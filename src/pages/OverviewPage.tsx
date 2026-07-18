@@ -79,7 +79,7 @@ function metricRows(
       value: String(totalAppointments),
       detail: totalAppointments > 0 ? "Total appointments on record" : "Connect a calendar to book",
       tone: totalAppointments > 0 ? ("wire" as const) : ("neutral" as const),
-      href: totalAppointments > 0 ? "/insights" : "/connections",
+      href: totalAppointments > 0 ? "/phone?tab=appointments" : "/connections",
       icon: CalendarCheck2,
     },
     {

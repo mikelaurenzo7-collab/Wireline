@@ -2,8 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const read = (path: string) =>
-  readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("authenticated mobile cleanup", () => {
   it("renders existing short tab labels without weakening accessible names", () => {
@@ -13,9 +12,7 @@ describe("authenticated mobile cleanup", () => {
     expect(tabStrip).toContain("shortLabel?: string");
     expect(tabStrip).toContain('className="sm:hidden"');
     expect(tabStrip).toContain('className="hidden sm:inline"');
-    expect(tabStrip).toContain(
-      "tab.ariaLabel ?? (tab.shortLabel ? fullLabel : undefined)",
-    );
+    expect(tabStrip).toContain("tab.ariaLabel ?? (tab.shortLabel ? fullLabel : undefined)");
     expect(tabStrip).not.toContain("(${tab.shortLabel})");
     expect(tabs).toContain('shortLabel: "Camps"');
     expect(tabs).toContain('shortLabel: "Seq"');
@@ -41,14 +38,10 @@ describe("authenticated mobile cleanup", () => {
     const cadences = read("src/components/Cadences.tsx");
     const outbound = read("src/components/outbound/OutboundHub.tsx");
 
-    expect(campaigns).toContain(
-      "flex flex-col items-stretch gap-2 sm:flex-row",
-    );
+    expect(campaigns).toContain("flex flex-col items-stretch gap-2 sm:flex-row");
     expect(campaigns).toContain('aria-label="Refresh campaigns"');
     expect(campaigns).toContain("campaigns.length > 0 ?");
-    expect(cadences).toContain(
-      "Build timed call, SMS, and email follow-up sequences.",
-    );
+    expect(cadences).toContain("Build timed call, SMS, and email follow-up sequences.");
     expect(cadences).not.toMatch(/job-worker|\/pipeline/);
     expect(cadences).toContain("cadences.length > 0 && !showBuilder");
     expect(outbound).toMatch(/Consent checks run\s+before every dial/);
@@ -64,7 +57,7 @@ describe("authenticated mobile cleanup", () => {
     const mailbox = read("src/components/MailboxConnectionCard.tsx");
     const callLogs = read("src/components/CallLogsClaude.tsx");
     const studio = read("src/components/StudioWorkspaceV2.tsx");
-    const phone = read("src/pages/PhonePage.tsx");
+    const appointments = read("src/components/AppointmentsPanel.tsx");
 
     expect(activation).toContain("grid grid-cols-2 gap-2 lg:grid-cols-3");
     expect(activation).toContain("hidden text-[11px] leading-4");
@@ -81,7 +74,10 @@ describe("authenticated mobile cleanup", () => {
     expect(callLogs).toContain('shortLabel: "Stats"');
     expect(callLogs).toContain('aria-label="Export calls as CSV"');
     expect(studio).toContain("hidden size-4 shrink-0 sm:block");
-    expect(phone).toContain('title="Connect a calendar"');
+    // The appointments empty state moved into its own data-driven panel.
+    expect(appointments).toContain(
+      'title={calendarConnected ? "No appointments yet" : "Connect a calendar"}',
+    );
   });
 
   it("keeps guidance once, next to the decision it supports", () => {
@@ -91,16 +87,12 @@ describe("authenticated mobile cleanup", () => {
     const inbox = read("src/components/EmailInbox.tsx");
 
     expect(setup).not.toMatch(/Set the tone, greeting, essential facts/);
-    expect(setup).not.toMatch(
-      /Add only what the first customer workflow needs/,
-    );
+    expect(setup).not.toMatch(/Add only what the first customer workflow needs/);
     expect(review).not.toMatch(/Keep the loop small/);
     expect(voice).toMatch(
       /Browser tests the words\. Place a real call to verify the selected\s+audio\./,
     );
-    expect(inbox).toContain(
-      "Connect Gmail or Outlook to sync customer threads.",
-    );
+    expect(inbox).toContain("Connect Gmail or Outlook to sync customer threads.");
     expect(inbox).not.toContain("Summary + controls live here.");
   });
 
@@ -112,9 +104,7 @@ describe("authenticated mobile cleanup", () => {
     const billing = read("src/components/StripeBillingCard.tsx");
     const billingSettings = read("src/pages/BillingSettings.tsx");
     const trialBanner = read("src/components/layout/TrialBanner.tsx");
-    const activationWizard = read(
-      "src/components/onboarding/PostCreateActivationWizard.tsx",
-    );
+    const activationWizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
 
     expect(shell).toContain("<WiredEyebrow>AI employees</WiredEyebrow>");
     expect(callLogs).toContain('label: "Employees"');

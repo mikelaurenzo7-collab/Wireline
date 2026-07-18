@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import Vapi from "@vapi-ai/web";
+import { useEffect, useRef, useState } from "react";
+import type Vapi from "@vapi-ai/web";
 import { PhoneOff, Mic, Loader2, AlertCircle, Volume2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -24,21 +24,38 @@ export default function BrowserCallWidget({
   tintColor: _tintColor,
   buttonLabel = "Talk in browser",
 }: BrowserCallWidgetProps) {
-  const [vapi, setVapi] = useState<Vapi | null>(null);
   const [callActive, setCallActive] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [volume, setVolume] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [speakerActive, setSpeakerActive] = useState(false);
 
+  // The ~300 KB @vapi-ai/web WebRTC SDK is only needed once the visitor starts a
+  // call, so it is imported dynamically on first use rather than shipped in the
+  // marketing page bundle. Keep the instance in a ref so it survives re-renders.
+  const vapiRef = useRef<Vapi | null>(null);
+  const agentNameRef = useRef(agentName);
+  agentNameRef.current = agentName;
+
   useEffect(() => {
+    // Stop any in-flight session when the widget unmounts.
+    return () => {
+      try {
+        vapiRef.current?.stop();
+      } catch {
+        // Nothing to clean up when a session never started.
+      }
+    };
+  }, []);
+
+  async function ensureVapi(): Promise<Vapi | null> {
+    if (vapiRef.current) return vapiRef.current;
     if (!VAPI_PUBLIC_KEY) {
       setError("Voice demo is unavailable right now.");
-      return;
+      return null;
     }
-
-    const instance = new Vapi(VAPI_PUBLIC_KEY);
-    setVapi(instance);
+    const { default: VapiSDK } = await import("@vapi-ai/web");
+    const instance = new VapiSDK(VAPI_PUBLIC_KEY);
 
     instance.on("call-start", () => {
       setConnecting(false);
@@ -46,8 +63,8 @@ export default function BrowserCallWidget({
       setError(null);
       if (typeof window !== "undefined") {
         const analytics = window as AnalyticsWindow;
-        analytics.fbq?.("trackCustom", "BrowserCallStart", { agent: agentName });
-        analytics.plausible?.("BrowserCallStart", { props: { agent: agentName } });
+        analytics.fbq?.("trackCustom", "BrowserCallStart", { agent: agentNameRef.current });
+        analytics.plausible?.("BrowserCallStart", { props: { agent: agentNameRef.current } });
       }
     });
 
@@ -72,27 +89,25 @@ export default function BrowserCallWidget({
       setSpeakerActive(false);
     });
 
-    return () => {
-      try {
-        instance.stop();
-      } catch {
-        // Nothing to clean up when a session never started.
-      }
-    };
-  }, [agentName]);
+    vapiRef.current = instance;
+    return instance;
+  }
 
   const handleToggleCall = async () => {
-    if (!vapi) return;
-
     if (callActive) {
       setConnecting(true);
-      vapi.stop();
+      vapiRef.current?.stop();
       return;
     }
 
     try {
       setConnecting(true);
       setError(null);
+      const instance = await ensureVapi();
+      if (!instance) {
+        setConnecting(false);
+        return;
+      }
       const response = await fetch(`/api/public/assistant/${agentName}`);
       if (!response.ok) throw new Error("Could not load the demo agent.");
       const assistantPayload = await response.json();
@@ -100,7 +115,7 @@ export default function BrowserCallWidget({
       if (navigator.mediaDevices?.getUserMedia) {
         await navigator.mediaDevices.getUserMedia({ audio: true });
       }
-      vapi.start(assistantPayload);
+      instance.start(assistantPayload);
     } catch (reason: unknown) {
       console.error("[wireline:webrtc] Call start failed:", reason);
       setError(
@@ -111,6 +126,8 @@ export default function BrowserCallWidget({
       setConnecting(false);
     }
   };
+
+  const buttonText = connecting ? "Connecting…" : callActive ? "End call" : buttonLabel;
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -126,8 +143,9 @@ export default function BrowserCallWidget({
         disableAnimations
         variant={callActive ? "destructive" : "outline"}
         onClick={handleToggleCall}
-        disabled={connecting || !vapi}
-        aria-label={callActive ? "End conversation" : "Talk to agent"}
+        disabled={connecting}
+        aria-busy={connecting}
+        aria-label={buttonText}
         className={cn(
           "relative z-10 h-12 select-none rounded-md border px-6 font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.12em] transition-transform duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:border-border disabled:bg-secondary disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none",
           callActive
@@ -137,17 +155,17 @@ export default function BrowserCallWidget({
       >
         {connecting ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Connecting...</span>
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            <span>Connecting…</span>
           </>
         ) : callActive ? (
           <>
-            <PhoneOff className="h-4 w-4" />
+            <PhoneOff className="h-4 w-4" aria-hidden="true" />
             <span>End call</span>
           </>
         ) : (
           <>
-            <Mic className="h-4 w-4" />
+            <Mic className="h-4 w-4" aria-hidden="true" />
             <span>{buttonLabel}</span>
           </>
         )}
@@ -160,14 +178,19 @@ export default function BrowserCallWidget({
       </ShadButton>
 
       {callActive && (
-        <div className="flex h-7 items-center gap-2 rounded-full border border-border bg-[color:var(--wireline-surface-subtle)] px-4 py-1.5">
+        <div
+          className="flex h-7 items-center gap-2 rounded-full border border-border bg-[color:var(--wireline-surface-subtle)] px-4 py-1.5"
+          role="status"
+          aria-live="polite"
+        >
           <Volume2
             className={cn(
               "h-3.5 w-3.5 text-muted-foreground",
               speakerActive && "animate-pulse text-primary",
             )}
+            aria-hidden="true"
           />
-          <div className="flex h-3 items-end gap-0.5">
+          <div className="flex h-3 items-end gap-0.5" aria-hidden="true">
             {[1, 2, 3, 4, 5].map((bar) => {
               const scaled = volume * (1 + bar * 0.3);
               const height = scaled > 0.01 ? Math.min(100, Math.max(15, scaled * 100)) : 15;
@@ -187,8 +210,11 @@ export default function BrowserCallWidget({
       )}
 
       {error && (
-        <div className="flex items-center gap-2 rounded-md border border-border bg-secondary px-3 py-1 text-[var(--wireline-typography-overline-size)] font-medium uppercase tracking-wider text-muted-foreground">
-          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+        <div
+          className="flex items-center gap-2 rounded-md border border-border bg-secondary px-3 py-1 text-[var(--wireline-typography-overline-size)] font-medium uppercase tracking-wider text-muted-foreground"
+          role="alert"
+        >
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span>{error}</span>
         </div>
       )}

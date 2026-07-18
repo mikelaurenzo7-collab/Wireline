@@ -12,7 +12,7 @@ import express, { type Response } from "express";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser, authenticateEventStream } from "../middleware/auth";
-import { claudeRateLimiter } from "../middleware/api-rate-limits";
+import { claudeRateLimiter, smsRateLimit } from "../middleware/api-rate-limits";
 import { validateBody, workspaceMessageSchema, pdfUploadSchema } from "../lib/api-validation";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -619,6 +619,7 @@ router.post(
 router.post(
   "/api/agents/:id/workspace/run-action",
   authenticateUser,
+  smsRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;

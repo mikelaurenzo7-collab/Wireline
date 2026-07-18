@@ -1,8 +1,9 @@
 import { AppError } from "../lib/api-error";
 import { Router, Request, Response } from "express";
-import { drizzle, log, auditLogger, quotaTracker, requirePermission } from "../lib/server-context";
+import { drizzle, log, auditLogger, quotaTracker } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
+import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { quotaRateLimit } from "../middleware/api-rate-limits";
 import { getErrorMessage } from "../lib/server-utils";
 import { PLAN_DEFAULTS, validateOverride } from "../lib/tenant-quotas";
@@ -52,16 +53,17 @@ router.get("/plans", quotaRateLimit, (_req: Request, res: Response) => {
 /**
  * PUT /api/quotas/override — set a per-tenant override.
  *
- * Authorization: requires `quotas.override` permission (owner or admin
- * roles). A regular Account Holder/viewer/auditor cannot raise their own
- * caps. The accept/deny audit trail lives in `wireline_audit_log` via
- * `auditLogger.logSecurity` (deny path) and a dedicated `quota.override_set`
- * event on the accept path.
+ * Authorization: platform-admin only. Quotas are the platform's vendor-cost
+ * and abuse ceilings, so raising them is a platform operation — not a tenant
+ * self-service action. Tenant RBAC can't gate this: every self-serve signup
+ * resolves to the `owner` role (no team-membership row), so an "owner"
+ * permission check would let any tenant lift its own caps. The accept/deny
+ * audit trail lives in `wireline_audit_log`.
  */
 router.put(
   "/override",
   authenticateUser,
-  requirePermission("quotas.override"),
+  requirePlatformAdmin,
   quotaRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {

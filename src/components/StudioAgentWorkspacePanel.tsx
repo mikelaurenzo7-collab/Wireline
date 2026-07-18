@@ -28,7 +28,9 @@ type AgentSetupResponse = {
 
 function inferPersonality(value: string | undefined) {
   const normalized = value?.toLowerCase() ?? "";
-  return PERSONALITIES.find((option) => normalized.includes(option.id.toLowerCase()))?.id ?? "Clear";
+  return (
+    PERSONALITIES.find((option) => normalized.includes(option.id.toLowerCase()))?.id ?? "Clear"
+  );
 }
 
 function existingGreeting(directives: AgentSetupResponse["directives"]) {
@@ -73,7 +75,9 @@ export default function StudioAgentWorkspacePanel({
       .catch((reason) => {
         if (!cancelled) {
           setSetupGreeting(defaultGreeting);
-          setSetupError(reason instanceof Error ? reason.message : "Current setup could not be loaded.");
+          setSetupError(
+            reason instanceof Error ? reason.message : "Current setup could not be loaded.",
+          );
         }
       })
       .finally(() => {
@@ -139,9 +143,15 @@ export default function StudioAgentWorkspacePanel({
           </h2>
         </header>
 
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-labelledby="essentials-heading">
+        <section
+          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+          aria-labelledby="essentials-heading"
+        >
           <div className="mb-4">
-            <h3 id="essentials-heading" className="text-lg font-semibold tracking-tight text-foreground">
+            <h3
+              id="essentials-heading"
+              className="text-lg font-semibold tracking-tight text-foreground"
+            >
               Essentials
             </h3>
           </div>
@@ -171,7 +181,9 @@ export default function StudioAgentWorkspacePanel({
                         }`}
                       >
                         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                          {selected ? <CheckCircle2 className="size-4 text-primary" aria-hidden="true" /> : null}
+                          {selected ? (
+                            <CheckCircle2 className="size-4 text-primary" aria-hidden="true" />
+                          ) : null}
                           {option.id}
                         </span>
                         <span className="mt-1 block text-xs leading-5 text-muted-foreground">
@@ -193,11 +205,22 @@ export default function StudioAgentWorkspacePanel({
                 />
               </label>
 
-              <label className="grid gap-2" htmlFor="setup-knowledge">
-                <span className="text-sm font-semibold text-foreground">
-                  Essential business facts
-                  <span className="ml-2 font-normal text-muted-foreground">Optional</span>
-                </span>
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between gap-3">
+                  <label
+                    className="text-sm font-semibold text-foreground"
+                    htmlFor="setup-knowledge"
+                  >
+                    Essential business facts
+                    <span className="ml-2 font-normal text-muted-foreground">Optional</span>
+                  </label>
+                  <Link
+                    to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
+                    className="shrink-0 text-xs font-medium text-primary hover:underline"
+                  >
+                    Open full Training
+                  </Link>
+                </div>
                 <textarea
                   id="setup-knowledge"
                   value={setupKnowledge}
@@ -205,7 +228,7 @@ export default function StudioAgentWorkspacePanel({
                   className="min-h-28 w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm leading-6 outline-none focus:border-primary/50"
                   placeholder="Hours, services, pricing, policies, FAQs, and when to hand off to a person…"
                 />
-              </label>
+              </div>
 
               {setupNotice ? (
                 <StatusNotice tone="success" title="Changes saved">
@@ -230,7 +253,10 @@ export default function StudioAgentWorkspacePanel({
           )}
         </section>
 
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-labelledby="voice-heading">
+        <section
+          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+          aria-labelledby="voice-heading"
+        >
           <div className="mb-3">
             <h3 id="voice-heading" className="text-lg font-semibold tracking-tight text-foreground">
               Phone voice
@@ -239,7 +265,10 @@ export default function StudioAgentWorkspacePanel({
           <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
         </section>
 
-        <section className="rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6" aria-label="Continue setup">
+        <section
+          className="rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6"
+          aria-label="Continue setup"
+        >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-base font-semibold text-foreground">Test before going live</h3>
@@ -248,7 +277,12 @@ export default function StudioAgentWorkspacePanel({
               </p>
             </div>
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-              <Button type="button" variant="secondary" onClick={onTestVoiceInChat} className="justify-center">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onTestVoiceInChat}
+                className="justify-center"
+              >
                 Test conversation
               </Button>
               <Button asChild className="justify-center">
