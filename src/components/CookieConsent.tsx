@@ -22,6 +22,16 @@ function globalPrivacyControlEnabled(): boolean {
   return (navigator as PrivacyAwareNavigator).globalPrivacyControl === true;
 }
 
+function hasAcknowledgedNotice(): boolean {
+  try {
+    return Boolean(localStorage.getItem(NOTICE_STORAGE_KEY));
+  } catch {
+    // Hardened/private contexts may block storage entirely. Keep the notice
+    // available while the measurement loader independently defaults to off.
+    return false;
+  }
+}
+
 export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
   const location = useLocation();
@@ -29,7 +39,7 @@ export default function CookieConsent() {
   const privacySignalEnabled = globalPrivacyControlEnabled();
 
   useEffect(() => {
-    if (localStorage.getItem(NOTICE_STORAGE_KEY)) return;
+    if (hasAcknowledgedNotice()) return;
     let cancelled = false;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
