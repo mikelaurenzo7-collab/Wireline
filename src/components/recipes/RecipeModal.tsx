@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- recipe payload bridges loosely typed agent API. */
 /**
  * Recipe modal shell — picks up `recipe`, mounts the matching form,
- * polls Anthropic availability, and provides the close affordance.
+ * polls the managed OpenAI reasoning runtime, and provides the close affordance.
  *
- * Was inlined inside ClaudeRecipes.tsx; lifted into its own module
- * so the per-form code can live next to the form file it relates to.
+ * The recipe forms live beside the workflow they implement so this shell stays
+ * focused on availability, agent selection, and modal lifecycle.
  */
 
 import { useEffect, useState } from "react";
@@ -49,42 +49,56 @@ export function RecipeModal({
   const [available, setAvailable] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+
+    void (async () => {
       try {
         const [statusRes, agentsRes] = await Promise.all([
-          authFetch("/api/claude/status"),
+          authFetch("/api/health/public"),
           authFetch("/api/agents"),
         ]);
-        // Only flip `available = false` on an actual 200 that explicitly
-        // reports `available: false`. A 401 means the user's token hasn't
-        // landed yet (or expired) — that's NOT an AI outage and we
-        // shouldn't scare the user with a red "Wireline AI unavailable"
-        // banner. Stay in the loading null-state and let the next render
-        // retry once auth catches up.
+        if (cancelled) return;
+
+        // The public health contract reports the actual managed reasoning lane.
+        // Only an explicit non-operational result disables recipes. A transient
+        // auth failure on the agent list must not be mislabeled as an AI outage.
         if (statusRes.ok) {
-          const s = await statusRes.json();
-          setAvailable(!!s.available);
-        } else if (statusRes.status === 401) {
+          const status = (await statusRes.json()) as {
+            components?: { reasoning?: string };
+          };
+          setAvailable(status.components?.reasoning === "operational");
+        } else if (statusRes.status === 429) {
           setAvailable(null);
         } else {
           setAvailable(false);
         }
-        const a = await agentsRes.json();
-        setAgents(
-          (a.agents ?? []).map((x: any) => ({ id: x.id, name: x.name, archetype: x.archetype })),
-        );
+
+        if (agentsRes.ok) {
+          const body = (await agentsRes.json()) as { agents?: AgentLite[] };
+          setAgents(
+            (body.agents ?? []).map((agent) => ({
+              id: agent.id,
+              name: agent.name,
+              archetype: agent.archetype,
+            })),
+          );
+        }
       } catch {
-        setAvailable(null);
+        if (!cancelled) setAvailable(null);
       }
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -106,32 +120,32 @@ export function RecipeModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 24 }}
         transition={{ type: "spring", damping: 26, stiffness: 220 }}
-        className="relative rounded-md wl-panel-elevated border border-border w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden"
+        className="relative flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-md border border-border wl-panel-elevated"
       >
-        <div className="relative rounded-md wl-panel-elevated overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-md wl-panel-elevated">
           <div
-            className="absolute -top-32 -right-32 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-25 blur-3xl pointer-events-none wl-recipe-halo"
+            className="pointer-events-none absolute -right-32 -top-32 h-64 max-h-[50vw] w-64 max-w-[50vw] rounded-full opacity-25 blur-3xl wl-recipe-halo sm:max-h-none sm:max-w-none"
             data-recipe-accent={meta.accent}
           />
 
-          <div className="relative z-10 flex items-center justify-between px-7 py-5 border-b border-white/8">
+          <div className="relative z-10 flex items-center justify-between border-b border-white/8 px-7 py-5">
             <div className="flex items-center gap-4">
               <div
-                className="w-11 h-11 rounded-md wl-panel border border-white/10 flex items-center justify-center wl-recipe-icon"
+                className="flex h-11 w-11 items-center justify-center rounded-md border border-white/10 wl-panel wl-recipe-icon"
                 data-recipe-accent={meta.accent}
               >
-                <meta.icon className="w-5 h-5" />
+                <meta.icon className="h-5 w-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="font-display italic text-2xl leading-none">{meta.title}</h2>
+                  <h2 className="font-display text-2xl italic leading-none">{meta.title}</h2>
                   {meta.thinking && (
-                    <span className="px-2 py-0.5 rounded-full bg-brand/10 border border-brand/20 wl-label text-brand flex items-center gap-1">
-                      <Brain className="w-2.5 h-2.5" /> Adaptive
+                    <span className="flex items-center gap-1 rounded-full border border-brand/20 bg-brand/10 px-2 py-0.5 wl-label text-brand">
+                      <Brain className="h-2.5 w-2.5" /> Adaptive
                     </span>
                   )}
                 </div>
-                <p className="wl-label-muted mt-1">{meta.tagline}</p>
+                <p className="mt-1 wl-label-muted">{meta.tagline}</p>
               </div>
             </div>
             <ShadButton
@@ -139,15 +153,15 @@ export function RecipeModal({
               size="icon"
               onClick={onClose}
               aria-label="Close"
-              className="w-10 h-10 rounded-full hover:border-brand/40"
+              className="h-10 w-10 rounded-full hover:border-brand/40"
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" />
             </ShadButton>
           </div>
 
           {available === false && <NoKeyInline />}
           <WidgetBoundary label={meta.title}>
-            <div className="flex-1 scroll-viewport scrollbar-hide">
+            <div className="scrollbar-hide flex-1 scroll-viewport">
               {recipe === "brief" && (
                 <BriefForm
                   agents={agents}
