@@ -26,7 +26,7 @@ export const STUDIO_CANVAS_SURFACES = {
   workspacePanel: "src/components/StudioAgentWorkspacePanel.tsx",
   reviewPanel: "src/components/StudioAgentReviewPanel.tsx",
   overview: "src/pages/OverviewPage.tsx",
-  studioHome: "src/pages/AgentStudioHomeClaude.tsx",
+  studioHome: "src/pages/AgentStudioHome.tsx",
   agentPreference: "src/lib/studio-agent-preference.ts",
   activeAgentHook: "src/hooks/useStudioActiveAgentId.ts",
   authContext: "src/contexts/AuthContext.tsx",
@@ -34,6 +34,7 @@ export const STUDIO_CANVAS_SURFACES = {
 };
 
 export const STUDIO_CANVAS_FORBIDDEN = {
+  appRoutes: [{ id: "provider-bound-studio-route", pattern: /AgentStudioHomeClaude/ }],
   studioPageShell: [
     { id: "duplicate-rail", pattern: /aria-label="Workspace navigation"/ },
     { id: "agent-tablist", pattern: /role="tablist"/ },
@@ -53,7 +54,7 @@ export const STUDIO_CANVAS_FORBIDDEN = {
 
 export const STUDIO_CANVAS_REQUIRED = {
   appRoutes: [
-    { id: "claude-studio-route", pattern: /AgentStudioHomeClaude/ },
+    { id: "provider-neutral-studio-route", pattern: /pages\/AgentStudioHome"/ },
     // Retired /agents page redirects into Studio (agent-first IA owns the roster).
     { id: "agents-redirect", pattern: /path="\/agents" element=\{<Navigate to="\/studio" replace \/>\}/ },
   ],
