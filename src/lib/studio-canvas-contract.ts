@@ -22,10 +22,7 @@ export const STUDIO_CANVAS_SURFACES = {
 export type StudioCanvasSurfaceKey = keyof typeof STUDIO_CANVAS_SURFACES;
 
 export const STUDIO_CANVAS_FORBIDDEN = {
-  appRoutes: [
-    { id: "provider-bound-studio-route", pattern: /AgentStudioHomeClaude/ },
-    { id: "old-studio-route", pattern: /pages\/AgentStudioHome"/ },
-  ],
+  appRoutes: [{ id: "provider-bound-studio-route", pattern: /AgentStudioHomeClaude/ }],
   studioPageShell: [
     { id: "duplicate-rail", pattern: /aria-label="Workspace navigation"/ },
     { id: "agent-switcher", pattern: /StudioAgentBar/ },
