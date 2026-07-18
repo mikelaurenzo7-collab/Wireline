@@ -55,10 +55,11 @@ describe("static marketing metadata", () => {
       description: string;
     };
 
-    expect(manifest.name).toBe("Wireline - AI employees");
-    expect(manifest.description).toContain("AI employees");
-    expect(manifest.description).toContain("included numbers");
-    expect(manifest.description).toContain("book appointments");
-    expect(manifest.description).toContain("every result");
+    expect(manifest.name).toBe("Wireline - Your next AI employee");
+    expect(manifest.description).toContain("One trained AI employee");
+    expect(manifest.description).toContain("voice, SMS, and email");
+    expect(manifest.description).toContain("books the next step");
+    expect(manifest.description).toContain("logs every outcome");
+    expect(manifest.description).not.toContain("included numbers");
   });
 });
