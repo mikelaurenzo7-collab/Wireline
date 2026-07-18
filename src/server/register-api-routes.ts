@@ -15,6 +15,7 @@ import voicesRouter from "../routes/voices-routes";
 import pronunciationRouter from "../routes/pronunciation-routes";
 import elevenlabsWebhookRouter from "../routes/webhooks-elevenlabs-routes";
 import billingRouter from "../routes/billing-routes";
+import billingPortalReadinessRouter from "../routes/billing-portal-readiness-routes";
 import launchBillingCheckoutRouter from "../routes/launch-billing-checkout-routes";
 import subscriptionCheckoutGuardRouter from "../routes/subscription-checkout-guard-routes";
 import conversationBalanceRouter from "../routes/conversation-balance-routes";
@@ -113,6 +114,9 @@ export function registerApiRoutes(app: Express): void {
   // immutable Stripe lookup keys and never attaches postpaid metered overage.
   app.use(launchBillingCheckoutRouter);
   app.use(subscriptionCheckoutGuardRouter);
+  // The managed portal writer self-heals missing Stripe Dashboard configuration
+  // and must precede the broad billing router's legacy portal endpoint.
+  app.use(billingPortalReadinessRouter);
   app.use("/api", billingRouter);
   app.use(emailRouter);
   // Dashboard data plane: /api/dashboard/*, /api/calls, /api/appointments,
@@ -154,7 +158,8 @@ export function registerApiRoutes(app: Express): void {
   app.use(complianceRouter);
   app.use(knowledgeRouter);
   app.use(learningRouter);
-  app.use(openapiRouter);
+  // The public contract is advertised and consumed at /api/openapi.json.
+  app.use("/api", openapiRouter);
   app.use(supervisorRouter);
   // Insights data plane: funnel, heatmap, leaderboard, topics, failure-modes, daily-brief.
   app.use(insightsRouter);
