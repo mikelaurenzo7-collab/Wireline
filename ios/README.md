@@ -147,7 +147,9 @@ pressed action `#8B5CF6`, platinum-silver wire accent `#C7CCD6`, and primary ink
 ## Build
 
 This repo commits a **XcodeGen** spec (`ios/project.yml`) instead of a checked-in
-`.pbxproj`, so the project pins to your signing:
+`.pbxproj`, so the project pins to your signing. App Store release builds require
+Xcode 26 or newer and the iOS 26 SDK as of April 28, 2026; CI pins Xcode 26.3 as
+the reproducible release baseline.
 
 ```bash
 brew install xcodegen        # one-time
