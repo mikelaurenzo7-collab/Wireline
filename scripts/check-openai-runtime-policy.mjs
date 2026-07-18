@@ -15,6 +15,8 @@ const carrierPanel = read("src/components/admin/CarrierPanel.tsx");
 const prodEnvCheck = read("scripts/check-prod-env.mjs");
 const legalPage = read("src/components/LegalPage.tsx");
 const integrationLogos = read("src/components/layout/IntegrationLogos.tsx");
+const androidReadme = read("android/README.md");
+const legacyVoiceDoc = read("docs/GROK_LIVE_VOICE.md");
 const migrationJournal = read("drizzle/migrations/meta/_journal.json");
 const migrationCorpus = readdirSync(resolve(root, "drizzle/migrations"))
   .filter((name) => name.endsWith(".sql"))
@@ -47,6 +49,11 @@ if (!legalPage.includes("<strong>OpenAI</strong>")) fail("public privacy page do
 if (!legalPage.includes("<strong>Google Gemini</strong>")) fail("public privacy page does not name Gemini as managed fallback inference infrastructure");
 if (integrationLogos.includes("ALL_LOGOS.anthropic") || integrationLogos.includes('aria-label="Anthropic"')) fail("powered-by logo strip still advertises Anthropic");
 if (!integrationLogos.includes("ALL_LOGOS.openai")) fail("powered-by logo strip does not advertise OpenAI");
+if (!androidReadme.includes("managed OpenAI Realtime session contract")) fail("Android documentation does not identify the managed OpenAI realtime contract");
+if (!androidReadme.includes("Legacy xAI/Grok routes and configuration are compatibility-only")) fail("Android documentation does not constrain the legacy Grok path");
+if (androidReadme.includes("Native apps support authenticated Grok realtime voice sessions")) fail("Android documentation still presents Grok as the active native runtime");
+if (!legacyVoiceDoc.includes("Legacy xAI Voice Compatibility")) fail("legacy Grok document is not clearly classified as compatibility-only");
+if (!legacyVoiceDoc.includes("managed OpenAI Realtime contract")) fail("legacy Grok document does not point to the active OpenAI runtime");
 if (!models.includes('provider === "openrouter" && isOpenRouterModelId(model)')) fail("OpenRouter model validation is missing");
 if (!models.includes('return { provider: "openrouter", model, userSelected: true }')) fail("OpenRouter selections are not preserved exactly");
 if (!/item\(\s*["']deepgram-flux["']/.test(registry)) fail("Deepgram Flux is not registered as production voice transcription");
