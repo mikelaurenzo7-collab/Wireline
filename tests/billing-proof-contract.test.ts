@@ -126,6 +126,27 @@ describe("billing proof contract", () => {
     expect(welcome).toContain("id: billingPeriodReference");
   });
 
+  it("checks the canonical founder Stripe environment without reviving postpaid metering", () => {
+    const envCheck = read("scripts/check-prod-env.mjs");
+    const canonicalKeys = [
+      "STRIPE_STARTER_9_PRICE_ID",
+      "STRIPE_STARTER_9_ANNUAL_PRICE_ID",
+      "STRIPE_STARTER_PRICE_ID",
+      "STRIPE_STARTER_ANNUAL_PRICE_ID",
+      "STRIPE_TEAM_PRICE_ID",
+      "STRIPE_TEAM_ANNUAL_PRICE_ID",
+      "STRIPE_BUSINESS_PRICE_ID",
+      "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
+      "STRIPE_EXTRA_AGENT_PRICE_ID",
+      "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
+    ];
+
+    for (const key of canonicalKeys) expect(envCheck).toContain(`["${key}"`);
+    expect(envCheck).not.toContain('["STRIPE_BUSINESS_STARTER_PRICE_ID"');
+    expect(envCheck).not.toContain('["STRIPE_PRO_PRICE_ID"');
+    expect(envCheck).not.toContain('["STRIPE_VOICE_OVERAGE_METER_EVENT_NAME"');
+  });
+
   it("links the canonical billing runbook from the docs index", () => {
     expect(read("docs/BILLING_RUNBOOK.md")).toContain("Status: **Active canonical runbook**");
     expect(read("docs/README.md")).toContain("[BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md)");

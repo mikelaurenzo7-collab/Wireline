@@ -82,19 +82,19 @@ const recommended = [
   ["STRIPE_WEBHOOK_SECRET", "Stripe webhook signature verification"],
   ["VITE_STRIPE_PUBLIC_KEY", "Stripe publishable key for client-side checkout UI"],
 
-  // Current public subscription checkout is for shared capacity only.
-  // These env names are transitional code identifiers mapped to the live
-  // Wireline Team and Wireline Business products.
-  ["STRIPE_BUSINESS_STARTER_PRICE_ID", "Wireline Team monthly capacity price"],
-  ["STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID", "Wireline Team annual capacity price"],
-  ["STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID", "Wireline Team extra-agent add-on"],
-  ["STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID", "Wireline Team metered voice-overage price"],
-  ["STRIPE_PRO_PRICE_ID", "Wireline Business monthly capacity price"],
-  ["STRIPE_PRO_ANNUAL_PRICE_ID", "Wireline Business annual capacity price"],
-  ["STRIPE_PRO_EXTRA_AGENT_PRICE_ID", "Wireline Business extra-agent add-on"],
-  ["STRIPE_PRO_OVERAGE_PRICE_ID", "Wireline Business metered overage price"],
+  // Canonical Founder Early Access catalog. These keys mirror
+  // src/lib/plan-catalog.ts and scripts/lib/stripe-founder-catalog.mjs.
+  ["STRIPE_STARTER_9_PRICE_ID", "Wireline Starter monthly price"],
+  ["STRIPE_STARTER_9_ANNUAL_PRICE_ID", "Wireline Starter annual price"],
+  ["STRIPE_STARTER_PRICE_ID", "Wireline Starter Plus monthly price"],
+  ["STRIPE_STARTER_ANNUAL_PRICE_ID", "Wireline Starter Plus annual price"],
+  ["STRIPE_TEAM_PRICE_ID", "Wireline Pro monthly price"],
+  ["STRIPE_TEAM_ANNUAL_PRICE_ID", "Wireline Pro annual price"],
+  ["STRIPE_BUSINESS_PRICE_ID", "Wireline Business monthly price"],
+  ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "Wireline Business annual price"],
+  ["STRIPE_EXTRA_AGENT_PRICE_ID", "Extra Agent + 50 Minutes recurring add-on"],
+  ["STRIPE_LIVE_VIDEO_ADDON_PRICE_ID", "Live Video recurring add-on"],
 
-  ["STRIPE_VOICE_OVERAGE_METER_EVENT_NAME", "Stripe meter event name for voice-minute overage"],
   ["WIRELINE_DATA_KEY", "AES-256-GCM key for encrypting webhook secrets at rest"],
   ["CRON_SECRET", "Bearer token for cron job authentication"],
 ];
@@ -109,8 +109,6 @@ const optional = [
   ["SENTRY_DSN", "Backend error monitoring"],
   ["VITE_SENTRY_DSN", "Frontend error monitoring"],
   ["CLAUDE_MONTHLY_BUDGET_USD", "Legacy alias for rolling-24h AI spend alert threshold"],
-  ["STRIPE_BUSINESS_PRICE_ID", "Reserved only if Enterprise self-serve checkout is re-enabled"],
-  ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "Reserved only if Enterprise annual checkout is re-enabled"],
   [
     "STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID",
     "Reserved only if Enterprise add-on checkout is re-enabled",
