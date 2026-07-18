@@ -7,15 +7,29 @@ import { cn } from "../lib/utils";
 import { isMarketingStickyCtaRoute } from "../lib/marketing-mobile";
 import { isAuthPortalPath } from "../lib/public-routes";
 
-const STORAGE_KEY = "wireline_cookie_consent";
+const NOTICE_STORAGE_KEY = "wireline_cookie_consent";
+const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
+const MEASUREMENT_CONSENT_EVENT = "wireline:marketing-measurement-consent";
+
+type MeasurementConsent = "granted" | "denied";
+
+type PrivacyAwareNavigator = Navigator & {
+  globalPrivacyControl?: boolean;
+};
+
+function globalPrivacyControlEnabled(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return (navigator as PrivacyAwareNavigator).globalPrivacyControl === true;
+}
 
 export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
   const location = useLocation();
   const [hasSession, setHasSession] = useState(false);
+  const privacySignalEnabled = globalPrivacyControlEnabled();
 
   useEffect(() => {
-    if (localStorage.getItem(STORAGE_KEY)) return;
+    if (localStorage.getItem(NOTICE_STORAGE_KEY)) return;
     let cancelled = false;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
@@ -45,13 +59,26 @@ export default function CookieConsent() {
   const onAuthRoute = isAuthPortalPath(location.pathname);
   const clearMarketingSticky = !hasSession && isMarketingStickyCtaRoute(location.pathname);
 
-  const dismiss = () => {
-    localStorage.setItem(STORAGE_KEY, "acknowledged");
+  const saveChoice = (choice: MeasurementConsent) => {
+    const effectiveChoice = privacySignalEnabled ? "denied" : choice;
+    try {
+      localStorage.setItem(NOTICE_STORAGE_KEY, "acknowledged");
+      localStorage.setItem(MEASUREMENT_STORAGE_KEY, effectiveChoice);
+    } catch {
+      // Storage can be unavailable in hardened/private browser contexts. The
+      // measurement loader defaults to off when it cannot read an explicit grant.
+    }
+    window.dispatchEvent(
+      new CustomEvent(MEASUREMENT_CONSENT_EVENT, {
+        detail: effectiveChoice,
+      }),
+    );
     setVisible(false);
   };
 
-  // Escape dismisses the cookie notice — gives keyboard-only users a way out
-  // without having to tab through the page to reach the X button.
+  const dismiss = () => saveChoice("denied");
+
+  // Escape chooses the privacy-preserving default and dismisses the notice.
   useEffect(() => {
     if (!visible) return;
     const onKey = (e: KeyboardEvent) => {
@@ -59,7 +86,7 @@ export default function CookieConsent() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [visible]);
+  }, [visible, privacySignalEnabled]);
 
   return (
     <AnimatePresence>
@@ -70,9 +97,7 @@ export default function CookieConsent() {
           exit={{ y: 24, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
           className={cn(
-            // Mobile: slim full-width pill. ≥sm: bottom-right so it stays clear
-            // of the centered hero CTAs.
-            "fixed z-[9999] left-3 right-3 sm:right-5 sm:left-auto sm:max-w-[320px]",
+            "fixed z-[9999] left-3 right-3 sm:right-5 sm:left-auto sm:max-w-[390px]",
             onAuthRoute
               ? "top-[max(0.75rem,env(safe-area-inset-top,0))]"
               : clearMarketingSticky
@@ -80,43 +105,68 @@ export default function CookieConsent() {
                 : "bottom-[calc(4.25rem+env(safe-area-inset-bottom,0))]",
           )}
           role="dialog"
-          aria-label="Cookie notice"
+          aria-label="Privacy choices"
         >
-          {/* Compact card — bottom-right, clear of centered hero CTAs. */}
           <div className="rounded-md border border-border backdrop-blur-xl shadow-lg px-3.5 py-3 flex items-start gap-2.5 wl-cookie-card">
-            {/* Icon */}
             <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5 wl-cookie-icon">
               <Cookie className="w-3.5 h-3.5 text-brand" />
             </div>
 
-            {/* Copy */}
-            <p className="text-[var(--wireline-typography-caption-size)] leading-relaxed flex-1 min-w-0 text-foreground/80">
-              Essential cookies only — no ad or cross-site tracking.{" "}
-              <Link
-                to="/privacy"
-                className="text-brand hover:text-brand/80 underline"
-                onClick={dismiss}
-              >
-                Privacy
-              </Link>
-              {" · "}
-              <Link
-                to="/terms"
-                className="text-brand hover:text-brand/80 underline"
-                onClick={dismiss}
-              >
-                Terms
-              </Link>
-            </p>
+            <div className="flex-1 min-w-0 space-y-2.5">
+              <p className="text-[var(--wireline-typography-caption-size)] leading-relaxed text-foreground/80">
+                Essential storage and privacy-friendly product analytics help Wireline operate.
+                Optional advertising measurement stays off unless you allow it. {" "}
+                <Link
+                  to="/privacy"
+                  className="text-brand hover:text-brand/80 underline"
+                  onClick={dismiss}
+                >
+                  Privacy
+                </Link>
+                {" · "}
+                <Link
+                  to="/terms"
+                  className="text-brand hover:text-brand/80 underline"
+                  onClick={dismiss}
+                >
+                  Terms
+                </Link>
+              </p>
 
-            {/* Dismiss */}
+              {privacySignalEnabled ? (
+                <p className="text-[var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
+                  Your browser privacy signal is active, so advertising measurement remains off.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  <ShadButton
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disableAnimations
+                    onClick={() => saveChoice("denied")}
+                  >
+                    Essential only
+                  </ShadButton>
+                  <ShadButton
+                    type="button"
+                    size="sm"
+                    disableAnimations
+                    onClick={() => saveChoice("granted")}
+                  >
+                    Allow measurement
+                  </ShadButton>
+                </div>
+              )}
+            </div>
+
             <ShadButton
               type="button"
               variant="ghost"
               size="icon"
               disableAnimations
               onClick={dismiss}
-              aria-label="Dismiss cookie notice"
+              aria-label="Keep advertising measurement off and dismiss"
               className="shrink-0 w-9 h-9 -mt-1 -mr-1.5 text-muted hover:text-foreground touch-press hover:scale-[1.05]"
             >
               <X className="w-4 h-4" />
