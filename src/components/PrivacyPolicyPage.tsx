@@ -231,10 +231,6 @@ export default function PrivacyPolicyPage() {
                 <strong>Meta</strong> — Optional advertising measurement and campaign attribution, only
                 after explicit consent and subject to Global Privacy Control
               </li>
-              <li>
-                <strong>Have I Been Pwned Pwned Passwords</strong> — Compromised-password screening using
-                a k-anonymous partial hash prefix
-              </li>
             </ul>
           </Section>
 
