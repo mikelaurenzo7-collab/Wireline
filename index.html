@@ -72,44 +72,7 @@
           (window.plausible.q = window.plausible.q || []).push(arguments);
         };
     </script>
-
-    <script>
-      (function () {
-        var isProd =
-          window.location.hostname === "trywireline.com" ||
-          window.location.hostname === "www.trywireline.com";
-        if (isProd) {
-          !(function (f, b, e, v, n, t, s) {
-            if (f.fbq) return;
-            n = f.fbq = function () {
-              n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-            };
-            if (!f._fbq) f._fbq = n;
-            n.push = n;
-            n.loaded = true;
-            n.version = "2.0";
-            n.queue = [];
-            t = b.createElement(e);
-            t.async = true;
-            t.src = v;
-            s = b.getElementsByTagName(e)[0];
-            s.parentNode.insertBefore(t, s);
-          })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
-          fbq("init", "1683492795830248");
-          fbq("track", "PageView");
-          // Google Tag Manager (GTM-K2M2L84B) was removed: the container returns
-          // 404, so the loader only fired a failed request on every consented
-          // page load and managed no live tags. Plausible and the Meta Pixel
-          // provide analytics independently. A no-op dataLayer keeps any
-          // dataLayer.push() calls safe; restore a published container id here
-          // to re-enable GTM.
-          window.dataLayer = window.dataLayer || { push: function () {} };
-        } else {
-          window.fbq = function () {};
-          window.dataLayer = { push: function () {} };
-        }
-      })();
-    </script>
+    <script defer src="/marketing-measurement.js"></script>
 
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://trywireline.com/" />

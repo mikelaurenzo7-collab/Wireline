@@ -182,6 +182,8 @@ router.post(
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
+      customer_update: { address: "auto" },
+      automatic_tax: { enabled: true },
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${appUrl.url}/settings/billing?billing=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl.url}/settings/billing?billing=canceled`,

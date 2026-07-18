@@ -126,6 +126,8 @@ router.post(
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
         customer: customerId,
+        customer_update: { address: "auto" },
+        automatic_tax: { enabled: true },
         line_items: [
           {
             quantity: 1,
