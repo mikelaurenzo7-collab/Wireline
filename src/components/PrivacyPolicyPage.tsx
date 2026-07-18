@@ -325,8 +325,8 @@ export default function PrivacyPolicyPage() {
               Meta Pixel is optional and remains off until you choose{" "}
               <strong>Allow measurement</strong>. Global Privacy Control overrides an allow choice.
               Turning measurement off replaces Wireline's browser-side measurement function with a
-              no-op so future Wireline-triggered Meta events stop; a request already in flight
-              before revocation may still complete.
+              no-op so future Wireline-triggered Meta events stop;{" "}
+              {"a request already in flight before revocation may still complete"}.
             </p>
           </Section>
 
