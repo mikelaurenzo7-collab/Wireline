@@ -1,13 +1,11 @@
 import { randomBytes } from "node:crypto";
 
 // Hashes for the inline <script> blocks in index.html: theme bootstrap,
-// Plausible stub, prod-gated Meta Pixel, and the JSON-LD structured data.
-// (Stale hashes for superseded JSON-LD copy were removed so the allowlist
-// stays minimal.)
+// Plausible stub, and JSON-LD structured data. Advertising measurement lives in
+// a same-origin external loader so it can remain off until explicit consent.
 export const INLINE_SCRIPT_HASHES = [
   "'sha256-3Z3f8c52musA1bws65NjZG2DaDDUbBisRU8i4FLei1w='",
   "'sha256-rikP6O8OvZlYRMZkxJ9ZM9m/LxculWr4DxAXvwZAF7c='",
-  "'sha256-wlyqsbOPnONv6AM5ziYNY+cA6vvH4mU1oRX7hBcx9HQ='",
   "'sha256-Sgtkva0aoGBbIVz0IEvpLrdSvwJevIdCBSRF85pZ3LI='",
 ] as const;
 
@@ -25,10 +23,6 @@ export const INLINE_STYLE_HASHES = [
 export const MARKETING_SCRIPT_SRCS = [
   "https://plausible.io",
   "https://connect.facebook.net",
-  "https://www.googletagmanager.com",
-  "https://*.googletagmanager.com",
-  "https://www.google-analytics.com",
-  "https://*.google-analytics.com",
 ] as const;
 
 export function buildConnectSrcs(isDev: boolean = false): string {
@@ -46,10 +40,6 @@ export function buildConnectSrcs(isDev: boolean = false): string {
     "https://plausible.io",
     "https://connect.facebook.net",
     "https://www.facebook.com",
-    "https://www.googletagmanager.com",
-    "https://*.google-analytics.com",
-    "https://*.analytics.google.com",
-    "https://stats.g.doubleclick.net",
   ];
   if (isDev) base.push("ws://localhost:*", "http://localhost:*", "ws://127.0.0.1:*");
   return base.join(" ");
