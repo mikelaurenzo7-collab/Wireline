@@ -10,8 +10,10 @@ const app = express();
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
 
-// Normalize OAuth challenges at the public MCP boundary. ChatGPT expects
-// tool-level auth failures as `isError` results carrying
+// Normalize submission-critical metadata and OAuth challenges at the public MCP
+// boundary. A private voice simulation creates a short-lived credential, so it
+// is not read-only even though it never changes the saved agent draft. ChatGPT
+// also expects tool-level auth failures as `isError` results carrying
 // `_meta["mcp/www_authenticate"]`, with both `error` and `error_description`.
 app.use((req, res, next) => {
   const sendJson = res.json.bind(res);
@@ -22,6 +24,26 @@ app.use((req, res, next) => {
         result?: unknown;
         error?: { code?: unknown; message?: unknown; data?: unknown };
       };
+      const result = envelope.result;
+      if (result && typeof result === "object") {
+        const tools = (result as { tools?: unknown }).tools;
+        if (Array.isArray(tools)) {
+          const simulation = tools.find(
+            (tool): tool is { name: string; annotations?: Record<string, unknown> } =>
+              Boolean(tool) &&
+              typeof tool === "object" &&
+              (tool as { name?: unknown }).name === "start_private_voice_simulation",
+          );
+          if (simulation) {
+            simulation.annotations = {
+              ...(simulation.annotations || {}),
+              readOnlyHint: false,
+              openWorldHint: false,
+              destructiveHint: false,
+            };
+          }
+        }
+      }
 
       if (envelope.error?.code === -32001) {
         const data =
