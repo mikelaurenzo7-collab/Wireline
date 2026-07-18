@@ -4,7 +4,7 @@ import { DEFAULT_MODEL, MODEL_PRICING, OPENAI_MODELS } from "./ai-models";
 
 export interface RuntimeCallMeta {
   model: string;
-  provider: "openai" | "openrouter" | "google";
+  provider: "xai" | "openai" | "openrouter" | "google";
   input_tokens: number;
   output_tokens: number;
   cache_read_tokens: number;
@@ -109,6 +109,11 @@ function push(record: RuntimeCallMeta) {
 function providerFor(model: string): RuntimeCallMeta["provider"] {
   if (/^gpt-/i.test(model)) return "openai";
   if (model.toLowerCase().includes("gemini")) return "google";
+  // provider/model form (e.g. "x-ai/grok-4.5") routes through OpenRouter; a bare
+  // grok id (e.g. "grok-4.5") is the direct xAI runtime and is priced via
+  // MODEL_PRICING, not the OpenRouter estimator.
+  if (model.includes("/")) return "openrouter";
+  if (/grok/i.test(model)) return "xai";
   return "openrouter";
 }
 export function recordUsage(model: string, response: { usage?: any }, latencyMs: number) {
