@@ -1,12 +1,13 @@
-import { OPENAI_STRUCTURED_PRIMARY_MODEL } from "./ai-models";
+import { STRUCTURED_PRIMARY_MODEL } from "./ai-models";
 
 /**
  * Structured planning model policy.
- * Wireline-owned structured turns run through the managed OpenAI-first runtime.
+ * Wireline-owned structured turns run through the managed Grok-first runtime
+ * (Grok 4.5 via direct xAI), with OpenAI and then Gemini as ordered fallbacks.
  */
 export const STRUCTURED_RUNTIME_MODELS = {
-  STANDARD: OPENAI_STRUCTURED_PRIMARY_MODEL,
+  STANDARD: STRUCTURED_PRIMARY_MODEL,
 } as const;
 
 export const STRUCTURED_DIRECTOR_DEEP_MODEL =
-  process.env.WIRELINE_DIRECTOR_DEEP_MODEL?.trim() || OPENAI_STRUCTURED_PRIMARY_MODEL;
+  process.env.WIRELINE_DIRECTOR_DEEP_MODEL?.trim() || STRUCTURED_PRIMARY_MODEL;

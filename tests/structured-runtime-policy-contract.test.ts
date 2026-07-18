@@ -18,7 +18,7 @@ const LEGACY_CLAUDE_MODULES = [
 ];
 
 describe("structured runtime policy", () => {
-  it("exports managed OpenAI-first structured models", () => {
+  it("exports managed Grok-first structured models", () => {
     const models = read("src/lib/structured-runtime-models.ts");
     const aiModels = read("src/lib/ai-models.ts");
     const schema = read("src/db/schema.ts");
@@ -36,7 +36,11 @@ describe("structured runtime policy", () => {
 
     expect(models).toContain("STRUCTURED_RUNTIME_MODELS");
     expect(models).toContain("STRUCTURED_DIRECTOR_DEEP_MODEL");
-    expect(models).toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
+    expect(models).toContain("STRUCTURED_PRIMARY_MODEL");
+    expect(aiModels).toContain("export const XAI_STRUCTURED_PRIMARY_MODEL");
+    expect(aiModels).toContain(
+      "export const STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL",
+    );
     expect(aiModels).toContain("export const OPENAI_STRUCTURED_PRIMARY_MODEL");
     expect(schema).toContain('voiceLlmProvider: text("voice_llm_provider").default("openai")');
     expect(schema).toContain('voiceLlmModel: text("voice_llm_model").default("gpt-4o")');
@@ -50,11 +54,14 @@ describe("structured runtime policy", () => {
     expect(carrierPanel).not.toContain("Anthropic voice disruptions");
     expect(carrierPanel).not.toContain('v: "anthropic"');
     expect(prodEnvCheck).not.toContain("ANTHROPIC_API_KEY");
-    expect(prodEnvCheck).toContain("Direct OpenAI fallback and OpenAI Realtime sessions");
+    expect(prodEnvCheck).toContain("Primary managed runtime (Grok 4.5)");
+    expect(prodEnvCheck).toContain("Direct OpenAI fallback and OpenAI Realtime fallback sessions");
+    expect(legalPage).toContain("<strong>xAI</strong>");
     expect(legalPage).toContain("<strong>OpenAI</strong>");
     expect(legalPage).toContain("<strong>Google Gemini</strong>");
     expect(legalPage).not.toContain("Anthropic's Claude API");
     expect(legalPage).not.toContain("<strong>Anthropic</strong>");
+    expect(integrationLogos).toContain("ALL_LOGOS.xai");
     expect(integrationLogos).toContain("ALL_LOGOS.openai");
     expect(integrationLogos).not.toContain("ALL_LOGOS.anthropic");
     expect(migrationCorpus).toContain("voice_llm_provider SET DEFAULT 'openai'");
