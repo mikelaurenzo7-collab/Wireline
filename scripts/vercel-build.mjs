@@ -66,6 +66,7 @@ function sanitizePreviewEnvironment() {
 
 run("node", ["scripts/check-deployment-boundaries.mjs"]);
 run("node", ["scripts/check-native-release-horizon.mjs"]);
+run("node", ["scripts/check-password-screening-disclosure.mjs"]);
 run("node", ["scripts/check-provider-neutral-studio-entry.mjs"]);
 run("node", ["scripts/check-marketing-measurement-consent.mjs"]);
 run("node", ["scripts/check-mcp-http-hardening.mjs"]);
