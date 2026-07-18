@@ -10,6 +10,7 @@ const assert = (condition, message) => {
 const index = read("index.html");
 const loader = read("public/marketing-measurement.js");
 const notice = read("src/components/CookieConsent.tsx");
+const footer = read("src/components/marketing/MarketingFooter.tsx");
 const csp = read("src/lib/csp.ts");
 const vercelSource = read("vercel.json");
 
@@ -22,6 +23,7 @@ try {
 
 const consentKey = "wireline_marketing_measurement_consent";
 const consentEvent = "wireline:marketing-measurement-consent";
+const privacyChoicesEvent = "wireline:open-privacy-choices";
 const removedInlineMetaHash = "sha256-wlyqsbOPnONv6AM5ziYNY+cA6vvH4mU1oRX7hBcx9HQ=";
 const retiredAnalyticsHosts = [
   "googletagmanager.com",
@@ -54,20 +56,31 @@ assert(
   "measurement loader must honor Global Privacy Control.",
 );
 assert(
+  loader.includes('window.fbq("consent", "grant")'),
+  "measurement loader must grant Meta consent only after an explicit choice.",
+);
+assert(
+  loader.includes('window.fbq("consent", "revoke")'),
+  "measurement loader must revoke Meta consent when a visitor opts out.",
+);
+assert(
   loader.includes('window.fbq("track", "PageView")'),
   "measurement loader must preserve post-consent campaign attribution.",
 );
 
 assert(notice.includes(consentKey), "privacy notice must write the canonical consent key.");
 assert(notice.includes(consentEvent), "privacy notice must dispatch the canonical consent event.");
+assert(notice.includes(privacyChoicesEvent), "privacy notice must support reopening saved choices.");
+assert(footer.includes(privacyChoicesEvent), "public footer must expose the privacy choice control.");
+assert(footer.includes("Privacy choices"), "public footer must label the privacy choice control.");
 assert(notice.includes("Essential only"), "privacy notice must offer a privacy-preserving choice.");
 assert(notice.includes("Allow measurement"), "privacy notice must offer explicit opt-in.");
 assert(
-  notice.includes("function hasAcknowledgedNotice(): boolean"),
+  notice.includes("function noticeAcknowledged(): boolean"),
   "privacy notice must isolate the stored-choice lookup behind a fail-safe helper.",
 );
 assert(
-  notice.includes("return Boolean(localStorage.getItem(NOTICE_STORAGE_KEY))"),
+  notice.includes("localStorage.getItem(NOTICE_STORAGE_KEY) !== null"),
   "privacy notice must read acknowledgement through the guarded helper.",
 );
 assert(
