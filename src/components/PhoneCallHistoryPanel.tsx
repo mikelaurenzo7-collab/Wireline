@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { History, Loader2 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
-import CallLogsClaude from "./CallLogsClaude";
+import CallLogs from "./CallLogs";
 import { EmptyState, Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 
@@ -85,8 +85,8 @@ export default function PhoneCallHistoryPanel() {
 
   // Only mount the heavy console when we positively know there is at least one call.
   // Probe failure (null) and empty workspaces both get the framed empty state — never
-  // the black CallLogsClaude void that previously shipped on first paint.
-  if (hasCalls === true) return <CallLogsClaude />;
+  // the unframed call-logs void that previously shipped on first paint.
+  if (hasCalls === true) return <CallLogs />;
 
   // Top-align the framed empty inside the operate panel. Vertical centering
   // against a scrollable/unbounded height chain parks the card below the fold
