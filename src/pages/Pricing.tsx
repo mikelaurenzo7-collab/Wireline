@@ -130,7 +130,7 @@ const FAQ = [
   ],
   [
     "Can I cancel or get a refund?",
-    "Yes. Every paid plan is month-to-month by default with no long-term contract, and you can cancel from Stripe at any time — access continues through the end of the current billing period. Reach out at support@trywireline.com within 14 days of a first paid charge if a plan wasn't the right fit and we'll make it right.",
+    "Yes. Every paid plan is month-to-month by default with no long-term contract, and you can cancel from Stripe at any time — access continues through the end of the current billing period. Reach out at support@trywireline.com within 30 days of your first paid invoice if a plan wasn't the right fit and we'll make it right.",
   ],
   [
     "What is the Scale plan?",
