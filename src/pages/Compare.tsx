@@ -233,7 +233,10 @@ export default function Compare() {
                     </td>
                     <td className="px-5 py-5 align-top text-sm">
                       {option.internal ? (
-                        <Link className="inline-flex items-center gap-1.5 font-medium text-primary" to={option.href}>
+                        <Link
+                          className="inline-flex items-center gap-1.5 font-medium text-primary"
+                          to={option.href}
+                        >
                           {option.source} <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       ) : (
@@ -274,8 +277,7 @@ export default function Compare() {
             {TABLE_ROWS.map(([before, after], index) => (
               <div
                 className={
-                  (index ? "border-t border-border " : "") +
-                  "grid gap-5 p-5 sm:grid-cols-2 sm:p-6"
+                  (index ? "border-t border-border " : "") + "grid gap-5 p-5 sm:grid-cols-2 sm:p-6"
                 }
                 key={before}
               >

@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 280
-**Protected:** 242
+**Routes scanned:** 281
+**Protected:** 243
 **Public (allowlisted):** 38
 **Violations:** 0
 
@@ -275,6 +275,7 @@
 | post-call-output-routes.ts | POST | `/api/call-logs/:callLogId/artifact` | inline | — | — | Protected |
 | post-call-output-routes.ts | GET | `/api/post-call-output-preferences` | inline | — | — | Protected |
 | post-call-output-routes.ts | POST | `/api/post-call-output-preferences` | inline | — | — | Protected |
+| product-event-routes.ts | POST | `/api/product-events` | inline | — | — | Protected |
 | pronunciation-routes.ts | GET | `/api/pronunciation-dicts` | inline | — | — | Protected |
 | pronunciation-routes.ts | POST | `/api/pronunciation-dicts` | inline | — | — | Protected |
 | pronunciation-routes.ts | PATCH | `/api/pronunciation-dicts/:id` | inline | — | — | Protected |

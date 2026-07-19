@@ -44,7 +44,7 @@ The web app remains the primary operations surface. The root package uses React,
 - Keep Agent Studio / Wireline Wizard as the main builder.
 - Keep Director as fleet operator, QA coach, and strategic layer.
 - Continue using the web app for setup, billing, integrations, compliance settings, agent training, and analytics.
-- Maintain the Wireline Letterpress design system as the shared brand substrate: warm paper, restrained neutrals, forest-green action, and platform-native expression on iOS.
+- Maintain the Wireline Letterpress design system as the shared brand substrate: obsidian/near-white canvas, restrained neutrals, electric-violet action (Aurora palette), and platform-native expression on iOS.
 
 ### Android next
 

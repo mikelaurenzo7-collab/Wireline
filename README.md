@@ -51,8 +51,8 @@ Load the generated target package from `apps/browser-extension/dist/chromium` or
 
 ```bash
 npm run check-prod-env
-npm run verify       # design + source-control + routes + docs + token parity + Stripe + build + smoke
-npm run verify:full  # lint + server lint + design + Stripe + authz + CSP + tests + build + smoke
+npm run verify       # design + source-control + routes + docs + openapi + token parity + Stripe + build + smoke
+npm run verify:full  # lint + server lint + everything in verify + authz + CSP + runtime-policy + api-error + security audit + tests + browser-extension
 npm run verify:contracts
 node apps/browser-extension/scripts/build.mjs --check
 node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com

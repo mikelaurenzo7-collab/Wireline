@@ -8,7 +8,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | --- | --- | --- |
 | Overview | `src/pages/OverviewPage.tsx` | Calm command center for agents, calls, connections, Conversation Balance, and next actions. |
 | Create | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx` | Short intake for name, role, voice, personality, and starting brief. |
-| Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeWorkspace.tsx`, `src/components/AgentAssetUpload.tsx`, `src/components/PhoneAgentBlueprint.tsx` | Deep configuration for sources, documents, behavior, voice, policies, evaluation, memory, and guided call-plan readiness. |
+| Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/ReportingPreferences.tsx`, `src/components/training/RecentCallArtifactRequests.tsx` | Deep configuration for sources, documents, behavior, voice, policies, evaluation, and memory. |
 | Wire | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` | Numbers, integrations, routing, connected tools, approvals, billing, and launch controls. |
 | Run / Studio | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` | Chat-first execution for calls, texts, follow-up, approvals, handoff, and review. |
 | Browser | `apps/browser-extension/` | Wireline Command: explicit page-context handoff into Studio. |
@@ -44,7 +44,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | [REPO_HEALTH_AUDIT_2026-07-04.md](./REPO_HEALTH_AUDIT_2026-07-04.md) | Current codebase/repo health-pass findings, actions, and next priorities. |
 | [EXCLUDED_SURFACES_AUDIT_2026-07-06.md](./EXCLUDED_SURFACES_AUDIT_2026-07-06.md) | **Active** — source-of-truth triage for excluded/unmounted surfaces and their rebuild/delete targets. |
 | [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md) | **Active** — whole-product showcase matrix across web, API, native, browser, ChatGPT, voice, video, integrations, trust, and margin. |
-| [OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md](./OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md) | **Active** — AI-employee wedge (sales agents outbound) with outbound, inbound, and hybrid call modes, demo path, and pricing implications. |
+| [OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md](./OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md) | **Active for operating mechanics** — outbound, inbound, and hybrid call modes, included-number promise, demo path, and pricing implications. Its "AI Profit Agents" marketing label is superseded by the current AI-employees wedge. |
 | [GUIDED_AGENT_SETUP_2026-07-08.md](./GUIDED_AGENT_SETUP_2026-07-08.md) | **Active** — guided call-plan setup doctrine: ask, teach, capture, check, then launch. |
 | [WIRELINE_LEVEL_UP_MASTER_PLAN.md](./WIRELINE_LEVEL_UP_MASTER_PLAN.md) | **Active** — phased execution plan for truth/deletion, wedge launch, reliability/margin, multi-surface excellence, and expansion. |
 | [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md) | **Active** — customer-facing trust, compliance, and proof posture without overclaiming. |
@@ -52,6 +52,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | [PERFECTION_PLAN.md](./PERFECTION_PLAN.md) | **Active** — canonical launch-readiness audit record, production gate commands, and open pre-launch actions. |
 | [TAKEOVER_AUDIT_2026-07-05.md](./TAKEOVER_AUDIT_2026-07-05.md) | **Active** — takeover pass: design system beautification, polish layer, contracts, and verified upgrades. |
 | [COMPOSER_CERTIFICATION_2026-07-05.md](./COMPOSER_CERTIFICATION_2026-07-05.md) | **Active** — Composer 2.5 certification ladder, dual-voice PSTN, funnel events, and ops proof. |
+| [LAUNCH_DESIGN_QA_2026-07-14.md](./LAUNCH_DESIGN_QA_2026-07-14.md) | **Active** — final pre-launch visual/responsive/interaction QA evidence, release gate results, and non-blocking launch operations. |
 | [SUPABASE_ADVISOR_POSTURE_2026-07-07.md](./SUPABASE_ADVISOR_POSTURE_2026-07-07.md) | **Active** - Supabase security/performance advisor posture, custom-auth HIBP control, and unused-index evidence gate. |
 | [DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md](./DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md) | **Active** - dry-run-first demo tenant reset, reseed, and screenshot QA procedure. |
 | [OPS_CREDENTIALS_CHECKLIST_2026-07-07.md](./OPS_CREDENTIALS_CHECKLIST_2026-07-07.md) | **Active** — DNC, Redis, Sentry, and scale-readiness env vars. |
@@ -75,6 +76,23 @@ Wireline's durable documentation follows the active product model. The customer-
 | [INTEGRATION_VENDOR_AUDIT.md](./INTEGRATION_VENDOR_AUDIT.md) | Runtime/vendor decisions, deepen-before-expand priorities, and connector corrections. |
 | [VENDOR_LAUNCH_MAP.md](./VENDOR_LAUNCH_MAP.md) | **Active** — launch-ready vendor/surface inventory (live, beta, planned, retire) and Stripe legacy cleanup gate. |
 | [AUTHZ_MATRIX.md](./AUTHZ_MATRIX.md) | Authorization coverage artifact generated by authz verification. |
+| [WIRELINE_CEO_LAUNCH_CHECKLIST_2026-07-10.md](./WIRELINE_CEO_LAUNCH_CHECKLIST_2026-07-10.md) | **Active** — current "best employee" launch positioning, onboarding rule, and default-role doctrine (matches live `src/lib/product-copy.ts`). |
+| [WIRELINE_FORWARD_PLAN_2026-07.md](./WIRELINE_FORWARD_PLAN_2026-07.md) | **Active** — forward execution plan referenced by `CODE_REVIEW_MASTER_PLAN_2026-07-06.md`. |
+| [CODE_REVIEW_MASTER_PLAN_2026-07-06.md](./CODE_REVIEW_MASTER_PLAN_2026-07-06.md) | **Active** — completed code-review pass record and follow-on plan. |
+| [RUNNING_COSTS_AUDIT_2026-07-06.md](./RUNNING_COSTS_AUDIT_2026-07-06.md) | **Active** — running-cost audit referenced by `LAUNCH_READINESS_AND_MARGIN.md`. |
+| [HARNESS_WINGMAN.md](./HARNESS_WINGMAN.md) | **Active** — ops/infra harness doctrine paired with `scripts/harness-wireline-wingman-bootstrap.mjs`. |
+| [DESIGN_PARTNER_SPRINT_2026-07-08.md](./DESIGN_PARTNER_SPRINT_2026-07-08.md) | **Planned** — design-partner sprint gated on Compliance Center + approval-gated integrations. |
+| [ACCESSIBILITY.md](./ACCESSIBILITY.md) | **Active** — public accessibility commitment backed by Playwright a11y specs. |
+| [accessibility-e2e-gate.md](./accessibility-e2e-gate.md) | **Active** — critical-route accessibility gate policy paired with `ACCESSIBILITY.md`. |
+| [design-system-responsive-roadmap.md](./design-system-responsive-roadmap.md) | **Active** — responsive breakpoints, spacing tokens, and component containment rules. |
+| [AGENT_CUSTOMIZATION_ARCHITECTURE.md](./AGENT_CUSTOMIZATION_ARCHITECTURE.md) | **Active** — agent customization client/domain boundary, referenced from `CHATGPT_APP.md`. |
+| [CHATGPT_APP_DASHBOARD_CONFIG.md](./CHATGPT_APP_DASHBOARD_CONFIG.md) | **Active** — OAuth/CIMD dashboard registration record for the ChatGPT App. |
+| [CHATGPT_APP_SUBMISSION.md](./CHATGPT_APP_SUBMISSION.md) | **Active** — ChatGPT App submission contract, verified by `tests/chatgpt-app-contract.test.ts`. |
+| [INCIDENT_RESPONSE.md](./INCIDENT_RESPONSE.md) | **Active** — incident response runbook. |
+| [SLA.md](./SLA.md) | **Active** — service-level commitments. |
+| [LOAD_TEST.md](./LOAD_TEST.md) | **Active** — load-test methodology for the primary voice webhook ingress. |
+| [soc2-policies.md](./soc2-policies.md) | **Active** — current SOC 2 control narrative and observation window; source of truth over `SOC2_EVIDENCE_PACK.md`. |
+| [security/auth-password-controls.md](./security/auth-password-controls.md) | **Active** — custom scrypt password hashing and HIBP screening posture (Wireline does not use Supabase Auth). |
 
 ## Historical / planning material
 
@@ -84,6 +102,8 @@ Wireline's durable documentation follows the active product model. The customer-
 | `docs/superpowers/plans/**` | Historical execution plans. Useful for context, not the current source of truth. |
 | `docs/mobile-web-native-strategy-audit.md` | Strategic context for mobile/browser/native split; verify against current `CLIENT_SURFACES.md` before implementation. |
 | `docs/ONE-AGENT-STRATEGY.md` | Strategic framing; keep aligned with Create -> Train -> Wire -> Run and current pricing docs. |
+| [LAUNCH_OPERATING_SYSTEM.md](./LAUNCH_OPERATING_SYSTEM.md) | Historical — pre-dates the Create -> Train -> Wire -> Run model and AI-employees wedge. |
+| [SOC2_EVIDENCE_PACK.md](./SOC2_EVIDENCE_PACK.md) | Historical/superseded — contains inaccurate auth claims; `soc2-policies.md` is current. |
 
 ## Documentation hygiene rules
 
@@ -96,8 +116,8 @@ Wireline's durable documentation follows the active product model. The customer-
 ## Verification
 
 - `npm run verify:contracts` - focused product voice, authenticated page map, authenticated copy discipline, marketing metadata, static metadata, event taxonomy, chunk recovery, and guided setup contracts.
-- `npm run verify` - design check, source-control hygiene, route registry, docs index, design-token parity, Stripe catalog contract, build, and bundled-server smoke.
-- `npm run verify:full` - lint, server lint, design/source-control/route/docs/token/authz/CSP checks, tests, build, and smoke.
+- `npm run verify` - design check, source-control hygiene, route registry, docs index, OpenAPI, design-token parity, Stripe catalog contract, build, and bundled-server smoke.
+- `npm run verify:full` - lint, server lint, design/source-control/route/docs/openapi/token/authz/CSP/runtime-policy/api-error checks, `npm audit`, tests, build, smoke, and the browser-extension packaging check.
 - `npm run test:e2e` - Playwright homepage story, accessibility, and audience-tab smoke.
 - `node apps/browser-extension/scripts/build.mjs --check` - browser extension contract and packaging smoke.
 - `GET /api/health` - deployment health probe.

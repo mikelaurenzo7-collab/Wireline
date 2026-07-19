@@ -149,7 +149,6 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
     "ios/Wireline/Views/AssistantSetupViews.swift",
     "ios/Wireline/CarPlay/CarPlaySceneDelegate.swift",
     "src/components/MobileBrowserUtilities.tsx",
-    "src/pages/AgentsPage.tsx",
     "src/pages/SettingsPage.tsx",
     "src/pages/Developers.tsx",
     "src/components/KnowledgeBaseClaude.tsx",

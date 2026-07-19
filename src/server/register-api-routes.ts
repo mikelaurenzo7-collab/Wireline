@@ -6,7 +6,6 @@ import oauthRouter from "../routes/oauth";
 import agentRouter from "../routes/agent-routes-v2";
 import agentTestRouter from "../routes/agent-test-routes";
 import agentWorkspaceRouter from "../routes/agent-workspace-routes";
-import qaRouter from "../routes/qa-routes";
 import qaV2Router from "../routes/qa-routes-v2";
 import vapiRouter from "../routes/vapi-v2";
 import healthRouter from "../routes/health-routes";
@@ -90,7 +89,6 @@ export function registerApiRoutes(app: Express): void {
   app.use(agentTestRouter);
   app.use(agentWorkspaceRouter);
   app.use(browserHandoffRouter);
-  app.use("/api/qa", qaRouter);
   app.use(vapiRouter);
   app.use(voicesRouter);
   app.use(pronunciationRouter);

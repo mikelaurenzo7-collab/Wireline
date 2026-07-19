@@ -21,8 +21,9 @@ surfaces and are not needed for core web/API development.
   `POSTGRES_URL`, `INTERNAL_JWT_SECRET`, and at least one AI key
   (`GEMINI_API_KEY` / `OPENAI_API_KEY` / `AI_GATEWAY_API_KEY`). These are
   provided as Cursor secrets and are present in the process environment.
-- The full set of ~80 integration vars (Stripe, Vapi, Twilio, OAuth, Resend,
-  etc.) lives in the Vercel project. Pull them into a local `.env` with:
+- The full set of 150+ integration vars (Stripe, Vapi, Twilio, OAuth, Resend,
+  etc. — see `.env.example` for the canonical list) lives in the Vercel
+  project. Pull them into a local `.env` with:
   `npx vercel env pull .env --environment=development --yes --token="$VERCEL_TOKEN"`
   This is only needed for exercising those specific integrations — the server
   boots and the core signup/agent flow works without them.

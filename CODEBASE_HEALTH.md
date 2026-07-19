@@ -21,7 +21,7 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 | Routing | `src/App.tsx`, `src/routes/AppRoutes.tsx` |
 | Overview | `src/pages/OverviewPage.tsx` |
 | Create | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx` |
-| Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeWorkspace.tsx`, `src/components/AgentAssetUpload.tsx` |
+| Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/ReportingPreferences.tsx`, `src/components/training/RecentCallArtifactRequests.tsx` |
 | Wire | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` |
 | Run / Studio | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` |
 | Shell | `src/components/WorkspaceShell.tsx`, `src/components/layout/AppShell.tsx` |
@@ -96,8 +96,8 @@ Use customer-facing language consistently:
 Run the narrowest sufficient check while developing, then the full gate before merge.
 
 - `npm run check-prod-env` — required/recommended production environment shape, including deploy-safe Postgres URL host validation.
-- `npm run verify` — design check, source-control hygiene, route registry, docs index, design-token parity, Stripe catalog contract, production build, and bundled-server import smoke.
-- `npm run verify:full` — type check, server lint, design/source-control/route/docs/token checks, Stripe catalog contract, authz, bootstrap, CSP, tests, build, and smoke.
+- `npm run verify` — design check, source-control hygiene, route registry, docs index, OpenAPI, design-token parity, Stripe catalog contract, production build, and bundled-server import smoke.
+- `npm run verify:full` — type check, server lint, design/source-control/route/docs/openapi/token checks, Stripe catalog contract, authz, bootstrap, tsconfig-exclude hygiene, CSP, runtime policy, API error shape, `npm audit`, tests, build, smoke, and the browser-extension packaging check.
 - `npm run verify:contracts` — product voice, metadata, event taxonomy, and static contracts.
 - `node apps/browser-extension/scripts/build.mjs --check` — browser extension packaging and policy checks.
 - `GET /api/health` — deployed health probe.
