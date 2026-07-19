@@ -5,42 +5,51 @@ Executable probe: `npm run vendor:readiness`.
 
 ## Current launch snapshot — 2026-07-19
 
-The production deployment and Supabase database are reachable. The branch now
-builds with an OpenAI-first managed runtime, managed Vapi phone voices, explicit
+The production deployment and Supabase database are reachable. The branch builds
+with an OpenAI-first managed runtime, managed Vapi phone voices, explicit
 provider fallbacks, preview credential isolation, and a read-only vendor
 inventory probe. Presence of an environment variable is not treated as proof
 that an account is funded, entitled, or has usable inventory.
 
-Launch remains blocked until all of the following are cleared with current
-production evidence:
+A production-scoped Vercel probe completed at `2026-07-19T17:59:58Z` without
+creating calls, messages, or model inference. It verified:
 
-1. **Rotate exposed Twilio credentials and re-run the read-only production
-   probe.** A Twilio account SID/auth token was pasted into a chat and must be
-   treated as compromised. The current execution environment could not reach
-   Twilio directly, so account status, balance, number capabilities, Messaging
-   Services, and WhatsApp sender state are not certified. After rotation, run
-   `npm run vendor:readiness` with Vercel production env and complete one
-   controlled inbound call, outbound call, and two-way SMS test.
-2. **Resolve Stripe's negative available balance of $207.00.** The active
+- OpenAI, Gemini, Vercel AI Gateway, and xAI credentials are accepted.
+- xAI structured fallback is disabled, as required for the launch default.
+- Vapi credentials are accepted, with 18 reachable phone numbers and assistant
+  inventory access.
+- Twilio is active with a reported balance of `$23.664 USD`, nine incoming
+  numbers that are both voice- and SMS-capable, and one Messaging Service.
+- Resend is accepted and `trywireline.com` is verified.
+- ElevenLabs is on Creator with 130,840 credits remaining and the Voice API is
+  reachable.
+- The Federal DNC URL/key pair is configured and shape-valid.
+- Stripe charges and payouts are enabled, but the available USD balance is
+  `-$207.00`.
+- Twilio has no ONLINE WhatsApp sender.
+
+Launch remains blocked until all of the following are cleared:
+
+1. **Resolve Stripe's negative available balance of $207.00.** The active
    Founder catalog is coherent, but customer billing must not launch while the
    connected account has a negative balance or failed debit posture.
-3. **Correct and verify Federal DNC configuration.** Marketing outbound remains
-   disabled until `FEDERAL_DNC_API_URL` is a real HTTPS scrub endpoint, the key
-   is accepted, and the Compliance Center passes.
-4. **Keep WhatsApp private beta until inventory proves readiness.** Production
-   requires an approved ONLINE Twilio WhatsApp sender, Meta business/WABA
-   approval, callback configuration, and approved templates for
-   business-initiated messages outside the 24-hour customer-service window.
-5. **Upgrade or replace the ElevenLabs workspace before exposing its paid
-   features.** Production runtime logs returned HTTP 402 stating that the
-   connected workspace is a free user and cannot use Voice Library voices via
-   API. Usage top-ups do not replace paid-plan entitlements.
-6. **Restore full GitHub Actions execution.** Pull-request workflow runs are
+2. **Restore full GitHub Actions execution.** Pull-request workflow runs are
    ending in `startup_failure` before any job is created. Vercel currently runs
-   a narrow launch-policy contract suite and production bundle as a compensating
-   control, but that is not a substitute for the full CI matrix.
-7. **Rotate the exposed Vercel access token.** Replace it after the audit and
-   confirm no unauthorized project or environment changes occurred.
+   five focused launch-policy files, 18 tests, operational contracts, and the
+   production bundle as a compensating control, but this is not a substitute
+   for the full CI matrix.
+3. **Rotate the exposed Twilio and Vercel credentials.** Both were pasted into a
+   chat and must be treated as compromised even though the current Twilio token
+   is accepted. After rotation, update Vercel production secrets, redeploy, and
+   re-run the read-only probe.
+4. **Complete the controlled live launch matrix.** Account probes do not prove
+   end-to-end call transfer, tool execution, SMS opt-out, email delivery, or
+   Stripe webhook behavior.
+
+WhatsApp is not a core-launch blocker, but it remains **private beta** until an
+approved ONLINE Twilio sender, Meta business/WABA approval, callback
+configuration, and approved templates are present for business-initiated
+messages outside the 24-hour customer-service window.
 
 Set or rotate `HEALTH_MONITOR_TOKEN`, then point the uptime monitor at
 `/api/health/launch-readiness`. The public health endpoint is intentionally a
@@ -50,13 +59,13 @@ small model-health surface and does not certify every vendor account.
 
 The launch runtime is deliberately layered rather than vendor-maximal:
 
-| Plane                | Primary                                  | Fallback / boundary                                         |
-| -------------------- | ---------------------------------------- | ----------------------------------------------------------- |
-| Structured reasoning | OpenAI direct                            | Gemini → Vercel AI Gateway; xAI only behind explicit opt-in |
-| PSTN calls           | Twilio carrier number → Vapi             | OpenAI call model → Gemini                                  |
-| Phone speech         | Deepgram STT + managed Vapi voice roster | Twilio fallback response                                    |
-| Web/mobile live voice| OpenAI Realtime                          | xAI voice remains an optional experiment                    |
-| Cloning/showcase TTS | ElevenLabs                               | Optional paid entitlement; never core phone runtime         |
+| Plane                 | Primary                                  | Fallback / boundary                                         |
+| --------------------- | ---------------------------------------- | ----------------------------------------------------------- |
+| Structured reasoning  | OpenAI GPT-5.6 Terra direct              | Gemini → Vercel AI Gateway; xAI only behind explicit opt-in |
+| PSTN calls            | Twilio carrier number → Vapi             | OpenAI GPT-4o call model → Gemini                           |
+| Phone speech          | Deepgram STT + managed Vapi voice roster | Twilio fallback response                                    |
+| Web/mobile live voice | OpenAI Realtime                          | xAI voice remains an optional experiment                    |
+| Cloning/showcase TTS  | ElevenLabs                               | Optional Creator entitlement; never core phone runtime      |
 
 Use OpenAI as Wireline's default reasoning and live-voice runtime. Keep Vapi as
 the PSTN orchestration layer and Twilio as the carrier/messaging layer. Keep
@@ -70,11 +79,11 @@ latency-sensitive phone turn.
 
 ## Twilio channel posture
 
-| Channel   | Launch state       | Requirement                                                                 |
-| --------- | ------------------ | --------------------------------------------------------------------------- |
-| Voice     | **required**       | Active paid account, voice-capable number, Vapi import/routing, live tests |
-| SMS       | **required**       | SMS-capable sender or Messaging Service, webhook signatures, opt-out flow  |
-| WhatsApp  | **private beta**   | ONLINE sender, WABA approval, templates, callback and consent validation   |
+| Channel  | Verified state       | Requirement / next gate                                                        |
+| -------- | -------------------- | ------------------------------------------------------------------------------ |
+| Voice    | account/inventory ready | Nine voice-capable numbers; complete inbound/outbound Vapi live-call matrix |
+| SMS      | account/inventory ready | Nine SMS-capable numbers + one Messaging Service; test STOP/HELP/webhooks   |
+| WhatsApp | private beta         | Zero ONLINE senders; complete WABA, sender, templates, callbacks, and consent  |
 
 Twilio trial allowances such as 100 SMS or WhatsApp messages are onboarding
 credits, not a durable production entitlement or customer promise. Wireline's
@@ -88,47 +97,47 @@ implemented and verified using Twilio Content templates.
 
 ## Funding and account posture
 
-| Vendor              | Product role                      | Launch posture                         | Action                                                                 |
-| ------------------- | --------------------------------- | -------------------------------------- | ---------------------------------------------------------------------- |
-| Vercel              | Hosting, functions, cron          | Maintain subscription                  | Rotate exposed token; keep production project and spend alerts active |
-| Vercel AI Gateway   | Governed final AI route           | Optional reserve before scale          | Verify OIDC/API key, per-key budget, alerts, and credits               |
-| Supabase            | Postgres data plane               | Healthy connected project              | Run DB health and migrations; retain password-screening controls      |
-| Stripe              | Customer billing                  | **blocked: -$207 available balance**   | Resolve balance/debits; verify live webhook and catalog                |
-| OpenAI              | Primary reasoning + Realtime      | **required**                           | Maintain project budget, payment method, usage alerts, scoped keys    |
-| Gemini              | Direct AI continuity              | Recommended                            | Retain accepted key and quota/billing fallback                         |
-| xAI                 | Optional voice/reasoning experiment| Optional                              | Keep capped and opt-in; do not make launch depend on it                |
-| Vapi                | PSTN orchestration                | **required**                           | Verify key, phone inventory, billing, webhooks, and live call matrix   |
-| Twilio              | Carrier, numbers, SMS, WhatsApp   | **required; credentials must rotate**  | Re-probe account/inventory; add Usage Triggers and channel tests       |
-| ElevenLabs          | Optional clones/showcase          | **degraded: free-tier entitlement**    | Upgrade only when cloning/showcase is enabled and consented            |
-| Resend              | Transactional email               | **required**                           | Verify production key, sending domain, from-address, and delivery      |
-| Upstash             | Distributed rate limits           | **required**                           | Maintain production database and billing                              |
-| Federal DNC vendor  | Marketing scrub                   | **blocked until HTTPS probe passes**   | Correct endpoint/key and fund scrub volume before campaigns            |
-| Sentry              | Error alerts                      | Recommended                            | Verify backend/browser event receipt and alert routing                 |
-| LiveAvatar / HeyGen | Video add-on                      | Not core launch                        | Fund only after consent, pricing, and demand gates pass                |
-| Apollo / Perplexity | Enrichment/research               | Not core launch                        | Add capped budget only when Lead Hunt is sold                          |
+| Vendor              | Product role                       | Verified posture                         | Action                                                               |
+| ------------------- | ---------------------------------- | ---------------------------------------- | -------------------------------------------------------------------- |
+| Vercel              | Hosting, functions, cron           | project/build path healthy               | Rotate exposed token; keep payment method and spend alerts active    |
+| Vercel AI Gateway   | Governed final AI route            | credential/model catalog ready           | Set per-key budget, alerts, and reserve before scale                  |
+| Supabase            | Postgres data plane                | connected project healthy                | Run DB health and migrations; retain password-screening controls     |
+| Stripe              | Customer billing                   | **blocked: -$207 available balance**     | Resolve balance/debits; then verify live webhook and catalog          |
+| OpenAI              | Primary reasoning + Realtime       | credential ready                         | Maintain budget, payment method, alerts, and scoped keys              |
+| Gemini              | Direct AI continuity               | credential ready                         | Retain quota/billing fallback                                        |
+| xAI                 | Optional voice/reasoning experiment| credential ready; structured fallback off| Keep capped and opt-in; do not make launch depend on it               |
+| Vapi                | PSTN orchestration                 | credential ready; 18 numbers reachable   | Confirm billing/auto-reload and complete live call matrix             |
+| Twilio              | Carrier, numbers, SMS, WhatsApp    | active; $23.664; 9 voice/SMS numbers     | Rotate exposed token, re-probe, add Usage Triggers, run channel tests |
+| ElevenLabs          | Optional clones/showcase           | Creator; 130,840 credits; Voice API ready| Keep optional, consented, and monitored                               |
+| Resend              | Transactional email                | key accepted; trywireline.com verified   | Test real verification/reset delivery and maintain plan              |
+| Upstash             | Distributed rate limits            | credentials ready                        | Maintain production database and billing                             |
+| Federal DNC vendor  | Marketing scrub                    | URL/key configured                       | Confirm live lookup semantics and maintain scrub credits             |
+| Sentry              | Error alerts                       | not certified by vendor probe            | Verify backend/browser event receipt and alert routing               |
+| LiveAvatar / HeyGen | Video add-on                       | not core launch                          | Fund only after consent, pricing, and demand gates pass               |
+| Apollo / Perplexity | Enrichment/research                | not core launch                          | Add capped budget only when Lead Hunt is sold                         |
 
 Funding guidance is a reserve policy, not permission for uncapped auto-spend.
 Set provider-level budgets below Wireline account-level spend caps.
 
 ## Connector inventory
 
-| Vendor / surface                     | Role                                    | State                   | Launch boundary                                      |
-| ------------------------------------ | --------------------------------------- | ----------------------- | ---------------------------------------------------- |
-| Google Workspace                     | Sign-in, Gmail, calendar, Drive/Sheets  | live / verify prod      | Tenant retains Workspace plan                        |
-| Microsoft 365                        | Sign-in, Outlook, Teams, Excel/OneDrive | live / verify prod      | Tenant retains Microsoft plan                        |
-| HubSpot / Salesforce                 | CRM writeback                           | beta                    | Verify OAuth app review and tenant permissions       |
-| Shopify / Square                     | Commerce actions                        | beta                    | Do not claim full parity without E2E tests            |
-| Slack / Zoom                         | Alerts and meetings                     | beta                    | Verify OAuth and webhook paths                        |
-| Apollo                               | Enrichment                              | beta                    | Platform budget or tenant credential                 |
-| Meta / X Ads                         | Lead ingest and attribution             | beta                    | App review plus ad-account funding                    |
-| Yahoo Mail                           | Mailbox OAuth                           | planned                 | Do not market full parity                             |
-| DocuSign                             | E-sign                                  | beta                    | Verify JWT/access-token path                          |
-| ChatGPT App / MCP                    | Account-bound drafting/simulation       | beta                    | No unapproved live-call side effects                  |
-| Browser extension                    | Explicit page-context handoff           | beta                    | Store review and privacy verification                 |
-| iOS / Android                        | Urgent owner control                    | beta                    | Signing, native QA, and store approval                |
-| Video presenter                      | LiveAvatar/HeyGen                       | planned/beta add-on     | Separate consent and prepaid credits                  |
-| Figma / Canva / GitHub design export | Design schema/env only                  | planned                 | Do not fund until active routes exist                 |
-| Linear / Discord / Telegram          | No active integration                   | not implemented         | Do not market or fund                                 |
+| Vendor / surface                     | Role                                    | State               | Launch boundary                                      |
+| ------------------------------------ | --------------------------------------- | ------------------- | ---------------------------------------------------- |
+| Google Workspace                     | Sign-in, Gmail, calendar, Drive/Sheets  | live / verify E2E   | Tenant retains Workspace plan                        |
+| Microsoft 365                        | Sign-in, Outlook, Teams, Excel/OneDrive | live / verify E2E   | Tenant retains Microsoft plan                        |
+| HubSpot / Salesforce                 | CRM writeback                           | beta                | Verify OAuth app review and tenant permissions       |
+| Shopify / Square                     | Commerce actions                        | beta                | Do not claim full parity without E2E tests           |
+| Slack / Zoom                         | Alerts and meetings                     | beta                | Verify OAuth and webhook paths                       |
+| Apollo                               | Enrichment                              | beta                | Platform budget or tenant credential                 |
+| Meta / X Ads                         | Lead ingest and attribution             | beta                | App review plus ad-account funding                   |
+| Yahoo Mail                           | Mailbox OAuth                           | planned             | Do not market full parity                            |
+| DocuSign                             | E-sign                                  | beta                | Verify JWT/access-token path                         |
+| ChatGPT App / MCP                    | Account-bound drafting/simulation       | beta                | No unapproved live-call side effects                 |
+| Browser extension                    | Explicit page-context handoff           | beta                | Store review and privacy verification                |
+| iOS / Android                        | Urgent owner control                    | beta                | Signing, native QA, and store approval               |
+| Video presenter                      | LiveAvatar/HeyGen                       | planned/beta add-on | Separate consent and prepaid credits                 |
+| Figma / Canva / GitHub design export | Design schema/env only                  | planned             | Do not fund until active routes exist                |
+| Linear / Discord / Telegram          | No active integration                   | not implemented     | Do not market or fund                                |
 
 ## Required owner checks
 
