@@ -140,6 +140,7 @@ describe("product voice cohesion", () => {
   it("keeps the free-number promise backed by included capacity", () => {
     const catalog = read("src/lib/plan-catalog.ts");
     const billing = read("src/pages/BillingSettings.tsx");
+    const verification = read("src/components/layout/EmailVerifyBanner.tsx");
     expect(catalog).toContain(
       "Every paid tier guarantees live voice capacity and an on-demand number slot",
     );
@@ -149,6 +150,10 @@ describe("product voice cohesion", () => {
     expect(catalog).toContain("max_agents: 5");
     expect(catalog).toContain("included_phone_numbers: 5");
     expect(billing).toContain("plan.included_phone_numbers");
+    expect(verification).toContain("A live");
+    expect(verification).toContain("plan and compliant number");
+    expect(verification).not.toContain("14 days");
+    expect(verification).not.toContain("25 outbound calls");
   });
 
   it("keeps included number capacity mathematically aligned to included agents", () => {

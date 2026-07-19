@@ -51,8 +51,8 @@ export default function EmailVerifyBanner() {
       // Fires once; the dedupe in ToastContext catches accidental
       // double-fires from React StrictMode double-render in dev.
       success(
-        "Email verified — trial started",
-        "14 days · 1 AI employee · 25 outbound calls included. Pick a template to create your first one.",
+        "Email verified",
+        "Your workspace is ready. Build and test privately, then choose a live plan when you are ready for a customer number.",
       );
       // Strip the query param so refreshing the page doesn't re-fire
       // the toast. History API replace keeps scroll + state intact.
@@ -137,8 +137,8 @@ export default function EmailVerifyBanner() {
             </>
           ) : (
             <>
-              <strong>Verify your email</strong> to unlock outbound dialing and create more AI
-              employees. Check your inbox for a link from Wireline.
+              <strong>Verify your email</strong> to secure your account and continue setup. A live
+              plan and compliant number are still required before outbound dialing.
             </>
           )}
         </span>
