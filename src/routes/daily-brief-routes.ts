@@ -6,11 +6,26 @@ import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { createRateLimiter } from "../middleware/api-rate-limits";
 import { sendDailyBriefEmail } from "../lib/daily-brief";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
+
+/**
+ * send-now triggers a real LLM generation plus an email send — unlike
+ * most authenticated endpoints, an unthrottled loop here has real,
+ * unbounded AI-spend and email-volume cost. A legitimate user manually
+ * resending/previewing their brief does this at most a handful of
+ * times; 10/hour comfortably covers that while closing the endpoint off
+ * as a cost-abuse vector.
+ */
+const sendNowRateLimit = createRateLimiter({
+  bucket: "api:daily-brief-send-now",
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+});
 
 // Settings: GET / PUT for the daily-brief schedule.
 router.get(
@@ -100,6 +115,7 @@ router.put(
 router.post(
   "/api/daily-brief/send-now",
   authenticateUser,
+  sendNowRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const result = await sendDailyBriefEmail(req.user.id, { force: true });

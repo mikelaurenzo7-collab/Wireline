@@ -11,6 +11,7 @@ import {
   type ScheduledReportFrequency,
 } from "./post-call-output-preferences";
 import { drizzle } from "./server-context";
+import { redactSensitiveText } from "./shareable-artifact/redact";
 import { maybePublishWeeklyRecap } from "./shareable-artifact/publish-weekly-recap";
 import type { WeeklyRecapOutcomeSlice } from "./shareable-artifact/types";
 
@@ -281,12 +282,18 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
             )
             .slice(0, 5)
             .map((call) => ({
-              hero: call.summary?.split(/\n+/)[0]?.trim() || `${call.outcomeTag || "call"}`,
+              // Redact before this reaches the shareable weekly-recap artifact —
+              // same reasoning as maybePublishCallRecap: a spoken card number or
+              // SSN in the underlying call summary must never survive into a
+              // link-gated public page.
+              hero: redactSensitiveText(
+                call.summary?.split(/\n+/)[0]?.trim() || `${call.outcomeTag || "call"}`,
+              ),
               caller: call.customerNumber || null,
               atLabel: call.createdAt ? call.createdAt.toISOString().slice(0, 10) : null,
             })),
           followUps: openTasks.slice(0, 6).map((task) => ({
-            description: task.description ?? "",
+            description: redactSensitiveText(task.description ?? ""),
             priority:
               task.priority === "high" || task.priority === "medium" || task.priority === "low"
                 ? task.priority

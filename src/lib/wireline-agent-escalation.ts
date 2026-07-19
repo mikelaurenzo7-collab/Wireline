@@ -123,7 +123,7 @@ export const TIER_1_TOPICS: readonly string[] = Object.freeze([
   "how to get a phone number",
   "how to clone a voice",
   "vertical fit questions (does this work for [industry])",
-  "trial extension up to 14 days (once per customer, auto-grant)",
+  "Free Builder tier questions (build/test one agent free, no card, no time limit)",
   "password reset link",
   "receipt or invoice resend",
   "cancellation (confirms + emails Mike a record — no live transfer)",

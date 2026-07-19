@@ -123,9 +123,9 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
     response_template:
       "Totally fair. Usually when folks want to think it over, there's one specific thing on their mind — pricing, switching cost, or whether it'll actually work for their setup. Which one is closest for you?",
     follow_up_question:
-      "And in the meantime — want me to set up a fourteen-day trial with no card, so you can experience it instead of imagine it?",
+      "And in the meantime — want me to set you up with a free agent, no card needed, so you can build and test it instead of imagining it?",
     rationale:
-      "Surfaces the real blocker (almost never 'thinking' — it's a specific concern) and offers the lowest-friction next step (no-card trial).",
+      "Surfaces the real blocker (almost never 'thinking' — it's a specific concern) and offers the lowest-friction next step (a free, no-card agent build).",
   },
   {
     id: "already_have_competitor",

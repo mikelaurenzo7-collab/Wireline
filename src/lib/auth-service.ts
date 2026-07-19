@@ -206,8 +206,10 @@ export const authService = {
           .returning()) as Array<{ id: string; email: string; fullName: string | null }>;
         const user = inserted[0];
 
-        // Soft 14-day trial starts here. Failures don't block signup —
-        // the sweep job will fix up any stragglers.
+        // Sets the account to pending_activation (Free Builder — no trial,
+        // no card, no expiry) so signup/create/train works immediately.
+        // Failures don't block signup — the sweep job will fix up any
+        // stragglers. Function name is historical; see trial-gate.ts.
         const { startTrialForUser } = await import("./trial-gate");
         await startTrialForUser(user.id, signupAttribution, tx);
 

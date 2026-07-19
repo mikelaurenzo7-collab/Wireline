@@ -123,7 +123,6 @@
     "google-auth-library": "^10.7.0",
     "googleapis": "^171.4.0",
     "imapflow": "^1.4.2",
-    "livekit-client": "^2.15.7",
     "lucide-react": "^0.546.0",
     "motion": "^12.41.0",
     "nodemailer": "^9.0.1",

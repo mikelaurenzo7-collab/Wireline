@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 285
-**Protected:** 245
-**Public (allowlisted):** 40
+**Routes scanned:** 291
+**Protected:** 250
+**Public (allowlisted):** 41
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -38,6 +38,7 @@
 | `GET /api/health/slos` | Monitor token OR authenticated platform admin; enforced in handler |
 | `POST /api/intake/lead` | API-key auth via X-Wireline-Key + rate limit |
 | `POST /api/intake/leads` | API-key auth via X-Wireline-Key + rate limit |
+| `GET /api/integrations/certified` | Public certified-integration status; rate-limited, no tenant data |
 | `GET /api/public/assistant/:agentName` | Aggregated, no-PII marketing counters; rate-limited |
 | `GET /api/public/stats` | Aggregated, no-PII marketing counters; rate-limited |
 | `POST /api/webhooks/meta/deletion` | Meta HMAC-SHA256 signature + rate limit |
@@ -204,6 +205,9 @@
 | fleet-routes.ts | PATCH | `/api/Assistants/tasks/:id` | inline | — | — | Protected |
 | fleet-routes.ts | POST | `/api/Assistants/tasks/:id/approve` | inline | — | — | Protected |
 | fleet-routes.ts | GET | `/api/triage` | inline | — | — | Protected |
+| goals-routes.ts | GET | `/api/goals` | inline | — | — | Protected |
+| goals-routes.ts | POST | `/api/goals` | inline | — | — | Protected |
+| goals-routes.ts | DELETE | `/api/goals/:id` | inline | — | — | Protected |
 | grok-voice-routes.ts | POST | `/api/voice/live/session` | inline | — | — | Protected |
 | grok-voice-routes.ts | GET | `/api/voice/live/status` | inline | — | — | Protected |
 | grok-voice-routes.ts | POST | `/api/voice/live/tool` | inline | — | — | Protected |
@@ -231,6 +235,7 @@
 | intake-routes.ts | DELETE | `/api/intake/keys/:id` | inline | — | — | Protected |
 | intake-routes.ts | POST | `/api/intake/lead` | — | — | yes | Public (allowlisted) |
 | intake-routes.ts | POST | `/api/intake/leads` | — | — | yes | Public (allowlisted) |
+| integrations-cert-routes.ts | GET | `/api/integrations/certified` | — | — | yes | Public (allowlisted) |
 | job-routes.ts | POST | `/api/jobs/:id([0-9a-fA-F-]{36})/run` | inline | — | — | Protected |
 | job-routes.ts | POST | `/api/jobs/knowledge-crawl` | inline | — | — | Protected |
 | job-routes.ts | POST | `/api/jobs/prospect` | inline | — | — | Protected |
@@ -305,6 +310,8 @@
 | sms-routes.ts | POST | `/api/sms/threads/:id/mark-read` | inline | — | — | Protected |
 | sms-routes.ts | GET | `/api/sms/threads/:id/messages` | inline | — | — | Protected |
 | sms-routes.ts | POST | `/api/sms/threads/:id/reply` | inline | — | — | Protected |
+| soc2-routes.ts | GET | `/api/soc2/access-review` | inline | permission | — | Protected |
+| soc2-routes.ts | GET | `/api/soc2/evidence-pack` | inline | permission | — | Protected |
 | spend-control-routes.ts | GET | `/api/spend/budget` | inline | — | — | Protected |
 | spend-control-routes.ts | PUT | `/api/spend/budget` | inline | — | — | Protected |
 | spend-control-routes.ts | GET | `/api/spend/status` | inline | — | — | Protected |

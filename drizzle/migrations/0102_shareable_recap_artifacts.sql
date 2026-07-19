@@ -66,6 +66,13 @@ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
+-- Migration 0069 granted wireline_server on every table that existed at
+-- that time; it did not establish a default for tables created afterward
+-- (no ALTER DEFAULT PRIVILEGES was set), so every new tenant-scoped table
+-- must grant it explicitly or the app's own tenant-scoped queries (which
+-- run as wireline_server via SET LOCAL ROLE) fail with permission denied.
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE wireline_recap_artifacts TO wireline_server;
+
 -- Workspace branding columns on wireline_settings.
 -- Recaps use the display name in the eyebrow only; the Letterpress
 -- structure never yields. Proposals (a future kind) may use the logo +

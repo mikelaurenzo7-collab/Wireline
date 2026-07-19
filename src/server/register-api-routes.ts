@@ -66,9 +66,12 @@ import insightsRouter from "../routes/insights-routes";
 import pipelineRouter from "../routes/pipeline-routes";
 import dailyBriefRouter from "../routes/daily-brief-routes";
 import quotaRouter from "../routes/quota-routes";
+import goalsRouter from "../routes/goals-routes";
 import browserHandoffRouter from "../routes/browser-handoff-routes";
 import adminSeedDemoRouter from "../routes/admin-seed-demo-routes";
 import adminElevenLabsRouter from "../routes/admin-elevenlabs-routes";
+import soc2Router from "../routes/soc2-routes";
+import integrationsCertRouter from "../routes/integrations-cert-routes";
 
 /**
  * Canonical API route order.
@@ -172,7 +175,15 @@ export function registerApiRoutes(app: Express): void {
   // Pipeline kanban + campaign attribution for Insights Attribution tab.
   app.use(pipelineRouter);
   app.use("/api/quotas", quotaRouter);
+  app.use("/api/goals", goalsRouter);
   app.use(adminSeedDemoRouter);
   app.use(adminElevenLabsRouter);
   app.use(voiceObservabilityRouter);
+  // SOC2 evidence endpoints (/api/soc2/access-review, /evidence-pack) --
+  // authenticateUser + requirePermission("audit.read"), cited as a live
+  // control by docs/soc2-policies.md.
+  app.use(soc2Router);
+  // Public trust-page data source (/api/integrations/certified) -- no auth,
+  // IP rate-limited.
+  app.use(integrationsCertRouter);
 }

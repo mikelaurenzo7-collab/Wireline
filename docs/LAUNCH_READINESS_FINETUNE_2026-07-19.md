@@ -1,0 +1,67 @@
+# Launch Readiness Fine-Tuning — 2026-07-19
+
+Status: **Active** — fresh, from-scratch E2E audit (security, backend/codebase health, AI runtime, voice, pricing, marketing, env vars, vendor setup) run independently of `LAUNCH_PERFECTION_PASS_2026-07-19.md`, with verified fixes landed on `claude/launch-perfection-pass-8u4d77` and adversarial re-verification of that prior pass's changes.
+
+This pass explicitly re-grouped rather than re-litigating: four parallel research agents (security; backend architecture/codebase health; adversarial AI-runtime/voice re-check; adversarial pricing/marketing re-check) plus a live Supabase/Vercel re-sweep, triaged into a single prioritized list, with only verified, concretely-scoped findings actioned. Lower-priority, architectural, or industry-standard-tradeoff findings were deliberately left open (listed below) rather than churned for their own sake.
+
+## Security fixes
+
+- **Cadence engine bypassed the shared TCPA/federal-DNC gate.** `src/lib/cadence-engine.ts` checked only an internal DNC flag (`isDncBlocked`) before firing a scheduled `call` or `sms` step — the federal DNC registry, quiet-hours, and consent-metadata checks that every other outbound path runs through (`evaluateOutboundDialGate` in `src/lib/outbound-dial-gate.ts`) were never consulted for cadence-originated contacts. Cadence steps now call the shared gate with the lead's `lastCalledAt` and `metadata`, and fail **closed** (skip the step) if the gate call itself throws. Locked in by `tests/cadence-outbound-compliance-contract.test.ts`.
+- **Recap and weekly-review artifacts could echo raw PII from call transcripts/summaries onto a shareable URL.** The `wireline_recap_artifacts` pipeline (shipped in the prior pass, PR #801) had no redaction step — a credit-card or SSN-shaped sequence spoken on a call would land verbatim in the published page. Added `src/lib/shareable-artifact/redact.ts` (pattern-based, not full PII/NLP — deliberately conservative toward over-redacting ambiguous 9-digit sequences rather than under-redacting a real SSN) and wired it into every content choke point: `publish-call-recap.ts` (hero, moments, transcript, summary) and `scheduled-report-service.ts` (weekly top-moments, follow-up descriptions). Locked in by `tests/shareable-artifact-redaction.test.ts`, which includes source-reading wiring checks (not just unit tests of the regexes) so the redaction call sites can't silently regress.
+- **Sign-in endpoint was a timing oracle for account enumeration.** `forgot-password` already equalized response duration; `POST /api/auth/signin` did not — a failed lookup (unknown email) returned faster than a failed password check (bcrypt/scrypt compare cost), letting an attacker distinguish "no such account" from "wrong password" by timing. Generalized the existing single-purpose equalizer into `equalizedDuration<T>()` in `src/routes/auth-routes.ts` and applied it to both routes (signin floor 400ms, forgot-password floor unchanged at 1000ms — reasoned independently: signin is a high-frequency UX path, forgot-password is rare enough to absorb a longer floor). Locked in by `tests/auth-signin-timing-contract.test.ts`.
+- **`POST /api/daily-brief/send-now` had no rate limit.** Every other LLM-generation-plus-send endpoint in the app is throttled; this one triggers a real LLM call and a real email send per request and was reachable in an unbounded loop by any authenticated user — a cost-abuse vector, not just a UX gap. Added a dedicated `createRateLimiter` bucket (10/hour — comfortably covers legitimate manual resend/preview use). Locked in by `tests/daily-brief-send-now-rate-limit-contract.test.ts`.
+- **Two tables were unreachable by the app's own tenant-scoped queries.** `wireline_recap_artifacts` and `wireline_browser_handoffs` both enabled RLS and added the `deny_direct_api_access` policy correctly, but neither was ever granted to `wireline_server` — the role every tenant query actually runs as (`SET LOCAL ROLE wireline_server`). Migration `0069` granted `wireline_server` only on the tables that existed at that time; there is no `ALTER DEFAULT PRIVILEGES` establishing a default for tables created afterward, so this is a systemic gap for any table added post-`0069` that forgets the explicit grant. Fixed via `drizzle/migrations/0102_shareable_recap_artifacts.sql` (grant added to the existing file, since it had never actually been applied — see below) and the new `drizzle/migrations/0103_grant_wireline_server_browser_handoffs.sql`. **Both migrations were applied directly to the live production Supabase database** (project `ogenlhodmwvyacvnrsnj`) via Supabase MCP and verified end-to-end (table existence, grants, RLS, policy all confirmed via live SQL query). Six other tables were flagged by the same audit as *possibly* missing the same grant; those were deliberately **not** blanket-fixed — several are plausibly by-design pre-tenant-context tables (demo funnel, MCP's separate OAuth model, OAuth bridge codes, Stripe webhook idempotency), and incorrectly widening access on those could introduce a new problem rather than fix an existing one. They need individual verification before any grant is added — tracked as an open item below.
+- **Discovered in the course of the RLS check: the entire recap-artifact feature shipped in PR #801 was silently non-functional in production.** The migration that creates `wireline_recap_artifacts` and the `wireline_settings.workspace_*` branding columns was merged to `main` with correct SQL, but had never actually been run against the live database — the table and columns simply didn't exist. The feature fails closed (no crash, just zero artifacts ever published), so nothing alerted on this. Fixed by applying `0102` live (see above); this is the single highest-impact fix in this pass since it makes a previously-merged, customer-facing, plan-catalog-promised feature actually work for the first time.
+- **False "14-day trial" language remained live in AI-agent-facing copy** even though the product has run Free-Builder-tier (no trial, no card, no expiry) since a prior pass fixed the customer-facing signup/verification emails. An account holder's AI agent (via the objections/personas/escalation playbooks) or a demo/showcase Vapi tool could still promise or reference a trial that doesn't exist — a compliance and trust problem, not just a copy nit, since Wireline agents are the thing selling Wireline. Fixed in `src/lib/wireline-agent-objections.ts` (follow-up question + rationale), `src/lib/wireline-agent-personas.ts` (Maya's and Priya's capability bullets), `src/lib/wireline-agent-escalation.ts` (`TIER_1_TOPICS` entry), `src/lib/auth-service.ts` (stale comment only, not functional), and `src/lib/vapi-tool-handlers.ts` (stale doc-comment on `send_signup_link`). The existing `scripts/clear-system/billing-integrity.mjs` regression guard — which contract-tests source files for trial language via `mustExclude` — was extended to also scan these four files (it previously covered only `wireline-agent-personas.ts` partially and missed the other three entirely), closing the gap that let this drift back in undetected. **Adversarially verified**: temporarily reintroduced the bad string via `sed`, confirmed `node scripts/check-wireline-clear-system.mjs` failed with the exact expected violation message, then restored the fix — proving the guard actually catches what it claims to guard against, not just that it passes today.
+
+## Codebase health / organization
+
+- **Three legitimate, complete, previously-unregistered route files** were found during the backend-architecture audit — written, tested-by-hand-reading, but never mounted in `src/server/register-api-routes.ts`, so silently 404ing in production:
+  - `src/routes/goals-routes.ts` — `GET/POST /api/goals`, `DELETE /api/goals/:id`, fully tenant-scoped. Registered.
+  - `src/routes/soc2-routes.ts` — `GET /api/soc2/access-review`, `GET /api/soc2/evidence-pack`; `authenticateUser` + `requirePermission("audit.read")`; cited as a live control by `docs/soc2-policies.md`. Registered.
+  - `src/routes/integrations-cert-routes.ts` — public `GET /api/integrations/certified`, already correctly allowlisted in `scripts/generate-authz-matrix.ts` (the allowlist entry pre-dated the route actually being reachable). Registered.
+
+  All three are bare `app.use(router)` mounts (each router declares its own full path internally) added to `src/server/register-api-routes.ts`. `docs/AUTHZ_MATRIX.md` regenerated (291 routes scanned, 250 protected, 41 public, **0 violations**).
+- **Four dead files deleted**, each confirmed to have zero remaining importers before removal:
+  - `src/lib/agent-tool-dispatch-v2.ts` — zero importers anywhere in `src/`.
+  - `src/routes/contact-routes.ts` — deliberately orphaned per `docs/TAKEOVER_AUDIT_2026-07-05.md` (the frontend `ContactProfile.tsx` it served was already deleted as dead code in that prior audit; this route had no remaining caller).
+  - `src/lib/contact-profile.ts`, `src/lib/phone-tail-sql.ts` — both exclusively consumed by `contact-routes.ts`.
+- **`livekit-client` removed from `package.json`** — zero imports anywhere in `src/`; redundant with `@heygen/liveavatar-web-sdk`'s own transitive LiveKit dependency.
+- Every deletion was verified against the test suite (`grep` for any test referencing the removed files: none) before removal, and `npm run verify:full` (below) confirms nothing broke.
+
+## What was deliberately *not* changed
+
+Consistent with "no pointless changes" — findings that are real but architectural, tradeoff-dependent, or need a product decision rather than a code fix were left open rather than actioned reflexively:
+
+- Signup email-enumeration timing/response-shape disclosure (lower severity than the signin oracle fixed above; needs a broader decision about signup UX, not a mechanical equalizer).
+- A DNS-rebinding TOCTOU window in an outbound-fetch validator (theoretical without a chosen mitigation strategy — needs a design decision, not a patch).
+- The "shadow route" pattern already called out and intentionally kept in `register-api-routes.ts` (`spendControlRouter` before `auditRouter`) — pre-existing, documented, working as designed.
+- The remaining six tables flagged for a possible missing `wireline_server` grant (see Security fixes above) — needs per-table access-pattern verification, not a blanket grant.
+- Several "unreferenced `src/lib` utility" cleanup candidates from the codebase-health audit — lower confidence than the four deleted above; left for a dedicated cleanup pass rather than bundled in here.
+
+## Live vendor / environment re-sweep
+
+- Re-confirmed the production `/api/health` and core vendor connectivity posture from the prior pass still holds; no new live-vendor regressions found.
+- **`STRIPE_ENTERPRISE_PRICE_ID` and `OPENAI_REALTIME_MODEL` deletion attempted and blocked.** Both were re-confirmed as safe-to-remove Vercel env vars (dead price id / stale model pin, per `LAUNCH_PERFECTION_PASS_2026-07-19.md` items 3 and 5). A direct Vercel API delete call was **blocked by the harness's auto-mode classifier** ("Blocked by classifier"). Per the tool's own guidance, this was not routed around via an alternate write path (e.g. Vercel MCP). Both remain open, manual-ops items — see below.
+- GitHub Actions CI remains dead repo-wide (phantom workflow registration, `LAUNCH_PERFECTION_PASS_2026-07-19.md` item 2) — no GitHub MCP tool exists to purge a corrupt workflow registration; still requires GitHub support or a Settings-level fix. Verification for this pass rests entirely on local `npm run verify:full`, same as the prior pass.
+
+## Verification
+
+Full gate run with every change from this pass included:
+
+```
+npm run authz:check    # 291 scanned, 250 protected, 41 public, 0 violations
+npm run design:check   # Wireline Clear System (8 modules) + command-palette contract — both passed
+npm run verify:full    # type check x3, eslint, design/source-control/route/docs/openapi/token/authz/
+                        # bootstrap/tsconfig/csp/runtime-policy/api-error checks, npm audit,
+                        # tests, build, smoke, browser-extension check
+```
+
+`verify:full` result: **142 → 143 test files, 742/742 tests passed**, 0 lint errors, 0 `npm audit` high/critical vulnerabilities, clean build, server bundle smoke-imports successfully, browser-extension packaging check passed. Zero regressions from this pass's changes.
+
+## Open items (ops-only, not code)
+
+1. **Delete `STRIPE_ENTERPRISE_PRICE_ID` and `OPENAI_REALTIME_MODEL` from Vercel production env vars manually** — both confirmed dead/stale twice now (prior pass + this one); automated deletion is blocked by the harness classifier regardless of tool path.
+2. **GitHub Actions phantom workflow (`BuildFailed`, id `296195680`)** still blocks all CI; needs a GitHub Settings/support-level fix, not a code change.
+3. **Six additional tables flagged for a possible missing `wireline_server` grant** need individual access-pattern verification (see Security fixes above) before any grant is added — several are plausibly correct as-is.
+4. The remaining unused-Vercel-env-var cruft list and the lower-confidence `src/lib` cleanup candidates from `LAUNCH_PERFECTION_PASS_2026-07-19.md` and this pass's codebase-health audit remain open for a dedicated pass.

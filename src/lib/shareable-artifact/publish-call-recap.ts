@@ -13,6 +13,7 @@ import { drizzle, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import { planById } from "../plan-catalog";
 import { isBrandedArtifactEntitled } from "./entitlement";
+import { redactSensitiveText } from "./redact";
 import { publishCallRecap, type RecapArtifactHandle } from "./service";
 import type {
   CallRecapAction,
@@ -178,13 +179,22 @@ export async function maybePublishCallRecap(
     const plan = planById(planId);
     if (!isBrandedArtifactEntitled(plan)) return null;
 
+    // Redact once, at the top, before summary/transcript feed hero, moments,
+    // or the stored content — a caller reading a card number or SSN aloud
+    // must never have those digits reach the shareable-URL artifact, which
+    // is access-gated by an unguessable link rather than a hard auth wall.
+    const safeSummary = input.summary ? redactSensitiveText(input.summary) : input.summary;
+    const safeTranscript = input.transcript
+      ? redactSensitiveText(input.transcript)
+      : input.transcript;
+
     const outcomeLabel = pickOutcomeLabel(input.outcomeTag);
     const hero = pickHero({
       outcomeTag: input.outcomeTag,
       outcomeLabel,
       agentName: input.agentName,
       customerName: input.customerName,
-      summary: input.summary,
+      summary: safeSummary,
     });
 
     const content: CallRecapContent = {
@@ -211,12 +221,12 @@ export async function maybePublishCallRecap(
         name: input.customerName ?? null,
         phone: input.customerNumber ?? null,
       },
-      moments: extractMoments(input.summary),
+      moments: extractMoments(safeSummary),
       actions: nextActionsFor(input.outcomeTag),
-      transcript: parseTranscript(input.transcript),
+      transcript: parseTranscript(safeTranscript),
       sentiment: input.sentiment ?? null,
       intentLabel: input.intentLabel ?? null,
-      summary: input.summary ?? null,
+      summary: safeSummary ?? null,
     };
 
     return await publishCallRecap({
