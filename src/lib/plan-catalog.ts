@@ -155,6 +155,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "20 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
       "$0.50 monthly flexible Runtime Allowance",
+      "Voice, SMS, and email under one employee identity",
       "Lead Hunt access and connected email workflows",
       "Automatic post-call summary, outcome, note, and next action",
       "No automatic overages",

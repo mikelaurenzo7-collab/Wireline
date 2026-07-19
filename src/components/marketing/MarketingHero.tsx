@@ -80,7 +80,7 @@ export default function MarketingHero({
           {isHomeHero ? (
             <div
               aria-label="Wire to Work to Win"
-              className="inline-flex max-w-full flex-nowrap items-center justify-center gap-[clamp(.4rem,2.5vw,.75rem)] whitespace-nowrap rounded-full border border-border bg-card px-[clamp(.8rem,4vw,1.25rem)] py-2 font-[var(--wireline-font-family-mono)] text-[clamp(.7rem,3.3vw,.82rem)] font-semibold uppercase tracking-[.12em] text-muted-foreground shadow-[var(--wireline-elevation-sm)]"
+              className="inline-flex max-w-full flex-wrap items-center justify-center gap-x-[clamp(.4rem,2.5vw,.75rem)] gap-y-1 rounded-2xl border border-border bg-card px-[clamp(.8rem,4vw,1.25rem)] py-2 font-[var(--wireline-font-family-mono)] text-[clamp(.7rem,3.3vw,.82rem)] font-semibold uppercase tracking-[.12em] text-muted-foreground shadow-[var(--wireline-elevation-sm)]"
             >
               {MARKETING_VOICE.spine.map((item, index) => (
                 <Fragment key={item}>

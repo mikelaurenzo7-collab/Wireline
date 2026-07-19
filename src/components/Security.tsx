@@ -244,7 +244,9 @@ export default function Security() {
               the honest summary of what we ship today, where we still have work to do, and how to
               reach us if you find something we missed.
             </p>
-            <p className="mt-4 text-eyebrow !text-[0.625rem]">Last updated · July 7, 2026</p>
+            <p className="mt-4 text-eyebrow !text-[0.625rem]">
+              Last updated · July 7, 2026 · Reviewed for launch · July 19, 2026
+            </p>
           </motion.div>
 
           <section className="mb-10 grid gap-3 sm:grid-cols-2" aria-label="Security summary">

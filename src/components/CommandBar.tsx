@@ -18,7 +18,6 @@ import {
   Inbox,
   LayoutDashboard,
   MonitorDown,
-  PenLine,
   Phone,
   Search,
   Settings,
@@ -61,32 +60,24 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   },
   {
     id: "agents",
-    label: "Agents",
-    description: "Manage personal and business agents.",
+    label: "AI Employee",
+    description: "Open Studio and manage your live AI employees.",
     icon: Bot,
-    href: "/overview",
-    category: "Workspace",
-  },
-  {
-    id: "studio",
-    label: "Studio",
-    description: "Run agent work, approvals, calls, texts, and follow-up.",
-    icon: PenLine,
     href: "/studio",
     category: "Workspace",
   },
   {
-    id: "training",
-    label: "Training",
-    description: "Manage the facts, context, sources, and policies agents use.",
+    id: "knowledge",
+    label: "Knowledge",
+    description: "Manage the facts, context, sources, and policies each AI employee uses.",
     icon: Database,
     href: "/knowledge",
     category: "Workspace",
   },
   {
-    id: "wire",
-    label: "Wire",
-    description: "Choose the accounts, integrations, and actions an agent can use.",
+    id: "connections",
+    label: "Connections",
+    description: "Choose the accounts, integrations, and actions an AI employee can use.",
     icon: Cable,
     href: "/connections",
     category: "Workspace",
@@ -410,7 +401,7 @@ export default function CommandBar() {
                       : undefined
                   }
                   aria-autocomplete="list"
-                  placeholder="Search workspace or wire an agent…"
+                  placeholder="Search workspace, AI employees, or settings…"
                   className="h-8 border-none bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -427,7 +418,7 @@ export default function CommandBar() {
                 size="icon"
                 aria-label="Close command palette"
                 onClick={close}
-                className="size-8 min-h-8 min-w-8"
+                className="size-11 min-h-11 min-w-11"
               >
                 <X aria-hidden="true" className="size-4" />
               </Button>
@@ -517,7 +508,7 @@ export default function CommandBar() {
                     className="m-4 min-h-48 border-dashed"
                     icon={<Terminal className="size-5" />}
                     title="No matching commands."
-                    description="Try a workspace destination, agent, integration, or setting."
+                    description="Try an AI employee, integration, workspace destination, or setting."
                   />
                 )}
               </ScrollArea>

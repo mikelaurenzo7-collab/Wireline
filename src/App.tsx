@@ -11,6 +11,8 @@ import RouteChangeA11y from "./components/RouteChangeA11y";
 import { useAuth } from "./contexts/AuthContext";
 import { isWorkspaceRoute } from "./lib/workspace-route-scope";
 
+import ToastStack from "./components/Toast";
+
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const Features = lazy(() => import("./pages/Features"));
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -133,6 +135,7 @@ export default function App() {
                 <AccountProvider>
                   <AgentsProvider>
                     <AppRouter />
+                    <ToastStack />
                   </AgentsProvider>
                 </AccountProvider>
               </BrandingProvider>

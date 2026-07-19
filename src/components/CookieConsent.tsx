@@ -50,14 +50,14 @@ export default function CookieConsent() {
         if (cancelled) return;
         const sessionPresent = sessionRes.ok;
         setHasSession(sessionPresent);
-        if (sessionPresent) return;
+      } catch {
+        /* Session probe failed — still show the notice so EU/UK visitors get a
+           consent choice regardless of auth state. */
+      }
+      if (!cancelled) {
         timeoutId = setTimeout(() => {
           if (!cancelled) setVisible(true);
         }, 1200);
-      } catch {
-        if (!cancelled) {
-          timeoutId = setTimeout(() => setVisible(true), 1200);
-        }
       }
     })();
 

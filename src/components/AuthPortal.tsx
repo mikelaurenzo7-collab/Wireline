@@ -43,12 +43,35 @@ import {
 } from "../lib/demo-attribution-client";
 import { emitProductEventOnce } from "../lib/product-event-client";
 
+/**
+ * Redact common infrastructure/DB error leakage before surfacing anything to
+ * the sign-in card. Server-side code owns being careful; this is defence in
+ * depth so a slipped ORM/proxy string never lands in the UI.
+ */
+const UNSAFE_ERROR_PATTERNS = [
+  /duplicate key value/i,
+  /violates .* constraint/i,
+  /relation ".*" does not exist/i,
+  /supabase/i,
+  /postgres|postgresql/i,
+  /ECONNRE(SET|FUSED)/,
+  /getaddrinfo /,
+  /stack trace|\bat .* \(.*:\d+:\d+\)/i,
+  /\{.*"stack"/,
+  /^HTTP \d+/,
+];
+
+function isSafeErrorMessage(message: string): boolean {
+  if (message.length > 240) return false;
+  return !UNSAFE_ERROR_PATTERNS.some((pattern) => pattern.test(message));
+}
+
 function extractServerErrorMessage(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") return null;
   const p = payload as Record<string, unknown>;
-  const candidates: unknown[] = [p.error, p.message, (p.error as any)?.message];
+  const candidates: unknown[] = [p.userMessage, p.error, p.message, (p.error as any)?.message];
   for (const c of candidates) {
-    if (typeof c === "string" && c.trim()) return c.trim();
+    if (typeof c === "string" && c.trim() && isSafeErrorMessage(c.trim())) return c.trim();
   }
   const details = p.details;
   if (Array.isArray(details) && details.length > 0) {
@@ -56,10 +79,10 @@ function extractServerErrorMessage(payload: unknown): string | null {
       .map((d) => {
         if (!d || typeof d !== "object") return null;
         const row = d as { field?: unknown; message?: unknown };
-        const msg = typeof row.message === "string" ? row.message.trim() : "";
-        if (!msg) return null;
+        const raw = typeof row.message === "string" ? row.message.trim() : "";
+        if (!raw || !isSafeErrorMessage(raw)) return null;
         const field = typeof row.field === "string" && row.field ? row.field : null;
-        return field ? `${field}: ${msg}` : msg;
+        return field ? `${field}: ${raw}` : raw;
       })
       .filter((s): s is string => !!s);
     if (parts.length > 0) return parts.slice(0, 3).join(" ");
@@ -113,15 +136,21 @@ function OAuthSignInButtons({
   disabled,
   onError,
   isSignUp = false,
+  consentNeeded = false,
 }: {
   disabled?: boolean;
   onError?: (message: string) => void;
   isSignUp?: boolean;
+  consentNeeded?: boolean;
 }) {
   const [pending, setPending] = useState<OAuthProvider | null>(null);
 
   const start = async (provider: OAuthProvider) => {
     if (disabled || pending) return;
+    if (consentNeeded) {
+      onError?.("Accept the Terms and Privacy Policy below to continue.");
+      return;
+    }
     setPending(provider);
     onError?.("");
     try {
@@ -176,7 +205,7 @@ function OAuthSignInButtons({
   }> = [
     {
       id: "google",
-      label: "Gmail",
+      label: "Google",
       mark: (
         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
           <path
@@ -200,7 +229,7 @@ function OAuthSignInButtons({
     },
     {
       id: "microsoft",
-      label: "Outlook",
+      label: "Microsoft",
       mark: (
         <svg width="18" height="18" viewBox="0 0 21 21" aria-hidden="true">
           <rect x="1" y="1" width="9" height="9" fill="#F25022" />
@@ -375,12 +404,17 @@ export default function AuthPortal() {
   const strengthLabel = isSignUp ? getPasswordStrengthLabel(password) : null;
 
   useEffect(() => {
-    setSignupIntent(captureSignupIntentFromLocation());
+    // Only capture and persist signup intent on the signup route. A visitor
+    // hitting /signin?plan=business (e.g. from a marketing email) shouldn't
+    // overwrite their stored plan preference or flip workspaceMode away from
+    // their default.
     captureDemoSourceFromLocation();
     persistAuthRedirect(readRedirectFromSearch(location.search));
+    if (!isSignupRoute) return;
     const intent = captureSignupIntentFromLocation();
+    setSignupIntent(intent);
     if (intent) setWorkspaceMode(workspaceFromIntent(intent));
-  }, [location.search]);
+  }, [location.search, isSignupRoute]);
 
   useEffect(() => {
     persistWorkspaceMode(workspaceMode);
@@ -433,6 +467,7 @@ export default function AuthPortal() {
 
   const handleAuth = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (loading) return;
     setError(null);
     setMessage(null);
 
@@ -617,6 +652,7 @@ export default function AuthPortal() {
               <OAuthSignInButtons
                 disabled={loading}
                 isSignUp={isSignUp}
+                consentNeeded={isSignUp && !agreedToTerms}
                 onError={(m) => setError(m || null)}
               />
             )}
@@ -632,8 +668,10 @@ export default function AuthPortal() {
                     id="auth-email"
                     type="email"
                     required
+                    autoFocus
                     autoComplete="email"
                     spellCheck={false}
+                    disabled={loading}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="wl-stitch-input h-11"
@@ -674,6 +712,7 @@ export default function AuthPortal() {
                       required
                       minLength={isSignUp ? 8 : undefined}
                       autoComplete={isSignUp ? "new-password" : "current-password"}
+                      disabled={loading}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="wl-stitch-input h-11"
@@ -685,7 +724,7 @@ export default function AuthPortal() {
                       onClick={() => setShowPassword((value) => !value)}
                       aria-label={showPassword ? "Hide password" : "Show password"}
                       aria-pressed={showPassword}
-                      className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-sm text-foreground/60 transition hover:bg-ink/5 hover:text-foreground"
+                      className="absolute right-1.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg text-foreground/60 transition hover:bg-ink/5 hover:text-foreground"
                     >
                       {showPassword ? (
                         <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -727,17 +766,22 @@ export default function AuthPortal() {
               )}
 
               {isSignUp && (
-                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-muted/50 p-3 text-sm leading-relaxed text-foreground/75">
+                <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/50 p-3 text-sm leading-relaxed text-foreground/75">
                   <input
+                    id="auth-terms"
                     type="checkbox"
                     checked={agreedToTerms}
                     onChange={(e) => setAgreedToTerms(e.target.checked)}
                     className="mt-1 h-4 w-4 shrink-0 accent-primary"
                   />
                   <span>
-                    I agree to the{" "}
+                    <label htmlFor="auth-terms" className="cursor-pointer select-none">
+                      I agree to the Wireline
+                    </label>{" "}
                     <Link
                       to="/terms"
+                      target="_blank"
+                      rel="noopener"
                       className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80"
                     >
                       Terms
@@ -745,13 +789,15 @@ export default function AuthPortal() {
                     and{" "}
                     <Link
                       to="/privacy"
+                      target="_blank"
+                      rel="noopener"
                       className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80"
                     >
                       Privacy Policy
                     </Link>
                     .
                   </span>
-                </label>
+                </div>
               )}
 
               <button

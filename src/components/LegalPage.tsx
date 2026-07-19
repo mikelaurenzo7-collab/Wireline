@@ -3,7 +3,7 @@ import { Shield, FileText, Trash2, ArrowLeft, Video } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingChrome from "./marketing/MarketingChrome";
 
-const LAST_UPDATED = "July 6, 2026";
+const LAST_UPDATED = "July 19, 2026";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared layout wrapper for legal pages
@@ -118,7 +118,7 @@ export function PrivacyPolicy() {
     >
       <PageMeta
         title="Privacy Policy"
-        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors include Postgres hosting, xAI, OpenAI, Google Gemini, Stripe, Vercel, and breached-password screening. Last updated July 6, 2026."
+        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors include Postgres hosting, xAI, OpenAI, Google Gemini, Stripe, Vercel, and breached-password screening. Last updated July 19, 2026."
         path="/privacy"
       />
 
@@ -335,7 +335,7 @@ export function TermsOfService() {
     >
       <PageMeta
         title="Terms of Service"
-        description="Wireline's terms of service — acceptable use, billing, telemarketing compliance (TCPA), limitation of liability, and governing law (Delaware). Last updated May 9, 2026."
+        description="Wireline's terms of service — acceptable use, billing, telemarketing compliance (TCPA), SMS opt-out disclosure, limitation of liability, and governing law (Delaware). Last updated July 19, 2026."
         path="/terms"
       />
 
@@ -389,7 +389,37 @@ export function TermsOfService() {
         </p>
       </Section>
 
-      <Section title="5. Billing and Subscriptions">
+      <Section title="5. SMS and Messaging Terms">
+        <p>
+          <strong>Consumer notice — reply STOP to opt out, HELP for help.</strong> Wireline numbers
+          can send transactional and business communications by SMS. Recipients may reply
+          <strong> STOP</strong>, <strong>UNSUBSCRIBE</strong>, <strong>CANCEL</strong>,{" "}
+          <strong>QUIT</strong>, or <strong>END</strong> at any time to stop further messages from
+          that number, and <strong>HELP</strong> to receive support contact information. Wireline
+          honors these keywords automatically and records the opt-out on the underlying consent
+          ledger.
+        </p>
+        <p>
+          <strong>Message and data rates may apply. Message frequency varies</strong> by the
+          business, the campaign, and the recipient's activity. Wireline does not charge recipients
+          for messages, but the recipient's carrier may. Wireline is not responsible for carrier
+          fees.
+        </p>
+        <p>
+          <strong>A2P 10DLC registration (US carriers).</strong> Business (Application-to-Person)
+          messaging in the United States requires brand and campaign registration with US carrier
+          consortia. Wireline (as the Communications Service Provider) coordinates that registration
+          with account holders who send business SMS; the registered brand and use case are the
+          account holder's, not Wireline's. Unregistered or misrepresented traffic may be filtered,
+          blocked, or rate-limited by carriers.
+        </p>
+        <p>
+          Report messaging complaints or ask a question about SMS from a Wireline number by emailing{" "}
+          <strong>support@trywireline.com</strong>.
+        </p>
+      </Section>
+
+      <Section title="6. Billing and Subscriptions">
         <p>
           Paid features are billed monthly via Stripe. Subscriptions renew automatically unless
           cancelled before the renewal date. You may cancel at any time via the Billing section in
@@ -414,7 +444,7 @@ export function TermsOfService() {
         </p>
       </Section>
 
-      <Section title="6. Data and Privacy">
+      <Section title="7. Data and Privacy">
         <p>
           Your use of Wireline is governed by our{" "}
           <Link to="/privacy" className="text-brand hover:text-brand/80 underline">
@@ -424,7 +454,7 @@ export function TermsOfService() {
         </p>
       </Section>
 
-      <Section title="7. Intellectual Property">
+      <Section title="8. Intellectual Property">
         <p>
           You retain full ownership of your agent configurations, knowledge base content, call
           recordings, and all other data you create in Wireline. By using the platform you grant us
@@ -437,7 +467,7 @@ export function TermsOfService() {
         </p>
       </Section>
 
-      <Section title="8. Disclaimer of Warranties">
+      <Section title="9. Disclaimer of Warranties">
         <p>
           Wireline is provided "as is" and "as available" without warranty of any kind, express or
           implied, including warranties of merchantability, fitness for a particular purpose, or
@@ -446,7 +476,7 @@ export function TermsOfService() {
         </p>
       </Section>
 
-      <Section title="9. Limitation of Liability">
+      <Section title="10. Limitation of Liability">
         <p>
           To the maximum extent permitted by applicable law, <strong>Wireline</strong>'s total
           liability arising out of or related to these Terms or the service shall not exceed the
@@ -455,7 +485,7 @@ export function TermsOfService() {
         </p>
       </Section>
 
-      <Section title="10. Indemnification">
+      <Section title="11. Indemnification">
         <p>
           You agree to indemnify and hold harmless <strong>Wireline</strong> from any claims,
           damages, or expenses (including reasonable attorneys' fees) arising from your use of the
@@ -464,7 +494,7 @@ export function TermsOfService() {
         </p>
       </Section>
 
-      <Section title="11. Governing Law">
+      <Section title="12. Governing Law">
         <p>
           These Terms are governed by the laws of <strong>Delaware, United States</strong>, without
           regard to conflict-of-law principles. Any disputes shall be resolved exclusively in the
@@ -472,14 +502,14 @@ export function TermsOfService() {
         </p>
       </Section>
 
-      <Section title="12. Modifications">
+      <Section title="13. Modifications">
         <p>
           We may update these Terms with 14 days' advance notice posted on this page. Your continued
           use after the effective date constitutes acceptance of the revised Terms.
         </p>
       </Section>
 
-      <Section title="13. Contact">
+      <Section title="14. Contact">
         <p>
           Legal notices: <strong>support@trywireline.com</strong>
         </p>

@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import MarketingFooter from "./MarketingFooter";
 import MarketingHero from "./MarketingHero";
+import MarketingStickyCta from "./MarketingStickyCta";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import TrustSignals from "./TrustSignals";
 import {
@@ -39,7 +40,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     title: "Your best salesperson, without the commission.",
     lead: "Call warm lists, revive old leads, promote offers, text or email the follow-up, book appointments, and log profit-moving outcomes with one tireless employee.",
     bestFor: ["Lead response", "Quote follow-up", "Appointment setting"],
-    cta: "Build your best employee",
+    cta: "Start on Starter — $9/mo",
     ctaPath: "/signup?plan=starter&mode=outbound",
   },
   inbound: {
@@ -47,7 +48,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     title: "Answer demand before profit leaks.",
     lead: "Handle front-desk calls, inbound qualification, scheduling, callbacks, overflow, after-hours coverage, and the next SMS or email from one shared customer record.",
     bestFor: ["Front desk", "Lead qualifier", "Support triage"],
-    cta: "Build your best employee",
+    cta: "Start on Starter — $9/mo",
     ctaPath: "/signup?plan=starter&mode=inbound",
   },
   hybrid: {
@@ -55,7 +56,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     title: "The employee who does the follow-through.",
     lead: "When sales, service, callbacks, email, SMS, scheduling, recovery, and CRM updates belong in one workflow, Wireline owns the busywork and shows you the result.",
     bestFor: ["Sales desk", "Collections desk", "Appointment desk"],
-    cta: "Build your best employee",
+    cta: "Start on Starter — $9/mo",
     ctaPath: "/signup?plan=starter&mode=hybrid",
   },
 };
@@ -80,6 +81,7 @@ const PLAN_PREVIEW = [
     body: "Build, train, and privately test your first AI Voice Employee. Activate a paid plan when you are ready for live calling, SMS, email workflows, and a Wireline number.",
     cta: "Start free",
     ctaPath: "/signup?plan=personal",
+    highlight: false,
   },
   {
     name: "Starter",
@@ -88,6 +90,16 @@ const PLAN_PREVIEW = [
     body: `${planCatalog.starter.max_agents} live AI Voice Employee, ${planCatalog.starter.included_phone_numbers} included Wireline number, and ${planCatalog.starter.voice_minutes_monthly} guaranteed voice minutes—plus connected SMS and email workflows.`,
     cta: "Start for $9",
     ctaPath: "/signup?plan=starter",
+    highlight: false,
+  },
+  {
+    name: "Starter Plus",
+    price: `$${planCatalog.team.price_usd_monthly}`,
+    period: "/mo",
+    body: `${planCatalog.team.voice_minutes_monthly} guaranteed voice minutes and the full SMS + Lead Hunt workflow—still one focused AI employee, with room to answer real customer demand.`,
+    cta: "Get Starter Plus",
+    ctaPath: "/signup?plan=team",
+    highlight: true,
   },
   {
     name: "Pro",
@@ -96,6 +108,7 @@ const PLAN_PREVIEW = [
     body: `${planCatalog.business.max_agents} live AI employees and ${planCatalog.business.included_phone_numbers} included numbers with shared voice, SMS, email, CRM sync, analytics, roles, approvals, and oversight.`,
     cta: "Go Pro",
     ctaPath: "/signup?plan=business",
+    highlight: false,
   },
 ] as const;
 
@@ -322,12 +335,22 @@ export default function WireAgentLanding() {
                 available to the same employee under visible usage controls.
               </p>
             </div>
-            <div className="mx-auto grid max-w-[960px] gap-5 sm:grid-cols-3">
+            <div className="mx-auto grid max-w-[1200px] gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {PLAN_PREVIEW.map((plan) => (
                 <article
                   key={plan.name}
-                  className="wl-paper flex min-h-[260px] flex-col rounded-[16px] p-7 text-center"
+                  className={`wl-paper relative flex min-h-[260px] flex-col rounded-[16px] p-7 text-center ${
+                    plan.highlight ? "ring-2 ring-primary/60 shadow-lg" : ""
+                  }`}
                 >
+                  {plan.highlight ? (
+                    <span
+                      className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary-foreground shadow-sm"
+                      aria-label="Most popular plan"
+                    >
+                      Most popular
+                    </span>
+                  ) : null}
                   <h3 className="wl-display-4">{plan.name}</h3>
                   <div className="mt-5 flex items-baseline justify-center gap-1">
                     <span className="wl-display-2 leading-none">{plan.price}</span>
@@ -338,7 +361,9 @@ export default function WireAgentLanding() {
                   </p>
                   <Link
                     to={plan.ctaPath}
-                    className="marketing-btn-secondary mt-6 min-h-11 justify-center text-[13px] font-semibold"
+                    className={`mt-6 min-h-11 justify-center text-[13px] font-semibold ${
+                      plan.highlight ? "marketing-btn-primary" : "marketing-btn-secondary"
+                    }`}
                   >
                     {plan.cta}
                   </Link>
@@ -399,8 +424,9 @@ export default function WireAgentLanding() {
         </section>
 
         <TrustSignals />
-        <MarketingFooter />
+        <MarketingFooter aboveStickyCta />
       </main>
+      <MarketingStickyCta />
     </div>
   );
 }

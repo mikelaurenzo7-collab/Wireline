@@ -161,12 +161,20 @@ function FirstRunLaunchpad() {
             Give one AI employee a clear job, test it, then connect only the channels that job
             needs.
           </p>
-          <Button asChild className="mt-5 w-full justify-center sm:w-auto">
-            <Link to="/studio?create=1">
-              Create your first AI employee
-              <ArrowRight size={15} aria-hidden="true" />
+          <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+            <Button asChild className="w-full justify-center sm:w-auto">
+              <Link to="/studio?create=1">
+                Create your first AI employee
+                <ArrowRight size={15} aria-hidden="true" />
+              </Link>
+            </Button>
+            <Link
+              to="/showcase"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-muted-foreground transition hover:text-foreground"
+            >
+              See a live demo first
             </Link>
-          </Button>
+          </div>
           <p className="mt-3 text-xs text-muted-foreground">
             Reliable voice and behavior defaults are already selected.
           </p>
