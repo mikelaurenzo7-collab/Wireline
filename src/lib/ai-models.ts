@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Wireline model policy.
  * Managed runtime: OpenAI primary for structured reasoning and Vapi call
  * intelligence, with Gemini as the first automatic fallback and the Vercel AI
