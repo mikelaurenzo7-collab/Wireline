@@ -72,8 +72,9 @@ describe("current-state UI contract", () => {
     expect(landing).toContain("/signup?plan=starter&mode=hybrid");
     expect(hero).toContain('aria-label="Wire to Work to Win"');
     expect(hero).toContain("MARKETING_VOICE.spine.map");
-    expect(hero).toContain("flex-nowrap");
-    expect(hero).toContain("whitespace-nowrap");
+    // Pill wraps when the label doesn't fit on 360px screens rather than
+    // forcing horizontal page overflow. Keep the label allocation gates.
+    expect(hero).toContain("flex-wrap");
     expect(hero).toContain("size-[1em] shrink-0");
     expect(hero).toContain("max-w-[22rem] grid-cols-2");
     expect(hero).toContain("col-span-2 sm:col-span-1");

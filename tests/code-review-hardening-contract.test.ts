@@ -128,8 +128,23 @@ describe("code review hardening contracts", () => {
 
   it("defensively handles unavailable browser storage in activation nudges", () => {
     const nudge = read("src/components/ActivationNudge.tsx");
-    expect(nudge).toContain("function readDismissed()");
-    expect(nudge).toContain("function writeDismissed()");
+    expect(nudge).toContain("function readDismissed(scopeId: string | null)");
+    expect(nudge).toContain("function writeDismissed(scopeId: string | null)");
     expect(nudge).toContain("catch");
+  });
+
+  it("keeps public purchase, consent, and sticky-CTA promises internally consistent", () => {
+    const pricing = read("src/pages/Pricing.tsx");
+    const terms = read("src/components/LegalPage.tsx");
+    const auth = read("src/components/AuthPortal.tsx");
+    const marketingCss = read("src/styles/public-marketing-polish.css");
+
+    expect(pricing).toContain("within 30 days of your first paid invoice");
+    expect(pricing).not.toContain("within 14 days of a first paid charge");
+    expect(terms).toContain("30-day money-back guarantee");
+    expect(auth).toContain('aria-labelledby="auth-terms-label"');
+    expect(auth).toContain('<span id="auth-terms-label">');
+    expect(marketingCss).toContain(".marketing-footer-above-sticky");
+    expect(marketingCss).toContain("env(safe-area-inset-bottom, 0px)");
   });
 });

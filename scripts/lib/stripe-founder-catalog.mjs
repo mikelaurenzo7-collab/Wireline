@@ -4,7 +4,7 @@
  * Keep customer-facing plan ids aligned with src/lib/plan-catalog.ts:
  * personal is the free builder and intentionally has no Stripe product.
  */
-export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v3";
+export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v4";
 
 export const FOUNDER_PRODUCTS = [
   {
@@ -24,7 +24,7 @@ export const FOUNDER_PRODUCTS = [
     key: "team",
     name: "Wireline Starter Plus",
     description:
-      "Expanded one-agent founder plan: 1 on-demand production number, 75 pooled voice minutes monthly, full Lead Hunt workflows, shared conversation inbox, connected email and SMS automation, and prepaid Conversation Balance for additional usage.",
+      "Expanded one-agent founder plan: 1 on-demand production number, 40 pooled voice minutes monthly, full Lead Hunt workflows, shared conversation inbox, connected email and SMS automation, and prepaid Conversation Balance for additional usage.",
     defaultPriceKey: "team_monthly_founder_2026_07_v2",
     metadata: {
       wireline_plan_id: "team",
@@ -37,7 +37,7 @@ export const FOUNDER_PRODUCTS = [
     key: "business",
     name: "Wireline Pro",
     description:
-      "Multi-agent operating plan for growing businesses: up to 5 live AI communications agents and on-demand numbers, 250 pooled voice minutes monthly, Lead Hunt workflows, shared inbox, routing, approvals, connected email and SMS automation, and prepaid overflow.",
+      "Multi-agent operating plan for growing businesses: up to 5 live AI communications agents and on-demand numbers, 100 pooled voice minutes monthly, Lead Hunt workflows, shared inbox, routing, approvals, connected email and SMS automation, and prepaid overflow.",
     defaultPriceKey: "business_monthly_founder_2026_07_v2",
     metadata: {
       wireline_plan_id: "business",
@@ -50,7 +50,7 @@ export const FOUNDER_PRODUCTS = [
     key: "enterprise",
     name: "Wireline Business",
     description:
-      "High-capacity operating plan: up to 15 live AI communications agents and on-demand numbers, 650 pooled voice minutes monthly, Lead Hunt and enrichment workflows, analytics, CRM controls, approvals, connected email and SMS automation, and prepaid overflow.",
+      "High-capacity operating plan: up to 15 live AI communications agents and on-demand numbers, 250 pooled voice minutes monthly, Lead Hunt and enrichment workflows, analytics, CRM controls, approvals, connected email and SMS automation, and prepaid overflow.",
     defaultPriceKey: "enterprise_monthly_founder_2026_07_v2",
     metadata: {
       wireline_plan_id: "enterprise",

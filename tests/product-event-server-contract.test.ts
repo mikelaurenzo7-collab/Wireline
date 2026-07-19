@@ -33,6 +33,9 @@ describe("product event server emission", () => {
     emitServerProductEvent({
       event: "tenant_activated",
       userId: "user-123",
+      surface: "web_workspace",
+      correlationId: "web:tenant_activated:test",
+      demoAccount: true,
       metadata: { call_log_id: "42" },
     });
 
@@ -41,11 +44,23 @@ describe("product event server emission", () => {
       expect.objectContaining({
         product_event: "tenant_activated",
         userId: "user-123",
+        surface: "web_workspace",
+        correlationId: "web:tenant_activated:test",
+        demoAccount: true,
         metadata: expect.objectContaining({ call_log_id: "42" }),
         payload: expect.objectContaining({ event: "tenant_activated" }),
       }),
     );
     expect(insert).toHaveBeenCalled();
+    expect(insertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          surface: "web_workspace",
+          correlation_id: "web:tenant_activated:test",
+          demo_account: true,
+        }),
+      }),
+    );
   });
 
   it("dedupes once-per-user activation milestones", () => {

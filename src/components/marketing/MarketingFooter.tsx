@@ -9,6 +9,14 @@ const PRODUCT_LINKS = [
   { to: "/solutions/sales", label: "Business" },
   { to: "/features", label: "Features" },
   { to: "/pricing", label: "Pricing" },
+  { to: "/compare", label: "Compare" },
+] as const;
+
+const COMPANY_LINKS = [
+  { to: "/about", label: "About" },
+  { to: "/blog", label: "Blog" },
+  { to: "/contact", label: "Contact" },
+  { to: "/changelog", label: "Changelog" },
 ] as const;
 
 const RESOURCE_LINKS = [
@@ -40,9 +48,7 @@ export default function MarketingFooter({
     <footer
       className={cn(
         "relative z-10 shrink-0 border-t border-border bg-background",
-        compact
-          ? "px-5 py-6"
-          : "px-5 py-9 sm:px-6 sm:py-11 lg:px-8 xl:px-12 2xl:px-16",
+        compact ? "px-5 py-6" : "px-5 py-9 sm:px-6 sm:py-11 lg:px-8 xl:px-12 2xl:px-16",
         aboveStickyCta && "marketing-footer-above-sticky",
         className,
       )}
@@ -63,10 +69,29 @@ export default function MarketingFooter({
             </p>
           </div>
 
-          <div className="marketing-footer-navs grid grid-cols-2 gap-8 sm:gap-12">
-            <nav aria-label="Product" className="marketing-footer-nav flex flex-col items-start gap-1">
+          <div className="marketing-footer-navs grid grid-cols-2 gap-8 sm:grid-cols-3 sm:gap-12">
+            <nav
+              aria-label="Product"
+              className="marketing-footer-nav flex flex-col items-start gap-1"
+            >
               <p className="wl-overline mb-1">Product</p>
               {PRODUCT_LINKS.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className="inline-flex min-h-8 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+
+            <nav
+              aria-label="Company"
+              className="marketing-footer-nav flex flex-col items-start gap-1"
+            >
+              <p className="wl-overline mb-1">Company</p>
+              {COMPANY_LINKS.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}

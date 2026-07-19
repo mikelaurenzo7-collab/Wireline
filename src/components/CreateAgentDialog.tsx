@@ -57,6 +57,38 @@ const FAST_START_IDLE =
 type Role = (typeof ROLE_TEMPLATES)[number]["value"];
 type Posture = "personal" | "business";
 
+/**
+ * Map create-agent server responses to user-safe strings. Raw error strings
+ * from provider APIs (Vapi quota codes, Postgres constraint messages, stack
+ * fragments) must never land in the first-run Studio dialog.
+ */
+function safeCreateAgentError(
+  status: number,
+  code: string | null | undefined,
+  raw: string | null | undefined,
+): string {
+  const normalized = code?.toLowerCase();
+  if (status === 401 || status === 403) {
+    return "Your session expired. Please sign in again to keep building.";
+  }
+  if (status === 402 || normalized === "plan_capacity_reached") {
+    return "Your current plan is at its live-agent capacity. Upgrade or archive an existing employee to make room.";
+  }
+  if (status === 409 || normalized === "name_conflict") {
+    return "An employee with that name already exists. Pick a different name to continue.";
+  }
+  if (status === 429 || normalized === "rate_limited") {
+    return "You're going a bit fast. Take a breath and try again in a moment.";
+  }
+  if (status >= 500) {
+    return "Wireline is having a hiccup. Try again in a moment — nothing was billed.";
+  }
+  if (typeof raw === "string" && raw.trim() && raw.trim().length <= 160 && !/[({]/.test(raw)) {
+    return raw.trim();
+  }
+  return "Something got stuck creating this employee. Try again in a moment.";
+}
+
 function defaultAgentName(posture: Posture, role: Role) {
   if (posture === "personal") return "Sarah";
   if (role === "sales") return "Revenue Desk";
@@ -162,9 +194,10 @@ export default function CreateAgentDialog({
       const body = (await safeJson(response)) as {
         id?: string;
         error?: string;
+        code?: string;
       } | null;
       if (!response.ok || !body?.id) {
-        setError(body?.error || "AI employee could not be created.");
+        setError(safeCreateAgentError(response.status, body?.code, body?.error));
         return;
       }
 
@@ -217,7 +250,7 @@ export default function CreateAgentDialog({
         });
       } else {
         stashCreateWarning(
-          `${finalName} was created, but the starting brief didn't fully apply. Add it from Set up.`,
+          `${finalName} was created, but the starting brief didn't fully apply. Open Studio and paste it into the Set up tab to try again.`,
         );
       }
       emitProductEvent({

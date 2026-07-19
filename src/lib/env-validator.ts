@@ -71,6 +71,21 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     validate: nonEmpty,
   },
   {
+    name: "XAI_API_KEY",
+    group: "ai",
+    required: false,
+    requiredInProd: true,
+    description: "Primary managed Grok runtime and realtime voice credential",
+    validate: nonEmpty,
+  },
+  {
+    name: "XAI_API_KEY_CHATKIT",
+    group: "ai",
+    required: false,
+    description: "Scoped xAI credential for ChatGPT app realtime voice spend isolation",
+    validate: nonEmpty,
+  },
+  {
     name: "OPENAI_API_KEY",
     group: "ai",
     required: false,
@@ -256,6 +271,14 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "operational",
     required: false,
     description: "Comma-separated allowed origins",
+  },
+  {
+    name: "WIRELINE_LAUNCH_DEMO_MODE",
+    group: "operational",
+    required: false,
+    description: "Marks internal launch accounts and product telemetry as demo-only",
+    validate: (value) => value === "true" || value === "false",
+    formatHint: "true or false",
   },
   {
     name: "OWNER_EMAIL",

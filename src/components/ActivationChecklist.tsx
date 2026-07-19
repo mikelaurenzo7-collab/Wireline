@@ -1,11 +1,24 @@
 import { useEffect, useState } from "react";
-import { Check, Circle, Phone, Sparkles, GraduationCap, Cable, Inbox } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Circle,
+  Phone,
+  Sparkles,
+  GraduationCap,
+  Cable,
+  Inbox,
+  Trophy,
+} from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAccount } from "../contexts/AccountContext";
+import { useAuth } from "../contexts/AuthContext";
 
 import {
   fetchAssistantSetupProgress,
   type AssistantSetupProgress,
 } from "../lib/fleet-setup-progress";
+import { isActivationCelebrated, markActivationCelebrated } from "../lib/post-signup-onboarding";
 import { cn } from "../lib/utils";
 
 const DISMISS_KEY = "wireline_activation_checklist_dismissed";
@@ -74,14 +87,29 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
 }
 
 export default function ActivationChecklist({ className }: { className?: string }) {
+  const { user } = useAuth();
+  const { activeAccount } = useAccount();
+  const activationScope = activeAccount?.id ?? user?.id ?? null;
+  const dismissKey = activationScope ? `${DISMISS_KEY}:${activationScope}` : null;
   const [progress, setProgress] = useState<AssistantSetupProgress | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  const [celebrationDismissed, setCelebrationDismissed] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem(DISMISS_KEY) === "true") setDismissed(true);
-  }, []);
+    setDismissed(false);
+    setCelebrationDismissed(false);
+    if (!dismissKey) return;
+    try {
+      if (localStorage.getItem(dismissKey) === "true") setDismissed(true);
+    } catch {
+      /* storage can be unavailable in private or embedded browser contexts */
+    }
+    if (isActivationCelebrated(activationScope)) setCelebrationDismissed(true);
+  }, [activationScope, dismissKey]);
 
   useEffect(() => {
+    setProgress(null);
+    if (!activationScope) return;
     let cancelled = false;
     void fetchAssistantSetupProgress().then((nextProgress) => {
       if (!cancelled) setProgress(nextProgress);
@@ -89,13 +117,63 @@ export default function ActivationChecklist({ className }: { className?: string 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [activationScope]);
 
   const steps = buildSteps(progress);
   const completed = steps.filter((step) => step.done).length;
   const allDone = completed >= steps.length;
 
-  if (dismissed || allDone || !progress || progress.agents === 0) return null;
+  if (dismissed || !progress || progress.agents === 0) return null;
+
+  if (allDone) {
+    if (celebrationDismissed) return null;
+    return (
+      <section
+        className={cn("wl-paper wl-paper-elevated relative overflow-hidden p-5 sm:p-6", className)}
+        aria-label="Your best employee is live"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+              <Trophy className="size-5" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="wl-eyebrow wl-eyebrow--primary">Your best employee is live</p>
+              <h2 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
+                All 5 customer-ready steps are done.
+              </h2>
+              <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground sm:text-sm">
+                Review the first outcome, then let Wireline keep the conversation moving.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+            <Link
+              to="/phone?tab=logs"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+              onClick={() => {
+                markActivationCelebrated(activationScope);
+                setCelebrationDismissed(true);
+              }}
+            >
+              Review the first outcome
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                markActivationCelebrated(activationScope);
+                setCelebrationDismissed(true);
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const next = steps.find((step) => !step.done);
 
@@ -119,7 +197,11 @@ export default function ActivationChecklist({ className }: { className?: string 
           type="button"
           className="self-start text-xs text-muted-foreground hover:text-foreground"
           onClick={() => {
-            localStorage.setItem(DISMISS_KEY, "true");
+            try {
+              if (dismissKey) localStorage.setItem(dismissKey, "true");
+            } catch {
+              /* storage can be unavailable in private or embedded browser contexts */
+            }
             setDismissed(true);
           }}
         >

@@ -42,8 +42,8 @@ export const WIRELINE_PLANS = [
     bestFor: "Growing solo operations that need more coverage.",
     includes: [
       "1 live agent and 1 production number, provisioned when needed",
-      "75 guaranteed live-voice minutes each month",
-      "$2 monthly flexible Runtime Allowance",
+      "40 guaranteed live-voice minutes each month",
+      "$1 monthly flexible Runtime Allowance",
       "Full Lead Hunt, enrichment, research, email, and SMS workflows",
     ],
   },
@@ -53,8 +53,8 @@ export const WIRELINE_PLANS = [
     bestFor: "Revenue, support, and front desk teams.",
     includes: [
       "Up to 5 live agents and 5 production numbers, provisioned when needed",
-      "250 guaranteed live-voice minutes each month",
-      "$6 monthly flexible Runtime Allowance",
+      "100 guaranteed live-voice minutes each month",
+      "$4 monthly flexible Runtime Allowance",
       "CRM sync, routing, approvals, and campaign workflows",
     ],
   },
@@ -64,8 +64,8 @@ export const WIRELINE_PLANS = [
     bestFor: "Governed rollout for larger teams.",
     includes: [
       "Up to 15 live agents and 15 production numbers, provisioned when needed",
-      "650 guaranteed live-voice minutes each month",
-      "$15 monthly flexible Runtime Allowance",
+      "250 guaranteed live-voice minutes each month",
+      "$10 monthly flexible Runtime Allowance",
       "Priority support posture and no automatic overages",
     ],
   },

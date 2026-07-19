@@ -12,7 +12,7 @@ type Props = {
 
 export default function MarketingStickyCta({
   href = "/signup",
-  label = "Create agent",
+  label = "Build your AI Voice Employee",
   secondaryHref = "/showcase",
   secondaryLabel = "Hear a demo",
   className,

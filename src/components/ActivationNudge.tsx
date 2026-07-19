@@ -15,6 +15,8 @@ import { ACTIVATION_NUDGE_COPY } from "../lib/wireline-onboarding-copy";
 import { emitProductEventOnce } from "../lib/product-event-client";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { cn } from "../lib/utils";
+import { useAccount } from "../contexts/AccountContext";
+import { useAuth } from "../contexts/AuthContext";
 
 const DISMISS_KEY = "wireline_activation_nudge_dismissed";
 
@@ -33,17 +35,23 @@ function formatTel(number: string): string {
   return `tel:${number}`;
 }
 
-function readDismissed(): boolean {
+function dismissalStorageKey(scopeId: string): string {
+  return `${DISMISS_KEY}:${scopeId}`;
+}
+
+function readDismissed(scopeId: string | null): boolean {
+  if (!scopeId) return false;
   try {
-    return localStorage.getItem(DISMISS_KEY) === "true";
+    return localStorage.getItem(dismissalStorageKey(scopeId)) === "true";
   } catch {
     return false;
   }
 }
 
-function writeDismissed(): void {
+function writeDismissed(scopeId: string | null): void {
+  if (!scopeId) return;
   try {
-    localStorage.setItem(DISMISS_KEY, "true");
+    localStorage.setItem(dismissalStorageKey(scopeId), "true");
   } catch {
     /* storage can be unavailable in private or embedded browser contexts */
   }
@@ -55,13 +63,16 @@ function shouldYieldToFirstSession(): boolean {
 }
 
 export default function ActivationNudge({ className }: { className?: string }) {
+  const { user } = useAuth();
+  const { activeAccount } = useAccount();
+  const activationScope = activeAccount?.id ?? user?.id ?? null;
   const [visible, setVisible] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    if (readDismissed()) setDismissed(true);
-  }, []);
+    setDismissed(readDismissed(activationScope));
+  }, [activationScope]);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,6 +83,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
       if (
         cancelled ||
         stopped ||
+        !activationScope ||
         shouldYieldToFirstSession() ||
         isPostSignupFlowActive() ||
         isFreshSignupSession()
@@ -84,18 +96,22 @@ export default function ActivationNudge({ className }: { className?: string }) {
       ]);
 
       if (cancelled) return;
-      if (activation?.activated || isActivationCelebrated()) {
+      if (activation?.activated || isActivationCelebrated(activationScope)) {
         if (activation?.activated && isRecentActivation(activation.activatedAt)) {
           emitProductEventOnce({
             event: "live_call_completed",
+            accountId: activeAccount?.id,
             metadata: {
+              scope: activationScope,
               channel: activation.activationChannel ?? "unknown",
               call_id: activation.firstActivationCallId ?? null,
             },
           });
           emitProductEventOnce({
             event: "first_call_completed",
+            accountId: activeAccount?.id,
             metadata: {
+              scope: activationScope,
               channel: activation.activationChannel ?? "unknown",
               call_id: activation.firstActivationCallId ?? null,
             },
@@ -127,10 +143,10 @@ export default function ActivationNudge({ className }: { className?: string }) {
       cancelled = true;
       if (interval) clearInterval(interval);
     };
-  }, []);
+  }, [activationScope, activeAccount?.id]);
 
   const dismiss = () => {
-    writeDismissed();
+    writeDismissed(activationScope);
     setDismissed(true);
   };
 

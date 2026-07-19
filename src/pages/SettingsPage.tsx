@@ -158,15 +158,16 @@ export default function SettingsPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame mode="narrow">
+        <h1 className="sr-only">Settings</h1>
         <SettingsTabs />
 
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <p className="wl-eyebrow wl-eyebrow--muted">Profile</p>
-              <h1 className="mt-2 font-[var(--wireline-font-family-display)] text-[clamp(1.55rem,4vw,2.1rem)] font-normal leading-tight tracking-[-0.035em] text-foreground">
+              <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-[clamp(1.55rem,4vw,2.1rem)] font-normal leading-tight tracking-[-0.035em] text-foreground">
                 Account identity
-              </h1>
+              </h2>
               <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">
                 Signed-in identity and session controls.
               </p>

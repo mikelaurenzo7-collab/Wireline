@@ -47,6 +47,23 @@ export default class ErrorBoundary extends Component<Props, State> {
   reset = () => this.setState({ error: null });
   reload = () => window.location.reload();
 
+  /**
+   * ErrorBoundary sits above AuthProvider so it catches marketing crashes too.
+   * If the crashed route is public (marketing, legal, auth), the recovery link
+   * should go home — not `/overview`, which forces a redirect to /signin for
+   * signed-out visitors and drops them into a login wall on top of the crash.
+   */
+  private recoveryHref(): { href: string; label: string } {
+    if (typeof window === "undefined") return { href: "/", label: "Back home" };
+    const path = window.location.pathname;
+    const isWorkspace =
+      /^\/(?:overview|studio|agents|approvals|call-logs|logs|inbox|phone|knowledge|insights|connections|settings|apps|admin|billing|audit|dnc|templates|onboarding)/.test(
+        path,
+      );
+    if (isWorkspace) return { href: "/overview", label: "Back to workspace" };
+    return { href: "/", label: "Back home" };
+  }
+
   render() {
     if (!this.state.error) return this.props.children;
     // Use `in` so an explicit `fallback={null}` (used by App.tsx to
@@ -86,7 +103,9 @@ export default class ErrorBoundary extends Component<Props, State> {
                 <summary className="wl-label-muted cursor-pointer transition-colors hover:text-foreground">
                   Error details
                 </summary>
-                <pre className="mt-3 whitespace-pre-wrap break-words">{this.state.error.message}</pre>
+                <pre className="mt-3 whitespace-pre-wrap break-words">
+                  {this.state.error.message}
+                </pre>
               </details>
             ) : null}
             <div className="relative z-10 flex flex-wrap gap-3">
@@ -104,10 +123,20 @@ export default class ErrorBoundary extends Component<Props, State> {
                 disableAnimations
                 className="!text-[var(--wireline-typography-overline-size)] !uppercase !tracking-[0.3em]"
               >
-                <a href="/overview" className="flex items-center gap-2">
-                  <Home className="h-3.5 w-3.5" /> Back to Workspace
+                <a href={this.recoveryHref().href} className="flex items-center gap-2">
+                  <Home className="h-3.5 w-3.5" /> {this.recoveryHref().label}
                 </a>
               </ShadButton>
+              {!staleChunk ? (
+                <ShadButton
+                  variant="outline"
+                  onClick={this.reload}
+                  disableAnimations
+                  className="!text-[var(--wireline-typography-overline-size)] !uppercase !tracking-[0.3em]"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" /> Reload
+                </ShadButton>
+              ) : null}
             </div>
           </div>
         </div>

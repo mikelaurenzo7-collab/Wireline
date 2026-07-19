@@ -9,6 +9,7 @@ import { Button, Input } from "../components/atoms";
 import { FormField, StatusNotice } from "../components/molecules";
 import MarketingChrome from "../components/marketing/MarketingChrome";
 import WirelineMark from "../components/WirelineMark";
+import { readStoredWorkspaceMode, resolvePostAuthDestination } from "../lib/auth-redirect";
 
 /**
  * /reset-password?token=<raw>
@@ -79,7 +80,11 @@ export default function ResetPassword() {
       setSuccess(true);
       if (data.user) {
         signIn({ user: data.user });
-        window.setTimeout(() => navigate("/", { replace: true }), 900);
+        const destination = resolvePostAuthDestination(
+          readStoredWorkspaceMode() || "personal",
+          window.location.search,
+        );
+        window.setTimeout(() => navigate(destination, { replace: true }), 900);
       }
     } catch (caughtError: any) {
       setError(caughtError.message || "Reset failed");

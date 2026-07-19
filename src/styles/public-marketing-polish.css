@@ -231,6 +231,12 @@
   text-decoration: none;
 }
 
+@media (max-width: 1023px) {
+  .marketing-footer-above-sticky {
+    padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 @media (max-width: 900px) {
   .marketing-surface .marketing-hero {
     min-height: auto;

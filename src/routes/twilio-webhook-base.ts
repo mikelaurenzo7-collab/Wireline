@@ -56,6 +56,8 @@ const OPT_OUT_KEYWORDS = new Set([
 
 const OPT_IN_KEYWORDS = new Set(["start", "unstop", "yes", "optin", "opt-in", "opt in"]);
 
+const HELP_KEYWORDS = new Set(["help", "info", "support"]);
+
 function twimlReply(body: string): string {
   // Minimal TwiML — escape XML special chars in the body.
   const escaped = body
@@ -215,6 +217,15 @@ router.post("/api/twilio-webhook/sms", twilioRateLimiter, async (req: Request, r
       }
 
       return res.status(200).send(twimlReply("You have been resubscribed. Welcome back."));
+    }
+
+    // ─── HELP FLOW ─────────────────────────────────────────────────
+    if (HELP_KEYWORDS.has(trimmed)) {
+      return res.status(200).send(
+        twimlReply(
+          "Wireline SMS help: reply STOP to opt out or START to opt back in. Contact support@trywireline.com for support. Message and data rates may apply.",
+        ),
+      );
     }
 
     // ─── CSAT REPLY DETECTION ─────────────────────────────────────

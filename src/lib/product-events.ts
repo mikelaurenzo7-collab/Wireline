@@ -1,4 +1,4 @@
-export const PRODUCT_EVENT_VERSION = "2026-07-08";
+export const PRODUCT_EVENT_VERSION = "2026-07-19";
 
 export const PRODUCT_EVENT_NAMES = [
   "landing_viewed",
@@ -109,7 +109,7 @@ export type ProductEventPayload = {
   event: ProductEventName;
   audience?: ProductEventAudience;
   surface: ProductEventSurface;
-  planId?: "personal" | "team" | "business" | "enterprise";
+  planId?: "personal" | "starter" | "team" | "business" | "enterprise";
   wedge?: string;
   templateId?: string;
   agentId?: string;

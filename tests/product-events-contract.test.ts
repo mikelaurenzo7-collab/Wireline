@@ -95,11 +95,13 @@ describe("product event taxonomy", () => {
       event: "landing_viewed",
       audience: "solo_business",
       surface: "marketing_web",
+      planId: "starter",
       metadata: { path: "/" },
     });
 
     expect(event.occurredAt).toEqual(expect.any(String));
     expect(PRODUCT_EVENT_NAMES).toContain(event.event);
     expect(event.audience).toBe("solo_business");
+    expect(event.planId).toBe("starter");
   });
 });

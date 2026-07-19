@@ -39,7 +39,8 @@ function EmptyKnowledge() {
         action={
           <div className="space-y-4">
             <p className="mx-auto max-w-[44ch] text-sm leading-relaxed text-muted-foreground">
-              Create the employee first, then add the business facts, policies, and answers it may use with customers.
+              Create the employee first, then add the business facts, policies, and answers it may
+              use with customers.
             </p>
             <div className="flex flex-col items-stretch justify-center gap-2 sm:flex-row">
               <Button asChild>
@@ -94,7 +95,10 @@ export default function KnowledgePage() {
   return (
     <WorkspaceShell contentClassName={populated ? "pt-1 pb-24 sm:pb-6" : "pt-0"}>
       {!loading && !agents.length ? (
-        <EmptyKnowledge />
+        <WorkspacePageFrame mode="standard">
+          <WorkspacePageIntro title="Knowledge" />
+          <EmptyKnowledge />
+        </WorkspacePageFrame>
       ) : (
         <WorkspacePageFrame mode="standard">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

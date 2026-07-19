@@ -8,6 +8,7 @@ import {
   Mail,
   MessageSquareText,
   PhoneCall,
+  Radio,
   ShieldCheck,
   Sparkles,
   Users,
@@ -42,7 +43,7 @@ const PAID_TIERS = [
     plan: planById.team,
     publicName: "Starter Plus",
     eyebrow: "Best one-employee value",
-    tagline: "More voice capacity. The full multichannel workflow.",
+    tagline: "2× the voice minutes, full SMS + Lead Hunt workflow — for $10 more.",
     detail:
       "Keep one AI Voice Employee, but add substantially more voice capacity plus Lead Hunt, enrichment, inbox, email, SMS, and follow-up workflows under one memory and one set of rules.",
     cta: "Choose Starter Plus",
@@ -128,8 +129,12 @@ const FAQ = [
     "Calls and messages carry real carrier and AI costs. One subscription unlocks every channel, included capacity gets you live, and extra provider usage stays prepaid and visible.",
   ],
   [
+    "Can I cancel or get a refund?",
+    "Yes. Every paid plan is month-to-month by default with no long-term contract, and you can cancel from Stripe at any time — access continues through the end of the current billing period. Reach out at support@trywireline.com within 30 days of your first paid invoice if a plan wasn't the right fit and we'll make it right.",
+  ],
+  [
     "What is the Scale plan?",
-    "Scale is a custom committed-usage agreement for organizations needing 25 or more employees, negotiated channel economics, SSO, custom integrations, security review, retention controls, implementation support, or SLAs.",
+    "Scale is a custom committed-usage agreement for organizations needing 25 or more employees, negotiated channel economics, SSO, custom integrations, security review, retention controls, implementation support, or SLAs. See the Scale card above.",
   ],
 ] as const;
 
@@ -153,6 +158,11 @@ const assurances = [
     icon: ShieldCheck,
     label: "Spend controls",
     detail: "Approvals, consent, spend controls, logs, and outcomes remain visible.",
+  },
+  {
+    icon: Radio,
+    label: "Cancel anytime",
+    detail: "Month-to-month by default. Cancel in Stripe with no lock-in.",
   },
 ] as const;
 
@@ -198,8 +208,12 @@ export default function Pricing() {
           eyebrow="Founder Early Access"
           title="Build Free. Launch for $9. Scale When It Pays."
           description="One subscription unlocks calls, texts, email, follow-up, and Lead Hunt—plus a number on every paid plan. Extra usage stays prepaid, never a surprise bill."
-          primaryAction={{ label: "Build your AI Voice Employee", to: "/signup?plan=personal" }}
-          secondaryAction={{ label: "Compare every plan", to: "#plans", tone: "secondary" }}
+          primaryAction={{ label: "Launch for $9/mo", to: "/signup?plan=starter" }}
+          secondaryAction={{
+            label: "Build free first",
+            to: "/signup?plan=personal",
+            tone: "secondary",
+          }}
           proof={assurances.map(({ label }) => label)}
         />
 
@@ -267,13 +281,21 @@ export default function Pricing() {
                     key={plan.id}
                     className={`relative rounded-[28px] border p-6 text-center shadow-sm ${
                       featured
-                        ? "border-foreground bg-foreground text-background"
+                        ? "border-foreground bg-foreground text-background ring-2 ring-primary/60 shadow-lg xl:-translate-y-1"
                         : "border-border bg-card"
                     }`}
                   >
+                    {featured ? (
+                      <span
+                        className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary-foreground shadow-sm"
+                        aria-label="Most popular plan"
+                      >
+                        Most popular
+                      </span>
+                    ) : null}
                     <div className="flex flex-col items-center justify-center gap-3 text-center">
                       <div>
-                        <p className={`wl-stitch-label ${featured ? "text-background/70" : ""}`}>
+                        <p className={`wl-stitch-label ${featured ? "text-background/85" : ""}`}>
                           {eyebrow}
                         </p>
                         <h3 className="mt-2 text-2xl font-semibold">{publicName}</h3>
@@ -290,13 +312,20 @@ export default function Pricing() {
                         ${plan.price_usd_monthly}
                       </span>
                       <span
-                        className={`pb-1 text-sm ${featured ? "text-background/70" : "text-muted-foreground"}`}
+                        className={`pb-1 text-sm ${featured ? "text-background/85" : "text-muted-foreground"}`}
                       >
                         /month
                       </span>
                     </div>
+                    {plan.price_usd_annual > 0 ? (
+                      <p
+                        className={`mt-1 text-xs ${featured ? "text-background/85" : "text-muted-foreground"}`}
+                      >
+                        or ${plan.price_usd_annual}/yr · save 2 months
+                      </p>
+                    ) : null}
                     <p
-                      className={`mt-4 text-sm leading-6 ${featured ? "text-background/75" : "text-muted-foreground"}`}
+                      className={`mt-4 text-sm leading-6 ${featured ? "text-background/90" : "text-muted-foreground"}`}
                     >
                       {detail}
                     </p>
@@ -319,19 +348,22 @@ export default function Pricing() {
                       {cta} <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </Link>
                     <p
-                      className={`mt-3 text-center text-xs ${featured ? "text-background/60" : "text-muted-foreground"}`}
+                      className={`mt-3 text-center text-xs ${featured ? "text-background/85" : "text-muted-foreground"}`}
                     >
-                      {badge}
+                      {featured ? "Cancel anytime · no long-term contract" : badge}
                     </p>
                   </article>
                 ),
               )}
 
-              <article className="rounded-[28px] border border-border bg-card p-6 text-center shadow-sm">
+              <article
+                id="scale"
+                className="rounded-[28px] border border-border bg-card p-6 text-center shadow-sm scroll-mt-24"
+              >
                 <div className="flex flex-col items-center justify-center gap-3 text-center">
                   <div>
                     <p className="wl-stitch-label">25+ employees or custom needs</p>
-                    <h3 className="mt-2 text-2xl font-semibold">Scale & Enterprise</h3>
+                    <h3 className="mt-2 text-2xl font-semibold">Scale &amp; Enterprise</h3>
                   </div>
                   <ShieldCheck className="h-6 w-6" aria-hidden="true" />
                 </div>
@@ -424,11 +456,11 @@ export default function Pricing() {
           <div className="wl-public-rail mx-auto max-w-[1200px] rounded-[32px] border border-border bg-foreground p-8 text-background sm:p-12">
             <div className="grid justify-items-center gap-8 text-center">
               <div className="mx-auto max-w-3xl">
-                <p className="wl-stitch-label text-background/65">Founder Early Access</p>
+                <p className="wl-stitch-label text-background/85">Founder Early Access</p>
                 <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
                   Build the employee first. Let real demand choose the plan.
                 </h2>
-                <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-background/70">
+                <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-background/90">
                   Start with a private build, launch your AI Voice Employee for $9 with an included
                   number, then upgrade when completed work justifies more capacity or specialists.
                 </p>

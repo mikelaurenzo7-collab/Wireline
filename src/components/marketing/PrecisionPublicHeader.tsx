@@ -16,6 +16,12 @@ const links = [
   { to: "/features", label: "Features", active: (path: string) => path === "/features" },
   { to: "/pricing", label: "Pricing", active: (path: string) => path === "/pricing" },
   { to: "/showcase", label: "Demos", active: (path: string) => path === "/showcase" },
+  {
+    to: "/trust",
+    label: "Trust",
+    active: (path: string) =>
+      path === "/trust" || path === "/security" || path.startsWith("/trust/"),
+  },
 ] as const;
 
 const mobileControlClassName =
