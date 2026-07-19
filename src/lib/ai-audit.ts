@@ -40,10 +40,14 @@ export const runInAuditContext = <T>(ctx: AuditContext, fn: () => T): T => audit
 function pricingFor(model: string) {
   const direct = MODEL_PRICING[model as keyof typeof MODEL_PRICING];
   if (direct) return direct;
-  // AI-Gateway-served turns report prefixed ids ("xai/grok-4.5", "openai/gpt-5");
-  // price them by their bare model so every route shares one price table.
+  // AI-Gateway-served turns report prefixed ids (for example,
+  // "xai/grok-4.5" or "openai/gpt-5.6-terra"). Price them by the
+  // bare model so every route shares one audited price table.
   const bare = model.includes("/") ? model.slice(model.lastIndexOf("/") + 1) : model;
-  return MODEL_PRICING[bare as keyof typeof MODEL_PRICING] ?? MODEL_PRICING[OPENAI_MODELS.GPT_5];
+  return (
+    MODEL_PRICING[bare as keyof typeof MODEL_PRICING] ??
+    MODEL_PRICING[OPENAI_MODELS.GPT_5_6_TERRA]
+  );
 }
 export function estimateCost(
   usage: {
