@@ -40,7 +40,10 @@ describe("OpenAI-first structured runtime provider chain", () => {
     expect(client).toContain('endpoint: "https://api.openai.com/v1/responses"');
     expect(client).toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
     expect(client).toContain('requested.startsWith("gpt-") ? requested : OPENAI_STRUCTURED_PRIMARY_MODEL');
-    expect(models).toContain('OPENAI_STRUCTURED_PRIMARY_MODEL = "gpt-5.6-terra"');
+    expect(models).toContain('GPT_5_6_TERRA: "gpt-5.6-terra"');
+    expect(models).toContain(
+      "process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() || OPENAI_MODELS.GPT_5_6_TERRA",
+    );
     expect(realtime).toContain('OPENAI_REALTIME_MODEL || "gpt-realtime-2.1"');
     expect(realtime).toContain('OPENAI_REALTIME_TRANSCRIBER || "gpt-4o-mini-transcribe"');
   });
