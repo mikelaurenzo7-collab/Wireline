@@ -209,15 +209,18 @@ describe("company identity pack", () => {
   it("keeps the customer surface explicit, fail-closed, and touch accessible", () => {
     const surface = read("src/components/settings/CompanyIdentityPack.tsx");
     const phoneSettings = read("src/pages/PhoneSettings.tsx");
+    const normalizedSurface = surface.replace(/\s+/g, " ");
 
-    expect(surface).toContain("Brand the employee, not just the dashboard.");
-    expect(surface).toMatch(
-      /Provider approval and recipient-device display remain external\s+states\./,
+    expect(normalizedSurface).toContain("Brand the employee, not just the dashboard.");
+    expect(normalizedSurface).toContain(
+      "Provider approval and recipient-device display remain external states.",
     );
-    expect(surface).toContain("Maximum 15 characters for traditional CNAM fallback.");
-    expect(surface).toContain("supported mobile networks after approval");
-    expect(surface).toContain("Save these changes before requesting verification review.");
-    expect(surface).toContain("Select at least one identity channel before saving.");
+    expect(normalizedSurface).toContain("Maximum 15 characters for traditional CNAM fallback.");
+    expect(normalizedSurface).toContain("supported mobile networks after approval");
+    expect(normalizedSurface).toContain(
+      "Save these changes before requesting verification review.",
+    );
+    expect(normalizedSurface).toContain("Select at least one identity channel before saving.");
     expect(surface).toContain("min-h-11 cursor-pointer");
     expect(surface).toContain("reviewAlreadyRequested");
     expect(surface).toContain("Review already requested");
