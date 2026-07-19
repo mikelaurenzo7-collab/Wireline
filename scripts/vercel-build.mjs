@@ -25,23 +25,6 @@ const shouldMigrate =
   !migrationsDisabled &&
   (migrationsForced || (environment === "production" && !isDuplicateV0Project));
 
-function runStripeBalanceAuditIfRequested() {
-  const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
-  if (environment !== "preview" || !commitMessage.includes("[stripe-balance-audit]")) return;
-
-  console.log(
-    "Running one-shot read-only Stripe balance audit; no Stripe objects will be created or mutated.",
-  );
-  const result = spawnSync("node", ["scripts/check-stripe-balance-cause.mjs"], {
-    stdio: "inherit",
-    shell: process.platform === "win32",
-    env: process.env,
-  });
-  console.log(
-    `One-shot Stripe balance audit completed with status ${result.status ?? 1}; preview build will continue for evidence collection.`,
-  );
-}
-
 function sanitizePreviewEnvironment() {
   if (
     environment !== "preview" ||
@@ -99,7 +82,6 @@ run("npx", [
   "tests/runtime-integrations-registry-contract.test.ts",
   "tests/production-env-policy-contract.test.ts",
 ]);
-runStripeBalanceAuditIfRequested();
 sanitizePreviewEnvironment();
 run("node", ["scripts/check-operational-core.mjs"]);
 run("node", ["scripts/build-design-tokens.mjs"]);
