@@ -250,6 +250,16 @@ export const userPreferencesRateLimit = createRateLimiter({
 });
 
 /**
+ * Product milestone ingestion. A busy workspace can emit several milestones
+ * during setup, while the per-user bucket prevents audit-ledger flooding.
+ */
+export const productEventsRateLimit = createRateLimiter({
+  bucket: "api:product-events",
+  windowMs: 60 * 1000,
+  max: 120,
+});
+
+/**
  * Voice-observability insights rate limiter.
  * 120 reads/min per user — dashboards poll latency trends interactively, so
  * the bucket is sized for UI navigation while still throttling scraping.
