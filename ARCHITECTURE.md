@@ -63,19 +63,22 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 
 ## Runtime services
 
-- **Auth and authorization:** session middleware plus user-scoped ownership checks.
+- **Auth and authorization:** Wireline-owned session middleware, scrypt password hashes, HIBP k-anonymous password screening, and user-scoped ownership checks. Supabase Auth is not the authentication authority.
 - **Launch readiness API:** the launch-readiness health endpoint is protected by a server-owned monitor credential rather than tenant session authentication; it exposes capability levels for operational monitors.
-- **Database:** Drizzle schema and migrations in `src/db` and `drizzle/migrations`.
+- **Database:** Drizzle schema and migrations in `src/db` and `drizzle/migrations`, hosted on Supabase Postgres.
 - **Billing:** Stripe-backed entitlements, plan catalog, Conversation Balance, checkout, portal, webhooks, and ledger-style reconciliation stay server-owned.
-- **Voice:**
-  - Production PSTN calls: Twilio + Vapi-backed execution configured from agent profiles.
-  - Authenticated realtime/live tests: dedicated xAI Grok voice path with server-provisioned short-lived sessions and safety-scoped tools. See `docs/GROK_LIVE_VOICE.md` and `src/lib/voice/grok-voice-*`.
-- **LLM / reasoning:**
+- **Voice and telephony:**
+  - Production PSTN calls: Twilio carrier numbers imported into Vapi with SMS ownership disabled in Vapi.
+  - Vapi orchestrates the call; OpenAI GPT-4o is the managed call model with Gemini fallback.
+  - Twilio remains authoritative for numbers, signed inbound SMS, opt-out enforcement, delivery callbacks, and the two-way messaging inbox.
+  - OpenAI Realtime is the default private web/mobile live-voice runtime.
+  - xAI Grok realtime remains an explicitly selected experiment, never automatic failover for customer calls.
+- **LLM / structured reasoning:**
   - Central policy and catalog: `src/lib/ai-models.ts`.
-  - Structured runtime: xAI Grok primary, then OpenAI, Gemini, and Vercel AI Gateway.
-  - Production PSTN intelligence: OpenAI with Gemini fallback inside Vapi.
-  - Authenticated Studio live voice: xAI Grok realtime; OpenAI Realtime is a separate continuity endpoint, not automatic client failover.
-  - ElevenLabs is optional TTS/cloning/showcase infrastructure, not a reasoning runtime or the tenant PSTN default.
+  - Primary: direct OpenAI Responses API using GPT-5.6 Terra by default.
+  - Continuity: Gemini, then Vercel AI Gateway as the governed final multi-model route.
+  - Direct xAI structured use is disabled unless `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=true`.
+  - ElevenLabs is optional TTS/cloning/showcase infrastructure, not a reasoning runtime or tenant PSTN default.
 - **Video presenters:**
   - `src/lib/video-presenter/` wraps provider details behind Wireline-owned copy, status, consent, metering, and fallback language.
   - Customer surfaces should say presenter, face, or live video add-on, not vendor names.
@@ -91,7 +94,7 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 - Browser/mobile clients may initiate intent but must not own authorization decisions.
 - Outbound marketing dials run tenant DNC + federal DNC (when configured) + TCPA consent gates before PSTN spend.
 - CSP policy checks, authorization checks, product-doc checks, and functional tests remain in the full verification path.
-- Supabase leaked-password protection must be enabled before public launch if it remains disabled in project settings.
+- Supabase Auth advisor findings must not be represented as Wireline auth blockers unless Wireline adopts Supabase Auth. Wireline's custom password and HIBP controls remain the authoritative launch gate.
 
 ## Source-of-truth discipline
 
