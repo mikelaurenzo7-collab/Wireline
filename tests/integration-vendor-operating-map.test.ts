@@ -97,15 +97,18 @@ describe("integration vendor operating map", () => {
     );
   });
 
-  it("keeps environment and launch gates aligned with the funded runtime", () => {
+  it("keeps environment and launch gates aligned with the OpenAI-first funded runtime", () => {
     const envValidator = readFileSync(resolve(process.cwd(), "src/lib/env-validator.ts"), "utf8");
     const launchReadiness = readFileSync(
       resolve(process.cwd(), "src/lib/launch-readiness.ts"),
       "utf8",
     );
 
-    expect(envValidator).toContain("process.env.XAI_API_KEY");
-    expect(envValidator).toContain("const directRuntime");
+    expect(envValidator).toContain("process.env.OPENAI_API_KEY");
+    expect(envValidator).toContain("process.env.AI_GATEWAY_API_KEY");
+    expect(envValidator).toContain("const managedRuntime");
+    expect(envValidator).toContain("Optional xAI experiment credential; not part of the launch default");
+    expect(envValidator).not.toContain("const directRuntime");
     expect(launchReadiness).toContain("TWILIO_ACCOUNT_SID+TWILIO_AUTH_TOKEN");
     expect(launchReadiness).toContain("PSTN voice + number stack");
   });
