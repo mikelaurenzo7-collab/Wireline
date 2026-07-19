@@ -79,7 +79,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "apps-breadcrumb", pattern: /"\/apps": "Apps"/ },
   ],
   studioChrome: [
-    { id: "context-label", pattern: /aria-label="AI employee context"/ },
+    { id: "context-label", pattern: /aria-label=\{`\$\{language\.singular\} context`\}/ },
     { id: "readiness", pattern: /Live|Setup needed/ },
     { id: "create-entry", pattern: /\/studio\?create=1/ },
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },

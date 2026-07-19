@@ -22,7 +22,7 @@ describe("activation path contract", () => {
     expect(overview).toContain("ActivationChecklist");
     expect(overview).toContain("FirstRunLaunchpad");
     expect(overview).toContain("Put one customer-facing job to work today.");
-    expect(overview).toContain("Create your first AI employee");
+    expect(overview).toContain("{language.createCta}");
     expect(overview).toContain("degraded && !hasAgents");
     expect(overview).toContain("WorkspaceRecovery");
   });
