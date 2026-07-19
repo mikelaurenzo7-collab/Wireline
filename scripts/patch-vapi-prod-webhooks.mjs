@@ -14,10 +14,18 @@ const WEBHOOK_URL = "https://trywireline.com/api/vapi-webhook";
 
 const key = process.env.VAPI_PRIVATE_KEY?.trim();
 const secret = process.env.VAPI_WEBHOOK_SECRET?.trim();
-if (!key || !secret) {
-  console.error("Set VAPI_PRIVATE_KEY and VAPI_WEBHOOK_SECRET.");
+const credentialId = process.env.VAPI_WEBHOOK_CREDENTIAL_ID?.trim();
+if (!key || (!credentialId && !secret)) {
+  console.error(
+    "Set VAPI_PRIVATE_KEY and either VAPI_WEBHOOK_CREDENTIAL_ID or VAPI_WEBHOOK_SECRET.",
+  );
   process.exit(1);
 }
+
+const webhookServer = {
+  url: WEBHOOK_URL,
+  ...(credentialId ? { credentialId } : { secret }),
+};
 
 async function vapiFetch(path, opts = {}) {
   const res = await fetch(`${VAPI_BASE}${path}`, {
@@ -41,14 +49,7 @@ async function main() {
 
   for (const a of assistants) {
     const currentUrl = a.server?.url || a.serverUrl || "";
-    const payload = {
-      server: {
-        url: WEBHOOK_URL,
-        secret,
-      },
-      serverUrl: WEBHOOK_URL,
-      serverUrlSecret: secret,
-    };
+    const payload = { server: webhookServer };
     await vapiFetch(`/assistant/${a.id}`, {
       method: "PATCH",
       body: JSON.stringify(payload),
@@ -61,7 +62,7 @@ async function main() {
     await vapiFetch(`/phone-number/${p.id}`, {
       method: "PATCH",
       body: JSON.stringify({
-        server: { url: WEBHOOK_URL, secret },
+        server: webhookServer,
       }),
     });
     console.log(`  ✓ ${p.number || p.id}`);

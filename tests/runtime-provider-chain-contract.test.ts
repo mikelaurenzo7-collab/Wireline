@@ -2,10 +2,11 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const client = readFileSync(resolve(process.cwd(), "src/lib/ai-client.ts"), "utf8").replace(
-  /\r\n/g,
-  "\n",
-);
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
+const client = read("src/lib/ai-client.ts");
+const models = read("src/lib/ai-models.ts");
+const realtime = read("src/lib/voice/openai-realtime-config.ts");
 
 function position(value: string) {
   const index = client.indexOf(value);
@@ -35,10 +36,13 @@ describe("OpenAI-first structured runtime provider chain", () => {
     expect(client).toContain("AI Gateway request failed; trying explicitly enabled xAI fallback");
   });
 
-  it("routes managed structured turns to the direct OpenAI Responses API", () => {
+  it("routes managed turns to current explicit OpenAI model IDs", () => {
     expect(client).toContain('endpoint: "https://api.openai.com/v1/responses"');
     expect(client).toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
     expect(client).toContain('requested.startsWith("gpt-") ? requested : OPENAI_STRUCTURED_PRIMARY_MODEL');
+    expect(models).toContain('OPENAI_STRUCTURED_PRIMARY_MODEL = "gpt-5.6-terra"');
+    expect(realtime).toContain('OPENAI_REALTIME_MODEL || "gpt-realtime-2.1"');
+    expect(realtime).toContain('OPENAI_REALTIME_TRANSCRIBER || "gpt-4o-mini-transcribe"');
   });
 
   it("does not turn an aborted request into another provider call", () => {

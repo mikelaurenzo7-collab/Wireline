@@ -1,5 +1,6 @@
 import { log } from "./server-context";
 import { isPostgresConnectionString } from "./database-connection";
+import { isProductionDeployment } from "./deployment-environment";
 
 export type EnvGroup =
   | "core"
@@ -154,6 +155,14 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     required: false,
     requiredInProd: true,
     description: "Vapi webhook verification",
+    validate: nonEmpty,
+  },
+  {
+    name: "VAPI_WEBHOOK_CREDENTIAL_ID",
+    group: "voice",
+    required: false,
+    description:
+      "Preferred Vapi Custom Credential ID for authenticated webhook delivery; falls back to the shared secret during migration",
     validate: nonEmpty,
   },
   {
@@ -406,7 +415,7 @@ export function validateEnv(): EnvValidationResult {
     groups.map((group) => [group, { valid: 0, invalid: 0, total: 0 }]),
   ) as EnvValidationResult["byGroup"];
   const result: EnvValidationResult = { valid: true, errors: [], warnings: [], byGroup };
-  const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
+  const isProd = isProductionDeployment();
 
   for (const config of ENV_REGISTRY) {
     const value = process.env[config.name];

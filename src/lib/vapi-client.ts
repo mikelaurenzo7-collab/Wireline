@@ -23,6 +23,8 @@ import {
   buildRoleToolDefsForTenant,
   mapOutboundVoiceRole,
 } from "./vapi-helpers";
+import { toVapiFunctionTools } from "./vapi-tool-format";
+import { buildVapiServerConfig } from "./vapi-server-config";
 import { normalizeOutboundNumber } from "./dialer-compliance";
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
@@ -494,6 +496,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       twilioLookup: !!settings?.twilioLookupEnabled,
     },
   );
+  const outboundTools = toVapiFunctionTools(outboundFunctions);
 
   const assistantPayload: Record<string, unknown> = {
     name: agentConfig.name || "Wireline Outbound Agent",
@@ -511,7 +514,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
     backgroundDenoisingEnabled: false,
     startSpeakingPlan: resolveOutboundStartSpeakingPlan(speechPipeline),
     transcriber: speechPipeline.transcriber,
-    ...(outboundServerUrl && { serverUrl: outboundServerUrl }),
+    ...(outboundServerUrl && { server: buildVapiServerConfig(outboundServerUrl) }),
     serverMessages: [
       "tool-calls",
       "status-update",
@@ -527,9 +530,8 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
         : {}),
       systemPrompt: finalSystemPrompt,
       temperature: llmTemp,
+      tools: outboundTools,
     },
-    // Match inbound assistant factory — Vapi rejects tools nested under model.
-    functions: outboundFunctions,
     recordingEnabled: true,
     voice: (() => {
       // Outbound calls use the same managed Vapi voice roster as inbound calls.
@@ -546,11 +548,6 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       };
     })(),
   };
-
-  const webhookSecret = process.env.VAPI_WEBHOOK_SECRET?.trim();
-  if (webhookSecret) {
-    assistantPayload.serverUrlSecret = webhookSecret;
-  }
 
   const vapiPayload = {
     phoneNumberId: outboundPhoneNumberId,

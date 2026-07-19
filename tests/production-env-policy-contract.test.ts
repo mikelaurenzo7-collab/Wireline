@@ -1,13 +1,24 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { isProductionDeployment } from "../src/lib/deployment-environment";
 
 const envValidator = readFileSync(resolve(process.cwd(), "src/lib/env-validator.ts"), "utf8");
 const prodCheck = readFileSync(resolve(process.cwd(), "scripts/check-prod-env.mjs"), "utf8");
 
 describe("production environment launch policy", () => {
-  it("distinguishes production from Vercel preview", () => {
-    expect(envValidator).toContain('process.env.VERCEL_ENV === "production"');
+  it("distinguishes production from Vercel preview even though NODE_ENV is production", () => {
+    expect(isProductionDeployment({ VERCEL_ENV: "preview", NODE_ENV: "production" })).toBe(
+      false,
+    );
+    expect(isProductionDeployment({ VERCEL_ENV: "development", NODE_ENV: "production" })).toBe(
+      false,
+    );
+    expect(isProductionDeployment({ VERCEL_ENV: "production", NODE_ENV: "development" })).toBe(
+      true,
+    );
+    expect(isProductionDeployment({ NODE_ENV: "production" })).toBe(true);
+    expect(envValidator).toContain("isProductionDeployment()");
     expect(envValidator).not.toContain('process.env.VERCEL === "1"');
   });
 

@@ -195,14 +195,34 @@ const [
     : null,
 ]);
 
+const openaiModelIds = new Set(
+  arrayAt(openai?.body, "data")
+    .map((model) => String(model?.id || ""))
+    .filter(Boolean),
+);
+const openaiStructuredModelReady = openai?.ok && openaiModelIds.has("gpt-5.6-terra");
+const openaiRealtimeModelReady = openai?.ok && openaiModelIds.has("gpt-realtime-2.1");
+const openaiTranscriberReady =
+  openai?.ok && openaiModelIds.has("gpt-4o-mini-transcribe");
+
 record(
   "openai",
   true,
-  openai?.ok ? "ready" : "blocked",
-  openai?.ok
-    ? "OpenAI key accepted for the managed structured runtime and realtime sessions."
-    : "OpenAI key missing or rejected.",
+  openaiStructuredModelReady ? "ready" : "blocked",
+  openaiStructuredModelReady
+    ? "OpenAI key accepted and the required gpt-5.6-terra model is available."
+    : openai?.ok
+      ? "OpenAI key accepted, but the required gpt-5.6-terra model is unavailable."
+      : "OpenAI key missing or rejected.",
   "Keep a payment method, project budget, and usage alerts enabled.",
+  {
+    structured_model: "gpt-5.6-terra",
+    structured_model_available: openaiStructuredModelReady,
+    realtime_model: "gpt-realtime-2.1",
+    realtime_model_available: openaiRealtimeModelReady,
+    transcriber_model: "gpt-4o-mini-transcribe",
+    transcriber_model_available: openaiTranscriberReady,
+  },
 );
 record(
   "gemini",

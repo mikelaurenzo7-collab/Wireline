@@ -81,6 +81,8 @@ run("npx", [
   "tests/vendor-readiness-contract.test.ts",
   "tests/runtime-integrations-registry-contract.test.ts",
   "tests/production-env-policy-contract.test.ts",
+  "tests/managed-vapi-runtime-contract.test.ts",
+  "tests/vapi-modern-payload-contract.test.ts",
 ]);
 sanitizePreviewEnvironment();
 run("node", ["scripts/check-operational-core.mjs"]);

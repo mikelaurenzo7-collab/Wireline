@@ -19,6 +19,7 @@ import {
   resolveVapiVoiceModelSelection,
 } from "./ai-models";
 import { sanitizePhone } from "./vapi-helpers";
+import { buildVapiServerConfig } from "./vapi-server-config";
 import { resolveVapiSpeechPipeline, type VapiTranscriberMode } from "./voice-agent-profile";
 
 export type ShowcaseKind = "cs" | "demo";
@@ -713,7 +714,8 @@ export function buildShowcaseAssistantPayload(
   agent: ContactAgent,
   kind: ShowcaseKind,
   options?: {
-    serverUrlSecret?: string;
+    webhookCredentialId?: string;
+    webhookSecret?: string;
     provider?: string;
     model?: string;
     existingVoiceId?: string;
@@ -741,7 +743,10 @@ export function buildShowcaseAssistantPayload(
         ? { fallbackModels: voiceSelection.fallbackModels }
         : {}),
     },
-    serverUrl: SHOWCASE_WEBHOOK_URL,
+    server: buildVapiServerConfig(SHOWCASE_WEBHOOK_URL, {
+      credentialId: options?.webhookCredentialId,
+      secret: options?.webhookSecret,
+    }),
     responseDelaySeconds: 0,
     numWordsToInterruptAssistant: 2,
     backgroundDenoisingEnabled: false,
@@ -826,10 +831,6 @@ export function buildShowcaseAssistantPayload(
         ],
       },
     };
-  }
-
-  if (options?.serverUrlSecret) {
-    payload.serverUrlSecret = options.serverUrlSecret;
   }
 
   return payload;

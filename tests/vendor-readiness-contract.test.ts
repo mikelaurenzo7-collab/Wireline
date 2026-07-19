@@ -25,6 +25,9 @@ describe("vendor readiness contract", () => {
     }
 
     expect(probe).toContain("/v1/models");
+    expect(probe).toContain('openaiModelIds.has("gpt-5.6-terra")');
+    expect(probe).toContain('openaiModelIds.has("gpt-realtime-2.1")');
+    expect(probe).toContain('openaiModelIds.has("gpt-4o-mini-transcribe")');
     expect(probe).toContain("/phone-number?limit=100");
     expect(probe).toContain("/assistant?limit=1");
     expect(probe).toContain("/IncomingPhoneNumbers.json?PageSize=50");
