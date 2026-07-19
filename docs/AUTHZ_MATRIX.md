@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 282
-**Protected:** 243
-**Public (allowlisted):** 39
+**Routes scanned:** 285
+**Protected:** 245
+**Public (allowlisted):** 40
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -45,6 +45,7 @@
 | `POST /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
 | `GET /api/openapi.json` | Public OpenAPI spec; rate-limited + CDN cached |
 | `GET /api/quotas/plans` | Public plan limits comparison table |
+| `GET /recap/:slug` | Signed shareable call/weekly recap; opaque slug + bearer token verified against stored SHA-256 hash, timing-safe; per-IP + per-slug rate limits |
 | `POST /api/support/ticket` | Public support/contact form; strict validation + 5/15min IP rate limit |
 | `POST /api/twilio-webhook/message-status` | Twilio signature validation + rate limit |
 | `POST /api/twilio-webhook/sms` | Twilio signature validation + rate limit |
@@ -297,6 +298,9 @@
 | settings-routes.ts | GET | `/api/user-preferences` | inline | — | — | Protected |
 | settings-routes.ts | POST | `/api/user-preferences` | inline | — | — | Protected |
 | settings-routes.ts | DELETE | `/api/user/account` | inline | — | — | Protected |
+| shareable-artifact-routes.ts | GET | `/api/recap-artifacts` | inline | — | — | Protected |
+| shareable-artifact-routes.ts | DELETE | `/api/recap-artifacts/:id` | inline | — | — | Protected |
+| shareable-artifact-routes.ts | GET | `/recap/:slug` | — | — | yes | Public (allowlisted) |
 | sms-routes.ts | GET | `/api/sms/threads` | inline | — | — | Protected |
 | sms-routes.ts | POST | `/api/sms/threads/:id/mark-read` | inline | — | — | Protected |
 | sms-routes.ts | GET | `/api/sms/threads/:id/messages` | inline | — | — | Protected |

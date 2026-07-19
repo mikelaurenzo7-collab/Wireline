@@ -107,6 +107,11 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     pattern: /^\/(?:api\/)?voice\/metrics$/,
     reason: "Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write",
   },
+  {
+    pattern: /^\/recap\/:slug$/,
+    reason:
+      "Signed shareable call/weekly recap; opaque slug + bearer token verified against stored SHA-256 hash, timing-safe; per-IP + per-slug rate limits",
+  },
 ];
 
 interface RouteEntry {

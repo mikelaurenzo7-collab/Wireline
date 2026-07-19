@@ -32,6 +32,7 @@ import {
 } from "./post-call-output-preferences";
 import { requiresSalesApprovalForIntegration } from "./sales-integration-policy";
 import { drizzle, log } from "./server-context";
+import { maybePublishCallRecap } from "./shareable-artifact/publish-call-recap";
 import { sanitizePhone } from "./vapi-helpers";
 
 export type CallOutcomeTag =
@@ -451,6 +452,24 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     log.warn("post-call digest: CRM log failed", { error: err?.message });
   }
 
+  const recapHandle = await maybePublishCallRecap({
+    userId: ctx.userId,
+    agentId: ctx.agentId ?? null,
+    agentName: ctx.agentName ?? null,
+    callLogId: ctx.callLogId,
+    customerName: ctx.customerName ?? null,
+    customerNumber: ctx.customerNumber ?? null,
+    direction: ctx.direction ?? null,
+    durationSeconds: ctx.durationSeconds ?? null,
+    summary: ctx.summary ?? null,
+    transcript: ctx.transcript ?? null,
+    sentiment: ctx.sentiment ?? null,
+    intentLabel: ctx.intentLabel ?? null,
+    outcomeTag,
+    campaignSource,
+    startedAtIso: new Date().toISOString(),
+  });
+
   let emailSent = false;
   try {
     const integ = new IntegrationService(ctx.userId);
@@ -461,6 +480,7 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
       campaignSource,
       crmLogged,
       crmQueuedForApproval,
+      recapUrl: recapHandle?.url ?? null,
     });
     const accountHolderEmail = await pickAccountHolderEmail(ctx.userId);
     if (accountHolderEmail) {
@@ -566,17 +586,25 @@ function renderDigestEmail(d: {
   campaignSource: string | null;
   crmLogged: boolean;
   crmQueuedForApproval?: boolean;
+  recapUrl?: string | null;
 }): string {
   const dur = Math.round((d.durationSeconds || 0) / 60);
   const next = nextActionFromOutcome(d.outcomeTag);
   const identity = `${d.outcomeTag.toUpperCase()} — ${d.agentName || "Agent"} → ${d.customerName || d.customerNumber || "caller"}`;
   const metadata = `${d.direction || "Call"} · ${dur} min · ${d.sentiment || "neutral"} sentiment${d.campaignSource ? ` · Campaign: ${d.campaignSource}` : ""}`;
+  const recapBlock = d.recapUrl
+    ? `<p style="margin:0 0 24px;">
+        <a href="${escapeHtml(d.recapUrl)}" style="display:inline-block;background:${BRAND.colors.primary};color:#ffffff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;letter-spacing:0.02em;">Open the recap →</a>
+        <span style="display:block;margin-top:8px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8B87A0;">Shareable Wireline recap · private link</span>
+      </p>`
+    : "";
   return [
     `<div style="font-family:-apple-system,system-ui,sans-serif;max-width:560px;line-height:1.55;color:#1a1a1a;">`,
     `<p style="font-size:11px;text-transform:uppercase;letter-spacing:.3em;color:${BRAND.colors.primary};margin:0 0 4px;">Wireline · Post-call digest</p>`,
     `<h2 style="margin:0 0 8px;font-size:22px;font-style:italic;font-weight:500;">${escapeHtml(identity)}</h2>`,
     `<p style="margin:0 0 16px;font-size:13px;color:#666;">${escapeHtml(metadata)}</p>`,
     `<div style="background:#f7f7f9;border-radius:12px;padding:14px 16px;margin:0 0 16px;font-size:14px;">${escapeHtml(d.summary || "(no summary captured)").replace(/\n/g, "<br/>")}</div>`,
+    recapBlock,
     `<p style="margin:0 0 6px;font-size:13px;"><strong>Next action:</strong> ${escapeHtml(next)}</p>`,
     `<p style="margin:0 0 16px;font-size:12px;color:#666;">${escapeHtml(crmDigestStatusLine(d.crmLogged, d.crmQueuedForApproval ?? false))}</p>`,
     `<p style="margin:24px 0 0;font-size:12px;color:#888;">Open the call <a href="https://trywireline.com/phone?tab=logs" style="color:${BRAND.colors.primary};text-decoration:none;">in Wireline →</a></p>`,

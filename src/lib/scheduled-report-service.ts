@@ -11,6 +11,8 @@ import {
   type ScheduledReportFrequency,
 } from "./post-call-output-preferences";
 import { drizzle } from "./server-context";
+import { maybePublishWeeklyRecap } from "./shareable-artifact/publish-weekly-recap";
+import type { WeeklyRecapOutcomeSlice } from "./shareable-artifact/types";
 
 export interface ScheduledReportJobPayload extends Record<string, unknown> {
   userId: string;
@@ -132,7 +134,11 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
 
   // Schedule the next occurrence before doing external work. A transient OpenAI
   // or connector outage can fail this report without silently stopping all future reports.
-  await ensureNextScheduledReport(payload.userId, preferences, new Date(safeEnd.getTime() + 60_000));
+  await ensureNextScheduledReport(
+    payload.userId,
+    preferences,
+    new Date(safeEnd.getTime() + 60_000),
+  );
 
   const calls = await drizzle
     .select({
@@ -245,6 +251,51 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
     periodLabel,
   });
 
+  const shareableRecap =
+    payload.frequency === "weekly"
+      ? await maybePublishWeeklyRecap({
+          userId: payload.userId,
+          weekLabel: periodLabel,
+          periodStart: start,
+          periodEnd: safeEnd,
+          callTimestamps: calls
+            .map((call) => call.createdAt)
+            .filter((value): value is Date => value instanceof Date),
+          totals: {
+            calls: calls.length,
+            voiceMinutes: minutes,
+            booked: outcomes.booked || 0,
+            qualified: outcomes.qualified || 0,
+            followup: outcomes.followup || 0,
+          },
+          averageQaScore: averageQa,
+          outcomeMix: Object.entries(outcomes)
+            .map<WeeklyRecapOutcomeSlice>(([tag, count]) => ({ tag, count }))
+            .sort((left, right) => right.count - left.count),
+          topMoments: calls
+            .filter(
+              (call) =>
+                call.outcomeTag === "booked" ||
+                call.outcomeTag === "qualified" ||
+                (call.leadScore ?? 0) >= 70,
+            )
+            .slice(0, 5)
+            .map((call) => ({
+              hero: call.summary?.split(/\n+/)[0]?.trim() || `${call.outcomeTag || "call"}`,
+              caller: call.customerNumber || null,
+              atLabel: call.createdAt ? call.createdAt.toISOString().slice(0, 10) : null,
+            })),
+          followUps: openTasks.slice(0, 6).map((task) => ({
+            description: task.description ?? "",
+            priority:
+              task.priority === "high" || task.priority === "medium" || task.priority === "low"
+                ? task.priority
+                : null,
+            dueAtLabel: task.dueDate ? task.dueDate.toISOString().slice(0, 10) : null,
+          })),
+        })
+      : null;
+
   return {
     skipped: false,
     title,
@@ -254,5 +305,6 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
     fileName: artifact.fileName,
     destination: artifact.provider,
     openaiResponseId: artifact.openaiResponseId,
+    shareableRecapUrl: shareableRecap?.url ?? null,
   } as const;
 }
