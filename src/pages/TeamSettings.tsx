@@ -207,7 +207,10 @@ export default function TeamSettings() {
               actions={[
                 {
                   label: "Invite teammate",
-                  onClick: () => setIsInviteOpen(true),
+                  onClick: () => {
+                    if (!canInvite) return;
+                    setIsInviteOpen(true);
+                  },
                   primary: true,
                 },
               ]}

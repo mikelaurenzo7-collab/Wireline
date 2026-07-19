@@ -101,7 +101,7 @@ function ProfileRow({
         <span
           className={
             wrapValue
-              ? "wl-data-row__title break-all [overflow-wrap:anywhere] sm:truncate sm:break-normal"
+              ? "wl-data-row__title whitespace-normal break-all [overflow-wrap:anywhere] [text-overflow:clip] sm:truncate sm:whitespace-nowrap sm:break-normal"
               : "wl-data-row__title"
           }
           data-wireline-preserve-case
