@@ -82,7 +82,8 @@
     "route-registry:check": "node scripts/check-route-registry.mjs",
     "docs:check": "node scripts/check-docs-index.mjs",
     "design:tokens:check": "node scripts/check-design-token-parity.mjs",
-    "openapi:check": "node scripts/check-openapi-implementation.mjs"
+    "openapi:check": "node scripts/check-openapi-implementation.mjs",
+    "stripe:balance:audit": "node scripts/check-stripe-balance-cause.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
