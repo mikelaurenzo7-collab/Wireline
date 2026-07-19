@@ -1,5 +1,11 @@
 # Wireline Launch Operating System
 
+**Status: historical.** Written before the current Create -> Train -> Wire ->
+Run model and the "AI employees" wedge (see `docs/README.md` and
+`docs/WIRELINE_CEO_LAUNCH_CHECKLIST_2026-07-10.md`). The "AI call coverage"
+category framing and 3-step loop below are superseded; the customer
+segmentation content may still be useful context.
+
 ## 1. Category and promise
 
 Wireline is **AI call coverage**.

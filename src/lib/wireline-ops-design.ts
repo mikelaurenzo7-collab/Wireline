@@ -602,9 +602,9 @@ export const OPS_INSIGHTS_EMPTY = {
     ],
   },
   leaderboard: {
-    title: "No ranked agents",
+    title: "No ranked employees",
     actions: [
-      { label: "Deploy agent", to: "/agents", primary: true },
+      { label: "Create AI employee", to: "/studio", primary: true },
       { label: "Call history", to: "/phone?tab=logs" },
     ],
   },

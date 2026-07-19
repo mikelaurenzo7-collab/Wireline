@@ -1,6 +1,12 @@
 # AI Profit Agent Wedge — 2026-07-07
 
-**Status:** Active wedge strategy.  
+**Status:** Active for operating mechanics (outbound/inbound/hybrid modes,
+included-number promise, list -> pitch -> call -> outcome loop). The
+**"AI Profit Agents" / "AI profit agents that actually call" marketing
+label below is superseded** — the current go-to-market wedge is **AI
+employees** (see `docs/README.md` and
+`docs/WIRELINE_CEO_LAUNCH_CHECKLIST_2026-07-10.md`). Read the operating
+decisions here; use current docs for customer-facing naming.  
 **Updated:** 2026-07-10 profit-agent positioning and included-number promise.
 
 ## Decision

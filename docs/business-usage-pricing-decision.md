@@ -26,9 +26,9 @@ Wireline sells operating capacity, not template access.
 | --- | --- | ---: | ---: | ---: | ---: |
 | `personal` | Wireline Free Builder | $0 | 0 | $0 | 1 |
 | `starter` | Wireline Starter | $9 / $90 | 20 | $0.50/mo | 1 |
-| `team` | Wireline Starter Plus | $19 / $190 | 75 | $2/mo | 1 |
-| `business` | Wireline Pro | $59 / $590 | 250 | $6/mo | 5 |
-| `enterprise` | Wireline Business | $149 / $1,490 | 650 | $15/mo | 15 |
+| `team` | Wireline Starter Plus | $19 / $190 | 40 | $1/mo | 1 |
+| `business` | Wireline Pro | $59 / $590 | 100 | $4/mo | 5 |
+| `enterprise` | Wireline Business | $149 / $1,490 | 250 | $10/mo | 15 |
 
 Overage beyond included voice minutes ranges $0.25/min (Starter) down to $0.17/min (top tier) — see
 `overage_per_min_usd` per plan. SMS outbound segments still bill Conversation Balance at

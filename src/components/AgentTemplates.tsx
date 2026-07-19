@@ -30,6 +30,7 @@ import { cn } from "../lib/utils";
 import { BRAND } from "../constants/brand-colors";
 import { useToast } from "../contexts/ToastContext";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
+import { EmptyState } from "./ui/EmptyState";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Skeleton } from "./ui/shadcn/Skeleton";
@@ -460,10 +461,10 @@ function TemplateCard({
           onClick={() => onDeploy(template)}
           disabled={deploying}
           className="w-full !py-2 !text-[var(--wireline-typography-overline-size)] !tracking-[0.22em] flex items-center justify-center gap-2 shadow-sm"
-          aria-label={`${alreadyDeployed ? "Deploy another" : "Deploy"} ${template.name} agent`}
+          aria-label={`${alreadyDeployed ? "Use again" : "Use"} ${template.name} template`}
         >
           {deploying ? <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin" /> : null}
-          {alreadyDeployed ? "Deploy another" : "Deploy agent"}
+          {alreadyDeployed ? "Use again" : "Use template"}
         </ShadButton>
       </div>
     </motion.article>
@@ -668,24 +669,31 @@ export default function AgentTemplates() {
           <>
             <AnimatePresence mode="popLayout">
               {visible.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="py-16 text-center text-[var(--wireline-color-text-tertiary)] font-[var(--wireline-font-family-display)] text-lg"
-                >
-                  <p>No templates match{q ? ` “${search.trim()}”` : ""}</p>
-                  {search ? (
-                    <ShadButton
-                      type="button"
-                      disableAnimations
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSearch("")}
-                      className="mt-3 rounded-full wl-label"
-                    >
-                      Clear search
-                    </ShadButton>
-                  ) : null}
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <EmptyState
+                    framed
+                    density="compact"
+                    titleTone="ui"
+                    withHalo={false}
+                    icon={Search}
+                    title={q ? `No templates match “${search.trim()}”` : "No templates match"}
+                    description={
+                      search
+                        ? "Try a broader job name, or clear the search to browse everything."
+                        : "Adjust the filters to see available starting points."
+                    }
+                    actions={
+                      search
+                        ? [
+                            {
+                              label: "Clear search",
+                              onClick: () => setSearch(""),
+                              primary: true,
+                            },
+                          ]
+                        : [{ label: "Create from scratch", to: "/studio?create=1", primary: true }]
+                    }
+                  />
                 </motion.div>
               )}
             </AnimatePresence>

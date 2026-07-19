@@ -71,7 +71,7 @@ const recommended = [
     "DATABASE_POOL_URL",
     "Pooler URL the runtime prefers; env-validator marks it required in production (falls back to POSTGRES_URL)",
   ],
-  ["XAI_API_KEY", "Primary managed runtime (Grok) and Grok realtime voice sessions"],
+  ["XAI_API_KEY", "Primary managed runtime (Grok 4.5) and Grok realtime voice sessions"],
   ["XAI_API_KEY_CHATKIT", "Scoped ChatGPT app realtime voice key for spend isolation"],
   ["OPENAI_API_KEY", "Direct OpenAI fallback and OpenAI Realtime fallback sessions"],
   ["GEMINI_API_KEY", "Gemini fallback when xAI or OpenAI is unavailable"],

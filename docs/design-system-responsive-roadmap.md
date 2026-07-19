@@ -6,7 +6,7 @@ Make Wireline feel restrained, precise, and easy to operate across phones, table
 
 ## Design Position
 
-Retain the existing Wireline Letterpress foundation: quiet warm-paper surfaces, fine borders, editorial typography, forest-green action, and restrained semantic status colors. Evolve the system through responsive tokens and component contracts rather than a visual rebrand or imported mockup palette.
+Retain the existing Wireline Letterpress foundation: quiet obsidian/near-white surfaces, fine borders, editorial typography, electric-violet action (Aurora palette), and restrained semantic status colors. Evolve the system through responsive tokens and component contracts rather than a visual rebrand or imported mockup palette.
 
 ## Immediate Findings
 

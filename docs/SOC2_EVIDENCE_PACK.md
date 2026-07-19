@@ -1,5 +1,14 @@
 # Wireline SOC 2 Type II Evidence Pack
 
+**Status: historical / superseded.** This pack predates the current custom-auth
+system and contains inaccurate claims (e.g. "Multi-factor authentication via
+Supabase Auth," "Supabase-managed password security") that contradict the
+actual authentication implementation. **[soc2-policies.md](./soc2-policies.md)
+and [security/auth-password-controls.md](./security/auth-password-controls.md)
+are the current, accurate source of truth** for SOC 2 control narrative and
+auth/password posture. Retained for historical structure (vendor DPA table,
+governance diagram) pending a full content refresh.
+
 **Document Version:** 1.0  
 **Prepared Date:** 2026-05-29  
 **Audit Period:** [To be defined]  

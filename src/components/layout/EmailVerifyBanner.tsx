@@ -118,11 +118,11 @@ export default function EmailVerifyBanner() {
     <motion.div
       initial={{ height: 0, opacity: 0 }}
       animate={{ height: "auto", opacity: 1 }}
-      className={cn("wl-banner", bannerTone)}
+      className={cn("wl-banner flex-col gap-3 sm:flex-row sm:items-center sm:gap-3", bannerTone)}
     >
-      <div className="wl-banner__body">
+      <div className="wl-banner__body w-full min-w-0">
         <Mail className="wl-banner__icon" aria-hidden />
-        <span>
+        <span className="min-w-0 text-left">
           {outcome === "sent" ? (
             <>Verification email resent — check your inbox + spam folder.</>
           ) : outcome === "no-transport" ? (
@@ -137,8 +137,8 @@ export default function EmailVerifyBanner() {
             </>
           ) : (
             <>
-              <strong>Verify your email</strong> to unlock outbound dialing and create more agents.
-              Check your inbox for a link from Wireline.
+              <strong>Verify your email</strong> to unlock outbound dialing and create more AI
+              employees. Check your inbox for a link from Wireline.
             </>
           )}
         </span>
@@ -151,7 +151,7 @@ export default function EmailVerifyBanner() {
         onClick={resend}
         disabled={buttonDisabled}
         className={cn(
-          "touch-press hover:scale-[1.02] shrink-0 app-micro-cta h-auto after:hidden border-0 shadow-none",
+          "touch-press hover:scale-[1.02] w-full shrink-0 self-stretch app-micro-cta h-auto after:hidden border-0 shadow-none sm:w-auto sm:self-center",
           outcome === "sent" && "opacity-70",
         )}
       >

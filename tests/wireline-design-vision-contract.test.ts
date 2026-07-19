@@ -11,7 +11,6 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 const AUTHENTICATED_SURFACE_GLOBS = [
   "src/pages/OverviewPage.tsx",
-  "src/pages/AgentsPage.tsx",
   "src/pages/SettingsPage.tsx",
   "src/pages/EmailPage.tsx",
   "src/pages/TemplatesPage.tsx",

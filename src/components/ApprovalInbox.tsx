@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   AlertTriangle,
   Calendar,
@@ -14,6 +13,7 @@ import {
 
 import { authFetch } from "../lib/api";
 import { emitProductEventOnce } from "../lib/product-event-client";
+import { EmptyState } from "./ui/EmptyState";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 
@@ -98,18 +98,17 @@ function actionIcon(task: FollowUpTaskRow) {
 
 function ApprovalEmptyCard({ title, description }: { title: string; description: string }) {
   return (
-    <section className="mx-auto flex min-h-[176px] w-full max-w-4xl flex-col items-center justify-center rounded-2xl border border-border bg-card/75 px-6 py-8 text-center shadow-[var(--wireline-shadow-sm)] sm:px-8">
-      <span className="mx-auto grid size-10 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-        <Check size={18} aria-hidden="true" />
-      </span>
-      <h3 className="mt-4 text-sm font-semibold text-foreground">{title}</h3>
-      <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-        {description}
-      </p>
-      <ShadButton asChild variant="secondary" size="sm" className="mt-5">
-        <Link to="/studio">Open Studio</Link>
-      </ShadButton>
-    </section>
+    <EmptyState
+      framed
+      density="compact"
+      titleTone="ui"
+      withHalo={false}
+      className="mx-auto w-full max-w-4xl"
+      icon={<Check className="size-5" aria-hidden="true" />}
+      title={title}
+      description={description}
+      actions={[{ label: "Open Studio", to: "/studio", primary: true }]}
+    />
   );
 }
 

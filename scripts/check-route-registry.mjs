@@ -41,7 +41,7 @@ for (const { line } of appUseLines) {
 }
 // "/api" is a deliberate shared prefix: several feature routers (billing,
 // OpenAPI, and others) define their own sub-paths and mount under it.
-const allowedDuplicateMounts = new Set(["/api/qa", "/api"]);
+const allowedDuplicateMounts = new Set(["/api"]);
 for (const [mount, count] of duplicateMounts) {
   if (count > 1 && !allowedDuplicateMounts.has(mount)) {
     problems.push(`Duplicate explicit route mount ${mount} appears ${count} times without an allowlist entry.`);
