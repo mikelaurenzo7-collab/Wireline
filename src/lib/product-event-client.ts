@@ -6,6 +6,10 @@ import {
 
 type WindowWithAnalytics = Window & {
   dataLayer?: { push: (data: Record<string, unknown>) => void };
+  plausible?: (
+    event: string,
+    options?: { props?: Record<string, string | number | boolean | null> },
+  ) => void;
 };
 
 /** GTM / FB Pixel aliases used in marketing tags (roadmap naming). */
@@ -21,19 +25,46 @@ const GTM_EVENT_ALIASES: Partial<Record<ProductEventName, string>> = {
 
 const PRODUCT_EVENT_ONCE_PREFIX = "wireline:product-event-once:";
 
+function createCorrelationId(event: ProductEventName): string {
+  const random =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `web:${event}:${random}`;
+}
+
+function postAuthenticatedProductEvent(event: ReturnType<typeof makeProductEvent>): boolean {
+  if (event.surface === "marketing_web" || typeof fetch !== "function") return false;
+
+  // Session identity is resolved from the httpOnly cookie on the server. The
+  // client-supplied account id is never trusted. keepalive protects navigation
+  // milestones without blocking the UI.
+  void fetch("/api/product-events", {
+    method: "POST",
+    credentials: "same-origin",
+    keepalive: true,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(event),
+  }).catch(() => undefined);
+  return true;
+}
+
 export function emitProductEvent(
   input: Omit<Parameters<typeof makeProductEvent>[0], "surface"> & {
     surface?: ProductEventSurface;
   },
-): void {
+): boolean {
+  if (typeof window === "undefined") return false;
+
   const event = makeProductEvent({
     surface: input.surface ?? "web_workspace",
+    correlationId: input.correlationId ?? createCorrelationId(input.event),
     ...input,
   });
+  const analytics = window as WindowWithAnalytics;
+  let dispatched = false;
 
-  if (typeof window === "undefined") return;
-
-  const layer = (window as WindowWithAnalytics).dataLayer;
+  const layer = analytics.dataLayer;
   if (layer && typeof layer.push === "function") {
     layer.push({
       event: GTM_EVENT_ALIASES[event.event] ?? event.event,
@@ -42,10 +73,27 @@ export function emitProductEvent(
       wireline_audience: event.audience ?? null,
       wireline_agent_id: event.agentId ?? null,
       wireline_plan_id: event.planId ?? null,
+      wireline_correlation_id: event.correlationId ?? null,
       wireline_metadata: event.metadata ?? null,
       wireline_occurred_at: event.occurredAt,
     });
+    dispatched = true;
   }
+
+  if (typeof analytics.plausible === "function") {
+    analytics.plausible(GTM_EVENT_ALIASES[event.event] ?? event.event, {
+      props: {
+        wireline_event: event.event,
+        surface: event.surface,
+        audience: event.audience ?? null,
+        plan_id: event.planId ?? null,
+        wedge: event.wedge ?? null,
+      },
+    });
+    dispatched = true;
+  }
+
+  return postAuthenticatedProductEvent(event) || dispatched;
 }
 
 function onceScope(
@@ -76,10 +124,17 @@ export function emitProductEventOnce(
   const key = `${PRODUCT_EVENT_ONCE_PREFIX}${input.event}:${onceScope(input)}`;
   try {
     if (localStorage.getItem(key) === "1") return false;
-    localStorage.setItem(key, "1");
   } catch {
     /* private mode — still attempt emit */
   }
-  emitProductEvent(input);
+
+  const dispatched = emitProductEvent(input);
+  if (!dispatched) return false;
+
+  try {
+    localStorage.setItem(key, "1");
+  } catch {
+    /* private mode — event was still dispatched */
+  }
   return true;
 }
