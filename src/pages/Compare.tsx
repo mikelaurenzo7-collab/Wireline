@@ -259,8 +259,8 @@ export default function Compare() {
           <p className="mt-4 max-w-4xl text-xs leading-5 text-muted-foreground">
             Public prices were checked on the linked official pages on July 19, 2026 and may change.
             Taxes, carrier fees, optional add-ons, annual discounts, implementation services, and
-            usage patterns can change the effective total. This is a buying-model reference, not a
-            claim that unlike products are feature-for-feature equivalents.
+            usage patterns can change the effective total. This is a buying-model reference,{" "}
+            {"not a claim that unlike products are feature-for-feature equivalents."}
           </p>
         </div>
       </section>
