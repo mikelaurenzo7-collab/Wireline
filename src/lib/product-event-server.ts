@@ -11,12 +11,16 @@ import {
   type ProductEventAudience,
   type ProductEventName,
   type ProductEventPayload,
+  type ProductEventSurface,
 } from "./product-events";
 
 export type ServerProductEventInput = {
   event: ProductEventName;
   userId: string;
   audience?: ProductEventAudience;
+  surface?: ProductEventSurface;
+  correlationId?: string;
+  demoAccount?: boolean;
   planId?: ProductEventPayload["planId"];
   wedge?: string;
   templateId?: string;
@@ -32,8 +36,9 @@ export function emitServerProductEvent(input: ServerProductEventInput): void {
 
   const payload = makeProductEvent({
     event: input.event,
-    surface: "api",
+    surface: input.surface ?? "api",
     audience: input.audience,
+    correlationId: input.correlationId,
     planId: input.planId,
     wedge: input.wedge,
     templateId: input.templateId,
@@ -45,12 +50,18 @@ export function emitServerProductEvent(input: ServerProductEventInput): void {
     },
   });
 
+  const demoAccount =
+    input.demoAccount ?? String(process.env.WIRELINE_LAUNCH_DEMO_MODE || "").toLowerCase() === "true";
+
   log.info("product_event", {
     product_event: payload.event,
     product_event_version: PRODUCT_EVENT_VERSION,
     userId: input.userId,
     agentId: input.agentId ?? null,
     audience: payload.audience,
+    surface: payload.surface,
+    correlationId: payload.correlationId ?? null,
+    demoAccount,
     wedge: payload.wedge ?? null,
     metadata: payload.metadata ?? {},
     payload,
@@ -69,6 +80,9 @@ export function emitServerProductEvent(input: ServerProductEventInput): void {
       metadata: {
         product_event_version: PRODUCT_EVENT_VERSION,
         audience: payload.audience,
+        surface: payload.surface,
+        correlation_id: payload.correlationId ?? null,
+        demo_account: demoAccount,
         wedge: payload.wedge ?? null,
         template_id: payload.templateId ?? null,
         plan_id: payload.planId ?? null,
