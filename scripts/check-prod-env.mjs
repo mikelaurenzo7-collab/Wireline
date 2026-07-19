@@ -68,12 +68,17 @@ const required = [
   ["VAPI_WEBHOOK_SECRET", "Vapi webhook HMAC secret", process.env.VAPI_WEBHOOK_SECRET],
   ["TWILIO_ACCOUNT_SID", "Twilio programmable voice and messaging account", process.env.TWILIO_ACCOUNT_SID],
   ["TWILIO_AUTH_TOKEN", "Twilio API authentication and inbound webhook validation", process.env.TWILIO_AUTH_TOKEN],
+  ["STRIPE_SECRET_KEY", "Stripe subscriptions, prepaid balances, and billing portal", process.env.STRIPE_SECRET_KEY],
+  ["STRIPE_WEBHOOK_SECRET", "Stripe webhook signature verification", process.env.STRIPE_WEBHOOK_SECRET],
+  ["RESEND_API_KEY", "Transactional email for verification, billing, and lifecycle delivery", process.env.RESEND_API_KEY],
+  ["FEDERAL_DNC_API_URL", "Federal DNC scrub endpoint required before marketing outbound", process.env.FEDERAL_DNC_API_URL],
+  ["FEDERAL_DNC_API_KEY", "Federal DNC scrub credential required before marketing outbound", process.env.FEDERAL_DNC_API_KEY],
 ];
 
 const recommended = [
   [
     "DATABASE_POOL_URL",
-    "Pooler URL the runtime prefers; env-validator marks it required in production (falls back to POSTGRES_URL)",
+    "Pooler URL the runtime prefers; POSTGRES_URL remains the supported fallback",
   ],
   ["OPENAI_API_KEY_CHATKIT", "Scoped ChatGPT app realtime voice key for spend isolation"],
   ["GEMINI_API_KEY", "Gemini continuity fallback when direct OpenAI is unavailable"],
@@ -81,8 +86,6 @@ const recommended = [
   ["VITE_VAPI_PUBLIC_KEY", "Vapi browser-side test calls"],
   ["APP_URL", "Canonical URL for OAuth redirects and email links"],
   ["CORS_ORIGINS", "Production CORS allowlist"],
-  ["STRIPE_SECRET_KEY", "Stripe billing endpoints"],
-  ["STRIPE_WEBHOOK_SECRET", "Stripe webhook signature verification"],
   ["VITE_STRIPE_PUBLIC_KEY", "Stripe publishable key for client-side checkout UI"],
 
   // Canonical Founder Early Access catalog. These keys mirror
@@ -138,6 +141,7 @@ const formatHints = new Map([
   ["POSTGRES_URL", "postgresql://user:pass@host:port/db (host must be dotted, localhost, or IP)"],
   ["DATABASE_POOL_URL", "postgresql://user:pass@pooler-host:6543/db"],
   ["TWILIO_ACCOUNT_SID", "AC followed by 32 hexadecimal characters"],
+  ["FEDERAL_DNC_API_URL", "https://vendor.example/api/dnc-check"],
 ]);
 
 function configuredValue([key, _description, value]) {
@@ -150,6 +154,14 @@ function isValidEnvValue(key, value) {
     return isPostgresConnectionString(value);
   }
   if (key === "TWILIO_ACCOUNT_SID") return /^AC[a-fA-F0-9]{32}$/.test(String(value).trim());
+  if (key === "FEDERAL_DNC_API_URL") {
+    try {
+      return new URL(String(value).trim()).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+  if (key === "STRIPE_SECRET_KEY") return /^sk_(test|live)_/.test(String(value).trim());
   return true;
 }
 
