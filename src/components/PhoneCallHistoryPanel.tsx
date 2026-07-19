@@ -18,7 +18,12 @@ type CallsProbeResponse = {
  * instead of letting the heavier console settle into an empty black pane.
  */
 export default function PhoneCallHistoryPanel() {
-  const { agents, loading: agentsLoading } = useAgents();
+  const {
+    agents,
+    loading: agentsLoading,
+    degraded: agentsDegraded,
+    refresh: refreshAgents,
+  } = useAgents();
   const [loading, setLoading] = useState(true);
   const [hasCalls, setHasCalls] = useState<boolean | null>(null);
   const [failed, setFailed] = useState(false);
@@ -91,6 +96,25 @@ export default function PhoneCallHistoryPanel() {
   if (hasCalls === true) return <CallLogsClaude />;
 
   const hasAgents = agents.length > 0;
+  if (agentsDegraded && !hasAgents) {
+    return (
+      <div className="w-full px-4 py-8 sm:px-6">
+        <StatusNotice
+          tone="warning"
+          title="Employee readiness unavailable"
+          action={
+            <Button type="button" variant="secondary" size="sm" onClick={refreshAgents}>
+              Retry
+            </Button>
+          }
+        >
+          Wireline could not confirm your employee or phone setup. Existing configuration is
+          unchanged.
+        </StatusNotice>
+      </div>
+    );
+  }
+
   const livePhone = agents.find((agent) => agent.phone_number)?.phone_number ?? null;
   const emptyState = !hasAgents
     ? {

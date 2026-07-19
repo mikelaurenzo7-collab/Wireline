@@ -165,6 +165,18 @@ async function settle(page) {
 }
 
 function pushIssue(issues, issue) {
+  if (
+    issues.some(
+      (existing) =>
+        existing.viewport === issue.viewport &&
+        existing.route === issue.route &&
+        existing.kind === issue.kind &&
+        existing.detail === issue.detail,
+    )
+  ) {
+    return;
+  }
+
   const P0 = new Set([
     "http",
     "navigation",
@@ -175,6 +187,53 @@ function pushIssue(issues, issue) {
     "auth",
   ]);
   issues.push({ ...issue, severity: P0.has(issue.kind) ? "P0" : "P1" });
+}
+
+async function captureInternalScrollEnd(page, file) {
+  const hasScrollableContent = await page.evaluate(() => {
+    const selectors = [
+      ".wl-viewport-scroll",
+      ".wl-workspace-content",
+      ".route-shell-scroll",
+      ".scroll-viewport",
+    ];
+    const candidates = selectors.flatMap((selector) =>
+      Array.from(document.querySelectorAll(selector)),
+    );
+    const scrollOwner = candidates
+      .filter((element) => {
+        const style = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return (
+          rect.width > 0 &&
+          rect.height > 0 &&
+          (style.overflowY === "auto" || style.overflowY === "scroll") &&
+          element.scrollHeight > element.clientHeight + 24
+        );
+      })
+      .sort((a, b) => b.scrollHeight - b.clientHeight - (a.scrollHeight - a.clientHeight))[0];
+
+    if (!scrollOwner) return false;
+    scrollOwner.setAttribute("data-wireline-qa-scroll-owner", "true");
+    scrollOwner.scrollTop = scrollOwner.scrollHeight;
+    return true;
+  });
+
+  if (!hasScrollableContent) return;
+  await page.waitForTimeout(120);
+  await page.screenshot({
+    path: file.replace(/\.png$/, "-end.png"),
+    fullPage: false,
+    animations: "disabled",
+    timeout: 30_000,
+  });
+  await page.evaluate(() => {
+    const scrollOwner = document.querySelector('[data-wireline-qa-scroll-owner="true"]');
+    if (scrollOwner) {
+      scrollOwner.scrollTop = 0;
+      scrollOwner.removeAttribute("data-wireline-qa-scroll-owner");
+    }
+  });
 }
 
 async function auditResponsiveLayout(page, viewportName, route, issues) {
@@ -284,6 +343,7 @@ async function captureRoute(page, viewportName, route, issues) {
   await auditResponsiveLayout(page, viewportName, route, issues);
   const file = path.join(outputDir, `${viewportName}-${fileName(route)}.png`);
   await page.screenshot({ path: file, fullPage: true, animations: "disabled", timeout: 30_000 });
+  await captureInternalScrollEnd(page, file);
 }
 
 function attachPageDiagnostics(page, viewportName, issues) {

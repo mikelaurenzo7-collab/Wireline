@@ -53,7 +53,11 @@ describe("demand-driven authenticated experience", () => {
     expect(phoneHistory).toContain('title: "Create your first AI employee"');
     expect(phoneHistory).toContain('title: "Connect a phone number"');
     expect(phoneHistory).toContain("Call your Wireline number");
+    expect(phoneHistory).toContain("agentsDegraded && !hasAgents");
+    expect(phoneHistory).toContain("Employee readiness unavailable");
     expect(insightEmpty).toContain("agents.length === 0");
+    expect(insightEmpty).toContain("agentsDegraded && agents.length === 0");
+    expect(insightEmpty).toContain("Retry employee status");
     expect(insightEmpty).toContain('label: "Connect phone"');
     expect(insightEmpty).toContain('label: "Test employee"');
   });

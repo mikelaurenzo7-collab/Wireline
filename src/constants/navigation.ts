@@ -168,11 +168,19 @@ export function isNavActive(pathname: string, href: string) {
       current === "/settings" ||
       current.startsWith("/settings/") ||
       current === "/admin" ||
-      current.startsWith("/admin/")
+      current.startsWith("/admin/") ||
+      current === "/apps" ||
+      current.startsWith("/apps/")
     );
   }
   if (target === "/studio") {
-    return current === "/studio" || current.startsWith("/studio/") || current === "/agents";
+    return (
+      current === "/studio" ||
+      current.startsWith("/studio/") ||
+      current === "/agents" ||
+      current === "/templates" ||
+      current.startsWith("/templates/")
+    );
   }
   const item = [...WORKSPACE_NAV, ...OPERATE_NAV, ...MOBILE_MORE_NAV].find(
     (nav) => nav.href === target,

@@ -46,6 +46,8 @@ describe("agent navigation contract", () => {
     expect(navigation).toContain('route: "/knowledge", parentHref: "/studio"');
     expect(navigation).toContain('route: "/approvals", parentHref: "/inbox"');
     expect(navigation).toContain('route: "/apps", parentHref: "/settings"');
+    expect(navigation).toContain('current === "/apps"');
+    expect(navigation).toContain('current === "/templates"');
     expect(workspaceShell).toContain("desktopNavParentHref(pathname)");
     expect(workspaceShell).toMatch(/aria-label="AI employees"/);
     expect(workspaceShell).toMatch(/\/studio\?create=1/);

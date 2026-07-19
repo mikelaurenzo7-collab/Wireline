@@ -108,20 +108,27 @@ export function InsightEmpty({
   /** Panel chrome — off when the parent already supplies a frame. */
   framed?: boolean;
 }) {
-  const { agents, loading: agentsLoading } = useAgents();
+  const {
+    agents,
+    loading: agentsLoading,
+    degraded: agentsDegraded,
+    refresh: refreshAgents,
+  } = useAgents();
   const config = OPS_INSIGHTS_EMPTY[configKey];
   const prerequisiteActions =
     actionsOverride ??
     (agentsLoading
       ? []
-      : agents.length === 0
-        ? [{ label: "Create AI employee", to: "/studio?create=1", primary: true }]
-        : !agents.some((agent) => agent.phone_number)
-          ? [
-              { label: "Connect phone", to: "/settings/phone", primary: true },
-              { label: "Test employee", to: "/studio?section=test" },
-            ]
-          : [...config.actions]);
+      : agentsDegraded && agents.length === 0
+        ? [{ label: "Retry employee status", onClick: refreshAgents, primary: true }]
+        : agents.length === 0
+          ? [{ label: "Create AI employee", to: "/studio?create=1", primary: true }]
+          : !agents.some((agent) => agent.phone_number)
+            ? [
+                { label: "Connect phone", to: "/settings/phone", primary: true },
+                { label: "Test employee", to: "/studio?section=test" },
+              ]
+            : [...config.actions]);
 
   return (
     <EmptyState
