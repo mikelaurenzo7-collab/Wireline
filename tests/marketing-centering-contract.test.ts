@@ -30,11 +30,14 @@ describe("marketing centering contract", () => {
   it("loads the public QA layer last and keeps centered labels on the shared axis", () => {
     const marketingBundle = read("src/styles/wireline-marketing-surfaces.css");
     const publicPolish = read("src/styles/public-marketing-polish.css");
+    const hero = read("src/components/marketing/MarketingHero.tsx");
 
     expect(marketingBundle.trimEnd()).toMatch(/@import "\.\/public-marketing-polish\.css";$/);
     expect(publicPolish).toContain(":where(.text-center, .wl-marketing-center)");
     expect(publicPolish).toContain("text-align: center");
     expect(publicPolish).toContain(".marketing-footer-rail");
+    expect(publicPolish).toContain("overflow-wrap: anywhere");
+    expect(hero).toContain("w-full min-w-0 max-w-[70rem]");
   });
 
   it("keeps the public signal mark violet from the first terminal", () => {

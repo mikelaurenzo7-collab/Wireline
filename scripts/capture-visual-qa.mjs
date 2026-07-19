@@ -197,8 +197,18 @@ async function auditResponsiveLayout(page, viewportName, route, issues) {
       .map((element) => {
         const rect = element.getBoundingClientRect();
         const style = window.getComputedStyle(element);
-        const escapesViewport = rect.left < -1 || rect.right > viewportWidth + 1;
+        const horizontalScroller = element.closest(
+          ".overflow-x-auto, .tab-strip-scroll, .wl-workspace-tabs",
+        );
+        const scrollerStyle = horizontalScroller
+          ? window.getComputedStyle(horizontalScroller)
+          : null;
+        const intentionallyScrollable =
+          scrollerStyle?.overflowX === "auto" || scrollerStyle?.overflowX === "scroll";
+        const escapesViewport =
+          !intentionallyScrollable && (rect.left < -1 || rect.right > viewportWidth + 1);
         const hasVisibleInternalOverflow =
+          !intentionallyScrollable &&
           element.scrollWidth > element.clientWidth + 1 &&
           style.overflowX === "visible" &&
           !element.classList.contains("tab-strip-scroll");

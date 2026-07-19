@@ -33,6 +33,15 @@ import { isLegacyAdminTabRedirect } from "../lib/admin-access";
 
 type ConfirmState = { open: boolean; title: string; message: string; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, title: "", message: "", onConfirm: () => {} };
+const ADMIN_TAB_SHORT_LABELS: Record<string, string> = {
+  accounts: "Acct",
+  branding: "Brand",
+  carrier: "Route",
+  subscription: "Bill",
+  team: "Team",
+  flywheel: "Growth",
+  activity: "Audit",
+};
 
 interface AdminSettingsState {
   vapi_phone_number_id: string;
@@ -390,6 +399,7 @@ export default function AdminSettings() {
           tabs={VALID_TABS.map((tab) => ({
             id: tab,
             label: OPS_ADMIN.tabLabels[tab as OpsAdminTab] ?? tab,
+            shortLabel: ADMIN_TAB_SHORT_LABELS[tab],
           }))}
         />
         <WorkspacePageFrame mode="operate" className="gap-0 pb-0">

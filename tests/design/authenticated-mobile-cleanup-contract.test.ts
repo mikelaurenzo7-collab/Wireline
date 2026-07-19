@@ -8,6 +8,8 @@ describe("authenticated mobile cleanup", () => {
   it("renders existing short tab labels without weakening accessible names", () => {
     const tabStrip = read("src/components/layout/WorkspaceTabStrip.tsx");
     const tabs = read("src/lib/page-sub-tabs.ts");
+    const settingsTabs = read("src/components/settings/SettingsTabs.tsx");
+    const approvals = read("src/components/ApprovalInbox.tsx");
 
     expect(tabStrip).toContain("shortLabel?: string");
     expect(tabStrip).toContain('className="sm:hidden"');
@@ -17,6 +19,9 @@ describe("authenticated mobile cleanup", () => {
     expect(tabs).toContain('shortLabel: "Camps"');
     expect(tabs).toContain('shortLabel: "Seq"');
     expect(tabs).toContain('shortLabel: "Calls"');
+    expect(settingsTabs).toContain('shortLabel: "Acct"');
+    expect(settingsTabs).toContain('shortLabel: "Bill"');
+    expect(approvals).toContain('escalations: "Esc."');
   });
 
   it("keeps authenticated metrics glanceable instead of stacking full cards", () => {

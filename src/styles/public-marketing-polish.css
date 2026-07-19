@@ -263,15 +263,30 @@
 
   .marketing-surface .marketing-hero__title,
   .marketing-surface .wireline-home-hero .marketing-hero__title {
+    width: 100%;
     max-width: 14ch;
     font-size: clamp(2.35rem, 11.5vw, 3.35rem) !important;
     line-height: 0.96;
+    overflow-wrap: anywhere;
   }
 
   .marketing-surface.wl-features-page .marketing-hero__title {
     max-width: 16ch;
     font-size: clamp(2.15rem, 10.4vw, 3rem) !important;
     line-height: 0.98;
+  }
+
+  .marketing-surface .marketing-hero__actions {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .marketing-surface .marketing-hero__actions > a {
+    min-width: 0;
+    max-width: 100%;
+    padding-inline: 1rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .marketing-surface .marketing-hero__description {
