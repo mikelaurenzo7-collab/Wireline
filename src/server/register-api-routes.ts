@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import authRouter from "../routes/auth-routes";
 import authOAuthRouter from "../routes/auth-oauth-routes";
+import productEventRouter from "../routes/product-event-routes";
 import oauthRouter from "../routes/oauth";
 import agentRouter from "../routes/agent-routes-v2";
 import agentTestRouter from "../routes/agent-test-routes";
@@ -84,6 +85,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(authOAuthRouter);
   app.use(authRouter);
   app.use(oauthRouter);
+  app.use(productEventRouter);
   app.use(agentRouter);
   app.use(agentTestRouter);
   app.use(agentWorkspaceRouter);
