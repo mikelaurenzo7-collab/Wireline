@@ -6,6 +6,7 @@ const source = readFileSync(
   resolve(process.cwd(), "src/lib/runtime-integrations-registry.ts"),
   "utf8",
 );
+const compactSource = source.replace(/\s+/g, " ");
 
 describe("runtime integrations registry launch policy", () => {
   it("presents OpenAI as required primary and xAI as optional", () => {
@@ -18,9 +19,9 @@ describe("runtime integrations registry launch policy", () => {
 
   it("marks the monetized communications control plane as required", () => {
     for (const integration of ["vapi", "twilio", "stripe", "resend", "upstash"]) {
-      const start = source.indexOf(`item("${integration}"`);
-      expect(start).toBeGreaterThanOrEqual(0);
-      expect(source.slice(start, start + 500)).toContain("true");
+      expect(compactSource).toMatch(
+        new RegExp(`item\\(\\s*"${integration}".{0,700}?, true,`),
+      );
     }
   });
 
