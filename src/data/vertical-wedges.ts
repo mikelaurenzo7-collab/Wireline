@@ -228,7 +228,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaTitle: "Wireline for Real Estate | AI Lead Qualifier on Every Listing Call",
     metaDescription:
       "AI voice + email agent for real estate teams. Qualify buyers, book showings, revive cold leads, and sync CRM notes.",
-    eyebrow: "For Real Estate Agents & Brokerages",
+    eyebrow: "For Real Estate",
     headline: "Every lead worked. Every showing booked.",
     subhead:
       "An AI agent that picks up every listing inquiry. Qualifies pre approval status. Books the showing. And follows up on cold leads. So your top producing agents only see qualified prospects.",
@@ -410,7 +410,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaTitle: "Wireline for Restaurants — AI Phone Host for Reservations + Takeout",
     metaDescription:
       "AI voice + email host for restaurants. Take reservations, capture takeout orders, handle event inquiries, and follow up by SMS.",
-    eyebrow: "For Restaurants + Hospitality",
+    eyebrow: "For Restaurants",
     headline: "The phone rings during dinner rush. The agent picks up.",
     subhead:
       "An AI host that answers the reservation call when your floor team is buried, captures takeout orders accurately, and saves you the no-shows by SMS-confirming every booking 2 hours before.",

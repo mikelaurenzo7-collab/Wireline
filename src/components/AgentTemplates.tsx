@@ -648,7 +648,7 @@ export default function AgentTemplates() {
 
       <div className="flex-1 min-h-0 scroll-viewport px-4 py-4" aria-live="polite">
         {initialLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
@@ -698,7 +698,7 @@ export default function AgentTemplates() {
               )}
             </AnimatePresence>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
               <AnimatePresence mode="popLayout">
                 {visible.map((template) => (
                   <TemplateCard

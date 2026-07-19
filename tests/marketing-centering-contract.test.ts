@@ -27,6 +27,17 @@ describe("marketing centering contract", () => {
     expect(stickyCta).toContain("if (!visible) return null");
   });
 
+  it("keeps each mobile footer column vertical and intrinsically sized", () => {
+    const responsive = read("src/styles/responsive.css");
+
+    expect(responsive).toMatch(
+      /\.marketing-footer-nav\s*\{[^}]*display: flex !important;[^}]*flex-direction: column;/,
+    );
+    expect(responsive).not.toMatch(
+      /\.marketing-footer-nav\s*\{[^}]*grid-template-columns: repeat\(2/,
+    );
+  });
+
   it("loads the public QA layer last and keeps centered labels on the shared axis", () => {
     const marketingBundle = read("src/styles/wireline-marketing-surfaces.css");
     const publicPolish = read("src/styles/public-marketing-polish.css");

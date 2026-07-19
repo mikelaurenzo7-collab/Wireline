@@ -87,7 +87,8 @@ const CHANNEL_CONFIG = {
   sms: {
     icon: MessageSquareText,
     title: "SMS identity",
-    description: "Business and campaign registration for compliant application-to-person messaging.",
+    description:
+      "Business and campaign registration for compliant application-to-person messaging.",
   },
   email: {
     icon: Mail,
@@ -166,8 +167,7 @@ function reviewSummary(identity: IdentityResponse | null) {
   if (statuses.every((status) => status === "approved")) {
     return {
       label: "Identity approved",
-      className:
-        "border-emerald-500/25 bg-emerald-500/8 text-emerald-700 dark:text-emerald-300",
+      className: "border-emerald-500/25 bg-emerald-500/8 text-emerald-700 dark:text-emerald-300",
     };
   }
   if (statuses.includes("in_review")) {
@@ -212,7 +212,7 @@ function ChannelCard({
         selected ? "border-border" : "border-border/70 opacity-80",
       )}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/5 text-primary">
             <Icon size={18} aria-hidden="true" />
@@ -393,7 +393,8 @@ export default function CompanyIdentityPack() {
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
               Prepare one verified company identity for the employee's dedicated number, SMS sender,
-              and email sender. Provider approval and recipient-device display remain external states.
+              and email sender. Provider approval and recipient-device display remain external
+              states.
             </p>
           </div>
         </div>
@@ -414,7 +415,7 @@ export default function CompanyIdentityPack() {
         <p className="py-8 text-center text-sm text-muted-foreground">Loading company identity…</p>
       ) : identity ? (
         <>
-          <div className="mt-5 grid gap-4 lg:grid-cols-3">
+          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {CHANNELS.map((channel) => (
               <ChannelCard
                 key={channel}
@@ -516,13 +517,16 @@ export default function CompanyIdentityPack() {
                   placeholder="Appointment confirmation"
                 />
                 <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
-                  Enhanced branded calling may show this on supported mobile networks after approval.
+                  Enhanced branded calling may show this on supported mobile networks after
+                  approval.
                 </span>
               </label>
             </div>
 
             <fieldset className="mt-5">
-              <legend className="text-xs font-semibold text-foreground">Request identity for</legend>
+              <legend className="text-xs font-semibold text-foreground">
+                Request identity for
+              </legend>
               <div className="mt-3 flex flex-wrap gap-2">
                 {CHANNELS.map((channel) => (
                   <label
@@ -559,10 +563,7 @@ export default function CompanyIdentityPack() {
                 variant="secondary"
                 onClick={requestReview}
                 disabled={
-                  requesting ||
-                  !identity.review_eligible ||
-                  isDirty ||
-                  reviewAlreadyRequested
+                  requesting || !identity.review_eligible || isDirty || reviewAlreadyRequested
                 }
               >
                 {requesting

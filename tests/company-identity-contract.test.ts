@@ -224,6 +224,8 @@ describe("company identity pack", () => {
     expect(surface).toContain("Update identity to resubmit");
     expect(surface).toContain("Not selected");
     expect(surface).toContain("Request verification review");
+    expect(surface).toContain("md:grid-cols-2 xl:grid-cols-3");
+    expect(surface).toContain("flex flex-wrap items-start justify-between");
     expect(phoneSettings).toContain('key={activeNumber?.id ?? "no-number"}');
   });
 });

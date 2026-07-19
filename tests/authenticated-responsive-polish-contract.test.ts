@@ -59,6 +59,15 @@ describe("authenticated responsive polish contract", () => {
     expect(team).toContain('<WorkspacePageFrame mode="standard">');
   });
 
+  it("shows an actionable carrier state instead of a false empty inventory", () => {
+    const picker = read("src/components/PhoneNumberPicker.tsx");
+
+    expect(picker).toContain("readApiJson");
+    expect(picker).toContain("availableResult.status === 503");
+    expect(picker).toContain("Number inventory unavailable");
+    expect(picker).toContain("inventoryUnavailable");
+  });
+
   it("gives every previously headingless workspace a clear page heading", () => {
     const studio = read("src/components/studio/StudioContextChrome.tsx");
     const team = read("src/pages/TeamSettings.tsx");

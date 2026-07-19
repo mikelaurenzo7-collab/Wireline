@@ -79,6 +79,9 @@ describe("authenticated mobile cleanup", () => {
     expect(callLogs).toContain('shortLabel: "Stats"');
     expect(callLogs).toContain('aria-label="Export calls as CSV"');
     expect(studio).toContain("hidden size-4 shrink-0 sm:block");
+    expect(read("src/components/AgentTemplates.tsx")).toContain(
+      "sm:grid-cols-2 sm:gap-3 xl:grid-cols-3",
+    );
     // The appointments empty state moved into its own data-driven panel.
     expect(appointments).toContain(
       'title={calendarConnected ? "No appointments yet" : "Connect a calendar"}',
