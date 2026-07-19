@@ -43,27 +43,18 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "INTERNAL_JWT_SECRET",
   ]),
   item(
-    "xai",
-    "xAI Grok",
-    "Primary structured runtime and authenticated Studio live voice.",
-    "ai",
-    true,
-    ["XAI_API_KEY"],
-    "OpenAI, Gemini, and AI Gateway remain ordered structured fallbacks.",
-  ),
-  item(
     "openai",
     "OpenAI",
-    "Structured fallback, primary Vapi PSTN call model, and optional Realtime continuity.",
+    "Primary structured runtime, primary Vapi PSTN call model, and optional Realtime voice.",
     "ai",
     true,
     ["OPENAI_API_KEY"],
-    "Gemini is the automatic PSTN call-model fallback.",
+    "Gemini and the Vercel AI Gateway provide ordered continuity.",
   ),
   item(
     "gemini",
     "Google Gemini",
-    "Automatic fallback for managed AI work and grounded search.",
+    "First automatic continuity fallback for managed AI work and grounded search.",
     "ai",
     false,
     ["GEMINI_API_KEY"],
@@ -71,23 +62,32 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "ai-gateway",
     "Vercel AI Gateway",
-    "Last-resort multi-model routing for the managed runtime.",
+    "Governed final multi-model route with centralized budgets and observability.",
     "ai",
     false,
     [],
     "Vercel deployments can use OIDC instead of a static Gateway key.",
     [["AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN"]],
   ),
-  item("vapi", "Vapi", "PSTN inbound and outbound call handling.", "voice", true, [
+  item(
+    "xai",
+    "xAI Grok",
+    "Optional Grok experiments and Wireline Live voice; excluded from the launch default chain.",
+    "ai",
+    false,
+    ["XAI_API_KEY"],
+    "Structured fallback requires WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=true.",
+  ),
+  item("vapi", "Vapi", "Managed PSTN inbound and outbound call orchestration.", "voice", true, [
     "VAPI_PRIVATE_KEY",
     "VAPI_WEBHOOK_SECRET",
   ]),
   item(
     "twilio",
     "Twilio",
-    "SMS, WhatsApp, phone-number lookup, and imported number provisioning.",
+    "Required production phone-number carrier and two-way SMS layer; WhatsApp remains private beta until an approved sender and templates are live.",
     "voice",
-    false,
+    true,
     ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
   ),
   item(
@@ -101,10 +101,11 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "elevenlabs",
     "ElevenLabs",
-    "Optional TTS, voice cloning, pronunciation tools, and showcase voices.",
+    "Optional TTS, consented voice cloning, pronunciation tools, and showcase voices.",
     "voice",
     false,
     ["ELEVENLABS_API_KEY"],
+    "Paid plan entitlements are required for Voice Library API use.",
   ),
   item(
     "openai-realtime",
@@ -156,7 +157,7 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "ICLOUD_APPLE_ID",
     "ICLOUD_APP_PASSWORD",
   ]),
-  item("stripe", "Stripe", "Subscriptions, billing, and portal.", "billing", false, [
+  item("stripe", "Stripe", "Subscriptions, prepaid balances, billing, and portal.", "billing", true, [
     "STRIPE_SECRET_KEY",
     "STRIPE_WEBHOOK_SECRET",
   ]),
@@ -165,9 +166,9 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "Resend",
     "Transactional email for verification, billing, support, and lifecycle messages.",
     "infra",
-    false,
+    true,
     ["RESEND_API_KEY"],
-    "Development can log verification email instead of sending.",
+    "A verified production sending domain is also required.",
   ),
   item("hubspot", "HubSpot", "CRM contacts, deals, and activity.", "actions", false, [
     "HUBSPOT_CLIENT_ID",
@@ -232,7 +233,7 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
       "X_ADS_ACCOUNT_ID",
     ],
   ),
-  item("upstash", "Upstash Redis", "Distributed rate limits and spend controls.", "infra", false, [
+  item("upstash", "Upstash Redis", "Distributed rate limits and spend controls.", "infra", true, [
     "UPSTASH_REDIS_REST_URL",
     "UPSTASH_REDIS_REST_TOKEN",
   ]),
