@@ -22,7 +22,7 @@ import { placeOutboundCall } from "./vapi-client";
 import { assertOutboundVoiceAllowed } from "./voice-spend-control";
 import { sendTenantMessage } from "./twilio-service";
 import { IntegrationService } from "./integrations";
-import { isDncBlocked } from "./compliance";
+import { evaluateOutboundDialGate } from "./outbound-dial-gate";
 
 interface CadenceStep {
   type: "call" | "sms" | "email";
@@ -45,6 +45,8 @@ interface LeadRow {
   customerNumber: string | null;
   email: string | null;
   agentId: string | null;
+  lastCalledAt: Date | null;
+  metadata: Record<string, unknown> | null;
 }
 
 function applyVars(template: string, lead: LeadRow): string {
@@ -62,17 +64,29 @@ async function executeStep(
 ): Promise<{ ok: boolean; result: string }> {
   const agentId = step.agentId || cadence.agentId || lead.agentId;
 
-  // TCPA/GDPR: refuse any call or SMS step when the number is on this
-  // tenant's DNC list. A lead can land on DNC after being enrolled — we
-  // must re-check at execution time, not just at enroll time.
+  // TCPA/federal DNC/express-written-consent: a cadence step is marketing
+  // outbound exactly like a campaign dial or intake auto-dial, and a lead
+  // can land on DNC (or lose consent) after being enrolled — re-check at
+  // execution time through the same shared gate campaign-dialer.ts and
+  // intake-routes.ts use, not just tenant-internal DNC. Covers call and
+  // SMS steps; both are marketing outbound under TCPA.
   if ((step.type === "call" || step.type === "sms") && lead.customerNumber) {
     try {
-      if (await isDncBlocked(cadence.userId, lead.customerNumber)) {
-        return { ok: false, result: "skipped — number on DNC" };
+      const gate = await evaluateOutboundDialGate({
+        userId: cadence.userId,
+        phone: lead.customerNumber,
+        leadId: lead.id,
+        lastCalledAt: lead.lastCalledAt,
+        metadata: lead.metadata || {},
+      });
+      if (!gate.allowed) {
+        return { ok: false, result: `skipped — ${gate.reason}` };
       }
     } catch (err: any) {
-      log.warn("cadence DNC check failed — failing closed", { error: err?.message });
-      return { ok: false, result: "DNC check failed (fail-closed)" };
+      log.warn("cadence outbound compliance gate failed — failing closed", {
+        error: err?.message,
+      });
+      return { ok: false, result: "compliance gate failed (fail-closed)" };
     }
   }
 
@@ -159,6 +173,8 @@ export async function tickDueCadenceRuns({
             customerNumber: schema.outboundLeads.customerNumber,
             email: schema.outboundLeads.email,
             agentId: schema.outboundLeads.agentId,
+            lastCalledAt: schema.outboundLeads.lastCalledAt,
+            metadata: schema.outboundLeads.metadata,
           })
           .from(schema.outboundLeads)
           .where(inArray(schema.outboundLeads.id, leadIds))

@@ -78,7 +78,12 @@ router.post(
       const { email, password } = req.body;
       // Body is now validated by Zod middleware
 
-      const result = await authService.signIn(email, password);
+      // Equalized so "no such account" (fast) and "wrong password" (scrypt)
+      // take indistinguishable wall-clock time — see SIGNIN_MIN_DURATION_MS.
+      const result = await equalizedDuration(
+        authService.signIn(email, password),
+        SIGNIN_MIN_DURATION_MS,
+      );
       if (!result) {
         throw AppError.fromHttpStatus(401, "Invalid email or password");
       }
@@ -428,11 +433,26 @@ router.post("/api/auth/signout", async (_req: Request, res: Response) => {
 });
 
 /**
- * Equalize response time across the registered/unregistered paths in
- * /forgot-password. createPasswordResetToken does real work (DB lookup
- * + scrypt-free insert + tokens) for registered emails and returns null
- * fast for unregistered ones. Without an equalizer, an attacker can
- * enumerate accounts by timing the response.
+ * Equalize response time across two paths that would otherwise diverge in
+ * a way an attacker can time to enumerate accounts or distinguish "no
+ * such user" from "wrong password." Promise.all enforces a minimum
+ * wall-clock by racing the real work against a fixed-delay timer: work
+ * that's naturally slower than the floor is unaffected; work that
+ * finishes faster gets padded out so timing can't distinguish it from
+ * the slower path.
+ */
+async function equalizedDuration<T>(promise: Promise<T>, minMs: number): Promise<T> {
+  const [value] = await Promise.all([
+    promise,
+    new Promise<void>((resolve) => setTimeout(resolve, minMs)),
+  ]);
+  return value;
+}
+
+/**
+ * /forgot-password floor. createPasswordResetToken does real work (DB
+ * lookup + scrypt-free insert + tokens) for registered emails and
+ * returns null fast for unregistered ones.
  *
  * Floor was empirically tuned from the PR #141 preview smoke test:
  * registered-path median ~700ms with outliers to 1025ms; unregistered
@@ -443,17 +463,22 @@ router.post("/api/auth/signout", async (_req: Request, res: Response) => {
  * there too. ≤1s is acceptable UX for a once-per-recovery action.
  */
 const FORGOT_PASSWORD_MIN_DURATION_MS = 1000;
-async function equalizedDuration<T>(promise: Promise<T>): Promise<T> {
-  // Promise.all enforces a minimum wall-clock by racing the work
-  // against a fixed-delay timer. Long DB latency on the registered
-  // path naturally exceeds the floor; short returns on the
-  // unregistered path get padded out so timing can't distinguish.
-  const [value] = await Promise.all([
-    promise,
-    new Promise<void>((resolve) => setTimeout(resolve, FORGOT_PASSWORD_MIN_DURATION_MS)),
-  ]);
-  return value;
-}
+
+/**
+ * /signin floor. authService.signIn returns null fast for an
+ * unregistered email (one indexed SELECT, no scrypt) but only after
+ * running scryptSync for a registered email with the wrong password —
+ * the same enumeration-by-timing bug class as forgot-password. Unlike
+ * forgot-password, signin is a high-frequency action, so the floor is
+ * tuned much lower: scrypt (N=16384) plus a pooled DB lookup typically
+ * completes in well under 400ms, so a correct-password signin is not
+ * perceptibly slowed, while the fast "no such user" path is padded up
+ * to match the slower "wrong password" path closely enough that timing
+ * sampling stops being a practical enumeration oracle. Combined with
+ * signinRateLimiter (5 attempts / 15 min per email+IP), this closes the
+ * gap without adding a full second to every login.
+ */
+const SIGNIN_MIN_DURATION_MS = 400;
 
 /**
  * POST /api/auth/forgot-password
@@ -479,7 +504,10 @@ router.post(
       const { email } = req.body;
       // Email is now validated by Zod middleware
 
-      const issued = await equalizedDuration(authService.createPasswordResetToken(email, req.ip));
+      const issued = await equalizedDuration(
+        authService.createPasswordResetToken(email, req.ip),
+        FORGOT_PASSWORD_MIN_DURATION_MS,
+      );
 
       if (issued) {
         const appUrl = resolveCanonicalAppUrl();

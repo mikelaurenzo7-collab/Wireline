@@ -16,6 +16,10 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   const verticalWedges = read("src/data/vertical-wedges.ts");
   const founderSeed = read("src/lib/founder-fleet-seed.ts");
   const wirelinePersonas = read("src/lib/wireline-agent-personas.ts");
+  const wirelineObjections = read("src/lib/wireline-agent-objections.ts");
+  const wirelineEscalation = read("src/lib/wireline-agent-escalation.ts");
+  const emailService = read("src/lib/email-service.ts");
+  const vapiToolHandlers = read("src/lib/vapi-tool-handlers.ts");
 
   mustInclude(
     "src/pages/BillingSettings.tsx",
@@ -168,6 +172,42 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     wirelinePersonas,
     /Everyday:|Plus:\s+\$|Studio:\s+\$|Account Holder:|first working assistant|my assistant/i,
     "demo-line personas must quote current agent and pricing language",
+  );
+  // The commercial model is Free Builder (build/test one agent free, no
+  // card, no time limit) → pick a live plan for a customer number. There
+  // is no time-boxed trial to promise or "extend" — live sales/support
+  // agent scripts that offer one are lying to real prospects on the phone.
+  const TRIAL_LANGUAGE_PATTERN =
+    /14-day trial|fourteen-day trial|trial extension|extend a trial/i;
+  mustExclude(
+    "src/lib/wireline-agent-personas.ts",
+    wirelinePersonas,
+    TRIAL_LANGUAGE_PATTERN,
+    "demo-line personas must not promise or extend a time-boxed trial (Free Builder has no expiry)",
+  );
+  mustExclude(
+    "src/lib/wireline-agent-objections.ts",
+    wirelineObjections,
+    TRIAL_LANGUAGE_PATTERN,
+    "objection-handling scripts must not promise a time-boxed trial (Free Builder has no expiry)",
+  );
+  mustExclude(
+    "src/lib/wireline-agent-escalation.ts",
+    wirelineEscalation,
+    TRIAL_LANGUAGE_PATTERN,
+    "Tier-1 auto-resolve topics must not list trial extension as a capability that doesn't exist",
+  );
+  mustExclude(
+    "src/lib/email-service.ts",
+    emailService,
+    TRIAL_LANGUAGE_PATTERN,
+    "transactional email copy must not promise a time-boxed trial (Free Builder has no expiry)",
+  );
+  mustExclude(
+    "src/lib/vapi-tool-handlers.ts",
+    vapiToolHandlers,
+    TRIAL_LANGUAGE_PATTERN,
+    "Vapi tool handler docs/copy must not describe a time-boxed trial (Free Builder has no expiry)",
   );
   mustExclude(
     "scripts/capture-prod-visual-qa.mjs",

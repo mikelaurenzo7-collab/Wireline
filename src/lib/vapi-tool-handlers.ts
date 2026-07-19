@@ -271,8 +271,9 @@ export interface SendSignupLinkDeps {
 }
 
 /**
- * Core logic for the `send_signup_link` Vapi tool — emails a 14-day
- * trial signup link. Used by the showcase/demo agents.
+ * Core logic for the `send_signup_link` Vapi tool — emails a free-agent
+ * signup link (Free Builder tier, no card, no trial). Used by the
+ * showcase/demo agents.
  *
  * Branch parity:
  *  - bad email           → "spell it" reprompt, no send

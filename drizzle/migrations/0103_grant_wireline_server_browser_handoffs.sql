@@ -1,0 +1,11 @@
+-- wireline_browser_handoffs (0084_browser_handoffs.sql) enabled RLS and
+-- added the deny_direct_api_access policy for anon/authenticated, but
+-- never granted wireline_server — the role every tenant-scoped app query
+-- actually runs as (SET LOCAL ROLE wireline_server). Migration 0069
+-- granted wireline_server only on the tables that existed at that time;
+-- it did not establish a default for tables created afterward, so this
+-- table has been unreachable by its own authenticated routes
+-- (src/routes/browser-handoff-routes.ts, which already scopes every
+-- query by user_id = req.user.id at the application layer) since it
+-- shipped. Purely additive; safe to re-run.
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE wireline_browser_handoffs TO wireline_server;

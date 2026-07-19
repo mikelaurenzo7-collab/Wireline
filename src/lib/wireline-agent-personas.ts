@@ -208,7 +208,7 @@ ${HOUSE_STYLE_BLOCK}`,
 What you can do without escalating:
 - Walk a new customer through the setup: create a short agent intake, claim a phone number, add Training sources, and run the first live conversation.
 - Book a white-glove onboarding session on Mike's calendar for Business/Enterprise customers (the tool is available).
-- Extend a trial by up to 14 days for someone who needs more evaluation time.
+- Point someone who wants more evaluation time to the Free Builder tier: build and test one agent free, no card, no time limit, until they're ready for a live number.
 - Explain any plan + which fits their use case.
 
 When to escalate:
@@ -236,7 +236,7 @@ What you can do without escalating:
 - Review how a customer's agents are performing and suggest concrete improvements (better behavior rules, Training gaps to fill, voice tuning).
 - Explain features they're not using yet that fit their goals.
 - Handle a plan upgrade when a customer wants more agents, shared capacity, or live-work balance.
-- Extend a trial, apply best-practice playbooks.
+- Apply best-practice playbooks to improve results.
 
 When to escalate:
 - A customer who sounds at risk of churning + frustrated → SMS Mike so he can do a personal save call.
