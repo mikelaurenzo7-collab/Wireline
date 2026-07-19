@@ -67,7 +67,11 @@ const required = [
   ["VAPI_PRIVATE_KEY", "Vapi managed inbound and outbound voice runtime", process.env.VAPI_PRIVATE_KEY],
   ["VAPI_WEBHOOK_SECRET", "Vapi webhook HMAC secret", process.env.VAPI_WEBHOOK_SECRET],
   ["TWILIO_ACCOUNT_SID", "Twilio programmable voice and messaging account", process.env.TWILIO_ACCOUNT_SID],
-  ["TWILIO_AUTH_TOKEN", "Twilio API authentication and inbound webhook validation", process.env.TWILIO_AUTH_TOKEN],
+  [
+    "TWILIO_AUTH_TOKEN",
+    "Twilio inbound webhook signature validation; rotate after any disclosure",
+    process.env.TWILIO_AUTH_TOKEN,
+  ],
   ["STRIPE_SECRET_KEY", "Stripe subscriptions, prepaid balances, and billing portal", process.env.STRIPE_SECRET_KEY],
   ["STRIPE_WEBHOOK_SECRET", "Stripe webhook signature verification", process.env.STRIPE_WEBHOOK_SECRET],
   ["RESEND_API_KEY", "Transactional email for verification, billing, and lifecycle delivery", process.env.RESEND_API_KEY],
@@ -84,6 +88,8 @@ const recommended = [
   ["GEMINI_API_KEY", "Gemini continuity fallback when direct OpenAI is unavailable"],
   ["AI_GATEWAY_API_KEY", "Vercel AI Gateway governed final fallback and centralized budgets"],
   ["VITE_VAPI_PUBLIC_KEY", "Vapi browser-side test calls"],
+  ["TWILIO_API_KEY", "Scoped Twilio REST API key SID; preferred over the Account Auth Token"],
+  ["TWILIO_API_SECRET", "Secret paired with TWILIO_API_KEY for production REST calls"],
   ["APP_URL", "Canonical URL for OAuth redirects and email links"],
   ["CORS_ORIGINS", "Production CORS allowlist"],
   ["VITE_STRIPE_PUBLIC_KEY", "Stripe publishable key for client-side checkout UI"],
@@ -141,6 +147,7 @@ const formatHints = new Map([
   ["POSTGRES_URL", "postgresql://user:pass@host:port/db (host must be dotted, localhost, or IP)"],
   ["DATABASE_POOL_URL", "postgresql://user:pass@pooler-host:6543/db"],
   ["TWILIO_ACCOUNT_SID", "AC followed by 32 hexadecimal characters"],
+  ["TWILIO_API_KEY", "SK followed by 32 hexadecimal characters"],
   ["FEDERAL_DNC_API_URL", "https://vendor.example/api/dnc-check"],
 ]);
 
@@ -154,6 +161,7 @@ function isValidEnvValue(key, value) {
     return isPostgresConnectionString(value);
   }
   if (key === "TWILIO_ACCOUNT_SID") return /^AC[a-fA-F0-9]{32}$/.test(String(value).trim());
+  if (key === "TWILIO_API_KEY") return /^SK[a-fA-F0-9]{32}$/.test(String(value).trim());
   if (key === "FEDERAL_DNC_API_URL") {
     try {
       return new URL(String(value).trim()).protocol === "https:";
@@ -177,6 +185,9 @@ const jwtSecretConflict =
   process.env.SUPABASE_JWT_SECRET &&
   process.env.INTERNAL_JWT_SECRET !== process.env.SUPABASE_JWT_SECRET;
 
+const twilioApiKeyPairPartial =
+  Boolean(process.env.TWILIO_API_KEY?.trim()) !== Boolean(process.env.TWILIO_API_SECRET?.trim());
+
 const missing = (vars) => vars.filter((entry) => !configuredValue(entry));
 
 const missingRequired = jwtSecretConflict
@@ -188,7 +199,17 @@ const missingRequired = jwtSecretConflict
       ...missing(required),
     ]
   : missing(required);
-const missingRecommended = missing(recommended);
+const missingRecommended = [
+  ...(twilioApiKeyPairPartial
+    ? [
+        [
+          "TWILIO_API_KEY / TWILIO_API_SECRET",
+          "The scoped Twilio REST credential must be configured as a complete key/secret pair.",
+        ],
+      ]
+    : []),
+  ...missing(recommended),
+];
 const missingOptional = missing(optional);
 const invalidRequired = invalid(required);
 const invalidRecommended = invalid(recommended);
