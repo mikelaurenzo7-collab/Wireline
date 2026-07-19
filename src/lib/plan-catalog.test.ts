@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID,
+  LAUNCH_CONTRIBUTION_MARGIN_FLOOR,
   STRIPE_PLANS,
   VOICE_VARIABLE_COST_PER_MIN_USD,
+  estimatedContributionMarginAtFullIncludedUsage,
   planById,
   planByPriceId,
   planByStripePrice,
@@ -62,12 +64,31 @@ describe("plan-catalog", () => {
 
   it("locks canonical Founder Early Access voice and capacity rates", () => {
     expect(planById("starter")?.voice_minutes_monthly).toBe(20);
-    expect(planById("team")?.voice_minutes_monthly).toBe(75);
-    expect(planById("business")?.voice_minutes_monthly).toBe(250);
-    expect(planById("enterprise")?.voice_minutes_monthly).toBe(650);
+    expect(planById("team")?.voice_minutes_monthly).toBe(40);
+    expect(planById("business")?.voice_minutes_monthly).toBe(100);
+    expect(planById("enterprise")?.voice_minutes_monthly).toBe(250);
     expect(planById("team")?.overage_per_min_usd).toBe(0.22);
     expect(planById("business")?.overage_per_min_usd).toBe(0.19);
     expect(planById("enterprise")?.overage_per_min_usd).toBe(0.17);
+  });
+
+  it("keeps price leadership while protecting full-use contribution margin", () => {
+    const paid = STRIPE_PLANS.filter((plan) => plan.price_usd_monthly > 0);
+    for (const plan of paid) {
+      expect(
+        estimatedContributionMarginAtFullIncludedUsage(plan, "month"),
+        `${plan.id} monthly`,
+      ).toBeGreaterThanOrEqual(LAUNCH_CONTRIBUTION_MARGIN_FLOOR);
+    }
+
+    // The $9 annual plan is the intentionally capped acquisition offer. Upper
+    // tiers must still clear the floor when every annual entitlement is used.
+    for (const plan of paid.filter((item) => item.id !== "starter")) {
+      expect(
+        estimatedContributionMarginAtFullIncludedUsage(plan, "year"),
+        `${plan.id} annual`,
+      ).toBeGreaterThanOrEqual(LAUNCH_CONTRIBUTION_MARGIN_FLOOR);
+    }
   });
 
   it("keeps paid extra-agent add-ons as capacity bundles", () => {
