@@ -15,14 +15,16 @@ describe("Twilio webhook XML contract", () => {
     expect(route).toContain('replace(/\'/g, "&apos;")');
   });
 
-  it("keeps STOP/START replies and unknown-number no-op behavior", () => {
+  it("keeps STOP/START/HELP replies and unknown-number no-op behavior", () => {
     const route = read("src/routes/twilio-webhook-base.ts");
     const wrapper = read("src/routes/twilio-webhook.ts");
 
     expect(route).toContain("OPT_OUT_KEYWORDS");
     expect(route).toContain("OPT_IN_KEYWORDS");
+    expect(route).toContain("HELP_KEYWORDS");
     expect(route).toContain("You have been unsubscribed");
     expect(route).toContain("You have been resubscribed");
+    expect(route).toContain("support@trywireline.com");
     expect(route).toContain("twimlEmpty()");
     // Twilio's native Advanced Opt-Out (OptOutType) is handled ahead of the
     // legacy keyword-matching base router so it never double-replies.
