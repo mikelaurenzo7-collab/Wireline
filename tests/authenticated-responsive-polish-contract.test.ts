@@ -77,7 +77,7 @@ describe("authenticated responsive polish contract", () => {
     const team = read("src/pages/TeamSettings.tsx");
     const admin = read("src/components/AdminSettings.tsx");
 
-    expect(studio).toContain('<h1 className="sr-only">AI employees</h1>');
+    expect(studio).toContain('<h1 className="sr-only">{language.plural}</h1>');
     expect(studio).toContain("{activeAgent.name}");
     expect(team).toContain(">\n            Team\n          </h1>");
     expect(admin).toContain('<h1 className="sr-only">Admin workspace</h1>');

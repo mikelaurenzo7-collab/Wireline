@@ -114,7 +114,7 @@ describe("authenticated mobile cleanup", () => {
     const trialBanner = read("src/components/layout/TrialBanner.tsx");
     const activationWizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
 
-    expect(shell).toContain("<WiredEyebrow>AI employees</WiredEyebrow>");
+    expect(shell).toContain("<WiredEyebrow>{language.plural}</WiredEyebrow>");
     expect(callLogs).toContain('label: "Employees"');
     expect(callLogs).toContain('<Zap className="size-4"');
     expect(callLogs).not.toContain("⚡");

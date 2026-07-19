@@ -8,6 +8,7 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 describe("managed Vapi runtime policy", () => {
   const roster = read("src/data/voice-roster.ts");
   const factory = read("src/lib/vapi-assistant-factory-v2.ts");
+  const outboundClient = read("src/lib/vapi-client.ts");
   const draftService = read("src/lib/agent-draft-service.ts");
   const studio = read("src/components/StudioAgentWorkspacePanel.tsx");
   const knowledge = read("src/pages/KnowledgePage.tsx");
@@ -28,6 +29,9 @@ describe("managed Vapi runtime policy", () => {
     expect(factory).not.toMatch(
       /resolveElevenLabsSpeed|pronunciationDictionaryLocators|eleven_flash/,
     );
+    expect(outboundClient).toMatch(/provider: "vapi" as const/);
+    expect(outboundClient).toMatch(/DEFAULT_MANAGED_VOICE_ID/);
+    expect(outboundClient).not.toMatch(/provider === "11labs"|eleven_flash/);
     expect(draftService).toMatch(/voiceProvider: "vapi"/);
   });
 

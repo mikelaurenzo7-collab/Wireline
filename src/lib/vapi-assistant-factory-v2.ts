@@ -3,6 +3,8 @@ import { desc, eq } from "drizzle-orm";
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { buildRoleToolDefsForTenant } from "./vapi-helpers";
+import { toVapiFunctionTools } from "./vapi-tool-format";
+import { buildVapiServerConfig } from "./vapi-server-config";
 import {
   getVoiceLatencyProfile,
   resolveOutboundStartSpeakingPlan,
@@ -115,6 +117,24 @@ export async function buildVapiAssistant({
   const finalSystemPrompt = isGrokModelId(modelSelection.model)
     ? `${systemPrompt}\n\n${buildGrokStrengthsPromptSection()}`
     : systemPrompt;
+  const functionTools = toVapiFunctionTools(
+    await buildRoleToolDefsForTenant(
+      configured.role || "customer_service",
+      configured.enabledTools,
+      agent.user_id,
+      userSettings?.aiTier,
+      {
+        twilioMessaging: !!userSettings?.twilioMessagingEnabled,
+        twilioLookup: !!userSettings?.twilioLookupEnabled,
+      },
+    ),
+  );
+  const appUrl = process.env.APP_URL?.trim().replace(/\/+$/, "");
+  const webhookServer = appUrl
+    ? buildVapiServerConfig(
+        `${appUrl}/api/vapi-webhook?agentId=${encodeURIComponent(agentId)}`,
+      )
+    : undefined;
 
   return {
     name: configured.name,
@@ -128,6 +148,7 @@ export async function buildVapiAssistant({
         : {}),
       systemPrompt: finalSystemPrompt,
       temperature: clampVoiceTemperature(configured.llmTemperature, 0.3),
+      tools: functionTools,
     },
     voice: {
       provider: "vapi" as const,
@@ -135,6 +156,7 @@ export async function buildVapiAssistant({
       ...(vapiVoiceVersion(voiceId) ? { version: vapiVoiceVersion(voiceId) } : {}),
     },
     transcriber: speech.transcriber,
+    ...(webhookServer ? { server: webhookServer } : {}),
     startSpeakingPlan: isOutbound
       ? resolveOutboundStartSpeakingPlan(speech)
       : speech.startSpeakingPlan,
@@ -152,16 +174,6 @@ export async function buildVapiAssistant({
       "speech-update",
     ],
     clientMessages: ["transcript", "hang", "function-call", "speech-update", "conversation-update"],
-    functions: await buildRoleToolDefsForTenant(
-      configured.role || "customer_service",
-      configured.enabledTools,
-      agent.user_id,
-      userSettings?.aiTier,
-      {
-        twilioMessaging: !!userSettings?.twilioMessagingEnabled,
-        twilioLookup: !!userSettings?.twilioLookupEnabled,
-      },
-    ),
     analysisPlan: {
       summaryPrompt:
         "Summarize the call in 2-3 sentences with caller intent, agent action, and committed follow-up.",

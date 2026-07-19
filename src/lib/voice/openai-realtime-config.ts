@@ -1,7 +1,7 @@
-export const OPENAI_REALTIME_DEFAULT_MODEL = process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2";
+export const OPENAI_REALTIME_DEFAULT_MODEL = process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2.1";
 export const OPENAI_REALTIME_DEFAULT_VOICE = process.env.OPENAI_REALTIME_VOICE || "marin";
 export const OPENAI_REALTIME_DEFAULT_TRANSCRIBER =
-  process.env.OPENAI_REALTIME_TRANSCRIBER || "gpt-realtime-whisper";
+  process.env.OPENAI_REALTIME_TRANSCRIBER || "gpt-4o-mini-transcribe";
 
 export const OPENAI_REALTIME_VOICES = [
   "alloy",

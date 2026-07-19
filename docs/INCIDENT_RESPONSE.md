@@ -1,36 +1,36 @@
 # Wireline Incident Response Runbook
 
 **Owner:** Mike Laurenzo (founder)
-**Last reviewed:** May 2026
+**Last reviewed:** July 2026
 
 ---
 
 ## 1. Severity Classification
 
-| Level | Criteria | Examples |
-|-------|----------|----------|
-| **P0** | All voice agents down, all customers affected | Vapi/Anthropic total outage, DB unreachable, DNS failure |
+| Level  | Criteria                                              | Examples                                                                   |
+| ------ | ----------------------------------------------------- | -------------------------------------------------------------------------- |
+| **P0** | All live calls or the core platform down              | Vapi/OpenAI/Twilio chain outage, DB unreachable, DNS failure               |
 | **P1** | Voice agents degraded or subset of customers affected | Latency >2s, one provider down (fallback active), webhook delivery stalled |
-| **P2** | Non-critical features broken | Dashboard slow, billing portal error, email delivery delayed |
-| **P3** | Minor issues | UI cosmetic bug, documentation error, single-user edge case |
+| **P2** | Non-critical features broken                          | Dashboard slow, billing portal error, email delivery delayed               |
+| **P3** | Minor issues                                          | UI cosmetic bug, documentation error, single-user edge case                |
 
 ## 2. Detection
 
 ### Automated Monitoring
 
-| Check | Frequency | Alert Channel |
-|-------|-----------|---------------|
-| `GET /api/health` | 1 min | Uptime monitor → SMS + email |
-| `GET /api/health/models` | 5 min | Vercel cron → Slack |
-| Synthetic call to showcase lines | 15 min | Scheduled job → SMS on failure |
-| Stripe webhook delivery lag | 5 min | Job queue sweep → log alert |
-| Error rate spike (Sentry) | Real-time | Sentry → email + Slack |
+| Check                            | Frequency | Alert Channel                  |
+| -------------------------------- | --------- | ------------------------------ |
+| `GET /api/health`                | 1 min     | Uptime monitor → SMS + email   |
+| `GET /api/health/models`         | 5 min     | Vercel cron → Slack            |
+| Synthetic call to showcase lines | 15 min    | Scheduled job → SMS on failure |
+| Stripe webhook delivery lag      | 5 min     | Job queue sweep → log alert    |
+| Error rate spike (Sentry)        | Real-time | Sentry → email + Slack         |
 
 ### Manual Indicators
 
 - Customer reports via support channel
 - Sudden drop in call volume (dashboard or daily brief anomaly)
-- Vapi/ElevenLabs/Anthropic status page shows degradation
+- Vapi, Twilio, xAI, OpenAI, Gemini, Supabase, or Vercel reports degradation
 
 ## 3. Response Procedure
 
@@ -44,15 +44,19 @@
 2. DIAGNOSE (within 15 min)
    □ Check /api/health/models — which provider is down?
    □ Check Vapi status: https://status.vapi.ai
-   □ Check Anthropic status: https://status.anthropic.com
-   □ Check ElevenLabs status: https://status.elevenlabs.io
+   □ Check Twilio status: https://status.twilio.com
+   □ Check xAI status: https://status.x.ai
+   □ Check OpenAI status: https://status.openai.com
+   □ Check Google Cloud status: https://status.cloud.google.com
    □ Check Supabase status: https://status.supabase.com
    □ Check Vercel status: https://www.vercel-status.com
    □ Check Sentry for error spike patterns
 
 3. MITIGATE
-   □ If Anthropic down → verify Gemini fallback is active
-   □ If Vapi down → no voice fallback available (escalate)
+   □ If xAI structured runtime is down → verify OpenAI/Gemini/Gateway fallback
+   □ If OpenAI PSTN model is down → verify Vapi moved calls to Gemini
+   □ If Vapi is down → pause new calls and verify limited Twilio fallback behavior
+   □ If Twilio is down → pause number/SMS provisioning; assess Vapi-owned inventory
    □ If DB down → Supabase incident, wait for recovery
    □ If our code → identify commit, revert if clear cause
 
@@ -111,6 +115,7 @@ Required for all P0 and P1 incidents within 72 hours:
 **Impact:** [number of customers affected, calls dropped]
 
 ### Timeline
+
 - HH:MM — First detection signal
 - HH:MM — Investigation started
 - HH:MM — Root cause identified
@@ -118,17 +123,21 @@ Required for all P0 and P1 incidents within 72 hours:
 - HH:MM — Service restored
 
 ### Root Cause
+
 [What actually broke and why]
 
 ### What Went Well
+
 - [Detection was fast because...]
 - [Fallback worked because...]
 
 ### What Went Poorly
+
 - [Detection was slow because...]
 - [Took too long to identify because...]
 
 ### Action Items
+
 - [ ] [Preventive measure 1] — owner, due date
 - [ ] [Preventive measure 2] — owner, due date
 - [ ] [Monitoring improvement] — owner, due date
@@ -139,30 +148,32 @@ Required for all P0 and P1 incidents within 72 hours:
 ```
 Level 1: Automated monitors detect → alert fires
 Level 2: Mike Laurenzo (founder) — all hours for P0/P1
-Level 3: Upstream provider support (Vapi, Anthropic, Supabase)
+Level 3: Upstream provider support (Vapi, Twilio, xAI/OpenAI/Google, Supabase)
 ```
 
 ## 6. Key Contacts
 
-| Service | Support Channel | Account |
-|---------|----------------|---------|
-| Vapi | support@vapi.ai | Wireline workspace |
-| Anthropic | support (console) | Wireline org |
-| ElevenLabs | support (console) | Wireline account |
-| Supabase | support (dashboard) | Wireline project |
-| Vercel | support (dashboard) | Wireline team |
-| Twilio | support (console) | Wireline account |
-| Stripe | support (dashboard) | Wireline account |
+| Service    | Support Channel     | Account            |
+| ---------- | ------------------- | ------------------ |
+| Vapi       | support@vapi.ai     | Wireline workspace |
+| xAI        | support (console)   | Wireline team      |
+| OpenAI     | support (console)   | Wireline project   |
+| Google AI  | support (console)   | Wireline project   |
+| ElevenLabs | support (console)   | Wireline account   |
+| Supabase   | support (dashboard) | Wireline project   |
+| Vercel     | support (dashboard) | Wireline team      |
+| Twilio     | support (console)   | Wireline account   |
+| Stripe     | support (dashboard) | Wireline account   |
 
 ## 7. Preventive Measures
 
 - **Dependency health:** Integration health panel in AdminSettings
 - **Budget guards:** Spend caps prevent runaway costs during incidents
 - **Rate limits:** Per-user and system-wide limits prevent cascading load
-- **Fallback providers:** Gemini Flash as voice fallback when Anthropic degrades
+- **Fallback providers:** structured xAI → OpenAI → Gemini → Gateway; Vapi PSTN OpenAI → Gemini
 - **Idempotent webhooks:** Stripe event deduplication prevents double-processing
 - **Job queue retry:** Failed background jobs retry with exponential backoff
 
 ---
 
-*This runbook evolves with every incident. Update it after every P0/P1 review.*
+_This runbook evolves with every incident. Update it after every P0/P1 review._

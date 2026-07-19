@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   assertFederalDncForMarketing,
   isFederalDncListed,
@@ -8,13 +8,19 @@ import {
 } from "../src/lib/federal-dnc-service";
 
 describe("federal-dnc-service", () => {
+  beforeEach(() => {
+    // Vercel preview builds can inherit production-scoped vendor credentials.
+    // Keep these unit tests deterministic and prevent accidental live lookups.
+    vi.stubEnv("FEDERAL_DNC_API_KEY", "");
+    vi.stubEnv("FEDERAL_DNC_API_URL", "");
+    vi.stubEnv("FEDERAL_DNC_PROVIDER", "");
+    vi.stubEnv("FEDERAL_DNC_ALLOW_UNCONFIGURED", "");
+    vi.stubEnv("NODE_ENV", "test");
+    vi.stubEnv("VERCEL", "");
+  });
+
   afterEach(() => {
-    delete process.env.FEDERAL_DNC_API_KEY;
-    delete process.env.FEDERAL_DNC_API_URL;
-    delete process.env.FEDERAL_DNC_PROVIDER;
-    delete process.env.FEDERAL_DNC_ALLOW_UNCONFIGURED;
-    delete process.env.NODE_ENV;
-    delete process.env.VERCEL;
+    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });
 

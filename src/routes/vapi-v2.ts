@@ -91,7 +91,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
   if (showcaseRoute && message?.type === "assistant-request") {
     return res.json({
       assistant: buildShowcaseAssistantPayload(showcaseRoute.agent, showcaseRoute.kind, {
-        serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET,
+        webhookSecret: process.env.VAPI_WEBHOOK_SECRET,
       }),
     });
   }

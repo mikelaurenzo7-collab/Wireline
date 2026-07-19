@@ -79,14 +79,14 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "apps-breadcrumb", pattern: /"\/apps": "Apps"/ },
   ],
   studioChrome: [
-    { id: "context-label", pattern: /aria-label="AI employee context"/ },
+    { id: "context-label", pattern: /aria-label=\{`\$\{language\.singular\} context`\}/ },
     { id: "readiness", pattern: /Live|Setup needed/ },
     { id: "create-entry", pattern: /\/studio\?create=1/ },
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
   ],
   overview: [
     { id: "overview-greeting", pattern: /dayGreeting\(\)/ },
-    { id: "first-employee-cta", pattern: /Create your first AI employee/ },
+    { id: "first-employee-cta", pattern: /\{language\.createCta\}/ },
     { id: "all-agents", pattern: /agents\.map/ },
     { id: "studio-link", pattern: /to=\{`\/studio\?agent=\$\{enc\}`\}/ },
   ],
@@ -101,7 +101,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
     { id: "workroom-key", pattern: /<StudioWorkroom[\s\S]*key=\{active\.id\}/ },
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
-    { id: "empty-state", pattern: /Create your first AI employee/ },
+    { id: "empty-state", pattern: /Create your first \$\{language\.singular\}/ },
     { id: "command-nonce", pattern: /commandNonce/ },
   ],
   workroom: [

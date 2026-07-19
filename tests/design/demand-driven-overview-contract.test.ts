@@ -45,7 +45,7 @@ describe("demand-driven authenticated experience", () => {
   it("does not offer live calling before a line exists", () => {
     expect(overview).toMatch(/hasLiveLine \? \(/);
     expect(overview).toMatch(/Start a call/);
-    expect(overview).toMatch(/Test employee/);
+    expect(overview).toMatch(/Test \{language\.navShort\.toLowerCase\(\)\}/);
     expect(overview).toMatch(/hasConversationHistory/);
     expect(overview).toMatch(/No new conversations today\. Your customer line is still ready/);
   });

@@ -47,9 +47,11 @@ export function resolvePostAuthDestination(
 ): string {
   /**
    * Determines the route after successful login (email or OAuth).
-   * Honors explicit ?redirect or persisted AUTH_REDIRECT_KEY.
+   * Honors an explicit ?redirect first. Fresh signup then takes precedence over
+   * any persisted redirect left by an earlier sign-in flow.
    * Otherwise:
    * - For immediate post-signup (fresh flag): Studio create (consumed after use).
+   * - For returning sign-ins: persisted AUTH_REDIRECT_KEY (consumed after use).
    * - Default for all logged-in sessions: /overview (Home).
    * Studio is kept as the tool/create surface (nav, /studio, ?create=1 links).
    * Fresh signups can reach create in Studio when appropriate via links or the one-time flow.
@@ -57,23 +59,25 @@ export function resolvePostAuthDestination(
   const freshSignup = isFreshSignupSession();
   const fromSearch = readRedirectFromSearch(search);
   if (fromSearch) {
+    persistAuthRedirect(null);
     if (freshSignup) clearFreshSignupSession();
     return fromSearch;
   }
+
+  if (freshSignup) {
+    // A redirect persisted by an earlier sign-in must never override a direct
+    // signup. Only a safe redirect on the current signup URL may beat Fast Start.
+    persistAuthRedirect(null);
+    clearFreshSignupSession();
+    return workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1";
+  }
+
   if (typeof window !== "undefined") {
     const stored = window.localStorage.getItem(AUTH_REDIRECT_KEY);
     if (isSafeInternalPath(stored)) {
       window.localStorage.removeItem(AUTH_REDIRECT_KEY);
-      if (freshSignup) clearFreshSignupSession();
       return stored;
     }
-  }
-
-  if (freshSignup) {
-    // Consume the one-time flag so only the immediate post-signup navigation targets
-    // Studio create. Subsequent logins default to /overview (Home).
-    clearFreshSignupSession();
-    return workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1";
   }
 
   return "/overview";

@@ -25,6 +25,26 @@ const shouldMigrate =
   !migrationsDisabled &&
   (migrationsForced || (environment === "production" && !isDuplicateV0Project));
 
+function runLiveVapiSchemaAuditIfRequested() {
+  const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
+  if (environment !== "preview" || !commitMessage.includes("[launch-deep-audit]")) return;
+
+  console.log("Running one-shot non-billable Vapi payload schema audit.");
+  run("node", ["scripts/check-vapi-payload-contract-live.mjs"]);
+}
+
+function runDeepLaunchAuditIfRequested() {
+  const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
+  if (environment !== "preview" || !commitMessage.includes("[launch-deep-audit]")) return;
+
+  console.log("Running one-shot full TypeScript, ESLint, and Vitest launch audit.");
+  run("npm", ["run", "lint"]);
+  run("npm", ["run", "lint:server"]);
+  run("npm", ["run", "lint:audit-modules"]);
+  run("npm", ["run", "lint:eslint"]);
+  run("npm", ["run", "test:run"]);
+}
+
 function sanitizePreviewEnvironment() {
   if (
     environment !== "preview" ||
@@ -72,7 +92,21 @@ run("node", ["scripts/check-marketing-measurement-consent.mjs"]);
 run("node", ["scripts/check-mcp-http-hardening.mjs"]);
 run("node", ["scripts/check-stripe-checkout-tax.mjs"]);
 run("node", ["scripts/check-stripe-catalog-contract.mjs"]);
+run("node", ["--check", "scripts/check-vendor-readiness.mjs"]);
+run("npx", [
+  "vitest",
+  "run",
+  "tests/runtime-provider-chain-contract.test.ts",
+  "tests/structured-runtime-policy-contract.test.ts",
+  "tests/vendor-readiness-contract.test.ts",
+  "tests/runtime-integrations-registry-contract.test.ts",
+  "tests/production-env-policy-contract.test.ts",
+  "tests/managed-vapi-runtime-contract.test.ts",
+  "tests/vapi-modern-payload-contract.test.ts",
+]);
+runLiveVapiSchemaAuditIfRequested();
 sanitizePreviewEnvironment();
+runDeepLaunchAuditIfRequested();
 run("node", ["scripts/check-operational-core.mjs"]);
 run("node", ["scripts/build-design-tokens.mjs"]);
 

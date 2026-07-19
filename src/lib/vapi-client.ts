@@ -23,13 +23,15 @@ import {
   buildRoleToolDefsForTenant,
   mapOutboundVoiceRole,
 } from "./vapi-helpers";
+import { toVapiFunctionTools } from "./vapi-tool-format";
+import { buildVapiServerConfig } from "./vapi-server-config";
 import { normalizeOutboundNumber } from "./dialer-compliance";
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
 import { vapiVoiceVersion } from "./voice-catalog";
+import { DEFAULT_MANAGED_VOICE_ID, isManagedVapiVoiceId } from "../data/voice-roster";
 import {
-  resolveElevenLabsSpeed,
   resolveOutboundStartSpeakingPlan,
   resolveVapiSpeechPipeline,
   VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
@@ -494,6 +496,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       twilioLookup: !!settings?.twilioLookupEnabled,
     },
   );
+  const outboundTools = toVapiFunctionTools(outboundFunctions);
 
   const assistantPayload: Record<string, unknown> = {
     name: agentConfig.name || "Wireline Outbound Agent",
@@ -511,7 +514,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
     backgroundDenoisingEnabled: false,
     startSpeakingPlan: resolveOutboundStartSpeakingPlan(speechPipeline),
     transcriber: speechPipeline.transcriber,
-    ...(outboundServerUrl && { serverUrl: outboundServerUrl }),
+    ...(outboundServerUrl && { server: buildVapiServerConfig(outboundServerUrl) }),
     serverMessages: [
       "tool-calls",
       "status-update",
@@ -527,65 +530,24 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
         : {}),
       systemPrompt: finalSystemPrompt,
       temperature: llmTemp,
+      tools: outboundTools,
     },
-    // Match inbound assistant factory — Vapi rejects tools nested under model.
-    functions: outboundFunctions,
     recordingEnabled: true,
     voice: (() => {
-      // ElevenLabs voice config (per-agent). Three knob groups:
-      //   1. speed (0.7–1.2, default 1.0) — speaking rate.
-      //   2. fine-tuning (stability, similarityBoost, style,
-      //      useSpeakerBoost) — voice quality. Most impactful on
-      //      cloned voices.
-      // All stored as numeric → string via pg; coerce + clamp here so
-      // a corrupted value can't ship something Vapi/EL would reject.
-      // Only attached on 11labs providers — OpenAI's voice block
-      // ignores them and Vapi would reject the request if we sent
-      // them. Speed is omitted when at the neutral default to keep
-      // the payload tidy; fine-tuning params are always attached so
-      // the Account Holder's slider value is authoritative.
-      //
-      // Docs:
-      //   speed:        https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
-      //   fine-tuning:  https://elevenlabs.io/docs/api-reference/text-to-speech/convert#request.body.voice_settings
-      const provider = agentConfig.voiceProvider || "11labs";
-      const speed = resolveElevenLabsSpeed((agentConfig as any)?.voiceSpeed, { outbound: true });
-      const clamp01 = (v: unknown, fallback: number): number => {
-        if (v == null) return fallback;
-        const n = Number(v);
-        if (!Number.isFinite(n)) return fallback;
-        return Math.min(1, Math.max(0, n));
-      };
-      const stability = clamp01((agentConfig as any)?.voiceStability, 0.65);
-      const similarityBoost = clamp01((agentConfig as any)?.voiceSimilarityBoost, 0.8);
-      const style = clamp01((agentConfig as any)?.voiceStyle, 0.1);
-      const rawSpeakerBoost = (agentConfig as any)?.voiceSpeakerBoost;
-      const useSpeakerBoost = rawSpeakerBoost == null ? true : Boolean(rawSpeakerBoost);
+      // Outbound calls use the same managed Vapi voice roster as inbound calls.
+      // ElevenLabs remains an optional cloning/showcase layer, not the tenant
+      // phone runtime.
+      const requestedVoiceId = agentConfig.voiceIdOutbound || agentConfig.voiceId;
+      const voiceId = isManagedVapiVoiceId(requestedVoiceId)
+        ? requestedVoiceId
+        : DEFAULT_MANAGED_VOICE_ID;
       return {
-        provider,
-        voiceId: agentConfig.voiceIdOutbound || agentConfig.voiceId || "bIHbv24MWmeRgasZH58o",
-        ...(provider === "vapi" &&
-        vapiVoiceVersion(agentConfig.voiceIdOutbound || agentConfig.voiceId)
-          ? { version: vapiVoiceVersion(agentConfig.voiceIdOutbound || agentConfig.voiceId) }
-          : {}),
-        // Pin the ElevenLabs TTS model so Vapi doesn't auto-swap
-        // between turbo / flash / multilingual / v3 mid-call. Each
-        // model has subtly different prosody for the same voiceId,
-        // which a caller hears as the agent "changing voice or
-        // cadence" halfway through. Matches the tenant assistant
-        // factory; turbo_v2_5 is the humanness/latency sweet spot
-        // for phone calls.
-        ...(provider === "11labs" ? { model: "eleven_flash_v2_5" } : {}),
-        ...(provider === "11labs" && speed !== 1.0 ? { speed } : {}),
-        ...(provider === "11labs" ? { stability, similarityBoost, style, useSpeakerBoost } : {}),
+        provider: "vapi" as const,
+        voiceId,
+        ...(vapiVoiceVersion(voiceId) ? { version: vapiVoiceVersion(voiceId) } : {}),
       };
     })(),
   };
-
-  const webhookSecret = process.env.VAPI_WEBHOOK_SECRET?.trim();
-  if (webhookSecret) {
-    assistantPayload.serverUrlSecret = webhookSecret;
-  }
 
   const vapiPayload = {
     phoneNumberId: outboundPhoneNumberId,

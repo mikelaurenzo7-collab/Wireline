@@ -38,6 +38,7 @@ import {
 import { getPasswordPolicyError } from "../lib/password-policy";
 import { markFreshSignupSession } from "../lib/post-signup-onboarding";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
+import { CUSTOMER_AGENT_LANGUAGE, customerAgentLanguage } from "../lib/product-copy";
 import {
   captureDemoSourceFromLocation,
   readDemoSourceCookie,
@@ -330,14 +331,14 @@ function WorkspaceSelector({
       id: "personal",
       title: "Personal",
       shortText: "Just me",
-      text: "One private employee for calls, texts, and follow-up.",
+      text: "A private agent for your calls, appointments, and follow-up.",
       icon: <User className="h-4 w-4" />,
     },
     {
       id: "business",
       title: "Business",
       shortText: "Team workspace",
-      text: "Shared employees, numbers, approvals, and integrations.",
+      text: `Shared ${CUSTOMER_AGENT_LANGUAGE.business.plural}, numbers, approvals, and integrations.`,
       icon: <Building2 className="h-4 w-4" />,
     },
   ];
@@ -593,7 +594,7 @@ export default function AuthPortal() {
   const pageDescription = isReset
     ? "Enter your email and Wireline will send a secure password reset link."
     : isSignUp
-      ? "Build your first AI employee."
+      ? `Build your first ${customerAgentLanguage(workspaceMode).singular}.`
       : "Welcome back to Wireline.";
 
   return (

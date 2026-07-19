@@ -37,6 +37,7 @@
     "design:contract": "npm run design:check",
     "assets": "node scripts/render-image-assets.mjs",
     "check-prod-env": "node scripts/check-prod-env.mjs",
+    "vendor:readiness": "node scripts/check-vendor-readiness.mjs",
     "runtime:policy:check": "node scripts/check-runtime-policy.mjs",
     "stripe:setup": "node scripts/setup-stripe-catalog.mjs",
     "stripe:audit-live": "node scripts/run-stripe-audit-from-vercel.mjs",
@@ -81,7 +82,8 @@
     "route-registry:check": "node scripts/check-route-registry.mjs",
     "docs:check": "node scripts/check-docs-index.mjs",
     "design:tokens:check": "node scripts/check-design-token-parity.mjs",
-    "openapi:check": "node scripts/check-openapi-implementation.mjs"
+    "openapi:check": "node scripts/check-openapi-implementation.mjs",
+    "stripe:balance:audit": "node scripts/check-stripe-balance-cause.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

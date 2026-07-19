@@ -8,11 +8,11 @@ describe("Fast Start step flow contract", () => {
   const createDialog = read("src/components/CreateAgentDialog.tsx");
 
   it("keeps create on a single brief-first screen", () => {
-    expect(createDialog).toContain("What should this employee handle?");
+    expect(createDialog).toContain("{language.setupPrompt}");
     expect(createDialog).toContain("One sentence is enough.");
-    expect(createDialog).toContain('aria-label="Employee type"');
+    expect(createDialog).toContain('aria-label="Use case"');
     expect(createDialog).toContain('aria-label="Quick briefs"');
-    expect(createDialog).toContain("Create AI employee");
+    expect(createDialog).toContain("language.createCta");
     expect(createDialog).toContain("Voice, phone, and testing come next in Studio.");
     expect(createDialog).not.toContain("useState<1 | 2>(1)");
     expect(createDialog).not.toMatch(/Step [12] ·/);

@@ -56,7 +56,10 @@ export const STUDIO_CANVAS_REQUIRED = {
   appRoutes: [
     { id: "provider-neutral-studio-route", pattern: /pages\/AgentStudioHome"/ },
     // Retired /agents page redirects into Studio (agent-first IA owns the roster).
-    { id: "agents-redirect", pattern: /path="\/agents" element=\{<Navigate to="\/studio" replace \/>\}/ },
+    {
+      id: "agents-redirect",
+      pattern: /path="\/agents" element=\{<Navigate to="\/studio" replace \/>\}/,
+    },
   ],
   studioHome: [
     { id: "dedicated-shell", pattern: /StudioPageShell/ },
@@ -78,7 +81,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "apps-breadcrumb", pattern: /"\/apps": "Apps"/ },
   ],
   studioChrome: [
-    { id: "context-label", pattern: /aria-label="AI employee context"/ },
+    { id: "context-label", pattern: /aria-label=\{`\$\{language\.singular\} context`\}/ },
     { id: "readiness", pattern: /Live|Setup needed/ },
     { id: "create-entry", pattern: /\/studio\?create=1/ },
   ],
@@ -86,7 +89,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     // Nav carries the "Overview" label; the page itself leads with a
     // personalized greeting headline and the first-employee path.
     { id: "overview-greeting", pattern: /dayGreeting\(\)/ },
-    { id: "first-employee-cta", pattern: /Create your first AI employee/ },
+    { id: "first-employee-cta", pattern: /\{language\.createCta\}/ },
     { id: "full-roster", pattern: /agents\.map/ },
     { id: "studio-target", pattern: /\/studio\?agent=/ },
   ],
@@ -136,14 +139,31 @@ function readSurface(key) {
 export function assertStudioCanvasContract(sources, { mustInclude, mustExclude }) {
   const get = (key) => sources[key] ?? readSurface(key);
   for (const [surfaceKey, rules] of Object.entries(STUDIO_CANVAS_FORBIDDEN)) {
-    for (const rule of rules) mustExclude(STUDIO_CANVAS_SURFACES[surfaceKey], get(surfaceKey), rule.pattern, rule.id);
+    for (const rule of rules)
+      mustExclude(STUDIO_CANVAS_SURFACES[surfaceKey], get(surfaceKey), rule.pattern, rule.id);
   }
   for (const [surfaceKey, rules] of Object.entries(STUDIO_CANVAS_REQUIRED)) {
-    for (const rule of rules) mustInclude(STUDIO_CANVAS_SURFACES[surfaceKey], get(surfaceKey), rule.pattern, `studio canvas: ${rule.id}`);
+    for (const rule of rules)
+      mustInclude(
+        STUDIO_CANVAS_SURFACES[surfaceKey],
+        get(surfaceKey),
+        rule.pattern,
+        `studio canvas: ${rule.id}`,
+      );
   }
   for (const path of STUDIO_CANVAS_LINK_SURFACES) {
     const key = path.includes("OverviewPage") ? "overview" : "workspacePanel";
-    mustExclude(path, get(key), /mode=workroom/, "legacy workroom mode must not appear in studio links");
+    mustExclude(
+      path,
+      get(key),
+      /mode=workroom/,
+      "legacy workroom mode must not appear in studio links",
+    );
   }
-  mustInclude(STUDIO_CANVAS_SURFACES.designVision, get("designVision"), /minTouchTargetPx:\s*44/, "design vision must document Studio touch targets");
+  mustInclude(
+    STUDIO_CANVAS_SURFACES.designVision,
+    get("designVision"),
+    /minTouchTargetPx:\s*44/,
+    "design vision must document Studio touch targets",
+  );
 }
