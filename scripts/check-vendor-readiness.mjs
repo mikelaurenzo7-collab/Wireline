@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * Read-only launch probe. It validates credentials and funding posture without
- * printing secrets or making billable model/call requests.
+ * Read-only launch probe. It validates credentials, inventory, channel posture,
+ * and funding without printing secrets or making billable model/call/message
+ * requests.
  *
  * Load production env before running:
  *   node --env-file=.env.production scripts/check-vendor-readiness.mjs
@@ -56,6 +57,14 @@ function validHttpsUrl(name) {
   }
 }
 
+function arrayAt(body, key) {
+  return Array.isArray(body?.[key]) ? body[key] : Array.isArray(body) ? body : [];
+}
+
+function basicAuth(username, password) {
+  return `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`;
+}
+
 record(
   "postgres",
   true,
@@ -69,22 +78,37 @@ record(
 record(
   "upstash",
   true,
-  present("UPSTASH_REDIS_REST_URL") && present("UPSTASH_REDIS_REST_TOKEN") ? "ready" : "blocked",
+  present("UPSTASH_REDIS_REST_URL") && present("UPSTASH_REDIS_REST_TOKEN")
+    ? "ready"
+    : "blocked",
   "Distributed rate-limit credentials.",
   "Maintain a production Upstash database and billing method.",
 );
+
+const twilioConfigured = present("TWILIO_ACCOUNT_SID") && present("TWILIO_AUTH_TOKEN");
+const twilioAuthorization = twilioConfigured
+  ? basicAuth(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+  : null;
+const gatewayCredential =
+  process.env.AI_GATEWAY_API_KEY?.trim() || process.env.VERCEL_OIDC_TOKEN?.trim() || "";
 
 const [
   xai,
   openai,
   gemini,
-  vapi,
+  gateway,
+  vapiPhones,
+  vapiAssistants,
   twilioAccount,
   twilioBalance,
+  twilioNumbers,
+  twilioMessagingServices,
+  twilioWhatsappSenders,
   stripeAccount,
   stripeBalance,
   resend,
   eleven,
+  elevenVoices,
 ] = await Promise.all([
   present("XAI_API_KEY")
     ? readJson("https://api.x.ai/v1/models", {
@@ -101,34 +125,48 @@ const [
         `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(process.env.GEMINI_API_KEY)}`,
       )
     : null,
+  gatewayCredential
+    ? readJson("https://ai-gateway.vercel.sh/v1/models", {
+        headers: { Authorization: `Bearer ${gatewayCredential}` },
+      })
+    : null,
   present("VAPI_PRIVATE_KEY")
-    ? readJson("https://api.vapi.ai/phone-number?limit=1", {
+    ? readJson("https://api.vapi.ai/phone-number?limit=100", {
         headers: { Authorization: `Bearer ${process.env.VAPI_PRIVATE_KEY}` },
       })
     : null,
-  present("TWILIO_ACCOUNT_SID") && present("TWILIO_AUTH_TOKEN")
+  present("VAPI_PRIVATE_KEY")
+    ? readJson("https://api.vapi.ai/assistant?limit=1", {
+        headers: { Authorization: `Bearer ${process.env.VAPI_PRIVATE_KEY}` },
+      })
+    : null,
+  twilioConfigured
     ? readJson(
         `https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(process.env.TWILIO_ACCOUNT_SID)}.json`,
-        {
-          headers: {
-            Authorization: `Basic ${Buffer.from(
-              `${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`,
-            ).toString("base64")}`,
-          },
-        },
+        { headers: { Authorization: twilioAuthorization } },
       )
     : null,
-  present("TWILIO_ACCOUNT_SID") && present("TWILIO_AUTH_TOKEN")
+  twilioConfigured
     ? readJson(
         `https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(process.env.TWILIO_ACCOUNT_SID)}/Balance.json`,
-        {
-          headers: {
-            Authorization: `Basic ${Buffer.from(
-              `${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`,
-            ).toString("base64")}`,
-          },
-        },
+        { headers: { Authorization: twilioAuthorization } },
       )
+    : null,
+  twilioConfigured
+    ? readJson(
+        `https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(process.env.TWILIO_ACCOUNT_SID)}/IncomingPhoneNumbers.json?PageSize=50`,
+        { headers: { Authorization: twilioAuthorization } },
+      )
+    : null,
+  twilioConfigured
+    ? readJson("https://messaging.twilio.com/v1/Services?PageSize=50", {
+        headers: { Authorization: twilioAuthorization },
+      })
+    : null,
+  twilioConfigured
+    ? readJson("https://messaging.twilio.com/v1/Channels/Senders?Channel=whatsapp&PageSize=50", {
+        headers: { Authorization: twilioAuthorization },
+      })
     : null,
   present("STRIPE_SECRET_KEY")
     ? readJson("https://api.stripe.com/v1/account", {
@@ -150,23 +188,19 @@ const [
         headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY },
       })
     : null,
+  present("ELEVENLABS_API_KEY")
+    ? readJson("https://api.elevenlabs.io/v2/voices?page_size=1", {
+        headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY },
+      })
+    : null,
 ]);
 
-record(
-  "xai",
-  true,
-  xai?.ok ? "ready" : "blocked",
-  xai?.ok
-    ? "xAI key accepted; Grok structured/live-voice APIs are reachable."
-    : "xAI key missing or rejected.",
-  "Confirm prepaid credits or a nonzero invoiced billing limit in xAI Console.",
-);
 record(
   "openai",
   true,
   openai?.ok ? "ready" : "blocked",
   openai?.ok
-    ? "OpenAI key accepted for Vapi PSTN intelligence/fallback."
+    ? "OpenAI key accepted for the managed structured runtime and realtime sessions."
     : "OpenAI key missing or rejected.",
   "Keep a payment method, project budget, and usage alerts enabled.",
 );
@@ -174,37 +208,96 @@ record(
   "gemini",
   false,
   gemini?.ok ? "ready" : "degraded",
-  gemini?.ok ? "Gemini fallback key accepted." : "Gemini fallback unavailable.",
-  "Attach Google Cloud billing only if free/committed quota is insufficient.",
+  gemini?.ok ? "Gemini continuity fallback key accepted." : "Gemini fallback unavailable.",
+  "Attach Google Cloud billing only if free or committed quota is insufficient.",
 );
 record(
   "ai_gateway",
   false,
-  present("AI_GATEWAY_API_KEY") || present("VERCEL_OIDC_TOKEN") ? "ready" : "degraded",
-  "Last-resort multi-model routing.",
-  "Purchase Gateway credits and set an API-key budget/auto-top-up before scale.",
+  gateway?.ok ? "ready" : "degraded",
+  gateway?.ok
+    ? "Vercel AI Gateway credential accepted and model catalog reachable."
+    : gatewayCredential
+      ? `AI Gateway credential was rejected or unavailable${gateway ? ` (HTTP ${gateway.status})` : ""}.`
+      : "AI Gateway credential missing.",
+  "Set an API-key budget and alerting; add credits or auto-top-up before scale.",
 );
+
+const xaiFallbackEnabled =
+  process.env.WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK?.trim().toLowerCase() === "true";
+record(
+  "xai",
+  false,
+  xai?.ok ? "ready" : "degraded",
+  xai?.ok
+    ? `xAI key accepted; optional Grok and Wireline Live voice APIs are reachable${
+        xaiFallbackEnabled ? " and the structured fallback switch is enabled" : ""
+      }.`
+    : "Optional xAI layer missing or rejected.",
+  "Keep xAI opt-in until quality, latency, and unit economics beat the OpenAI launch default.",
+  { structured_fallback_enabled: xaiFallbackEnabled },
+);
+
+const vapiPhoneInventory = arrayAt(vapiPhones?.body, "data");
+const vapiAssistantInventory = arrayAt(vapiAssistants?.body, "data");
+const vapiReady = Boolean(vapiPhones?.ok && vapiAssistants?.ok && vapiPhoneInventory.length > 0);
 record(
   "vapi",
   true,
-  vapi?.ok ? "ready" : "blocked",
-  vapi?.ok
-    ? "Vapi private key accepted; phone inventory reachable."
-    : "Vapi key missing or rejected.",
-  "Check Vapi Settings → Billing; add credits or enable auto-reload.",
+  vapiReady ? "ready" : "blocked",
+  vapiPhones?.ok && vapiAssistants?.ok
+    ? `Vapi key accepted; ${vapiPhoneInventory.length} phone number(s) reachable and assistant API accepted.`
+    : "Vapi key missing, rejected, or inventory APIs unavailable.",
+  vapiPhoneInventory.length > 0
+    ? "Keep Vapi billing funded and auto-reload enabled."
+    : "Provision or import at least one production phone number before launch.",
+  { phone_number_count: vapiPhoneInventory.length, assistant_sample_count: vapiAssistantInventory.length },
 );
 
-const twilioReady = Boolean(twilioAccount?.ok && twilioAccount.body?.status === "active");
+const twilioAccountReady = Boolean(twilioAccount?.ok && twilioAccount.body?.status === "active");
+const twilioIncomingNumbers = arrayAt(twilioNumbers?.body, "incoming_phone_numbers");
+const voiceCapableNumbers = twilioIncomingNumbers.filter((number) => number?.capabilities?.voice === true);
+const smsCapableNumbers = twilioIncomingNumbers.filter((number) => number?.capabilities?.sms === true);
+const twilioServices = arrayAt(twilioMessagingServices?.body, "services");
+const whatsappSenders = arrayAt(twilioWhatsappSenders?.body, "senders");
+const onlineWhatsappSenders = whatsappSenders.filter(
+  (sender) => String(sender?.status || "").trim().toUpperCase() === "ONLINE",
+);
+const twilioVoiceSmsReady = Boolean(
+  twilioAccountReady && voiceCapableNumbers.length > 0 && (smsCapableNumbers.length > 0 || twilioServices.length > 0),
+);
 record(
-  "twilio",
+  "twilio_voice_sms",
   true,
-  twilioReady ? "ready" : "blocked",
-  twilioReady
-    ? `Twilio account active${twilioBalance?.ok ? `; reported balance ${twilioBalance.body.balance} ${twilioBalance.body.currency}` : ""}.`
+  twilioVoiceSmsReady ? "ready" : "blocked",
+  twilioAccountReady
+    ? `Twilio account active${
+        twilioBalance?.ok
+          ? `; reported balance ${twilioBalance.body.balance} ${twilioBalance.body.currency}`
+          : ""
+      }; ${voiceCapableNumbers.length} voice-capable number(s), ${smsCapableNumbers.length} SMS-capable number(s), and ${twilioServices.length} Messaging Service(s).`
     : `Twilio credentials missing or rejected${twilioAccount ? ` (HTTP ${twilioAccount.status})` : ""}.`,
-  twilioReady
-    ? "Keep the paid account and payment method current; configure Usage Triggers."
-    : "Rotate TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN, upgrade the account, and add a payment method.",
+  twilioVoiceSmsReady
+    ? "Keep the paid account and payment method current; configure Usage Triggers and sender webhooks."
+    : "Restore valid credentials and provision at least one voice-capable number plus an SMS sender or Messaging Service.",
+  {
+    incoming_number_count: twilioIncomingNumbers.length,
+    voice_capable_number_count: voiceCapableNumbers.length,
+    sms_capable_number_count: smsCapableNumbers.length,
+    messaging_service_count: twilioServices.length,
+  },
+);
+record(
+  "twilio_whatsapp",
+  false,
+  onlineWhatsappSenders.length > 0 ? "ready" : "degraded",
+  onlineWhatsappSenders.length > 0
+    ? `${onlineWhatsappSenders.length} ONLINE WhatsApp sender(s) found.`
+    : "No ONLINE Twilio WhatsApp sender found; keep WhatsApp private-beta and do not market it as generally available.",
+  onlineWhatsappSenders.length > 0
+    ? "Maintain Meta business verification, approved templates, quality rating, and Twilio funding."
+    : "Complete WABA/sender onboarding and approve templates before enabling business-initiated WhatsApp messages.",
+  { sender_count: whatsappSenders.length, online_sender_count: onlineWhatsappSenders.length },
 );
 
 const stripeAvailable = Number(
@@ -212,9 +305,9 @@ const stripeAvailable = Number(
 );
 const stripeReady = Boolean(
   stripeAccount?.ok &&
-  stripeAccount.body?.charges_enabled &&
-  stripeAccount.body?.payouts_enabled &&
-  stripeAvailable >= 0,
+    stripeAccount.body?.charges_enabled &&
+    stripeAccount.body?.payouts_enabled &&
+    stripeAvailable >= 0,
 );
 record(
   "stripe",
@@ -246,16 +339,24 @@ record(
 const elevenRemaining = eleven?.ok
   ? Number(eleven.body?.character_limit ?? 0) - Number(eleven.body?.character_count ?? 0)
   : null;
+const elevenTier = String(eleven?.body?.tier || "unknown").trim().toLowerCase();
+const elevenPaidTier = eleven?.ok && elevenTier !== "free" && elevenTier !== "unknown";
+const elevenReady = Boolean(elevenPaidTier && elevenVoices?.ok && elevenRemaining !== null && elevenRemaining > 0);
 record(
   "elevenlabs",
   false,
-  eleven?.ok ? "ready" : "degraded",
+  elevenReady ? "ready" : "degraded",
   eleven?.ok
-    ? `${eleven.body.tier || "unknown"} plan active; ${Math.max(0, elevenRemaining).toLocaleString()} credits remaining.`
+    ? `${eleven.body.tier || "unknown"} plan; ${Math.max(0, elevenRemaining).toLocaleString()} credits remaining; Voice API ${
+        elevenVoices?.ok ? "reachable" : "unavailable"
+      }.`
     : "Optional ElevenLabs voice layer unavailable.",
-  elevenRemaining !== null && elevenRemaining > 0
-    ? "No immediate top-up required; keep ElevenLabs optional for clones/showcase."
-    : "Top up only if enabling voice cloning/showcase usage.",
+  elevenTier === "free"
+    ? "Upgrade the ElevenLabs workspace before exposing Voice Library API features; usage top-ups do not unlock paid-plan entitlements."
+    : elevenRemaining !== null && elevenRemaining > 0
+      ? "Keep ElevenLabs optional for consented clones/showcase and monitor credits."
+      : "Fund the paid workspace only if enabling consented voice cloning or showcase usage.",
+  { tier: elevenTier, voice_api_reachable: Boolean(elevenVoices?.ok) },
 );
 
 record(
@@ -265,14 +366,16 @@ record(
   validHttpsUrl("FEDERAL_DNC_API_URL")
     ? "Federal DNC vendor URL and key configured."
     : "FEDERAL_DNC_API_URL is missing or is not a valid HTTPS URL.",
-  "Maintain vendor subscription/scrub credits before enabling marketing outbound.",
+  "Maintain vendor subscription or scrub credits before enabling marketing outbound.",
 );
 
 const blocked = checks.filter((check) => check.required && check.level === "blocked");
+const degraded = checks.filter((check) => check.level === "degraded");
 const report = {
   generated_at: new Date().toISOString(),
   launch_ready: blocked.length === 0,
   blocked: blocked.map((check) => check.id),
+  degraded: degraded.map((check) => check.id),
   checks,
 };
 
