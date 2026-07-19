@@ -43,7 +43,7 @@ const PAID_TIERS = [
     plan: planById.team,
     publicName: "Starter Plus",
     eyebrow: "Best one-employee value",
-    tagline: "3.75× the voice minutes, full SMS + Lead Hunt workflow — for $10 more.",
+    tagline: "2× the voice minutes, full SMS + Lead Hunt workflow — for $10 more.",
     detail:
       "Keep one AI Voice Employee, but add substantially more voice capacity plus Lead Hunt, enrichment, inbox, email, SMS, and follow-up workflows under one memory and one set of rules.",
     cta: "Choose Starter Plus",
