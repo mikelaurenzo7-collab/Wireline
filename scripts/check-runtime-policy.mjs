@@ -87,18 +87,18 @@ if (!prodEnvCheck.includes("Primary managed runtime and OpenAI Realtime sessions
   fail("production env check does not name the OpenAI runtime dependency");
 if (!prodEnvCheck.includes("Optional xAI experiments"))
   fail("production env check does not classify xAI as optional");
-if (!legalPage.includes("<strong>OpenAI</strong>"))
-  fail("public legal page does not name OpenAI inference infrastructure");
-if (!legalPage.includes("<strong>Google Gemini</strong>"))
-  fail("public legal page does not name Gemini fallback infrastructure");
-if (!legalPage.includes("<strong>xAI</strong>"))
-  fail("public legal page does not disclose optional xAI infrastructure");
 if (legalPage.includes("Anthropic's Claude API") || legalPage.includes("<strong>Anthropic</strong>"))
   fail("public legal page still names Anthropic as active inference infrastructure");
-if (!privacyPage.includes("<strong>OpenAI</strong>"))
-  fail("public privacy page does not name OpenAI inference infrastructure");
+if (!privacyPage.includes("<strong>OpenAI</strong> — Primary managed AI inference"))
+  fail("public privacy page does not name OpenAI as the primary inference infrastructure");
+if (!privacyPage.includes("<strong>Google Gemini</strong>"))
+  fail("public privacy page does not name Gemini fallback infrastructure");
+if (!privacyPage.includes("<strong>xAI</strong>"))
+  fail("public privacy page does not disclose optional xAI infrastructure");
 if (!privacyPage.includes("xAI") || !privacyPage.includes("explicitly enabled"))
   fail("public privacy page does not bound xAI as optional");
+if (privacyPage.includes("Anthropic's Claude API") || privacyPage.includes("<strong>Anthropic</strong>"))
+  fail("public privacy page still names Anthropic as active inference infrastructure");
 if (!integrationLogos.includes("ALL_LOGOS.openai"))
   fail("powered-by logo strip does not advertise OpenAI");
 if (integrationLogos.includes("ALL_LOGOS.anthropic") || integrationLogos.includes('aria-label="Anthropic"'))

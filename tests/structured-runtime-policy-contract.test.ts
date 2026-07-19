@@ -26,6 +26,7 @@ describe("structured runtime policy", () => {
     const carrierPanel = read("src/components/admin/CarrierPanel.tsx");
     const prodEnvCheck = read("scripts/check-prod-env.mjs");
     const legalPage = read("src/components/LegalPage.tsx");
+    const privacyPage = read("src/components/PrivacyPolicyPage.tsx");
     const integrationLogos = read("src/components/layout/IntegrationLogos.tsx");
     const migrationJournal = read("drizzle/migrations/meta/_journal.json");
     const migrationCorpus = readdirSync(resolve(root, "drizzle/migrations"))
@@ -56,9 +57,15 @@ describe("structured runtime policy", () => {
     expect(prodEnvCheck).not.toContain("ANTHROPIC_API_KEY");
     expect(prodEnvCheck).toContain("Primary managed runtime and OpenAI Realtime sessions");
     expect(prodEnvCheck).toContain("Optional xAI experiments");
-    expect(legalPage).toContain("<strong>xAI</strong>");
-    expect(legalPage).toContain("<strong>OpenAI</strong>");
-    expect(legalPage).toContain("<strong>Google Gemini</strong>");
+    // The live /privacy page (PrivacyPolicyPage.tsx) owns the sub-processor
+    // disclosure; LegalPage.tsx now carries only Terms of Service.
+    expect(privacyPage).toContain("<strong>OpenAI</strong> — Primary managed AI inference");
+    expect(privacyPage).toContain("<strong>Google Gemini</strong>");
+    expect(privacyPage).toContain(
+      "<strong>xAI</strong> — Optional explicitly enabled AI and realtime-voice experiments",
+    );
+    expect(privacyPage).not.toContain("Anthropic's Claude API");
+    expect(privacyPage).not.toContain("<strong>Anthropic</strong>");
     expect(legalPage).not.toContain("Anthropic's Claude API");
     expect(legalPage).not.toContain("<strong>Anthropic</strong>");
     expect(integrationLogos).toContain("ALL_LOGOS.xai");

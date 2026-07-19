@@ -14,10 +14,10 @@
  *   - "Free" numbers must be released to get below the cap before buying more
  *
  * Why this lives in lib/ and not in a route:
- *   The same provisioning flow is triggered from THREE places —
+ *   The same provisioning flow is shared by explicit, deliberate callers —
  *   (1) self-serve buy via /api/phone-numbers/provision
  *   (2) admin bulk-fill via /api/admin/phone-numbers/fill-pool
- *   (3) signup hook auto-provisioning a trial number on new accounts.
+ *   Signup and agent creation never auto-provision (see ARCHITECTURE.md).
  *   Keeping the Vapi side-effects in one helper means the database
  *   write + Vapi call sequencing stays consistent across callers.
  */

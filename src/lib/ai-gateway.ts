@@ -45,7 +45,8 @@ export function isAIGatewayConfigured() {
 
 export function gatewayModelId(model: string) {
   const selected = model.trim();
-  if (!selected) return process.env.WIRELINE_GATEWAY_STRUCTURED_MODEL?.trim() || "xai/grok-4.5";
+  if (!selected)
+    return process.env.WIRELINE_GATEWAY_STRUCTURED_MODEL?.trim() || "openai/gpt-5.6-terra";
   if (selected.includes("/")) return selected;
   if (/grok/i.test(selected)) return `xai/${selected}`;
   if (/^gpt-/i.test(selected)) return `openai/${selected}`;

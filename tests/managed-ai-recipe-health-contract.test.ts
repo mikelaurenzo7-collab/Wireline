@@ -12,10 +12,13 @@ const registry = read("src/server/register-api-routes.ts");
 describe("managed AI recipe availability", () => {
   it("uses a real provider-neutral status contract instead of the dead Claude route", () => {
     expect(modal).toContain('authFetch("/api/ai/status")');
-    expect(modal).toContain('status.primary_provider === "xai"');
+    // Availability must not be coupled to any single provider id — the managed
+    // chain (OpenAI primary, Gemini, AI Gateway) can serve regardless.
+    expect(modal).toContain("setAvailable(status.available === true)");
+    expect(modal).not.toContain('primary_provider === "');
     expect(modal).not.toContain("/api/claude/status");
     expect(route).toContain('router.get("/api/ai/status", authenticateUser');
-    expect(route).toContain('primary_provider: "xai"');
+    expect(route).toContain('primary_provider: "openai"');
     expect(route).toContain("STRUCTURED_PRIMARY_MODEL");
     expect(registry).toContain("app.use(aiStatusRouter)");
   });

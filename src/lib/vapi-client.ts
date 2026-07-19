@@ -257,7 +257,7 @@ export async function placeOutboundCall(opts: {
       ok: false,
       status: 400,
       error:
-        "No voice line is configured for this agent. Provision a dedicated number in Settings → Carrier or create a new agent to auto-provision one.",
+        "No voice line is configured for this agent. Provision a dedicated number in Settings → Carrier to wire this agent for calls.",
     };
   }
 

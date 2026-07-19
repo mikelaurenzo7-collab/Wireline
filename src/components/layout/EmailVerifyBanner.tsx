@@ -128,7 +128,7 @@ export default function EmailVerifyBanner() {
           ) : outcome === "no-transport" ? (
             <>
               <AlertTriangle className="inline w-3.5 h-3.5 mb-0.5 mr-1" aria-hidden />
-              Mail transport temporarily down. Try again in a few minutes — your trial isn&apos;t
+              Mail transport temporarily down. Try again in a few minutes — your account isn&apos;t
               affected.
             </>
           ) : outcome === "error" ? (
