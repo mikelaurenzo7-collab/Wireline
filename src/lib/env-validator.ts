@@ -33,6 +33,7 @@ const isHex32 = (value: string) => /^[a-f0-9]{64}$/i.test(value);
 const isStripe = (value: string) => /^sk_(test|live)_/.test(value);
 const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 const isE164 = (value: string) => /^\+[1-9]\d{6,14}$/.test(value);
+const isTwilioAccountSid = (value: string) => /^AC[a-fA-F0-9]{32}$/.test(value);
 const isPositiveNumber = (value: string) => Number.isFinite(Number(value)) && Number(value) > 0;
 
 const isCommaSeparatedEmails = (value: string) =>
@@ -67,29 +68,23 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "AI_GATEWAY_API_KEY",
     group: "ai",
     required: false,
-    description: "AI Gateway key for local and non-Vercel execution",
-    validate: nonEmpty,
-  },
-  {
-    name: "XAI_API_KEY",
-    group: "ai",
-    required: false,
-    requiredInProd: true,
-    description: "Primary managed Grok runtime and realtime voice credential",
-    validate: nonEmpty,
-  },
-  {
-    name: "XAI_API_KEY_CHATKIT",
-    group: "ai",
-    required: false,
-    description: "Scoped xAI credential for ChatGPT app realtime voice spend isolation",
+    description: "Vercel AI Gateway key for governed fallback outside Vercel OIDC",
     validate: nonEmpty,
   },
   {
     name: "OPENAI_API_KEY",
     group: "ai",
     required: false,
-    description: "Direct OpenAI continuity fallback",
+    requiredInProd: true,
+    description: "Primary managed reasoning and OpenAI Realtime credential",
+    validate: (value) => value.startsWith("sk-"),
+    formatHint: "sk-...",
+  },
+  {
+    name: "OPENAI_API_KEY_CHATKIT",
+    group: "ai",
+    required: false,
+    description: "Scoped OpenAI credential for ChatGPT app realtime voice spend isolation",
     validate: (value) => value.startsWith("sk-"),
     formatHint: "sk-...",
   },
@@ -97,8 +92,30 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "GEMINI_API_KEY",
     group: "ai",
     required: false,
-    description: "Gemini fallback and grounded search",
+    description: "Gemini continuity fallback and grounded search",
     validate: nonEmpty,
+  },
+  {
+    name: "XAI_API_KEY",
+    group: "ai",
+    required: false,
+    description: "Optional xAI experiment credential; not part of the launch default",
+    validate: nonEmpty,
+  },
+  {
+    name: "XAI_API_KEY_CHATKIT",
+    group: "ai",
+    required: false,
+    description: "Optional scoped xAI credential for isolated experiments",
+    validate: nonEmpty,
+  },
+  {
+    name: "WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK",
+    group: "ai",
+    required: false,
+    description: "Explicit opt-in for direct xAI structured fallback",
+    validate: (value) => value === "true" || value === "false",
+    formatHint: "true or false",
   },
   {
     name: "PERPLEXITY_API_KEY",
@@ -126,21 +143,47 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "VAPI_PRIVATE_KEY",
     group: "voice",
     required: false,
-    description: "Independent Vapi phone-handling capability",
+    requiredInProd: true,
+    description: "Managed Vapi PSTN orchestration and phone handling",
     validate: nonEmpty,
   },
   {
     name: "VAPI_WEBHOOK_SECRET",
     group: "voice",
     required: false,
-    description: "Independent Vapi webhook verification",
+    requiredInProd: true,
+    description: "Vapi webhook verification",
+    validate: nonEmpty,
+  },
+  {
+    name: "VITE_VAPI_PUBLIC_KEY",
+    group: "voice",
+    required: false,
+    description: "Vapi browser test-call public key",
+    validate: nonEmpty,
+  },
+  {
+    name: "TWILIO_ACCOUNT_SID",
+    group: "voice",
+    required: false,
+    requiredInProd: true,
+    description: "Twilio programmable voice and messaging account SID",
+    validate: isTwilioAccountSid,
+    formatHint: "AC followed by 32 hexadecimal characters",
+  },
+  {
+    name: "TWILIO_AUTH_TOKEN",
+    group: "voice",
+    required: false,
+    requiredInProd: true,
+    description: "Twilio API authentication and webhook signature verification",
     validate: nonEmpty,
   },
   {
     name: "ELEVENLABS_API_KEY",
     group: "voice",
     required: false,
-    description: "Independent voice configuration",
+    description: "Optional voice cloning and showcase synthesis",
     validate: nonEmpty,
   },
   {
@@ -245,6 +288,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "OAUTH_STATE_SECRET",
     group: "security",
     required: false,
+    requiredInProd: true,
     description: "OAuth state signing secret",
   },
   {
@@ -383,17 +427,14 @@ export function validateEnv(): EnvValidationResult {
 
   const gateway =
     process.env.AI_GATEWAY_API_KEY?.trim() || (isProd && process.env.VERCEL_OIDC_TOKEN?.trim());
-  const directRuntime =
-    process.env.XAI_API_KEY?.trim() ||
-    process.env.OPENAI_API_KEY?.trim() ||
-    process.env.GEMINI_API_KEY?.trim();
-  if (!gateway && !directRuntime) {
+  const managedRuntime = process.env.OPENAI_API_KEY?.trim() || gateway;
+  if (!managedRuntime) {
     result.valid = false;
     byGroup.ai.invalid++;
     result.errors.push({
-      var: "AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN",
+      var: "OPENAI_API_KEY / AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN",
       group: "ai",
-      message: "Configure xAI, a direct model fallback, or AI Gateway before serving AI requests",
+      message: "Configure the OpenAI managed runtime or Vercel AI Gateway before serving AI requests",
     });
   }
   return result;
