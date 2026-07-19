@@ -27,12 +27,10 @@ const migrationCorpus = readdirSync(resolve(root, "drizzle/migrations"))
   .map((name) => read(`drizzle/migrations/${name}`))
   .join("\n");
 
-// Legacy Claude removal stays enforced.
 if (packageJson.includes('"@anthropic-ai/sdk"')) fail("Anthropic SDK remains in the install manifest");
 if (client.includes("@anthropic-ai/sdk") || client.includes("api.anthropic.com"))
   fail("managed runtime references Anthropic");
 
-// Managed structured runtime is OpenAI-first with ordered continuity fallbacks.
 if (!client.includes("https://api.openai.com/v1/responses"))
   fail("managed runtime is not using the direct OpenAI Responses endpoint");
 if (!client.includes("OpenAI request failed; trying Gemini fallback"))
@@ -60,11 +58,13 @@ if (!models.includes("export const OPENAI_STRUCTURED_PRIMARY_MODEL"))
   fail("ai-models does not export the OpenAI structured primary model");
 if (!models.includes("export const STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL"))
   fail("managed structured default is not the OpenAI primary");
-if (!models.includes('GPT_5: "gpt-5"')) fail("GPT-5 model id is not registered");
+if (!models.includes('GPT_5_6_TERRA: "gpt-5.6-terra"'))
+  fail("GPT-5.6 Terra model id is not registered");
+if (!models.includes("OPENAI_MODELS.GPT_5_6_TERRA"))
+  fail("managed OpenAI default is not GPT-5.6 Terra");
 if (!structuredModels.includes("STRUCTURED_PRIMARY_MODEL"))
   fail("structured-runtime-models does not route through the managed structured primary");
 
-// Managed PSTN voice keeps a reliable OpenAI default with Gemini automatic fallback.
 if (!models.includes('VAPI_TENANT_DEFAULT_PROVIDER = "openai"'))
   fail("managed voice default is not OpenAI");
 if (!models.includes("VAPI_DEFAULT_FALLBACK_MODELS"))
@@ -82,7 +82,6 @@ if (!carrierPanel.includes("OpenAI is the primary call model") || !carrierPanel.
 if (carrierPanel.includes("Claude Sonnet") || carrierPanel.includes('v: "anthropic"'))
   fail("carrier cognitive routing still presents Claude as the managed default");
 
-// Production env + public disclosures describe the actual launch and optional layers.
 if (prodEnvCheck.includes("ANTHROPIC_API_KEY")) fail("production env check still asks for Anthropic");
 if (!prodEnvCheck.includes("Primary managed runtime and OpenAI Realtime sessions"))
   fail("production env check does not name the OpenAI runtime dependency");
@@ -93,23 +92,23 @@ if (!legalPage.includes("<strong>OpenAI</strong>"))
 if (!legalPage.includes("<strong>Google Gemini</strong>"))
   fail("public legal page does not name Gemini fallback infrastructure");
 if (!legalPage.includes("<strong>xAI</strong>"))
-  fail("public legal page does not disclose the optional xAI infrastructure");
+  fail("public legal page does not disclose optional xAI infrastructure");
 if (legalPage.includes("Anthropic's Claude API") || legalPage.includes("<strong>Anthropic</strong>"))
   fail("public legal page still names Anthropic as active inference infrastructure");
 if (!privacyPage.includes("<strong>OpenAI</strong>"))
   fail("public privacy page does not name OpenAI inference infrastructure");
+if (!privacyPage.includes("xAI") || !privacyPage.includes("explicitly enabled"))
+  fail("public privacy page does not bound xAI as optional");
 if (!integrationLogos.includes("ALL_LOGOS.openai"))
   fail("powered-by logo strip does not advertise OpenAI");
 if (integrationLogos.includes("ALL_LOGOS.anthropic") || integrationLogos.includes('aria-label="Anthropic"'))
   fail("powered-by logo strip still advertises Anthropic");
 
-// Realtime voice: OpenAI is registered and xAI remains an optional parallel route.
 if (!registerApiRoutes.includes("openaiRealtimeRouter"))
   fail("OpenAI Realtime router is not registered");
 if (!registerApiRoutes.includes("grokVoiceRouter"))
   fail("optional Grok realtime voice router is not registered");
 
-// OpenRouter is retired: the Vercel AI Gateway is the only multi-model route.
 if (/openrouter/i.test(models)) fail("ai-models still references the retired OpenRouter path");
 if (!/item\(\s*["']ai-gateway["']/.test(registry))
   fail("Vercel AI Gateway is not registered as the multi-model route");
@@ -128,7 +127,6 @@ if (!migrationCorpus.includes("claude-haiku-4-5"))
 if (!migrationJournal.includes("0083_reassert_openai_voice_defaults"))
   fail("managed voice-default catch-up migration is not journaled for production deploys");
 
-// Unmounted admin route trees and legacy Claude modules stay removed.
 if (existsSync(resolve(root, "src/routes/admin-migrate"))) fail("unmounted admin migration route tree remains");
 if (existsSync(resolve(root, "src/routes/admin-operating-routes.ts")))
   fail("unmounted admin operating routes remain");
