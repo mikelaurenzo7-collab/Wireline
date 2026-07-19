@@ -13,26 +13,32 @@ function position(value: string) {
   return index;
 }
 
-describe("Grok-first structured runtime provider chain", () => {
-  it("tries direct xAI, then OpenAI, then Gemini, then the AI Gateway", () => {
-    const xai = position('providers.push({ name: "xAI"');
+describe("OpenAI-first structured runtime provider chain", () => {
+  it("tries direct OpenAI, then Gemini, then the AI Gateway", () => {
     const openAI = position('providers.push({ name: "OpenAI"');
     const gemini = position('providers.push({ name: "Gemini"');
     const gateway = position('providers.push({ name: "AI Gateway"');
 
-    expect(xai).toBeLessThan(openAI);
     expect(openAI).toBeLessThan(gemini);
     expect(gemini).toBeLessThan(gateway);
-    expect(client).toContain("xAI request failed; trying direct OpenAI fallback");
     expect(client).toContain("OpenAI request failed; trying Gemini fallback");
+    expect(client).toContain("Gemini request failed; trying AI Gateway fallback");
   });
 
-  it("routes managed structured turns to the direct xAI Responses API", () => {
+  it("keeps direct xAI behind an explicit experimental fallback flag", () => {
+    const gateway = position('providers.push({ name: "AI Gateway"');
+    const xai = position('providers.push({ name: "xAI"');
+
+    expect(gateway).toBeLessThan(xai);
+    expect(client).toContain("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK");
     expect(client).toContain('const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses"');
-    expect(client).toContain("callXAI");
-    expect(client).toContain("XAI_STRUCTURED_PRIMARY_MODEL");
-    // xAI only ever receives grok-* ids; OpenAI/Gemini ids never leak to xAI.
-    expect(client).toContain("/grok/i.test(requested) ? requested : XAI_STRUCTURED_PRIMARY_MODEL");
+    expect(client).toContain("AI Gateway request failed; trying explicitly enabled xAI fallback");
+  });
+
+  it("routes managed structured turns to the direct OpenAI Responses API", () => {
+    expect(client).toContain('endpoint: "https://api.openai.com/v1/responses"');
+    expect(client).toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
+    expect(client).toContain('requested.startsWith("gpt-") ? requested : OPENAI_STRUCTURED_PRIMARY_MODEL');
   });
 
   it("does not turn an aborted request into another provider call", () => {
