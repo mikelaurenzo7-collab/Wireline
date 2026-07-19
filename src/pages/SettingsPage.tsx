@@ -100,9 +100,7 @@ function ProfileRow({
         <span className="wl-data-row__detail">{label}</span>
         <span
           className={
-            wrapValue
-              ? "wl-data-row__title whitespace-normal break-all [overflow-wrap:anywhere] [text-overflow:clip] sm:truncate sm:whitespace-nowrap sm:break-normal"
-              : "wl-data-row__title"
+            wrapValue ? "wl-data-row__title wl-data-row__title--multiline" : "wl-data-row__title"
           }
           data-wireline-preserve-case
           title={value}
