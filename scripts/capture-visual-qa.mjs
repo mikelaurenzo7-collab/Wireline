@@ -33,6 +33,12 @@ const marketingRoutes = [
   "/terms",
   "/developers",
   "/for/personal",
+  "/for/home-services",
+  "/for/medical",
+  "/for/legal",
+  "/for/real-estate",
+  "/for/insurance",
+  "/for/restaurants",
   "/for/sales",
   "/signin",
   "/signup",
@@ -44,17 +50,22 @@ const authenticatedRoutes = [
   "/overview",
   "/studio",
   "/studio?create=1",
+  "/templates",
   "/knowledge",
   "/connections",
   "/connections/salesforce",
   "/phone",
   "/insights",
   "/inbox",
+  "/approvals",
   "/apps",
   "/settings",
   "/settings/billing",
   "/settings/phone",
   "/settings/team",
+  "/settings/customization",
+  "/settings/apps",
+  "/settings/compliance",
   "/admin",
   "/admin?tab=subscription",
   "/admin?tab=team",
@@ -154,6 +165,18 @@ async function settle(page) {
 }
 
 function pushIssue(issues, issue) {
+  if (
+    issues.some(
+      (existing) =>
+        existing.viewport === issue.viewport &&
+        existing.route === issue.route &&
+        existing.kind === issue.kind &&
+        existing.detail === issue.detail,
+    )
+  ) {
+    return;
+  }
+
   const P0 = new Set([
     "http",
     "navigation",
@@ -164,6 +187,44 @@ function pushIssue(issues, issue) {
     "auth",
   ]);
   issues.push({ ...issue, severity: P0.has(issue.kind) ? "P0" : "P1" });
+}
+
+async function captureInternalScrollEnd(page, file) {
+  const hasScrollableContent = await page.evaluate(() => {
+    const scrollOwners = Array.from(document.querySelectorAll("*")).filter((element) => {
+      const style = window.getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return (
+        rect.width > 0 &&
+        rect.height > 0 &&
+        (style.overflowY === "auto" || style.overflowY === "scroll") &&
+        element.scrollHeight > element.clientHeight + 24
+      );
+    });
+
+    if (scrollOwners.length === 0) return false;
+    for (const scrollOwner of scrollOwners) {
+      scrollOwner.setAttribute("data-wireline-qa-scroll-owner", "true");
+      scrollOwner.scrollTop = scrollOwner.scrollHeight;
+    }
+    return true;
+  });
+
+  if (!hasScrollableContent) return;
+  await page.waitForTimeout(120);
+  await page.screenshot({
+    path: file.replace(/\.png$/, "-end.png"),
+    fullPage: false,
+    animations: "disabled",
+    timeout: 30_000,
+  });
+  await page.evaluate(() => {
+    const scrollOwners = document.querySelectorAll('[data-wireline-qa-scroll-owner="true"]');
+    for (const scrollOwner of scrollOwners) {
+      scrollOwner.scrollTop = 0;
+      scrollOwner.removeAttribute("data-wireline-qa-scroll-owner");
+    }
+  });
 }
 
 async function auditResponsiveLayout(page, viewportName, route, issues) {
@@ -186,8 +247,18 @@ async function auditResponsiveLayout(page, viewportName, route, issues) {
       .map((element) => {
         const rect = element.getBoundingClientRect();
         const style = window.getComputedStyle(element);
-        const escapesViewport = rect.left < -1 || rect.right > viewportWidth + 1;
+        const horizontalScroller = element.closest(
+          ".overflow-x-auto, .tab-strip-scroll, .wl-workspace-tabs",
+        );
+        const scrollerStyle = horizontalScroller
+          ? window.getComputedStyle(horizontalScroller)
+          : null;
+        const intentionallyScrollable =
+          scrollerStyle?.overflowX === "auto" || scrollerStyle?.overflowX === "scroll";
+        const escapesViewport =
+          !intentionallyScrollable && (rect.left < -1 || rect.right > viewportWidth + 1);
         const hasVisibleInternalOverflow =
+          !intentionallyScrollable &&
           element.scrollWidth > element.clientWidth + 1 &&
           style.overflowX === "visible" &&
           !element.classList.contains("tab-strip-scroll");
@@ -263,6 +334,7 @@ async function captureRoute(page, viewportName, route, issues) {
   await auditResponsiveLayout(page, viewportName, route, issues);
   const file = path.join(outputDir, `${viewportName}-${fileName(route)}.png`);
   await page.screenshot({ path: file, fullPage: true, animations: "disabled", timeout: 30_000 });
+  await captureInternalScrollEnd(page, file);
 }
 
 function attachPageDiagnostics(page, viewportName, issues) {

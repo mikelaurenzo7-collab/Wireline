@@ -17,14 +17,38 @@ describe("marketing centering contract", () => {
     expect(claritySystem).not.toContain("left-aligned reading rail");
   });
 
+  it("keeps mobile navigation balanced and delays duplicate sticky actions", () => {
+    const header = read("src/components/marketing/PrecisionPublicHeader.tsx");
+    const stickyCta = read("src/components/marketing/MarketingStickyCta.tsx");
+
+    expect(header).toContain("ml-auto lg:hidden");
+    expect(stickyCta).toContain('document.querySelector(".marketing-hero__actions")');
+    expect(stickyCta).toContain("IntersectionObserver");
+    expect(stickyCta).toContain("if (!visible) return null");
+  });
+
+  it("keeps each mobile footer column vertical and intrinsically sized", () => {
+    const responsive = read("src/styles/responsive.css");
+
+    expect(responsive).toMatch(
+      /\.marketing-footer-nav\s*\{[^}]*display: flex !important;[^}]*flex-direction: column;/,
+    );
+    expect(responsive).not.toMatch(
+      /\.marketing-footer-nav\s*\{[^}]*grid-template-columns: repeat\(2/,
+    );
+  });
+
   it("loads the public QA layer last and keeps centered labels on the shared axis", () => {
     const marketingBundle = read("src/styles/wireline-marketing-surfaces.css");
     const publicPolish = read("src/styles/public-marketing-polish.css");
+    const hero = read("src/components/marketing/MarketingHero.tsx");
 
     expect(marketingBundle.trimEnd()).toMatch(/@import "\.\/public-marketing-polish\.css";$/);
     expect(publicPolish).toContain(":where(.text-center, .wl-marketing-center)");
     expect(publicPolish).toContain("text-align: center");
     expect(publicPolish).toContain(".marketing-footer-rail");
+    expect(publicPolish).toContain("overflow-wrap: anywhere");
+    expect(hero).toContain("w-full min-w-0 max-w-[70rem]");
   });
 
   it("keeps the public signal mark violet from the first terminal", () => {

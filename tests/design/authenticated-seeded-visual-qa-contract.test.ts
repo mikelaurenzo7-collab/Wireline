@@ -41,4 +41,12 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(css).toMatch(/\.wl-workspace-shell::before\s*\{[\s\S]*content: none;/);
     expect(css).toContain("reserve color for state and action");
   });
+
+  it("captures the end of internal scroll regions and deduplicates runtime findings", () => {
+    const visualQa = read("scripts/capture-visual-qa.mjs");
+
+    expect(visualQa).toContain("captureInternalScrollEnd");
+    expect(visualQa).toContain('file.replace(/\\.png$/, "-end.png")');
+    expect(visualQa).toContain("issues.some");
+  });
 });

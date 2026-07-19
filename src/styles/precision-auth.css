@@ -13,11 +13,7 @@
   background:
     radial-gradient(
       circle at 50% 0%,
-      color-mix(
-        in srgb,
-        var(--wireline-color-action-primary-container) 8%,
-        transparent
-      ),
+      color-mix(in srgb, var(--wireline-color-action-primary-container) 8%, transparent),
       transparent 32rem
     ),
     var(--wireline-color-canvas-default);
@@ -72,23 +68,57 @@
 .wl-stitch-auth-card [role="tab"]:focus-visible,
 .wl-stitch-auth-card a:focus-visible {
   border-radius: var(--radius-md);
-  outline: var(--wireline-interaction-focus-width) solid
-    var(--wireline-color-focus-default);
+  outline: var(--wireline-interaction-focus-width) solid var(--wireline-color-focus-default);
   outline-offset: var(--wireline-interaction-focus-offset);
-  box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth)
-    var(--wireline-color-glow-primary);
+  box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth) var(--wireline-color-glow-primary);
 }
 
 .wl-stitch-auth-card button[type="button"]:focus-visible {
   outline-color: var(--wireline-color-focus-wire);
-  box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth)
-    var(--wireline-color-glow-wire);
+  box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth) var(--wireline-color-glow-wire);
 }
 
 .wl-stitch-auth-divider {
   font-family: var(--wireline-font-mono);
   font-size: 0.6875rem;
   letter-spacing: 0.08em;
+}
+
+@media (min-width: 640px) and (max-height: 900px) {
+  .wl-auth-form-panel {
+    padding-block: 1rem;
+  }
+
+  .wl-auth-form-panel > div {
+    margin-block: 0 auto;
+  }
+
+  .wl-auth-entry-mark,
+  .wl-auth-heading,
+  .wl-auth-workspace-selector {
+    margin-bottom: 0.875rem;
+  }
+
+  .wl-stitch-auth-card {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .wl-auth-tabs {
+    margin-bottom: 0.75rem;
+  }
+
+  .wl-auth-oauth {
+    gap: 0.5rem;
+  }
+
+  .wl-auth-oauth > * + * {
+    margin-top: 0.5rem;
+  }
+
+  .wl-auth-form {
+    margin-top: 1rem;
+    gap: 1rem;
+  }
 }
 
 @media (max-width: 639px) {

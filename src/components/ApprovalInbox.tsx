@@ -58,10 +58,10 @@ const BUCKET_LABELS: Record<ApprovalBucket, string> = {
 };
 
 const BUCKET_SHORT_LABELS: Record<ApprovalBucket, string> = {
-  pending: "Pending",
-  compliance: "Compliance",
+  pending: "Pend",
+  compliance: "Consent",
   hot_leads: "Hot",
-  escalations: "Escalations",
+  escalations: "Esc.",
   knowledge_gaps: "Gaps",
 };
 

@@ -80,10 +80,9 @@ describe("current-state UI contract", () => {
     expect(hero).toContain("col-span-2 sm:col-span-1");
 
     expect(auth).toContain('pathname === "/signup" || pathname === "/get-started"');
-    expect(auth).toContain('starter: "Starter · $9/month"');
-    expect(auth).toContain('team: "Starter Plus · $19/month"');
-    expect(auth).toContain('business: "Pro · $59/month"');
-    expect(auth).toContain('enterprise: "Business · $149/month"');
+    expect(auth).toContain("STRIPE_PLANS.map");
+    expect(auth).toContain("plan.price_usd_monthly");
+    expect(auth).not.toContain('starter: "Starter · $9/month"');
     expect(auth).toContain(': "starter";');
     expect(auth).not.toContain('nextMode === "business" ? "business" : "personal"');
   });
@@ -96,10 +95,14 @@ describe("current-state UI contract", () => {
     const features = read("src/pages/Features.tsx");
 
     expect(auth).toContain("max-w-[520px]");
+    expect(auth).toContain('shortText: "Just me"');
+    expect(auth).toContain('shortText: "Team workspace"');
+    expect(auth).toContain("sm:grid-cols-2");
     expect(auth).toContain('const nextPath = value ? "/signup" : "/signin"');
     expect(auth).toContain("location.search");
     expect(auth).not.toContain("AuthBrandPanel");
     expect(authCss).toContain("grid-template-columns: minmax(0, 1fr)");
+    expect(authCss).toContain("@media (min-width: 640px) and (max-height: 900px)");
     expect(mobile).toMatch(/\.wl-stitch-auth-card > \.mb-6\.text-center[\s\S]*display: block/);
     expect(shell).toContain("max-w-[32ch] break-words text-balance");
     expect(shell).not.toContain('className="truncate font-[var(--wireline-font-family-display)]');

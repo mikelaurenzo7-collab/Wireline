@@ -299,11 +299,7 @@ export default function BillingSettings() {
                       );
                     })}
                   </div>
-                ) : (
-                  <Button asChild variant="outline" size="sm" className="mt-5 self-start">
-                    <Link to="/pricing">Compare live plans</Link>
-                  </Button>
-                )}
+                ) : null}
               </>
             )}
           </article>
@@ -345,11 +341,8 @@ export default function BillingSettings() {
                   No recurring invoice
                 </p>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  No telephony or subscription charges until you activate a plan.
+                  No telephony or subscription charges until you choose a live plan above.
                 </p>
-                <Button asChild variant="outline" size="sm" className="mt-5 self-start">
-                  <Link to="/pricing">View Founder Early Access plans</Link>
-                </Button>
               </>
             )}
           </article>

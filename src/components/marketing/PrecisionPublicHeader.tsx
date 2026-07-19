@@ -80,7 +80,7 @@ export default function PrecisionPublicHeader() {
           <DialogTrigger asChild>
             <button
               type="button"
-              className={`${mobileControlClassName} lg:hidden`}
+              className={`${mobileControlClassName} ml-auto lg:hidden`}
               aria-label={open ? "Close navigation" : "Open navigation"}
               aria-expanded={open}
               aria-controls="wireline-mobile-navigation"

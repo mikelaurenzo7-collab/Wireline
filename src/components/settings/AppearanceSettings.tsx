@@ -45,7 +45,7 @@ export default function AppearanceSettings() {
               type="button"
               onClick={() => setTheme(id)}
               aria-pressed={selected}
-              className={`flex min-h-[44px] flex-col gap-2 rounded-xl border px-4 py-3 text-left transition-colors ${
+              className={`flex min-h-[44px] min-w-0 flex-col gap-2 overflow-hidden rounded-xl border px-4 py-3 text-left transition-colors ${
                 selected
                   ? "border-primary/35 bg-primary/5"
                   : "border-border bg-card hover:border-primary/25"
@@ -55,7 +55,9 @@ export default function AppearanceSettings() {
                 <Icon size={16} aria-hidden="true" />
                 {label}
               </span>
-              <span className="text-xs leading-relaxed text-muted-foreground">{detail}</span>
+              <span className="min-w-0 break-words text-xs leading-relaxed text-muted-foreground">
+                {detail}
+              </span>
             </button>
           );
         })}

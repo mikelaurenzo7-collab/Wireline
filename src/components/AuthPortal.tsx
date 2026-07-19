@@ -37,6 +37,7 @@ import {
 } from "../lib/auth-redirect";
 import { getPasswordPolicyError } from "../lib/password-policy";
 import { markFreshSignupSession } from "../lib/post-signup-onboarding";
+import { STRIPE_PLANS } from "../lib/plan-catalog";
 import {
   captureDemoSourceFromLocation,
   readDemoSourceCookie,
@@ -98,13 +99,14 @@ function cleanThrownMessage(e: unknown): string | null {
   return trimmed;
 }
 
-const SIGNUP_PLAN_LABELS: Record<SignupPlanId, string> = {
-  personal: "Free Builder",
-  starter: "Starter · $9/month",
-  team: "Starter Plus · $19/month",
-  business: "Pro · $59/month",
-  enterprise: "Business · $149/month",
-};
+const SIGNUP_PLAN_LABELS = Object.fromEntries(
+  STRIPE_PLANS.map((plan) => [
+    plan.id,
+    plan.price_usd_monthly === 0
+      ? plan.name.replace(/^Wireline /, "")
+      : `${plan.name.replace(/^Wireline /, "")} · $${plan.price_usd_monthly}/month`,
+  ]),
+) as Record<SignupPlanId, string>;
 
 function signupIntentLabel(intent: SignupIntent | null): string | null {
   if (!intent?.preferredPlanId && !intent?.signupWedge) return null;
@@ -255,7 +257,7 @@ function OAuthSignInButtons({
   ];
 
   return (
-    <div className="space-y-3">
+    <div className="wl-auth-oauth space-y-3">
       {providers.map((p) => (
         <button
           key={p.id}
@@ -320,24 +322,27 @@ function WorkspaceSelector({
   const options: Array<{
     id: WorkspaceMode;
     title: string;
+    shortText: string;
     text: string;
     icon: ReactNode;
   }> = [
     {
       id: "personal",
       title: "Personal",
+      shortText: "Just me",
       text: "One private employee for calls, texts, and follow-up.",
       icon: <User className="h-4 w-4" />,
     },
     {
       id: "business",
       title: "Business",
+      shortText: "Team workspace",
       text: "Shared employees, numbers, approvals, and integrations.",
       icon: <Building2 className="h-4 w-4" />,
     },
   ];
   return (
-    <div className="mb-6 grid gap-2">
+    <div className="wl-auth-workspace-selector mb-6 grid gap-2 sm:grid-cols-2">
       {options.map((option) => (
         <button
           key={option.id}
@@ -362,6 +367,9 @@ function WorkspaceSelector({
             <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
               {option.title}
               {mode === option.id && <Check className="h-4 w-4 text-brand" />}
+            </span>
+            <span className="wl-auth-workspace-short mt-0.5 text-[11px] text-muted-foreground sm:hidden">
+              {option.shortText}
             </span>
             <span className="mt-1 block text-xs leading-5 text-muted-foreground">
               {option.text}
@@ -597,7 +605,7 @@ export default function AuthPortal() {
         noIndex
       />
       <AuthShell>
-        <div className="mb-6 text-center">
+        <div className="wl-auth-heading mb-6 text-center">
           <h1 className="text-xl font-semibold tracking-[-.02em]">{pageTitle}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{pageDescription}</p>
           {isSignUp && intentLabel ? (
@@ -614,7 +622,7 @@ export default function AuthPortal() {
         <div>
           {!isReset && (
             <div
-              className="mb-4 grid grid-cols-2 border-b border-ink/10 p-1"
+              className="wl-auth-tabs mb-4 grid grid-cols-2 border-b border-ink/10 p-1"
               role="tablist"
               aria-label="Account access"
             >
@@ -657,7 +665,7 @@ export default function AuthPortal() {
               />
             )}
 
-            <form onSubmit={handleAuth} className="mt-6 flex flex-col gap-5">
+            <form onSubmit={handleAuth} className="wl-auth-form mt-6 flex flex-col gap-5">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-foreground" htmlFor="auth-email">
                   Email address

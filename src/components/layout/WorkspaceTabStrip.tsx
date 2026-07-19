@@ -26,7 +26,7 @@ type WorkspaceTabStripProps = {
 function tabClassName(active: boolean, density: "default" | "compact") {
   return cn(
     "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-lg border font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40",
-    density === "compact" ? "min-h-8 px-2.5 text-xs" : "min-h-[44px] px-4 text-sm",
+    density === "compact" ? "min-h-8 px-2 text-xs sm:px-2.5" : "min-h-[44px] px-4 text-sm",
     active
       ? "border-primary/30 bg-primary/15 text-primary shadow-none"
       : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -79,7 +79,7 @@ export function WorkspaceTabStrip({
         className={cn(
           "flex items-center",
           wrap ? "min-w-max lg:w-full lg:min-w-0 lg:flex-wrap" : "min-w-max",
-          compact ? "gap-1" : "gap-2",
+          compact ? "gap-0.5 sm:gap-1" : "gap-2",
           wrap
             ? align === "start"
               ? "justify-start"
@@ -90,8 +90,7 @@ export function WorkspaceTabStrip({
         {tabs.map((tab) => {
           const active = tab.id === activeId;
           const fullLabel = tab.ariaLabel ?? tab.label;
-          const accessibleLabel =
-            tab.ariaLabel ?? (tab.shortLabel ? fullLabel : undefined);
+          const accessibleLabel = tab.ariaLabel ?? (tab.shortLabel ? fullLabel : undefined);
           if (tab.href) {
             return (
               <Link

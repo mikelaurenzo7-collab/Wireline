@@ -18,6 +18,7 @@ import {
   OPERATE_NAV,
   WORKSPACE_NAV,
   NAV_SHORTCUT_HINTS,
+  desktopNavParentHref,
   isMobileMoreActive,
   isNavActive,
   type ShellNavItem,
@@ -54,8 +55,16 @@ function readinessLabel(agent: { phone_number?: string | null } | undefined): st
   return agent?.phone_number ? "Active" : "Training";
 }
 
-function RailLink({ item, pathname }: { item: ShellNavItem; pathname: string }) {
-  const active = isNavActive(pathname, item.href);
+function RailLink({
+  item,
+  pathname,
+  activeOverride,
+}: {
+  item: ShellNavItem;
+  pathname: string;
+  activeOverride?: boolean;
+}) {
+  const active = activeOverride ?? isNavActive(pathname, item.href);
   const Icon = item.icon;
   const hint = NAV_SHORTCUT_HINTS[item.href];
   return (
@@ -152,6 +161,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
     : agents;
   const visibleAgents = orderedAgents.slice(0, 3);
   const hiddenAgentCount = Math.max(agents.length - visibleAgents.length, 0);
+  const secondaryRouteParent = desktopNavParentHref(pathname);
 
   return (
     <aside
@@ -187,7 +197,12 @@ function DesktopRail({ pathname }: { pathname: string }) {
       <WiredEyebrow className="px-2.5 pb-2 pt-2.5">Workspace</WiredEyebrow>
       <nav className="flex flex-col gap-0.5" aria-label="Workspace">
         {WORKSPACE_NAV.map((item) => (
-          <RailLink key={item.href} item={item} pathname={pathname} />
+          <RailLink
+            key={item.href}
+            item={item}
+            pathname={pathname}
+            activeOverride={secondaryRouteParent === item.href ? true : undefined}
+          />
         ))}
       </nav>
 
@@ -253,7 +268,12 @@ function DesktopRail({ pathname }: { pathname: string }) {
       <nav className="flex shrink-0 flex-col gap-0.5" aria-label="Operate">
         {OPERATE_NAV.filter((item) => isRouteAvailableForAccount(accountType, item.href)).map(
           (item) => (
-            <RailLink key={item.href} item={item} pathname={pathname} />
+            <RailLink
+              key={item.href}
+              item={item}
+              pathname={pathname}
+              activeOverride={secondaryRouteParent === item.href ? true : undefined}
+            />
           ),
         )}
       </nav>

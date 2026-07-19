@@ -172,7 +172,20 @@ export default function ComplianceCenter() {
           </div>
           <div className="mt-3 grid max-h-[360px] gap-2 overflow-y-auto pr-1">
             {recentEvents.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No consent events logged yet.</p>
+              <div className="rounded-xl border border-border bg-card p-3.5 text-sm leading-6 text-muted-foreground">
+                <p>No consent events logged yet.</p>
+                <p className="mt-1">
+                  Events appear after customer calls or messages record a disclosure, consent, or
+                  opt-out.{" "}
+                  <Link
+                    to="/settings/phone"
+                    className="font-semibold text-foreground underline-offset-4 hover:text-primary hover:underline"
+                  >
+                    Review phone setup
+                  </Link>
+                  .
+                </p>
+              </div>
             ) : (
               recentEvents.map((entry) => (
                 <div

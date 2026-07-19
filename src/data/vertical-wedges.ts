@@ -82,7 +82,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Always answers. Including the 6pm pipe burst that books a $500 emergency job your competitor missed.",
     primaryCta: { label: "Create home services agent", href: signupHrefForWedge("home-services") },
-    secondaryCta: { label: "Call inbound CS demo", href: "tel:+16306425927" },
+    secondaryCta: { label: "Call customer-service demo", href: "tel:+16306425927" },
     trustLine:
       "Built on enterprise grade carrier infrastructure. White labeled. Customers hear your business name, not ours.",
     faqs: [
@@ -228,7 +228,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaTitle: "Wireline for Real Estate | AI Lead Qualifier on Every Listing Call",
     metaDescription:
       "AI voice + email agent for real estate teams. Qualify buyers, book showings, revive cold leads, and sync CRM notes.",
-    eyebrow: "For Real Estate Agents & Brokerages",
+    eyebrow: "For Real Estate",
     headline: "Every lead worked. Every showing booked.",
     subhead:
       "An AI agent that picks up every listing inquiry. Qualifies pre approval status. Books the showing. And follows up on cold leads. So your top producing agents only see qualified prospects.",
@@ -410,7 +410,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaTitle: "Wireline for Restaurants — AI Phone Host for Reservations + Takeout",
     metaDescription:
       "AI voice + email host for restaurants. Take reservations, capture takeout orders, handle event inquiries, and follow up by SMS.",
-    eyebrow: "For Restaurants + Hospitality",
+    eyebrow: "For Restaurants",
     headline: "The phone rings during dinner rush. The agent picks up.",
     subhead:
       "An AI host that answers the reservation call when your floor team is buried, captures takeout orders accurately, and saves you the no-shows by SMS-confirming every booking 2 hours before.",
@@ -470,7 +470,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Compliance-first phone agents for sales teams. Speed-to-lead, quote follow-up, warm reactivation, and governed outbound queues with approved CRM actions.",
     eyebrow: "For Sales Teams",
-    headline: "Your sales agent works the queue while your team works the deals.",
+    headline: "Your sales employee works the queue while your team works the deals.",
     subhead:
       "Calls new leads fast, qualifies cleanly, books meetings, and logs every outcome — from speed-to-lead and missed-call recovery to governed warm follow-up from approved lead lists.",
     pains: [
@@ -499,7 +499,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "< 60s",
     statLabel:
       "Target speed-to-lead on inbound form and demo requests. Governed queues handle warm follow-up with consent, caps, and full audit trail.",
-    primaryCta: { label: "Create sales agent", href: signupHrefForWedge("sales") },
+    primaryCta: { label: "Create sales employee", href: signupHrefForWedge("sales") },
     secondaryCta: { label: "Call outbound sales demo", href: "tel:+14692571581" },
     trustLine:
       "Connects to HubSpot and Salesforce. Approved actions sync to your connected CRM. Apollo enrichment available in beta.",

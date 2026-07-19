@@ -3,13 +3,13 @@ import { useLocation } from "react-router-dom";
 import { WorkspaceTabStrip } from "../layout/WorkspaceTabStrip";
 
 const settingsTabs = [
-  { id: "account", href: "/settings", label: "Account" },
-  { id: "billing", href: "/settings/billing", label: "Billing" },
-  { id: "phone", href: "/settings/phone", label: "Phone" },
-  { id: "team", href: "/settings/team", label: "Team" },
-  { id: "customization", href: "/settings/customization", label: "Brand" },
-  { id: "apps", href: "/settings/apps", label: "Apps" },
-  { id: "compliance", href: "/settings/compliance", label: "Legal" },
+  { id: "account", href: "/settings", label: "Account", shortLabel: "Acct" },
+  { id: "billing", href: "/settings/billing", label: "Billing", shortLabel: "Bill" },
+  { id: "phone", href: "/settings/phone", label: "Phone", shortLabel: "Phone" },
+  { id: "team", href: "/settings/team", label: "Team", shortLabel: "Team" },
+  { id: "customization", href: "/settings/customization", label: "Brand", shortLabel: "Brand" },
+  { id: "apps", href: "/settings/apps", label: "Apps", shortLabel: "Apps" },
+  { id: "compliance", href: "/settings/compliance", label: "Legal", shortLabel: "Legal" },
 ] as const;
 
 function isActive(pathname: string, href: string) {

@@ -80,6 +80,20 @@ export default function Blog() {
             basics that make an agent useful from day one — clear jobs, firm boundaries, and useful
             handoffs.
           </p>
+          <nav
+            className="mx-auto mt-7 flex max-w-2xl flex-wrap justify-center gap-2"
+            aria-label="Browse Wireline notes"
+          >
+            {NOTES.map(({ title }) => (
+              <a
+                key={title}
+                href={`#${noteSlug(title)}`}
+                className="inline-flex min-h-10 items-center rounded-full border border-border bg-card px-4 text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+              >
+                {title.replace(/\.$/, "")}
+              </a>
+            ))}
+          </nav>
         </div>
       </section>
 
@@ -109,8 +123,8 @@ export default function Blog() {
         <div className="wl-stitch-card wl-stitch-card-brand p-7 sm:p-10">
           <div className="mx-auto max-w-2xl text-center">
             <div className="inline-flex items-center gap-2 text-sm font-medium text-[var(--wireline-color-text-secondary)]">
-              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-              A private draft is a good place to begin.
+              <ShieldCheck className="h-4 w-4" aria-hidden="true" />A private draft is a good place
+              to begin.
             </div>
             <h2 className="mt-4 text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
               Teach an agent the call you keep putting off.

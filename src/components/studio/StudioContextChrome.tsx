@@ -61,13 +61,15 @@ export default function StudioContextChrome() {
               {readyLabel}
             </span>
           ) : null}
-          <Button asChild variant="secondary" size="sm">
-            <Link to="/studio?create=1">
-              <Plus className="size-4" aria-hidden="true" />
-              <span className="hidden sm:inline">New employee</span>
-              <span className="sm:hidden">New</span>
-            </Link>
-          </Button>
+          {agents.length > 0 ? (
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/studio?create=1">
+                <Plus className="size-4" aria-hidden="true" />
+                <span className="hidden sm:inline">New employee</span>
+                <span className="sm:hidden">New</span>
+              </Link>
+            </Button>
+          ) : null}
         </div>
       </div>
     </header>

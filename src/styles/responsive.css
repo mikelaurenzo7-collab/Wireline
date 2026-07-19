@@ -188,12 +188,12 @@
     line-height: 1.45;
   }
   .marketing-footer-nav {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.35rem 1rem !important;
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.35rem !important;
   }
   .marketing-footer-nav .wl-overline {
-    grid-column: 1 / -1;
+    width: 100%;
   }
   .marketing-footer-nav a {
     min-height: 2.25rem;

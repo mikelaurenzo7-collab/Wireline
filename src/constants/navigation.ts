@@ -38,6 +38,25 @@ export type NavItem = {
 
 export const MOBILE_MORE_HREF = "__more__" as const;
 
+const DESKTOP_ROUTE_PARENTS: ReadonlyArray<{
+  route: string;
+  parentHref: string;
+}> = [
+  { route: "/templates", parentHref: "/studio" },
+  { route: "/knowledge", parentHref: "/studio" },
+  { route: "/approvals", parentHref: "/inbox" },
+  { route: "/apps", parentHref: "/settings" },
+];
+
+/** Keeps secondary tools anchored to a visible desktop-rail destination. */
+export function desktopNavParentHref(pathname: string): string | null {
+  const current = cleanNavPath(pathname);
+  return (
+    DESKTOP_ROUTE_PARENTS.find(({ route }) => current === route || current.startsWith(`${route}/`))
+      ?.parentHref ?? null
+  );
+}
+
 /**
  * Primary setup destinations. Knowledge remains available as a contextual deep
  * link from the employee workspace rather than competing in the main rail.
@@ -149,11 +168,19 @@ export function isNavActive(pathname: string, href: string) {
       current === "/settings" ||
       current.startsWith("/settings/") ||
       current === "/admin" ||
-      current.startsWith("/admin/")
+      current.startsWith("/admin/") ||
+      current === "/apps" ||
+      current.startsWith("/apps/")
     );
   }
   if (target === "/studio") {
-    return current === "/studio" || current.startsWith("/studio/") || current === "/agents";
+    return (
+      current === "/studio" ||
+      current.startsWith("/studio/") ||
+      current === "/agents" ||
+      current === "/templates" ||
+      current.startsWith("/templates/")
+    );
   }
   const item = [...WORKSPACE_NAV, ...OPERATE_NAV, ...MOBILE_MORE_NAV].find(
     (nav) => nav.href === target,

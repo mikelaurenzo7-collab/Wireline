@@ -607,7 +607,7 @@ export default function AgentTemplates() {
             placeholder="Search templates, roles, channels…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-muted/20 border border-border rounded-md outline-none focus:border-primary/50 text-foreground placeholder:text-muted/70"
+            className="w-full rounded-md border border-border bg-muted/20 py-2 pl-9 pr-4 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50"
           />
         </div>
 
@@ -648,7 +648,7 @@ export default function AgentTemplates() {
 
       <div className="flex-1 min-h-0 scroll-viewport px-4 py-4" aria-live="polite">
         {initialLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
@@ -698,7 +698,7 @@ export default function AgentTemplates() {
               )}
             </AnimatePresence>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
               <AnimatePresence mode="popLayout">
                 {visible.map((template) => (
                   <TemplateCard

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import { WIRELINE_FEATURED_TEAM_AGENT } from "../data/contact-agents";
+import { planById } from "../lib/plan-catalog";
 import MarketingPageFrame from "./layout/MarketingPageFrame";
 import { Input } from "./ui/shadcn/Input";
 
@@ -28,6 +29,9 @@ const CONTACT_PROMISES = [
   ["Live issue", "Urgent call coverage problems should use the phone line first."],
   ["Clear next step", "If Wireline is not the right fit, we will say so directly."],
 ] as const;
+
+const STARTER_PRICE = planById("starter")?.price_usd_monthly ?? 9;
+const STARTER_PLUS_PRICE = planById("team")?.price_usd_monthly ?? 19;
 
 export function ContactPage() {
   const [searchParams] = useSearchParams();
@@ -121,7 +125,10 @@ export function ContactPage() {
         </div>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-3">
-          <a href={`tel:${salesAgent.tel}`} className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
+          <a
+            href={`tel:${salesAgent.tel}`}
+            className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
+          >
             <Phone className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 font-semibold text-foreground">Call Wireline</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -145,7 +152,8 @@ export function ContactPage() {
             <Sparkles className="h-5 w-5" />
             <h2 className="mt-5 font-semibold">See plans</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--wireline-color-text-secondary)]">
-              Create and train for free. Starter Plus starts at $19/mo; Pro at $59/mo.
+              Create and train free. Starter launches at ${STARTER_PRICE}/mo; Starter Plus at $
+              {STARTER_PLUS_PRICE}/mo.
             </p>
           </Link>
         </section>

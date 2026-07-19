@@ -42,6 +42,13 @@ describe("agent navigation contract", () => {
       /MOBILE_MORE_NAV[\s\S]*href: "\/knowledge"[\s\S]*label: "Knowledge"/,
     );
     expect(navigation).toMatch(/MOBILE_MORE_NAV[\s\S]*href: "\/approvals"/);
+    expect(navigation).toContain('route: "/templates", parentHref: "/studio"');
+    expect(navigation).toContain('route: "/knowledge", parentHref: "/studio"');
+    expect(navigation).toContain('route: "/approvals", parentHref: "/inbox"');
+    expect(navigation).toContain('route: "/apps", parentHref: "/settings"');
+    expect(navigation).toContain('current === "/apps"');
+    expect(navigation).toContain('current === "/templates"');
+    expect(workspaceShell).toContain("desktopNavParentHref(pathname)");
     expect(workspaceShell).toMatch(/aria-label="AI employees"/);
     expect(workspaceShell).toMatch(/\/studio\?create=1/);
     expect(workspaceShell).toMatch(/to="\/settings"[\s\S]*aria-label="Account settings"/);
@@ -73,6 +80,7 @@ describe("agent navigation contract", () => {
     expect(studioWorkspace).not.toMatch(/400px_minmax|lg:grid-cols/);
     expect(studioChrome).toMatch(/AI Employee/);
     expect(studioChrome).toMatch(/New employee/);
+    expect(studioChrome).toMatch(/agents\.length > 0/);
     expect(studioChrome).not.toMatch(/Test employee|Connect calls|Deploy|Deep edit/);
     expect(studioPanel).toMatch(/Give \{agentName\} one clear job/);
     expect(studioPanel).toMatch(/Essentials/);
