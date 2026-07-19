@@ -40,10 +40,10 @@ export const runInAuditContext = <T>(ctx: AuditContext, fn: () => T): T => audit
 function pricingFor(model: string) {
   const direct = MODEL_PRICING[model as keyof typeof MODEL_PRICING];
   if (direct) return direct;
-  // AI-Gateway-served turns report prefixed ids ("xai/grok-4.5", "openai/gpt-5.5");
+  // AI-Gateway-served turns report prefixed ids ("xai/grok-4.5", "openai/gpt-5");
   // price them by their bare model so every route shares one price table.
   const bare = model.includes("/") ? model.slice(model.lastIndexOf("/") + 1) : model;
-  return MODEL_PRICING[bare as keyof typeof MODEL_PRICING] ?? MODEL_PRICING[OPENAI_MODELS.GPT_5_5];
+  return MODEL_PRICING[bare as keyof typeof MODEL_PRICING] ?? MODEL_PRICING[OPENAI_MODELS.GPT_5];
 }
 export function estimateCost(
   usage: {
@@ -114,44 +114,12 @@ function push(record: RuntimeCallMeta) {
 function providerFor(model: string): RuntimeCallMeta["provider"] {
   if (/^gpt-/i.test(model)) return "openai";
   if (model.toLowerCase().includes("gemini")) return "google";
-  // Bare grok ids come from the direct xAI runtime; provider/model form
-  // ("xai/grok-4.5") only ever comes back from the AI Gateway last-resort.
+  // Bare grok ids come from the explicitly enabled direct xAI runtime;
+  // provider/model form ("xai/grok-4.5") comes back from AI Gateway.
   if (isXAIModelId(model) && !model.includes("/")) return "xai";
   return "gateway";
 }
-export function recordUsage(
-  model: string,
-  response: { model?: string; usage?: any },
-  latencyMs: number,
-) {
-  // Attribute cost to the model that actually served the turn. On provider
-  // failover the runtime returns a different model than requested, so pricing
-  // and provider attribution must follow the response, not the request.
-  const served = typeof response.model === "string" && response.model ? response.model : model;
-  push({
-    model: served,
-    provider: providerFor(served),
-    input_tokens: response.usage?.input_tokens ?? response.usage?.prompt_tokens ?? 0,
-    output_tokens: response.usage?.output_tokens ?? response.usage?.completion_tokens ?? 0,
-    cache_read_tokens: response.usage?.cache_read_input_tokens ?? 0,
-    cache_create_tokens: response.usage?.cache_creation_input_tokens ?? 0,
-    latency_ms: latencyMs,
-  });
-}
-export function recordGeminiUsage(
-  model: string,
-  usage: GeminiUsageMetadata | undefined,
-  latencyMs: number,
-): RuntimeCallMeta {
-  const record = {
-    model,
-    provider: "google" as const,
-    input_tokens: usage?.promptTokenCount ?? 0,
-    output_tokens: usage?.candidatesTokenCount ?? 0,
-    cache_read_tokens: 0,
-    cache_create_tokens: 0,
-    latency_ms: latencyMs,
-  };
-  push(record);
-  return record;
+
+export function recordRuntimeCall(record: Omit<RuntimeCallMeta, "provider"> & { provider?: RuntimeCallMeta["provider"] }) {
+  push({ ...record, provider: record.provider || providerFor(record.model) });
 }
