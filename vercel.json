@@ -101,11 +101,15 @@
       "destination": "/api/index.ts"
     },
     {
+      "source": "/recap/:path*",
+      "destination": "/api/index.ts"
+    },
+    {
       "source": "/legal/data-deletion",
       "destination": "/legal/data-deletion.html"
     },
     {
-      "source": "/((?!api/|assets/|legal/|.+\\.[A-Za-z0-9]+$).*)",
+      "source": "/((?!api/|assets/|legal/|recap/|.+\\.[A-Za-z0-9]+$).*)",
       "destination": "/index.html"
     }
   ],

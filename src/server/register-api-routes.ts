@@ -41,6 +41,7 @@ import calendarRouter from "../routes/calendar-routes";
 import workspaceKnowledgeRouter from "../routes/workspace-knowledge-routes";
 import icloudMailRouter from "../routes/icloud-mail-routes";
 import emailUnsubscribeRouter from "../routes/email-unsubscribe-routes";
+import shareableArtifactRouter from "../routes/shareable-artifact-routes";
 import marketingRuntimeRouter from "../routes/marketing-runtime-routes";
 import metaWebhookRouter from "../routes/meta-webhook-routes";
 import twilioWebhookRouter from "../routes/twilio-webhook";
@@ -134,6 +135,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(workspaceKnowledgeRouter);
   app.use(icloudMailRouter);
   app.use(emailUnsubscribeRouter);
+  app.use(shareableArtifactRouter);
   app.use(metaWebhookRouter);
   // Twilio inbound SMS receiver (/api/twilio-webhook/*) -- signature-verified,
   // TCPA opt-out keywords. The Carrier panel hands this URL to customers.

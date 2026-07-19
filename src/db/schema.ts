@@ -200,6 +200,42 @@ export const settings = pgTable("wireline_settings", {
   firstActivationCallId: bigint("first_activation_call_id", { mode: "bigint" }),
   timeToActivationSeconds: integer("time_to_activation_seconds"),
   activationChannel: text("activation_channel"),
+  /**
+   * Workspace brand — carried into shareable recap and (future) proposal
+   * artifacts. Only affects the surface of published pages; the underlying
+   * Letterpress structure stays owned by Wireline. See
+   * `src/lib/shareable-artifact/brand.ts` and the migration
+   * `0102_shareable_recap_artifacts.sql`.
+   */
+  workspaceDisplayName: text("workspace_display_name"),
+  workspaceAccentHex: text("workspace_accent_hex"),
+  workspaceTheme: text("workspace_theme").default("obsidian").notNull(),
+  workspaceLogoUrl: text("workspace_logo_url"),
+  workspaceContactLine: text("workspace_contact_line"),
+  workspaceWirelineCreditVisible: boolean("workspace_wireline_credit_visible")
+    .default(true)
+    .notNull(),
+});
+
+// 1.0.1 SHAREABLE RECAP ARTIFACTS
+// One row per published recap / weekly review / (future) proposal page.
+// See `src/lib/shareable-artifact/service.ts` for the publish/verify/render
+// pipeline and `drizzle/migrations/0102_shareable_recap_artifacts.sql`
+// for indexes, RLS, and check constraints.
+export const recapArtifacts = pgTable("wireline_recap_artifacts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  agentId: text("agent_id"),
+  kind: text("kind").notNull(),
+  sourceRef: text("source_ref"),
+  slug: text("slug").notNull().unique(),
+  tokenHash: text("token_hash").notNull(),
+  content: jsonb("content").notNull(),
+  publishedAt: timestamp("published_at", { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  viewCount: integer("view_count").default(0).notNull(),
+  lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
 });
 
 // 1.1 USER PREFERENCES
