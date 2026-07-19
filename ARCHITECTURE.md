@@ -17,18 +17,18 @@ Historic workspace URLs should redirect into the active agent workflow rather th
 
 ## Frontend surfaces
 
-| Concern | Source |
-| --- | --- |
-| Entry | `src/main.tsx` |
-| Routing | `src/App.tsx`, `src/routes/AppRoutes.tsx` |
-| Session boundary | `src/components/layout/AppShell.tsx`, `src/components/WorkspaceShell.tsx` |
-| Overview | `src/pages/OverviewPage.tsx` |
-| Create | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx` |
-| Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/ReportingPreferences.tsx`, `src/components/training/RecentCallArtifactRequests.tsx` |
-| Wire | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` |
-| Run / Studio | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` |
-| Agent roster/state | `src/contexts/AgentsContext.tsx` |
-| Shared visual system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |
+| Concern              | Source                                                                                                                                                                                |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entry                | `src/main.tsx`                                                                                                                                                                        |
+| Routing              | `src/App.tsx`, `src/routes/AppRoutes.tsx`                                                                                                                                             |
+| Session boundary     | `src/components/layout/AppShell.tsx`, `src/components/WorkspaceShell.tsx`                                                                                                             |
+| Overview             | `src/pages/OverviewPage.tsx`                                                                                                                                                          |
+| Create               | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx`                                                                                                               |
+| Train                | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/ReportingPreferences.tsx`, `src/components/training/RecentCallArtifactRequests.tsx` |
+| Wire                 | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                                                                                                            |
+| Run / Studio         | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                                                                                                           |
+| Agent roster/state   | `src/contexts/AgentsContext.tsx`                                                                                                                                                      |
+| Shared visual system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts`                                            |
 
 The visual layer is intentionally restrained: Wireline Letterpress (Aurora palette), dark/ink surfaces, a cool obsidian canvas, electric-violet action, a platinum-silver wire accent, accessible focus states, and no parallel palettes.
 
@@ -72,9 +72,10 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
   - Authenticated realtime/live tests: dedicated xAI Grok voice path with server-provisioned short-lived sessions and safety-scoped tools. See `docs/GROK_LIVE_VOICE.md` and `src/lib/voice/grok-voice-*`.
 - **LLM / reasoning:**
   - Central policy and catalog: `src/lib/ai-models.ts`.
-  - Primary structured and many voice paths: OpenAI with Gemini fallback.
-  - Custom multi-model routing: Vercel AI Gateway (last-resort in the managed chain).
-  - Live Grok remains separate from Vapi production calls.
+  - Structured runtime: xAI Grok primary, then OpenAI, Gemini, and Vercel AI Gateway.
+  - Production PSTN intelligence: OpenAI with Gemini fallback inside Vapi.
+  - Authenticated Studio live voice: xAI Grok realtime; OpenAI Realtime is a separate continuity endpoint, not automatic client failover.
+  - ElevenLabs is optional TTS/cloning/showcase infrastructure, not a reasoning runtime or the tenant PSTN default.
 - **Video presenters:**
   - `src/lib/video-presenter/` wraps provider details behind Wireline-owned copy, status, consent, metering, and fallback language.
   - Customer surfaces should say presenter, face, or live video add-on, not vendor names.
@@ -94,15 +95,15 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 
 ## Source-of-truth discipline
 
-| Concern | Canonical source |
-| --- | --- |
-| Product language | `src/lib/product-copy.ts`, `docs/README.md` |
-| Pricing | `docs/business-usage-pricing-decision.md`, `src/lib/plan-catalog.ts` |
-| Conversation Balance | `src/lib/conversation-balance.ts` |
-| Design | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css` |
-| Models | `src/lib/ai-models.ts` |
-| Video presenter copy | `src/lib/video-presenter/copy.ts` |
-| Repo hygiene | `CODEBASE_HEALTH.md` |
+| Concern              | Canonical source                                                                                      |
+| -------------------- | ----------------------------------------------------------------------------------------------------- |
+| Product language     | `src/lib/product-copy.ts`, `docs/README.md`                                                           |
+| Pricing              | `docs/business-usage-pricing-decision.md`, `src/lib/plan-catalog.ts`                                  |
+| Conversation Balance | `src/lib/conversation-balance.ts`                                                                     |
+| Design               | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css` |
+| Models               | `src/lib/ai-models.ts`                                                                                |
+| Video presenter copy | `src/lib/video-presenter/copy.ts`                                                                     |
+| Repo hygiene         | `CODEBASE_HEALTH.md`                                                                                  |
 
 ## Verification
 

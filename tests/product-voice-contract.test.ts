@@ -5,6 +5,7 @@ import {
   AGENT_DIRECTION_MODES,
   AGENT_NUMBER_PROMISE,
   BRAND_SYSTEM,
+  customerAgentLanguage,
   MARKETING_VOICE,
   OUTBOUND_WEDGE,
 } from "../src/lib/product-copy";
@@ -65,6 +66,19 @@ describe("product voice cohesion", () => {
     expect(AGENT_DIRECTION_MODES.hybrid.promise).toContain("calls, texts, email");
   });
 
+  it("uses contextual customer nouns without renaming the technical agent domain", () => {
+    expect(customerAgentLanguage("personal")).toMatchObject({
+      singular: "personal agent",
+      plural: "personal agents",
+      createCta: "Create personal agent",
+    });
+    expect(customerAgentLanguage("business")).toMatchObject({
+      singular: "AI employee",
+      plural: "AI employees",
+      createCta: "Create AI employee",
+    });
+  });
+
   it("keeps the canonical operating loop across public buying surfaces", () => {
     const features = read("src/pages/Features.tsx");
     const pricing = read("src/pages/Pricing.tsx");
@@ -78,7 +92,7 @@ describe("product voice cohesion", () => {
 
     // The sign-in/up funnel stays intentionally minimal (see PR #738): it leads with
     // the product promise, not a decorative four-step loop grid.
-    expect(authPortal).toContain("Build your first AI employee.");
+    expect(authPortal).toContain("customerAgentLanguage(workspaceMode)");
 
     expect(features).toContain("Build → Train → Launch → Improve");
     expect(features).not.toContain("Create → Train → Wire → Run");

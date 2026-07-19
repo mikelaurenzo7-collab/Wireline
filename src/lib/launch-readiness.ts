@@ -43,6 +43,9 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   if (byId.get("openai")?.status !== "configured") voiceBlockers.push("OPENAI_API_KEY");
   if (byId.get("vapi")?.status !== "configured") voiceBlockers.push("VAPI_PRIVATE_KEY");
   if (!envPresent("VAPI_WEBHOOK_SECRET")) voiceBlockers.push("VAPI_WEBHOOK_SECRET");
+  if (byId.get("twilio")?.status !== "configured") {
+    voiceBlockers.push("TWILIO_ACCOUNT_SID+TWILIO_AUTH_TOKEN");
+  }
 
   const billingBlockers: string[] = [];
   if (byId.get("stripe")?.status !== "configured") billingBlockers.push("STRIPE_SECRET_KEY");
@@ -77,7 +80,7 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
     },
     {
       id: "voice_ready",
-      label: "Guaranteed voice stack",
+      label: "PSTN voice + number stack",
       level: levelFromBlockers(voiceBlockers),
       blockers: voiceBlockers,
     },

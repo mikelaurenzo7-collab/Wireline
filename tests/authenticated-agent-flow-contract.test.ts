@@ -19,7 +19,7 @@ describe("authenticated agent flow", () => {
     expect(authPortal).toContain('nextMode === "personal"');
     expect(authPortal).toContain('import WirelineMark from "./brand/WirelineMark"');
     // The auth funnel stays minimal (PR #738): product promise, not a decorative loop grid.
-    expect(authPortal).toContain("Build your first AI employee.");
+    expect(authPortal).toContain("customerAgentLanguage(workspaceMode)");
     expect(authPortal).not.toContain('<span className="wl-auth-brand-badge">W</span>');
     expect(workspaceShell).toContain('import WirelineMark from "./brand/WirelineMark"');
     expect(workspaceShell).not.toMatch(/>\s*W\s*<\/span>/);
@@ -27,7 +27,7 @@ describe("authenticated agent flow", () => {
       'workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1"',
     );
     expect(authPortal.match(/navigate\(resolvePostAuthDestination/g)).toHaveLength(1);
-    expect(onboardingFlow).toContain("Opening your first agent");
+    expect(onboardingFlow).toContain("Opening your first ${language.singular}");
     expect(onboardingFlow).not.toContain("Link your phone");
     expect(appShell).not.toContain("ActivationCheckpoint");
   });
@@ -81,7 +81,7 @@ describe("authenticated agent flow", () => {
 
     expect(appRoutes).toContain('path="/studio" element={<AgentStudioHome');
     expect(createDialog).toContain("Fast Start");
-    expect(createDialog).toContain("AI employee in about a minute");
+    expect(createDialog).toContain("{language.setupLabel}");
     // Fast Start is a single brief-first screen; voice, phone, and testing
     // are deliberately deferred into Studio.
     expect(createDialog).toContain("Voice, phone, and testing come next in Studio.");
@@ -97,6 +97,8 @@ describe("authenticated agent flow", () => {
     expect(mobileUtilities).toContain('pathname.startsWith("/settings")');
 
     expect(studioHome).toContain('params.get("brief")');
+    expect(studioHome).toContain('params.get("posture")');
+    expect(studioHome).toContain('requestedPosture !== "personal" && accountType === "business"');
     expect(studioHome).toContain("PostCreateActivationWizard");
     expect(studioHome).toContain("readPostCreateWizard");
     expect(studioHome).not.toContain("mode=workroom");

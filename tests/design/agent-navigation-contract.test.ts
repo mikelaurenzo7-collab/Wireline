@@ -79,7 +79,7 @@ describe("agent navigation contract", () => {
     expect(studioWorkspace).not.toMatch(/StudioAgentCanvas/);
     expect(studioWorkspace).not.toMatch(/400px_minmax|lg:grid-cols/);
     expect(studioChrome).toMatch(/AI Employee/);
-    expect(studioChrome).toMatch(/New employee/);
+    expect(studioChrome).toMatch(/language\.createCta/);
     expect(studioChrome).toMatch(/agents\.length > 0/);
     expect(studioChrome).not.toMatch(/Test employee|Connect calls|Deploy|Deep edit/);
     expect(studioPanel).toMatch(/Give \{agentName\} one clear job/);
@@ -127,12 +127,12 @@ describe("agent navigation contract", () => {
   });
 
   it("keeps Fast Start focused on one job and managed defaults", () => {
-    expect(studioChrome).toMatch(/New employee/);
+    expect(studioChrome).toMatch(/language\.createCta/);
     expect(studioChrome).not.toMatch(/New assistant|Assistants/);
     expect(createDialog).toMatch(/Fast Start/);
-    expect(createDialog).toMatch(/AI employee in about a minute/);
-    expect(createDialog).toMatch(/What should this employee handle/);
-    expect(createDialog).toMatch(/Create AI employee/);
+    expect(createDialog).toMatch(/language\.setupLabel/);
+    expect(createDialog).toMatch(/language\.setupPrompt/);
+    expect(createDialog).toMatch(/language\.createCta/);
     expect(createDialog).toMatch(/phoneProvisionRequested: false/);
     expect(createDialog).not.toMatch(/VoicePickerField|CreateAgentCatalogFacePicker/);
     expect(createDialog).not.toMatch(/Provision a number|video-presenter/);

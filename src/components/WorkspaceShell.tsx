@@ -10,7 +10,7 @@ import MobileNavMoreSheet from "./layout/MobileNavMoreSheet";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccount } from "../contexts/AccountContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
-import { formatAgentRoleLabel } from "../lib/product-copy";
+import { customerAgentLanguage, formatAgentRoleLabel } from "../lib/product-copy";
 import { workspaceSidebarLabel } from "../lib/user-display";
 import {
   MOBILE_MORE_HREF,
@@ -53,6 +53,12 @@ function userInitial(name?: string | null, email?: string | null) {
 
 function readinessLabel(agent: { phone_number?: string | null } | undefined): string {
   return agent?.phone_number ? "Active" : "Training";
+}
+
+function contextualNavItem(item: ShellNavItem, posture: "personal" | "business"): ShellNavItem {
+  if (item.href !== "/studio") return item;
+  const language = customerAgentLanguage(posture);
+  return { ...item, label: language.navLabel, shortLabel: language.navShort };
 }
 
 function RailLink({
@@ -151,6 +157,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const { user } = useAuth();
   const { accountType } = useAccount();
   const { agents, resolvedId } = useStudioActiveAgentId();
+  const language = customerAgentLanguage(accountType);
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
   const planLabel = accountType === "business" ? "Business workspace" : "Personal workspace";
   const orderedAgents = resolvedId
@@ -196,23 +203,26 @@ function DesktopRail({ pathname }: { pathname: string }) {
 
       <WiredEyebrow className="px-2.5 pb-2 pt-2.5">Workspace</WiredEyebrow>
       <nav className="flex flex-col gap-0.5" aria-label="Workspace">
-        {WORKSPACE_NAV.map((item) => (
-          <RailLink
-            key={item.href}
-            item={item}
-            pathname={pathname}
-            activeOverride={secondaryRouteParent === item.href ? true : undefined}
-          />
-        ))}
+        {WORKSPACE_NAV.map((rawItem) => {
+          const item = contextualNavItem(rawItem, accountType);
+          return (
+            <RailLink
+              key={item.href}
+              item={item}
+              pathname={pathname}
+              activeOverride={secondaryRouteParent === item.href ? true : undefined}
+            />
+          );
+        })}
       </nav>
 
       {agents.length ? (
         <div className="shrink-0 pt-3">
           <div className="flex items-center justify-between px-2.5 pb-2">
-            <WiredEyebrow>AI employees</WiredEyebrow>
+            <WiredEyebrow>{language.plural}</WiredEyebrow>
             <Link
               to="/studio?create=1"
-              aria-label="New AI employee"
+              aria-label={`New ${language.singular}`}
               className="text-[11px] font-semibold text-primary hover:underline"
             >
               New
@@ -252,7 +262,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
                 to="/studio"
                 className="mt-0.5 flex min-h-[40px] items-center justify-between rounded-[10px] px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
-                <span>All AI employees</span>
+                <span>All {language.plural}</span>
                 <span className="font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">
                   {agents.length}
                 </span>
@@ -308,6 +318,7 @@ function MobileDock({
   moreOpen: boolean;
   onMoreOpen: (open: boolean) => void;
 }) {
+  const { accountType } = useAccount();
   return (
     <>
       <nav
@@ -315,15 +326,18 @@ function MobileDock({
         className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-xl lg:hidden"
       >
         <div className="mx-auto flex max-w-lg items-center justify-between gap-0.5">
-          {MOBILE_PRIMARY_NAV.map((item) => (
-            <MobileDockLink
-              key={item.href}
-              item={item}
-              pathname={pathname}
-              moreOpen={moreOpen}
-              onMore={() => onMoreOpen(true)}
-            />
-          ))}
+          {MOBILE_PRIMARY_NAV.map((rawItem) => {
+            const item = contextualNavItem(rawItem, accountType);
+            return (
+              <MobileDockLink
+                key={item.href}
+                item={item}
+                pathname={pathname}
+                moreOpen={moreOpen}
+                onMore={() => onMoreOpen(true)}
+              />
+            );
+          })}
         </div>
       </nav>
       <MobileNavMoreSheet open={moreOpen} onOpenChange={onMoreOpen} pathname={pathname} />

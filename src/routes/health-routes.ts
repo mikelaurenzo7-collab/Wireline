@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import express, { type NextFunction, type Request, type Response } from "express";
 import { timingSafeEqual } from "node:crypto";
-import { drizzle } from "../lib/server-context";
+import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { getHealthCapabilities, getIntegrationsStatus } from "../lib/integrations-registry";
@@ -20,6 +20,7 @@ import {
 } from "../lib/ai-models";
 import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
+import { reportError } from "../lib/error-reporter";
 
 const router = express.Router();
 const healthRateLimiter = createIpRateLimiter({
@@ -27,6 +28,12 @@ const healthRateLimiter = createIpRateLimiter({
   windowMs: 60_000,
   max: 30,
   message: { error: "Too many health-check requests.", code: "RATE_LIMITED" },
+});
+const clientReportRateLimiter = createIpRateLimiter({
+  bucket: "api:health:client-report",
+  windowMs: 60_000,
+  max: 20,
+  message: { error: "Too many client error reports.", code: "RATE_LIMITED" },
 });
 function monitorTokenOk(req: Request): boolean {
   const expected = process.env.HEALTH_MONITOR_TOKEN || process.env.CRON_SECRET;
@@ -42,6 +49,35 @@ function requireMonitorToken(req: Request, res: Response, next: NextFunction) {
     ? next()
     : res.status(401).json({ ok: false, code: "MONITOR_TOKEN_REQUIRED" });
 }
+
+router.post("/report", clientReportRateLimiter, (req, res) => {
+  const body = req.body && typeof req.body === "object" ? req.body : {};
+  const message = typeof body.message === "string" ? body.message.trim().slice(0, 500) : "";
+  if (!message) {
+    return res.status(400).json({ error: "Error message is required.", code: "INVALID_INPUT" });
+  }
+
+  const stack = typeof body.stack === "string" ? body.stack.slice(0, 4_000) : undefined;
+  let route: string | undefined;
+  if (typeof body.url === "string") {
+    try {
+      const parsed = new URL(body.url);
+      route = `${parsed.pathname}${parsed.search}`.slice(0, 500);
+    } catch {
+      route = undefined;
+    }
+  }
+  const contextKeys =
+    body.context && typeof body.context === "object" ? Object.keys(body.context).slice(0, 20) : [];
+
+  log.error("Client error report", { message, route, contextKeys });
+  reportError(new Error(message), {
+    tags: { surface: "browser", route: route || "unknown" },
+    browser_stack: stack,
+    context_keys: contextKeys,
+  });
+  return res.status(202).json({ ok: true });
+});
 async function probeDatabase(
   timeoutMs = 1500,
 ): Promise<{ ok: boolean; latency_ms: number; error?: string }> {

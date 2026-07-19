@@ -18,6 +18,57 @@ export const BRAND_SYSTEM = {
   ],
 } as const;
 
+export type CustomerAgentPosture = "personal" | "business";
+
+/**
+ * Customer terminology is contextual even though the technical domain remains
+ * `agent` in routes, schemas, events, and APIs.
+ */
+export const CUSTOMER_AGENT_LANGUAGE = {
+  personal: {
+    singular: "personal agent",
+    indefiniteSingular: "a personal agent",
+    plural: "personal agents",
+    navLabel: "Agent",
+    navShort: "Agent",
+    createCta: "Create personal agent",
+    setupLabel: "Personal agent in about a minute",
+    setupPrompt: "What should your personal agent handle?",
+    setupDescription: "Start with one call, appointment, or personal task.",
+    nameLabel: "Agent name",
+  },
+  business: {
+    singular: "AI employee",
+    indefiniteSingular: "an AI employee",
+    plural: "AI employees",
+    navLabel: "AI Employee",
+    navShort: "Employee",
+    createCta: "Create AI employee",
+    setupLabel: "AI employee in about a minute",
+    setupPrompt: "What job should this AI employee own?",
+    setupDescription: "Start with one customer-facing job.",
+    nameLabel: "Employee name",
+  },
+} as const satisfies Record<
+  CustomerAgentPosture,
+  {
+    singular: string;
+    indefiniteSingular: string;
+    plural: string;
+    navLabel: string;
+    navShort: string;
+    createCta: string;
+    setupLabel: string;
+    setupPrompt: string;
+    setupDescription: string;
+    nameLabel: string;
+  }
+>;
+
+export function customerAgentLanguage(posture: CustomerAgentPosture) {
+  return CUSTOMER_AGENT_LANGUAGE[posture];
+}
+
 export const AGENT_DIRECTION_MODES = {
   outbound: {
     label: "Sales",

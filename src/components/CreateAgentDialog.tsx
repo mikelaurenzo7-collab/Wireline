@@ -15,6 +15,7 @@ import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { setPostSignupFlowActive } from "../lib/post-signup-onboarding";
 import { emitProductEvent } from "../lib/product-event-client";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
+import { customerAgentLanguage } from "../lib/product-copy";
 
 const ROLE_TEMPLATES = [
   {
@@ -66,16 +67,19 @@ function safeCreateAgentError(
   status: number,
   code: string | null | undefined,
   raw: string | null | undefined,
+  posture: Posture,
 ): string {
+  const language = customerAgentLanguage(posture);
+  const noun = language.singular;
   const normalized = code?.toLowerCase();
   if (status === 401 || status === 403) {
     return "Your session expired. Please sign in again to keep building.";
   }
   if (status === 402 || normalized === "plan_capacity_reached") {
-    return "Your current plan is at its live-agent capacity. Upgrade or archive an existing employee to make room.";
+    return `Your current plan is at its live-agent capacity. Upgrade or archive an existing ${noun} to make room.`;
   }
   if (status === 409 || normalized === "name_conflict") {
-    return "An employee with that name already exists. Pick a different name to continue.";
+    return `${language.indefiniteSingular.replace(/^./, (letter) => letter.toUpperCase())} with that name already exists. Pick a different name to continue.`;
   }
   if (status === 429 || normalized === "rate_limited") {
     return "You're going a bit fast. Take a breath and try again in a moment.";
@@ -86,7 +90,7 @@ function safeCreateAgentError(
   if (typeof raw === "string" && raw.trim() && raw.trim().length <= 160 && !/[({]/.test(raw)) {
     return raw.trim();
   }
-  return "Something got stuck creating this employee. Try again in a moment.";
+  return `Something got stuck creating this ${noun}. Try again in a moment.`;
 }
 
 function defaultAgentName(posture: Posture, role: Role) {
@@ -134,6 +138,7 @@ export default function CreateAgentDialog({
   const dialogRef = useRef<HTMLFormElement>(null);
   useModalFocusTrap(dialogRef, { onEscape: close });
   const activePosture: Posture = posture;
+  const language = customerAgentLanguage(activePosture);
 
   useEffect(() => {
     if (!open) return;
@@ -197,7 +202,7 @@ export default function CreateAgentDialog({
         code?: string;
       } | null;
       if (!response.ok || !body?.id) {
-        setError(safeCreateAgentError(response.status, body?.code, body?.error));
+        setError(safeCreateAgentError(response.status, body?.code, body?.error, activePosture));
         return;
       }
 
@@ -281,7 +286,7 @@ export default function CreateAgentDialog({
       });
       onClose();
     } catch {
-      setError("AI employee could not be created. Try again.");
+      setError(`${language.singular} could not be created. Try again.`);
     } finally {
       setCreating(false);
     }
@@ -327,7 +332,7 @@ export default function CreateAgentDialog({
                   id="create-agent-description"
                   className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground"
                 >
-                  AI employee in about a minute
+                  {language.setupLabel}
                 </p>
               </div>
             </div>
@@ -337,7 +342,7 @@ export default function CreateAgentDialog({
               size="icon"
               onClick={close}
               disabled={creating}
-              aria-label="Close AI employee setup"
+              aria-label={`Close ${language.singular} setup`}
               className="shrink-0"
             >
               <X aria-hidden="true" size={16} />
@@ -348,11 +353,13 @@ export default function CreateAgentDialog({
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
           <p className={WL_APP_CLASSES.wiredEyebrow}>One job</p>
           <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(2rem,4vw,2.5rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
-            What should this employee handle?
+            {language.setupPrompt}
           </h3>
-          <p className="mt-3 text-sm text-muted-foreground">One sentence is enough.</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {language.setupDescription} One sentence is enough.
+          </p>
 
-          <div className="mt-5 grid gap-2 sm:grid-cols-2" role="group" aria-label="Employee type">
+          <div className="mt-5 grid gap-2 sm:grid-cols-2" role="group" aria-label="Use case">
             {(
               [
                 ["personal", "Personal", "Calls and appointments"],
@@ -397,7 +404,7 @@ export default function CreateAgentDialog({
           </div>
 
           <label className="mt-5 block">
-            <span className="sr-only">AI employee brief</span>
+            <span className="sr-only">{language.singular} brief</span>
             <Textarea
               ref={briefRef}
               value={brief}
@@ -433,7 +440,8 @@ export default function CreateAgentDialog({
 
           <label className="mt-6 grid gap-1.5">
             <span className="text-xs font-semibold text-foreground">
-              Employee name <span className="font-normal text-muted-foreground">(optional)</span>
+              {language.nameLabel}{" "}
+              <span className="font-normal text-muted-foreground">(optional)</span>
             </span>
             <Input
               value={name}
@@ -461,7 +469,7 @@ export default function CreateAgentDialog({
               ) : (
                 <WandSparkles size={15} aria-hidden="true" />
               )}
-              {creating ? "Creating…" : "Create AI employee"}
+              {creating ? "Creating…" : language.createCta}
             </Button>
           </div>
         </div>

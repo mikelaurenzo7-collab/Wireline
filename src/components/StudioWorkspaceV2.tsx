@@ -6,8 +6,10 @@ import { Button, Skeleton } from "../components/atoms";
 import { PanelSkeleton } from "../components/atoms/skeleton-presets";
 import { EmptyState } from "../components/ui/EmptyState";
 import { useAgents } from "../contexts/AgentsContext";
+import { useAccount } from "../contexts/AccountContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
+import { customerAgentLanguage } from "../lib/product-copy";
 import StudioAgentReviewPanel from "./StudioAgentReviewPanel";
 import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
 import StudioWorkroom, { type StudioWorkroomHandle } from "./StudioWorkroom";
@@ -50,8 +52,9 @@ function StudioLoadingState() {
   );
 }
 
-function StudioEmptyState() {
+function StudioEmptyState({ posture }: { posture: "personal" | "business" }) {
   const [brief, setBrief] = useState("");
+  const language = customerAgentLanguage(posture);
 
   function createHref() {
     const params = new URLSearchParams({ create: "1" });
@@ -64,20 +67,28 @@ function StudioEmptyState() {
     <EmptyState
       fill
       icon={Sparkles}
-      title="Create your first AI employee"
-      description="Start with one customer-facing job. Wireline will guide setup, testing, and launch."
+      title={`Create your first ${language.singular}`}
+      description={
+        posture === "business"
+          ? "Start with one customer-facing job. Wireline will guide setup, testing, and launch."
+          : "Start with one call, appointment, or personal task. Wireline will guide setup and testing."
+      }
       className="wl-composer-dock"
     >
       <div className="mx-auto mt-2 w-full max-w-xl text-left">
         <label className="mb-2 block text-sm font-semibold text-foreground" htmlFor="studio-brief">
-          What should this employee handle?
+          {language.setupPrompt}
         </label>
         <textarea
           id="studio-brief"
           value={brief}
           onChange={(event) => setBrief(event.target.value)}
           className="min-h-[92px] w-full resize-y rounded-xl border border-border bg-card p-4 text-[15px] leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
-          placeholder="Answer missed calls, qualify leads, book appointments, and follow up by text…"
+          placeholder={
+            posture === "business"
+              ? "Answer missed calls, qualify leads, book appointments, and follow up by text…"
+              : "Screen unknown callers, book appointments, and text me what happened…"
+          }
         />
         <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
           <Button asChild>
@@ -101,6 +112,7 @@ function normalizeSection(value: string | null): WorkspaceSection {
 
 export default function StudioWorkspaceV2() {
   const { loading } = useAgents();
+  const { accountType } = useAccount();
   const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
@@ -189,7 +201,7 @@ export default function StudioWorkspaceV2() {
   }, [setSection]);
 
   if (loading) return <StudioLoadingState />;
-  if (agents.length === 0) return <StudioEmptyState />;
+  if (agents.length === 0) return <StudioEmptyState posture={accountType} />;
 
   if (!active) {
     return (

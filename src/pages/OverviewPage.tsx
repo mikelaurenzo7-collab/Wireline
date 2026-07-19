@@ -23,7 +23,8 @@ import OutboundDialDialog from "../components/OutboundDialDialog";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
-import { formatAgentRoleLabel } from "../lib/product-copy";
+import { useAccount } from "../contexts/AccountContext";
+import { customerAgentLanguage, formatAgentRoleLabel } from "../lib/product-copy";
 import { workspaceFirstName } from "../lib/user-display";
 import { authFetch } from "../lib/api";
 import { isoToLocalDateKey, localDateKey } from "../lib/date-display";
@@ -122,7 +123,8 @@ function AgentLoadingRows() {
   );
 }
 
-function FirstRunLaunchpad() {
+function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
+  const language = customerAgentLanguage(posture);
   const steps = [
     {
       title: "Choose one real job",
@@ -158,13 +160,13 @@ function FirstRunLaunchpad() {
             Put one customer-facing job to work today.
           </h2>
           <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
-            Give one AI employee a clear job, test it, then connect only the channels that job
-            needs.
+            Give one {language.singular} a clear job, test it, then connect only the channels that
+            job needs.
           </p>
           <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
             <Button asChild className="w-full justify-center sm:w-auto">
               <Link to="/studio?create=1">
-                Create your first AI employee
+                {language.createCta}
                 <ArrowRight size={15} aria-hidden="true" />
               </Link>
             </Button>
@@ -413,7 +415,9 @@ function formatCallMeta(createdAt: string, durationSeconds?: number | null) {
 
 export default function OverviewPage() {
   const { user } = useAuth();
+  const { accountType } = useAccount();
   const { agents, loading, degraded, refresh } = useAgents();
+  const language = customerAgentLanguage(accountType);
   const [showOutboundDial, setShowOutboundDial] = useState(false);
 
   const [callsCount, setCallsCount] = useState(0);
@@ -541,7 +545,7 @@ export default function OverviewPage() {
             <div className="max-w-2xl">
               <h1 className="wl-display-2 text-balance">
                 {isFirstRun
-                  ? "Let's put your first AI employee to work."
+                  ? `Let's put your first ${language.singular} to work.`
                   : `${dayGreeting()}, ${workspaceFirstName(user?.full_name, user?.email)}.`}
               </h1>
             </div>
@@ -551,7 +555,7 @@ export default function OverviewPage() {
                   <Button asChild className="shrink-0 justify-center sm:min-w-[170px]">
                     <Link to={primaryStudioHref}>
                       <Sparkles aria-hidden="true" size={15} />
-                      Manage AI employee
+                      Manage {language.navLabel}
                     </Link>
                   </Button>
                   {hasLiveLine ? (
@@ -572,7 +576,7 @@ export default function OverviewPage() {
                     >
                       <Link to={primaryTestHref}>
                         <Play aria-hidden="true" size={15} />
-                        Test employee
+                        Test {language.navShort.toLowerCase()}
                       </Link>
                     </Button>
                   )}
@@ -583,7 +587,7 @@ export default function OverviewPage() {
         </section>
 
         {isFirstRun ? (
-          <FirstRunLaunchpad />
+          <FirstRunLaunchpad posture={accountType} />
         ) : degraded && !hasAgents ? (
           <WorkspaceRecovery onRetry={refresh} />
         ) : (

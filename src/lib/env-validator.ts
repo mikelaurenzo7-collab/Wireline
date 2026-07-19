@@ -383,14 +383,17 @@ export function validateEnv(): EnvValidationResult {
 
   const gateway =
     process.env.AI_GATEWAY_API_KEY?.trim() || (isProd && process.env.VERCEL_OIDC_TOKEN?.trim());
-  const fallback = process.env.OPENAI_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim();
-  if (!gateway && !fallback) {
+  const directRuntime =
+    process.env.XAI_API_KEY?.trim() ||
+    process.env.OPENAI_API_KEY?.trim() ||
+    process.env.GEMINI_API_KEY?.trim();
+  if (!gateway && !directRuntime) {
     result.valid = false;
     byGroup.ai.invalid++;
     result.errors.push({
       var: "AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN",
       group: "ai",
-      message: "Configure AI Gateway or a direct model fallback before serving AI requests",
+      message: "Configure xAI, a direct model fallback, or AI Gateway before serving AI requests",
     });
   }
   return result;

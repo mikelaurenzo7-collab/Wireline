@@ -41,4 +41,15 @@ describe("health surfaces contract", () => {
     expect(actionEngine).not.toContain("/api/health/integrations");
     expect(actionEngine).toContain("/api/oauth/crm/status");
   });
+
+  it("accepts bounded browser error reports and forwards them to server telemetry", () => {
+    const source = read("src/routes/health-routes.ts");
+    const clientReporter = read("src/lib/sentry.ts");
+
+    expect(clientReporter).toContain('"/api/health/report"');
+    expect(source).toContain('router.post("/report"');
+    expect(source).toContain("clientReportRateLimiter");
+    expect(source).toContain("reportError(new Error(message)");
+    expect(source).toContain("body.stack.slice(0, 4_000)");
+  });
 });

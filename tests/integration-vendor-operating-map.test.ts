@@ -59,6 +59,7 @@ describe("integration vendor operating map", () => {
     expect(ids).toEqual(
       expect.arrayContaining([
         "drizzle",
+        "xai",
         "openai",
         "gemini",
         "ai-gateway",
@@ -88,6 +89,25 @@ describe("integration vendor operating map", () => {
     expect(RUNTIME_INTEGRATIONS.find((entry) => entry.id === "docusign")?.oneOfEnvVars).toEqual([
       ["DOCUSIGN_ACCESS_TOKEN", "DOCUSIGN_JWT_TOKEN"],
     ]);
+    expect(RUNTIME_INTEGRATIONS.find((entry) => entry.id === "ai-gateway")?.oneOfEnvVars).toEqual([
+      ["AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN"],
+    ]);
+    expect(RUNTIME_INTEGRATIONS.find((entry) => entry.id === "elevenlabs")?.description).toContain(
+      "Optional TTS",
+    );
+  });
+
+  it("keeps environment and launch gates aligned with the funded runtime", () => {
+    const envValidator = readFileSync(resolve(process.cwd(), "src/lib/env-validator.ts"), "utf8");
+    const launchReadiness = readFileSync(
+      resolve(process.cwd(), "src/lib/launch-readiness.ts"),
+      "utf8",
+    );
+
+    expect(envValidator).toContain("process.env.XAI_API_KEY");
+    expect(envValidator).toContain("const directRuntime");
+    expect(launchReadiness).toContain("TWILIO_ACCOUNT_SID+TWILIO_AUTH_TOKEN");
+    expect(launchReadiness).toContain("PSTN voice + number stack");
   });
 
   it("classifies buyer-facing runtime connectors with current registry ids", () => {

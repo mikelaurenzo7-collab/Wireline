@@ -4,10 +4,12 @@ import { useNavigate } from "react-router-dom";
 import TransitionSurface from "../components/TransitionSurface";
 import { PageMeta } from "../lib/page-meta";
 import { readStoredWorkspaceMode } from "../lib/auth-redirect";
+import { customerAgentLanguage } from "../lib/product-copy";
 
 export default function OnboardingFlow() {
   const navigate = useNavigate();
   const workspaceMode = readStoredWorkspaceMode();
+  const language = customerAgentLanguage(workspaceMode);
   const [showFallback, setShowFallback] = useState(false);
   // Dedicated entry for direct-to-create flows (e.g. ?onboarding or explicit links).
   // Default post-login (even for fresh) is /overview (Home). Use /studio?create or this flow
@@ -21,7 +23,7 @@ export default function OnboardingFlow() {
     },
     {
       label: "Next",
-      value: "Opening your first agent brief.",
+      value: `Opening your first ${language.singular} brief.`,
     },
   ];
 
@@ -39,7 +41,7 @@ export default function OnboardingFlow() {
       <PageMeta title="Opening create flow - Wireline" noIndex />
       <TransitionSurface
         eyebrow="Create flow"
-        title="Opening your first agent"
+        title={`Opening your first ${language.singular}`}
         busyLabel="Routing now"
         details={details}
         actions={

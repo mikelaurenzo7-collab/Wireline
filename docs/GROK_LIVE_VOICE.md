@@ -1,6 +1,6 @@
 # Grok Live Voice (Active Realtime Architecture)
 
-Wireline's authenticated browser, mobile, and ChatGPT voice sessions run on the managed **xAI Grok realtime contract** in `src/lib/voice/grok-voice-service.ts` and `src/routes/grok-voice-routes.ts`. This is the active, default live-voice architecture. The OpenAI Realtime implementation in `src/lib/voice/openai-realtime-service.ts` and `src/routes/openai-realtime-routes.ts` remains registered as an ordered continuity fallback.
+Wireline's authenticated browser, mobile, and ChatGPT voice sessions run on the managed **xAI Grok realtime contract** in `src/lib/voice/grok-voice-service.ts` and `src/routes/grok-voice-routes.ts`. This is the active, default live-voice architecture. The OpenAI Realtime implementation in `src/lib/voice/openai-realtime-service.ts` and `src/routes/openai-realtime-routes.ts` remains registered as a separate manual continuity endpoint; the current Studio client does not automatically fail over from Grok to OpenAI.
 
 The live-voice sandbox (`src/components/LiveVoiceSandbox.tsx`) opens a session against `/api/voice/live/session` and connects with the `xai-client-secret.<token>` WebSocket subprotocol. Sessions are authenticated, agent-scoped, and never expose the long-lived xAI key to a browser or native client.
 
@@ -26,9 +26,9 @@ The server mints short-lived client secrets (`https://api.x.ai/v1/realtime/clien
 - Production PSTN calls remain on the approved telephony path (Vapi) and continue to enforce billing, consent, DNC, and launch policy server-side.
 - Customer-facing voice names remain Wireline profiles rather than provider brands.
 
-## OpenAI Realtime fallback environment
+## OpenAI Realtime continuity environment
 
-The OpenAI Realtime path stays available as a continuity fallback for authenticated realtime tests:
+The OpenAI Realtime path stays available as an operator-selected continuity path for authenticated realtime tests:
 
 ```bash
 OPENAI_API_KEY=
