@@ -80,6 +80,7 @@ run("npx", [
   "tests/structured-runtime-policy-contract.test.ts",
   "tests/vendor-readiness-contract.test.ts",
   "tests/runtime-integrations-registry-contract.test.ts",
+  "tests/production-env-policy-contract.test.ts",
 ]);
 sanitizePreviewEnvironment();
 run("node", ["scripts/check-operational-core.mjs"]);
