@@ -85,10 +85,10 @@ latency-sensitive phone turn.
 | SMS      | account/inventory ready | Nine SMS-capable numbers + one Messaging Service; test STOP/HELP/webhooks   |
 | WhatsApp | private beta         | Zero ONLINE senders; complete WABA, sender, templates, callbacks, and consent  |
 
-Twilio trial allowances such as 100 SMS or WhatsApp messages are onboarding
-credits, not a durable production entitlement or customer promise. Wireline's
-customer allowance must be governed by its own plan catalog, spend controls,
-and current Twilio pricing.
+Promotional trials and one-time onboarding credits are not durable production
+entitlements or customer promises. Wireline does not promise 100 free SMS or
+WhatsApp messages. Customer allowances are governed by Wireline's plan catalog,
+prepaid runtime controls, and current Twilio and Meta pricing.
 
 The current code supports signed inbound messaging webhooks and two-way
 responses. It does not yet justify general asynchronous WhatsApp marketing
