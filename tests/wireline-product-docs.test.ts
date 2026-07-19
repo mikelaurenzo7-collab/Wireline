@@ -53,7 +53,7 @@ describe("Wireline product documentation contract", () => {
 
     expect(roadmap).toContain("Create → Train → Wire → Run");
     expect(roadmap).toContain("Letterpress");
-    expect(roadmap).toContain("voice + presenter");
+    expect(roadmap).toContain("voice + chat AI-employee");
     expect(roadmap).toContain("Material-style dark SaaS");
     expect(vendors).toContain("LiveAvatar");
     expect(vendors).toContain("Customer surfaces must never name vendors");

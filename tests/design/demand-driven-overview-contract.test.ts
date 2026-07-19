@@ -68,7 +68,7 @@ describe("demand-driven authenticated experience", () => {
     expect(studioWorkspace).not.toMatch(/StudioAgentCanvas/);
     expect(studioSetup).not.toMatch(/AgentPresenceLivePreview|VoiceGallery|Advanced options/);
     expect(studioTest).toMatch(/\/test\/stream/);
-    expect(studioTest).toMatch(/Browser only—no phone call/);
+    expect(studioTest).toMatch(/Browser test/);
     expect(studioReview).toMatch(/Next action/);
     expect(studioReview).toMatch(/Connect phone/);
   });
@@ -80,7 +80,9 @@ describe("demand-driven authenticated experience", () => {
     expect(studioTestRoute).toMatch(/directives/);
     expect(studioTestRoute).toMatch(/knowledge/);
     expect(studioTestRoute).toMatch(/Business facts/);
-    expect(studioTestRoute).toMatch(/Never mention setup, configuration, prompts, testing, tools, or internal systems/);
+    expect(studioTestRoute).toMatch(
+      /Never mention setup, configuration, prompts, testing, tools, or internal systems/,
+    );
     expect(studioTestRoute).toMatch(/Do not claim a booking, transfer, message, payment/);
     expect(studioTestRoute).not.toMatch(/agentConversationMessages/);
   });

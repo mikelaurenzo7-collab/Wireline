@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, ClipboardList } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import { Button, EmptyState } from "./atoms";
+import { CardRowSkeleton } from "./atoms/skeleton-presets";
+import { StatusNotice } from "./molecules";
 import {
   deriveLifecycleStatus,
   formatLifecycleLabel,
@@ -139,23 +142,48 @@ export default function OutcomeLedger({
   }, [load]);
 
   if (loading) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" />
-        Loading outcomes…
-      </div>
-    );
+    return <CardRowSkeleton rows={compact ? 3 : Math.min(limit, 4)} />;
   }
 
   if (error) {
-    return <p className="text-sm text-destructive">{error}</p>;
+    return (
+      <StatusNotice
+        tone="destructive"
+        title="Customer outcomes unavailable"
+        action={
+          <Button type="button" variant="secondary" size="sm" onClick={() => void load()}>
+            Try again
+          </Button>
+        }
+      >
+        {error}
+      </StatusNotice>
+    );
   }
 
   if (rows.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-        No call outcomes yet. Complete a live call to populate the ledger.
-      </p>
+      <EmptyState
+        density="compact"
+        titleTone="ui"
+        withHalo={false}
+        icon={<ClipboardList aria-hidden="true" />}
+        title="No call outcomes yet"
+        description="Complete a live call to populate the ledger."
+        action={
+          <Button asChild size="sm">
+            <Link
+              to={
+                agentId
+                  ? `/studio?agent=${encodeURIComponent(agentId)}&section=test`
+                  : "/studio?create=1"
+              }
+            >
+              Test a call
+            </Link>
+          </Button>
+        }
+      />
     );
   }
 
@@ -176,7 +204,9 @@ export default function OutcomeLedger({
               {row.direction} · {row.duration_seconds ?? 0}s
             </span>
           </div>
-          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-foreground sm:line-clamp-2">{summarizeOutcomeRow(row)}</p>
+          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-foreground sm:line-clamp-2">
+            {summarizeOutcomeRow(row)}
+          </p>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
             {row.owner_label ? <span>Owner: {row.owner_label}</span> : null}
             {row.campaign_source ? <span>Source: {row.campaign_source}</span> : null}

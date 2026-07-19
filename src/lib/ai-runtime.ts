@@ -1,7 +1,7 @@
 /**
  * Wireline managed AI runtime.
- * OpenAI is primary, Gemini is automatic failure fallback, and OpenRouter is
- * honored only for an explicit agent-selected model.
+ * Grok 4.5 (direct xAI) is primary; OpenAI and Gemini are ordered automatic
+ * fallbacks, and the Vercel AI Gateway is the last-resort multi-model route.
  */
 export * from "./ai-models";
 export * from "./ai-audit";

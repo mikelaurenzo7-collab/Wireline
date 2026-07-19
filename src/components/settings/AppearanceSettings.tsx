@@ -33,10 +33,6 @@ export default function AppearanceSettings() {
       <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-xl tracking-[-0.02em] text-foreground">
         Workspace theme
       </h2>
-      <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-        Ink is the default product canvas. Paper is optional for high-glare rooms. Public marketing
-        pages keep their own storytelling surfaces.
-      </p>
       <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
         Active: {resolvedTheme === "dark" ? "Ink" : "Paper"}
       </p>

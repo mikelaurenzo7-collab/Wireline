@@ -27,7 +27,7 @@ import {
 } from "../lib/mcp-transport";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import { rateLimit } from "../lib/rate-limit";
-import { createOpenAIRealtimeClientSecret } from "../lib/voice/openai-realtime-service";
+import { createGrokVoiceClientSession } from "../lib/voice/grok-voice-service";
 import * as schema from "../db/schema";
 
 const router = express.Router();
@@ -545,8 +545,9 @@ router.post("/mcp", async (req, res) => {
         throw AppError.tooManyRequests(
           "The private voice simulation limit has been reached. Continue testing from Wireline.",
         );
-      const session = await createOpenAIRealtimeClientSecret({
+      const session = await createGrokVoiceClientSession({
         userId: authed.userId,
+        agentId: draft.view.id,
         agentName: draft.view.name,
         instructions: draft.runtimeInstructions,
         tools: [],

@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 282
-**Protected:** 244
+**Routes scanned:** 280
+**Protected:** 242
 **Public (allowlisted):** 38
 **Violations:** 0
 
@@ -80,9 +80,7 @@
 | agent-routes-v2.ts | GET | `/api/agents` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agents` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agents/:id/import` | inline | — | — | Protected |
-| agent-routes-v2.ts | GET | `/api/agents/openrouter-models` | inline | — | — | Protected |
 | agent-routes-v2.ts | GET | `/api/agents/roles` | inline | — | — | Protected |
-| agent-routes-v2.ts | GET | `/api/agents/voice-models` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/train/extract` | inline | — | — | Protected |
 | agent-test-routes.ts | POST | `/api/agents/:id/test/stream` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/apply-change` | inline | — | — | Protected |

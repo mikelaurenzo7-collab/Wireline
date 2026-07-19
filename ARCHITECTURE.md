@@ -73,7 +73,7 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 - **LLM / reasoning:**
   - Central policy and catalog: `src/lib/ai-models.ts`.
   - Primary structured and many voice paths: OpenAI with Gemini fallback.
-  - Custom per-agent options: OpenRouter or catalog-backed model IDs.
+  - Custom multi-model routing: Vercel AI Gateway (last-resort in the managed chain).
   - Live Grok remains separate from Vapi production calls.
 - **Video presenters:**
   - `src/lib/video-presenter/` wraps provider details behind Wireline-owned copy, status, consent, metering, and fallback language.

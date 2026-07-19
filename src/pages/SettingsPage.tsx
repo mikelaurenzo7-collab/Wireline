@@ -168,8 +168,7 @@ export default function SettingsPage() {
                 Account identity
               </h1>
               <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">
-                Signed-in identity and session controls. Profile edits ship in a later release — use
-                Security below for password and compliance.
+                Signed-in identity and session controls.
               </p>
             </div>
           </div>

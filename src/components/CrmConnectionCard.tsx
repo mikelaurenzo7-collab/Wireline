@@ -10,6 +10,8 @@ import { getIntegrationLogo } from "./layout/IntegrationLogos";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Input } from "./ui/shadcn/Input";
+import { Skeleton } from "./atoms";
+import { StatusNotice } from "./molecules";
 import { BRAND } from "../constants/brand-colors";
 
 const CRM_SELECT_UNSET = "__unset__";
@@ -163,6 +165,7 @@ const PROVIDERS: {
 export default function CrmConnectionCard() {
   const [state, setState] = useState<IntegrationState | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [slackChannels, setSlackChannels] = useState<
     { id: string; name: string; is_private?: boolean }[]
@@ -181,11 +184,16 @@ export default function CrmConnectionCard() {
   const fetchStatus = useCallback(async () => {
     try {
       const r = await authFetch("/api/oauth/crm/status");
-      if (r.ok) setState(await r.json());
-    } catch {
-      /* ignore */
+      if (!r.ok) throw new Error("Could not load integration connections.");
+      setState(await r.json());
+      setError(null);
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : "Could not load integration connections.",
+      );
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -307,20 +315,57 @@ export default function CrmConnectionCard() {
     }
   };
 
+  const retry = () => {
+    setLoading(true);
+    void fetchStatus();
+  };
+
   if (loading) {
     return (
-      <div className="text-[var(--wireline-typography-overline-size)] text-muted flex items-center gap-2 py-4">
-        <Loader2 className="w-3 h-3 animate-spin" /> Checking integration connections…
+      <div className="space-y-4" aria-busy="true" aria-label="Loading integration connections…">
+        <Skeleton className="h-11 w-full" shape="surface" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3">
+          {Array.from({ length: PROVIDERS.length }).map((_, i) => (
+            <Skeleton key={i} className="h-24" shape="surface" />
+          ))}
+        </div>
       </div>
     );
   }
 
-  if (!state) return null;
+  if (!state) {
+    return (
+      <StatusNotice
+        tone="destructive"
+        title="Integration connections unavailable"
+        action={
+          <ShadButton type="button" variant="outline" size="sm" disableAnimations onClick={retry}>
+            Retry
+          </ShadButton>
+        }
+      >
+        {error || "Could not load your connected integrations. Please try again."}
+      </StatusNotice>
+    );
+  }
 
   const connectedCount = PROVIDERS.filter((p) => state[p.key]?.connected).length;
 
   return (
     <div className="space-y-4">
+      {error ? (
+        <StatusNotice
+          tone="destructive"
+          title="Integration connections unavailable"
+          action={
+            <ShadButton type="button" variant="outline" size="sm" disableAnimations onClick={retry}>
+              Retry
+            </ShadButton>
+          }
+        >
+          {error}
+        </StatusNotice>
+      ) : null}
       <div className="rounded-md wl-panel border border-border px-4 py-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className={WL_APP_CLASSES.wiredEyebrow}>Connected stack</p>
@@ -335,10 +380,7 @@ export default function CrmConnectionCard() {
             variant="outline"
             size="sm"
             disableAnimations
-            onClick={() => {
-              setLoading(true);
-              void fetchStatus();
-            }}
+            onClick={retry}
             className="rounded-full wl-label"
             aria-label="Refresh integration status"
           >

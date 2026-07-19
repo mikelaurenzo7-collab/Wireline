@@ -573,7 +573,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
               )}
               {deliveries && deliveries.length === 0 && (
                 <div className="wl-micro-meta opacity-90 italic py-3">
-                  No deliveries yet. Hit Test or trigger an event.
+                  No deliveries yet. Run Test, or trigger an event.
                 </div>
               )}
               <div className="space-y-1.5">

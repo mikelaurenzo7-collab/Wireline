@@ -8,11 +8,7 @@ import { getBudgetSnapshot, clearBudgetCache } from "./spend-guards";
 import { planById } from "./plan-catalog";
 import { getVoiceUsageSnapshot } from "./voice-usage";
 import { getCreditBalanceUsd } from "./credit-wallet";
-import {
-  defaultAiSpendBudgetUsdForTier,
-  openRouterAllowedForPlanId,
-  subscriptionPlanToTier,
-} from "./plan-entitlements";
+import { defaultAiSpendBudgetUsdForTier, subscriptionPlanToTier } from "./plan-entitlements";
 import { quotaTracker } from "./server-context";
 
 const INTERNAL_AI_TOKEN_DIMENSION = "claude_tokens_daily" as const;
@@ -43,7 +39,6 @@ export interface WorkspaceUsageSnapshot {
   ai_tokens_used_today: number;
   ai_tokens_daily_limit: number;
   ai_tokens_pct: number;
-  openrouter_allowed: boolean;
   /** Primary ring value — worst of voice vs AI spend (what burns margin fastest). */
   usage_pct: number;
   /** @deprecated Sidebar alias — same as voice_minutes_included */
@@ -88,8 +83,7 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
   const freeBuilder = !plan || plan.id === "personal";
   const insufficientForNextAttempt =
     voice.voice_minutes_remaining < 1 && creditBalanceRounded < voice.overage_per_min_usd;
-  const liveVoiceBlocked =
-    freeBuilder || completionGraceDueUsd > 0 || insufficientForNextAttempt;
+  const liveVoiceBlocked = freeBuilder || completionGraceDueUsd > 0 || insufficientForNextAttempt;
 
   return {
     plan_id: voice.plan_id,
@@ -116,7 +110,6 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
     ai_tokens_used_today: tokenUsed,
     ai_tokens_daily_limit: tokenLimit,
     ai_tokens_pct: tokenPct,
-    openrouter_allowed: openRouterAllowedForPlanId(voice.plan_id),
     usage_pct: Math.max(voicePct, aiPct),
     voice_minutes_cap: voice.voice_minutes_included,
   };

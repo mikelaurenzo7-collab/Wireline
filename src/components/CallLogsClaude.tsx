@@ -131,6 +131,11 @@ function todayBoundary(): number {
   return start.getTime();
 }
 
+// Floor tab reveal batch size — also used as the increment for both the
+// client-side "already fetched but hidden" reveal and the server-side
+// offset when /api/calls reports more rows exist than we've fetched.
+const FLOOR_PAGE_SIZE = 12;
+
 function Wave() {
   return (
     <div className="flex h-5 items-end gap-[2px]" aria-hidden="true">
@@ -154,6 +159,9 @@ export default function CallLogsClaude() {
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [visibleFloorCount, setVisibleFloorCount] = useState(FLOOR_PAGE_SIZE);
   const [showOutboundDial, setShowOutboundDial] = useState(false);
   const [params, setParams] = (function useTabState() {
     const url = new URL(typeof window !== "undefined" ? window.location.href : "http://x/");
@@ -186,11 +194,12 @@ export default function CallLogsClaude() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    authFetch("/api/calls?limit=100")
+    authFetch("/api/calls?limit=100&offset=0")
       .then((response) => (response.ok ? response.json() : null))
       .then((body: CallsResponse | null) => {
         if (cancelled) return;
         setCalls(Array.isArray(body?.calls) ? body!.calls! : []);
+        setHasMore(Boolean(body?.hasMore));
       })
       .catch(() => {
         if (cancelled) return;
@@ -221,6 +230,43 @@ export default function CallLogsClaude() {
     for (const call of calls) if (call.agent_id) ids.add(call.agent_id);
     return ids.size;
   }, [calls]);
+
+  // Same priority chain the Floor tab renders (live > today > everything),
+  // kept unsliced here so pagination can reason about the real bucket size
+  // instead of the display cap.
+  const floorList = live.length > 0 ? live : today.length > 0 ? today : calls;
+  // More already-fetched-but-hidden rows exist in this bucket — reveal them
+  // client-side, no network call needed.
+  const floorHasMoreVisible = live.length === 0 && floorList.length > visibleFloorCount;
+  // The visible bucket is exhausted but /api/calls said more rows exist
+  // server-side (hasMore, from the offset/limit pagination it already
+  // supports — see src/routes/dashboard-routes.ts). Older rows fetched this
+  // way can still land in `today` (or even `live`, in principle), since they
+  // flow back through the same `calls` state and the memos above.
+  const floorHasMoreServer = live.length === 0 && !floorHasMoreVisible && hasMore;
+  const floorCanLoadMore = floorHasMoreVisible || floorHasMoreServer;
+
+  const loadMoreFloorCalls = useCallback(() => {
+    if (floorHasMoreVisible) {
+      setVisibleFloorCount((prev) => prev + FLOOR_PAGE_SIZE);
+      return;
+    }
+    if (!floorHasMoreServer || loadingMore) return;
+    setLoadingMore(true);
+    authFetch(`/api/calls?limit=${FLOOR_PAGE_SIZE}&offset=${calls.length}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body: CallsResponse | null) => {
+        if (!body) return;
+        const nextCalls = Array.isArray(body.calls) ? body.calls : [];
+        setCalls((prev) => [...prev, ...nextCalls]);
+        setHasMore(Boolean(body.hasMore));
+        setVisibleFloorCount((prev) => prev + FLOOR_PAGE_SIZE);
+      })
+      .catch(() => {
+        // Leave hasMore as-is so the button stays available to retry.
+      })
+      .finally(() => setLoadingMore(false));
+  }, [calls.length, floorHasMoreVisible, floorHasMoreServer, loadingMore]);
 
   useEffect(() => {
     const reviewed = calls.find((call) => call.outcome_tag && !isLive(call));
@@ -314,12 +360,13 @@ export default function CallLogsClaude() {
           <>
             <LiveFloorPresence signals={presenceSignals} agentNameForId={agentNameForId} />
             <FloorTab
-              calls={
-                live.length > 0 ? live : today.length > 0 ? today.slice(0, 12) : calls.slice(0, 12)
-              }
+              calls={live.length > 0 ? floorList : floorList.slice(0, visibleFloorCount)}
               loading={loading}
               hasLive={live.length > 0 || presenceSignals.length > 0}
               onOutboundCall={() => setShowOutboundDial(true)}
+              canLoadMore={floorCanLoadMore}
+              loadingMore={loadingMore}
+              onLoadMore={loadMoreFloorCalls}
             />
           </>
         ) : null}
@@ -339,11 +386,17 @@ function FloorTab({
   loading,
   hasLive,
   onOutboundCall,
+  canLoadMore,
+  loadingMore,
+  onLoadMore,
 }: {
   calls: Call[];
   loading: boolean;
   hasLive: boolean;
   onOutboundCall: () => void;
+  canLoadMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
 }) {
   if (loading) return <CardRowSkeleton />;
   if (!calls.length) {
@@ -452,6 +505,19 @@ function FloorTab({
           </li>
         ))}
       </ul>
+      {canLoadMore ? (
+        <div className="mt-4 flex justify-center">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={onLoadMore}
+            disabled={loadingMore}
+          >
+            {loadingMore ? "Loading…" : "Show more"}
+          </Button>
+        </div>
+      ) : null}
     </>
   );
 }

@@ -9,7 +9,7 @@ Status: **Active**. Single launch-ready inventory for Wireline surfaces, vendors
 | Stripe | Plans, Conversation Balance, add-ons | **live** | Legacy retired SKUs deactivated 2026-07-07 (`retired_anchor` defaults only); audit clean |
 | OpenAI | Managed reasoning + voice runtime | **live** | Primary structured + Vapi voice model |
 | Google Gemini | AI fallback + grounded search | **live** | Automatic failure fallback |
-| OpenRouter | Per-agent custom models | **beta** | Opt-in breadth; pass-through metering |
+| Vercel AI Gateway | Last-resort multi-model routing | **beta** | Managed-runtime fallback; one key |
 | Vapi | PSTN orchestration | **live** | Inbound/outbound call runtime |
 | Twilio | SMS, WhatsApp, number import | **live** | Platform-backed messaging tools |
 | Deepgram Flux | Transcription / turn-taking via Vapi | **live** | Production voice path |

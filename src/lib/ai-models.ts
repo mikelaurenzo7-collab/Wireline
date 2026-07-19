@@ -1,8 +1,8 @@
 /**
  * Wireline model policy.
  * Managed runtime: xAI Grok 4.5 primary (direct xAI API), with OpenAI and then
- * Gemini as ordered automatic fallbacks. OpenRouter is an explicit agent-owner
- * override and is never silently substituted.
+ * Gemini as ordered automatic fallbacks and the Vercel AI Gateway as the
+ * last-resort multi-model route.
  */
 export const XAI_MODELS = {
   GROK_4_5: "grok-4.5",
@@ -34,7 +34,7 @@ export const GEMINI_STRUCTURED_FALLBACK_MODEL =
 /** The managed structured default the runtime asks for first. */
 export const STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL;
 
-export type VapiVoiceProvider = "google" | "openai" | "openrouter";
+export type VapiVoiceProvider = "google" | "openai";
 export type VoiceModelSpeed = "fastest" | "fast" | "balanced" | "heavy";
 
 export interface VapiVoiceModelSelection {
@@ -65,18 +65,6 @@ export const VAPI_VOICE_FALLBACK_PROVIDER = "google" as const;
 export const VAPI_VOICE_FALLBACK_MODEL = GEMINI_MODELS.FLASH_3_5;
 export const VAPI_DEFAULT_FALLBACK_MODELS: readonly string[] = [VAPI_VOICE_FALLBACK_MODEL];
 
-export function isOpenRouterModelId(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  const id = value.trim();
-  return (
-    !!id &&
-    id.length <= 160 &&
-    !id.includes("..") &&
-    !/\s/.test(id) &&
-    /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._:-]*$/i.test(id)
-  );
-}
-
 export function isOpenAIModelId(value: unknown): value is string {
   return typeof value === "string" && /^gpt-[a-z0-9._-]+$/i.test(value.trim());
 }
@@ -97,8 +85,6 @@ export function resolveVapiVoiceModelSelection(input?: {
     .trim()
     .toLowerCase();
   const model = String(input?.model || "").trim();
-  if (provider === "openrouter" && isOpenRouterModelId(model))
-    return { provider: "openrouter", model, userSelected: true };
   if (provider === "google" && isGeminiModelId(model))
     return {
       provider: "google",
@@ -137,25 +123,6 @@ export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
     speed: "fastest",
     envKey: "GEMINI_API_KEY",
     note: "Native alternative. If selected directly, calls retry through OpenAI if Gemini is unavailable.",
-  },
-  {
-    provider: "openrouter",
-    model: "x-ai/grok-4.5",
-    label: "Grok 4.5",
-    speed: "balanced",
-    envKey: "OPENROUTER_API_KEY",
-    latencyWarning: true,
-    note: "xAI Grok 4.5 — witty, current, and reasoning-strong call handling. Managed calls keep GPT-4o as an automatic fallback.",
-  },
-  {
-    provider: "openrouter",
-    model: "x-ai/grok-4.5",
-    label: "OpenRouter — choose a model",
-    speed: "balanced",
-    envKey: "OPENROUTER_API_KEY",
-    latencyWarning: true,
-    acceptsCustomModelId: true,
-    note: "Advanced override. Wireline forwards the exact provider/model ID (e.g. x-ai/grok-4.5 enables distinctive Grok strengths when needed).",
   },
 ] as const;
 

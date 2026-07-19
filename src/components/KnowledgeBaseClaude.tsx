@@ -42,6 +42,9 @@ type AssetBody = {
 
 const TEXT_HEX_DEEP = "var(--wireline-color-action-primary-pressed)";
 const SUCCESS_SURFACE = "var(--wireline-color-feedback-success-surface)";
+// Mirrors the directives cap below — keeps the list readable for customers
+// with hundreds of ingested documents instead of rendering every row.
+const KNOWLEDGE_VISIBLE_CAP = 8;
 
 function fileBadge(content: string | undefined): string {
   if (!content) return "DOC";
@@ -114,7 +117,14 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   const [dragOver, setDragOver] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showAllKnowledge, setShowAllKnowledge] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Switching AI employees should not carry over an expanded list from a
+    // different (possibly much longer) knowledge base.
+    setShowAllKnowledge(false);
+  }, [agentId]);
 
   useEffect(() => {
     if (!agentId) {
@@ -321,19 +331,27 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         aria-label="Ingested knowledge"
         aria-busy={loading ? "true" : undefined}
       >
-        {loading
-          ? Array.from({ length: 3 }, (_, index) => (
-              <div
-                key={index}
-                className="h-[68px] animate-pulse rounded-[12px] bg-[var(--wireline-color-surface-subtle)]"
-              />
-            ))
-          : knowledge.length === 0
-            ? // Drop zone below already invites uploads — keep this row out of the
-              // way when empty so the page reads as: stats -> upload, not
-              // stats -> empty pill -> identical upload pill.
-              null
-            : knowledge.map((entry, index) => {
+        {loading ? (
+          Array.from({ length: 3 }, (_, index) => (
+            <div
+              key={index}
+              className="h-[68px] animate-pulse rounded-[12px] bg-[var(--wireline-color-surface-subtle)]"
+            />
+          ))
+        ) : knowledge.length ===
+          0 ? // Drop zone below already invites uploads — keep this row out of the
+        // way when empty so the page reads as: stats -> upload, not
+        // stats -> empty pill -> identical upload pill.
+        null : (
+          <>
+            <div className="mb-1 flex items-center justify-between">
+              <div className="wl-eyebrow">Ingested knowledge</div>
+              <span className="text-[11px] font-medium text-[var(--wireline-color-action-primary-default)]">
+                {knowledge.length} total
+              </span>
+            </div>
+            {(showAllKnowledge ? knowledge : knowledge.slice(0, KNOWLEDGE_VISIBLE_CAP)).map(
+              (entry, index) => {
                 const badge = fileBadge(entry.source);
                 return (
                   <article
@@ -365,7 +383,19 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                     </span>
                   </article>
                 );
-              })}
+              },
+            )}
+            {knowledge.length > KNOWLEDGE_VISIBLE_CAP ? (
+              <button
+                type="button"
+                onClick={() => setShowAllKnowledge((value) => !value)}
+                className="self-start text-[12px] font-semibold text-[var(--wireline-color-action-primary-default)] hover:underline"
+              >
+                {showAllKnowledge ? "Show less" : `Show all ${knowledge.length}`}
+              </button>
+            ) : null}
+          </>
+        )}
       </section>
 
       {compactUpload ? activeRulesPanel : null}
@@ -402,9 +432,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         </div>
         <div
           className={
-            compactUpload
-              ? "shrink-0 [&>button]:w-full sm:[&>button]:w-auto"
-              : "mt-3 shrink-0"
+            compactUpload ? "shrink-0 [&>button]:w-full sm:[&>button]:w-auto" : "mt-3 shrink-0"
           }
         >
           {uploadTrigger}

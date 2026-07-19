@@ -5,18 +5,12 @@
 import { eq } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { isOwnerEmail } from "./auth-service";
-import {
-  VOICE_VARIABLE_COST_PER_MIN_USD,
-  planById,
-  type StripePlanId,
-} from "./plan-catalog";
+import { VOICE_VARIABLE_COST_PER_MIN_USD, planById, type StripePlanId } from "./plan-catalog";
 import { drizzle } from "./server-context";
 import type { PlanTier } from "./tenant-quotas";
 
 /** Platform owners dogfood on enterprise entitlements without a Stripe row. */
 export const FOUNDER_EFFECTIVE_PLAN_ID: StripePlanId = "enterprise";
-
-const OPENROUTER_PLANS = new Set<StripePlanId>(["business", "enterprise"]);
 
 /** Map wireline_subscriptions.plan → runtime quota tier. */
 export function subscriptionPlanToTier(planId: string | null | undefined): PlanTier {
@@ -45,28 +39,12 @@ export function subscriptionPlanToTier(planId: string | null | undefined): PlanT
   }
 }
 
-export function openRouterAllowedForTier(tier: PlanTier): boolean {
-  if (tier === "free") return false;
-  return OPENROUTER_PLANS.has(tier as StripePlanId);
-}
-
-export function openRouterAllowedForPlanId(planId: string | null | undefined): boolean {
-  return openRouterAllowedForTier(subscriptionPlanToTier(planId));
-}
-
 export function effectivePlanIdForEntitlements(
   planId: string | null | undefined,
   email?: string | null,
 ): string | null {
   if (isOwnerEmail(email)) return FOUNDER_EFFECTIVE_PLAN_ID;
   return planId ?? null;
-}
-
-export function openRouterAllowedForEntitlements(
-  planId: string | null | undefined,
-  email?: string | null,
-): boolean {
-  return openRouterAllowedForPlanId(effectivePlanIdForEntitlements(planId, email));
 }
 
 export async function getEffectiveSubscriptionPlanId(

@@ -88,7 +88,7 @@ describe("agent navigation contract", () => {
     expect(studioWorkroom).toMatch(/type WorkroomMode = "configure" \| "test"/);
     expect(studioWorkroom).toMatch(/\/test\/stream/);
     expect(studioWorkroom).toMatch(/Talk to \$\{agentName\} like a customer/);
-    expect(studioWorkroom).toMatch(/Browser only—no phone call/);
+    expect(studioWorkroom).toMatch(/Browser test/);
     // Roleplay quick prompts come from the shared WORKSPACE_VOICE module.
     expect(studioWorkroom).toMatch(/WORKSPACE_VOICE\.testPrompts/);
     expect(productCopy).toMatch(/What services do you offer/);
@@ -193,7 +193,7 @@ describe("agent navigation contract", () => {
     expect(settingsPage).toMatch(/Profile/);
     expect(settingsPage).toMatch(/Security/);
     expect(billingPage).toMatch(/Current plan/);
-    expect(billingPage).toMatch(/Stripe is the source of truth for your renewal amount/);
+    expect(billingPage).toMatch(/Stripe is the system of record for billing/);
     expect(billingPage).toMatch(/View invoices and payment method/);
     expect(teamPage).toMatch(/Members/);
     expect([connectionsPage, settingsPage, billingPage, teamPage].join("\n")).not.toMatch(

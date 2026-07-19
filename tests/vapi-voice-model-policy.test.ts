@@ -3,7 +3,6 @@ import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
   VAPI_VOICE_FALLBACK_MODEL,
-  isOpenRouterModelId,
   resolveVapiVoiceModelSelection,
 } from "../src/lib/ai-models";
 
@@ -32,16 +31,19 @@ describe("managed PSTN voice model policy", () => {
     expect(selection.fallbackModels).toEqual([VAPI_TENANT_DEFAULT_MODEL]);
   });
 
-  it("passes an explicit Grok OpenRouter override through unchanged", () => {
-    const model = "x-ai/grok-4.5";
-    const selection = resolveVapiVoiceModelSelection({ provider: "openrouter", model });
-    expect(selection).toEqual({ provider: "openrouter", model, userSelected: true });
-  });
-
-  it("rejects malformed OpenRouter IDs and returns to the managed chain", () => {
-    expect(isOpenRouterModelId("anthropic/claude sonnet")).toBe(false);
+  it("normalizes retired OpenRouter selections back to the managed chain", () => {
     const selection = resolveVapiVoiceModelSelection({
       provider: "openrouter",
+      model: "x-ai/grok-4.5",
+    });
+    expect(selection.provider).toBe(VAPI_TENANT_DEFAULT_PROVIDER);
+    expect(selection.model).toBe(VAPI_TENANT_DEFAULT_MODEL);
+    expect(selection.fallbackModels).toEqual([VAPI_VOICE_FALLBACK_MODEL]);
+  });
+
+  it("rejects unknown providers and returns to the managed chain", () => {
+    const selection = resolveVapiVoiceModelSelection({
+      provider: "unknown",
       model: "not a valid model id",
     });
     expect(selection.provider).toBe(VAPI_TENANT_DEFAULT_PROVIDER);

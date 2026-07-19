@@ -10,6 +10,7 @@ import {
 import { ArrowLeft, Loader2, Phone, Send, Trash2 } from "lucide-react";
 
 import { Button } from "../components/atoms";
+import { StatusNotice } from "../components/molecules";
 import AgentFace from "./AgentFace";
 import OutboundDialDialog from "./OutboundDialDialog";
 import { useStreamingChat } from "../hooks/useStreamingChat";
@@ -322,11 +323,6 @@ const StudioWorkroom = forwardRef<
             <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
               {mode === "test" ? `Talk to ${agentName} like a customer` : `Improve ${agentName}`}
             </h2>
-            <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">
-              {mode === "test"
-                ? "Browser only—no phone call."
-                : "Describe the change, then review it before it goes live."}
-            </p>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             {mode === "test" && allowOutbound ? (
@@ -355,11 +351,10 @@ const StudioWorkroom = forwardRef<
       </header>
 
       {error ? (
-        <div
-          className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-3xl rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground"
-          role="alert"
-        >
-          {error}
+        <div className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-3xl">
+          <StatusNotice tone="destructive" title="Conversation issue">
+            {error}
+          </StatusNotice>
         </div>
       ) : null}
 

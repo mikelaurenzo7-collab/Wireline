@@ -476,18 +476,6 @@ export const icloudMailConnectSchema = z.object({
   app_password: z.string().min(4).max(128),
 });
 
-/** Director composer model pin — must survive validateBody (unknown keys are stripped). */
-export const directorChatModelSelectionSchema = z.discriminatedUnion("provider", [
-  z.object({
-    provider: z.literal("wireline"),
-    tier: z.enum(["auto", "sonnet", "opus"]),
-  }),
-  z.object({
-    provider: z.literal("openrouter"),
-    modelId: z.string().min(1).max(128),
-  }),
-]);
-
 export const directorStitchOptionsSchema = z.object({
   designMode: z.boolean().optional(),
   useAccountBranding: z.boolean().optional(),
@@ -501,7 +489,6 @@ export const directorMessageSchema = z
     focusAgentId: z.string().max(120).optional(),
     skipAccountHolderPersist: z.boolean().optional(),
     forceDeep: z.boolean().optional(),
-    modelSelection: directorChatModelSelectionSchema.optional(),
     stitchOptions: directorStitchOptionsSchema.optional(),
     threadKey: directorThreadKeySchema.optional(),
     approval: z.record(z.string(), z.unknown()).optional(),
@@ -515,7 +502,6 @@ export const directorStreamMessageSchema = z.object({
   focusAgentId: z.string().max(120).optional(),
   skipAccountHolderPersist: z.boolean().optional(),
   forceDeep: z.boolean().optional(),
-  modelSelection: directorChatModelSelectionSchema.optional(),
   stitchOptions: directorStitchOptionsSchema.optional(),
   threadKey: directorThreadKeySchema.optional(),
 });

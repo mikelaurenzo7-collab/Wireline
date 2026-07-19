@@ -118,11 +118,10 @@ if (!androidReadme.includes("managed xAI Grok realtime session contract"))
 if (androidReadme.includes("Legacy xAI/Grok routes and configuration are compatibility-only"))
   fail("Android documentation still frames the Grok path as legacy");
 
-// OpenRouter override contract stays intact; production voice integrations stay registered.
-if (!models.includes('provider === "openrouter" && isOpenRouterModelId(model)'))
-  fail("OpenRouter model validation is missing");
-if (!models.includes('return { provider: "openrouter", model, userSelected: true }'))
-  fail("OpenRouter selections are not preserved exactly");
+// OpenRouter is retired: the Vercel AI Gateway is the only multi-model route.
+if (/openrouter/i.test(models)) fail("ai-models still references the retired OpenRouter path");
+if (!/item\(\s*["']ai-gateway["']/.test(registry))
+  fail("Vercel AI Gateway is not registered as the multi-model route");
 if (!/item\(\s*["']deepgram-flux["']/.test(registry))
   fail("Deepgram Flux is not registered as production voice transcription");
 if (!/item\(\s*["']elevenlabs["']/.test(registry))

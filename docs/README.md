@@ -14,7 +14,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | Browser | `apps/browser-extension/` | Wireline Command: explicit page-context handoff into Studio. |
 | Native | `ios/`, `android/` | Thin control surfaces for calls, approvals, notifications, widgets, and daily review. |
 | ChatGPT App | `docs/CHATGPT_APP.md` | OAuth-connected MCP surface for account-bound private actions. |
-| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx` | Optional live visual presenter add-on for business agents with Wireline-owned customer copy. |
+| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx` | Secondary, later-stage live visual presenter add-on for business agents (not the core differentiator or part of the primary launch story) with Wireline-owned customer copy. |
 
 ## Current product rules
 

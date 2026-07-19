@@ -101,8 +101,6 @@ const recommended = [
 ];
 
 const optional = [
-  ["OPENROUTER_API_KEY", "Explicit per-agent custom-model pass-through"],
-  ["WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL", "Default OpenRouter model when a tenant opts in"],
   ["GOOGLE_CLIENT_ID", "Gmail OAuth - disables email integration when unset"],
   ["GOOGLE_CLIENT_SECRET", "Gmail OAuth"],
   ["MICROSOFT_CLIENT_ID", "Outlook OAuth"],
