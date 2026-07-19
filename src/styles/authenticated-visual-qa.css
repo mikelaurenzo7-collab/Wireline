@@ -238,48 +238,10 @@
   padding: 0.9rem;
 }
 
-[data-wireline-route="/connections"] details[data-wireline-integration-map] {
-  border: 1px solid color-mix(in srgb, var(--wireline-color-border-default) 88%, transparent);
-  border-radius: 14px;
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-surface-default) 88%,
-    var(--wireline-color-canvas-default)
-  );
-}
-
-[data-wireline-route="/connections"] details[data-wireline-integration-map] > summary {
-  display: flex;
-  min-height: 3.5rem;
-  cursor: pointer;
-  list-style: none;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.9rem 1rem;
-  color: var(--wireline-color-text-primary);
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-[data-wireline-route="/connections"] details[data-wireline-integration-map] > summary::-webkit-details-marker {
-  display: none;
-}
-
-[data-wireline-route="/connections"] details[data-wireline-integration-map] > summary::after {
-  content: "+";
-  color: var(--wireline-color-text-secondary);
-  font-size: 1.1rem;
-  font-weight: 400;
-}
-
-[data-wireline-route="/connections"] details[data-wireline-integration-map][open] > summary::after {
-  content: "−";
-}
-
-[data-wireline-route="/connections"] details[data-wireline-integration-map][open] > summary {
-  border-bottom: 1px solid var(--wireline-color-border-default);
-}
+/* Integration capabilities disclosure is now the shared Accordion primitive
+ * (src/components/ui/shadcn/Accordion.tsx), styled inline via Tailwind
+ * utilities at the call site in ConnectionsPage.tsx — no route-scoped
+ * re-skin needed here. */
 
 @media (max-width: 639px) {
   .wl-overview-greeting .wl-display-2 {

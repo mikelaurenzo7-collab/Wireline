@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Loader2, Plus, X } from "lucide-react";
+import { Loader2, Plus, Users, X } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { Badge, Button, Input, NativeSelect } from "../components/atoms";
 import { FormField, StatusNotice } from "../components/molecules";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import SettingsTabs from "../components/settings/SettingsTabs";
+import { EmptyState } from "../components/ui/EmptyState";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAuth } from "../contexts/AuthContext";
 import { authFetch } from "../lib/api";
@@ -122,9 +123,6 @@ export default function TeamSettings() {
           <h1 className="font-[var(--wireline-font-family-display)] text-3xl font-semibold tracking-[-.03em] text-foreground">
             Team
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Invite teammates and keep workspace access easy to review.
-          </p>
         </div>
 
         {teamAccess === "restricted" ? (
@@ -198,7 +196,14 @@ export default function TeamSettings() {
               ))}
             </div>
           ) : (
-            <p className="mt-5 text-center text-sm text-muted-foreground">No teammates yet</p>
+            <EmptyState
+              icon={Users}
+              title="No teammates yet"
+              titleTone="ui"
+              density="compact"
+              withHalo={false}
+              className="mt-5"
+            />
           )}
         </section>
       </WorkspacePageFrame>

@@ -8,9 +8,9 @@
 
 ## Executive summary
 
-Wireline is a **voice + presenter** AI SaaS on the **Wireline Letterpress** design system (Aurora palette: cool obsidian canvas, electric-violet action, platinum-silver wire accent). The product loop is **Create → Train → Wire → Run**; activation is measured when a customer reaches a trained agent on a live line.
+Wireline is a **voice + chat AI-employee** SaaS on the **Wireline Letterpress** design system (Aurora palette: cool obsidian canvas, electric-violet action, platinum-silver wire accent). The product loop is **Create → Train → Wire → Run**; activation is measured when a customer reaches a trained agent on a live line.
 
-**Differentiation:** No major competitor blends **live conversational voice** with an **on-screen presenter** in one operator console. Retell/Vapi/Synthflow stop at audio; Synthesia/HeyGen stop at rendered video.
+**Differentiation:** Wireline's core moat is the full **Create → Train → Wire → Run** AI-employee operating loop — one console where a business creates, trains, numbers/integrates, and runs an agent that calls, texts, and emails on its behalf, self-serve end to end with transparent usage pricing. Retell/Vapi/Synthflow compete narrowly on live conversational voice API access; none offer the full trained-employee lifecycle (train → wire numbers/integrations → run outbound, inbound, and hybrid → review outcomes) in one self-serve product. A live **on-screen presenter** is an optional, secondary, later-stage add-on layered on top of this core loop for business agents that want a visual presence — it is not the primary differentiator or launch story.
 
 **This quarter (0–30 days):** Repo hygiene (done baseline), **appearance system** (Ink default + optional Paper), **post-create wizard** (Train → Channels → Wire → Test), **pricing positioning**, presenter PSTN honesty, verification discipline.
 
@@ -60,14 +60,16 @@ Wireline is a **voice + presenter** AI SaaS on the **Wireline Letterpress** desi
 
 ### Positioning matrix (summary)
 
-| Platform           | Live voice | Live presenter        | Self-serve | Transparent pricing |
-| ------------------ | ---------- | --------------------- | ---------- | ------------------- |
-| **Wireline**       | ✅         | ✅ (Studio / preview) | ✅         | ✅ Balance + tiers  |
-| Retell             | ✅         | ❌                    | ✅         | ✅ ~$0.07/min       |
-| Vapi               | ✅         | ❌                    | Dev-led    | ✅ ~$0.05/min       |
-| Synthflow          | ✅         | ❌                    | ✅         | ✅ ~$0.08/min       |
-| Bland              | ✅         | ❌                    | Sales-led  | Contract            |
-| Synthesia / HeyGen | ❌ (video) | Offline video         | ✅         | Credits / subs      |
+The primary axis Wireline competes on is the **voice + chat AI-employee operating loop** (Create → Train → Wire → Run: an agent that calls, texts, and emails, self-serve from draft to live line) versus point-solution voice APIs. The **Live presenter** column below is a secondary, later-stage bonus capability — not the basis of the comparison.
+
+| Platform           | Live voice | Live presenter (secondary add-on) | Self-serve | Transparent pricing |
+| ------------------ | ---------- | ---------------------------------- | ---------- | ------------------- |
+| **Wireline**       | ✅         | ✅ (Studio / preview)              | ✅         | ✅ Balance + tiers  |
+| Retell             | ✅         | ❌                                 | ✅         | ✅ ~$0.07/min       |
+| Vapi               | ✅         | ❌                                 | Dev-led    | ✅ ~$0.05/min       |
+| Synthflow          | ✅         | ❌                                 | ✅         | ✅ ~$0.08/min       |
+| Bland              | ✅         | ❌                                 | Sales-led  | Contract            |
+| Synthesia / HeyGen | ❌ (video) | Offline video                      | ✅         | Credits / subs      |
 
 Public comparison table: `/pricing` → **Why Wireline** section.
 
@@ -182,7 +184,7 @@ Detailed research lanes and KPI taxonomy: [RESEARCH_OPERATING_SYSTEM.md](./RESEA
 | Technical debt          | `verify:full` on merge; contract tests on activation funnel      |
 | Latency                 | Streaming STT/LLM/TTS; WebRTC; graceful “agent thinking” UI      |
 | Accessibility           | Ink/Paper contrast audit; focus rings; reduced-motion respect    |
-| Competition             | Own voice+presenter niche; community + fast iteration            |
+| Competition             | Own the voice+chat AI-employee operating loop (Create→Train→Wire→Run); presenter is a secondary, later-stage differentiator; community + fast iteration |
 | Compliance              | Encryption in transit (WebRTC); retention controls; consent copy |
 | Presenter PSTN mismatch | Explicit routing hint + future: block or dual-voice config       |
 
@@ -204,7 +206,7 @@ Detailed research lanes and KPI taxonomy: [RESEARCH_OPERATING_SYSTEM.md](./RESEA
 - [ ] Push `414eb50e` workspace polish if not on `origin/main`
 - [x] Wizard persistence across refresh and cross-route navigation
 - [ ] Integration tests: theme storage, pricing section, wizard channels
-- [ ] Supabase advisor fixes (leaked password protection)
+- [x] Supabase advisor: leaked-password protection WARN accepted as non-active-control posture (custom HIBP screening is the enforced control; see `docs/SUPABASE_ADVISOR_POSTURE_2026-07-07.md`)
 - [ ] Production Stripe live checkout proof
 - [x] Studio banner when agent uses presenter voice on phone-only deployments
 

@@ -170,12 +170,12 @@ The magic moment is not the voice. The magic moment is the outcome row changing 
 
 ## Pricing implication
 
-Keep the current plan model, but explain it through profit-agent capacity:
+Keep the current plan model, but explain it through profit-agent capacity. The tier labels below are descriptive shorthand, not the literal live plan names — see `src/lib/plan-catalog.ts` for the current plan ids, names, and prices (Free Builder $0 / Starter $9 / Starter Plus $19 / Pro $59 / Business $149):
 
-- Personal: create/train one profit agent; one included number; live outbound, inbound, or hybrid work uses Conversation Balance.
-- Team: four included profit agents, four included numbers, shared inbox, routing, approvals, and Conversation Balance.
-- Business: eight included profit agents, eight included numbers, CRM sync, analytics, roles, approvals, and campaign oversight.
-- Enterprise: compliance review, SSO, BYO telephony, custom workflows, committed usage, and implementation support.
+- Personal (Free Builder tier): create/train one profit agent; one included number; live outbound, inbound, or hybrid work uses Conversation Balance.
+- Team (Starter Plus tier, $19/mo): 1 included profit agent, 1 included number, shared inbox, routing, approvals, and Conversation Balance.
+- Business (Pro tier, $59/mo): 5 included profit agents, 5 included numbers, CRM sync, analytics, roles, approvals, and campaign oversight.
+- Enterprise (Business tier, $149/mo: 15 included profit agents, 15 included numbers) plus custom deals above it: compliance review, SSO, BYO telephony, custom workflows, committed usage, and implementation support.
 
 ## Success metric
 

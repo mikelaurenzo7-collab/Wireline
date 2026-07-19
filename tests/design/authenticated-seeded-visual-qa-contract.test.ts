@@ -15,8 +15,12 @@ describe("authenticated seeded-state visual QA contract", () => {
 
   it("keeps the technical integration inventory behind progressive disclosure", () => {
     const connections = read("src/pages/ConnectionsPage.tsx");
-    expect(connections).toContain("<details data-wireline-integration-map>");
-    expect(connections).toContain("<summary>Integration capabilities</summary>");
+    expect(connections).toContain(
+      '<Accordion type="single" collapsible data-wireline-integration-map>',
+    );
+    expect(connections).toMatch(
+      /<AccordionTrigger[^>]*>\s*Integration capabilities\s*<\/AccordionTrigger>/,
+    );
     expect(connections).toContain("<IntegrationOperatingMap />");
   });
 
@@ -30,7 +34,6 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(css).toContain(".wl-workspace-shell .wl-rail-link kbd");
     expect(css).toContain("article:nth-of-type(n + 4)");
     expect(css).toContain(":has(> section:first-child .wl-empty-state)");
-    expect(css).toContain("details[data-wireline-integration-map]");
   });
 
   it("removes the decorative ledger treatment from authenticated task surfaces", () => {

@@ -48,6 +48,7 @@ export default function VoiceLibraryPanel() {
   const [loading, setLoading] = useState(true);
   const [configured, setConfigured] = useState(true);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
+  const [previewErrorIds, setPreviewErrorIds] = useState<Set<string>>(new Set());
   const [showCloneForm, setShowCloneForm] = useState(false);
   const [cloneName, setCloneName] = useState("");
   const [cloneFile, setCloneFile] = useState<File | null>(null);
@@ -90,23 +91,29 @@ export default function VoiceLibraryPanel() {
       setPlayingVoiceId(null);
       return;
     }
+    // Clear any prior failure for this voice so a retry gets a clean state.
+    setPreviewErrorIds((prev) => {
+      if (!prev.has(voice.voice_id)) return prev;
+      const next = new Set(prev);
+      next.delete(voice.voice_id);
+      return next;
+    });
     const audio = new Audio(`/api/voices/${encodeURIComponent(voice.voice_id)}/owned-preview`);
     audioRef.current = audio;
+    // A preview can fail for any reason (rate limit, provider outage, invalid
+    // media) — surface it as a calm inline state next to the voice, not a toast.
+    const handlePreviewFailure = () => {
+      audioRef.current = null;
+      setPlayingVoiceId(null);
+      setPreviewErrorIds((prev) => new Set(prev).add(voice.voice_id));
+    };
     audio.onended = () => {
       audioRef.current = null;
       setPlayingVoiceId(null);
     };
-    audio.onerror = () => {
-      audioRef.current = null;
-      setPlayingVoiceId(null);
-      toastError("Preview failed", "Couldn't play the audio sample.");
-    };
+    audio.onerror = handlePreviewFailure;
     setPlayingVoiceId(voice.voice_id);
-    audio.play().catch(() => {
-      audioRef.current = null;
-      setPlayingVoiceId(null);
-      toastError("Preview failed", "Couldn't play the audio sample.");
-    });
+    audio.play().catch(handlePreviewFailure);
   };
 
   const resetClone = () => {
@@ -309,51 +316,61 @@ export default function VoiceLibraryPanel() {
           </div>
         ) : null}
         {!loading
-          ? ownedVoices.map((voice) => (
-              <div
-                key={voice.voice_id}
-                className="flex items-center gap-3 rounded-md border border-border bg-card p-3"
-              >
-                <ShadButton
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  disableAnimations
-                  onClick={() => playPreview(voice)}
-                  disabled={!voice.preview_url}
-                  className={cn(
-                    "h-9 w-9 shrink-0 rounded-full",
-                    voice.preview_url
-                      ? "border-brand/20 bg-brand/10 text-brand hover:bg-brand/20"
-                      : "bg-muted/10 text-muted/70",
-                  )}
-                  aria-label={`Play preview of ${voice.name}`}
+          ? ownedVoices.map((voice) => {
+              const previewFailed = previewErrorIds.has(voice.voice_id);
+              return (
+                <div
+                  key={voice.voice_id}
+                  className="flex items-center gap-3 rounded-md border border-border bg-card p-3"
                 >
-                  {playingVoiceId === voice.voice_id ? (
-                    <Pause className="h-4 w-4" />
-                  ) : (
-                    <Play className="ml-0.5 h-4 w-4" />
-                  )}
-                </ShadButton>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[var(--wireline-typography-caption-size)] font-medium text-foreground">
-                    {voice.name}
-                  </p>
-                  <p className="wl-label-muted opacity-70">Private Wireline voice</p>
+                  <ShadButton
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disableAnimations
+                    onClick={() => playPreview(voice)}
+                    disabled={!voice.preview_url}
+                    title={previewFailed ? "Preview unavailable — tap to try again" : undefined}
+                    className={cn(
+                      "h-9 w-9 shrink-0 rounded-full",
+                      voice.preview_url && !previewFailed
+                        ? "border-brand/20 bg-brand/10 text-brand hover:bg-brand/20"
+                        : "bg-muted/10 text-muted/70",
+                    )}
+                    aria-label={
+                      previewFailed
+                        ? `Preview unavailable for ${voice.name}. Tap to try again.`
+                        : `Play preview of ${voice.name}`
+                    }
+                  >
+                    {playingVoiceId === voice.voice_id ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="ml-0.5 h-4 w-4" />
+                    )}
+                  </ShadButton>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[var(--wireline-typography-caption-size)] font-medium text-foreground">
+                      {voice.name}
+                    </p>
+                    <p className="wl-label-muted opacity-70">
+                      {previewFailed ? "Preview unavailable" : "Private Wireline voice"}
+                    </p>
+                  </div>
+                  <ShadButton
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disableAnimations
+                    onClick={() => void deleteClone(voice)}
+                    className="h-8 w-8 shrink-0 rounded-md text-muted hover:bg-rose-500/8 hover:text-rose-600"
+                    aria-label={`Delete ${voice.name}`}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </ShadButton>
                 </div>
-                <ShadButton
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  disableAnimations
-                  onClick={() => void deleteClone(voice)}
-                  className="h-8 w-8 shrink-0 rounded-md text-muted hover:bg-rose-500/8 hover:text-rose-600"
-                  aria-label={`Delete ${voice.name}`}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </ShadButton>
-              </div>
-            ))
+              );
+            })
           : null}
       </section>
     </div>

@@ -4,7 +4,7 @@ import { Download, ExternalLink, Loader2, Shield } from "lucide-react";
 
 import DncManager from "./DncManager";
 import { authFetch } from "../lib/api";
-import { Button } from "./atoms";
+import { Button, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
 
 type ComplianceCenterSummary = {
@@ -92,9 +92,14 @@ export default function ComplianceCenter() {
         </div>
 
         {loading ? (
-          <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" />
-            Loading compliance status…
+          <div
+            className="mt-4 grid gap-3 sm:grid-cols-3"
+            aria-busy="true"
+            aria-label="Loading compliance status"
+          >
+            <Skeleton shape="surface" className="h-[72px] w-full" />
+            <Skeleton shape="surface" className="h-[72px] w-full" />
+            <Skeleton shape="surface" className="h-[72px] w-full" />
           </div>
         ) : error ? (
           <StatusNotice tone="destructive" className="mt-3" title={error} />

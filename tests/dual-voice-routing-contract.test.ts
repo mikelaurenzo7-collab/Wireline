@@ -36,3 +36,52 @@ describe("dual-voice PSTN routing contracts", () => {
     expect(picker).not.toContain('provider: "presenter"');
   });
 });
+
+describe("ChatGPT private voice simulation routing", () => {
+  it("starts the private voice simulation on the managed Grok contract, not OpenAI", () => {
+    const accountRoutes = read("src/routes/chatgpt-mcp-account-routes.ts");
+    expect(accountRoutes).toContain(
+      'import { createGrokVoiceClientSession } from "../lib/voice/grok-voice-service";',
+    );
+    expect(accountRoutes).not.toContain("createOpenAIRealtimeClientSecret");
+
+    const simulationHandler = accountRoutes.slice(
+      accountRoutes.indexOf('if (name === "start_private_voice_simulation")'),
+      accountRoutes.indexOf('if (name === "list_wireline_agents")'),
+    );
+    expect(simulationHandler).toContain("createGrokVoiceClientSession({");
+    expect(simulationHandler).toContain("instructions: draft.runtimeInstructions");
+    expect(simulationHandler).toContain("agentName: draft.view.name");
+    expect(simulationHandler).toContain("tools: []");
+    expect(simulationHandler).toContain('toolChoice: "none"');
+    expect(simulationHandler).toContain('apiKeyPurpose: "chatgpt_demo"');
+  });
+
+  it("gives createGrokVoiceClientSession a draft-mode input shape that mirrors the OpenAI realtime service", () => {
+    const grokService = read("src/lib/voice/grok-voice-service.ts");
+    expect(grokService).toContain("instructions?: string | null");
+    expect(grokService).toContain("agentName?: string | null");
+    expect(grokService).toContain("tools?: readonly GrokRealtimeFunction[]");
+    expect(grokService).toContain('toolChoice?: "auto" | "none"');
+    expect(grokService).toContain('apiKeyPurpose?: "runtime" | "chatgpt_demo"');
+
+    // Draft (not-yet-persisted) ChatGPT agents must bypass the persisted-agent lookup.
+    expect(grokService).toContain("const isDraftSession = Boolean(");
+    expect(grokService).toContain(
+      "const runtime = isDraftSession ? null : await loadAgentRuntime(input.agentId, input.userId);",
+    );
+
+    // Spend-isolated xAI key, mirroring OPENAI_API_KEY_CHATKIT.
+    expect(grokService).toContain("XAI_API_KEY_CHATKIT");
+    expect(grokService).toContain('purpose === "chatgpt_demo" ? process.env.XAI_API_KEY_CHATKIT');
+  });
+
+  it("keeps XAI_API_KEY_CHATKIT documented alongside XAI_API_KEY", () => {
+    const envExample = read(".env.example");
+    const xaiIndex = envExample.indexOf("XAI_API_KEY=");
+    const chatkitIndex = envExample.indexOf("XAI_API_KEY_CHATKIT=");
+    expect(xaiIndex).toBeGreaterThan(-1);
+    expect(chatkitIndex).toBeGreaterThan(xaiIndex);
+    expect(chatkitIndex - xaiIndex).toBeLessThan(200);
+  });
+});

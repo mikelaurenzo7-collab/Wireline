@@ -22,6 +22,37 @@ struct AskWirelineIntent: AppIntent {
     }
 }
 
+/// "Have Wireline take this call" — transfers the current live call to the
+/// user's saved callback number. Mirrors the in-app "Take this call" button
+/// (LiveCallView/CallsView): infer the most recent live call and hand it off,
+/// no parameters required so it works hands-free through Siri.
+struct TakeThisCallIntent: AppIntent {
+    static var title: LocalizedStringResource = "Take this call"
+    static var description = IntentDescription("Wireline transfers your current live call to your saved callback number.")
+    static var openAppWhenRun = false
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        guard KeychainStore.loadToken() != nil else {
+            return .result(dialog: "Open Wireline and sign in first.")
+        }
+        do {
+            let calls = try await WirelineAPI.shared.activeCalls()
+            guard let call = calls.first else {
+                return .result(dialog: "You don't have a live call to take right now.")
+            }
+            try await WirelineAPI.shared.handoffCall(callId: call.callId)
+            return .result(dialog: "Connecting you to that call now.")
+        } catch let WirelineAPI.APIError.http(status, _) where status == 400 {
+            return .result(dialog: "Add a callback number in Settings, then try again.")
+        } catch let WirelineAPI.APIError.http(status, _) where status == 409 {
+            return .result(dialog: "You can't take over yet. Try again in a moment.")
+        } catch {
+            return .result(dialog: "I couldn't take that call right now. Try again in a moment.")
+        }
+    }
+}
+
 /// "Summarize my last call" — reads the most recent completed call and speaks
 /// its recap. Fully self-contained (no app launch needed).
 struct SummarizeLastCallIntent: AppIntent {
@@ -110,6 +141,15 @@ struct WirelineShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Place a call",
             systemImageName: "phone.arrow.up.right"
+        )
+        AppShortcut(
+            intent: TakeThisCallIntent(),
+            phrases: [
+                "Have \(.applicationName) take this",
+                "Have \(.applicationName) take this call",
+            ],
+            shortTitle: "Take this call",
+            systemImageName: "phone.arrow.down.left"
         )
         AppShortcut(
             intent: SummarizeLastCallIntent(),

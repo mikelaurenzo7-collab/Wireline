@@ -6,6 +6,10 @@ const web = readFileSync("src/constants/generated-design-tokens.ts", "utf8");
 const css = readFileSync("apps/browser-extension/panel/tokens.generated.css", "utf8");
 const iosShared = readFileSync("ios/WirelineShared/WirelineDesignTokens.generated.swift", "utf8");
 const iosApp = readFileSync("ios/Wireline/Theme/WirelineDesignTokens.generated.swift", "utf8");
+const android = readFileSync(
+  "android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt",
+  "utf8",
+);
 
 const flatten = (obj, prefix = []) => Object.entries(obj).flatMap(([key, value]) => {
   if (value && typeof value === "object" && "value" in value) return [[prefix.concat(key).join("."), String(value.value)]];
@@ -22,6 +26,7 @@ for (const [name, value] of flatten(canonical)) {
     ["browser extension CSS", css],
     ["iOS shared tokens", iosShared],
     ["iOS app tokens", iosApp],
+    ["Android tokens", android],
   ];
   for (const [label, text] of surfaces) {
     if (!text.toLowerCase().includes(normalized)) problems.push(`${label} is missing ${name} (${value}).`);

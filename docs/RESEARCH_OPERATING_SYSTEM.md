@@ -283,7 +283,7 @@ Trust is a sales feature. Security work must be visible, provable, and operation
 Deliverables:
 
 - Launch security checklist.
-- Custom-auth breached-password screening enforced for sign-up and password reset.
+- Custom-auth breached-password screening — already enforced for sign-up and password reset (see `docs/security/auth-password-controls.md`).
 - Data retention policy for calls, transcripts, recordings, summaries, training uploads, and audit logs.
 - Consent and call-recording disclosure policy by jurisdiction.
 - Vendor data-flow map.
@@ -405,7 +405,7 @@ Any item with Severity 5 can override the formula.
 4. Primary CI still needs stronger coverage for the new product contracts and e2e accessibility smoke.
 5. The public landing component still has a few business-mode strings that over-index on call centers and under-index on solo business.
 6. Pricing direction is coherent but still requires post-deploy checkout, webhook, portal, and billing-status verification before live rollout.
-7. Custom-auth breached-password screening remains a launch blocker until enforced in Wireline's auth service.
+7. Custom-auth breached-password screening is enforced (see `docs/security/auth-password-controls.md`); the Supabase Auth leaked-password advisor WARN is an accepted, non-active-control posture, not an open launch blocker (see `docs/SUPABASE_ADVISOR_POSTURE_2026-07-07.md`).
 8. SLA language promises synthetic call probes; the implementation and reporting loop must be verified before using that as a public trust claim.
 
 ---

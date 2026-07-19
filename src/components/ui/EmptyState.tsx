@@ -29,7 +29,7 @@ export interface EmptyStateProps {
   withHalo?: boolean;
   /** Minimal frame behind the medallion (off in compact panels) */
   withConstellation?: boolean;
-  /** Eyebrow label above the title. Defaults to the canonical "No data yet". */
+  /** Optional eyebrow label above the title. Omit for no eyebrow. */
   eyebrow?: string;
   /** Optional accent override (hex/rgb) tinting the medallion. */
   accent?: string;

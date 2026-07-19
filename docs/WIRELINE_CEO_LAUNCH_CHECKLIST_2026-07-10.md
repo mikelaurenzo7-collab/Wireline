@@ -81,6 +81,8 @@ This keeps the upsell honest: if the customer pays for another agent, they also 
 
 ## Launch env checklist
 
+**Status: historical / superseded.** The price IDs and env var names below are a snapshot from the 2026-07-10 launch prep. The env var *names* here do not reliably map 1:1 to today's plan *display names* — for example, in the live Founder Early Access catalog `STRIPE_TEAM_PRICE_ID` backs the **Pro** plan and `STRIPE_BUSINESS_PRICE_ID` backs the **Business** plan, not a plan literally called "Team" or "Business." `src/lib/plan-catalog.ts` (the `STRIPE_PLANS` array's `priceIdEnv` / `annualPriceIdEnv` fields) and `.env.example` are the current live source of truth for which env var backs which plan tier — verify against those before treating anything below as current.
+
 Before production launch, verify these are present in Vercel for Production and Preview:
 
 ```bash

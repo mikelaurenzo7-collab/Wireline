@@ -181,11 +181,22 @@ export default function BillingSettings() {
                       {planStatus}
                     </Badge>
                   </div>
-                  <p className="mt-3 max-w-[72ch] text-sm leading-6 text-muted-foreground">
-                    {paidPlan
-                      ? `${plan.max_agents} live AI employee${plan.max_agents === 1 ? "" : "s"}, up to ${plan.included_phone_numbers} on-demand production number${plan.included_phone_numbers === 1 ? "" : "s"}, and ${plan.voice_minutes_monthly.toLocaleString()} pooled live-call minutes each month. Lead Hunt and connected email workflows are available; variable SMS, enrichment, and extra voice usage draw from prepaid balance.`
-                      : "Build, train, and privately simulate one draft AI employee. Choose a paid plan before provisioning a production number or running paid provider actions."}
-                  </p>
+                  {paidPlan ? (
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                      <span>
+                        {plan.max_agents} live AI employee{plan.max_agents === 1 ? "" : "s"}
+                      </span>
+                      <span>
+                        {plan.included_phone_numbers} number
+                        {plan.included_phone_numbers === 1 ? "" : "s"}
+                      </span>
+                      <span>{plan.voice_minutes_monthly.toLocaleString()} min/mo</span>
+                    </div>
+                  ) : (
+                    <p className="mt-3 max-w-[60ch] text-sm leading-6 text-muted-foreground">
+                      1 draft agent. Choose a paid plan for a live number and paid provider actions.
+                    </p>
+                  )}
                 </>
               )}
             </div>
@@ -229,8 +240,7 @@ export default function BillingSettings() {
                   Conversation Balance
                 </p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Prepaid funding for additional voice, SMS segments, provider-backed enrichment,
-                  and other variable channel work.
+                  Funds voice, SMS, and enrichment usage beyond your plan.
                 </p>
               </div>
               <ShieldCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />
@@ -250,10 +260,10 @@ export default function BillingSettings() {
                 </p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   {!paidPlan
-                    ? "Conversation Balance becomes available after a live plan is active."
+                    ? "Available after a live plan is active."
                     : balanceDue > 0
-                      ? "A previous active call finished normally after coverage ran out. Restore this amount before another paid provider action."
-                      : "Included plan capacity is used first. Additional variable usage draws only from this balance—never an automatic postpaid overage invoice."}
+                      ? "A previous call finished after coverage ran out. Restore this amount before another paid action."
+                      : "Extra usage draws only from this balance—never an automatic overage invoice."}
                 </p>
 
                 {paidPlan ? (
@@ -313,8 +323,7 @@ export default function BillingSettings() {
                   {formatDate(subscription?.current_period_end)}
                 </p>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Stripe is the source of truth for your renewal amount, billing interval, payment
-                  method, invoices, cancellation, discounts, and tax details.
+                  Stripe is the system of record for billing, invoices, and cancellation.
                 </p>
                 <Button
                   type="button"
@@ -335,8 +344,7 @@ export default function BillingSettings() {
                   No recurring invoice
                 </p>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Free Builder creates no production telephony or recurring subscription cost.
-                  Activate only when an agent is trained and ready for live work.
+                  No telephony or subscription charges until you activate a plan.
                 </p>
                 <Button asChild variant="outline" size="sm" className="mt-5 self-start">
                   <Link to="/pricing">View Founder Early Access plans</Link>

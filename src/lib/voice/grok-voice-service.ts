@@ -14,6 +14,7 @@ import {
   resolveGrokVoiceSpeed,
   resolveWirelineGrokVoice,
   resolveWirelineVoiceProfile,
+  type GrokRealtimeFunction,
 } from "./grok-voice-config";
 import { buildGrokStrengthsPromptSection } from "../grok-features";
 
@@ -57,11 +58,34 @@ export type CreateGrokVoiceSessionInput = {
   userId: string;
   agentId: string;
   languageHint?: unknown;
+  /**
+   * Raw instructions for a session that is not backed by a persisted agent row
+   * (e.g. a ChatGPT draft). When provided, bypasses loadAgentRuntime's
+   * persisted-agent lookup entirely.
+   */
+  instructions?: string | null;
+  /** Draft display name, used for the greeting fallback and instructions identity. */
+  agentName?: string | null;
+  /** Defaults to Wireline runtime tools. Pass [] for a tool-free demo. */
+  tools?: readonly GrokRealtimeFunction[];
+  /** Tool-free demos must disable tool selection explicitly. */
+  toolChoice?: "auto" | "none";
+  /** Routes acquisition/demo sessions to a separately budgeted xAI key when configured. */
+  apiKeyPurpose?: "runtime" | "chatgpt_demo";
 };
 
-function getXaiApiKey(): string {
-  const apiKey = process.env.XAI_API_KEY?.trim();
-  if (!apiKey) throw AppError.fromHttpStatus(503, "Live voice is not configured yet.");
+function getXaiApiKey(purpose: CreateGrokVoiceSessionInput["apiKeyPurpose"] = "runtime"): string {
+  const apiKey =
+    (purpose === "chatgpt_demo" ? process.env.XAI_API_KEY_CHATKIT?.trim() : "") ||
+    process.env.XAI_API_KEY?.trim();
+  if (!apiKey) {
+    throw AppError.fromHttpStatus(
+      503,
+      purpose === "chatgpt_demo"
+        ? "ChatGPT voice preview is not configured. Add XAI_API_KEY_CHATKIT or XAI_API_KEY in Vercel."
+        : "Live voice is not configured yet.",
+    );
+  }
   return apiKey;
 }
 
@@ -192,6 +216,21 @@ function buildInstructions(
     .join("\n");
 }
 
+/**
+ * Fallback instructions for a draft session that supplied an agentName but no
+ * raw instructions. Keeps the non-negotiable runtime rules but skips the
+ * AgentRow-specific sections (compliance, directives, knowledge) that require
+ * a persisted agent row.
+ */
+function buildDraftInstructions(agentName?: string | null): string {
+  const name = agentName?.trim() || "Wireline";
+  return [
+    `You are ${name}, a Wireline voice agent.`,
+    ...NON_NEGOTIABLE_RUNTIME_RULES,
+    `\n${buildGrokStrengthsPromptSection()}`,
+  ].join("\n");
+}
+
 async function loadAgentRuntime(agentId: string, userId: string) {
   const [agents, personalities, directives, knowledge, dictionaries] = await Promise.all([
     drizzle
@@ -253,21 +292,34 @@ async function loadAgentRuntime(agentId: string, userId: string) {
 }
 
 export async function createGrokVoiceClientSession(input: CreateGrokVoiceSessionInput) {
-  const apiKey = getXaiApiKey();
-  const runtime = await loadAgentRuntime(input.agentId, input.userId);
-  const selectedVoice = resolveVoiceSelection(runtime.agent);
+  const purpose = input.apiKeyPurpose || "runtime";
+  const apiKey = getXaiApiKey(purpose);
+  const draftInstructions = input.instructions?.trim() || "";
+  const isDraftSession = Boolean(draftInstructions || input.agentName?.trim());
+  // A ChatGPT draft agent is not necessarily a persisted row in the agents
+  // table, so draft sessions never touch loadAgentRuntime's persisted-agent
+  // lookup.
+  const runtime = isDraftSession ? null : await loadAgentRuntime(input.agentId, input.userId);
+  const selectedVoice = runtime
+    ? resolveVoiceSelection(runtime.agent)
+    : {
+        profile: resolveWirelineVoiceProfile(undefined, undefined),
+        voice: resolveWirelineGrokVoice(undefined, undefined),
+      };
   const languageHint = normalizeGrokLanguageHint(input.languageHint);
-  const replace = buildPronunciationReplacements(runtime.dictionaries);
+  const replace = runtime ? buildPronunciationReplacements(runtime.dictionaries) : undefined;
+  const tools = input.tools ?? WIRELINE_GROK_REALTIME_TOOLS;
+  const instructions = draftInstructions
+    ? draftInstructions.slice(0, 16_000)
+    : runtime
+      ? buildInstructions(runtime.agent, runtime.personality, runtime.directives, runtime.knowledge)
+      : buildDraftInstructions(input.agentName);
   const session = {
     voice: selectedVoice.voice,
-    instructions: buildInstructions(
-      runtime.agent,
-      runtime.personality,
-      runtime.directives,
-      runtime.knowledge,
-    ),
+    instructions,
     reasoning: { effort: resolveGrokReasoningEffort() },
-    tools: WIRELINE_GROK_REALTIME_TOOLS,
+    tools,
+    tool_choice: input.toolChoice || "auto",
     turn_detection: {
       type: "server_vad",
       threshold: 0.65,
@@ -316,6 +368,7 @@ export async function createGrokVoiceClientSession(input: CreateGrokVoiceSession
       log.warn("xAI realtime client secret request failed", {
         userId: input.userId,
         agentId: input.agentId,
+        purpose,
         status: response.status,
         body: raw.slice(0, 300),
       });
@@ -324,13 +377,14 @@ export async function createGrokVoiceClientSession(input: CreateGrokVoiceSession
     log.info("xAI live voice session issued", {
       userId: input.userId,
       agentId: input.agentId,
+      purpose,
       model: GROK_VOICE_DEFAULT_MODEL,
       profile: selectedVoice.profile,
       customVoice: !BUILT_IN_VOICES.has(selectedVoice.voice),
       languageHint: languageHint || null,
       transcriptionModel: GROK_TRANSCRIPTION_MODEL,
       pronunciationReplacements: Object.keys(replace || {}).length,
-      tools: WIRELINE_GROK_REALTIME_TOOLS.map((tool) => tool.name),
+      tools: tools.map((tool) => tool.name),
     });
     return {
       token,
@@ -338,14 +392,16 @@ export async function createGrokVoiceClientSession(input: CreateGrokVoiceSession
       model: GROK_VOICE_DEFAULT_MODEL,
       session,
       greeting:
-        runtime.agent.firstMessage?.trim() || `Hi, this is ${runtime.agent.name}. How can I help?`,
+        runtime?.agent.firstMessage?.trim() ||
+        `Hi, this is ${runtime?.agent.name || input.agentName?.trim() || "Wireline"}. How can I help?`,
       wireline: {
-        agentId: runtime.agent.id,
+        agentId: runtime?.agent.id || input.agentId,
         profile: selectedVoice.profile,
         voice: selectedVoice.voice,
         languageHint: languageHint || null,
         transcription: true,
-        tools: WIRELINE_GROK_REALTIME_TOOLS.map((tool) => tool.name),
+        tools: tools.map((tool) => tool.name),
+        purpose,
       },
     };
   } catch (error) {
@@ -353,6 +409,7 @@ export async function createGrokVoiceClientSession(input: CreateGrokVoiceSession
     log.error("xAI realtime session request errored", {
       userId: input.userId,
       agentId: input.agentId,
+      purpose,
       error: getErrorMessage(error),
     });
     throw AppError.fromHttpStatus(502, "Live voice session request failed.");

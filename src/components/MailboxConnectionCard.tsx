@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2, Mail, Trash2 } from "lucide-react";
 
 import { authFetch, safeJson } from "../lib/api";
-import { Badge, Button } from "./atoms";
+import { Badge, Button, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
 
@@ -162,10 +162,7 @@ export default function MailboxConnectionCard() {
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2
-            id="mailbox-connections-title"
-            className="text-base font-semibold text-foreground"
-          >
+          <h2 id="mailbox-connections-title" className="text-base font-semibold text-foreground">
             Inbox connections
           </h2>
         </div>
@@ -179,9 +176,14 @@ export default function MailboxConnectionCard() {
       ) : null}
 
       {loading ? (
-        <div className="mt-5 flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          Checking inbox connections…
+        <div
+          className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4"
+          aria-busy="true"
+          aria-label="Checking inbox connections"
+        >
+          {PROVIDERS.map((provider) => (
+            <Skeleton key={provider.id} shape="surface" className="h-[140px] w-full" />
+          ))}
         </div>
       ) : (
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">

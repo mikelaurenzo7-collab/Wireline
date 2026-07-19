@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   AlertTriangle,
   Calendar,
@@ -105,6 +106,9 @@ function ApprovalEmptyCard({ title, description }: { title: string; description:
       <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
         {description}
       </p>
+      <ShadButton asChild variant="secondary" size="sm" className="mt-5">
+        <Link to="/studio">Open Studio</Link>
+      </ShadButton>
     </section>
   );
 }
@@ -300,12 +304,16 @@ type ApprovalInboxProps = {
   embedded?: boolean;
 };
 
+/** Items rendered per bucket before a "Show more" control reveals the rest. */
+const APPROVAL_PAGE_SIZE = 20;
+
 export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) {
   const [bucket, setBucket] = useState<ApprovalBucket>("pending");
   const [triage, setTriage] = useState<TriageBucket | null>(null);
   const [tasks, setTasks] = useState<FollowUpTaskRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(APPROVAL_PAGE_SIZE);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -329,6 +337,12 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Reset pagination whenever the active bucket changes so switching tabs
+  // never leaves a stale "Show more" cursor from a different, longer list.
+  useEffect(() => {
+    setVisibleCount(APPROVAL_PAGE_SIZE);
+  }, [bucket]);
 
   const bucketItems = useMemo(() => {
     if (!triage) return [];
@@ -409,9 +423,24 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
           />
         ) : (
           <div className="grid gap-3">
-            {actionableTasks.map((task) => (
+            {actionableTasks.slice(0, visibleCount).map((task) => (
               <ApprovalTaskCard key={task.id} task={task} onResolved={() => void load()} />
             ))}
+            {actionableTasks.length > visibleCount ? (
+              <ShadButton
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mx-auto"
+                onClick={() =>
+                  setVisibleCount((count) =>
+                    Math.min(count + APPROVAL_PAGE_SIZE, actionableTasks.length),
+                  )
+                }
+              >
+                Show more ({actionableTasks.length - visibleCount} remaining)
+              </ShadButton>
+            ) : null}
           </div>
         )
       ) : bucketItems.length === 0 ? (
@@ -421,12 +450,25 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         />
       ) : (
         <div className="grid gap-3">
-          {bucketItems.map((item) => (
+          {bucketItems.slice(0, visibleCount).map((item) => (
             <article key={item.id} className="rounded-xl border border-border bg-card p-4">
               <p className="text-sm font-semibold capitalize">{taskType(item)}</p>
               <p className="mt-2 text-sm text-muted-foreground">{evidenceSnippet(item)}</p>
             </article>
           ))}
+          {bucketItems.length > visibleCount ? (
+            <ShadButton
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mx-auto"
+              onClick={() =>
+                setVisibleCount((count) => Math.min(count + APPROVAL_PAGE_SIZE, bucketItems.length))
+              }
+            >
+              Show more ({bucketItems.length - visibleCount} remaining)
+            </ShadButton>
+          ) : null}
         </div>
       )}
     </div>
