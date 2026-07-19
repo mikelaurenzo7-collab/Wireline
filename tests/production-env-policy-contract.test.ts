@@ -37,6 +37,14 @@ describe("production environment launch policy", () => {
     }
   });
 
+  it("keeps the Twilio Auth Token for webhook validation but prefers a scoped REST key pair", () => {
+    expect(prodCheck).toContain("Twilio inbound webhook signature validation");
+    expect(prodCheck).toContain('"TWILIO_API_KEY"');
+    expect(prodCheck).toContain('"TWILIO_API_SECRET"');
+    expect(prodCheck).toContain("twilioApiKeyPairPartial");
+    expect(prodCheck).toContain("SK followed by 32 hexadecimal characters");
+  });
+
   it("requires HTTPS for the DNC provider endpoint", () => {
     expect(envValidator).toContain("const isHttpsUrl");
     expect(envValidator).toContain("validate: (value) => !value || isHttpsUrl(value)");
