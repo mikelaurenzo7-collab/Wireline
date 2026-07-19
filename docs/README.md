@@ -117,7 +117,7 @@ Wireline's durable documentation follows the active product model. The customer-
 
 - `npm run verify:contracts` - focused product voice, authenticated page map, authenticated copy discipline, marketing metadata, static metadata, event taxonomy, chunk recovery, and guided setup contracts.
 - `npm run verify` - design check, source-control hygiene, route registry, docs index, OpenAPI, design-token parity, Stripe catalog contract, build, and bundled-server smoke.
-- `npm run verify:full` - lint, server lint, design/source-control/route/docs/openapi/token/authz/CSP/runtime-policy/api-error checks, `npm audit`, tests, build, smoke, and the browser-extension packaging check.
+- `npm run verify:full` - type check, audit-modules type check, server lint, ESLint, design/source-control/route/docs/openapi/token/authz/CSP/runtime-policy/api-error checks, `npm audit`, tests, build, smoke, and the browser-extension packaging check.
 - `npm run test:e2e` - Playwright homepage story, accessibility, and audience-tab smoke.
 - `node apps/browser-extension/scripts/build.mjs --check` - browser extension contract and packaging smoke.
 - `GET /api/health` - deployment health probe.

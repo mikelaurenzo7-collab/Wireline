@@ -107,7 +107,7 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 ## Verification
 
 - `npm run verify` — design, source-control hygiene, route registry, docs index, OpenAPI, design-token parity, Stripe catalog contract, production build, and bundled-server import smoke.
-- `npm run verify:full` — type check, server lint, everything in `verify`, plus authorization coverage, server bootstrap, tsconfig-exclude hygiene, CSP policy consistency, runtime policy, API error shape, `npm audit`, tests, and the browser-extension packaging check.
+- `npm run verify:full` — type check, a second audit-modules-scoped type check, server lint, ESLint, everything in `verify`, plus authorization coverage, server bootstrap, tsconfig-exclude hygiene, CSP policy consistency, runtime policy, API error shape, `npm audit`, tests, and the browser-extension packaging check.
 - `npm run verify:contracts` — product voice, metadata, static metadata, and event taxonomy contracts.
 - `node apps/browser-extension/scripts/build.mjs --check` — browser extension packaging and policy check.
 - `GET /api/health` — public production health probe.

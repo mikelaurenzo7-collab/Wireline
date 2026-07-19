@@ -97,7 +97,7 @@ Run the narrowest sufficient check while developing, then the full gate before m
 
 - `npm run check-prod-env` — required/recommended production environment shape, including deploy-safe Postgres URL host validation.
 - `npm run verify` — design check, source-control hygiene, route registry, docs index, OpenAPI, design-token parity, Stripe catalog contract, production build, and bundled-server import smoke.
-- `npm run verify:full` — type check, server lint, design/source-control/route/docs/openapi/token checks, Stripe catalog contract, authz, bootstrap, tsconfig-exclude hygiene, CSP, runtime policy, API error shape, `npm audit`, tests, build, smoke, and the browser-extension packaging check.
+- `npm run verify:full` — type check, a second audit-modules-scoped type check, server lint, ESLint, design/source-control/route/docs/openapi/token checks, Stripe catalog contract, authz, bootstrap, tsconfig-exclude hygiene, CSP, runtime policy, API error shape, `npm audit`, tests, build, smoke, and the browser-extension packaging check.
 - `npm run verify:contracts` — product voice, metadata, event taxonomy, and static contracts.
 - `node apps/browser-extension/scripts/build.mjs --check` — browser extension packaging and policy checks.
 - `GET /api/health` — deployed health probe.
