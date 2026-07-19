@@ -5,7 +5,7 @@ import { PageMeta } from "../lib/page-meta";
 import MarketingChrome from "./marketing/MarketingChrome";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
-const LAST_UPDATED = "July 18, 2026";
+const LAST_UPDATED = "July 19, 2026";
 const NOTICE_STORAGE_KEY = "wireline_cookie_consent";
 const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
 const MEASUREMENT_CONSENT_EVENT = "wireline:marketing-measurement-consent";
@@ -75,7 +75,7 @@ export default function PrivacyPolicyPage() {
     <MarketingChrome stickyCta={false}>
       <PageMeta
         title="Privacy Policy"
-        description="Wireline's privacy policy — how we collect, use, protect, and disclose data, including privacy-friendly product analytics and optional advertising measurement. Last updated July 18, 2026."
+        description="Wireline's privacy policy — how we collect, use, protect, and disclose data, including privacy-friendly product analytics and optional advertising measurement. Last updated July 19, 2026."
         path="/privacy"
       />
 
@@ -213,8 +213,9 @@ export default function PrivacyPolicyPage() {
 
           <Section title="3. How We Use Data">
             <p>
-              We use data to provide and secure Wireline; process AI requests through xAI's Grok
-              with OpenAI and Google Gemini as managed fallbacks; route calls and messages; execute
+              We use data to provide and secure Wireline; process managed AI requests primarily
+              through OpenAI, with Google Gemini and Vercel AI Gateway as continuity routes and xAI
+              available only for explicitly enabled experiments; route calls and messages; execute
               connected workflows; provide support; prevent fraud and abuse; bill through Stripe;
               and understand aggregate product performance.
             </p>
@@ -237,17 +238,21 @@ export default function PrivacyPolicyPage() {
                 <strong>Postgres hosting</strong> — Database storage and backup infrastructure
               </li>
               <li>
-                <strong>Voice and communications infrastructure</strong> — Call, SMS, and voice
-                processing
+                <strong>Vapi and Twilio</strong> — Managed call orchestration, phone-number carrier,
+                SMS transport, and communications processing
               </li>
               <li>
-                <strong>xAI</strong> — Primary AI-model inference (Grok)
+                <strong>OpenAI</strong> — Primary managed AI inference and realtime sessions
               </li>
               <li>
-                <strong>OpenAI</strong> — Managed fallback AI inference and realtime sessions
+                <strong>Google Gemini</strong> — Managed continuity inference and grounded search
               </li>
               <li>
-                <strong>Google Gemini</strong> — Managed fallback AI inference
+                <strong>Vercel AI Gateway</strong> — Governed multi-model continuity, budgets, and
+                inference observability
+              </li>
+              <li>
+                <strong>xAI</strong> — Optional explicitly enabled AI and realtime-voice experiments
               </li>
               <li>
                 <strong>Stripe</strong> — Payment processing, billing, and tax calculation
