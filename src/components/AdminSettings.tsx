@@ -39,7 +39,7 @@ const ADMIN_TAB_SHORT_LABELS: Record<string, string> = {
   carrier: "Route",
   subscription: "Bill",
   team: "Team",
-  flywheel: "Growth",
+  flywheel: "Grow",
   activity: "Audit",
 };
 

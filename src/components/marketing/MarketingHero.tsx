@@ -61,7 +61,7 @@ export default function MarketingHero({
         className,
       )}
     >
-      <div className="wl-public-rail">
+      <div className="wl-public-rail min-w-0 max-w-full">
         <div
           className={cn(
             "marketing-hero__content mx-auto flex w-full min-w-0 max-w-[70rem] flex-col items-center text-center",

@@ -79,7 +79,7 @@ export function WorkspaceTabStrip({
         className={cn(
           "flex items-center",
           wrap ? "min-w-max lg:w-full lg:min-w-0 lg:flex-wrap" : "min-w-max",
-          compact ? "gap-1" : "gap-2",
+          compact ? "gap-0.5 sm:gap-1" : "gap-2",
           wrap
             ? align === "start"
               ? "justify-start"
