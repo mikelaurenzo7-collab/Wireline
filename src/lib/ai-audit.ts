@@ -119,7 +119,39 @@ function providerFor(model: string): RuntimeCallMeta["provider"] {
   if (isXAIModelId(model) && !model.includes("/")) return "xai";
   return "gateway";
 }
-
-export function recordRuntimeCall(record: Omit<RuntimeCallMeta, "provider"> & { provider?: RuntimeCallMeta["provider"] }) {
-  push({ ...record, provider: record.provider || providerFor(record.model) });
+export function recordUsage(
+  model: string,
+  response: { model?: string; usage?: any },
+  latencyMs: number,
+) {
+  // Attribute cost to the model that actually served the turn. On provider
+  // failover the runtime returns a different model than requested, so pricing
+  // and provider attribution must follow the response, not the request.
+  const served = typeof response.model === "string" && response.model ? response.model : model;
+  push({
+    model: served,
+    provider: providerFor(served),
+    input_tokens: response.usage?.input_tokens ?? response.usage?.prompt_tokens ?? 0,
+    output_tokens: response.usage?.output_tokens ?? response.usage?.completion_tokens ?? 0,
+    cache_read_tokens: response.usage?.cache_read_input_tokens ?? 0,
+    cache_create_tokens: response.usage?.cache_creation_input_tokens ?? 0,
+    latency_ms: latencyMs,
+  });
+}
+export function recordGeminiUsage(
+  model: string,
+  usage: GeminiUsageMetadata | undefined,
+  latencyMs: number,
+): RuntimeCallMeta {
+  const record = {
+    model,
+    provider: "google" as const,
+    input_tokens: usage?.promptTokenCount ?? 0,
+    output_tokens: usage?.candidatesTokenCount ?? 0,
+    cache_read_tokens: 0,
+    cache_create_tokens: 0,
+    latency_ms: latencyMs,
+  };
+  push(record);
+  return record;
 }
