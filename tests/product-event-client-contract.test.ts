@@ -58,4 +58,53 @@ describe("product event client", () => {
       { call_id: "call-2", channel: "phone" },
     ]);
   });
+
+  it("falls back to Plausible and the authenticated ledger when dataLayer is absent", () => {
+    const plausible = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("window", { plausible, localStorage });
+
+    expect(
+      emitProductEventOnce({
+        event: "agent_created",
+        agentId: "agent-durable",
+        planId: "starter",
+      }),
+    ).toBe(true);
+
+    expect(plausible).toHaveBeenCalledWith(
+      "agent-created",
+      expect.objectContaining({
+        props: expect.objectContaining({ plan_id: "starter" }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/product-events",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "same-origin",
+        keepalive: true,
+      }),
+    );
+  });
+
+  it("does not burn a once marker when no delivery sink exists", () => {
+    vi.stubGlobal("fetch", undefined);
+    vi.stubGlobal("window", { localStorage });
+
+    expect(
+      emitProductEventOnce({ event: "agent_created", agentId: "agent-retry" }),
+    ).toBe(false);
+
+    vi.stubGlobal("window", {
+      dataLayer: { push: (data: Record<string, unknown>) => pushes.push(data) },
+      localStorage,
+    });
+    expect(
+      emitProductEventOnce({ event: "agent_created", agentId: "agent-retry" }),
+    ).toBe(true);
+    expect(pushes).toHaveLength(1);
+  });
+
 });
