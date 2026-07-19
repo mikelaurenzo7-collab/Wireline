@@ -40,6 +40,20 @@ describe("activation path contract", () => {
     expect(checklist).toContain("First live customer handled");
   });
 
+  it("isolates browser activation state per account", () => {
+    const storage = read("src/lib/post-signup-onboarding.ts");
+    const checklist = read("src/components/ActivationChecklist.tsx");
+    const nudge = read("src/components/ActivationNudge.tsx");
+
+    expect(storage).toContain("activationCelebratedStorageKey(scopeId)");
+    expect(storage).toContain("${ACTIVATION_CELEBRATED_KEY}:${scopeId}");
+    expect(checklist).toContain("markActivationCelebrated(activationScope)");
+    expect(checklist).toContain("${DISMISS_KEY}:${activationScope}");
+    expect(nudge).toContain("isActivationCelebrated(activationScope)");
+    expect(nudge).toContain("accountId: activeAccount?.id");
+    expect(nudge).toContain("scope: activationScope");
+  });
+
   it("keeps post-create setup honest and focused", () => {
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     const copy = read("src/lib/wireline-onboarding-copy.ts");
