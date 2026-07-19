@@ -191,16 +191,7 @@ function pushIssue(issues, issue) {
 
 async function captureInternalScrollEnd(page, file) {
   const hasScrollableContent = await page.evaluate(() => {
-    const selectors = [
-      ".wl-viewport-scroll",
-      ".wl-workspace-content",
-      ".route-shell-scroll",
-      ".scroll-viewport",
-    ];
-    const candidates = selectors.flatMap((selector) =>
-      Array.from(document.querySelectorAll(selector)),
-    );
-    const scrollOwner = candidates
+    const scrollOwner = Array.from(document.querySelectorAll("*"))
       .filter((element) => {
         const style = window.getComputedStyle(element);
         const rect = element.getBoundingClientRect();
