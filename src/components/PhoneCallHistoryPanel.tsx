@@ -22,6 +22,7 @@ export default function PhoneCallHistoryPanel() {
     agents,
     loading: agentsLoading,
     degraded: agentsDegraded,
+    phoneLookupDegraded,
     refresh: refreshAgents,
   } = useAgents();
   const [loading, setLoading] = useState(true);
@@ -110,6 +111,25 @@ export default function PhoneCallHistoryPanel() {
         >
           Wireline could not confirm your employee or phone setup. Existing configuration is
           unchanged.
+        </StatusNotice>
+      </div>
+    );
+  }
+
+  if (phoneLookupDegraded && hasAgents) {
+    return (
+      <div className="w-full px-4 py-8 sm:px-6">
+        <StatusNotice
+          tone="warning"
+          title="Phone readiness unavailable"
+          action={
+            <Button type="button" variant="secondary" size="sm" onClick={refreshAgents}>
+              Retry
+            </Button>
+          }
+        >
+          Wireline could not confirm the phone numbers connected to your employees. Existing
+          configuration is unchanged.
         </StatusNotice>
       </div>
     );

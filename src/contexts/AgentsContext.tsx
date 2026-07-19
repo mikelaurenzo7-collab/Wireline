@@ -23,6 +23,7 @@ interface AgentsContextValue {
   agents: WorkspaceAgentSummary[];
   loading: boolean;
   degraded: boolean;
+  phoneLookupDegraded: boolean;
   hasAgents: boolean;
   refresh: () => void;
 }
@@ -31,6 +32,7 @@ const AgentsContext = createContext<AgentsContextValue>({
   agents: [],
   loading: true,
   degraded: false,
+  phoneLookupDegraded: false,
   hasAgents: false,
   refresh: () => {},
 });
@@ -95,6 +97,7 @@ function parseAgentsPayload(
 async function fetchAgentsWithRetry(attempts = 2): Promise<{
   agents: WorkspaceAgentSummary[];
   degraded: boolean;
+  phoneLookupDegraded: boolean;
 }> {
   let lastError: unknown;
   for (let attempt = 0; attempt < attempts; attempt++) {
@@ -105,15 +108,21 @@ async function fetchAgentsWithRetry(attempts = 2): Promise<{
       const numbersBody = numbersResponse?.ok
         ? await numbersResponse.json().catch(() => null)
         : null;
+      const phoneLookupDegraded = !numbersResponse?.ok;
       const numbersByAgent = parsePhoneNumberMap(numbersBody);
       if (response.ok && body) {
         return {
           agents: parseAgentsPayload(body, numbersByAgent),
           degraded: body.degraded === true,
+          phoneLookupDegraded,
         };
       }
       if (body && (response.status === 503 || body.degraded === true)) {
-        return { agents: parseAgentsPayload(body, numbersByAgent), degraded: true };
+        return {
+          agents: parseAgentsPayload(body, numbersByAgent),
+          degraded: true,
+          phoneLookupDegraded,
+        };
       }
       lastError = new Error(`HTTP ${response.status}`);
     } catch (error) {
@@ -130,6 +139,7 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
   const [agents, setAgents] = useState<WorkspaceAgentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [degraded, setDegraded] = useState(false);
+  const [phoneLookupDegraded, setPhoneLookupDegraded] = useState(false);
   const [nonce, setNonce] = useState(0);
   const hasLoadedOnceRef = useRef(false);
   const focusDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -140,6 +150,7 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
     if (!user) {
       setAgents([]);
       setDegraded(false);
+      setPhoneLookupDegraded(false);
       setLoading(false);
       hasLoadedOnceRef.current = false;
       return;
@@ -149,16 +160,24 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
     if (!hasLoadedOnceRef.current) setLoading(true);
 
     fetchAgentsWithRetry()
-      .then(({ agents: list, degraded: nextDegraded }) => {
-        if (cancelled) return;
-        setAgents(list);
-        setDegraded(nextDegraded);
-        hasLoadedOnceRef.current = true;
-      })
+      .then(
+        ({
+          agents: list,
+          degraded: nextDegraded,
+          phoneLookupDegraded: nextPhoneLookupDegraded,
+        }) => {
+          if (cancelled) return;
+          setAgents(list);
+          setDegraded(nextDegraded);
+          setPhoneLookupDegraded(nextPhoneLookupDegraded);
+          hasLoadedOnceRef.current = true;
+        },
+      )
       .catch(() => {
         if (cancelled) return;
         setAgents((current) => (current.length > 0 ? current : []));
         setDegraded(true);
+        setPhoneLookupDegraded(true);
         hasLoadedOnceRef.current = true;
       })
       .finally(() => {
@@ -187,8 +206,15 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
   }, [user, refresh]);
 
   const value = useMemo<AgentsContextValue>(
-    () => ({ agents, loading, degraded, hasAgents: agents.length > 0, refresh }),
-    [agents, loading, degraded, refresh],
+    () => ({
+      agents,
+      loading,
+      degraded,
+      phoneLookupDegraded,
+      hasAgents: agents.length > 0,
+      refresh,
+    }),
+    [agents, loading, degraded, phoneLookupDegraded, refresh],
   );
 
   return <AgentsContext.Provider value={value}>{children}</AgentsContext.Provider>;

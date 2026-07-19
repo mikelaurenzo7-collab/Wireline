@@ -20,6 +20,7 @@ describe("demand-driven authenticated experience", () => {
   const voicePicker = read("src/components/voice/SimpleVoicePicker.tsx");
   const phoneHistory = read("src/components/PhoneCallHistoryPanel.tsx");
   const insightEmpty = read("src/components/insights/shared.tsx");
+  const agentsContext = read("src/contexts/AgentsContext.tsx");
 
   it("prioritizes customer demand and outcomes over internal inventory", () => {
     expect(overview).toMatch(/Customer conversations today/);
@@ -55,9 +56,14 @@ describe("demand-driven authenticated experience", () => {
     expect(phoneHistory).toContain("Call your Wireline number");
     expect(phoneHistory).toContain("agentsDegraded && !hasAgents");
     expect(phoneHistory).toContain("Employee readiness unavailable");
+    expect(phoneHistory).toContain("phoneLookupDegraded && hasAgents");
+    expect(phoneHistory).toContain("Phone readiness unavailable");
     expect(insightEmpty).toContain("agents.length === 0");
     expect(insightEmpty).toContain("agentsDegraded && agents.length === 0");
+    expect(insightEmpty).toContain("phoneLookupDegraded && agents.length > 0");
     expect(insightEmpty).toContain("Retry employee status");
+    expect(agentsContext).toContain("const phoneLookupDegraded = !numbersResponse?.ok");
+    expect(agentsContext).toContain("setPhoneLookupDegraded(nextPhoneLookupDegraded)");
     expect(insightEmpty).toContain('label: "Connect phone"');
     expect(insightEmpty).toContain('label: "Test employee"');
   });

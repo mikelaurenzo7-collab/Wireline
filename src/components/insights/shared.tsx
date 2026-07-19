@@ -112,6 +112,7 @@ export function InsightEmpty({
     agents,
     loading: agentsLoading,
     degraded: agentsDegraded,
+    phoneLookupDegraded,
     refresh: refreshAgents,
   } = useAgents();
   const config = OPS_INSIGHTS_EMPTY[configKey];
@@ -119,7 +120,7 @@ export function InsightEmpty({
     actionsOverride ??
     (agentsLoading
       ? []
-      : agentsDegraded && agents.length === 0
+      : (agentsDegraded && agents.length === 0) || (phoneLookupDegraded && agents.length > 0)
         ? [{ label: "Retry employee status", onClick: refreshAgents, primary: true }]
         : agents.length === 0
           ? [{ label: "Create AI employee", to: "/studio?create=1", primary: true }]
