@@ -61,7 +61,7 @@ describe("integration vendor operating map", () => {
         "drizzle",
         "openai",
         "gemini",
-        "openrouter",
+        "ai-gateway",
         "vapi",
         "twilio",
         "deepgram-flux",

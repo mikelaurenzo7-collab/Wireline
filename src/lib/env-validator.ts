@@ -108,13 +108,6 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     formatHint: "milliseconds, e.g. 8000",
   },
   {
-    name: "OPENROUTER_API_KEY",
-    group: "ai",
-    required: false,
-    description: "Explicit agent-selected model access",
-    validate: nonEmpty,
-  },
-  {
     name: "VAPI_PRIVATE_KEY",
     group: "voice",
     required: false,

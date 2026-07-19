@@ -25,12 +25,8 @@ import { AI_TOOLS } from "../lib/ai-tools";
 import {
   isGeminiModelId,
   isOpenAIModelId,
-  isOpenRouterModelId,
   OPENAI_STRUCTURED_PRIMARY_MODEL,
-  VAPI_TENANT_DEFAULT_MODEL,
-  VAPI_TENANT_DEFAULT_PROVIDER,
 } from "../lib/ai-models";
-import { listOpenRouterModelsForDirector } from "../lib/openrouter-models";
 import { AgentBusinessProfileSchema } from "../lib/form-validators";
 import { isOwnerEmail } from "../lib/auth-service";
 import { resolveAgentEntitlement } from "../lib/agent-entitlements";
@@ -525,42 +521,6 @@ router.post(
   },
 );
 
-router.get(
-  "/api/agents/openrouter-models",
-  authenticateUser,
-  async (_req: AuthenticatedRequest, res: Response) => {
-    const { enabled, catalog } = await listOpenRouterModelsForDirector();
-    res.json({
-      enabled,
-      models: catalog.map((model) => ({
-        id: model.id,
-        label: model.label,
-        description: model.description,
-        category: model.category,
-      })),
-    });
-  },
-);
-
-router.get(
-  "/api/agents/voice-models",
-  authenticateUser,
-  async (_req: AuthenticatedRequest, res: Response) => {
-    const { catalog } = await listOpenRouterModelsForDirector();
-    res.json({
-      tenantDefaultProvider: VAPI_TENANT_DEFAULT_PROVIDER,
-      tenantDefaultModel: VAPI_TENANT_DEFAULT_MODEL,
-      options: catalog.map((model) => ({
-        provider: "openrouter",
-        model: model.id,
-        label: model.label,
-        speed: "balanced" as const,
-        envKey: "OPENROUTER_API_KEY",
-      })),
-    });
-  },
-);
-
 router.patch(
   "/api/agent-config/:id/runtime",
   authenticateUser,
@@ -583,9 +543,7 @@ router.patch(
         throw AppError.fromHttpStatus(400, "Choose a valid OpenAI model");
       if (provider === "google" && !isGeminiModelId(model))
         throw AppError.fromHttpStatus(400, "Choose a valid Gemini model");
-      if (provider === "openrouter" && !isOpenRouterModelId(model))
-        throw AppError.fromHttpStatus(400, "Enter a valid OpenRouter provider/model ID");
-      if (!(["openai", "google", "openrouter"] as string[]).includes(provider))
+      if (!(["openai", "google"] as string[]).includes(provider))
         throw AppError.fromHttpStatus(400, "Invalid runtime provider");
     }
     await drizzle

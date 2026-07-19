@@ -407,7 +407,7 @@ export const agents = pgTable(
      * temperature, exactly as before. When set, the voice factory routes the
      * live call through this provider/model instead. Values are validated +
      * normalized by resolveVapiVoiceModelSelection() against the Vapi-native
-     * provider set (anthropic | google | openai | xai | openrouter), so a bad
+     * provider set (anthropic | google | openai | xai), so a bad
      * value can never reach Vapi — it falls back to the tenant default.
      *
      * llm_temperature is clamped to a safe range in the factory so a per-agent

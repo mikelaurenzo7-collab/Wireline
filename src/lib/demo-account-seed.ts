@@ -155,7 +155,7 @@ export async function resolveDemoUserId(email: string): Promise<string | null> {
   return rows[0]?.id ?? null;
 }
 
-/** Demo / marketing tenants need Pro so Director OpenRouter catalog is exercisable. */
+/** Demo / marketing tenants need Pro so Director features are exercisable. */
 export async function ensureDemoProSubscription(userId: string): Promise<void> {
   const currentPeriodEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
   await drizzle

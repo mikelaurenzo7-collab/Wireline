@@ -9,14 +9,10 @@ import {
   type RuntimeCallMeta,
 } from "../lib/ai-audit";
 import { recordDailySpend, evaluateSpend } from "../lib/spend-guards";
-import { estimateOpenRouterCostUsd } from "../lib/openrouter-models";
 
 function estimateAuditRecordCost(record: RuntimeCallMeta): number {
-  if (record.provider === "openrouter")
-    return estimateOpenRouterCostUsd(record.model, {
-      input_tokens: record.input_tokens,
-      output_tokens: record.output_tokens,
-    });
+  // estimateCost normalizes gateway-prefixed ids ("xai/grok-4.5") to their bare
+  // model for pricing, so every provider shares one price table.
   return estimateCost(
     {
       input_tokens: record.input_tokens,

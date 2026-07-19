@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AsyncLocalStorage } from "node:async_hooks";
-import { DEFAULT_MODEL, MODEL_PRICING, OPENAI_MODELS } from "./ai-models";
+import { DEFAULT_MODEL, MODEL_PRICING, OPENAI_MODELS, isXAIModelId } from "./ai-models";
 
 export interface RuntimeCallMeta {
   model: string;
-  provider: "xai" | "openai" | "openrouter" | "google";
+  provider: "xai" | "openai" | "google" | "gateway";
   input_tokens: number;
   output_tokens: number;
   cache_read_tokens: number;
@@ -38,7 +38,12 @@ export async function withAuditCapture<T>(
 export const createAuditContext = (): AuditContext => ({ records: [] });
 export const runInAuditContext = <T>(ctx: AuditContext, fn: () => T): T => auditCtx.run(ctx, fn);
 function pricingFor(model: string) {
-  return MODEL_PRICING[model as keyof typeof MODEL_PRICING] ?? MODEL_PRICING[OPENAI_MODELS.GPT_5_5];
+  const direct = MODEL_PRICING[model as keyof typeof MODEL_PRICING];
+  if (direct) return direct;
+  // AI-Gateway-served turns report prefixed ids ("xai/grok-4.5", "openai/gpt-5.5");
+  // price them by their bare model so every route shares one price table.
+  const bare = model.includes("/") ? model.slice(model.lastIndexOf("/") + 1) : model;
+  return MODEL_PRICING[bare as keyof typeof MODEL_PRICING] ?? MODEL_PRICING[OPENAI_MODELS.GPT_5_5];
 }
 export function estimateCost(
   usage: {
@@ -109,12 +114,10 @@ function push(record: RuntimeCallMeta) {
 function providerFor(model: string): RuntimeCallMeta["provider"] {
   if (/^gpt-/i.test(model)) return "openai";
   if (model.toLowerCase().includes("gemini")) return "google";
-  // provider/model form (e.g. "x-ai/grok-4.5") routes through OpenRouter; a bare
-  // grok id (e.g. "grok-4.5") is the direct xAI runtime and is priced via
-  // MODEL_PRICING, not the OpenRouter estimator.
-  if (model.includes("/")) return "openrouter";
-  if (/grok/i.test(model)) return "xai";
-  return "openrouter";
+  // Bare grok ids come from the direct xAI runtime; provider/model form
+  // ("xai/grok-4.5") only ever comes back from the AI Gateway last-resort.
+  if (isXAIModelId(model) && !model.includes("/")) return "xai";
+  return "gateway";
 }
 export function recordUsage(
   model: string,
@@ -151,19 +154,4 @@ export function recordGeminiUsage(
   };
   push(record);
   return record;
-}
-export function recordOpenRouterUsage(
-  model: string,
-  usage: { input_tokens: number; output_tokens: number },
-  latencyMs: number,
-) {
-  push({
-    model,
-    provider: "openrouter",
-    input_tokens: usage.input_tokens,
-    output_tokens: usage.output_tokens,
-    cache_read_tokens: 0,
-    cache_create_tokens: 0,
-    latency_ms: latencyMs,
-  });
 }

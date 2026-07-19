@@ -58,7 +58,7 @@ export interface StreamingState {
   error?: string;
   /** Model name from meta event. */
   model?: string;
-  /** Human label from meta (Wireline tier or OpenRouter model). */
+  /** Human label from meta (Wireline managed tier). */
   modelDisplayLabel?: string;
 }
 

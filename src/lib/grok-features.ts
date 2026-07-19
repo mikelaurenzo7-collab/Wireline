@@ -15,7 +15,7 @@ export const GROK_REALTIME_VOICE = {
 } as const;
 
 export const GROK_MODEL_OPTIONS = {
-  note: "Grok models (e.g. via OpenRouter 'x-ai/grok-...') accepted as explicit per-agent overrides. Not the current Vapi tenant default.",
+  note: "Grok 4.5 is the managed structured primary via the direct xAI API; the Vercel AI Gateway carries any multi-model routing.",
 } as const;
 
 export const GROK_AGENT_STRENGTHS = {

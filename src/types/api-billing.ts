@@ -103,7 +103,6 @@ export interface WorkspaceUsageResponse {
   ai_tokens_used_today?: number;
   ai_tokens_daily_limit?: number;
   ai_tokens_pct?: number;
-  openrouter_allowed?: boolean;
   usage_pct: number;
   voice_minutes_cap?: number;
 }

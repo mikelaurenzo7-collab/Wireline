@@ -59,9 +59,14 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     false,
     ["GEMINI_API_KEY"],
   ),
-  item("openrouter", "OpenRouter", "Explicit per-agent custom-model pass-through.", "ai", false, [
-    "OPENROUTER_API_KEY",
-  ]),
+  item(
+    "ai-gateway",
+    "Vercel AI Gateway",
+    "Last-resort multi-model routing for the managed runtime.",
+    "ai",
+    false,
+    ["AI_GATEWAY_API_KEY"],
+  ),
   item("vapi", "Vapi", "PSTN inbound and outbound call handling.", "voice", true, [
     "VAPI_PRIVATE_KEY",
     "VAPI_WEBHOOK_SECRET",
