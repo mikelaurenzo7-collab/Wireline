@@ -770,11 +770,12 @@ export default function AuthPortal() {
                   <input
                     id="auth-terms"
                     type="checkbox"
+                    aria-labelledby="auth-terms-label"
                     checked={agreedToTerms}
                     onChange={(e) => setAgreedToTerms(e.target.checked)}
                     className="mt-1 h-4 w-4 shrink-0 accent-primary"
                   />
-                  <span>
+                  <span id="auth-terms-label">
                     <label htmlFor="auth-terms" className="cursor-pointer select-none">
                       I agree to the Wireline
                     </label>{" "}
