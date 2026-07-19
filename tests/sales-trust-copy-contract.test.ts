@@ -31,6 +31,7 @@ const PROHIBITED_PATTERNS: { pattern: RegExp; reason: string }[] = [
 const SCANNED_FILES = [
   "src/data/vertical-wedges.ts",
   "src/components/marketing/WireAgentLanding.tsx",
+  "src/pages/Compare.tsx",
 ] as const;
 
 describe("sales trust copy contract", () => {
@@ -71,5 +72,17 @@ describe("sales trust copy contract", () => {
     expect(landing).not.toMatch(/homepage now leads/i);
     expect(landing).not.toMatch(/live desk/i);
     expect(landing).not.toMatch(/Polish principles/i);
+  });
+
+  it("keeps the market comparison dated, sourced, and explicit about unlike products", () => {
+    const compare = read("src/pages/Compare.tsx");
+
+    expect(compare).toContain("Verified July 19, 2026");
+    expect(compare).toContain("https://www.goodcall.com/pricing");
+    expect(compare).toContain("https://smith.ai/pricing/ai-receptionist");
+    expect(compare).toContain("https://www.bland.ai/pricing");
+    expect(compare).toContain("https://www.retellai.com/pricing");
+    expect(compare).toContain("not a claim that unlike products are feature-for-feature equivalents");
+    expect(compare).toContain('primaryAction={{ label: "Start free", to: "/signup?plan=personal" }}');
   });
 });
