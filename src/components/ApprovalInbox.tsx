@@ -104,7 +104,7 @@ function ApprovalEmptyCard({ title, description }: { title: string; description:
       titleTone="ui"
       withHalo={false}
       className="mx-auto w-full max-w-4xl"
-      icon={<Check className="size-5" aria-hidden="true" />}
+      icon={Check}
       title={title}
       description={description}
       actions={[{ label: "Open Studio", to: "/studio", primary: true }]}

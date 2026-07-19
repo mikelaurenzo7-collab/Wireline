@@ -295,7 +295,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
           density="compact"
           titleTone="ui"
           withHalo={false}
-          icon={<Mail className="size-5" />}
+          icon={Mail}
           title="Connect your inbox"
           description="Connect Gmail or Outlook to sync customer threads."
           action={

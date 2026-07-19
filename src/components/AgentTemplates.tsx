@@ -669,7 +669,6 @@ export default function AgentTemplates() {
           <>
             <AnimatePresence mode="popLayout">
               {visible.length === 0 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <EmptyState
                     framed
                     density="compact"
@@ -678,12 +677,12 @@ export default function AgentTemplates() {
                     icon={Search}
                     title={q ? `No templates match “${search.trim()}”` : "No templates match"}
                     description={
-                      search
+                      q
                         ? "Try a broader job name, or clear the search to browse everything."
                         : "Adjust the filters to see available starting points."
                     }
                     actions={
-                      search
+                      q
                         ? [
                             {
                               label: "Clear search",
@@ -694,7 +693,6 @@ export default function AgentTemplates() {
                         : [{ label: "Create from scratch", to: "/studio?create=1", primary: true }]
                     }
                   />
-                </motion.div>
               )}
             </AnimatePresence>
 

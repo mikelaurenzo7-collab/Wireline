@@ -204,16 +204,17 @@ export default function TeamSettings() {
               density="compact"
               withHalo={false}
               className="mt-5"
-              actions={[
-                {
-                  label: "Invite teammate",
-                  onClick: () => {
-                    if (!canInvite) return;
-                    setIsInviteOpen(true);
-                  },
-                  primary: true,
-                },
-              ]}
+              actions={
+                canInvite
+                  ? [
+                      {
+                        label: "Invite teammate",
+                        onClick: () => setIsInviteOpen(true),
+                        primary: true,
+                      },
+                    ]
+                  : undefined
+              }
             />
           )}
         </section>

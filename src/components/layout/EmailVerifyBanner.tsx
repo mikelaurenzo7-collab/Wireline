@@ -116,9 +116,9 @@ export default function EmailVerifyBanner() {
 
   return (
     <motion.div
-      initial={{ height: 0, opacity: 0 }}
-      animate={{ height: "auto", opacity: 1 }}
-      className={cn("wl-banner flex-col gap-3 sm:flex-row sm:items-center sm:gap-3", bannerTone)}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className={cn("wl-banner flex-col gap-3 sm:flex-row sm:items-center", bannerTone)}
     >
       <div className="wl-banner__body w-full min-w-0">
         <Mail className="wl-banner__icon" aria-hidden />
@@ -143,20 +143,22 @@ export default function EmailVerifyBanner() {
           )}
         </span>
       </div>
-      <Button
-        type="button"
-        variant={outcome === "sent" ? "secondary" : "default"}
-        size="sm"
-        disableAnimations
-        onClick={resend}
-        disabled={buttonDisabled}
-        className={cn(
-          "touch-press hover:scale-[1.02] w-full shrink-0 self-stretch app-micro-cta h-auto after:hidden border-0 shadow-none sm:w-auto sm:self-center",
-          outcome === "sent" && "opacity-70",
-        )}
-      >
-        {buttonLabel}
-      </Button>
+      <div className="wl-banner__actions w-full sm:w-auto">
+        <Button
+          type="button"
+          variant={outcome === "sent" ? "secondary" : "default"}
+          size="sm"
+          disableAnimations
+          onClick={resend}
+          disabled={buttonDisabled}
+          className={cn(
+            "touch-press hover:scale-[1.02] w-full shrink-0 app-micro-cta h-auto after:hidden border-0 shadow-none sm:w-auto",
+            outcome === "sent" && "opacity-70",
+          )}
+        >
+          {buttonLabel}
+        </Button>
+      </div>
     </motion.div>
   );
 }
