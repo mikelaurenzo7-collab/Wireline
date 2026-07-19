@@ -72,6 +72,15 @@ run("node", ["scripts/check-marketing-measurement-consent.mjs"]);
 run("node", ["scripts/check-mcp-http-hardening.mjs"]);
 run("node", ["scripts/check-stripe-checkout-tax.mjs"]);
 run("node", ["scripts/check-stripe-catalog-contract.mjs"]);
+run("node", ["--check", "scripts/check-vendor-readiness.mjs"]);
+run("npx", [
+  "vitest",
+  "run",
+  "tests/runtime-provider-chain-contract.test.ts",
+  "tests/structured-runtime-policy-contract.test.ts",
+  "tests/vendor-readiness-contract.test.ts",
+  "tests/runtime-integrations-registry-contract.test.ts",
+]);
 sanitizePreviewEnvironment();
 run("node", ["scripts/check-operational-core.mjs"]);
 run("node", ["scripts/build-design-tokens.mjs"]);
