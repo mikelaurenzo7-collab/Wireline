@@ -9,6 +9,7 @@ import { getCreditBalanceUsd } from "./credit-wallet";
 import { SMS_COST_PER_SEGMENT_USD, billSmsMessage } from "./sms-billing";
 
 export type TwilioMessageChannel = "sms" | "whatsapp";
+export type TwilioRestAuthMode = "api_key" | "auth_token" | "unconfigured";
 
 interface TwilioTenantSettings {
   messagingEnabled: boolean;
@@ -49,16 +50,35 @@ function env(name: string): string {
   return typeof process.env[name] === "string" ? process.env[name]!.trim() : "";
 }
 
+export function getTwilioRestAuthMode(): TwilioRestAuthMode {
+  const accountSid = env("TWILIO_ACCOUNT_SID");
+  const apiKey = env("TWILIO_API_KEY");
+  const apiSecret = env("TWILIO_API_SECRET");
+  if (accountSid && apiKey && apiSecret) return "api_key";
+  if (accountSid && env("TWILIO_AUTH_TOKEN")) return "auth_token";
+  return "unconfigured";
+}
+
 export function getTwilioClient() {
   if (cachedClient !== undefined) return cachedClient;
 
   const accountSid = env("TWILIO_ACCOUNT_SID");
+  const apiKey = env("TWILIO_API_KEY");
+  const apiSecret = env("TWILIO_API_SECRET");
   const authToken = env("TWILIO_AUTH_TOKEN");
+
+  if (accountSid && apiKey && apiSecret) {
+    cachedClient = twilio(apiKey, apiSecret, { accountSid });
+    return cachedClient;
+  }
+
   if (!accountSid || !authToken) {
     cachedClient = null;
     return cachedClient;
   }
 
+  // Compatibility fallback. Production should use a scoped API key for REST
+  // calls while retaining the Auth Token only for Twilio webhook validation.
   cachedClient = twilio(accountSid, authToken);
   return cachedClient;
 }
