@@ -674,6 +674,7 @@ export default function AuthPortal() {
                     disabled={loading}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@company.com"
                     className="wl-stitch-input h-11"
                     style={{ paddingLeft: "2.5rem" }}
                     aria-label="Email address"
@@ -715,6 +716,7 @@ export default function AuthPortal() {
                       disabled={loading}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      placeholder={isSignUp ? "At least 8 characters" : "Your password"}
                       className="wl-stitch-input h-11"
                       style={{ paddingLeft: "2.5rem", paddingRight: "2.75rem" }}
                       aria-label="Password"

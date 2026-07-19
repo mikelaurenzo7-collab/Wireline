@@ -194,7 +194,8 @@ export default function BillingSettings() {
                     </div>
                   ) : (
                     <p className="mt-3 max-w-[60ch] text-sm leading-6 text-muted-foreground">
-                      1 draft agent. Choose a paid plan for a live number and paid provider actions.
+                      1 draft AI employee. Choose a paid plan for a live number and paid provider
+                      actions.
                     </p>
                   )}
                 </>

@@ -144,7 +144,7 @@ export default function Compare() {
         title="Less phone tag. More of your day."
         description="Make the call, keep the result, and stop turning routine phone work into another project."
         primaryAction={{ label: "Start free", to: "/signup?plan=personal" }}
-        secondaryAction={{ label: "Hear an agent", to: "/showcase", tone: "secondary" }}
+        secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
         proof={COMPARE_HERO_PROOF}
       />
 

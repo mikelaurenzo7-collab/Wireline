@@ -199,10 +199,18 @@ export default function TeamSettings() {
             <EmptyState
               icon={Users}
               title="No teammates yet"
+              description="Invite collaborators to share numbers, approvals, and call outcomes."
               titleTone="ui"
               density="compact"
               withHalo={false}
               className="mt-5"
+              actions={[
+                {
+                  label: "Invite teammate",
+                  onClick: () => setIsInviteOpen(true),
+                  primary: true,
+                },
+              ]}
             />
           )}
         </section>
