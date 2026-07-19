@@ -3,10 +3,8 @@ import twilio from "twilio";
 
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
-import { getCreditBalanceUsd } from "./credit-wallet";
-import { SMS_COST_PER_SEGMENT_USD, billSmsMessage } from "./sms-billing";
 
 export type TwilioMessageChannel = "sms" | "whatsapp";
 export type TwilioRestAuthMode = "api_key" | "auth_token" | "unconfigured";
@@ -293,126 +291,12 @@ async function buildMessagePayload(
   return { payload };
 }
 
-export async function sendTenantMessage(
-  userId: string,
-  params: { to: string; body: string; channel?: TwilioMessageChannel; agentId?: string },
-): Promise<TwilioSendResult> {
-  const channel = params.channel || "sms";
-  const client = getTwilioClient();
-  const prepared = await buildMessagePayload(userId, {
-    to: params.to,
-    body: params.body,
-    channel,
-  });
-
-  if (prepared.result) return prepared.result;
-  if (!client || !prepared.payload) {
-    return {
-      ok: false,
-      configured: false,
-      enabled: false,
-      reason: "Twilio messaging is unavailable.",
-    };
-  }
-
-  if (channel === "sms") {
-    const smsBalance = await getCreditBalanceUsd(userId);
-    if (smsBalance < SMS_COST_PER_SEGMENT_USD) {
-      return {
-        ok: false,
-        configured: true,
-        enabled: true,
-        reason:
-          "Add Conversation Balance before sending SMS. Outbound texts bill at $0.02 per segment.",
-      };
-    }
-  }
-
-  try {
-    const message = await client.messages.create(prepared.payload as any);
-
-    if (channel === "sms" && message.sid) {
-      const segments = Math.max(1, Number(message.numSegments) || 1);
-      const billed = await billSmsMessage(userId, message.sid, segments);
-      const expected = Math.round(SMS_COST_PER_SEGMENT_USD * segments * 100) / 100;
-      if (billed < expected) {
-        log.warn("sms segment billing incomplete after send", {
-          userId,
-          messageSid: message.sid,
-          segments,
-          billed,
-          expected,
-        });
-      }
-    }
-
-    // Mirror the outbound message into the SMS inbox so account holders see
-    // the full two-way history alongside replies. Idempotent thread
-    // upsert keyed by (user_id, customer_number). Wrapped in its own
-    // try/catch so a transient DB issue can never block the actual SMS
-    // send return value.
-    try {
-      const recipient = String(prepared.payload.to || params.to || "");
-      if (recipient) {
-        const [existingThread] = await drizzle
-          .select({ id: schema.smsThreads.id })
-          .from(schema.smsThreads)
-          .where(
-            and(
-              eq(schema.smsThreads.userId, userId),
-              eq(schema.smsThreads.customerNumber, recipient),
-            ),
-          )
-          .limit(1);
-        let threadId: string | undefined;
-        if (existingThread) {
-          threadId = existingThread.id as unknown as string;
-          await drizzle
-            .update(schema.smsThreads)
-            .set({ lastMessageAt: new Date(), status: "open" })
-            .where(eq(schema.smsThreads.id, existingThread.id));
-        } else {
-          const [created] = await drizzle
-            .insert(schema.smsThreads)
-            .values({ userId, customerNumber: recipient, unreadCount: 0 })
-            .returning({ id: schema.smsThreads.id });
-          threadId = created?.id as unknown as string;
-        }
-        if (threadId) {
-          await drizzle.insert(schema.smsMessages).values({
-            userId,
-            threadId,
-            direction: "out",
-            body: params.body,
-            twilioSid: message.sid,
-          });
-        }
-      }
-    } catch (e: any) {
-      log.warn("Outbound SMS thread persist skipped", { error: e?.message });
-    }
-
-    return {
-      ok: true,
-      configured: true,
-      enabled: true,
-      sid: message.sid,
-      status: message.status ?? null,
-      to: message.to || prepared.payload.to,
-      channel,
-    };
-  } catch (error) {
-    log.warn("Twilio message send failed", { error: getErrorMessage(error), channel });
-    return {
-      ok: false,
-      configured: true,
-      enabled: true,
-      reason: "Twilio rejected the message send request.",
-      channel,
-    };
-  }
-}
-
+/**
+ * Tenant SMS/WhatsApp sends live in ./twilio-service (sendTenantMessage),
+ * which layers the DNC gate and atomic runtime-usage billing on top of this
+ * module's payload building. Keep customer-bound sends there so no path can
+ * skip suppression checks.
+ */
 export async function sendManagerAlert(
   userId: string,
   params: { title: string; message: string; callId?: string },

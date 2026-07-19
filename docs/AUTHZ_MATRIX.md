@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 281
+**Routes scanned:** 282
 **Protected:** 243
-**Public (allowlisted):** 38
+**Public (allowlisted):** 39
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -34,6 +34,7 @@
 | `GET /api/email/unsubscribe` | CAN-SPAM one-click unsubscribe; token-scoped + rate-limited |
 | `GET /api/health` | Public liveness probe; DB ping only, rate-limited |
 | `GET /api/health/public` | Public component status; rate-limited, no tenant data |
+| `POST /api/health/report` | Browser client-error reports (pre-auth by design); rate-limited, size-bounded input, no data returned |
 | `GET /api/health/slos` | Monitor token OR authenticated platform admin; enforced in handler |
 | `POST /api/intake/lead` | API-key auth via X-Wireline-Key + rate limit |
 | `POST /api/intake/leads` | API-key auth via X-Wireline-Key + rate limit |
@@ -213,6 +214,7 @@
 | health-routes.ts | GET | `/api/health/models` | inline | — | — | Protected |
 | health-routes.ts | GET | `/api/health/public` | — | — | yes | Public (allowlisted) |
 | health-routes.ts | GET | `/api/health/ready` | inline | — | — | Protected |
+| health-routes.ts | POST | `/api/health/report` | — | — | yes | Public (allowlisted) |
 | health-routes.ts | GET | `/api/health/slos` | — | — | yes | Public (allowlisted) |
 | icloud-mail-routes.ts | POST | `/api/integrations/icloud/connect` | inline | — | — | Protected |
 | icloud-mail-routes.ts | POST | `/api/integrations/icloud/disconnect` | inline | — | — | Protected |

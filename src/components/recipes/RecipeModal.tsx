@@ -75,16 +75,17 @@ export function RecipeModal({
         ]);
         if (cancelled) return;
 
-        // The dedicated contract is lightweight, authenticated, and explicitly
-        // identifies xAI Grok as the managed primary. Wait for AuthContext before
-        // calling it so a session-hydration race cannot strand every form in a
-        // permanently disabled neutral state.
+        // The dedicated contract is lightweight, authenticated, and provider-
+        // neutral: availability means the managed runtime chain can serve
+        // structured turns, whichever provider is primary. Wait for AuthContext
+        // before calling it so a session-hydration race cannot strand every
+        // form in a permanently disabled neutral state.
         if (statusRes.ok) {
           const status = (await statusRes.json()) as {
             available?: boolean;
             primary_provider?: string;
           };
-          setAvailable(status.available === true && status.primary_provider === "xai");
+          setAvailable(status.available === true);
         } else if (statusRes.status === 401) {
           // A genuinely expired session is still distinct from an AI outage.
           setAvailable(null);

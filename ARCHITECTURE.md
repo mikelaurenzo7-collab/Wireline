@@ -71,8 +71,9 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
   - Production PSTN calls: Twilio carrier numbers imported into Vapi with SMS ownership disabled in Vapi.
   - Vapi orchestrates the call; OpenAI GPT-4o is the managed call model with Gemini fallback.
   - Twilio remains authoritative for numbers, signed inbound SMS, opt-out enforcement, delivery callbacks, and the two-way messaging inbox.
-  - OpenAI Realtime is the default private web/mobile live-voice runtime.
-  - xAI Grok realtime remains an explicitly selected experiment, never automatic failover for customer calls.
+  - The xAI Grok realtime voice contract powers authenticated private live-voice test and simulation sessions (Studio sandbox and the ChatGPT account simulation) through server-minted ephemeral client secrets and an isolated spend credential.
+  - OpenAI Realtime powers the unauthenticated guest voice demo and remains available as a manual alternative session endpoint.
+  - Neither realtime test surface is automatic failover for customer PSTN calls.
 - **LLM / structured reasoning:**
   - Central policy and catalog: `src/lib/ai-models.ts`.
   - Primary: direct OpenAI Responses API using GPT-5.6 Terra by default.

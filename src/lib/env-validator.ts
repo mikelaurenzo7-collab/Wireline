@@ -190,6 +190,22 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     validate: nonEmpty,
   },
   {
+    name: "TWILIO_API_KEY",
+    group: "voice",
+    required: false,
+    description:
+      "Preferred scoped Twilio REST API key; when set with TWILIO_API_SECRET, REST calls avoid the master auth token",
+    validate: nonEmpty,
+    formatHint: "SK followed by 32 hexadecimal characters",
+  },
+  {
+    name: "TWILIO_API_SECRET",
+    group: "voice",
+    required: false,
+    description: "Secret paired with TWILIO_API_KEY for scoped Twilio REST authentication",
+    validate: nonEmpty,
+  },
+  {
     name: "ELEVENLABS_API_KEY",
     group: "voice",
     required: false,
@@ -460,7 +476,8 @@ export function validateEnv(): EnvValidationResult {
     result.errors.push({
       var: "OPENAI_API_KEY / AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN",
       group: "ai",
-      message: "Configure the OpenAI managed runtime or Vercel AI Gateway before serving AI requests",
+      message:
+        "Configure the OpenAI managed runtime or Vercel AI Gateway before serving AI requests",
     });
   }
   return result;

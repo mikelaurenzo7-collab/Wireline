@@ -92,7 +92,8 @@ specific branch for Preview which is awkward — prefer the UI.
 | `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN`          | Outbound SMS, inbound webhook                                                                                       |
 | `OWNER_PHONE` / `OWNER_EMAIL` / `PLATFORM_SMS_FROM` | Escalation routing (where agent escalations go). Set `OWNER_EMAIL=mikelaurenzo7@gmail.com` for the founder account. |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`       | Billing                                                                                                             |
-| `ANTHROPIC_API_KEY`                                 | Claude API for agent reasoning                                                                                      |
+| `OPENAI_API_KEY`                                    | Primary managed structured runtime (direct OpenAI Responses API) and OpenAI Realtime sessions                       |
+| `GEMINI_API_KEY`                                    | First automatic structured fallback and grounded-search fallback                                                    |
 | `OPENROUTER_API_KEY`                                | Optional — Director chat model picker (Pro+ in app; company key; voice runtime unchanged)                           |
 
 ### Internal JWT secret cleanup

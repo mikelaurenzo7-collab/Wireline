@@ -1,5 +1,6 @@
 /** Exact server-side previews for Wireline Live voices. */
 import { AppError } from "../api-error";
+import { log } from "../server-logger";
 import { VAPI_CURATED_VOICES, WIRELINE_LIVE_VOICES } from "../voice-catalog";
 
 export const CURATED_VOICE_PREVIEW_TEXT = "Hello, this is {name}. How can I help you today?";
@@ -73,11 +74,22 @@ export async function generateCuratedVoicePreview(
     });
 
     if (!response.ok) {
+      const detail = (await response.text().catch(() => "")).slice(0, 300);
+      log.warn("[voice-preview] provider TTS request rejected", {
+        provider: "wireline-live",
+        status: response.status,
+        voiceId: normalizedVoiceId,
+        detail,
+      });
       throw AppError.fromHttpStatus(503, "Voice preview is temporarily unavailable.");
     }
 
     const audio = await response.arrayBuffer();
     if (audio.byteLength === 0) {
+      log.warn("[voice-preview] provider TTS returned empty audio", {
+        provider: "wireline-live",
+        voiceId: normalizedVoiceId,
+      });
       throw AppError.fromHttpStatus(503, "Voice preview is temporarily unavailable.");
     }
     return audio;

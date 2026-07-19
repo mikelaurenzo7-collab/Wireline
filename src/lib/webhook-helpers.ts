@@ -3,6 +3,7 @@ import { drizzle, log, fetchWithTimeout } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, lte } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
+import { decryptSecret } from "./secret-vault";
 import { resolveWebhookDeliveryHostname } from "./webhook-validators";
 import {
   WEBHOOK_DELIVERY_FAILED,
@@ -97,7 +98,12 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
     return;
   }
 
-  type DeliveryHook = { id: string; url: string; secret: string | null };
+  type DeliveryHook = {
+    id: string;
+    url: string;
+    secret: string | null;
+    secretEncrypted: string | null;
+  };
   const hookRaw = (
     deliveryWithHook as unknown as {
       webhook?: DeliveryHook | DeliveryHook[];
@@ -113,12 +119,38 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
     return;
   }
 
+  // Vault-encrypted secrets (secretEncrypted) are how the webhook API stores
+  // secrets today; the plaintext column only survives on legacy rows. If a
+  // configured secret cannot be decrypted, fail the delivery instead of
+  // sending an unsigned request the subscriber cannot verify.
+  let signingSecret: string | null = hook.secret;
+  if (hook.secretEncrypted) {
+    try {
+      signingSecret = decryptSecret(hook.secretEncrypted);
+    } catch (err: unknown) {
+      log.error("Webhook delivery blocked — secret decryption failed", {
+        deliveryId: String(deliveryId),
+        webhookId: hook.id,
+        error: getErrorMessage(err),
+      });
+      await drizzle
+        .update(schema.webhookDeliveries)
+        .set({
+          status: WEBHOOK_DELIVERY_FAILED,
+          lastError: "secret_decrypt_failed",
+          nextAttemptAt: null,
+        })
+        .where(eq(schema.webhookDeliveries.id, deliveryIdBig));
+      return;
+    }
+  }
+
   const body = JSON.stringify(deliveryWithHook.payload);
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (hook.secret) {
-    // Note: hook.secret might be encrypted, but historically it was plaintext in this helper.
-    // If it's encrypted, we'd need decryptSecret(hook.secret). Assuming plaintext or pre-decrypted here for parity.
-    headers["x-wireline-signature"] = createHmac("sha256", hook.secret).update(body).digest("hex");
+  if (signingSecret) {
+    headers["x-wireline-signature"] = createHmac("sha256", signingSecret)
+      .update(body)
+      .digest("hex");
   }
 
   let statusCode: number | null = null;

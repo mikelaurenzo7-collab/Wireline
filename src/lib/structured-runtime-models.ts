@@ -2,8 +2,9 @@ import { STRUCTURED_PRIMARY_MODEL } from "./ai-models";
 
 /**
  * Structured planning model policy.
- * Wireline-owned structured turns run through the managed Grok-first runtime
- * (Grok 4.5 via direct xAI), with OpenAI and then Gemini as ordered fallbacks.
+ * Wireline-owned structured turns run through the managed OpenAI-first runtime
+ * (GPT-5.6 Terra via the direct OpenAI Responses API), with Gemini and then the
+ * Vercel AI Gateway as ordered fallbacks; direct xAI stays explicit opt-in.
  */
 export const STRUCTURED_RUNTIME_MODELS = {
   STANDARD: STRUCTURED_PRIMARY_MODEL,

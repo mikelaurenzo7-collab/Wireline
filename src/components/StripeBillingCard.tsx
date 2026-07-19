@@ -48,14 +48,6 @@ const PLAN_ACCENTS: Record<string, string> = {
   enterprise: BRAND.colors.primary,
 };
 
-// Conversion-tracking values (USD/mo). Personal activation is tracked through
-// Conversation Balance checkout, not subscription checkout.
-const CHECKOUT_VALUES: Record<string, number> = {
-  team: 29,
-  business: 59,
-  enterprise: 0,
-};
-
 export default function StripeBillingCard() {
   const [plans, setPlans] = useState<ClientPlan[]>([]);
   const [sub, setSub] = useState<BillingSubscriptionState | null>(null);
@@ -137,10 +129,13 @@ export default function StripeBillingCard() {
       if (typeof window !== "undefined") {
         try {
           if (typeof (window as any).fbq === "function") {
+            // Conversion value comes from the live plan catalog so tracking
+            // never drifts from the price actually charged. Personal activation
+            // is tracked through Conversation Balance checkout instead.
             (window as any).fbq("track", "InitiateCheckout", {
               content_category: "Subscription",
               content_ids: [planId],
-              value: CHECKOUT_VALUES[planId] || 0,
+              value: plans.find((plan) => plan.id === planId)?.price_usd_monthly ?? 0,
               currency: "USD",
             });
           }
@@ -602,8 +597,8 @@ function ActiveSubCard({
                         : ""
                   }
                 >
-                  {agentCount} / {sub.max_agents}{" "}
-                  {sub.max_agents === 1 ? "employee" : "employees"} in use
+                  {agentCount} / {sub.max_agents} {sub.max_agents === 1 ? "employee" : "employees"}{" "}
+                  in use
                 </span>
               ) : (
                 ""

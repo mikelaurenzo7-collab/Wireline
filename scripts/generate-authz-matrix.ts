@@ -66,6 +66,11 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     reason: "Public component status; rate-limited, no tenant data",
   },
   {
+    pattern: /^\/api\/health\/report$/,
+    reason:
+      "Browser client-error reports (pre-auth by design); rate-limited, size-bounded input, no data returned",
+  },
+  {
     pattern: /^\/api\/health\/slos$/,
     reason: "Monitor token OR authenticated platform admin; enforced in handler",
   },
