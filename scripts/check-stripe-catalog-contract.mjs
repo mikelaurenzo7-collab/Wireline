@@ -79,6 +79,61 @@ for (const [id, monthly, annual] of expectedPlans) {
   }
 }
 
+const expectedCapacity = [
+  ["starter", 1, 1, 20],
+  ["team", 1, 1, 40],
+  ["business", 5, 5, 100],
+  ["enterprise", 15, 15, 250],
+];
+for (const [planId, agents, numbers, voiceMinutes] of expectedCapacity) {
+  const product = FOUNDER_PRODUCTS.find(
+    (candidate) => candidate.metadata?.wireline_plan_id === planId,
+  );
+  if (!product) {
+    errors.push(`Founder manifest is missing product metadata for ${planId}.`);
+    continue;
+  }
+
+  const expectedMetadata = {
+    included_agents: String(agents),
+    included_numbers: String(numbers),
+    included_voice_minutes: String(voiceMinutes),
+    overage_policy: "prepaid_balance_only",
+  };
+  for (const [key, value] of Object.entries(expectedMetadata)) {
+    if (product.metadata?.[key] !== value) {
+      errors.push(`Founder product metadata drift for ${planId}.${key}: expected ${value}.`);
+    }
+  }
+
+  const recurringPrices = FOUNDER_PRICES.filter(
+    (price) => price.productKey === planId && price.recurring,
+  );
+  if (recurringPrices.length !== 2) {
+    errors.push(`Founder manifest must define monthly and annual prices for ${planId}.`);
+  }
+  for (const price of recurringPrices) {
+    if (price.metadata?.included_voice_minutes !== String(voiceMinutes)) {
+      errors.push(
+        `Founder price metadata drift for ${price.key}: expected ${voiceMinutes} included minutes.`,
+      );
+    }
+  }
+}
+
+const extraAgentProduct = FOUNDER_PRODUCTS.find((product) => product.key === "extra_agent");
+const extraAgentPrice = FOUNDER_PRICES.find(
+  (price) => price.key === "extra_agent_monthly_founder_2026_07_v3",
+);
+for (const [label, metadata] of [
+  ["product", extraAgentProduct?.metadata],
+  ["price", extraAgentPrice?.metadata],
+]) {
+  if (metadata?.included_voice_minutes !== "50" || metadata?.included_phone_numbers !== "1") {
+    errors.push(`Extra-agent ${label} metadata must guarantee 50 minutes and one number slot.`);
+  }
+}
+
 if (FOUNDER_PRODUCTS.length !== 8) {
   errors.push(`Founder manifest must define 8 active paid/add-on products; found ${FOUNDER_PRODUCTS.length}.`);
 }
