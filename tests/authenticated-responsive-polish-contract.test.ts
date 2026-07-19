@@ -43,9 +43,20 @@ describe("authenticated responsive polish contract", () => {
 
   it("reserves enough desktop width for the compliance action rail", () => {
     const compliance = read("src/components/ComplianceCenter.tsx");
+    const dnc = read("src/components/DncManager.tsx");
 
     expect(compliance).toContain("minmax(448px,.9fr)");
     expect(compliance).not.toContain("minmax(320px,.9fr)");
+    expect(dnc).toContain("grid shrink-0 grid-cols-2 gap-2");
+    expect(dnc).not.toContain("sm:grid-cols-4");
+  });
+
+  it("keeps every settings destination on one stable content rail", () => {
+    const account = read("src/pages/SettingsPage.tsx");
+    const team = read("src/pages/TeamSettings.tsx");
+
+    expect(account).toContain('<WorkspacePageFrame mode="standard">');
+    expect(team).toContain('<WorkspacePageFrame mode="standard">');
   });
 
   it("gives every previously headingless workspace a clear page heading", () => {

@@ -76,7 +76,8 @@
 
 /* Centering contract: mono labels and headings must share the same visual axis
    whenever a section explicitly opts into centered marketing content. */
-.marketing-surface :where(.text-center, .wl-marketing-center)
+.marketing-surface
+  :where(.text-center, .wl-marketing-center)
   > :where(.wl-overline, .wl-stitch-label, .wl-stitch-eyebrow, .wl-eyebrow) {
   display: block;
   width: 100%;
@@ -95,7 +96,8 @@
   justify-content: center;
 }
 
-.marketing-surface :where(.text-center, .wl-marketing-center)
+.marketing-surface
+  :where(.text-center, .wl-marketing-center)
   > :where(.wl-public-section-heading, .wl-stitch-display, .wl-display-2, h1, h2) {
   margin-inline: auto;
   text-align: center;
@@ -111,7 +113,9 @@
 }
 
 .marketing-surface .wl-public-copy,
-.marketing-surface .wl-marketing-center > p:not(.wl-overline):not(.wl-stitch-label):not(.wl-eyebrow) {
+.marketing-surface
+  .wl-marketing-center
+  > p:not(.wl-overline):not(.wl-stitch-label):not(.wl-eyebrow) {
   max-width: 44rem;
   font-size: clamp(0.96rem, 0.92rem + 0.2vw, 1.08rem);
   line-height: 1.62;
@@ -262,6 +266,12 @@
     max-width: 14ch;
     font-size: clamp(2.35rem, 11.5vw, 3.35rem) !important;
     line-height: 0.96;
+  }
+
+  .marketing-surface.wl-features-page .marketing-hero__title {
+    max-width: 16ch;
+    font-size: clamp(2.15rem, 10.4vw, 3rem) !important;
+    line-height: 0.98;
   }
 
   .marketing-surface .marketing-hero__description {

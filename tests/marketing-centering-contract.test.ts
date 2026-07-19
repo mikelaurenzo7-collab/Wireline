@@ -17,6 +17,16 @@ describe("marketing centering contract", () => {
     expect(claritySystem).not.toContain("left-aligned reading rail");
   });
 
+  it("keeps mobile navigation balanced and delays duplicate sticky actions", () => {
+    const header = read("src/components/marketing/PrecisionPublicHeader.tsx");
+    const stickyCta = read("src/components/marketing/MarketingStickyCta.tsx");
+
+    expect(header).toContain("ml-auto lg:hidden");
+    expect(stickyCta).toContain('document.querySelector(".marketing-hero__actions")');
+    expect(stickyCta).toContain("IntersectionObserver");
+    expect(stickyCta).toContain("if (!visible) return null");
+  });
+
   it("loads the public QA layer last and keeps centered labels on the shared axis", () => {
     const marketingBundle = read("src/styles/wireline-marketing-surfaces.css");
     const publicPolish = read("src/styles/public-marketing-polish.css");

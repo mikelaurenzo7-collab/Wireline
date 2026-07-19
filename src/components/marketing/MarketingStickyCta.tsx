@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
 import { cn } from "../../lib/utils";
 
 type Props = {
@@ -17,6 +18,27 @@ export default function MarketingStickyCta({
   secondaryLabel = "Hear demo",
   className,
 }: Props) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const heroAction = document.querySelector(".marketing-hero__actions");
+    const hero = document.querySelector(".marketing-hero");
+    const revealBoundary = heroAction ?? hero;
+
+    if (!revealBoundary || typeof IntersectionObserver === "undefined") {
+      setVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(([entry]) => setVisible(!entry.isIntersecting), {
+      threshold: 0.05,
+    });
+    observer.observe(revealBoundary);
+    return () => observer.disconnect();
+  }, []);
+
+  if (!visible) return null;
+
   return (
     <div
       className={cn(

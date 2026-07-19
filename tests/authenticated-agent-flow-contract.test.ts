@@ -123,7 +123,7 @@ describe("authenticated agent flow", () => {
     expect(templates).toContain("aria-pressed={selected}");
     expect(templates).toContain("Clear search");
     expect(templates).toContain(
-      'aria-label={`${alreadyDeployed ? "Deploy another" : "Deploy"} ${template.name} agent`}',
+      'aria-label={`${alreadyDeployed ? "Use again" : "Use"} ${template.name} template`}',
     );
     expect(templates).not.toContain("hidden hidden");
   });

@@ -154,7 +154,7 @@ export default function SettingsPage() {
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
-      <WorkspacePageFrame mode="narrow">
+      <WorkspacePageFrame mode="standard">
         <h1 className="sr-only">Settings</h1>
         <SettingsTabs />
 

@@ -220,7 +220,8 @@ export function EmptyState({
     <div
       className={cn(
         WL_APP_CLASSES.panelFrame,
-        "p-10 md:p-14 flex flex-col items-center text-center",
+        "flex flex-col items-center text-center",
+        compact ? "p-6 sm:p-8" : "p-10 md:p-14",
       )}
     >
       {body}

@@ -321,7 +321,7 @@ export default function DncManager() {
           }
         />
         {/* Stat bar */}
-        <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid shrink-0 grid-cols-2 gap-2">
           {[
             { label: "Total Blocked", value: stats.total, icon: Shield },
             { label: "Manual Entries", value: stats.manual, icon: Plus },
@@ -330,13 +330,13 @@ export default function DncManager() {
           ].map(({ label, value, icon: Icon }) => (
             <div
               key={label}
-              className="relative overflow-hidden rounded-md border border-border wl-panel p-4"
+              className="relative overflow-hidden rounded-md border border-border wl-panel p-3"
             >
-              <div className="mb-2 flex items-center justify-between">
-                <p className="wl-label-muted">{label}</p>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <p className="wl-label-muted min-w-0 whitespace-nowrap text-[10px]">{label}</p>
                 <Icon className="h-3.5 w-3.5 text-brand" />
               </div>
-              <p className="font-display text-3xl italic leading-none text-foreground">{value}</p>
+              <p className="font-display text-2xl leading-none text-foreground">{value}</p>
             </div>
           ))}
         </div>

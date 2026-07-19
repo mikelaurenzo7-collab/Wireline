@@ -18,6 +18,8 @@ describe("demand-driven authenticated experience", () => {
   const routeRegistry = read("src/server/register-api-routes.ts");
   const studioReview = read("src/components/StudioAgentReviewPanel.tsx");
   const voicePicker = read("src/components/voice/SimpleVoicePicker.tsx");
+  const phoneHistory = read("src/components/PhoneCallHistoryPanel.tsx");
+  const insightEmpty = read("src/components/insights/shared.tsx");
 
   it("prioritizes customer demand and outcomes over internal inventory", () => {
     expect(overview).toMatch(/Customer conversations today/);
@@ -45,6 +47,15 @@ describe("demand-driven authenticated experience", () => {
     expect(overview).toMatch(/Test employee/);
     expect(overview).toMatch(/hasConversationHistory/);
     expect(overview).toMatch(/No new conversations today\. Your customer line is still ready/);
+  });
+
+  it("keeps empty-state actions in prerequisite order", () => {
+    expect(phoneHistory).toContain('title: "Create your first AI employee"');
+    expect(phoneHistory).toContain('title: "Connect a phone number"');
+    expect(phoneHistory).toContain("Call your Wireline number");
+    expect(insightEmpty).toContain("agents.length === 0");
+    expect(insightEmpty).toContain('label: "Connect phone"');
+    expect(insightEmpty).toContain('label: "Test employee"');
   });
 
   it("tracks only verifiable customer-readiness milestones", () => {

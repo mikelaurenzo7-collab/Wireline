@@ -14,6 +14,7 @@ import { authFetch, readApiJson } from "../../lib/api";
 import { BRAND } from "../../constants/brand-colors";
 import { Skeleton } from "../ui/shadcn/Skeleton";
 import { Button } from "../atoms";
+import { useAgents } from "../../contexts/AgentsContext";
 
 /* ── Data fetching ──────────────────────────────────────────────── */
 
@@ -107,7 +108,21 @@ export function InsightEmpty({
   /** Panel chrome — off when the parent already supplies a frame. */
   framed?: boolean;
 }) {
+  const { agents, loading: agentsLoading } = useAgents();
   const config = OPS_INSIGHTS_EMPTY[configKey];
+  const prerequisiteActions =
+    actionsOverride ??
+    (agentsLoading
+      ? []
+      : agents.length === 0
+        ? [{ label: "Create AI employee", to: "/studio?create=1", primary: true }]
+        : !agents.some((agent) => agent.phone_number)
+          ? [
+              { label: "Connect phone", to: "/settings/phone", primary: true },
+              { label: "Test employee", to: "/studio?section=test" },
+            ]
+          : [...config.actions]);
+
   return (
     <EmptyState
       framed={framed}
@@ -117,7 +132,7 @@ export function InsightEmpty({
       withHalo={false}
       icon={icon}
       title={titleOverride ?? config.title}
-      actions={actionsOverride ?? [...config.actions]}
+      actions={prerequisiteActions}
       accent={success ? WL_BRAND.accent : undefined}
     />
   );

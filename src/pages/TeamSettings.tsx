@@ -116,7 +116,7 @@ export default function TeamSettings() {
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
-      <WorkspacePageFrame mode="narrow">
+      <WorkspacePageFrame mode="standard">
         <SettingsTabs />
 
         <div>

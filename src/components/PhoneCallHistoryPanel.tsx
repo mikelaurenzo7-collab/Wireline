@@ -6,6 +6,7 @@ import { authFetch } from "../lib/api";
 import CallLogsClaude from "./CallLogsClaude";
 import { EmptyState, Button } from "./atoms";
 import { StatusNotice } from "./molecules";
+import { useAgents } from "../contexts/AgentsContext";
 
 type CallsProbeResponse = {
   calls?: unknown[];
@@ -17,6 +18,7 @@ type CallsProbeResponse = {
  * instead of letting the heavier console settle into an empty black pane.
  */
 export default function PhoneCallHistoryPanel() {
+  const { agents, loading: agentsLoading } = useAgents();
   const [loading, setLoading] = useState(true);
   const [hasCalls, setHasCalls] = useState<boolean | null>(null);
   const [failed, setFailed] = useState(false);
@@ -49,7 +51,7 @@ export default function PhoneCallHistoryPanel() {
     };
   }, [attempt]);
 
-  if (loading) {
+  if (loading || agentsLoading) {
     return (
       <div className="flex w-full items-center justify-center px-4 py-10 text-sm text-muted-foreground sm:px-6">
         <span className="inline-flex items-center gap-2">
@@ -88,6 +90,46 @@ export default function PhoneCallHistoryPanel() {
   // the black CallLogsClaude void that previously shipped on first paint.
   if (hasCalls === true) return <CallLogsClaude />;
 
+  const hasAgents = agents.length > 0;
+  const livePhone = agents.find((agent) => agent.phone_number)?.phone_number ?? null;
+  const emptyState = !hasAgents
+    ? {
+        title: "Create your first AI employee",
+        description:
+          "Call history starts after you create an employee, connect its number, and handle the first customer conversation.",
+        action: (
+          <Button asChild>
+            <Link to="/studio?create=1">Create AI employee</Link>
+          </Button>
+        ),
+      }
+    : !livePhone
+      ? {
+          title: "Connect a phone number",
+          description:
+            "Your AI employee is ready for setup. Connect its customer line before expecting call history here.",
+          action: (
+            <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
+              <Button asChild>
+                <Link to="/settings/phone">Connect phone</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/studio?section=setup">Review employee</Link>
+              </Button>
+            </div>
+          ),
+        }
+      : {
+          title: "No call history yet",
+          description:
+            "Your customer line is connected. Place one real call to verify audio and populate the first summary, outcome, and follow-up.",
+          action: (
+            <Button asChild>
+              <a href={`tel:${livePhone}`}>Call your Wireline number</a>
+            </Button>
+          ),
+        };
+
   // Top-align the framed empty inside the operate panel. Vertical centering
   // against a scrollable/unbounded height chain parks the card below the fold
   // (the classic Phone History black void).
@@ -100,18 +142,9 @@ export default function PhoneCallHistoryPanel() {
         withHalo={false}
         className="w-full max-w-lg"
         icon={<History className="size-5" aria-hidden />}
-        title="No call history yet"
-        description="Calls, summaries, outcomes, and follow-ups appear here after you connect a phone number."
-        action={
-          <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
-            <Button asChild>
-              <Link to="/studio?create=1">Create AI employee</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/settings/phone">Connect phone</Link>
-            </Button>
-          </div>
-        }
+        title={emptyState.title}
+        description={emptyState.description}
+        action={emptyState.action}
       />
     </div>
   );

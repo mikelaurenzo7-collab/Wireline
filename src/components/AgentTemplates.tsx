@@ -607,7 +607,7 @@ export default function AgentTemplates() {
             placeholder="Search templates, roles, channels…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-muted/20 border border-border rounded-md outline-none focus:border-primary/50 text-foreground placeholder:text-muted/70"
+            className="w-full rounded-md border border-border bg-muted/20 py-2 pl-9 pr-4 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50"
           />
         </div>
 

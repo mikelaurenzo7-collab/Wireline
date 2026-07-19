@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Settings } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "./ConfirmModal";
@@ -366,6 +366,20 @@ export default function AdminSettings() {
     <>
       <AdminHubViewport>
         <h1 className="sr-only">Admin workspace</h1>
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-3">
+          <div>
+            <p className="wl-eyebrow wl-eyebrow--muted">Workspace settings</p>
+            <p className="mt-1 font-[var(--wireline-font-family-display)] text-xl font-semibold tracking-[-0.03em] text-foreground">
+              Admin
+            </p>
+          </div>
+          <Link
+            to="/settings"
+            className="inline-flex min-h-10 items-center rounded-xl px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            Account settings
+          </Link>
+        </div>
         <WorkspaceTabStrip
           ariaLabel="Admin sections"
           activeId={activeTab}
