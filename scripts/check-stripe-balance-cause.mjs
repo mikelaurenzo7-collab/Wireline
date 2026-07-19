@@ -4,6 +4,7 @@
  * Read-only Stripe balance ledger diagnostic.
  * Lists sanitized negative balance transactions without printing secrets or
  * customer/card details. No Stripe objects are created or mutated.
+ * The Vercel one-shot trigger is removed immediately after evidence collection.
  */
 
 const secretKey = process.env.STRIPE_SECRET_KEY?.trim();
