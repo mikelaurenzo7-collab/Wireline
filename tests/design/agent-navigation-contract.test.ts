@@ -63,8 +63,8 @@ describe("agent navigation contract", () => {
     expect(overviewPage).toMatch(/Appointments booked/);
     expect(overviewPage).toMatch(/Follow-ups waiting/);
     expect(overviewPage).toMatch(/Customer outcomes/);
-    expect(overviewPage).toMatch(/Personal AI employees/);
-    expect(overviewPage).toMatch(/Business AI employees/);
+    expect(overviewPage).toMatch(/customerAgentLanguage\(kind\)/);
+    expect(overviewPage).toMatch(/language\.plural\.replace/);
     expect(overviewPage).toMatch(/Recent customer conversations/);
     expect(overviewPage).not.toMatch(/Workspace metrics|Conversation Balance|Workspace pulse/);
     expect(overviewPage).not.toMatch(/Your assistants|New assistant|Create assistant/);

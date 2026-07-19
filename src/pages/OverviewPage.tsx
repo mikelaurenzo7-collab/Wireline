@@ -106,7 +106,7 @@ function MetricSkeleton() {
 
 function AgentLoadingRows() {
   return (
-    <div className="grid gap-2" aria-busy="true" aria-label="Loading AI employees">
+    <div className="grid gap-2" aria-busy="true" aria-label="Loading agents">
       {Array.from({ length: 3 }, (_, index) => (
         <div key={index} className="rounded-[10px] border border-border px-3 py-3">
           <div className="flex items-center gap-3">
@@ -215,7 +215,7 @@ function WorkspaceRecovery({ onRetry }: { onRetry: () => void }) {
   return (
     <section className="wl-paper wl-paper-elevated p-6 sm:p-8" aria-label="Workspace recovery">
       <StatusNotice tone="warning" title="Your workspace is reconnecting">
-        We could not load your AI employee roster. Your employees and customer data are unchanged.
+        We could not load your agent roster. Your agents and customer data are unchanged.
       </StatusNotice>
       <Button type="button" variant="secondary" className="mt-4" onClick={onRetry}>
         Retry workspace
@@ -233,6 +233,7 @@ function DemandReadinessCard({
   connectionsDetail,
   setupHref,
   testHref,
+  subjectLabel,
 }: {
   hasLiveLine: boolean;
   hasConversationHistory: boolean;
@@ -242,6 +243,7 @@ function DemandReadinessCard({
   connectionsDetail: string;
   setupHref: string;
   testHref: string;
+  subjectLabel: string;
 }) {
   const state = !hasLiveLine
     ? {
@@ -252,7 +254,7 @@ function DemandReadinessCard({
         primaryHref: "/connections",
         primaryLabel: "Connect phone and channels",
         secondaryHref: testHref,
-        secondaryLabel: "Test the employee first",
+        secondaryLabel: `Test the ${subjectLabel} first`,
       }
     : !hasConversationHistory
       ? {
@@ -285,7 +287,7 @@ function DemandReadinessCard({
             primaryHref: "/phone?tab=logs",
             primaryLabel: "Review conversations",
             secondaryHref: setupHref,
-            secondaryLabel: "Improve the employee",
+            secondaryLabel: `Improve the ${subjectLabel}`,
           };
 
   return (
@@ -333,6 +335,7 @@ function DemandReadinessCard({
 function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
   const live = Boolean(agent.phone_number);
   const enc = encodeURIComponent(agent.id);
+  const language = customerAgentLanguage(agent.is_business_agent ? "business" : "personal");
   return (
     <Link
       to={`/studio?agent=${enc}`}
@@ -356,7 +359,7 @@ function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
       </span>
       <span
         className={`wl-chip wl-chip--${live ? "success" : "warning"} shrink-0`}
-        aria-label={`AI employee status: ${agentReadiness(agent)}`}
+        aria-label={`${language.singular} status: ${agentReadiness(agent)}`}
       >
         <span className="wl-chip__dot" aria-hidden="true" />
         {agentReadiness(agent)}
@@ -372,7 +375,8 @@ function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
 type AgentKind = "personal" | "business";
 
 function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgentSummary[] }) {
-  const heading = kind === "personal" ? "Personal AI employees" : "Business AI employees";
+  const language = customerAgentLanguage(kind);
+  const heading = language.plural.replace(/^./, (letter) => letter.toUpperCase());
   if (agents.length === 0) return null;
 
   return (
@@ -393,7 +397,7 @@ function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgen
           to={`/studio?create=1&posture=${kind}`}
           className="grid min-h-[44px] place-items-center rounded-[10px] border border-dashed border-border bg-background/30 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
         >
-          + New {kind} employee
+          + New {language.singular}
         </Link>
       </div>
     </section>
@@ -603,6 +607,7 @@ export default function OverviewPage() {
               connectionsDetail={connectionsDetail}
               setupHref={primaryStudioHref}
               testHref={primaryTestHref}
+              subjectLabel={language.navShort.toLowerCase()}
             />
 
             <section
@@ -639,7 +644,7 @@ export default function OverviewPage() {
 
             {degraded ? (
               <StatusNotice tone="warning" title="Status partial">
-                AI employee links are recovering — showing the last safe state.
+                Agent links are recovering — showing the last safe state.
               </StatusNotice>
             ) : null}
 
@@ -672,12 +677,12 @@ export default function OverviewPage() {
 
             <section
               className="grid gap-4 lg:grid-cols-[1fr_1fr]"
-              aria-label="AI employees and recent customer conversations"
+              aria-label="Agents and recent customer conversations"
             >
               <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                    AI employees
+                    Agents
                   </p>
                   <Link to="/studio" className="text-xs font-semibold text-primary hover:underline">
                     Manage →
@@ -696,11 +701,15 @@ export default function OverviewPage() {
                     titleTone="ui"
                     withHalo={false}
                     icon={<Bot aria-hidden="true" />}
-                    title="No AI employees yet"
-                    description="Create one for a specific customer-facing job."
+                    title={`No ${language.plural} yet`}
+                    description={
+                      accountType === "business"
+                        ? "Create one for a specific customer-facing job."
+                        : "Create one for a call, appointment, or personal task."
+                    }
                     action={
                       <Button asChild size="sm">
-                        <Link to="/studio?create=1">Create AI employee</Link>
+                        <Link to="/studio?create=1">{language.createCta}</Link>
                       </Button>
                     }
                   />
@@ -752,7 +761,7 @@ export default function OverviewPage() {
                           </span>
                           <span className="wl-data-row__detail wl-data-row__detail--clamp">
                             {[
-                              call.agent_name || primaryAgent?.name || "AI employee",
+                              call.agent_name || primaryAgent?.name || language.singular,
                               formatCallMeta(call.created_at, call.duration_seconds),
                               call.summary || call.intent_label,
                             ]
@@ -779,7 +788,7 @@ export default function OverviewPage() {
                       description={
                         hasLiveLine
                           ? "Place one real inbound call, then review the outcome here."
-                          : "Test the employee first, then connect a phone number when it is ready."
+                          : `Test the ${language.navShort.toLowerCase()} first, then connect a phone number when it is ready.`
                       }
                       action={
                         <Button asChild size="sm">
