@@ -89,7 +89,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     // Nav carries the "Overview" label; the page itself leads with a
     // personalized greeting headline and the first-employee path.
     { id: "overview-greeting", pattern: /dayGreeting\(\)/ },
-    { id: "first-employee-cta", pattern: /Create your first AI employee/ },
+    { id: "first-employee-cta", pattern: /\{language\.createCta\}/ },
     { id: "full-roster", pattern: /agents\.map/ },
     { id: "studio-target", pattern: /\/studio\?agent=/ },
   ],
