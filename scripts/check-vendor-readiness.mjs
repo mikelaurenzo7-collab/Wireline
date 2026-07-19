@@ -263,8 +263,15 @@ const whatsappSenders = arrayAt(twilioWhatsappSenders?.body, "senders");
 const onlineWhatsappSenders = whatsappSenders.filter(
   (sender) => String(sender?.status || "").trim().toUpperCase() === "ONLINE",
 );
+const twilioBalanceUsd = Number(twilioBalance?.body?.balance ?? Number.NaN);
+const twilioFunded = Boolean(
+  twilioBalance?.ok && Number.isFinite(twilioBalanceUsd) && twilioBalanceUsd >= 0,
+);
 const twilioVoiceSmsReady = Boolean(
-  twilioAccountReady && voiceCapableNumbers.length > 0 && (smsCapableNumbers.length > 0 || twilioServices.length > 0),
+  twilioAccountReady &&
+    twilioFunded &&
+    voiceCapableNumbers.length > 0 &&
+    (smsCapableNumbers.length > 0 || twilioServices.length > 0),
 );
 record(
   "twilio_voice_sms",
@@ -279,8 +286,12 @@ record(
     : `Twilio credentials missing or rejected${twilioAccount ? ` (HTTP ${twilioAccount.status})` : ""}.`,
   twilioVoiceSmsReady
     ? "Keep the paid account and payment method current; configure Usage Triggers and sender webhooks."
-    : "Restore valid credentials and provision at least one voice-capable number plus an SMS sender or Messaging Service.",
+    : twilioAccountReady && !twilioFunded
+      ? "Restore a non-negative Twilio balance and successful recharge posture before launch."
+      : "Restore valid credentials and provision at least one voice-capable number plus an SMS sender or Messaging Service.",
   {
+    balance_usd: twilioBalance?.ok && Number.isFinite(twilioBalanceUsd) ? twilioBalanceUsd : null,
+    balance_non_negative: twilioFunded,
     incoming_number_count: twilioIncomingNumbers.length,
     voice_capable_number_count: voiceCapableNumbers.length,
     sms_capable_number_count: smsCapableNumbers.length,
