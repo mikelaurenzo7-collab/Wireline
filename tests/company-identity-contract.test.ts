@@ -211,8 +211,8 @@ describe("company identity pack", () => {
     const phoneSettings = read("src/pages/PhoneSettings.tsx");
 
     expect(surface).toContain("Brand the employee, not just the dashboard.");
-    expect(surface).toContain(
-      "Provider approval and recipient-device display remain external states.",
+    expect(surface).toMatch(
+      /Provider approval and recipient-device display remain external\s+states\./,
     );
     expect(surface).toContain("Maximum 15 characters for traditional CNAM fallback.");
     expect(surface).toContain("supported mobile networks after approval");
