@@ -78,7 +78,7 @@ describe("agent navigation contract", () => {
     expect(studioWorkspace).toMatch(/StudioAgentReviewPanel/);
     expect(studioWorkspace).not.toMatch(/StudioAgentCanvas/);
     expect(studioWorkspace).not.toMatch(/400px_minmax|lg:grid-cols/);
-    expect(studioChrome).toMatch(/AI Employee/);
+    expect(studioChrome).toMatch(/language\.navLabel/);
     expect(studioChrome).toMatch(/language\.createCta/);
     expect(studioChrome).toMatch(/agents\.length > 0/);
     expect(studioChrome).not.toMatch(/Test employee|Connect calls|Deploy|Deep edit/);
