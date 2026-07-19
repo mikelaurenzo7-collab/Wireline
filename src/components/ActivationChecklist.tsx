@@ -11,6 +11,8 @@ import {
   Trophy,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAccount } from "../contexts/AccountContext";
+import { useAuth } from "../contexts/AuthContext";
 
 import {
   fetchAssistantSetupProgress,
@@ -85,16 +87,29 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
 }
 
 export default function ActivationChecklist({ className }: { className?: string }) {
+  const { user } = useAuth();
+  const { activeAccount } = useAccount();
+  const activationScope = activeAccount?.id ?? user?.id ?? null;
+  const dismissKey = activationScope ? `${DISMISS_KEY}:${activationScope}` : null;
   const [progress, setProgress] = useState<AssistantSetupProgress | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [celebrationDismissed, setCelebrationDismissed] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem(DISMISS_KEY) === "true") setDismissed(true);
-    if (isActivationCelebrated()) setCelebrationDismissed(true);
-  }, []);
+    setDismissed(false);
+    setCelebrationDismissed(false);
+    if (!dismissKey) return;
+    try {
+      if (localStorage.getItem(dismissKey) === "true") setDismissed(true);
+    } catch {
+      /* storage can be unavailable in private or embedded browser contexts */
+    }
+    if (isActivationCelebrated(activationScope)) setCelebrationDismissed(true);
+  }, [activationScope, dismissKey]);
 
   useEffect(() => {
+    setProgress(null);
+    if (!activationScope) return;
     let cancelled = false;
     void fetchAssistantSetupProgress().then((nextProgress) => {
       if (!cancelled) setProgress(nextProgress);
@@ -102,7 +117,7 @@ export default function ActivationChecklist({ className }: { className?: string 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [activationScope]);
 
   const steps = buildSteps(progress);
   const completed = steps.filter((step) => step.done).length;
@@ -137,7 +152,7 @@ export default function ActivationChecklist({ className }: { className?: string 
               to="/phone?tab=logs"
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
               onClick={() => {
-                markActivationCelebrated();
+                markActivationCelebrated(activationScope);
                 setCelebrationDismissed(true);
               }}
             >
@@ -148,7 +163,7 @@ export default function ActivationChecklist({ className }: { className?: string 
               type="button"
               className="text-xs text-muted-foreground hover:text-foreground"
               onClick={() => {
-                markActivationCelebrated();
+                markActivationCelebrated(activationScope);
                 setCelebrationDismissed(true);
               }}
             >
@@ -182,7 +197,11 @@ export default function ActivationChecklist({ className }: { className?: string 
           type="button"
           className="self-start text-xs text-muted-foreground hover:text-foreground"
           onClick={() => {
-            localStorage.setItem(DISMISS_KEY, "true");
+            try {
+              if (dismissKey) localStorage.setItem(dismissKey, "true");
+            } catch {
+              /* storage can be unavailable in private or embedded browser contexts */
+            }
             setDismissed(true);
           }}
         >
