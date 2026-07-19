@@ -29,6 +29,7 @@ export type EnvValidationResult = {
 
 const nonEmpty = (value: string) => value.length > 0;
 const isUrl = (value: string) => /^https?:\/\//.test(value);
+const isHttpsUrl = (value: string) => /^https:\/\//.test(value);
 const isHex32 = (value: string) => /^[a-f0-9]{64}$/i.test(value);
 const isStripe = (value: string) => /^sk_(test|live)_/.test(value);
 const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -242,14 +243,18 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "STRIPE_SECRET_KEY",
     group: "billing",
     required: false,
-    description: "Stripe billing key",
+    requiredInProd: true,
+    description: "Stripe subscriptions, prepaid balances, billing, and portal",
     validate: (value) => !value || isStripe(value),
+    formatHint: "sk_live_... for production",
   },
   {
     name: "STRIPE_WEBHOOK_SECRET",
     group: "billing",
     required: false,
-    description: "Stripe signing secret",
+    requiredInProd: true,
+    description: "Stripe webhook signing secret",
+    validate: nonEmpty,
   },
   {
     name: "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
@@ -277,6 +282,14 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     required: false,
     requiredInProd: true,
     description: "Distributed rate-limit token",
+  },
+  {
+    name: "RESEND_API_KEY",
+    group: "infrastructure",
+    required: false,
+    requiredInProd: true,
+    description: "Transactional email for verification, billing, support, and lifecycle delivery",
+    validate: nonEmpty,
   },
   {
     name: "SENTRY_DSN",
@@ -342,8 +355,10 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "FEDERAL_DNC_API_URL",
     group: "operational",
     required: false,
-    description: "Federal DNC vendor lookup endpoint (outbound scrub)",
-    validate: (value) => !value || isUrl(value),
+    requiredInProd: true,
+    description: "Federal DNC vendor lookup endpoint required before marketing outbound",
+    validate: (value) => !value || isHttpsUrl(value),
+    formatHint: "https://vendor.example/api/dnc-check",
   },
   {
     name: "FEDERAL_DNC_PROVIDER",
@@ -355,7 +370,9 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "FEDERAL_DNC_API_KEY",
     group: "operational",
     required: false,
-    description: "Federal DNC vendor API key",
+    requiredInProd: true,
+    description: "Federal DNC vendor API key required before marketing outbound",
+    validate: nonEmpty,
   },
   {
     name: "OWNER_PHONE",
@@ -389,7 +406,7 @@ export function validateEnv(): EnvValidationResult {
     groups.map((group) => [group, { valid: 0, invalid: 0, total: 0 }]),
   ) as EnvValidationResult["byGroup"];
   const result: EnvValidationResult = { valid: true, errors: [], warnings: [], byGroup };
-  const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+  const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
 
   for (const config of ENV_REGISTRY) {
     const value = process.env[config.name];
