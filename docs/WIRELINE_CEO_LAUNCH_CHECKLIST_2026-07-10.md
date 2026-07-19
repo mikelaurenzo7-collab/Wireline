@@ -59,10 +59,15 @@ Paid extra agents should add useful capacity, not just another seat consuming th
 Founder catalog decision:
 
 - Starter: $9/mo, 1 live agent, 20 guaranteed live-voice minutes.
-- Starter Plus: $19/mo, 1 live agent, 75 guaranteed live-voice minutes.
-- Pro: $59/mo, up to 5 live agents, 250 guaranteed live-voice minutes.
-- Business: $149/mo, up to 15 live agents, 650 guaranteed live-voice minutes.
+- Starter Plus: $19/mo, 1 live agent, 40 guaranteed live-voice minutes.
+- Pro: $59/mo, up to 5 live agents, 100 guaranteed live-voice minutes.
+- Business: $149/mo, up to 15 live agents, 250 guaranteed live-voice minutes.
 - Extra live agent add-on: $15/mo, plus 1 additional live agent, 1 production-number slot, and 50 additional guaranteed live-voice minutes.
+
+These deliberately low founder prices remain well below the cost of hiring. Upper-tier included
+capacity is capped so every monthly plan and every upper-tier annual plan retains at least a 45%
+contribution-margin reserve at full included utilization. Additional usage remains prepaid; Wireline
+does not create surprise postpaid overages.
 
 Stripe object configured:
 
