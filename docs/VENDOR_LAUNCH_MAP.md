@@ -35,13 +35,16 @@ Launch remains blocked until all of the following are cleared:
    connected account has a negative balance or failed debit posture.
 2. **Restore full GitHub Actions execution.** Pull-request workflow runs are
    ending in `startup_failure` before any job is created. Vercel currently runs
-   five focused launch-policy files, 18 tests, operational contracts, and the
-   production bundle as a compensating control, but this is not a substitute
-   for the full CI matrix.
+   the focused launch-policy suite, a full TypeScript/ESLint/Vitest audit,
+   operational contracts, and the production bundle as a compensating control,
+   but this is not a substitute for the full CI matrix.
 3. **Rotate the exposed Twilio and Vercel credentials.** Both were pasted into a
-   chat and must be treated as compromised even though the current Twilio token
-   is accepted. After rotation, update Vercel production secrets, redeploy, and
-   re-run the read-only probe.
+   chat and must be treated as compromised even though the current credentials
+   are accepted. Create a scoped Twilio REST API key pair, set
+   `TWILIO_API_KEY` and `TWILIO_API_SECRET`, rotate `TWILIO_AUTH_TOKEN`, and
+   retain that rotated Auth Token only for inbound webhook-signature
+   validation. Update Vercel production secrets, revoke the exposed Vercel
+   token, redeploy, and re-run the read-only probe.
 4. **Complete the controlled live launch matrix.** Account probes do not prove
    end-to-end call transfer, tool execution, SMS opt-out, email delivery, or
    Stripe webhook behavior.
@@ -79,11 +82,11 @@ latency-sensitive phone turn.
 
 ## Twilio channel posture
 
-| Channel  | Verified state       | Requirement / next gate                                                        |
-| -------- | -------------------- | ------------------------------------------------------------------------------ |
-| Voice    | account/inventory ready | Nine voice-capable numbers; complete inbound/outbound Vapi live-call matrix |
-| SMS      | account/inventory ready | Nine SMS-capable numbers + one Messaging Service; test STOP/HELP/webhooks   |
-| WhatsApp | private beta         | Zero ONLINE senders; complete WABA, sender, templates, callbacks, and consent  |
+| Channel  | Verified state          | Requirement / next gate                                                       |
+| -------- | ----------------------- | ----------------------------------------------------------------------------- |
+| Voice    | account/inventory ready | Nine voice-capable numbers; complete inbound/outbound Vapi live-call matrix   |
+| SMS      | account/inventory ready | Nine SMS-capable numbers + one Messaging Service; test STOP/HELP/webhooks      |
+| WhatsApp | private beta            | Zero ONLINE senders; complete WABA, sender, templates, callbacks, and consent |
 
 Promotional trials and one-time onboarding credits are not durable production
 entitlements or customer promises. Wireline does not promise 100 free SMS or
@@ -95,26 +98,31 @@ responses. It does not yet justify general asynchronous WhatsApp marketing
 claims: outside the 24-hour service window, approved template delivery must be
 implemented and verified using Twilio Content templates.
 
+The Twilio REST client now prefers `TWILIO_API_KEY` + `TWILIO_API_SECRET` with
+`TWILIO_ACCOUNT_SID`. The Account Auth Token remains a compatibility fallback
+for REST calls until the scoped key pair is installed and remains required for
+Twilio webhook-signature validation after rotation.
+
 ## Funding and account posture
 
-| Vendor              | Product role                       | Verified posture                         | Action                                                               |
-| ------------------- | ---------------------------------- | ---------------------------------------- | -------------------------------------------------------------------- |
-| Vercel              | Hosting, functions, cron           | project/build path healthy               | Rotate exposed token; keep payment method and spend alerts active    |
-| Vercel AI Gateway   | Governed final AI route            | credential/model catalog ready           | Set per-key budget, alerts, and reserve before scale                  |
-| Supabase            | Postgres data plane                | connected project healthy                | Run DB health and migrations; retain password-screening controls     |
-| Stripe              | Customer billing                   | **blocked: -$207 available balance**     | Resolve balance/debits; then verify live webhook and catalog          |
-| OpenAI              | Primary reasoning + Realtime       | credential ready                         | Maintain budget, payment method, alerts, and scoped keys              |
-| Gemini              | Direct AI continuity               | credential ready                         | Retain quota/billing fallback                                        |
-| xAI                 | Optional voice/reasoning experiment| credential ready; structured fallback off| Keep capped and opt-in; do not make launch depend on it               |
-| Vapi                | PSTN orchestration                 | credential ready; 18 numbers reachable   | Confirm billing/auto-reload and complete live call matrix             |
-| Twilio              | Carrier, numbers, SMS, WhatsApp    | active; $23.664; 9 voice/SMS numbers     | Rotate exposed token, re-probe, add Usage Triggers, run channel tests |
-| ElevenLabs          | Optional clones/showcase           | Creator; 130,840 credits; Voice API ready| Keep optional, consented, and monitored                               |
-| Resend              | Transactional email                | key accepted; trywireline.com verified   | Test real verification/reset delivery and maintain plan              |
-| Upstash             | Distributed rate limits            | credentials ready                        | Maintain production database and billing                             |
-| Federal DNC vendor  | Marketing scrub                    | URL/key configured                       | Confirm live lookup semantics and maintain scrub credits             |
-| Sentry              | Error alerts                       | not certified by vendor probe            | Verify backend/browser event receipt and alert routing               |
-| LiveAvatar / HeyGen | Video add-on                       | not core launch                          | Fund only after consent, pricing, and demand gates pass               |
-| Apollo / Perplexity | Enrichment/research                | not core launch                          | Add capped budget only when Lead Hunt is sold                         |
+| Vendor              | Product role                        | Verified posture                          | Action                                                                        |
+| ------------------- | ----------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------- |
+| Vercel              | Hosting, functions, cron            | project/build path healthy                | Rotate exposed token; keep payment method and spend alerts active             |
+| Vercel AI Gateway   | Governed final AI route             | credential/model catalog ready            | Set per-key budget, alerts, and reserve before scale                           |
+| Supabase            | Postgres data plane                 | connected project healthy                 | Run DB health and migrations; retain password-screening controls              |
+| Stripe              | Customer billing                    | **blocked: -$207 available balance**      | Resolve balance/debits; then verify live webhook and catalog                   |
+| OpenAI              | Primary reasoning + Realtime        | credential ready                          | Maintain budget, payment method, alerts, and scoped keys                       |
+| Gemini              | Direct AI continuity                | credential ready                          | Retain quota/billing fallback                                                  |
+| xAI                 | Optional voice/reasoning experiment | credential ready; structured fallback off | Keep capped and opt-in; do not make launch depend on it                        |
+| Vapi                | PSTN orchestration                  | credential ready; 18 numbers reachable    | Confirm billing/auto-reload and complete live call matrix                      |
+| Twilio              | Carrier, numbers, SMS, WhatsApp     | active; $23.664; 9 voice/SMS numbers      | Install scoped API key, rotate token, add Usage Triggers, run channel tests    |
+| ElevenLabs          | Optional clones/showcase            | Creator; 130,840 credits; Voice API ready | Keep optional, consented, and monitored                                        |
+| Resend              | Transactional email                 | key accepted; trywireline.com verified    | Test real verification/reset delivery and maintain plan                       |
+| Upstash             | Distributed rate limits             | credentials ready                         | Maintain production database and billing                                      |
+| Federal DNC vendor  | Marketing scrub                     | URL/key configured                        | Confirm live lookup semantics and maintain scrub credits                       |
+| Sentry              | Error alerts                        | not certified by vendor probe             | Verify backend/browser event receipt and alert routing                         |
+| LiveAvatar / HeyGen | Video add-on                        | not core launch                           | Fund only after consent, pricing, and demand gates pass                        |
+| Apollo / Perplexity | Enrichment/research                 | not core launch                           | Add capped budget only when Lead Hunt is sold                                  |
 
 Funding guidance is a reserve policy, not permission for uncapped auto-spend.
 Set provider-level budgets below Wireline account-level spend caps.
@@ -154,6 +162,10 @@ npm run stripe:catalog:check
 node --env-file=.env.production scripts/check-vendor-readiness.mjs
 ```
 
+Before the final Twilio probe, confirm production contains a complete scoped
+REST pair (`TWILIO_API_KEY`, `TWILIO_API_SECRET`) plus the newly rotated
+`TWILIO_AUTH_TOKEN` used for webhook validation.
+
 Then complete the controlled launch matrix:
 
 1. One inbound and one outbound phone call with transfer/tool execution.
@@ -185,4 +197,5 @@ The active products match the Founder catalog. Before future catalog writes:
 - Funding and inventory probe: `scripts/check-vendor-readiness.mjs`
 - Production env check: `scripts/check-prod-env.mjs`
 - Twilio messaging: `src/lib/twilio-service.ts`
+- Twilio REST authentication: `src/lib/twilio-service-base.ts`
 - Vapi orchestration: `src/lib/vapi-client.ts`
