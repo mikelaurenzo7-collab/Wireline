@@ -61,11 +61,15 @@ describe("authenticated responsive polish contract", () => {
 
   it("shows an actionable carrier state instead of a false empty inventory", () => {
     const picker = read("src/components/PhoneNumberPicker.tsx");
+    const admin = read("src/components/AdminSettings.tsx");
+    const viewport = read("src/components/layout/ClientRouteViewport.tsx");
 
     expect(picker).toContain("readApiJson");
     expect(picker).toContain("availableResult.status === 503");
     expect(picker).toContain("Number inventory unavailable");
     expect(picker).toContain("inventoryUnavailable");
+    expect(admin).toContain("<AdminHubViewport scroll>");
+    expect(viewport).toContain("overflow-y-auto overscroll-contain");
   });
 
   it("gives every previously headingless workspace a clear page heading", () => {

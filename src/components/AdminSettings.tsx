@@ -373,7 +373,7 @@ export default function AdminSettings() {
 
   return (
     <>
-      <AdminHubViewport>
+      <AdminHubViewport scroll>
         <h1 className="sr-only">Admin workspace</h1>
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-3">
           <div>

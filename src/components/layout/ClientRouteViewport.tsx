@@ -27,7 +27,7 @@ export default function ClientRouteViewport({
       className={cn(
         "relative flex flex-col w-full",
         scroll
-          ? "route-shell-scroll scroll-viewport flex-1 min-h-0"
+          ? "route-shell-scroll scroll-viewport flex-1 min-h-0 overflow-y-auto overscroll-contain"
           : "flex-1 min-h-0 overflow-hidden",
         className,
       )}
