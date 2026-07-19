@@ -132,17 +132,23 @@ export function markOnboardingCelebrated(): void {
   }
 }
 
-export function isActivationCelebrated(): boolean {
+export function activationCelebratedStorageKey(scopeId: string): string {
+  return `${ACTIVATION_CELEBRATED_KEY}:${scopeId}`;
+}
+
+export function isActivationCelebrated(scopeId: string | null | undefined): boolean {
+  if (!scopeId) return false;
   try {
-    return localStorage.getItem(ACTIVATION_CELEBRATED_KEY) === "true";
+    return localStorage.getItem(activationCelebratedStorageKey(scopeId)) === "true";
   } catch {
     return false;
   }
 }
 
-export function markActivationCelebrated(): void {
+export function markActivationCelebrated(scopeId: string | null | undefined): void {
+  if (!scopeId) return;
   try {
-    localStorage.setItem(ACTIVATION_CELEBRATED_KEY, "true");
+    localStorage.setItem(activationCelebratedStorageKey(scopeId), "true");
   } catch {
     /* ignore */
   }
