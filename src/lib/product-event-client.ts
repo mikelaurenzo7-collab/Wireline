@@ -57,9 +57,9 @@ export function emitProductEvent(
   if (typeof window === "undefined") return false;
 
   const event = makeProductEvent({
+    ...input,
     surface: input.surface ?? "web_workspace",
     correlationId: input.correlationId ?? createCorrelationId(input.event),
-    ...input,
   });
   const analytics = window as WindowWithAnalytics;
   let dispatched = false;
