@@ -191,22 +191,22 @@ function pushIssue(issues, issue) {
 
 async function captureInternalScrollEnd(page, file) {
   const hasScrollableContent = await page.evaluate(() => {
-    const scrollOwner = Array.from(document.querySelectorAll("*"))
-      .filter((element) => {
-        const style = window.getComputedStyle(element);
-        const rect = element.getBoundingClientRect();
-        return (
-          rect.width > 0 &&
-          rect.height > 0 &&
-          (style.overflowY === "auto" || style.overflowY === "scroll") &&
-          element.scrollHeight > element.clientHeight + 24
-        );
-      })
-      .sort((a, b) => b.scrollHeight - b.clientHeight - (a.scrollHeight - a.clientHeight))[0];
+    const scrollOwners = Array.from(document.querySelectorAll("*")).filter((element) => {
+      const style = window.getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return (
+        rect.width > 0 &&
+        rect.height > 0 &&
+        (style.overflowY === "auto" || style.overflowY === "scroll") &&
+        element.scrollHeight > element.clientHeight + 24
+      );
+    });
 
-    if (!scrollOwner) return false;
-    scrollOwner.setAttribute("data-wireline-qa-scroll-owner", "true");
-    scrollOwner.scrollTop = scrollOwner.scrollHeight;
+    if (scrollOwners.length === 0) return false;
+    for (const scrollOwner of scrollOwners) {
+      scrollOwner.setAttribute("data-wireline-qa-scroll-owner", "true");
+      scrollOwner.scrollTop = scrollOwner.scrollHeight;
+    }
     return true;
   });
 
@@ -219,8 +219,8 @@ async function captureInternalScrollEnd(page, file) {
     timeout: 30_000,
   });
   await page.evaluate(() => {
-    const scrollOwner = document.querySelector('[data-wireline-qa-scroll-owner="true"]');
-    if (scrollOwner) {
+    const scrollOwners = document.querySelectorAll('[data-wireline-qa-scroll-owner="true"]');
+    for (const scrollOwner of scrollOwners) {
       scrollOwner.scrollTop = 0;
       scrollOwner.removeAttribute("data-wireline-qa-scroll-owner");
     }
