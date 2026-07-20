@@ -1,9 +1,10 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
+import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { sanitizePhone } from "../lib/vapi-helpers";
 import baseRouter from "./twilio-webhook-base";
@@ -51,7 +52,9 @@ async function tenantForSender(toValue: string): Promise<string | null> {
  */
 router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next: NextFunction) => {
   const optOutType = String(req.body?.OptOutType || "").toUpperCase();
-  const bodyKeyword = String(req.body?.Body || "").trim().toLowerCase();
+  const bodyKeyword = String(req.body?.Body || "")
+    .trim()
+    .toLowerCase();
   const legacyOptIn = !optOutType && LEGACY_OPT_IN_KEYWORDS.has(bodyKeyword);
   if (!optOutType && !legacyOptIn) return next();
   if (!evaluateTwilioWebhookAuth(req).ok) return res.status(403).send(emptyTwiml());
@@ -67,7 +70,8 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
           .insert(schema.dncList)
           .values({
             userId,
-            phone: customerNumber,
+            // Canonical digits-only key so the outbound-call gate matches.
+            phone: normalizeDncPhone(customerNumber),
             phoneRaw: String(req.body?.From || ""),
             reason: "opt-out",
             source: "twilio_advanced_opt_out",
@@ -82,7 +86,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
           .where(
             and(
               eq(schema.dncList.userId, userId),
-              eq(schema.dncList.phone, customerNumber),
+              inArray(schema.dncList.phone, dncPhoneCandidates(customerNumber)),
               eq(schema.dncList.reason, "opt-out"),
               or(
                 eq(schema.dncList.source, "twilio_advanced_opt_out"),
