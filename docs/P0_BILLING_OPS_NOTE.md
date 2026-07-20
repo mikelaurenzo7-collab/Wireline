@@ -28,16 +28,17 @@ Add-ons:
 
 Voice usage is not postpaid or metered in this launch catalog. Included Runtime Allowance and prepaid Conversation Balance are the supported model.
 
-## Live Stripe reconciliation — verified 2026-07-10
+## Live Stripe reconciliation — verified 2026-07-20 (Cadence AI)
 
-Account: Wireline (`acct_1TXb0SJohDtfy3Ik`).
+Account: **Cadence AI** (`acct_1TkyXL8e6If87QKm`) — the live Wireline billing account after the
+2026-07 Stripe project reconnect. Older notes that cite `acct_1TXb0SJohDtfy3Ik` are historical.
 
-- 8 active products match the Founder manifest.
-- 14 canonical active prices match the expected amounts, intervals, products, and lookup keys.
-- 1 additional active $9 price remains attached to an archived duplicate Starter product because Stripe requires an active default price on that archived product. It is not sellable through an active product and is treated as an audit warning, not a parity failure.
-- The duplicate Starter product was archived.
-- 8 superseded Team/Business/overage/add-on prices were deactivated.
-- No active, trialing, past-due, or incomplete subscriptions were found.
+- Active founder products + 14 canonical prices match `scripts/lib/stripe-founder-catalog.mjs`.
+- Vercel Production/Preview/Development price-ID env vars are in parity with the live catalog.
+- Webhook `https://trywireline.com/api/stripe-webhook` enabled_events match
+  `src/routes/billing-routes.ts` (including `charge.refunded` / `charge.dispute.created`).
+- No live subscriptions at time of audit.
+- Available USD balance: **$0.00** (charges + payouts enabled).
 - No active Payment Links were found.
 - Checkout-session enumeration is unavailable to the connected Stripe key; recheck open sessions in Stripe Dashboard before any future destructive catalog cleanup.
 

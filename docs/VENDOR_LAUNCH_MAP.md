@@ -30,17 +30,18 @@ A production-scoped vendor + inventory pass on `2026-07-20` verified:
   `freshPublicResearch()` (Perplexity-first when `PERPLEXITY_API_KEY` is set, else Gemini grounded
   search via `GEMINI_API_KEY`). **Do not add Tavily/Serper.** `PERPLEXITY_API_KEY` is optional
   quality boost, not a launch blocker while Gemini is present.
-- Federal DNC URL/key pair remains configured in production (local `vercel env pull` redacts the
-  URL literal and will false-fail shape checks).
-- Stripe charges/payouts enabled, but available USD balance is still **`-$207.00`** from failed
-  bank debits covering Stripe Tax Product Subscription fees (`insufficient_funds` payouts).
+- Federal DNC: production runtime reports `compliance_ready` (Sensitive URL/KEY present). Development's
+  encrypted key is a misplaced Vercel token (`vcp_…`) and does **not** authenticate DNCScrub — fix
+  development and run one live scrub probe before scaling marketing outbound.
+- Stripe is on **Cadence AI** (`acct_1TkyXL8e6If87QKm`): charges/payouts enabled, available USD
+  balance **`$0.00`**, founder catalog 14/14 prices, webhook events aligned to
+  `src/routes/billing-routes.ts`. The prior −$207 figure was the retired Wireline Stripe account.
 - Twilio has no ONLINE WhatsApp sender (private beta).
 
 Launch remains blocked until the following are cleared:
 
-1. **Resolve Stripe's negative available balance of $207.00.** Fund the linked bank account /
-   settle failed debit attempts for the Stripe Tax subscription, then re-check
-   `GET /v1/balance`. Customer checkout must not launch while available balance is negative.
+1. **Prove Federal DNCScrub with a live JSON scrub** (and fix the development `vcp_…` key). Marketing
+   outbound fails closed when the vendor is unconfigured; presence ≠ verified vendor auth.
 2. **Restore full GitHub Actions execution.** PR workflow runs still end in `startup_failure`
    before any job is created. Vercel build checks compensate but are not a full CI matrix.
 3. **Rotate the exposed Vercel personal token** that was pasted into chat; revoke after
@@ -112,7 +113,7 @@ compatibility fallback until it is rotated.
 | Vercel              | Hosting, functions, cron            | project/build path healthy                | Rotate exposed token; keep payment method and spend alerts active             |
 | Vercel AI Gateway   | Governed final AI route             | credential/model catalog ready            | Set per-key budget, alerts, and reserve before scale                           |
 | Supabase            | Postgres data plane                 | connected project healthy                 | Run DB health and migrations; retain password-screening controls              |
-| Stripe              | Customer billing                    | **blocked: -$207 available balance**      | Resolve balance/debits; then verify live webhook and catalog                   |
+| Stripe              | Customer billing                    | **ready (Cadence AI, $0 available)**      | Keep buffer before paid invites; webhook aligned 2026-07-20                   |
 | OpenAI              | Primary reasoning + Realtime        | credential ready                          | Maintain budget, payment method, alerts, and scoped keys                       |
 | Gemini              | Direct AI continuity                | credential ready                          | Retain quota/billing fallback                                                  |
 | xAI                 | Optional voice/reasoning experiment | credential ready; structured fallback off | Keep capped and opt-in; do not make launch depend on it                        |

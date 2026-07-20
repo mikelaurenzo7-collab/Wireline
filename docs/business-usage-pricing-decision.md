@@ -79,7 +79,9 @@ Current active products after reconciliation:
 
 ## Exact applied Stripe writes (historical — see status note above)
 
-Applied on the live Wireline Stripe account `acct_1TXb0SJohDtfy3Ik`.
+Applied historically on the retired Wireline Stripe account `acct_1TXb0SJohDtfy3Ik`.
+**Current live account is Cadence AI `acct_1TkyXL8e6If87QKm`** — see `docs/P0_BILLING_OPS_NOTE.md`
+and `src/lib/plan-catalog.ts` for the active founder catalog price IDs.
 
 1. Updated product `Wireline Personal`
    Price writes: none

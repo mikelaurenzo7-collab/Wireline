@@ -63,5 +63,6 @@ npm run verify:full    # type check x3, eslint, design/source-control/route/docs
 
 1. ~~**Delete `STRIPE_ENTERPRISE_PRICE_ID` and `OPENAI_REALTIME_MODEL` from Vercel production env vars manually**~~ — **Done 2026-07-20** (removed from production via Vercel CLI; were not present in preview/development).
 2. **GitHub Actions phantom workflow (`BuildFailed`, id `296195680`)** still blocks all CI; needs a GitHub Settings/support-level fix, not a code change.
-3. **Six additional tables flagged for a possible missing `wireline_server` grant** need individual access-pattern verification (see Security fixes above) before any grant is added — several are plausibly correct as-is.
-4. The remaining unused-Vercel-env-var cruft list and the lower-confidence `src/lib` cleanup candidates from `LAUNCH_PERFECTION_PASS_2026-07-19.md` and this pass's codebase-health audit remain open for a dedicated pass.
+3. ~~**Six additional tables flagged for a possible missing `wireline_server` grant**~~ — MCP OAuth tables granted via live `0104` on 2026-07-20; ElevenLabs voice tables dropped via live `0105`. Remaining intentionally-ungranted globals: `wireline_stripe_events`, `wireline_demo_call_events`, `wireline_oauth_pending_codes` (verify before any grant).
+4. **Federal DNCScrub real `loginId`** — development currently holds a misplaced Vercel token; production/preview Sensitive values are API-unreadable. See `docs/E2E_AUDIT_STRIPE_VERCEL_2026-07-20.md`.
+5. The remaining unused-Vercel-env-var cruft list and the lower-confidence `src/lib` cleanup candidates from `LAUNCH_PERFECTION_PASS_2026-07-19.md` and this pass's codebase-health audit remain open for a dedicated pass.
