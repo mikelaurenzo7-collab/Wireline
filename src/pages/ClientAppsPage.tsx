@@ -5,6 +5,7 @@ import {
   Smartphone,
   Sparkles,
   TabletSmartphone,
+  Terminal,
 } from "lucide-react";
 
 import { Badge, Button } from "../components/atoms";
@@ -19,7 +20,7 @@ const clientSurfaces = [
     status: CLIENT_SURFACE_POSTURE.browser.status,
     statusVariant: "info" as const,
     action: CLIENT_SURFACE_POSTURE.browser.action,
-    href: "mailto:support@trywireline.com?subject=Wireline%20Command%20install%20guide",
+    href: "/settings/apps/command",
   },
   {
     icon: Smartphone,
@@ -48,10 +49,18 @@ const clientSurfaces = [
   {
     icon: Sparkles,
     title: "Claude",
-    status: "Connector",
-    statusVariant: "outline" as const,
-    action: "Add connector",
+    status: CLIENT_SURFACE_POSTURE.claude.status,
+    statusVariant: "info" as const,
+    action: CLIENT_SURFACE_POSTURE.claude.action,
     href: "https://claude.ai/settings/connectors",
+  },
+  {
+    icon: Terminal,
+    title: "Cursor",
+    status: CLIENT_SURFACE_POSTURE.cursor.status,
+    statusVariant: "info" as const,
+    action: CLIENT_SURFACE_POSTURE.cursor.action,
+    href: "https://docs.cursor.com/context/mcp",
   },
 ] as const;
 
@@ -60,38 +69,46 @@ export default function ClientAppsPage() {
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame mode="standard">
         <WorkspacePageIntro title="Apps" />
+        <p className="mb-5 max-w-2xl text-sm leading-6 text-muted-foreground">
+          {CLIENT_SURFACE_POSTURE.summary}
+        </p>
         <section
           className="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
           aria-label="Wireline apps and companion surfaces"
         >
-          {clientSurfaces.map(({ icon: Icon, title, status, statusVariant, action, href }) => (
-            <article
-              key={title}
-              className="wl-paper wl-paper-elevated group flex min-h-[132px] flex-col p-5 transition-all hover:border-primary/30"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
-                  <Icon size={17} aria-hidden="true" />
-                </span>
-                <Badge variant={statusVariant}>{status}</Badge>
-              </div>
-              <h2 className="mt-5 font-[var(--wireline-font-family-display)] text-[22px] font-normal leading-tight tracking-[-0.02em] text-foreground">
-                {title}
-              </h2>
-              <Button
-                asChild
-                variant="link"
-                className="mt-auto w-fit px-0 pt-4 text-sm text-primary"
+          {clientSurfaces.map(({ icon: Icon, title, status, statusVariant, action, href }) => {
+            const external = href.startsWith("https://") || href.startsWith("mailto:");
+            return (
+              <article
+                key={title}
+                className="wl-paper wl-paper-elevated group flex min-h-[132px] flex-col p-5 transition-all hover:border-primary/30"
               >
-                <a
-                  href={href}
-                  {...(href.startsWith("https://") ? { target: "_blank", rel: "noreferrer" } : {})}
+                <div className="flex items-start justify-between gap-3">
+                  <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
+                    <Icon size={17} aria-hidden="true" />
+                  </span>
+                  <Badge variant={statusVariant}>{status}</Badge>
+                </div>
+                <h2 className="mt-5 font-[var(--wireline-font-family-display)] text-[22px] font-normal leading-tight tracking-[-0.02em] text-foreground">
+                  {title}
+                </h2>
+                <Button
+                  asChild
+                  variant="link"
+                  className="mt-auto w-fit px-0 pt-4 text-sm text-primary"
                 >
-                  {action} <ArrowUpRight size={14} />
-                </a>
-              </Button>
-            </article>
-          ))}
+                  <a
+                    href={href}
+                    {...(external && href.startsWith("https://")
+                      ? { target: "_blank", rel: "noreferrer" }
+                      : {})}
+                  >
+                    {action} <ArrowUpRight size={14} />
+                  </a>
+                </Button>
+              </article>
+            );
+          })}
         </section>
       </WorkspacePageFrame>
     </WorkspaceShell>

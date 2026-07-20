@@ -1,11 +1,14 @@
 # Wireline (iOS)
 
-Native iOS + CarPlay client for the Wireline AI call workspace. Wireline is
-**agent-first**: it screens inbound calls, places outbound calls through Wireline
-agents, is woken by VoIP push when a call arrives, and is driven by App Intents.
-It is a thin client over the existing Wireline backend — no business logic,
-prompts, model selection, or billing lives here. The phone is the daily control
-surface for the agents.
+Native iOS client for the Wireline AI call workspace. **Product posture:
+Planned** — code and simulator CI exist; TestFlight/App Store are not live.
+CarPlay Communication is Phase 2 (entitlement-gated), not part of the current
+customer surface.
+
+Wireline is **agent-first**: it screens inbound calls, places outbound calls
+through Wireline agents, is woken by VoIP push when a call arrives, and is
+driven by App Intents. It is a thin client over the existing Wireline backend —
+no business logic, prompts, model selection, or billing lives here.
 
 > This folder is the iOS half of the Wireline monorepo. The backend it talks to
 > is the same Express/Supabase app in the repo root; the mobile contract is
@@ -112,11 +115,12 @@ The backend signs APNs tokens with these (see root `.env.example`):
 `APNS_ENV`. Without them, push is a safe no-op and the rest of the platform is
 unaffected.
 
-## What's approvable vs aspirational
+## What's code-complete vs shipping
 
-**Approvable / shipped intent:** CallKit inbound + outbound, the CarPlay
-Communication template (recents/contacts/dialer), Siri + App Intents to place a
-call, and deep-linking Maps / Spotify / Calendar.
+**In-repo today (not customer-live):** CallKit inbound + outbound paths, Siri +
+App Intents to place a call, widget targets, and deep-linking Maps / Spotify /
+Calendar. Product posture remains **Planned** until TestFlight + physical-device
+acceptance.
 
 **NOT possible:** controlling another app's CarPlay UI or widgets, custom
 non-communication CarPlay templates, or driving Spotify's playback surface.
@@ -124,7 +128,7 @@ Wireline launches those apps; it does not pilot them.
 
 ## Roadmap
 
-- **Phase 1 — done:** Bearer auth, `/api/mobile/me|agents|devices|calls`,
+- **Phase 1 — code complete:** Bearer auth, `/api/mobile/me|agents|devices|calls`,
   outbound App Intent + the activation layer (Siri/widgets/Ask Wireline),
   CallKit + PushKit VoIP inbound, recap pushes, workspace, calls, and
   "take this call" handoff (`/api/mobile/calls/:id/handoff`).

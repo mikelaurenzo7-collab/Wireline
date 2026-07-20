@@ -87,6 +87,9 @@ export default function OutboundDialDialog({
           context: context.trim() || undefined,
           callPurpose,
           hasExpressWrittenConsent: callPurpose === "marketing_or_sales" && consentConfirmed,
+          ...(callPurpose === "marketing_or_sales" && consentConfirmed
+            ? { consentSource: "manual_attestation" as const }
+            : {}),
         }),
       });
       const body = (await response.json()) as { error?: string; code?: string };

@@ -111,6 +111,13 @@ describe("mcp dynamic client registration", () => {
     expect(mcpDraftSourceForClient(dynamicId, "cursor://anysphere.cursor-mcp/oauth/callback")).toBe(
       "cursor_mcp",
     );
+    expect(
+      mcpDraftSourceForClient(dynamicId, [
+        "https://claude.ai/api/mcp/auth_callback",
+        "https://www.cursor.com/agents/mcp/oauth/callback",
+      ]),
+    ).toBe("cursor_mcp");
     expect(mcpDraftSourceForClient("https://chatgpt.com/oauth/x/client.json")).toBe("chatgpt_mcp");
   });
 });
+

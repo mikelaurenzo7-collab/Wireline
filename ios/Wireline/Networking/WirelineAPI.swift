@@ -110,6 +110,7 @@ actor WirelineAPI {
             let context: String?
             let callPurpose: String
             let hasExpressWrittenConsent: Bool
+            let consentSource: String?
         }
         struct Result: Decodable {
             let success: Bool
@@ -122,7 +123,8 @@ actor WirelineAPI {
                 customerNumber: number,
                 context: context,
                 callPurpose: callPurpose,
-                hasExpressWrittenConsent: hasExpressWrittenConsent
+                hasExpressWrittenConsent: hasExpressWrittenConsent,
+                consentSource: hasExpressWrittenConsent ? "manual_attestation" : nil
             )
         )
         return (try? JSONDecoder().decode(Result.self, from: data))?.callId

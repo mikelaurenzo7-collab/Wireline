@@ -33,7 +33,7 @@ describe("Wireline ChatGPT App production contract", () => {
     expect(oauthRouteSource).toContain('"/.well-known/oauth-authorization-server"');
     expect(oauthRouteSource).toContain("client_id_metadata_document_supported: true");
     expect(oauthRouteSource).toContain('code_challenge_method: "S256"');
-    expect(oauthRouteSource).toContain("assertMcpDraftWriteRateLimit");
+    expect(accountRouteSource).toContain("assertMcpDraftWriteRateLimit");
     expect(oauthRouteSource).toContain("assertMcpTokenEndpointRateLimit");
     expect(oauthRouteSource).toContain("revokeMcpAccessTokensForClient");
     expect(oauthRouteSource).toContain("backfillMcpOAuthResourceBindings");

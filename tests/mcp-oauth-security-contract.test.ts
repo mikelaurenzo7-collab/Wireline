@@ -27,7 +27,6 @@ describe("mcp oauth security contract", () => {
 
   it("rate-limits draft writes and token endpoint traffic", () => {
     const oauthRoutes = read("src/routes/chatgpt-mcp-routes.ts");
-    expect(oauthRoutes).toContain("assertMcpDraftWriteRateLimit");
     expect(oauthRoutes).toContain("assertMcpTokenEndpointRateLimit");
     const accountRoutes = read("src/routes/chatgpt-mcp-account-routes.ts");
     expect(accountRoutes).toContain("assertMcpDraftWriteRateLimit");

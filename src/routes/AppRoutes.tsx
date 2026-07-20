@@ -18,6 +18,7 @@ const InsightsPage = lazy(() => import("../pages/InsightsPage"));
 const EmailPage = lazy(() => import("../pages/EmailPage"));
 const ApprovalsPage = lazy(() => import("../pages/ApprovalsPage"));
 const ClientAppsPage = lazy(() => import("../pages/ClientAppsPage"));
+const BrowserCommandInstallPage = lazy(() => import("../pages/BrowserCommandInstallPage"));
 const BillingSettings = lazy(() => import("../pages/BillingSettings"));
 const PhoneSettings = lazy(() => import("../pages/PhoneSettings"));
 const TeamSettings = lazy(() => import("../pages/TeamSettings"));
@@ -74,6 +75,8 @@ export default function AppRoutes() {
         <Route path="/inbox" element={<EmailPage />} />
         <Route path="/approvals" element={<ApprovalsPage />} />
         <Route path="/apps" element={<ClientAppsPage />} />
+        <Route path="/apps/command" element={<BrowserCommandInstallPage />} />
+        <Route path="/settings/apps/command" element={<BrowserCommandInstallPage />} />
 
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/billing" element={<BillingSettings />} />

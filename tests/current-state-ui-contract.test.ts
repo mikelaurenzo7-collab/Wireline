@@ -40,9 +40,14 @@ describe("current-state UI contract", () => {
     expect(CLIENT_SURFACE_POSTURE.summary).toContain("Web is the canonical runtime");
     expect(CLIENT_SURFACE_POSTURE.browser.status).toBe("Early access");
     expect(CLIENT_SURFACE_POSTURE.chatgpt.status).toBe("Early access");
+    expect(CLIENT_SURFACE_POSTURE.claude.status).toBe("Early access");
+    expect(CLIENT_SURFACE_POSTURE.cursor.status).toBe("Early access");
     expect(CLIENT_SURFACE_POSTURE.android.status).toBe("Internal beta");
     expect(CLIENT_SURFACE_POSTURE.ios.status).toBe("Planned");
     expect(apps).toContain("CLIENT_SURFACE_POSTURE");
+    expect(apps).toContain('title: "Cursor"');
+    expect(apps).toContain('href: "/settings/apps/command"');
+    expect(apps).not.toContain("mailto:support@trywireline.com?subject=Wireline%20Command%20install%20guide");
     expect(apps).not.toContain('status: "Live"');
     expect(apps).not.toContain('action: "TestFlight"');
   });
@@ -50,7 +55,7 @@ describe("current-state UI contract", () => {
   it("makes the account-bound MCP apps public without overstating their authority", () => {
     const developers = read("src/pages/Developers.tsx");
 
-    expect(developers).toContain("Bring Wireline into ChatGPT or Claude.");
+    expect(developers).toContain("Bring Wireline into ChatGPT, Claude, or Cursor.");
     expect(developers).toContain("https://trywireline.com/mcp");
     expect(developers).toContain("https://claude.ai/settings/connectors");
     expect(developers).toContain("Cursor");
@@ -62,6 +67,16 @@ describe("current-state UI contract", () => {
     expect(developers).not.toContain("Settings -> API Access");
     expect(developers).not.toContain("wl_YOUR_API_KEY");
     expect(developers).not.toContain("https://chatgpt.com/plugins");
+  });
+
+  it("ships an in-product Wireline Command install path with downloadable packages", () => {
+    const install = read("src/pages/BrowserCommandInstallPage.tsx");
+    const routes = read("src/routes/AppRoutes.tsx");
+    expect(routes).toContain("BrowserCommandInstallPage");
+    expect(routes).toContain('path="/settings/apps/command"');
+    expect(install).toContain("/downloads/wireline-command-chromium.zip");
+    expect(install).toContain("/downloads/wireline-command-firefox.zip");
+    expect(install).toContain("Load unpacked");
   });
 
   it("keeps public conversion routes on the selected launch plan", () => {

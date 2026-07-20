@@ -126,7 +126,7 @@ export default function Developers() {
         <div className="mx-auto max-w-5xl text-center">
           <p className="wl-stitch-eyebrow">ChatGPT · Claude · Cursor</p>
           <h2 id="mcp-apps-heading" className="wl-stitch-display mt-3 text-balance">
-            Bring Wireline into ChatGPT or Claude.
+            Bring Wireline into ChatGPT, Claude, or Cursor.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
             Use one account-bound MCP connector to draft an AI employee in natural language, test

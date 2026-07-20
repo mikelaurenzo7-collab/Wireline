@@ -56,8 +56,8 @@ app.use((req, res, next) => {
 });
 
 // Account-bound tools own the production /mcp transport. The legacy router
-// remains mounted for OAuth discovery, consent, token exchange, and a safe
-// compatibility fallback while connected clients refresh tool descriptors.
+// remains mounted for OAuth discovery, consent, token exchange, and 405
+// GET/DELETE /mcp responses only — it no longer serves guest tool traffic.
 app.use(chatgptMcpAccountRouter);
 app.use(chatgptMcpRouter);
 

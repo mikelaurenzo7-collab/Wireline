@@ -27,3 +27,24 @@ describe("browser handoff runtime grants", () => {
     );
   });
 });
+
+describe("dial consent artifact on clients", () => {
+  it("sends manual_attestation consentSource from web and native dial clients", () => {
+    const web = read("src/components/OutboundDialDialog.tsx");
+    const android = read("android/app/src/main/java/com/wireline/app/data/WirelineApi.kt");
+    const ios = read("ios/Wireline/Networking/WirelineAPI.swift");
+    expect(web).toContain('consentSource: "manual_attestation"');
+    expect(android).toContain('body.put("consentSource", "manual_attestation")');
+    expect(ios).toContain('consentSource: hasExpressWrittenConsent ? "manual_attestation" : nil');
+  });
+});
+
+describe("MCP Cursor draft attribution", () => {
+  it("resolves draftSource from oauth client redirect_uris", () => {
+    const account = read("src/routes/chatgpt-mcp-account-routes.ts");
+    const registry = read("src/lib/mcp-client-registry.ts");
+    expect(account).toContain("wireline_mcp_oauth_clients");
+    expect(account).toContain("mcpDraftSourceForClient(clientId, redirectUris)");
+    expect(registry).toContain("redirectUris.some((uri) => isCursorRedirectUri(uri))");
+  });
+});

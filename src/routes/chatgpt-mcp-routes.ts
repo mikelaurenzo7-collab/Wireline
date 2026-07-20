@@ -1,52 +1,29 @@
-import express, { type Request, type Response } from "express";
+import express, { type Request } from "express";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
-import { getDefaultAgentTools } from "../lib/agent-capabilities";
-import { resolveAgentEntitlement } from "../lib/agent-entitlements";
-import { isOwnerEmail } from "../lib/auth-service";
 import { verifyInternalJwt } from "../lib/auth-utils";
-import {
-  CHATGPT_MCP_RESOURCE_URI,
-  buildChatGptWidgetHtml,
-  buildDemoRealtimeInstructions,
-  createDemoSpec,
-  decodeDemoToken,
-  encodeDemoToken,
-  MCP_SCOPES,
-  type McpScope,
-} from "../lib/chatgpt-mcp";
+import { MCP_SCOPES, type McpScope } from "../lib/chatgpt-mcp";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import {
   clientDisplayName,
   isDynamicClientId,
-  mcpDraftSourceForClient,
   newDynamicClientId,
   oauthErrorCode,
   validateDynamicClientRegistration,
 } from "../lib/mcp-client-registry";
-import { pickRotatedVoiceId } from "../data/voice-roster";
-import { resolveAgentRoleArchetype } from "../lib/agent-role-definitions";
 import {
-  assertMcpDraftWriteRateLimit,
   assertMcpTokenEndpointRateLimit,
   backfillMcpOAuthResourceBindings,
   hashMcpOAuthToken,
-  isMcpResourceBound,
   mcpIssuer,
   mcpResourceUrl,
   pruneExpiredMcpOAuthRows,
   revokeMcpAccessTokensForClient,
 } from "../lib/mcp-oauth-security";
-import {
-  applyMcpTransportHeaders,
-  isMcpNotificationMethod,
-  mcpToolErrorResult,
-} from "../lib/mcp-transport";
 import { rateLimit } from "../lib/rate-limit";
-import { drizzle, fetchWithTimeout, log, tenantStore } from "../lib/server-context";
+import { drizzle, fetchWithTimeout, log } from "../lib/server-context";
 import { getSessionTokenFromRequest } from "../lib/session-cookie";
-import { createOpenAIRealtimeClientSecret } from "../lib/voice/openai-realtime-service";
 import * as schema from "../db/schema";
 
 const router = express.Router();
@@ -55,12 +32,6 @@ const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const AUTHORIZATION_CODE_TTL_MS = 5 * 60 * 1000;
 const CLIENT_METADATA_CACHE_TTL_MS = 5 * 60 * 1000;
 
-type McpPrincipal = {
-  userId: string;
-  email: string;
-  scopes: McpScope[];
-  draftSource: "chatgpt_app" | "claude_app" | "cursor_app";
-};
 type AuthorizationRequest = {
   clientId: string;
   redirectUri: string;
@@ -389,228 +360,6 @@ async function issueTokens(input: {
   };
 }
 
-async function mcpPrincipal(req: Request): Promise<McpPrincipal | null> {
-  const token = /^Bearer\s+(.+)$/i.exec(req.get("authorization") || "")?.[1]?.trim();
-  if (!token || token.length > 1000) return null;
-  await ensureMcpSchema();
-  const result = (await drizzle.execute(
-    sql`SELECT user_id, email, scope, resource, client_id, expires_at FROM wireline_mcp_access_tokens WHERE token_hash = ${tokenHash(token)} LIMIT 1`,
-  )) as unknown as {
-    rows?: Array<{
-      user_id: string;
-      email: string;
-      scope: string;
-      resource: string | null;
-      client_id: string;
-      expires_at: Date | string;
-    }>;
-  };
-  const row = result.rows?.[0];
-  if (
-    !row ||
-    new Date(row.expires_at).getTime() <= Date.now() ||
-    !isMcpResourceBound(row.resource, req)
-  )
-    return null;
-  const scopes = parseScopes(row.scope);
-  const draftSource = mcpDraftSourceForClient(row.client_id || "");
-  return scopes.length
-    ? {
-        userId: row.user_id,
-        email: row.email,
-        scopes,
-        draftSource:
-          draftSource === "cursor_mcp"
-            ? "cursor_app"
-            : draftSource === "claude_mcp"
-              ? "claude_app"
-              : "chatgpt_app",
-      }
-    : null;
-}
-
-class McpAuthorizationError extends Error {
-  constructor(readonly requiredScope?: McpScope) {
-    super("Connect a Wireline account to continue.");
-  }
-}
-
-function requireScope(principal: McpPrincipal | null, scope: McpScope): McpPrincipal {
-  if (!principal || !principal.scopes.includes(scope)) throw new McpAuthorizationError(scope);
-  return principal;
-}
-
-function jsonRpc(res: Response, id: unknown, result: unknown, status = 200) {
-  res
-    .status(status)
-    .type("application/json")
-    .json({ jsonrpc: "2.0", id: id ?? null, result });
-}
-
-function jsonRpcError(
-  res: Response,
-  id: unknown,
-  code: number,
-  message: string,
-  status = 200,
-  data?: unknown,
-) {
-  res
-    .status(status)
-    .type("application/json")
-    .json({ jsonrpc: "2.0", id: id ?? null, error: { code, message, ...(data ? { data } : {}) } });
-}
-
-function resourceMeta(req: Request) {
-  return {
-    ui: {
-      prefersBorder: true,
-      domain: issuer(req),
-      csp: { connectDomains: ["https://api.openai.com"], resourceDomains: [] },
-    },
-    "openai/widgetDescription":
-      "Shows a Wireline AI phone-agent preview with an optional live voice demo and a secure save-to-Wireline action.",
-  };
-}
-
-function guestDemoToolsEnabled(): boolean {
-  return process.env.CHATGPT_MCP_GUEST_DEMO === "true";
-}
-
-const GUEST_DEMO_TOOL_NAMES = new Set([
-  "start_agent_demo",
-  "create_demo_voice_session",
-  "save_demo_to_wireline",
-]);
-
-function toolDefinitions() {
-  const widgetMeta = {
-    ui: { resourceUri: CHATGPT_MCP_RESOURCE_URI },
-    "openai/outputTemplate": CHATGPT_MCP_RESOURCE_URI,
-    "openai/widgetAccessible": true,
-  };
-  return [
-    {
-      name: "start_agent_demo",
-      title: "Build a Wireline agent preview",
-      description:
-        "Creates a temporary AI phone-agent preview from a business goal. No Wireline account is required.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          business_name: { type: "string" },
-          agent_name: { type: "string" },
-          role: {
-            type: "string",
-            enum: ["receptionist", "scheduler", "sales", "customer_service"],
-          },
-          primary_goal: { type: "string" },
-          tone: { type: "string" },
-        },
-        required: ["business_name", "primary_goal"],
-        additionalProperties: false,
-      },
-      annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
-      securitySchemes: [{ type: "noauth" }],
-      _meta: widgetMeta,
-    },
-    {
-      name: "create_demo_voice_session",
-      title: "Start a private live voice preview",
-      description:
-        "Creates a short, tool-free realtime voice session for the active Wireline agent preview. It cannot place calls or access business data.",
-      inputSchema: {
-        type: "object",
-        properties: { demo_token: { type: "string" } },
-        required: ["demo_token"],
-        additionalProperties: false,
-      },
-      annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
-      securitySchemes: [{ type: "noauth" }],
-      _meta: { ...widgetMeta, ui: { resourceUri: CHATGPT_MCP_RESOURCE_URI, visibility: ["app"] } },
-    },
-    {
-      name: "save_demo_to_wireline",
-      title: "Save the demo agent to Wireline",
-      description:
-        "Creates a durable, unlaunched Wireline agent draft. Requires a connected account and explicit confirmation. It does not attach a number or make calls.",
-      inputSchema: {
-        type: "object",
-        properties: { demo_token: { type: "string" }, confirmed: { type: "boolean" } },
-        required: ["demo_token", "confirmed"],
-        additionalProperties: false,
-      },
-      annotations: { readOnlyHint: false, openWorldHint: false, destructiveHint: false },
-      securitySchemes: [{ type: "oauth2", scopes: ["agents.write"] }],
-      _meta: widgetMeta,
-    },
-    {
-      name: "list_wireline_agents",
-      title: "List Wireline agents",
-      description: "Shows the connected user's existing Wireline agents.",
-      inputSchema: { type: "object", properties: {}, additionalProperties: false },
-      annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
-      securitySchemes: [{ type: "oauth2", scopes: ["agents.read"] }],
-      _meta: widgetMeta,
-    },
-  ].filter((tool) => guestDemoToolsEnabled() || !GUEST_DEMO_TOOL_NAMES.has(tool.name));
-}
-
-async function saveDemo(principal: McpPrincipal, demoToken: unknown) {
-  const spec = decodeDemoToken(demoToken);
-  return tenantStore.run(principal.userId, async () => {
-    const [{ count }] = await drizzle
-      .select({ count: sql`count(*)` })
-      .from(schema.agents)
-      .where(eq(schema.agents.userId, principal.userId));
-    const existing = Number(count || 0);
-    const [setting] = await drizzle
-      .select({
-        planId: schema.subscriptions.plan,
-        subscriptionStatus: schema.settings.subscriptionStatus,
-        maxAgents: schema.settings.maxAgents,
-        extraAgents: schema.settings.extraAgents,
-      })
-      .from(schema.settings)
-      .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
-      .where(eq(schema.settings.userId, principal.userId))
-      .limit(1);
-    const entitlement = resolveAgentEntitlement({
-      isOwner: isOwnerEmail(principal.email),
-      subscriptionStatus: setting?.subscriptionStatus,
-      planId: setting?.planId,
-      maxAgents: setting?.maxAgents,
-      extraAgents: setting?.extraAgents,
-    });
-    if (entitlement.effectiveCap !== null && existing >= entitlement.effectiveCap)
-      throw AppError.fromHttpStatus(
-        402,
-        `Agent capacity limit reached. Your plan allows up to ${entitlement.effectiveCap} agents.`,
-      );
-    const id = `agent-${randomBytes(16).toString("hex")}`;
-    await drizzle.insert(schema.agents).values({
-      id,
-      userId: principal.userId,
-      name: spec.agentName,
-      role: spec.role,
-      channel: "voice",
-      archetype: resolveAgentRoleArchetype(spec.role),
-      voiceId: pickRotatedVoiceId(existing),
-      voiceProvider: "openai",
-      enabledTools: getDefaultAgentTools(),
-      firstMessage: `Hi, this is ${spec.agentName}. How can I help?`,
-      isBusinessAgent: spec.businessName !== "Your business",
-      businessVariables: {
-        businessName: spec.businessName,
-        primaryGoal: spec.primaryGoal,
-        previewTone: spec.tone,
-        source: principal.draftSource,
-      },
-      systemPromptOverride: buildDemoRealtimeInstructions(spec),
-    });
-    return { id, spec };
-  });
-}
 
 router.get(
   [
@@ -828,200 +577,6 @@ router.post("/mcp/oauth/token", express.urlencoded({ extended: false }), async (
   }
 });
 
-router.post("/mcp", async (req, res) => {
-  const body =
-    req.body && typeof req.body === "object" ? (req.body as Record<string, unknown>) : null;
-  const id = body?.id ?? null;
-  const method = text(body?.method, 128);
-  const params =
-    body?.params && typeof body.params === "object" ? (body.params as Record<string, unknown>) : {};
-  const principal = await mcpPrincipal(req).catch(() => null);
-  const negotiatedVersion = applyMcpTransportHeaders(req, res, method, params);
-  try {
-    if (method === "initialize")
-      return jsonRpc(res, id, {
-        protocolVersion: negotiatedVersion,
-        capabilities: {
-          tools: { listChanged: false },
-          resources: { subscribe: false, listChanged: false },
-        },
-        serverInfo: { name: "wireline-chatgpt", version: "1.1.0" },
-        instructions:
-          "Use Wireline to create a private voice-agent preview first. Guests can explore and try live voice from the preview card. Require a connected Wireline account plus explicit confirmation before saving an agent draft. Never claim an agent is live, has a number, or can place calls unless Wireline confirms it.",
-      });
-    if (method === "ping") return jsonRpc(res, id, {});
-    if (isMcpNotificationMethod(method)) return res.status(202).end();
-    if (method === "tools/list") return jsonRpc(res, id, { tools: toolDefinitions() });
-    if (method === "resources/list")
-      return jsonRpc(res, id, {
-        resources: [
-          {
-            uri: CHATGPT_MCP_RESOURCE_URI,
-            name: "Wireline agent launch board",
-            mimeType: "text/html;profile=mcp-app",
-            description:
-              "Compact Wireline agent preview, guest voice demo, and conversion controls.",
-          },
-        ],
-      });
-    if (method === "resources/read") {
-      if (text(params.uri, 2048) !== CHATGPT_MCP_RESOURCE_URI)
-        return jsonRpcError(res, id, -32002, "Resource not found.");
-      return jsonRpc(res, id, {
-        contents: [
-          {
-            uri: CHATGPT_MCP_RESOURCE_URI,
-            mimeType: "text/html;profile=mcp-app",
-            text: buildChatGptWidgetHtml(),
-            _meta: resourceMeta(req),
-          },
-        ],
-      });
-    }
-    if (method !== "tools/call") return jsonRpcError(res, id, -32601, "Method not found.");
-    const name = text(params.name, 128);
-    const args =
-      params.arguments && typeof params.arguments === "object"
-        ? (params.arguments as Record<string, unknown>)
-        : {};
-    if (!guestDemoToolsEnabled() && GUEST_DEMO_TOOL_NAMES.has(name)) {
-      return jsonRpcError(
-        res,
-        id,
-        -32601,
-        "Guest demo tools are disabled. Connect your Wireline account to use account-bound tools.",
-      );
-    }
-    if (name === "start_agent_demo") {
-      const spec = createDemoSpec(args);
-      const demoToken = encodeDemoToken(spec);
-      return jsonRpc(res, id, {
-        content: [
-          {
-            type: "text",
-            text: `Wireline prepared ${spec.agentName}, a private preview for ${spec.businessName}.`,
-          },
-        ],
-        structuredContent: {
-          agent_name: spec.agentName,
-          business_name: spec.businessName,
-          role: spec.role,
-          primary_goal: spec.primaryGoal,
-          tone: spec.tone,
-          demo_token: demoToken,
-          next_step:
-            "Try live voice from the Wireline card, then save the agent when you want to keep it.",
-        },
-        _meta: { demo_token: demoToken },
-      });
-    }
-    if (name === "create_demo_voice_session") {
-      const spec = decodeDemoToken(args.demo_token);
-      const limit = await rateLimit(`chatgpt-demo:${req.ip || "anon"}`, {
-        bucket: "chatgpt-demo-voice",
-        windowMs: 60 * 60 * 1000,
-        max: 3,
-        failClosedOnError: true,
-      });
-      if (!limit.allowed)
-        throw AppError.tooManyRequests(
-          "The free live voice preview limit has been reached. Save the agent to Wireline to continue testing.",
-        );
-      const session = await createOpenAIRealtimeClientSecret({
-        userId: `guest:${createHash("sha256")
-          .update(String(req.ip || "anon"))
-          .digest("hex")
-          .slice(0, 32)}`,
-        agentName: spec.agentName,
-        instructions: buildDemoRealtimeInstructions(spec),
-        tools: [],
-        toolChoice: "none",
-        apiKeyPurpose: "chatgpt_demo",
-      });
-      return jsonRpc(res, id, {
-        content: [{ type: "text", text: "Private live voice preview ready." }],
-        structuredContent: { status: "ready" },
-        _meta: { realtime_session: session },
-      });
-    }
-    if (name === "save_demo_to_wireline") {
-      if (args.confirmed !== true)
-        throw AppError.fromHttpStatus(
-          400,
-          "Confirm that you want to save this Wireline agent draft before continuing.",
-        );
-      const authed = requireScope(principal, "agents.write");
-      await assertMcpDraftWriteRateLimit(authed.userId);
-      const saved = await saveDemo(authed, args.demo_token);
-      return jsonRpc(res, id, {
-        content: [
-          {
-            type: "text",
-            text: `${saved.spec.agentName} is saved as an unlaunched Wireline draft.`,
-          },
-        ],
-        structuredContent: {
-          agent_id: saved.id,
-          agent_name: saved.spec.agentName,
-          status: "draft",
-          next_step:
-            "Open Wireline to connect a verified test number, configure knowledge and escalation, then explicitly launch.",
-        },
-        _meta: {},
-      });
-    }
-    if (name === "list_wireline_agents") {
-      const authed = requireScope(principal, "agents.read");
-      const agents = await tenantStore.run(authed.userId, () =>
-        import("../lib/agents-store").then(({ listAgentsForUser }) =>
-          listAgentsForUser(authed.userId),
-        ),
-      );
-      const summary = agents.slice(0, 20).map((agent) => ({
-        id: agent.id,
-        name: agent.name,
-        role: agent.role || "assistant",
-        channel: agent.channel || "voice",
-      }));
-      return jsonRpc(res, id, {
-        content: [
-          {
-            type: "text",
-            text: summary.length
-              ? `Found ${summary.length} Wireline agent${summary.length === 1 ? "" : "s"}.`
-              : "No Wireline agents yet.",
-          },
-        ],
-        structuredContent: { agents: summary },
-        _meta: { agents },
-      });
-    }
-    return jsonRpcError(res, id, -32601, "Tool not found.");
-  } catch (error) {
-    if (error instanceof McpAuthorizationError) {
-      const challenge = `Bearer resource_metadata="${issuer(req)}/.well-known/oauth-protected-resource", error="insufficient_scope", scope="${error.requiredScope || "agents.read"}"`;
-      res.setHeader("WWW-Authenticate", challenge);
-      return jsonRpcError(res, id, -32001, "Connect a Wireline account to continue.", 401, {
-        required_scope: error.requiredScope,
-        _meta: { "mcp/www_authenticate": [challenge] },
-      });
-    }
-    const appError = error instanceof AppError ? error : null;
-    if (appError) {
-      // Tool-execution failures surface as isError results so the model can
-      // read the message and correct course; protocol failures stay errors.
-      if (method === "tools/call") return jsonRpc(res, id, mcpToolErrorResult(appError.message));
-      return jsonRpcError(res, id, -32000, appError.message, appError.statusCode || 400);
-    }
-    log.error("ChatGPT MCP request failed", {
-      method,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return jsonRpcError(res, id, -32603, "Wireline could not complete that request.", 500);
-  }
-});
-
-// Streamable HTTP allows servers to decline the optional SSE listener and
 // session-termination requests with 405 rather than an opaque 404.
 router.get("/mcp", (_req, res) => {
   res.setHeader("Allow", "POST");
