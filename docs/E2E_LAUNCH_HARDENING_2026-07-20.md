@@ -69,3 +69,17 @@ npx vitest run tests/activation-bootstrap-contract.test.ts \
   tests/vendor-readiness-contract.test.ts
 VERCEL_TOKEN=… node scripts/run-stripe-audit-from-vercel.mjs
 ```
+
+## Visual QA (production, same evening)
+
+`scripts/capture-prod-visual-qa.mjs` against `https://trywireline.com`:
+
+| Sweep | Result |
+| --- | --- |
+| Desktop + phone marketing + authenticated | **252 PNGs, 0 automated issues** |
+| Signup → workspace | Succeeded (`visual.qa.*@mailinator.com`) |
+| Dogfood auth probe (`e2e-gold`) | Overview / Studio (Jordan) / Phone / Insights / Billing / Compliance / Carrier / Connections — all 200, no auth bounce |
+
+Manual review of key frames: home/pricing/showcase heroes, Free Builder billing honesty, Salesforce call-sync **OFF** while disconnected, Showcase **"No signup to listen"**, mobile Studio empty-state + bottom nav, dogfood Studio setup for Jordan — all Letterpress-consistent, no launch-facing copy or toggle lies found.
+
+Artifacts: `/opt/cursor/artifacts/visual-qa-prod/2026-07-20T17-52-36-174Z/` and `/opt/cursor/artifacts/visual-qa-dogfood/`.
