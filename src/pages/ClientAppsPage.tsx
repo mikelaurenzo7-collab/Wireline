@@ -7,6 +7,7 @@ import {
   TabletSmartphone,
   Terminal,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { Badge, Button } from "../components/atoms";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
@@ -44,7 +45,7 @@ const clientSurfaces = [
     status: CLIENT_SURFACE_POSTURE.chatgpt.status,
     statusVariant: "info" as const,
     action: CLIENT_SURFACE_POSTURE.chatgpt.action,
-    href: "https://trywireline.com/mcp",
+    href: "/developers",
   },
   {
     icon: Sparkles,
@@ -97,14 +98,20 @@ export default function ClientAppsPage() {
                   variant="link"
                   className="mt-auto w-fit px-0 pt-4 text-sm text-primary"
                 >
-                  <a
-                    href={href}
-                    {...(external && href.startsWith("https://")
-                      ? { target: "_blank", rel: "noreferrer" }
-                      : {})}
-                  >
-                    {action} <ArrowUpRight size={14} />
-                  </a>
+                  {external ? (
+                    <a
+                      href={href}
+                      {...(href.startsWith("https://")
+                        ? { target: "_blank", rel: "noreferrer" }
+                        : {})}
+                    >
+                      {action} <ArrowUpRight size={14} />
+                    </a>
+                  ) : (
+                    <Link to={href}>
+                      {action} <ArrowUpRight size={14} />
+                    </Link>
+                  )}
                 </Button>
               </article>
             );

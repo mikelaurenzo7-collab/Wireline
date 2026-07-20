@@ -50,6 +50,9 @@ describe("current-state UI contract", () => {
     expect(apps).toContain("CLIENT_SURFACE_POSTURE");
     expect(apps).toContain('title: "Cursor"');
     expect(apps).toContain('href: "/settings/apps/command"');
+    expect(apps).toContain('href: "/developers"');
+    expect(apps).not.toContain("https://trywireline.com/mcp");
+    expect(apps).toContain("from \"react-router-dom\"");
     expect(apps).not.toContain("mailto:support@trywireline.com?subject=Wireline%20Command%20install%20guide");
     expect(apps).not.toContain('status: "Live"');
     expect(apps).not.toContain('action: "TestFlight"');
@@ -85,6 +88,9 @@ describe("current-state UI contract", () => {
     expect(install).toContain("/downloads/wireline-command-chromium.zip");
     expect(install).toContain("/downloads/wireline-command-firefox.zip");
     expect(install).toContain("Load unpacked");
+    expect(install).toContain("manifest.json in the unzipped folder");
+    expect(install).not.toContain("firefox/manifest.json");
+    expect(install).not.toContain("unzipped chromium folder");
   });
 
   it("keeps public conversion routes on the selected launch plan", () => {

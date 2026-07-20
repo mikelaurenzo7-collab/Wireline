@@ -14,7 +14,7 @@ const DOWNLOADS = [
     steps: [
       "Unzip the package on your computer.",
       "Open chrome://extensions (or edge://extensions) and enable Developer mode.",
-      "Click Load unpacked and select the unzipped chromium folder.",
+      "Click Load unpacked and select the unzipped folder (the one that contains manifest.json).",
       "Pin Wireline Command, then use the toolbar action, side panel, or Ctrl/Cmd+Shift+Y on any page.",
     ],
   },
@@ -25,7 +25,7 @@ const DOWNLOADS = [
     steps: [
       "Unzip the package on your computer.",
       "Open about:debugging#/runtime/this-firefox.",
-      "Click Load Temporary Add-on… and select the unzipped firefox/manifest.json.",
+      "Click Load Temporary Add-on… and select manifest.json in the unzipped folder.",
       "Note: temporary add-ons are removed when Firefox restarts — use Chromium for day-to-day dogfood.",
     ],
   },
