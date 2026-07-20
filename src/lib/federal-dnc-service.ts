@@ -13,7 +13,17 @@ export type FederalDncLookupResult = {
 export function isFederalDncVendorConfigured(): boolean {
   const apiKey = process.env.FEDERAL_DNC_API_KEY?.trim();
   const apiUrl = process.env.FEDERAL_DNC_API_URL?.trim();
-  return Boolean(apiKey && apiUrl);
+  if (!apiKey || !apiUrl) return false;
+  // Vercel personal/access tokens have been pasted as DNC keys by mistake.
+  // They authenticate nothing at DNCScrub and make readiness probes lie.
+  if (/^vcp_/i.test(apiKey) || /^vercel_/i.test(apiKey)) return false;
+  try {
+    const parsed = new URL(apiUrl);
+    if (parsed.protocol !== "https:") return false;
+  } catch {
+    return false;
+  }
+  return true;
 }
 
 function isDncScrubProvider(apiUrl: string): boolean {

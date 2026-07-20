@@ -73,7 +73,7 @@ Amounts are **recommended working capital to start**, not vendor list prices. Re
 | **Supabase** | Postgres + RLS | `POSTGRES_URL`, pool URL | Pro ~$25 card on file | No blind `db:push` on shared DB |
 | **Vercel** | Hosting | project env | Pro ~$20 | Watch function/bandwidth |
 | **Federal DNC** | Marketing scrub | `FEDERAL_DNC_API_URL`, `FEDERAL_DNC_API_KEY` | Credits for **2× first campaign list** | No marketing dial without scrub |
-| **ElevenLabs** | Optional clone/showcase TTS only | `ELEVENLABS_API_KEY` | **$0** extra — use Creator credits | Never core PSTN |
+| **LiveAvatar / HeyGen** | Optional photoreal video presenter add-on | `LIVEAVATAR_API_KEY`, `HEYGEN_API_KEY` | Only if selling Live Video add-on | Never core PSTN; ElevenLabs removed |
 | **LiveAvatar / HeyGen** | Video add-on $19/mo | `LIVEAVATAR_*`, `HEYGEN_*`, `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID` | **$0** until add-on sold | Cap sessions |
 | **Apollo** | Lead enrichment | `APOLLO_API_KEY` | **$0** until Lead Hunt monetized | Credit cap |
 | **Sentry** | Errors | DSN optional | Free tier OK | Event quota |

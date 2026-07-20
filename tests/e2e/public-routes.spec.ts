@@ -23,6 +23,7 @@ const PUBLIC_ROUTES = [
   "/contact",
   "/privacy",
   "/terms",
+  "/developers",
   "/signin",
   "/signup",
   "/reset-password?token=e2e-smoke",

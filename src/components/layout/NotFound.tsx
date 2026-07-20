@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
-import { Bot, ChevronRight, Compass, Home, LayoutGrid, MessageSquare, Phone } from "lucide-react";
+import { ChevronRight, Compass, Home, LayoutGrid, MessageSquare, Phone } from "lucide-react";
 import { BRAND } from "../../constants/brand-colors";
 
 /**
@@ -128,10 +128,10 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               accent={BRAND.colors.primary}
             />
             <NotFoundCard
-              to="/agents"
-              icon={Bot}
-              label="AI Employees"
-              hint="Manage roster"
+              to="/phone"
+              icon={Phone}
+              label="Phone"
+              hint="Calls, campaigns, logs"
               accent={BRAND.colors.primary}
             />
             <NotFoundCard

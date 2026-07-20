@@ -76,6 +76,18 @@ describe("federal-dnc-service", () => {
     expect(clear.listed).toBe(false);
   });
 
+  it("treats misplaced Vercel tokens as unconfigured", () => {
+    process.env.FEDERAL_DNC_API_URL = "https://www.dncscrub.com/app/main/rpc/scrub";
+    process.env.FEDERAL_DNC_API_KEY = "vcp_notARealDncKey";
+    expect(isFederalDncVendorConfigured()).toBe(false);
+  });
+
+  it("requires https vendor URL", () => {
+    process.env.FEDERAL_DNC_API_URL = "http://www.dncscrub.com/app/main/rpc/scrub";
+    process.env.FEDERAL_DNC_API_KEY = "scrub-login-id";
+    expect(isFederalDncVendorConfigured()).toBe(false);
+  });
+
   it("blocks marketing outbound when vendor is not configured in production", () => {
     process.env.NODE_ENV = "production";
     const gate = assertFederalDncForMarketing();
