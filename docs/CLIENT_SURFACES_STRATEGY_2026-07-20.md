@@ -43,7 +43,7 @@ Ownership contract: `docs/CLIENT_SURFACES.md`.
 - Fail closed on missing `capturedAt` so forged fragments cannot skip the TTL.
 - Runtime handoff schema grants `wireline_server` so fresh envs don't silently break redeem.
 
-**Do not invest in Chrome/Firefox store GA** until `/settings/apps` has a real sideload/install path and the waitlist mailto is replaced. Until then: Early access + install guide.
+**Store GA stays deferred.** In-product install is live at `/settings/apps/command` (Chromium + Firefox zips under `/downloads/`). Keep store listings off until that path is the default dogfood route.
 
 ---
 
@@ -65,13 +65,13 @@ Ownership contract: `docs/CLIENT_SURFACES.md`.
 | --- | --- | --- | --- |
 | ChatGPT | No (uses MCP) | Yes — primary | Yes — `/developers`, `/settings/apps` |
 | Claude | No | Yes — Anthropic redirect DCR | Yes — connectors link |
-| Cursor | **No** | Yes — Cursor redirect allowlist in `mcp-client-registry.ts` | Added on `/developers` this pass; not a first-class Apps tile yet |
+| Cursor | **No** | Yes — Cursor redirect allowlist in `mcp-client-registry.ts` | Yes — `/settings/apps` + `/developers`; `draftSource: cursor_mcp` |
 
 **Live MCP tools (account-bound):** draft create/get/update, list agents, workspace summary, private voice simulation.
 
 **Hard non-goals (enforced):** no number provision, dial, SMS, launch, billing mutations.
 
-Guest demo tools behind `CHATGPT_MCP_GUEST_DEMO` are **shadowed** by the account router on `POST /mcp` — treat as dead/legacy, not a launch path.
+Guest demo tools (`CHATGPT_MCP_GUEST_DEMO`) are **removed** from the OAuth/MCP router — account-bound `POST /mcp` is the only tool transport. Do not reintroduce guest tools.
 
 There is **no** Claude Desktop extension, **no** Cursor `.cursor-plugin`, and **no** `plugins/` tree in this monorepo. Those would be separate products; the correct Wireline shape is one remote MCP server.
 
@@ -93,10 +93,10 @@ Do **not** sell iOS as live while `CLIENT_SURFACE_POSTURE.ios = Planned`. Align 
 
 ## Investment order (next)
 
-1. **Web honesty** — done for Developers + extension copy; keep matrix/docs in sync with `CLIENT_SURFACE_POSTURE`.
-2. **MCP polish** — delete or quarantine shadowed guest tools; optional Apps tile for Cursor.
-3. **Extension** — real install instructions in-product; then store packaging.
-4. **Android internal beta → dogfood** — only after dial/consent/push smoke on device.
-5. **iOS** — after signing + CallKit acceptance; CarPlay stays Phase 2.
+1. **Web honesty** — `/developers` MCP-first; companion posture synced.
+2. **MCP polish** — guest tool transport removed; Cursor Apps tile + draftSource attribution.
+3. **Extension** — in-product install at `/settings/apps/command` with Chromium/Firefox zips under `/downloads/`.
+4. **Android internal beta → dogfood** — consent artifact on native dial; checklist updated.
+5. **iOS** — Planned honesty in README; CarPlay stays Phase 2.
 
-Kill candidates (not recommended yet): none. Shrink candidates: extension agency claims (done), Developers API-key fiction (done), guest MCP demos (next).
+Kill candidates (not recommended yet): none. Shrink candidates: extension agency claims (done), Developers API-key fiction (done), guest MCP demos (done).

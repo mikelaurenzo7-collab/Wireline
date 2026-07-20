@@ -122,6 +122,9 @@ class WirelineApi(context: Context) {
             .put("customerNumber", customerNumber)
             .put("callPurpose", callPurpose)
             .put("hasExpressWrittenConsent", hasExpressWrittenConsent)
+        if (hasExpressWrittenConsent) {
+            body.put("consentSource", "manual_attestation")
+        }
         if (!context.isNullOrBlank()) body.put("context", context)
         val response: OutboundCallResponse = post("/api/mobile/calls/outbound", body)
         return response.callId

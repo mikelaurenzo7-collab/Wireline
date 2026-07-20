@@ -1,10 +1,12 @@
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
 import { Resvg } from "@resvg/resvg-js";
 
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const extensionRoot = resolve(currentDirectory, "..");
+const repoRoot = resolve(extensionRoot, "../..");
 const isCheck = process.argv.includes("--check");
 
 function mergeManifest(base, overlay) {
@@ -16,7 +18,9 @@ function mergeManifest(base, overlay) {
     }
     if (value && typeof value === "object" && !Array.isArray(value)) {
       output[key] = mergeManifest(
-        output[key] && typeof output[key] === "object" && !Array.isArray(output[key]) ? output[key] : {},
+        output[key] && typeof output[key] === "object" && !Array.isArray(output[key])
+          ? output[key]
+          : {},
         value,
       );
       continue;
@@ -41,6 +45,9 @@ function assertExtensionPolicy(manifest, target) {
   if (hostPermissions.length) {
     throw new Error(`${target}: no persistent host permissions are permitted in the command baseline.`);
   }
+  if (permissions.has("tabs")) {
+    throw new Error(`${target}: tabs permission is prohibited — use activeTab only.`);
+  }
   if (!permissions.has("activeTab") || !permissions.has("scripting")) {
     throw new Error(`${target}: explicit active-tab capture permissions are required.`);
   }
@@ -62,6 +69,25 @@ async function renderIcons(outputDirectory) {
   }
 }
 
+function zipTarget(target, outputDirectory) {
+  const zipName = `wireline-command-${target}.zip`;
+  const zipPath = resolve(extensionRoot, "dist", zipName);
+  const result = spawnSync("zip", ["-r", "-q", zipPath, "."], {
+    cwd: outputDirectory,
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(`${target}: zip failed — ${result.stderr || result.stdout || "unknown error"}`);
+  }
+  return zipPath;
+}
+
+async function publishDownload(zipPath, target) {
+  const downloadsDir = resolve(repoRoot, "public/downloads");
+  await mkdir(downloadsDir, { recursive: true });
+  await cp(zipPath, resolve(downloadsDir, `wireline-command-${target}.zip`));
+}
+
 async function buildTarget(target) {
   const base = await readJson("manifest.base.json");
   const overlay = await readJson(`manifest.${target}.json`);
@@ -73,12 +99,20 @@ async function buildTarget(target) {
   await rm(outputDirectory, { recursive: true, force: true });
   await mkdir(outputDirectory, { recursive: true });
   await Promise.all([
-    cp(resolve(extensionRoot, "background"), resolve(outputDirectory, "background"), { recursive: true }),
+    cp(resolve(extensionRoot, "background"), resolve(outputDirectory, "background"), {
+      recursive: true,
+    }),
     cp(resolve(extensionRoot, "panel"), resolve(outputDirectory, "panel"), { recursive: true }),
     renderIcons(outputDirectory),
   ]);
   await writeFile(resolve(outputDirectory, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  const zipPath = zipTarget(target, outputDirectory);
+  await publishDownload(zipPath, target);
 }
 
 await Promise.all([buildTarget("chromium"), buildTarget("firefox")]);
-console.log(isCheck ? "Wireline browser-extension policy checks passed." : "Wireline browser-extension builds created.");
+console.log(
+  isCheck
+    ? "Wireline browser-extension policy checks passed."
+    : "Wireline browser-extension builds + public/downloads zips created.",
+);

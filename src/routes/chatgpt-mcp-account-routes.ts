@@ -88,14 +88,29 @@ async function principalFromRequest(req: Request): Promise<McpPrincipal | null> 
   if (!record || new Date(record.expires_at).getTime() <= Date.now()) return null;
   if (!isMcpResourceBound(record.resource, req)) return null;
   const scopes = parseScopes(record.scope);
-  return scopes.length
-    ? {
-        userId: record.user_id,
-        email: record.email,
-        scopes,
-        draftSource: mcpDraftSourceForClient(record.client_id || ""),
-      }
-    : null;
+  if (!scopes.length) return null;
+
+  let redirectUris: string[] = [];
+  const clientId = record.client_id || "";
+  if (clientId) {
+    const clients = (await drizzle.execute(sql`
+      SELECT redirect_uris
+      FROM wireline_mcp_oauth_clients
+      WHERE client_id = ${clientId}
+      LIMIT 1
+    `)) as unknown as { rows?: Array<{ redirect_uris: unknown }> };
+    const rawUris = clients.rows?.[0]?.redirect_uris;
+    redirectUris = Array.isArray(rawUris)
+      ? rawUris.filter((value): value is string => typeof value === "string")
+      : [];
+  }
+
+  return {
+    userId: record.user_id,
+    email: record.email,
+    scopes,
+    draftSource: mcpDraftSourceForClient(clientId, redirectUris),
+  };
 }
 
 function requireScope(principal: McpPrincipal | null, scope: McpScope): McpPrincipal {

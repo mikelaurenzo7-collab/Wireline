@@ -139,7 +139,7 @@ export const MARKETING_VOICE = {
 
 export const CLIENT_SURFACE_POSTURE = {
   summary:
-    "Web is the canonical runtime. Browser Command and ChatGPT are early-access companions. Android remains in internal beta; iPhone follows device QA and signing.",
+    "Web is the canonical runtime. Browser Command, ChatGPT, Claude, and Cursor are early-access companions on the same account-bound MCP/handoff model. Android remains in internal beta; iPhone follows device QA and signing.",
   browser: {
     status: "Early access",
     action: "Install guide",
@@ -147,6 +147,14 @@ export const CLIENT_SURFACE_POSTURE = {
   chatgpt: {
     status: "Early access",
     action: "Open MCP",
+  },
+  claude: {
+    status: "Early access",
+    action: "Add connector",
+  },
+  cursor: {
+    status: "Early access",
+    action: "Add in Cursor",
   },
   android: {
     status: "Internal beta",

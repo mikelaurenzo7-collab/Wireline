@@ -61,10 +61,22 @@ apps/browser-extension/dist/firefox/
 
 The build generates the browser-required PNG icon sizes from `assets/icon.svg` and merges the shared manifest with the target overlay.
 
+## In-product install (preferred)
+
+Signed-in customers install from **Apps → Wireline Command** (`/settings/apps/command`).
+That page serves the same zips the build copies into `public/downloads/`:
+
+```text
+/downloads/wireline-command-chromium.zip
+/downloads/wireline-command-firefox.zip
+```
+
+Rebuild with `node apps/browser-extension/scripts/build.mjs` whenever shipping a new package so `public/downloads/` stays in sync.
+
 ## Local validation
 
 1. Run the build command above.
-2. Load `dist/chromium` as an unpacked extension in Chrome, Edge, or Opera.
+2. Prefer the in-product download page, or load `dist/chromium` as an unpacked extension in Chrome, Edge, or Opera.
 3. Load `dist/firefox` as a temporary add-on in Firefox.
 4. Test the toolbar action, selected-text context menu, page context menu, `tel:` link context menu, and `Ctrl/Command+Shift+Y` shortcut.
 5. Confirm quick commands exist for Call, Text, Follow-up, and Agent task.
@@ -75,7 +87,7 @@ The build generates the browser-required PNG icon sizes from `assets/icon.svg` a
 
 Before any store upload:
 
-- Replace preview status in `/settings/apps` only after the matching store listing is live.
+- Keep `/settings/apps/command` as the primary install path; only change posture copy after the matching store listing is live.
 - Create browser-specific store screenshots from real extension UI.
 - Supply the exact privacy disclosure: active-tab data is read only after an explicit user action and is not retained by the extension.
 - Complete Chrome, Edge, Firefox, and Opera store metadata separately; package artifacts are shared where browser policy permits, but store review and listing requirements do not replace each other.

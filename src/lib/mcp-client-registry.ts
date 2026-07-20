@@ -136,11 +136,14 @@ export function clientDisplayName(redirectUri: string): string {
 
 export function mcpDraftSourceForClient(
   clientId: string,
-  redirectUri?: string,
+  redirectUriOrUris?: string | string[],
 ): "chatgpt_mcp" | "claude_mcp" | "cursor_mcp" {
-  if (redirectUri && isCursorRedirectUri(redirectUri)) return "cursor_mcp";
-  if (isDynamicClientId(clientId)) {
-    return redirectUri && isCursorRedirectUri(redirectUri) ? "cursor_mcp" : "claude_mcp";
-  }
+  const redirectUris = Array.isArray(redirectUriOrUris)
+    ? redirectUriOrUris
+    : redirectUriOrUris
+      ? [redirectUriOrUris]
+      : [];
+  if (redirectUris.some((uri) => isCursorRedirectUri(uri))) return "cursor_mcp";
+  if (isDynamicClientId(clientId)) return "claude_mcp";
   return "chatgpt_mcp";
 }

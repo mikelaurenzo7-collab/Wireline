@@ -98,18 +98,20 @@ describe("mcp transport contract", () => {
     });
   });
 
-  it("keeps both MCP routers on the shared transport hardening", () => {
-    for (const path of [
-      "src/routes/chatgpt-mcp-routes.ts",
-      "src/routes/chatgpt-mcp-account-routes.ts",
-    ]) {
-      const source = read(path);
-      expect(source, path).toContain("applyMcpTransportHeaders");
-      expect(source, path).toContain('method === "ping"');
-      expect(source, path).toContain("isMcpNotificationMethod");
-      expect(source, path).toContain("mcpToolErrorResult");
-    }
+  it("keeps account MCP on shared transport hardening; OAuth router stays OAuth-only", () => {
+    const account = read("src/routes/chatgpt-mcp-account-routes.ts");
+    expect(account).toContain("applyMcpTransportHeaders");
+    expect(account).toContain('method === "ping"');
+    expect(account).toContain("isMcpNotificationMethod");
+    expect(account).toContain("mcpToolErrorResult");
+
     const oauthRoutes = read("src/routes/chatgpt-mcp-routes.ts");
     expect(oauthRoutes).toContain("pruneExpiredMcpOAuthRows");
+    expect(oauthRoutes).toContain('router.post("/mcp/oauth/token"');
+    // Guest tool transport was removed — account router owns POST /mcp.
+    expect(oauthRoutes).not.toContain("start_agent_demo");
+    expect(oauthRoutes).not.toContain("GUEST_DEMO");
+    expect(oauthRoutes).not.toContain("guestDemoToolsEnabled");
+    expect(oauthRoutes).not.toMatch(/router\.post\(\s*"\/mcp"/);
   });
 });
