@@ -179,6 +179,43 @@ function assertNotAborted(signal?: AbortSignal) {
   throw error;
 }
 
+// Wall-clock ceiling on any single provider attempt. Structured responses
+// (small JSON) rarely need more than 30s; 60s leaves headroom for the largest
+// documented tool-call chains while still bounding fallback advancement so a
+// stalled provider cannot hold a request thread open indefinitely.
+const RUNTIME_REQUEST_TIMEOUT_MS = 60_000;
+
+// Compose the caller-supplied signal with our per-attempt timeout so both
+// paths abort the underlying fetch/SDK call. Returns the merged signal plus a
+// `dispose()` to clear the timer once the attempt settles.
+function withRequestTimeout(callerSignal?: AbortSignal): {
+  signal: AbortSignal;
+  dispose: () => void;
+  timedOut: () => boolean;
+} {
+  const controller = new AbortController();
+  let timedOutFlag = false;
+  const timer = setTimeout(() => {
+    timedOutFlag = true;
+    controller.abort(new Error(`AI provider timed out after ${RUNTIME_REQUEST_TIMEOUT_MS}ms`));
+  }, RUNTIME_REQUEST_TIMEOUT_MS);
+  const onCallerAbort = () => {
+    controller.abort(callerSignal?.reason);
+  };
+  if (callerSignal) {
+    if (callerSignal.aborted) onCallerAbort();
+    else callerSignal.addEventListener("abort", onCallerAbort, { once: true });
+  }
+  return {
+    signal: controller.signal,
+    timedOut: () => timedOutFlag,
+    dispose: () => {
+      clearTimeout(timer);
+      callerSignal?.removeEventListener("abort", onCallerAbort);
+    },
+  };
+}
+
 async function callResponsesEndpoint(args: {
   endpoint: string;
   headers: Record<string, string>;
@@ -190,32 +227,46 @@ async function callResponsesEndpoint(args: {
   assertNotAborted(args.options?.signal);
   const tool = structuredOutputTool(args.body);
   const started = Date.now();
-  const response = await fetch(args.endpoint, {
-    method: "POST",
-    headers: args.headers,
-    signal: args.options?.signal,
-    body: JSON.stringify({
-      model: args.model,
-      instructions: extractText(args.body.system) || undefined,
-      input: args.body.messages.map((item) => ({
-        role: item.role === "assistant" ? "assistant" : "user",
-        content: extractText(item.content),
-      })),
-      max_output_tokens: args.body.max_tokens ?? 4096,
-      ...(tool
-        ? {
-            text: {
-              format: {
-                type: "json_schema",
-                name: tool.name.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 64),
-                schema: tool.input_schema,
-                strict: false,
+  const timer = withRequestTimeout(args.options?.signal);
+  let response: Response;
+  try {
+    response = await fetch(args.endpoint, {
+      method: "POST",
+      headers: args.headers,
+      signal: timer.signal,
+      body: JSON.stringify({
+        model: args.model,
+        instructions: extractText(args.body.system) || undefined,
+        input: args.body.messages.map((item) => ({
+          role: item.role === "assistant" ? "assistant" : "user",
+          content: extractText(item.content),
+        })),
+        max_output_tokens: args.body.max_tokens ?? 4096,
+        ...(tool
+          ? {
+              text: {
+                format: {
+                  type: "json_schema",
+                  name: tool.name.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 64),
+                  schema: tool.input_schema,
+                  strict: false,
+                },
               },
-            },
-          }
-        : {}),
-    }),
-  });
+            }
+          : {}),
+      }),
+    });
+  } catch (err) {
+    if (timer.timedOut()) {
+      timer.dispose();
+      throw new Error(
+        `${args.provider} Responses request timed out after ${RUNTIME_REQUEST_TIMEOUT_MS}ms`,
+      );
+    }
+    timer.dispose();
+    throw err;
+  }
+  timer.dispose();
 
   if (!response.ok) {
     const detail = (await response.text()).slice(0, 500);
@@ -341,7 +392,30 @@ async function callGemini(
       contents[contents.length - 1].parts[0].text +=
         `\nReturn one JSON object matching this schema:\n${JSON.stringify(tool.input_schema, null, 2)}`;
   }
-  const result = await model.generateContent({ contents, generationConfig });
+  // Google SDK does not forward AbortSignal; race the promise against a timer
+  // so a stalled Gemini call cannot hold the request open past the ceiling.
+  const timer = withRequestTimeout(options?.signal);
+  let result: Awaited<ReturnType<typeof model.generateContent>>;
+  try {
+    result = await new Promise((resolve, reject) => {
+      const onAbort = () => {
+        const reason =
+          timer.signal.reason instanceof Error
+            ? timer.signal.reason
+            : new Error(
+                timer.timedOut()
+                  ? `Gemini request timed out after ${RUNTIME_REQUEST_TIMEOUT_MS}ms`
+                  : "Gemini request aborted",
+              );
+        reject(reason);
+      };
+      if (timer.signal.aborted) return onAbort();
+      timer.signal.addEventListener("abort", onAbort, { once: true });
+      model.generateContent({ contents, generationConfig }).then(resolve, reject);
+    });
+  } finally {
+    timer.dispose();
+  }
   assertNotAborted(options?.signal);
   const text = result.response.text();
   const inputTokens = result.response.usageMetadata?.promptTokenCount || 0;
@@ -422,6 +496,7 @@ class RuntimeCircuitBreaker {
 const xaiCircuitBreaker = new RuntimeCircuitBreaker("xAI");
 const gatewayCircuitBreaker = new RuntimeCircuitBreaker("AI Gateway");
 const openAICircuitBreaker = new RuntimeCircuitBreaker("OpenAI");
+const geminiCircuitBreaker = new RuntimeCircuitBreaker("Gemini");
 
 function xaiStructuredFallbackEnabled(): boolean {
   return process.env.WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK?.trim().toLowerCase() === "true";
@@ -431,7 +506,8 @@ function configuredProviders(): RuntimeProvider[] {
   const providers: RuntimeProvider[] = [];
   if (process.env.OPENAI_API_KEY)
     providers.push({ name: "OpenAI", call: callOpenAI, breaker: openAICircuitBreaker });
-  if (process.env.GEMINI_API_KEY) providers.push({ name: "Gemini", call: callGemini });
+  if (process.env.GEMINI_API_KEY)
+    providers.push({ name: "Gemini", call: callGemini, breaker: geminiCircuitBreaker });
   if (isAIGatewayConfigured())
     providers.push({ name: "AI Gateway", call: callGateway, breaker: gatewayCircuitBreaker });
   if (xaiStructuredFallbackEnabled() && process.env.XAI_API_KEY)
@@ -539,7 +615,7 @@ export function getRuntimeClient(): RuntimeClient {
 export const isRuntimeAvailable = () =>
   Boolean(
     process.env.OPENAI_API_KEY ||
-      process.env.GEMINI_API_KEY ||
-      isAIGatewayConfigured() ||
-      (xaiStructuredFallbackEnabled() && process.env.XAI_API_KEY),
+    process.env.GEMINI_API_KEY ||
+    isAIGatewayConfigured() ||
+    (xaiStructuredFallbackEnabled() && process.env.XAI_API_KEY),
   );

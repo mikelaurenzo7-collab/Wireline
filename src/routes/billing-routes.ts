@@ -14,7 +14,7 @@ import {
   subscriptionCheckoutLineItems,
 } from "../lib/stripe-helpers";
 import { sendPaymentFailedEmail } from "../lib/email-service";
-import { planById, plansForClient } from "../lib/plan-catalog";
+import { planById, plansForClient, FOUNDER_CATALOG_VERSION } from "../lib/plan-catalog";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import { getWorkspaceUsageSnapshot } from "../lib/workspace-usage-snapshot";
 import { addCredit, reverseCredit } from "../lib/credit-wallet";
@@ -24,6 +24,27 @@ import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 
 const router = express.Router();
+
+// Refuse to send a customer to Stripe checkout with a price that isn't part of
+// the current founder catalog. Guards against a Vercel env var pointing at a
+// retired/orphaned price after a catalog rotation — mirrors the launch-billing
+// checkout's resolveLaunchPriceId validator (see launch-billing-checkout-routes.ts).
+// Returns `null` when the price is missing, inactive, or lacks the catalog
+// marker; callers should refuse the checkout with a 503 in that case.
+async function validateFounderCatalogPriceId(priceId: string): Promise<string | null> {
+  try {
+    const price = await stripe.prices.retrieve(priceId);
+    if (!price.active) return null;
+    if (price.metadata?.wireline_catalog_version !== FOUNDER_CATALOG_VERSION) return null;
+    return price.id;
+  } catch (error) {
+    log.warn("Stripe price validation failed for founder-catalog checkout", {
+      priceId,
+      error: getErrorMessage(error),
+    });
+    return null;
+  }
+}
 
 // ─── Stripe Webhook ──────────────────────────────────────────────────────────
 
@@ -838,13 +859,21 @@ router.post(
       if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
       // Canonical env is STRIPE_LIVE_VIDEO_ADDON_PRICE_ID; STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID
       // is accepted as an alias so ops can standardize on the SKU-shaped name.
-      const priceId =
+      const configuredPriceId =
         process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID ||
         process.env.STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID;
-      if (!priceId) {
+      if (!configuredPriceId) {
         return res.status(503).json({
           code: "SERVICE_UNAVAILABLE",
           error: "Live video add-on is not configured (STRIPE_LIVE_VIDEO_ADDON_PRICE_ID).",
+        });
+      }
+      const priceId = await validateFounderCatalogPriceId(configuredPriceId);
+      if (!priceId) {
+        return res.status(503).json({
+          code: "SERVICE_UNAVAILABLE",
+          error:
+            "Live video add-on price is not in the current founder catalog. Run stripe:setup and update Vercel.",
         });
       }
 
@@ -1087,11 +1116,24 @@ router.post(
       if (!plan) throw AppError.fromHttpStatus(400, "Plan not found");
 
       const priceIdEnv = plan.extraAgentPriceIdEnv;
-      const priceId = priceIdEnv ? process.env[priceIdEnv] : undefined;
-      if (!priceIdEnv || !priceId) {
+      const configuredPriceId = priceIdEnv ? process.env[priceIdEnv] : undefined;
+      if (!priceIdEnv || !configuredPriceId) {
         return res.status(503).json({
           code: "SERVICE_UNAVAILABLE",
           error: `Extra-agent billing not configured for the ${plan.name} tier. Owner needs to set ${priceIdEnv || "STRIPE_<TIER>_EXTRA_AGENT_PRICE_ID"} in environment variables and link it to a Stripe Price.`,
+        });
+      }
+      // Validate the env-configured price against the current founder catalog
+      // so a stale env var can never silently charge a retired price. Only
+      // enforced when Stripe is reachable — the local dev path below tolerates
+      // an unconfigured Stripe client.
+      const priceId = stripeAvailable()
+        ? await validateFounderCatalogPriceId(configuredPriceId)
+        : configuredPriceId;
+      if (!priceId) {
+        return res.status(503).json({
+          code: "SERVICE_UNAVAILABLE",
+          error: `Extra-agent price for ${plan.name} is not in the current founder catalog. Run stripe:setup and update ${priceIdEnv} in Vercel.`,
         });
       }
 

@@ -60,6 +60,20 @@ export default function AgentStudioHome() {
       };
       if (cancelled) return;
 
+      // Clear the handoff_id from the URL on both success AND failure so a
+      // page refresh doesn't re-fire the redemption (expired handoffs would
+      // otherwise re-toast on every reload until the user manually edits the
+      // URL).
+      const clearHandoffParam = () =>
+        setParams(
+          (current) => {
+            const next = new URLSearchParams(current);
+            next.delete("handoff_id");
+            return next;
+          },
+          { replace: true },
+        );
+
       if (!response.ok || !body.context) {
         toast({
           type: "warning",
@@ -67,20 +81,14 @@ export default function AgentStudioHome() {
           message: body.error || "Open Wireline Command and capture the page again.",
           duration: 10_000,
         });
+        clearHandoffParam();
         return;
       }
 
       setBrowserContext(body.context);
       setSignedBrief(browserCommandBrief(body.context));
       setShowCreate(true);
-      setParams(
-        (current) => {
-          const next = new URLSearchParams(current);
-          next.delete("handoff_id");
-          return next;
-        },
-        { replace: true },
-      );
+      clearHandoffParam();
     })();
 
     return () => {

@@ -45,6 +45,7 @@ import shareableArtifactRouter from "../routes/shareable-artifact-routes";
 import marketingRuntimeRouter from "../routes/marketing-runtime-routes";
 import metaWebhookRouter from "../routes/meta-webhook-routes";
 import twilioWebhookRouter from "../routes/twilio-webhook";
+import escalationRouter from "../routes/escalation-routes";
 import smsRouter from "../routes/sms-routes";
 import webhookRouter from "../routes/webhook-routes";
 import intakeRouter from "../routes/intake-routes";
@@ -143,6 +144,11 @@ export function registerApiRoutes(app: Express): void {
   // Twilio inbound SMS receiver (/api/twilio-webhook/*) -- signature-verified,
   // TCPA opt-out keywords. The Carrier panel hands this URL to customers.
   app.use(twilioWebhookRouter);
+  // POST /api/escalate -- Vapi escalate_to_human tool receiver for the four
+  // customer-service voice agents (Sarah/Liam/Tyler/Maya). Auth via shared
+  // VAPI_WEBHOOK_SECRET. Missing this mount silently 404s every in-call
+  // escalation, so the route must stay registered.
+  app.use(escalationRouter);
   // SMS threads power the Inbox SMS tab (/api/sms/threads*).
   app.use(smsRouter);
   // Tenant webhook management -- mounted after metaWebhookRouter so the

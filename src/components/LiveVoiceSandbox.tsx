@@ -199,7 +199,9 @@ export default function LiveVoiceSandbox({
   const waitForAudio = () =>
     new Promise<void>((resolve) => {
       const context = audio.current;
-      const delay = context ? Math.max(20, (nextAudio.current - context.currentTime) * 1000 + 30) : 20;
+      const delay = context
+        ? Math.max(20, (nextAudio.current - context.currentTime) * 1000 + 30)
+        : 20;
       window.setTimeout(resolve, delay);
     });
 
@@ -313,7 +315,25 @@ export default function LiveVoiceSandbox({
     const ws = new WebSocket(endpoint.toString(), [`xai-client-secret.${session.token}`]);
     socket.current = ws;
 
+    // Watchdog for a WebSocket that never opens (TLS hang, upstream outage,
+    // ephemeral secret rejected before onopen fires). Without this the UI
+    // stays on the "connecting" spinner indefinitely because ws.onerror only
+    // sets a soft notice without transitioning state.
+    const connectWatchdog = window.setTimeout(() => {
+      if (ws.readyState !== WebSocket.OPEN) {
+        try {
+          ws.close();
+        } catch {
+          /* ignore */
+        }
+        if (connectionGeneration === generation.current && !closedByUser.current) {
+          fail("Live voice did not connect. Check your network and start the test again.");
+        }
+      }
+    }, 10_000);
+
     ws.onopen = () => {
+      window.clearTimeout(connectWatchdog);
       if (connectionGeneration !== generation.current || closedByUser.current) {
         ws.close();
         return;
@@ -425,6 +445,7 @@ export default function LiveVoiceSandbox({
     };
 
     ws.onclose = () => {
+      window.clearTimeout(connectWatchdog);
       if (connectionGeneration !== generation.current || closedByUser.current) return;
       if (retry.current >= 2) {
         fail("Connection lost. Start the test again to continue.");

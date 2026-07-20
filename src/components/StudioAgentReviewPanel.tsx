@@ -102,7 +102,10 @@ export default function StudioAgentReviewPanel({
           </StatusNotice>
         ) : null}
 
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-label="Launch summary">
+        <section
+          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+          aria-label="Launch summary"
+        >
           {loading ? (
             <div className="grid gap-4 sm:grid-cols-2" aria-busy="true">
               {Array.from({ length: 4 }, (_, index) => (
@@ -122,7 +125,9 @@ export default function StudioAgentReviewPanel({
               ].map((item) => (
                 <div key={item.label} className="rounded-xl border border-border bg-background p-4">
                   <dt className="text-xs font-semibold text-muted-foreground">{item.label}</dt>
-                  <dd className="mt-2 text-sm font-semibold leading-5 text-foreground">{item.value}</dd>
+                  <dd className="mt-2 text-sm font-semibold leading-5 text-foreground">
+                    {item.value}
+                  </dd>
                 </div>
               ))}
             </dl>
@@ -131,14 +136,19 @@ export default function StudioAgentReviewPanel({
 
         <StatusNotice
           tone={hasPhone ? "success" : "warning"}
-          title={hasPhone ? "Live customer line connected" : "Browser-ready; live line not connected"}
+          title={
+            hasPhone ? "Live customer line connected" : "Browser-ready; live line not connected"
+          }
         >
           {hasPhone
             ? `${agentName} is live at ${phoneNumber}. Place one inbound test before sharing the number.`
             : "Test in the browser, then connect a phone line when the greeting and handoff are ready."}
         </StatusNotice>
 
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-label="Next actions">
+        <section
+          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+          aria-label="Next actions"
+        >
           <h3 className="text-base font-semibold text-foreground">Next action</h3>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <Button type="button" variant="secondary" onClick={onEdit} className="justify-center">
@@ -150,7 +160,7 @@ export default function StudioAgentReviewPanel({
               Test conversation
             </Button>
             <Button asChild className="justify-center">
-              <Link to={hasPhone ? "/phone?tab=logs" : "/connections"}>
+              <Link to={hasPhone ? "/phone?tab=logs" : "/settings/phone"}>
                 {hasPhone ? (
                   <CheckCircle2 className="size-4" aria-hidden="true" />
                 ) : (
