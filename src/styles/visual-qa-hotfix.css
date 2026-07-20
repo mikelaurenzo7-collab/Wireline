@@ -19,8 +19,8 @@
     display: none;
   }
 
-  /* Settings security rows: allow detail copy to wrap instead of hard-clipping. */
-  [data-wireline-route="/settings"] .wl-data-row__detail {
+  /* Settings detail rows: allow copy to wrap instead of hard-clipping. */
+  [data-wireline-route^="/settings"] .wl-data-row__detail {
     white-space: normal;
     overflow: visible;
     text-overflow: unset;

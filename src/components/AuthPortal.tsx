@@ -372,7 +372,7 @@ function WorkspaceSelector({
             <span className="wl-auth-workspace-short mt-0.5 text-[11px] text-muted-foreground sm:hidden">
               {option.shortText}
             </span>
-            <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+            <span className="mt-1 hidden text-xs leading-5 text-muted-foreground sm:block">
               {option.text}
             </span>
           </span>

@@ -50,8 +50,10 @@ describe("current-state UI contract", () => {
     expect(apps).toContain("CLIENT_SURFACE_POSTURE");
     expect(apps).toContain('title: "Cursor"');
     expect(apps).toContain('href: "/settings/apps/command"');
-    expect(apps).toContain('href: "/developers"');
-    expect(apps).not.toContain("https://trywireline.com/mcp");
+    // ChatGPT setup stays in the authenticated Apps shell (no public marketing eject).
+    expect(apps).toContain('href: "/settings/apps#chatgpt-mcp"');
+    expect(apps).toContain('id="chatgpt-mcp"');
+    expect(apps).toContain("https://trywireline.com/mcp");
     expect(apps).toContain("from \"react-router-dom\"");
     expect(apps).not.toContain("mailto:support@trywireline.com?subject=Wireline%20Command%20install%20guide");
     expect(apps).not.toContain('status: "Live"');
@@ -66,7 +68,8 @@ describe("current-state UI contract", () => {
   it("makes the account-bound MCP apps public without overstating their authority", () => {
     const developers = read("src/pages/Developers.tsx");
 
-    expect(developers).toContain("Bring Wireline into ChatGPT, Claude, or Cursor.");
+    expect(developers).toContain("Connect once. Draft and simulate in the client you already open.");
+    expect(developers).toContain("Copy MCP endpoint");
     expect(developers).toContain("https://trywireline.com/mcp");
     expect(developers).toContain("https://claude.ai/settings/connectors");
     expect(developers).toContain("Cursor");

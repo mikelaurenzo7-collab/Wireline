@@ -20,6 +20,8 @@ type OutcomeLedgerProps = {
   limit?: number;
   compact?: boolean;
   showViewAll?: boolean;
+  /** Shown only when outcomes exist — avoids empty-state CTA noise. */
+  followUpsHref?: string;
 };
 
 type TaskLite = {
@@ -57,6 +59,7 @@ export default function OutcomeLedger({
   limit = 8,
   compact = false,
   showViewAll = true,
+  followUpsHref,
 }: OutcomeLedgerProps) {
   const [rows, setRows] = useState<OutcomeLedgerRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -189,6 +192,13 @@ export default function OutcomeLedger({
 
   return (
     <div className={compact ? "grid gap-2" : "grid gap-3"}>
+      {followUpsHref ? (
+        <div className="mb-1 flex justify-end">
+          <Link to={followUpsHref} className="text-xs font-semibold text-primary hover:underline">
+            Review follow-ups →
+          </Link>
+        </div>
+      ) : null}
       {rows.map((row) => (
         <article key={row.id} className="rounded-xl border border-border bg-card px-3 py-3 sm:px-4">
           <div className="flex flex-wrap items-center justify-between gap-2">

@@ -26,7 +26,7 @@ type ModeDetail = {
 };
 
 const HERO_LOOP = MARKETING_VOICE.proof;
-const HERO_CAPABILITIES = MARKETING_VOICE.channelProof;
+const HERO_CAPABILITIES = MARKETING_VOICE.channelProof.slice(0, 3);
 
 const MODE_OPTIONS: { key: AgentMode; label: string }[] = [
   { key: "outbound", label: AGENT_DIRECTION_MODES.outbound.label },
