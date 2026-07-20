@@ -15,7 +15,7 @@ export const EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY = 15;
 export const EXTRA_AGENT_ADDON_VOICE_MINUTES_MONTHLY = 50;
 export const EXTRA_AGENT_ADDON_PHONE_NUMBERS = 1;
 export const EXTRA_AGENT_ADDON_PRICE_ENV = "STRIPE_EXTRA_AGENT_PRICE_ID";
-export const EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID = "price_1TrnEvJohDtfy3IkjBi7VOCP";
+export const EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID = "price_1Tv9K58e6If87QKm7rzn3MNS";
 
 export type StripePlanId = "personal" | "starter" | "team" | "business" | "enterprise";
 
@@ -144,8 +144,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_STARTER_9_PRICE_ID",
     annualPriceIdEnv: "STRIPE_STARTER_9_ANNUAL_PRICE_ID",
-    fallbackPriceId: "price_1TraB4JohDtfy3IkKFF3zI5C",
-    fallbackAnnualPriceId: "price_1TraBAJohDtfy3IkgLxLqDVI",
+    fallbackPriceId: "price_1Tv9K08e6If87QKmt8n8bkiX",
+    fallbackAnnualPriceId: "price_1Tv9K08e6If87QKmz6w2X8VZ",
     lookupKeyMonthly: "starter_monthly_founder_2026_07_v2",
     lookupKeyAnnual: "starter_annual_founder_2026_07_v2",
     ...PAID_EXTRA_AGENT_ADDON,
@@ -173,8 +173,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
     annualPriceIdEnv: "STRIPE_STARTER_ANNUAL_PRICE_ID",
-    fallbackPriceId: "price_1TrZ9AJohDtfy3Ika0bPG5Dc",
-    fallbackAnnualPriceId: "price_1TrZ9GJohDtfy3IkUxOJscJZ",
+    fallbackPriceId: "price_1Tv9K18e6If87QKmJno3YyTp",
+    fallbackAnnualPriceId: "price_1Tv9K18e6If87QKmOLPol6N3",
     lookupKeyMonthly: "team_monthly_founder_2026_07_v2",
     lookupKeyAnnual: "team_annual_founder_2026_07_v2",
     ...PAID_EXTRA_AGENT_ADDON,
@@ -202,8 +202,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     included_phone_numbers: 5,
     priceIdEnv: "STRIPE_TEAM_PRICE_ID",
     annualPriceIdEnv: "STRIPE_TEAM_ANNUAL_PRICE_ID",
-    fallbackPriceId: "price_1TrZ9RJohDtfy3Ik9Q4QFABQ",
-    fallbackAnnualPriceId: "price_1TrZ9XJohDtfy3Ikp1RQzxrj",
+    fallbackPriceId: "price_1Tv9K28e6If87QKmoe22FUz1",
+    fallbackAnnualPriceId: "price_1Tv9K38e6If87QKm3OsZgYcy",
     lookupKeyMonthly: "business_monthly_founder_2026_07_v2",
     lookupKeyAnnual: "business_annual_founder_2026_07_v2",
     ...PAID_EXTRA_AGENT_ADDON,
@@ -232,8 +232,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     included_phone_numbers: 15,
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
     annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
-    fallbackPriceId: "price_1TrZ9gJohDtfy3Ik7zHhg92a",
-    fallbackAnnualPriceId: "price_1TrZ9pJohDtfy3Ik0zUieFvi",
+    fallbackPriceId: "price_1Tv9K38e6If87QKmkWgepqBn",
+    fallbackAnnualPriceId: "price_1Tv9K48e6If87QKm4pwXGJGl",
     lookupKeyMonthly: "enterprise_monthly_founder_2026_07_v2",
     lookupKeyAnnual: "enterprise_annual_founder_2026_07_v2",
     ...PAID_EXTRA_AGENT_ADDON,
