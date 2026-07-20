@@ -596,7 +596,7 @@ export const directorConversationMessages = pgTable(
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
-    /** director = Assistants chat; painter = Wireline Design studio (/design). */
+    /** Conversation thread key. "director" = the Assistants chat. */
     threadKey: text("thread_key").notNull().default("director"),
     // role is one of "Account Holder" | "director" — DB-level CHECK constraint
     // lives in the migration (this Drizzle version doesn't expose .$type()).

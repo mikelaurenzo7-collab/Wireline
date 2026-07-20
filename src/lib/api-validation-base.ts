@@ -466,57 +466,6 @@ export const icloudMailConnectSchema = z.object({
   app_password: z.string().min(4).max(128),
 });
 
-export const directorStitchOptionsSchema = z.object({
-  designMode: z.boolean().optional(),
-  useAccountBranding: z.boolean().optional(),
-});
-
-export const directorThreadKeySchema = z.enum(["director", "painter"]);
-
-export const directorMessageSchema = z
-  .object({
-    content: z.string().max(4000).optional(),
-    focusAgentId: z.string().max(120).optional(),
-    skipAccountHolderPersist: z.boolean().optional(),
-    forceDeep: z.boolean().optional(),
-    stitchOptions: directorStitchOptionsSchema.optional(),
-    threadKey: directorThreadKeySchema.optional(),
-    approval: z.record(z.string(), z.unknown()).optional(),
-  })
-  .refine((data) => Boolean(data.content?.trim()) || data.approval, {
-    message: "Message content required",
-  });
-
-export const directorStreamMessageSchema = z.object({
-  content: z.string().min(1, "Message content required").max(4000),
-  focusAgentId: z.string().max(120).optional(),
-  skipAccountHolderPersist: z.boolean().optional(),
-  forceDeep: z.boolean().optional(),
-  stitchOptions: directorStitchOptionsSchema.optional(),
-  threadKey: directorThreadKeySchema.optional(),
-});
-
-export const directorExecuteSchema = z.discriminatedUnion("kind", [
-  z.object({
-    kind: z.literal("comms"),
-    action: z.object({ kind: z.string().min(1) }).passthrough(),
-    hasExpressWrittenConsent: z.boolean().optional(),
-  }),
-  z.object({
-    kind: z.literal("integration"),
-    job: z.object({ tool: z.string().min(1) }).passthrough(),
-  }),
-]);
-
-export const directorProposalResolveSchema = z.object({
-  key: z
-    .string()
-    .min(3)
-    .max(40)
-    .regex(/^(change|toggle|action|integration):\d+$/),
-  state: z.enum(["done", "dismissed"]),
-});
-
 export const pdfUploadSchema = z.object({
   pdfBase64: z
     .string()

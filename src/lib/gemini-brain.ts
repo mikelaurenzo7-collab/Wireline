@@ -34,7 +34,7 @@ function parseGeminiJsonText<T>(text: string): T {
   return JSON.parse(candidate) as T;
 }
 
-/** Plain-text completion for Design Studio visual refinement. */
+/** Plain-text Gemini completion for arbitrary system/user prompts. */
 export async function runGeminiTextCompletion(input: {
   model: string;
   system: string;
@@ -54,7 +54,7 @@ export async function runGeminiTextCompletion(input: {
   return text.trim();
 }
 
-/** JSON extraction for Design Studio critics — any Gemini text model. */
+/** Structured JSON extraction via any Gemini text model. */
 export async function runGeminiJsonCompletion<T>(input: {
   model: string;
   system: string;
