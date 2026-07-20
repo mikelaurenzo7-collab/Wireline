@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 292
-**Protected:** 250
-**Public (allowlisted):** 42
+**Routes scanned:** 275
+**Protected:** 234
+**Public (allowlisted):** 41
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -54,7 +54,6 @@
 | `POST /api/vapi-webhook` | Vapi signature validation + agent-scoped routing |
 | `GET /health/voice-status` | Public demo-line voice probe; aggregated metrics only, rate-limited |
 | `POST /voice/metrics` | Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write |
-| `POST /api/webhooks/elevenlabs` | ElevenLabs HMAC-SHA256 signature |
 
 ## Full Matrix
 
@@ -66,11 +65,6 @@
 | account-routes.ts | GET | `/api/accounts/:id` | inline | — | — | Protected |
 | account-routes.ts | GET | `/api/accounts/primary` | inline | — | — | Protected |
 | activation-routes.ts | GET | `/api/activation/status` | inline | — | — | Protected |
-| admin-elevenlabs-routes.ts | POST | `/api/admin/elevenlabs/dialogue` | inline | platform_admin | — | Protected |
-| admin-elevenlabs-routes.ts | POST | `/api/admin/elevenlabs/music` | inline | platform_admin | — | Protected |
-| admin-elevenlabs-routes.ts | POST | `/api/admin/elevenlabs/sound-effect` | inline | platform_admin | — | Protected |
-| admin-elevenlabs-routes.ts | GET | `/api/admin/elevenlabs/status` | inline | platform_admin | — | Protected |
-| admin-elevenlabs-routes.ts | POST | `/api/admin/elevenlabs/transcribe` | inline | platform_admin | — | Protected |
 | admin-seed-demo-routes.ts | DELETE | `/api/admin/demo-data` | inline | platform_admin | — | Protected |
 | admin-seed-demo-routes.ts | POST | `/api/admin/seed-demo-account` | inline | platform_admin | — | Protected |
 | admin-seed-demo-routes.ts | POST | `/api/admin/seed-founder-Assistants` | inline | platform_admin | — | Protected |
@@ -286,10 +280,6 @@
 | post-call-output-routes.ts | GET | `/api/post-call-output-preferences` | inline | — | — | Protected |
 | post-call-output-routes.ts | POST | `/api/post-call-output-preferences` | inline | — | — | Protected |
 | product-event-routes.ts | POST | `/api/product-events` | inline | — | — | Protected |
-| pronunciation-routes.ts | GET | `/api/pronunciation-dicts` | inline | — | — | Protected |
-| pronunciation-routes.ts | POST | `/api/pronunciation-dicts` | inline | — | — | Protected |
-| pronunciation-routes.ts | PATCH | `/api/pronunciation-dicts/:id` | inline | — | — | Protected |
-| pronunciation-routes.ts | DELETE | `/api/pronunciation-dicts/:id` | inline | — | — | Protected |
 | qa-routes-v2.ts | POST | `/api/qa/score-batch` | inline | — | — | Protected |
 | qa-routes-v2.ts | POST | `/api/qa/score/:callId` | inline | — | — | Protected |
 | qa-routes-v2.ts | GET | `/api/qa/stats` | inline | — | — | Protected |
@@ -335,13 +325,6 @@
 | voice-observability-routes.ts | GET | `/api/insights/voice-reliability` | inline | permission | — | Protected |
 | voice-observability-routes.ts | GET | `/health/voice-status` | — | — | yes | Public (allowlisted) |
 | voice-observability-routes.ts | POST | `/voice/metrics` | — | — | yes | Public (allowlisted) |
-| voices-routes.ts | GET | `/api/voices` | inline | — | — | Protected |
-| voices-routes.ts | DELETE | `/api/voices/:id` | inline | — | — | Protected |
-| voices-routes.ts | GET | `/api/voices/:id/owned-preview` | inline | — | — | Protected |
-| voices-routes.ts | GET | `/api/voices/:id/preview` | inline | — | yes | Protected |
-| voices-routes.ts | POST | `/api/voices/clone` | inline | — | — | Protected |
-| voices-routes.ts | GET | `/api/voices/curated/preview` | inline | — | yes | Protected |
-| voices-routes.ts | GET | `/api/voices/presenter/:id/preview` | inline | — | yes | Protected |
 | webhook-routes.ts | GET | `/api/webhooks` | inline | — | — | Protected |
 | webhook-routes.ts | POST | `/api/webhooks` | inline | permission | — | Protected |
 | webhook-routes.ts | PATCH | `/api/webhooks/:id` | inline | permission | — | Protected |
@@ -350,5 +333,4 @@
 | webhook-routes.ts | POST | `/api/webhooks/:id/test` | inline | permission | — | Protected |
 | webhook-routes.ts | DELETE | `/api/webhooks/deliveries/:id` | inline | — | — | Protected |
 | webhook-routes.ts | POST | `/api/webhooks/deliveries/:id/retry` | inline | — | — | Protected |
-| webhooks-elevenlabs-routes.ts | POST | `/api/webhooks/elevenlabs` | — | — | yes | Public (allowlisted) |
 | workspace-knowledge-routes.ts | POST | `/api/workspace-knowledge/google-drive` | inline | — | — | Protected |

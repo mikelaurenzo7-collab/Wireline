@@ -267,14 +267,6 @@ const ALL_LOGOS: Record<string, LogoDef> = {
       </svg>
     ),
   },
-  elevenlabs: {
-    name: "ElevenLabs",
-    svg: (
-      <svg viewBox="0 0 24 24" aria-label="ElevenLabs" width="100%" height="100%">
-        <path d="M8.5 4.5l-3 15h3.5l3-15H8.5zm7 0l-3 15h3.5l3-15h-3.5z" />
-      </svg>
-    ),
-  },
   vapi: {
     name: "Vapi",
     svg: (
@@ -325,7 +317,6 @@ const POWERED_BY: LogoDef[] = [
   ALL_LOGOS.xai,
   ALL_LOGOS.openai,
   ALL_LOGOS.gemini,
-  ALL_LOGOS.elevenlabs,
   ALL_LOGOS.vapi,
   ALL_LOGOS.supabase,
   ALL_LOGOS.vercel,

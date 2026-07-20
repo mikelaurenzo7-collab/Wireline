@@ -23,7 +23,6 @@ const XAI_REALTIME_URL = "wss://api.x.ai/v1/realtime";
 const GROK_TRANSCRIPTION_MODEL = "grok-transcribe";
 const MAX_PROMPT_LINE_LENGTH = 700;
 const MAX_INITIAL_KNOWLEDGE_ITEMS = 8;
-const MAX_REPLACE_ENTRIES = 80;
 const BUILT_IN_VOICES = new Set(["eve", "ara", "rex", "sal", "leo"]);
 
 const NON_NEGOTIABLE_RUNTIME_RULES = [
@@ -153,25 +152,6 @@ function resolveVoiceSelection(agent: AgentRow) {
   };
 }
 
-function buildPronunciationReplacements(
-  rows: Array<{ entries: unknown }>,
-): Record<string, string> | undefined {
-  const replacements: Record<string, string> = {};
-  for (const row of rows) {
-    if (!Array.isArray(row.entries)) continue;
-    for (const entry of row.entries) {
-      if (!entry || typeof entry !== "object") continue;
-      const value = entry as { from?: unknown; to?: unknown; kind?: unknown };
-      if (value.kind === "phoneme") continue;
-      const from = trimLine(value.from, 120);
-      const to = trimLine(value.to, 160);
-      if (!from || !to || Object.keys(replacements).length >= MAX_REPLACE_ENTRIES) continue;
-      replacements[from] = to;
-    }
-  }
-  return Object.keys(replacements).length ? replacements : undefined;
-}
-
 function buildInstructions(
   agent: AgentRow,
   personality: string,
@@ -232,7 +212,7 @@ function buildDraftInstructions(agentName?: string | null): string {
 }
 
 async function loadAgentRuntime(agentId: string, userId: string) {
-  const [agents, personalities, directives, knowledge, dictionaries] = await Promise.all([
+  const [agents, personalities, directives, knowledge] = await Promise.all([
     drizzle
       .select({
         id: schema.agents.id,
@@ -269,16 +249,6 @@ async function loadAgentRuntime(agentId: string, userId: string) {
       .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
       .orderBy(desc(schema.knowledge.createdAt))
       .limit(80),
-    drizzle
-      .select({ entries: schema.pronunciationDictionaries.entries })
-      .from(schema.pronunciationDictionaries)
-      .where(
-        and(
-          eq(schema.pronunciationDictionaries.userId, userId),
-          eq(schema.pronunciationDictionaries.active, true),
-        ),
-      )
-      .catch(() => []),
   ]);
   const agent = agents[0] as AgentRow | undefined;
   if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
@@ -287,7 +257,6 @@ async function loadAgentRuntime(agentId: string, userId: string) {
     personality: personalities[0]?.content || "",
     directives,
     knowledge,
-    dictionaries,
   };
 }
 
@@ -307,7 +276,6 @@ export async function createGrokVoiceClientSession(input: CreateGrokVoiceSession
         voice: resolveWirelineGrokVoice(undefined, undefined),
       };
   const languageHint = normalizeGrokLanguageHint(input.languageHint);
-  const replace = runtime ? buildPronunciationReplacements(runtime.dictionaries) : undefined;
   const tools = input.tools ?? WIRELINE_GROK_REALTIME_TOOLS;
   const instructions = draftInstructions
     ? draftInstructions.slice(0, 16_000)
@@ -341,7 +309,6 @@ export async function createGrokVoiceClientSession(input: CreateGrokVoiceSession
         speed: resolveGrokVoiceSpeed(),
       },
     },
-    ...(replace ? { replace } : {}),
   };
 
   try {
@@ -383,7 +350,6 @@ export async function createGrokVoiceClientSession(input: CreateGrokVoiceSession
       customVoice: !BUILT_IN_VOICES.has(selectedVoice.voice),
       languageHint: languageHint || null,
       transcriptionModel: GROK_TRANSCRIPTION_MODEL,
-      pronunciationReplacements: Object.keys(replace || {}).length,
       tools: tools.map((tool) => tool.name),
     });
     return {

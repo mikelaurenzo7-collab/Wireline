@@ -66,7 +66,6 @@ describe("integration vendor operating map", () => {
         "vapi",
         "twilio",
         "deepgram-flux",
-        "elevenlabs",
         "openai-realtime",
         "liveavatar",
         "heygen",
@@ -92,9 +91,6 @@ describe("integration vendor operating map", () => {
     expect(RUNTIME_INTEGRATIONS.find((entry) => entry.id === "ai-gateway")?.oneOfEnvVars).toEqual([
       ["AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN"],
     ]);
-    expect(RUNTIME_INTEGRATIONS.find((entry) => entry.id === "elevenlabs")?.description).toContain(
-      "Optional TTS",
-    );
   });
 
   it("keeps environment and launch gates aligned with the OpenAI-first funded runtime", () => {
@@ -107,7 +103,9 @@ describe("integration vendor operating map", () => {
     expect(envValidator).toContain("process.env.OPENAI_API_KEY");
     expect(envValidator).toContain("process.env.AI_GATEWAY_API_KEY");
     expect(envValidator).toContain("const managedRuntime");
-    expect(envValidator).toContain("Optional xAI experiment credential; not part of the launch default");
+    expect(envValidator).toContain(
+      "Optional xAI experiment credential; not part of the launch default",
+    );
     expect(envValidator).not.toContain("const directRuntime");
     expect(launchReadiness).toContain("TWILIO_ACCOUNT_SID+TWILIO_AUTH_TOKEN");
     expect(launchReadiness).toContain("PSTN voice + number stack");

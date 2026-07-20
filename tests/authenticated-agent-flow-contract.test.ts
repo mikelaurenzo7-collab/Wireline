@@ -211,19 +211,6 @@ describe("authenticated agent flow", () => {
     expect(wizard).toContain("ACTIVATION_REQUIRED");
   });
 
-  it("authenticates and rate-limits provider-backed voice previews", () => {
-    const voices = read("src/routes/voices-routes.ts");
-
-    expect(voices).toContain("curatedPreviewRateLimiter");
-    expect(voices).toContain("voicePreviewUserRateLimiter");
-    expect(voices).toContain("fetchTrustedPreview");
-    // Trusted hosts can serve real audio with text/plain headers (GCS), so
-    // previews must be validated by payload magic bytes, not headers alone.
-    expect(voices).toContain("sniffAudioContentType");
-    expect(voices).toContain('"/api/voices/curated/preview"');
-    expect(voices).toContain('"/api/voices/:id/preview"');
-  });
-
   it("routes every PSTN call through the managed Vapi voice runtime", () => {
     const schema = read("src/db/schema.ts");
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");

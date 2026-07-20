@@ -28,21 +28,8 @@ export function installWebhookBodyParsers(app: ExpressApp): void {
   );
 
   // Meta Lead Ads and data-deletion callbacks — raw bytes for HMAC validation.
-  app.use(
-    "/api/webhooks/meta/leads",
-    express.raw({ type: "*/*", limit: RAW_WEBHOOK_LIMIT }),
-  );
-  app.use(
-    "/api/webhooks/meta/deletion",
-    express.raw({ type: "*/*", limit: RAW_WEBHOOK_LIMIT }),
-  );
-
-  // Dormant premium voice callbacks remain isolated from the active browser
-  // product, but their verifier still requires exact raw bytes when enabled.
-  app.use(
-    "/api/webhooks/elevenlabs",
-    express.raw({ type: "*/*", limit: RAW_WEBHOOK_LIMIT }),
-  );
+  app.use("/api/webhooks/meta/leads", express.raw({ type: "*/*", limit: RAW_WEBHOOK_LIMIT }));
+  app.use("/api/webhooks/meta/deletion", express.raw({ type: "*/*", limit: RAW_WEBHOOK_LIMIT }));
 
   // Twilio voice and messaging callbacks are form encoded. Keep extended=false
   // so signature validation receives a flat parameter object, and cap both the

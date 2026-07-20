@@ -19,14 +19,11 @@ describe("runtime integrations registry launch policy", () => {
 
   it("marks the monetized communications control plane as required", () => {
     for (const integration of ["vapi", "twilio", "stripe", "resend", "upstash"]) {
-      expect(compactSource).toMatch(
-        new RegExp(`item\\(\\s*"${integration}".{0,700}?, true,`),
-      );
+      expect(compactSource).toMatch(new RegExp(`item\\(\\s*"${integration}".{0,700}?, true,`));
     }
   });
 
-  it("keeps WhatsApp and ElevenLabs claims bounded", () => {
+  it("keeps WhatsApp claims bounded", () => {
     expect(source).toContain("WhatsApp remains private beta");
-    expect(source).toContain("Paid plan entitlements are required for Voice Library API use");
   });
 });

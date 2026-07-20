@@ -46,8 +46,6 @@ describe("vendor readiness contract", () => {
     expect(probe).toContain("voiceCapableNumbers.length > 0");
     expect(probe).toContain("No ONLINE Twilio WhatsApp sender found");
     expect(probe).toContain('validHttpsUrl("FEDERAL_DNC_API_URL")');
-    expect(probe).toContain('"elevenlabs",\n  false');
-    expect(probe).toContain("usage top-ups do not unlock paid-plan entitlements");
   });
 
   it("is exposed as an explicit owner command rather than a default local test", () => {

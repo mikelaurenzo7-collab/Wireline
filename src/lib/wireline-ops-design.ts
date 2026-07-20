@@ -202,7 +202,6 @@ export const OPS_TRAINING_PANEL = {
   rules: "No rules. Add below.",
   directives: "No directives. Add below.",
   facts: "No facts. Add below.",
-  pronunciation: "No rules. Add row.",
   knowledge: {
     title: "No entries yet",
   },

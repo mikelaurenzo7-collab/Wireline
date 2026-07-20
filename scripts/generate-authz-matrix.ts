@@ -35,7 +35,6 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
   },
   { pattern: /^\/api\/twilio-webhook\//, reason: "Twilio signature validation + rate limit" },
   { pattern: /^\/api\/webhooks\/meta\//, reason: "Meta HMAC-SHA256 signature + rate limit" },
-  { pattern: /^\/api\/webhooks\/elevenlabs/, reason: "ElevenLabs HMAC-SHA256 signature" },
   { pattern: /^\/api\/vapi\//, reason: "Vapi tool/webhook signature verification" },
   { pattern: /^\/api\/vapi-webhook$/, reason: "Vapi signature validation + agent-scoped routing" },
   { pattern: /^\/api\/escalate$/, reason: "Vapi X-Vapi-Secret (timing-safe) + rate limit" },
@@ -91,18 +90,6 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
   },
   { pattern: /^\/api\/support\/ticket$/, reason: "Public support form; rate-limited + validated" },
   { pattern: /^\/api\/contact$/, reason: "Public marketing contact form; rate-limited" },
-  {
-    pattern: /^\/api\/voices\/:id\/preview$/,
-    reason: "Premade voice previews only; cloned/tenant voices are on the authed route",
-  },
-  {
-    pattern: /^\/api\/voices\/curated\/preview$/,
-    reason: "Public Wireline Live / Phone timbre samples; ElevenLabs-backed, no tenant data",
-  },
-  {
-    pattern: /^\/api\/voices\/presenter\/:id\/preview$/,
-    reason: "Public HeyGen presenter voice preview redirect; no tenant data",
-  },
   {
     pattern: /^\/(?:api\/)?voice\/metrics$/,
     reason: "Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write",

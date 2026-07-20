@@ -2,7 +2,7 @@
  * PCM16 LE resampling for live presenter lip-sync.
  *
  * Vapi listenUrl streams 8 kHz phone PCM; LiveAvatar LITE expects ~24 kHz
- * (matches ElevenLabs pcm_24000 and the Knowledge simulator path).
+ * (matches the 24 kHz PCM and the Knowledge simulator path).
  */
 export const VAPI_LISTEN_PCM_RATE_HZ = 8_000;
 export const LIVEAVATAR_PCM_RATE_HZ = 24_000;

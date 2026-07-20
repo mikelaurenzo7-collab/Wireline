@@ -53,7 +53,7 @@ describe("video presenter integration", () => {
   it("streams agent voice into LiveAvatar LITE via sample route + SDK audio", () => {
     const routes = source("src/routes/video-presenter-routes-base.ts");
     expect(routes).toContain("/api/agents/:id/video-presenter/sample");
-    expect(routes).toContain("generateSamplePcm24");
+    expect(routes).toContain("generatePresenterSpeech");
     expect(routes).toContain("LIVE_VIDEO_NO_VOICE");
     const live = source("src/components/LiveVideoPresenter.tsx");
     expect(live).toContain("feedPcmDelta");

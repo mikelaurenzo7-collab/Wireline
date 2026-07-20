@@ -410,16 +410,6 @@ export const updateIntakeKeySchema = z.object({
 });
 
 // ============================================================================
-// Pronunciation Route Schemas
-// ============================================================================
-
-export const pronunciationEntrySchema = z.object({
-  word: z.string().min(1, "Word is required").max(100),
-  pronunciation: z.string().min(1, "Pronunciation is required").max(200),
-  agentId: z.string().optional(),
-});
-
-// ============================================================================
 // Assistants Task Schemas
 // ============================================================================
 

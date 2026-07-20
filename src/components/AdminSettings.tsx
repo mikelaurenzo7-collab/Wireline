@@ -22,8 +22,6 @@ import { VAPI_TENANT_DEFAULT_MODEL, VAPI_TENANT_DEFAULT_PROVIDER } from "../lib/
 import { AccountsPanel } from "./admin/AccountsPanel";
 import { BrandingPanel } from "./admin/BrandingPanel";
 import { CarrierPanel } from "./admin/CarrierPanel";
-// Voice library + pronunciation dictionary panels moved to the Training Voice tab
-// (they're agent training inputs, not tenant admin config).
 import { SubscriptionPanel } from "./admin/SubscriptionPanel";
 import { TeamPanel } from "./admin/TeamPanel";
 import { GrowthPanel } from "./admin/GrowthPanel";
@@ -127,9 +125,9 @@ export default function AdminSettings() {
   const navigate = useNavigate();
   const activeTab: AdminTab = (() => {
     const qsRaw = new URLSearchParams(location.search).get("tab");
-    // Legacy redirect: voices + pronunciation moved out of Settings into each
-    // agent's chat Training tab (they're agent identity, not tenant config).
-    if (qsRaw === "voices" || qsRaw === "pronunciation") {
+    // Legacy redirect: the voice tab moved out of Settings into each
+    // agent's chat Training tab (it's agent identity, not tenant config).
+    if (qsRaw === "voices") {
       // useNavigate inside a render branch is fine because navigate is
       // a stable callback and we run it once per matching render. The
       // redirect happens synchronously on the next tick. Voice tooling

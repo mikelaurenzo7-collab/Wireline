@@ -19,7 +19,6 @@ const CERTIFIED_IDS = new Set([
   "hubspot",
   "slack",
   "shopify",
-  "elevenlabs",
 ]);
 
 const BETA_IDS = new Set([

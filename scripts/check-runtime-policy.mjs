@@ -114,8 +114,6 @@ if (!/item\(\s*["']ai-gateway["']/.test(registry))
   fail("Vercel AI Gateway is not registered as the multi-model route");
 if (!/item\(\s*["']deepgram-flux["']/.test(registry))
   fail("Deepgram Flux is not registered as production voice transcription");
-if (!/item\(\s*["']elevenlabs["']/.test(registry))
-  fail("ElevenLabs is not registered as an optional voice synthesis layer");
 if (!/item\(\s*["']openai-realtime["']/.test(registry))
   fail("OpenAI Realtime web/mobile mode is not registered");
 if (!migrationCorpus.includes("voice_llm_provider SET DEFAULT 'openai'"))
