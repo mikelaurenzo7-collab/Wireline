@@ -19,13 +19,46 @@ import type { ToolCallContext, ToolCallResult } from "./types";
 // ─── Knowledge search helpers ────────────────────────────────────────────────
 const MAX_KB_RESULTS = 8;
 const MAX_KB_RESULT_CHARS = 600;
+const KNOWLEDGE_STOP_WORDS = new Set([
+  "about",
+  "after",
+  "again",
+  "also",
+  "and",
+  "are",
+  "can",
+  "could",
+  "does",
+  "for",
+  "from",
+  "have",
+  "how",
+  "into",
+  "our",
+  "please",
+  "that",
+  "the",
+  "their",
+  "this",
+  "what",
+  "when",
+  "where",
+  "which",
+  "with",
+  "would",
+  "your",
+]);
 
 function tokenize(text: string): string[] {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter((t) => t.length > 2);
+  return Array.from(
+    new Set(
+      text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .split(/\s+/)
+        .filter((token) => token.length > 2 && !KNOWLEDGE_STOP_WORDS.has(token)),
+    ),
+  );
 }
 
 function scoreSnippet(content: string, queryTokens: string[]): number {
@@ -43,11 +76,15 @@ async function searchAgentKnowledge(
   agentId: string,
   query: string,
 ): Promise<string> {
+  if (!userId || !agentId) {
+    return "NO_VERIFIED_MATCH: The agent identity could not be verified. Do not answer the factual question. Offer to take a message or escalate to a human.";
+  }
+
   const [directives, knowledge] = await Promise.all([
     drizzle
       .select({ content: schema.directives.content })
       .from(schema.directives)
-      .where(eq(schema.directives.agentId, agentId))
+      .where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId)))
       .orderBy(desc(schema.directives.priority))
       .limit(40),
     drizzle
@@ -71,26 +108,28 @@ async function searchAgentKnowledge(
   ].filter((s) => s.content.length > 0);
 
   if (snippets.length === 0) {
-    return "No knowledge base entries found for this agent. Take a message and let the caller know someone will follow up.";
+    return "NO_VERIFIED_MATCH: This agent has no approved knowledge for that question. Do not guess or fill gaps from general knowledge. Ask one clarifying question, then take a message or escalate if the caller still needs a factual answer.";
   }
 
   const queryTokens = tokenize(query);
+  if (queryTokens.length === 0) {
+    return "NO_VERIFIED_MATCH: The question is too broad to verify safely. Ask the caller for the specific product, service, policy, date, or detail they need.";
+  }
+
   const scored = snippets
     .map((s) => ({ ...s, score: scoreSnippet(s.content, queryTokens) }))
+    .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, MAX_KB_RESULTS);
 
-  const lines = scored.filter((s) => s.score > 0).map((s) => `[${s.source}] ${s.content}`);
-
-  if (lines.length === 0) {
-    // Return top entries even without keyword matches — they're still relevant context
-    return scored
-      .slice(0, 3)
-      .map((s) => `[${s.source}] ${s.content}`)
-      .join("\n\n");
+  if (scored.length === 0) {
+    return "NO_VERIFIED_MATCH: No approved knowledge matched the caller's question. Do not answer from memory, inference, or an unrelated entry. For current public facts, use the approved live-research tool only when enabled; otherwise take a message or escalate.";
   }
 
-  return lines.join("\n\n");
+  return [
+    "VERIFIED_KNOWLEDGE_MATCH: Answer only from the approved excerpts below. If they do not fully resolve the question, say you do not have a verified answer and offer follow-up; do not combine them with assumptions.",
+    ...scored.map((s) => `[${s.source}] ${s.content}`),
+  ].join("\n\n");
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -108,7 +147,8 @@ export async function handleCoreToolCall(
       if (!query) {
         return {
           toolCallId,
-          result: "Please provide a specific question to search the knowledge base.",
+          result:
+            "NO_VERIFIED_MATCH: No specific question was provided. Ask the caller what exact fact they need before answering.",
         };
       }
       const results = await searchAgentKnowledge(
@@ -123,7 +163,7 @@ export async function handleCoreToolCall(
       return {
         toolCallId,
         result:
-          "Knowledge search is temporarily unavailable. Answer from what you know or take a message.",
+          "NO_VERIFIED_MATCH: Knowledge search is temporarily unavailable. Do not answer the factual question from memory or guesswork. Take a message or escalate to a human.",
       };
     }
   }
