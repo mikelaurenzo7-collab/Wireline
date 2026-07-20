@@ -47,10 +47,11 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "provider-neutral-studio-route", pattern: /pages\/AgentStudioHome"/ },
     { id: "studio-route", pattern: /path="\/studio"/ },
     // Retired /agents directory page redirects into Studio, which owns the
-    // roster under the agent-first IA.
+    // roster under the agent-first IA. Query/hash are preserved for deep-links.
     {
       id: "agents-redirect",
-      pattern: /path="\/agents" element=\{<Navigate to="\/studio" replace \/>\}/,
+      pattern:
+        /path="\/agents"[\s\S]*AgentsToStudioRedirect|AgentsToStudioRedirect[\s\S]*\/studio\$\{location\.search\}/,
     },
   ],
   studioHome: [
