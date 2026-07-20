@@ -303,19 +303,21 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
               <Button asChild>
                 <Link to="/connections">Open Connections</Link>
               </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={syncing}
-                onClick={() => void syncInbox()}
-              >
-                {syncing ? (
-                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                ) : (
-                  <RefreshCw aria-hidden="true" className="size-4" />
-                )}
-                {syncing ? "Refreshing" : "Refresh inbox"}
-              </Button>
+              {error ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={syncing}
+                  onClick={() => void syncInbox()}
+                >
+                  {syncing ? (
+                    <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+                  ) : (
+                    <RefreshCw aria-hidden="true" className="size-4" />
+                  )}
+                  {syncing ? "Refreshing" : "Try again"}
+                </Button>
+              ) : null}
             </div>
           }
         />
