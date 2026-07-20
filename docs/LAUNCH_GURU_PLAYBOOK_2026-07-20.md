@@ -4,7 +4,7 @@ Status: **Active** — founder cheat-code for a successful launch and durable fu
 Canonical prices: `src/lib/plan-catalog.ts`. Canonical vendors: `docs/VENDOR_LAUNCH_MAP.md`.
 Companion creative kit: `docs/LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md` (binaries live in agent artifacts, not git).
 
-Snapshot verified live on **2026-07-20 (evening audit)**: Stripe on **Cadence AI** (`acct_1TkyXL8e6If87QKm`) available balance **$0.00**; Twilio balance **~$23.66**; production `trywireline.com` healthy. Federal DNCScrub credentials still need a real `loginId` (development currently holds a misplaced Vercel token).
+Snapshot verified live on **2026-07-20 (evening hardening)**: Stripe on **Cadence AI** (`acct_1TkyXL8e6If87QKm`) available balance **$0.00**; Twilio balance **~$23.66**; production `trywireline.com` healthy; launch-readiness **83** (`compliance_ready` degraded). Federal DNCScrub still needs a real `loginId` on all Vercel targets (development key removed; prod/preview Sensitive values fail the runtime configured check).
 
 ---
 

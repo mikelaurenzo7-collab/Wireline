@@ -119,7 +119,10 @@ router.use(
           .values({
             id: req.user.id,
             userId: req.user.id,
-            subscriptionStatus: isOwnerEmail(req.user.email) ? "active" : "trialing",
+            // Match signup (`startTrialForUser`): Free Builder tenants start
+            // pending_activation. Never bootstrap a silent `trialing` row —
+            // that status bypasses enforceLiveWorkActivation with no expiry.
+            subscriptionStatus: isOwnerEmail(req.user.email) ? "active" : "pending_activation",
             ...identityUpdate,
             updatedAt: new Date(),
           })

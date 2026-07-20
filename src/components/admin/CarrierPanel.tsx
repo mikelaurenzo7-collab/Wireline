@@ -69,14 +69,26 @@ interface PhoneNumber {
 
 type CarrierNumber = Record<string, unknown>;
 
+function hasSmsSendConfig(settings: CarrierSettings): boolean {
+  return Boolean(
+    settings.twilio_messaging_service_sid?.trim() || settings.twilio_sms_from_number?.trim(),
+  );
+}
+
+function hasManagerAlertConfig(settings: CarrierSettings): boolean {
+  return Boolean(settings.twilio_manager_alert_number?.trim());
+}
+
 function Toggle({
   checked,
   onClick,
   label,
+  disabled = false,
 }: {
   checked: boolean;
   onClick: () => void;
   label: string;
+  disabled?: boolean;
 }) {
   return (
     <ShadButton
@@ -84,11 +96,14 @@ function Toggle({
       variant="ghost"
       size="icon"
       disableAnimations
+      disabled={disabled}
       onClick={onClick}
       aria-label={label}
       aria-pressed={checked}
+      aria-disabled={disabled || undefined}
       className={cn(
         "relative h-6 w-11 shrink-0 rounded-full p-0",
+        disabled && "cursor-not-allowed opacity-50",
         checked ? "bg-brand hover:bg-brand" : "bg-black/15",
       )}
     >
@@ -119,6 +134,12 @@ export function CarrierPanel({
   const voiceAgents = agents.filter(
     (agent) => agent.channel === "voice" || agent.channel === "omnichannel" || !agent.channel,
   );
+  const smsSendable = hasSmsSendConfig(settings);
+  const managerAlertReady = hasManagerAlertConfig(settings);
+  // Honesty: never show ON when send path cannot succeed (mirrors Salesforce disconnect).
+  const messagingEnabled = Boolean(settings.twilio_messaging_enabled) && smsSendable;
+  const managerAlertsEnabled =
+    Boolean(settings.twilio_manager_alerts_enabled) && managerAlertReady;
 
   return (
     <div className="grid h-full min-h-0 grid-cols-1 gap-3 overflow-y-auto pb-4 xl:grid-cols-2">
@@ -307,18 +328,24 @@ export function CarrierPanel({
               </p>
             </div>
             <Toggle
-              checked={Boolean(settings.twilio_messaging_enabled)}
-              onClick={() =>
+              checked={messagingEnabled}
+              onClick={() => {
+                const next = !messagingEnabled;
+                if (next && !smsSendable) {
+                  // Opening the form (flag true) without claiming send-ready ON.
+                  onUpdateSettings({ ...settings, twilio_messaging_enabled: true });
+                  return;
+                }
                 onUpdateSettings({
                   ...settings,
-                  twilio_messaging_enabled: !settings.twilio_messaging_enabled,
-                })
-              }
+                  twilio_messaging_enabled: next,
+                });
+              }}
               label="Toggle customer follow-up by text"
             />
           </div>
 
-          {settings.twilio_messaging_enabled ? (
+          {settings.twilio_messaging_enabled || messagingEnabled ? (
             <div className="grid gap-3">
               <label className="grid gap-1.5" htmlFor="twilio-sms-from">
                 <span className="wl-label text-foreground/55">SMS sender number</span>
@@ -361,18 +388,23 @@ export function CarrierPanel({
               </p>
             </div>
             <Toggle
-              checked={Boolean(settings.twilio_manager_alerts_enabled)}
-              onClick={() =>
+              checked={managerAlertsEnabled}
+              onClick={() => {
+                const next = !managerAlertsEnabled;
+                if (next && !managerAlertReady) {
+                  onUpdateSettings({ ...settings, twilio_manager_alerts_enabled: true });
+                  return;
+                }
                 onUpdateSettings({
                   ...settings,
-                  twilio_manager_alerts_enabled: !settings.twilio_manager_alerts_enabled,
-                })
-              }
+                  twilio_manager_alerts_enabled: next,
+                });
+              }}
               label="Toggle important-event alerts"
             />
           </div>
 
-          {settings.twilio_manager_alerts_enabled ? (
+          {settings.twilio_manager_alerts_enabled || managerAlertsEnabled ? (
             <label className="grid gap-1.5" htmlFor="manager-alert-number">
               <span className="wl-label text-foreground/55">Your alert number</span>
               <Input
