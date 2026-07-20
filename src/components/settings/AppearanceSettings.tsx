@@ -7,7 +7,7 @@ const OPTIONS: Array<{ id: Theme; label: string; detail: string; icon: typeof Su
   {
     id: "dark",
     label: "Ink",
-    detail: "Warm dark canvas — default Wireline Letterpress.",
+    detail: "Warm dark canvas — Letterpress default.",
     icon: Moon,
   },
   {

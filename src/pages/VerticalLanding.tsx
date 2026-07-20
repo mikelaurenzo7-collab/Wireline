@@ -66,8 +66,10 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
 
   const heroProof = isPersonal
     ? ["Your voice", "Clear outcomes", "Private by default"]
-    : ["Answers", "Books", "Reports"];
-  const heroDescription = isPersonal ? "Offload the calls that follow you around." : cfg.subhead;
+    : undefined;
+  const heroDescription = isPersonal
+    ? "Hand the phone work to Wireline so your day stays yours."
+    : cfg.subhead;
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [

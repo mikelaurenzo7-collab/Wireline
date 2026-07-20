@@ -165,7 +165,7 @@ export const INSIGHTS_VIEW_TABS: Record<string, AppPageSubTab> = {
   leaderboard: {
     id: "leaderboard",
     label: "Leaderboard",
-    shortLabel: "Leaders",
+    shortLabel: "Ranks",
     ariaLabel: "Leaderboard",
     icon: Trophy,
   },
@@ -216,7 +216,7 @@ export const OUTBOUND_VIEW_TABS: AppPageSubTab[] = [
   {
     id: "callbacks",
     label: "Callbacks",
-    shortLabel: "Calls",
+    shortLabel: "Cbks",
     ariaLabel: "Callbacks",
     icon: CalendarClock,
   },

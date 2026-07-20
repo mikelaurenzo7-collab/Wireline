@@ -69,7 +69,10 @@ export default function PhonePage() {
 
   return (
     <WorkspaceShell contentClassName="pt-0 pb-0" fullBleed>
-      <WorkspacePageFrame mode="operate" className="flex min-h-0 flex-1 flex-col gap-0 pb-0">
+      <WorkspacePageFrame
+        mode="operate"
+        className="flex min-h-0 flex-1 flex-col gap-0 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] lg:pb-4"
+      >
         <WorkspaceOperateIntro
           title="Calls"
           tabs={
@@ -84,7 +87,7 @@ export default function PhonePage() {
             />
           }
         />
-        <div className="flex min-h-0 flex-1 flex-col overflow-visible">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
           {primaryTab === "logs" && <PhoneCallHistoryPanel />}
           {primaryTab === "outbound" && (
             <OutboundHub activeView={outboundView} onViewChange={setOutboundView} />

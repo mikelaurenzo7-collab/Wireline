@@ -46,7 +46,7 @@ export default function OutboundHub({
           </Button>
         )}
       </div>
-      <div className="min-h-0 flex-1 overflow-visible">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4">
         {activeView === "dispatch" && (
           <div className="flex min-h-0 flex-col">
             <div className="border-b border-border px-4 py-4 sm:px-6">

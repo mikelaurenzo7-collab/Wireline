@@ -156,7 +156,6 @@ export const OPS_CHANNEL_EMPTY = {
     title: "No campaigns yet",
     actions: [
       { label: "Create campaign", to: "/phone?tab=outbound&view=campaigns", primary: true },
-      { label: "Open dispatch", to: "/phone?tab=outbound&view=dispatch" },
     ],
   },
   outboundQueue: {
