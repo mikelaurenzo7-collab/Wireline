@@ -390,9 +390,9 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "operational",
     required: false,
     requiredInProd: true,
-    description: "Federal DNC vendor loginId (DNCScrub) — never a Vercel token",
-    validate: (value) =>
-      !value || (!/^vcp_/i.test(value.trim()) && !/^vercel_/i.test(value.trim()) && nonEmpty(value)),
+    description:
+      "Federal DNC vendor loginId (DNCScrub). Presence is required in prod; misplaced Vercel tokens are rejected at runtime by isFederalDncVendorConfigured.",
+    validate: nonEmpty,
   },
   {
     name: "OWNER_PHONE",
