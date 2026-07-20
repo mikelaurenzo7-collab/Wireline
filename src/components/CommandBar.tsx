@@ -164,8 +164,8 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   },
   {
     id: "client-apps",
-    label: "Wireline everywhere",
-    description: "Open Wireline Command, native app, and ChatGPT connection settings.",
+    label: "Companion surfaces",
+    description: "Optional early-access Command, MCP, and mobile waitlists — web remains the product.",
     icon: MonitorDown,
     href: "/settings/apps",
     category: "Manage",

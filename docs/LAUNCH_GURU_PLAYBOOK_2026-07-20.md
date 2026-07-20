@@ -20,9 +20,12 @@ Snapshot verified live on **2026-07-20 (evening hardening)**: Stripe on **Cadenc
 | CTA | “Start free” → Free Builder → “Launch for $9/mo” |
 | Money model | Included minutes + prepaid Conversation Balance (no silent postpaid meter; active calls finish) |
 | Runtime | OpenAI → Gemini → AI Gateway; PSTN = Twilio → Vapi (GPT-4o → Gemini); Grok = auth live test only |
-| Do not sell as GA | WhatsApp marketing, iOS/Android store, Jobber/ServiceTitan, SSO, auto-retrain, video presenter as core |
+| Do not sell as GA | WhatsApp marketing, iOS/Android store, browser-extension stores, Jobber/ServiceTitan, SSO, auto-retrain, video presenter as core |
+| Surface to launch | **Web only** — Command / MCP / Android / iPhone are optional companions, not admission criteria |
 
 **Launch rule:** do not invite paying strangers until Stripe available balance is ≥ $0 and the live E2E matrix below is green.
+
+**Perfectionism rule:** do **not** delay web launch for App Store, Play Store, Chrome/Firefox store listings, or iOS TestFlight. Ship the browser product; companions follow.
 
 ---
 
