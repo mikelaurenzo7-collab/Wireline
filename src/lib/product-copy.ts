@@ -146,7 +146,7 @@ export const CLIENT_SURFACE_POSTURE = {
   },
   chatgpt: {
     status: "Early access",
-    action: "Open MCP",
+    action: "Open guide",
   },
   claude: {
     status: "Early access",

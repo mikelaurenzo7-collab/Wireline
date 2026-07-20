@@ -33,7 +33,9 @@ surfaces and are not needed for core web/API development.
 - The dev server never throws on missing env (`src/lib/startup.ts`); unconfigured
   features return actionable `503` JSON at request time instead of crashing.
 - **Federal DNC scrub (outbound):** set `FEDERAL_DNC_API_URL` + `FEDERAL_DNC_API_KEY`
-  before scaling marketing outbound; unconfigured vendor returns no federal scrub.
+  (real DNCScrub `loginId`, not a Vercel token) before marketing outbound. Unconfigured
+  vendor **blocks** marketing/campaign dials fail-closed; non-marketing Studio dials
+  still use tenant DNC + TCPA.
 
 ### Database (important, non-obvious)
 

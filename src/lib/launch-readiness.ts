@@ -122,6 +122,12 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   };
 }
 
+/** True when LAUNCH_HARD_GATE=true and any launch capability is not ready. */
+export function isLaunchHardBlocked(): boolean {
+  if (process.env.LAUNCH_HARD_GATE !== "true") return false;
+  return !evaluateLaunchReadiness().campaign_ready;
+}
+
 export function isVoiceLaunchBlocked(): boolean {
   const voice = evaluateLaunchReadiness().capabilities.find(
     (capability) => capability.id === "voice_ready",
@@ -133,7 +139,8 @@ export function launchBlockResponse() {
   const report = evaluateLaunchReadiness();
   return {
     code: "LAUNCH_NOT_READY",
-    error: "Wireline voice, billing, compliance, or core infrastructure is not launch-ready.",
+    error:
+      "Launch hard gate is on and Wireline is not launch-ready (voice, billing, compliance, or core).",
     launch_blockers: report.launch_blockers,
     capabilities: report.capabilities,
   };

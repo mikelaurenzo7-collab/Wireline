@@ -110,7 +110,9 @@ export default function ComplianceCenter() {
                 Federal DNC
               </p>
               <p className="mt-1 text-sm font-medium text-foreground">
-                {summary.federal_dnc_configured ? "Vendor configured" : "Not configured"}
+                {summary.federal_dnc_configured
+                  ? "Vendor configured"
+                  : "Not configured — marketing dials blocked"}
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-3.5">

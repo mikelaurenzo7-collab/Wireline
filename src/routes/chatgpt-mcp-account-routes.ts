@@ -409,7 +409,7 @@ function resourceMeta(req: Request) {
     ui: {
       prefersBorder: true,
       domain: issuer(req),
-      csp: { connectDomains: ["https://api.openai.com"], resourceDomains: [] },
+      csp: { connectDomains: ["https://api.x.ai", "wss://api.x.ai"], resourceDomains: [] },
     },
     "openai/widgetDescription":
       "Shows a connected Wireline agent draft, private voice simulation, aggregate workspace status, and a secure path to continue configuration in Wireline.",

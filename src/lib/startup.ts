@@ -1,6 +1,7 @@
 import { log, IS_PROD } from "./server-context";
 import { getInternalJwtSecret } from "./internal-jwt-secret";
 import { validateEnv, logEnvValidation, generateSetupChecklist } from "./env-validator";
+import { isFederalDncVendorConfigured } from "./federal-dnc-service";
 
 /**
  * Startup env validation — fail fast in production rather than
@@ -81,9 +82,9 @@ export function validateStartupEnv() {
     }
   }
 
-  if (IS_PROD && (!process.env.FEDERAL_DNC_API_URL || !process.env.FEDERAL_DNC_API_KEY)) {
+  if (IS_PROD && !isFederalDncVendorConfigured()) {
     log.warn(
-      "FEDERAL_DNC_API_URL / FEDERAL_DNC_API_KEY not set in production — federal DNC scrub is skipped until configured. Set both before scaling marketing outbound.",
+      "Federal DNC vendor is not configured (missing FEDERAL_DNC_API_URL/KEY or rejected placeholder key) — marketing/campaign outbound fails closed until a real DNCScrub loginId is set.",
     );
   }
 

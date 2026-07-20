@@ -84,4 +84,20 @@ describe("ChatGPT private voice simulation routing", () => {
     expect(chatkitIndex).toBeGreaterThan(xaiIndex);
     expect(chatkitIndex - xaiIndex).toBeLessThan(200);
   });
+
+  it("connects the account MCP widget to Grok WebSocket PCM, not OpenAI WebRTC", () => {
+    const widget = read("src/lib/chatgpt-mcp-account.ts");
+    const accountRoutes = read("src/routes/chatgpt-mcp-account-routes.ts");
+
+    expect(widget).toContain("new WebSocket");
+    expect(widget).toContain("xai-client-secret.");
+    expect(widget).toContain('type: "session.update"');
+    expect(widget).toContain("session.endpoint");
+    expect(widget).toContain("input_audio_buffer.append");
+    expect(widget).not.toContain("api.openai.com/v1/realtime/calls");
+    expect(widget).not.toContain("RTCPeerConnection");
+
+    expect(accountRoutes).toContain('connectDomains: ["https://api.x.ai", "wss://api.x.ai"]');
+    expect(accountRoutes).not.toContain('connectDomains: ["https://api.openai.com"]');
+  });
 });
