@@ -36,8 +36,11 @@ describe("current-state UI contract", () => {
 
   it("keeps companion availability honest to the web-first launch order", () => {
     const apps = read("src/pages/ClientAppsPage.tsx");
+    const security = read("src/components/Security.tsx");
+    const commandBar = read("src/components/CommandBar.tsx");
 
-    expect(CLIENT_SURFACE_POSTURE.summary).toContain("Web is the canonical runtime");
+    expect(CLIENT_SURFACE_POSTURE.summary).toContain("Launch on the web");
+    expect(CLIENT_SURFACE_POSTURE.summary).toContain("None are required for the core product");
     expect(CLIENT_SURFACE_POSTURE.browser.status).toBe("Early access");
     expect(CLIENT_SURFACE_POSTURE.chatgpt.status).toBe("Early access");
     expect(CLIENT_SURFACE_POSTURE.claude.status).toBe("Early access");
@@ -50,6 +53,11 @@ describe("current-state UI contract", () => {
     expect(apps).not.toContain("mailto:support@trywireline.com?subject=Wireline%20Command%20install%20guide");
     expect(apps).not.toContain('status: "Live"');
     expect(apps).not.toContain('action: "TestFlight"');
+    expect(commandBar).toContain('label: "Companion surfaces"');
+    expect(commandBar).not.toContain("Wireline everywhere");
+    expect(security).toContain("The web app is the GA product");
+    expect(security).toContain("Marketing / campaign outbound fails closed");
+    expect(security).not.toContain("until then, only tenant lists apply");
   });
 
   it("makes the account-bound MCP apps public without overstating their authority", () => {

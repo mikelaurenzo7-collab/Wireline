@@ -139,7 +139,7 @@ export const MARKETING_VOICE = {
 
 export const CLIENT_SURFACE_POSTURE = {
   summary:
-    "Web is the canonical runtime. Browser Command, ChatGPT, Claude, and Cursor are early-access companions on the same account-bound MCP/handoff model. Android remains in internal beta; iPhone follows device QA and signing.",
+    "Launch on the web — Create, Train, Wire, and Run are complete in the browser. Browser Command, ChatGPT, Claude, and Cursor are optional early-access companions; Android is internal beta; iPhone is planned. None are required for the core product.",
   browser: {
     status: "Early access",
     action: "Install guide",

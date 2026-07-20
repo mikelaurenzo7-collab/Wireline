@@ -91,12 +91,20 @@ Do **not** sell iOS as live while `CLIENT_SURFACE_POSTURE.ios = Planned`. Align 
 
 ---
 
-## Investment order (next)
+## Web-first launch decision (2026-07-20)
 
-1. **Web honesty** — `/developers` MCP-first; companion posture synced.
-2. **MCP polish** — guest tool transport removed; Cursor Apps tile + draftSource attribution.
-3. **Extension** — in-product install at `/settings/apps/command` with Chromium/Firefox zips under `/downloads/`.
-4. **Android internal beta → dogfood** — consent artifact on native dial; checklist updated.
-5. **iOS** — Planned honesty in README; CarPlay stays Phase 2.
+**GO: promote and sell the web app without store-ready natives or extension.**
+
+Companions are optional early access. Create → Train → Wire → Run is complete on `trywireline.com`. Waiting on App Store / Play / Chrome Web Store is a perfectionist trap, not a product dependency.
+
+Real gates before inviting paid strangers (ops, not companions): Federal DNCScrub for marketing dials, live billing/voice/SMS/email E2E proof, Stripe buffer, Twilio top-up, rotate leaked tokens. See `docs/LAUNCH_GURU_PLAYBOOK_2026-07-20.md`.
+
+## Investment order (companions after web GA)
+
+1. **Web honesty** — done for Apps/Developers/Security posture.
+2. **MCP polish** — guest tools removed; Cursor/Claude on shared `/mcp`.
+3. **Extension** — in-product install live; store GA deferred.
+4. **Android internal beta → dogfood** — after web launch traffic exists.
+5. **iOS** — Planned; CarPlay Phase 2.
 
 Kill candidates (not recommended yet): none. Shrink candidates: extension agency claims (done), Developers API-key fiction (done), guest MCP demos (done).

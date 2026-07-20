@@ -137,18 +137,18 @@ const TRUST_PACK_SECTIONS = [
     icon: Globe2,
     title: "Wireline Command (browser extension)",
     items: [
+      "Early access handoff only — install from Apps in Studio; store listings are not GA.",
       "Page context is sent only when you explicitly click Send to Studio — no background harvesting.",
       "No broad host permissions, no silent browsing collection, and no auth tokens stored in the extension.",
-      "The extension is a handoff surface into Studio, not an independent agent runtime.",
     ],
   },
   {
     icon: ServerCog,
     title: "Native mobile clients",
     items: [
-      "iOS and Android authenticate with short-lived Bearer sessions against the same Wireline API contract as web.",
-      "Calls, approvals, and notifications are control surfaces — prompts, billing, and compliance decisions stay server-owned.",
-      "Account deletion and sign-out are required App Store / Play policy paths on native settings.",
+      "Optional companions — Android is internal beta; iPhone is planned. The web app is the GA product.",
+      "When available, natives use short-lived Bearer sessions against the same API; prompts, billing, and compliance stay server-owned.",
+      "App Store / Play account-deletion paths ship with each store build — they are not a launch gate for the web product.",
     ],
   },
   {
@@ -157,7 +157,7 @@ const TRUST_PACK_SECTIONS = [
     items: [
       "Outbound calls require consent checks before dial — marketing calls respect do-not-call posture.",
       "Tenant DNC lists are enforced before expensive PSTN actions.",
-      "Federal DNC registry scrub is wired into outbound dial paths when FEDERAL_DNC_API_URL and FEDERAL_DNC_API_KEY are configured; until then, only tenant lists apply and we document the gap in sales conversations.",
+      "Marketing / campaign outbound fails closed until Federal DNC scrub is configured (FEDERAL_DNC_API_URL + FEDERAL_DNC_API_KEY). Non-marketing Studio dials still use tenant DNC + TCPA.",
     ],
   },
   {
