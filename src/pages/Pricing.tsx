@@ -218,7 +218,7 @@ export default function Pricing() {
             to: "/signup?plan=personal",
             tone: "secondary",
           }}
-          proof={assurances.map(({ label }) => label)}
+          proof={assurances.slice(0, 3).map(({ label }) => label)}
         />
 
         <section id="plans" className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">

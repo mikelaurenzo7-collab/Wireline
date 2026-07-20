@@ -665,14 +665,8 @@ export default function OverviewPage() {
                     Customer outcomes
                   </p>
                 </div>
-                <Link
-                  to="/approvals"
-                  className="text-xs font-semibold text-primary hover:underline"
-                >
-                  Review follow-ups →
-                </Link>
               </div>
-              <OutcomeLedger limit={5} showViewAll />
+              <OutcomeLedger limit={5} showViewAll followUpsHref="/approvals" />
             </section>
 
             <section

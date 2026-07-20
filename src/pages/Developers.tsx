@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BookOpen,
   Copy,
@@ -102,6 +102,15 @@ export default function Developers() {
     window.setTimeout(() => setCopied(false), 2000);
   };
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#mcp-endpoint") return;
+    const node = document.getElementById("mcp-endpoint");
+    node?.scrollIntoView({ behavior: "smooth", block: "start" });
+    handleCopy();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot deep-link copy
+  }, []);
+
   return (
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
@@ -114,7 +123,7 @@ export default function Developers() {
         eyebrow="Developers"
         title="Bring Wireline into the tools you already use."
         description="The live developer surface is an account-bound MCP connector. Draft and simulate privately in ChatGPT, Claude, or Cursor — then finish Training, Wire, and launch in Wireline."
-        primaryAction={{ label: "Open MCP endpoint", to: "https://trywireline.com/mcp" }}
+        primaryAction={{ label: "Copy MCP endpoint", to: "#mcp-endpoint" }}
         secondaryAction={{ label: "OpenAPI map", to: openApiUrl, tone: "secondary" }}
         proof={["OAuth PKCE", "Account-bound tools", "ChatGPT · Claude · Cursor"]}
       />
@@ -126,7 +135,7 @@ export default function Developers() {
         <div className="mx-auto max-w-5xl text-center">
           <p className="wl-stitch-eyebrow">ChatGPT · Claude · Cursor</p>
           <h2 id="mcp-apps-heading" className="wl-stitch-display mt-3 text-balance">
-            Bring Wireline into ChatGPT, Claude, or Cursor.
+            Connect once. Draft and simulate in the client you already open.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
             Use one account-bound MCP connector to draft an AI employee in natural language, test
@@ -155,7 +164,7 @@ export default function Developers() {
             ))}
           </div>
 
-          <div className="mx-auto mt-6 max-w-3xl rounded-xl border border-border bg-background p-5">
+          <div id="mcp-endpoint" className="mx-auto mt-6 max-w-3xl scroll-mt-28 rounded-xl border border-border bg-background p-5">
             <p className="wl-overline text-primary">Secure MCP endpoint</p>
             <code className="mt-3 block overflow-x-auto font-mono text-sm text-foreground">
               {mcpEndpoint}

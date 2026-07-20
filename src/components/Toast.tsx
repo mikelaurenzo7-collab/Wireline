@@ -110,9 +110,15 @@ export default function ToastStack() {
   const location = useLocation();
   const marketingSticky = !user && isMarketingStickyCtaRoute(location.pathname);
 
-  // The mobile bottom tab bar was removed, so signed-in toasts now sit at the
-  // standard bottom gutter. Only the public marketing sticky CTA still needs
-  // extra clearance.
+  // Clear the mobile dock (signed-in) or marketing sticky CTA (public conversion
+  // routes). --toast-mobile-bottom is set inline so it cannot drift from the
+  // WorkspaceShell dock / MarketingStickyCta heights.
+  const mobileBottom = user
+    ? "calc(5.25rem + env(safe-area-inset-bottom, 0px))"
+    : marketingSticky
+      ? "calc(5.25rem + env(safe-area-inset-bottom, 0px))"
+      : "calc(1rem + env(safe-area-inset-bottom, 0px))";
+
   return (
     <div
       role="log"
@@ -121,6 +127,7 @@ export default function ToastStack() {
       aria-relevant="additions text"
       aria-label="Notifications"
       className="toast-stack fixed inset-x-3 max-md:bottom-[var(--toast-mobile-bottom)] md:bottom-5 md:inset-x-auto md:right-5 z-[9999] flex flex-col gap-2 items-stretch md:items-end pointer-events-none"
+      style={{ ["--toast-mobile-bottom" as any]: mobileBottom }}
       data-marketing-sticky={marketingSticky ? "true" : undefined}
     >
       <AnimatePresence initial={false} mode="sync">

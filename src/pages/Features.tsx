@@ -115,7 +115,7 @@ const USE_CASES = [
   { title: "Custom workflow", icon: Workflow },
 ] as const;
 
-const FEATURE_HERO_PROOF = MARKETING_VOICE.channelProof;
+const FEATURE_HERO_PROOF = MARKETING_VOICE.channelProof.slice(0, 3);
 
 export default function Features() {
   return (
