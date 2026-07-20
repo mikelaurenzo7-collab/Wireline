@@ -324,7 +324,7 @@ export default function CrmConnectionCard() {
     return (
       <div className="space-y-4" aria-busy="true" aria-label="Loading integration connections…">
         <Skeleton className="h-11 w-full" shape="surface" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3">
+        <div className="grid grid-cols-1 items-start sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3">
           {Array.from({ length: PROVIDERS.length }).map((_, i) => (
             <Skeleton key={i} className="h-24" shape="surface" />
           ))}
@@ -392,7 +392,7 @@ export default function CrmConnectionCard() {
 
       {/* One flat grid keeps the page symmetric at every viewport; each card
           carries its own category chip instead of a one-card section. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3">
+      <div className="grid grid-cols-1 items-start sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3">
         <AnimatePresence mode="popLayout">
           {PROVIDERS.map(({ key, label, logo, group, beta }) => {
             const styles = CONNECTED_STYLES;

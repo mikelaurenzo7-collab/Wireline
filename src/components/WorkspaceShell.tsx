@@ -52,7 +52,7 @@ function userInitial(name?: string | null, email?: string | null) {
 }
 
 function readinessLabel(agent: { phone_number?: string | null } | undefined): string {
-  return agent?.phone_number ? "Active" : "Training";
+  return agent?.phone_number ? "Live" : "Setup needed";
 }
 
 function contextualNavItem(item: ShellNavItem, posture: "personal" | "business"): ShellNavItem {

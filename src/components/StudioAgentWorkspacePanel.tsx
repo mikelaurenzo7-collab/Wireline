@@ -197,11 +197,12 @@ export default function StudioAgentWorkspacePanel({
 
               <label className="grid gap-2" htmlFor="setup-greeting">
                 <span className="text-sm font-semibold text-foreground">Opening greeting</span>
-                <input
+                <textarea
                   id="setup-greeting"
                   value={setupGreeting}
                   onChange={(event) => setSetupGreeting(event.target.value)}
-                  className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary/50"
+                  rows={2}
+                  className="min-h-11 w-full resize-y rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary/50"
                 />
               </label>
 
