@@ -76,3 +76,14 @@ VERCEL_TOKEN=… node scripts/verify-stripe-vercel-parity.mjs
 VERCEL_TOKEN=… npm run stripe:webhook:check
 npx vitest run tests/cadence-stripe-gdpr-contract.test.ts src/lib/plan-catalog.test.ts
 ```
+
+## Visual QA follow-up (same day)
+
+Full production capture against `trywireline.com`:
+
+- Desktop marketing + authenticated shell: **126 PNGs, 0 automated issues**, signup→workspace succeeded
+- Phone (390×844) marketing + authenticated shell: **126 PNGs, 0 automated issues**
+- Fixed before merge: Showcase proof "Private until launch" → "No signup to listen"; Salesforce call-sync switch reads OFF while disconnected; visual-QA phone viewport loop
+
+Artifacts (local agent): `/opt/cursor/artifacts/visual-qa-prod/` and `/opt/cursor/artifacts/visual-qa-phone/`.
+
