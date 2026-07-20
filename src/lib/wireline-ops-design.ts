@@ -333,14 +333,14 @@ export const OPS_STUDIO_ASSISTS_COPY = {
   hint: "Opens Studio scoped to this agent",
 } as const;
 
-/** Deep-link into Studio with an agent focused and the composer prefilled. */
+/** Deep-link into Studio with an agent focused and the workroom composer prefilled. */
 export function directorAssistHref(agentId: string, prompt: string): string {
-  return `/studio?agent=${encodeURIComponent(agentId)}&prompt=${encodeURIComponent(prompt)}`;
+  return `/studio?agent=${encodeURIComponent(agentId)}&command=${encodeURIComponent(prompt)}`;
 }
 
-/** Deep-link into Studio with only a prefilled prompt. */
+/** Deep-link into Studio with only a prefilled workroom command. */
 export function directorPromptHref(prompt: string): string {
-  return `/studio?prompt=${encodeURIComponent(prompt)}`;
+  return `/studio?command=${encodeURIComponent(prompt)}`;
 }
 
 /** In-app help route – quick paths + page chrome */

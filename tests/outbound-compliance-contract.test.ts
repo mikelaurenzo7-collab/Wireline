@@ -14,11 +14,25 @@ describe("outbound compliance contract", () => {
       expect(source).not.toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES).optional()");
       expect(source).not.toContain('default("marketing_or_sales")');
       expect(source).toContain("isMarketingCallPurpose(callPurpose)");
+      expect(source).toContain("assertFederalDncForMarketing()");
       expect(source).toContain("outboundConsentMetadata({");
       expect(source).toContain("isDncBlocked(req.user.id, customerNumber)");
       expect(source).toContain("isFederalDncListed(customerNumber)");
       expect(source).toContain("is_federal_dnc: isFederalDnc");
       expect(source).toContain("tcpaBlocked: true");
+    }
+  });
+
+  it("fails closed when federal DNC vendor is unconfigured for marketing dials on web and mobile", () => {
+    const web = read("src/routes/outbound-routes.ts");
+    const mobile = read("src/routes/mobile-routes.ts");
+
+    for (const source of [web, mobile]) {
+      expect(source).toMatch(
+        /if \(isMarketingCallPurpose\(callPurpose\)\)[\s\S]*?assertFederalDncForMarketing\(\)/,
+      );
+      expect(source).toContain("federalGate.allowed");
+      expect(source).toContain("status(503)");
     }
   });
 

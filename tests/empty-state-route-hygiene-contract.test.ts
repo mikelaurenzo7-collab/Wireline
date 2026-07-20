@@ -18,6 +18,8 @@ describe("empty-state route hygiene", () => {
     expect(ops).not.toMatch(/to: "\/agents"/);
     expect(ops).toContain("directorAssistHref");
     expect(ops).toContain("`/studio?agent=");
+    expect(ops).toContain("&command=");
+    expect(ops).not.toContain("&prompt=");
 
     expect(overview).toContain('primaryHref: "/settings/phone"');
     expect(overview).toContain('primaryLabel: "Connect phone"');

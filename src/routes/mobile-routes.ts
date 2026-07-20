@@ -32,7 +32,7 @@ import { ensureDefaultAccount } from "../lib/account-service";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
-import { isFederalDncListed } from "../lib/federal-dnc-service";
+import { isFederalDncListed, assertFederalDncForMarketing } from "../lib/federal-dnc-service";
 import {
   OUTBOUND_CALL_PURPOSES,
   isMarketingCallPurpose,
@@ -622,6 +622,16 @@ router.post(
         hasExpressWrittenConsent,
       } = req.body;
       const expressConsent = normalizedExpressConsent({ callPurpose, hasExpressWrittenConsent });
+
+      if (isMarketingCallPurpose(callPurpose)) {
+        const federalGate = assertFederalDncForMarketing();
+        if (!federalGate.allowed) {
+          return res.status(503).json({
+            code: federalGate.code,
+            error: federalGate.message,
+          });
+        }
+      }
 
       if (await isDncBlocked(req.user.id, customerNumber)) {
         log.warn("Mobile outbound dial blocked by DNC list", { customerNumber });

@@ -180,6 +180,8 @@ export default function CrmConnectionCard() {
   // URL. Held here until they click Connect.
   const [shopDomain, setShopDomain] = useState("");
   const [shopError, setShopError] = useState<string | null>(null);
+  /** Keep Shopify domain collapsed until Connect so the grid stays even. */
+  const [shopDomainOpen, setShopDomainOpen] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -265,6 +267,7 @@ export default function CrmConnectionCard() {
     if (provider === "shopify") {
       const shop = shopDomain.trim().toLowerCase();
       if (!/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shop)) {
+        setShopDomainOpen(true);
         setShopError("Enter a valid store domain, e.g. your-store.myshopify.com");
         return;
       }
@@ -538,7 +541,7 @@ export default function CrmConnectionCard() {
                     );
                   })()}
 
-                {key === "shopify" && !s.connected && (
+                {key === "shopify" && !s.connected && shopDomainOpen && (
                   <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
                     <div className="wl-label text-muted/90">Your store domain</div>
                     <Input
@@ -551,6 +554,7 @@ export default function CrmConnectionCard() {
                       placeholder="your-store.myshopify.com"
                       spellCheck={false}
                       autoCapitalize="off"
+                      autoFocus
                       className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-foreground placeholder:text-foreground/55 outline-none focus:border-brand/40"
                     />
                     {shopError ? (
