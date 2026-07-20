@@ -371,7 +371,7 @@ async function upsertAgent(
     archetype: template.archetype,
     firstMessage: template.firstMessage,
     voiceId: pickRotatedVoiceId(voiceIndex),
-    voiceProvider: "11labs",
+    voiceProvider: "vapi",
     enabledTools: toolsJson,
     personalityVibe: template.personalityVibe || "warm",
     emailAgentTone: template.emailAgentTone,

@@ -541,8 +541,7 @@ export default function LiveVoiceSandbox({
               Speak with {agentName}
             </h3>
             <p className="mt-1 max-w-2xl text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-              A private browser test using this agent's rules, facts, voice profile, and
-              pronunciation guidance.
+              A private browser test using this agent's rules, facts, and voice profile.
             </p>
           </div>
         </div>

@@ -96,16 +96,6 @@ export const VAPI_START_SPEAKING_PLAN_FLUX = {
  */
 export const VAPI_OUTBOUND_FIRST_MESSAGE_MODE = "assistant-waits-for-user" as const;
 
-/** Slight pace nudge when the Account Holder left ElevenLabs speed at the 1.0 default — 0.97 is barely perceptible but gives outbound a calmer open. */
-export const VAPI_OUTBOUND_VOICE_SPEED_NUDGE = 0.97;
-
-/** Clamp ElevenLabs speed; outbound nudges untouched 1.0 → 0.94 for a calmer phone cadence. */
-export function resolveElevenLabsSpeed(raw: unknown, opts?: { outbound?: boolean }): number {
-  const parsed = raw == null ? 1.0 : Math.min(1.2, Math.max(0.7, Number(raw) || 1.0));
-  if (opts?.outbound && parsed === 1.0) return VAPI_OUTBOUND_VOICE_SPEED_NUDGE;
-  return parsed;
-}
-
 /** Brief beat after the callee speaks before the agent opens (pairs with waits-for-user). */
 export function resolveOutboundStartSpeakingPlan(
   speechPipeline: ReturnType<typeof resolveVapiSpeechPipeline>,
@@ -176,8 +166,8 @@ export function getVoiceLatencyProfile(input: {
   return {
     silenceTimeoutSeconds,
     // Vapi waits this long after the caller stops talking before the
-    // agent starts speaking. Zero across all tiers — 11labs streaming
-    // TTS handles first-token latency, so there's no quality reason to
+    // agent starts speaking. Zero across all tiers — streaming TTS
+    // handles first-token latency, so there's no quality reason to
     // throttle.
     responseDelaySeconds: 0,
     // Two-word interrupt threshold for everyone. Lets the caller cut

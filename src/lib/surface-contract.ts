@@ -83,12 +83,7 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
   knowledge: {
     route: "/knowledge",
     tabs: KNOWLEDGE_TABS,
-    requiredSections: [
-      "Voice engine",
-      "Pronunciation dictionary",
-      "Flow Composer",
-      "Scenario library",
-    ],
+    requiredSections: ["Voice engine", "Flow Composer", "Scenario library"],
     retiredPatterns: ["trainingNav", "six item section map"],
   },
   training: {

@@ -99,15 +99,6 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     ["VAPI_PRIVATE_KEY"],
   ),
   item(
-    "elevenlabs",
-    "ElevenLabs",
-    "Optional TTS, consented voice cloning, pronunciation tools, and showcase voices.",
-    "voice",
-    false,
-    ["ELEVENLABS_API_KEY"],
-    "Paid plan entitlements are required for Voice Library API use.",
-  ),
-  item(
     "openai-realtime",
     "OpenAI Realtime",
     "Optional web/mobile voice mode, separate from phone routing.",
@@ -157,10 +148,14 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "ICLOUD_APPLE_ID",
     "ICLOUD_APP_PASSWORD",
   ]),
-  item("stripe", "Stripe", "Subscriptions, prepaid balances, billing, and portal.", "billing", true, [
-    "STRIPE_SECRET_KEY",
-    "STRIPE_WEBHOOK_SECRET",
-  ]),
+  item(
+    "stripe",
+    "Stripe",
+    "Subscriptions, prepaid balances, billing, and portal.",
+    "billing",
+    true,
+    ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"],
+  ),
   item(
     "resend",
     "Resend",

@@ -13,7 +13,6 @@ import {
   Target,
   ShieldAlert,
   Mail,
-  Wand2,
   ScrollText,
   BarChart3,
   Headphones,
@@ -29,7 +28,6 @@ export type Recipe =
   | "qualify"
   | "objection-drill"
   | "cold-email"
-  | "persona-clone"
   | "summarize-thread"
   | "agent-review"
   | "coach"
@@ -81,13 +79,6 @@ export const RECIPE_META: Record<Recipe, RecipeMeta> = {
     icon: Mail,
     accent: BRAND.colors.primary,
     thinking: false,
-  },
-  "persona-clone": {
-    title: "Persona Clone",
-    tagline: "Distill a person's voice from samples.",
-    icon: Wand2,
-    accent: BRAND.colors.outlineVariant,
-    thinking: true,
   },
   "summarize-thread": {
     title: "Thread Summary",

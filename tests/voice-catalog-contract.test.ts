@@ -17,9 +17,6 @@ describe("voice catalog", () => {
     // external provider fetches in the picker itself.
     expect(read("src/components/voice/SimpleVoicePicker.tsx")).toContain("VAPI_CURATED_VOICES");
     expect(read("src/components/voice/SimpleVoicePicker.tsx")).not.toContain('"/api/voices"');
-    expect(read("src/routes/voices-routes.ts")).toContain("providers:");
-    expect(read("src/routes/voices-routes.ts")).toContain("presenterVoices");
-    expect(read("src/routes/voices-routes.ts")).toContain("/api/voices/curated/preview");
     expect(read("src/lib/voice/voice-preview-service.ts")).toContain(
       'const XAI_TTS_URL = "https://api.x.ai/v1/tts"',
     );

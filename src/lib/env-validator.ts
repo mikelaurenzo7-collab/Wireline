@@ -207,13 +207,6 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     validate: nonEmpty,
   },
   {
-    name: "ELEVENLABS_API_KEY",
-    group: "voice",
-    required: false,
-    description: "Optional voice cloning and showcase synthesis",
-    validate: nonEmpty,
-  },
-  {
     name: "LIVEAVATAR_API_KEY",
     group: "voice",
     required: false,

@@ -1,4 +1,4 @@
-export type VoiceProvider = "xai" | "11labs" | "vapi" | "presenter";
+export type VoiceProvider = "xai" | "vapi" | "presenter";
 
 export type VoiceOption = {
   id: string;
@@ -19,7 +19,7 @@ export const WIRELINE_LIVE_VOICES: readonly VoiceOption[] = [
 ] as const;
 
 /**
- * Vapi native voices — included with your phone line, no ElevenLabs key required.
+ * Vapi native voices — included with your phone line, no extra voice provider required.
  * Curated for reception and sales calls.
  */
 export const VAPI_CURATED_VOICES: readonly VoiceOption[] = [
@@ -92,7 +92,7 @@ export function normalizeApiVoices(raw: unknown): VoiceOption[] {
             ? "vapi"
             : providerRaw === "presenter"
               ? "presenter"
-              : "11labs";
+              : "vapi";
       return {
         id,
         name: voice.name || id,
@@ -105,7 +105,6 @@ export function normalizeApiVoices(raw: unknown): VoiceOption[] {
 }
 
 export type VoiceCatalogProviders = {
-  elevenlabs: boolean;
   wirelineLive: boolean;
   vapi: boolean;
   presenter: boolean;
@@ -139,7 +138,7 @@ export function voiceFamilyLabel(provider: VoiceProvider): string {
 /** Short routing hint for create-flow voice picks. */
 export function voiceRoutingHint(provider: VoiceProvider): string | null {
   if (provider === "xai") {
-    return "Best for browser simulator and low-latency tests. For PSTN phone calls, prefer Wireline Phone or Voice library.";
+    return "Best for browser simulator and low-latency tests. For PSTN phone calls, prefer Wireline Phone.";
   }
   if (provider === "vapi") {
     return "Optimized for live phone calls on your Vapi line.";
@@ -155,16 +154,10 @@ export function voicePreviewUrl(voice: VoiceOption): string | null {
   if (voice.provider === "xai") {
     return `/api/voices/curated/preview?provider=xai&voiceId=${encodeURIComponent(voice.id)}`;
   }
-  if (voice.provider === "vapi") {
-    return null;
-  }
   if (voice.provider === "presenter") {
     return `/api/voices/presenter/${encodeURIComponent(voice.id)}/preview`;
   }
-  if (voice.owned_by_user) {
-    return `/api/voices/${encodeURIComponent(voice.id)}/owned-preview`;
-  }
-  return `/api/voices/${encodeURIComponent(voice.id)}/preview`;
+  return null;
 }
 
 /** Play a short voice sample in the browser via server-hosted audio. */

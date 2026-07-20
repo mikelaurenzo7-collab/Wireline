@@ -170,7 +170,6 @@ export const WIRELINE_INTEGRATIONS = [
   "X (Twitter)",
   "Stripe",
   "Bring-your-own carrier",
-  "Wireline voice cloning",
 ] as const;
 
 /**

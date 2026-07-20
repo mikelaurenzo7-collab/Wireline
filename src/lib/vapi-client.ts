@@ -535,8 +535,6 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
     recordingEnabled: true,
     voice: (() => {
       // Outbound calls use the same managed Vapi voice roster as inbound calls.
-      // ElevenLabs remains an optional cloning/showcase layer, not the tenant
-      // phone runtime.
       const requestedVoiceId = agentConfig.voiceIdOutbound || agentConfig.voiceId;
       const voiceId = isManagedVapiVoiceId(requestedVoiceId)
         ? requestedVoiceId

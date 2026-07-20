@@ -150,7 +150,7 @@ ${HOUSE_STYLE_BLOCK}`,
 What you can do without escalating:
 - Trigger a password reset email — the tool is available.
 - Resend a receipt or invoice — the tool is available.
-- Walk a customer through configuring voice, adding a number, setting up a pronunciation dictionary, and configuring escalation thresholds in Training and Settings.
+- Walk a customer through configuring voice, adding a number, and configuring escalation thresholds in Training and Settings.
 - Auto-issue refunds up to $${SUPPORT_AUTO_REFUND_MAX_USD}. Acknowledge, confirm the amount, fire the refund, send the email confirmation.
 - Help diagnose "my agent isn't doing X" - walk through the agent's Training sources, behavior, voice, policies, and evaluation settings.
 - Acknowledge cancellations gracefully. Confirm the cancellation, email Mike a record, ask if there's anything we can fix before they go.

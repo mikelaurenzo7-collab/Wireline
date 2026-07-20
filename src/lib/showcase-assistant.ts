@@ -801,9 +801,9 @@ export function buildShowcaseAssistantPayload(
     },
   };
 
-  // All showcase agents use Vapi's curated V2 voices (powered by xAI Grok).
-  // No ElevenLabs dependency — Vapi voices are included at $0.0025/min with
-  // lower latency and more natural conversational quality.
+  // All showcase agents use Vapi's curated V2 voices (powered by xAI Grok),
+  // included at $0.0025/min with lower latency and more natural
+  // conversational quality.
   const vapiVoiceId = agent.vapiVoiceId || options?.existingVoiceId || "Elliot";
   payload.voice = {
     provider: "vapi",

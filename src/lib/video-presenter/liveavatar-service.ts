@@ -1,7 +1,7 @@
 /**
  * LiveAvatar (HeyGen) server client — LITE mode sessions.
  *
- * Wireline keeps Vapi / ElevenLabs / OpenAI for voice + brains; LiveAvatar
+ * Wireline keeps Vapi / OpenAI for voice + brains; LiveAvatar
  * renders photoreal lip-sync video into a LiveKit room. Docs:
  * https://docs.liveavatar.com/docs/lite-mode/overview
  */

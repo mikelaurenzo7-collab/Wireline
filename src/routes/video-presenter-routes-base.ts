@@ -27,7 +27,6 @@ import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { buildAgentIdentityPreview } from "../lib/agent-identity";
-import { elevenLabsConfigured, generateSamplePcm24 } from "../lib/elevenlabs-client";
 import {
   generatePresenterSpeech,
   presenterVoicesConfigured,
@@ -373,55 +372,41 @@ router.post(
       );
     }
 
-    const voiceId = agent.voiceId?.trim();
-    if (!voiceId) {
+    const sampleText = `Hi, I'm ${agent.name}. Thanks for calling — how can I help you today?`;
+
+    if (!presenterVoicesConfigured()) {
+      throw AppError.fromHttpStatus(503, "Presenter voice preview is not configured.");
+    }
+
+    // The lip-sync preview always renders through the presenter (HeyGen) voice
+    // layer. A presenter-voice agent uses its own voice; any other agent falls
+    // back to the avatar's matched presenter voice.
+    const voiceProvider = (agent.voiceProvider || "vapi").trim().toLowerCase();
+    let presenterVoiceId = voiceProvider === "presenter" ? agent.voiceId?.trim() || null : null;
+    if (!presenterVoiceId) {
+      const resolved = await resolveAvatarDefaultVoice(presenter.avatarId);
+      presenterVoiceId = resolved?.voiceId ?? null;
+    }
+    if (!presenterVoiceId) {
       throw new AppError(
         400,
         "LIVE_VIDEO_NO_VOICE",
-        "Pick a voice for this agent before previewing.",
+        "Pick a presenter voice for this agent before previewing.",
       );
     }
 
-    const sampleText = `Hi, I'm ${agent.name}. Thanks for calling — how can I help you today?`;
-    const voiceProvider = (agent.voiceProvider || "11labs").trim().toLowerCase();
-
-    if (voiceProvider === "presenter") {
-      if (!presenterVoicesConfigured()) {
-        throw AppError.fromHttpStatus(503, "Presenter voice preview is not configured.");
-      }
-      const mp3 = await generatePresenterSpeech({ voiceId, text: sampleText });
-      const chunkSize = 48_000;
-      const view = new Uint8Array(mp3);
-      const chunks: string[] = [];
-      for (let offset = 0; offset < view.byteLength; offset += chunkSize) {
-        const slice = view.subarray(offset, Math.min(offset + chunkSize, view.byteLength));
-        chunks.push(Buffer.from(slice).toString("base64"));
-      }
-      res.json({
-        eventId: randomUUID(),
-        format: "mp3",
-        chunks,
-        sampleText,
-      });
-      return;
-    }
-
-    if (!elevenLabsConfigured()) {
-      throw AppError.fromHttpStatus(503, "Voice preview is not configured.");
-    }
-    const pcm = await generateSamplePcm24({ voiceId, text: sampleText });
-
-    const bytesPerSecond = 24_000 * 2;
+    const mp3 = await generatePresenterSpeech({ voiceId: presenterVoiceId, text: sampleText });
+    const chunkSize = 48_000;
+    const view = new Uint8Array(mp3);
     const chunks: string[] = [];
-    const view = new Uint8Array(pcm);
-    for (let offset = 0; offset < view.byteLength; offset += bytesPerSecond) {
-      const slice = view.subarray(offset, Math.min(offset + bytesPerSecond, view.byteLength));
+    for (let offset = 0; offset < view.byteLength; offset += chunkSize) {
+      const slice = view.subarray(offset, Math.min(offset + chunkSize, view.byteLength));
       chunks.push(Buffer.from(slice).toString("base64"));
     }
 
     res.json({
       eventId: randomUUID(),
-      format: "pcm24",
+      format: "mp3",
       chunks,
       sampleText,
     });

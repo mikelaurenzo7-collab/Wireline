@@ -252,7 +252,7 @@ router.post(
         channel: "voice",
         archetype: resolveAgentRoleArchetype(role),
         voiceId,
-        voiceProvider: "11labs",
+        voiceProvider: "vapi",
         enabledTools,
         firstMessage: `Hi, this is ${name}. How can I help?`,
         isBusinessAgent,

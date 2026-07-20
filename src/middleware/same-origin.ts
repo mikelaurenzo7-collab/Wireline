@@ -9,7 +9,6 @@ const ORIGIN_CHECK_SKIP_PREFIXES = [
   // /api/webhooks/ tree, so a future authenticated route under that prefix
   // can't silently inherit the CSRF exemption.
   "/api/webhooks/meta/",
-  "/api/webhooks/elevenlabs",
   "/api/twilio-webhook",
   "/api/intake/lead",
   "/api/intake/leads",

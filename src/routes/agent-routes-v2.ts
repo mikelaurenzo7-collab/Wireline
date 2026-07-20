@@ -578,15 +578,15 @@ router.patch(
       .limit(1);
     const voiceId = cleanText(req.body?.voiceId, 160) || null;
     const providerRaw =
-      cleanText(req.body?.provider, 32).toLowerCase() || (voiceId ? "11labs" : null);
-    const allowedProviders = new Set(["11labs", "xai", "vapi", "presenter"]);
+      cleanText(req.body?.provider, 32).toLowerCase() || (voiceId ? "vapi" : null);
+    const allowedProviders = new Set(["xai", "vapi", "presenter"]);
     if (providerRaw && !allowedProviders.has(providerRaw)) {
       throw AppError.fromHttpStatus(400, "Invalid voice provider.");
     }
     const provider = providerRaw;
     const phoneVoiceId = cleanText(req.body?.phoneVoiceId, 160) || null;
     const phoneVoiceProviderRaw = cleanText(req.body?.phoneVoiceProvider, 32).toLowerCase() || null;
-    const phoneProviders = new Set(["11labs", "vapi"]);
+    const phoneProviders = new Set(["vapi"]);
     if (phoneVoiceProviderRaw && !phoneProviders.has(phoneVoiceProviderRaw)) {
       throw AppError.fromHttpStatus(400, "Invalid phone voice provider.");
     }

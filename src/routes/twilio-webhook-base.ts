@@ -221,11 +221,13 @@ router.post("/api/twilio-webhook/sms", twilioRateLimiter, async (req: Request, r
 
     // ─── HELP FLOW ─────────────────────────────────────────────────
     if (HELP_KEYWORDS.has(trimmed)) {
-      return res.status(200).send(
-        twimlReply(
-          "Wireline SMS help: reply STOP to opt out or START to opt back in. Contact support@trywireline.com for support. Message and data rates may apply.",
-        ),
-      );
+      return res
+        .status(200)
+        .send(
+          twimlReply(
+            "Wireline SMS help: reply STOP to opt out or START to opt back in. Contact support@trywireline.com for support. Message and data rates may apply.",
+          ),
+        );
     }
 
     // ─── CSAT REPLY DETECTION ─────────────────────────────────────
@@ -368,9 +370,8 @@ router.post(
     // full URL because it fetches the media file itself. Falls back to the
     // canonical prod host when APP_URL isn't set (e.g. on a fresh deploy
     // before env was populated). If the asset doesn't exist on this
-    // deploy (i.e. owner has not curled /api/admin/elevenlabs/sound-effect yet), Twilio
-    // will skip it gracefully and continue to the next verb — no caller
-    // disruption.
+    // deploy, Twilio will skip it gracefully and continue to the next verb —
+    // no caller disruption.
     const appBaseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
     const transferChimeUrl = `${appBaseUrl}/sounds/wireline-transfer-chime.mp3`;
 
@@ -414,8 +415,8 @@ router.post(
 /**
  * SINGING RECEPTIONIST PRE-ROLL (Fun Demo)
  *
- * Twilio Voice webhook that plays the pre-baked ElevenLabs Music
- * jingle (Mira's intro), then bridges the call to the Vapi-routed
+ * Twilio Voice webhook that plays the pre-baked jingle
+ * (Mira's intro), then bridges the call to the Vapi-routed
  * receptionist assistant. Wire this URL as the Voice webhook on the
  * Twilio number that backs the showcase demo:
  *   POST https://trywireline.com/api/twilio-webhook/singing-receptionist

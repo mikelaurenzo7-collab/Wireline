@@ -107,8 +107,6 @@ const [
   stripeAccount,
   stripeBalance,
   resend,
-  eleven,
-  elevenVoices,
 ] = await Promise.all([
   present("XAI_API_KEY")
     ? readJson("https://api.x.ai/v1/models", {
@@ -181,16 +179,6 @@ const [
   present("RESEND_API_KEY")
     ? readJson("https://api.resend.com/domains", {
         headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
-      })
-    : null,
-  present("ELEVENLABS_API_KEY")
-    ? readJson("https://api.elevenlabs.io/v1/user/subscription", {
-        headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY },
-      })
-    : null,
-  present("ELEVENLABS_API_KEY")
-    ? readJson("https://api.elevenlabs.io/v2/voices?page_size=1", {
-        headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY },
       })
     : null,
 ]);
@@ -365,29 +353,6 @@ record(
     ? `Verified sending domain(s): ${verifiedDomains.map((domain) => domain.name).join(", ")}.`
     : "Resend key/domain missing or unverified.",
   "Maintain the Resend plan; no prepaid balance is required.",
-);
-
-const elevenRemaining = eleven?.ok
-  ? Number(eleven.body?.character_limit ?? 0) - Number(eleven.body?.character_count ?? 0)
-  : null;
-const elevenTier = String(eleven?.body?.tier || "unknown").trim().toLowerCase();
-const elevenPaidTier = eleven?.ok && elevenTier !== "free" && elevenTier !== "unknown";
-const elevenReady = Boolean(elevenPaidTier && elevenVoices?.ok && elevenRemaining !== null && elevenRemaining > 0);
-record(
-  "elevenlabs",
-  false,
-  elevenReady ? "ready" : "degraded",
-  eleven?.ok
-    ? `${eleven.body.tier || "unknown"} plan; ${Math.max(0, elevenRemaining).toLocaleString()} credits remaining; Voice API ${
-        elevenVoices?.ok ? "reachable" : "unavailable"
-      }.`
-    : "Optional ElevenLabs voice layer unavailable.",
-  elevenTier === "free"
-    ? "Upgrade the ElevenLabs workspace before exposing Voice Library API features; usage top-ups do not unlock paid-plan entitlements."
-    : elevenRemaining !== null && elevenRemaining > 0
-      ? "Keep ElevenLabs optional for consented clones/showcase and monitor credits."
-      : "Fund the paid workspace only if enabling consented voice cloning or showcase usage.",
-  { tier: elevenTier, voice_api_reachable: Boolean(elevenVoices?.ok) },
 );
 
 record(

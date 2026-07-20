@@ -12,9 +12,6 @@ import healthRouter from "../routes/health-routes";
 import aiStatusRouter from "../routes/ai-status-routes";
 import openaiRealtimeRouter from "../routes/openai-realtime-routes";
 import grokVoiceRouter from "../routes/grok-voice-routes";
-import voicesRouter from "../routes/voices-routes";
-import pronunciationRouter from "../routes/pronunciation-routes";
-import elevenlabsWebhookRouter from "../routes/webhooks-elevenlabs-routes";
 import billingRouter from "../routes/billing-routes";
 import billingPortalReadinessRouter from "../routes/billing-portal-readiness-routes";
 import launchBillingCheckoutRouter from "../routes/launch-billing-checkout-routes";
@@ -70,7 +67,6 @@ import quotaRouter from "../routes/quota-routes";
 import goalsRouter from "../routes/goals-routes";
 import browserHandoffRouter from "../routes/browser-handoff-routes";
 import adminSeedDemoRouter from "../routes/admin-seed-demo-routes";
-import adminElevenLabsRouter from "../routes/admin-elevenlabs-routes";
 import soc2Router from "../routes/soc2-routes";
 import integrationsCertRouter from "../routes/integrations-cert-routes";
 
@@ -95,9 +91,6 @@ export function registerApiRoutes(app: Express): void {
   app.use(agentWorkspaceRouter);
   app.use(browserHandoffRouter);
   app.use(vapiRouter);
-  app.use(voicesRouter);
-  app.use(pronunciationRouter);
-  app.use(elevenlabsWebhookRouter);
   app.use(accountRouter);
   // These terminal/guard writers must precede the broad legacy settings router.
   app.use(userPreferenceGuardRouter);
@@ -183,7 +176,6 @@ export function registerApiRoutes(app: Express): void {
   app.use("/api/quotas", quotaRouter);
   app.use("/api/goals", goalsRouter);
   app.use(adminSeedDemoRouter);
-  app.use(adminElevenLabsRouter);
   app.use(voiceObservabilityRouter);
   // SOC2 evidence endpoints (/api/soc2/access-review, /evidence-pack) --
   // authenticateUser + requirePermission("audit.read"), cited as a live

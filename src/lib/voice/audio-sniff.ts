@@ -2,7 +2,7 @@
  * Magic-byte detection for provider-hosted audio samples.
  *
  * Some trusted preview hosts (notably storage.googleapis.com serving
- * ElevenLabs premade samples) return valid audio bytes with a text/plain
+ * premade voice samples) return valid audio bytes with a text/plain
  * content type. Response headers alone therefore cannot distinguish real
  * audio from an HTML or JSON error page — the payload can.
  */

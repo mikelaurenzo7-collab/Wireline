@@ -23,7 +23,6 @@ import { EnrichLeadForm } from "./forms/EnrichLeadForm";
 import { QualifyForm } from "./forms/QualifyForm";
 import { ObjectionDrillForm } from "./forms/ObjectionDrillForm";
 import { ColdEmailForm } from "./forms/ColdEmailForm";
-import { PersonaCloneForm } from "./forms/PersonaCloneForm";
 import { ThreadSummaryForm } from "./forms/ThreadSummaryForm";
 import { AgentReviewForm } from "./forms/AgentReviewForm";
 import { KnowledgeFromDocumentForm } from "./forms/KnowledgeFromDocumentForm";
@@ -198,9 +197,6 @@ export function RecipeModal({
                   initial={initial}
                   disabled={!available}
                 />
-              )}
-              {recipe === "persona-clone" && (
-                <PersonaCloneForm agents={agents} agentId={agentId} disabled={!available} />
               )}
               {recipe === "summarize-thread" && (
                 <ThreadSummaryForm threadId={threadId} disabled={!available} />

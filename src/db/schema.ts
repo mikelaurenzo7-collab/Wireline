@@ -329,11 +329,10 @@ export const agents = pgTable(
      *     `handoff` payload to swap voices, which adds ~500ms of dead
      *     air during the handoff but is the only seamless path Vapi
      *     supports today.
-     *   - Pattern source: ElevenLabs multi-voice cookbook —
-     *     https://elevenlabs.io/docs/eleven-agents/customization/voice/multi-voice-support
+     *   - Pattern source: Vapi call-control handoff for mid-call voice swaps.
      */
     secondaryVoiceId: text("secondary_voice_id"),
-    voiceProvider: text("voice_provider").default("11labs"),
+    voiceProvider: text("voice_provider").default("vapi"),
     /** PSTN line voice when studio voice uses presenter lip-sync. */
     phoneVoiceId: text("phone_voice_id"),
     phoneVoiceProvider: text("phone_voice_provider"),
@@ -422,17 +421,14 @@ export const agents = pgTable(
     // archetype default (Receptionist 5s, SDR 2s, etc.).
     silenceTimeoutSeconds: integer("silence_timeout_seconds"),
     /**
-     * Per-agent ElevenLabs speaking rate multiplier. Range 0.7 – 1.2,
+     * Per-agent speaking rate multiplier. Range 0.7 – 1.2,
      * default 1.0 (normal pace). Account Holders slow agents down for elderly
      * customers (0.85) or speed them up for impatient callers (1.1).
      * Surfaced as a slider in AssistantSettings → Voice and wired into the
-     * Vapi assistant voice block as `voice.speed` when the provider is
-     * 11labs.
+     * Vapi assistant voice block as `voice.speed`.
      *
      * Stored as numeric (Postgres `numeric`) for exact arithmetic; the
      * voice factory coerces via Number() before passing to Vapi.
-     *
-     * Docs: https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
      */
     voiceSpeed: decimal("voice_speed", { precision: 3, scale: 2 }).default("1.0"),
     /**
@@ -453,26 +449,20 @@ export const agents = pgTable(
     llmModel: text("llm_model"),
     llmTemperature: decimal("llm_temperature", { precision: 3, scale: 2 }),
     /**
-     * ElevenLabs voice fine-tuning — quality knobs account holders with cloned
-     * voices need to dial in their exact sound. All four map 1:1 to the
-     * ElevenLabs voice settings payload Vapi forwards to ElevenLabs at
-     * synthesis time. Defaults match ElevenLabs's documented defaults so
-     * a NULL/missing row sounds identical to "no fine-tuning".
+     * Legacy voice fine-tuning knobs account holders used to dial in a custom
+     * sound. Retained as nullable columns for continuity with historical rows.
      *
      *   stability         (0..1, default 0.5)  — voice consistency. Low =
      *                      expressive/emotional, high = monotone/consistent.
      *   similarity_boost  (0..1, default 0.75) — how closely TTS hugs the
-     *                      source voice. Most impact on cloned voices.
+     *                      source voice.
      *   style             (0..1, default 0.0)  — style exaggeration. >0
      *                      adds latency but more character.
      *   speaker_boost     (bool, default true) — boosts perceived loudness/
      *                      presence; off for "intimate" voices.
      *
-     * Surfaced as the Voice fine-tuning panel in AssistantSettings → carrier
-     * signal parameters. Numerics stored as `numeric(3,2)` (returned as a
-     * string by pg) — the factory coerces + clamps to [0,1] before send.
-     *
-     * Docs: https://elevenlabs.io/docs/api-reference/text-to-speech/convert#request.body.voice_settings
+     * Numerics stored as `numeric(3,2)` (returned as a string by pg) — the
+     * factory coerces + clamps to [0,1] before send.
      */
     voiceStability: decimal("voice_stability", { precision: 3, scale: 2 }).default("0.5"),
     voiceSimilarityBoost: decimal("voice_similarity_boost", {
@@ -562,68 +552,6 @@ export const agentLessons = pgTable(
   }),
 );
 
-// Per-tenant cloned voices — voice_id is the ElevenLabs UUID, name
-// is the Account Holder-given label, preview_url is the ElevenLabs-hosted
-// MP3 sample. Pluggable directly into Vapi assistant configs (Vapi
-// accepts any ElevenLabs voice_id when the API key on file has
-// access to it).
-export const clonedVoices = pgTable(
-  "wireline_cloned_voices",
-  {
-    voiceId: text("voice_id").primaryKey(),
-    userId: uuid("user_id").notNull(),
-    name: text("name").notNull(),
-    status: text("status").default("completed").notNull(), // 'processing' | 'completed' | 'failed'
-    previewUrl: text("preview_url"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  () => ({
-    userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_cloned_voices_user_created ON wireline_cloned_voices USING btree (user_id, created_at DESC)`,
-  }),
-);
-
-// Per-tenant pronunciation dictionaries for ElevenLabs TTS.
-// Account Holders in regulated verticals (medical, legal, real estate) need
-// industry jargon pronounced correctly — "HVAC" should say "H-V-A-C",
-// not "h-vack"; "ACL" should be spelled out; "deposition" might need
-// an IPA phoneme override. ElevenLabs exposes this via their
-// Pronunciation Dictionary API; once created, the returned
-// pronunciation_dictionary_id + version_id are stored here and
-// attached to Vapi assistants via voice.eleven_labs
-// .pronunciation_dictionary_locators on every assistant build.
-//
-// `entries` shape (jsonb array):
-//   [{ from: "HVAC",  to: "H-V-A-C",        kind: "alias" },
-//    { from: "ACL",   to: "ˈeɪ siː ɛl",     kind: "phoneme" }]
-// Validated route-side before we sync to ElevenLabs.
-//
-// `active` lets account holders toggle a dictionary off without deleting it
-// (e.g. seasonal vocabularies, A/B testing legal vs medical jargon
-// across the same Assistants).
-export const pronunciationDictionaries = pgTable(
-  "wireline_pronunciation_dictionaries",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id").notNull(),
-    name: text("name").notNull(),
-    entries: jsonb("entries")
-      .notNull()
-      .default(sql`'[]'::jsonb`),
-    // ElevenLabs assigns these on every successful add-from-rules call.
-    // Null until the first successful sync — the row exists locally as
-    // a draft until then. Versioned because ElevenLabs treats every
-    // edit as a new version: we always store the latest.
-    elevenlabsDictionaryId: text("elevenlabs_dictionary_id"),
-    elevenlabsVersionId: text("elevenlabs_version_id"),
-    active: boolean("active").default(true).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  () => ({
-    userIdx: sql`CREATE INDEX IF NOT EXISTS idx_pronunciation_dicts_user ON wireline_pronunciation_dictionaries USING btree (user_id, created_at DESC)`,
-  }),
-);
-
 // Per-agent Account Holder chat thread. Persistent, ongoing — distinct from
 // /train which is structural agent configuration. Think of this as the
 // private DM channel the Account Holder has with each AI agent: ongoing
@@ -668,7 +596,7 @@ export const directorConversationMessages = pgTable(
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
-    /** director = Assistants chat; painter = Wireline Design studio (/design). */
+    /** Conversation thread key. "director" = the Assistants chat. */
     threadKey: text("thread_key").notNull().default("director"),
     // role is one of "Account Holder" | "director" — DB-level CHECK constraint
     // lives in the migration (this Drizzle version doesn't expose .$type()).

@@ -87,8 +87,6 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_director_artifacts", userColumns: ["user_id"] },
   { table: "wireline_director_artifact_objects", userColumns: ["user_id"] },
   { table: "wireline_director_profile", userColumns: ["user_id"] },
-  { table: "wireline_cloned_voices", userColumns: ["user_id"] },
-  { table: "wireline_pronunciation_dictionaries", userColumns: ["user_id"] },
   { table: "wireline_subscriptions", userColumns: ["user_id"] },
   { table: "wireline_onboarding_progress", userColumns: ["user_id"] },
   { table: "wireline_user_preferences", userColumns: ["user_id"] },
@@ -181,9 +179,7 @@ export async function purgeAccount(
         }
 
         const predicates = [
-          ...(target.userColumns || []).map(
-            (column) => sql`${sql.raw(column)} = ${userId}`,
-          ),
+          ...(target.userColumns || []).map((column) => sql`${sql.raw(column)} = ${userId}`),
           ...(target.organizationColumns || []).map(
             (column) =>
               sql`${sql.raw(column)} IN (
