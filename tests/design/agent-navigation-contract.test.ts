@@ -52,7 +52,9 @@ describe("agent navigation contract", () => {
     expect(workspaceShell).toMatch(/aria-label="AI employees"/);
     expect(workspaceShell).toMatch(/\/studio\?create=1/);
     expect(workspaceShell).toMatch(/to="\/settings"[\s\S]*aria-label="Account settings"/);
-    expect(appRoutes).toMatch(/path="\/agents"[\s\S]*to="\/studio"/);
+    expect(appRoutes).toContain('path="/agents"');
+    expect(appRoutes).toContain("AgentsToStudioRedirect");
+    expect(appRoutes).toMatch(/AgentsToStudioRedirect[\s\S]*\/studio/);
     expect(appRoutes).not.toMatch(/path="\/(pulse|fleet|ops|training|chat|actions|nexus|wires)"/);
   });
 
