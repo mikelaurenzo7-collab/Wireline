@@ -4,7 +4,7 @@ Status: **Active** — founder cheat-code for a successful launch and durable fu
 Canonical prices: `src/lib/plan-catalog.ts`. Canonical vendors: `docs/VENDOR_LAUNCH_MAP.md`.
 Companion creative kit: `docs/LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md` (binaries live in agent artifacts, not git).
 
-Snapshot verified live on **2026-07-20**: Stripe available balance **−$207.00**; Twilio balance **~$23.66**; production `trywireline.com` healthy.
+Snapshot verified live on **2026-07-20 (evening audit)**: Stripe on **Cadence AI** (`acct_1TkyXL8e6If87QKm`) available balance **$0.00**; Twilio balance **~$23.66**; production `trywireline.com` healthy. Federal DNCScrub credentials still need a real `loginId` (development currently holds a misplaced Vercel token).
 
 ---
 
@@ -30,7 +30,9 @@ Snapshot verified live on **2026-07-20**: Stripe available balance **−$207.00*
 
 ### Red — block public checkout
 
-1. **Fund Stripe** until `GET /v1/balance` available USD ≥ `0` (today −$207). Prefer keeping this Stripe account; settle Tax Product Subscription failed debits (~2 × $103.50). Decide keep/cancel Tax sub at $0 MRR.
+1. **Federal DNCScrub** — set a real vendor `loginId` on Vercel (all targets). Until then,
+   marketing outbound correctly fails closed. Prefer keeping Cadence AI Stripe; keep a
+   **$300–500** available buffer before inviting paid users (balance is currently $0, not −$207).
 2. **Prove billing E2E:** Checkout Starter $9 → webhook entitlement → Conversation Balance top-up → Customer Portal → cancel (access through period end).
 3. **Prove voice E2E:** inbound answer + outbound dial + transfer/tool (`gemini_ground`) + call ends with logged outcome.
 4. **Prove SMS E2E:** inbound reply + STOP/HELP compliance + delivery status callback.
@@ -58,7 +60,7 @@ Amounts are **recommended working capital to start**, not vendor list prices. Re
 
 | Vendor | What burns money | Env vars (primary) | Recommended start fund / posture | Cap / alert |
 | --- | --- | --- | ---: | --- |
-| **Stripe** | Tax sub, refunds, negative balance risk; processing 2.9%+$0.30 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `VITE_STRIPE_PUBLIC_KEY`, plan `STRIPE_*_PRICE_ID` | **Settle −$207 first**; keep **$300–500** available buffer before inviting paid users | Bank auto-debit on; Tax sub review monthly |
+| **Stripe** | Processing 2.9%+$0.30; Cadence AI live catalog | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `VITE_STRIPE_PUBLIC_KEY`, plan `STRIPE_*_PRICE_ID` | Available **$0** today — keep **$300–500** buffer before paid invites | Bank auto-debit on; Tax sub review monthly |
 | **Twilio** | Numbers ~$1.15/mo COGS each; SMS; PSTN carrier | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_API_KEY`, `TWILIO_API_SECRET` | **$150–250** prepaid (today ~$24 — top up) | Daily trigger $25; monthly $200 until 20 paid accounts |
 | **Vapi** | Call orchestration + model pass-through | `VAPI_PRIVATE_KEY`, `VAPI_WEBHOOK_SECRET`, `VITE_VAPI_PUBLIC_KEY` | **$200–400** or 2 weeks of expected minutes | Auto-reload on; concurrency ≥ expected peak+2 |
 | **OpenAI** | Structured AI (GPT-5.6 Terra); Vapi GPT-4o; guest Realtime | `OPENAI_API_KEY`, optional `OPENAI_API_KEY_CHATKIT`, `OPENAI_REALTIME_*` | **$150–300** project budget month 1 | Soft 50/75; hard monthly stop |
@@ -71,7 +73,7 @@ Amounts are **recommended working capital to start**, not vendor list prices. Re
 | **Supabase** | Postgres + RLS | `POSTGRES_URL`, pool URL | Pro ~$25 card on file | No blind `db:push` on shared DB |
 | **Vercel** | Hosting | project env | Pro ~$20 | Watch function/bandwidth |
 | **Federal DNC** | Marketing scrub | `FEDERAL_DNC_API_URL`, `FEDERAL_DNC_API_KEY` | Credits for **2× first campaign list** | No marketing dial without scrub |
-| **ElevenLabs** | Optional clone/showcase TTS only | `ELEVENLABS_API_KEY` | **$0** extra — use Creator credits | Never core PSTN |
+| **LiveAvatar / HeyGen** | Optional photoreal video presenter add-on | `LIVEAVATAR_API_KEY`, `HEYGEN_API_KEY` | Only if selling Live Video add-on | Never core PSTN; ElevenLabs removed |
 | **LiveAvatar / HeyGen** | Video add-on $19/mo | `LIVEAVATAR_*`, `HEYGEN_*`, `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID` | **$0** until add-on sold | Cap sessions |
 | **Apollo** | Lead enrichment | `APOLLO_API_KEY` | **$0** until Lead Hunt monetized | Credit cap |
 | **Sentry** | Errors | DSN optional | Free tier OK | Event quota |
@@ -161,7 +163,7 @@ Outbound marketing must pass `evaluateOutboundDialGate()` (TCPA, tenant DNC, fed
 
 ### Days 0–2 — Money & truth
 
-1. Clear Stripe −$207; confirm balance ≥ $0.
+1. Confirm Cadence Stripe available ≥ $0 (today $0 — fund buffer before paid invites).
 2. Top Twilio to ≥ $150; set Usage Triggers.
 3. Confirm Vapi auto-reload; OpenAI/Gemini/Gateway budgets.
 4. Rotate exposed Vercel tokens; verify prod env with `npm run check-prod-env` / vendor readiness.
@@ -258,7 +260,7 @@ Expansion gate (from master plan): **20+ paying Team/Business** or **~$2k MRR** 
 
 | Risk | Mitigation |
 | --- | --- |
-| Negative Stripe balance at checkout | Settle before launch; keep buffer |
+| Zero Stripe available buffer at checkout | Keep $300–500 buffer before paid invites |
 | Voice COGS spike | Prepaid wallet; overage rates; pause new dials on hard gate |
 | TCPA / DNC lawsuit | Outbound dial gate + federal DNC + consent logs |
 | Secret leaks in chat | Rotate immediately; never commit tokens |

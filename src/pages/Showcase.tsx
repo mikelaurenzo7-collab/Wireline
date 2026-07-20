@@ -8,7 +8,11 @@ import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
 import MarketingHero from "../components/marketing/MarketingHero";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 
-const SHOWCASE_HERO_PROOF = ["Live in your browser", "Real phone demos", "Private until launch"] as const;
+const SHOWCASE_HERO_PROOF = [
+  "Live in your browser",
+  "Real phone demos",
+  "No signup to listen",
+] as const;
 
 export default function Showcase() {
   const primaryDemo = LANDING_PUBLIC_DEMO_AGENTS[0];

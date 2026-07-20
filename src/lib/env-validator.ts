@@ -390,8 +390,9 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "operational",
     required: false,
     requiredInProd: true,
-    description: "Federal DNC vendor API key required before marketing outbound",
-    validate: nonEmpty,
+    description: "Federal DNC vendor loginId (DNCScrub) — never a Vercel token",
+    validate: (value) =>
+      !value || (!/^vcp_/i.test(value.trim()) && !/^vercel_/i.test(value.trim()) && nonEmpty(value)),
   },
   {
     name: "OWNER_PHONE",

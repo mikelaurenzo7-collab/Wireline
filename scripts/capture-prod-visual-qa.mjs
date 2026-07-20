@@ -14,7 +14,7 @@ const outputDir = path.join(outputRoot, timestamp);
 const signupEmail =
   process.env.WIRELINE_VISUAL_EMAIL?.trim() || `visual.qa.${Date.now()}@mailinator.com`;
 const signupPassword =
-  process.env.WIRELINE_VISUAL_PASSWORD || `WirelineQA!${String(Date.now()).slice(-6)}`;
+  process.env.WIRELINE_VISUAL_PASSWORD || `WirelineQA!${String(Date.now()).slice(-6)}Aa1`;
 
 const marketingRoutes = [
   "/",
@@ -36,11 +36,17 @@ const marketingRoutes = [
   "/blog",
   "/changelog",
   "/security",
+  "/trust",
+  "/trust/medical",
+  "/trust/legal",
+  "/trust/insurance",
+  "/trust/enterprise",
   "/status",
   "/support",
   "/contact",
   "/privacy",
   "/terms",
+  "/developers",
   "/get-started",
   "/signin",
   "/signup",
@@ -50,9 +56,9 @@ const marketingRoutes = [
 
 const authenticatedRoutes = [
   "/overview",
-  "/agents",
   "/studio",
   "/studio?create=1",
+  "/templates",
   "/knowledge",
   "/phone",
   "/phone?tab=logs",
@@ -61,11 +67,22 @@ const authenticatedRoutes = [
   "/phone?tab=callbacks",
   "/connections",
   "/connections/salesforce",
-  "/apps",
+  "/insights",
   "/inbox",
+  "/approvals",
+  "/apps",
   "/settings",
   "/settings/billing",
+  "/settings/phone",
+  "/settings/team",
+  "/settings/customization",
+  "/settings/compliance",
+  "/settings/apps",
   "/admin",
+  "/admin?tab=subscription",
+  "/admin?tab=team",
+  "/admin?tab=branding",
+  "/admin?tab=carrier",
 ];
 
 /*
@@ -90,11 +107,21 @@ const studioDeepLinkRoutes = studioMultiAgentCaptureRoutes(
  * after browser chrome/scaling. It is intentionally shorter than the regular
  * laptop target because composer visibility is a vertical ergonomics contract.
  */
-const viewports = [
+const allViewports = [
+  { name: "phone", width: 390, height: 844 },
   { name: "desktop", width: 1440, height: 1100 },
   { name: "laptop", width: 1280, height: 900 },
   { name: "thinkpad", width: 1365, height: 768 },
 ];
+const viewportFilter = new Set(
+  (process.env.WIRELINE_VISUAL_VIEWPORTS || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean),
+);
+const viewports = viewportFilter.size
+  ? allViewports.filter((viewport) => viewportFilter.has(viewport.name))
+  : allViewports.filter((viewport) => viewport.name === "phone" || viewport.name === "desktop");
 
 function fileName(route) {
   if (route === "/") return "home";
@@ -177,13 +204,21 @@ async function signUp(page, viewportName, issues) {
   await page.goto(`${baseUrl}/signup`, { waitUntil: "domcontentloaded", timeout: 45_000 });
   await settle(page);
   try {
-    const createTab = page.getByRole("button", { name: "Create account" });
+    // Prefer the segmented-control tab, not the disabled submit button that shares the name.
+    const createTab = page.getByRole("tab", { name: "Create account" });
     if (await createTab.isVisible().catch(() => false)) await createTab.click();
     await page.locator("#auth-email").fill(signupEmail);
     await page.locator("#auth-password").fill(signupPassword);
-    const terms = page.locator('input[type="checkbox"]');
-    if (await terms.count()) await terms.first().check();
-    await page.locator('form button[type="submit"]').click();
+    const terms = page.locator("#auth-terms");
+    if (await terms.count()) {
+      await terms.check({ force: true });
+    } else {
+      const fallback = page.locator('input[type="checkbox"]').first();
+      if (await fallback.count()) await fallback.check({ force: true });
+    }
+    const submit = page.locator('form button[type="submit"]');
+    await expectEnabled(submit, 10_000);
+    await submit.click();
     await page.waitForURL(/\/(overview|agents|studio|onboarding)(?:\?|$)/, { timeout: 45_000 });
     await settle(page);
     return true;
@@ -197,6 +232,15 @@ async function signUp(page, viewportName, issues) {
     });
     return false;
   }
+}
+
+async function expectEnabled(locator, timeoutMs) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (await locator.isEnabled().catch(() => false)) return;
+    await locator.page().waitForTimeout(150);
+  }
+  throw new Error("Submit control stayed disabled — terms checkbox or password policy likely unmet.");
 }
 
 async function completeOnboardingIfNecessary(page, viewportName, issues) {
@@ -310,7 +354,12 @@ try {
 }
 
 let qaFocus = (process.env.WIRELINE_QA_FOCUS || "").trim().toLowerCase();
-if (!qaFocus || qaFocus === "auto") {
+if (!qaFocus) {
+  // Default to the full multi-viewport sweep. Opt into evolving focus with
+  // WIRELINE_QA_FOCUS=auto (used by the iterative QA loop).
+  qaFocus = "full";
+}
+if (qaFocus === "auto") {
   const focuses = [
     "onboarding",
     "create-agent",
@@ -329,11 +378,12 @@ if (!qaFocus || qaFocus === "auto") {
     `[Evolving QA] Turn ${currentTurn} detected. Auto-selecting focus: '${qaFocus}' (highest-leverage check)`,
   );
 } else {
-  console.log(`[Explicit QA] Using explicit focus override: '${qaFocus}'`);
+  console.log(`[Explicit QA] Using focus: '${qaFocus}'`);
 }
 
 try {
-  const desktop = viewports[0];
+  const desktop =
+    viewports.find((viewport) => viewport.name === "desktop") || viewports[0];
 
   if (qaFocus === "onboarding") {
     console.log("Running onboarding flow focused QA...");
@@ -735,8 +785,6 @@ try {
     await mobileContext.close();
   } else {
     console.log("Running complete multi-viewport standard visual QA sweep...");
-    await captureMarketing(browser, desktop, issues);
-
     const signupContext = await browser.newContext({
       viewport: { width: desktop.width, height: desktop.height },
       deviceScaleFactor: 1,
@@ -747,13 +795,12 @@ try {
     if (await signUp(signupPage, desktop.name, issues)) {
       await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
       storageState = await signupContext.storageState();
-      for (const route of [...authenticatedRoutes, ...studioDeepLinkRoutes]) {
-        await captureRoute(signupPage, desktop.name, route, issues, "authenticated");
-      }
     }
     await signupContext.close();
 
-    for (const viewport of viewports.slice(1)) {
+    // Capture every requested viewport once (do not skip index 0 when desktop
+    // is not first — that previously dropped phone marketing/auth shots).
+    for (const viewport of viewports) {
       await captureMarketing(browser, viewport, issues);
       if (storageState) await captureAuthenticated(browser, viewport, storageState, issues);
     }

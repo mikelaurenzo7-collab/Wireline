@@ -141,7 +141,7 @@ describe("plan-catalog", () => {
     // The shared add-on price is intentionally present on paid plan objects so
     // UIs can display it and billing code can match Stripe subscription items.
     // Subscription sync identifies the base plan from the base price item only.
-    expect(EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID).toBe("price_1TrnEvJohDtfy3IkjBi7VOCP");
+    expect(EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID).toBe("price_1Tv9K58e6If87QKm7rzn3MNS");
     expect(STRIPE_PLANS.filter((plan) => plan.extraAgentFallbackPriceId)).toHaveLength(4);
   });
 
