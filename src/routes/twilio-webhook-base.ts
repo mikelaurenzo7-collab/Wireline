@@ -25,8 +25,9 @@ import { Router, Request, Response } from "express";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { sanitizePhone } from "../lib/vapi-helpers";
+import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 
 // Targeted rate limit for Twilio SMS webhooks.
@@ -162,7 +163,9 @@ router.post("/api/twilio-webhook/sms", twilioRateLimiter, async (req: Request, r
           .insert(schema.dncList)
           .values({
             userId: tenantUserId,
-            phone: fromNormalized,
+            // Canonical digits-only key so the outbound-call gate (isDncBlocked)
+            // matches this opt-out. phoneRaw keeps the original for audit.
+            phone: normalizeDncPhone(from),
             phoneRaw: from,
             reason: "opt-out",
             source: "sms_opt_out",
@@ -196,11 +199,14 @@ router.post("/api/twilio-webhook/sms", twilioRateLimiter, async (req: Request, r
     // ─── OPT-IN FLOW (resubscribe) ─────────────────────────────────
     if (OPT_IN_KEYWORDS.has(trimmed)) {
       try {
-        await drizzle
-          .delete(schema.dncList)
-          .where(
-            and(eq(schema.dncList.userId, tenantUserId), eq(schema.dncList.phone, fromNormalized)),
-          );
+        await drizzle.delete(schema.dncList).where(
+          and(
+            eq(schema.dncList.userId, tenantUserId),
+            // Remove every stored variant so resubscribe clears legacy
+            // "+"-prefixed and 10/11-digit rows too.
+            inArray(schema.dncList.phone, dncPhoneCandidates(from)),
+          ),
+        );
 
         await drizzle.insert(schema.consentLog).values({
           userId: tenantUserId,

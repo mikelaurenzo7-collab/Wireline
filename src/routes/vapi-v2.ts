@@ -233,6 +233,10 @@ router.post("/api/vapi-webhook", async (req, res) => {
         function: { name: tc.name, arguments: tc.arguments },
       }));
       const toolCallRows = await runVapiToolCallsWithConcurrency(toolCalls, (toolCall) =>
+        // The .catch MUST wrap withVapiToolTimeout(...) — the timeout rejects
+        // from the wrapper, not the inner dispatch. Catching only the inner
+        // promise lets a >5s tool reject the whole batch (HTTP 500, all tool
+        // results lost mid-call).
         withVapiToolTimeout(
           (async () =>
             dispatchToolCall(toolCall.function?.name || "", toolCall.function?.arguments || {}, {
@@ -244,14 +248,14 @@ router.post("/api/vapi-webhook", async (req, res) => {
               agentVoiceName,
               drizzle,
               log,
-            }))().catch((err) => ({
-            toolCallId: toolCall.id,
-            result:
-              (err as Error)?.message === "VAPI_TOOL_TIMEOUT"
-                ? "That is taking longer than expected. Apologize briefly and offer to follow up by email or text."
-                : "Something went wrong running that action. Continue the conversation and try another approach.",
-          })),
-        ),
+            }))(),
+        ).catch((err) => ({
+          toolCallId: toolCall.id,
+          result:
+            (err as Error)?.message === "VAPI_TOOL_TIMEOUT"
+              ? "That is taking longer than expected. Apologize briefly and offer to follow up by email or text."
+              : "Something went wrong running that action. Continue the conversation and try another approach.",
+        })),
       );
       const results = finalizeVapiToolBatch(toolCalls, toolCallRows);
       const id = callId(payload, message);

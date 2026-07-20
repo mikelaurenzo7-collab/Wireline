@@ -264,22 +264,17 @@ export async function handleShopifyToolCall(
   }
 
   if (fn === "shopify_apply_discount") {
-    try {
-      const { order_number, discount_code } = args || {};
-      // ignore unused vars for now by doing something with them
-      void order_number;
-      void discount_code;
-      // Stub for now or call actual service
-      return {
-        toolCallId,
-        result: `Discount ${discount_code} applied to order ${order_number} successfully (pending sync).`,
-      };
-    } catch {
-      return {
-        toolCallId,
-        result: "I've noted the discount request.",
-      };
-    }
+    // Not wired to the Shopify Admin API. Never tell the caller the discount was
+    // applied — that would be customer-facing misinformation (no discount is
+    // created). Offer human follow-up instead, like square_send_invoice does.
+    const { order_number, discount_code } = args || {};
+    void order_number;
+    void discount_code;
+    return {
+      toolCallId,
+      result:
+        "I can't apply a discount to an order directly on this line. Let me take the details and have the team apply it and follow up to confirm.",
+    };
   }
 
   return null;

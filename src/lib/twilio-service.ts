@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Twilio API responses are vendor-defined. */
 import { randomUUID } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
+
+import { dncPhoneCandidates } from "./compliance";
 
 import * as schema from "../db/schema";
 import { resolveAgentSmsFromNumber } from "./agent-phone-lines";
@@ -111,10 +113,14 @@ async function existingThread(userId: string, customerNumber: string) {
 }
 
 async function blockedByDnc(userId: string, phone: string): Promise<boolean> {
+  // Match every stored variant (digits-only, "+"-prefixed, 10/11-digit) so a
+  // number a tenant added to DNC digits-only still suppresses outbound SMS.
+  const candidates = dncPhoneCandidates(phone);
+  if (candidates.length === 0) return false;
   const [row] = await drizzle
     .select({ phone: schema.dncList.phone })
     .from(schema.dncList)
-    .where(and(eq(schema.dncList.userId, userId), eq(schema.dncList.phone, phone)))
+    .where(and(eq(schema.dncList.userId, userId), inArray(schema.dncList.phone, candidates)))
     .limit(1);
   return !!row;
 }
