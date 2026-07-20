@@ -61,7 +61,7 @@ npm run verify:full    # type check x3, eslint, design/source-control/route/docs
 
 ## Open items (ops-only, not code)
 
-1. **Delete `STRIPE_ENTERPRISE_PRICE_ID` and `OPENAI_REALTIME_MODEL` from Vercel production env vars manually** — both confirmed dead/stale twice now (prior pass + this one); automated deletion is blocked by the harness classifier regardless of tool path.
+1. ~~**Delete `STRIPE_ENTERPRISE_PRICE_ID` and `OPENAI_REALTIME_MODEL` from Vercel production env vars manually**~~ — **Done 2026-07-20** (removed from production via Vercel CLI; were not present in preview/development).
 2. **GitHub Actions phantom workflow (`BuildFailed`, id `296195680`)** still blocks all CI; needs a GitHub Settings/support-level fix, not a code change.
 3. **Six additional tables flagged for a possible missing `wireline_server` grant** need individual access-pattern verification (see Security fixes above) before any grant is added — several are plausibly correct as-is.
 4. The remaining unused-Vercel-env-var cruft list and the lower-confidence `src/lib` cleanup candidates from `LAUNCH_PERFECTION_PASS_2026-07-19.md` and this pass's codebase-health audit remain open for a dedicated pass.

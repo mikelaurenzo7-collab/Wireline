@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowLeft,
@@ -281,7 +282,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
           description="Wire a number, then text it from another phone to start the first thread."
           action={
             <Button asChild>
-              <a href="/settings/phone">Open phone setup</a>
+              <Link to="/settings/phone">Open phone setup</Link>
             </Button>
           }
           density="compact"

@@ -251,8 +251,8 @@ function DemandReadinessCard({
         title: "Connect a phone line to start capturing real demand.",
         detail:
           "Add it to your site and business listings, or forward missed calls from your current number.",
-        primaryHref: "/connections",
-        primaryLabel: "Connect phone and channels",
+        primaryHref: "/settings/phone",
+        primaryLabel: "Connect phone",
         secondaryHref: testHref,
         secondaryLabel: `Test the ${subjectLabel} first`,
       }

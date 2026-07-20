@@ -55,10 +55,11 @@ export const STUDIO_CANVAS_FORBIDDEN = {
 export const STUDIO_CANVAS_REQUIRED = {
   appRoutes: [
     { id: "provider-neutral-studio-route", pattern: /pages\/AgentStudioHome"/ },
-    // Retired /agents page redirects into Studio (agent-first IA owns the roster).
+    // Retired /agents page redirects into Studio (agent-first IA owns the roster),
+    // preserving query/hash so legacy deep-links keep working.
     {
       id: "agents-redirect",
-      pattern: /path="\/agents" element=\{<Navigate to="\/studio" replace \/>\}/,
+      pattern: /path="\/agents"[\s\S]*AgentsToStudioRedirect|AgentsToStudioRedirect[\s\S]*\/studio\$\{location\.search\}/,
     },
   ],
   studioHome: [

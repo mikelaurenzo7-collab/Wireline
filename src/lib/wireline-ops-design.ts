@@ -74,12 +74,12 @@ export const OPS_CHANNEL_EMPTY = {
     title: "No active callers",
     actions: [
       { label: "View call history", to: "/phone" },
-      { label: "Open roster", to: "/agents", primary: true },
+      { label: "Open Studio", to: "/studio", primary: true },
     ],
   },
   fleetRail: {
     title: "No agents yet",
-    actions: [{ label: "Open roster", to: "/agents", primary: true }],
+    actions: [{ label: "Open Studio", to: "/studio", primary: true }],
   },
   fleetAgents: {
     title: "No roster yet",
@@ -93,7 +93,7 @@ export const OPS_CHANNEL_EMPTY = {
   phone: {
     title: "No calls yet",
     actions: [
-      { label: "Configure a number", to: "/settings", primary: true },
+      { label: "Configure a number", to: "/settings/phone", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
     ],
   },
@@ -103,7 +103,7 @@ export const OPS_CHANNEL_EMPTY = {
   sms: {
     title: "No SMS yet",
     actions: [
-      { label: "Configure SMS sender", to: "/settings?tab=carrier", primary: true },
+      { label: "Configure SMS sender", to: "/settings/phone", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
     ],
   },
@@ -111,7 +111,7 @@ export const OPS_CHANNEL_EMPTY = {
     title: "No threads yet",
     actions: [
       { label: "Connect email", to: "/connections", primary: true },
-      { label: "Open Agents", to: "/agents" },
+      { label: "Open Studio", to: "/studio" },
     ],
   },
   inboxDetail: {
@@ -121,12 +121,12 @@ export const OPS_CHANNEL_EMPTY = {
     title: "No leads in the pipeline",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
-      { label: "Open Wire", to: "/connections" },
+      { label: "Open Connections", to: "/connections" },
     ],
   },
   training: {
     title: "No agents to train yet",
-    actions: [{ label: "Open Agents", to: "/agents", primary: true }],
+    actions: [{ label: "Open Studio", to: "/studio", primary: true }],
   },
   integrations: {
     title: "No carriers linked",
@@ -134,7 +134,7 @@ export const OPS_CHANNEL_EMPTY = {
   audit: {
     title: "Audit trail is quiet",
     actions: [
-      { label: "Deploy an agent", to: "/agents", primary: true },
+      { label: "Deploy an agent", to: "/studio?create=1", primary: true },
       { label: "Open Recaps", to: "/overview" },
     ],
   },
@@ -333,14 +333,14 @@ export const OPS_STUDIO_ASSISTS_COPY = {
   hint: "Opens Studio scoped to this agent",
 } as const;
 
-/** Deep-link into Director chat with an agent focused and the composer prefilled. */
+/** Deep-link into Studio with an agent focused and the workroom composer prefilled. */
 export function directorAssistHref(agentId: string, prompt: string): string {
-  return `/agents?agent=${encodeURIComponent(agentId)}&prompt=${encodeURIComponent(prompt)}`;
+  return `/studio?agent=${encodeURIComponent(agentId)}&command=${encodeURIComponent(prompt)}`;
 }
 
-/** Deep-link into Director chat with only a prefilled prompt. */
+/** Deep-link into Studio with only a prefilled workroom command. */
 export function directorPromptHref(prompt: string): string {
-  return `/agents?prompt=${encodeURIComponent(prompt)}`;
+  return `/studio?command=${encodeURIComponent(prompt)}`;
 }
 
 /** In-app help route – quick paths + page chrome */
@@ -350,9 +350,9 @@ export const OPS_HELP = {
   stat: (live: number, demos: number) =>
     `${live} live line${live === 1 ? "" : "s"} -+ ${demos} demo${demos === 1 ? "" : "s"}`,
   quickLinks: [
-    { label: "Agents", to: "/agents", hint: "Open the agent roster" },
-    { label: "Wire", to: "/connections", hint: "Numbers, email, and integrations" },
-    { label: "Studio", to: "/studio", hint: "Training, voice, and run controls" },
+    { label: "Studio", to: "/studio", hint: "Open the AI employee roster" },
+    { label: "Connections", to: "/connections", hint: "Numbers, email, and integrations" },
+    { label: "Training", to: "/studio?section=setup", hint: "Job, greeting, facts, and voice" },
     { label: "System status", to: "/status", hint: "Public uptime feed" },
   ],
 } as const;
@@ -632,7 +632,7 @@ export const OPS_INSIGHTS_EMPTY = {
   attribution: {
     title: "No tagged calls",
     actions: [
-      { label: "Carrier settings", to: "/settings?tab=carrier", primary: true },
+      { label: "Phone settings", to: "/settings/phone", primary: true },
       { label: "Outbound", to: "/phone?tab=outbound" },
     ],
   },

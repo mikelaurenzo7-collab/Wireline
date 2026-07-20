@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import RouteFallback from "../components/layout/RouteFallback";
 import WorkspaceShell from "../components/WorkspaceShell";
 import NotFound from "../components/layout/NotFound";
@@ -25,6 +25,12 @@ const ComplianceCenterPage = lazy(() => import("../pages/ComplianceCenterPage"))
 const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"));
 
 const loading = <RouteFallback />;
+
+/** Preserve query/hash when legacy /agents deep-links redirect into Studio. */
+function AgentsToStudioRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/studio${location.search}${location.hash}`} replace />;
+}
 
 function AuthNotFound() {
   return (
@@ -54,7 +60,7 @@ export default function AppRoutes() {
         <Route path="/studio/handoff" element={<BrowserHandoffBridge />} />
         <Route path="/studio" element={<AgentStudioHome />} />
         <Route path="/studio/*" element={<AgentStudioHome />} />
-        <Route path="/agents" element={<Navigate to="/studio" replace />} />
+        <Route path="/agents" element={<AgentsToStudioRedirect />} />
         <Route path="/templates" element={<TemplatesPage />} />
         <Route path="/knowledge" element={<KnowledgePage />} />
 

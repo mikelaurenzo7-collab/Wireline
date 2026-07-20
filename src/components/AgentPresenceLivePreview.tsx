@@ -2,6 +2,7 @@
  * Fetches a LiveAvatar session and renders the live stream or SVG fallback.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Loader2, Play, Volume2 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
@@ -380,12 +381,12 @@ export default function AgentPresenceLivePreview({
               Subscribe to live video · $19/mo
             </button>
           ) : upgradeRequired ? (
-            <a
-              href="/settings/billing"
+            <Link
+              to="/settings/billing"
               className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 text-xs font-semibold text-foreground transition-colors hover:border-[var(--wireline-color-action-primary-default)]"
             >
               Upgrade to unlock live video
-            </a>
+            </Link>
           ) : (
             <p className="mt-3 text-xs text-muted-foreground">
               Contact Wireline to enable this add-on on your workspace.

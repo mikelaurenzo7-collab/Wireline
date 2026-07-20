@@ -40,6 +40,9 @@ describe("demand-driven authenticated experience", () => {
     expect(overview).toMatch(/site and business listings/);
     expect(overview).toMatch(/forward missed calls/);
     expect(overview).toMatch(/Review follow-ups/);
+    expect(overview).toContain('primaryHref: "/settings/phone"');
+    expect(overview).toContain('primaryLabel: "Connect phone"');
+    expect(overview).not.toContain('primaryLabel: "Connect phone and channels"');
   });
 
   it("does not offer live calling before a line exists", () => {
