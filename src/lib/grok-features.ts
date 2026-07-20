@@ -20,7 +20,7 @@ export const GROK_MODEL_OPTIONS = {
 
 export const GROK_AGENT_STRENGTHS = {
   realtimeSearch:
-    "Pull live web and social context in voice sessions for accurate, current answers.",
+    "Search approved Training knowledge during live voice tests for accurate, grounded answers.",
   personalityTuning:
     "Distinct profiles (bright/warm/clear/etc) leverage a helpful, maximally truthful style.",
   advancedReasoning:
