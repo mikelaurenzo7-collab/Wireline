@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 291
+**Routes scanned:** 292
 **Protected:** 250
-**Public (allowlisted):** 41
+**Public (allowlisted):** 42
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -32,6 +32,7 @@
 | `POST /api/daily-brief/schedule` | Vercel cron; Bearer CRON_SECRET (timing-safe) |
 | `POST /api/email/unsubscribe` | CAN-SPAM one-click unsubscribe; token-scoped + rate-limited |
 | `GET /api/email/unsubscribe` | CAN-SPAM one-click unsubscribe; token-scoped + rate-limited |
+| `POST /api/escalate` | Vapi X-Vapi-Secret (timing-safe) + rate limit |
 | `GET /api/health` | Public liveness probe; DB ping only, rate-limited |
 | `GET /api/health/public` | Public component status; rate-limited, no tenant data |
 | `POST /api/health/report` | Browser client-error reports (pre-auth by design); rate-limited, size-bounded input, no data returned |
@@ -196,6 +197,7 @@
 | email-sync-routes.ts | POST | `/api/emails/sync` | inline | — | — | Protected |
 | email-unsubscribe-routes.ts | POST | `/api/email/unsubscribe` | — | — | yes | Public (allowlisted) |
 | email-unsubscribe-routes.ts | GET | `/api/email/unsubscribe` | — | — | yes | Public (allowlisted) |
+| escalation-routes.ts | POST | `/api/escalate` | — | — | yes | Public (allowlisted) |
 | fleet-routes.ts | GET | `/api/Assistants/activity` | inline | — | — | Protected |
 | fleet-routes.ts | GET | `/api/Assistants/presence` | inline | — | — | Protected |
 | fleet-routes.ts | GET | `/api/Assistants/presence/stream` | inline | — | — | Protected |

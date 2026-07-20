@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 const source = readFileSync("src/server/register-api-routes.ts", "utf8");
 const body = source.slice(source.indexOf("export function registerApiRoutes"));
@@ -10,6 +10,33 @@ const appUseLines = body
 
 const indexOf = (needle) => appUseLines.findIndex(({ line }) => line.includes(needle));
 const problems = [];
+
+// Orphan detection: any *-routes.ts file in src/routes/ that isn't imported by
+// register-api-routes.ts is a silent 404 in production. Historical example:
+// escalation-routes.ts was the target of the four flagship voice agents'
+// escalate_to_human tool and was never mounted, so every escalation 404'd.
+// Files legitimately mounted elsewhere (a separate serverless entrypoint or a
+// helper composed by a sibling router) are enumerated in an explicit allowlist.
+const MOUNTED_ELSEWHERE = new Set([
+  // Public MCP surface mounted by src/entrypoints/chatgpt-mcp-api.ts.
+  "chatgpt-mcp-routes.ts",
+  "chatgpt-mcp-account-routes.ts",
+  // Transitively mounted by grok-voice-routes via router.use(grokLiveProfileRouter).
+  "grok-live-profile-routes.ts",
+]);
+
+const routeFiles = readdirSync("src/routes")
+  .filter((name) => /-routes\.ts$/.test(name))
+  .sort();
+for (const file of routeFiles) {
+  if (MOUNTED_ELSEWHERE.has(file)) continue;
+  const modulePath = `"../routes/${file.replace(/\.ts$/, "")}"`;
+  if (!source.includes(modulePath)) {
+    problems.push(
+      `Route file src/routes/${file} is not imported by src/server/register-api-routes.ts (silent 404 in production; add an app.use(...) or extend MOUNTED_ELSEWHERE in this script if intentional).`,
+    );
+  }
+}
 
 function requireOrder(before, after, reason) {
   const a = indexOf(before);
