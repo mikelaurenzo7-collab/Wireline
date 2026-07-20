@@ -147,4 +147,20 @@ describe("code review hardening contracts", () => {
     expect(marketingCss).toContain(".marketing-footer-above-sticky");
     expect(marketingCss).toContain("env(safe-area-inset-bottom, 0px)");
   });
+
+  it("only logs the global API error handler at error level for 5xx, keeping 4xx as warn-level noise", () => {
+    const server = read("server.ts");
+    // The handler must branch on status before choosing a log level: 5xx is a
+    // real server fault (error + external alerting), 4xx is an expected
+    // client/validation/not-found outcome that should not pollute Vercel's
+    // runtime-error view or trigger Sentry alerting.
+    expect(server).toContain('log.error("API error", logFields)');
+    expect(server).toContain('log.warn("API client error", logFields)');
+    const handlerStart = server.indexOf("(error: unknown, req: express.Request");
+    const handlerBody = server.slice(handlerStart, handlerStart + 1200);
+    expect(handlerBody).toContain("if (status >= 500) {");
+    expect(handlerBody.indexOf("log.error(")).toBeLessThan(handlerBody.indexOf("} else {"));
+    expect(handlerBody.indexOf("reportError(")).toBeLessThan(handlerBody.indexOf("} else {"));
+    expect(handlerBody.indexOf("log.warn(")).toBeGreaterThan(handlerBody.indexOf("} else {"));
+  });
 });

@@ -161,15 +161,20 @@ app.use("/api", (req, res) => {
 
 app.use(
   (error: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    log.error("API error", {
+    const { status, body } = formatErrorResponse(error, res.locals.requestId as string | undefined);
+    const logFields = {
       requestId: res.locals.requestId,
       method: req.method,
       path: req.path,
+      status,
       error: getErrorMessage(error),
-    });
-    const { status, body } = formatErrorResponse(error, res.locals.requestId as string | undefined);
-    // External alerting for real 5xx only — 4xx are user errors, not incidents.
+    };
+    // 4xx are expected client/validation outcomes (bad params, not-found lookups,
+    // rate limits, probe traffic) — logging them at "error" drowns real incidents
+    // in Vercel's runtime-error view. Only 5xx represents an actual server fault,
+    // so only 5xx logs at error level and reaches external alerting.
     if (status >= 500) {
+      log.error("API error", logFields);
       reportError(error, {
         tags: {
           surface: "api",
@@ -179,6 +184,8 @@ app.use(
         },
         requestId: res.locals.requestId,
       });
+    } else {
+      log.warn("API client error", logFields);
     }
     res.status(status).json(body);
   },
