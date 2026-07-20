@@ -26,15 +26,19 @@ cloning, and showcase infrastructure. Keep:
 
 ### Red — resolve before taking live customers
 
-- [ ] Rotate invalid Twilio production credentials; prove account status,
-      number inventory, one SMS, inbound call, and outbound call.
-- [ ] Resolve Stripe's negative $207.00 balance and failed bank withdrawals.
-- [ ] Decide whether to retain the recurring Stripe Tax subscription that
-      created two $103.50 balance transactions while MRR is $0.
-- [ ] Replace malformed `FEDERAL_DNC_API_URL` with the actual HTTPS endpoint.
-- [ ] Re-run `npm run vendor:readiness` until `launch_ready: true`.
-- [ ] Rotate/set `HEALTH_MONITOR_TOKEN`; production monitor probe currently
-      rejects the stored token.
+- [ ] Resolve Stripe's negative $207.00 balance and failed bank withdrawals for the Tax Product Subscription; keep this Stripe account for now.
+- [ ] Complete controlled live launch matrix (inbound/outbound call + tools, SMS STOP/HELP, Resend verify/reset, Stripe checkout→webhook→portal).
+- [ ] Rotate any Vercel personal tokens pasted into chat; revoke after redeploy.
+- [ ] Re-run `npm run vendor:readiness` until launch posture is green.
+- [ ] Rotate/set `HEALTH_MONITOR_TOKEN`; point uptime monitor at `/api/health/launch-readiness`.
+
+### Yellow — launch with caps (not blockers)
+
+- [ ] Top Twilio prepaid (≥$150) and set Usage Triggers (today ~$24).
+- [ ] Confirm Vapi / OpenAI / Gemini / Gateway / xAI budgets and alerts.
+- [ ] Federal DNC funded before first marketing dial list.
+- [ ] Flip `WIRELINE_LAUNCH_DEMO_MODE` to `false` when first real customer is admitted.
+- [ ] Restore GitHub Actions (phantom `startup_failure`); until then rely on `verify:full` + Vercel.
 
 ### Green at audit
 
@@ -54,23 +58,29 @@ cloning, and showcase infrastructure. Keep:
 ## Funding cheat sheet
 
 Use caps and alerts; never solve launch anxiety with uncapped auto-spend.
+Full dollar bands and API-cost map: `docs/LAUNCH_GURU_PLAYBOOK_2026-07-20.md`.
 
-| Account                                         | Owner action                                                                                                  |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Stripe                                          | Settle negative balance first. Confirm bank debit. Re-evaluate the Tax subscription before another renewal.   |
-| Twilio                                          | Rotate credentials, confirm paid account/payment method, then add Usage Triggers for daily and monthly spend. |
-| Vapi                                            | Hold at least two weeks of expected call cost, enable auto-reload, and confirm concurrency.                   |
-| xAI                                             | Maintain prepaid credits or a nonzero invoiced limit; alert at 50/75/90%.                                     |
-| OpenAI                                          | Add payment method, project budget, and hard/soft alerts; PSTN depends on this key.                           |
-| Gemini                                          | Keep billing attached as inexpensive fallback; cap separately.                                                |
-| AI Gateway                                      | Buy a small reserve, set auto-top-up, and enforce a monthly API-key budget.                                   |
-| ElevenLabs                                      | No immediate top-up. Use existing Creator credits only for approved clones/showcase.                          |
-| Federal DNC                                     | Fund enough scrubs for at least 2× the first campaign list. No marketing dial without a successful scrub.     |
-| Supabase/Vercel/Upstash/Resend/Sentry/Plausible | Maintain plans and valid cards; these are subscriptions, not prepaid wallets.                                 |
-| LiveAvatar/HeyGen/Apollo/Perplexity             | Leave capped or unfunded until the corresponding paid add-on is enabled.                                      |
+Live snapshot **2026-07-20**: Stripe available **−$207.00**; Twilio **~$23.66**.
+
+| Account | Recommended start fund / action |
+| --- | --- |
+| Stripe | Settle −$207 first; keep **$300–500** available buffer before paid invites; review Tax Product Subscription. |
+| Twilio | Top to **$150–250**; Usage Triggers daily $25 / monthly $200 until ~20 paid accounts; confirm API key + Auth Token. |
+| Vapi | **$200–400** or ≥2 weeks expected minutes; auto-reload on; concurrency = peak+2. |
+| OpenAI | Month-1 project budget **$150–300**; soft 50/75 + hard stop; PSTN depends on this key. |
+| Gemini | **$50–100** separate fallback budget. |
+| AI Gateway | **$50** reserve + auto top-up + monthly key budget. |
+| xAI | **$50–100** for Studio live-voice tests; structured fallback stays off. |
+| Perplexity | **$0–40** optional research quality. |
+| ElevenLabs | **$0** extra — Creator credits for clones/showcase only; never core PSTN. |
+| Federal DNC | Credits for **2×** first marketing list; no marketing dial without scrub. |
+| Supabase/Vercel/Upstash/Resend | Cards on file (~$40–60/mo lean infra). |
+| LiveAvatar/HeyGen/Apollo | **$0** until paid add-on / Lead Hunt monetized. |
+
+**Founder operating float to open gates:** roughly **$1,500–2,500** (Stripe clear+buffer + voice wallets + AI budgets + optional $200–500 ad test).
 
 Exact account state and executable probes live in
-`docs/VENDOR_LAUNCH_MAP.md`.
+`docs/VENDOR_LAUNCH_MAP.md`. Creative assets: `docs/LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md`.
 
 ## Runtime operating rules
 
