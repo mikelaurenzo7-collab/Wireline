@@ -18,7 +18,7 @@ describe("authenticated mobile cleanup", () => {
     expect(tabStrip).not.toContain("(${tab.shortLabel})");
     expect(tabs).toContain('shortLabel: "Camps"');
     expect(tabs).toContain('shortLabel: "Seq"');
-    expect(tabs).toContain('shortLabel: "Calls"');
+    expect(tabs).toContain('shortLabel: "Cbks"');
     expect(settingsTabs).toContain('shortLabel: "Acct"');
     expect(settingsTabs).toContain('shortLabel: "Bill"');
     expect(approvals).toContain('escalations: "Esc."');

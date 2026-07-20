@@ -133,25 +133,47 @@
   --tw-prose-h4-size: clamp(1.25rem, 2.5vw + 0.25rem, 1.5rem);
 }
 
-/* Light mode prose support */
-@media (prefers-color-scheme: light) {
-  .prose {
-    --tw-prose-body: #383650;
-    --tw-prose-headings: #171426;
-    --tw-prose-links: #6d28d9;
-    --tw-prose-bold: #171426;
-    --tw-prose-counters: #5b5770;
-    --tw-prose-bullets: #a19cb3;
-    --tw-prose-hr: #e1deea;
-    --tw-prose-quotes: #383650;
-    --tw-prose-quote-borders: #6d28d9;
-    --tw-prose-code: #171426;
-    --tw-prose-pre-code: #171426;
-    --tw-prose-pre-bg: #f1eff7;
-    --tw-prose-th-borders: #cac4d9;
-    --tw-prose-td-borders: #e1deea;
-    --tw-prose-captions: #5b5770;
-  }
+/* Ink canvas is the default — pin prose tokens on .prose itself.
+   Tailwind typography's built-in slate bold is near-black and fails on Ink
+   when the @plugin theme map does not land on the element. */
+.prose {
+  --tw-prose-body: var(--wireline-color-text-secondary);
+  --tw-prose-headings: var(--wireline-color-text-primary);
+  --tw-prose-links: var(--wireline-color-action-primary-default);
+  --tw-prose-bold: var(--wireline-color-text-primary);
+  --tw-prose-counters: var(--wireline-color-text-secondary);
+  --tw-prose-bullets: var(--wireline-color-border-strong);
+  --tw-prose-hr: var(--wireline-color-border-default);
+  --tw-prose-quotes: var(--wireline-color-text-primary);
+  --tw-prose-quote-borders: var(--wireline-color-action-primary-default);
+  --tw-prose-captions: var(--wireline-color-text-secondary);
+  --tw-prose-code: var(--wireline-color-text-primary);
+  --tw-prose-pre-code: var(--wireline-color-text-primary);
+  --tw-prose-pre-bg: var(--wireline-color-surface-subtle);
+  --tw-prose-th-borders: var(--wireline-color-border-strong);
+  --tw-prose-td-borders: var(--wireline-color-border-default);
+}
+
+/* Light appearance prose — scoped to the app theme class, not OS preference.
+   Marketing/legal pages stay on the Ink canvas even when the OS is light;
+   prefers-color-scheme would paint near-black bold text onto black. */
+:root.light .prose,
+html.light .prose {
+  --tw-prose-body: #383650;
+  --tw-prose-headings: #171426;
+  --tw-prose-links: #6d28d9;
+  --tw-prose-bold: #171426;
+  --tw-prose-counters: #5b5770;
+  --tw-prose-bullets: #a19cb3;
+  --tw-prose-hr: #e1deea;
+  --tw-prose-quotes: #383650;
+  --tw-prose-quote-borders: #6d28d9;
+  --tw-prose-code: #171426;
+  --tw-prose-pre-code: #171426;
+  --tw-prose-pre-bg: #f1eff7;
+  --tw-prose-th-borders: #cac4d9;
+  --tw-prose-td-borders: #e1deea;
+  --tw-prose-captions: #5b5770;
 }
 
 /* Custom prose modifiers */

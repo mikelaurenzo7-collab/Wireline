@@ -117,7 +117,7 @@ export default function ClientSubTabs({
                 if (!active) onChange(tab.id);
               }}
               className={cn(
-                "relative inline-flex h-auto max-w-[7.25rem] shrink-0 items-center gap-1 overflow-hidden rounded-none text-ellipsis whitespace-nowrap font-medium normal-case tracking-normal transition-colors sm:max-w-[11rem]",
+                "relative inline-flex h-auto max-w-[8.5rem] shrink-0 items-center gap-1 overflow-hidden rounded-none text-ellipsis whitespace-nowrap font-medium normal-case tracking-normal transition-colors sm:max-w-[12rem]",
                 density === "compact"
                   ? "min-h-7 px-1.5 py-0.5 text-[0.6875rem]"
                   : "min-h-9 gap-1.5 px-2 py-1 text-[0.75rem] sm:min-h-10 sm:px-3 sm:py-1.5 sm:text-[var(--wireline-typography-overline-size)]",

@@ -145,13 +145,13 @@ export default function EmailVerifyBanner() {
       </div>
       <Button
         type="button"
-        variant={outcome === "sent" ? "secondary" : "default"}
+        variant="secondary"
         size="sm"
         disableAnimations
         onClick={resend}
         disabled={buttonDisabled}
         className={cn(
-          "touch-press hover:scale-[1.02] w-full shrink-0 self-stretch app-micro-cta h-auto after:hidden border-0 shadow-none sm:w-auto sm:self-center",
+          "touch-press hover:scale-[1.02] w-full shrink-0 self-stretch app-micro-cta h-auto after:hidden shadow-none sm:w-auto sm:self-center",
           outcome === "sent" && "opacity-70",
         )}
       >
