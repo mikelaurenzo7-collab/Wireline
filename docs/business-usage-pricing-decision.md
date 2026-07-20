@@ -2,6 +2,56 @@
 
 Canonical operating proof runbook: [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md).
 
+## Stripe account cutover (2026-07-20)
+
+The legacy Wireline Stripe account (`acct_1TXb0SJohDtfy3Ik`) is retired. It carried a
+**-$207** balance caused by a mistaken subscription that has since been deleted, and
+is no longer connected to the app.
+
+Billing now runs on the account formerly named **"Cadence AI"** (`acct_1TkyXL8e6If87QKm`,
+unused by any other product), reconfigured from scratch with the full Founder Early
+Access catalog defined in `scripts/lib/stripe-founder-catalog.mjs`:
+
+- 8 active products / 14 active prices, matching `FOUNDER_PRODUCTS` / `FOUNDER_PRICES`
+  exactly (verified against `scripts/check-stripe-catalog-contract.mjs`).
+- Every product/price carries `wireline_catalog_version: founder_early_access_2026_07_v4`
+  plus the same `wireline_plan_id` / `wireline_addon_id` / lookup-key metadata the app
+  reads in `src/lib/plan-catalog.ts` and `src/lib/stripe-helpers.ts`.
+- The one pre-existing product on the account ("Cadence Pro", no active subscriptions)
+  was archived rather than deleted (Stripe does not allow deleting a product/price with
+  history).
+- Vercel `production` / `preview` / `development` envs for `STRIPE_STARTER_9_PRICE_ID`,
+  `STRIPE_STARTER_9_ANNUAL_PRICE_ID`, `STRIPE_STARTER_PRICE_ID`,
+  `STRIPE_STARTER_ANNUAL_PRICE_ID`, `STRIPE_TEAM_PRICE_ID`, `STRIPE_TEAM_ANNUAL_PRICE_ID`,
+  `STRIPE_BUSINESS_PRICE_ID`, `STRIPE_BUSINESS_ANNUAL_PRICE_ID`,
+  `STRIPE_EXTRA_AGENT_PRICE_ID`, `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID`, and
+  `STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID` were repointed to the new account's price IDs.
+  `STRIPE_VOICE_OVERAGE_METER_EVENT_NAME` was set to `voice_minutes_overage` (label only —
+  no Stripe Billing Meter is used; see "No automatic overages" below).
+- Orphaned, code-unreferenced env vars from a prior pricing scheme
+  (`STRIPE_PRO_*`, `STRIPE_BUSINESS_STARTER_*`) were deleted from Vercel.
+- `src/lib/plan-catalog.ts` fallback price IDs were repointed to the new account so any
+  environment missing the Vercel env vars still resolves correctly.
+
+**Still required (Stripe does not expose these via API — dashboard-only, one-time):**
+
+1. Rename the account's public business name from "Cadence AI" to "Wireline" —
+   Stripe Dashboard → Settings → Business → Public details.
+2. Copy the live secret key (`sk_live_...`) and publishable key (`pk_live_...`) for
+   `acct_1TkyXL8e6If87QKm` from Developers → API keys, and set them as
+   `STRIPE_SECRET_KEY` / `VITE_STRIPE_PUBLIC_KEY` in Vercel.
+3. Create a webhook endpoint at `https://trywireline.com/api/stripe-webhook` (Developers
+   → Webhooks) subscribed to exactly: `checkout.session.completed`, `charge.refunded`,
+   `charge.dispute.created`, `customer.subscription.created`,
+   `customer.subscription.updated`, `customer.subscription.deleted`,
+   `invoice.payment_failed`, `invoice.payment_succeeded` — then set the signing secret
+   as `STRIPE_WEBHOOK_SECRET` in Vercel. (`npm run stripe:webhook:check` verifies drift
+   afterward.)
+4. Save a default Customer Portal configuration — Settings → Billing → Customer portal
+   → Save — or `/api/billing/portal` returns `PORTAL_NOT_CONFIGURED`.
+5. Redeploy production once the three secrets above are set so serverless functions
+   pick up the new values.
+
 **Status:** the "Target commercial structure," "Pricing lock," and "Exact applied Stripe writes"
 sections below are a historical record of the Jun/early-Jul 2026 zero-included-minutes catalog. As
 of 2026-07-10 the live catalog is the **Founder Early Access** model (5 tiers with guaranteed
@@ -55,7 +105,7 @@ short call caps for profitability, and do not rebuild the Stripe catalog unless
 ## Target commercial structure (historical — see status note above)
 
 | Offer                | Commercial role                                     | Billing expectation                                                             |
-| -------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------- |
+| -------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | Personal             | Solo or founder use                                 | No required subscription; live work funded through Conversation Balance top-ups |
 | Team                 | Shared SMB coverage                                 | Recurring capacity tier plus Conversation Balance                               |
 | Business             | Revenue, support, and front desk teams              | Recurring capacity tier plus pooled Conversation Balance                        |
@@ -143,6 +193,12 @@ Vercel production, preview, and development envs were repointed to the live Team
 
 Retired Personal, Plus, Starter, and old Business/Enterprise price env vars were removed from Vercel. Stripe secrets and webhook secrets were left intact.
 
+**Update (2026-07-20):** the `STRIPE_BUSINESS_STARTER_*` and `STRIPE_PRO_*` env vars above were
+themselves retired and deleted from Vercel as part of the Stripe account cutover — they were
+unreferenced by any code path (only `STRIPE_STARTER_9_*`, `STRIPE_STARTER_*`, `STRIPE_TEAM_*`,
+`STRIPE_BUSINESS_*`, and `STRIPE_EXTRA_AGENT_PRICE_ID` are read by `src/lib/plan-catalog.ts`) and
+pointed at the now-retired `acct_1TXb0SJohDtfy3Ik` account.
+
 ## Migration guardrails
 
 - Do not archive or delete anything tied to active subscriptions.
@@ -163,6 +219,7 @@ Archived products:
 - `Office Assistant`
 - `Front Desk`
 - `Sales & Reception`
+- `Cadence Pro` (pre-cutover product on the account now used for Wireline billing; no active subscriptions, archived 2026-07-20)
 
 Previously retired or inactive products no longer active in the catalog:
 
@@ -183,7 +240,7 @@ Wireline's commercial story is intentionally narrow and repeatable:
 These messages must stay aligned across:
 
 | Surface                   | Canonical copy anchor                                                           |
-| ------------------------- | ------------------------------------------------------------------------------- |
+| ------------------------- | --------------------------------------------------------------------------------------- |
 | `/pricing`                | "Create free. Train deeply. Fund live work when it matters."                    |
 | Billing settings          | "Start free. Fund live work."                                                   |
 | Conversation Balance API  | `CONVERSATION_BALANCE_COPY` in `src/lib/conversation-balance.ts`                |
@@ -197,3 +254,6 @@ These messages must stay aligned across:
 2. Confirm metered overage event emission uses `voice_minutes_overage` with `stripe_customer_id` and `value` payload keys before enabling overage burn in production.
 3. Keep Enterprise contact-sales until contract, committed-usage operations, and implementation controls are ready.
 4. Enforce custom-auth breached-password screening before public launch.
+5. Complete the five Stripe-account-cutover dashboard steps listed at the top of this document
+   (business name, live API keys, webhook endpoint + signing secret, customer portal
+   configuration, redeploy).
