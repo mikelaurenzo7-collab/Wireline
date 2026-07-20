@@ -239,7 +239,7 @@ export default function SalesforceIntegrationPage() {
                 </label>
                 <Switch
                   id="salesforce-call-activity-sync"
-                  checked={callActivitySyncEnabled}
+                  checked={Boolean(isConnected && callActivitySyncEnabled)}
                   onCheckedChange={(checked) => void updateCallActivityPreference(checked)}
                   disabled={!isConnected || saveState === "saving"}
                   aria-describedby="salesforce-activity-sync-description"

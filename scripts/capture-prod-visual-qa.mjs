@@ -785,8 +785,6 @@ try {
     await mobileContext.close();
   } else {
     console.log("Running complete multi-viewport standard visual QA sweep...");
-    await captureMarketing(browser, desktop, issues);
-
     const signupContext = await browser.newContext({
       viewport: { width: desktop.width, height: desktop.height },
       deviceScaleFactor: 1,
@@ -797,13 +795,12 @@ try {
     if (await signUp(signupPage, desktop.name, issues)) {
       await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
       storageState = await signupContext.storageState();
-      for (const route of [...authenticatedRoutes, ...studioDeepLinkRoutes]) {
-        await captureRoute(signupPage, desktop.name, route, issues, "authenticated");
-      }
     }
     await signupContext.close();
 
-    for (const viewport of viewports.slice(1)) {
+    // Capture every requested viewport once (do not skip index 0 when desktop
+    // is not first — that previously dropped phone marketing/auth shots).
+    for (const viewport of viewports) {
       await captureMarketing(browser, viewport, issues);
       if (storageState) await captureAuthenticated(browser, viewport, storageState, issues);
     }
