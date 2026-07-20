@@ -15,7 +15,9 @@ function readText(value: unknown, maxLength: number): string {
 }
 
 export function isFreshBrowserCapture(capturedAt: unknown): boolean {
-  if (typeof capturedAt !== "string" || !capturedAt.trim()) return true;
+  // Fail closed: missing/empty timestamps used to skip the TTL and allowed
+  // forged `#browser-context=` payloads without capturedAt to replay forever.
+  if (typeof capturedAt !== "string" || !capturedAt.trim()) return false;
   const parsed = Date.parse(capturedAt);
   if (Number.isNaN(parsed)) return false;
   return Date.now() - parsed <= BROWSER_COMMAND_CONTEXT_MAX_AGE_MS;

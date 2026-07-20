@@ -52,12 +52,16 @@ describe("current-state UI contract", () => {
 
     expect(developers).toContain("Bring Wireline into ChatGPT or Claude.");
     expect(developers).toContain("https://trywireline.com/mcp");
-    expect(developers).toContain("https://chatgpt.com/plugins");
     expect(developers).toContain("https://claude.ai/settings/connectors");
+    expect(developers).toContain("Cursor");
     expect(developers).toContain("one account-bound MCP connector");
     expect(developers).toContain(
       "this connector cannot place calls, send messages,\n              provision numbers, or launch an AI employee.",
     );
+    // No fake API-key product — session OpenAPI + MCP OAuth only.
+    expect(developers).not.toContain("Settings -> API Access");
+    expect(developers).not.toContain("wl_YOUR_API_KEY");
+    expect(developers).not.toContain("https://chatgpt.com/plugins");
   });
 
   it("keeps public conversion routes on the selected launch plan", () => {

@@ -187,7 +187,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/pages/Developers.tsx",
     developersPage,
-    /create a new agent configuration/,
+    /create or refine a private agent configuration draft/i,
     "developer surface must position agents, not assistants",
   );
   mustExclude(

@@ -42,6 +42,7 @@ import {
 import { placeOutboundCall, transferLiveCall } from "../lib/vapi-client";
 import { getCreditBalanceUsd, getRecentLedger } from "../lib/credit-wallet";
 import { getErrorMessage } from "../lib/server-utils";
+import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
 import {
@@ -603,6 +604,10 @@ const mobileDialSchema = z.object({
   context: z.string().max(2000).optional(),
   callPurpose: z.enum(OUTBOUND_CALL_PURPOSES),
   hasExpressWrittenConsent: z.boolean().optional().default(false),
+  // Same audit fields as POST /api/outbound/dial — marketing + express consent
+  // requires a source/lead artifact so native/Siri cannot attest without a trail.
+  consentSource: z.enum(["web_form", "lead_import", "crm", "manual_attestation"]).optional(),
+  consentLeadId: z.string().max(200).optional(),
 });
 
 router.post(
@@ -620,6 +625,8 @@ router.post(
         context,
         callPurpose,
         hasExpressWrittenConsent,
+        consentSource,
+        consentLeadId,
       } = req.body;
       const expressConsent = normalizedExpressConsent({ callPurpose, hasExpressWrittenConsent });
 
@@ -629,6 +636,13 @@ router.post(
           return res.status(503).json({
             code: federalGate.code,
             error: federalGate.message,
+          });
+        }
+        if (expressConsent && !consentSource && !consentLeadId) {
+          return res.status(400).json({
+            code: "CONSENT_ARTIFACT_REQUIRED",
+            error:
+              "Marketing calls with express written consent require consentSource or consentLeadId for auditability.",
           });
         }
       }
@@ -687,8 +701,20 @@ router.post(
           callPurpose,
           hasExpressWrittenConsent,
           source: "mobile",
+          consentSource,
+          consentLeadId,
         }),
       });
+
+      if (consentSource) {
+        emitServerProductEventOnce({
+          event: "consent_source_captured",
+          userId: req.user.id,
+          agentId,
+          audience: "sales",
+          metadata: { consent_source: consentSource, consent_lead_id: consentLeadId ?? null },
+        });
+      }
 
       res.json({ success: true, callId: result.callId });
     } catch (err) {
