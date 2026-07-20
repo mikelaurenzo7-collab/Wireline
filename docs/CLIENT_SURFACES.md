@@ -48,7 +48,7 @@ Each tier can ship on its own cadence only when it stays inside these boundaries
 
 | Boundary | Requirement |
 | --- | --- |
-| Launch status | **Beta**. Local install and target packaging are active; store submission is gated by manifest, review, and browser acceptance. |
+| Launch status | **Early access**. Local install and packaging checks are active; store submission waits on a real in-product install path and review. Aligns with `CLIENT_SURFACE_POSTURE.browser`. |
 | Owning files/directories | `apps/browser-extension/`, its manifest overlays, service worker, side panel/sidebar, build scripts, package artifacts, and extension README. |
 | Required checks before release | `node apps/browser-extension/scripts/build.mjs --check`; target builds for Chromium and Firefox; manual install smoke in each target browser; explicit-action context handoff smoke into Studio; permissions review against store policies. |
 | Non-goals | Not a hidden scraper, CRM mirror, independent background agent, or always-on page monitor. It does not provision phone numbers, own sessions, execute outbound actions, or duplicate Studio. |
@@ -59,7 +59,7 @@ Each tier can ship on its own cadence only when it stays inside these boundaries
 
 | Boundary | Requirement |
 | --- | --- |
-| Launch status | **Beta**. Native control surface exists; TestFlight/App Store release remains gated by device acceptance, signing, and privacy review. |
+| Launch status | **Planned**. Native control surface exists in-repo; TestFlight/App Store remain gated by device acceptance, signing, and privacy review. Aligns with `CLIENT_SURFACE_POSTURE.ios`. |
 | Owning files/directories | `ios/`, XcodeGen project files, SwiftUI views, native networking/auth adapters, widgets, Siri/intent surfaces, PushKit/CallKit integration, and iOS README. |
 | Required checks before release | XcodeGen generation; simulator build; unit/UI smoke for login, mobile API reads/writes, approvals, notifications, and wallet/review surfaces; physical-device PushKit/CallKit acceptance; App Privacy labels and account deletion verification. |
 | Non-goals | Not a full admin clone, backend fork, provider-key holder, or independent call-control authority. Native-first work should prioritize urgent owner control, not every Studio configuration screen. |
@@ -70,7 +70,7 @@ Each tier can ship on its own cadence only when it stays inside these boundaries
 
 | Boundary | Requirement |
 | --- | --- |
-| Launch status | **Beta**. Native control surface exists; Play release remains gated by emulator/physical-device acceptance, signing, and privacy review. |
+| Launch status | **Internal beta**. Native control surface exists; Play release remains gated by emulator/physical-device acceptance, signing, and privacy review. Aligns with `CLIENT_SURFACE_POSTURE.android`. |
 | Owning files/directories | `android/`, Gradle configuration, Kotlin/Compose UI, native networking/auth adapters, widgets, Telecom/FCM integrations, Android Auto-approved communication surfaces, and Android README. |
 | Required checks before release | Gradle compile; emulator smoke for login, mobile API reads/writes, approvals, notifications, wallet/review, and handoff; physical-device Telecom and FCM acceptance; Play Data safety/account deletion review; release signing verification. |
 | Non-goals | Not a full admin clone, backend fork, background dialer, or independent consent/plan-enforcement engine. Do not duplicate Studio or web billing controls in native-only logic. |
@@ -81,7 +81,7 @@ Each tier can ship on its own cadence only when it stays inside these boundaries
 
 | Boundary | Requirement |
 | --- | --- |
-| Launch status | **Beta**. Account-bound MCP/OAuth app is active behind reviewed tools and resources; guest demo tools remain gated by configuration. |
+| Launch status | **Early access**. Account-bound MCP/OAuth app is active behind reviewed tools; Claude and Cursor share the same `/mcp` server (no separate plugin packages). Guest demo tools are legacy/shadowed — not a launch path. Aligns with `CLIENT_SURFACE_POSTURE.chatgpt`. |
 | Owning files/directories | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `scripts/check-chatgpt-app-release.mjs`, `docs/CHATGPT_APP.md`, and related OAuth/config docs. |
 | Required checks before release | `node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com` for production-target release; local MCP discovery/tool/resource probe; OAuth PKCE reviewer flow; private simulation boundary test; contract review for every new tool. |
 | Non-goals | ChatGPT App cannot provision numbers, dial, launch agents, perform outbound communication, change billing, bypass approvals, or claim external actions happened unless Wireline actually performed them through server-owned workflows. |

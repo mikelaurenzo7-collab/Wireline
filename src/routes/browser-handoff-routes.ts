@@ -81,6 +81,17 @@ async function ensureBrowserHandoffSchema(): Promise<void> {
           END IF;
         END $$;
       `);
+      // Match migration 0103 — runtime CREATE TABLE IF NOT EXISTS must not leave
+      // wireline_server without grants (tenant queries run as SET LOCAL ROLE).
+      await drizzle.execute(sql`
+        DO $$
+        BEGIN
+          IF to_regclass('public.wireline_browser_handoffs') IS NOT NULL
+             AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'wireline_server') THEN
+            EXECUTE 'GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.wireline_browser_handoffs TO wireline_server';
+          END IF;
+        END $$;
+      `);
     })().catch((error) => {
       handoffSchemaReady = null;
       throw error;

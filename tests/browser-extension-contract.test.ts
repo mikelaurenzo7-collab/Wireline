@@ -25,8 +25,16 @@ describe("Wireline Command extension contract", () => {
     expect(baseManifest.permissions).toEqual(
       expect.arrayContaining(["activeTab", "scripting", "contextMenus"]),
     );
+    expect(baseManifest.permissions).not.toEqual(expect.arrayContaining(["tabs"]));
     expect(baseManifest.permissions).not.toEqual(expect.arrayContaining(["<all_urls>"]));
     expect(JSON.stringify(baseManifest)).not.toContain("<all_urls>");
+    expect(JSON.stringify(baseManifest)).not.toContain("fonts.googleapis.com");
+  });
+
+  it("fails closed when browser capture timestamps are missing", () => {
+    expect(contextSource).toMatch(
+      /if \(typeof capturedAt !== "string" \|\| !capturedAt\.trim\(\)\) return false/,
+    );
   });
 
   it("emits a native side-panel surface for Chromium and a native sidebar surface for Firefox", () => {

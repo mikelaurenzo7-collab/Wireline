@@ -133,7 +133,7 @@ export const MARKETING_VOICE = {
   spine: BRAND_SYSTEM.brandSpine,
   proof: BRAND_SYSTEM.proofLoop,
   extensionLead:
-    "Command your AI employee from any page. It calls, texts, emails, follows up, books the next step, and logs proof while you stay focused.",
+    "Send the page you are viewing into Studio as reference context—so your AI employee can prepare a call, draft a text, or follow up without you leaving the tab.",
   differentiator: OUTBOUND_WEDGE.differentiator,
 } as const;
 

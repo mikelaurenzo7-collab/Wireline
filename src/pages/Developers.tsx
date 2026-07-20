@@ -3,12 +3,10 @@ import {
   BookOpen,
   Copy,
   ExternalLink,
-  KeyRound,
   MessageSquareText,
   ShieldCheck,
   Sparkles,
   Terminal,
-  TerminalSquare,
 } from "lucide-react";
 
 import { Button } from "../components/atoms";
@@ -16,36 +14,51 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import MarketingHero from "../components/marketing/MarketingHero";
 import { PageMeta } from "../lib/page-meta";
 
+/**
+ * Developer surface is MCP-first.
+ * There is no Settings → API Access key minting surface today — session-cookie
+ * product APIs and the account-bound MCP connector are the real contracts.
+ */
+
 const GETTING_STARTED = [
   {
-    title: "Generate an API key",
+    title: "Connect an MCP client",
     description:
-      "Sign in, open Settings -> API Access, and create a key for your integration environment.",
-    icon: KeyRound,
+      "Add https://trywireline.com/mcp in ChatGPT, Claude, or Cursor. Sign in with your Wireline account via OAuth.",
+    icon: Sparkles,
   },
   {
-    title: "Make your first request",
+    title: "Draft and simulate privately",
     description:
-      "Send the key in the Authorization header and call an endpoint like /api/agents or /api/calls.",
-    icon: TerminalSquare,
+      "Use account-bound tools to create or refine a private agent draft and run a private voice simulation before continuing in Wireline.",
+    icon: MessageSquareText,
   },
   {
-    title: "Explore the schema",
+    title: "Finish in Studio",
     description:
-      "Use the OpenAPI spec or Swagger UI to inspect request and response shapes before you automate.",
+      "Numbers, dialing, Training, billing, and launch stay in the Wireline web app. The connector never claims those actions happened.",
     icon: BookOpen,
   },
 ] as const;
 
-const ENDPOINTS = [
+const MCP_BOUNDARIES = [
   {
-    path: "/api/agents",
-    description: "List agents or create a new agent configuration.",
+    path: "create_agent_draft / update_agent_draft",
+    description: "Create or refine a private agent configuration draft in natural language.",
   },
-  { path: "/api/calls", description: "Queue outbound calls and retrieve call activity." },
-  { path: "/api/campaigns", description: "Manage campaign definitions for outreach programs." },
-  { path: "/api/billing/plans", description: "Retrieve capacity tiers and billing configuration." },
-  { path: "/api/openapi.json", description: "Download the machine-readable API contract." },
+  {
+    path: "list_wireline_agents / get_wireline_workspace_summary",
+    description: "Read account-scoped agents and a minimized workspace summary.",
+  },
+  {
+    path: "start_private_voice_simulation",
+    description: "Run a private voice simulation — not a live customer call.",
+  },
+  {
+    path: "/api/openapi.json",
+    description:
+      "Machine-readable map of the session-authenticated product API used by the web app (not a public API-key product).",
+  },
 ] as const;
 
 const MCP_CLIENTS = [
@@ -53,8 +66,8 @@ const MCP_CLIENTS = [
     title: "ChatGPT",
     description:
       "Create and refine a private AI employee draft, then run a private voice simulation before continuing in Wireline.",
-    action: "Open ChatGPT plugins",
-    href: "https://chatgpt.com/plugins",
+    action: "Open ChatGPT apps",
+    href: "https://chatgpt.com/",
     icon: MessageSquareText,
   },
   {
@@ -65,54 +78,45 @@ const MCP_CLIENTS = [
     href: "https://claude.ai/settings/connectors",
     icon: Sparkles,
   },
+  {
+    title: "Cursor",
+    description:
+      "Register Wireline as a remote MCP server in Cursor. Same OAuth + draft/simulate tools — no separate Cursor plugin package.",
+    action: "Cursor MCP docs",
+    href: "https://docs.cursor.com/context/mcp",
+    icon: Terminal,
+  },
 ] as const;
 
 export default function Developers() {
-  const [logs, setLogs] = useState<string[]>([
-    "[INFO] Initializing agent connection...",
-    "[INFO] Voice session established with high-fidelity provider...",
-    "[DATA] Syncing Training context: 42 approved facts and policies...",
-    "[INFO] Route verification complete: agent ready to handle calls.",
-  ]);
   const [copied, setCopied] = useState(false);
 
   const appOrigin =
     typeof window !== "undefined" ? window.location.origin : "https://trywireline.com";
   const openApiUrl = `${appOrigin}/api/openapi.json`;
-  const swaggerUrl = `https://petstore.swagger.io/?url=${encodeURIComponent(openApiUrl)}`;
-  const curlCommand = `curl -X GET '${appOrigin}/api/agents' \\\n  -H 'Authorization: Bearer wl_YOUR_API_KEY'`;
+  const mcpEndpoint = "https://trywireline.com/mcp";
 
   const handleCopy = () => {
-    void navigator.clipboard.writeText(curlCommand);
+    void navigator.clipboard.writeText(mcpEndpoint);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleRunRequest = () => {
-    const newLogs = [
-      ...logs,
-      `[DATA] Inbound request received at ${new Date().toLocaleTimeString()} - Status 200 OK`,
-      "[INFO] Agent state synchronized successfully.",
-    ];
-    if (newLogs.length > 8) newLogs.shift();
-    setLogs(newLogs);
   };
 
   return (
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title="Developer Portal - Wireline"
-        description="Wireline developer documentation and secure MCP apps for ChatGPT and Claude - OpenAPI, OAuth, endpoint reference, and account-bound tools."
+        description="Wireline MCP apps for ChatGPT, Claude, and Cursor — account-bound draft, simulate, and continue in Studio. No public API keys."
         path="/developers"
       />
 
       <MarketingHero
-        eyebrow="Developer API"
-        title="Build on Wireline without building around it."
-        description="Provision agents, shape approved Training context, trigger live work, and retrieve call outcomes through the same API surface that powers Wireline."
-        primaryAction={{ label: "OpenAPI spec", to: openApiUrl }}
-        secondaryAction={{ label: "Try in Swagger UI", to: swaggerUrl, tone: "secondary" }}
-        proof={["Bearer authentication", "OpenAPI contract", "ChatGPT + Claude MCP"]}
+        eyebrow="Developers"
+        title="Bring Wireline into the tools you already use."
+        description="The live developer surface is an account-bound MCP connector. Draft and simulate privately in ChatGPT, Claude, or Cursor — then finish Training, Wire, and launch in Wireline."
+        primaryAction={{ label: "Open MCP endpoint", to: "https://trywireline.com/mcp" }}
+        secondaryAction={{ label: "OpenAPI map", to: openApiUrl, tone: "secondary" }}
+        proof={["OAuth PKCE", "Account-bound tools", "ChatGPT · Claude · Cursor"]}
       />
 
       <section
@@ -120,7 +124,7 @@ export default function Developers() {
         aria-labelledby="mcp-apps-heading"
       >
         <div className="mx-auto max-w-5xl text-center">
-          <p className="wl-stitch-eyebrow">ChatGPT + Claude</p>
+          <p className="wl-stitch-eyebrow">ChatGPT · Claude · Cursor</p>
           <h2 id="mcp-apps-heading" className="wl-stitch-display mt-3 text-balance">
             Bring Wireline into ChatGPT or Claude.
           </h2>
@@ -129,7 +133,7 @@ export default function Developers() {
             its voice privately, and continue configuration in Wireline when you are ready.
           </p>
 
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
             {MCP_CLIENTS.map(({ title, description, action, href, icon: Icon }) => (
               <article
                 key={title}
@@ -154,12 +158,16 @@ export default function Developers() {
           <div className="mx-auto mt-6 max-w-3xl rounded-xl border border-border bg-background p-5">
             <p className="wl-overline text-primary">Secure MCP endpoint</p>
             <code className="mt-3 block overflow-x-auto font-mono text-sm text-foreground">
-              https://trywireline.com/mcp
+              {mcpEndpoint}
             </code>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
               Private-by-default boundary: this connector cannot place calls, send messages,
               provision numbers, or launch an AI employee.
             </p>
+            <Button variant="outline" size="sm" onClick={handleCopy} className="mt-4">
+              <Copy className="mr-1 h-3.5 w-3.5" />
+              {copied ? "Copied" : "Copy endpoint"}
+            </Button>
           </div>
         </div>
       </section>
@@ -168,10 +176,9 @@ export default function Developers() {
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
             <p className="wl-stitch-eyebrow">Getting started</p>
-            <h2 className="wl-stitch-display mt-3 text-balance">One contract. Three clear steps.</h2>
+            <h2 className="wl-stitch-display mt-3 text-balance">One connector. Three clear steps.</h2>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-              Create a scoped key, make one request, then expand only after the response shape is
-              proven.
+              Connect with OAuth, draft and simulate privately, then finish launch work in Studio.
             </p>
           </div>
 
@@ -204,27 +211,25 @@ export default function Developers() {
             <ShieldCheck className="h-5 w-5" />
           </span>
           <p className="wl-stitch-eyebrow mt-5">Authentication</p>
-          <h2 className="wl-stitch-display mx-auto mt-3 max-w-[18ch] text-balance">
-            A scoped bearer token on every request.
+          <h2 className="wl-stitch-display mx-auto mt-3 max-w-[22ch] text-balance">
+            OAuth for MCP. Session auth for the product API.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-            Create tokens in Settings -&gt; API Access and keep each environment isolated. Never
-            place a Wireline API key in a client bundle.
+            MCP clients use OAuth PKCE against your Wireline account. The OpenAPI map documents the
+            same session-authenticated product routes the web app uses — there is no separate
+            public API-key product today.
           </p>
-          <div className="mx-auto mt-7 max-w-2xl overflow-x-auto rounded-xl border border-white/10 bg-ink p-4 text-left font-mono text-sm text-white/90">
-            <code>Authorization: Bearer wl_YOUR_API_KEY</code>
-          </div>
         </div>
       </section>
 
-      <section className="border-b border-border px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+      <section className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="wl-stitch-eyebrow">Key endpoints</p>
-            <h2 className="wl-stitch-display mt-3 text-balance">A small surface for real work.</h2>
+            <p className="wl-stitch-eyebrow">What the connector can do</p>
+            <h2 className="wl-stitch-display mt-3 text-balance">Draft. Simulate. Continue in Studio.</h2>
           </div>
-          <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {ENDPOINTS.map((endpoint) => (
+          <div className="mt-10 grid gap-3 sm:grid-cols-2">
+            {MCP_BOUNDARIES.map((endpoint) => (
               <article key={endpoint.path} className="wl-stitch-card p-5 text-center">
                 <code className="inline-flex rounded border border-brand/20 bg-brand/10 px-2 py-1 font-mono text-xs font-semibold text-primary">
                   {endpoint.path}
@@ -243,78 +248,9 @@ export default function Developers() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-foreground"
               >
-                Full endpoint list <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                OpenAPI map <ExternalLink className="h-3.5 w-3.5 opacity-60" />
               </a>
             </Button>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
-        <div className="mx-auto max-w-6xl">
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="wl-stitch-eyebrow">Live request preview</p>
-            <h2 className="wl-stitch-display mt-3 text-balance">Run the request. Read the result.</h2>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-              The preview is local to this page and demonstrates the request-and-response rhythm
-              without exposing a credential.
-            </p>
-          </div>
-
-          <div className="marketing-ink-panel mx-auto mt-10 max-w-5xl overflow-hidden rounded-[22px]">
-            <div className="flex flex-wrap items-center justify-center gap-3 border-b border-white/10 bg-black/30 px-5 py-4 text-center">
-              <span className="inline-flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-[.12em] text-white/70">
-                <Terminal className="h-4 w-4 text-primary" />
-                Wireline shell
-              </span>
-              <span className="inline-flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-[.12em] text-primary">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-                Live connected
-              </span>
-            </div>
-
-            <div className="space-y-7 p-5 sm:p-7">
-              <div>
-                <p className="text-center font-mono text-xs font-semibold uppercase tracking-[.12em] text-primary">
-                  Request input
-                </p>
-                <div className="mt-3 overflow-x-auto rounded-xl border border-white/10 bg-black/35 p-4 text-left">
-                  <pre className="font-mono text-xs leading-6 text-white/80">{curlCommand}</pre>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap justify-center gap-3">
-                <Button variant="editorial" size="sm" onClick={handleRunRequest}>
-                  Run request
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopy}
-                  className="border-white/20 bg-transparent text-white hover:bg-white/5"
-                >
-                  <Copy className="mr-1 h-3.5 w-3.5" />
-                  {copied ? "Copied" : "Copy cURL"}
-                </Button>
-              </div>
-
-              <div>
-                <p className="text-center font-mono text-xs font-semibold uppercase tracking-[.12em] text-white/60">
-                  Activity log
-                </p>
-                <div className="mt-3 min-h-[10rem] space-y-2 rounded-xl border border-white/10 bg-black/40 p-4 text-left">
-                  {logs.map((log, index) => (
-                    <p
-                      key={`${log}-${index}`}
-                      className="font-mono text-xs leading-6 text-white/70"
-                    >
-                      <span className="text-primary">{log.substring(0, 7)}</span>
-                      {log.substring(7)}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
