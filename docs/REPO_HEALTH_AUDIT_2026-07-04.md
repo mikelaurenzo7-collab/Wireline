@@ -1,5 +1,8 @@
 # Wireline Repo Health Audit — 2026-07-04
 
+**Status: historical.** First repo-health pass; superseded by the later
+passes recorded in `CODEBASE_HEALTH.md`'s "Recent health actions" changelog.
+
 ## Scope
 
 This pass reviewed repository health, durable documentation, active product boundaries, source-control hygiene, and obvious generated artifacts that do not belong in long-term source control.

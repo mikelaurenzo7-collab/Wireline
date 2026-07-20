@@ -1,6 +1,8 @@
 # Strict Business / Design Review — 2026-07-07
 
-**Status:** Active branch review.  
+**Status: historical.** Dated branch-review snapshot; its fixes already
+merged and its "Rule:" doctrine is restated in `docs/README.md` and
+`CODEBASE_HEALTH.md`.  
 **Base:** `a65923464c7eb4122bfa8b4f35feae94aaa98e1e` — `Guard structured log request ID binding`.  
 **Branch:** `codex/strict-business-design-audit-a659234`.
 

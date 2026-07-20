@@ -1,5 +1,8 @@
 # Wireline launch design QA
 
+**Status: historical.** Closed pre-launch visual/QA pass tied to a specific
+commit; superseded by the later launch audits indexed in `docs/README.md`.
+
 Date: 2026-07-14
 
 Baseline: `f1adccd2c6577fd1b09b1729a3a3a5a2b377263d`

@@ -1,6 +1,9 @@
 # Wireline Launch Perfection Plan
 
-Status: **Active** — canonical launch-readiness record. Re-audit before any paid-traffic milestone and update this file in place; do not point at files outside the repository.
+**Status: historical.** This was the rolling launch-readiness record before
+the dated `LAUNCH_*` audit sequence took over that role; see
+`docs/LAUNCH_READINESS_FINETUNE_2026-07-19.md` for the current audit of
+record.
 
 ## Gate
 

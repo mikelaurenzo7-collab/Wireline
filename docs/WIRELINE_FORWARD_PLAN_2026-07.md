@@ -1,6 +1,8 @@
 # Wireline Forward Plan — July 2026
 
-**Status:** Active · **Last audit:** 2026-07-07 · **Branch baseline:** `main`
+**Status: historical.** Thin early roadmap superseded in detail by
+`WIRELINE_LEVEL_UP_MASTER_PLAN.md`. **Last audit:** 2026-07-07 · **Branch
+baseline:** `main`
 
 ## North star
 
