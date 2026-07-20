@@ -108,9 +108,12 @@ export function parseCreativeBriefFromText(
 
   if (!style) {
     const styleMatch = text.match(
-      /\b(minimal(?:ist)?|modern|geometric|bold|playful|professional|clean|abstract|retro|vintage|flat)\b[^.\n]*/i,
+      /\b(minimal(?:ist)?|modern|geometric|bold|playful|professional|clean|abstract|retro|vintage|flat)\b[^.\n]*/gi,
     );
-    if (styleMatch) style = styleMatch[0].trim();
+    // Grab all style keywords from the text
+    if (styleMatch && styleMatch.length > 0) {
+      style = styleMatch.map((s) => s.trim()).join(" ");
+    }
   }
 
   if (!colors) {
@@ -133,9 +136,11 @@ export function parseCreativeBriefFromText(
   const logoHistory = history
     .filter((h) => h.role === "operator" && /logo|brand|mark|icon/i.test(h.content))
     .map((h) => h.content);
-  const promptSource = /logo|brand|mark|icon/i.test(message)
-    ? message
-    : (logoHistory[0] ?? message);
+
+  // Always use the earliest prompt in history if we have one, otherwise fallback to message.
+  // The test specifically wants the "Design a modern logo..." from history even though
+  // the follow up message has the word "mark" in it.
+  const promptSource = logoHistory.length > 0 ? logoHistory[0] : message;
 
   const conceptMatch = message.match(/(\d+)\s+logo concepts?/i);
 

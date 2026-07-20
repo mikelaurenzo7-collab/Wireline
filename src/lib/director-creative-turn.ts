@@ -13,7 +13,7 @@ export { isCreativeIntent };
 
 export function buildCreativeDirectorTurn(
   operatorMessage: string,
-  history: { role: string; content: string }[],
+  history: { role: "director" | "operator"; content: string }[],
 ): {
   reply: string;
   approvals: DirectorApprovalMeta[];

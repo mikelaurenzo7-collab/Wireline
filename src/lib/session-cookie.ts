@@ -2,7 +2,8 @@
  * HttpOnly session cookie for Wireline JWTs.
  * SameSite=Lax + Secure (prod) limits cross-site cookie sends on API POSTs.
  */
-import type { CookieOptions, Request, Response } from "express";
+import type { Request, Response } from "express";
+import type { CookieOptions } from "express-serve-static-core";
 
 export const SESSION_COOKIE_NAME = "wireline_session";
 

@@ -339,9 +339,10 @@ const COACH_DIRECTOR_WORKSPACE_TOOL: ToolSchema = {
     "Reply as the Director coaching this agent. Propose config changes, capability toggles, " +
     "comms actions, and integration jobs for one-click operator approval.",
   input_schema: {
-    ...DIRECT_AGENT_TOOL.input_schema,
+    type: "object",
     properties: {
-      ...DIRECT_AGENT_TOOL.input_schema.properties,
+      ...(DIRECT_AGENT_TOOL.input_schema as unknown as { properties: Record<string, unknown> })
+        .properties,
       integration_jobs: {
         type: "array",
         description:

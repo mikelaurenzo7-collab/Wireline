@@ -442,12 +442,10 @@ export default function DirectorWorkspace({
       pendingSendRef.current = null;
       inputRef.current?.focus();
     },
-    onError: (msg, { streamEstablished }) => {
+    onError: (msg, { streamEstablished: _streamEstablished }) => {
       const pending = pendingSendRef.current;
       if (pending?.trimmed) {
-        void sendNonStreamingRef.current?.(pending.trimmed, pending.optimisticId, {
-          skipOperatorPersist: streamEstablished,
-        });
+        void sendNonStreamingRef.current?.(pending.trimmed, pending.optimisticId);
         return;
       }
       void loadMessages();
@@ -950,9 +948,16 @@ export default function DirectorWorkspace({
         >
           <div className="flex items-center gap-2.5">
             <span className="wl-orbit" data-active={isSending}>
-              <span className="shrink-0 flex w-9 h-9 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/20 relative overflow-hidden">
-                <Compass className="w-4 h-4 relative z-10" />
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent" />
+              <span className="shrink-0 flex w-9 h-9 items-center justify-center rounded-full bg-gradient-to-br from-brand via-[#9B5CE0] to-brand-deep text-on-brand shadow-md shadow-brand/25 ring-1 ring-white/10 relative overflow-hidden group">
+                <span
+                  aria-hidden
+                  className="absolute inset-0 pointer-events-none mix-blend-soft-light"
+                  style={{
+                    background:
+                      "linear-gradient(145deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.06) 28%, transparent 52%, rgba(0,0,0,0.12) 78%)",
+                  }}
+                />
+                <Compass className="w-4 h-4 relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]" />
               </span>
             </span>
             <div>
@@ -998,7 +1003,7 @@ export default function DirectorWorkspace({
       {/* Messages - isolated scroll viewport */}
       <div ref={scrollRef} className="flex-1 min-h-0 scroll-viewport px-4 py-8 space-y-6">
         {loadDegraded && !isLoading && (
-          <p className="rounded-md border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-[11px] text-amber-900/80 dark:text-amber-100/80">
+          <p className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-[11px] text-destructive dark:text-destructive-foreground">
             Some Director data could not be loaded. Your thread may be incomplete — refresh to
             retry.
           </p>
@@ -1019,10 +1024,27 @@ export default function DirectorWorkspace({
           >
             {/* Hero identity */}
             <div className={cn("relative mb-6", WL_DIRECTOR_CLASSES.heroOrb)}>
-              <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-brand/20 to-brand/5 blur-2xl scale-125" />
-              <span className="flex w-16 h-16 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-xl shadow-brand/30 relative overflow-hidden">
-                <Compass className="w-8 h-8 relative z-10" />
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/25 to-transparent" />
+              <div className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150" />
+              <span className="flex w-16 h-16 items-center justify-center rounded-md bg-gradient-to-br from-brand via-[#9B5CE0] to-brand-deep text-on-brand shadow-lg shadow-brand/25 ring-1 ring-white/10 relative overflow-hidden group">
+                <span
+                  aria-hidden
+                  className="absolute inset-0 pointer-events-none mix-blend-soft-light"
+                  style={{
+                    background:
+                      "linear-gradient(145deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 28%, transparent 52%, rgba(0,0,0,0.15) 78%)",
+                  }}
+                />
+                <span
+                  aria-hidden
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+                  style={{
+                    background:
+                      "linear-gradient(125deg, transparent 20%, rgba(255,255,255,0.3) 42%, transparent 64%)",
+                    transform: "translateX(-30%)",
+                    animation: "medallion-facet 2.8s ease-in-out infinite",
+                  }}
+                />
+                <Compass className="w-8 h-8 relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]" />
               </span>
             </div>
 
@@ -1087,8 +1109,16 @@ export default function DirectorWorkspace({
                 {/* Director avatar + scene badge */}
                 {m.role === "director" && (
                   <div className="flex items-center gap-2 mb-2 ml-1">
-                    <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15">
-                      <Compass className="w-3.5 h-3.5" />
+                    <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-md bg-gradient-to-br from-brand via-[#9B5CE0] to-brand-deep text-on-brand shadow-sm shadow-brand/25 ring-1 ring-white/10 relative overflow-hidden group">
+                      <span
+                        aria-hidden
+                        className="absolute inset-0 pointer-events-none mix-blend-soft-light"
+                        style={{
+                          background:
+                            "linear-gradient(145deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.06) 28%, transparent 52%, rgba(0,0,0,0.12) 78%)",
+                        }}
+                      />
+                      <Compass className="w-3.5 h-3.5 relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]" />
                     </span>
                     <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">
                       Director
@@ -1456,7 +1486,7 @@ export default function DirectorWorkspace({
                           key={p.conceptId}
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          className="group relative rounded-xl border border-brand/12 bg-white/90 dark:bg-[#1a1225]/60 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand/25 transition-all duration-300"
+                          className="group relative rounded-md border border-brand/12 bg-white/90 dark:bg-[#1a1225]/60 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand/25 transition-all duration-300"
                         >
                           {/* Image canvas with hover overlay */}
                           <div className="relative overflow-hidden bg-[repeating-conic-gradient(#f0f0f0_0%_25%,#ffffff_0%_50%)] dark:bg-[repeating-conic-gradient(#1a1a2e_0%_25%,#0f0c17_0%_50%)] bg-[length:16px_16px]">
@@ -1537,7 +1567,7 @@ export default function DirectorWorkspace({
                                       true,
                                     )
                                   }
-                                  className="px-2.5 py-1 rounded-lg text-[10px] font-semibold border border-fuchsia-500/25 bg-fuchsia-500/5 text-fuchsia-600 hover:bg-fuchsia-500/10"
+                                  className="px-2.5 py-1 rounded-md text-[10px] font-semibold border border-fuchsia-500/25 bg-fuchsia-500/5 text-fuchsia-600 hover:bg-fuchsia-500/10"
                                 >
                                   <Sparkles className="w-2.5 h-2.5" />
                                   Vectorize
@@ -1561,7 +1591,7 @@ export default function DirectorWorkspace({
                                       true,
                                     )
                                   }
-                                  className="px-2.5 py-1 rounded-lg text-[10px] font-semibold border border-brand/20 bg-brand/5 text-brand hover:bg-brand/10"
+                                  className="px-2.5 py-1 rounded-md text-[10px] font-semibold border border-brand/20 bg-brand/5 text-brand hover:bg-brand/10"
                                 >
                                   <Download className="w-2.5 h-2.5" />
                                   Export pack
@@ -1573,7 +1603,7 @@ export default function DirectorWorkspace({
                                     `Refine concept ${p.title}: keep the core shape but adjust typography.`,
                                   )
                                 }
-                                className="px-2.5 py-1 rounded-lg text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
+                                className="px-2.5 py-1 rounded-md text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
                               >
                                 Edit
                               </ShadButton>
@@ -1583,7 +1613,7 @@ export default function DirectorWorkspace({
                                     `Regenerate 3 new options from ${p.title} with stronger contrast.`,
                                   )
                                 }
-                                className="px-2.5 py-1 rounded-lg text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
+                                className="px-2.5 py-1 rounded-md text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
                               >
                                 Regenerate
                               </ShadButton>
@@ -1635,7 +1665,7 @@ export default function DirectorWorkspace({
           );
           return (
             <div className="shrink-0 px-4 pb-2">
-              <div className="max-w-3xl mx-auto rounded-xl border border-brand/15 bg-white/80 dark:bg-black/15 backdrop-blur-sm p-3 space-y-3">
+              <div className="max-w-3xl mx-auto rounded-md border border-brand/15 bg-white/80 dark:bg-black/15 backdrop-blur-sm p-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-muted font-semibold">
@@ -1659,7 +1689,7 @@ export default function DirectorWorkspace({
                       {imageArts.slice(0, 12).map((a) => (
                         <div
                           key={a.id}
-                          className="group relative rounded-lg border border-brand/10 overflow-hidden bg-[repeating-conic-gradient(#f0f0f0_0%_25%,#ffffff_0%_50%)] dark:bg-[repeating-conic-gradient(#1a1a2e_0%_25%,#0f0c17_0%_50%)] bg-[length:12px_12px] aspect-square"
+                          className="group relative rounded-md border border-brand/10 overflow-hidden bg-[repeating-conic-gradient(#f0f0f0_0%_25%,#ffffff_0%_50%)] dark:bg-[repeating-conic-gradient(#1a1a2e_0%_25%,#0f0c17_0%_50%)] bg-[length:12px_12px] aspect-square"
                         >
                           <img
                             src={a.downloadUrl}

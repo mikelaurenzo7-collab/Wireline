@@ -169,7 +169,7 @@ export async function loadDirectorMessages(
       .where(eq(schema.directorConversationMessages.userId, userId))
       .orderBy(desc(schema.directorConversationMessages.createdAt))
       .limit(limit);
-    return { messages, degraded: false };
+    return { messages: messages as unknown as DirectorStoredMessage[], degraded: false };
   } catch (e) {
     if (isPostgresMissingColumn(e)) {
       log.warn("director messages: reasoning column missing, falling back", { userId });
@@ -187,7 +187,11 @@ export async function loadDirectorMessages(
           .orderBy(desc(schema.directorConversationMessages.createdAt))
           .limit(limit);
         return {
-          messages: rows.map((row) => ({ ...row, reasoning: null, metadata: null })),
+          messages: rows.map((row) => ({
+            ...row,
+            reasoning: null,
+            metadata: null,
+          })) as unknown as DirectorStoredMessage[],
           degraded: true,
         };
       } catch (fallbackError) {

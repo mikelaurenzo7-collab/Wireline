@@ -34,24 +34,26 @@ const AGENT_LIST_FALLBACK_SELECT = {
 
 export async function listAgentsForUser(userId: string, limit = 500): Promise<AgentListRow[]> {
   try {
-    return await drizzle
+    const res = await drizzle
       .select()
       .from(schema.agents)
       .where(eq(schema.agents.userId, userId))
       .orderBy(desc(schema.agents.createdAt))
       .limit(limit);
+    return res as unknown as AgentListRow[];
   } catch (e) {
     if (!isPostgresMissingColumn(e)) throw e;
     log.warn("agents list: schema column missing, using fallback projection", {
       userId,
       error: getErrorMessage(e),
     });
-    return drizzle
+    const res = await drizzle
       .select(AGENT_LIST_FALLBACK_SELECT)
       .from(schema.agents)
       .where(eq(schema.agents.userId, userId))
       .orderBy(desc(schema.agents.createdAt))
       .limit(limit);
+    return res as unknown as AgentListRow[];
   }
 }
 

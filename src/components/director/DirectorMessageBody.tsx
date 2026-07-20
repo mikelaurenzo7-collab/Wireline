@@ -45,7 +45,7 @@ function renderInline(text: string): React.ReactNode[] {
             <img
               src={imgMatch[2]}
               alt={imgMatch[1] || "Image"}
-              className="max-w-full max-h-72 rounded-lg border border-brand/10 shadow-sm object-contain"
+              className="max-w-full max-h-72 rounded-md border border-brand/10 shadow-sm object-contain"
               loading="lazy"
             />
             {imgMatch[1] && (

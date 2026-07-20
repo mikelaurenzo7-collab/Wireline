@@ -222,7 +222,7 @@ export function normalizeDirectorFleetPlan(
 ): DirectorFleetPlan {
   const reply =
     clampString(raw.reply, 12000) ||
-    "I'm here — tell me what you want to move forward and I'll orchestrate it.";
+    "I'm here — tell me what you want to move forward for your business and I'll orchestrate it.";
 
   const ownedIds = new Set(fleet.map((a) => a.id));
   const defaultAgentId = fleet[0]?.id;
