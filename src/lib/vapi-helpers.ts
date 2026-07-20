@@ -257,6 +257,25 @@ export function getArchetypeConfig(archetype: string): { rules: string; temp: nu
 }
 
 export const VAPI_TOOL_DEFS = {
+  search_knowledge_base: {
+    name: "search_knowledge_base",
+    description:
+      "Searches approved knowledge base entries, business rules, and policy content for this agent. " +
+      "Use this when a caller asks about pricing, services, operating hours, company policies, procedures, or any " +
+      "specific information you are not completely sure about. Always prefer this over guessing.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description:
+            "Precise question about a product, service, policy, procedure, pricing, " +
+            "or any business detail the caller is asking about.",
+        },
+      },
+      required: ["query"],
+    },
+  },
   view_recent_interactions: {
     name: "view_recent_interactions",
     description:

@@ -801,37 +801,15 @@ export function buildShowcaseAssistantPayload(
     },
   };
 
-  const voiceId = agent.voiceId || options?.existingVoiceId;
-  if (voiceId) {
-    const tuning = agent.voiceSettings ?? {};
-    payload.voice = {
-      provider: "11labs",
-      voiceId,
-      model: "eleven_flash_v2_5",
-      optimizeStreamingLatency: 4,
-      stability: tuning.stability ?? 0.65,
-      similarityBoost: tuning.similarityBoost ?? 0.88,
-      style: tuning.style ?? 0.05,
-      useSpeakerBoost: true,
-      // ElevenLabs speech speed. Individual agents override via
-      // voiceSettings.speed in contact-agents.ts; this default sits at
-      // the neutral 1.0 — no artificial slowdown. The old 0.95 nudge
-      // added perceptible dead-air without a cadence benefit large
-      // enough to justify ~50ms per TTS chunk. Per-agent speed tuning
-      // (Marcus calm at 0.95, Jake energetic at 1.06) lives in the
-      // contact-agents roster, not here.
-      // ElevenLabs accepts 0.7–1.2; Vapi forwards as voice.eleven_labs.speed.
-      speed: tuning.speed ?? 1.0,
-      fallbackPlan: {
-        voices: [
-          {
-            provider: "vapi",
-            voiceId: "Elliot",
-          },
-        ],
-      },
-    };
-  }
+  // All showcase agents use Vapi's curated V2 voices (powered by xAI Grok).
+  // No ElevenLabs dependency — Vapi voices are included at $0.0025/min with
+  // lower latency and more natural conversational quality.
+  const vapiVoiceId = agent.vapiVoiceId || options?.existingVoiceId || "Elliot";
+  payload.voice = {
+    provider: "vapi",
+    voiceId: vapiVoiceId,
+    version: 2,
+  };
 
   return payload;
 }

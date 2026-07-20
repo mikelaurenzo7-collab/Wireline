@@ -1,4 +1,5 @@
 export const AGENT_TOOL_NAME_VALUES = [
+  "search_knowledge_base",
   "view_recent_interactions",
   "escalate_to_human",
   "create_followup_task",
