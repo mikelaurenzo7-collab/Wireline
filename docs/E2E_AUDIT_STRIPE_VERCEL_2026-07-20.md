@@ -87,3 +87,10 @@ Full production capture against `trywireline.com`:
 
 Artifacts (local agent): `/opt/cursor/artifacts/visual-qa-prod/` and `/opt/cursor/artifacts/visual-qa-phone/`.
 
+## Evening follow-on
+
+See `docs/E2E_LAUNCH_HARDENING_2026-07-20.md` — activation bootstrap, Insights rate
+limits, DNC readiness honesty, DEFAULT PRIVILEGES, carrier SMS toggle honesty.
+Production launch-readiness re-probe: **overall_score 83** (`compliance_ready`
+degraded) until a real DNCScrub `loginId` replaces the current Federal DNC key.
+

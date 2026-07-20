@@ -145,7 +145,11 @@ router.get("/launch-readiness", healthRateLimiter, requireMonitorToken, (_req, r
     capabilities: report.capabilities.map((capability) => ({
       id: capability.id,
       level: capability.level,
+      // Surface blockers when degraded/blocked so monitors/ops don't have to
+      // reverse-engineer a bare level from source.
+      ...(capability.blockers.length > 0 ? { blockers: capability.blockers } : {}),
     })),
+    ...(report.launch_blockers.length > 0 ? { launch_blockers: report.launch_blockers } : {}),
     timestamp: report.generated_at,
   });
 });

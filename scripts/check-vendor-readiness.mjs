@@ -47,6 +47,23 @@ function present(name) {
   return Boolean(process.env[name]?.trim());
 }
 
+/**
+ * Mirror src/lib/federal-dnc-service.ts `isFederalDncVendorConfigured`.
+ * Presence-only checks lied when a Vercel personal token (`vcp_…`) was pasted
+ * as FEDERAL_DNC_API_KEY — readiness said ready while runtime correctly failed closed.
+ */
+function isFederalDncVendorConfigured() {
+  const apiKey = process.env.FEDERAL_DNC_API_KEY?.trim();
+  const apiUrl = process.env.FEDERAL_DNC_API_URL?.trim();
+  if (!apiKey || !apiUrl) return false;
+  if (/^vcp_/i.test(apiKey) || /^vercel_/i.test(apiKey)) return false;
+  try {
+    return new URL(apiUrl).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function validHttpsUrl(name) {
   const raw = process.env[name]?.trim();
   if (!raw) return false;
@@ -355,13 +372,20 @@ record(
   "Maintain the Resend plan; no prepaid balance is required.",
 );
 
+const federalDncConfigured = isFederalDncVendorConfigured();
+const federalDncKey = process.env.FEDERAL_DNC_API_KEY?.trim() || "";
+const federalDncLooksLikeVercelToken = /^vcp_/i.test(federalDncKey) || /^vercel_/i.test(federalDncKey);
 record(
   "federal_dnc",
   true,
-  validHttpsUrl("FEDERAL_DNC_API_URL") && present("FEDERAL_DNC_API_KEY") ? "ready" : "blocked",
-  validHttpsUrl("FEDERAL_DNC_API_URL")
+  federalDncConfigured ? "ready" : "blocked",
+  federalDncConfigured
     ? "Federal DNC vendor URL and key configured."
-    : "FEDERAL_DNC_API_URL is missing or is not a valid HTTPS URL.",
+    : federalDncLooksLikeVercelToken
+      ? "FEDERAL_DNC_API_KEY looks like a Vercel access token (vcp_/vercel_) — replace with the DNCScrub loginId."
+      : !present("FEDERAL_DNC_API_KEY")
+        ? "FEDERAL_DNC_API_KEY is missing."
+        : "FEDERAL_DNC_API_URL is missing or is not a valid HTTPS URL.",
   "Maintain vendor subscription or scrub credits before enabling marketing outbound.",
 );
 

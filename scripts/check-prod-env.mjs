@@ -169,6 +169,13 @@ function isValidEnvValue(key, value) {
       return false;
     }
   }
+  if (key === "FEDERAL_DNC_API_KEY") {
+    const trimmed = String(value).trim();
+    // Same rejection as src/lib/federal-dnc-service.ts — Vercel tokens have been
+    // pasted here by mistake and make presence-only checks lie.
+    if (/^vcp_/i.test(trimmed) || /^vercel_/i.test(trimmed)) return false;
+    return trimmed.length >= 8;
+  }
   if (key === "STRIPE_SECRET_KEY") return /^sk_(test|live)_/.test(String(value).trim());
   return true;
 }

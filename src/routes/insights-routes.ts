@@ -10,6 +10,7 @@ import * as insightsAi from "../lib/insights-ai";
 import { aiErr } from "../lib/ai-response-helpers";
 import { cachedInsight, setCachedInsight } from "../lib/insights-cache";
 import { enforceSpendCap, enforce24hSpendCap } from "../lib/spend-guards";
+import { createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -17,6 +18,18 @@ const router = Router();
 const DEFAULT_AGENT_ROLE = "customer_service";
 
 import { computeDailyBrief } from "../lib/daily-brief";
+
+/**
+ * LLM-backed Insights endpoints (topics / failure-modes / daily-brief).
+ * enforce24hSpendCap is intentionally a no-op telemetry stub — this limiter
+ * is the real cost-abuse brake. 20/hour covers interactive refresh while
+ * blocking unbounded `?refresh=1` loops.
+ */
+const insightsAiRateLimit = createRateLimiter({
+  bucket: "api:insights-ai",
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+});
 
 router.get(
   "/api/insights/funnel",
@@ -302,6 +315,7 @@ router.get(
 router.get(
   "/api/insights/topics",
   authenticateUser,
+  insightsAiRateLimit,
   enforce24hSpendCap,
   enforceSpendCap,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -350,6 +364,7 @@ router.get(
 router.get(
   "/api/insights/failure-modes",
   authenticateUser,
+  insightsAiRateLimit,
   enforce24hSpendCap,
   enforceSpendCap,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -413,6 +428,7 @@ router.get(
 router.get(
   "/api/insights/daily-brief",
   authenticateUser,
+  insightsAiRateLimit,
   enforce24hSpendCap,
   enforceSpendCap,
   async (req: AuthenticatedRequest, res: Response) => {
