@@ -1,5 +1,8 @@
 # Wireline Takeover Audit — 2026-07-05
 
+**Status: historical.** Completed design-system takeover pass; its outcomes
+now live in `design-tokens/wireline.tokens.json` and `CODEBASE_HEALTH.md`.
+
 ## Scope
 
 This pass is a full takeover review of the Wireline monorepo after pulling the

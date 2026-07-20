@@ -1,5 +1,8 @@
 # Integration Vendor Audit
 
+**Status: historical.** Vendor/runtime decision superseded by
+`VENDOR_LAUNCH_MAP.md`'s more current runtime-decision table.
+
 Date: 2026-07-06
 
 ## Decision

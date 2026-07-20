@@ -64,7 +64,7 @@ Use `npm run verify` for focused implementation branches and `npm run verify:ful
 
 | Area | Source of truth |
 | --- | --- |
-| Repo health | `CODEBASE_HEALTH.md`, `docs/REPO_HEALTH_AUDIT_2026-07-04.md`, `docs/EXCLUDED_SURFACES_AUDIT_2026-07-06.md` |
+| Repo health | `CODEBASE_HEALTH.md`, `docs/EXCLUDED_SURFACES_AUDIT_2026-07-06.md` |
 | Architecture | `ARCHITECTURE.md`, `src/server/register-api-routes.ts`, `src/routes/AppRoutes.tsx` |
 | Product docs | `docs/README.md`, `docs/CLIENT_SURFACES.md`, `docs/CHATGPT_APP.md`, `docs/PRODUCT_SHOWCASE_MATRIX.md`, `docs/WIRELINE_LEVEL_UP_MASTER_PLAN.md` |
 | Release boundaries | `docs/CLIENT_SURFACES.md` for tier ownership/checks/non-goals/security/rollback; `docs/PRODUCT_SHOWCASE_MATRIX.md` for commercial status; `docs/WIRELINE_LEVEL_UP_MASTER_PLAN.md` for execution sequencing |

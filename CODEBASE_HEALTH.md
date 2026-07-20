@@ -80,7 +80,6 @@ Use customer-facing language consistently:
 | `CODEBASE_HEALTH.md` | Cleanup rules, source-control boundaries, deletion policy. |
 | `ARCHITECTURE.md` | Runtime architecture, data-flow boundaries, security invariants. |
 | `docs/README.md` | Documentation index and canonical/historical status map. |
-| `docs/REPO_HEALTH_AUDIT_2026-07-04.md` | Current health-pass audit, actions, and next priorities. |
 | `docs/EXCLUDED_SURFACES_AUDIT_2026-07-06.md` | Active rebuild/delete triage for excluded and unmounted product surfaces. |
 | `docs/PRODUCT_SHOWCASE_MATRIX.md` | Active whole-product showcase matrix and feature-status discipline. |
 | `docs/WIRELINE_LEVEL_UP_MASTER_PLAN.md` | Active phased level-up plan for repo, product, trust, cost, and surfaces. |

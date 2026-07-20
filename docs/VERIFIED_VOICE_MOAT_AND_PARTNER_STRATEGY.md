@@ -127,6 +127,19 @@ Every provider adapter must implement:
 - Health checks and circuit-breaker state.
 - A portability record linking Wireline voice identity to provider voice IDs.
 
+### Upload transport constraint
+
+The current synchronous cloning path is intentionally limited to compressed
+samples under 3 MiB — enough for a clean 30–90 second MP3 or M4A sample —
+which keeps the feature deployable on the present Vercel architecture.
+Larger or lossless samples must not be enabled by raising Express's JSON
+limit; Vercel rejects the request before Express receives it. The scalable
+path is a short-lived, tenant-scoped client upload to dedicated object
+storage, followed by a small authenticated clone request referencing the
+object; a worker fetches, validates, hashes, isolates, clones, and deletes
+the temporary object under a retention SLA. (Folded in from the retired
+`VOICE_CLONING_EXPANSION.md`.)
+
 ### Routing policy
 
 Route by declared policy, not hard-coded vendor names:

@@ -1,5 +1,7 @@
 # Wireline Composer 2.5 Certification
 
+**Status: historical.** Dated pre-push certification snapshot; its test
+counts and phase status are stale.  
 **Date:** 2026-07-05  
 **Branch:** `main` (pre-push certification run)  
 **Baseline:** `db5e72b6` → certification commit (this release)
