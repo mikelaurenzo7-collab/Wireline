@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Vapi webhook/tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
-import { and, eq, ilike, inArray, not, or } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, not, or } from "drizzle-orm";
 
 import { superviseClientCommunication } from "../../lib/ai-supervisor";
 import * as schema from "../../db/schema";
@@ -16,12 +16,117 @@ import {
 
 import type { ToolCallContext, ToolCallResult } from "./types";
 
+// ─── Knowledge search helpers ────────────────────────────────────────────────
+const MAX_KB_RESULTS = 8;
+const MAX_KB_RESULT_CHARS = 600;
+
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length > 2);
+}
+
+function scoreSnippet(content: string, queryTokens: string[]): number {
+  const lower = content.toLowerCase();
+  let score = 0;
+  for (const token of queryTokens) {
+    if (lower.includes(token)) score += 1;
+  }
+  return score;
+}
+
+async function searchAgentKnowledge(
+  drizzle: any,
+  userId: string,
+  agentId: string,
+  query: string,
+): Promise<string> {
+  const [directives, knowledge] = await Promise.all([
+    drizzle
+      .select({ content: schema.directives.content })
+      .from(schema.directives)
+      .where(eq(schema.directives.agentId, agentId))
+      .orderBy(desc(schema.directives.priority))
+      .limit(40),
+    drizzle
+      .select({ content: schema.knowledge.content })
+      .from(schema.knowledge)
+      .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
+      .orderBy(desc(schema.knowledge.createdAt))
+      .limit(200),
+  ]);
+
+  type Snippet = { source: "rule" | "knowledge"; content: string };
+  const snippets: Snippet[] = [
+    ...directives.map((d: any) => ({
+      source: "rule" as const,
+      content: (d.content || "").trim().slice(0, MAX_KB_RESULT_CHARS),
+    })),
+    ...knowledge.map((k: any) => ({
+      source: "knowledge" as const,
+      content: (k.content || "").trim().slice(0, MAX_KB_RESULT_CHARS),
+    })),
+  ].filter((s) => s.content.length > 0);
+
+  if (snippets.length === 0) {
+    return "No knowledge base entries found for this agent. Take a message and let the caller know someone will follow up.";
+  }
+
+  const queryTokens = tokenize(query);
+  const scored = snippets
+    .map((s) => ({ ...s, score: scoreSnippet(s.content, queryTokens) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, MAX_KB_RESULTS);
+
+  const lines = scored.filter((s) => s.score > 0).map((s) => `[${s.source}] ${s.content}`);
+
+  if (lines.length === 0) {
+    // Return top entries even without keyword matches — they're still relevant context
+    return scored
+      .slice(0, 3)
+      .map((s) => `[${s.source}] ${s.content}`)
+      .join("\n\n");
+  }
+
+  return lines.join("\n\n");
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function handleCoreToolCall(
   fn: string,
   args: any,
   context: ToolCallContext,
 ): Promise<ToolCallResult | null> {
   const { agent, drizzle, log, message, payload, toolCallId, webhookAgentId } = context;
+
+  // ── Knowledge base search (highest priority — fast, no side effects) ──────
+  if (fn === "search_knowledge_base") {
+    try {
+      const query = typeof args?.query === "string" ? args.query.trim() : "";
+      if (!query) {
+        return {
+          toolCallId,
+          result: "Please provide a specific question to search the knowledge base.",
+        };
+      }
+      const results = await searchAgentKnowledge(
+        drizzle,
+        agent?.user_id || "",
+        webhookAgentId,
+        query,
+      );
+      return { toolCallId, result: results };
+    } catch (e: any) {
+      log.error("search_knowledge_base failed", { error: e?.message });
+      return {
+        toolCallId,
+        result:
+          "Knowledge search is temporarily unavailable. Answer from what you know or take a message.",
+      };
+    }
+  }
 
   if (fn === "create_followup_task") {
     try {
