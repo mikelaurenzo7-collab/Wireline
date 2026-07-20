@@ -106,6 +106,8 @@ LIVE_RESEARCH_TIMEOUT_MS=8000
 GEMINI_API_KEY=...
 ```
 
+`LIVE_RESEARCH_TIMEOUT_MS` is only the mid-call web-research HTTP timeout (default 8s). It is **not** a PSTN call-duration or billing limit — live calls run as long as needed and bill from included minutes then prepaid Conversation Balance.
+
 Do not paste populated secrets into GitHub or docs. Only Vercel project env should contain real secret values.
 
 ## Permission model
@@ -131,6 +133,8 @@ PERPLEXITY_MODEL=sonar
 LIVE_RESEARCH_TIMEOUT_MS=8000
 GEMINI_API_KEY=...
 ```
+
+Again: `LIVE_RESEARCH_TIMEOUT_MS` bounds research latency only, not how long a phone call may last.
 
 Use live research for:
 

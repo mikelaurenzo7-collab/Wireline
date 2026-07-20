@@ -19,6 +19,12 @@ const PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions";
 const PERPLEXITY_MODEL = process.env.PERPLEXITY_MODEL || "sonar";
 const MAX_QUERY_CHARS = 600;
 const MAX_ANSWER_CHARS = 1_000;
+/**
+ * Mid-call *web research* HTTP timeout only — NOT a call-duration or billing cap.
+ * PSTN calls run as long as the conversation needs; minutes bill from included pool
+ * then prepaid Conversation Balance (see `voice-usage.ts` / `plan-catalog.ts`).
+ * Keep this short so the caller is not held in silence while Perplexity/Gemini runs.
+ */
 const LIVE_RESEARCH_TIMEOUT_MS = Number(process.env.LIVE_RESEARCH_TIMEOUT_MS || 8_000);
 
 function cleanQuery(query: string): string {

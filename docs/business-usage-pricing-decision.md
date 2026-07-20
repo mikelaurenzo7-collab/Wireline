@@ -34,6 +34,24 @@ Overage beyond included voice minutes ranges $0.25/min (Starter) down to $0.17/m
 `overage_per_min_usd` per plan. SMS outbound segments still bill Conversation Balance at
 **$0.02/segment** (`SMS_COST_PER_SEGMENT_USD` in `src/lib/sms-billing.ts`, unchanged by this pivot).
 
+## Call length vs the "8 second" research timeout (locked 2026-07-20)
+
+**There is no 8-second call-duration budget.** `LIVE_RESEARCH_TIMEOUT_MS` (default `8000`) is only the
+HTTP timeout for mid-call *public web research* (Perplexity → Gemini) so a caller is not held in
+silence while a lookup runs. PSTN calls continue for as long as the conversation needs.
+
+Commercial protection is minutes + prepaid wallet, not call hard-caps:
+
+1. **Included monthly voice minutes** per paid tier (and +50 min per extra-agent add-on).
+2. **Conversation Balance top-ups** fund overflow at the plan's `overage_per_min_usd` — no silent
+   postpaid meter, no surprise invoice.
+3. **Active calls finish normally**; depleted coverage blocks only the *next* new live action.
+4. Soft near-limit warnings in product UI; hard gate only when coverage is gone.
+
+This is the intentional "happy user + protected margin" model. Do **not** reintroduce artificial
+short call caps for profitability, and do not rebuild the Stripe catalog unless
+`plan-catalog.ts` / live Stripe prices actually diverge.
+
 ## Target commercial structure (historical — see status note above)
 
 | Offer                | Commercial role                                     | Billing expectation                                                             |

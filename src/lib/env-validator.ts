@@ -137,7 +137,8 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "LIVE_RESEARCH_TIMEOUT_MS",
     group: "ai",
     required: false,
-    description: "Timeout budget for live public research calls",
+    description:
+      "HTTP timeout for mid-call public web research (Perplexity/Gemini) — not PSTN call length",
     validate: isPositiveNumber,
     formatHint: "milliseconds, e.g. 8000",
   },

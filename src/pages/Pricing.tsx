@@ -122,7 +122,11 @@ const FAQ = [
   ],
   [
     "What happens when included voice minutes run out?",
-    "New live work uses prepaid Conversation Balance. Wireline does not silently add a postpaid metered line item. Add balance, wait for renewal, or upgrade.",
+    "New live work uses prepaid Conversation Balance. Wireline does not silently add a postpaid metered line item. Add balance, wait for renewal, or upgrade. An active call is never cut off for billing — only the next new action pauses until coverage is restored.",
+  ],
+  [
+    "Are live calls limited to a few seconds?",
+    "No. Calls run as long as the conversation needs. Included monthly minutes and prepaid Conversation Balance fund duration; there is no artificial short hard-cap for profitability. Separate mid-call web research tools use a short network timeout so callers are not left waiting in silence.",
   ],
   [
     "Why keep live usage prepaid?",
