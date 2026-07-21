@@ -826,17 +826,17 @@ export default function AuthPortal() {
                 ) : isReset ? (
                   <>
                     Send reset link
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </>
                 ) : isSignUp ? (
                   <>
                     Create account
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </>
                 ) : (
                   <>
                     Sign in
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </>
                 )}
               </button>

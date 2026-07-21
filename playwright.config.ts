@@ -19,7 +19,12 @@ export default defineConfig({
       : {}),
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    {
+      name: "chromium",
+      // Design-gold screenshots belong only to the design-gold project.
+      testIgnore: /design-gold-screens\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+    },
     {
       name: "design-gold",
       testMatch: /design-gold-screens\.spec\.ts/,

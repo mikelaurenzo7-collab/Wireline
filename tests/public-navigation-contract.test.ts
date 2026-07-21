@@ -57,6 +57,12 @@ describe("public navigation mobile regression contract", () => {
     expect(publicHeader).toContain('<SkipToContentLink href="#main-content" />');
     expect(workspaceShell).toContain('<SkipToContentLink href="#workspace-main" />');
     expect(publicHeader).not.toContain("focus:not-sr-only");
+
+    // MarketingChrome pages (#security, legal, trust, status) must use a real
+    // <main> landmark — not a skip-target-only div — so SR landmark nav works.
+    const marketingChrome = source("src/components/marketing/MarketingChrome.tsx");
+    expect(marketingChrome).toMatch(/<main\b[^>]*\bid="main-content"/);
+    expect(marketingChrome).not.toMatch(/<div\b[^>]*\bid="main-content"/);
   });
 
   it("keeps Dialog capable of route-safe overlay, close-control, and navigation composition", () => {
