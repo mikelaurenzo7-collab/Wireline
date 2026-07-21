@@ -5,7 +5,9 @@ import * as schema from "../db/schema";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
+import { reportError } from "../lib/error-reporter";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
+import { claimTwilioUsageAlert } from "../lib/twilio-usage-alert-idempotency";
 import { sanitizePhone } from "../lib/vapi-helpers";
 import baseRouter from "./twilio-webhook-base";
 
@@ -179,6 +181,90 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
       errorCode,
       error: getErrorMessage(error),
     });
+  }
+
+  return res.status(204).end();
+});
+
+/**
+ * Account-level Twilio Usage Trigger callback. Twilio may deliver the same
+ * threshold callback more than once, so alerting is guarded by the documented
+ * IdempotencyToken in shared Redis. This endpoint is intentionally separate
+ * from tenant message/call telemetry: it protects Wireline's platform account.
+ */
+router.post("/api/twilio-webhook/usage-alert", async (req: Request, res: Response) => {
+  if (!evaluateTwilioWebhookAuth(req).ok) return res.status(403).send("Forbidden");
+
+  const idempotencyToken = String(req.body?.IdempotencyToken || "").trim();
+  const triggerSid = String(req.body?.UsageTriggerSid || "").trim();
+  const recurring = String(req.body?.Recurring || "unknown")
+    .trim()
+    .toLowerCase();
+  const triggerValue = String(req.body?.TriggerValue || "unknown").trim();
+  const currentValue = String(req.body?.CurrentValue || "unknown").trim();
+
+  if (!idempotencyToken || !triggerSid) {
+    return res.status(400).send("Missing Usage Trigger identity");
+  }
+
+  const claim = await claimTwilioUsageAlert(idempotencyToken);
+  if (claim === "duplicate") return res.status(204).end();
+  if (claim === "unavailable") {
+    log.error("Twilio usage alert idempotency unavailable", { triggerSid, recurring });
+    return res.status(503).send("Alert persistence unavailable");
+  }
+
+  const context = { triggerSid, recurring, triggerValue, currentValue };
+  log.error("Twilio account usage threshold reached", context);
+  reportError(new Error("Twilio account usage threshold reached"), {
+    route: "/api/twilio-webhook/usage-alert",
+    provider: "twilio",
+    ...context,
+  });
+
+  try {
+    await drizzle.insert(schema.webhookHealth).values({
+      userId: null,
+      provider: "twilio_usage",
+      eventType: recurring,
+      outcome: `threshold_${triggerValue}`.slice(0, 128),
+    });
+  } catch (error) {
+    // The alert is already claimed and present in Vercel/Sentry. Do not ask
+    // Twilio to retry indefinitely just because secondary telemetry is down.
+    log.warn("Twilio usage alert database telemetry failed", {
+      triggerSid,
+      error: getErrorMessage(error),
+    });
+  }
+
+  const alertEmail = String(process.env.OPS_ALERT_EMAIL || process.env.OWNER_EMAIL || "").trim();
+  if (alertEmail) {
+    try {
+      const { sendEmail } = await import("../lib/email-service");
+      const text = [
+        "Wireline's Twilio account reached a configured usage threshold.",
+        `Window: ${recurring}`,
+        `Threshold: ${triggerValue}`,
+        `Current value: ${currentValue}`,
+        `Trigger: ${triggerSid}`,
+        "Review Twilio usage before raising or removing the limit.",
+      ].join("\n");
+      const safeHtml = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\n/g, "<br>");
+      const sent = await sendEmail({
+        to: alertEmail,
+        subject: `[Wireline] Twilio ${recurring} usage threshold reached`,
+        text,
+        html: `<p>${safeHtml}</p>`,
+      });
+      if (!sent.ok) log.error("Twilio usage alert email failed", { triggerSid, error: sent.error });
+    } catch (error) {
+      log.error("Twilio usage alert email threw", { triggerSid, error: getErrorMessage(error) });
+    }
   }
 
   return res.status(204).end();

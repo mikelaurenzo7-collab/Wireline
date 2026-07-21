@@ -101,6 +101,7 @@ export default function LiveVoiceSandbox({
   onAgentAudioDelta,
   onAgentAudioEnd,
   onTestStarted,
+  onTestCompleted,
 }: {
   agentId: string;
   agentName: string;
@@ -109,6 +110,8 @@ export default function LiveVoiceSandbox({
   onAgentAudioEnd?: () => void;
   /** Fires only after a private live voice test has connected successfully. */
   onTestStarted?: () => void;
+  /** Fires once after the first complete assistant response in a connected test. */
+  onTestCompleted?: () => void;
 }) {
   const [state, setState] = useState<VoiceState>("idle");
   const [error, setError] = useState("");
@@ -133,6 +136,7 @@ export default function LiveVoiceSandbox({
   const assistantTranscriptMode = useRef<"audio" | "text" | null>(null);
   const userLineId = useRef<string | null>(null);
   const reportedStarted = useRef(false);
+  const reportedCompleted = useRef(false);
 
   const upsertLine = (id: string, role: Line["role"], text: string, replace = false) => {
     if (!text) return;
@@ -396,6 +400,10 @@ export default function LiveVoiceSandbox({
         assistantTranscriptMode.current = null;
         userLineId.current = null;
         onAgentAudioEnd?.();
+        if (reportedStarted.current && !reportedCompleted.current) {
+          reportedCompleted.current = true;
+          onTestCompleted?.();
+        }
         if (!pendingTools.current) setState("listening");
       }
       if (type === "response.function_call_arguments.done") {
@@ -471,6 +479,7 @@ export default function LiveVoiceSandbox({
     stop();
     const connectionGeneration = generation.current;
     reportedStarted.current = false;
+    reportedCompleted.current = false;
     closedByUser.current = false;
     setError("");
     setLines([]);

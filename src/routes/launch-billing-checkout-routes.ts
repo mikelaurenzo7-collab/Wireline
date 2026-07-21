@@ -10,6 +10,7 @@ import { authenticateUser } from "../middleware/auth";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import * as schema from "../db/schema";
 import type { AuthenticatedRequest } from "../types/auth";
+import { emitServerProductEvent } from "../lib/product-event-server";
 
 const router = Router();
 
@@ -196,6 +197,17 @@ router.post(
           overage_policy: "prepaid_balance_only",
           ...attributionMetadata,
         },
+      },
+    });
+
+    emitServerProductEvent({
+      event: "subscription_checkout_started",
+      userId: req.user.id,
+      planId: plan.id,
+      metadata: {
+        interval,
+        catalog_version: FOUNDER_CATALOG_VERSION,
+        checkout_session_id: session.id,
       },
     });
 

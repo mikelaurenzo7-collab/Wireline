@@ -3,9 +3,8 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { listVercelEnvs, resolveVercelEnvValue } from "./lib/vercel-env-values.mjs";
 
-const TEAM_ID = "team_ssX7cPECdHvXGFHSOuS9iXos";
-const PROJECT_ID = "prj_mCjWa69TtFye8z11u8bSaWwO41f2";
 const TARGETS = ["production", "preview", "development"];
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -24,20 +23,14 @@ if (!token) {
 const canon = JSON.parse(readFileSync(join(ROOT, "scripts", ".stripe-env.generated.json"), "utf8"));
 const keys = [...new Set([...Object.keys(canon), ...EXTRA_KEYS])];
 
-const res = await fetch(
-  `https://api.vercel.com/v9/projects/${PROJECT_ID}/env?decrypt=true&teamId=${TEAM_ID}`,
-  { headers: { Authorization: `Bearer ${token}` } },
-);
-const text = await res.text();
-if (!res.ok) throw new Error(`Vercel API ${res.status}: ${text.slice(0, 400)}`);
-
-const { envs = [] } = JSON.parse(text);
+const envs = await listVercelEnvs(token);
 const snapshot = {};
 for (const key of keys) {
   const rows = envs.filter((e) => e.key === key);
   snapshot[key] = {};
   for (const row of rows) {
-    for (const t of row.target || []) snapshot[key][t] = row.value;
+    const value = await resolveVercelEnvValue(token, row);
+    for (const t of row.target || []) snapshot[key][t] = value;
   }
 }
 

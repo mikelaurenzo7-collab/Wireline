@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-21T21:56:19.556Z",
+  "launch_decision": "NO-GO",
+  "blockers": [
+    "source_branch_not_main",
+    "source_worktree_dirty",
+    "launch_readiness_below_100",
+    "twilio_prepaid_balance_below_150",
+    "twilio_usage_triggers_missing",
+    "readiness:FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY"
+  ],
+  "source": {
+    "branch": "codex/public-self-serve-launch-readiness-2026-07-21",
+    "commit": "5d09a17577a1414502e433924bc4adc2972c4944",
+    "origin_main_ahead": 0,
+    "origin_main_behind": 0,
+    "worktree_clean": false
+  },
+  "production": {
+    "status": "ready",
+    "deployment_id": "dpl_HCT9hgrMCJbP4JYSDaAPtYZ7Wmzz",
+    "production_commit": "5d09a17577a1414502e433924bc4adc2972c4944",
+    "environment_audit": {
+      "record_count": 104,
+      "unique_key_count": 96,
+      "production_record_count": 96,
+      "preview_record_count": 95,
+      "development_record_count": 76,
+      "duplicate_keys": [
+        "WIRELINE_LAUNCH_DEMO_MODE",
+        "GEMINI_API_KEY",
+        "FEDERAL_DNC_PROVIDER",
+        "FEDERAL_DNC_API_URL",
+        "FEDERAL_DNC_API_KEY",
+        "APNS_ENV"
+      ],
+      "overlapping_duplicate_keys": [],
+      "parity_gaps": [],
+      "potentially_unencrypted_secret_keys": []
+    }
+  },
+  "live_checks": {
+    "readiness": {
+      "status": "blocked",
+      "http_status": 503,
+      "overall_score": 83,
+      "blockers": [
+        "FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY"
+      ],
+      "capabilities": [
+        {
+          "id": "core_ready",
+          "level": "ready"
+        },
+        {
+          "id": "billing_ready",
+          "level": "ready"
+        },
+        {
+          "id": "voice_ready",
+          "level": "ready"
+        },
+        {
+          "id": "email_ready",
+          "level": "ready"
+        },
+        {
+          "id": "oauth_ready",
+          "level": "ready"
+        },
+        {
+          "id": "compliance_ready",
+          "level": "degraded",
+          "blockers": [
+            "FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY"
+          ]
+        }
+      ]
+    },
+    "stripe": {
+      "status": "reachable",
+      "available_usd": 0,
+      "pending_usd": 0,
+      "starter_annual": {
+        "price_id": "price_1TvlQa8e6If87QKmm9GTajo6",
+        "unit_amount_usd": 99,
+        "active": true,
+        "livemode": true,
+        "lookup_key": "starter_annual_founder_2026_07_v3"
+      }
+    },
+    "database": {
+      "status": "reachable",
+      "table_count": 73,
+      "index_count": 198,
+      "rls_table_count": 73,
+      "recap_agent_index_present": true
+    },
+    "twilio": {
+      "status": "reachable",
+      "prepaid_balance_usd": 23.664,
+      "usage_trigger_count": 0,
+      "usage_triggers": []
+    }
+  },
+  "runtime_policy": {
+    "managed_structured_chain": [
+      "OpenAI",
+      "Gemini",
+      "Vercel AI Gateway"
+    ],
+    "xai": "authenticated realtime tests and explicitly enabled experiments only"
+  },
+  "surface_posture": {
+    "web": "public self-serve candidate",
+    "browser_command": "early access",
+    "native": "internal_or_planned",
+    "mcp": "account-bound early access",
+    "whatsapp": "unavailable",
+    "live_video": "gated_add_on"
+  }
+}

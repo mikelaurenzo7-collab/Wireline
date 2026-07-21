@@ -32,6 +32,7 @@ export const PRODUCT_EVENT_NAMES = [
   "first_call_completed",
   "first_sales_call_completed",
   "live_call_completed",
+  "outcome_recorded",
   "outcome_reviewed",
   "first_next_action_approved",
   "first_meeting_booked",
@@ -45,6 +46,18 @@ export const PRODUCT_EVENT_NAMES = [
 ] as const;
 
 export type ProductEventName = (typeof PRODUCT_EVENT_NAMES)[number];
+
+/** Canonical public self-serve funnel requested by launch operations. */
+export const PUBLIC_SELF_SERVE_FUNNEL_EVENT_NAMES = [
+  "signup_started",
+  "signup_completed",
+  "agent_draft_created",
+  "test_call_completed",
+  "subscription_checkout_started",
+  "phone_number_provision_completed",
+  "first_call_completed",
+  "outcome_recorded",
+] as const satisfies readonly ProductEventName[];
 
 export const ACTIVATION_EVENT_NAMES = [
   "landing_viewed",
@@ -64,6 +77,7 @@ export const ACTIVATION_EVENT_NAMES = [
   "agent_launch_completed",
   "first_call_completed",
   "live_call_completed",
+  "outcome_recorded",
   "outcome_reviewed",
   "upgrade_to_paid",
 ] as const satisfies readonly ProductEventName[];

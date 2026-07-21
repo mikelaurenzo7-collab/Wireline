@@ -30,18 +30,13 @@ import { sanitizePhone } from "../lib/vapi-helpers";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 
-// Targeted rate limit for Twilio SMS webhooks.
-// Legitimate SMS volumes from real users are low (1-2 per interaction).
-// Burst protection against SMS bombing or DNC list pollution attacks.
-// 30 requests per minute per IP allows legitimate bursts while blocking abuse.
-const twilioRateLimiter = createIpRateLimiter({
-  bucket: "webhook:twilio",
-  windowMs: 60_000,
-  max: 30,
-  message: { error: "Too many SMS requests. Please try again later." },
-});
-
 const router = Router();
+const twilioVoiceRateLimiter = createIpRateLimiter({
+  bucket: "webhook:twilio:voice",
+  windowMs: 60_000,
+  max: 120,
+  message: { error: "Too many voice callbacks. Please retry later." },
+});
 
 const OPT_OUT_KEYWORDS = new Set([
   "stop",
@@ -110,7 +105,7 @@ async function lookupTenant(toNumber: string): Promise<string | null> {
   return null;
 }
 
-router.post("/api/twilio-webhook/sms", twilioRateLimiter, async (req: Request, res: Response) => {
+router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
   const auth = evaluateTwilioWebhookAuth(req);
   if (!auth.ok) {
     if (
@@ -341,7 +336,7 @@ router.post("/api/twilio-webhook/sms", twilioRateLimiter, async (req: Request, r
  */
 router.post(
   "/api/twilio-webhook/voice-fallback",
-  twilioRateLimiter,
+  twilioVoiceRateLimiter,
   async (req: Request, res: Response) => {
     if (!verifyTwilioSignature(req)) {
       log.warn("Twilio webhook signature verification failed", { path: req.path });
@@ -402,7 +397,7 @@ router.post(
 
 router.post(
   "/api/twilio-webhook/voicemail-complete",
-  twilioRateLimiter,
+  twilioVoiceRateLimiter,
   (req: Request, res: Response) => {
     if (!verifyTwilioSignature(req)) {
       log.warn("Twilio webhook signature verification failed", { path: req.path });
@@ -451,7 +446,7 @@ router.post(
  */
 router.post(
   "/api/twilio-webhook/singing-receptionist",
-  twilioRateLimiter,
+  twilioVoiceRateLimiter,
   (req: Request, res: Response) => {
     if (!verifyTwilioSignature(req)) {
       log.warn("Twilio webhook signature verification failed", { path: req.path });

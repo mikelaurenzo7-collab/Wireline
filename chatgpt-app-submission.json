@@ -110,14 +110,6 @@
       "expected_output_url": null
     },
     {
-      "description": "Read an existing private draft.",
-      "user_prompt": "Show me the current setup for my Wireline agent draft before I change it.",
-      "file_attachment_urls": null,
-      "tools_triggered": "get_agent_draft",
-      "expected_output": "Returns the connected user's private draft details without changing the draft.",
-      "expected_output_url": null
-    },
-    {
       "description": "Start a private voice simulation for a draft.",
       "user_prompt": "Let me privately try the voice simulation for this Wireline draft.",
       "file_attachment_urls": null,

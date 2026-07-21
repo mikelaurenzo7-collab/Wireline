@@ -4,6 +4,7 @@ import {
   PRODUCT_EVENT_AUDIENCES,
   PRODUCT_EVENT_NAMES,
   PRODUCT_EVENT_SURFACES,
+  PUBLIC_SELF_SERVE_FUNNEL_EVENT_NAMES,
   SALES_FUNNEL_EVENT_NAMES,
   isProductEventAudience,
   isProductEventName,
@@ -31,8 +32,22 @@ describe("product event taxonomy", () => {
       "agent_launch_completed",
       "first_call_completed",
       "live_call_completed",
+      "outcome_recorded",
       "outcome_reviewed",
       "upgrade_to_paid",
+    ]);
+  });
+
+  it("locks the eight public self-serve milestones in order", () => {
+    expect(PUBLIC_SELF_SERVE_FUNNEL_EVENT_NAMES).toEqual([
+      "signup_started",
+      "signup_completed",
+      "agent_draft_created",
+      "test_call_completed",
+      "subscription_checkout_started",
+      "phone_number_provision_completed",
+      "first_call_completed",
+      "outcome_recorded",
     ]);
   });
 

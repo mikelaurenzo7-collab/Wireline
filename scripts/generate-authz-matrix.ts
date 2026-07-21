@@ -33,7 +33,10 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     pattern: /^\/(?:api\/)?stripe-webhook$/,
     reason: "Stripe signature verification + idempotency",
   },
-  { pattern: /^\/api\/twilio-webhook\//, reason: "Twilio signature validation + rate limit" },
+  {
+    pattern: /^\/api\/twilio-webhook\//,
+    reason: "Twilio signature validation; valid provider retries are never IP-throttled",
+  },
   { pattern: /^\/api\/webhooks\/meta\//, reason: "Meta HMAC-SHA256 signature + rate limit" },
   { pattern: /^\/api\/vapi\//, reason: "Vapi tool/webhook signature verification" },
   { pattern: /^\/api\/vapi-webhook$/, reason: "Vapi signature validation + agent-scoped routing" },

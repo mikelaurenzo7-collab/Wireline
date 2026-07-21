@@ -532,6 +532,17 @@ export default function AuthPortal() {
         const endpoint = isSignUp ? "/api/auth/signup" : "/api/auth/signin";
         const attribution = isSignUp ? sanitizeSignupIntent(signupIntent) : null;
         const demoSource = isSignUp ? readDemoSourceCookie() : null;
+        if (isSignUp) {
+          emitProductEventOnce({
+            event: "signup_started",
+            surface: "marketing_web",
+            metadata: {
+              scope: "public_signup_form",
+              plan_id: attribution?.preferredPlanId ?? null,
+              wedge: attribution?.signupWedge ?? null,
+            },
+          });
+        }
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

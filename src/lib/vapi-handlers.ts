@@ -28,6 +28,7 @@ import { runPostCallDigest } from "./post-call-digest";
 import { findCallLogByVapiCallId, isOutboundCallPlaceholder } from "./outbound-call-tracking";
 import { takeStagedReliabilityMetrics } from "./call-reliability-capture";
 import { notifyCallRecap } from "./mobile-push";
+import { emitServerProductEventOnce } from "./product-event-server";
 
 export interface CallReportPayload {
   message: {
@@ -157,6 +158,25 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     // so retries cannot double-meter, double-alert, or duplicate audit rows.
     return;
   }
+
+  emitServerProductEventOnce({
+    event: "first_call_completed",
+    userId,
+    agentId: webhookAgentId,
+    metadata: {
+      call_log_id: insertedCallLogId?.toString() ?? null,
+      direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
+    },
+  });
+  emitServerProductEventOnce({
+    event: "live_call_completed",
+    userId,
+    agentId: webhookAgentId,
+    metadata: {
+      call_log_id: insertedCallLogId?.toString() ?? null,
+      direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
+    },
+  });
 
   // Fire-and-forget monthly voice-minute tracking + Stripe overage emission.
   // Gated on a successful fresh insert/finalization so Vapi retries don't double-bill.

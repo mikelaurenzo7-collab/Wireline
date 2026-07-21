@@ -497,8 +497,8 @@ try {
     if (await signUp(signupPage, desktop.name, issues)) {
       await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
 
-      // Navigate to /training
-      await signupPage.goto(`${baseUrl}/training`, { waitUntil: "domcontentloaded" });
+      // Training is the customer journey; Knowledge is the mounted product surface.
+      await signupPage.goto(`${baseUrl}/knowledge`, { waitUntil: "domcontentloaded" });
       await settle(signupPage);
 
       const titleInput = signupPage.locator("input[placeholder*='Preferred pharmacy']").first();
@@ -522,7 +522,7 @@ try {
       } else {
         issues.push({
           viewport: desktop.name,
-          route: "/training",
+          route: "/knowledge",
           mode: "authenticated",
           kind: "flow",
           detail: "Add detail input elements not found on /knowledge.",

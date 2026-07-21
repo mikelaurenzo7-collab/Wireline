@@ -30,6 +30,7 @@ import {
 import { AgentBusinessProfileSchema } from "../lib/form-validators";
 import { isOwnerEmail } from "../lib/auth-service";
 import { resolveAgentEntitlement } from "../lib/agent-entitlements";
+import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { runStructured } from "../lib/ai-structured";
 import {
   AGENT_CREATE_DEFAULT_ROLE_ID,
@@ -346,6 +347,13 @@ router.post(
             set: { userId: req.user.id, content: templatePersonality },
           });
       }
+    });
+
+    emitServerProductEventOnce({
+      event: "agent_draft_created",
+      userId: req.user.id,
+      agentId: id,
+      metadata: { source: "web_fast_start", role },
     });
 
     res.status(201).json({

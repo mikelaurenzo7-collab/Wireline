@@ -38,6 +38,7 @@
     "assets": "node scripts/render-image-assets.mjs",
     "check-prod-env": "node scripts/check-prod-env.mjs",
     "vendor:readiness": "node scripts/check-vendor-readiness.mjs",
+    "launch:status": "node scripts/generate-launch-status.mjs",
     "runtime:policy:check": "node scripts/check-runtime-policy.mjs",
     "stripe:setup": "node scripts/setup-stripe-catalog.mjs",
     "stripe:audit-live": "node scripts/run-stripe-audit-from-vercel.mjs",

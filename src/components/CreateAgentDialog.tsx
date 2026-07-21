@@ -259,6 +259,11 @@ export default function CreateAgentDialog({
         );
       }
       emitProductEvent({
+        event: "agent_draft_created",
+        agentId: body.id,
+        metadata: { role, posture: activePosture, source: "web_fast_start" },
+      });
+      emitProductEvent({
         event: "agent_created",
         agentId: body.id,
         metadata: { role, posture: activePosture, phone_provisioned: false },

@@ -24,7 +24,6 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   const designVision = read("src/lib/wireline-design-vision.ts");
   const wirelineDesignSystem = read("src/lib/wireline-design-system.ts");
   const mcpWidgetStyles = read("src/lib/wireline-mcp-widget-styles.ts");
-  const chatgptWidget = read("src/lib/chatgpt-mcp.ts");
   const chatgptAccountWidget = read("src/lib/chatgpt-mcp-account.ts");
   const signalOrbFrame = read("src/components/ui/SignalOrbFrame.tsx");
 
@@ -241,12 +240,6 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     mcpWidgetStyles,
     /action: "#A78BFA"/,
     "MCP widgets must use the Aurora action token",
-  );
-  mustInclude(
-    "src/lib/chatgpt-mcp.ts",
-    chatgptWidget,
-    /buildWirelineMcpWidgetCss/,
-    "ChatGPT public widget must use shared chrome",
   );
   mustInclude(
     "src/lib/chatgpt-mcp-account.ts",

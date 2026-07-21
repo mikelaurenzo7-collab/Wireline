@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const source = readFileSync(
   resolve(process.cwd(), "src/lib/runtime-integrations-registry.ts"),
   "utf8",
-);
+).replace(/\r\n/g, "\n");
 const compactSource = source.replace(/\s+/g, " ");
 
 describe("runtime integrations registry launch policy", () => {

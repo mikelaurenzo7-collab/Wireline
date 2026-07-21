@@ -108,9 +108,15 @@ describe("code review hardening contracts", () => {
     expect(handlers).toContain(
       "All downstream side effects (usage, customer webhooks,\n    // compliance ledger, enrichment, notifications) are intentionally skipped",
     );
-    expect(handlers).toContain(
-      "return;\n  }\n\n  // Fire-and-forget monthly voice-minute tracking",
+    const duplicateReturn = handlers.indexOf(
+      "return;\n  }",
+      handlers.indexOf("if (!insertedFresh)"),
     );
+    const firstCallMilestone = handlers.indexOf('event: "first_call_completed"');
+    const usageTracking = handlers.indexOf("// Fire-and-forget monthly voice-minute tracking");
+    expect(duplicateReturn).toBeGreaterThan(-1);
+    expect(firstCallMilestone).toBeGreaterThan(duplicateReturn);
+    expect(usageTracking).toBeGreaterThan(firstCallMilestone);
   });
 
   it("tracks post-create roleplay starts only from a connected live voice test", () => {

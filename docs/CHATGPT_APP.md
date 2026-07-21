@@ -86,7 +86,7 @@ OPENAI_API_KEY_CHATKIT=
 OPENAI_API_KEY=
 ```
 
-`MCP_DEMO_STATE_SECRET` is legacy-only while the old guest handler remains mounted for compatibility; it is not used by account-bound production tools.
+There is no guest MCP transport or guest signing secret. Every production tool call requires an account-bound OAuth access token.
 
 ## ChatGPT registration
 

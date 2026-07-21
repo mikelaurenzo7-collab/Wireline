@@ -292,12 +292,19 @@ describe("product voice cohesion", () => {
   });
 
   it("keeps top-level workspace pages mounted to the current surfaces", () => {
+    const customization = read("src/pages/CustomizationSettings.tsx");
+    const authenticatedVisualQa = read("scripts/capture-prod-visual-qa.mjs");
+
     expect(read("src/pages/TemplatesPage.tsx")).toContain("AgentTemplates");
     expect(read("src/pages/AgentStudioHome.tsx")).toContain("CreateAgentDialog");
     expect(read("src/pages/OverviewPage.tsx")).toContain("Customer demand and outcomes");
     expect(read("src/pages/OverviewPage.tsx")).toContain("Recent customer conversations");
     expect(read("src/components/outbound/OutboundHub.tsx")).toContain("CampaignsPanel");
     expect(read("src/components/outbound/OutboundHub.tsx")).toContain("IntakeKeysManager");
+    expect(customization).toContain('href: "/knowledge"');
+    expect(customization).not.toContain('href: "/training');
+    expect(authenticatedVisualQa).toContain("`${baseUrl}/knowledge`");
+    expect(authenticatedVisualQa).not.toContain("`${baseUrl}/training`");
   });
 
   it("keeps authenticated surfaces action-first, not explanatory", () => {

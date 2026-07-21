@@ -36,7 +36,7 @@ const customizationLayers = [
     title: "Success targets",
     detail: "KPIs. Follow-up. Offer.",
     action: "Set",
-    href: "/training?section=guidance",
+    href: "/knowledge",
     icon: Target,
   },
 ] as const;

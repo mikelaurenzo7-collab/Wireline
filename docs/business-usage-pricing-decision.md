@@ -25,7 +25,7 @@ Wireline sells operating capacity, not template access.
 | Plan id | Product name | Monthly / Annual | Included voice minutes | Runtime Allowance | Max agents |
 | --- | --- | ---: | ---: | ---: | ---: |
 | `personal` | Wireline Free Builder | $0 | 0 | $0 | 1 |
-| `starter` | Wireline Starter | $9 / $90 | 20 | $0.50/mo | 1 |
+| `starter` | Wireline Starter | $9 / $99 | 20 | $0.50/mo | 1 |
 | `team` | Wireline Starter Plus | $19 / $190 | 40 | $1/mo | 1 |
 | `business` | Wireline Pro | $59 / $590 | 100 | $4/mo | 5 |
 | `enterprise` | Wireline Business | $149 / $1,490 | 250 | $10/mo | 15 |

@@ -14,7 +14,7 @@ This note is the current launch source for billing operations. Historical billin
 | Plan | Monthly | Annual | Billing model |
 | --- | ---: | ---: | --- |
 | Free Builder | $0 | — | No Stripe product |
-| Starter | $9 | $90 | Fixed subscription |
+| Starter | $9 | $99 | Fixed subscription |
 | Starter Plus | $19 | $190 | Fixed subscription |
 | Pro | $59 | $590 | Fixed subscription |
 | Business | $149 | $1,490 | Fixed subscription |
@@ -24,7 +24,7 @@ Add-ons:
 
 - Extra Agent + 50 Minutes: $15/month
 - Live Video: $19/month
-- Conversation Balance: prepaid $10, $25, $50, or $100 ($10 minimum; dynamic Stripe checkout amounts from `src/lib/conversation-balance.ts`)
+- Conversation Balance: prepaid $5, $10, $25, or $50 ($5 minimum; dynamic Stripe checkout amounts from `src/lib/conversation-balance.ts`)
 
 Voice usage is not postpaid or metered in this launch catalog. Included Runtime Allowance and prepaid Conversation Balance are the supported model.
 
@@ -60,7 +60,7 @@ Then verify in a non-production test workspace:
 2. Starter checkout shows $9/month and returns to the authenticated billing surface.
 3. The webhook persists the subscription and entitlement state once when replayed.
 4. Customer Portal cancellation appears in `GET /api/billing/status`.
-5. A $10 Conversation Balance checkout credits the ledger once when the event is replayed.
+5. A $5 Conversation Balance checkout credits the ledger once when the event is replayed.
 6. Included Runtime Allowance is consumed before prepaid Conversation Balance.
 7. Extra Agent and Live Video use the canonical recurring prices.
 

@@ -40,6 +40,7 @@ import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { ensureDefaultAccount } from "../lib/account-service";
 import { PasswordRejectedError } from "../lib/breached-passwords";
+import { emitServerProductEventOnce } from "../lib/product-event-server";
 const router = Router();
 
 function sendAuthSuccess(
@@ -163,6 +164,16 @@ router.post(
         utmSource,
         utmMedium,
         utmCampaign,
+      });
+
+      emitServerProductEventOnce({
+        event: "signup_completed",
+        userId: result.user.id,
+        metadata: {
+          plan_id: preferredPlanId ?? null,
+          wedge: signupWedge ?? null,
+          source: "email_password",
+        },
       });
 
       scheduleFounderBootstrap(result.user.id, result.user.email);

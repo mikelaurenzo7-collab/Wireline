@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 275
+**Routes scanned:** 276
 **Protected:** 234
-**Public (allowlisted):** 41
+**Public (allowlisted):** 42
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -49,8 +49,9 @@
 | `GET /api/quotas/plans` | Public plan limits comparison table |
 | `GET /recap/:slug` | Signed shareable call/weekly recap; opaque slug + bearer token verified against stored SHA-256 hash, timing-safe; per-IP + per-slug rate limits |
 | `POST /api/support/ticket` | Public support/contact form; strict validation + 5/15min IP rate limit |
-| `POST /api/twilio-webhook/message-status` | Twilio signature validation + rate limit |
-| `POST /api/twilio-webhook/sms` | Twilio signature validation + rate limit |
+| `POST /api/twilio-webhook/message-status` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/sms` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/usage-alert` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/vapi-webhook` | Vapi signature validation + agent-scoped routing |
 | `GET /health/voice-status` | Public demo-line voice probe; aggregated metrics only, rate-limited |
 | `POST /voice/metrics` | Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write |
@@ -317,6 +318,7 @@
 | team-routes.ts | POST | `/api/team/invite` | inline | permission | — | Protected |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/message-status` | — | — | yes | Public (allowlisted) |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/sms` | — | — | yes | Public (allowlisted) |
+| twilio-webhook.ts | POST | `/api/twilio-webhook/usage-alert` | — | — | yes | Public (allowlisted) |
 | user-preference-guard-routes.ts | POST | `/api/user-preferences` | inline | — | — | Protected |
 | vapi-v2.ts | POST | `/api/vapi-webhook` | — | — | yes | Public (allowlisted) |
 | video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/enable` | inline | — | — | Protected |

@@ -1,6 +1,6 @@
 # Launch Perfection Pass — 2026-07-19
 
-Status: **Active** — full-surface pre-launch audit (AI runtime, pricing, marketing, voice, integrations, vendor setup) with fixes landed on `claude/launch-perfection-pass-8u4d77` and live-vendor verification against production credentials.
+Status: **Historical snapshot, superseded** — this audit records the 2026-07-19 state. Current launch truth is generated in `docs/LAUNCH_STATUS.generated.json`.
 
 ## What was verified against live vendors (production credentials, read-only)
 
@@ -22,7 +22,7 @@ Status: **Active** — full-surface pre-launch audit (AI runtime, pricing, marke
 
 ## Open vendor/ops items (not code)
 
-1. **Stripe balance is -$207.00** (probe: `/v1/balance` available `-20700 usd`). Charges still work; incoming revenue is recouped until cleared. Matches the open blocker in `VENDOR_LAUNCH_MAP.md`.
+1. **Resolved/superseded:** the -$207.00 balance belonged to the retired Stripe project. The active launch account reported $0 available on 2026-07-21.
 2. **GitHub Actions CI is dead repo-wide.** Every push to `main` since 2026-06-27 produces only a `startup_failure` run attributed to a corrupt phantom workflow registration (workflow id `296195680`, path literally `BuildFailed`, state `deleted`, created 2026-06-15). Real gates have not run at all: `ci.yml` last ran 2026-06-27 (failure), `verify-full.yml` and `product-contracts.yml` have **zero runs ever**. `build-diagnostics.yml` and `drive-origin-main-export.yml` are registered as active but have no backing files on `main`. Verification currently rests entirely on local `npm run verify:full`. Fix at the GitHub account level: check repo Settings → Actions policy, org Actions billing/spending limit, and rulesets/required workflows referencing `BuildFailed`; GitHub support can purge the corrupt registration.
 3. **`STRIPE_ENTERPRISE_PRICE_ID` in Vercel points at a nonexistent price** (Stripe 404). No code reads it — delete the env var. Same for the other legacy inactive-price vars no code reads: `STRIPE_PRO_*` (4), `STRIPE_BUSINESS_STARTER_*` (4).
 4. **Unused Vercel env cruft** safe to delete after review: `CLERK_SECRET_KEY`, `VITE_CLERK_PUBLISHABLE_KEY`, `ANTHROPIC_API_KEY` (runtime purge is contract-enforced), `FIGMA_*`, `CANVA_*`, `GITHUB_DESIGN_*`, `MIGRATION_TOKEN`, `SLACK_APP_TOKEN`/`SLACK_SIGNING_SECRET`/`SLACK_VERIFICATION_TOKEN`/`SLACK_REFRESH_TOKEN`, `META_CLIENT_*`/`META_BUSINESS_ID`/`META_GRAPH_API_BASE`/`META_OAUTH_*`, `X_BEARER_TOKEN`, `YAHOO_APP_ID`, `SQUARE_PRODUCTION_ACCESS_TOKEN`, `GOOGLE_MAPS_API_KEY`, `TWILIO_VERIFY_SERVICE_SID`, `ZOOM_WEBHOOK_SECRET_TOKEN`, `OPENAI_EXTRACTION_MODEL`, `OPENAI_OPTIMIZER_MODEL`.
@@ -34,7 +34,7 @@ Status: **Active** — full-surface pre-launch audit (AI runtime, pricing, marke
 
 ## Code and docs defects fixed in this pass
 
-- **Runtime narrative unified to code truth** (OpenAI Responses primary → Gemini → AI Gateway; xAI structured strictly opt-in; Grok realtime powers authenticated live-voice test/simulation; OpenAI Realtime powers the guest demo): `README.md`, `ARCHITECTURE.md`, `.env.example`, `DEPLOY.md`, `src/lib/structured-runtime-models.ts`, `src/lib/grok-features.ts`, `src/lib/ai-gateway.ts` (empty-model default now `openai/gpt-5.6-terra`).
+- **Runtime narrative unified to code truth** (OpenAI Responses primary → Gemini → AI Gateway; xAI structured strictly opt-in; Grok realtime powers authenticated live-voice test/simulation). The guest MCP demo referenced in the original 2026-07-19 audit was fully retired on 2026-07-21.
 - **`/api/ai/status` reported `primary_provider: "xai"` while serving GPT-5.6 Terra**, and `RecipeModal` disabled all recipe forms unless the provider equaled `"xai"` — a coupling landmine. The route now reports `openai`, the client gates only on availability, and `managed-ai-recipe-health-contract` enforces the decoupling.
 - **Signup/verification emails promised a "14-day trial" that no longer exists** (`email-service.ts` signup-link + verification templates, Vapi `create_account` fallback line, `EmailVerifyBanner`). All now speak the Free Builder truth: build/train/simulate free, pick a live plan for a customer number.
 - **Tenant webhook deliveries were silently unsigned** for any webhook created through the current API: creation stores the secret vault-encrypted (`secretEncrypted`) and nulls the legacy `secret` column, but delivery signed only from the legacy column. Delivery now decrypts the vault secret (legacy plaintext still honored) and fails closed with `secret_decrypt_failed` instead of sending an unsigned request.
@@ -45,7 +45,7 @@ Status: **Active** — full-surface pre-launch audit (AI runtime, pricing, marke
 - **Voice-preview failures are now diagnosable**: the Wireline Live TTS call logs upstream status + body snippet on rejection (the July 18 production failures were opaque 503s).
 - **Security-header parity**: `server.ts` now emits the same Permissions-Policy directive set and 2-year HSTS max-age as `vercel.json`.
 - **`.env.example` rewritten to operational truth**: OpenAI primary (required in prod) instead of "optional fallback"; dead Anthropic/design-export/`MIGRATION_TOKEN`/ghost vendor sub-vars removed (22 vars with zero code references); realtime defaults corrected; `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK`, managed-chain overrides, `HEALTH_MONITOR_TOKEN`, launch controls, Twilio scoped key + webhook base URL, `WIRELINE_AUTO_PROVISION_NUMBERS`, and `VAPI_WEBHOOK_CREDENTIAL_ID` documented. `TWILIO_API_KEY`/`TWILIO_API_SECRET` added to the env-validator registry.
-- **Pricing docs drift**: `P0_BILLING_OPS_NOTE.md` Conversation Balance presets corrected to the shipped $10/$25/$50/$100 (code minimum $10; dynamic Stripe checkout); stale "650 included minutes" comment fixed; orphaned pre-pivot `stripe-catalog-proposal.json` removed from version control and gitignored as reconciler output.
+- **Pricing docs drift at the time of this audit**: the then-shipped runtime presets differed from the fixed catalog. This was superseded on 2026-07-21 when runtime, catalog, and docs were standardized on $5/$10/$25/$50.
 - **Misleading auto-provisioning copy fixed** (`vapi-client.ts` customer error, `vapi-phone-numbers.ts` header): agent creation never silently provisions numbers.
 - **`site.webmanifest`** now lists the generated 192px PNG icon alongside the SVG.
 
@@ -55,4 +55,4 @@ Status: **Active** — full-surface pre-launch audit (AI runtime, pricing, marke
 - "AI Voice Employee" appears 21× on buying surfaces but is not a `product-copy.ts` term.
 - `product-copy.ts` labels iOS "Planned/Join waitlist" while `CLIENT_SURFACES.md` calls it Beta (TestFlight pending) — currently understated on purpose.
 - `IntegrationLogos` default "powered by" strip is exported but unmounted (contract-guarded); mount or remove deliberately.
-- Conversation Balance fixed prices in `stripe-founder-catalog.mjs` ($5/$10/$25/$50) do not match runtime presets ($10/$25/$50/$100); checkout uses dynamic `price_data`, so the fixed prices are inert — reconcile at the next Stripe catalog sync.
+- Conversation Balance fixed prices and runtime presets now match at $5/$10/$25/$50 (resolved 2026-07-21).

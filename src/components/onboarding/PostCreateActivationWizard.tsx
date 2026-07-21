@@ -460,6 +460,13 @@ export default function PostCreateActivationWizard({
                     metadata: { channel: "roleplay" },
                   });
                 }}
+                onTestCompleted={() => {
+                  emitProductEventOnce({
+                    event: "test_call_completed",
+                    agentId: payload.agentId,
+                    metadata: { channel: "roleplay", result: "assistant_response_completed" },
+                  });
+                }}
               />
               {hasLine && phoneNumber ? (
                 <div className="rounded-xl border border-border bg-card/60 px-4 py-3">
