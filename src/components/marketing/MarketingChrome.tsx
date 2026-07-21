@@ -36,7 +36,7 @@ export default function MarketingChrome({
       )}
     >
       <PrecisionPublicHeader />
-      <div
+      <main
         id="main-content"
         tabIndex={-1}
         className={cn(
@@ -51,7 +51,7 @@ export default function MarketingChrome({
         )}
       >
         {children}
-      </div>
+      </main>
       {footer && <MarketingFooter className="relative z-10 shrink-0" aboveStickyCta={stickyCta} />}
       {stickyCta && <MarketingStickyCta />}
     </div>

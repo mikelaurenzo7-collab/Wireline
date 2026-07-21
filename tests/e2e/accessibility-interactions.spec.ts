@@ -10,8 +10,6 @@ const publicRoutes = [
   "/support",
   "/contact",
 ];
-const pageEntrySelector = 'main, [role="main"], #main-content';
-
 async function gotoPublicRouteWithMain(page: Page, route: string) {
   let lastError: unknown;
 
@@ -20,10 +18,11 @@ async function gotoPublicRouteWithMain(page: Page, route: string) {
     await expect(page.locator("body")).toBeVisible({ timeout: 10_000 });
 
     try {
-      await expect(
-        page.locator(pageEntrySelector).first(),
-        `${route} should expose a main landmark or skip-link target`,
-      ).toBeVisible({ timeout: 30_000 });
+      const main = page.getByRole("main");
+      await expect(main.first(), `${route} should expose a main landmark`).toBeVisible({
+        timeout: 30_000,
+      });
+      await expect(main, `${route} should expose exactly one main landmark`).toHaveCount(1);
       return;
     } catch (error) {
       lastError = error;

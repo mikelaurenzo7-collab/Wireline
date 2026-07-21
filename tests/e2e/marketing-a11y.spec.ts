@@ -49,20 +49,15 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
   expect(brandWordBoxes[1].right).toBeLessThan(brandWordBoxes[2].right);
 
   const proofList = page.getByRole("list", { name: "Wireline proof points" });
-  for (const label of [
-    "Voice agent",
-    "Text / SMS agent",
-    "Email agent",
-    "Paid-plan number",
-    "Connected inbox",
-    "Shared memory",
-  ]) {
+  // Hero renders MARKETING_VOICE.channelProof.slice(0, 3) in a 2-col mobile grid.
+  for (const label of ["Voice calling", "Text / SMS", "Email messaging"]) {
     await expect(proofList.getByRole("listitem").filter({ hasText: label })).toBeVisible();
   }
+  await expect(proofList.getByRole("listitem")).toHaveCount(3);
   const proofRows = await proofList
     .getByRole("listitem")
     .evaluateAll((items) => items.map((item) => Math.round(item.getBoundingClientRect().top)));
-  expect(new Set(proofRows).size).toBe(3);
+  expect(new Set(proofRows).size).toBe(2);
 
   const tablist = page.getByRole("tablist", { name: "Agent work lane" });
   await expect(tablist).toBeVisible();
