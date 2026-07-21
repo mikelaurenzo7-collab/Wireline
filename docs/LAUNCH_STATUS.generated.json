@@ -1,10 +1,9 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-21T21:56:19.556Z",
+  "generated_at": "2026-07-21T22:38:45.000Z",
   "launch_decision": "NO-GO",
   "blockers": [
     "source_branch_not_main",
-    "source_worktree_dirty",
     "launch_readiness_below_100",
     "twilio_prepaid_balance_below_150",
     "twilio_usage_triggers_missing",
@@ -12,21 +11,21 @@
   ],
   "source": {
     "branch": "codex/public-self-serve-launch-readiness-2026-07-21",
-    "commit": "5d09a17577a1414502e433924bc4adc2972c4944",
-    "origin_main_ahead": 0,
+    "commit": "c67ce5e5df703826a6b63fdeff31bb1c1efe18e9",
+    "origin_main_ahead": 1,
     "origin_main_behind": 0,
-    "worktree_clean": false
+    "worktree_clean": true
   },
   "production": {
     "status": "ready",
     "deployment_id": "dpl_HCT9hgrMCJbP4JYSDaAPtYZ7Wmzz",
     "production_commit": "5d09a17577a1414502e433924bc4adc2972c4944",
     "environment_audit": {
-      "record_count": 104,
-      "unique_key_count": 96,
-      "production_record_count": 96,
-      "preview_record_count": 95,
-      "development_record_count": 76,
+      "record_count": 103,
+      "unique_key_count": 95,
+      "production_record_count": 95,
+      "preview_record_count": 94,
+      "development_record_count": 75,
       "duplicate_keys": [
         "WIRELINE_LAUNCH_DEMO_MODE",
         "GEMINI_API_KEY",
