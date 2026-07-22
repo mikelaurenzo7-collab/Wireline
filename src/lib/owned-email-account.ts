@@ -10,7 +10,7 @@ export interface OwnedEmailAccountInput {
   userId: string;
   emailAddress: string;
   provider: string;
-  accessToken: string | null;
+  accessToken: string;
   refreshToken: string | null;
   expiresAt: bigint | null;
   oauthGrantedScopes: string | null;
@@ -26,7 +26,7 @@ export async function upsertOwnedEmailAccount(input: OwnedEmailAccountInput): Pr
       set: {
         provider: input.provider,
         accessToken: input.accessToken,
-        refreshToken: input.refreshToken,
+        ...(input.refreshToken ? { refreshToken: input.refreshToken } : {}),
         expiresAt: input.expiresAt,
         oauthGrantedScopes: input.oauthGrantedScopes,
       },
