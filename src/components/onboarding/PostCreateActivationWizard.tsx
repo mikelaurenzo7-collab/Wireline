@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Cable, Loader2, MessageSquare, Phone, Sparkles, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useModalFocusTrap } from "../../lib/use-modal-focus-trap";
+import { useBodyScrollLock } from "../../lib/use-body-scroll-lock";
 
 import RoleplaySandbox from "../RoleplaySandbox";
 import { Button } from "../atoms";
@@ -252,6 +253,7 @@ export default function PostCreateActivationWizard({
 
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalFocusTrap(dialogRef, { onEscape: dismiss });
+  useBodyScrollLock(true);
 
   return (
     <div
