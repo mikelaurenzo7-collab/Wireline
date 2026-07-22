@@ -224,11 +224,11 @@ export default function Pricing() {
         <section id="plans" className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail mx-auto max-w-[1500px]">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="wl-stitch-label">Plans for different stages</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+              <p className="wl-overline text-primary">Plans for different stages</p>
+              <h2 className="wl-public-section-heading mt-3">
                 Start with one employee. Add specialists when demand earns them.
               </h2>
-              <p className="mt-4 text-base leading-7 text-muted-foreground">
+              <p className="wl-public-copy mx-auto mt-4">
                 Every paid plan supports voice, SMS, and email for the same employee and includes a
                 Wireline number slot. Higher tiers primarily buy more simultaneous roles, voice
                 capacity, number slots, collaboration, analytics, and governance.
@@ -255,7 +255,7 @@ export default function Pricing() {
                 <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
                   {planById.personal.features.map((feature) => (
                     <li key={feature} className="flex gap-3">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -285,7 +285,7 @@ export default function Pricing() {
                     key={plan.id}
                     className={`relative rounded-[28px] border p-6 text-center shadow-sm ${
                       featured
-                        ? "border-foreground bg-foreground text-background ring-2 ring-primary/60 shadow-lg xl:-translate-y-1"
+                        ? "border-primary/50 bg-card ring-2 ring-primary/45 shadow-lg xl:-translate-y-1"
                         : "border-border bg-card"
                     }`}
                   >
@@ -299,44 +299,30 @@ export default function Pricing() {
                     ) : null}
                     <div className="flex flex-col items-center justify-center gap-3 text-center">
                       <div>
-                        <p className={`wl-stitch-label ${featured ? "text-background/85" : ""}`}>
-                          {eyebrow}
-                        </p>
-                        <h3 className="mt-2 text-2xl font-semibold">{publicName}</h3>
+                        <p className="wl-stitch-label">{eyebrow}</p>
+                        <h3 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">
+                          {publicName}
+                        </h3>
                       </div>
-                      <Icon className="h-6 w-6" aria-hidden="true" />
+                      <Icon className="h-6 w-6 text-primary" aria-hidden="true" />
                     </div>
-                    <p
-                      className={`mt-3 text-sm font-semibold ${featured ? "text-background" : "text-foreground"}`}
-                    >
-                      {tagline}
-                    </p>
+                    <p className="mt-3 text-sm font-semibold text-foreground">{tagline}</p>
                     <div className="mt-5 flex items-end justify-center gap-2">
                       <span className="text-4xl font-semibold tracking-[-0.04em]">
                         ${plan.price_usd_monthly}
                       </span>
-                      <span
-                        className={`pb-1 text-sm ${featured ? "text-background/85" : "text-muted-foreground"}`}
-                      >
-                        /month
-                      </span>
+                      <span className="pb-1 text-sm text-muted-foreground">/month</span>
                     </div>
                     {plan.price_usd_annual > 0 ? (
-                      <p
-                        className={`mt-1 text-xs ${featured ? "text-background/85" : "text-muted-foreground"}`}
-                      >
+                      <p className="mt-1 text-xs text-muted-foreground">
                         or ${plan.price_usd_annual}/yr · save 2 months
                       </p>
                     ) : null}
-                    <p
-                      className={`mt-4 text-sm leading-6 ${featured ? "text-background/90" : "text-muted-foreground"}`}
-                    >
-                      {detail}
-                    </p>
+                    <p className="mt-4 text-sm leading-6 text-muted-foreground">{detail}</p>
                     <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
                       {plan.features.map((feature) => (
                         <li key={feature} className="flex gap-3">
-                          <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                           <span>{feature}</span>
                         </li>
                       ))}
@@ -345,15 +331,13 @@ export default function Pricing() {
                       to={ctaPath}
                       className={`mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition ${
                         featured
-                          ? "bg-background text-foreground hover:bg-background/90"
+                          ? "marketing-btn-primary border-0"
                           : "bg-foreground text-background hover:bg-foreground/90"
                       }`}
                     >
                       {cta} <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </Link>
-                    <p
-                      className={`mt-3 text-center text-xs ${featured ? "text-background/85" : "text-muted-foreground"}`}
-                    >
+                    <p className="mt-3 text-center text-xs text-muted-foreground">
                       {featured ? "Cancel anytime · no long-term contract" : badge}
                     </p>
                   </article>
@@ -385,7 +369,7 @@ export default function Pricing() {
                     "Security, rollout, and support plan",
                   ].map((feature) => (
                     <li key={feature} className="flex gap-3">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -404,11 +388,11 @@ export default function Pricing() {
         <section className="border-y border-border bg-muted/35 px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail mx-auto max-w-[1400px]">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="wl-stitch-label">Channel economics</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+              <p className="wl-overline text-primary">Channel economics</p>
+              <h2 className="wl-public-section-heading mt-3">
                 One employee. No channel seat tax. Clear usage costs.
               </h2>
-              <p className="mt-4 text-base leading-7 text-muted-foreground">
+              <p className="wl-public-copy mx-auto mt-4">
                 One employee can call, text, and email under a single subscription. Costs track the
                 real boundaries: numbers, calls, message segments, delivery, enrichment, and data.
               </p>
@@ -431,11 +415,11 @@ export default function Pricing() {
         <section className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail mx-auto max-w-[1000px]">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="wl-stitch-label">Questions before launch</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+              <p className="wl-overline text-primary">Questions before launch</p>
+              <h2 className="wl-public-section-heading mt-3">
                 Predictable enough for owners. Flexible enough to grow.
               </h2>
-              <p className="mt-4 text-base leading-7 text-muted-foreground">
+              <p className="wl-public-copy mx-auto mt-4">
                 Your subscription funds employee capacity. Prepaid balance funds variable provider
                 work.
               </p>
@@ -457,21 +441,21 @@ export default function Pricing() {
         </section>
 
         <section className="px-5 pb-16 sm:px-8 sm:pb-24 lg:px-10">
-          <div className="wl-public-rail mx-auto max-w-[1200px] rounded-[32px] border border-border bg-foreground p-8 text-background sm:p-12">
+          <div className="wl-public-rail mx-auto max-w-[1200px] rounded-[32px] marketing-ink-panel p-8 sm:p-12">
             <div className="grid justify-items-center gap-8 text-center">
               <div className="mx-auto max-w-3xl">
-                <p className="wl-stitch-label text-background/85">Founder Early Access</p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+                <p className="wl-overline text-primary">Founder Early Access</p>
+                <h2 className="wl-public-section-heading mt-3 text-[var(--wireline-color-text-primary)]">
                   Build the employee first. Let real demand choose the plan.
                 </h2>
-                <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-background/90">
+                <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-2xl text-base leading-7">
                   Start with a private build, launch your AI Voice Employee for $9 with an included
                   number, then upgrade when completed work justifies more capacity or specialists.
                 </p>
               </div>
               <Link
                 to="/signup?plan=personal"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-background px-6 text-sm font-semibold text-foreground transition hover:bg-background/90"
+                className="marketing-btn-primary min-h-12 justify-center px-6 text-sm font-semibold"
               >
                 Build your AI Voice Employee <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>

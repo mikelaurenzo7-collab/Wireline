@@ -141,8 +141,8 @@ export default function Compare() {
 
       <MarketingHero
         eyebrow="Why Wireline"
-        title="Less phone tag. More of your day."
-        description="Make the call, keep the result, and stop turning routine phone work into another project."
+        title="Wireline vs. other voice AI."
+        description="Compare the buying model—not only the headline price. One trained employee across voice, SMS, and email, with prepaid overflow instead of surprise per-call bills."
         primaryAction={{ label: "Start free", to: "/signup?plan=personal" }}
         secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
         proof={COMPARE_HERO_PROOF}

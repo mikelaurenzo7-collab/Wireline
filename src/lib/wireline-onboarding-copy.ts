@@ -145,7 +145,7 @@ export const POST_CREATE_WIZARD_COPY = {
       detail:
         "Your opening brief is already saved. Add a site, document, or policy now if it matters for the first call, or train more later.",
       salesHint:
-        "Recommended first path: train a sales agent for speed-to-lead and approved follow-up queues.",
+        "Recommended first path: teach the outcomes that matter on day one, then connect the live number when you're ready to dial.",
       primary: "Open optional training",
       secondary: "Continue to number",
     },

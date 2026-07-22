@@ -197,7 +197,8 @@
 }
 
 .marketing-live-dot {
-  background: var(--wireline-color-status-success);
+  background: var(--wireline-color-action-primary-default);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wireline-color-action-primary-default) 28%, transparent);
 }
 
 .marketing-tag-success {

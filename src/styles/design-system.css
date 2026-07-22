@@ -1,7 +1,7 @@
 @import "./lib/typography.css";
 
 /* Wireline — Letterpress design system (Aurora palette).
- * Instrument Serif for display. DM Sans for body. Space Mono for system labels.
+ * Inter Tight for display. Inter for body. IBM Plex Mono for system labels.
  * Electric violet is action. Obsidian canvas is calm. Silver is the wire accent. */
 
 :root {
@@ -224,6 +224,14 @@
 }
 
 .marketing-demo-surface {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border: 1px solid var(--wireline-rule);
+  border-radius: var(--wireline-radius-xl);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
   background:
     radial-gradient(
       circle at top left,
@@ -286,17 +294,6 @@
   .marketing-channel-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-}
-
-.marketing-demo-surface {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  border: 1px solid var(--wireline-rule);
-  border-radius: var(--wireline-radius-xl);
-  padding: clamp(1.5rem, 4vw, 2.5rem);
 }
 
 .text-primary {

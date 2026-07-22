@@ -29,6 +29,31 @@ function isWizardStep(value: string | null): value is PostCreateWizardStep {
   return value === "train" || value === "channels" || value === "wire" || value === "test";
 }
 
+/** Keep provision failures owner-safe — never surface ORM/provider internals. */
+function safeProvisionError(
+  status: number,
+  code: string | null | undefined,
+  raw: string | null | undefined,
+): string {
+  const normalized = code?.toLowerCase();
+  if (status === 401 || status === 403) {
+    return "Your session expired. Sign in again to continue wiring a number.";
+  }
+  if (status === 402 || normalized === "activation_required") {
+    return POST_CREATE_WIZARD_COPY.steps.wire.activationRequired;
+  }
+  if (status === 429 || normalized === "rate_limited") {
+    return "You're going a bit fast. Try provisioning again in a moment.";
+  }
+  if (status >= 500) {
+    return "Number provisioning hit a temporary snag. Try again in a moment.";
+  }
+  if (typeof raw === "string" && raw.trim() && raw.trim().length <= 160 && !/[({]/.test(raw)) {
+    return raw.trim();
+  }
+  return "Could not provision a number.";
+}
+
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, "");
   const domestic = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
@@ -127,7 +152,8 @@ export default function PostCreateActivationWizard({
         return;
       }
       if (!response.ok || body?.ok === false) {
-        throw new Error(body?.error || body?.message || "Could not provision a number.");
+        setWireError(safeProvisionError(response.status, body?.code, body?.error || body?.message));
+        return;
       }
       emitProductEventOnce({
         event: "phone_channel_wired",
@@ -149,8 +175,8 @@ export default function PostCreateActivationWizard({
       });
       await refreshPhone();
       setStep("test");
-    } catch (reason) {
-      setWireError(reason instanceof Error ? reason.message : "Could not provision a number.");
+    } catch {
+      setWireError("Could not provision a number.");
     } finally {
       setProvisioning(false);
     }
@@ -491,7 +517,7 @@ export default function PostCreateActivationWizard({
               {hasLine && phoneNumber ? (
                 <div className="rounded-xl border border-border bg-card/60 px-4 py-3">
                   <p className="text-xs font-semibold text-foreground">
-                    {ACTIVATION_PENDING_COPY.browserTestTitle}
+                    {ACTIVATION_PENDING_COPY.phoneLabel}
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                     {ACTIVATION_PENDING_COPY.subtitle(payload.agentName)}

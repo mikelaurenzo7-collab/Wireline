@@ -107,12 +107,42 @@ const TOOL_STACK = [
 ] as const;
 
 const USE_CASES = [
-  { title: "Lead response", icon: PhoneCall },
-  { title: "Inbox triage", icon: Mail },
-  { title: "SMS follow-up", icon: MessageSquareText },
-  { title: "Appointments", icon: CalendarClock },
-  { title: "Front desk", icon: Contact },
-  { title: "Custom workflow", icon: Workflow },
+  {
+    title: "Lead response",
+    icon: PhoneCall,
+    to: "/solutions/sales",
+    body: "Answer and qualify new demand before it cools.",
+  },
+  {
+    title: "Inbox triage",
+    icon: Mail,
+    to: "/solutions/support",
+    body: "Sort, draft, and resolve email without losing context.",
+  },
+  {
+    title: "SMS follow-up",
+    icon: MessageSquareText,
+    to: "/solutions/sales",
+    body: "Keep momentum with consented text that finishes the job.",
+  },
+  {
+    title: "Appointments",
+    icon: CalendarClock,
+    to: "/solutions/support",
+    body: "Offer real availability and book without the phone tag.",
+  },
+  {
+    title: "Front desk",
+    icon: Contact,
+    to: "/solutions/support",
+    body: "Catch every call, route the exception, log the outcome.",
+  },
+  {
+    title: "Custom workflow",
+    icon: Workflow,
+    to: "/signup",
+    body: "Train one employee on the conversation work you want off your plate.",
+  },
 ] as const;
 
 const FEATURE_HERO_PROOF = MARKETING_VOICE.channelProof.slice(0, 3);
@@ -243,9 +273,10 @@ export default function Features() {
             </div>
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {USE_CASES.map((useCase) => (
-                <article
+                <Link
                   key={useCase.title}
-                  className="wl-stitch-card group flex min-h-[10rem] flex-col items-center justify-center rounded-xl border border-border bg-card p-6 text-center transition-all hover:border-primary/30 hover:shadow-sm"
+                  to={useCase.to}
+                  className="wl-stitch-card group flex min-h-[10rem] flex-col items-center justify-center rounded-xl border border-border bg-card p-6 text-center transition-all hover:border-primary/30 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
                   <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-primary/5 text-primary transition group-hover:bg-primary/10">
                     <useCase.icon size={18} aria-hidden="true" />
@@ -253,7 +284,13 @@ export default function Features() {
                   <h3 className="text-[1.05rem] font-semibold leading-tight tracking-[-0.015em] text-foreground">
                     {useCase.title}
                   </h3>
-                </article>
+                  <p className="mt-2 max-w-[28ch] text-sm leading-6 text-muted-foreground">
+                    {useCase.body}
+                  </p>
+                  <span className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-primary opacity-0 transition group-hover:opacity-100">
+                    Explore <ArrowRight size={12} aria-hidden="true" />
+                  </span>
+                </Link>
               ))}
             </div>
           </div>
