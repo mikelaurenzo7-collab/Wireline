@@ -19,15 +19,17 @@ import {
 import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
-// Schema version: latest migration is `drizzle/migrations/0059_add_accounts.sql`.
+// Schema version: latest committed migration is
+// `drizzle/migrations/0106_default_privileges_wireline_server.sql`.
+// Live Supabase schema may also be ahead via out-of-band applies — see AGENTS.md.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
 
 // 0. IDENTITY & ACCOUNTS
 
 /**
  * A user can own one or two accounts — a personal account (single agent,
- * streamlined UI) and/or a business account (Assistants, command centre, SDR
- * pipeline). The first account type created at signup becomes the
+ * streamlined UI) and/or a business account (AI employees, Studio command
+ * surfaces, outbound pipeline). The first account type created at signup becomes the
  * "primary" account. Agents, settings, and billing scope to an account,
  * not directly to a user.
  */

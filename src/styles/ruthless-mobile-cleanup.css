@@ -144,6 +144,7 @@
     font-size: 1rem;
   }
 
+  .wl-stitch-auth-card .wl-auth-terms,
   .wl-stitch-auth-card label.flex.cursor-pointer.items-start {
     border: 0;
     border-radius: 0;
@@ -151,6 +152,15 @@
     padding: 0;
     font-size: 0.8125rem;
     line-height: 1.4;
+  }
+
+  .wl-stitch-auth-card .wl-auth-terms {
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .wl-stitch-auth-card .wl-auth-terms input[type="checkbox"] {
+    margin-top: 0.15rem;
   }
 
   .wl-stitch-auth-card + div {

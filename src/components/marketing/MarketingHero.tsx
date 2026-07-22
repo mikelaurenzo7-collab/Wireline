@@ -180,7 +180,7 @@ export default function MarketingHero({
                 <li
                   key={item}
                   className={cn(
-                    "inline-flex min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-border bg-card px-2.5 text-center text-[12px] font-medium text-muted-foreground sm:px-3.5 sm:text-[13px]",
+                    "inline-flex min-h-8 min-w-0 items-center justify-center gap-2 rounded-full border border-border bg-card px-2.5 text-center text-[12px] font-medium leading-tight text-muted-foreground sm:whitespace-nowrap sm:px-3.5 sm:text-[13px]",
                     proof.length % 2 === 1 && index === proof.length - 1
                       ? "col-span-2 sm:col-span-1"
                       : undefined,

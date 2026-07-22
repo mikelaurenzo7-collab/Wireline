@@ -83,7 +83,7 @@ function StudioEmptyState({ posture }: { posture: "personal" | "business" }) {
           id="studio-brief"
           value={brief}
           onChange={(event) => setBrief(event.target.value)}
-          className="min-h-[92px] w-full resize-y rounded-xl border border-border bg-card p-4 text-[15px] leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+          className="min-h-[92px] w-full resize-none rounded-xl border border-border bg-card p-4 text-base leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 sm:resize-y md:text-[15px]"
           placeholder={
             posture === "business"
               ? "Answer missed calls, qualify leads, book appointments, and follow up by text…"

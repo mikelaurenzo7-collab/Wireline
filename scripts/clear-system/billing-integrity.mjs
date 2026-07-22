@@ -239,4 +239,37 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     /Free Builder:[\s\S]*Starter:/,
     "demo-line personas must quote Free Builder + Starter catalog truth",
   );
+
+  const conversationBalance = read("src/lib/conversation-balance.ts");
+  const stripeFounderCatalog = read("scripts/lib/stripe-founder-catalog.mjs");
+  mustInclude(
+    "src/lib/conversation-balance.ts",
+    conversationBalance,
+    /CONVERSATION_BALANCE_PRESETS_USD = \[10, 25, 50, 100\]/,
+    "Runtime Balance presets must stay at $10/$25/$50/$100",
+  );
+  mustInclude(
+    "src/lib/conversation-balance.ts",
+    conversationBalance,
+    /CONVERSATION_BALANCE_MIN_USD = 10/,
+    "Runtime Balance minimum must stay $10",
+  );
+  mustInclude(
+    "scripts/lib/stripe-founder-catalog.mjs",
+    stripeFounderCatalog,
+    /\[10, 25, 50, 100\]\.map/,
+    "Stripe founder catalog balance prices must match Runtime Balance presets",
+  );
+  mustExclude(
+    "src/components/ConversationBalanceCard.tsx",
+    conversationBalanceCard,
+    /\[5, 10, 25, 50\]/,
+    "Conversation Balance card fallback must not revive $5 presets",
+  );
+  mustExclude(
+    "docs/P0_BILLING_OPS_NOTE.md",
+    read("docs/P0_BILLING_OPS_NOTE.md"),
+    /\$5 minimum|prepaid \$5, \$10, \$25, or \$50/,
+    "P0 billing ops note must not revive $5 Runtime Balance presets",
+  );
 }
