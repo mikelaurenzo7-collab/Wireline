@@ -5,6 +5,7 @@ import { X, Loader2, ArrowRight, User2, Users2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { MANAGED_VOICE_BY_GENDER, VAPI_CURATED_VOICES, providerLabel } from "../lib/voice-catalog";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
+import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
@@ -63,9 +64,16 @@ export default function DeployAgentModal({
   const [voiceId, setVoiceId] = useState<string>(MANAGED_VOICE_BY_GENDER.female);
   const [showVoiceList, setShowVoiceList] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
-  // Pin the page underneath while the deploy modal is open.
+  // Pin the page underneath and contain keyboard focus while the modal is open.
   useBodyScrollLock(open);
+  useModalFocusTrap(dialogRef, {
+    active: open && template !== null,
+    onEscape: () => {
+      if (!deploying) onClose();
+    },
+  });
 
   // Reset state whenever a new template is selected, autofocus the name field.
   useEffect(() => {
@@ -87,16 +95,6 @@ export default function DeployAgentModal({
     setVoiceId(MANAGED_VOICE_BY_GENDER[g]);
     setShowVoiceList(false);
   };
-
-  // ESC to close
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !deploying) onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [open, deploying, onClose]);
 
   if (!template) return null;
 
@@ -133,9 +131,11 @@ export default function DeployAgentModal({
             aria-hidden="true"
           />
           <motion.div
+            ref={dialogRef}
             role="dialog"
-            aria-label="Deploy agent"
             aria-modal="true"
+            aria-labelledby="deploy-agent-title"
+            aria-describedby="deploy-agent-description"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
@@ -152,10 +152,16 @@ export default function DeployAgentModal({
               <div className="relative z-10 flex items-start justify-between gap-4 px-7 pt-6 pb-3 border-b border-border">
                 <div className="space-y-1.5 min-w-0">
                   <p className="wl-micro-meta">Deploy · {template.category}</p>
-                  <h2 className="font-display italic text-2xl text-foreground leading-tight">
+                  <h2
+                    id="deploy-agent-title"
+                    className="font-display italic text-2xl text-foreground leading-tight"
+                  >
                     {template.name}
                   </h2>
-                  <p className="text-[var(--wireline-typography-caption-size)] text-foreground/65 leading-relaxed">
+                  <p
+                    id="deploy-agent-description"
+                    className="text-[var(--wireline-typography-caption-size)] text-foreground/65 leading-relaxed"
+                  >
                     {template.description}
                   </p>
                 </div>
