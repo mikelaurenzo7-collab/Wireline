@@ -50,10 +50,20 @@ export default function TeamSettings() {
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
   const inviteDialogRef = useRef<HTMLDivElement>(null);
 
+  function openInviteDialog() {
+    setInviteError(null);
+    setIsInviteOpen(true);
+  }
+
+  function closeInviteDialog() {
+    if (inviting) return;
+    setIsInviteOpen(false);
+  }
+
   useBodyScrollLock(isInviteOpen);
   useModalFocusTrap(inviteDialogRef, {
     active: isInviteOpen,
-    onEscape: () => setIsInviteOpen(false),
+    onEscape: closeInviteDialog,
   });
 
   const displayMembers = useMemo(() => {
@@ -160,7 +170,7 @@ export default function TeamSettings() {
               type="button"
               size="sm"
               disabled={!canInvite}
-              onClick={() => setIsInviteOpen(true)}
+              onClick={() => openInviteDialog()}
             >
               <Plus size={14} aria-hidden="true" />
               Invite
@@ -218,7 +228,7 @@ export default function TeamSettings() {
                   label: "Invite teammate",
                   onClick: () => {
                     if (!canInvite) return;
-                    setIsInviteOpen(true);
+                    openInviteDialog();
                   },
                   primary: true,
                 },
@@ -239,6 +249,7 @@ export default function TeamSettings() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="team-invite-title"
+            aria-busy={inviting}
           >
             <div className="mb-5 flex items-center justify-between">
               <div>
@@ -253,7 +264,8 @@ export default function TeamSettings() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                onClick={() => setIsInviteOpen(false)}
+                onClick={closeInviteDialog}
+                disabled={inviting}
                 aria-label="Close invite dialog"
               >
                 <X size={20} />
@@ -290,7 +302,12 @@ export default function TeamSettings() {
                 </StatusNotice>
               ) : null}
               <div className="mt-8 flex justify-end gap-3">
-                <Button type="button" variant="secondary" onClick={() => setIsInviteOpen(false)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={closeInviteDialog}
+                  disabled={inviting}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={inviting}>
