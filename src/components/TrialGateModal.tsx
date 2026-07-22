@@ -86,23 +86,38 @@ export default function TrialGateModal() {
   const [error, setError] = useState<string | null>(null);
   const [resend, setResend] = useState<ResendOutcome>("idle");
   const dialogRef = useRef<HTMLDivElement>(null);
+  const checkoutAbortRef = useRef<AbortController | null>(null);
+
+  function closeModal() {
+    checkoutAbortRef.current?.abort();
+    checkoutAbortRef.current = null;
+    setPending(null);
+    setDetail(null);
+  }
 
   useBodyScrollLock(detail !== null);
   useModalFocusTrap(dialogRef, {
     active: detail !== null,
-    onEscape: () => setDetail(null),
+    onEscape: closeModal,
   });
 
   useEffect(() => {
     const onBlock = (event: Event) => {
       const customEvent = event as CustomEvent<TrialGateBlockDetail>;
       if (!customEvent.detail) return;
+      checkoutAbortRef.current?.abort();
+      checkoutAbortRef.current = null;
+      setPending(null);
       setDetail(customEvent.detail);
       setError(null);
       setResend("idle");
     };
     window.addEventListener(TRIAL_GATE_EVENT, onBlock);
-    return () => window.removeEventListener(TRIAL_GATE_EVENT, onBlock);
+    return () => {
+      window.removeEventListener(TRIAL_GATE_EVENT, onBlock);
+      checkoutAbortRef.current?.abort();
+      checkoutAbortRef.current = null;
+    };
   }, []);
 
   if (!detail) return null;
@@ -119,6 +134,9 @@ export default function TrialGateModal() {
       detail.code === "TRIAL_LIMIT_HIT");
 
   async function checkout(planId: string) {
+    checkoutAbortRef.current?.abort();
+    const controller = new AbortController();
+    checkoutAbortRef.current = controller;
     setPending(planId);
     setError(null);
     try {
@@ -126,6 +144,7 @@ export default function TrialGateModal() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan_id: planId }),
+        signal: controller.signal,
       });
       const data = (await safeJson<{ url?: string; error?: string }>(response)) as {
         url?: string;
@@ -171,10 +190,13 @@ export default function TrialGateModal() {
 
       window.location.href = checkoutUrl;
     } catch (checkoutError: unknown) {
+      if (checkoutError instanceof Error && checkoutError.name === "AbortError") return;
       setError(
         checkoutError instanceof Error ? checkoutError.message : "Network error opening checkout.",
       );
       setPending(null);
+    } finally {
+      if (checkoutAbortRef.current === controller) checkoutAbortRef.current = null;
     }
   }
 
@@ -194,6 +216,9 @@ export default function TrialGateModal() {
   }
 
   async function topUpPersonalBalance(amountUsd: number) {
+    checkoutAbortRef.current?.abort();
+    const controller = new AbortController();
+    checkoutAbortRef.current = controller;
     setPending(`balance-${amountUsd}`);
     setError(null);
     try {
@@ -205,6 +230,7 @@ export default function TrialGateModal() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount_usd: amountUsd }),
+        signal: controller.signal,
       });
       const data = (await safeJson<{ url?: string; error?: string }>(response)) as {
         url?: string;
@@ -218,12 +244,15 @@ export default function TrialGateModal() {
       }
       window.location.href = checkoutUrl;
     } catch (checkoutError: unknown) {
+      if (checkoutError instanceof Error && checkoutError.name === "AbortError") return;
       setError(
         checkoutError instanceof Error
           ? checkoutError.message
           : "Network error opening Conversation Balance checkout.",
       );
       setPending(null);
+    } finally {
+      if (checkoutAbortRef.current === controller) checkoutAbortRef.current = null;
     }
   }
 
@@ -241,6 +270,7 @@ export default function TrialGateModal() {
           aria-modal="true"
           aria-labelledby="trial-gate-title"
           aria-describedby="trial-gate-description"
+          aria-busy={pending !== null || resend === "pending"}
         >
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -254,7 +284,7 @@ export default function TrialGateModal() {
               disableAnimations
               variant="ghost"
               size="icon"
-              onClick={() => setDetail(null)}
+              onClick={closeModal}
               aria-label="Close"
               className="absolute top-4 right-4 z-10 h-11 w-11 rounded-full text-muted hover:bg-muted/10 hover:text-foreground after:hidden sm:h-9 sm:w-9"
             >
