@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { randomBytes, scryptSync, createHmac, timingSafeEqual, createHash } from "node:crypto";
-import { drizzle, log } from "./server-context";
+import { drizzle, log, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
 import { and, eq, gte, isNull } from "drizzle-orm";
 import { requireInternalJwtSecret } from "./internal-jwt-secret";
@@ -194,49 +194,56 @@ export const authService = {
     await requirePasswordSafety(password, "signup");
     const passwordHash = hashPassword(password);
 
-    try {
-      return await drizzle.transaction(async (tx) => {
-        const inserted = (await tx
-          .insert(schema.users)
-          .values({
-            email,
-            passwordHash,
-            fullName,
-          })
-          .returning()) as Array<{ id: string; email: string; fullName: string | null }>;
-        const user = inserted[0];
+    // Signup bootstrap must never inherit an authenticated tenant ALS scope.
+    // An inherited scope SETs LOCAL ROLE wireline_server, and wireline_users
+    // WITH CHECK (id = current_user_id) rejects brand-new rows (pg 42501).
+    // Running under an empty store forces an unscoped pool checkout (postgres
+    // rolbypassrls) for the whole create-user transaction.
+    return tenantStore.run("", async () => {
+      try {
+        return await drizzle.transaction(async (tx) => {
+          const inserted = (await tx
+            .insert(schema.users)
+            .values({
+              email,
+              passwordHash,
+              fullName,
+            })
+            .returning()) as Array<{ id: string; email: string; fullName: string | null }>;
+          const user = inserted[0];
 
-        // Sets the account to pending_activation (Free Builder — no trial,
-        // no card, no expiry) so signup/create/train works immediately.
-        // Failures don't block signup — the sweep job will fix up any
-        // stragglers. Function name is historical; see trial-gate.ts.
-        const { startTrialForUser } = await import("./trial-gate");
-        await startTrialForUser(user.id, signupAttribution, tx);
+          // Sets the account to pending_activation (Free Builder — no trial,
+          // no card, no expiry) so signup/create/train works immediately.
+          // Failures don't block signup — the sweep job will fix up any
+          // stragglers. Function name is historical; see trial-gate.ts.
+          const { startTrialForUser } = await import("./trial-gate");
+          await startTrialForUser(user.id, signupAttribution, tx);
 
-        const { resolveAccountType } = await import("./account-type");
-        const account_type = resolveAccountType(signupAttribution?.preferredPlanId);
-        await tx.insert(schema.accounts).values({
-          userId: user.id,
-          type: account_type,
-          label: account_type === "personal" ? "Personal" : "My Business",
-          isPrimary: true,
+          const { resolveAccountType } = await import("./account-type");
+          const account_type = resolveAccountType(signupAttribution?.preferredPlanId);
+          await tx.insert(schema.accounts).values({
+            userId: user.id,
+            type: account_type,
+            label: account_type === "personal" ? "Personal" : "My Business",
+            isPrimary: true,
+          });
+
+          return {
+            user: {
+              id: user.id,
+              email: user.email,
+              full_name: user.fullName,
+              ...authUserFlags(user),
+              account_type,
+            },
+            token: generateToken({ id: user.id, email: user.email }),
+          };
         });
-
-        return {
-          user: {
-            id: user.id,
-            email: user.email,
-            full_name: user.fullName,
-            ...authUserFlags(user),
-            account_type,
-          },
-          token: generateToken({ id: user.id, email: user.email }),
-        };
-      });
-    } catch (err: any) {
-      log.error("Auth: Sign up failed", { email, error: err.message });
-      throw err;
-    }
+      } catch (err: any) {
+        log.error("Auth: Sign up failed", { email, error: err.message });
+        throw err;
+      }
+    });
   },
 
   /**

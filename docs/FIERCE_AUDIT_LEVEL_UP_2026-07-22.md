@@ -41,6 +41,10 @@ were stubs, and structured model routing ignored complexity.
    published annual savings instead.
 7. **Runtime Balance** — Billing settings section title uses
    `CONVERSATION_BALANCE_COPY.title`.
+8. **Signup RLS flake hardened** — `signUp` forces an empty tenant ALS scope so
+   bootstrap uses postgres `rolbypassrls` (INSERT…RETURNING cannot satisfy
+   `wireline_server` RLS). Migration `0109` records the decision and re-asserts
+   the strict `wireline_users` tenant policy.
 
 ## Ops still open (not code)
 

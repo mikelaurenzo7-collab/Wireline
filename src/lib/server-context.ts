@@ -118,8 +118,9 @@ async function scopeClientToTenant(userId: string) {
     // Restore the raw query fn before finalizing so our control statements run as-is.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- restoring pg client.query
     (client as any).query = _origQuery;
-    // COMMIT closes the outer transaction. If it was aborted by an earlier error,
-    // Postgres turns COMMIT into a ROLLBACK, so this is safe in both cases.
+    // COMMIT/ROLLBACK must settle before the client returns to the pool
+    // (_origRelease only runs after). SET LOCAL ROLE is transaction-scoped, so
+    // the next checkout never inherits wireline_server from this one.
     _origQuery(err ? "ROLLBACK" : "COMMIT")
       .then(() => _origRelease(err))
       .catch(() => _origRelease(err || true));

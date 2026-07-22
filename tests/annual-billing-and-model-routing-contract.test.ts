@@ -27,6 +27,12 @@ describe("annual billing purchase path", () => {
     expect(personas).toContain("Do not invent coupons or percent-off deals");
     expect(personas).not.toMatch(/Offer up to \$\{SALES_AUTO_DISCOUNT_MAX_PERCENT\}%/);
   });
+
+  it("hardens signup against inherited tenant ALS / wireline_server RLS", () => {
+    const auth = read("src/lib/auth-service.ts");
+    expect(auth).toContain('tenantStore.run(""');
+    expect(auth).toContain("Signup bootstrap must never inherit");
+  });
 });
 
 describe("structured model routing", () => {
