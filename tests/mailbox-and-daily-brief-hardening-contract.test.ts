@@ -7,6 +7,10 @@ const microsoft = readFileSync("src/routes/oauth/microsoft.ts", "utf8");
 const yahoo = readFileSync("src/routes/oauth/yahoo.ts", "utf8");
 const icloud = readFileSync("src/routes/icloud-mail-routes.ts", "utf8");
 const dailyBrief = readFileSync("src/routes/daily-brief-routes.ts", "utf8");
+const androidAsk = readFileSync(
+  "android/app/src/main/java/com/wireline/app/ui/ask/AskWirelineScreen.kt",
+  "utf8",
+);
 
 const mailboxRoutes = [google, microsoft, yahoo, icloud];
 
@@ -49,5 +53,19 @@ describe("daily brief status contracts", () => {
     expect(dailyBrief).toContain('err?.code === "AI_RUNTIME_OFFLINE"');
     expect(dailyBrief).toContain('code === "AI_RUNTIME_OFFLINE"');
     expect(dailyBrief).toContain('msg.includes("AI runtime required")');
+  });
+});
+
+describe("Android Ask Wireline truthfulness", () => {
+  it("derives plan status from loaded account data instead of inventing billing health", () => {
+    expect(androidAsk).toContain("account.subscriptionStatus");
+    expect(androidAsk).toContain("account.planName");
+    expect(androidAsk).not.toContain("All subscription plans are active");
+    expect(androidAsk).not.toContain("your billing subscription is active");
+  });
+
+  it("does not claim an outbound call succeeded before the async API result", () => {
+    expect(androidAsk).toContain("Outbound call request submitted");
+    expect(androidAsk).not.toContain("Outbound call placed with agent");
   });
 });
