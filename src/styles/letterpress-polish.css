@@ -567,12 +567,22 @@
 }
 
 .wl-banner__body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
+  display: inline-flex;
+  flex-direction: row;
+  gap: 0.625rem;
   min-width: 0;
   flex: 1 1 auto;
+  align-items: flex-start;
   align-self: center;
+}
+
+.wl-banner__body > span,
+.wl-banner__body > p {
+  min-width: 0;
+  flex: 1 1 auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
 }
 
 .wl-banner__title {
