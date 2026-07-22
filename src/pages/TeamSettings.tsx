@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Loader2, Plus, Users, X } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -11,6 +11,8 @@ import WorkspaceShell from "../components/WorkspaceShell";
 import { useAuth } from "../contexts/AuthContext";
 import { authFetch } from "../lib/api";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
+import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
+import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 
 type InviteRole = "admin" | "member" | "viewer";
 
@@ -46,6 +48,13 @@ export default function TeamSettings() {
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+  const inviteDialogRef = useRef<HTMLDivElement>(null);
+
+  useBodyScrollLock(isInviteOpen);
+  useModalFocusTrap(inviteDialogRef, {
+    active: isInviteOpen,
+    onEscape: () => setIsInviteOpen(false),
+  });
 
   const displayMembers = useMemo(() => {
     if (members.length > 0) return members;
@@ -220,11 +229,23 @@ export default function TeamSettings() {
       </WorkspacePageFrame>
 
       {isInviteOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+          role="presentation"
+        >
+          <div
+            ref={inviteDialogRef}
+            className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="team-invite-title"
+          >
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-[-.025em] text-foreground">
+                <h2
+                  id="team-invite-title"
+                  className="font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-[-.025em] text-foreground"
+                >
                   Invite teammate
                 </h2>
               </div>
@@ -243,6 +264,7 @@ export default function TeamSettings() {
                 <FormField label="Email address" required>
                   <Input
                     type="email"
+                    autoFocus
                     required
                     placeholder="colleague@company.com"
                     value={inviteEmail}
