@@ -114,19 +114,19 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jan 27, 2026",
     tag: "polish",
     title: "Sidebar rail — desktop chrome rebuild",
-    body: "The horizontal top bar gave way to a vertical sidebar rail on desktop. Collapses to 56 px when not in focus; expands to 224 px on hover or toggle. Carries logo, search, every nav destination, tier-usage badge, live phone pulse, and the avatar block. Mobile keeps its iOS-style bottom tabs (Recaps · Triage · Activity · Cockpit · More).",
+    body: "The horizontal top bar gave way to a vertical sidebar rail on desktop. Collapses to 56 px when not in focus; expands to 224 px on hover or toggle. Carries logo, search, every nav destination, tier-usage badge, live phone pulse, and the avatar block. Mobile keeps its iOS-style bottom tabs for Overview, Phone, Insights, Studio, and More.",
   },
   {
     date: "Jan 27, 2026",
     tag: "infra",
-    title: "Voice tiering rebalanced — Sonnet 4.6 live, Opus 4.7 brain",
-    body: "End-to-end caller dead air dropped from ~2 s to ~700–900 ms. The live voice runtime now runs Claude Sonnet 4.6 (TTFT 300–500 ms against our 18 KB system prompt); Claude Opus 4.7 powers every off-wire path — pre-call briefs, post-call analysis, daily brief, coaching — where the user isn't waiting. Same agent moat, faster wire.",
+    title: "Voice runtime rebalanced — OpenAI primary, Gemini continuity",
+    body: "Structured reasoning runs OpenAI GPT-5.6 Terra first, with Gemini as direct continuity and Vercel AI Gateway as the governed last route. Authenticated Studio live-voice tests use xAI Grok realtime; guest demos use OpenAI Realtime. Production PSTN stays on Twilio + Vapi — model shopping is not the product.",
   },
   {
     date: "Jan 27, 2026",
     tag: "infra",
     title: "/api/health/models — live LLM canary",
-    body: "Auth-gated endpoint pings every configured Claude tier with a 1-token probe and reports {ok, latency_ms} per layer. Catches the silent failure mode where a model id drifts away from what Anthropic actually serves.",
+    body: "Auth-gated endpoint probes every configured structured-reasoning provider with a tiny completion and reports {ok, latency_ms} per layer. Catches silent model-id drift before callers feel it.",
   },
   {
     date: "May 19, 2026",

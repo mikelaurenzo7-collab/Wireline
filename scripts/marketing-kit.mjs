@@ -489,7 +489,7 @@ Generated from **${resolvedEmail}** on ${baseURL} — ${new Date().toISOString()
 
 **Sub:** Wireline agents answer, book, sync CRM, and escalate to your team with a real TCPA ledger. Not another voice API you have to assemble.
 
-**CTA:** Start free trial · Call demo line (630) 581-1834
+**CTA:** Start free on Free Builder · Call demo line (630) 581-1834
 
 ## 15s reel hook (vertical)
 

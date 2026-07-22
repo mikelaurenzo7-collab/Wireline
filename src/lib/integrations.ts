@@ -509,12 +509,35 @@ export class IntegrationService {
       body: params.toString(),
     });
     const d = (await r.json()) as any;
-
     const table = account.emailAddress ? schema.emailAccounts : schema.calendarAccounts;
+
+    if (!r.ok || !d.access_token) {
+      const isTerminal =
+        r.status === 400 ||
+        d.error === "invalid_grant" ||
+        (typeof d.error_description === "string" &&
+          d.error_description.toLowerCase().includes("invalid_grant"));
+      // Never persist encryptSecret(undefined) — that permanently bricks the row.
+      if (isTerminal) {
+        await drizzle
+          .update(table as any)
+          .set({
+            accessToken: null,
+            refreshToken: null,
+            expiresAt: BigInt(0),
+          })
+          .where(eq((table as any).id, account.id));
+      }
+      throw new Error(
+        d.error_description || d.error || "Microsoft token refresh failed",
+      );
+    }
+
     await drizzle
       .update(table as any)
       .set({
         accessToken: encryptSecret(d.access_token),
+        ...(d.refresh_token ? { refreshToken: encryptSecret(d.refresh_token) } : {}),
         expiresAt: BigInt(Date.now() + (d.expires_in || 3600) * 1000),
       })
       .where(eq((table as any).id, account.id));

@@ -67,6 +67,17 @@ interface RateLimitMiddleware {
 export function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
+      // Spend-sensitive buckets fail closed when Upstash is unavailable —
+      // matching claudeRateLimiter / intake rather than silently allowing
+      // unbounded dial/SMS/campaign spend.
+      if (opts.failClosedOnError) {
+        const status = distributedLimiterStatus();
+        if (!status.ok) {
+          res.status(503).json({ error: status.reason, code: status.code });
+          return;
+        }
+      }
+
       // Extract user ID from authenticated session.
       const userId = (req as Request & { user?: { id?: string } }).user?.id;
       if (!userId) {
@@ -92,8 +103,21 @@ export function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware
         next(err);
         return;
       }
-      // Fail-OPEN on unexpected infrastructure errors — better to serve traffic
-      // than lock out everyone on rate limiter bugs.
+      if (opts.failClosedOnError) {
+        log.error("rate limiter error, fail-closed", {
+          bucket: opts.bucket,
+          error: getErrorMessage(err),
+        });
+        next(
+          AppError.fromHttpStatus(
+            503,
+            "Rate limiting temporarily unavailable. Retry shortly.",
+          ),
+        );
+        return;
+      }
+      // Fail-OPEN on unexpected infrastructure errors for non-spend buckets —
+      // better to serve traffic than lock out everyone on rate limiter bugs.
       log.error("rate limiter error, fail-open", {
         bucket: opts.bucket,
         error: getErrorMessage(err),
@@ -208,6 +232,7 @@ export const phoneNumberRateLimiter = createRateLimiter({
   bucket: "api:phone-numbers",
   windowMs: 15 * 60 * 1000,
   max: 30,
+  failClosedOnError: true,
 });
 
 /**
@@ -228,6 +253,7 @@ export const dialRateLimiter = createRateLimiter({
   bucket: "api:dial",
   windowMs: 60 * 1000,
   max: 60,
+  failClosedOnError: true,
 });
 
 /**
@@ -286,6 +312,7 @@ export const smsRateLimit = createRateLimiter({
   bucket: "api:sms",
   windowMs: 60 * 1000,
   max: 60,
+  failClosedOnError: true,
 });
 
 /** Dashboard reads, nav badges, CSV export. */
@@ -314,6 +341,7 @@ export const campaignWriteRateLimit = createRateLimiter({
   bucket: "api:campaigns-write",
   windowMs: 60 * 1000,
   max: 60,
+  failClosedOnError: true,
 });
 
 // ──────────────────────────────────────────────────────────────────────

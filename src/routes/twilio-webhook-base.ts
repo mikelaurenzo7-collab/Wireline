@@ -398,18 +398,113 @@ router.post(
 router.post(
   "/api/twilio-webhook/voicemail-complete",
   twilioVoiceRateLimiter,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     if (!verifyTwilioSignature(req)) {
       log.warn("Twilio webhook signature verification failed", { path: req.path });
       return res
         .status(403)
         .send(`<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`);
     }
-    log.info("Voicemail recorded during Vapi failover", { url: req.body?.RecordingUrl });
+
+    const recordingUrl =
+      typeof req.body?.RecordingUrl === "string" ? req.body.RecordingUrl.trim() : "";
+    const transcription =
+      typeof req.body?.TranscriptionText === "string" ? req.body.TranscriptionText.trim() : "";
+    const from = typeof req.body?.From === "string" ? req.body.From : "";
+    const to = typeof req.body?.To === "string" ? req.body.To : "";
+    const durationRaw = Number(req.body?.RecordingDuration);
+    const durationSeconds = Number.isFinite(durationRaw) ? Math.max(0, Math.round(durationRaw)) : null;
+
+    // Persist + notify off the critical Twilio response path — hang up first
+    // so the caller isn't waiting on DB/email, then run tenant work.
     res.setHeader("Content-Type", "text/xml");
-    return res
-      .status(200)
-      .send(`<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`);
+    res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`);
+
+    if (!recordingUrl) {
+      log.warn("Voicemail complete missing RecordingUrl", { from, to });
+      return;
+    }
+
+    try {
+      const tenantUserId = to ? await lookupTenant(to) : null;
+      if (!tenantUserId) {
+        log.warn("Voicemail recorded but no tenant matched To number", { to, from, recordingUrl });
+        return;
+      }
+
+      await tenantStore.run({ userId: tenantUserId }, async () => {
+        await drizzle.insert(schema.callLogs).values({
+          userId: tenantUserId,
+          direction: "inbound",
+          customerNumber: from ? sanitizePhone(from) || from : null,
+          durationSeconds,
+          recordingUrl,
+          transcript: transcription || null,
+          summary: "Voicemail left during voice failover (Vapi unavailable).",
+          outcomeTag: "voicemail",
+          intentLabel: "voicemail",
+        });
+
+        // Best-effort owner notify via Resend — still inside tenant context.
+        try {
+          const [owner] = await drizzle
+            .select({ email: schema.users.email })
+            .from(schema.users)
+            .where(eq(schema.users.id, tenantUserId))
+            .limit(1);
+          if (owner?.email) {
+            const { sendEmail } = await import("../lib/email-service");
+            await sendEmail({
+              to: owner.email,
+              subject: "Wireline: voicemail left during call failover",
+              text: [
+                "A caller left a voicemail while your AI voice line was in failover mode.",
+                "",
+                from ? `From: ${from}` : null,
+                to ? `To: ${to}` : null,
+                durationSeconds != null ? `Duration: ${durationSeconds}s` : null,
+                `Recording: ${recordingUrl}`,
+                transcription ? `Transcript: ${transcription}` : null,
+                "",
+                "Open Phone → History in Wireline to review.",
+              ]
+                .filter(Boolean)
+                .join("\n"),
+              html: `
+              <p>A caller left a voicemail while your AI voice line was in failover mode.</p>
+              <ul>
+                ${from ? `<li><strong>From:</strong> ${from}</li>` : ""}
+                ${to ? `<li><strong>To:</strong> ${to}</li>` : ""}
+                ${durationSeconds != null ? `<li><strong>Duration:</strong> ${durationSeconds}s</li>` : ""}
+                <li><strong>Recording:</strong> <a href="${recordingUrl}">${recordingUrl}</a></li>
+                ${transcription ? `<li><strong>Transcript:</strong> ${transcription}</li>` : ""}
+              </ul>
+              <p>Open Phone → History in Wireline to review.</p>
+            `,
+            });
+          }
+        } catch (notifyErr) {
+          log.warn("Voicemail owner notify failed", {
+            error: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
+          });
+        }
+      });
+
+      log.info("Voicemail persisted during Vapi failover", {
+        userId: tenantUserId,
+        from,
+        to,
+        recordingUrl,
+        hasTranscript: Boolean(transcription),
+      });
+    } catch (err) {
+      log.error("Failed to persist failover voicemail", {
+        error: err instanceof Error ? err.message : String(err),
+        recordingUrl,
+        from,
+        to,
+      });
+    }
   },
 );
 
