@@ -1,8 +1,8 @@
 /**
  * Workspace entitlement for the photoreal live video add-on.
  *
- * Catalog face picks stay included; streaming requires platform keys plus a
- * paid capacity plan (or an explicit workspace flag for enterprise pilots).
+ * The paid streaming add-on is offered only after ops explicitly marks the
+ * curated Presence Catalog launch-ready.
  */
 import { eq } from "drizzle-orm";
 
@@ -11,7 +11,16 @@ import { drizzle } from "../server-context";
 import { canonicalPlanId, type StripePlanId } from "../plan-catalog";
 import { getLiveAvatarStatus } from "./liveavatar-service";
 
-const PAID_LIVE_VIDEO_PLANS = new Set<StripePlanId>(["team", "business", "enterprise"]);
+const PAID_LIVE_VIDEO_PLANS = new Set<StripePlanId>([
+  "starter",
+  "team",
+  "business",
+  "enterprise",
+]);
+
+export function isLiveVideoCatalogReady(): boolean {
+  return process.env.WIRELINE_LIVE_VIDEO_CATALOG_READY === "true";
+}
 
 export type LiveVideoEntitlement = {
   platformConfigured: boolean;
@@ -36,6 +45,7 @@ export async function resolveLiveVideoEntitlement(
 ): Promise<LiveVideoEntitlement> {
   const platform = getLiveAvatarStatus();
   const platformConfigured = platform.configured;
+  const catalogReady = isLiveVideoCatalogReady();
 
   if (options?.isOwner || billingBypassEnabled()) {
     return {
@@ -72,29 +82,38 @@ export async function resolveLiveVideoEntitlement(
     row?.subscriptionStatus === "active" || row?.subscriptionStatus === "trialing";
   const onPaidPlan = planId ? PAID_LIVE_VIDEO_PLANS.has(planId) : false;
 
-  const billingEntitled = workspaceFlag || (stripeActive && settingsActive && onPaidPlan);
+  const addonOffered = platformConfigured && catalogReady;
+  const billingEntitled =
+    addonOffered && workspaceFlag && stripeActive && settingsActive && onPaidPlan;
 
   let reason: string | null = null;
   if (!platformConfigured) {
     reason = "Live video is not available on this workspace yet.";
-  } else if (!billingEntitled) {
-    reason = onPaidPlan
-      ? "Activate your subscription to unlock live video."
-      : "Subscribe to the live video add-on ($19/mo) or upgrade to Starter Plus to stream photoreal presenters.";
+  } else if (!catalogReady) {
+    reason = "Live video is paused while the curated Presence Catalog is prepared.";
+  } else if (!onPaidPlan) {
+    reason = "Activate a paid plan before adding live video.";
+  } else if (!stripeActive || !settingsActive) {
+    reason = "Activate your subscription before adding live video.";
+  } else if (!workspaceFlag) {
+    reason = "Subscribe to the live video add-on ($19/mo) to stream a presenter.";
   }
 
-  const checkoutAvailable = Boolean(
-    process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID || process.env.STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID,
-  );
+  const checkoutAvailable =
+    addonOffered &&
+    Boolean(
+      process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID ||
+        process.env.STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID,
+    );
 
   return {
     platformConfigured,
-    addonOffered: platformConfigured,
+    addonOffered,
     billingEntitled,
     liveVideoAddonEnabled: workspaceFlag,
     liveVideoCheckoutAvailable: checkoutAvailable,
     planId,
-    upgradeRequired: platformConfigured && !billingEntitled && !checkoutAvailable,
+    upgradeRequired: addonOffered && !billingEntitled && !checkoutAvailable,
     reason,
   };
 }
