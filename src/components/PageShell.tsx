@@ -1,9 +1,11 @@
-import React, { ReactNode, useState, useRef, useEffect } from "react";
+import React, { ReactNode, useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "../lib/utils";
 import { resolveBrandAccent } from "../lib/brand-token";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
+import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 
 /* ──────────────────────────────────────────────────────────────────────────
    PageShell — viewport-fit page primitive.
@@ -83,53 +85,13 @@ export default function PageShell({
   const tabSwipe = useRef<{ x: number; y: number } | null>(null);
   // Ref for focus trap inside the bottom sheet dialog.
   const sheetRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const activeTab = tabs?.find((t) => t.id === activeId) ?? tabs?.[0];
 
-  // M4 — Escape key closes the bottom sheet.
-  useEffect(() => {
-    if (!mobileActionsOpen) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        setMobileActionsOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [mobileActionsOpen]);
-
-  // C5 — Focus trap: when sheet opens, move focus to close button; on Tab/Shift+Tab
-  // cycle within the sheet so keyboard users can't reach content behind it.
-  useEffect(() => {
-    if (!mobileActionsOpen) return;
-    // Move initial focus to the close button.
-    closeButtonRef.current?.focus();
-    const handleTab = (e: KeyboardEvent) => {
-      if (e.key !== "Tab" || !sheetRef.current) return;
-      const focusable = Array.from(
-        sheetRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null);
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-    window.addEventListener("keydown", handleTab);
-    return () => window.removeEventListener("keydown", handleTab);
-  }, [mobileActionsOpen]);
+  useBodyScrollLock(mobileActionsOpen);
+  useModalFocusTrap(sheetRef, {
+    active: mobileActionsOpen,
+    onEscape: () => setMobileActionsOpen(false),
+  });
 
   return (
     <div
@@ -428,7 +390,6 @@ export default function PageShell({
               <div className="flex items-center justify-between px-4 pb-3">
                 <p className="text-eyebrow">Actions</p>
                 <ShadButton
-                  ref={closeButtonRef}
                   type="button"
                   variant="ghost"
                   size="icon"
