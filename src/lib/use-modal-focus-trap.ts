@@ -7,19 +7,54 @@ type ModalFocusTrapOptions = {
   onEscape?: () => void;
 };
 
+type ActiveFocusTrap = {
+  id: symbol;
+  container: HTMLElement;
+};
+
 const FOCUSABLE_SELECTOR = [
   "button:not([disabled])",
   "[href]",
   "input:not([disabled])",
   "select:not([disabled])",
   "textarea:not([disabled])",
+  "[contenteditable=\"true\"]",
   "[tabindex]:not([tabindex=\"-1\"])",
 ].join(", ");
+
+const activeFocusTraps: ActiveFocusTrap[] = [];
+
+function isTopmostTrap(id: symbol) {
+  return activeFocusTraps[activeFocusTraps.length - 1]?.id === id;
+}
+
+function getFocusable(container: HTMLElement) {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (element) => {
+      const style = window.getComputedStyle(element);
+      return (
+        !element.matches(":disabled") &&
+        !element.closest('[aria-hidden="true"], [inert]') &&
+        style.display !== "none" &&
+        style.visibility !== "hidden" &&
+        element.offsetParent !== null
+      );
+    },
+  );
+}
+
+function eventBelongsToNestedModal(event: KeyboardEvent, container: HTMLElement) {
+  const target = event.target;
+  if (!(target instanceof Element) || container.contains(target)) return false;
+  const owner = target.closest<HTMLElement>('[role="dialog"][aria-modal="true"]');
+  return Boolean(owner && owner !== container);
+}
 
 /**
  * Give hand-rolled dialogs the same keyboard lifecycle Radix provides:
  * establish initial focus, contain Tab / Shift+Tab, close on Escape, and return
- * focus to the trigger after the dialog unmounts.
+ * focus to the trigger after the dialog unmounts. A module-level stack ensures
+ * only the top custom dialog handles keyboard input when overlays are nested.
  */
 export function useModalFocusTrap(
   containerRef: RefObject<HTMLElement | null>,
@@ -34,25 +69,15 @@ export function useModalFocusTrap(
     const container = containerRef.current;
     if (!container) return;
 
+    const trapId = Symbol("wireline-modal-focus-trap");
     const previouslyFocused =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     let addedContainerTabIndex = false;
-
-    const getFocusable = () =>
-      Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter((element) => {
-        const style = window.getComputedStyle(element);
-        return (
-          !element.hasAttribute("disabled") &&
-          element.getAttribute("aria-hidden") !== "true" &&
-          style.display !== "none" &&
-          style.visibility !== "hidden" &&
-          element.offsetParent !== null
-        );
-      });
+    activeFocusTraps.push({ id: trapId, container });
 
     const focusFrame = requestAnimationFrame(() => {
-      if (container.contains(document.activeElement)) return;
-      const first = getFocusable()[0];
+      if (!isTopmostTrap(trapId) || container.contains(document.activeElement)) return;
+      const first = getFocusable(container)[0];
       if (first) {
         first.focus();
         return;
@@ -65,6 +90,14 @@ export function useModalFocusTrap(
     });
 
     const handleKey = (event: KeyboardEvent) => {
+      if (
+        !isTopmostTrap(trapId) ||
+        event.defaultPrevented ||
+        eventBelongsToNestedModal(event, container)
+      ) {
+        return;
+      }
+
       if (event.key === "Escape") {
         event.preventDefault();
         onEscapeRef.current?.();
@@ -72,7 +105,7 @@ export function useModalFocusTrap(
       }
       if (event.key !== "Tab") return;
 
-      const focusable = getFocusable();
+      const focusable = getFocusable(container);
       if (focusable.length === 0) {
         event.preventDefault();
         container.focus();
@@ -93,15 +126,38 @@ export function useModalFocusTrap(
       }
     };
 
-    // Capture the event before page-level shortcuts can move focus behind the dialog.
+    // Capture before page-level shortcuts can move focus behind the active dialog.
     document.addEventListener("keydown", handleKey, true);
     return () => {
       cancelAnimationFrame(focusFrame);
       document.removeEventListener("keydown", handleKey, true);
+
+      const wasTopmost = isTopmostTrap(trapId);
+      const trapIndex = activeFocusTraps.findIndex((trap) => trap.id === trapId);
+      if (trapIndex >= 0) activeFocusTraps.splice(trapIndex, 1);
       if (addedContainerTabIndex) container.removeAttribute("tabindex");
-      if (previouslyFocused && document.contains(previouslyFocused)) {
-        requestAnimationFrame(() => previouslyFocused.focus());
-      }
+      if (!wasTopmost) return;
+
+      const nextTrap = activeFocusTraps[activeFocusTraps.length - 1];
+      const expectedNextId = nextTrap?.id;
+      requestAnimationFrame(() => {
+        const currentTop = activeFocusTraps[activeFocusTraps.length - 1];
+        if (currentTop?.id !== expectedNextId) return;
+
+        if (
+          previouslyFocused &&
+          document.contains(previouslyFocused) &&
+          (!nextTrap || nextTrap.container.contains(previouslyFocused))
+        ) {
+          previouslyFocused.focus();
+          return;
+        }
+
+        if (nextTrap && document.contains(nextTrap.container)) {
+          const nextFocusable = getFocusable(nextTrap.container)[0];
+          (nextFocusable ?? nextTrap.container).focus();
+        }
+      });
     };
   }, [active, containerRef]);
 }
