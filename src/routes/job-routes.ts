@@ -113,7 +113,7 @@ router.post(
   jobsRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { url, agentContext, maxEntries, maxPages } = req.body ?? {};
+      const { url, agentContext } = req.body ?? {};
       if (!url || typeof url !== "string" || url.length > 2048) {
         throw AppError.fromHttpStatus(400, "url required (max 2048 chars).");
       }
