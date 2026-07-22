@@ -7,18 +7,25 @@ type ModalFocusTrapOptions = {
   onEscape?: () => void;
 };
 
+const FOCUSABLE_SELECTOR = [
+  "button:not([disabled])",
+  "[href]",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "[tabindex]:not([tabindex=\"-1\"])",
+].join(", ");
+
 /**
- * Trap keyboard focus within a modal container while `active`: move initial
- * focus inside, cycle Tab / Shift+Tab within the container so keyboard users
- * can't reach content behind it, and close on Escape regardless of where focus
- * currently sits. Mirrors the C5 focus-trap pattern in PageShell so hand-rolled
- * dialogs (CreateAgentDialog, PostCreateActivationWizard) behave consistently.
+ * Give hand-rolled dialogs the same keyboard lifecycle Radix provides:
+ * establish initial focus, contain Tab / Shift+Tab, close on Escape, and return
+ * focus to the trigger after the dialog unmounts.
  */
 export function useModalFocusTrap(
   containerRef: RefObject<HTMLElement | null>,
   { active = true, onEscape }: ModalFocusTrapOptions = {},
 ): void {
-  // Keep the latest onEscape without re-running the trap effect every render.
+  // Keep the latest callback without tearing down the keyboard listener.
   const onEscapeRef = useRef(onEscape);
   onEscapeRef.current = onEscape;
 
@@ -27,41 +34,74 @@ export function useModalFocusTrap(
     const container = containerRef.current;
     if (!container) return;
 
-    const getFocusable = () =>
-      Array.from(
-        container.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null);
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    let addedContainerTabIndex = false;
 
-    // Move focus inside the modal if it isn't already there.
-    if (!container.contains(document.activeElement)) {
-      getFocusable()[0]?.focus();
-    }
+    const getFocusable = () =>
+      Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter((element) => {
+        const style = window.getComputedStyle(element);
+        return (
+          !element.hasAttribute("disabled") &&
+          element.getAttribute("aria-hidden") !== "true" &&
+          style.display !== "none" &&
+          style.visibility !== "hidden" &&
+          element.offsetParent !== null
+        );
+      });
+
+    const focusFrame = requestAnimationFrame(() => {
+      if (container.contains(document.activeElement)) return;
+      const first = getFocusable()[0];
+      if (first) {
+        first.focus();
+        return;
+      }
+      if (!container.hasAttribute("tabindex")) {
+        container.setAttribute("tabindex", "-1");
+        addedContainerTabIndex = true;
+      }
+      container.focus();
+    });
 
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        event.preventDefault();
         onEscapeRef.current?.();
         return;
       }
       if (event.key !== "Tab") return;
+
       const focusable = getFocusable();
-      if (focusable.length === 0) return;
+      if (focusable.length === 0) {
+        event.preventDefault();
+        container.focus();
+        return;
+      }
+
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
-      const activeEl = document.activeElement;
+      const activeElement = document.activeElement;
       if (event.shiftKey) {
-        if (activeEl === first || !container.contains(activeEl)) {
+        if (activeElement === first || !container.contains(activeElement)) {
           event.preventDefault();
           last.focus();
         }
-      } else if (activeEl === last || !container.contains(activeEl)) {
+      } else if (activeElement === last || !container.contains(activeElement)) {
         event.preventDefault();
         first.focus();
       }
     };
 
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+    // Capture the event before page-level shortcuts can move focus behind the dialog.
+    document.addEventListener("keydown", handleKey, true);
+    return () => {
+      cancelAnimationFrame(focusFrame);
+      document.removeEventListener("keydown", handleKey, true);
+      if (addedContainerTabIndex) container.removeAttribute("tabindex");
+      if (previouslyFocused && document.contains(previouslyFocused)) {
+        requestAnimationFrame(() => previouslyFocused.focus());
+      }
+    };
   }, [active, containerRef]);
 }
