@@ -44,7 +44,9 @@ npx vitest run tests/outbound-compliance-contract.test.ts \
   tests/voice-observability-api-paths-contract.test.ts \
   tests/vapi-voice-model-policy.test.ts \
   tests/video-presenter-contract.test.ts \
-  tests/authenticated-agent-flow-contract.test.ts
+  tests/authenticated-agent-flow-contract.test.ts \
+  tests/mobile-tcpa-consent-contract.test.ts
+npm run lint:server
 npm run csp:check
 npm run authz:check
 ```

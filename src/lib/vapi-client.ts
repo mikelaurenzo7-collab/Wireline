@@ -572,7 +572,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
     if (!vapiResponse.ok && voiceSelection.provider === "google") {
       const geminiErrorBody = await vapiResponse.text();
       const retryModel =
-        voiceSelection.fallbackModels.find((model) => isOpenAIModelId(model)) ||
+        voiceSelection.fallbackModels?.find((model) => isOpenAIModelId(model)) ||
         VAPI_TENANT_DEFAULT_MODEL;
       const retryProvider = isGeminiModelId(retryModel)
         ? VAPI_VOICE_FALLBACK_PROVIDER
