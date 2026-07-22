@@ -67,7 +67,7 @@ export default function DeployAgentModal({
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Pin the page underneath and contain keyboard focus while the modal is open.
-  useBodyScrollLock(open);
+  useBodyScrollLock(open && template !== null);
   useModalFocusTrap(dialogRef, {
     active: open && template !== null,
     onEscape: () => {
