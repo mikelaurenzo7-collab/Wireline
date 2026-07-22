@@ -37,5 +37,9 @@ describe("voice catalog", () => {
     expect(liveAvatarService).not.toContain("process.env.HEYGEN_API_KEY");
     expect(read("src/routes/video-presenter-routes-base.ts")).toContain("matched-voice");
     expect(read("src/lib/voice/voice-preview-service.ts")).toContain("generateCuratedVoicePreview");
+    const routes = read("src/routes/grok-voice-routes.ts");
+    expect(routes).toContain("/api/voices/curated/preview");
+    expect(routes).toContain("authenticateUser");
+    expect(routes).toContain("generateCuratedVoicePreview");
   });
 });
