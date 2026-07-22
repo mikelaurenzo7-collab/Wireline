@@ -12,6 +12,7 @@ import {
   type PostCreateWizardPayload,
 } from "../lib/wireline-create-flow";
 import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
+import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { setPostSignupFlowActive } from "../lib/post-signup-onboarding";
 import { emitProductEvent } from "../lib/product-event-client";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
@@ -136,7 +137,8 @@ export default function CreateAgentDialog({
   const [error, setError] = useState("");
   const briefRef = useRef<HTMLTextAreaElement>(null);
   const dialogRef = useRef<HTMLFormElement>(null);
-  useModalFocusTrap(dialogRef, { onEscape: close });
+  useModalFocusTrap(dialogRef, { active: open, onEscape: close });
+  useBodyScrollLock(open);
   const activePosture: Posture = posture;
   const language = customerAgentLanguage(activePosture);
 
