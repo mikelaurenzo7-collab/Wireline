@@ -1,7 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { MARKETING_VOICE } from "../../src/lib/product-copy";
 
 test.setTimeout(150_000);
+
+const HERO_CHANNEL_PROOF = MARKETING_VOICE.channelProof.slice(0, 3);
 
 async function gotoHomepageWithMain(page: Page) {
   let lastError: unknown;
@@ -49,11 +52,11 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
   expect(brandWordBoxes[1].right).toBeLessThan(brandWordBoxes[2].right);
 
   const proofList = page.getByRole("list", { name: "Wireline proof points" });
-  // Hero renders MARKETING_VOICE.channelProof.slice(0, 3) in a 2-col mobile grid.
-  for (const label of ["Voice calling", "Text / SMS", "Email messaging"]) {
+  // Keep labels sourced from MARKETING_VOICE so copy renames don't desync E2E.
+  for (const label of HERO_CHANNEL_PROOF) {
     await expect(proofList.getByRole("listitem").filter({ hasText: label })).toBeVisible();
   }
-  await expect(proofList.getByRole("listitem")).toHaveCount(3);
+  await expect(proofList.getByRole("listitem")).toHaveCount(HERO_CHANNEL_PROOF.length);
   const proofRows = await proofList
     .getByRole("listitem")
     .evaluateAll((items) => items.map((item) => Math.round(item.getBoundingClientRect().top)));

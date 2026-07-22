@@ -17,6 +17,7 @@ import { validateBody, workspaceMessageSchema, pdfUploadSchema } from "../lib/ap
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
+import { publicAiStreamFailureMessage } from "../lib/ai-stream-errors";
 import { findOwnedAgentProfile } from "../lib/agent-ownership";
 import {
   planWorkspace,
@@ -162,7 +163,11 @@ router.post(
         .limit(CLAUDE_CONTEXT_WINDOW);
 
       const history = priorMessages.reverse().map((m) => ({
-        role: m.role === "Account Holder" ? ("Account Holder" as const) : ("agent" as const),
+        // Accept legacy "operator" rows until migration 0108 backfill lands everywhere.
+        role:
+          m.role === "Account Holder" || m.role === "operator"
+            ? ("Account Holder" as const)
+            : ("agent" as const),
         content: m.content,
       }));
 
@@ -269,7 +274,10 @@ router.post(
         .limit(CLAUDE_CONTEXT_WINDOW);
 
       const history = priorMessages.reverse().map((m) => ({
-        role: m.role === "Account Holder" ? ("Account Holder" as const) : ("agent" as const),
+        role:
+          m.role === "Account Holder" || m.role === "operator"
+            ? ("Account Holder" as const)
+            : ("agent" as const),
         content: m.content,
       }));
 
@@ -365,7 +373,9 @@ router.post(
       } catch (e) {
         if (e instanceof AppError) throw e;
         log.error("workspace stream failed", { error: getErrorMessage(e), agentId });
-        sse.write("error", { message: "Failed to generate response" });
+        sse.write("error", {
+          message: publicAiStreamFailureMessage(e, "Failed to generate response"),
+        });
         sse.end();
       }
     } catch (e) {
