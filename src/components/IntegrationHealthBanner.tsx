@@ -7,6 +7,10 @@ export type IntegrationHealthPayload = {
   reconnect_microsoft_calendar?: boolean;
   calendar_scope_unknown_google?: boolean;
   calendar_scope_unknown_microsoft?: boolean;
+  reconnect_hubspot?: boolean;
+  reconnect_salesforce?: boolean;
+  reconnect_google_sheets?: boolean;
+  reconnect_microsoft_mailbox?: boolean;
   reasons?: string[] | null;
 };
 
@@ -25,6 +29,10 @@ export default function IntegrationHealthBanner({ health, onOpenIntegrations }: 
   const needsAttention =
     Boolean(health.reconnect_google_calendar) ||
     Boolean(health.reconnect_microsoft_calendar) ||
+    Boolean(health.reconnect_hubspot) ||
+    Boolean(health.reconnect_salesforce) ||
+    Boolean(health.reconnect_google_sheets) ||
+    Boolean(health.reconnect_microsoft_mailbox) ||
     reasons.length > 0;
   if (!needsAttention) return null;
 

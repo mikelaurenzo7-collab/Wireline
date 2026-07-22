@@ -215,4 +215,28 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     /create-assistant|knowledge-base|Create assistant|Knowledge Base|standard business subscription starts at \$49/i,
     "production visual QA harness must use Create Agent and Training language",
   );
+  mustExclude(
+    "src/lib/plan-catalog.ts",
+    read("src/lib/plan-catalog.ts"),
+    /proposal|presentation, and report|report artifact workflow/i,
+    "plan catalog must not sell proposal/presentation artifacts that are not shipped",
+  );
+  mustExclude(
+    "src/lib/wireline-agent-personas.ts",
+    wirelinePersonas,
+    /SSO,\s*SCIM|Enterprise:\s*SSO/i,
+    "demo-line personas must not claim live SSO/SCIM on a self-serve Enterprise tier",
+  );
+  mustExclude(
+    "scripts/marketing-kit.mjs",
+    read("scripts/marketing-kit.mjs"),
+    /Start free trial/i,
+    "marketing kit must not regenerate Start free trial CTAs",
+  );
+  mustInclude(
+    "src/lib/wireline-agent-personas.ts",
+    wirelinePersonas,
+    /Free Builder:[\s\S]*Starter:/,
+    "demo-line personas must quote Free Builder + Starter catalog truth",
+  );
 }

@@ -114,6 +114,15 @@ export default function ComplianceCenter() {
                   ? "Vendor configured"
                   : "Not configured — marketing dials blocked"}
               </p>
+              {!summary.federal_dnc_configured ? (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Register the business with DNCScrub, then set the vendor login on the platform.
+                  Studio non-marketing dials still use tenant DNC + TCPA.{" "}
+                  <Link to="/security" className="text-primary underline-offset-2 hover:underline">
+                    Open Trust / Security
+                  </Link>
+                </p>
+              ) : null}
             </div>
             <div className="rounded-xl border border-border bg-card p-3.5">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">

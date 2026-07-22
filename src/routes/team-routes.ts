@@ -67,41 +67,63 @@ router.post(
         })
         .returning()) as any[];
 
-      // Attempt to send invitation email autonomously via user's connected integrations
-      try {
-        const { IntegrationService } = await import("../lib/integrations");
-        const service = new IntegrationService(req.tenantId);
-        const appUrl = process.env.APP_URL || "https://wireline.ai";
-        const invitedBy = req.user.email || "A colleague";
-        const safeInvitedBy = escapeHtml(invitedBy);
-        const safeInviteUrl = escapeAttribute(`${appUrl}/signup?invite=${data.id}`);
-
-        const sent = await service.sendEmail({
-          to: email,
-          subject: `Invitation to join ${invitedBy} on Wireline`,
-          body: `
+      // Prefer platform Resend so invites don't depend on a connected mailbox
+      // (and so HTML CTAs aren't double-escaped by IntegrationService paths).
+      const appUrl = process.env.APP_URL || "https://trywireline.com";
+      const invitedBy = req.user.email || "A colleague";
+      const safeInvitedBy = escapeHtml(invitedBy);
+      const inviteUrl = `${appUrl}/signup?invite=${data.id}`;
+      const safeInviteUrl = escapeAttribute(inviteUrl);
+      const subject = `Invitation to join ${invitedBy} on Wireline`;
+      const html = `
           <h1>You've been invited!</h1>
-          <p>${safeInvitedBy} has invited you to join their team on Wireline Business OS.</p>
+          <p>${safeInvitedBy} has invited you to join their team on Wireline.</p>
           <p>Wireline helps people and teams hand off calls, messages, and follow-ups while keeping human review close.</p>
-          <p><a href="${safeInviteUrl}" style="padding: 10px 20px; background: #000; color: #fff; text-decoration: none; border-radius: 5px;">Accept Invitation</a></p>
+          <p><a href="${safeInviteUrl}" style="padding: 10px 20px; background: #5B4CFF; color: #fff; text-decoration: none; border-radius: 5px;">Accept Invitation</a></p>
           <p>If you don't have an account, you'll be prompted to create one.</p>
-        `,
-        });
+        `;
+      const text = [
+        "You've been invited!",
+        "",
+        `${invitedBy} has invited you to join their team on Wireline.`,
+        "",
+        `Accept invitation: ${inviteUrl}`,
+        "",
+        "If you don't have an account, you'll be prompted to create one.",
+      ].join("\n");
 
-        if (sent) {
-          log.info("Team invitation email sent via integration", { email, invitedBy: req.user.id });
+      let emailSent = false;
+      try {
+        const { sendEmail } = await import("../lib/email-service");
+        const result = await sendEmail({ to: email, subject, text, html });
+        emailSent = Boolean(result.ok);
+        if (result.ok) {
+          log.info("Team invitation email sent via Resend", { email, invitedBy: req.user.id });
         } else {
-          log.warn("Team invitation logged but email not sent (no connected integration)", {
-            email,
-            userId: req.user.id,
-          });
+          // Fallback: try the inviter's connected mailbox (Google/Microsoft).
+          const { IntegrationService } = await import("../lib/integrations");
+          const service = new IntegrationService(req.tenantId);
+          const sent = await service.sendEmail({ to: email, subject, body: html });
+          emailSent = Boolean(sent);
+          if (sent) {
+            log.info("Team invitation email sent via connected mailbox", {
+              email,
+              invitedBy: req.user.id,
+            });
+          } else {
+            log.warn("Team invitation created but email not delivered", {
+              email,
+              userId: req.user.id,
+              resendError: result.error,
+            });
+          }
         }
       } catch (mailErr) {
         if (mailErr instanceof AppError) throw mailErr;
         log.error("Failed to send invitation email", { error: getErrorMessage(mailErr) });
       }
 
-      res.json({ success: true, invitation: data });
+      res.json({ success: true, invitation: data, email_sent: emailSent });
     } catch (error: any) {
       log.error("Failed to invite team member", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to invite team member");

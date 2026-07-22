@@ -183,7 +183,22 @@ async function getAccessToken(userId: string): Promise<string | null> {
         })
         .where(eq(schema.crmConnections.id, conn.id));
     } catch (err) {
-      log.error("Google Sheets token refresh failed", { error: getErrorMessage(err) });
+      const message = getErrorMessage(err);
+      log.error("Google Sheets token refresh failed", { error: message });
+      const isTerminal =
+        /invalid_grant|invalid_rapt|token has been expired or revoked/i.test(message);
+      if (isTerminal) {
+        await drizzle
+          .update(schema.crmConnections)
+          .set({
+            active: false,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.crmConnections.id, conn.id));
+        return null;
+      }
+      // Soft refresh failures: keep serving the existing token briefly so a
+      // transient Google blip doesn't break mid-call sheet writes.
     }
   }
   return token;

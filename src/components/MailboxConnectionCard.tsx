@@ -26,13 +26,15 @@ const PROVIDERS: Array<{
     detail: "Mail and Microsoft Calendar",
     logo: "microsoft_outlook",
   },
-  { id: "yahoo", label: "Yahoo Mail", detail: "Mail sync", logo: "yahoo" },
   {
     id: "icloud",
     label: "iCloud Mail",
     detail: "Apple app-specific password",
     logo: "icloud",
   },
+  // Yahoo OAuth stores tokens today, but inbox fetch/send is not wired
+  // (XOAUTH2 IMAP). Keep it out of the connect UI until both paths ship —
+  // catalog readiness remains "planned".
 ];
 
 export default function MailboxConnectionCard() {

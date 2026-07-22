@@ -102,6 +102,10 @@ async function purchaseTwilioLocalNumber(
   if (!client) return null;
 
   const smsUrl = `${appBaseUrl()}/api/twilio-webhook/sms`;
+  // Vapi owns the primary voice webhook after import; Twilio still needs a
+  // voiceFallbackUrl so carrier-side Vapi SIP/webhook failures reach our
+  // degraded-mode handler instead of a silent hangup.
+  const voiceFallbackUrl = `${appBaseUrl()}/api/twilio-webhook/voice-fallback`;
   const searchParams: any = {
     voiceEnabled: true,
     smsEnabled: true,
@@ -124,6 +128,8 @@ async function purchaseTwilioLocalNumber(
       phoneNumber: chosen.phoneNumber,
       smsUrl,
       smsMethod: "POST",
+      voiceFallbackUrl,
+      voiceFallbackMethod: "POST",
       friendlyName: `Wireline · tenant ${userId.slice(0, 8)}`,
     });
     return { phoneNumber: purchased.phoneNumber, sid: purchased.sid };

@@ -36,7 +36,7 @@ export const CONSOLE_MAP = {
     {
       id: "overview",
       label: "Overview",
-      detail: "Agents, metrics, and your daily brief",
+      detail: "Agents, metrics, and activation checklist",
       path: "/overview",
     },
     {
@@ -80,9 +80,9 @@ export const AUTH_PORTAL_SHOWCASE = {
     },
     {
       id: "live-ops",
-      label: "Recaps floor",
+      label: "Phone approvals",
       detail:
-        "Supervisor listen / whisper / barge is in beta — approve CRM writes and monitor calls from Phone today.",
+        "Approve CRM writes and monitor live calls from Phone today. Supervisor listen / whisper / barge remains on the roadmap.",
     },
   ],
 } as const;

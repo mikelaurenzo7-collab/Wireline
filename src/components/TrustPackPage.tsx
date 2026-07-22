@@ -51,7 +51,7 @@ const PACKS: Record<
     title: "Enterprise",
     subtitle: "Security posture documentation available under NDA.",
     bullets: [
-      "SSO-ready team model",
+      "Scale / custom SSO when you need it",
       "Spend budgets and audit exports",
       "Custom retention policies",
       "Dedicated support and white-glove onboarding",

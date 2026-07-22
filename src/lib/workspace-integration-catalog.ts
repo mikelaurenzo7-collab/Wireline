@@ -70,9 +70,9 @@ export const WORKSPACE_INTEGRATION_CATALOG: WorkspaceIntegration[] = [
     id: "twilio",
     label: "Twilio Messaging",
     family: "Messaging",
-    purpose: "SMS, WhatsApp, phone intelligence, and imported number support behind voice agents.",
-    detail: "Text follow-ups and phone-number checks while Vapi owns live PSTN call orchestration.",
-    capabilities: ["SMS", "WhatsApp", "Phone lookup", "Number import"],
+    purpose: "SMS, phone intelligence, and imported number support behind voice agents.",
+    detail: "Text follow-ups and phone-number checks while Vapi owns live PSTN call orchestration. WhatsApp stays private beta until an ONLINE Twilio sender and approved templates are live.",
+    capabilities: ["SMS", "Phone lookup", "Number import"],
     agentScope:
       "Send consented follow-ups, validate phone numbers, and support call-line provisioning.",
     guardrail:
