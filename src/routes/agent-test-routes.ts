@@ -5,6 +5,7 @@ import { z } from "zod";
 import { AppError } from "../lib/api-error";
 import { runStructuredStream } from "../lib/ai-structured";
 import { isRuntimeAvailable } from "../lib/ai-client";
+import { publicAiStreamFailureMessage } from "../lib/ai-stream-errors";
 import { getErrorMessage } from "../lib/server-utils";
 import { drizzle, log } from "../lib/server-context";
 import { authenticateEventStream } from "../middleware/auth";
@@ -187,7 +188,12 @@ router.post(
       } catch (error) {
         if (error instanceof AppError) throw error;
         log.error("agent customer test failed", { agentId, error: getErrorMessage(error) });
-        sse.write("error", { message: "Could not generate the customer test response." });
+        sse.write("error", {
+          message: publicAiStreamFailureMessage(
+            error,
+            "Could not generate the customer test response.",
+          ),
+        });
         sse.end();
       }
     } catch (error) {

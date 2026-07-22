@@ -219,10 +219,10 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
   const terminalReplyRef = useRef(false);
 
   const reset = useCallback(() => {
-    completionRef.current = false;
-    latestReplyRef.current = undefined;
-    streamEstablishedRef.current = false;
-    terminalReplyRef.current = false;
+    // Do not clear completionRef / latestReplyRef / terminalReplyRef here.
+    // Callers (StudioWorkroom) invoke reset() from onComplete/onError while send()
+    // is still draining the SSE body; clearing completionRef falsely triggers
+    // "Stream ended before the reply finished" after a real error/done event.
     setState(INITIAL_STATE);
   }, []);
 
