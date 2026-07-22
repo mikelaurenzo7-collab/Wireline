@@ -1,14 +1,14 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import {
-  emitServerProductEvent,
-  emitServerProductEventOnce,
-  _resetServerProductEventOnceForTests,
-} from "../src/lib/product-event-server";
 
-const logInfo = vi.fn();
-const logWarn = vi.fn();
-const insertValues = vi.fn().mockResolvedValue(undefined);
-const insert = vi.fn(() => ({ values: insertValues }));
+const { logInfo, logWarn, insertValues, insert } = vi.hoisted(() => {
+  const insertValuesFn = vi.fn().mockResolvedValue(undefined);
+  return {
+    logInfo: vi.fn(),
+    logWarn: vi.fn(),
+    insertValues: insertValuesFn,
+    insert: vi.fn(() => ({ values: insertValuesFn })),
+  };
+});
 
 vi.mock("../src/lib/server-context", () => ({
   log: {
@@ -19,6 +19,12 @@ vi.mock("../src/lib/server-context", () => ({
     insert: (...args: unknown[]) => insert(...args),
   },
 }));
+
+import {
+  emitServerProductEvent,
+  emitServerProductEventOnce,
+  _resetServerProductEventOnceForTests,
+} from "../src/lib/product-event-server";
 
 describe("product event server emission", () => {
   beforeEach(() => {

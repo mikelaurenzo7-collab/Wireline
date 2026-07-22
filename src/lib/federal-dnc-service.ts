@@ -141,7 +141,7 @@ export function assertFederalDncForMarketing(): FederalDncMarketingGate {
     allowed: false,
     code: "FEDERAL_DNC_NOT_CONFIGURED",
     message:
-      "Federal DNC scrub is required for marketing outbound. Configure FEDERAL_DNC_API_URL and FEDERAL_DNC_API_KEY before dialing campaigns.",
+      "Marketing dials need Federal DNC scrub enabled on this workspace. Studio and other non-marketing calls still work with your tenant DNC and TCPA rules. Ask your admin to finish Federal DNC setup before campaign dialing.",
   };
 }
 
