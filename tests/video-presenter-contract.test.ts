@@ -71,6 +71,8 @@ describe("video presenter integration", () => {
     expect(preview).toContain("Add live video");
     expect(preview).toContain("live-video-checkout");
     expect(preview).toContain("liveVideoMeteringNote");
+    expect(preview).toContain("catalogReadyForLiveVideo");
+    expect(preview).toContain("Checkout stays hidden until Presence Catalog selection returns");
   });
 
   it("imports catalog listing for the avatar picker route", () => {

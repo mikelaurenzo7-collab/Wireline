@@ -38,6 +38,10 @@ export function buildConnectSrcs(isDev: boolean = false): string {
     "https://api.openai.com",
     "https://api.vapi.ai",
     "wss://api.vapi.ai",
+    // Live video (LiveAvatar / LiveKit): browser SDK signals + media.
+    "https://api.liveavatar.com",
+    "https://*.livekit.cloud",
+    "wss://*.livekit.cloud",
     "https://accounts.google.com",
     "https://oauth2.googleapis.com",
     "https://www.googleapis.com",

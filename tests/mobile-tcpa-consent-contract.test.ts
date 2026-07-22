@@ -57,6 +57,6 @@ describe("mobile TCPA consent contract", () => {
     expect(mobile).not.toContain('default("marketing_or_sales")');
     expect(mobile).toContain("isMarketingCallPurpose");
     expect(mobile).toContain("outboundConsentMetadata");
-    expect(mobile).toContain("evaluateOutboundConsent");
+    expect(mobile).toContain("evaluateOutboundDialGate");
   });
 });

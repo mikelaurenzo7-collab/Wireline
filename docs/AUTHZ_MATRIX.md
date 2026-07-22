@@ -53,8 +53,8 @@
 | `POST /api/twilio-webhook/sms` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/usage-alert` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/vapi-webhook` | Vapi signature validation + agent-scoped routing |
-| `GET /health/voice-status` | Public demo-line voice probe; aggregated metrics only, rate-limited |
-| `POST /voice/metrics` | Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write |
+| `GET /api/health/voice-status` | Public demo-line voice probe; aggregated metrics only, rate-limited |
+| `POST /api/voice/metrics` | Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write |
 
 ## Full Matrix
 
@@ -322,11 +322,11 @@
 | user-preference-guard-routes.ts | POST | `/api/user-preferences` | inline | — | — | Protected |
 | vapi-v2.ts | POST | `/api/vapi-webhook` | — | — | yes | Public (allowlisted) |
 | video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/enable` | inline | — | — | Protected |
+| voice-observability-routes.ts | GET | `/api/health/voice-status` | — | — | yes | Public (allowlisted) |
 | voice-observability-routes.ts | GET | `/api/insights/latency` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/latency/recent` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/voice-reliability` | inline | permission | — | Protected |
-| voice-observability-routes.ts | GET | `/health/voice-status` | — | — | yes | Public (allowlisted) |
-| voice-observability-routes.ts | POST | `/voice/metrics` | — | — | yes | Public (allowlisted) |
+| voice-observability-routes.ts | POST | `/api/voice/metrics` | — | — | yes | Public (allowlisted) |
 | webhook-routes.ts | GET | `/api/webhooks` | inline | — | — | Protected |
 | webhook-routes.ts | POST | `/api/webhooks` | inline | permission | — | Protected |
 | webhook-routes.ts | PATCH | `/api/webhooks/:id` | inline | permission | — | Protected |

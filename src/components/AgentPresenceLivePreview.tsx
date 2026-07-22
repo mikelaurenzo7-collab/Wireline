@@ -19,7 +19,7 @@ import type {
   VideoPresenterConsentStatus,
   VideoPresenterSessionResponse,
 } from "../lib/video-presenter/types";
-import AgentPresenceAvatarPicker from "./AgentPresenceAvatarPicker";
+import AgentPresenceAvatarPicker, { hasPresenceCatalogPick } from "./AgentPresenceAvatarPicker";
 import CustomPresenceConsentPanel from "./video-presenter/CustomPresenceConsentPanel";
 import AgentPresenceSlot, { AgentPresenceMeta } from "./AgentPresenceSlot";
 import LiveVideoPresenter, { type LiveVideoPresenterHandle } from "./LiveVideoPresenter";
@@ -246,13 +246,20 @@ export default function AgentPresenceLivePreview({
   const platformConfigured = presenterState?.platform.configured ?? false;
   const addon = presenterState?.addon;
   const liveVideoEnabled = presenter?.provider !== "synthetic" && presenter?.status !== "disabled";
-  const addonPurchasable = addon?.addonOffered && addon?.billingEntitled;
+  const hasCatalogFace = hasPresenceCatalogPick(
+    presenter,
+    presenterState?.platform.defaultAvatarId ?? null,
+  );
+  const catalogReadyForLiveVideo = hasCatalogFace;
+  const addonPurchasable =
+    catalogReadyForLiveVideo && addon?.addonOffered && addon?.billingEntitled;
   const canCheckoutAddon =
+    catalogReadyForLiveVideo &&
     addon?.addonOffered &&
     addon?.liveVideoCheckoutAvailable &&
     !addon?.liveVideoAddonEnabled &&
     !addon?.billingEntitled;
-  const upgradeRequired = addon?.upgradeRequired ?? false;
+  const upgradeRequired = catalogReadyForLiveVideo && (addon?.upgradeRequired ?? false);
   const hasVoice = presenterState?.hasVoice ?? false;
   const statusCopy =
     presenter && videoPresenterStatusMessage(presenter, platformConfigured, isBusinessAgent);
@@ -350,14 +357,15 @@ export default function AgentPresenceLivePreview({
           <WiredEyebrow>Add-on</WiredEyebrow>
           <p className="mt-2 text-sm font-medium text-foreground">Live video presence</p>
           <p className="mt-1 max-w-[52ch] text-xs leading-relaxed text-muted-foreground">
-            {liveVideoAddonPitch()}{" "}
-            {presenter?.chosenAvatarId
-              ? "Your catalog face is saved — enable this to stream it on your site and in preview."
-              : "Pick a catalog face above, then enable this when you want photoreal streaming."}
+            {catalogReadyForLiveVideo
+              ? `${liveVideoAddonPitch()} Your catalog face is saved — enable this to stream it on your site and in preview.`
+              : "Live video stays off while the Presence Catalog is paused. Keep using Wireline faces in Studio; checkout unlocks once a curated catalog face is available for your workspace."}
           </p>
-          <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground/90">
-            {liveVideoMeteringNote()}
-          </p>
+          {catalogReadyForLiveVideo ? (
+            <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground/90">
+              {liveVideoMeteringNote()}
+            </p>
+          ) : null}
           {addonPurchasable ? (
             <button
               type="button"
@@ -387,9 +395,13 @@ export default function AgentPresenceLivePreview({
             >
               Upgrade to unlock live video
             </Link>
-          ) : (
+          ) : catalogReadyForLiveVideo ? (
             <p className="mt-3 text-xs text-muted-foreground">
               Contact Wireline to enable this add-on on your workspace.
+            </p>
+          ) : (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Checkout stays hidden until Presence Catalog selection returns.
             </p>
           )}
         </div>
