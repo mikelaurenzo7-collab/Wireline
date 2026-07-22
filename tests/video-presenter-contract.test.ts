@@ -62,6 +62,13 @@ describe("video presenter integration", () => {
   });
 
   it("offers live video as an explicit opt-in add-on", () => {
+    const entitlements = source("src/lib/video-presenter/live-video-entitlements.ts");
+    expect(entitlements).toContain("WIRELINE_LIVE_VIDEO_CATALOG_READY");
+    expect(entitlements).toContain(
+      "addonOffered && workspaceFlag && stripeActive && settingsActive && onPaidPlan",
+    );
+    expect(entitlements).not.toContain("workspaceFlag ||");
+
     const routes = source("src/routes/video-presenter-routes.ts");
     expect(routes).toContain("/video-presenter/enable");
     expect(source("src/routes/video-presenter-routes-base.ts")).toContain(
@@ -108,6 +115,9 @@ describe("video presenter integration", () => {
     const billing = source("src/routes/billing-routes.ts");
     expect(billing).toContain("/billing/live-video-checkout");
     expect(billing).toContain("live_video_addon");
+    expect(billing).toContain("LIVE_VIDEO_CATALOG_UNAVAILABLE");
+    expect(billing).toContain("LIVE_VIDEO_BASE_PLAN_REQUIRED");
+    expect(billing).toContain("automatic_tax: { enabled: true }");
     expect(source("scripts/lib/stripe-founder-catalog.mjs")).toContain(
       "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
     );
