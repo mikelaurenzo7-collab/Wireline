@@ -10,6 +10,8 @@ describe("authenticated modal lifecycle contract", () => {
     const focusTrap = source("src/lib/use-modal-focus-trap.ts");
 
     expect(focusTrap).toContain("previouslyFocused");
+    expect(focusTrap).toContain("activeFocusTraps");
+    expect(focusTrap).toContain("isTopmostTrap");
     expect(focusTrap).toContain("document.contains(previouslyFocused)");
     expect(focusTrap).toContain('document.addEventListener("keydown", handleKey, true)');
     expect(focusTrap).toContain('event.key === "Escape"');
@@ -35,6 +37,8 @@ describe("authenticated modal lifecycle contract", () => {
       "src/components/onboarding/PostCreateActivationWizard.tsx",
       "src/components/PhoneAgentBlueprint.tsx",
       "src/pages/TeamSettings.tsx",
+      "src/components/CommandBar.tsx",
+      "src/components/PageShell.tsx",
     ];
 
     for (const path of customDialogs) {
@@ -43,7 +47,7 @@ describe("authenticated modal lifecycle contract", () => {
       expect(component, path).toContain("useModalFocusTrap");
       expect(component, path).toContain('role="dialog"');
       expect(component, path).toContain('aria-modal="true"');
-      expect(component, path).toContain("aria-labelledby");
+      expect(component, path).toMatch(/aria-(?:label|labelledby)=/);
     }
   });
 
