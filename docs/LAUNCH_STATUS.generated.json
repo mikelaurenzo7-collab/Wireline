@@ -1,43 +1,24 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-21T22:38:45.000Z",
+  "generated_at": "2026-07-22T03:58:36.330Z",
   "launch_decision": "NO-GO",
   "blockers": [
     "source_branch_not_main",
     "launch_readiness_below_100",
     "twilio_prepaid_balance_below_150",
-    "twilio_usage_triggers_missing",
+    "production_commit_mismatch",
     "readiness:FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY"
   ],
   "source": {
-    "branch": "codex/public-self-serve-launch-readiness-2026-07-21",
-    "commit": "c67ce5e5df703826a6b63fdeff31bb1c1efe18e9",
-    "origin_main_ahead": 1,
+    "branch": "cursor/launch-strategic-wins-bcbf",
+    "commit": "33102af19f39f0cc9264f90cb00bebc6860b0359",
+    "origin_main_ahead": 4,
     "origin_main_behind": 0,
     "worktree_clean": true
   },
   "production": {
-    "status": "ready",
-    "deployment_id": "dpl_HCT9hgrMCJbP4JYSDaAPtYZ7Wmzz",
-    "production_commit": "5d09a17577a1414502e433924bc4adc2972c4944",
-    "environment_audit": {
-      "record_count": 103,
-      "unique_key_count": 95,
-      "production_record_count": 95,
-      "preview_record_count": 94,
-      "development_record_count": 75,
-      "duplicate_keys": [
-        "WIRELINE_LAUNCH_DEMO_MODE",
-        "GEMINI_API_KEY",
-        "FEDERAL_DNC_PROVIDER",
-        "FEDERAL_DNC_API_URL",
-        "FEDERAL_DNC_API_KEY",
-        "APNS_ENV"
-      ],
-      "overlapping_duplicate_keys": [],
-      "parity_gaps": [],
-      "potentially_unencrypted_secret_keys": []
-    }
+    "status": "unknown",
+    "reason": "Vercel read credentials not supplied"
   },
   "live_checks": {
     "readiness": {
@@ -99,8 +80,25 @@
     "twilio": {
       "status": "reachable",
       "prepaid_balance_usd": 23.664,
-      "usage_trigger_count": 0,
-      "usage_triggers": []
+      "usage_trigger_count": 2,
+      "usage_triggers": [
+        {
+          "sid": "UT0b4f2ad0a52443399961676aa80b9439",
+          "recurring": "daily",
+          "usage_category": "totalprice",
+          "trigger_by": "price",
+          "trigger_value": "25",
+          "callback_url": "https://trywireline.com/api/twilio-webhook/usage-alert"
+        },
+        {
+          "sid": "UTb93a09c6605e475e953f940a845efa0a",
+          "recurring": "monthly",
+          "usage_category": "totalprice",
+          "trigger_by": "price",
+          "trigger_value": "200",
+          "callback_url": "https://trywireline.com/api/twilio-webhook/usage-alert"
+        }
+      ]
     }
   },
   "runtime_policy": {
