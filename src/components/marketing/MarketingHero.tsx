@@ -1,7 +1,8 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useEffect, type ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { MARKETING_VOICE } from "../../lib/product-copy";
 import { cn } from "../../lib/utils";
 
@@ -47,6 +48,23 @@ export default function MarketingHero({
 }: MarketingHeroProps) {
   const actions = [primaryAction, secondaryAction].filter(Boolean) as HeroAction[];
   const isHomeHero = typeof title === "string" && title === MARKETING_VOICE.headline;
+
+  useEffect(() => {
+    if (!isHomeHero) return;
+    emitProductEventOnce({
+      event: "landing_viewed",
+      surface: "marketing_web",
+      metadata: { path: window.location.pathname || "/", scope: "home_hero" },
+    });
+  }, [isHomeHero]);
+
+  const trackPrimaryCta = (label: string, to: string) => {
+    emitProductEvent({
+      event: "landing_primary_cta_clicked",
+      surface: "marketing_web",
+      metadata: { label, to, source: "marketing_hero" },
+    });
+  };
 
   return (
     <section
@@ -135,6 +153,9 @@ export default function MarketingHero({
                     key={`${action.to}-${action.label}`}
                     href={action.to}
                     className={actionClassName}
+                    onClick={
+                      primary ? () => trackPrimaryCta(action.label, action.to) : undefined
+                    }
                   >
                     {children}
                   </a>
@@ -143,6 +164,9 @@ export default function MarketingHero({
                     key={`${action.to}-${action.label}`}
                     to={action.to}
                     className={actionClassName}
+                    onClick={
+                      primary ? () => trackPrimaryCta(action.label, action.to) : undefined
+                    }
                   >
                     {children}
                   </Link>

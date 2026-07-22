@@ -34,6 +34,7 @@ describe("product voice cohesion", () => {
     );
     expect(MARKETING_VOICE.eyebrow).toBeNull();
     expect(MARKETING_VOICE.headline).toBe("Your next AI employee");
+    expect(MARKETING_VOICE.primaryCta).toBe("Build your AI Voice Employee");
     expect(MARKETING_VOICE.subline).toBe(
       "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.",
     );
@@ -111,6 +112,7 @@ describe("product voice cohesion", () => {
     const extension = read("apps/browser-extension/panel/index.html");
     expect(landing).toContain("MARKETING_VOICE.headline");
     expect(landing).toContain("MARKETING_VOICE.subline");
+    expect(landing).toContain("MARKETING_VOICE.primaryCta");
     expect(landing).toContain("AGENT_DIRECTION_MODES");
     expect(landing).toContain("HERO_LOOP");
     expect(workroom).toContain("WORKSPACE_VOICE");

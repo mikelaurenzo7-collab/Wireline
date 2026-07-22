@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
+import { emitProductEvent } from "../../lib/product-event-client";
 import { cn } from "../../lib/utils";
 
 type Props = {
@@ -57,6 +58,13 @@ export default function MarketingStickyCta({
           <Link
             to={href}
             className="marketing-btn-primary min-h-[48px] min-w-0 flex-[1.25] gap-1.5 px-3 text-sm"
+            onClick={() =>
+              emitProductEvent({
+                event: "landing_primary_cta_clicked",
+                surface: "marketing_web",
+                metadata: { label, to: href, source: "marketing_sticky_cta" },
+              })
+            }
           >
             <span>{label}</span>
             <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />

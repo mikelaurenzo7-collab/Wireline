@@ -20,6 +20,7 @@ import { ShadButton } from "./ui/shadcn/ShadButton";
 import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
 import { BRAND } from "../constants/brand-colors";
 import { PRODUCT_VERSATILITY } from "../lib/product-copy";
+import { emitProductEvent } from "../lib/product-event-client";
 import {
   CONVERSATION_BALANCE_COPY,
   CONVERSATION_BALANCE_PRESETS_USD,
@@ -161,6 +162,10 @@ export default function StripeBillingCard() {
     setCreditBusy(amountUsd);
     setError(null);
     try {
+      emitProductEvent({
+        event: "conversation_balance_checkout_started",
+        metadata: { amount_usd: amountUsd, source: "stripe_billing_card" },
+      });
       const r = await authFetch("/api/conversation-balance/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

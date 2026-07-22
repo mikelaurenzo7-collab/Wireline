@@ -158,9 +158,29 @@ export default function PostCreateActivationWizard({
 
   function finish() {
     setStep("complete");
+    emitProductEventOnce({
+      event: "agent_launch_completed",
+      agentId: payload.agentId,
+      metadata: {
+        has_line: Boolean(phoneNumber),
+        test_started: testStarted,
+        source: "post_create_wizard",
+      },
+    });
   }
 
   function dismiss() {
+    if (step === "complete") {
+      emitProductEventOnce({
+        event: "agent_launch_completed",
+        agentId: payload.agentId,
+        metadata: {
+          has_line: Boolean(phoneNumber),
+          test_started: testStarted,
+          source: "post_create_wizard_dismiss",
+        },
+      });
+    }
     setPostSignupFlowActive(false);
     clearPostCreateWizard();
     onClose();

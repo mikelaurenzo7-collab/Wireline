@@ -93,6 +93,10 @@ export function emitProductEvent(
     dispatched = true;
   }
 
+  // Marketing milestones are client-analytics only. Still count them as
+  // dispatched so once-guards work when GTM/Plausible are not loaded.
+  if (event.surface === "marketing_web") return true;
+
   return postAuthenticatedProductEvent(event) || dispatched;
 }
 

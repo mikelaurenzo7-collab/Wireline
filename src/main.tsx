@@ -4,7 +4,8 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
 import { isLikelyStaleChunkError, requestStaleChunkReload } from "./lib/chunk-recovery";
-import { captureSignupIntentFromLocation } from "./lib/signup-intent";
+import { emitProductEventOnce } from "./lib/product-event-client";
+import { captureSignupIntentFromLocation, hasSignupIntent } from "./lib/signup-intent";
 import {
   clearDomReconciliationReloadGuardAfterStableRender,
   isDomReconciliationError,
@@ -19,7 +20,21 @@ import "./index.css";
 if (typeof window !== "undefined") {
   // Preserve campaign and plan intent before a public landing-page CTA changes
   // the URL. Signup can then persist first-touch attribution server-side.
-  captureSignupIntentFromLocation();
+  const signupIntent = captureSignupIntentFromLocation();
+  if (hasSignupIntent(signupIntent)) {
+    emitProductEventOnce({
+      event: "signup_intent_captured",
+      surface: "marketing_web",
+      planId: signupIntent.preferredPlanId,
+      metadata: {
+        wedge: signupIntent.signupWedge ?? null,
+        utm_source: signupIntent.utmSource ?? null,
+        utm_medium: signupIntent.utmMedium ?? null,
+        utm_campaign: signupIntent.utmCampaign ?? null,
+        scope: "bootstrap",
+      },
+    });
+  }
 
   window.addEventListener("error", (event) => {
     const error = event.error instanceof Error ? event.error : event.message;
