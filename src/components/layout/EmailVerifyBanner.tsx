@@ -6,7 +6,8 @@
  *   1. unverified, transport up   → "Check your inbox · Resend"
  *   2. unverified, last send failed → "Mail transport down · Retry"
  *
- * Verified users see nothing (component returns null).
+ * Verified users see nothing (component returns null). Session dismiss
+ * hides the nag for this browser tab without clearing the requirement.
  *
  * Reads verification state from /api/billing/status's `email_verified`
  * flag (added in the same commit). Resend hits POST
@@ -15,7 +16,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Mail, Loader2, Check, AlertTriangle } from "lucide-react";
+import { Mail, Loader2, Check, AlertTriangle, X } from "lucide-react";
 import { authFetch } from "../../lib/api";
 import { cn } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
@@ -24,9 +25,18 @@ import type { BillingStatusResponse } from "../../types/api";
 
 type SendOutcome = "idle" | "pending" | "sent" | "no-transport" | "error";
 
+const DISMISS_SESSION_KEY = "wireline.email_verify_banner.dismissed";
+
 export default function EmailVerifyBanner() {
   const [verified, setVerified] = useState<boolean | null>(null);
   const [outcome, setOutcome] = useState<SendOutcome>("idle");
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return sessionStorage.getItem(DISMISS_SESSION_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
   const { success } = useToast();
 
   useEffect(() => {
@@ -71,7 +81,7 @@ export default function EmailVerifyBanner() {
     }
   }, [success]);
 
-  if (verified !== false) return null;
+  if (verified !== false || dismissed) return null;
 
   async function resend() {
     setOutcome("pending");
@@ -88,6 +98,15 @@ export default function EmailVerifyBanner() {
     } catch {
       setOutcome("error");
     }
+  }
+
+  function dismissForSession() {
+    try {
+      sessionStorage.setItem(DISMISS_SESSION_KEY, "1");
+    } catch {
+      // sessionStorage may be blocked; still hide for this mount.
+    }
+    setDismissed(true);
   }
 
   // Informational — trial urgency uses wl-banner--warn in TrialBanner.
@@ -137,26 +156,40 @@ export default function EmailVerifyBanner() {
             </>
           ) : (
             <>
-              <strong>Verify your email</strong> to secure your account and continue setup. A live
-              plan and compliant number are still required before outbound dialing.
+              <strong>Verify your email</strong> to secure your account.{" "}
+              {"A live plan and compliant number are still required before outbound dialing."}
             </>
           )}
         </span>
       </div>
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        disableAnimations
-        onClick={resend}
-        disabled={buttonDisabled}
-        className={cn(
-          "touch-press hover:scale-[1.02] w-full shrink-0 self-stretch app-micro-cta h-auto after:hidden shadow-none sm:w-auto sm:self-center",
-          outcome === "sent" && "opacity-70",
-        )}
-      >
-        {buttonLabel}
-      </Button>
+      <div className="flex w-full shrink-0 flex-col gap-2 self-stretch sm:w-auto sm:flex-row sm:items-center sm:self-center">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disableAnimations
+          onClick={resend}
+          disabled={buttonDisabled}
+          className={cn(
+            "touch-press hover:scale-[1.02] w-full shrink-0 app-micro-cta h-auto after:hidden shadow-none sm:w-auto",
+            outcome === "sent" && "opacity-70",
+          )}
+        >
+          {buttonLabel}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disableAnimations
+          onClick={dismissForSession}
+          aria-label="Dismiss email verification reminder for this session"
+          className="touch-press w-full shrink-0 gap-1.5 text-muted-foreground sm:w-auto"
+        >
+          <X className="size-3.5" aria-hidden="true" />
+          Dismiss
+        </Button>
+      </div>
     </motion.div>
   );
 }

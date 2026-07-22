@@ -85,7 +85,7 @@ describe("authenticated agent flow", () => {
     expect(createDialog).toContain("{language.setupLabel}");
     // Fast Start is a single brief-first screen; voice, phone, and testing
     // are deliberately deferred into Studio.
-    expect(createDialog).toContain("Voice, phone, and testing come next in Studio.");
+    expect(createDialog).toContain("I&apos;ll explore first");
     expect(createDialog).not.toContain("VoicePickerField");
     expect(createDialog).not.toContain("CreateAgentCatalogFacePicker");
     expect(productCopy).toContain('createHeadline: "Build your best employee."');

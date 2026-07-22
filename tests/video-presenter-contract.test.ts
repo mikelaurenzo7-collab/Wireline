@@ -25,7 +25,7 @@ describe("video presenter integration", () => {
 
   it("keeps Fast Start free of avatar and presenter pickers", () => {
     const dialog = source("src/components/CreateAgentDialog.tsx");
-    expect(dialog).toContain("Voice, phone, and testing come next in Studio.");
+    expect(dialog).toContain("I&apos;ll explore first");
     expect(dialog).not.toMatch(/CreateAgentCatalogFacePicker|AgentPresenceAvatarPicker|avatar/i);
   });
 

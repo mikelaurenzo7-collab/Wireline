@@ -13,7 +13,7 @@ describe("Fast Start step flow contract", () => {
     expect(createDialog).toContain('aria-label="Use case"');
     expect(createDialog).toContain('aria-label="Quick briefs"');
     expect(createDialog).toContain("language.createCta");
-    expect(createDialog).toContain("Voice, phone, and testing come next in Studio.");
+    expect(createDialog).toContain("I&apos;ll explore first");
     expect(createDialog).not.toContain("useState<1 | 2>(1)");
     expect(createDialog).not.toMatch(/Step [12] ·/);
     expect(createDialog).not.toContain("continueToVoice");

@@ -48,7 +48,7 @@ function dayGreeting(date = new Date()) {
 }
 
 function agentReadiness(agent: WorkspaceAgentSummary) {
-  return agent.phone_number ? "Live" : "Setup needed";
+  return agent.phone_number ? "Live" : "Needs setup";
 }
 
 function metricRows(

@@ -17,7 +17,7 @@ describe("Fast Start native voice contract", () => {
     expect(createDialog).not.toMatch(/authFetch\("\/api\/voices"\)/);
     expect(createDialog).not.toMatch(/playVoicePreview|ElevenLabs|xAI/);
     expect(createDialog).not.toMatch(/VoicePickerField|VoiceGallery/);
-    expect(createDialog).toContain("Voice, phone, and testing come next in Studio.");
+    expect(createDialog).toContain("I&apos;ll explore first");
   });
 
   it("resolves every new employee to a managed phone voice", () => {
