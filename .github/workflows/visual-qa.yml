@@ -24,13 +24,15 @@ jobs:
       PORT: "3000"
       APP_URL: http://127.0.0.1:3000
       CORS_ORIGINS: http://127.0.0.1:3000
+      # The visual server imports the DB layer but public-route capture never connects.
+      POSTGRES_URL: "postgresql://wireline:wireline@127.0.0.1:5432/wireline"
       WIRELINE_VISUAL_BASE_URL: http://127.0.0.1:3000
       WIRELINE_VISUAL_OUTPUT_DIR: artifacts/visual-qa-pr
       WIRELINE_VISUAL_VIEWPORTS: phone-360,phone-390,tablet-768,laptop-1024,laptop-1280,desktop-1440
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
@@ -69,7 +71,7 @@ jobs:
 
       - name: Upload artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wireline-visual-qa-pr
           path: artifacts/visual-qa-pr
