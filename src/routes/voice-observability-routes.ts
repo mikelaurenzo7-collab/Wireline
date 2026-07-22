@@ -42,10 +42,10 @@ const MetricsBodySchema = z.object({
   latencyP95Ms: z.number().int().min(0).optional(),
 });
 
-router.post("/voice/metrics", async (req: Request, res: Response) => {
+router.post("/api/voice/metrics", async (req: Request, res: Response) => {
   try {
     if (!vapiWebhookSecretOk(req)) {
-      log.warn("Rejected /voice/metrics with bad or missing Vapi secret");
+      log.warn("Rejected /api/voice/metrics with bad or missing Vapi secret");
       throw AppError.fromHttpStatus(401, "Unauthorized");
     }
 
@@ -73,7 +73,7 @@ router.post("/voice/metrics", async (req: Request, res: Response) => {
     res.json({ recorded: true });
   } catch (err) {
     if (err instanceof AppError) throw err;
-    log.error("POST /voice/metrics failed", {
+    log.error("POST /api/voice/metrics failed", {
       error: err instanceof Error ? err.message : String(err),
     });
     throw AppError.fromHttpStatus(500, "Failed to record metrics");
@@ -81,7 +81,7 @@ router.post("/voice/metrics", async (req: Request, res: Response) => {
 });
 
 // GET /api/health/voice-status — public probe for demo line health
-router.get("/health/voice-status", async (_req: Request, res: Response) => {
+router.get("/api/health/voice-status", async (_req: Request, res: Response) => {
   try {
     const window = await computeVoiceHealthWindow({ demoOnly: true, windowMinutes: 5 });
     const status = window.healthy ? "healthy" : "degraded";
@@ -109,7 +109,7 @@ router.get("/health/voice-status", async (_req: Request, res: Response) => {
     });
   } catch (err) {
     if (err instanceof AppError) throw err;
-    log.error("GET /health/voice-status failed", {
+    log.error("GET /api/health/voice-status failed", {
       error: err instanceof Error ? err.message : String(err),
     });
     // Fail open — don't break deploys because of observability glitches

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
@@ -48,5 +50,14 @@ describe("managed PSTN voice model policy", () => {
     });
     expect(selection.provider).toBe(VAPI_TENANT_DEFAULT_PROVIDER);
     expect(selection.fallbackModels).toEqual([VAPI_VOICE_FALLBACK_MODEL]);
+  });
+
+  it("retries rejected Gemini outbound models through OpenAI, not Gemini again", () => {
+    const vapi = readFileSync(resolve(process.cwd(), "src/lib/vapi-client.ts"), "utf8");
+    expect(vapi).toContain("retrying with OpenAI voice fallback");
+    expect(vapi).toContain("voiceSelection.fallbackModels.find");
+    expect(vapi).not.toMatch(
+      /provider: VAPI_VOICE_FALLBACK_PROVIDER,\s*model: VAPI_VOICE_FALLBACK_MODEL/,
+    );
   });
 });

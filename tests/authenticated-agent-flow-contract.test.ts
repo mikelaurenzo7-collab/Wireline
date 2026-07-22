@@ -233,7 +233,8 @@ describe("authenticated agent flow", () => {
 
     expect(preview).toContain("CustomPresenceConsentPanel");
     expect(preview).toContain("consentStatus");
-    expect(panel).toContain("Submit for review");
-    expect(panel).toContain("rights to use this likeness");
+    expect(panel).toContain("Custom likeness review is coming soon");
+    expect(panel).toContain("confirm rights");
+    expect(panel).not.toContain("Submit for review");
   });
 });

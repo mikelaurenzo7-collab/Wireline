@@ -8,32 +8,40 @@ describe("outbound compliance contract", () => {
   it("requires explicit callPurpose on web and mobile direct dial APIs", () => {
     const web = read("src/routes/outbound-routes.ts");
     const mobile = read("src/routes/mobile-routes.ts");
+    const gate = read("src/lib/outbound-dial-gate.ts");
 
     for (const source of [web, mobile]) {
       expect(source).toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES)");
       expect(source).not.toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES).optional()");
       expect(source).not.toContain('default("marketing_or_sales")');
       expect(source).toContain("isMarketingCallPurpose(callPurpose)");
-      expect(source).toContain("assertFederalDncForMarketing()");
+      expect(source).toContain("evaluateOutboundDialGate({");
       expect(source).toContain("outboundConsentMetadata({");
-      expect(source).toContain("isDncBlocked(req.user.id, customerNumber)");
-      expect(source).toContain("isFederalDncListed(customerNumber)");
-      expect(source).toContain("is_federal_dnc: isFederalDnc");
       expect(source).toContain("tcpaBlocked: true");
+      expect(source).toContain("DUPLICATE_DIAL_SUPPRESSED");
+      expect(source).toContain("lastCalledAt: new Date()");
     }
+
+    expect(gate).toContain("assertFederalDncForMarketing()");
+    expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
+    expect(gate).toContain("isFederalDncListed(opts.phone)");
+    expect(gate).toContain("is_marketing_call: isMarketingCall");
   });
 
   it("fails closed when federal DNC vendor is unconfigured for marketing dials on web and mobile", () => {
     const web = read("src/routes/outbound-routes.ts");
     const mobile = read("src/routes/mobile-routes.ts");
+    const gate = read("src/lib/outbound-dial-gate.ts");
 
     for (const source of [web, mobile]) {
-      expect(source).toMatch(
-        /if \(isMarketingCallPurpose\(callPurpose\)\)[\s\S]*?assertFederalDncForMarketing\(\)/,
-      );
-      expect(source).toContain("federalGate.allowed");
+      expect(source).toContain("isMarketingCall: marketing");
+      expect(source).toContain('gate.reason === "federal_dnc_unconfigured"');
       expect(source).toContain("status(503)");
     }
+
+    expect(gate).toContain("if (isMarketingCall)");
+    expect(gate).toContain("assertFederalDncForMarketing()");
+    expect(gate).toContain('reason: "federal_dnc_unconfigured"');
   });
 
   it("keeps consent metadata durable and source-specific", () => {
@@ -60,8 +68,8 @@ describe("outbound compliance contract", () => {
     expect(outbound).toContain('source: "bulk"');
     expect(outbound).toContain("has_express_written_consent: req.body.has_express_written_consent");
     expect(campaignDialer).toContain("evaluateOutboundDialGate");
-    expect(dialGate).toContain("is_marketing_call: true");
-    expect(dialGate).toContain("has_express_written_consent === true");
+    expect(dialGate).toContain("is_marketing_call: isMarketingCall");
+    expect(dialGate).toContain("hasExpressWrittenConsent");
     expect(campaignDialer).toContain('call_purpose: "marketing_or_sales"');
     expect(dialGate).toContain("isFederalDncListed");
     expect(campaignDialer).toContain('source: "campaign"');

@@ -9,15 +9,13 @@ import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { parseFormData } from "../lib/form-validators";
 import { OutboundBulkSchema } from "../lib/form-validators";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
-import { isDncBlocked } from "../lib/compliance";
-import { evaluateOutboundConsent } from "../lib/tcpa-consent";
-import { isFederalDncListed, assertFederalDncForMarketing } from "../lib/federal-dnc-service";
 import {
   OUTBOUND_CALL_PURPOSES,
   isMarketingCallPurpose,
   normalizedExpressConsent,
   outboundConsentMetadata,
 } from "../lib/outbound-call-purpose";
+import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import { placeOutboundCall } from "../lib/vapi-client";
 import { SentryEvents } from "../lib/sentry-events";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
@@ -163,53 +161,61 @@ router.post(
         consentLeadId,
       } = req.body;
       const expressConsent = normalizedExpressConsent({ callPurpose, hasExpressWrittenConsent });
+      const marketing = isMarketingCallPurpose(callPurpose);
 
-      if (isMarketingCallPurpose(callPurpose)) {
-        const federalGate = assertFederalDncForMarketing();
-        if (!federalGate.allowed) {
-          return res.status(503).json({
-            code: federalGate.code,
-            error: federalGate.message,
-          });
-        }
-        if (expressConsent && !consentSource && !consentLeadId) {
-          return res.status(400).json({
-            code: "CONSENT_ARTIFACT_REQUIRED",
-            error:
-              "Marketing calls with express written consent require consentSource or consentLeadId for auditability.",
-          });
-        }
-      }
-
-      // DNC compliance check — block calls to numbers on the Do Not Call list.
-      if (await isDncBlocked(req.user.id, customerNumber)) {
-        log.warn("Outbound dial blocked by DNC list", { customerNumber });
-        return res.status(403).json({
-          code: "FORBIDDEN",
-          error: "This number is on the Do Not Call list and cannot be dialed.",
-          dncBlocked: true,
+      if (marketing && expressConsent && !consentSource && !consentLeadId) {
+        return res.status(400).json({
+          code: "CONSENT_ARTIFACT_REQUIRED",
+          error:
+            "Marketing calls with express written consent require consentSource or consentLeadId for auditability.",
         });
       }
 
-      // TCPA pre-call consent gate.
-      const isFederalDnc = await isFederalDncListed(customerNumber);
-      const tcpaDecision = evaluateOutboundConsent({
+      const gate = await evaluateOutboundDialGate({
+        userId: req.user.id,
         phone: customerNumber,
-        is_internal_dnc: false, // already checked above
-        is_federal_dnc: isFederalDnc,
-        is_marketing_call: isMarketingCallPurpose(callPurpose),
-        has_express_written_consent: expressConsent,
+        isMarketingCall: marketing,
+        hasExpressWrittenConsent: expressConsent,
+        metadata: { has_express_written_consent: expressConsent },
       });
-      if (!tcpaDecision.allowed) {
-        log.warn("Outbound dial blocked by TCPA consent gate", {
+      if (!gate.allowed) {
+        if (gate.reason === "federal_dnc_unconfigured") {
+          return res.status(503).json({
+            code: gate.federalDncCode || "FEDERAL_DNC_UNCONFIGURED",
+            error: gate.federalDncMessage || "Federal DNC is not configured for marketing dials.",
+          });
+        }
+        if (gate.reason === "blocked_internal_dnc") {
+          log.warn("Outbound dial blocked by DNC list", { customerNumber });
+          return res.status(403).json({
+            code: "FORBIDDEN",
+            error: "This number is on the Do Not Call list and cannot be dialed.",
+            dncBlocked: true,
+          });
+        }
+        if (gate.reason === "blocked_tcpa") {
+          const tcpa = gate.tcpaDecision;
+          log.warn("Outbound dial blocked by TCPA consent gate", {
+            customerNumber,
+            abort_reason: tcpa?.abort_reason,
+          });
+          return res.status(403).json({
+            code: "FORBIDDEN",
+            error: tcpa?.disclosure_script || "Call blocked by TCPA consent rules.",
+            tcpaBlocked: true,
+            tcpa,
+          });
+        }
+        log.warn("Outbound dial blocked by duplicate guard", {
           customerNumber,
-          abort_reason: tcpaDecision.abort_reason,
+          reason: gate.reason,
         });
-        return res.status(403).json({
-          code: "FORBIDDEN",
-          error: tcpaDecision.disclosure_script || "Call blocked by TCPA consent rules.",
-          tcpaBlocked: true,
-          tcpa: tcpaDecision,
+        return res.status(409).json({
+          code: "DUPLICATE_DIAL_SUPPRESSED",
+          error:
+            "This number was already dialed in the last 24 hours. Wait before dialing again, or schedule a callback.",
+          reason: gate.reason,
+          status: gate.status,
         });
       }
 
@@ -235,6 +241,7 @@ router.post(
         callId: result.callId,
         status: "Dialing",
         attempts: 1,
+        lastCalledAt: new Date(),
         metadata: outboundConsentMetadata({
           callPurpose,
           hasExpressWrittenConsent,

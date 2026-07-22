@@ -80,8 +80,19 @@ describe("outbound launch safety", () => {
     expect(intake).toContain("evaluateOutboundDialGate");
     expect(intake).toMatch(/evaluateOutboundDialGate[\s\S]*placeOutboundCall/s);
     const gate = read("src/lib/outbound-dial-gate.ts");
-    expect(gate).toContain("has_express_written_consent === true");
-    expect(gate).toContain("is_marketing_call: true");
+    expect(gate).toContain("hasExpressWrittenConsent");
+    expect(gate).toContain("is_marketing_call: isMarketingCall");
+    expect(gate).toContain("isMarketingCall?: boolean");
+  });
+
+  it("routes manual web and mobile dials through the shared duplicate/compliance gate", () => {
+    const web = read("src/routes/outbound-routes.ts");
+    const mobile = read("src/routes/mobile-routes.ts");
+    for (const source of [web, mobile]) {
+      expect(source).toContain("evaluateOutboundDialGate({");
+      expect(source).toMatch(/evaluateOutboundDialGate[\s\S]*placeOutboundCall/s);
+      expect(source).toContain("DUPLICATE_DIAL_SUPPRESSED");
+    }
   });
 
   it("charges bulk intake rate limit once with batch cost", () => {

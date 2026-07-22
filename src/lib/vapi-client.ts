@@ -39,8 +39,9 @@ import {
 import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
-  VAPI_VOICE_FALLBACK_MODEL,
   VAPI_VOICE_FALLBACK_PROVIDER,
+  isGeminiModelId,
+  isOpenAIModelId,
   resolveVapiVoiceModelSelection,
 } from "./ai-models";
 
@@ -570,11 +571,19 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
 
     if (!vapiResponse.ok && voiceSelection.provider === "google") {
       const geminiErrorBody = await vapiResponse.text();
-      log.warn("Vapi rejected Gemini outbound model; retrying with configured voice fallback", {
+      const retryModel =
+        voiceSelection.fallbackModels.find((model) => isOpenAIModelId(model)) ||
+        VAPI_TENANT_DEFAULT_MODEL;
+      const retryProvider = isGeminiModelId(retryModel)
+        ? VAPI_VOICE_FALLBACK_PROVIDER
+        : VAPI_TENANT_DEFAULT_PROVIDER;
+      log.warn("Vapi rejected Gemini outbound model; retrying with OpenAI voice fallback", {
         userId,
         agentId,
         customerNumber,
         model: voiceSelection.model,
+        retryProvider,
+        retryModel,
         error: geminiErrorBody.slice(0, 500),
       });
 
@@ -584,8 +593,8 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
           ...(vapiPayload.assistant as Record<string, unknown>),
           model: {
             ...(vapiPayload.assistant.model as Record<string, unknown>),
-            provider: VAPI_VOICE_FALLBACK_PROVIDER,
-            model: VAPI_VOICE_FALLBACK_MODEL,
+            provider: retryProvider,
+            model: retryModel,
           },
         },
       } as any;

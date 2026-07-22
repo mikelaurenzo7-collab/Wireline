@@ -8,6 +8,13 @@
 import { presenterCustomizationMessage } from "../lib/video-presenter/copy";
 import type { AgentVideoPresenterConfig } from "../lib/video-presenter/types";
 
+export function hasPresenceCatalogPick(
+  presenter: Pick<AgentVideoPresenterConfig, "chosenAvatarId"> | null | undefined,
+  workspaceDefaultAvatarId?: string | null,
+): boolean {
+  return Boolean(presenter?.chosenAvatarId || workspaceDefaultAvatarId);
+}
+
 export default function AgentPresenceAvatarPicker({
   presenter,
   platformConfigured,
@@ -20,7 +27,7 @@ export default function AgentPresenceAvatarPicker({
   onUpdated: (next: AgentVideoPresenterConfig) => void;
 }) {
   const customizationNote = presenterCustomizationMessage(presenter);
-  const hasSavedCatalogPick = Boolean(presenter.chosenAvatarId || workspaceDefaultAvatarId);
+  const hasSavedCatalogPick = hasPresenceCatalogPick(presenter, workspaceDefaultAvatarId);
 
   if (!platformConfigured && !hasSavedCatalogPick) return null;
 
