@@ -32,6 +32,7 @@ import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
+import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { Button, EmptyState, Input } from "./atoms";
 import { ScrollArea } from "./ui/shadcn/ScrollArea";
 import { APP_KEYBOARD_SHORTCUTS } from "../constants/navigation";
@@ -209,9 +210,8 @@ export default function CommandBar() {
   const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
   const pendingGoRef = useRef(false);
   const goTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -232,6 +232,8 @@ export default function CommandBar() {
     setIsOpen(false);
     setQuery("");
   }, []);
+
+  useModalFocusTrap(dialogRef, { active: isOpen, onEscape: close });
 
   const execute = useCallback(
     (command: CommandItem) => {
@@ -261,13 +263,6 @@ export default function CommandBar() {
         else setIsOpen(true);
         return;
       }
-      if (event.key === "Escape" && isOpen) {
-        event.preventDefault();
-        clearGoPending();
-        close();
-        return;
-      }
-
       // Chord: g then <key> navigates using APP_KEYBOARD_SHORTCUTS (when not typing).
       if (isOpen || isTextEntryTarget(event.target)) {
         clearGoPending();
@@ -303,18 +298,6 @@ export default function CommandBar() {
   }, [close, isOpen, navigate]);
 
   useEffect(() => {
-    if (isOpen) {
-      restoreFocusRef.current =
-        document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      const frame = requestAnimationFrame(() => inputRef.current?.focus());
-      return () => cancelAnimationFrame(frame);
-    }
-    if (restoreFocusRef.current && document.contains(restoreFocusRef.current)) {
-      restoreFocusRef.current.focus();
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
     if (isOpen) setSelectedIndex(0);
   }, [isOpen, query]);
 
@@ -337,17 +320,6 @@ export default function CommandBar() {
     }
   }
 
-  function onDialogKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
-    if (event.key !== "Tab") return;
-    if (event.target === inputRef.current) {
-      event.preventDefault();
-      closeButtonRef.current?.focus();
-    } else if (event.target === closeButtonRef.current) {
-      event.preventDefault();
-      inputRef.current?.focus();
-    }
-  }
-
   return (
     <AnimatePresence>
       {isOpen ? (
@@ -361,6 +333,7 @@ export default function CommandBar() {
             onMouseDown={close}
           />
           <motion.div
+            ref={dialogRef}
             initial={reduceMotion ? { opacity: 1 } : { scale: 0.98, opacity: 0, y: -12 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={
@@ -376,7 +349,6 @@ export default function CommandBar() {
             aria-labelledby="command-palette-title"
             aria-describedby="command-palette-description"
             data-slot="command-palette"
-            onKeyDown={onDialogKeyDown}
             className="relative w-full max-w-2xl overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card shadow-[var(--wireline-elevation-lg)]"
           >
             <div className="flex items-center gap-3 border-b border-border px-4 py-3 sm:px-5 sm:py-4">
@@ -412,7 +384,6 @@ export default function CommandBar() {
                 ESC
               </kbd>
               <Button
-                ref={closeButtonRef}
                 type="button"
                 variant="ghost"
                 size="icon"
