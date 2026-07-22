@@ -25,6 +25,14 @@ const planById = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan]))
   (typeof STRIPE_PLANS)[number]
 >;
 
+/** Honest annual savings vs paying monthly for 12 months (Starter is 1 month, most tiers 2). */
+function annualSavingsLabel(monthlyUsd: number, annualUsd: number): string | null {
+  if (!(monthlyUsd > 0) || !(annualUsd > 0)) return null;
+  const monthsSaved = Math.max(0, Math.round(12 - annualUsd / monthlyUsd));
+  if (monthsSaved <= 0) return null;
+  return `save ${monthsSaved} month${monthsSaved === 1 ? "" : "s"}`;
+}
+
 const PAID_TIERS = [
   {
     plan: planById.starter,
@@ -315,14 +323,25 @@ export default function Pricing() {
                     </div>
                     {plan.price_usd_annual > 0 ? (
                       <p className="mt-1 text-xs text-muted-foreground">
-                        or ${plan.price_usd_annual}/yr · save 2 months
+                        {(() => {
+                          const savings = annualSavingsLabel(
+                            plan.price_usd_monthly,
+                            plan.price_usd_annual,
+                          );
+                          return savings
+                            ? `or $${plan.price_usd_annual}/yr · ${savings}`
+                            : `or $${plan.price_usd_annual}/yr`;
+                        })()}
                       </p>
                     ) : null}
                     <p className="mt-4 text-sm leading-6 text-muted-foreground">{detail}</p>
                     <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
                       {plan.features.map((feature) => (
                         <li key={feature} className="flex gap-3">
-                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                          <Check
+                            className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                            aria-hidden="true"
+                          />
                           <span>{feature}</span>
                         </li>
                       ))}

@@ -157,7 +157,7 @@ const TRUST_PACK_SECTIONS = [
     items: [
       "Outbound calls require consent checks before dial — marketing calls respect do-not-call posture.",
       "Tenant DNC lists are enforced before expensive PSTN actions.",
-      "Marketing / campaign outbound fails closed until Federal DNC scrub is configured (FEDERAL_DNC_API_URL + FEDERAL_DNC_API_KEY). Non-marketing Studio dials still use tenant DNC + TCPA.",
+      "Marketing and campaign outbound fail closed until Federal DNC scrub is enabled. Studio non-marketing dials still use tenant DNC + TCPA. Operators: register the business, obtain a DNCScrub loginId, then set FEDERAL_DNC_API_URL + FEDERAL_DNC_API_KEY.",
     ],
   },
   {

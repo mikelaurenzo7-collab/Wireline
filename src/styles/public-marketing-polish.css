@@ -35,7 +35,7 @@
 }
 
 .marketing-surface .marketing-hero__title {
-  max-width: 18ch;
+  max-width: min(100%, 28ch);
   margin-inline: auto;
   font-size: clamp(2.75rem, 5.15vw, 4.9rem);
   font-weight: 750;
@@ -45,9 +45,14 @@
   text-wrap: balance;
 }
 
+/* Home hero: keep "YOUR NEXT AI EMPLOYEE" on one line from tablet up.
+   ~21 characters — previous 15ch cap forced a scrunched two-line wrap
+   and left empty gutters on both sides of the first viewport. */
 .marketing-surface .wireline-home-hero .marketing-hero__title {
-  max-width: 15ch;
-  font-size: clamp(3rem, 6vw, 5.6rem);
+  max-width: min(100%, 24ch);
+  font-size: clamp(2.55rem, 4.2vw + 1.1rem, 4.85rem);
+  letter-spacing: -0.035em;
+  text-wrap: nowrap;
 }
 
 .marketing-surface .marketing-hero__description {
@@ -264,10 +269,12 @@
   .marketing-surface .marketing-hero__title,
   .marketing-surface .wireline-home-hero .marketing-hero__title {
     width: 100%;
-    max-width: 14ch;
+    max-width: 11ch;
     font-size: clamp(2.35rem, 11.5vw, 3.35rem) !important;
     line-height: 0.96;
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
+    text-wrap: balance;
+    white-space: normal;
   }
 
   .marketing-surface.wl-features-page .marketing-hero__title {
