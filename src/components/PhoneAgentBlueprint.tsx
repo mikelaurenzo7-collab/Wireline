@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronRight, Loader2, PhoneCall, Sparkles } from "lucide-react";
 import { authFetch, safeJson } from "../lib/api";
+import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
+import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import {
   AGENT_DIRECTION_GUIDANCE,
   GUIDED_AGENT_LEARNING_LOOP,
@@ -315,6 +317,15 @@ export default function PhoneAgentBlueprint({
   const [draft, setDraft] = useState<BlueprintDraft>(createDraft());
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
+  const dialogRef = useRef<HTMLElement>(null);
+
+  useBodyScrollLock(isOpen);
+  useModalFocusTrap(dialogRef, {
+    active: isOpen,
+    onEscape: () => {
+      if (!saving) setIsOpen(false);
+    },
+  });
 
   const stageCount = Array.isArray(existingSteps) ? existingSteps.length : 0;
   const isReplacing = stageCount > 0;
@@ -413,10 +424,12 @@ export default function PhoneAgentBlueprint({
           onMouseDown={() => setIsOpen(false)}
         >
           <section
+            ref={dialogRef}
             className="studio-blueprint-dialog"
             role="dialog"
             aria-modal="true"
             aria-labelledby="phone-agent-blueprint-title"
+            aria-describedby="phone-agent-blueprint-description"
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="studio-blueprint-heading">
@@ -425,7 +438,7 @@ export default function PhoneAgentBlueprint({
                 <h2 id="phone-agent-blueprint-title">
                   Teach {agentName || "this agent"} the call job.
                 </h2>
-                <p>
+                <p id="phone-agent-blueprint-description">
                   Choose direction first, tune the work, then pass the readiness check. This saves a
                   real staged call plan.
                 </p>
