@@ -120,6 +120,8 @@ export const OUTBOUND_WEDGE = {
 export const MARKETING_VOICE = {
   eyebrow: null,
   headline: "Your next AI employee",
+  /** Public hero CTA — voice-led marketing noun; product noun stays "AI employee". */
+  primaryCta: "Build your AI Voice Employee",
   subline:
     "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.",
   channelProof: [

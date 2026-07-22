@@ -22,6 +22,7 @@ import Stripe from "stripe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
+import { emitServerProductEventOnce } from "../lib/product-event-server";
 
 const router = express.Router();
 
@@ -291,6 +292,26 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         if (event.type === "customer.subscription.created")
           (sub as unknown as Record<string, unknown>)._auditCreate = true;
         await syncSubscriptionFromStripe(sub);
+        const subscriptionUserId = sub.metadata?.wireline_user_id;
+        const subscriptionPlan = planById(sub.metadata?.wireline_plan);
+        if (
+          subscriptionUserId &&
+          subscriptionPlan &&
+          (sub.status === "active" || sub.status === "trialing")
+        ) {
+          emitServerProductEventOnce({
+            event: "subscription_started",
+            userId: subscriptionUserId,
+            planId: subscriptionPlan.id,
+            metadata: { subscription_id: sub.id, status: sub.status },
+          });
+          emitServerProductEventOnce({
+            event: "upgrade_to_paid",
+            userId: subscriptionUserId,
+            planId: subscriptionPlan.id,
+            metadata: { subscription_id: sub.id, status: sub.status },
+          });
+        }
         break;
       }
       case "invoice.payment_failed": {

@@ -156,7 +156,6 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
     "src/components/marketing/BrowserCallWidget.tsx",
     "src/components/marketing/TrustSignals.tsx",
     "src/data/wireline-knowledge.ts",
-    "src/lib/chatgpt-mcp.ts",
     "src/lib/chatgpt-mcp-account.ts",
     "public/static-legal.css",
     "public/site.webmanifest",

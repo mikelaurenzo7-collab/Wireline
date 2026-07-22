@@ -148,6 +148,7 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
       { table: "wireline_call_logs", column: "user_id" },
       { table: "wireline_call_logs", column: "vapi_call_id" },
       { table: "wireline_subscriptions", column: "user_id" },
+      { table: "wireline_recap_artifacts", column: "agent_id" },
     ];
 
     for (const { table, column } of criticalIndexes) {

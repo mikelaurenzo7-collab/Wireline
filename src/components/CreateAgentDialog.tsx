@@ -51,7 +51,7 @@ const ROLE_TEMPLATES = [
 ] as const;
 
 const FAST_START_SELECTED =
-  "border-primary bg-[var(--wireline-color-action-primary-container)] text-primary";
+  "border-primary bg-[var(--wireline-color-action-primary-containerStrong)] text-[var(--wireline-color-text-primary)]";
 const FAST_START_IDLE =
   "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground";
 
@@ -258,6 +258,11 @@ export default function CreateAgentDialog({
           `${finalName} was created, but the starting brief didn't fully apply. Open Studio and paste it into the Set up tab to try again.`,
         );
       }
+      emitProductEvent({
+        event: "agent_draft_created",
+        agentId: body.id,
+        metadata: { role, posture: activePosture, source: "web_fast_start" },
+      });
       emitProductEvent({
         event: "agent_created",
         agentId: body.id,

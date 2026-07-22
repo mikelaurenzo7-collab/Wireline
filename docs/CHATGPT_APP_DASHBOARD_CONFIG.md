@@ -46,9 +46,8 @@ These match `MCP_SCOPES` declared by the Wireline MCP server.
 | Variable | Required | Notes |
 | --- | --- | --- |
 | `APP_URL` | Yes | `https://trywireline.com` |
-| `MCP_DEMO_STATE_SECRET` | Yes | Random, at least 32 characters; signs one-hour guest previews. |
 | `MCP_OAUTH_TOKEN_PEPPER` | Yes | Random, at least 32 characters; hashes OAuth credentials. |
-| `OPENAI_API_KEY_CHATKIT` | Yes for voice preview | Guest preview runtime key; isolate budget from customer runtime. |
+| `OPENAI_API_KEY_CHATKIT` | Optional | Isolated key for account-bound private simulation; falls back to `OPENAI_API_KEY`. |
 | `OPENAI_API_KEY` | Fallback | Existing Wireline OpenAI runtime key. |
 
 Never put runtime secret values into this document, the repository, screenshots, or the ChatGPT submission form.

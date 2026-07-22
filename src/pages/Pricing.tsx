@@ -94,7 +94,7 @@ const CHANNEL_RULES = [
   {
     icon: Mail,
     title: "Email",
-    body: "Connect Gmail, Outlook, Yahoo, iCloud, or customer email infrastructure. Provider limits and reputation controls remain authoritative; platform-funded sending or enrichment can draw from prepaid balance.",
+    body: "Connect Gmail, Outlook, iCloud, or customer email infrastructure. Yahoo inbox sync is planned. Provider limits and reputation controls remain authoritative; platform-funded sending or enrichment can draw from prepaid balance.",
   },
   {
     icon: Crosshair,

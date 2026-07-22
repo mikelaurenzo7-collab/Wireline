@@ -108,7 +108,6 @@ export default function Developers() {
     const node = document.getElementById("mcp-endpoint");
     node?.scrollIntoView({ behavior: "smooth", block: "start" });
     handleCopy();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot deep-link copy
   }, []);
 
   return (
@@ -164,7 +163,10 @@ export default function Developers() {
             ))}
           </div>
 
-          <div id="mcp-endpoint" className="mx-auto mt-6 max-w-3xl scroll-mt-28 rounded-xl border border-border bg-background p-5">
+          <div
+            id="mcp-endpoint"
+            className="mx-auto mt-6 max-w-3xl scroll-mt-28 rounded-xl border border-border bg-background p-5"
+          >
             <p className="wl-overline text-primary">Secure MCP endpoint</p>
             <code className="mt-3 block overflow-x-auto font-mono text-sm text-foreground">
               {mcpEndpoint}
@@ -185,7 +187,9 @@ export default function Developers() {
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
             <p className="wl-stitch-eyebrow">Getting started</p>
-            <h2 className="wl-stitch-display mt-3 text-balance">One connector. Three clear steps.</h2>
+            <h2 className="wl-stitch-display mt-3 text-balance">
+              One connector. Three clear steps.
+            </h2>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
               Connect with OAuth, draft and simulate privately, then finish launch work in Studio.
             </p>
@@ -225,8 +229,8 @@ export default function Developers() {
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
             MCP clients use OAuth PKCE against your Wireline account. The OpenAPI map documents the
-            same session-authenticated product routes the web app uses — there is no separate
-            public API-key product today.
+            same session-authenticated product routes the web app uses — there is no separate public
+            API-key product today.
           </p>
         </div>
       </section>
@@ -235,7 +239,9 @@ export default function Developers() {
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
             <p className="wl-stitch-eyebrow">What the connector can do</p>
-            <h2 className="wl-stitch-display mt-3 text-balance">Draft. Simulate. Continue in Studio.</h2>
+            <h2 className="wl-stitch-display mt-3 text-balance">
+              Draft. Simulate. Continue in Studio.
+            </h2>
           </div>
           <div className="mt-10 grid gap-3 sm:grid-cols-2">
             {MCP_BOUNDARIES.map((endpoint) => (

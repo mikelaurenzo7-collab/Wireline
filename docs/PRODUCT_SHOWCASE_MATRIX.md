@@ -67,7 +67,7 @@ Every feature in this matrix should map to one of those states before paid acqui
 | Wireline Command (browser extension)                         | **Early access** | Local install; store submission deferred until in-product install path exists |
 | iOS app                                                      | **Planned** | Code + simulator CI; TestFlight pending; CarPlay Phase 2 |
 | Android app                                                  | **Internal beta** | Code + Gradle CI; Play pending |
-| ChatGPT / Claude / Cursor (shared MCP)                       | **Early access** | Account tools live at `/mcp`; guest demo tools shadowed/legacy; no separate Claude/Cursor plugin packages |
+| ChatGPT / Claude / Cursor (shared MCP)                       | **Early access** | Account-bound tools live at `/mcp`; no guest transport or separate Claude/Cursor plugin packages |
 | Live supervisor audio                                        | **Planned** | Beta-labeled in product copy                                                                                                                      |
 | Learning loop (auto-retrain)                                 | **Planned** | Post-call review exists; full loop roadmap                                                                                                        |
 | Jobber / ServiceTitan connectors                             | **Planned** | Vertical FAQ must not imply live until shipped                                                                                                    |

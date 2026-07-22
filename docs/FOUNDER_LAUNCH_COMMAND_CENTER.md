@@ -16,7 +16,7 @@ See `docs/CUSTOMER_TERMINOLOGY.md`.
 Do not move the launch runtime to ElevenLabs. ElevenLabs is optional TTS,
 cloning, and showcase infrastructure. Keep:
 
-1. xAI Grok for structured reasoning and Studio realtime voice.
+1. OpenAI Responses for managed structured reasoning; xAI Grok only for authenticated Studio realtime voice and explicitly enabled experiments.
 2. Twilio + Vapi for PSTN orchestration.
 3. OpenAI with Gemini fallback inside the Vapi phone runtime.
 4. Vercel AI Gateway as the funded last-resort structured route.
@@ -26,25 +26,24 @@ cloning, and showcase infrastructure. Keep:
 
 ### Red — resolve before taking live customers
 
-- [ ] Resolve Stripe's negative $207.00 balance and failed bank withdrawals for the Tax Product Subscription; keep this Stripe account for now.
+- [ ] Configure a real Federal DNC credential and complete one successful live scrub; launch readiness is blocked at 83 until then.
+- [ ] Top Twilio prepaid to at least **$150** and add daily/monthly Usage Triggers after the signed callback route is deployed.
 - [ ] Complete controlled live launch matrix (inbound/outbound call + tools, SMS STOP/HELP, Resend verify/reset, Stripe checkout→webhook→portal).
 - [ ] Rotate any Vercel personal tokens pasted into chat; revoke after redeploy.
-- [ ] Re-run `npm run vendor:readiness` until launch posture is green.
+- [ ] Restore GitHub Actions execution and required checks; escalate the documented startup failure if repository configuration is sound.
+- [ ] Re-run `npm run launch:status` and `npm run vendor:readiness` until readiness is 100 and every required launch gate is green.
 - [ ] Rotate/set `HEALTH_MONITOR_TOKEN`; point uptime monitor at `/api/health/launch-readiness`.
 
 ### Yellow — launch with caps (not blockers)
 
-- [ ] Top Twilio prepaid (≥$150) and set Usage Triggers (today ~$24).
 - [ ] Confirm Vapi / OpenAI / Gemini / Gateway / xAI budgets and alerts.
-- [ ] Federal DNC funded before first marketing dial list.
 - [ ] Flip `WIRELINE_LAUNCH_DEMO_MODE` to `false` when first real customer is admitted.
-- [ ] Restore GitHub Actions (phantom `startup_failure`); until then rely on `verify:full` + Vercel.
 
 ### Green at audit
 
 - Vercel production deployment is Ready and serves `trywireline.com`.
 - Public health reports voice, fallback, and reasoning operational.
-- Supabase is `ACTIVE_HEALTHY`; database health reports 74 tables, 196 indexes,
+- Supabase is `ACTIVE_HEALTHY`; database health reports 73 tables, 198 indexes,
   and no issues/warnings.
 - xAI, OpenAI, Gemini, Vapi, ElevenLabs, Resend, and Stripe API credentials are
   accepted.
@@ -52,19 +51,19 @@ cloning, and showcase infrastructure. Keep:
 - ElevenLabs Creator is active with its full audited credit allowance unused.
 - Stripe charges and payouts are enabled; catalog products are active; there
   are no active subscriptions.
-- AI Gateway key, Upstash, Sentry, OAuth, MCP, Vapi, Stripe, DNC, and core
-  encryption env names exist in Vercel.
+- AI Gateway, Upstash, Sentry, OAuth, MCP, Vapi, Stripe, and core encryption
+  env names exist in Vercel. Federal DNC remains intentionally fail-closed until configured.
 
 ## Funding cheat sheet
 
 Use caps and alerts; never solve launch anxiety with uncapped auto-spend.
 Full dollar bands and API-cost map: `docs/LAUNCH_GURU_PLAYBOOK_2026-07-20.md`.
 
-Live snapshot **2026-07-20**: Stripe available **−$207.00**; Twilio **~$23.66**.
+Live snapshot **2026-07-21**: Stripe available **$0.00**; Twilio **$23.664**.
 
 | Account | Recommended start fund / action |
 | --- | --- |
-| Stripe | Settle −$207 first; keep **$300–500** available buffer before paid invites; review Tax Product Subscription. |
+| Stripe | Keep a **$300–500** operating buffer before paid invites; no retired-account deficit is carried into this launch account. |
 | Twilio | Top to **$150–250**; Usage Triggers daily $25 / monthly $200 until ~20 paid accounts; confirm API key + Auth Token. |
 | Vapi | **$200–400** or ≥2 weeks expected minutes; auto-reload on; concurrency = peak+2. |
 | OpenAI | Month-1 project budget **$150–300**; soft 50/75 + hard stop; PSTN depends on this key. |
@@ -77,19 +76,19 @@ Live snapshot **2026-07-20**: Stripe available **−$207.00**; Twilio **~$23.66*
 | Supabase/Vercel/Upstash/Resend | Cards on file (~$40–60/mo lean infra). |
 | LiveAvatar/HeyGen/Apollo | **$0** until paid add-on / Lead Hunt monetized. |
 
-**Founder operating float to open gates:** roughly **$1,500–2,500** (Stripe clear+buffer + voice wallets + AI budgets + optional $200–500 ad test).
+**Founder operating float to open gates:** roughly **$1,500–2,500** (Stripe buffer + voice wallets + AI budgets + optional $200–500 ad test).
 
-Exact account state and executable probes live in
+The generated current record is `docs/LAUNCH_STATUS.generated.json`; executable probes and vendor detail live in
 `docs/VENDOR_LAUNCH_MAP.md`. Creative assets: `docs/LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md`.
 
 ## Runtime operating rules
 
 ### Structured work
 
-`xAI Grok 4.5 → OpenAI → Gemini → Vercel AI Gateway`
+`OpenAI → Gemini → Vercel AI Gateway`
 
 - Do not route every request through the most expensive model.
-- Keep Grok direct for the tested launch path and provider-specific realtime.
+- Keep Grok direct only for authenticated realtime testing and explicitly enabled experiments; it is not in the managed structured fallback chain.
 - Tag and budget Gateway usage before promoting it above last-resort status.
 - Record provider, model, tokens, latency, feature, account, and cost for each
   paid action.

@@ -34,6 +34,7 @@ describe("product voice cohesion", () => {
     );
     expect(MARKETING_VOICE.eyebrow).toBeNull();
     expect(MARKETING_VOICE.headline).toBe("Your next AI employee");
+    expect(MARKETING_VOICE.primaryCta).toBe("Build your AI Voice Employee");
     expect(MARKETING_VOICE.subline).toBe(
       "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.",
     );
@@ -111,6 +112,7 @@ describe("product voice cohesion", () => {
     const extension = read("apps/browser-extension/panel/index.html");
     expect(landing).toContain("MARKETING_VOICE.headline");
     expect(landing).toContain("MARKETING_VOICE.subline");
+    expect(landing).toContain("MARKETING_VOICE.primaryCta");
     expect(landing).toContain("AGENT_DIRECTION_MODES");
     expect(landing).toContain("HERO_LOOP");
     expect(workroom).toContain("WORKSPACE_VOICE");
@@ -292,12 +294,19 @@ describe("product voice cohesion", () => {
   });
 
   it("keeps top-level workspace pages mounted to the current surfaces", () => {
+    const customization = read("src/pages/CustomizationSettings.tsx");
+    const authenticatedVisualQa = read("scripts/capture-prod-visual-qa.mjs");
+
     expect(read("src/pages/TemplatesPage.tsx")).toContain("AgentTemplates");
     expect(read("src/pages/AgentStudioHome.tsx")).toContain("CreateAgentDialog");
     expect(read("src/pages/OverviewPage.tsx")).toContain("Customer demand and outcomes");
     expect(read("src/pages/OverviewPage.tsx")).toContain("Recent customer conversations");
     expect(read("src/components/outbound/OutboundHub.tsx")).toContain("CampaignsPanel");
     expect(read("src/components/outbound/OutboundHub.tsx")).toContain("IntakeKeysManager");
+    expect(customization).toContain('href: "/knowledge"');
+    expect(customization).not.toContain('href: "/training');
+    expect(authenticatedVisualQa).toContain("`${baseUrl}/knowledge`");
+    expect(authenticatedVisualQa).not.toContain("`${baseUrl}/training`");
   });
 
   it("keeps authenticated surfaces action-first, not explanatory", () => {

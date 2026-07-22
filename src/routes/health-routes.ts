@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import express, { type NextFunction, type Request, type Response } from "express";
-import { timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
@@ -67,12 +67,32 @@ router.post("/report", clientReportRateLimiter, (req, res) => {
       route = undefined;
     }
   }
-  const contextKeys =
-    body.context && typeof body.context === "object" ? Object.keys(body.context).slice(0, 20) : [];
+  const context = body.context && typeof body.context === "object" ? body.context : {};
+  const contextKeys = Object.keys(context).slice(0, 20);
+  const stackTop = stack?.split("\n").slice(0, 3).join("\n").slice(0, 800);
+  const componentTop =
+    typeof context.componentStack === "string"
+      ? context.componentStack.split("\n").slice(0, 3).join("\n").slice(0, 800)
+      : undefined;
+  const errorClass =
+    typeof context.errorClass === "string" ? context.errorClass.slice(0, 80) : "browser";
+  const fingerprint = createHash("sha256")
+    .update([errorClass, message, route || "unknown", stackTop || componentTop || ""].join("|"))
+    .digest("hex")
+    .slice(0, 16);
 
-  log.error("Client error report", { message, route, contextKeys });
+  log.error("Client error report", {
+    fingerprint,
+    errorClass,
+    message,
+    route,
+    stackTop,
+    componentTop,
+    contextKeys,
+  });
   reportError(new Error(message), {
-    tags: { surface: "browser", route: route || "unknown" },
+    tags: { surface: "browser", route: route || "unknown", error_class: errorClass },
+    fingerprint,
     browser_stack: stack,
     context_keys: contextKeys,
   });

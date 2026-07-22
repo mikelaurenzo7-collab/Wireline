@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Loader2, Plus, ReceiptText, Wallet } from "lucide-react";
 import { authFetch } from "../lib/api";
+import { emitProductEvent } from "../lib/product-event-client";
 
 type LedgerEntry = {
   id: string;
@@ -73,6 +74,10 @@ export default function ConversationBalanceCard() {
     setBusyAmount(amountUsd);
     setError(null);
     try {
+      emitProductEvent({
+        event: "conversation_balance_checkout_started",
+        metadata: { amount_usd: amountUsd, source: "conversation_balance_card" },
+      });
       const response = await authFetch("/api/conversation-balance/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

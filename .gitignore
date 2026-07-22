@@ -125,6 +125,7 @@ worktrees/
 
 # Session-local QA scripts
 scripts/.tmp-*
+work/
 
 # Visual QA screenshot dumps (local only)
 .qa-temp/

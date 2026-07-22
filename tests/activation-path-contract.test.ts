@@ -58,7 +58,9 @@ describe("activation path contract", () => {
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     const copy = read("src/lib/wireline-onboarding-copy.ts");
     expect(wizard).toContain('["train", "wire", "test"]');
-    expect(wizard).not.toContain('event: "test_call_completed"');
+    expect(wizard).toContain("onTestCompleted");
+    expect(wizard).toContain('event: "test_call_completed"');
+    expect(wizard).toContain('result: "assistant_response_completed"');
     expect(wizard).toContain("testStarted ?");
     expect(wizard).toContain("Finish without a test");
     expect(copy).toContain("Optional: review what your agent learned");

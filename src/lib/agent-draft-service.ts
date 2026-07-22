@@ -14,6 +14,7 @@ import {
 import { resolveAgentEntitlement } from "./agent-entitlements";
 import { isOwnerEmail } from "./auth-service";
 import { drizzle, tenantStore } from "./server-context";
+import { emitServerProductEventOnce } from "./product-event-server";
 
 const ROLE_ARCHETYPES: Record<AgentCustomizationProfile["identity"]["role"], string> = {
   receptionist: "Receptionist",
@@ -180,6 +181,13 @@ export async function createAgentDraft(
       disallowedTopics: profile.behavior.prohibitedTopics,
       escalationKeywords: [],
       escalationHandoffEnabled: profile.behavior.escalationPolicy === "handoff_when_configured",
+    });
+    emitServerProductEventOnce({
+      event: "agent_draft_created",
+      userId: principal.userId,
+      agentId: id,
+      surface: source === "chatgpt_mcp" ? "chatgpt_app" : "api",
+      metadata: { source, role: profile.identity.role },
     });
     return toView(id, profile);
   });

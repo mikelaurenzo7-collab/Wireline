@@ -66,7 +66,7 @@ Amounts are **recommended working capital to start**, not vendor list prices. Re
 | **Stripe** | Processing 2.9%+$0.30; Cadence AI live catalog | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `VITE_STRIPE_PUBLIC_KEY`, plan `STRIPE_*_PRICE_ID` | Available **$0** today — keep **$300–500** buffer before paid invites | Bank auto-debit on; Tax sub review monthly |
 | **Twilio** | Numbers ~$1.15/mo COGS each; SMS; PSTN carrier | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_API_KEY`, `TWILIO_API_SECRET` | **$150–250** prepaid (today ~$24 — top up) | Daily trigger $25; monthly $200 until 20 paid accounts |
 | **Vapi** | Call orchestration + model pass-through | `VAPI_PRIVATE_KEY`, `VAPI_WEBHOOK_SECRET`, `VITE_VAPI_PUBLIC_KEY` | **$200–400** or 2 weeks of expected minutes | Auto-reload on; concurrency ≥ expected peak+2 |
-| **OpenAI** | Structured AI (GPT-5.6 Terra); Vapi GPT-4o; guest Realtime | `OPENAI_API_KEY`, optional `OPENAI_API_KEY_CHATKIT`, `OPENAI_REALTIME_*` | **$150–300** project budget month 1 | Soft 50/75; hard monthly stop |
+| **OpenAI** | Structured AI (GPT-5.6 Terra); Vapi GPT-4o; optional account-bound private simulation | `OPENAI_API_KEY`, optional `OPENAI_API_KEY_CHATKIT`, `OPENAI_REALTIME_*` | **$150–300** project budget month 1 | Soft 50/75; hard monthly stop |
 | **Gemini** | Structured fallback + live research fallback | `GEMINI_API_KEY` | **$50–100** | Separate project budget |
 | **Vercel AI Gateway** | Last multi-model route | `AI_GATEWAY_API_KEY` / OIDC | **$50** reserve + auto top-up | Monthly key budget |
 | **xAI** | Auth Studio/sim live voice (not PSTN) | `XAI_API_KEY`, optional `XAI_API_KEY_CHATKIT` | **$50–100** | Cap; structured fallback stays **off** |
@@ -95,7 +95,7 @@ Amounts are **recommended working capital to start**, not vendor list prices. Re
 
 | Bucket | Amount |
 | --- | ---: |
-| Clear Stripe negative + buffer | **$500** |
+| Stripe operating buffer | **$500** |
 | Twilio + Vapi working capital | **$400** |
 | OpenAI + Gemini + Gateway + xAI | **$350** |
 | Infra cards (Vercel/Supabase/Upstash/Resend) | card on file (~$40–60/mo) |
@@ -113,13 +113,13 @@ Do not solve anxiety with uncapped auto-spend. Prefer prepaid wallets + hard cap
 | Plan | Price | Agents | Included mins | Runtime Allowance | Overage (prepaid) | Numbers |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Free Builder | $0 | 1 draft | 0 | $0 | — | 0 |
-| Starter | $9 / $90 | 1 | 20 | $0.50 | $0.25/min | 1 |
+| Starter | $9 / $99 | 1 | 20 | $0.50 | $0.25/min | 1 |
 | Starter Plus | $19 / $190 | 1 | 40 | $1 | $0.22/min | 1 |
 | Pro | $59 / $590 | 5 | 100 | $4 | $0.19/min | 5 |
 | Business | $149 / $1,490 | 15 | 250 | $10 | $0.17/min | 15 |
 
 Add-ons: **+$15/mo** extra agent (+50 min +1 number); **+$19/mo** live video (Starter Plus+).
-Top-ups: Conversation Balance **$10 / $25 / $50 / $100** (min $10, max $1000).
+Top-ups: Conversation Balance **$5 / $10 / $25 / $50** (min $5, max $1000).
 
 **Customer happiness rule:** active calls finish; depleted coverage blocks only the *next* action.
 **Your happiness rule:** overage rates stay above $0.128 COGS; prepaid prevents surprise receivables.
@@ -141,9 +141,6 @@ SMS
 
 Studio live voice test (auth)
   xAI Grok realtime (NOT production PSTN)
-
-Guest demo voice
-  OpenAI Realtime
 
 Mid-call research tool
   Perplexity (optional) → Gemini grounded | timeout LIVE_RESEARCH_TIMEOUT_MS

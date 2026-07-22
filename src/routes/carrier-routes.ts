@@ -23,6 +23,7 @@ import {
   POPULAR_AREA_CODES,
 } from "../lib/vapi-phone-numbers";
 import { enforceLiveWorkActivation } from "../lib/trial-gate";
+import { emitServerProductEventOnce } from "../lib/product-event-server";
 
 interface VapiPhoneNumber {
   id: string;
@@ -142,6 +143,16 @@ router.post(
           error: result.error ?? "Could not provision a phone number.",
         });
       }
+
+      emitServerProductEventOnce({
+        event: "phone_number_provision_completed",
+        userId: req.user.id,
+        agentId,
+        metadata: {
+          source: "self_serve_provision",
+          reused: result.reused ?? false,
+        },
+      });
 
       res.json({
         ok: true,

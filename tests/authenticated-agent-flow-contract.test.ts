@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 function read(relativePath: string) {
-  return readFileSync(resolve(process.cwd(), relativePath), "utf8");
+  return readFileSync(resolve(process.cwd(), relativePath), "utf8").replace(/\r\n/g, "\n");
 }
 
 describe("authenticated agent flow", () => {
@@ -55,7 +55,8 @@ describe("authenticated agent flow", () => {
     // outcomes surface through the ledger and follow-up review paths instead.
     expect(overview).not.toContain("DailyBriefPanel");
     expect(overview).toContain("OutcomeLedger");
-    expect(overview).toContain('to="/approvals"');
+    expect(overview).toContain('primaryHref: "/approvals"');
+    expect(overview).toContain("<Link to={state.primaryHref}");
   });
 
   it("gives first-time users real mailbox connection actions", () => {

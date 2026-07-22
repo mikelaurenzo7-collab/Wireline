@@ -6,6 +6,11 @@ import { useAuth } from "../contexts/AuthContext";
 import { isMarketingStickyCtaRoute } from "../lib/marketing-mobile";
 import { cn } from "../lib/utils";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import type { CSSProperties } from "react";
+
+type ToastStackStyle = CSSProperties & {
+  "--toast-mobile-bottom": string;
+};
 
 const META = {
   success: {
@@ -127,7 +132,7 @@ export default function ToastStack() {
       aria-relevant="additions text"
       aria-label="Notifications"
       className="toast-stack fixed inset-x-3 max-md:bottom-[var(--toast-mobile-bottom)] md:bottom-5 md:inset-x-auto md:right-5 z-[9999] flex flex-col gap-2 items-stretch md:items-end pointer-events-none"
-      style={{ ["--toast-mobile-bottom" as any]: mobileBottom }}
+      style={{ "--toast-mobile-bottom": mobileBottom } as ToastStackStyle}
       data-marketing-sticky={marketingSticky ? "true" : undefined}
     >
       <AnimatePresence initial={false} mode="sync">

@@ -3,6 +3,10 @@ import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertOctagon, RefreshCw, Home } from "lucide-react";
 import { isLikelyStaleChunkError, requestStaleChunkReload } from "../lib/chunk-recovery";
 import { captureException } from "../lib/sentry";
+import {
+  isDomReconciliationError,
+  requestDomReconciliationReload,
+} from "../lib/dom-reconciliation-recovery";
 import { cn } from "../lib/utils";
 
 import { ShadButton } from "./ui/shadcn/ShadButton";
@@ -41,7 +45,12 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (import.meta.env.DEV) {
       console.error("ErrorBoundary caught:", error, info);
     }
-    captureException(error, { componentStack: info.componentStack });
+    const domReconciliation = isDomReconciliationError(error);
+    captureException(error, {
+      componentStack: info.componentStack,
+      errorClass: domReconciliation ? "dom_reconciliation" : "react_boundary",
+    });
+    if (domReconciliation) requestDomReconciliationReload(error, "error-boundary");
   }
 
   reset = () => this.setState({ error: null });

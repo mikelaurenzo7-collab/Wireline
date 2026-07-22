@@ -34,6 +34,7 @@ import { requiresSalesApprovalForIntegration } from "./sales-integration-policy"
 import { drizzle, log } from "./server-context";
 import { maybePublishCallRecap } from "./shareable-artifact/publish-call-recap";
 import { sanitizePhone } from "./vapi-helpers";
+import { emitServerProductEventOnce } from "./product-event-server";
 
 export type CallOutcomeTag =
   | "booked"
@@ -318,6 +319,16 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
       .update(schema.callLogs)
       .set({ outcomeTag, campaignSource })
       .where(eq(schema.callLogs.id, callLogIdBig));
+    emitServerProductEventOnce({
+      event: "outcome_recorded",
+      userId: ctx.userId,
+      agentId: ctx.agentId ?? undefined,
+      metadata: {
+        call_log_id: callLogIdBig.toString(),
+        outcome: outcomeTag,
+        direction: ctx.direction ?? null,
+      },
+    });
   } catch (err: any) {
     log.warn("post-call digest: callLog update failed", { error: err?.message });
   }

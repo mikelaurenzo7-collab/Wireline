@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-22T03:58:36.330Z",
+  "launch_decision": "NO-GO",
+  "blockers": [
+    "source_branch_not_main",
+    "launch_readiness_below_100",
+    "twilio_prepaid_balance_below_150",
+    "production_commit_mismatch",
+    "readiness:FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY"
+  ],
+  "source": {
+    "branch": "cursor/launch-strategic-wins-bcbf",
+    "commit": "33102af19f39f0cc9264f90cb00bebc6860b0359",
+    "origin_main_ahead": 4,
+    "origin_main_behind": 0,
+    "worktree_clean": true
+  },
+  "production": {
+    "status": "unknown",
+    "reason": "Vercel read credentials not supplied"
+  },
+  "live_checks": {
+    "readiness": {
+      "status": "blocked",
+      "http_status": 503,
+      "overall_score": 83,
+      "blockers": [
+        "FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY"
+      ],
+      "capabilities": [
+        {
+          "id": "core_ready",
+          "level": "ready"
+        },
+        {
+          "id": "billing_ready",
+          "level": "ready"
+        },
+        {
+          "id": "voice_ready",
+          "level": "ready"
+        },
+        {
+          "id": "email_ready",
+          "level": "ready"
+        },
+        {
+          "id": "oauth_ready",
+          "level": "ready"
+        },
+        {
+          "id": "compliance_ready",
+          "level": "degraded",
+          "blockers": [
+            "FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY"
+          ]
+        }
+      ]
+    },
+    "stripe": {
+      "status": "reachable",
+      "available_usd": 0,
+      "pending_usd": 0,
+      "starter_annual": {
+        "price_id": "price_1TvlQa8e6If87QKmm9GTajo6",
+        "unit_amount_usd": 99,
+        "active": true,
+        "livemode": true,
+        "lookup_key": "starter_annual_founder_2026_07_v3"
+      }
+    },
+    "database": {
+      "status": "reachable",
+      "table_count": 73,
+      "index_count": 198,
+      "rls_table_count": 73,
+      "recap_agent_index_present": true
+    },
+    "twilio": {
+      "status": "reachable",
+      "prepaid_balance_usd": 23.664,
+      "usage_trigger_count": 2,
+      "usage_triggers": [
+        {
+          "sid": "UT0b4f2ad0a52443399961676aa80b9439",
+          "recurring": "daily",
+          "usage_category": "totalprice",
+          "trigger_by": "price",
+          "trigger_value": "25",
+          "callback_url": "https://trywireline.com/api/twilio-webhook/usage-alert"
+        },
+        {
+          "sid": "UTb93a09c6605e475e953f940a845efa0a",
+          "recurring": "monthly",
+          "usage_category": "totalprice",
+          "trigger_by": "price",
+          "trigger_value": "200",
+          "callback_url": "https://trywireline.com/api/twilio-webhook/usage-alert"
+        }
+      ]
+    }
+  },
+  "runtime_policy": {
+    "managed_structured_chain": [
+      "OpenAI",
+      "Gemini",
+      "Vercel AI Gateway"
+    ],
+    "xai": "authenticated realtime tests and explicitly enabled experiments only"
+  },
+  "surface_posture": {
+    "web": "public self-serve candidate",
+    "browser_command": "early access",
+    "native": "internal_or_planned",
+    "mcp": "account-bound early access",
+    "whatsapp": "unavailable",
+    "live_video": "gated_add_on"
+  }
+}

@@ -65,7 +65,7 @@ for (const envTarget of ["STRIPE_EXTRA_AGENT_PRICE_ID"]) {
 }
 
 const expectedPlans = [
-  ["starter", 9, 90],
+  ["starter", 9, 99],
   ["team", 19, 190],
   ["business", 59, 590],
   ["enterprise", 149, 1490],

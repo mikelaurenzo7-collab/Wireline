@@ -158,9 +158,29 @@ export default function PostCreateActivationWizard({
 
   function finish() {
     setStep("complete");
+    emitProductEventOnce({
+      event: "agent_launch_completed",
+      agentId: payload.agentId,
+      metadata: {
+        has_line: Boolean(phoneNumber),
+        test_started: testStarted,
+        source: "post_create_wizard",
+      },
+    });
   }
 
   function dismiss() {
+    if (step === "complete") {
+      emitProductEventOnce({
+        event: "agent_launch_completed",
+        agentId: payload.agentId,
+        metadata: {
+          has_line: Boolean(phoneNumber),
+          test_started: testStarted,
+          source: "post_create_wizard_dismiss",
+        },
+      });
+    }
     setPostSignupFlowActive(false);
     clearPostCreateWizard();
     onClose();
@@ -458,6 +478,13 @@ export default function PostCreateActivationWizard({
                     event: "first_test_call_started",
                     agentId: payload.agentId,
                     metadata: { channel: "roleplay" },
+                  });
+                }}
+                onTestCompleted={() => {
+                  emitProductEventOnce({
+                    event: "test_call_completed",
+                    agentId: payload.agentId,
+                    metadata: { channel: "roleplay", result: "assistant_response_completed" },
                   });
                 }}
               />

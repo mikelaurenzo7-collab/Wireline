@@ -81,7 +81,7 @@ Each tier can ship on its own cadence only when it stays inside these boundaries
 
 | Boundary | Requirement |
 | --- | --- |
-| Launch status | **Early access**. Account-bound MCP/OAuth app is active behind reviewed tools; Claude and Cursor share the same `/mcp` server (no separate plugin packages). Guest demo tools are legacy/shadowed — not a launch path. Aligns with `CLIENT_SURFACE_POSTURE.chatgpt`. |
+| Launch status | **Early access**. Account-bound MCP/OAuth app is active behind reviewed tools; Claude and Cursor share the same `/mcp` server (no separate plugin packages). No guest tool transport exists. Aligns with `CLIENT_SURFACE_POSTURE.chatgpt`. |
 | Owning files/directories | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `scripts/check-chatgpt-app-release.mjs`, `docs/CHATGPT_APP.md`, and related OAuth/config docs. |
 | Required checks before release | `node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com` for production-target release; local MCP discovery/tool/resource probe; OAuth PKCE reviewer flow; private simulation boundary test; contract review for every new tool. |
 | Non-goals | ChatGPT App cannot provision numbers, dial, launch agents, perform outbound communication, change billing, bypass approvals, or claim external actions happened unless Wireline actually performed them through server-owned workflows. |

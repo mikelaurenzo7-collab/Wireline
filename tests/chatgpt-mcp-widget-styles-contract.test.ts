@@ -25,12 +25,9 @@ describe("ChatGPT MCP widget Letterpress styling", () => {
     expect(css).toContain("outline: 2px solid var(--wl-action)");
   });
 
-  it("wires shared widget CSS into both MCP HTML builders", () => {
-    const launch = read("src/lib/chatgpt-mcp.ts");
+  it("wires shared widget CSS into the account-bound MCP HTML builder", () => {
     const account = read("src/lib/chatgpt-mcp-account.ts");
-    expect(launch).toContain("buildWirelineMcpWidgetCss");
     expect(account).toContain("buildWirelineMcpWidgetCss");
-    expect(launch).not.toContain("color-mix(in srgb, CanvasText");
     expect(account).not.toContain("color-mix(in srgb, CanvasText");
   });
 });

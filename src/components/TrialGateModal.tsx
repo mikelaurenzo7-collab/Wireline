@@ -19,6 +19,7 @@ import {
   CONVERSATION_BALANCE_COPY,
   CONVERSATION_BALANCE_PRESETS_USD,
 } from "../lib/conversation-balance";
+import { emitProductEvent } from "../lib/product-event-client";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 const TIER_PITCH: Record<string, string> = {
@@ -199,6 +200,10 @@ export default function TrialGateModal() {
     setPending(`balance-${amountUsd}`);
     setError(null);
     try {
+      emitProductEvent({
+        event: "conversation_balance_checkout_started",
+        metadata: { amount_usd: amountUsd, source: "trial_gate_modal" },
+      });
       const response = await authFetch("/api/conversation-balance/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -6,15 +6,22 @@ export default function RoleplaySandbox({
   agentId,
   agentName = "your agent",
   onTestStarted,
+  onTestCompleted,
 }: {
   agentId: string;
   agentName?: string;
   onTestStarted?: () => void;
+  onTestCompleted?: () => void;
 }) {
   return (
     <div className="space-y-4">
       <WirelineLiveVoiceProfile agentId={agentId} />
-      <LiveVoiceSandbox agentId={agentId} agentName={agentName} onTestStarted={onTestStarted} />
+      <LiveVoiceSandbox
+        agentId={agentId}
+        agentName={agentName}
+        onTestStarted={onTestStarted}
+        onTestCompleted={onTestCompleted}
+      />
       <div className="grid gap-3 rounded-xl border border-border bg-secondary p-4 sm:grid-cols-2">
         <div className="flex gap-3">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-card text-primary">

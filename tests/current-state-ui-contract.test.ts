@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import { CLIENT_SURFACE_POSTURE, PRODUCT_POSTURE } from "../src/lib/product-copy";
 
-const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
 function relativeLuminance(hex: string): number {
   const channels = hex
@@ -54,8 +55,10 @@ describe("current-state UI contract", () => {
     expect(apps).toContain('href: "/settings/apps#chatgpt-mcp"');
     expect(apps).toContain('id="chatgpt-mcp"');
     expect(apps).toContain("https://trywireline.com/mcp");
-    expect(apps).toContain("from \"react-router-dom\"");
-    expect(apps).not.toContain("mailto:support@trywireline.com?subject=Wireline%20Command%20install%20guide");
+    expect(apps).toContain('from "react-router-dom"');
+    expect(apps).not.toContain(
+      "mailto:support@trywireline.com?subject=Wireline%20Command%20install%20guide",
+    );
     expect(apps).not.toContain('status: "Live"');
     expect(apps).not.toContain('action: "TestFlight"');
     expect(commandBar).toContain('label: "Companion surfaces"');
@@ -68,7 +71,9 @@ describe("current-state UI contract", () => {
   it("makes the account-bound MCP apps public without overstating their authority", () => {
     const developers = read("src/pages/Developers.tsx");
 
-    expect(developers).toContain("Connect once. Draft and simulate in the client you already open.");
+    expect(developers).toContain(
+      "Connect once. Draft and simulate in the client you already open.",
+    );
     expect(developers).toContain("Copy MCP endpoint");
     expect(developers).toContain("https://trywireline.com/mcp");
     expect(developers).toContain("https://claude.ai/settings/connectors");

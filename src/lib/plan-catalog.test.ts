@@ -81,14 +81,17 @@ describe("plan-catalog", () => {
       ).toBeGreaterThanOrEqual(LAUNCH_CONTRIBUTION_MARGIN_FLOOR);
     }
 
-    // The $9 annual plan is the intentionally capped acquisition offer. Upper
-    // tiers must still clear the floor when every annual entitlement is used.
-    for (const plan of paid.filter((item) => item.id !== "starter")) {
+    for (const plan of paid) {
       expect(
         estimatedContributionMarginAtFullIncludedUsage(plan, "year"),
         `${plan.id} annual`,
       ).toBeGreaterThanOrEqual(LAUNCH_CONTRIBUTION_MARGIN_FLOOR);
     }
+
+    expect(planById("starter")?.price_usd_annual).toBe(99);
+    expect(
+      estimatedContributionMarginAtFullIncludedUsage(planById("starter")!, "year"),
+    ).toBeGreaterThanOrEqual(LAUNCH_CONTRIBUTION_MARGIN_FLOOR);
   });
 
   it("keeps paid extra-agent add-ons as capacity bundles", () => {
