@@ -1,11 +1,10 @@
 name: CodeQL Security Scan
 
-# CodeQL uploads results to GitHub's code-scanning dashboard, which requires
-# GitHub Advanced Security. That feature is only available on public repos or
-# private repos on a GitHub Enterprise / Advanced Security plan.
-# Runs on PRs/pushes when GitHub Advanced Security is enabled. If code scanning
-# is not enabled, the analyze job is allowed to fail without blocking merges.
-# To enable full uploads: Settings → Security → Code scanning → Set up → Save.
+# Private-repository CodeQL requires GitHub Code Security. Keep the workflow
+# present and current, but run it only after the repository feature is enabled.
+# To activate: enable code scanning, then set the repository Actions variable
+# WIRELINE_CODEQL_ENABLED=true. This avoids a permanently red, non-actionable
+# check while preserving the full scan as soon as the entitlement is available.
 on:
   workflow_dispatch:
   pull_request:
@@ -19,6 +18,7 @@ concurrency:
 
 jobs:
   analyze:
+    if: ${{ vars.WIRELINE_CODEQL_ENABLED == 'true' }}
     name: Analyze TypeScript/JavaScript
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -29,16 +29,16 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
           # Optional: add custom queries from CodeQL packs
           # queries: security-extended,security-and-quality
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:javascript-typescript"
