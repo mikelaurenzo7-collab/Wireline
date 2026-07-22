@@ -64,7 +64,7 @@ describe("current-state UI contract", () => {
     expect(commandBar).toContain('label: "Companion surfaces"');
     expect(commandBar).not.toContain("Wireline everywhere");
     expect(security).toContain("The web app is the GA product");
-    expect(security).toContain("Marketing / campaign outbound fails closed");
+    expect(security).toContain("Marketing and campaign outbound fail closed");
     expect(security).not.toContain("until then, only tenant lists apply");
   });
 
