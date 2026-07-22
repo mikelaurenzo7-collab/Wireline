@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 import { emailAccounts } from "../db/schema";
 import { drizzle } from "./server-context";
@@ -18,6 +18,10 @@ export interface OwnedEmailAccountInput {
 
 export async function upsertOwnedEmailAccount(input: OwnedEmailAccountInput): Promise<boolean> {
   const emailAddress = input.emailAddress.trim().toLowerCase();
+  const refreshTokenUpdate = input.refreshToken
+    ? input.refreshToken
+    : sql<string | null>`case when ${emailAccounts.provider} = ${input.provider} then ${emailAccounts.refreshToken} else null end`;
+
   const [row] = await drizzle
     .insert(emailAccounts)
     .values({ ...input, emailAddress })
@@ -26,7 +30,7 @@ export async function upsertOwnedEmailAccount(input: OwnedEmailAccountInput): Pr
       set: {
         provider: input.provider,
         accessToken: input.accessToken,
-        ...(input.refreshToken ? { refreshToken: input.refreshToken } : {}),
+        refreshToken: refreshTokenUpdate,
         expiresAt: input.expiresAt,
         oauthGrantedScopes: input.oauthGrantedScopes,
       },
