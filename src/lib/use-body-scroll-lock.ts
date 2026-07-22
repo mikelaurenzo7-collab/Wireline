@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 type BodyStyleSnapshot = {
-  body: HTMLBodyElement;
+  body: HTMLElement;
   overflow: string;
   paddingRight: string;
 };
