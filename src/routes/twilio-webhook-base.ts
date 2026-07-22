@@ -432,7 +432,7 @@ router.post(
         return;
       }
 
-      await tenantStore.run({ userId: tenantUserId }, async () => {
+      await tenantStore.run(tenantUserId, async () => {
         await drizzle.insert(schema.callLogs).values({
           userId: tenantUserId,
           direction: "inbound",

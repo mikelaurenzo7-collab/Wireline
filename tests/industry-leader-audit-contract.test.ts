@@ -39,6 +39,9 @@ describe("industry-leader audit hardening contracts", () => {
     expect(webhook).toContain("schema.callLogs");
     expect(webhook).toContain("recordingUrl");
     expect(webhook).toContain("sendEmail");
+    // tenantStore is AsyncLocalStorage<string> — must pass userId string, not an object.
+    expect(webhook).toMatch(/tenantStore\.run\(tenantUserId,\s*async\s*\(\)\s*=>/);
+    expect(webhook).not.toContain("tenantStore.run({ userId:");
   });
 
   it("surfaces CRM reconnect signals in integration health", () => {
