@@ -111,6 +111,6 @@ import { MessageCircle, History, Mail } from "lucide-react";
 
 export const CHANNELS_HUB: HubTabDef[] = [
   { label: "Phone", path: "/phone", icon: History },
-  { label: "Email", path: "/email", icon: Mail },
-  { label: "SMS", path: "/sms", icon: MessageCircle },
+  { label: "Email", path: "/inbox?tab=email", icon: Mail },
+  { label: "SMS", path: "/inbox?tab=sms", icon: MessageCircle },
 ];

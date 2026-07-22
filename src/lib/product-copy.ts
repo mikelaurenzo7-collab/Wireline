@@ -3,6 +3,8 @@
 export const BRAND_SYSTEM = {
   northStar: "The best employee you've ever had, for next to nothing.",
   productNoun: "AI employee",
+  /** Public buying-surface noun (voice-led). Product noun stays "AI employee". */
+  buyingNoun: "AI Voice Employee",
   defaultRole: "Your best employee",
   brandSpine: ["Wire", "Work", "Win"],
   proofLoop: ["Brief", "Train", "Launch", "Improve"],
@@ -15,6 +17,7 @@ export const BRAND_SYSTEM = {
     "Treat specialists as expansion, not setup homework.",
     "Show logged proof after every call, text, email, handoff, campaign, and follow-up.",
     "Never name the customer-facing role after the platform; Wireline is the platform and the customer owns the employee.",
+    "On public buying surfaces, prefer the voice-led buying noun (AI Voice Employee) over the generic product noun.",
   ],
 } as const;
 
@@ -137,6 +140,7 @@ export const MARKETING_VOICE = {
   extensionLead:
     "Send the page you are viewing into Studio as reference context—so your AI employee can prepare a call, draft a text, or follow up without you leaving the tab.",
   differentiator: OUTBOUND_WEDGE.differentiator,
+  buyingNoun: BRAND_SYSTEM.buyingNoun,
 } as const;
 
 export const CLIENT_SURFACE_POSTURE = {

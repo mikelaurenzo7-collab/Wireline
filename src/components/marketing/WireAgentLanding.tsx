@@ -406,14 +406,14 @@ export default function WireAgentLanding() {
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                   <Link
                     to="/signup"
-                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--wireline-color-text-primary)] px-7 py-3 text-[15px] font-semibold text-[var(--wireline-color-canvas-default)] transition-all hover:-translate-y-px hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-text-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] sm:w-auto"
+                    className="marketing-btn-primary min-h-12 w-full justify-center px-7 text-[15px] font-semibold sm:w-auto"
                   >
                     Build your AI Voice Employee
                     <ArrowRight size={16} aria-hidden="true" />
                   </Link>
                   <Link
                     to="/showcase"
-                    className="flex min-h-12 w-full items-center justify-center px-7 py-3 text-[15px] font-medium marketing-ink-panel__soft transition-colors hover:text-[var(--wireline-color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-text-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] sm:w-auto"
+                    className="marketing-btn-secondary min-h-12 w-full justify-center border-border/40 bg-transparent px-7 text-[15px] font-medium text-[var(--wireline-color-text-secondary)] hover:bg-white/5 hover:text-[var(--wireline-color-text-primary)] sm:w-auto"
                   >
                     Hear a demo
                   </Link>

@@ -377,9 +377,15 @@ export default function CreateAgentDialog({
                   key={value}
                   type="button"
                   onClick={() => {
+                    const previousDefault = defaultBrief(activePosture);
                     setPosture(value);
                     setRole(defaultRole(value));
-                    setBrief(defaultBrief(value));
+                    setBrief((current) => {
+                      if (!current.trim() || current === previousDefault) {
+                        return defaultBrief(value);
+                      }
+                      return current;
+                    });
                   }}
                   className={`rounded-[12px] border px-4 py-3 text-left transition-colors ${
                     selected

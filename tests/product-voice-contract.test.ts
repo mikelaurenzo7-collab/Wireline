@@ -19,6 +19,8 @@ describe("product voice cohesion", () => {
     // Customer-facing positioning must feel like the owner's best employee,
     // not three separate channel products or a menu of departments to configure.
     expect(BRAND_SYSTEM.northStar).toBe("The best employee you've ever had, for next to nothing.");
+    expect(BRAND_SYSTEM.productNoun).toBe("AI employee");
+    expect(BRAND_SYSTEM.buyingNoun).toBe("AI Voice Employee");
     expect(BRAND_SYSTEM.defaultRole).toBe("Your best employee");
     expect(BRAND_SYSTEM.brandSpine).toEqual(["Wire", "Work", "Win"]);
     expect(BRAND_SYSTEM.proofLoop).toEqual(["Brief", "Train", "Launch", "Improve"]);
@@ -32,9 +34,13 @@ describe("product voice cohesion", () => {
     expect(BRAND_SYSTEM.toneRules).toContain(
       "State that the included Wireline number applies to paid plans so the free builder is never misrepresented.",
     );
+    expect(BRAND_SYSTEM.toneRules).toContain(
+      "On public buying surfaces, prefer the voice-led buying noun (AI Voice Employee) over the generic product noun.",
+    );
     expect(MARKETING_VOICE.eyebrow).toBeNull();
     expect(MARKETING_VOICE.headline).toBe("Your next AI employee");
     expect(MARKETING_VOICE.primaryCta).toBe("Build your AI Voice Employee");
+    expect(MARKETING_VOICE.buyingNoun).toBe(BRAND_SYSTEM.buyingNoun);
     expect(MARKETING_VOICE.subline).toBe(
       "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.",
     );
