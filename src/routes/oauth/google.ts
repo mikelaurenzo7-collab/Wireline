@@ -4,6 +4,10 @@ import { google } from "googleapis";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { encryptSecret } from "../../lib/secret-vault";
+import {
+  EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE,
+  upsertOwnedEmailAccount,
+} from "../../lib/owned-email-account";
 import { oauthRateLimiter } from "../../middleware/rate-limit-middleware";
 import { authenticateUser } from "../../middleware/auth";
 import {
@@ -69,11 +73,11 @@ router.get(
 
       const oauth2 = google.oauth2({ auth: oauth2Client, version: "v2" });
       const userInfo = await oauth2.userinfo.get();
-      const emailAddress = userInfo.data.email;
+      const emailAddress = userInfo.data.email?.trim().toLowerCase();
 
       if (!emailAddress) throw new Error("Could not fetch user email.");
 
-      let userId = vs.userId ?? (await resolveUserIdFromOAuthSession(req as express.Request));
+      const userId = vs.userId ?? (await resolveUserIdFromOAuthSession(req as express.Request));
       if (!userId) {
         return res
           .status(401)
@@ -93,32 +97,23 @@ router.get(
       // Supabase-client syntax against a Drizzle handle, which throws
       // `db.from is not a function` at runtime — every Google OAuth callback
       // was silently failing before this fix.
-      const accessTokenGoogle = encryptSecret(tokens.access_token!);
+      if (!tokens.access_token) throw new Error("Google token response omitted access_token.");
+      const accessTokenGoogle = encryptSecret(tokens.access_token);
       const refreshTokenGoogle = tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null;
-      const expiresAtGoogle = tokens.expiry_date ?? Date.now() + 3600 * 1000;
+      const expiresAtGoogle = BigInt(tokens.expiry_date ?? Date.now() + 3600 * 1000);
 
-      await drizzle
-        .insert(schema.emailAccounts)
-        .values({
-          userId,
-          emailAddress,
-          provider: "google",
-          accessToken: accessTokenGoogle,
-          refreshToken: refreshTokenGoogle,
-          expiresAt: BigInt(expiresAtGoogle),
-          oauthGrantedScopes: scopeStr || null,
-        })
-        .onConflictDoUpdate({
-          target: schema.emailAccounts.emailAddress,
-          set: {
-            userId,
-            provider: "google",
-            accessToken: accessTokenGoogle,
-            refreshToken: refreshTokenGoogle,
-            expiresAt: BigInt(expiresAtGoogle),
-            oauthGrantedScopes: scopeStr || null,
-          },
-        });
+      const emailAccountConnected = await upsertOwnedEmailAccount({
+        userId,
+        emailAddress,
+        provider: "google",
+        accessToken: accessTokenGoogle,
+        refreshToken: refreshTokenGoogle,
+        expiresAt: expiresAtGoogle,
+        oauthGrantedScopes: scopeStr || null,
+      });
+      if (!emailAccountConnected) {
+        return res.status(409).send(EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE);
+      }
 
       await drizzle
         .insert(schema.calendarAccounts)
@@ -128,7 +123,7 @@ router.get(
           provider: "google",
           accessToken: accessTokenGoogle,
           refreshToken: refreshTokenGoogle,
-          expiresAt: BigInt(expiresAtGoogle),
+          expiresAt: expiresAtGoogle,
           oauthGrantedScopes: scopeStr || null,
         })
         .onConflictDoUpdate({
@@ -137,7 +132,7 @@ router.get(
             provider: "google",
             accessToken: accessTokenGoogle,
             refreshToken: refreshTokenGoogle,
-            expiresAt: BigInt(expiresAtGoogle),
+            expiresAt: expiresAtGoogle,
             oauthGrantedScopes: scopeStr || null,
           },
         });
