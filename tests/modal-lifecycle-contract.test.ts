@@ -51,6 +51,23 @@ describe("authenticated modal lifecycle contract", () => {
     }
   });
 
+  it("keeps mutating modal actions from completing after an unguarded dismissal", () => {
+    const trialGate = source("src/components/TrialGateModal.tsx");
+    expect(trialGate).toContain("checkoutAbortRef.current?.abort()");
+    expect(trialGate).toContain("signal: controller.signal");
+    expect(trialGate).toContain("onClick={closeModal}");
+
+    for (const [path, guard] of [
+      ["src/components/CreateAgentDialog.tsx", "if (creating) return"],
+      ["src/components/DeployAgentModal.tsx", "if (!deploying) onClose()"],
+      ["src/components/onboarding/PostCreateActivationWizard.tsx", "if (provisioning) return"],
+      ["src/components/PhoneAgentBlueprint.tsx", "if (saving) return"],
+      ["src/pages/TeamSettings.tsx", "if (inviting) return"],
+    ] as const) {
+      expect(source(path), path).toContain(guard);
+    }
+  });
+
   it("does not leave duplicate global Escape listeners in migrated modals", () => {
     for (const path of [
       "src/components/TrialGateModal.tsx",
