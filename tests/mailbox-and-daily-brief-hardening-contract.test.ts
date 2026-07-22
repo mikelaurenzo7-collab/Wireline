@@ -23,6 +23,12 @@ describe("mailbox ownership hardening", () => {
     expect(updateSet).not.toContain("userId");
   });
 
+  it("preserves a provider refresh token when reconnect omits a replacement", () => {
+    expect(ownedMailbox).toContain(
+      "...(input.refreshToken ? { refreshToken: input.refreshToken } : {})",
+    );
+  });
+
   it("routes every supported mailbox connection through the ownership guard", () => {
     for (const route of mailboxRoutes) {
       expect(route).toContain("upsertOwnedEmailAccount");
