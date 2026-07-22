@@ -13,6 +13,7 @@ import { claimJobById, completeJob, enqueue, failJob, getQueueStats } from "../l
 import { handleJob } from "../lib/job-worker";
 import { assertUrlSafeForServerFetch } from "../lib/webhook-validators";
 import { apolloPlatformConfigured } from "../lib/apollo-service";
+import { KnowledgeIngestionUnavailableError } from "../lib/ai-brains";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const JOB_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -135,26 +136,11 @@ router.post(
       ) {
         throw AppError.fromHttpStatus(400, "agentContext must be a string ≤ 2000 characters.");
       }
-      const safeMaxEntries = Math.max(1, Math.min(50, Number(maxEntries) || 12));
-      const safeMaxPages = Math.max(1, Math.min(20, Number(maxPages) || 5));
 
-      const result = await enqueue(drizzle, {
-        userId: req.user.id,
-        type: "knowledge_from_url",
-        payload: {
-          userId: req.user.id,
-          url,
-          agentContext,
-          maxEntries: safeMaxEntries,
-          maxPages: safeMaxPages,
-        },
-        maxAttempts: 2,
-      });
-      if (!result.ok) {
-        throw AppError.fromHttpStatus(500, String(result.error || "Failed to enqueue crawl job"));
-      }
-
-      res.json({ ok: true, jobId: result.jobId ?? null, status: "pending" });
+      // Knowledge URL/PDF ingestion is intentionally unavailable on the managed
+      // runtime (see ai-brains.ts). Fail closed at enqueue so clients get an
+      // immediate 503 instead of a job that always dies on first run.
+      throw AppError.fromHttpStatus(503, new KnowledgeIngestionUnavailableError().message);
     } catch (err) {
       if (err instanceof AppError) throw err;
       log.error("POST /api/jobs/knowledge-crawl failed", { error: getErrorMessage(err) });
