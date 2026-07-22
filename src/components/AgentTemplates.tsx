@@ -29,7 +29,6 @@ import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
 import { cn } from "../lib/utils";
 import { BRAND } from "../constants/brand-colors";
 import { useToast } from "../contexts/ToastContext";
-import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { EmptyState } from "./ui/EmptyState";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
@@ -471,7 +470,7 @@ function TemplateCard({
   );
 }
 
-function CustomAgentCard() {
+function CustomAgentCard({ onCreate }: { onCreate: () => void }) {
   return (
     <motion.div
       layout
@@ -485,10 +484,19 @@ function CustomAgentCard() {
       <div className="space-y-1">
         <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">Custom Agent</h3>
         <p className="text-[var(--wireline-typography-caption-size)] text-foreground/70 leading-relaxed max-w-[12.5rem]">
-          Let Wireline wire a bespoke agent for your exact use case.
+          Start from a blank employee in Studio and set the job, greeting, and voice yourself.
         </p>
       </div>
-      <ClaudeRecipeButton recipe="agent-wire" label="Open Wire Agent" variant="ghost" />
+      <ShadButton
+        type="button"
+        disableAnimations
+        variant="ghost"
+        onClick={onCreate}
+        className="rounded-full wl-label-muted hover:text-brand h-auto px-3 py-1.5"
+      >
+        <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+        Create in Studio
+      </ShadButton>
     </motion.div>
   );
 }
@@ -711,7 +719,7 @@ export default function AgentTemplates() {
                 ))}
               </AnimatePresence>
 
-              <CustomAgentCard />
+              <CustomAgentCard onCreate={() => navigate("/studio?create=1")} />
             </div>
           </>
         )}
