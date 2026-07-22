@@ -3,6 +3,11 @@ import { z } from "zod";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import { validateBody } from "../lib/api-validation";
+import { AppError } from "../lib/api-error";
+import {
+  generateCuratedVoicePreview,
+  isCuratedPreviewProvider,
+} from "../lib/voice/voice-preview-service";
 import type { AuthenticatedRequest } from "../types/auth";
 import {
   createGrokVoiceClientSession,
@@ -27,6 +32,11 @@ const statusLimiter = createRateLimiter({
   windowMs: 60_000,
   max: 30,
 });
+const previewLimiter = createRateLimiter({
+  bucket: "api:voice-preview",
+  windowMs: 60_000,
+  max: 20,
+});
 const sessionSchema = z.object({
   agentId: z.string().min(1).max(200),
   languageHint: z.string().max(20).optional(),
@@ -38,6 +48,25 @@ const toolSchema = z.object({
 });
 
 router.use(grokLiveProfileRouter);
+
+router.get(
+  "/api/voices/curated/preview",
+  authenticateUser,
+  previewLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const provider = typeof req.query.provider === "string" ? req.query.provider : "";
+    const voiceId = typeof req.query.voiceId === "string" ? req.query.voiceId.trim() : "";
+
+    if (!isCuratedPreviewProvider(provider) || !voiceId) {
+      throw AppError.fromHttpStatus(400, "A valid provider and voice are required.");
+    }
+
+    const audio = await generateCuratedVoicePreview(provider, voiceId);
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Cache-Control", "private, max-age=3600");
+    res.send(Buffer.from(audio));
+  },
+);
 
 router.get(
   "/api/voice/live/status",
