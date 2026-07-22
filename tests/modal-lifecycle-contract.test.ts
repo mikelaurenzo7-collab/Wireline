@@ -60,6 +60,8 @@ describe("authenticated modal lifecycle contract", () => {
     for (const [path, guard] of [
       ["src/components/CreateAgentDialog.tsx", "if (creating) return"],
       ["src/components/DeployAgentModal.tsx", "if (!deploying) onClose()"],
+      ["src/components/OutboundDialDialog.tsx", "if (!next && !placing) onClose()"],
+      ["src/components/DncManager.tsx", "if (!nextOpen && adding) return"],
       ["src/components/onboarding/PostCreateActivationWizard.tsx", "if (provisioning) return"],
       ["src/components/PhoneAgentBlueprint.tsx", "if (saving) return"],
       ["src/pages/TeamSettings.tsx", "if (inviting) return"],

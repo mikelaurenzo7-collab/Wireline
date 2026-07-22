@@ -111,7 +111,7 @@ export default function DncManager() {
   });
 
   const handleAdd = async () => {
-    if (!addPhone.trim()) return;
+    if (adding || !addPhone.trim()) return;
     setAdding(true);
     try {
       const r = await authFetch("/api/dnc", {
@@ -492,8 +492,23 @@ export default function DncManager() {
       </div>
 
       {/* Add number modal */}
-      <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent className="sm:max-w-md rounded-md border border-border p-6 shadow-2xl wl-modal-surface">
+      <Dialog
+        open={showAdd}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen && adding) return;
+          setShowAdd(nextOpen);
+        }}
+      >
+        <DialogContent
+          aria-busy={adding}
+          onEscapeKeyDown={(event) => {
+            if (adding) event.preventDefault();
+          }}
+          onPointerDownOutside={(event) => {
+            if (adding) event.preventDefault();
+          }}
+          className="sm:max-w-md rounded-md border border-border p-6 shadow-2xl wl-modal-surface"
+        >
           <DialogHeader className="flex flex-row items-center gap-3 space-y-0 border-b border-border/60 pb-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-md border border-rose-500/30 bg-rose-500/10">
               <Shield className="h-4.5 w-4.5 text-rose-500" />
@@ -520,7 +535,8 @@ export default function DncManager() {
                   placeholder="+1 (555) 123-4567"
                   value={addPhone}
                   onChange={(e) => setAddPhone(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                  onKeyDown={(e) => e.key === "Enter" && !adding && handleAdd()}
+                  disabled={adding}
                   className="border-input bg-[var(--wireline-color-surface-recessed)] pl-9 text-sm text-foreground placeholder:text-foreground/55 focus-visible:ring-[var(--wireline-color-focus-default)]"
                 />
               </div>
@@ -529,7 +545,7 @@ export default function DncManager() {
             <div>
               <label className="mb-2 block wl-label-muted">Reason</label>
               <div className="relative">
-                <Select value={addReason} onValueChange={setAddReason}>
+                <Select value={addReason} onValueChange={setAddReason} disabled={adding}>
                   <SelectTrigger
                     aria-label="Reason"
                     className="h-9 w-full rounded-md border border-input bg-transparent pl-3 text-sm text-foreground"
@@ -560,6 +576,7 @@ export default function DncManager() {
               type="button"
               variant="secondary"
               onClick={() => setShowAdd(false)}
+              disabled={adding}
               className="flex-1"
             >
               Cancel

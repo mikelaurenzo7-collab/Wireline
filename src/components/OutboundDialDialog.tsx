@@ -125,8 +125,23 @@ export default function OutboundDialDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-md gap-0 overflow-hidden border-border bg-[var(--wireline-color-surface-default)] p-0 shadow-2xl">
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && !placing) onClose();
+      }}
+    >
+      <DialogContent
+        showClose={!placing}
+        aria-busy={placing}
+        onEscapeKeyDown={(event) => {
+          if (placing) event.preventDefault();
+        }}
+        onPointerDownOutside={(event) => {
+          if (placing) event.preventDefault();
+        }}
+        className="max-w-md gap-0 overflow-hidden border-border bg-[var(--wireline-color-surface-default)] p-0 shadow-2xl"
+      >
         <DialogHeader className="border-b border-border px-6 py-5">
           <DialogTitle className="flex items-center gap-2 font-[var(--wireline-font-family-display)] text-xl font-normal tracking-[-0.02em]">
             <Phone className="h-4 w-4 text-primary" aria-hidden />
