@@ -253,6 +253,40 @@ export async function searchContacts(query: string, userId?: string): Promise<Hu
   }
 }
 
+export async function updateDealStage(
+  dealId: string,
+  stage: string,
+  userId?: string,
+): Promise<boolean> {
+  const uid = userId || "";
+  const token = await getValidToken(uid);
+  if (!token) {
+    log.warn("HubSpot not connected — skipping deal stage update");
+    return false;
+  }
+
+  try {
+    const res = await fetchWithTimeout(
+      `${HUBSPOT_BASE}/crm/v3/objects/deals/${encodeURIComponent(dealId)}`,
+      {
+        method: "PATCH",
+        headers: hsHeaders(token),
+        body: JSON.stringify({
+          properties: {
+            dealstage: stage,
+          },
+        }),
+      },
+      15_000,
+    );
+    if (!res.ok) throw new Error(`HubSpot deal stage update error: ${res.status}`);
+    return true;
+  } catch (err) {
+    log.error("HubSpot deal stage update failed", { error: getErrorMessage(err) });
+    return false;
+  }
+}
+
 export async function createContact(
   params: {
     first_name: string;

@@ -227,6 +227,89 @@ async function getValidToken(
 //  CRM Operations
 // ────────────────────────────────────────────────────────────────────
 
+export async function createContact(
+  params: {
+    first_name: string;
+    last_name: string;
+    email?: string;
+    phone?: string;
+    company?: string;
+  },
+  userId?: string,
+): Promise<string | null> {
+  const uid = userId || "";
+  const creds = await getValidToken(uid);
+  if (!creds) {
+    log.warn("Salesforce not connected — skipping contact create");
+    return null;
+  }
+
+  try {
+    const body: Record<string, unknown> = {
+      FirstName: params.first_name || "",
+      LastName: params.last_name || "Unknown",
+    };
+    if (params.email) body.Email = params.email;
+    if (params.phone) body.Phone = params.phone;
+    // Account association by company name is best-effort: Salesforce requires
+    // an AccountId for Account Name. Store company on Title/Description when
+    // we only have a free-text company label from a voice call.
+    if (params.company) body.Title = params.company;
+
+    const res = await fetchWithTimeout(
+      `${creds.instanceUrl}/services/data/v59.0/sobjects/Contact`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${creds.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      },
+      15_000,
+    );
+    if (!res.ok) throw new Error(`Salesforce Contact create error: ${res.status}`);
+    const data = (await res.json()) as any;
+    return data.id || null;
+  } catch (err) {
+    log.error("Salesforce contact create failed", { error: getErrorMessage(err) });
+    return null;
+  }
+}
+
+export async function updateOpportunityStage(
+  opportunityId: string,
+  stage: string,
+  userId?: string,
+): Promise<boolean> {
+  const uid = userId || "";
+  const creds = await getValidToken(uid);
+  if (!creds) {
+    log.warn("Salesforce not connected — skipping opportunity stage update");
+    return false;
+  }
+
+  try {
+    const res = await fetchWithTimeout(
+      `${creds.instanceUrl}/services/data/v59.0/sobjects/Opportunity/${encodeURIComponent(opportunityId)}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${creds.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ StageName: stage }),
+      },
+      15_000,
+    );
+    if (!res.ok) throw new Error(`Salesforce Opportunity stage update error: ${res.status}`);
+    return true;
+  } catch (err) {
+    log.error("Salesforce opportunity stage update failed", { error: getErrorMessage(err) });
+    return false;
+  }
+}
+
 export async function searchContacts(query: string, userId?: string): Promise<SalesforceContact[]> {
   const uid = userId || "";
   const creds = await getValidToken(uid);

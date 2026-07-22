@@ -26,6 +26,8 @@ describe("outbound compliance contract", () => {
     expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
     expect(gate).toContain("isFederalDncListed(opts.phone)");
     expect(gate).toContain("is_marketing_call: isMarketingCall");
+    expect(gate).toContain("resolveCallingHoursForPhone");
+    expect(gate).toContain('reason: "outside_permitted_calling_hours"');
   });
 
   it("fails closed when federal DNC vendor is unconfigured for marketing dials on web and mobile", () => {

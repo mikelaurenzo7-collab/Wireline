@@ -58,8 +58,11 @@ export class CRMService {
         log.error("hubspot create contact failed", { error: err });
       }
     } else if (resolved === "salesforce") {
-      // Not yet implemented for Salesforce, just logging
-      log.warn("salesforce create contact not implemented");
+      try {
+        return await salesforce.createContact(params, this.userId);
+      } catch (err) {
+        log.error("salesforce create contact failed", { error: err });
+      }
     }
     return null;
   }
@@ -151,12 +154,23 @@ export class CRMService {
   }): Promise<boolean> {
     const resolved = params.crmType === "auto" ? await getActiveCrm(this.userId) : params.crmType;
     if (resolved === "hubspot") {
-      // Use raw hubspot API or just stub for now
-      log.warn("hubspot update deal stage not natively exposed, stubbing");
-      return true;
+      try {
+        return await hubspot.updateDealStage(params.deal_id, params.stage, this.userId);
+      } catch (err) {
+        log.error("hubspot update deal stage failed", { error: err });
+        return false;
+      }
     } else if (resolved === "salesforce") {
-      log.warn("salesforce update opportunity stage not natively exposed, stubbing");
-      return true;
+      try {
+        return await salesforce.updateOpportunityStage(
+          params.deal_id,
+          params.stage,
+          this.userId,
+        );
+      } catch (err) {
+        log.error("salesforce update opportunity stage failed", { error: err });
+        return false;
+      }
     }
     return false;
   }

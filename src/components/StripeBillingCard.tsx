@@ -61,6 +61,17 @@ export default function StripeBillingCard() {
   const [liveVideoBusy, setLiveVideoBusy] = useState(false);
   const [liveVideoAddon, setLiveVideoAddon] = useState<LiveVideoAddonState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [billingInterval, setBillingInterval] = useState<"month" | "year">(() => {
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get("interval");
+      if (fromUrl === "year") return "year";
+      const stored = getStoredSignupIntent()?.preferredBillingInterval;
+      if (stored === "year") return "year";
+    } catch {
+      /* ignore */
+    }
+    return "month";
+  });
 
   const refresh = async () => {
     setLoading(true);
@@ -106,7 +117,7 @@ export default function StripeBillingCard() {
     }
   }, []);
 
-  const startCheckout = async (planId: string) => {
+  const startCheckout = async (planId: string, interval: "month" | "year" = billingInterval) => {
     const hasActive =
       !!sub?.has_subscription &&
       (sub.status === "active" || sub.status === "trialing" || sub.status === "past_due");
@@ -118,7 +129,7 @@ export default function StripeBillingCard() {
       const r = await authFetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan_id: planId }),
+        body: JSON.stringify({ plan_id: planId, interval }),
       });
       const d = await r.json();
       if (r.status === 409 && d?.code === "ALREADY_SUBSCRIBED") {
@@ -129,6 +140,11 @@ export default function StripeBillingCard() {
 
       if (typeof window !== "undefined") {
         try {
+          const selected = plans.find((plan) => plan.id === planId);
+          const checkoutValue =
+            interval === "year"
+              ? (selected?.price_usd_annual ?? 0)
+              : (selected?.price_usd_monthly ?? 0);
           if (typeof (window as any).fbq === "function") {
             // Conversion value comes from the live plan catalog so tracking
             // never drifts from the price actually charged. Personal activation
@@ -136,15 +152,21 @@ export default function StripeBillingCard() {
             (window as any).fbq("track", "InitiateCheckout", {
               content_category: "Subscription",
               content_ids: [planId],
-              value: plans.find((plan) => plan.id === planId)?.price_usd_monthly ?? 0,
+              value: checkoutValue,
               currency: "USD",
             });
           }
           if (typeof (window as any).plausible === "function") {
-            (window as any).plausible("CheckoutInitiated", { props: { plan: planId } });
+            (window as any).plausible("CheckoutInitiated", {
+              props: { plan: planId, interval },
+            });
           }
           if (typeof (window as any).dataLayer?.push === "function") {
-            (window as any).dataLayer.push({ event: "checkout_initiated", planId });
+            (window as any).dataLayer.push({
+              event: "checkout_initiated",
+              planId,
+              interval,
+            });
           }
         } catch (err) {
           console.error("[wireline:analytics] Failed to log checkout initiation:", err);
@@ -342,6 +364,8 @@ export default function StripeBillingCard() {
           plans={plans}
           signupPlanInterest={signupPlanInterest}
           busy={busy}
+          billingInterval={billingInterval}
+          onBillingIntervalChange={setBillingInterval}
           onSelectPlan={startCheckout}
         />
       )}
@@ -378,7 +402,7 @@ function CreditTopUpCard({
     <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-5">
       <div className="border-b border-border pb-5">
         <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
-          {isActivation ? CONVERSATION_BALANCE_COPY.title : "Add Conversation Balance"}
+          {isActivation ? CONVERSATION_BALANCE_COPY.title : `Add ${CONVERSATION_BALANCE_COPY.title}`}
         </h3>
         <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
           {isActivation
@@ -420,24 +444,64 @@ function PlanPicker({
   plans,
   signupPlanInterest,
   busy,
+  billingInterval,
+  onBillingIntervalChange,
   onSelectPlan,
 }: {
   plans: ClientPlan[];
   signupPlanInterest: string | null;
   busy: string | null;
-  onSelectPlan: (planId: string) => void;
+  billingInterval: "month" | "year";
+  onBillingIntervalChange: (interval: "month" | "year") => void;
+  onSelectPlan: (planId: string, interval: "month" | "year") => void;
 }) {
   return (
     <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-8">
       <div className="border-b border-border pb-6">
-        <h3 className="font-semibold tracking-[-.02em] text-3xl text-foreground">
-          Choose operating capacity
-        </h3>
-        <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
-          {PRODUCT_VERSATILITY.short} Build free, go live from $9/mo with guaranteed voice minutes,
-          and move into shared capacity when you need routing, numbers, approvals, and team
-          operations. Stripe-secured. Cancel anytime.
-        </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h3 className="font-semibold tracking-[-.02em] text-3xl text-foreground">
+              Choose operating capacity
+            </h3>
+            <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
+              {PRODUCT_VERSATILITY.short} Build free, go live from $9/mo with guaranteed voice
+              minutes, and move into shared capacity when you need routing, numbers, approvals, and
+              team operations. Stripe-secured. Cancel anytime.
+            </p>
+          </div>
+          <div
+            className="inline-flex shrink-0 rounded-full border border-border bg-muted/40 p-1"
+            role="group"
+            aria-label="Billing interval"
+          >
+            <button
+              type="button"
+              onClick={() => onBillingIntervalChange("month")}
+              className={cn(
+                "min-h-9 rounded-full px-4 text-xs font-semibold uppercase tracking-[0.14em] transition",
+                billingInterval === "month"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              aria-pressed={billingInterval === "month"}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              onClick={() => onBillingIntervalChange("year")}
+              className={cn(
+                "min-h-9 rounded-full px-4 text-xs font-semibold uppercase tracking-[0.14em] transition",
+                billingInterval === "year"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              aria-pressed={billingInterval === "year"}
+            >
+              Annual
+            </button>
+          </div>
+        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 stagger-children">
         {plans
@@ -447,6 +511,14 @@ function PlanPicker({
             const accent = PLAN_ACCENTS[plan.id] || BRAND.colors.primary;
             const isBusy = busy === plan.id;
             const isSignupMatch = signupPlanInterest === plan.id;
+            const annual = plan.price_usd_annual > 0;
+            const showAnnual = billingInterval === "year" && annual;
+            const price = showAnnual ? plan.price_usd_annual : plan.price_usd_monthly;
+            const priceSuffix = showAnnual ? "/yr" : "/mo";
+            const monthsSaved =
+              annual && plan.price_usd_monthly > 0
+                ? Math.max(0, Math.round(12 - plan.price_usd_annual / plan.price_usd_monthly))
+                : 0;
             return (
               <motion.div
                 key={plan.id}
@@ -489,12 +561,26 @@ function PlanPicker({
                   </h4>
                   <div className="mt-1.5 flex items-baseline gap-1">
                     <span className="font-semibold tracking-[-.02em] text-4xl text-foreground">
-                      ${plan.price_usd_monthly.toLocaleString()}
+                      ${price.toLocaleString()}
                     </span>
                     <span className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
-                      /mo
+                      {priceSuffix}
                     </span>
                   </div>
+                  {showAnnual && monthsSaved > 0 ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Save {monthsSaved} month{monthsSaved === 1 ? "" : "s"} vs monthly
+                    </p>
+                  ) : billingInterval === "year" && !annual ? (
+                    <p className="mt-1 text-xs text-muted-foreground">Billed monthly</p>
+                  ) : annual ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      or ${plan.price_usd_annual}/yr
+                      {monthsSaved > 0
+                        ? ` · save ${monthsSaved} month${monthsSaved === 1 ? "" : "s"}`
+                        : ""}
+                    </p>
+                  ) : null}
                 </div>
                 <ul className="space-y-2 flex-1">
                   {plan.features.map((f: string, i: number) => (
@@ -511,7 +597,9 @@ function PlanPicker({
                   type="button"
                   disableAnimations
                   variant="outline"
-                  onClick={() => onSelectPlan(plan.id)}
+                  onClick={() =>
+                    onSelectPlan(plan.id, showAnnual ? "year" : "month")
+                  }
                   disabled={isBusy || !plan.configured}
                   className={cn(
                     "w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-border hover:border-[color:var(--wireline-color-border-strong)] text-foreground bg-card hover:bg-muted hover-premium-glow",
@@ -522,7 +610,7 @@ function PlanPicker({
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : plan.configured ? (
                     <>
-                      Subscribe <ArrowRight className="w-3 h-3" />
+                      Subscribe {showAnnual ? "annually" : ""} <ArrowRight className="w-3 h-3" />
                     </>
                   ) : (
                     "Contact sales"

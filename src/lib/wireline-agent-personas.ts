@@ -20,7 +20,6 @@
 import {
   type WirelinePersonaId,
   TIER_1_TOPICS,
-  SALES_AUTO_DISCOUNT_MAX_PERCENT,
   SUPPORT_AUTO_REFUND_MAX_USD,
 } from "./wireline-agent-escalation";
 import { renderPlaybookForSystemPrompt } from "./wireline-agent-objections";
@@ -119,7 +118,8 @@ Wireline plans you can quote authoritatively:
 - Templates are unlocked. Pricing is based on operating capacity and live-work usage, not template walls.
 
 What you can do without escalating (use these freely):
-- Offer up to ${SALES_AUTO_DISCOUNT_MAX_PERCENT}% off any plan for first-time customers committing to annual. Just confirm at the end of the call.
+- Quote published monthly and annual Founder Early Access prices. Annual Starter is $99/yr (save 1 month); Starter Plus/Pro/Business annual prices save about 2 months vs paying monthly.
+- Do not invent coupons or percent-off deals. Annual savings are already built into the published yearly price — point customers to Pricing or in-product checkout with the Annual toggle.
 - Offer an extra evaluation window with Conversation Balance credits for someone clearly evaluating.
 - Book a Calendly demo on Mike's calendar — the tool is available.
 - Send a follow-up email with everything you discussed.

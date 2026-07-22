@@ -17,6 +17,7 @@ export type SignupWedgeKey = (typeof SIGNUP_WEDGE_KEYS)[number];
 
 export type SignupIntent = {
   preferredPlanId?: SignupPlanId;
+  preferredBillingInterval?: "month" | "year";
   signupWedge?: SignupWedgeKey;
   utmSource?: string;
   utmMedium?: string;
@@ -129,6 +130,10 @@ export function sanitizeSignupIntent(intent: SignupIntent | null | undefined): S
   const normalizedPlan = normalizePlanId(intent.preferredPlanId);
   if (normalizedPlan) out.preferredPlanId = normalizedPlan;
 
+  if (intent.preferredBillingInterval === "year" || intent.preferredBillingInterval === "month") {
+    out.preferredBillingInterval = intent.preferredBillingInterval;
+  }
+
   if (intent.signupWedge && WEDGE_SET.has(intent.signupWedge)) {
     out.signupWedge = intent.signupWedge;
   }
@@ -160,6 +165,11 @@ export function parseSignupIntent(search: string): SignupIntent | null {
 
   const normalizedPlan = normalizePlanId(rawPlan);
   if (normalizedPlan) intent.preferredPlanId = normalizedPlan;
+
+  const rawInterval = params.get("interval")?.trim().toLowerCase();
+  if (rawInterval === "year" || rawInterval === "month") {
+    intent.preferredBillingInterval = rawInterval;
+  }
 
   if (rawWedge && WEDGE_SET.has(rawWedge)) {
     intent.signupWedge = rawWedge as SignupWedgeKey;

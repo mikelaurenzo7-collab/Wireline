@@ -9,7 +9,7 @@ import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
-import { CONVERSATION_BALANCE_PRESETS_USD } from "../lib/conversation-balance";
+import { CONVERSATION_BALANCE_COPY, CONVERSATION_BALANCE_PRESETS_USD } from "../lib/conversation-balance";
 import { conversationBalanceMinuteEstimates } from "../lib/voice-pricing-display";
 import type { BillingStatusResponse } from "../types/api";
 
@@ -238,7 +238,7 @@ export default function BillingSettings() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                  Conversation Balance
+                  {CONVERSATION_BALANCE_COPY.title}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   Funds voice, SMS, and enrichment usage beyond your plan.

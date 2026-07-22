@@ -4,6 +4,7 @@ import { eq, and, gte, ne } from "drizzle-orm";
 import { assertFederalDncForMarketing, isFederalDncListed } from "./federal-dnc-service";
 import { isDncBlocked } from "./compliance";
 import { evaluateOutboundConsent, type ConsentDecision } from "./tcpa-consent";
+import { resolveCallingHoursForPhone } from "./tcpa-calling-hours";
 import { LEAD_STATUS } from "./outbound-status";
 import { jsonSafeId } from "./server-utils";
 
@@ -13,6 +14,7 @@ export type OutboundDialDenyReason =
   | "federal_dnc_unconfigured"
   | "blocked_internal_dnc"
   | "blocked_tcpa"
+  | "outside_permitted_calling_hours"
   | "skipped_duplicate"
   | "self_recent_call_scheduled";
 
@@ -55,6 +57,21 @@ export async function evaluateOutboundDialGate(opts: {
   const metadata = opts.metadata || {};
   const hasExpressWrittenConsent =
     opts.hasExpressWrittenConsent === true || metadata.has_express_written_consent === true;
+
+  // TCPA quiet hours first — local computation, cheapest fail-closed check.
+  const callingHours = resolveCallingHoursForPhone(opts.phone);
+  if (!callingHours.allowed) {
+    return {
+      allowed: false,
+      status: "AutoDialFailed",
+      reason: "outside_permitted_calling_hours",
+      metadataPatch: {
+        ...metadata,
+        auto_dial_error: "Outside TCPA permitted calling hours (8am–9pm local).",
+        calling_hours: callingHours,
+      },
+    };
+  }
 
   if (isMarketingCall) {
     const federalGate = assertFederalDncForMarketing();

@@ -247,7 +247,14 @@ async function adjustMessagingReservation(input: {
  */
 export async function sendTenantMessage(
   userId: string,
-  params: { to: string; body: string; channel?: TwilioMessageChannel; agentId?: string },
+  params: {
+    to: string;
+    body: string;
+    channel?: TwilioMessageChannel;
+    agentId?: string;
+    /** Optional MMS / rich-media URL (Twilio mediaUrl). */
+    mediaUrl?: string | string[];
+  },
 ): Promise<TwilioSendResult> {
   const channel = params.channel || "sms";
   const phone = cleanPhone(params.to);
@@ -365,6 +372,14 @@ export async function sendTenantMessage(
     statusCallback: `${appUrl()}/api/twilio-webhook/message-status`,
     validityPeriod: boundedValidityPeriod(),
   };
+  const mediaUrls = Array.isArray(params.mediaUrl)
+    ? params.mediaUrl.filter((url) => typeof url === "string" && url.trim())
+    : typeof params.mediaUrl === "string" && params.mediaUrl.trim()
+      ? [params.mediaUrl.trim()]
+      : [];
+  if (mediaUrls.length > 0) {
+    payload.mediaUrl = mediaUrls;
+  }
   if (channel === "whatsapp") {
     payload.from = address(cleanPhone(sender), channel);
   } else if (settings.messagingServiceSid) {

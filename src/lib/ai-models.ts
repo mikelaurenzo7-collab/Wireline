@@ -149,7 +149,14 @@ export const MODEL_PRICING = {
   [GEMINI_MODELS.PRO_3_1]: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 0 },
 } as const;
 export const DEFAULT_MODEL = STRUCTURED_PRIMARY_MODEL;
-export function selectModelForTask(_complexity: TaskComplexity): string {
+/**
+ * Route structured work by complexity inside the OpenAI primary lane.
+ * Gemini remains the automatic continuity fallback (see ai-client), not a
+ * complexity selector — OpenAI only accepts gpt-* ids on the primary path.
+ * GPT-5 is ~½ the input cost of GPT-5.6 Terra for simple/medium tasks.
+ */
+export function selectModelForTask(complexity: TaskComplexity): string {
+  if (complexity === "simple" || complexity === "medium") return OPENAI_MODELS.GPT_5;
   return STRUCTURED_PRIMARY_MODEL;
 }
 export function modelLabel(model: string): string {

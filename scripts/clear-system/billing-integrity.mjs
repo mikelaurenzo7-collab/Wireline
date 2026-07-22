@@ -24,8 +24,8 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/pages/BillingSettings.tsx",
     billingSettingsPage,
-    /Conversation Balance/,
-    "billing must expose conversation balance controls",
+    /CONVERSATION_BALANCE_COPY\.title|Runtime Balance/,
+    "billing must expose Runtime Balance controls",
   );
   mustInclude(
     "src/components/StripeBillingCard.tsx",
