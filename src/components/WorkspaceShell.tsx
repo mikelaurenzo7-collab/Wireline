@@ -52,7 +52,7 @@ function userInitial(name?: string | null, email?: string | null) {
 }
 
 function readinessLabel(agent: { phone_number?: string | null } | undefined): string {
-  return agent?.phone_number ? "Live" : "Setup needed";
+  return agent?.phone_number ? "Live" : "Needs setup";
 }
 
 function contextualNavItem(item: ShellNavItem, posture: "personal" | "business"): ShellNavItem {
@@ -250,7 +250,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
                   />
                   <span className="min-w-0">
                     <span className="block truncate text-[12px] font-semibold">{agent.name}</span>
-                    <span className="block truncate text-[10px] text-[color:var(--wireline-color-text-secondary)]">
+                    <span className="block truncate text-[10px] leading-tight text-[color:var(--wireline-color-text-secondary)]">
                       {formatAgentRoleLabel(agent.role)} · {readinessLabel(agent)}
                     </span>
                   </span>

@@ -206,7 +206,7 @@ export default function BillingSettings() {
               <div className="flex flex-wrap gap-2">
                 {!paidPlan ? (
                   <Button asChild disableAnimations>
-                    <Link to="/pricing">Choose a live plan</Link>
+                    <Link to="/pricing">Choose a paid plan</Link>
                   </Button>
                 ) : null}
                 {hasSubscription ? (

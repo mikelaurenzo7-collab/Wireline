@@ -25,7 +25,7 @@ describe("empty-state route hygiene", () => {
     expect(overview).toContain('primaryLabel: "Connect phone"');
 
     expect(shell).toContain('"Live"');
-    expect(shell).toContain('"Setup needed"');
+    expect(shell).toContain('"Needs setup"');
     expect(shell).not.toMatch(/phone_number \? "Active" : "Training"/);
 
     expect(routes).toContain("AgentsToStudioRedirect");

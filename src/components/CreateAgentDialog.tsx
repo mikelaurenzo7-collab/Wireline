@@ -471,9 +471,14 @@ export default function CreateAgentDialog({
 
         <div className="shrink-0 border-t border-border px-6 py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-muted-foreground">
-              Voice, phone, and testing come next in Studio.
-            </p>
+            <button
+              type="button"
+              onClick={close}
+              disabled={creating}
+              className="text-left text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline disabled:opacity-50"
+            >
+              I&apos;ll explore first
+            </button>
             <Button type="submit" disabled={creating} className="gap-2 sm:shrink-0">
               {creating ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />

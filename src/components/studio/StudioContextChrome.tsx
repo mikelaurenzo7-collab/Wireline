@@ -10,7 +10,7 @@ import { customerAgentLanguage } from "../../lib/product-copy";
 
 function readiness(agent: WorkspaceAgentSummary | null) {
   if (!agent) return null;
-  return agent.phone_number ? "Live" : "Setup needed";
+  return agent.phone_number ? "Live" : "Needs setup";
 }
 
 export default function StudioContextChrome() {
