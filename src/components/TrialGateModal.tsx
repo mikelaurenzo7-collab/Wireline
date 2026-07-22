@@ -7,12 +7,13 @@
  * hidden free trial.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, CreditCard, AlertTriangle, Sparkles, Wallet, Mail, Check } from "lucide-react";
 import { authFetch, safeJson, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from "../lib/api";
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
+import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 import {
@@ -84,8 +85,13 @@ export default function TrialGateModal() {
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resend, setResend] = useState<ResendOutcome>("idle");
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useBodyScrollLock(detail !== null);
+  useModalFocusTrap(dialogRef, {
+    active: detail !== null,
+    onEscape: () => setDetail(null),
+  });
 
   useEffect(() => {
     const onBlock = (event: Event) => {
@@ -98,15 +104,6 @@ export default function TrialGateModal() {
     window.addEventListener(TRIAL_GATE_EVENT, onBlock);
     return () => window.removeEventListener(TRIAL_GATE_EVENT, onBlock);
   }, []);
-
-  useEffect(() => {
-    if (!detail) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setDetail(null);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [detail]);
 
   if (!detail) return null;
 
@@ -239,9 +236,11 @@ export default function TrialGateModal() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-[100] flex items-end justify-center bg-black/55 px-0 pt-[env(safe-area-inset-top,0)] pb-[env(safe-area-inset-bottom,0)] backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="trial-gate-title"
+          aria-describedby="trial-gate-description"
         >
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -273,7 +272,10 @@ export default function TrialGateModal() {
               >
                 {title}
               </h2>
-              <p className="max-w-xl text-sm leading-relaxed text-foreground/75 sm:text-base">
+              <p
+                id="trial-gate-description"
+                className="max-w-xl text-sm leading-relaxed text-foreground/75 sm:text-base"
+              >
                 {body}
               </p>
             </div>
