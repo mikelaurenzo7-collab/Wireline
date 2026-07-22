@@ -23,6 +23,7 @@ import type { AuthenticatedRequest } from "../types/auth";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
+import { isLiveVideoCatalogReady } from "../lib/video-presenter/live-video-entitlements";
 
 const router = express.Router();
 
@@ -878,6 +879,12 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
+      if (!isLiveVideoCatalogReady()) {
+        return res.status(503).json({
+          code: "LIVE_VIDEO_CATALOG_UNAVAILABLE",
+          error: "Live video checkout is paused while the curated Presence Catalog is prepared.",
+        });
+      }
       // Canonical env is STRIPE_LIVE_VIDEO_ADDON_PRICE_ID; STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID
       // is accepted as an alias so ops can standardize on the SKU-shaped name.
       const configuredPriceId =
@@ -889,19 +896,13 @@ router.post(
           error: "Live video add-on is not configured (STRIPE_LIVE_VIDEO_ADDON_PRICE_ID).",
         });
       }
-      const priceId = await validateFounderCatalogPriceId(configuredPriceId);
-      if (!priceId) {
-        return res.status(503).json({
-          code: "SERVICE_UNAVAILABLE",
-          error:
-            "Live video add-on price is not in the current founder catalog. Run stripe:setup and update Vercel.",
-        });
-      }
-
       const [row] = await drizzle
         .select({
           stripeCustomerId: schema.subscriptions.stripeCustomerId,
           liveVideoAddonEnabled: schema.settings.liveVideoAddonEnabled,
+          planId: schema.subscriptions.plan,
+          stripeStatus: schema.subscriptions.status,
+          subscriptionStatus: schema.settings.subscriptionStatus,
         })
         .from(schema.settings)
         .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
@@ -912,6 +913,26 @@ router.post(
         return res.status(409).json({
           code: "LIVE_VIDEO_ALREADY_ENABLED",
           error: "Live video add-on is already active on this workspace.",
+        });
+      }
+
+      const plan = planById(row?.planId);
+      const stripeActive = row?.stripeStatus === "active" || row?.stripeStatus === "trialing";
+      const settingsActive =
+        row?.subscriptionStatus === "active" || row?.subscriptionStatus === "trialing";
+      if (!plan || plan.id === "personal" || !stripeActive || !settingsActive) {
+        return res.status(402).json({
+          code: "LIVE_VIDEO_BASE_PLAN_REQUIRED",
+          error: "Activate a paid Wireline plan before adding live video.",
+        });
+      }
+
+      const priceId = await validateFounderCatalogPriceId(configuredPriceId);
+      if (!priceId) {
+        return res.status(503).json({
+          code: "SERVICE_UNAVAILABLE",
+          error:
+            "Live video add-on price is not in the current founder catalog. Run stripe:setup and update Vercel.",
         });
       }
 
@@ -947,6 +968,8 @@ router.post(
         mode: "subscription",
         customer: customerId,
         line_items: [{ price: priceId, quantity: 1 }],
+        automatic_tax: { enabled: true },
+        customer_update: { address: "auto", name: "auto" },
         success_url: `${base}/settings/billing?live_video=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${base}/settings/billing?live_video=canceled`,
         metadata: addonMeta,
