@@ -40,7 +40,7 @@ const PAID_TIERS = [
     eyebrow: "Put one employee live",
     tagline: "Your AI Voice Employee from $9/month.",
     detail:
-      "Launch one focused employee for inbound coverage, outbound follow-up, appointment setting, lead qualification, SMS, or email—with an included Wireline number at no extra line fee.",
+      "One focused employee for inbound, outbound follow-up, or scheduling—with an included Wireline number.",
     cta: "Start for $9",
     ctaPath: "/signup?plan=starter",
     icon: Sparkles,
@@ -53,7 +53,7 @@ const PAID_TIERS = [
     eyebrow: "Best one-employee value",
     tagline: "2× the voice minutes, full SMS + Lead Hunt workflow — for $10 more.",
     detail:
-      "Keep one AI Voice Employee, but add substantially more voice capacity plus Lead Hunt, enrichment, inbox, email, SMS, and follow-up workflows under one memory and one set of rules.",
+      "Same one-employee limit, with 2× voice minutes plus Lead Hunt, inbox, SMS, and email under one memory.",
     cta: "Choose Starter Plus",
     ctaPath: "/signup?plan=team",
     icon: Crosshair,
@@ -66,7 +66,7 @@ const PAID_TIERS = [
     eyebrow: "For a growing operation",
     tagline: "Five specialized employees. One supervised workspace.",
     detail:
-      "Add dedicated employees for inbound conversion, outbound follow-up, lead revival, scheduling, support, or front-desk work while preserving shared routing, approvals, channel controls, and analytics.",
+      "Up to five specialized employees with shared routing, approvals, channel controls, and analytics.",
     cta: "Go Pro",
     ctaPath: "/signup?plan=business",
     icon: Users,
@@ -79,7 +79,7 @@ const PAID_TIERS = [
     eyebrow: "For serious operators",
     tagline: "A complete AI conversation workforce.",
     detail:
-      "Deploy up to fifteen purpose-built employees across sales, service, operations, recovery, support, and multiple business lines with stronger governance, analytics, and oversight.",
+      "Up to fifteen purpose-built employees across lines of work, with stronger governance and oversight.",
     cta: "Start Business",
     ctaPath: "/signup?plan=enterprise",
     icon: Building2,
@@ -218,7 +218,7 @@ export default function Pricing() {
       <main id="main-content" className="pt-16" tabIndex={-1}>
         <MarketingHero
           eyebrow="Founder Early Access"
-          title="Build Free. Launch for $9. Scale When It Pays."
+          title="Build free. Launch for $9. Scale when it pays."
           description="One subscription unlocks calls, texts, email, follow-up, and Lead Hunt—plus a number on every paid plan. Extra usage stays prepaid, never a surprise bill."
           primaryAction={{ label: "Launch for $9/mo", to: "/signup?plan=starter" }}
           secondaryAction={{
@@ -250,7 +250,7 @@ export default function Pricing() {
                     <p className="wl-stitch-label">Build before billing</p>
                     <h3 className="mt-2 text-2xl font-semibold">Free Builder</h3>
                   </div>
-                  <WalletCards className="h-6 w-6" aria-hidden="true" />
+                  <WalletCards className="h-6 w-6 text-primary" aria-hidden="true" />
                 </div>
                 <div className="mt-6 flex items-end justify-center gap-2">
                   <span className="text-4xl font-semibold tracking-[-0.04em]">$0</span>
@@ -351,7 +351,7 @@ export default function Pricing() {
                       className={`mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition ${
                         featured
                           ? "marketing-btn-primary border-0"
-                          : "bg-foreground text-background hover:bg-foreground/90"
+                          : "marketing-btn-secondary"
                       }`}
                     >
                       {cta} <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -372,7 +372,7 @@ export default function Pricing() {
                     <p className="wl-stitch-label">25+ employees or custom needs</p>
                     <h3 className="mt-2 text-2xl font-semibold">Scale &amp; Enterprise</h3>
                   </div>
-                  <ShieldCheck className="h-6 w-6" aria-hidden="true" />
+                  <ShieldCheck className="h-6 w-6 text-primary" aria-hidden="true" />
                 </div>
                 <div className="mt-6 text-4xl font-semibold tracking-[-0.04em]">Custom</div>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">

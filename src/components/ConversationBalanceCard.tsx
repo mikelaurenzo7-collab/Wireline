@@ -106,11 +106,13 @@ export default function ConversationBalanceCard() {
     );
   }
 
-  const presets = balance?.presets_usd?.length ? balance.presets_usd : [5, 10, 25, 50];
+  const presets = balance?.presets_usd?.length ? balance.presets_usd : [10, 25, 50, 100];
   const copy = balance?.copy ?? {
-    title: "Conversation Balance",
-    subtitle: "Start free. Add balance when you are ready to run calls, texts, and follow-up.",
-    reassurance: "No automatic reload. Add more only when you want more live work.",
+    title: "Runtime Balance",
+    subtitle:
+      "Your subscription guarantees monthly voice capacity and includes flexible runtime for optional AI, SMS, research, enrichment, and business artifacts. Add prepaid balance only when you need more.",
+    reassurance:
+      "No automatic overages or auto-refill by default. Active calls finish normally; the next paid action pauses when included capacity and balance are depleted.",
   };
   const balanceUsd = balance?.balance_usd ?? 0;
 

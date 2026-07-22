@@ -237,10 +237,11 @@ export const FOUNDER_PRICES = [
       wireline_price_type: "live_video_addon",
     },
   },
-  ...[5, 10, 25, 50].map((amount) => ({
+  // Keep in lockstep with src/lib/conversation-balance.ts presets ($10 minimum).
+  ...[10, 25, 50, 100].map((amount) => ({
     key: `balance_${amount}`,
     productKey: "conversation_balance",
-    nickname: `Conversation Balance - $${amount}`,
+    nickname: `Runtime Balance - $${amount}`,
     lookupKey: null,
     unitAmount: amount * 100,
     recurring: null,

@@ -667,6 +667,42 @@ export default function AuthPortal() {
           )}
 
           <div className="pt-2">
+            {isSignUp && (
+              <div className="wl-auth-terms mb-4 flex items-start gap-3 rounded-xl border border-border bg-muted/50 p-3 text-sm leading-relaxed text-foreground/75">
+                <input
+                  id="auth-terms"
+                  type="checkbox"
+                  aria-labelledby="auth-terms-label"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 accent-primary"
+                />
+                <span id="auth-terms-label">
+                  <label htmlFor="auth-terms" className="cursor-pointer select-none">
+                    I agree to the Wireline
+                  </label>{" "}
+                  <Link
+                    to="/terms"
+                    target="_blank"
+                    rel="noopener"
+                    className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80"
+                  >
+                    Terms
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    to="/privacy"
+                    target="_blank"
+                    rel="noopener"
+                    className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80"
+                  >
+                    Privacy Policy
+                  </Link>
+                  .
+                </span>
+              </div>
+            )}
+
             {!isReset && (
               <OAuthSignInButtons
                 disabled={loading}
@@ -783,42 +819,6 @@ export default function AuthPortal() {
                 <div className="flex items-start gap-2 rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] p-3 text-sm text-[var(--wireline-color-text-primary)]">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--wireline-color-status-success)]" />
                   <div>{message}</div>
-                </div>
-              )}
-
-              {isSignUp && (
-                <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/50 p-3 text-sm leading-relaxed text-foreground/75">
-                  <input
-                    id="auth-terms"
-                    type="checkbox"
-                    aria-labelledby="auth-terms-label"
-                    checked={agreedToTerms}
-                    onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    className="mt-1 h-4 w-4 shrink-0 accent-primary"
-                  />
-                  <span id="auth-terms-label">
-                    <label htmlFor="auth-terms" className="cursor-pointer select-none">
-                      I agree to the Wireline
-                    </label>{" "}
-                    <Link
-                      to="/terms"
-                      target="_blank"
-                      rel="noopener"
-                      className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80"
-                    >
-                      Terms
-                    </Link>{" "}
-                    and{" "}
-                    <Link
-                      to="/privacy"
-                      target="_blank"
-                      rel="noopener"
-                      className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80"
-                    >
-                      Privacy Policy
-                    </Link>
-                    .
-                  </span>
                 </div>
               )}
 

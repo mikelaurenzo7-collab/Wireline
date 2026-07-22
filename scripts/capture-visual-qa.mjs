@@ -310,7 +310,8 @@ async function gotoWithRetry(page, route, attempts = 3) {
   throw lastError;
 }
 
-async function captureRoute(page, viewportName, route, issues) {
+async function captureRoute(page, viewportName, route, issues, options = {}) {
+  const { requireAuth = false, onAuthLost = null } = options;
   let response;
   try {
     response = await gotoWithRetry(page, route);
@@ -324,8 +325,34 @@ async function captureRoute(page, viewportName, route, issues) {
     return;
   }
   await settle(page);
+  let finalUrl = page.url();
+
+  // Authenticated captures can lose the session mid-matrix (long marketing
+  // sweeps, cookie churn). Recover once instead of recording a false P0.
+  if (
+    requireAuth &&
+    typeof onAuthLost === "function" &&
+    /\/signin(?:\?|$)/.test(new URL(finalUrl).pathname)
+  ) {
+    const recovered = await onAuthLost(page);
+    if (recovered) {
+      try {
+        response = await gotoWithRetry(page, route);
+        await settle(page);
+        finalUrl = page.url();
+      } catch (error) {
+        pushIssue(issues, {
+          viewport: viewportName,
+          route,
+          kind: "navigation",
+          detail: error instanceof Error ? error.message : "Navigation failed after re-auth",
+        });
+        return;
+      }
+    }
+  }
+
   const status = response?.status() ?? null;
-  const finalUrl = page.url();
   if (status && status >= 400)
     pushIssue(issues, { viewport: viewportName, route, kind: "http", detail: String(status) });
   if (!routeReached(baseUrl, route, finalUrl)) {
@@ -378,12 +405,12 @@ async function withTimeout(work, timeoutMs, message) {
   }
 }
 
-async function captureRouteInFreshPage(context, viewportName, route, issues) {
+async function captureRouteInFreshPage(context, viewportName, route, issues, options = {}) {
   const page = await context.newPage();
   attachPageDiagnostics(page, viewportName, issues);
   try {
     await withTimeout(
-      captureRoute(page, viewportName, route, issues),
+      captureRoute(page, viewportName, route, issues, options),
       routeTimeoutMs,
       `Capture timed out after ${routeTimeoutMs}ms`,
     );
@@ -461,23 +488,44 @@ try {
   }
 
   for (const viewport of activeViewports) {
-    const context = await browser.newContext({
+    const marketingContext = await browser.newContext({
       viewport: { width: viewport.width, height: viewport.height },
       isMobile: viewport.isMobile,
       hasTouch: viewport.hasTouch,
       deviceScaleFactor: 1,
-      storageState: authenticatedStorageState ?? undefined,
     });
 
     for (const route of activeMarketingRoutes)
-      await captureRouteInFreshPage(context, viewport.name, route, issues);
+      await captureRouteInFreshPage(marketingContext, viewport.name, route, issues);
+
+    await marketingContext.close();
 
     if (authenticatedStorageState) {
-      for (const route of activeAuthenticatedRoutes)
-        await captureRouteInFreshPage(context, viewport.name, route, issues);
-    }
+      const authContext = await browser.newContext({
+        viewport: { width: viewport.width, height: viewport.height },
+        isMobile: viewport.isMobile,
+        hasTouch: viewport.hasTouch,
+        deviceScaleFactor: 1,
+        storageState: authenticatedStorageState,
+      });
 
-    await context.close();
+      const recoverAuth = async (page) => {
+        const recovered = await signIn(page, `${viewport.name}-reauth`, issues);
+        if (recovered) {
+          authenticatedStorageState = await authContext.storageState();
+        }
+        return recovered;
+      };
+
+      for (const route of activeAuthenticatedRoutes) {
+        await captureRouteInFreshPage(authContext, viewport.name, route, issues, {
+          requireAuth: true,
+          onAuthLost: recoverAuth,
+        });
+      }
+
+      await authContext.close();
+    }
   }
 } finally {
   await browser.close();

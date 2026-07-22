@@ -186,7 +186,7 @@ export default function ActivationChecklist({ className }: { className?: string 
         <div>
           <p className="wl-eyebrow wl-eyebrow--primary">Get ready for real customers</p>
           <h2 className="mt-1 text-base font-semibold text-foreground">
-            {completed} of {steps.length} customer-ready steps complete
+            {completed} of {steps.length} customer-ready steps&nbsp;complete
           </h2>
           <p className="mt-1 hidden max-w-2xl text-xs leading-5 text-muted-foreground sm:block">
             Test freely in Studio. This checklist tracks only saved setup, live channels, and real
