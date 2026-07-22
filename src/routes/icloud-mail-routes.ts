@@ -3,6 +3,10 @@ import { and, eq } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { validateBody, icloudMailConnectSchema } from "../lib/api-validation";
 import { verifyIcloudMailCredentials, icloudGrantedScopes } from "../lib/icloud-mail";
+import {
+  EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE,
+  upsertOwnedEmailAccount,
+} from "../lib/owned-email-account";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { encryptSecret, isVaultConfigured } from "../lib/secret-vault";
@@ -60,28 +64,22 @@ router.post(
 
     const encryptedPassword = encryptSecret(appPassword);
 
-    await drizzle
-      .insert(schema.emailAccounts)
-      .values({
-        userId,
-        emailAddress,
-        provider: "icloud",
-        accessToken: encryptedPassword,
-        refreshToken: null,
-        expiresAt: null,
-        oauthGrantedScopes: icloudGrantedScopes(),
-      })
-      .onConflictDoUpdate({
-        target: schema.emailAccounts.emailAddress,
-        set: {
-          userId,
-          provider: "icloud",
-          accessToken: encryptedPassword,
-          refreshToken: null,
-          expiresAt: null,
-          oauthGrantedScopes: icloudGrantedScopes(),
-        },
-      });
+    const emailAccountConnected = await upsertOwnedEmailAccount({
+      userId,
+      emailAddress,
+      provider: "icloud",
+      accessToken: encryptedPassword,
+      refreshToken: null,
+      expiresAt: null,
+      oauthGrantedScopes: icloudGrantedScopes(),
+    });
+    if (!emailAccountConnected) {
+      throw new AppError(
+        409,
+        "EMAIL_ACCOUNT_IN_USE",
+        EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE,
+      );
+    }
 
     res.json({ ok: true, email: emailAddress, provider: "icloud" });
   },
