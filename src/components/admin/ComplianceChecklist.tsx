@@ -102,7 +102,8 @@ export default function ComplianceChecklist() {
           size="sm"
           className="shrink-0"
           onClick={() => {
-            window.open("/api/admin/trust-pack/soc2", "_blank", "noopener,noreferrer");
+            // Live SOC2 evidence pack mounted by soc2Router (auth + audit.read).
+            window.open("/api/soc2/evidence-pack", "_blank", "noopener,noreferrer");
           }}
         >
           <Download className="w-3.5 h-3.5 mr-1.5" />
