@@ -21,11 +21,16 @@ describe("shareable-artifact route registration and public allowlist", () => {
   });
 
   it("routes /recap/:path* to the API function in vercel.json", () => {
-    const vercel = read("vercel.json");
-    expect(vercel).toContain('"source": "/recap/:path*"');
-    expect(vercel).toContain('"destination": "/api/index.ts"');
+    const vercel = JSON.parse(read("vercel.json")) as {
+      rewrites?: Array<{ source?: string; destination?: string }>;
+    };
+    const rewrites = vercel.rewrites ?? [];
+
+    expect(rewrites).toContainEqual({ source: "/recap/:path*", destination: "/api/index.ts" });
+
     // SPA fallback must exclude the /recap/ prefix so it does not intercept.
-    expect(vercel).toContain("|recap/|");
+    const spaFallback = rewrites.find((rewrite) => rewrite.destination === "/index.html");
+    expect(spaFallback?.source).toContain("recap/");
   });
 
   it("public GET /recap/:slug is not authenticated in the route handler", () => {

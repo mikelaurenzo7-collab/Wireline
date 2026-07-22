@@ -51,8 +51,15 @@ fun AskWirelineScreen(
     var outboundContext by remember { mutableStateOf("") }
     var outboundCallPurpose by remember { mutableStateOf("service_or_requested") }
     var selectedAgentId by remember { mutableStateOf("") }
-    val selectedAgent = state.agents.firstOrNull { it.id == selectedAgentId } ?: state.agents.firstOrNull()
+    val selectedAgent = state.agents.firstOrNull { it.id == selectedAgentId }
+        ?: state.agents.firstOrNull()
     val requiresMarketingConsent = outboundCallPurpose == "marketing_or_sales"
+
+    LaunchedEffect(state.agents, selectedAgentId) {
+        if (selectedAgentId.isBlank() || state.agents.none { it.id == selectedAgentId }) {
+            selectedAgentId = state.agents.firstOrNull()?.id.orEmpty()
+        }
+    }
 
     // Functions mirroring iOS logic
     val onSummarizeLastCall: () -> Unit = {
@@ -91,7 +98,11 @@ fun AskWirelineScreen(
             answerText = when {
                 cleanQuery.contains("wallet") || cleanQuery.contains("credit") || cleanQuery.contains("balance") || cleanQuery.contains("money") -> {
                     val balance = state.wallet?.balanceUsd ?: 0.0
-                    "Your current prepaid balance is $${"%.2f".format(balance)}. All subscription plans are active and billing is in good standing."
+                    val planSummary = state.me?.account?.let { account ->
+                        val status = account.subscriptionStatus.replace('_', ' ')
+                        "Your ${account.planName} plan status is $status."
+                    } ?: "Plan status is still loading."
+                    "Your current prepaid balance is $${"%.2f".format(balance)}. $planSummary"
                 }
                 cleanQuery.contains("agent") || cleanQuery.contains("roster") || cleanQuery.contains("bot") || cleanQuery.contains("bots") -> {
                     if (state.agents.isEmpty()) {
@@ -121,7 +132,7 @@ fun AskWirelineScreen(
                     }
                 }
                 else -> {
-                    "As your Wireline agent, I've analyzed your system state: You have ${state.agents.size} active agents deployed, ${state.activeCalls.size} live calls running, and your billing subscription is active. Try asking me 'Summarize last call' or 'Show my agent roster'."
+                    "I can verify ${state.agents.size} configured agents and ${state.activeCalls.size} live calls right now. Try asking me 'Summarize last call', 'Show my agent roster', or 'What is my wallet balance?'."
                 }
             }
             inputText = ""
@@ -201,7 +212,7 @@ fun AskWirelineScreen(
                                     color = Brand.Text2,
                                     fontWeight = FontWeight.Bold
                                 )
-Icon(
+                                Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Dismiss",
                                     tint = Brand.Text3,
@@ -258,12 +269,12 @@ Icon(
                                         .background(Brand.AccentSoft, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
-Icon(
-                                    imageVector = Icons.Default.Phone,
-                                    contentDescription = "Place a call",
-                                    tint = Brand.Accent,
-                                    modifier = Modifier.size(16.dp)
-                                )
+                                    Icon(
+                                        imageVector = Icons.Default.Phone,
+                                        contentDescription = "Place a call",
+                                        tint = Brand.Accent,
+                                        modifier = Modifier.size(16.dp)
+                                    )
                                 }
                                 Spacer(Modifier.width(14.dp))
                                 Text(
@@ -382,14 +393,15 @@ Icon(
                                     Button(
                                         onClick = {
                                             selectedAgent?.let {
+                                                val requestedNumber = outboundNumber
                                                 model.placeCall(
                                                     it.id,
-                                                    outboundNumber,
+                                                    requestedNumber,
                                                     outboundContext,
                                                     outboundCallPurpose,
                                                     requiresMarketingConsent && outboundConsent
                                                 )
-                                                answerText = "Outbound call placed with agent ${it.name} to $outboundNumber."
+                                                answerText = "Outbound call request submitted with ${it.name} for $requestedNumber."
                                                 outboundNumber = ""
                                                 outboundContext = ""
                                                 outboundConsent = false
@@ -513,12 +525,12 @@ private fun ActionRowCard(
                     .background(Brand.AccentSoft, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = Brand.Accent,
-                modifier = Modifier.size(16.dp)
-            )
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = Brand.Accent,
+                    modifier = Modifier.size(16.dp)
+                )
             }
             Spacer(Modifier.width(14.dp))
             Text(

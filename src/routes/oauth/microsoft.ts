@@ -3,6 +3,10 @@ import express from "express";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { encryptSecret } from "../../lib/secret-vault";
+import {
+  EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE,
+  upsertOwnedEmailAccount,
+} from "../../lib/owned-email-account";
 import { oauthRateLimiter } from "../../middleware/rate-limit-middleware";
 import { authenticateUser } from "../../middleware/auth";
 import {
@@ -62,14 +66,14 @@ router.get(
     if (!vs.ok) {
       return res.status(400).send("Invalid or expired OAuth state. Please restart.");
     }
-    if (!code) return res.status(400).send("No code provided.");
+    if (!code || typeof code !== "string") return res.status(400).send("No code provided.");
 
     try {
       const redirectUri = getMicrosoftRedirectUri(req);
       const tokenParams = new URLSearchParams({
         client_id: process.env.MICROSOFT_CLIENT_ID!,
         client_secret: process.env.MICROSOFT_CLIENT_SECRET!,
-        code: code as string,
+        code,
         redirect_uri: redirectUri,
         grant_type: "authorization_code",
       });
@@ -81,16 +85,20 @@ router.get(
       });
       const tokens = (await tokenRes.json()) as any;
       if (!tokenRes.ok) throw new Error(tokens.error_description || "Token exchange failed");
+      if (!tokens.access_token) throw new Error("Microsoft token response omitted access_token.");
 
       const profileRes = await fetch("https://graph.microsoft.com/v1.0/me", {
         headers: { Authorization: `Bearer ${tokens.access_token}` },
       });
+      if (!profileRes.ok) throw new Error(`Microsoft profile request failed (${profileRes.status}).`);
       const profile = (await profileRes.json()) as any;
-      const emailAddress = profile.mail || profile.userPrincipalName;
+      const emailAddress = String(profile.mail || profile.userPrincipalName || "")
+        .trim()
+        .toLowerCase();
       if (!emailAddress)
         throw new Error("Could not retrieve email address from Microsoft account.");
 
-      let userId = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+      const userId = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
       if (!userId) {
         return res
           .status(401)
@@ -105,28 +113,18 @@ router.get(
       const refreshTokenMs = tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null;
       const expiresAtMs = BigInt(Date.now() + (tokens.expires_in || 3600) * 1000);
 
-      await drizzle
-        .insert(schema.emailAccounts)
-        .values({
-          userId,
-          emailAddress,
-          provider: "microsoft",
-          accessToken: accessTokenMs,
-          refreshToken: refreshTokenMs,
-          expiresAt: expiresAtMs,
-          oauthGrantedScopes: scopeStr || null,
-        })
-        .onConflictDoUpdate({
-          target: schema.emailAccounts.emailAddress,
-          set: {
-            userId,
-            provider: "microsoft",
-            accessToken: accessTokenMs,
-            refreshToken: refreshTokenMs,
-            expiresAt: expiresAtMs,
-            oauthGrantedScopes: scopeStr || null,
-          },
-        });
+      const emailAccountConnected = await upsertOwnedEmailAccount({
+        userId,
+        emailAddress,
+        provider: "microsoft",
+        accessToken: accessTokenMs,
+        refreshToken: refreshTokenMs,
+        expiresAt: expiresAtMs,
+        oauthGrantedScopes: scopeStr || null,
+      });
+      if (!emailAccountConnected) {
+        return res.status(409).send(EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE);
+      }
 
       await drizzle
         .insert(schema.calendarAccounts)

@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- aggregate stats and dashboard rows draw from heterogeneous queries. */
 import { Router, Response, type Request } from "express";
-import { AppError } from "../lib/api-error";
+import { AppError, rethrowIfAppError } from "../lib/api-error";
 import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import { sendDailyBriefEmail } from "../lib/daily-brief";
@@ -48,7 +48,12 @@ router.get(
       const accounts = await drizzle
         .select({ emailAddress: schema.emailAccounts.emailAddress })
         .from(schema.emailAccounts)
-        .where(eq(schema.emailAccounts.userId, req.user.id))
+        .where(
+          and(
+            eq(schema.emailAccounts.userId, req.user.id),
+            eq(schema.emailAccounts.provider, "google"),
+          ),
+        )
         .limit(1);
 
       res.json({
@@ -105,6 +110,7 @@ router.put(
 
       res.json({ success: true });
     } catch (e: any) {
+      rethrowIfAppError(e);
       log.error("Failed to save settings", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to save settings");
     }
@@ -122,8 +128,13 @@ router.post(
       res.json({ success: true, ...result });
     } catch (e: any) {
       const err = e as { code?: string; message?: string };
-      if (err?.code === "CLAUDE_OFFLINE")
-        return res.status(503).json({ error: err.message, code: err.code });
+      if (err?.code === "AI_RUNTIME_OFFLINE" || err?.code === "CLAUDE_OFFLINE") {
+        return res.status(503).json({
+          error: err.message || "AI runtime required for the daily brief.",
+          code: err.code,
+        });
+      }
+      rethrowIfAppError(e);
       throw AppError.fromHttpStatus(500, "Send failed");
     }
   },
@@ -161,10 +172,16 @@ router.post("/api/daily-brief/schedule", async (req: Request, res: Response) => 
         sent++;
       } catch (e: unknown) {
         const msg = getErrorMessage(e);
+        const code =
+          e && typeof e === "object" && "code" in e
+            ? String((e as { code?: unknown }).code || "")
+            : "";
         if (
           msg.includes("No recipient") ||
           msg.includes("No connected Gmail") ||
-          msg.includes("CLAUDE_OFFLINE") ||
+          code === "AI_RUNTIME_OFFLINE" ||
+          code === "CLAUDE_OFFLINE" ||
+          msg.includes("AI runtime required") ||
           msg.includes("Claude required")
         ) {
           skipped++;
@@ -172,7 +189,7 @@ router.post("/api/daily-brief/schedule", async (req: Request, res: Response) => 
           failed++;
           if (errors.length < 5) errors.push(`${uid}: ${msg}`);
         }
-        log.warn("Daily brief cron: user skipped or failed", { userId: uid, error: msg });
+        log.warn("Daily brief cron: user skipped or failed", { userId: uid, error: msg, code });
       }
     }
 
