@@ -48,20 +48,19 @@ surfaces and are not needed for core web/API development.
 - Tenant isolation uses `SET LOCAL ROLE wireline_server` + the
   `app.current_user_id` GUC (not Supabase Auth / `auth.uid()`); see
   `src/lib/server-context.ts` and `DATABASE_SETUP.md`.
-- Known drift caveat: migration `drizzle/migrations/0082_phone_voice_routing.sql`
-  targets `ALTER TABLE agents ...` but the physical table is `wireline_agents`,
-  so it is effectively a no-op against the real DB. If agent creation fails with
-  `column "phone_voice_id" of relation "wireline_agents" does not exist`, add the
-  columns directly to the correct table:
-  `ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS phone_voice_id text;`
-  `ALTER TABLE wireline_agents ADD COLUMN IF NOT EXISTS phone_voice_provider text;`
-  (These have already been applied to the current shared DB.)
+- Migration `drizzle/migrations/0082_phone_voice_routing.sql` correctly targets
+  `wireline_agents`, and the current shared database already has
+  `phone_voice_id` + `phone_voice_provider`. Do not apply manual ALTER statements
+  unless a read-only schema check proves those columns are missing.
 
 ### Verifying the environment
 
-- Lint/typecheck (`npm run lint`, `npm run lint:eslint`), tests
+- Run lint/typecheck (`npm run lint`, `npm run lint:eslint`), tests
   (`npm run test:run`), build (`npm run build`), and server smoke
-  (`npm run smoke:server`) all pass.
+  (`npm run smoke:server`) sequentially for a complete local verification pass.
+- GitHub Actions may fail to start or return no jobs when the repository/account
+  Actions spending limit is exhausted. Treat that as billing infrastructure,
+  not a code failure; use the command-level results plus the Vercel build status.
 - Resource note: `npm run lint` (full `tsc`) is memory-heavy. Avoid running it
   concurrently with `build` + `test` + the dev server — under memory pressure the
   typecheck/eslint processes can be OOM-killed (they exit with no output). Run the
