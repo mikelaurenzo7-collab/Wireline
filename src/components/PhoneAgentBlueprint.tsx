@@ -319,12 +319,15 @@ export default function PhoneAgentBlueprint({
   const [notice, setNotice] = useState("");
   const dialogRef = useRef<HTMLElement>(null);
 
+  function closeDialog() {
+    if (saving) return;
+    setIsOpen(false);
+  }
+
   useBodyScrollLock(isOpen);
   useModalFocusTrap(dialogRef, {
     active: isOpen,
-    onEscape: () => {
-      if (!saving) setIsOpen(false);
-    },
+    onEscape: closeDialog,
   });
 
   const stageCount = Array.isArray(existingSteps) ? existingSteps.length : 0;
@@ -421,7 +424,7 @@ export default function PhoneAgentBlueprint({
         <div
           className="studio-blueprint-backdrop"
           role="presentation"
-          onMouseDown={() => setIsOpen(false)}
+          onMouseDown={closeDialog}
         >
           <section
             ref={dialogRef}
@@ -430,6 +433,7 @@ export default function PhoneAgentBlueprint({
             aria-modal="true"
             aria-labelledby="phone-agent-blueprint-title"
             aria-describedby="phone-agent-blueprint-description"
+            aria-busy={saving}
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="studio-blueprint-heading">
@@ -446,7 +450,8 @@ export default function PhoneAgentBlueprint({
               <button
                 className="studio-blueprint-close"
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={closeDialog}
+                disabled={saving}
                 aria-label="Close call plan"
               >
                 ×
@@ -620,7 +625,8 @@ export default function PhoneAgentBlueprint({
               <button
                 className="studio-secondary-button"
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={closeDialog}
+                disabled={saving}
               >
                 Cancel
               </button>
