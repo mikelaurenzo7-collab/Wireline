@@ -30,3 +30,5 @@ jobs:
       - run: node apps/browser-extension/scripts/build.mjs
       - run: npm run build
       - run: node -e "process.env.VERCEL='1'; require('./dist/server.cjs'); console.log('server bundle imports')"
+        env:
+          DATABASE_POOL_URL: postgresql://wireline:wireline@127.0.0.1:5432/wireline
