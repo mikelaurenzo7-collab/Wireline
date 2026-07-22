@@ -26,4 +26,11 @@ describe("Twilio usage alert contract", () => {
     expect(launchStatus).toContain("/Usage/Triggers.json?PageSize=100");
     expect(launchStatus).not.toContain("monitor.twilio.com/v1/Monitors/UsageTriggers");
   });
+
+  it("provisions account Usage Triggers for the usage-alert callback", () => {
+    const provisionScript = read("scripts/provision-twilio-usage-triggers.mjs");
+    expect(provisionScript).toContain("/Usage/Triggers.json?PageSize=100");
+    expect(provisionScript).toContain("/Usage/Triggers.json");
+    expect(provisionScript).toContain("/api/twilio-webhook/usage-alert");
+  });
 });

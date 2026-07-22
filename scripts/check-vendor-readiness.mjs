@@ -380,7 +380,7 @@ record(
   true,
   federalDncConfigured ? "ready" : "blocked",
   federalDncConfigured
-    ? "Federal DNC vendor URL and key configured."
+    ? "Federal DNC vendor URL and key configured; run npm run dnc:probe for live verification."
     : federalDncLooksLikeVercelToken
       ? "FEDERAL_DNC_API_KEY looks like a Vercel access token (vcp_/vercel_) — replace with the DNCScrub loginId."
       : !present("FEDERAL_DNC_API_KEY")
