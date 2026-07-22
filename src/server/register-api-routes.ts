@@ -69,6 +69,7 @@ import browserHandoffRouter from "../routes/browser-handoff-routes";
 import adminSeedDemoRouter from "../routes/admin-seed-demo-routes";
 import soc2Router from "../routes/soc2-routes";
 import integrationsCertRouter from "../routes/integrations-cert-routes";
+import gatewayCatalogRouter from "../routes/gateway-catalog-routes";
 
 /**
  * Canonical API route order.
@@ -184,4 +185,6 @@ export function registerApiRoutes(app: Express): void {
   // Public trust-page data source (/api/integrations/certified) -- no auth,
   // IP rate-limited.
   app.use(integrationsCertRouter);
+  // AI Gateway model catalog (/api/model-catalog) -- authenticateUser only.
+  app.use(gatewayCatalogRouter);
 }

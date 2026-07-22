@@ -21,7 +21,6 @@ import { authenticateLiveOpsStream } from "./src/middleware/live-ops-stream";
 import { registerApiRoutes } from "./src/server/register-api-routes";
 import { sseBroadcaster } from "./src/services/sse-broadcaster";
 import { initSupervisorWebSocketServer } from "./src/services/supervisor-websocket-service";
-import gatewayCatalogRouter from "./src/lib/gateway-catalog";
 
 const SHUTDOWN_GRACE_MS = 30_000;
 let server: Server | null = null;
@@ -138,7 +137,6 @@ app.use((_req, res, next) => {
 
 startMemoryCleanup();
 registerApiRoutes(app);
-app.use(gatewayCatalogRouter);
 
 app.get("/api/live-ops/stream", authenticateLiveOpsStream, (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");

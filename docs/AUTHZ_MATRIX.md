@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 277
-**Protected:** 235
+**Routes scanned:** 278
+**Protected:** 236
 **Public (allowlisted):** 42
 **Violations:** 0
 
@@ -202,6 +202,7 @@
 | fleet-routes.ts | PATCH | `/api/Assistants/tasks/:id` | inline | — | — | Protected |
 | fleet-routes.ts | POST | `/api/Assistants/tasks/:id/approve` | inline | — | — | Protected |
 | fleet-routes.ts | GET | `/api/triage` | inline | — | — | Protected |
+| gateway-catalog-routes.ts | GET | `/api/model-catalog` | inline | — | — | Protected |
 | goals-routes.ts | GET | `/api/goals` | inline | — | — | Protected |
 | goals-routes.ts | POST | `/api/goals` | inline | — | — | Protected |
 | goals-routes.ts | DELETE | `/api/goals/:id` | inline | — | — | Protected |

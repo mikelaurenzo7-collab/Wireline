@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { authenticateUser } from "../middleware/auth";
-import { isAIGatewayConfigured, listAIGatewayLanguageModels } from "./ai-gateway";
+import { isAIGatewayConfigured, listAIGatewayLanguageModels } from "../lib/ai-gateway";
 
 const router = Router();
 
+/** GET /api/model-catalog — AI Gateway language-model catalog for authenticated tenants. */
 router.get("/api/model-catalog", authenticateUser, async (_req, res) => {
   const models = await listAIGatewayLanguageModels();
   res.json({
