@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 276
-**Protected:** 234
+**Routes scanned:** 277
+**Protected:** 235
 **Public (allowlisted):** 42
 **Violations:** 0
 
@@ -205,6 +205,7 @@
 | goals-routes.ts | GET | `/api/goals` | inline | — | — | Protected |
 | goals-routes.ts | POST | `/api/goals` | inline | — | — | Protected |
 | goals-routes.ts | DELETE | `/api/goals/:id` | inline | — | — | Protected |
+| grok-voice-routes.ts | GET | `/api/voices/curated/preview` | inline | — | — | Protected |
 | grok-voice-routes.ts | POST | `/api/voice/live/session` | inline | — | — | Protected |
 | grok-voice-routes.ts | GET | `/api/voice/live/status` | inline | — | — | Protected |
 | grok-voice-routes.ts | POST | `/api/voice/live/tool` | inline | — | — | Protected |
