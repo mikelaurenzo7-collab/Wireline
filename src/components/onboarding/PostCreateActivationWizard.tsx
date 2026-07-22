@@ -197,6 +197,7 @@ export default function PostCreateActivationWizard({
   }
 
   function dismiss() {
+    if (provisioning) return;
     if (step === "complete") {
       emitProductEventOnce({
         event: "agent_launch_completed",
@@ -262,6 +263,7 @@ export default function PostCreateActivationWizard({
       role="dialog"
       aria-modal="true"
       aria-labelledby="post-create-wizard-title"
+      aria-busy={provisioning}
     >
       <div className="flex max-h-[min(92dvh,880px)] w-full max-w-2xl flex-col overflow-hidden rounded-t-[var(--radius-xl)] border border-border bg-background shadow-[var(--wireline-elevation-lg)] sm:rounded-[var(--radius-xl)]">
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
@@ -277,6 +279,7 @@ export default function PostCreateActivationWizard({
           <button
             type="button"
             onClick={dismiss}
+            disabled={provisioning}
             className="grid size-9 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
             aria-label="Close setup guide"
           >
@@ -569,7 +572,7 @@ export default function PostCreateActivationWizard({
 
         <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-4 sm:px-6">
           {step !== "complete" ? (
-            <Button type="button" variant="ghost" size="sm" onClick={dismiss}>
+            <Button type="button" variant="ghost" size="sm" onClick={dismiss} disabled={provisioning}>
               Skip for now
             </Button>
           ) : null}
@@ -585,7 +588,7 @@ export default function PostCreateActivationWizard({
                   <Link to="/settings/phone">{POST_CREATE_WIZARD_COPY.complete.phoneCta}</Link>
                 </Button>
               ) : null}
-              <Button type="button" size="sm" onClick={dismiss}>
+              <Button type="button" size="sm" onClick={dismiss} disabled={provisioning}>
                 {POST_CREATE_WIZARD_COPY.complete.studioCta}
               </Button>
             </>
