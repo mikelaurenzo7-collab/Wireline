@@ -75,11 +75,17 @@ const required = [
   ["STRIPE_SECRET_KEY", "Stripe subscriptions, prepaid balances, and billing portal", process.env.STRIPE_SECRET_KEY],
   ["STRIPE_WEBHOOK_SECRET", "Stripe webhook signature verification", process.env.STRIPE_WEBHOOK_SECRET],
   ["RESEND_API_KEY", "Transactional email for verification, billing, and lifecycle delivery", process.env.RESEND_API_KEY],
-  ["FEDERAL_DNC_API_URL", "Federal DNC scrub endpoint required before marketing outbound", process.env.FEDERAL_DNC_API_URL],
-  ["FEDERAL_DNC_API_KEY", "Federal DNC scrub credential required before marketing outbound", process.env.FEDERAL_DNC_API_KEY],
 ];
 
 const recommended = [
+  [
+    "FEDERAL_DNC_API_URL",
+    "Federal DNC scrub endpoint — deferred checklist until business registration; marketing outbound fails closed without it",
+  ],
+  [
+    "FEDERAL_DNC_API_KEY",
+    "DNCScrub loginId — deferred checklist until business registration; never paste a Vercel vcp_ token here",
+  ],
   [
     "DATABASE_POOL_URL",
     "Pooler URL the runtime prefers; POSTGRES_URL remains the supported fallback",

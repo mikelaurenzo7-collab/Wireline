@@ -374,10 +374,11 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "FEDERAL_DNC_API_URL",
     group: "operational",
     required: false,
-    requiredInProd: true,
-    description: "Federal DNC vendor lookup endpoint required before marketing outbound",
+    requiredInProd: false,
+    description:
+      "Federal DNC vendor lookup endpoint (deferred checklist). Marketing outbound fails closed until configured.",
     validate: (value) => !value || isHttpsUrl(value),
-    formatHint: "https://vendor.example/api/dnc-check",
+    formatHint: "https://www.dncscrub.com/app/main/rpc/scrub",
   },
   {
     name: "FEDERAL_DNC_PROVIDER",
@@ -389,9 +390,9 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "FEDERAL_DNC_API_KEY",
     group: "operational",
     required: false,
-    requiredInProd: true,
+    requiredInProd: false,
     description:
-      "Federal DNC vendor loginId (DNCScrub). Presence is required in prod; misplaced Vercel tokens are rejected at runtime by isFederalDncVendorConfigured.",
+      "Federal DNC vendor loginId (DNCScrub). Deferred until business registration; misplaced Vercel tokens are rejected at runtime by isFederalDncVendorConfigured.",
     validate: nonEmpty,
   },
   {

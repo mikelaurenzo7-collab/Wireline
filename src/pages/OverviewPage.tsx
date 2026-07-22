@@ -134,7 +134,8 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
     },
     {
       title: "Connect the customer line",
-      detail: "Claim a number, or route calls customers already make to your business.",
+      detail:
+        "Activate a paid plan, then claim an included Wireline number—or route calls customers already make to your business.",
       icon: Phone,
     },
     {

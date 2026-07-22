@@ -2,6 +2,10 @@
  * Launch readiness — capability report for the product Wireline actually sells.
  * Voice and a working number are guaranteed, while email, SMS, and artifacts are
  * optional connected capabilities.
+ *
+ * Federal DNC is intentionally deferred from the GO / score gate until the
+ * founder completes business registration with DNCScrub. Marketing outbound
+ * still fails closed at runtime via `assertFederalDncForMarketing()`.
  */
 import { getIntegrationsStatus } from "./integrations-registry";
 import { validateEnv } from "./env-validator";
@@ -21,8 +25,19 @@ export type LaunchReadinessReport = {
   hard_gate_enabled: boolean;
   capabilities: CapabilityReadiness[];
   launch_blockers: string[];
+  /** Ops checklist items that do not fail GO / score / hard-gate. */
+  deferred_checklist: string[];
   generated_at: string;
 };
+
+/** Capability ids that contribute to overall_score and campaign_ready. */
+const SCORE_CAPABILITY_IDS = new Set([
+  "core_ready",
+  "billing_ready",
+  "voice_ready",
+  "email_ready",
+  "oauth_ready",
+]);
 
 function levelFromBlockers(blockers: string[]): ReadinessLevel {
   if (blockers.length === 0) return "ready";
@@ -53,9 +68,9 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   const marginCheck = assertPlanMarginFloors();
   if (!marginCheck.ok) billingBlockers.push(...marginCheck.violations);
 
-  const complianceBlockers: string[] = [];
+  const deferred_checklist: string[] = [];
   if (!isFederalDncVendorConfigured()) {
-    complianceBlockers.push("FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY");
+    deferred_checklist.push("FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY");
   }
 
   const emailBlockers: string[] = [];
@@ -98,26 +113,24 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
     },
     {
       id: "compliance_ready",
-      label: "Outbound compliance",
-      level: levelFromBlockers(complianceBlockers),
-      blockers: complianceBlockers,
+      label: "Outbound compliance (deferred checklist)",
+      // Visible degraded state for ops; excluded from score / GO / hard-gate.
+      level: deferred_checklist.length === 0 ? "ready" : "degraded",
+      blockers: [...deferred_checklist],
     },
   ];
 
-  const launch_blockers = [
-    ...coreBlockers,
-    ...billingBlockers,
-    ...voiceBlockers,
-    ...complianceBlockers,
-  ];
-  const readyCount = capabilities.filter((capability) => capability.level === "ready").length;
+  const launch_blockers = [...coreBlockers, ...billingBlockers, ...voiceBlockers];
+  const scored = capabilities.filter((capability) => SCORE_CAPABILITY_IDS.has(capability.id));
+  const readyCount = scored.filter((capability) => capability.level === "ready").length;
 
   return {
-    overall_score: Math.round((readyCount / capabilities.length) * 100),
+    overall_score: Math.round((readyCount / scored.length) * 100),
     campaign_ready: launch_blockers.length === 0,
     hard_gate_enabled: process.env.LAUNCH_HARD_GATE === "true",
     capabilities,
     launch_blockers,
+    deferred_checklist,
     generated_at: new Date().toISOString(),
   };
 }
@@ -140,8 +153,9 @@ export function launchBlockResponse() {
   return {
     code: "LAUNCH_NOT_READY",
     error:
-      "Launch hard gate is on and Wireline is not launch-ready (voice, billing, compliance, or core).",
+      "Launch hard gate is on and Wireline is not launch-ready (voice, billing, or core).",
     launch_blockers: report.launch_blockers,
+    deferred_checklist: report.deferred_checklist,
     capabilities: report.capabilities,
   };
 }

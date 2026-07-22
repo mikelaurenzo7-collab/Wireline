@@ -33,15 +33,16 @@ Snapshot verified live on **2026-07-20 (evening hardening)**: Stripe on **Cadenc
 
 ### Red — block public checkout
 
-1. **Federal DNCScrub** — set a real vendor `loginId` on Vercel (all targets). Until then,
-   marketing outbound correctly fails closed. Prefer keeping Cadence AI Stripe; keep a
-   **$300–500** available buffer before inviting paid users (balance is currently $0, not −$207).
+1. **Federal DNCScrub (deferred checklist)** — register the business, then set a real vendor
+   `loginId` on Vercel (all targets). Until then, marketing outbound correctly fails closed.
+   Prefer keeping Cadence AI Stripe; keep a **$300–500** available buffer before inviting paid users
+   (balance is currently $0, not −$207).
 2. **Prove billing E2E:** Checkout Starter $9 → webhook entitlement → Conversation Balance top-up → Customer Portal → cancel (access through period end).
 3. **Prove voice E2E:** inbound answer + outbound dial + transfer/tool (`gemini_ground`) + call ends with logged outcome.
 4. **Prove SMS E2E:** inbound reply + STOP/HELP compliance + delivery status callback.
 5. **Prove email E2E:** Resend verify + password reset land in inbox for `trywireline.com`.
 6. **Rotate secrets exposed in chat** (Vercel personal tokens pasted into agent sessions). Revoke old tokens after redeploy.
-7. **`npm run vendor:readiness`** → treat `launch_ready` seriously; investigate any fail.
+7. **`npm run vendor:readiness`** → treat `launch_ready` seriously; investigate any fail. Federal DNC may show `blocked` while remaining optional for GO.
 
 ### Yellow — launch with caps
 

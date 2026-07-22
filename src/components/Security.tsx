@@ -165,7 +165,7 @@ const TRUST_PACK_SECTIONS = [
     title: "Billing & spend controls",
     items: [
       "Conversation Balance is a prepaid ledger — live voice work cannot silently exceed funded balance on Personal.",
-      "Team and Business plans meter voice overage through Stripe with visible rates in billing settings.",
+      "Every paid plan draws extra voice, SMS, and enrichment from prepaid Conversation Balance with visible rates; active calls finish, and the next action pauses if coverage is depleted.",
       "Daily spend accumulators and economics-at-risk alerts help the platform owner catch margin leaks early.",
     ],
   },
