@@ -1,38 +1,27 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { logInfo, logWarn, insertValues, insert } = vi.hoisted(() => {
-  const insertValuesFn = vi.fn().mockResolvedValue(undefined);
-  return {
-    logInfo: vi.fn(),
-    logWarn: vi.fn(),
-    insertValues: insertValuesFn,
-    insert: vi.fn(() => ({ values: insertValuesFn })),
-  };
-});
-
-vi.mock("../src/lib/server-context", () => ({
-  log: {
-    info: (...args: unknown[]) => logInfo(...args),
-    warn: (...args: unknown[]) => logWarn(...args),
-  },
-  drizzle: {
-    insert: (...args: unknown[]) => insert(...args),
-  },
-}));
-
+import { drizzle, log } from "../src/lib/server-context";
 import {
   emitServerProductEvent,
   emitServerProductEventOnce,
   _resetServerProductEventOnceForTests,
 } from "../src/lib/product-event-server";
 
+const insertValues = vi.fn().mockResolvedValue(undefined);
+
 describe("product event server emission", () => {
   beforeEach(() => {
-    logInfo.mockClear();
-    logWarn.mockClear();
-    insert.mockClear();
-    insertValues.mockClear();
+    vi.restoreAllMocks();
+    insertValues.mockReset();
+    insertValues.mockResolvedValue(undefined);
+    vi.spyOn(log, "info").mockImplementation(() => undefined);
+    vi.spyOn(log, "warn").mockImplementation(() => undefined);
+    vi.spyOn(drizzle, "insert").mockReturnValue({ values: insertValues } as never);
     _resetServerProductEventOnceForTests();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("logs structured product events for server workflows", () => {
@@ -45,7 +34,7 @@ describe("product event server emission", () => {
       metadata: { call_log_id: "42" },
     });
 
-    expect(logInfo).toHaveBeenCalledWith(
+    expect(log.info).toHaveBeenCalledWith(
       "product_event",
       expect.objectContaining({
         product_event: "tenant_activated",
@@ -57,7 +46,7 @@ describe("product event server emission", () => {
         payload: expect.objectContaining({ event: "tenant_activated" }),
       }),
     );
-    expect(insert).toHaveBeenCalled();
+    expect(drizzle.insert).toHaveBeenCalled();
     expect(insertValues).toHaveBeenCalledWith(
       expect.objectContaining({
         metadata: expect.objectContaining({
@@ -77,6 +66,6 @@ describe("product event server emission", () => {
     };
     expect(emitServerProductEventOnce(input)).toBe(true);
     expect(emitServerProductEventOnce(input)).toBe(false);
-    expect(logInfo).toHaveBeenCalledTimes(1);
+    expect(log.info).toHaveBeenCalledTimes(1);
   });
 });
