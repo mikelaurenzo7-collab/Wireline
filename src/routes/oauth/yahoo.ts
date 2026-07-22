@@ -5,6 +5,10 @@ import { and, eq } from "drizzle-orm";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { encryptSecret } from "../../lib/secret-vault";
+import {
+  EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE,
+  upsertOwnedEmailAccount,
+} from "../../lib/owned-email-account";
 import { oauthRateLimiter } from "../../middleware/rate-limit-middleware";
 import { authenticateUser } from "../../middleware/auth";
 import {
@@ -118,35 +122,25 @@ router.get(
       });
       if (!meRes.ok) throw new Error(`Yahoo userinfo failed (${meRes.status})`);
       const me = (await meRes.json()) as { email?: string };
-      const emailAddress = me.email;
+      const emailAddress = me.email?.trim().toLowerCase();
       if (!emailAddress) throw new Error("Yahoo did not return an email address");
 
       const accessTokenY = encryptSecret(tokens.access_token);
       const refreshTokenY = tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null;
-      const expiresAtY = Date.now() + (tokens.expires_in ?? 3600) * 1000;
+      const expiresAtY = BigInt(Date.now() + (tokens.expires_in ?? 3600) * 1000);
 
-      await drizzle
-        .insert(schema.emailAccounts)
-        .values({
-          userId,
-          emailAddress,
-          provider: "yahoo",
-          accessToken: accessTokenY,
-          refreshToken: refreshTokenY,
-          expiresAt: BigInt(expiresAtY),
-          oauthGrantedScopes: YAHOO_MAIL_SCOPES,
-        })
-        .onConflictDoUpdate({
-          target: schema.emailAccounts.emailAddress,
-          set: {
-            userId,
-            provider: "yahoo",
-            accessToken: accessTokenY,
-            refreshToken: refreshTokenY,
-            expiresAt: BigInt(expiresAtY),
-            oauthGrantedScopes: YAHOO_MAIL_SCOPES,
-          },
-        });
+      const emailAccountConnected = await upsertOwnedEmailAccount({
+        userId,
+        emailAddress,
+        provider: "yahoo",
+        accessToken: accessTokenY,
+        refreshToken: refreshTokenY,
+        expiresAt: expiresAtY,
+        oauthGrantedScopes: YAHOO_MAIL_SCOPES,
+      });
+      if (!emailAccountConnected) {
+        return res.status(409).send(EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE);
+      }
 
       const targetOrigin =
         (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
