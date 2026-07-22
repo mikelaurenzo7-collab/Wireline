@@ -62,12 +62,12 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
     {
       id: "line",
       label: "Phone number connected",
-      detail: "Give customers a live path to reach the employee by call or text.",
+      detail:
+        "Activate a paid plan, then claim an included Wireline number so customers can call or text.",
       done: p.numbers > 0,
       href: "/settings/phone",
       icon: Cable,
-    },
-    {
+    },    {
       id: "live",
       label: "First live customer handled",
       detail: "Confirm the line received a real conversation and logged the outcome.",

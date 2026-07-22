@@ -22,19 +22,21 @@ describe("production environment launch policy", () => {
     expect(envValidator).not.toContain('process.env.VERCEL === "1"');
   });
 
-  it("requires monetization, email delivery, and outbound compliance in production", () => {
-    for (const key of [
-      "STRIPE_SECRET_KEY",
-      "STRIPE_WEBHOOK_SECRET",
-      "RESEND_API_KEY",
-      "FEDERAL_DNC_API_URL",
-      "FEDERAL_DNC_API_KEY",
-    ]) {
+  it("requires monetization and email delivery in production; Federal DNC is deferred checklist", () => {
+    for (const key of ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "RESEND_API_KEY"]) {
       const start = envValidator.indexOf(`name: "${key}"`);
       expect(start).toBeGreaterThanOrEqual(0);
       expect(envValidator.slice(start, start + 350)).toContain("requiredInProd: true");
       expect(prodCheck.slice(prodCheck.indexOf(`"${key}"`) - 50)).toContain(`"${key}"`);
     }
+
+    for (const key of ["FEDERAL_DNC_API_URL", "FEDERAL_DNC_API_KEY"]) {
+      const start = envValidator.indexOf(`name: "${key}"`);
+      expect(start).toBeGreaterThanOrEqual(0);
+      expect(envValidator.slice(start, start + 450)).toContain("requiredInProd: false");
+      expect(prodCheck).toContain(`"${key}"`);
+    }
+    expect(prodCheck).toContain("deferred checklist until business registration");
   });
 
   it("keeps the Twilio Auth Token for webhook validation but prefers a scoped REST key pair", () => {

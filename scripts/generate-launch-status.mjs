@@ -44,17 +44,22 @@ async function launchReadiness() {
     headers: { "x-monitor-token": token },
   });
   const capabilities = Array.isArray(result.body?.capabilities) ? result.body.capabilities : [];
-  const nestedBlockers = capabilities.flatMap((capability) =>
-    Array.isArray(capability?.blockers) ? capability.blockers : [],
+  const deferred = new Set(
+    Array.isArray(result.body?.deferred_checklist) ? result.body.deferred_checklist : [],
   );
+  // Only hard launch_blockers fail GO. Capability blockers that are also on the
+  // deferred checklist (e.g. Federal DNC) stay visible without vetoing launch.
+  const hardBlockers = Array.isArray(result.body?.launch_blockers)
+    ? result.body.launch_blockers
+    : Array.isArray(result.body?.blockers)
+      ? result.body.blockers
+      : [];
   return {
     status: result.ok ? "ready" : "blocked",
     http_status: result.status,
     overall_score: result.body?.overall_score ?? null,
-    blockers: [
-      ...(Array.isArray(result.body?.blockers) ? result.body.blockers : []),
-      ...nestedBlockers,
-    ],
+    blockers: hardBlockers.filter((item) => !deferred.has(item)),
+    deferred_checklist: [...deferred],
     capabilities,
   };
 }
@@ -294,11 +299,18 @@ for (const item of readiness.blockers || []) {
   if (label) blockers.push(`readiness:${label}`);
 }
 
+const deferredChecklist = [
+  ...new Set([
+    ...(Array.isArray(readiness.deferred_checklist) ? readiness.deferred_checklist : []),
+  ]),
+];
+
 const record = {
   schema_version: 1,
   generated_at: new Date().toISOString(),
   launch_decision: blockers.length ? "NO-GO" : "GO",
   blockers: [...new Set(blockers)],
+  deferred_checklist: deferredChecklist,
   source: {
     branch: sourceBranch,
     commit: sourceCommit,

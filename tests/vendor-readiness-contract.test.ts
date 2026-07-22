@@ -47,6 +47,11 @@ describe("vendor readiness contract", () => {
     expect(probe).toContain("No ONLINE Twilio WhatsApp sender found");
     expect(probe).toContain("isFederalDncVendorConfigured");
     expect(probe).toContain("/^vcp_/i");
+    // Federal DNC remains on the checklist but is not required for launch_ready.
+    expect(probe).toContain("deferred checklist — not a launch GO blocker");
+    const recordIdx = probe.indexOf('record(\n  "federal_dnc"');
+    expect(recordIdx).toBeGreaterThanOrEqual(0);
+    expect(probe.slice(recordIdx, recordIdx + 280)).toContain("false");
   });
 
   it("is exposed as an explicit owner command rather than a default local test", () => {

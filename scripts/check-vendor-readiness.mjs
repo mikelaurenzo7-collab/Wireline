@@ -377,16 +377,18 @@ const federalDncKey = process.env.FEDERAL_DNC_API_KEY?.trim() || "";
 const federalDncLooksLikeVercelToken = /^vcp_/i.test(federalDncKey) || /^vercel_/i.test(federalDncKey);
 record(
   "federal_dnc",
-  true,
+  // Deferred launch checklist: marketing outbound still fails closed at runtime
+  // until a real DNCScrub loginId is configured after business registration.
+  false,
   federalDncConfigured ? "ready" : "blocked",
   federalDncConfigured
     ? "Federal DNC vendor URL and key configured; run npm run dnc:probe for live verification."
     : federalDncLooksLikeVercelToken
       ? "FEDERAL_DNC_API_KEY looks like a Vercel access token (vcp_/vercel_) — replace with the DNCScrub loginId."
       : !present("FEDERAL_DNC_API_KEY")
-        ? "FEDERAL_DNC_API_KEY is missing."
-        : "FEDERAL_DNC_API_URL is missing or is not a valid HTTPS URL.",
-  "Maintain vendor subscription or scrub credits before enabling marketing outbound.",
+        ? "FEDERAL_DNC_API_KEY is missing (deferred checklist — not a launch GO blocker)."
+        : "FEDERAL_DNC_API_URL is missing or is not a valid HTTPS URL (deferred checklist).",
+  "Register the business, obtain a DNCScrub loginId, then fund scrub credits before marketing outbound.",
 );
 
 const blocked = checks.filter((check) => check.required && check.level === "blocked");

@@ -170,6 +170,10 @@ router.get("/launch-readiness", healthRateLimiter, requireMonitorToken, (_req, r
       ...(capability.blockers.length > 0 ? { blockers: capability.blockers } : {}),
     })),
     ...(report.launch_blockers.length > 0 ? { launch_blockers: report.launch_blockers } : {}),
+    // Federal DNC and similar ops items stay visible without failing GO/score.
+    ...(report.deferred_checklist.length > 0
+      ? { deferred_checklist: report.deferred_checklist }
+      : {}),
     timestamp: report.generated_at,
   });
 });

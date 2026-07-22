@@ -26,16 +26,16 @@ cloning, and showcase infrastructure. Keep:
 
 ### Red — resolve before taking live customers
 
-- [ ] Configure a real Federal DNC credential and complete one successful live scrub; launch readiness is blocked at 83 until then.
-- [ ] Top Twilio prepaid to at least **$150** and add daily/monthly Usage Triggers after the signed callback route is deployed.
+- [ ] Top Twilio prepaid to at least **$150** (Usage Triggers daily $25 / monthly $200 are already live).
 - [ ] Complete controlled live launch matrix (inbound/outbound call + tools, SMS STOP/HELP, Resend verify/reset, Stripe checkout→webhook→portal).
 - [ ] Rotate any Vercel personal tokens pasted into chat; revoke after redeploy.
 - [ ] Restore GitHub Actions execution and required checks; escalate the documented startup failure if repository configuration is sound.
-- [ ] Re-run `npm run launch:status` and `npm run vendor:readiness` until readiness is 100 and every required launch gate is green.
+- [ ] Re-run `npm run launch:status` and `npm run vendor:readiness` until required launch gates are green.
 - [ ] Rotate/set `HEALTH_MONITOR_TOKEN`; point uptime monitor at `/api/health/launch-readiness`.
 
-### Yellow — launch with caps (not blockers)
+### Yellow — launch with caps (not GO blockers)
 
+- [ ] **Federal DNCScrub** — register the business, obtain a real `loginId`, set `FEDERAL_DNC_*` on all Vercel targets, run `npm run dnc:probe`. Marketing outbound stays fail-closed until then; Studio non-marketing dials still use tenant DNC + TCPA.
 - [ ] Confirm Vapi / OpenAI / Gemini / Gateway / xAI budgets and alerts.
 - [ ] Flip `WIRELINE_LAUNCH_DEMO_MODE` to `false` when first real customer is admitted.
 
