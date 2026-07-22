@@ -63,8 +63,10 @@ describe("signup intent contract", () => {
 
     const main = read("src/main.tsx");
     expect(main).toContain(
-      'import { captureSignupIntentFromLocation } from "./lib/signup-intent";',
+      'import { captureSignupIntentFromLocation, hasSignupIntent } from "./lib/signup-intent";',
     );
-    expect(main).toContain("captureSignupIntentFromLocation();");
+    expect(main).toContain("captureSignupIntentFromLocation()");
+    expect(main).toContain('event: "signup_intent_captured"');
+    expect(main).toContain("hasSignupIntent(signupIntent)");
   });
 });
