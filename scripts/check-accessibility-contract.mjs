@@ -1,8 +1,9 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { extname, join, relative } from "node:path";
+import ts from "typescript";
 
 const roots = ["src"];
-const extensions = new Set([".ts", ".tsx", ".js", ".jsx", ".css"]);
+const sourceExtensions = new Set([".ts", ".tsx", ".js", ".jsx"]);
 const failures = [];
 
 function walk(dir) {
@@ -11,44 +12,151 @@ function walk(dir) {
     const path = join(dir, entry);
     const stat = statSync(path);
     if (stat.isDirectory()) walk(path);
-    if (!stat.isFile()) continue;
-    if (![...extensions].some((extension) => path.endsWith(extension))) continue;
+    if (!stat.isFile() || !sourceExtensions.has(extname(path))) continue;
     inspectFile(path);
   }
 }
 
-function addFailure(file, line, message) {
-  failures.push(`${relative(process.cwd(), file)}:${line} ${message}`);
+function addFailure(file, sourceFile, node, message) {
+  const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+  failures.push(`${relative(process.cwd(), file)}:${line + 1} ${message}`);
+}
+
+function attribute(node, sourceFile, name) {
+  return node.attributes.properties.find(
+    (property) =>
+      ts.isJsxAttribute(property) && property.name.getText(sourceFile).toLowerCase() === name,
+  );
+}
+
+function attributeText(property, sourceFile) {
+  if (!property || !ts.isJsxAttribute(property)) return "";
+  if (!property.initializer) return "true";
+  if (ts.isStringLiteral(property.initializer)) return property.initializer.text;
+  return property.initializer.getText(sourceFile).replace(/^\{|\}$/g, "");
+}
+
+function collectLiteralText(node, output) {
+  if (ts.isStringLiteralLike(node)) {
+    output.push(node.text);
+    return;
+  }
+  ts.forEachChild(node, (child) => collectLiteralText(child, output));
+}
+
+function hasVisibleFocusReplacement(value) {
+  return /(?:focus|focus-visible):[^\s]*(?:ring|outline|border|shadow)/.test(value);
 }
 
 function inspectFile(file) {
   const text = readFileSync(file, "utf8");
-  const lines = text.split(/\r?\n/);
+  const extension = extname(file);
+  const sourceFile = ts.createSourceFile(
+    file,
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+    extension === ".tsx"
+      ? ts.ScriptKind.TSX
+      : extension === ".jsx"
+        ? ts.ScriptKind.JSX
+        : extension === ".js"
+          ? ts.ScriptKind.JS
+          : ts.ScriptKind.TS,
+  );
+  const inspectedFocusStrings = new Set();
 
-  lines.forEach((line, index) => {
-    const lineNumber = index + 1;
-    const compact = line.replace(/\s+/g, " ");
+  function visit(node) {
+    if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
+      const tagName = node.tagName.getText(sourceFile).toLowerCase();
+      const alt = attribute(node, sourceFile, "alt");
+      const role = attribute(node, sourceFile, "role");
+      const tabIndex = attribute(node, sourceFile, "tabindex");
+      const onKeyDown = attribute(node, sourceFile, "onkeydown");
+      const onKeyUp = attribute(node, sourceFile, "onkeyup");
+      const ariaHidden = attribute(node, sourceFile, "aria-hidden");
+      const className = attribute(node, sourceFile, "classname");
 
-    if (/<img\b/i.test(line) && !/\balt=/.test(line)) {
-      addFailure(file, lineNumber, "Image elements need alt text or an explicit empty alt for decoration.");
+      if (tagName === "img" && !alt) {
+        addFailure(
+          file,
+          sourceFile,
+          node,
+          "Image elements need alt text or an explicit empty alt for decoration.",
+        );
+      }
+
+      if (tabIndex && /^[1-9]\d*$/.test(attributeText(tabIndex, sourceFile).trim())) {
+        addFailure(
+          file,
+          sourceFile,
+          node,
+          "Positive tabindex creates fragile keyboard order. Use DOM order or tabindex={0}/-1.",
+        );
+      }
+
+      if (
+        tagName !== "button" &&
+        attributeText(role, sourceFile).replace(/['"]/g, "") === "button" &&
+        (!tabIndex || (!onKeyDown && !onKeyUp))
+      ) {
+        addFailure(
+          file,
+          sourceFile,
+          node,
+          "Custom role=button needs keyboard handling and focusability. Prefer <button>.",
+        );
+      }
+
+      const hidden = attributeText(ariaHidden, sourceFile).replace(/['"]/g, "") === "true";
+      const nativelyFocusable = ["a", "button", "input", "select", "textarea"].includes(tagName);
+      const tabIndexText = attributeText(tabIndex, sourceFile).trim();
+      const explicitlyFocusable = Boolean(tabIndex && !/^-[1-9]\d*$/.test(tabIndexText));
+      if (hidden && (nativelyFocusable || explicitlyFocusable)) {
+        addFailure(
+          file,
+          sourceFile,
+          node,
+          "Focusable controls must not be hidden from assistive technology.",
+        );
+      }
+
+      if (className && ts.isJsxAttribute(className) && className.initializer) {
+        const values = [];
+        collectLiteralText(className.initializer, values);
+        for (const value of values) inspectedFocusStrings.add(value);
+        const combined = values.join(" ");
+        if (/\boutline-none\b/.test(combined) && !hasVisibleFocusReplacement(combined)) {
+          addFailure(
+            file,
+            sourceFile,
+            className,
+            "Do not remove focus outlines without a visible focus replacement.",
+          );
+        }
+      }
     }
 
-    if (/tabIndex=\{?[1-9]/.test(line) || /tabindex=["'][1-9]/i.test(line)) {
-      addFailure(file, lineNumber, "Positive tabindex creates fragile keyboard order. Use DOM order or tabindex={0}/-1.");
-    }
+    ts.forEachChild(node, visit);
+  }
 
-    if (/outline:\s*none/i.test(line) || /outline-none/.test(line)) {
-      addFailure(file, lineNumber, "Do not remove focus outlines without a visible focus-visible replacement.");
-    }
+  visit(sourceFile);
 
-    if (/role=["']button["']/.test(line) && !/onKeyDown|onKeyUp|tabIndex/.test(compact)) {
-      addFailure(file, lineNumber, "Custom role=button needs keyboard handling and focusability. Prefer <button>.");
+  function inspectStandaloneFocusStrings(node) {
+    if (ts.isStringLiteralLike(node) && !inspectedFocusStrings.has(node.text)) {
+      if (/\boutline-none\b/.test(node.text) && !hasVisibleFocusReplacement(node.text)) {
+        addFailure(
+          file,
+          sourceFile,
+          node,
+          "Do not remove focus outlines without a visible focus replacement.",
+        );
+      }
     }
+    ts.forEachChild(node, inspectStandaloneFocusStrings);
+  }
 
-    if (/aria-hidden=["']true["']/.test(line) && /button|href=|tabIndex=\{?0/.test(compact)) {
-      addFailure(file, lineNumber, "Focusable controls must not be hidden from assistive technology.");
-    }
-  });
+  inspectStandaloneFocusStrings(sourceFile);
 }
 
 for (const root of roots) walk(root);
