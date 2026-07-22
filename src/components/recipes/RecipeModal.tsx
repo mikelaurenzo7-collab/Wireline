@@ -7,7 +7,7 @@
  * focused on availability, agent selection, and modal lifecycle.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Brain, X } from "lucide-react";
 import { authFetch } from "../../lib/api";
@@ -28,6 +28,8 @@ import { AgentReviewForm } from "./forms/AgentReviewForm";
 import { KnowledgeFromDocumentForm } from "./forms/KnowledgeFromDocumentForm";
 import { CallPlaybookForm } from "./forms/CallPlaybookForm";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { useBodyScrollLock } from "../../lib/use-body-scroll-lock";
+import { useModalFocusTrap } from "../../lib/use-modal-focus-trap";
 
 export function RecipeModal({
   recipe,
@@ -49,14 +51,10 @@ export function RecipeModal({
   const [available, setAvailable] = useState<boolean | null>(null);
   const { user, loading: authLoading } = useAuth();
   const authenticatedUserId = user?.id ?? null;
+  const dialogRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  useBodyScrollLock(true);
+  useModalFocusTrap(dialogRef, { onEscape: onClose });
 
   useEffect(() => {
     if (authLoading || !authenticatedUserId) {
@@ -120,8 +118,14 @@ export function RecipeModal({
         exit={{ opacity: 0 }}
         className="absolute inset-0 bg-black/60 backdrop-blur-xl"
         onClick={onClose}
+        aria-hidden="true"
       />
       <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recipe-modal-title"
+        aria-describedby="recipe-modal-description"
         initial={{ opacity: 0, scale: 0.96, y: 24 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 24 }}
@@ -144,14 +148,18 @@ export function RecipeModal({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="font-display italic text-2xl leading-none">{meta.title}</h2>
+                  <h2 id="recipe-modal-title" className="font-display italic text-2xl leading-none">
+                    {meta.title}
+                  </h2>
                   {meta.thinking && (
                     <span className="px-2 py-0.5 rounded-full bg-brand/10 border border-brand/20 wl-label text-brand flex items-center gap-1">
                       <Brain className="w-2.5 h-2.5" /> Adaptive
                     </span>
                   )}
                 </div>
-                <p className="wl-label-muted mt-1">{meta.tagline}</p>
+                <p id="recipe-modal-description" className="wl-label-muted mt-1">
+                  {meta.tagline}
+                </p>
               </div>
             </div>
             <ShadButton
