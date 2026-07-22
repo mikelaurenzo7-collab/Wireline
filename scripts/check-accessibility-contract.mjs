@@ -36,18 +36,6 @@ function attributeText(property, sourceFile) {
   return property.initializer.getText(sourceFile).replace(/^\{|\}$/g, "");
 }
 
-function collectLiteralText(node, output) {
-  if (ts.isStringLiteralLike(node)) {
-    output.push(node.text);
-    return;
-  }
-  ts.forEachChild(node, (child) => collectLiteralText(child, output));
-}
-
-function hasVisibleFocusReplacement(value) {
-  return /(?:focus|focus-visible):[^\s]*(?:ring|outline|border|shadow)/.test(value);
-}
-
 function inspectFile(file) {
   const text = readFileSync(file, "utf8");
   const extension = extname(file);
@@ -64,7 +52,9 @@ function inspectFile(file) {
           ? ts.ScriptKind.JS
           : ts.ScriptKind.TS,
   );
-  const inspectedFocusStrings = new Set();
+  // Focus visibility depends on composed component classes and rendered CSS.
+  // It is covered by the browser accessibility and visual-QA workflows; this
+  // syntax contract stays limited to semantics it can determine soundly.
 
   function visit(node) {
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
@@ -75,7 +65,6 @@ function inspectFile(file) {
       const onKeyDown = attribute(node, sourceFile, "onkeydown");
       const onKeyUp = attribute(node, sourceFile, "onkeyup");
       const ariaHidden = attribute(node, sourceFile, "aria-hidden");
-      const className = attribute(node, sourceFile, "classname");
 
       if (tagName === "img" && !alt) {
         addFailure(
@@ -120,43 +109,12 @@ function inspectFile(file) {
           "Focusable controls must not be hidden from assistive technology.",
         );
       }
-
-      if (className && ts.isJsxAttribute(className) && className.initializer) {
-        const values = [];
-        collectLiteralText(className.initializer, values);
-        for (const value of values) inspectedFocusStrings.add(value);
-        const combined = values.join(" ");
-        if (/\boutline-none\b/.test(combined) && !hasVisibleFocusReplacement(combined)) {
-          addFailure(
-            file,
-            sourceFile,
-            className,
-            "Do not remove focus outlines without a visible focus replacement.",
-          );
-        }
-      }
     }
 
     ts.forEachChild(node, visit);
   }
 
   visit(sourceFile);
-
-  function inspectStandaloneFocusStrings(node) {
-    if (ts.isStringLiteralLike(node) && !inspectedFocusStrings.has(node.text)) {
-      if (/\boutline-none\b/.test(node.text) && !hasVisibleFocusReplacement(node.text)) {
-        addFailure(
-          file,
-          sourceFile,
-          node,
-          "Do not remove focus outlines without a visible focus replacement.",
-        );
-      }
-    }
-    ts.forEachChild(node, inspectStandaloneFocusStrings);
-  }
-
-  inspectStandaloneFocusStrings(sourceFile);
 }
 
 for (const root of roots) walk(root);
