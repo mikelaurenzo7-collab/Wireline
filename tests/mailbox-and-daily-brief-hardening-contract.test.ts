@@ -23,9 +23,9 @@ describe("mailbox ownership hardening", () => {
     expect(updateSet).not.toContain("userId");
   });
 
-  it("preserves a provider refresh token when reconnect omits a replacement", () => {
+  it("preserves a refresh token only for a reconnect to the same provider", () => {
     expect(ownedMailbox).toContain(
-      "...(input.refreshToken ? { refreshToken: input.refreshToken } : {})",
+      'case when ${emailAccounts.provider} = ${input.provider} then ${emailAccounts.refreshToken} else null end',
     );
   });
 
