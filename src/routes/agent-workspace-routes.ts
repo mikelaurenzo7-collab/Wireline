@@ -162,7 +162,11 @@ router.post(
         .limit(CLAUDE_CONTEXT_WINDOW);
 
       const history = priorMessages.reverse().map((m) => ({
-        role: m.role === "Account Holder" ? ("Account Holder" as const) : ("agent" as const),
+        // Accept legacy "operator" rows until migration 0108 backfill lands everywhere.
+        role:
+          m.role === "Account Holder" || m.role === "operator"
+            ? ("Account Holder" as const)
+            : ("agent" as const),
         content: m.content,
       }));
 
@@ -269,7 +273,10 @@ router.post(
         .limit(CLAUDE_CONTEXT_WINDOW);
 
       const history = priorMessages.reverse().map((m) => ({
-        role: m.role === "Account Holder" ? ("Account Holder" as const) : ("agent" as const),
+        role:
+          m.role === "Account Holder" || m.role === "operator"
+            ? ("Account Holder" as const)
+            : ("agent" as const),
         content: m.content,
       }));
 
