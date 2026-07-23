@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type Vapi from "@vapi-ai/web";
 import { PhoneOff, Mic, Loader2, AlertCircle, Volume2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import AgentFace from "../AgentFace";
+import { emitProductEvent } from "../../lib/product-event-client";
 
 const VAPI_PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY || "";
 
@@ -12,6 +13,12 @@ type BrowserCallWidgetProps = {
   /** Retained for call-site compatibility. The public demo uses shared semantic tokens. */
   tintColor?: string;
   buttonLabel?: string;
+  /**
+   * Rendered instead of a dead-end error when the browser voice demo can't
+   * run (VITE_VAPI_PUBLIC_KEY unset in this environment). Lets the hero fall
+   * back to the phone demo lines instead of stranding the visitor.
+   */
+  fallback?: ReactNode;
 };
 
 type AnalyticsWindow = Window & {
@@ -33,6 +40,7 @@ export default function BrowserCallWidget({
   agentName,
   tintColor: _tintColor,
   buttonLabel = "Talk in browser",
+  fallback,
 }: BrowserCallWidgetProps) {
   const [callActive, setCallActive] = useState(false);
   const [connecting, setConnecting] = useState(false);
@@ -113,14 +121,19 @@ export default function BrowserCallWidget({
     try {
       setConnecting(true);
       setError(null);
+      // Demo-start is the strongest top-of-funnel intent signal on the site;
+      // the event name existed in the taxonomy with no emit site until now.
+      emitProductEvent({
+        event: "landing_demo_clicked",
+        surface: "marketing_web",
+        metadata: { agent: agentName, mode: "browser_voice" },
+      });
       const instance = await ensureVapi();
       if (!instance) {
         setConnecting(false);
         return;
       }
-      const response = await fetch(
-        `/api/public/assistant/${encodeURIComponent(agentName)}`,
-      );
+      const response = await fetch(`/api/public/assistant/${encodeURIComponent(agentName)}`);
       if (!response.ok) throw new Error("Could not load the demo agent.");
       const assistantPayload = await response.json();
 
@@ -137,6 +150,13 @@ export default function BrowserCallWidget({
   };
 
   const buttonText = connecting ? "Connecting…" : callActive ? "End call" : buttonLabel;
+
+  // When the public voice key isn't configured, don't render a dead button —
+  // show the provided fallback (phone demo lines) if the call site gave one.
+  // Placed after all hooks so hook order stays stable across renders.
+  if (!VAPI_PUBLIC_KEY && fallback) {
+    return <>{fallback}</>;
+  }
 
   return (
     <div className="flex flex-col items-center gap-3">

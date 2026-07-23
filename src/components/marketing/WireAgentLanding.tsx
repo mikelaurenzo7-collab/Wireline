@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Volume2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import MarketingFooter from "./MarketingFooter";
@@ -7,12 +7,15 @@ import MarketingHero from "./MarketingHero";
 import MarketingStickyCta from "./MarketingStickyCta";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import TrustSignals from "./TrustSignals";
+import BrowserCallWidget from "./BrowserCallWidget";
 import {
   AGENT_DIRECTION_MODES,
   AGENT_NUMBER_PROMISE,
   MARKETING_VOICE,
 } from "../../lib/product-copy";
 import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
+import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
+import { emitProductEvent } from "../../lib/product-event-client";
 
 type AgentMode = "outbound" | "inbound" | "hybrid";
 
@@ -120,12 +123,21 @@ function modePanelId(key: AgentMode) {
   return `wire-agent-${key}-panel`;
 }
 
+const HERO_DEMO_AGENT = LANDING_PUBLIC_DEMO_AGENTS[0];
+
 export default function WireAgentLanding() {
   const [mode, setMode] = useState<AgentMode>("outbound");
   const detail = MODE_DETAILS[mode];
 
   const selectMode = (key: AgentMode, focusAfterSelect = false) => {
     setMode(key);
+    // Audience-selection is a top-of-funnel signal we optimize against —
+    // the event name existed in the taxonomy with no emit site until now.
+    emitProductEvent({
+      event: "landing_audience_selected",
+      surface: "marketing_web",
+      metadata: { audience: key, source: "hero_work_lane" },
+    });
 
     if (focusAfterSelect) {
       window.requestAnimationFrame(() => document.getElementById(modeTabId(key))?.focus());
@@ -163,8 +175,41 @@ export default function WireAgentLanding() {
           title={MARKETING_VOICE.headline}
           description={MARKETING_VOICE.subline}
           primaryAction={{ label: MARKETING_VOICE.primaryCta, to: "/signup" }}
-          secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
+          secondaryAction={{ label: "Hear a demo", to: "#hear-a-demo", tone: "secondary" }}
           proof={HERO_CAPABILITIES}
+          visual={
+            <div id="hear-a-demo" className="flex flex-col justify-between text-center">
+              <div>
+                <div className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-foreground">
+                  <Volume2 className="h-4 w-4 text-primary" aria-hidden="true" />
+                  Hear it now — live in your browser
+                </div>
+                <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+                  Ask a real question out loud. Your microphone turns on only after you start, and
+                  no signup is needed to listen.
+                </p>
+              </div>
+              <div className="mt-6 rounded-[16px] border border-border bg-background/70 p-4">
+                <BrowserCallWidget
+                  agentName={HERO_DEMO_AGENT.name}
+                  buttonLabel="Start the live demo"
+                  fallback={
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">
+                        Prefer the phone? Call a live demo line — no signup to listen.
+                      </p>
+                      <a
+                        href={`tel:${HERO_DEMO_AGENT.tel}`}
+                        className="marketing-btn-secondary mt-3 inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
+                      >
+                        Call {HERO_DEMO_AGENT.display}
+                      </a>
+                    </div>
+                  }
+                />
+              </div>
+            </div>
+          }
         />
 
         <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
