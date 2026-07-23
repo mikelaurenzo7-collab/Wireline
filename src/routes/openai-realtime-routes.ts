@@ -1,7 +1,7 @@
 import express, { type Response } from "express";
 import { z } from "zod";
 import { authenticateUser } from "../middleware/auth";
-import { createRateLimiter } from "../middleware/api-rate-limits";
+import { createRateLimiter, simulationMinuteQuota } from "../middleware/api-rate-limits";
 import { validateBody } from "../lib/api-validation";
 import type { AuthenticatedRequest } from "../types/auth";
 import {
@@ -36,6 +36,7 @@ router.post(
   "/api/voice/openai/session",
   authenticateUser,
   openaiRealtimeLimiter,
+  simulationMinuteQuota,
   validateBody(openaiRealtimeSessionSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     const session = await createOpenAIRealtimeClientSecret({

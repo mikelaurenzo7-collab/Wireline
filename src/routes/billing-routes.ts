@@ -805,6 +805,8 @@ router.post(
         line_items: [{ price: priceId, quantity: 1 }],
         automatic_tax: { enabled: true },
         customer_update: { address: "auto", name: "auto" },
+        // Parity with the plan checkout — promo codes work on add-ons too.
+        allow_promotion_codes: true,
         success_url: `${base}/settings/billing?live_video=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${base}/settings/billing?live_video=canceled`,
         metadata: addonMeta,
