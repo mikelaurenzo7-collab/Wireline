@@ -62,7 +62,6 @@ const ADMIN_WRITABLE_SETTINGS = new Set([
   "subscriptionStatus",
   "maxAgents",
   "extraAgents",
-  "founderUnlimitedAgents",
 ]);
 
 function pickWritableSettings(

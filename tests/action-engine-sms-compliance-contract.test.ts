@@ -10,7 +10,7 @@ const engine = read("src/lib/action-engine.ts");
 describe("action-engine outbound SMS compliance gate", () => {
   it("routes auto send_text_message through evaluateOutboundDialGate before Twilio send", () => {
     expect(engine).toContain('import { evaluateOutboundDialGate } from "./outbound-dial-gate"');
-    expect(engine).toContain("MARKETING_SMS_ROLES");
+    expect(engine).toContain("NON_MARKETING_SMS_ROLES");
 
     const handlerMatch = engine.match(
       /async function handleSendTextMessage\([\s\S]*?\n\}/,

@@ -34,7 +34,6 @@ export const SettingsSchema = z.object({
   subscription_status: z.string().max(40).nullable().optional(),
   max_agents: z.number().int().nullable().optional(),
   extra_agents: z.number().int().nonnegative().nullable().optional(),
-  founder_unlimited_agents: z.boolean().nullable().optional(),
 
   vapi_phone_number_id: z.string().nullable().optional(),
   vapi_phone_inbound_agent_id: z.string().nullable().optional(),
