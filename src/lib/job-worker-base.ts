@@ -733,6 +733,12 @@ export async function handleJob(job: JobRow): Promise<void> {
     log.info("cadence_tick processed", summary);
   }
 
+  if (job.type === "callback_tick") {
+    const { tickDueCallbacks } = await import("./callback-engine");
+    const summary = await tickDueCallbacks({ limit: 25 });
+    if (summary.processed > 0) log.info("callback_tick processed", { ...summary });
+  }
+
   if (job.type === "auto_qa_score") {
     const p = job.payload as { callLogId: number | string; userId: string };
     if (!claudeBrain.isBrainAvailable()) {

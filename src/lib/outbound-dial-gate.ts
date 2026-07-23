@@ -52,11 +52,24 @@ export async function evaluateOutboundDialGate(opts: {
   isMarketingCall?: boolean;
   /** Explicit consent override; falls back to metadata.has_express_written_consent. */
   hasExpressWrittenConsent?: boolean;
+  /**
+   * Caller-requested callbacks are a distinct TCPA class: the consumer asked,
+   * on a recorded line, to be called back — prior express consent for that
+   * specific return call. This flag (a) treats the dial as non-marketing,
+   * (b) supplies that consent, and (c) skips the 24h duplicate guard, because
+   * a callback within a day of the original call is the entire point.
+   * Quiet hours and tenant/federal DNC lookups still apply — a caller who
+   * lands on DNC after requesting a callback stays protected.
+   */
+  isRequestedCallback?: boolean;
 }): Promise<OutboundDialGateResult> {
-  const isMarketingCall = opts.isMarketingCall !== false;
+  const isRequestedCallback = opts.isRequestedCallback === true;
+  const isMarketingCall = isRequestedCallback ? false : opts.isMarketingCall !== false;
   const metadata = opts.metadata || {};
   const hasExpressWrittenConsent =
-    opts.hasExpressWrittenConsent === true || metadata.has_express_written_consent === true;
+    opts.hasExpressWrittenConsent === true ||
+    metadata.has_express_written_consent === true ||
+    isRequestedCallback;
 
   // TCPA quiet hours first — local computation, cheapest fail-closed check.
   const callingHours = resolveCallingHoursForPhone(opts.phone);
@@ -91,7 +104,7 @@ export async function evaluateOutboundDialGate(opts: {
     }
   }
 
-  if (opts.lastCalledAt) {
+  if (opts.lastCalledAt && !isRequestedCallback) {
     const elapsed = Date.now() - opts.lastCalledAt.getTime();
     if (elapsed < DUPLICATE_WINDOW_MS) {
       const nextEligible = new Date(opts.lastCalledAt.getTime() + DUPLICATE_WINDOW_MS);
@@ -108,34 +121,36 @@ export async function evaluateOutboundDialGate(opts: {
     }
   }
 
-  const since = new Date(Date.now() - DUPLICATE_WINDOW_MS);
-  const otherConditions = [
-    eq(schema.outboundLeads.userId, opts.userId),
-    eq(schema.outboundLeads.customerNumber, opts.phone),
-    gte(schema.outboundLeads.lastCalledAt, since),
-  ];
-  if (opts.leadId != null && opts.leadId !== "") {
-    otherConditions.push(ne(schema.outboundLeads.id, BigInt(opts.leadId)));
-  }
+  if (!isRequestedCallback) {
+    const since = new Date(Date.now() - DUPLICATE_WINDOW_MS);
+    const otherConditions = [
+      eq(schema.outboundLeads.userId, opts.userId),
+      eq(schema.outboundLeads.customerNumber, opts.phone),
+      gte(schema.outboundLeads.lastCalledAt, since),
+    ];
+    if (opts.leadId != null && opts.leadId !== "") {
+      otherConditions.push(ne(schema.outboundLeads.id, BigInt(opts.leadId)));
+    }
 
-  const [otherRecent] = await drizzle
-    .select({ id: schema.outboundLeads.id })
-    .from(schema.outboundLeads)
-    .where(and(...otherConditions))
-    .limit(1);
+    const [otherRecent] = await drizzle
+      .select({ id: schema.outboundLeads.id })
+      .from(schema.outboundLeads)
+      .where(and(...otherConditions))
+      .limit(1);
 
-  if (otherRecent) {
-    return {
-      allowed: false,
-      status: LEAD_STATUS.SKIPPED_DUPLICATE,
-      reason: "skipped_duplicate",
-      metadataPatch: {
-        ...metadata,
-        // jsonb cannot store raw JS BigInt — always stringify lead IDs
-        duplicate_of_lead_id: jsonSafeId(otherRecent.id),
-        duplicate_guard: "other_within_24h",
-      },
-    };
+    if (otherRecent) {
+      return {
+        allowed: false,
+        status: LEAD_STATUS.SKIPPED_DUPLICATE,
+        reason: "skipped_duplicate",
+        metadataPatch: {
+          ...metadata,
+          // jsonb cannot store raw JS BigInt — always stringify lead IDs
+          duplicate_of_lead_id: jsonSafeId(otherRecent.id),
+          duplicate_guard: "other_within_24h",
+        },
+      };
+    }
   }
 
   if (await isDncBlocked(opts.userId, opts.phone)) {

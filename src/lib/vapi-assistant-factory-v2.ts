@@ -9,8 +9,15 @@ import {
   getVoiceLatencyProfile,
   resolveOutboundStartSpeakingPlan,
   resolveVapiSpeechPipeline,
+  VAPI_MAX_INBOUND_CALL_SECONDS,
+  VAPI_MAX_OUTBOUND_CALL_SECONDS,
   VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
 } from "./voice-agent-profile";
+import {
+  buildAgentRuntimeContext,
+  resolveAssistantBasePrompt,
+  type AgentRuntimeProfile,
+} from "./agent-runtime";
 import {
   clampVoiceTemperature,
   resolveVapiVoiceModelSelection,
@@ -79,9 +86,7 @@ export async function buildVapiAssistant({
   const requestedVoice = isOutbound
     ? configured.voiceIdOutbound || configured.voiceId
     : configured.voiceIdInbound || configured.voiceId;
-  const voiceId = isManagedVapiVoiceId(requestedVoice)
-    ? requestedVoice
-    : DEFAULT_MANAGED_VOICE_ID;
+  const voiceId = isManagedVapiVoiceId(requestedVoice) ? requestedVoice : DEFAULT_MANAGED_VOICE_ID;
   const speech = resolveVapiSpeechPipeline();
   const latency = getVoiceLatencyProfile({
     archetype: configured.archetype || undefined,
@@ -100,10 +105,12 @@ export async function buildVapiAssistant({
   const flowBlock = flow.length
     ? `\n## CALL FLOW\n${flow.map((step, index) => `${index + 1}. ${step.name || "Stage"}: ${step.instructions || ""}${step.transitionCondition ? ` (advance when ${step.transitionCondition})` : ""}${step.isEndNode ? " (end call after completion)" : ""}`).join("\n")}\n`
     : "";
-  const systemPrompt = [
+  const identityBlock = [
     `You are ${configured.name}, a Wireline ${configured.role || "agent"}.`,
     "Be accurate, concise, kind, and action-oriented. Never invent business facts, prices, availability, or commitments.",
     "When an action is outside your permissions or confidence, clearly explain the limitation and escalate to a human.",
+  ].join("\n");
+  const callSpecificContext = [
     personality ? `\n## TONE\n${personality}\n` : "",
     promptItem("OPERATING RULES", directives),
     promptItem("APPROVED TRAINING", knowledge),
@@ -114,9 +121,43 @@ export async function buildVapiAssistant({
   ]
     .filter(Boolean)
     .join("\n");
+  // Account Holder override replaces the auto-composed identity but keeps the
+  // call-specific context (tone, rules, training, flow, escalation) appended.
+  const basePrompt = resolveAssistantBasePrompt({
+    override: configured.systemPromptOverride,
+    autoComposedPrompt: [identityBlock, callSpecificContext].filter(Boolean).join("\n"),
+    callSpecificContext,
+  });
+  // Layer the runtime guardrails (compliance disclosure, do-not-discuss,
+  // escalation keywords, KPI focus, personality vibe, voice consistency,
+  // business-variable substitution) exactly as the outbound path does — an
+  // override can never silently drop them.
+  const runtimeProfile: AgentRuntimeProfile = {
+    timezone: configured.timezone,
+    business_hours: configured.businessHours as AgentRuntimeProfile["business_hours"],
+    compliance_mode: configured.complianceMode,
+    disallowed_topics: configured.disallowedTopics,
+    escalation_keywords: configured.escalationKeywords,
+    business_variables: configured.businessVariables as AgentRuntimeProfile["business_variables"],
+    out_of_hours_message: configured.outOfHoursMessage,
+    kpi_focus: configured.kpiFocus,
+    personality_vibe: configured.personalityVibe,
+  };
+  const runtime = buildAgentRuntimeContext(basePrompt, runtimeProfile);
+  // Inbound callers are already on the line when the business is closed, so
+  // out-of-hours never refuses the call — it switches the agent into
+  // message-taking mode and opens with the Account Holder's after-hours line.
+  const afterHours = !isOutbound && !runtime.inHours;
+  const systemPrompt = afterHours
+    ? `${runtime.prompt}\n\n## AFTER-HOURS MODE\nThe business is currently closed. Let the caller know, take a complete message (name, number, reason for calling), promise a follow-up during business hours, and do NOT commit to appointments, prices, or actions that require the business to be open.`
+    : runtime.prompt;
   const finalSystemPrompt = isGrokModelId(modelSelection.model)
     ? `${systemPrompt}\n\n${buildGrokStrengthsPromptSection()}`
     : systemPrompt;
+  const afterHoursGreeting = afterHours
+    ? runtime.outOfHoursMessage ||
+      `Hi, you've reached ${configured.name}. We're currently closed, but I can take a message and make sure the right person follows up.`
+    : null;
   const functionTools = toVapiFunctionTools(
     await buildRoleToolDefsForTenant(
       configured.role || "customer_service",
@@ -131,15 +172,17 @@ export async function buildVapiAssistant({
   );
   const appUrl = process.env.APP_URL?.trim().replace(/\/+$/, "");
   const webhookServer = appUrl
-    ? buildVapiServerConfig(
-        `${appUrl}/api/vapi-webhook?agentId=${encodeURIComponent(agentId)}`,
-      )
+    ? buildVapiServerConfig(`${appUrl}/api/vapi-webhook?agentId=${encodeURIComponent(agentId)}`)
     : undefined;
 
   return {
     name: configured.name,
-    firstMessage: configured.firstMessage || `Hi, this is ${configured.name}. How can I help?`,
+    firstMessage:
+      afterHoursGreeting ||
+      configured.firstMessage ||
+      `Hi, this is ${configured.name}. How can I help?`,
     ...(isOutbound ? { firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE } : {}),
+    maxDurationSeconds: isOutbound ? VAPI_MAX_OUTBOUND_CALL_SECONDS : VAPI_MAX_INBOUND_CALL_SECONDS,
     model: {
       provider: modelSelection.provider,
       model: modelSelection.model,
@@ -178,6 +221,8 @@ export async function buildVapiAssistant({
       summaryPrompt:
         "Summarize the call in 2-3 sentences with caller intent, agent action, and committed follow-up.",
       structuredDataPrompt: "Extract caller intent, outcome, commitments, and sentiment as JSON.",
+      successEvaluationPrompt:
+        "Did the agent accomplish the caller's primary goal or the configured call objective? Consider resolution, correct escalation, and follow-through commitments.",
     },
   };
 }
