@@ -133,8 +133,7 @@ export default function PhoneSettings() {
           ) : null}
         </section>
 
-        <CompanyIdentityPack key={activeNumber?.id ?? "no-number"} />
-
+        {/* Number → attach → identity: keep the next operating action above compliance depth */}
         <section className="studio-card mt-5 p-5 sm:p-6">
           <p className={WL_APP_CLASSES.wiredEyebrow}>Routing</p>
           {attachedAgent ? (
@@ -145,8 +144,8 @@ export default function PhoneSettings() {
           ) : (
             <p className="mt-4 text-sm text-muted-foreground">No AI employee attached yet</p>
           )}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button asChild variant="secondary" size="sm">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button asChild size="sm">
               <Link
                 to={
                   attachedAgent
@@ -154,17 +153,19 @@ export default function PhoneSettings() {
                     : "/studio"
                 }
               >
-                Open Studio
+                {attachedAgent ? "Open Studio" : "Attach in Studio"}
               </Link>
             </Button>
-            <Button asChild variant="secondary" size="sm">
-              <Link to="/admin?tab=carrier">Carrier routing</Link>
-            </Button>
-            <Button asChild variant="secondary" size="sm">
-              <Link to="/settings/customization">Appearance</Link>
-            </Button>
+            <Link
+              to="/admin?tab=carrier"
+              className="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Carrier routing
+            </Link>
           </div>
         </section>
+
+        <CompanyIdentityPack key={activeNumber?.id ?? "no-number"} />
 
         {message ? (
           <StatusNotice tone="info" className="mt-5" title="Phone line updated">
