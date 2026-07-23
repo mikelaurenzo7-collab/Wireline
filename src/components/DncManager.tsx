@@ -500,6 +500,7 @@ export default function DncManager() {
         }}
       >
         <DialogContent
+          showClose={!adding}
           aria-busy={adding}
           onEscapeKeyDown={(event) => {
             if (adding) event.preventDefault();

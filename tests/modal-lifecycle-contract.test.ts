@@ -70,6 +70,16 @@ describe("authenticated modal lifecycle contract", () => {
     }
   });
 
+  it("keeps pending dialogs honest about dismissal and assistive-technology state", () => {
+    const dnc = source("src/components/DncManager.tsx");
+    const confirm = source("src/components/ConfirmModal.tsx");
+    const shadcnDialog = source("src/components/ui/shadcn/Dialog.tsx");
+
+    expect(shadcnDialog).toContain("showClose?: boolean");
+    expect(dnc).toContain("showClose={!adding}");
+    expect(confirm).toContain("aria-busy={loading}");
+  });
+
   it("does not leave duplicate global Escape listeners in migrated modals", () => {
     for (const path of [
       "src/components/TrialGateModal.tsx",

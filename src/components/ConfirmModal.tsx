@@ -42,6 +42,7 @@ export default function ConfirmModal({
       }}
     >
       <AlertDialogContent
+        aria-busy={loading}
         aria-labelledby="confirm-modal-title"
         aria-describedby="confirm-modal-desc"
         className="p-0"
