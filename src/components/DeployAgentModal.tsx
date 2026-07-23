@@ -83,8 +83,11 @@ export default function DeployAgentModal({
     setGender(initialGender);
     setVoiceId(MANAGED_VOICE_BY_GENDER[initialGender]);
     setShowVoiceList(false);
-    // Defer focus until the modal animation is past the initial frame
-    setTimeout(() => nameInputRef.current?.select(), 80);
+    // Defer focus until the modal animation is past the initial frame. Clear it
+    // if the template changes or the dialog closes so focus cannot jump back
+    // into an exiting modal after the shared trap restores the trigger.
+    const focusTimer = window.setTimeout(() => nameInputRef.current?.select(), 80);
+    return () => window.clearTimeout(focusTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally re-keyed on template id
   }, [template?.id]);
 
