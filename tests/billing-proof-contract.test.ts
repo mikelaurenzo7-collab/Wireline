@@ -87,6 +87,18 @@ describe("billing proof contract", () => {
     expect(guard).toContain('code: "LIVE_PLAN_REQUIRED"');
   });
 
+  it("keeps free activation, prepaid balance, and past-due recovery commercially consistent", () => {
+    const modal = read("src/components/TrialGateModal.tsx");
+    const balanceRoutes = read("src/routes/conversation-balance-routes.ts");
+    const billingRoutes = read("src/routes/billing-routes.ts");
+
+    expect(balanceRoutes).toContain('plan.id !== "personal"');
+    expect(modal).not.toContain('authFetch("/api/conversation-balance/checkout"');
+    expect(modal).toContain('authFetch("/api/billing/portal"');
+    expect(modal).toContain('detail.code === "SUBSCRIPTION_REQUIRED"');
+    expect(billingRoutes).not.toContain("credit top-up activates a pending account");
+  });
+
   it("reconciles voice usage against plan, included minutes, and completion grace", () => {
     const usage = read("src/lib/voice-usage.ts");
     const grace = read("src/lib/voice-completion-grace.ts");

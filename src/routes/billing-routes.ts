@@ -155,16 +155,6 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                       : session.payment_intent?.id,
                 },
               });
-              // Reconcile pricing/activation: a credit top-up activates a pending account!
-              await drizzle
-                .update(schema.settings)
-                .set({ subscriptionStatus: "active", updatedAt: new Date() })
-                .where(
-                  and(
-                    eq(schema.settings.userId, userId),
-                    eq(schema.settings.subscriptionStatus, "pending_activation"),
-                  ),
-                );
             });
           } else {
             log.warn("credit_topup session missing user id or amount", {

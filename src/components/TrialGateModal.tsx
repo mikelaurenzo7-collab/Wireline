@@ -9,18 +9,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Loader2, CreditCard, AlertTriangle, Sparkles, Wallet, Mail, Check } from "lucide-react";
+import { X, Loader2, CreditCard, AlertTriangle, Sparkles, Mail, Check } from "lucide-react";
 import { authFetch, safeJson, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from "../lib/api";
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
-import {
-  CONVERSATION_BALANCE_COPY,
-  CONVERSATION_BALANCE_PRESETS_USD,
-} from "../lib/conversation-balance";
-import { emitProductEvent } from "../lib/product-event-client";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 const TIER_PITCH: Record<string, string> = {
@@ -28,10 +23,6 @@ const TIER_PITCH: Record<string, string> = {
   business: "Approvals, analytics, CRM sync, roles, and pooled live work",
   enterprise: "Governed rollout, security review, custom policy, and committed usage",
 };
-
-const PERSONAL_ACTIVATION_TOP_UP_USD = CONVERSATION_BALANCE_PRESETS_USD.includes(25)
-  ? 25
-  : CONVERSATION_BALANCE_PRESETS_USD[0];
 
 /** Public self-serve plans only. Retained plans stay serviceable but are never reacquired accidentally. */
 const SELF_SERVE_TIERS = STRIPE_PLANS.filter(
@@ -48,7 +39,7 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
     case "ACTIVATION_REQUIRED":
       return {
         title: "Activate live work",
-        body: "Create and train stay free. Add Conversation Balance for personal live work, or choose Team or Business when shared routing and numbers matter.",
+        body: "Create and train stay free. Choose a live plan to add a production number and paid provider actions.",
       };
     case "EMAIL_UNVERIFIED":
       return {
@@ -60,18 +51,18 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
         title: "Trial limit reached",
         body:
           typeof detail.limit === "number" && typeof detail.current === "number"
-            ? `You've used ${detail.current} of ${detail.limit} during your legacy trial. Add Conversation Balance or choose shared capacity to keep going - your data and agent stay exactly as they are.`
-            : "You've hit your legacy trial limit. Add Conversation Balance or choose shared capacity to keep going.",
+            ? `You've used ${detail.current} of ${detail.limit} during your legacy trial. Choose a live plan to keep going — your data and agent stay exactly as they are.`
+            : "You've hit your legacy trial limit. Choose a live plan to keep going.",
       };
     case "TRIAL_EXPIRED":
       return {
         title: "Your legacy trial ended",
-        body: "Add Conversation Balance or choose shared capacity to keep your agent live. Your number, settings, and call history stay exactly as you left them.",
+        body: "Choose a live plan to restore your agent. Your settings and call history stay exactly as you left them.",
       };
     case "SUBSCRIPTION_REQUIRED":
       return {
         title: "Subscription paused",
-        body: "Your subscription is past due. Update your card or choose operating capacity to keep your agent live.",
+        body: "Your subscription is past due. Open Stripe billing to update your payment method and restore live work.",
       };
     default:
       return { title: "Capacity required", body: detail.error };
@@ -125,13 +116,14 @@ export default function TrialGateModal() {
   const { title, body } = headlineForCode(detail);
   const recommendedPlanId = recommendedPlanFromIntent(getStoredSignupIntent());
   const eyebrow =
-    detail.code === "ACTIVATION_REQUIRED" ? "Activate live work" : "Upgrade to keep going";
-  const checkoutAllowed = detail.code !== "EMAIL_UNVERIFIED";
-  const showPersonalTopUp =
-    checkoutAllowed &&
-    (detail.code === "ACTIVATION_REQUIRED" ||
-      detail.code === "TRIAL_EXPIRED" ||
-      detail.code === "TRIAL_LIMIT_HIT");
+    detail.code === "ACTIVATION_REQUIRED"
+      ? "Activate live work"
+      : detail.code === "SUBSCRIPTION_REQUIRED"
+        ? "Restore billing"
+        : "Choose a live plan";
+  const showBillingPortal = detail.code === "SUBSCRIPTION_REQUIRED";
+  const showPlanCheckout =
+    detail.code !== "EMAIL_UNVERIFIED" && detail.code !== "SUBSCRIPTION_REQUIRED";
 
   async function checkout(planId: string) {
     checkoutAbortRef.current?.abort();
@@ -200,6 +192,39 @@ export default function TrialGateModal() {
     }
   }
 
+  async function openBillingPortal() {
+    checkoutAbortRef.current?.abort();
+    const controller = new AbortController();
+    checkoutAbortRef.current = controller;
+    setPending("billing-portal");
+    setError(null);
+    try {
+      const response = await authFetch("/api/billing/portal", {
+        method: "POST",
+        signal: controller.signal,
+      });
+      const data = (await safeJson<{ url?: string; error?: string }>(response)) as {
+        url?: string;
+        error?: string;
+      } | null;
+      const portalUrl = data?.url;
+      if (!response.ok || !portalUrl) {
+        setError(data?.error || "Stripe billing could not be opened. Try again shortly.");
+        setPending(null);
+        return;
+      }
+      window.location.href = portalUrl;
+    } catch (portalError: unknown) {
+      if (portalError instanceof Error && portalError.name === "AbortError") return;
+      setError(
+        portalError instanceof Error ? portalError.message : "Network error opening Stripe billing.",
+      );
+      setPending(null);
+    } finally {
+      if (checkoutAbortRef.current === controller) checkoutAbortRef.current = null;
+    }
+  }
+
   async function resendVerification() {
     setResend("pending");
     try {
@@ -212,47 +237,6 @@ export default function TrialGateModal() {
       else setResend("error");
     } catch {
       setResend("error");
-    }
-  }
-
-  async function topUpPersonalBalance(amountUsd: number) {
-    checkoutAbortRef.current?.abort();
-    const controller = new AbortController();
-    checkoutAbortRef.current = controller;
-    setPending(`balance-${amountUsd}`);
-    setError(null);
-    try {
-      emitProductEvent({
-        event: "conversation_balance_checkout_started",
-        metadata: { amount_usd: amountUsd, source: "trial_gate_modal" },
-      });
-      const response = await authFetch("/api/conversation-balance/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount_usd: amountUsd }),
-        signal: controller.signal,
-      });
-      const data = (await safeJson<{ url?: string; error?: string }>(response)) as {
-        url?: string;
-        error?: string;
-      } | null;
-      const checkoutUrl = data?.url;
-      if (!response.ok || !checkoutUrl) {
-        setError(data?.error || "Conversation Balance checkout could not be opened.");
-        setPending(null);
-        return;
-      }
-      window.location.href = checkoutUrl;
-    } catch (checkoutError: unknown) {
-      if (checkoutError instanceof Error && checkoutError.name === "AbortError") return;
-      setError(
-        checkoutError instanceof Error
-          ? checkoutError.message
-          : "Network error opening Conversation Balance checkout.",
-      );
-      setPending(null);
-    } finally {
-      if (checkoutAbortRef.current === controller) checkoutAbortRef.current = null;
     }
   }
 
@@ -357,47 +341,37 @@ export default function TrialGateModal() {
                   )}
                 </div>
               )}
-              {checkoutAllowed && (
+              {showBillingPortal && (
+                <div className="flex flex-col items-start gap-3">
+                  <ShadButton
+                    type="button"
+                    disableAnimations
+                    onClick={openBillingPortal}
+                    disabled={pending !== null}
+                    className="h-11 rounded-md px-5"
+                  >
+                    {pending === "billing-portal" ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Opening Stripe billing
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="h-4 w-4" />
+                        Update payment in Stripe
+                      </>
+                    )}
+                  </ShadButton>
+                  <a
+                    href="/settings/billing"
+                    className="text-xs text-brand underline-offset-2 hover:underline"
+                  >
+                    View Wireline billing details
+                  </a>
+                </div>
+              )}
+              {showPlanCheckout && (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {showPersonalTopUp && (
-                    <ShadButton
-                      type="button"
-                      disableAnimations
-                      variant="outline"
-                      onClick={() => topUpPersonalBalance(PERSONAL_ACTIVATION_TOP_UP_USD)}
-                      disabled={!!pending}
-                      className="relative h-auto w-full justify-start rounded-md border-brand/50 bg-brand/5 p-4 text-left touch-manipulation hover:border-brand hover:bg-brand/10"
-                    >
-                      <div className="absolute -top-2 left-4 rounded-full bg-brand px-2 py-0.5 font-medium text-on-brand wl-label">
-                        Personal
-                      </div>
-                      <div className="mb-1 font-display text-lg italic text-foreground">
-                        {CONVERSATION_BALANCE_COPY.title}
-                      </div>
-                      <div className="mb-2 flex items-baseline gap-1">
-                        <span className="font-display text-2xl italic text-foreground">
-                          ${PERSONAL_ACTIVATION_TOP_UP_USD}
-                        </span>
-                        <span className="wl-label-muted/70">top-up</span>
-                      </div>
-                      <p className="mb-3 text-[var(--wireline-typography-overline-size)] leading-relaxed text-foreground/65">
-                        One agent, one number, and live work funded only when you add balance.
-                      </p>
-                      <div className="inline-flex items-center gap-1.5 text-brand wl-label">
-                        {pending === `balance-${PERSONAL_ACTIVATION_TOP_UP_USD}` ? (
-                          <>
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            Opening
-                          </>
-                        ) : (
-                          <>
-                            <Wallet className="h-3 w-3" />
-                            Add balance
-                          </>
-                        )}
-                      </div>
-                    </ShadButton>
-                  )}
                   {SELF_SERVE_TIERS.map((tier) => {
                     const isPending = pending === tier.id;
                     const isRecommended = tier.id === recommendedPlanId;
@@ -462,13 +436,9 @@ export default function TrialGateModal() {
                 </div>
               )}
 
-              {checkoutAllowed && (
+              {showPlanCheckout && (
                 <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted/70 wl-label">
-                  <span>
-                    {showPersonalTopUp
-                      ? "Personal balance or shared capacity"
-                      : "Shared capacity checkout"}
-                  </span>
+                  <span>Secure checkout in Stripe</span>
                   <span>&middot;</span>
                   <span>Cancel anytime</span>
                   <span>&middot;</span>
