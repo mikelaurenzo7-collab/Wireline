@@ -30,14 +30,28 @@ describe("AI cost-protection contract", () => {
     expect(pdfRoute.slice(0, 600)).toContain("claudeRateLimiter");
   });
 
-  it("signup seeds a real default AI spend budget", () => {
+  it("signup seeds a real default AI spend budget inside the signup transaction", () => {
     const trialGate = read("src/lib/trial-gate.ts");
     expect(trialGate).toContain("ensureDefaultAiSpendBudget");
+    // Must pass the tx executor — seeding on the module drizzle would hit the
+    // spend_budgets → users FK against the still-uncommitted user row and
+    // silently drop the seed for every password signup.
+    expect(trialGate).toContain("ensureDefaultAiSpendBudget(userId, null, tx)");
+    const snapshot = read("src/lib/workspace-usage-snapshot.ts");
+    expect(snapshot).toMatch(/executor:\s*any\s*=\s*drizzle/);
+    // Both the read and the write go through the passed executor (the tx),
+    // not the module-level drizzle.
+    expect(snapshot).toMatch(/await executor\s*\.insert\(schema\.spendBudgets\)/);
+    expect(snapshot).toMatch(/await executor\s*\.select/);
   });
 
-  it("auto-seeded budgets rise with plan upgrades but custom budgets are preserved", () => {
+  it("only the auto-seeded free cap is auto-raised; hand-set caps are never overwritten", () => {
     const snapshot = read("src/lib/workspace-usage-snapshot.ts");
-    expect(snapshot).toContain("wasAutoSeeded");
+    // A budget above the free default is a deliberate Account-Holder choice and
+    // must not be silently raised on a plan change, even if it equals a paid
+    // tier default.
+    expect(snapshot).toContain("isAutoSeededFreeCap");
+    expect(snapshot).toMatch(/current <= freeDefault/);
   });
 
   it("realtime simulation sessions carry a daily minute quota", () => {

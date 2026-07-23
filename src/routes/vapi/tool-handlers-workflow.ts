@@ -140,6 +140,9 @@ export async function handleWorkflowToolCall(
                 ...((existingLead.metadata as Record<string, unknown> | null) || {}),
                 callback_notes: notes || null,
                 callback_requested_via: "phone_call",
+                // Fresh request → reset the deferral counter so a prior run's
+                // stale count can't prematurely drop this new callback.
+                callback_deferrals: 0,
               },
             })
             .where(eq(schema.outboundLeads.id, existingLead.id));

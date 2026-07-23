@@ -20,7 +20,9 @@ import { evaluateOutboundDialGate } from "./outbound-dial-gate";
 import { assertOutboundVoiceAllowed } from "./voice-spend-control";
 import { placeOutboundCall } from "./vapi-client";
 
-/** Quiet-hours deferrals push the callback forward instead of dropping it. */
+/** Deferrals (quiet hours or tenant insolvency) push the callback forward
+ *  instead of dropping it, up to MAX_DEFERRALS so a permanently-blocked lead
+ *  can't bounce every hour forever. */
 const DEFERRAL_STEP_MS = 60 * 60 * 1000;
 const MAX_DEFERRALS = 16;
 
@@ -101,7 +103,43 @@ export async function tickDueCallbacks({
         .where(eq(schema.outboundLeads.id, lead.id));
     };
 
+    // Shared deferral: roll the callback forward an hour, capping total
+    // deferrals so an unreachable/insolvent lead can't bounce forever.
+    const deferOrDrop = async (why: string): Promise<"deferred" | "dropped"> => {
+      const priorDeferrals = Number(metadata.callback_deferrals) || 0;
+      if (priorDeferrals >= MAX_DEFERRALS) {
+        await finish({
+          callbackScheduledAt: null,
+          summary: `Callback dropped — ${why} (max retries reached).`,
+          metadata: { ...metadata, callback_deferrals: 0 },
+        });
+        return "dropped";
+      }
+      await finish({
+        callbackScheduledAt: new Date(Date.now() + DEFERRAL_STEP_MS),
+        summary: `Callback deferred — ${why}.`,
+        metadata: { ...metadata, callback_deferrals: priorDeferrals + 1 },
+      });
+      return "deferred";
+    };
+
     try {
+      // Atomic claim: clear this lead's schedule BEFORE any slow work so a
+      // concurrent or retried tick (the sweep kills a tick at 30s but a JS
+      // promise keeps running) can't re-select the same row and dial the
+      // caller twice. If nothing comes back, another tick already claimed it.
+      const claimed = await drizzle
+        .update(schema.outboundLeads)
+        .set({ callbackScheduledAt: null })
+        .where(
+          and(
+            eq(schema.outboundLeads.id, lead.id),
+            isNotNull(schema.outboundLeads.callbackScheduledAt),
+          ),
+        )
+        .returning({ id: schema.outboundLeads.id });
+      if (!claimed.length) continue;
+
       if (!lead.customerNumber) {
         skipped++;
         await finish({
@@ -142,25 +180,10 @@ export async function tickDueCallbacks({
       if (!gate.allowed) {
         if (gate.reason === "outside_permitted_calling_hours") {
           // Requested time drifted into quiet hours (timezone, DST, late
-          // processing). Roll forward an hour at a time until it lands in a
-          // permitted window; give up after MAX_DEFERRALS so a bad number
-          // can't loop forever.
-          const priorDeferrals = Number(metadata.callback_deferrals) || 0;
-          if (priorDeferrals >= MAX_DEFERRALS) {
-            skipped++;
-            await finish({
-              callbackScheduledAt: null,
-              summary: "Callback dropped — could not find a permitted calling window.",
-              metadata: { ...metadata, callback_deferrals: 0 },
-            });
-          } else {
-            deferred++;
-            await finish({
-              callbackScheduledAt: new Date(Date.now() + DEFERRAL_STEP_MS),
-              summary: "Callback deferred — outside permitted calling hours.",
-              metadata: { ...metadata, callback_deferrals: priorDeferrals + 1 },
-            });
-          }
+          // processing). Roll forward until it lands in a permitted window.
+          (await deferOrDrop("outside permitted calling hours")) === "deferred"
+            ? deferred++
+            : skipped++;
         } else {
           skipped++;
           await finish({
@@ -175,13 +198,13 @@ export async function tickDueCallbacks({
       try {
         await assertOutboundVoiceAllowed({ userId: lead.userId, source: "callback", units: 0 });
       } catch (err) {
-        // Spend/quota gates are tenant-state, not lead-state — defer, don't
-        // drop, so the callback fires once the tenant is solvent again.
-        deferred++;
-        await finish({
-          callbackScheduledAt: new Date(Date.now() + DEFERRAL_STEP_MS),
-          summary: `Callback deferred — voice controls: ${err instanceof Error ? err.message : "blocked"}.`,
-        });
+        // Spend/quota gates are tenant-state, not lead-state — defer (bounded),
+        // so the callback fires once the tenant is solvent again, but a
+        // permanently-cancelled tenant's callbacks eventually stop retrying.
+        (await deferOrDrop(`voice controls: ${err instanceof Error ? err.message : "blocked"}`)) ===
+        "deferred"
+          ? deferred++
+          : skipped++;
         continue;
       }
 

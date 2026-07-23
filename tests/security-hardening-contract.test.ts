@@ -20,8 +20,10 @@ describe("security hardening contract", () => {
   it("outbound webhook delivery does not follow redirects (SSRF)", () => {
     const helpers = read("src/lib/webhook-helpers.ts");
     expect(helpers).toContain('redirect: "manual"');
-    // A 3xx is never counted as a delivered webhook.
-    expect(helpers).toContain("res.status < 300 || res.status >= 400");
+    // A blocked 3xx surfaces as an opaqueredirect (status 0) under undici;
+    // it must be detected by type and never counted as a delivered webhook.
+    expect(helpers).toContain('res.type === "opaqueredirect"');
+    expect(helpers).toMatch(/isRedirect[\s\S]{0,120}success = false/);
   });
 
   it("escalation binds the tenant to the invoked number, not a body field", () => {

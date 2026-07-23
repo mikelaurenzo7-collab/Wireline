@@ -13,7 +13,9 @@ const router = Router();
 const INTERNAL_AI_TOKEN_DIMENSION = "claude_tokens_daily" as const;
 const PUBLIC_AI_TOKEN_DIMENSION = "ai_tokens_daily" as const;
 
-function publicQuotaProfile(profile: Awaited<ReturnType<typeof quotaTracker.getProfile>>["profile"]) {
+function publicQuotaProfile(
+  profile: Awaited<ReturnType<typeof quotaTracker.getProfile>>["profile"],
+) {
   const { claude_tokens_daily, ...rest } = profile;
   return { ai_tokens_daily: claude_tokens_daily, ...rest };
 }
@@ -37,6 +39,7 @@ router.get(
         "concurrent_dials",
         "knowledge_rows",
         "intake_rpm",
+        "simulation_minutes_daily",
       ] as const;
       const usageValues = await Promise.all(
         internalDimensions.map((dimension) => quotaTracker.getUsage(userId, dimension)),
@@ -47,6 +50,7 @@ router.get(
         concurrent_dials: usageValues[2],
         knowledge_rows: usageValues[3],
         intake_rpm: usageValues[4],
+        simulation_minutes_daily: usageValues[5],
       };
       res.json({ plan, limits: publicQuotaProfile(profile), usage });
     } catch (err) {

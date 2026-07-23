@@ -36,15 +36,35 @@ describe("caller-requested callbacks execute end-to-end", () => {
     expect(engine).toContain("placeOutboundCall");
   });
 
-  it("requested callbacks stay DNC-protected in the shared gate", () => {
+  it("requested callbacks stay tenant-DNC-protected in the shared gate", () => {
     const gate = read("src/lib/outbound-dial-gate.ts");
     // The flag must skip ONLY the duplicate window + marketing consent,
-    // never the DNC lookups — a caller who lands on DNC after requesting a
-    // callback stays protected.
+    // never the tenant DNC lookup — a caller who lands on DNC after requesting
+    // a callback stays protected.
     expect(gate).toContain("isRequestedCallback");
     const dncCheck = gate.indexOf("isDncBlocked");
     expect(dncCheck).toBeGreaterThan(-1);
     expect(gate.slice(dncCheck - 400, dncCheck)).not.toContain("isRequestedCallback");
+  });
+
+  it("requested callbacks are ALSO blocked by the federal DNC registry", () => {
+    // evaluateOutboundConsent skips its federal-DNC block for non-marketing
+    // calls (which callbacks are), so the gate must enforce federal DNC
+    // explicitly for the callback path — fail-closed, matching the platform.
+    const gate = read("src/lib/outbound-dial-gate.ts");
+    expect(gate).toMatch(/isRequestedCallback\s*&&\s*isFederalDnc/);
+    expect(gate).toContain("federal_dnc_blocked");
+  });
+
+  it("the callback tick atomically claims a lead before dialing (no double-dial)", () => {
+    const engine = read("src/lib/callback-engine.ts");
+    // A claim UPDATE that clears callback_scheduled_at (guarded by isNotNull)
+    // and RETURNS the row makes a concurrent/retried tick skip an already-
+    // claimed lead instead of dialing the caller twice.
+    expect(engine).toMatch(/isNotNull\(schema\.outboundLeads\.callbackScheduledAt\)/);
+    expect(engine).toContain("if (!claimed.length) continue;");
+    // Both deferral paths (quiet hours + voice controls) share a bounded helper.
+    expect(engine).toContain("deferOrDrop");
   });
 });
 

@@ -163,6 +163,24 @@ export async function evaluateOutboundDialGate(opts: {
   }
 
   const isFederalDnc = await isFederalDncListed(opts.phone);
+
+  // Requested callbacks are treated as non-marketing (is_marketing_call=false)
+  // to waive the express-written-consent requirement — but evaluateOutboundConsent
+  // ALSO skips its federal-DNC block for non-marketing calls, which would let a
+  // federally-listed number be dialed on the callback path. The platform stays
+  // fail-closed on the federal registry, so enforce it explicitly here (also
+  // fires when the lookup errored, since isFederalDncListed returns listed on
+  // failure). Quiet hours + tenant DNC already ran above.
+  if (isRequestedCallback && isFederalDnc) {
+    return {
+      allowed: false,
+      status: LEAD_STATUS.BLOCKED_TCPA,
+      reason: "blocked_tcpa",
+      metadataPatch: { ...metadata, federal_dnc_blocked: true },
+      consentLogEvent: "outbound_blocked_tcpa",
+    };
+  }
+
   const tcpaDecision = evaluateOutboundConsent({
     phone: opts.phone,
     is_internal_dnc: false,
