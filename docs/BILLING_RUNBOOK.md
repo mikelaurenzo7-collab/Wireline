@@ -6,8 +6,8 @@ Status: **Active canonical runbook**. This is the operator proof path for Stripe
 
 - **Catalog:** `src/lib/plan-catalog.ts` owns canonical plan ids, public checkout eligibility, capacity limits, included phone numbers, included voice minutes, Runtime Allowance, and overflow rates.
 - **Conversation Balance:** `src/lib/conversation-balance.ts` owns customer-facing top-up limits and preset amounts.
-- **Stripe integration:** `src/lib/stripe-helpers.ts` owns Stripe client configuration, subscription line items, checkout, and subscription-to-entitlement sync.
-- **HTTP routes:** `src/routes/billing-routes.ts` owns `/api/billing/*`, `/api/stripe-webhook`, and add-on checkout. `src/routes/conversation-balance-routes.ts` owns `/api/conversation-balance/*`.
+- **Stripe integration:** `src/lib/stripe-helpers.ts` owns Stripe client configuration and subscription-to-entitlement sync.
+- **HTTP routes:** `src/routes/launch-billing-checkout-routes.ts` is the sole owner of `POST /api/billing/checkout` (founder catalog). `src/routes/billing-portal-readiness-routes.ts` is the sole owner of `POST /api/billing/portal` (managed portal configuration). `src/routes/billing-routes.ts` owns the remaining `/api/billing/*` surface, `/api/stripe-webhook`, and live-video add-on checkout. `src/routes/conversation-balance-routes.ts` owns `/api/conversation-balance/*`.
 - **Wallet ledger:** `src/lib/credit-wallet.ts` is the append-only USD ledger for top-ups, burns, refunds, disputes, and grants.
 - **Usage reconciliation:** `src/lib/voice-usage.ts` records monthly voice usage, consumes included capacity first, and burns Conversation Balance only for explicit funded overflow.
 - **Historical welcome-credit helper:** `src/lib/subscription-welcome-credit.ts` remains for prior ledger compatibility; new subscriptions receive the recurring Runtime Allowance defined by the catalog.

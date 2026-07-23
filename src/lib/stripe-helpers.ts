@@ -56,15 +56,6 @@ export function voiceOverageBillingConfigured(_plan: StripePlan): boolean {
   return false;
 }
 
-/** Checkout contains exactly one licensed base-plan subscription price. */
-export function subscriptionCheckoutLineItems(
-  plan: StripePlan,
-  interval: "month" | "year",
-): Stripe.Checkout.SessionCreateParams.LineItem[] {
-  const priceId = planPriceId(plan, interval);
-  return priceId ? [{ price: priceId, quantity: 1 }] : [];
-}
-
 /**
  * Resolve only true base-plan prices. Add-on prices can share a subscription
  * with the base plan, but must never overwrite wireline_subscriptions.plan.

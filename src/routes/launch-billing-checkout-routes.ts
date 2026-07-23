@@ -70,11 +70,11 @@ async function resolveLaunchPriceId(
 }
 
 /**
- * Founder catalog checkout.
+ * Canonical founder-catalog checkout — sole owner of POST /api/billing/checkout.
  *
- * Registered before the legacy billing router so new subscriptions always use
- * immutable lookup keys. Old Vercel price-id variables are validated hints and
- * can never silently charge a retired catalog price.
+ * Resolves immutable Stripe lookup keys (env price ids are validated hints only)
+ * and never attaches postpaid metered overage. Retired/non-public plans return
+ * LEGACY_PLAN_RETIRED so stale clients cannot reacquire them.
  */
 router.post(
   "/api/billing/checkout",
@@ -88,6 +88,14 @@ router.post(
     const plan = planById(requestedPlanId);
 
     if (!plan) throw AppError.fromHttpStatus(400, "Unknown plan_id.");
+    if (plan.public === false) {
+      return res.status(410).json({
+        code: "LEGACY_PLAN_RETIRED",
+        error:
+          "This personal subscription is no longer offered. Start free. Fund live work with Conversation Balance when you are ready.",
+        replacement: "conversation_balance",
+      });
+    }
     if (plan.id === "personal" || plan.price_usd_monthly === 0) {
       return res.status(400).json({
         code: "CONTACT_SALES_PLAN",

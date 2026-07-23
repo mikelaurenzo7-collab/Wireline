@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 278
-**Protected:** 236
+**Routes scanned:** 275
+**Protected:** 233
 **Public (allowlisted):** 42
 **Violations:** 0
 
@@ -116,12 +116,10 @@
 | auth-routes.ts | GET | `/api/auth/verify-email/:token` | — | — | yes | Public (allowlisted) |
 | billing-portal-readiness-routes.ts | POST | `/api/billing/portal` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/admin/stripe-customer-audit` | inline | platform_admin | — | Protected |
-| billing-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/billing/extra-agents` | inline | — | — | Protected |
 | billing-routes.ts | POST | `/api/billing/extra-agents` | inline | — | — | Protected |
 | billing-routes.ts | POST | `/api/billing/live-video-checkout` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/billing/plans` | — | — | yes | Public (allowlisted) |
-| billing-routes.ts | POST | `/api/billing/portal` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/billing/status` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/billing/usage` | inline | — | — | Protected |
 | billing-routes.ts | POST | `/api/stripe-webhook` | — | — | yes | Public (allowlisted) |
@@ -310,7 +308,6 @@
 | spend-control-routes.ts | GET | `/api/spend/budget` | inline | — | — | Protected |
 | spend-control-routes.ts | PUT | `/api/spend/budget` | inline | — | — | Protected |
 | spend-control-routes.ts | GET | `/api/spend/status` | inline | — | — | Protected |
-| subscription-checkout-guard-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
 | supervisor-routes.ts | POST | `/api/supervisor/subscribe` | inline | — | — | Protected |
 | supervisor-routes.ts | DELETE | `/api/supervisor/subscribe/:id` | inline | — | — | Protected |
 | supervisor-routes.ts | GET | `/api/supervisor/subscriptions` | inline | — | — | Protected |

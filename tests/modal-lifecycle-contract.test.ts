@@ -55,6 +55,7 @@ describe("authenticated modal lifecycle contract", () => {
     const trialGate = source("src/components/TrialGateModal.tsx");
     expect(trialGate).toContain("checkoutAbortRef.current?.abort()");
     expect(trialGate).toContain("signal: controller.signal");
+    expect(trialGate).toContain("if (controller.signal.aborted) return");
     expect(trialGate).toContain("onClick={closeModal}");
 
     for (const [path, guard] of [

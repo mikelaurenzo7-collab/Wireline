@@ -45,6 +45,29 @@ enum Brand {
     static let radiusMd = WirelineDesignTokens.Metric.radiusMd
     static let radiusLg = WirelineDesignTokens.Metric.radiusLg
     static let radiusXl = WirelineDesignTokens.Metric.radiusXl
+
+    // ── Typography ───────────────────────────────────────────────────────────
+    // Call sites use Brand.* font tokens (widgets + app chrome). Keep these on
+    // Brand — not only on Font — so shared targets compile without mismatches.
+    // Tracking belongs on Views (`.tracking(...)`), never on Font values.
+    static var displayLarge: Font {
+        .system(size: WirelineDesignTokens.Metric.typographyDisplaySize, weight: .regular, design: .serif)
+    }
+    static var h1: Font {
+        .system(size: WirelineDesignTokens.Metric.typographyH1Size, weight: .regular, design: .serif)
+    }
+    static var body: Font {
+        .system(size: WirelineDesignTokens.Metric.typographyBodySize, weight: .regular)
+    }
+    static var bodyStrong: Font {
+        .system(size: WirelineDesignTokens.Metric.typographyBodyStrongSize, weight: .semibold)
+    }
+    static var caption: Font {
+        .system(size: WirelineDesignTokens.Metric.typographyCaptionSize, weight: .regular)
+    }
+    static var overline: Font {
+        .system(size: WirelineDesignTokens.Metric.typographyOverlineSize, weight: .semibold, design: .monospaced)
+    }
 }
 
 extension Font {
@@ -64,12 +87,11 @@ extension Font {
         Font.system(style, design: .default).weight(weight)
     }
 
-    /// Token-driven sizes for flawless cross-surface type. Display tiers are
-    /// serif at regular weight, matching the Letterpress Instrument Serif.
-    static var displayLarge: Font { .system(size: WirelineDesignTokens.Metric.typographyDisplaySize, weight: .regular, design: .serif) }
-    static var h1: Font { .system(size: WirelineDesignTokens.Metric.typographyH1Size, weight: .regular, design: .serif) }
-    static var body: Font { .system(size: WirelineDesignTokens.Metric.typographyBodySize, weight: .regular) }
-    static var bodyStrong: Font { .system(size: WirelineDesignTokens.Metric.typographyBodyStrongSize, weight: .semibold) }
-    static var caption: Font { .system(size: WirelineDesignTokens.Metric.typographyCaptionSize, weight: .regular) }
-    static var overline: Font { .system(size: WirelineDesignTokens.Metric.typographyOverlineSize, weight: .semibold, design: .monospaced).tracking(0.08) }
+    /// Compatibility aliases for call sites that prefer Font.* over Brand.*.
+    static var displayLarge: Font { Brand.displayLarge }
+    static var h1: Font { Brand.h1 }
+    static var body: Font { Brand.body }
+    static var bodyStrong: Font { Brand.bodyStrong }
+    static var caption: Font { Brand.caption }
+    static var overline: Font { Brand.overline }
 }

@@ -4,17 +4,38 @@ import { readFileSync } from "node:fs";
 const read = (path: string) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 
 describe("billing proof contract", () => {
-  it("keeps checkout reachable for new users while blocking retired/contact-sales plans clearly", () => {
+  it("keeps a single founder-catalog checkout owner reachable for new users", () => {
+    const registry = read("src/server/register-api-routes.ts");
+    const launchCheckout = read("src/routes/launch-billing-checkout-routes.ts");
     const billingRoutes = read("src/routes/billing-routes.ts");
-    const checkoutGuard = read("src/routes/subscription-checkout-guard-routes.ts");
     const billingCard = read("src/components/StripeBillingCard.tsx");
 
-    expect(billingRoutes).toContain('router.post(\n  "/billing/checkout"');
-    expect(billingRoutes).toContain('code: "CONTACT_SALES_PLAN"');
-    expect(billingRoutes).toContain('code: "ALREADY_SUBSCRIBED"');
-    expect(billingRoutes).toContain("subscriptionCheckoutLineItems(plan, interval)");
-    expect(checkoutGuard).toContain('code: "LEGACY_PLAN_RETIRED"');
+    expect(registry).toContain("app.use(launchBillingCheckoutRouter)");
+    expect(registry).not.toContain("subscriptionCheckoutGuardRouter");
+    expect(launchCheckout).toContain('router.post(\n  "/api/billing/checkout"');
+    expect(launchCheckout).toContain('code: "CONTACT_SALES_PLAN"');
+    expect(launchCheckout).toContain('code: "ALREADY_SUBSCRIBED"');
+    expect(launchCheckout).toContain('code: "LEGACY_PLAN_RETIRED"');
+    expect(launchCheckout).toContain("FOUNDER_CATALOG_VERSION");
+    expect(launchCheckout).toContain('success_url: `${appUrl.url}/settings/billing?billing=success');
+    expect(launchCheckout).toContain('cancel_url: `${appUrl.url}/settings/billing?billing=canceled`');
+    expect(launchCheckout).not.toContain("/admin?billing=");
+    expect(billingRoutes).not.toContain('router.post(\n  "/billing/checkout"');
+    expect(billingRoutes).not.toContain("subscriptionCheckoutLineItems");
     expect(billingCard).toContain('authFetch("/api/billing/checkout"');
+  });
+
+  it("keeps a single managed Stripe portal owner returning to settings billing", () => {
+    const registry = read("src/server/register-api-routes.ts");
+    const portal = read("src/routes/billing-portal-readiness-routes.ts");
+    const billingRoutes = read("src/routes/billing-routes.ts");
+
+    expect(registry).toContain("app.use(billingPortalReadinessRouter)");
+    expect(portal).toContain('router.post(\n  "/api/billing/portal"');
+    expect(portal).toContain("ensureManagedPortalConfiguration");
+    expect(portal).toContain('return_url: `${appUrl.url}/settings/billing`');
+    expect(portal).not.toContain('return_url: `${appUrl.url}/admin`');
+    expect(billingRoutes).not.toContain('router.post(\n  "/billing/portal"');
   });
 
   it("syncs successful checkout and subscription webhooks into server-owned entitlements", () => {

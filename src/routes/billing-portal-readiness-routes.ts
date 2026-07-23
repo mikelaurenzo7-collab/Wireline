@@ -125,8 +125,9 @@ async function ensureManagedPortalConfiguration(baseUrl: string): Promise<string
 }
 
 /**
- * Canonical customer-portal writer. It precedes the broad legacy billing router
- * so a missing Stripe Dashboard default can never strand a paying customer.
+ * Canonical customer-portal writer — sole owner of POST /api/billing/portal.
+ * Self-heals missing Stripe Dashboard defaults so paying customers are never
+ * stranded on an unconfigured portal configuration.
  */
 router.post(
   "/api/billing/portal",

@@ -182,7 +182,9 @@ export default function TrialGateModal() {
 
       window.location.href = checkoutUrl;
     } catch (checkoutError: unknown) {
-      if (checkoutError instanceof Error && checkoutError.name === "AbortError") return;
+      // Ignore only intentional dismissals via checkoutAbortRef. authFetch also
+      // aborts on its own timeout with AbortError — those must surface.
+      if (controller.signal.aborted) return;
       setError(
         checkoutError instanceof Error ? checkoutError.message : "Network error opening checkout.",
       );
@@ -215,7 +217,7 @@ export default function TrialGateModal() {
       }
       window.location.href = portalUrl;
     } catch (portalError: unknown) {
-      if (portalError instanceof Error && portalError.name === "AbortError") return;
+      if (controller.signal.aborted) return;
       setError(
         portalError instanceof Error ? portalError.message : "Network error opening Stripe billing.",
       );

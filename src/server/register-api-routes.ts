@@ -15,7 +15,6 @@ import grokVoiceRouter from "../routes/grok-voice-routes";
 import billingRouter from "../routes/billing-routes";
 import billingPortalReadinessRouter from "../routes/billing-portal-readiness-routes";
 import launchBillingCheckoutRouter from "../routes/launch-billing-checkout-routes";
-import subscriptionCheckoutGuardRouter from "../routes/subscription-checkout-guard-routes";
 import conversationBalanceRouter from "../routes/conversation-balance-routes";
 import spendControlRouter from "../routes/spend-control-routes";
 import auditRouter from "../routes/audit-routes";
@@ -112,12 +111,10 @@ export function registerApiRoutes(app: Express): void {
   app.use(conversationBalanceRouter);
   app.use(emailOutcomeRouter);
   app.use(emailSyncRouter);
-  // Founder catalog checkout must precede legacy guards/routes. It resolves
-  // immutable Stripe lookup keys and never attaches postpaid metered overage.
+  // Sole owners for plan checkout and customer portal. Do not re-register these
+  // paths on billingRouter — shadowed duplicates previously revived retired
+  // prices, /admin return URLs, and unconfigured Stripe Dashboard portals.
   app.use(launchBillingCheckoutRouter);
-  app.use(subscriptionCheckoutGuardRouter);
-  // The managed portal writer self-heals missing Stripe Dashboard configuration
-  // and must precede the broad billing router's legacy portal endpoint.
   app.use(billingPortalReadinessRouter);
   app.use("/api", billingRouter);
   app.use(emailRouter);
