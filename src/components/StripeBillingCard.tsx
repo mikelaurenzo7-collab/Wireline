@@ -147,8 +147,7 @@ export default function StripeBillingCard() {
               : (selected?.price_usd_monthly ?? 0);
           if (typeof (window as any).fbq === "function") {
             // Conversion value comes from the live plan catalog so tracking
-            // never drifts from the price actually charged. Personal activation
-            // is tracked through Conversation Balance checkout instead.
+            // never drifts from the price actually charged.
             (window as any).fbq("track", "InitiateCheckout", {
               content_category: "Subscription",
               content_ids: [planId],
@@ -181,6 +180,13 @@ export default function StripeBillingCard() {
   };
 
   const startCreditCheckout = async (amountUsd: number) => {
+    const hasPaidSubscription =
+      !!sub?.has_subscription &&
+      (sub.status === "active" || sub.status === "trialing" || sub.status === "past_due");
+    if (!hasPaidSubscription) {
+      setError("Choose a live plan before adding Runtime Balance.");
+      return;
+    }
     setCreditBusy(amountUsd);
     setError(null);
     try {
@@ -310,11 +316,7 @@ export default function StripeBillingCard() {
           )}
         </div>
       ) : null}
-      <CreditTopUpCard
-        mode={hasActive ? "topup" : "activation"}
-        busy={creditBusy}
-        onBuy={startCreditCheckout}
-      />
+      {hasActive && <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />}
       {error && (
         <div
           role="alert"
@@ -389,25 +391,20 @@ export default function StripeBillingCard() {
 }
 
 function CreditTopUpCard({
-  mode,
   busy,
   onBuy,
 }: {
-  mode: "activation" | "topup";
   busy: number | null;
   onBuy: (amountUsd: number) => void;
 }) {
-  const isActivation = mode === "activation";
   return (
     <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-5">
       <div className="border-b border-border pb-5">
         <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
-          {isActivation ? CONVERSATION_BALANCE_COPY.title : `Add ${CONVERSATION_BALANCE_COPY.title}`}
+          Add {CONVERSATION_BALANCE_COPY.title}
         </h3>
         <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
-          {isActivation
-            ? `${CONVERSATION_BALANCE_COPY.subtitle} ${CONVERSATION_BALANCE_COPY.reassurance}`
-            : "Top up when you need more. Scale up for steady use."}
+          Top up when you need more. Scale up for steady use.
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
@@ -431,9 +428,7 @@ function CreditTopUpCard({
         ))}
         <span className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
           <Shield className="w-3 h-3" />
-          {isActivation
-            ? "Personal activation without a subscription"
-            : "Applied to live-work usage"}
+          Applied to live-work usage
         </span>
       </div>
     </div>

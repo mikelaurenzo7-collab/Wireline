@@ -8,6 +8,7 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   const stripeBillingCard = read("src/components/StripeBillingCard.tsx");
   const conversationBalanceCard = read("src/components/ConversationBalanceCard.tsx");
   const trialGateModal = read("src/components/TrialGateModal.tsx");
+  const conversationBalanceRoutes = read("src/routes/conversation-balance-routes.ts");
   const dbSchema = read("src/db/schema.ts");
   const creditWallet = read("src/lib/credit-wallet.ts");
   const billingRoutes = read("src/routes/billing-routes.ts");
@@ -45,11 +46,29 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     /Build and test for free/,
     "Conversation Balance card must not revive retired Build-first activation copy",
   );
-  mustInclude(
+  mustExclude(
     "src/components/TrialGateModal.tsx",
     trialGateModal,
     /\/api\/conversation-balance\/checkout/,
-    "trial gate must offer Personal Conversation Balance activation",
+    "trial gate must not sell Runtime Balance as a substitute for a live plan",
+  );
+  mustInclude(
+    "src/components/TrialGateModal.tsx",
+    trialGateModal,
+    /\/api\/billing\/portal/,
+    "past-due trial gates must recover through Stripe billing",
+  );
+  mustInclude(
+    "src/routes/conversation-balance-routes.ts",
+    conversationBalanceRoutes,
+    /plan\.id !== "personal"/,
+    "Runtime Balance checkout must require a paid live plan",
+  );
+  mustExclude(
+    "src/components/StripeBillingCard.tsx",
+    stripeBillingCard,
+    /Personal activation without a subscription|mode=\{hasActive \? "topup" : "activation"\}/,
+    "billing must not present prepaid balance as free-plan activation",
   );
 
   mustInclude(
