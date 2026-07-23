@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -37,6 +37,7 @@ function formatProvisionedDate(value?: string | null) {
 
 export default function PhoneSettings() {
   const { agents } = useAgents();
+  const location = useLocation();
   const [numbers, setNumbers] = useState<PhoneNumberRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
@@ -47,6 +48,17 @@ export default function PhoneSettings() {
     () => agents.find((agent) => agent.id === activeNumber?.agent_id),
     [activeNumber?.agent_id, agents],
   );
+
+  useEffect(() => {
+    if (location.hash !== "#company-identity") return;
+    const id = window.setTimeout(() => {
+      document.getElementById("company-identity")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [location.hash, location.pathname]);
 
   async function loadNumbers() {
     setLoading(true);
@@ -144,7 +156,7 @@ export default function PhoneSettings() {
           ) : (
             <p className="mt-4 text-sm text-muted-foreground">No AI employee attached yet</p>
           )}
-          <div className="mt-4 flex flex-wrap items-center gap-3">
+          <div className="mt-4">
             <Button asChild size="sm">
               <Link
                 to={
@@ -156,12 +168,6 @@ export default function PhoneSettings() {
                 {attachedAgent ? "Open Studio" : "Attach in Studio"}
               </Link>
             </Button>
-            <Link
-              to="/admin?tab=carrier"
-              className="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-            >
-              Carrier routing
-            </Link>
           </div>
         </section>
 

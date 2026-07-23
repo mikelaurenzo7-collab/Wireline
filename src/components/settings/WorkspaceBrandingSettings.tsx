@@ -59,13 +59,11 @@ export default function WorkspaceBrandingSettings() {
   }
 
   return (
-    <div id="brand" className="mt-5 scroll-mt-24">
-      <WorkspaceBrandEditor
-        settings={form}
-        onUpdate={setForm}
-        onSave={() => void save()}
-        isSaving={saving}
-      />
-    </div>
+    <WorkspaceBrandEditor
+      settings={form}
+      onUpdate={setForm}
+      onSave={() => void save()}
+      isSaving={saving}
+    />
   );
 }

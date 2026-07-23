@@ -220,7 +220,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/insights": "Activity",
   "/inbox": "Inbox",
   "/apps": "Apps",
-  "/settings": "Settings",
+  "/settings": "Account settings",
   "/settings/billing": "Billing settings",
   "/settings/phone": "Call settings",
   "/settings/team": "Team settings",

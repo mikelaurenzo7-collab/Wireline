@@ -3,23 +3,21 @@ import { useLocation } from "react-router-dom";
 import { WorkspaceTabStrip } from "../layout/WorkspaceTabStrip";
 
 const settingsTabs = [
-  { id: "account", href: "/settings", label: "Account", shortLabel: "Account" },
-  { id: "billing", href: "/settings/billing", label: "Billing", shortLabel: "Billing" },
-  { id: "phone", href: "/settings/phone", label: "Phone", shortLabel: "Phone" },
-  { id: "team", href: "/settings/team", label: "Team", shortLabel: "Team" },
+  { id: "account", href: "/settings", label: "Account" },
+  { id: "billing", href: "/settings/billing", label: "Billing" },
+  { id: "phone", href: "/settings/phone", label: "Phone" },
+  { id: "team", href: "/settings/team", label: "Team" },
   {
     id: "customization",
     href: "/settings/customization",
     label: "Appearance",
-    shortLabel: "Appearance",
     ariaLabel: "Appearance and brand",
   },
-  { id: "apps", href: "/settings/apps", label: "Apps", shortLabel: "Apps" },
+  { id: "apps", href: "/settings/apps", label: "Apps" },
   {
     id: "compliance",
     href: "/settings/compliance",
     label: "Compliance",
-    shortLabel: "Compliance",
     ariaLabel: "Compliance",
   },
 ] as const;

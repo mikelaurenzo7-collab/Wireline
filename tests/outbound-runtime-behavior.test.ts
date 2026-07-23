@@ -86,6 +86,17 @@ describe("outbound dial gate runtime", () => {
       drizzle: { select },
       log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     }));
+    vi.doMock("../src/lib/tcpa-calling-hours", () => ({
+      resolveCallingHoursForPhone: () => ({
+        allowed: true,
+        state: "CA",
+        timeZone: "America/Los_Angeles",
+        localHour: 12,
+        startHour: 8,
+        endHour: 21,
+        inferred: true,
+      }),
+    }));
     vi.doMock("../src/lib/federal-dnc-service", () => ({
       assertFederalDncForMarketing: () => ({ allowed: true }),
       isFederalDncListed: async () => false,
@@ -114,6 +125,17 @@ describe("outbound dial gate runtime", () => {
     vi.doMock("../src/lib/server-context", () => ({
       drizzle: { select: vi.fn() },
       log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    }));
+    vi.doMock("../src/lib/tcpa-calling-hours", () => ({
+      resolveCallingHoursForPhone: () => ({
+        allowed: true,
+        state: "CA",
+        timeZone: "America/Los_Angeles",
+        localHour: 12,
+        startHour: 8,
+        endHour: 21,
+        inferred: true,
+      }),
     }));
     vi.doMock("../src/lib/federal-dnc-service", () => ({
       assertFederalDncForMarketing: () => ({ allowed: true }),

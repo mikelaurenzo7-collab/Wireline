@@ -601,7 +601,7 @@ export default function OverviewPage() {
           <WorkspaceRecovery onRetry={refresh} />
         ) : (
           <>
-            {!hasLiveLine ? <ActivationChecklist className="mb-2" /> : null}
+            <ActivationChecklist className="mb-2" />
 
             <DemandReadinessCard
               hasLiveLine={hasLiveLine}
