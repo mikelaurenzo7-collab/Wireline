@@ -3,7 +3,7 @@ import { AppError } from "../lib/api-error";
 import express, { Request, Response } from "express";
 import { drizzle, log, tenantStore, auditLogger } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, count } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { getErrorMessage } from "../lib/server-utils";
