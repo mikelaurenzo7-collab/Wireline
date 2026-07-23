@@ -27,7 +27,7 @@
 import { Router, Request, Response } from "express";
 import { AppError } from "../lib/api-error";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
-import { drizzle, log } from "../lib/server-context";
+import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import twilio from "twilio";
@@ -97,64 +97,92 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
   const urgency = b.urgency === "urgent" ? "urgent" : "normal";
   const agentName = (b.agent_name || "Wireline agent").trim();
   const sourceNumber = (b.source_number || "").trim();
-  const tenantUserId = (b.tenant_user_id || "").trim() || null;
+  const claimedTenantId = (b.tenant_user_id || "").trim() || null;
+
+  // The webhook secret is shared across all tenants, so a body-supplied
+  // tenant_user_id cannot be trusted — a valid secret plus an arbitrary UUID
+  // would otherwise write an escalation task into any tenant's inbox. Bind
+  // the tenant to the phone number actually invoked (source_number → owner),
+  // and only fall back to the claimed id after confirming it's a real user.
+  let tenantUserId: string | null = null;
+  if (sourceNumber) {
+    const [owner] = await drizzle
+      .select({ userId: schema.phoneNumbers.userId })
+      .from(schema.phoneNumbers)
+      .where(eq(schema.phoneNumbers.phoneNumber, sourceNumber))
+      .limit(1);
+    if (owner?.userId) tenantUserId = owner.userId;
+  }
+  if (!tenantUserId && claimedTenantId) {
+    const [validUser] = await drizzle
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.id, claimedTenantId))
+      .limit(1);
+    if (validUser?.id) tenantUserId = validUser.id;
+  }
+  if (tenantUserId && claimedTenantId && tenantUserId !== claimedTenantId) {
+    log.warn("Escalation tenant mismatch — using number owner, not claimed id", {
+      sourceNumber: sourceNumber.slice(0, 8),
+    });
+  }
 
   log.info("Escalation received", {
     urgency,
     agentName,
     callerPhone: callerPhone.slice(0, 8),
     summary: summary.slice(0, 80),
+    tenantResolved: !!tenantUserId,
   });
 
-  // 1. Persist as a Assistants task — surfaces in Phone / Call History automatically
-  if (tenantUserId) {
-    try {
-      await drizzle.insert(schema.followUpTasks).values({
-        userId: tenantUserId,
-        taskType: "human_escalation",
-        description: `[${urgency.toUpperCase()}] ${agentName} → ${callerName} (${callerPhone}). ${summary}${callerEmail ? ` · email: ${callerEmail}` : ""}`,
-        priority: urgency === "urgent" ? "high" : "medium",
-        status: "pending",
-        sourceType: "phone_call",
-        sourceId: sourceNumber || `escalation-${Date.now()}`,
-        targetChannel: "manual",
-      });
-    } catch (e: any) {
-      log.warn("Escalation Assistants-task insert failed", { error: e?.message });
-    }
-  }
-
-  // 1b. Slack handoff — post to the configured channel for the originating
-  //     agent (or the tenant's default channel) so the human team gets a
-  //     real-time ping with a deep link to Phone. Best-effort; never
-  //     breaks the call.
+  // All tenant writes run inside tenantStore.run so RLS WITH CHECK applies —
+  // the escalation can only ever land in the resolved tenant's own rows.
   let slackPosted = false;
   if (tenantUserId) {
-    try {
-      let channelId: string | null = null;
-      if (sourceNumber) {
-        const [matchAgent] = await drizzle
-          .select({ slackChannelId: schema.agents.slackChannelId })
-          .from(schema.agents)
-          .where(eq(schema.agents.userId, tenantUserId))
-          .limit(1);
-        channelId = matchAgent?.slackChannelId || null;
+    await tenantStore.run(tenantUserId, async () => {
+      // 1. Persist as a follow-up task — surfaces in Phone / Call History.
+      try {
+        await drizzle.insert(schema.followUpTasks).values({
+          userId: tenantUserId!,
+          taskType: "human_escalation",
+          description: `[${urgency.toUpperCase()}] ${agentName} → ${callerName} (${callerPhone}). ${summary}${callerEmail ? ` · email: ${callerEmail}` : ""}`,
+          priority: urgency === "urgent" ? "high" : "medium",
+          status: "pending",
+          sourceType: "phone_call",
+          sourceId: sourceNumber || `escalation-${Date.now()}`,
+          targetChannel: "manual",
+        });
+      } catch (e: any) {
+        log.warn("Escalation follow-up task insert failed", { error: e?.message });
       }
-      if (!channelId) channelId = await getDefaultChannel(tenantUserId);
-      if (channelId) {
-        const urgencyEmoji = urgency === "urgent" ? "🚨" : "📞";
-        const text = [
-          `${urgencyEmoji} *Wireline escalation — ${urgency.toUpperCase()}*`,
-          `*Agent:* ${agentName}${sourceNumber ? ` on ${sourceNumber}` : ""}`,
-          `*Caller:* ${callerName} (${callerPhone})${callerEmail ? ` · ${callerEmail}` : ""}`,
-          `*Summary:* ${summary}`,
-          `<https://trywireline.com/phone?tab=logs|Open call history →>`,
-        ].join("\n");
-        slackPosted = await slackPostMessage(tenantUserId, channelId, text);
+
+      // 1b. Slack handoff — real-time ping with a deep link to Phone.
+      try {
+        let channelId: string | null = null;
+        if (sourceNumber) {
+          const [matchAgent] = await drizzle
+            .select({ slackChannelId: schema.agents.slackChannelId })
+            .from(schema.agents)
+            .where(eq(schema.agents.userId, tenantUserId!))
+            .limit(1);
+          channelId = matchAgent?.slackChannelId || null;
+        }
+        if (!channelId) channelId = await getDefaultChannel(tenantUserId!);
+        if (channelId) {
+          const urgencyEmoji = urgency === "urgent" ? "🚨" : "📞";
+          const text = [
+            `${urgencyEmoji} *Wireline escalation — ${urgency.toUpperCase()}*`,
+            `*Agent:* ${agentName}${sourceNumber ? ` on ${sourceNumber}` : ""}`,
+            `*Caller:* ${callerName} (${callerPhone})${callerEmail ? ` · ${callerEmail}` : ""}`,
+            `*Summary:* ${summary}`,
+            `<https://trywireline.com/phone?tab=logs|Open call history →>`,
+          ].join("\n");
+          slackPosted = await slackPostMessage(tenantUserId!, channelId, text);
+        }
+      } catch (e: any) {
+        log.warn("Escalation Slack post failed", { error: e?.message });
       }
-    } catch (e: any) {
-      log.warn("Escalation Slack post failed", { error: e?.message });
-    }
+    });
   }
 
   // 2. Real-time SMS to the platform owner — only for urgent
@@ -182,6 +210,8 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
     tracked: !!tenantUserId,
     sla: "4 business hours",
   });
+  // Note: owner SMS + response use the platform OWNER_PHONE (a fixed env),
+  // never a tenant-derived number, so they stay outside tenantStore.
 });
 
 export default router;

@@ -1,9 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Express middleware operates on heterogeneous request/response shapes. */
 import { auditLogger, log } from "../lib/server-context";
-import { rateLimit } from "../lib/rate-limit";
+import { rateLimit, distributedLimiterStatus } from "../lib/rate-limit";
 
 function isTestEnv() {
   return process.env.NODE_ENV === "test" || process.env.PLAYWRIGHT_TEST === "true";
+}
+
+/**
+ * Credential-stuffing defense depends on a SHARED counter. Without a
+ * distributed limiter (Upstash), rateLimit() silently degrades to a
+ * per-invocation in-memory Map — on Vercel every request is a fresh process,
+ * so signin/signup/forgot-password limits become effectively unlimited. The
+ * old `failClosedOnError` flag only caught Redis *errors*, not Redis
+ * *absence*. This refuses auth attempts in production when no distributed
+ * limiter is configured, exactly as the spend-sensitive buckets already do
+ * (single-node deployments opt in with WIRELINE_ALLOW_INMEMORY_RATE_LIMIT).
+ * Returns true when it has already sent a 503.
+ */
+function refusedForNoDistributedLimiter(res: any): boolean {
+  const status = distributedLimiterStatus();
+  if (status.ok) return false;
+  res.status(503).json({
+    error: "Authentication is temporarily unavailable. Try again shortly.",
+    code: status.code || "RATE_LIMITER_UNAVAILABLE",
+  });
+  return true;
 }
 
 function auditRateLimitExceeded(params: {
@@ -76,6 +97,7 @@ function authRateLimitOptions(bucket: string, windowMs: number, max: number) {
 
 export async function signinRateLimiter(req: any, res: any, next: any) {
   if (isTestEnv()) return next();
+  if (refusedForNoDistributedLimiter(res)) return;
   const email = (req.body?.email || "").toString().toLowerCase().trim();
   const ip = req.ip || "anon";
   const key = email ? `signin:${email}:${ip}` : `signin:anon:${ip}`;
@@ -107,6 +129,7 @@ export async function signinRateLimiter(req: any, res: any, next: any) {
 
 export async function signupRateLimiter(req: any, res: any, next: any) {
   if (isTestEnv()) return next();
+  if (refusedForNoDistributedLimiter(res)) return;
   const ip = req.ip || "anon";
   const key = `signup:${ip}`;
   try {
@@ -133,27 +156,36 @@ export async function signupRateLimiter(req: any, res: any, next: any) {
 
 export async function forgotPasswordRateLimiter(req: any, res: any, next: any) {
   if (isTestEnv()) return next();
+  if (refusedForNoDistributedLimiter(res)) return;
   const email = (req.body?.email || "").toString().toLowerCase().trim();
   const ip = req.ip || "anon";
   const key = email ? `forgotpw:${email}:${ip}` : `forgotpw:anon:${ip}`;
-  const result = await rateLimit(key, {
-    bucket: "forgot_password",
-    windowMs: FORGOT_PASSWORD_RATE_WINDOW_MS,
-    max: FORGOT_PASSWORD_RATE_MAX,
-  });
-  if (!result.allowed) {
-    auditRateLimitExceeded({
-      resource: "auth_forgot_password",
-      ip: req.ip,
-      metadata: email ? { email } : undefined,
+  try {
+    const result = await rateLimit(key, {
+      bucket: "forgot_password",
+      windowMs: FORGOT_PASSWORD_RATE_WINDOW_MS,
+      max: FORGOT_PASSWORD_RATE_MAX,
+      failClosedOnError: process.env.NODE_ENV === "production",
     });
-    res.setHeader("Retry-After", Math.ceil(FORGOT_PASSWORD_RATE_WINDOW_MS / 1000));
-    return res.status(429).json({
-      error: "Too many password reset requests. Wait 15 minutes and try again.",
-      code: "FORGOT_PASSWORD_RATE_LIMIT",
+    if (!result.allowed) {
+      auditRateLimitExceeded({
+        resource: "auth_forgot_password",
+        ip: req.ip,
+        metadata: email ? { email } : undefined,
+      });
+      res.setHeader("Retry-After", Math.ceil(FORGOT_PASSWORD_RATE_WINDOW_MS / 1000));
+      return res.status(429).json({
+        error: "Too many password reset requests. Wait 15 minutes and try again.",
+        code: "FORGOT_PASSWORD_RATE_LIMIT",
+      });
+    }
+    next();
+  } catch {
+    return res.status(503).json({
+      error: "Password reset is temporarily unavailable. Try again shortly.",
+      code: "RATE_LIMIT_UNAVAILABLE",
     });
   }
-  next();
 }
 
 export async function resendVerificationRateLimiter(req: any, res: any, next: any) {
