@@ -28,6 +28,7 @@ export type OutboundVoiceSource =
   | "bulk_import"
   | "campaign"
   | "cadence"
+  | "callback"
   | "director"
   | "automation";
 

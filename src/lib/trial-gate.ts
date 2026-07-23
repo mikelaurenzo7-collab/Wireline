@@ -83,6 +83,20 @@ export async function startTrialForUser(
       error: error?.message ?? String(error),
     });
   }
+  // Seed the free-tier AI hard-cap budget at signup. Without this, a
+  // pending-activation tenant has NO spendBudgets row, enforceSpendCap
+  // passes everything through, and the usage snapshot still displays a
+  // "hard cap" that doesn't exist. Paid checkout later raises the limit via
+  // the same helper in syncSubscriptionFromStripe.
+  try {
+    const { ensureDefaultAiSpendBudget } = await import("./workspace-usage-snapshot");
+    await ensureDefaultAiSpendBudget(userId, null);
+  } catch (error: any) {
+    log.warn("startTrialForUser budget seed failed (continuing signup)", {
+      userId,
+      error: error?.message ?? String(error),
+    });
+  }
 }
 
 export async function saveSignupAttribution(

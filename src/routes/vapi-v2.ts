@@ -200,6 +200,35 @@ router.post("/api/vapi-webhook", async (req, res) => {
 
     if (message?.type === "assistant-request") {
       try {
+        // Inbound solvency posture: an active-but-deeply-insolvent tenant
+        // (completed calls left a completion-grace debt beyond the threshold)
+        // still gets their line answered — but by a bounded take-a-message
+        // assistant, not the full agent. Callers are never hung up on for
+        // billing; COGS stops compounding while the balance is unpaid.
+        // Wallet lookup failure fails OPEN to the full assistant — a DB blip
+        // must not degrade a paying tenant's inbound line.
+        const INBOUND_TAKE_MESSAGE_GRACE_USD = 5;
+        const wallet = await import("../lib/voice-wallet-guard")
+          .then(({ getVoiceWalletSnapshot }) => getVoiceWalletSnapshot(agent.user_id))
+          .catch(() => null);
+        if (wallet && wallet.completion_grace_due_usd >= INBOUND_TAKE_MESSAGE_GRACE_USD) {
+          log.warn("Inbound routed to take-a-message assistant — completion grace due", {
+            agentId: webhookAgentId,
+            completionGraceDueUsd: wallet.completion_grace_due_usd,
+          });
+          return res.json({
+            assistant: {
+              firstMessage: `Hi, you've reached ${agentVoiceName || "our office"}. I can take a message and make sure the team gets back to you.`,
+              maxDurationSeconds: 300,
+              model: {
+                provider: "openai",
+                model: VAPI_OPENAI_FALLBACK_MODEL,
+                systemPrompt:
+                  "You are a courteous message-taking assistant. Collect the caller's name, number, and reason for calling, confirm the details back, promise a prompt follow-up, and end the call politely. Do not answer business questions, quote prices, or book appointments.",
+              },
+            },
+          });
+        }
         return res.json({
           assistant: await buildVapiAssistant({
             message,

@@ -101,20 +101,87 @@ export async function handleWorkflowToolCall(
   if (fn === "schedule_callback") {
     try {
       const { callback_datetime, notes } = args || {};
+      const { parseCallbackDatetime } = await import("../../lib/callback-engine");
+      const parsed = parseCallbackDatetime(callback_datetime);
+      // Unparseable model output → next-day attempt, with the caller-facing
+      // promise phrased to match ("within the next day", not a fake time).
+      const dueAt = parsed || new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      const callerNumber = sanitizePhone(
+        (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
+          (message.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
+          "",
+      );
+
+      // Structured persistence is what makes the callback EXECUTE: the
+      // callback_tick engine dials due callback_scheduled_at rows. The
+      // follow_up_tasks row below is the human-visible mirror.
+      if (callerNumber) {
+        const [existingLead] = await drizzle
+          .select({ id: schema.outboundLeads.id, metadata: schema.outboundLeads.metadata })
+          .from(schema.outboundLeads)
+          .where(
+            and(
+              eq(schema.outboundLeads.userId, agent?.user_id),
+              eq(schema.outboundLeads.customerNumber, callerNumber),
+            ),
+          )
+          .orderBy(sql`${schema.outboundLeads.createdAt} DESC`)
+          .limit(1);
+
+        if (existingLead) {
+          await drizzle
+            .update(schema.outboundLeads)
+            .set({
+              callbackScheduledAt: dueAt,
+              status: "Callback-Scheduled",
+              agentId: webhookAgentId,
+              metadata: {
+                ...((existingLead.metadata as Record<string, unknown> | null) || {}),
+                callback_notes: notes || null,
+                callback_requested_via: "phone_call",
+              },
+            })
+            .where(eq(schema.outboundLeads.id, existingLead.id));
+        } else {
+          await drizzle.insert(schema.outboundLeads).values({
+            userId: agent?.user_id,
+            agentId: webhookAgentId,
+            customerNumber: callerNumber,
+            status: "Callback-Scheduled",
+            source: "callback",
+            context: notes || "Caller requested a callback during a phone call.",
+            callbackScheduledAt: dueAt,
+            metadata: { callback_notes: notes || null, callback_requested_via: "phone_call" },
+          });
+        }
+      }
+
       await drizzle.insert(schema.followUpTasks).values({
         userId: agent?.user_id,
         agentId: webhookAgentId,
         taskType: "callback",
-        description: `Scheduled Callback: ${notes}`,
+        description: `Scheduled Callback: ${notes || "caller requested a return call"}`,
         priority: "high",
-        status: "pending",
+        status: callerNumber ? "scheduled" : "pending",
         sourceType: "phone_call",
-        targetChannel: "manual",
+        targetChannel: callerNumber ? "voice" : "manual",
+        dueDate: dueAt,
         createdAt: new Date(),
       });
+
+      if (!callerNumber) {
+        return {
+          toolCallId,
+          result:
+            "Callback request noted — I couldn't confirm the best number on this line, so please share the number to reach you and I'll lock it in.",
+        };
+      }
       return {
         toolCallId,
-        result: `Callback securely scheduled for ${callback_datetime}.`,
+        result: parsed
+          ? `Callback scheduled — you'll receive a call back around ${callback_datetime}.`
+          : "Callback scheduled — you'll receive a call back within the next day.",
       };
     } catch {
       return {

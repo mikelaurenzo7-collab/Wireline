@@ -1,4 +1,3 @@
- 
 import { Router, Response, NextFunction } from "express";
 import { AppError } from "../lib/api-error";
 import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
@@ -364,6 +363,15 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
         payload: {},
       }).catch((e: unknown) =>
         log.warn("cadence_tick enqueue failed", { error: getErrorMessage(e) }),
+      );
+      // Caller-requested callbacks: same 5-minute resolution as cadences.
+      // The tick is a no-op when nothing is due, so one per sweep is cheap.
+      await enqueue(drizzle, {
+        userId: SYSTEM_USER_ID,
+        type: "callback_tick",
+        payload: {},
+      }).catch((e: unknown) =>
+        log.warn("callback_tick enqueue failed", { error: getErrorMessage(e) }),
       );
     }
 

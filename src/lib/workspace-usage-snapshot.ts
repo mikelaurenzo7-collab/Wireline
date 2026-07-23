@@ -115,7 +115,15 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
   };
 }
 
-/** Seed plan-default AI spend budget when missing (called from Stripe sync). */
+/**
+ * Seed the plan-default AI spend budget. Called at signup (free tier) and
+ * from Stripe sync on every subscription change.
+ *
+ * Upgrade rule: a budget whose limit matches ANY tier default was auto-seeded
+ * — raise it when the new tier's default is higher (a signup-seeded $0.50
+ * free cap must not survive into a paid plan). A limit that matches no tier
+ * default was set by the Account Holder in spend controls — never touch it.
+ */
 export async function ensureDefaultAiSpendBudget(
   userId: string,
   planId: string | null,
@@ -129,7 +137,14 @@ export async function ensureDefaultAiSpendBudget(
     .where(eq(schema.spendBudgets.userId, userId))
     .limit(1);
 
-  if (existing && Number(existing.monthlyLimitUsd) > 0) return;
+  if (existing && Number(existing.monthlyLimitUsd) > 0) {
+    const current = Number(existing.monthlyLimitUsd);
+    const tierDefaults = (["free", "personal", "team", "business", "enterprise"] as const).map(
+      (t) => defaultAiSpendBudgetUsdForTier(t),
+    );
+    const wasAutoSeeded = tierDefaults.some((d) => Math.abs(d - current) < 0.005);
+    if (!wasAutoSeeded || limit <= current) return;
+  }
 
   await drizzle
     .insert(schema.spendBudgets)

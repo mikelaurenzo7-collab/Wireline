@@ -178,9 +178,27 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
       return;
     }
 
-    const res = await fetchWithTimeout(hook.url, { method: "POST", headers, body }, 10_000);
+    // redirect: "manual" closes the SSRF redirect bypass: the hostname guard
+    // above validated hook.url, but undici follows 3xx by default to a target
+    // that was never validated (a public host can 302 to 169.254.169.254 or
+    // an internal address). A redirected webhook is treated as a failed
+    // attempt — endpoints that legitimately move should update their URL.
+    const res = await fetchWithTimeout(
+      hook.url,
+      { method: "POST", headers, body, redirect: "manual" },
+      10_000,
+    );
     statusCode = res.status;
-    success = res.ok;
+    // A 3xx under redirect:"manual" surfaces as an opaqueredirect/300-399
+    // response — never treat it as a delivered webhook.
+    success = res.ok && (res.status < 300 || res.status >= 400);
+    if (res.status >= 300 && res.status < 400) {
+      log.warn("Webhook delivery blocked — endpoint attempted a redirect", {
+        deliveryId: String(deliveryId),
+        webhookId: hook.id,
+        status: res.status,
+      });
+    }
   } catch (err: unknown) {
     log.warn("Webhook delivery attempt failed", { deliveryId, error: getErrorMessage(err) });
   }

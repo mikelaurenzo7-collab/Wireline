@@ -59,6 +59,42 @@ function getErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
+/**
+ * Daily aggregate ceiling on realtime simulation sessions (Grok + OpenAI
+ * live-voice test paths). Each session mints a vendor-metered 5-minute
+ * client secret, so every mint charges 5 simulation minutes. The per-minute
+ * limiter above this stops bursts; without this cap a tenant could still run
+ * back-to-back sessions all day on paid realtime keys with zero accounting.
+ */
+export async function simulationMinuteQuota(req: Request, res: Response, next: NextFunction) {
+  const userId = (req as Request & { user?: { id?: string } }).user?.id;
+  if (!userId) return next();
+  try {
+    const { quotaTracker } = await import("../lib/server-context");
+    const decision = await quotaTracker.checkAndIncrement(userId, "simulation_minutes_daily", 5);
+    if (!decision.allowed) {
+      res.setHeader("Retry-After", "3600");
+      return res.status(429).json({
+        code: "SIMULATION_QUOTA_EXCEEDED",
+        error:
+          "You've reached today's live-simulation limit. It resets at midnight UTC — real phone calls are unaffected.",
+        limit: decision.limit,
+        used: decision.used,
+        reset_at: decision.reset_at,
+      });
+    }
+  } catch (err) {
+    // checkAndIncrement already degrades internally; an exception here means
+    // the tracker itself is down. Simulations are low-stakes relative to
+    // blocking every Studio test — log and continue.
+    log.warn("simulation quota check failed — allowing session", {
+      userId,
+      error: getErrorMessage(err),
+    });
+  }
+  next();
+}
+
 interface RateLimitMiddleware {
   (req: Request, res: Response, next: NextFunction): Promise<void>;
 }
@@ -108,12 +144,7 @@ export function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware
           bucket: opts.bucket,
           error: getErrorMessage(err),
         });
-        next(
-          AppError.fromHttpStatus(
-            503,
-            "Rate limiting temporarily unavailable. Retry shortly.",
-          ),
-        );
+        next(AppError.fromHttpStatus(503, "Rate limiting temporarily unavailable. Retry shortly."));
         return;
       }
       // Fail-OPEN on unexpected infrastructure errors for non-spend buckets —

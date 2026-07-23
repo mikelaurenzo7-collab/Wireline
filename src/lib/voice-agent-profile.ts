@@ -132,6 +132,39 @@ export function showcaseTranscriberModeForAgent(_agentName: string): VapiTranscr
   return "flux-eot";
 }
 
+/**
+ * Hard per-call duration ceilings. Wireline's billing policy is to never cut
+ * a live conversation for balance reasons, so the only bound on a runaway
+ * call (caller leaves the line open, spam bot, hold music) was Vapi's account
+ * default. These ceilings cap worst-case COGS per call without touching any
+ * realistic conversation: 40 minutes inbound, 30 minutes outbound.
+ */
+export const VAPI_MAX_INBOUND_CALL_SECONDS = 2400;
+export const VAPI_MAX_OUTBOUND_CALL_SECONDS = 1800;
+
+/**
+ * Native voicemail detection for outbound dials. Detection used to rely on
+ * the LLM noticing a recorded greeting and calling the leave_voicemail tool
+ * — unreliable, and every miss burns minutes talking to a machine. Vapi's
+ * built-in detector waits for the beep (up to beepMaxAwaitSeconds) and then
+ * speaks the assistant's voicemailMessage. The leave_voicemail tool protocol
+ * stays as a second layer for greetings the detector misses.
+ */
+export const VAPI_VOICEMAIL_DETECTION_PLAN = {
+  provider: "vapi" as const,
+  beepMaxAwaitSeconds: 30,
+};
+
+/**
+ * Deterministic voicemail fallback spoken when native detection fires.
+ * Deliberately says nothing about WHY we called: voicemails can be heard by
+ * third parties, and roles like collections are legally barred (FDCPA) from
+ * disclosing call context in a message. Identity + callback only.
+ */
+export function buildOutboundVoicemailMessage(agentName: string): string {
+  return `Hi, this is ${agentName}. Sorry I missed you — I'll try you again soon, or you can reach us back at this number. Thank you!`;
+}
+
 export function getVoiceLatencyProfile(input: {
   archetype?: string;
   role?: string;

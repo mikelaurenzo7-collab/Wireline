@@ -79,6 +79,10 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
     "worker-src 'self' blob:",
     "frame-src 'self' blob:",
     "frame-ancestors 'none'",
+    // Plugin/embed vectors are unused by this SPA — deny them explicitly
+    // rather than leaning on default-src, so an injected <object>/<embed>
+    // has no fallback source list to exploit.
+    "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
   ].join("; ");

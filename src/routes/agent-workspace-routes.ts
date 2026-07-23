@@ -33,6 +33,8 @@ import {
 import { executeAction } from "../lib/action-engine";
 import { runStructuredStream } from "../lib/ai-structured";
 import { isRuntimeAvailable } from "../lib/ai-client";
+import { withAudit } from "../middleware/audit-middleware";
+import { enforceSpendCap } from "../lib/spend-guards";
 
 const router = express.Router();
 
@@ -109,6 +111,11 @@ router.post(
   // Per-user throttle (60/min) so a spammy Account Holder can't run up model
   // cost — cheaper + safer than downgrading the model's intelligence.
   claudeRateLimiter,
+  // Composer turns reach a paid model — they must respect the tenant's hard
+  // cap and land in auditLog.costUsd like every other AI surface, or this
+  // becomes invisible COGS the spend guards can't see.
+  enforceSpendCap,
+  withAudit("workspace"),
   validateBody(workspaceMessageSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -234,6 +241,8 @@ router.post(
   "/api/agents/:id/workspace/messages/stream",
   authenticateEventStream,
   claudeRateLimiter,
+  enforceSpendCap,
+  withAudit("workspace"),
   validateBody(workspaceMessageSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -403,6 +412,12 @@ router.post(
 router.post(
   "/api/agents/:id/workspace/files",
   authenticateUser,
+  // PDF extraction is one of the most expensive single AI calls in the app
+  // (native document blocks) and previously had NO rate limit and NO cost
+  // accounting — a free tenant could drive unmetered model spend.
+  claudeRateLimiter,
+  enforceSpendCap,
+  withAudit("workspace"),
   validateBody(pdfUploadSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {

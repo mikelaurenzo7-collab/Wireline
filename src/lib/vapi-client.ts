@@ -32,14 +32,18 @@ import { DEFAULT_AGENT_ROLE } from "./agent-constants";
 import { vapiVoiceVersion } from "./voice-catalog";
 import { DEFAULT_MANAGED_VOICE_ID, isManagedVapiVoiceId } from "../data/voice-roster";
 import {
+  buildOutboundVoicemailMessage,
   resolveOutboundStartSpeakingPlan,
   resolveVapiSpeechPipeline,
+  VAPI_MAX_OUTBOUND_CALL_SECONDS,
   VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
+  VAPI_VOICEMAIL_DETECTION_PLAN,
 } from "./voice-agent-profile";
 import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
   VAPI_VOICE_FALLBACK_PROVIDER,
+  clampVoiceTemperature,
   isGeminiModelId,
   isOpenAIModelId,
   resolveVapiVoiceModelSelection,
@@ -363,9 +367,10 @@ export async function placeOutboundCall(opts: {
   const { rules: archetypeRules, temp: llmTemp } = getArchetypeConfig(archetype);
   const ambientNoiseActive = agentConfig.ambientNoise && agentConfig.ambientNoise !== "off";
   const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[outboundAgentRole] || "";
+  // Per-agent brain first (mirrors the inbound factory), tenant default second.
   const voiceSelection = resolveVapiVoiceModelSelection({
-    provider: settings?.voiceLlmProvider || VAPI_TENANT_DEFAULT_PROVIDER,
-    model: settings?.voiceLlmModel || VAPI_TENANT_DEFAULT_MODEL,
+    provider: agentConfig.llmProvider || settings?.voiceLlmProvider || VAPI_TENANT_DEFAULT_PROVIDER,
+    model: agentConfig.llmModel || settings?.voiceLlmModel || VAPI_TENANT_DEFAULT_MODEL,
   });
   const voiceLlmProvider = voiceSelection.provider;
   const voiceLlmModel = voiceSelection.model;
@@ -470,6 +475,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
     business_variables: agentConfig.businessVariables as AgentRuntimeProfile["business_variables"],
     out_of_hours_message: agentConfig.outOfHoursMessage,
     kpi_focus: agentConfig.kpiFocus,
+    personality_vibe: agentConfig.personalityVibe,
   };
   const runtime = buildAgentRuntimeContext(systemPrompt, runtimeProfile);
   if (!runtime.inHours) {
@@ -510,6 +516,9 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       ),
     backgroundSound: agentConfig.ambientNoise || "off",
     firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
+    maxDurationSeconds: VAPI_MAX_OUTBOUND_CALL_SECONDS,
+    voicemailDetection: VAPI_VOICEMAIL_DETECTION_PLAN,
+    voicemailMessage: buildOutboundVoicemailMessage(agentConfig.name || "your representative"),
     responseDelaySeconds: 0,
     numWordsToInterruptAssistant: 2,
     backgroundDenoisingEnabled: false,
@@ -530,7 +539,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
         ? { fallbackModels: voiceSelection.fallbackModels }
         : {}),
       systemPrompt: finalSystemPrompt,
-      temperature: llmTemp,
+      temperature: clampVoiceTemperature(agentConfig.llmTemperature, llmTemp),
       tools: outboundTools,
     },
     recordingEnabled: true,

@@ -340,7 +340,7 @@ function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
   return (
     <Link
       to={`/studio?agent=${enc}`}
-      className={`group flex min-h-[56px] items-center gap-3 rounded-[var(--wireline-radius-md)] border px-3 py-2 wl-press wl-focus-ring-halo ${
+      className={`group flex min-h-[56px] min-w-0 items-center gap-3 rounded-[var(--wireline-radius-md)] border px-3 py-2 wl-press wl-focus-ring-halo ${
         live
           ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)]"
           : "border-border bg-card hover:border-primary/30 hover:bg-muted/30"
@@ -381,7 +381,7 @@ function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgen
   if (agents.length === 0) return null;
 
   return (
-    <section aria-label={heading}>
+    <section className="min-w-0" aria-label={heading}>
       <div className="mb-2 flex items-center justify-between gap-3">
         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
           {heading}
@@ -390,13 +390,13 @@ function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgen
           {agents.length}
         </span>
       </div>
-      <div className="grid gap-2">
+      <div className="grid min-w-0 gap-2">
         {agents.map((agent) => (
           <CompactAgentRow key={agent.id} agent={agent} />
         ))}
         <Link
           to={`/studio?create=1&posture=${kind}`}
-          className="grid min-h-[44px] place-items-center rounded-[10px] border border-dashed border-border bg-background/30 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+          className="grid min-h-[44px] min-w-0 place-items-center rounded-[10px] border border-dashed border-border bg-background/30 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
         >
           + New {language.singular}
         </Link>
@@ -542,13 +542,13 @@ export default function OverviewPage() {
   return (
     <WorkspaceShell contentClassName="pt-7 pb-10 lg:pt-8">
       <WorkspacePageFrame mode="standard" className="wl-overview">
-        <section className={`relative wl-overview-greeting ${hasAgents ? "text-left" : "text-center"}`}>
+        <section
+          className={`relative wl-overview-greeting ${hasAgents ? "text-left" : "text-center"}`}
+        >
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             {todayLabel()}
           </p>
-          <div
-            className={`mt-3 flex flex-col gap-5 ${hasAgents ? "items-start" : "items-center"}`}
-          >
+          <div className={`mt-3 flex flex-col gap-5 ${hasAgents ? "items-start" : "items-center"}`}>
             <div className="max-w-2xl">
               <h1 className="wl-display-2 text-balance">
                 {isFirstRun

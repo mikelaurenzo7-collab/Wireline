@@ -54,8 +54,8 @@ function gracefulShutdown(signal: string) {
  * Canonical Wireline server entrypoint.
  *
  * Build, local development, Vercel's bundled API function, and process startup
- * all originate here. `server-v2.ts` is retained only as a compatibility export
- * for older internal references.
+ * all originate here. This is the single entrypoint — its absence of a
+ * `server-v2.ts` sibling is enforced by `scripts/check-server-bootstrap.mjs`.
  */
 if (typeof (BigInt.prototype as unknown as { toJSON?: () => string }).toJSON !== "function") {
   Object.defineProperty(BigInt.prototype, "toJSON", {

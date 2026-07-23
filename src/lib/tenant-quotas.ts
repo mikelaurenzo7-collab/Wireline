@@ -31,7 +31,7 @@ export type PlanTier = "free" | "personal" | "team" | "business" | "enterprise";
 export interface QuotaProfile {
   /** Anthropic input+output tokens per UTC day. */
   claude_tokens_daily: number;
-  /** Sum of voice-call duration in minutes per UTC day. */
+  /** Sum of Vapi call duration in minutes per UTC day. */
   voice_minutes_daily: number;
   /** Concurrent in-flight outbound dials per tenant. */
   concurrent_dials: number;
@@ -39,6 +39,13 @@ export interface QuotaProfile {
   knowledge_rows: number;
   /** Lead-intake API requests per minute per tenant. */
   intake_rpm: number;
+  /**
+   * Live-simulation minutes per UTC day (Grok/OpenAI realtime test
+   * sessions). Each session mint charges its 5-minute secret TTL — the
+   * per-minute rate limiter stops bursts, this stops a tenant running
+   * back-to-back realtime sessions all day on vendor-metered keys.
+   */
+  simulation_minutes_daily: number;
 }
 
 // Daily voice-minute caps are derived from the current catalog by
@@ -51,6 +58,7 @@ export const PLAN_DEFAULTS: Record<PlanTier, QuotaProfile> = {
     concurrent_dials: 1,
     knowledge_rows: 200,
     intake_rpm: 10,
+    simulation_minutes_daily: 15,
   },
   personal: {
     claude_tokens_daily: 300_000,
@@ -58,6 +66,7 @@ export const PLAN_DEFAULTS: Record<PlanTier, QuotaProfile> = {
     concurrent_dials: 2,
     knowledge_rows: 500,
     intake_rpm: 30,
+    simulation_minutes_daily: 30,
   },
   team: {
     claude_tokens_daily: 4_000_000,
@@ -65,6 +74,7 @@ export const PLAN_DEFAULTS: Record<PlanTier, QuotaProfile> = {
     concurrent_dials: 10,
     knowledge_rows: 5_000,
     intake_rpm: 100,
+    simulation_minutes_daily: 90,
   },
   business: {
     claude_tokens_daily: 8_000_000,
@@ -72,6 +82,7 @@ export const PLAN_DEFAULTS: Record<PlanTier, QuotaProfile> = {
     concurrent_dials: 25,
     knowledge_rows: 20_000,
     intake_rpm: 240,
+    simulation_minutes_daily: 180,
   },
   enterprise: {
     claude_tokens_daily: 20_000_000,
@@ -79,6 +90,7 @@ export const PLAN_DEFAULTS: Record<PlanTier, QuotaProfile> = {
     concurrent_dials: 50,
     knowledge_rows: 50_000,
     intake_rpm: 600,
+    simulation_minutes_daily: 360,
   },
 };
 
@@ -90,6 +102,7 @@ export const ALL_DIMENSIONS: QuotaDimension[] = [
   "concurrent_dials",
   "knowledge_rows",
   "intake_rpm",
+  "simulation_minutes_daily",
 ];
 
 // ─────────────────────────────────────────────────────────────────

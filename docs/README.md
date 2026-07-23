@@ -119,6 +119,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | [INTEGRATION_VENDOR_AUDIT.md](./INTEGRATION_VENDOR_AUDIT.md) | Historical — vendor/runtime decision superseded by `VENDOR_LAUNCH_MAP.md`'s runtime-decision table. |
 | [WIRELINE_FORWARD_PLAN_2026-07.md](./WIRELINE_FORWARD_PLAN_2026-07.md) | Historical — thin early roadmap superseded in detail by `WIRELINE_LEVEL_UP_MASTER_PLAN.md`. |
 | [CODE_REVIEW_MASTER_PLAN_2026-07-06.md](./CODE_REVIEW_MASTER_PLAN_2026-07-06.md) | Historical — self-described completed code-review record; no open follow-on thread. |
+| [MAIN_ORIGIN_CODE_REVIEW_2026-07-22.md](./MAIN_ORIGIN_CODE_REVIEW_2026-07-22.md) | Historical — dated main/origin verification-branch review snapshot; findings landed in the 07-22 audit sequence. |
 
 ## Documentation hygiene rules
 

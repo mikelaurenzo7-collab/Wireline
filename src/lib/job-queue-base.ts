@@ -52,6 +52,7 @@ export type JobType =
   | "autonomous_prospecting" // AI-driven lead discovery
   | "knowledge_from_url" // Async site crawl → structured knowledge entries
   | "cadence_tick" // Multi-touch outbound cadence step processor
+  | "callback_tick" // Caller-requested callback executor (due callback_scheduled_at rows)
   | "auto_qa_score" // Auto-QA every completed call → chains adaptive_optimization on low score
   | "sweep_orphan_supervisor_subs" // Daily janitor: delete subscription rows whose callId no longer references a call_log row
   | "trial_ending_soon_email" // Notify trialing user when trial ends within 3 days
