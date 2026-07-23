@@ -8,6 +8,13 @@ import SettingsTabs from "../components/settings/SettingsTabs";
 import CompanyIdentityPack from "../components/settings/CompanyIdentityPack";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/shadcn/Select";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
@@ -19,6 +26,8 @@ type PhoneNumberRecord = {
   campaign_label?: string | null;
   created_at?: string | null;
 };
+
+const PHONE_AGENT_UNSET = "__unassigned__";
 
 function formatPhone(value?: string | null) {
   if (!value) return "No number yet";
@@ -41,6 +50,7 @@ export default function PhoneSettings() {
   const [numbers, setNumbers] = useState<PhoneNumberRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
+  const [attaching, setAttaching] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const activeNumber = numbers[0] || null;
@@ -103,8 +113,36 @@ export default function PhoneSettings() {
     }
   }
 
+  async function attachAgent(agentId: string | null) {
+    if (!activeNumber || attaching) return;
+    setAttaching(true);
+    setMessage(null);
+    setError(null);
+    try {
+      const response = await authFetch(`/api/phone-numbers/${activeNumber.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agentId }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(body?.error || "Could not attach AI employee.");
+      }
+      setNumbers((prev) =>
+        prev.map((number) =>
+          number.id === activeNumber.id ? { ...number, agent_id: agentId } : number,
+        ),
+      );
+      setMessage(agentId ? "AI employee attached to this line." : "Line unassigned.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not attach AI employee.");
+    } finally {
+      setAttaching(false);
+    }
+  }
+
   const lineMeta = activeNumber
-    ? `${attachedAgent?.name || "Wireline agent"} · ${formatProvisionedDate(activeNumber.created_at)}`
+    ? `${attachedAgent?.name || "Unassigned"} · ${formatProvisionedDate(activeNumber.created_at)}`
     : loading
       ? "Loading carrier status"
       : "Provision a dedicated line in one click";
@@ -156,19 +194,50 @@ export default function PhoneSettings() {
           ) : (
             <p className="mt-4 text-sm text-muted-foreground">No AI employee attached yet</p>
           )}
-          <div className="mt-4">
-            <Button asChild size="sm">
-              <Link
-                to={
-                  attachedAgent
-                    ? `/studio?agent=${encodeURIComponent(attachedAgent.id)}`
-                    : "/studio"
+          {activeNumber ? (
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Select
+                value={activeNumber.agent_id || PHONE_AGENT_UNSET}
+                disabled={attaching}
+                onValueChange={(value) =>
+                  void attachAgent(value === PHONE_AGENT_UNSET ? null : value)
                 }
               >
-                {attachedAgent ? "Open Studio" : "Attach in Studio"}
-              </Link>
-            </Button>
-          </div>
+                <SelectTrigger
+                  aria-label="Attach AI employee to this number"
+                  className="h-auto min-w-[180px] rounded-md border border-input bg-muted px-2.5 py-2 text-sm"
+                >
+                  <SelectValue placeholder="Select AI employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={PHONE_AGENT_UNSET}>Unassigned</SelectItem>
+                  {agents.map((agent) => (
+                    <SelectItem key={agent.id} value={agent.id}>
+                      {agent.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {attachedAgent ? (
+                <Button asChild size="sm" variant="outline">
+                  <Link to={`/studio?agent=${encodeURIComponent(attachedAgent.id)}`}>
+                    Open Studio
+                  </Link>
+                </Button>
+              ) : null}
+              {agents.length === 0 ? (
+                <Button asChild size="sm">
+                  <Link to="/studio?create=1">Create AI employee</Link>
+                </Button>
+              ) : null}
+            </div>
+          ) : (
+            <div className="mt-4">
+              <Button asChild size="sm" variant="outline">
+                <Link to="/studio?create=1">Create AI employee first</Link>
+              </Button>
+            </div>
+          )}
         </section>
 
         <CompanyIdentityPack key={activeNumber?.id ?? "no-number"} />

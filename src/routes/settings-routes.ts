@@ -18,6 +18,66 @@ import { SettingsSchema } from "../../contracts/api-types";
 
 const router = Router();
 
+/**
+ * Client-writable settings columns (camelCase after mapObjectToCamel).
+ * Anything not listed here is server-owned — billing entitlements, trial
+ * counters, activation metrics, acquisition provenance, provider secrets.
+ */
+const CLIENT_WRITABLE_SETTINGS = new Set([
+  "vapiPhoneNumberId",
+  "vapiPhoneInboundAgentId",
+  "retentionDays",
+  "voiceLlmProvider",
+  "voiceLlmModel",
+  "dailyBriefEnabled",
+  "dailyBriefSendAt",
+  "dailyBriefRecipient",
+  "businessName",
+  "businessType",
+  "primaryProduct",
+  "businessHours",
+  "crmType",
+  "twilioMessagingEnabled",
+  "twilioLookupEnabled",
+  "twilioManagerAlertsEnabled",
+  "twilioMessagingServiceSid",
+  "twilioSmsFromNumber",
+  "twilioWhatsappFromNumber",
+  "twilioManagerAlertNumber",
+  "handoffPhone",
+  "prospectingEnabled",
+  "targetTitles",
+  "targetIndustries",
+  "targetStates",
+  "targetEmployeeRanges",
+  "brandName",
+  "brandLogoUrl",
+  "primaryColor",
+  "autonomyLevel",
+  "csatSmsEnabled",
+]);
+
+/** Platform-admin-only capacity fields — never via Stripe-bypass self-service. */
+const ADMIN_WRITABLE_SETTINGS = new Set([
+  "subscriptionStatus",
+  "maxAgents",
+  "extraAgents",
+]);
+
+function pickWritableSettings(
+  update: Record<string, unknown>,
+  isAccountHolder: boolean,
+): Record<string, unknown> {
+  const allowed = isAccountHolder
+    ? new Set([...CLIENT_WRITABLE_SETTINGS, ...ADMIN_WRITABLE_SETTINGS])
+    : CLIENT_WRITABLE_SETTINGS;
+  const filtered: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(update)) {
+    if (allowed.has(key)) filtered[key] = value;
+  }
+  return filtered;
+}
+
 router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const [data] = await drizzle
@@ -56,22 +116,13 @@ router.post(
   validate(SettingsSchema.partial()),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const update = mapObjectToCamel(req.body);
-      delete update.id;
-      delete update.userId;
-      delete update.createdAt;
-      // vapiPrivateKey is a sensitive credential — must not be set via this
-      // generic endpoint. It has a dedicated route with proper encryption.
-      delete update.vapiPrivateKey;
-
       const isAccountHolder = await isPlatformAdmin(req.user);
-      if (!isAccountHolder) {
-        delete update.subscriptionStatus;
-        delete update.maxAgents;
-        delete update.extraAgents;
-        delete update.founderUnlimitedAgents;
-      }
-
+      // Allowlist only — never trust deny-list + passthrough for entitlements
+      // (liveVideoAddonEnabled, trialEndsAt, trialOutboundCount, aiTier, …).
+      const update = pickWritableSettings(
+        mapObjectToCamel(req.body) as Record<string, unknown>,
+        isAccountHolder,
+      );
       update.updatedAt = new Date();
 
       let [data] = (await drizzle

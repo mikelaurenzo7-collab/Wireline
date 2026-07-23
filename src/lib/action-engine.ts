@@ -14,6 +14,29 @@ import { resolveAgentTools } from "./agent-capabilities";
 import { sendMetaConversion } from "./meta-service";
 import { superviseClientCommunication } from "./ai-supervisor";
 import { touchNavCounts } from "./nav-counts-invalidate";
+import { evaluateOutboundDialGate } from "./outbound-dial-gate";
+
+/**
+ * Roles whose auto SMS is treated as non-marketing (service / ops).
+ * Everything else — including unknown roles and missing agentId — fails
+ * closed as marketing so federal DNC + express consent apply.
+ */
+const NON_MARKETING_SMS_ROLES = new Set([
+  "customer_service",
+  "technical_support",
+  "receptionist",
+  "scheduler",
+  "personal_assistant",
+  "ecommerce",
+]);
+
+/** Match twilio-service cleanPhone so gate/lead lookup use the same destination. */
+function cleanOutboundSmsPhone(raw: string | null | undefined): string {
+  const input = String(raw || "").replace(/^whatsapp:/i, "");
+  const cleaned = input.replace(/[^0-9+]/g, "");
+  if (!cleaned) return "";
+  return cleaned.startsWith("+") ? `+${cleaned.slice(1).replace(/\+/g, "")}` : cleaned;
+}
 
 /**
  * The Action Engine is responsible for executing tasks extracted by the AI
@@ -226,8 +249,62 @@ async function handleSendTextMessage(
   action: ActionItem,
   _context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
+  const phone = cleanOutboundSmsPhone(action.payload.to);
+  if (!phone) {
+    return { success: false, error: "A destination number is required." };
+  }
+
+  // Match cadence-engine: every auto-sent SMS clears the shared TCPA / DNC /
+  // quiet-hours / duplicate gate. Non-service roles are marketing (federal
+  // DNC + express written consent via outbound-lead metadata when present).
+  let isMarketingCall = true;
+  if (action.agentId) {
+    const [agent] = await drizzle
+      .select({ role: schema.agents.role })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, action.agentId), eq(schema.agents.userId, userId)))
+      .limit(1);
+    const role = String(agent?.role || "").toLowerCase();
+    isMarketingCall = !NON_MARKETING_SMS_ROLES.has(role);
+  }
+
+  const [lead] = await drizzle
+    .select({
+      id: schema.outboundLeads.id,
+      lastCalledAt: schema.outboundLeads.lastCalledAt,
+      metadata: schema.outboundLeads.metadata,
+    })
+    .from(schema.outboundLeads)
+    .where(
+      and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.customerNumber, phone)),
+    )
+    .limit(1);
+
+  try {
+    const gate = await evaluateOutboundDialGate({
+      userId,
+      phone,
+      leadId: lead?.id,
+      lastCalledAt: lead?.lastCalledAt,
+      metadata: (lead?.metadata as Record<string, unknown> | null) || {},
+      isMarketingCall,
+    });
+    if (!gate.allowed) {
+      return {
+        success: false,
+        error: `Outbound SMS blocked (${gate.reason}).`,
+      };
+    }
+  } catch (err: unknown) {
+    log.warn("action-engine SMS compliance gate failed — failing closed", {
+      userId,
+      error: getErrorMessage(err),
+    });
+    return { success: false, error: "Compliance gate failed (fail-closed)." };
+  }
+
   const sent = await sendTenantMessage(userId, {
-    to: action.payload.to,
+    to: phone,
     body: action.payload.body,
     agentId: action.agentId,
   });

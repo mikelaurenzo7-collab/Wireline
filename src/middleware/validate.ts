@@ -5,7 +5,10 @@ import { log } from "../lib/server-context";
 export const validate = (schema: z.ZodTypeAny) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await schema.parseAsync(req.body);
+      // Replace the body with the parsed value so Zod strip/transform actually
+      // takes effect. parseAsync alone previously left unknown keys on req.body,
+      // which let entitlement fields slip past SettingsSchema into Drizzle.
+      req.body = await schema.parseAsync(req.body);
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
