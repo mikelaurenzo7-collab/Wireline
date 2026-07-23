@@ -310,7 +310,9 @@ describe("product voice cohesion", () => {
     expect(read("src/components/outbound/OutboundHub.tsx")).toContain("CampaignsPanel");
     expect(read("src/components/outbound/OutboundHub.tsx")).toContain("IntakeKeysManager");
     expect(customization).toContain('href: "/knowledge"');
+    expect(customization).toContain("WorkspaceBrandingSettings");
     expect(customization).not.toContain('href: "/training');
+    expect(customization).not.toContain('href: "/settings/apps"');
     expect(authenticatedVisualQa).toContain("`${baseUrl}/knowledge`");
     expect(authenticatedVisualQa).not.toContain("`${baseUrl}/training`");
   });

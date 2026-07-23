@@ -7,9 +7,21 @@ const settingsTabs = [
   { id: "billing", href: "/settings/billing", label: "Billing", shortLabel: "Bill" },
   { id: "phone", href: "/settings/phone", label: "Phone", shortLabel: "Phone" },
   { id: "team", href: "/settings/team", label: "Team", shortLabel: "Team" },
-  { id: "customization", href: "/settings/customization", label: "Brand", shortLabel: "Brand" },
+  {
+    id: "customization",
+    href: "/settings/customization",
+    label: "Appearance",
+    shortLabel: "Look",
+    ariaLabel: "Appearance and brand",
+  },
   { id: "apps", href: "/settings/apps", label: "Apps", shortLabel: "Apps" },
-  { id: "compliance", href: "/settings/compliance", label: "Legal", shortLabel: "Legal" },
+  {
+    id: "compliance",
+    href: "/settings/compliance",
+    label: "Compliance",
+    shortLabel: "Rules",
+    ariaLabel: "Compliance",
+  },
 ] as const;
 
 function isActive(pathname: string, href: string) {

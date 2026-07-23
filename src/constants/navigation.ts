@@ -224,8 +224,8 @@ export const PAGE_TITLES: Record<string, string> = {
   "/settings/billing": "Billing settings",
   "/settings/phone": "Call settings",
   "/settings/team": "Team settings",
-  "/settings/customization": "Customization settings",
-  "/settings/compliance": "Compliance center",
+  "/settings/customization": "Appearance & brand",
+  "/settings/compliance": "Compliance",
   "/settings/apps": "App settings",
   "/admin": "Admin",
 };

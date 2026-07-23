@@ -150,7 +150,7 @@ export default function StudioAgentReviewPanel({
           aria-label="Next actions"
         >
           <h3 className="text-base font-semibold text-foreground">Next action</h3>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Button type="button" variant="secondary" onClick={onEdit} className="justify-center">
               <Settings2 className="size-4" aria-hidden="true" />
               Edit setup
@@ -169,6 +169,26 @@ export default function StudioAgentReviewPanel({
                 {hasPhone ? "Review outcomes" : "Connect phone"}
               </Link>
             </Button>
+            <Button asChild variant="secondary" className="justify-center">
+              <Link to="/settings/phone#company-identity">
+                <Settings2 className="size-4" aria-hidden="true" />
+                Caller identity
+              </Link>
+            </Button>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+            <Link
+              to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
+              className="font-medium text-primary hover:underline"
+            >
+              Add business knowledge
+            </Link>
+            <Link to="/connections" className="font-medium text-primary hover:underline">
+              Open Connections
+            </Link>
+            <Link to="/settings/customization" className="font-medium text-primary hover:underline">
+              Appearance & brand
+            </Link>
           </div>
         </section>
       </div>

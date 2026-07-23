@@ -19,10 +19,16 @@ export default function ConnectionsPage() {
       <WorkspacePageFrame mode="standard" className="gap-4">
         <WorkspacePageIntro
           title="Connections"
+          description="Link mailbox, CRM, and tools. Set caller identity and phone before sharing a live number."
           action={
-            <Button asChild size="sm" variant="secondary">
-              <Link to="/settings/phone">Phone setup</Link>
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button asChild size="sm" variant="secondary">
+                <Link to="/settings/phone#company-identity">Caller identity</Link>
+              </Button>
+              <Button asChild size="sm" variant="secondary">
+                <Link to="/settings/phone">Phone setup</Link>
+              </Button>
+            </div>
           }
         />
         <MailboxConnectionCard />

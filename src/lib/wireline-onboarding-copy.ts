@@ -153,12 +153,13 @@ export const POST_CREATE_WIZARD_COPY = {
       label: "Channels",
       title: "Connect where customers reach you",
       detail:
-        "Phone is the default lane. Open Wire when you need CRM, SMS, email, or other tools connected.",
+        "Phone is the default lane. Open Connections when you need CRM, SMS, email, or other tools linked.",
       phoneTitle: "Business phone line",
       phoneDetail: "Provision a US number on the next step — callers reach this agent directly.",
-      connectionsTitle: "Wire hub",
-      connectionsDetail: "Salesforce, SMS threads, email inbox, and routing live under Wire.",
-      connectionsCta: "Open Wire",
+      connectionsTitle: "Connections",
+      connectionsDetail:
+        "Mailbox, Salesforce, SMS threads, and routing live under Connections.",
+      connectionsCta: "Open Connections",
       continue: "Continue to phone line",
     },
     wire: {
@@ -167,7 +168,7 @@ export const POST_CREATE_WIZARD_COPY = {
       detail:
         "Provision a US number so callers reach this agent. Conversation Balance or a paid plan is required.",
       primary: "Provision number",
-      skip: "Wire later",
+      skip: "Connect later",
       activationRequired:
         "Fund live work or choose shared capacity to provision a number — use the activation prompt to continue.",
     },
@@ -180,12 +181,12 @@ export const POST_CREATE_WIZARD_COPY = {
     },
   },
   complete: {
-    wiredTitle: "You're wired",
+    wiredTitle: "You're live",
     wiredDetail: (agentName: string, phone: string) =>
       `${agentName} is on ${phone}. Dial from your phone when you're ready — that's activation.`,
-    deferredTitle: "Agent ready in Studio",
+    deferredTitle: "Ready in Studio",
     deferredDetail: (agentName: string) =>
-      `${agentName} is trained and waiting. Wire a number under Settings → Phone when you're ready to go live.`,
+      `${agentName} is trained and waiting. Connect a number under Settings → Phone when you're ready to go live.`,
     studioCta: "Continue in Studio",
     phoneCta: "Phone settings",
   },

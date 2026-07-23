@@ -140,12 +140,16 @@ export default function PhoneSettings() {
             {attachedAgent ? (
               <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
                 <p className="text-sm font-semibold text-foreground">{attachedAgent.name}</p>
-                <p className="mt-1 text-xs text-muted-foreground">Attached agent</p>
+                <p className="mt-1 text-xs text-muted-foreground">Attached AI employee</p>
               </div>
             ) : (
-              <p className="mt-4 text-sm text-muted-foreground">No agent attached</p>
+              <p className="mt-4 text-sm text-muted-foreground">No AI employee attached yet</p>
             )}
-            <div className="mt-4">
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              Advanced carrier routing, forwarding destinations, and number inventory live in Admin
+              → Carrier.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
               <Button asChild variant="secondary" size="sm">
                 <Link
                   to={
@@ -157,16 +161,28 @@ export default function PhoneSettings() {
                   Open Studio
                 </Link>
               </Button>
+              <Button asChild variant="secondary" size="sm">
+                <Link to="/admin?tab=carrier">Carrier routing</Link>
+              </Button>
+            </div>
+          </section>
+
+          <section className="studio-card p-5 sm:p-6">
+            <p className={WL_APP_CLASSES.wiredEyebrow}>Brand surfaces</p>
+            <p className="mt-4 text-sm leading-6 text-muted-foreground">
+              Workspace theme, logo, and color sit under Appearance. Caller ID and legal business
+              identity sit in the pack above.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button asChild variant="secondary" size="sm">
+                <Link to="/settings/customization">Appearance & brand</Link>
+              </Button>
+              <Button asChild variant="secondary" size="sm">
+                <Link to="/settings/apps">Companion apps</Link>
+              </Button>
             </div>
           </section>
         </div>
-
-        <section className="studio-card mt-5 flex flex-col items-center gap-3 p-5 sm:flex-row sm:justify-between sm:p-6">
-          <p className={WL_APP_CLASSES.wiredEyebrow}>Apps</p>
-          <Button asChild variant="secondary" size="sm">
-            <Link to="/settings/apps">View apps</Link>
-          </Button>
-        </section>
 
         {message ? (
           <StatusNotice tone="info" className="mt-5" title="Phone line updated">

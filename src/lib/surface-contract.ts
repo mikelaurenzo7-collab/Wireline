@@ -1,19 +1,26 @@
-const KNOWLEDGE_TABS = ["Knowledge", "Voice", "Flows", "Simulator"] as const;
+const KNOWLEDGE_TABS = ["Business knowledge", "Reports"] as const;
 
-const SETTINGS_TABS = ["Account", "Billing", "Phone", "Team", "Brand", "Legal"] as const;
+const SETTINGS_TABS = [
+  "Account",
+  "Billing",
+  "Phone",
+  "Team",
+  "Appearance",
+  "Apps",
+  "Compliance",
+] as const;
 
 const PAGE_CHROME_MODES = ["standard", "narrow", "operate", "studio"] as const;
 
 const NAV_GROUPS = ["Workspace", "Agents", "Operate"] as const;
 
-const MOBILE_PRIMARY_LABELS = ["Overview", "Studio", "Phone", "Inbox", "More"] as const;
+const MOBILE_PRIMARY_LABELS = ["Overview", "AI Employee", "Inbox", "Calls", "More"] as const;
 
 const MOBILE_MORE_LABELS = [
-  "Training",
-  "Wire",
+  "Connections",
+  "Knowledge",
   "Approvals",
-  "Insights",
-  "Apps",
+  "Activity",
   "Settings",
 ] as const;
 
@@ -34,12 +41,12 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
     standard: {
       maxWidth: "980px",
       header: "WorkspacePageIntro start-aligned",
-      surfaces: ["Overview", "Training", "Wire", "Approvals", "Apps", "Inbox"],
+      surfaces: ["Overview", "Knowledge", "Connections", "Approvals", "Apps", "Inbox"],
     },
     narrow: {
       maxWidth: "700px",
       header: "Settings tabs + intro",
-      surfaces: ["Account", "Billing", "Team", "Legal"],
+      surfaces: ["Account", "Billing", "Team", "Compliance"],
     },
     operate: {
       fullBleed: true,
@@ -70,21 +77,21 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
       "CustomizationSettings",
       "ComplianceCenterPage",
     ],
-    narrowTabs: ["Account", "Billing", "Team", "Legal"],
-    standardTabs: ["Phone", "Brand"],
+    narrowTabs: ["Account", "Billing", "Team", "Compliance"],
+    standardTabs: ["Phone", "Appearance"],
     requiredPhoneSections: [
       "Your Wireline number",
-      "Call forwarding",
-      "VIP contacts",
-      "Connected devices",
+      "company-identity",
+      "Routing",
+      "Brand surfaces",
     ],
-    retiredPatterns: ["settingsDestinations", "link tile hub"],
+    retiredPatterns: ["settingsDestinations", "link tile hub", "Call forwarding card grid"],
   },
   knowledge: {
     route: "/knowledge",
     tabs: KNOWLEDGE_TABS,
-    requiredSections: ["Voice engine", "Flow Composer", "Scenario library"],
-    retiredPatterns: ["trainingNav", "six item section map"],
+    requiredSections: ["Business knowledge", "Reports"],
+    retiredPatterns: ["trainingNav", "six item section map", "Voice/Flows/Simulator tabs"],
   },
   training: {
     route: "/knowledge",

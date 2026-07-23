@@ -378,7 +378,11 @@ export default function CompanyIdentityPack() {
   }
 
   return (
-    <section className="studio-card mt-5 p-5 sm:p-6" aria-labelledby="company-identity-title">
+    <section
+      id="company-identity"
+      className="studio-card mt-5 scroll-mt-24 p-5 sm:p-6"
+      aria-labelledby="company-identity-title"
+    >
       <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-primary/15 bg-primary/5 text-primary">

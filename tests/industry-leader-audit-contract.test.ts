@@ -88,6 +88,7 @@ describe("industry-leader audit hardening contracts", () => {
   it("routes Goals customization CTA to Insights goals view", () => {
     const customization = read("src/pages/CustomizationSettings.tsx");
     expect(customization).toContain('href: "/insights?tab=performance&view=goals"');
+    expect(customization).toContain("Success targets");
     expect(customization).not.toMatch(/label:\s*"Goals"[\s\S]*?href:\s*"\/knowledge"/);
   });
 

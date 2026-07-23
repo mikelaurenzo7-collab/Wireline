@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { KeyRound, LogOut, Mail, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import {
+  KeyRound,
+  LogOut,
+  Mail,
+  Palette,
+  Phone,
+  ShieldCheck,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "../components/atoms";
@@ -177,6 +186,44 @@ export default function SettingsPage() {
         </section>
 
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
+          <p className="wl-eyebrow wl-eyebrow--muted">Workspace</p>
+          <div className="mt-5 grid gap-3">
+            <div className="wl-data-row wl-data-row--framed">
+              <span className="wl-data-row__leading rounded-lg bg-muted p-2" aria-hidden="true">
+                <Palette size={15} />
+              </span>
+              <span className="wl-data-row__main">
+                <span className="wl-data-row__title">Appearance & brand</span>
+                <span className="wl-data-row__detail">
+                  Theme, workspace name, logo, and primary color
+                </span>
+              </span>
+              <span className="wl-data-row__trailing">
+                <Button asChild variant="secondary" size="sm">
+                  <Link to="/settings/customization">Open</Link>
+                </Button>
+              </span>
+            </div>
+            <div className="wl-data-row wl-data-row--framed">
+              <span className="wl-data-row__leading rounded-lg bg-muted p-2" aria-hidden="true">
+                <Phone size={15} />
+              </span>
+              <span className="wl-data-row__main">
+                <span className="wl-data-row__title">Phone & caller identity</span>
+                <span className="wl-data-row__detail">
+                  Number, CNAM, legal business name, and support channels
+                </span>
+              </span>
+              <span className="wl-data-row__trailing">
+                <Button asChild variant="secondary" size="sm">
+                  <Link to="/settings/phone">Open</Link>
+                </Button>
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
           <p className="wl-eyebrow wl-eyebrow--muted">Security</p>
           <div className="mt-5 grid gap-3">
             <div className="wl-data-row wl-data-row--framed">
@@ -184,7 +231,7 @@ export default function SettingsPage() {
                 <ShieldCheck size={15} />
               </span>
               <span className="wl-data-row__main">
-                <span className="wl-data-row__title">Compliance Center</span>
+                <span className="wl-data-row__title">Compliance</span>
                 <span className="wl-data-row__detail">
                   DNC, consent ledger, scrub status, and audit export
                 </span>
