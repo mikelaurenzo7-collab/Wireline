@@ -37,6 +37,10 @@ targets:
     sources:
       - path: Wireline
       - path: WirelineShared
+        excludes:
+          # The app target owns its generated copy; widgets compile the shared copy.
+          # Excluding this one prevents two WirelineDesignTokens declarations in Wireline.
+          - WirelineDesignTokens.generated.swift
     dependencies:
       - target: WirelineWidgets
     settings:

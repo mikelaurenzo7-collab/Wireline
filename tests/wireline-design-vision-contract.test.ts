@@ -74,7 +74,7 @@ describe("Wireline Letterpress design vision", () => {
     expect(appSignature).toContain(".wl-operate-surface .studio-card");
     expect(appSignature).toContain("--wireline-color-action-secondary-default");
     expect(read("apps/browser-extension/panel/app-signature.css")).toContain(".wordmark::before");
-    expect(read("ios/Wireline/Theme/WirelineTheme.swift")).toContain("static let wire");
+    expect(read("ios/WirelineShared/WirelineBrand.swift")).toContain("static let wire");
   });
 
   it("centralizes workspace page intros and presence hooks", () => {
