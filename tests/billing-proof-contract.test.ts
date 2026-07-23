@@ -97,7 +97,11 @@ describe("billing proof contract", () => {
     expect(modal).not.toContain('authFetch("/api/conversation-balance/checkout"');
     expect(modal).toContain('authFetch("/api/billing/portal"');
     expect(modal).toContain('detail.code === "SUBSCRIPTION_REQUIRED"');
-    expect(billingCard).toContain("{hasActive && <CreditTopUpCard");
+    expect(billingCard).toContain("{canAddBalance && <CreditTopUpCard");
+    expect(billingCard).not.toContain(
+      'sub.status === "trialing" || sub.status === "past_due");\n    if (!hasPaidSubscription)',
+    );
+    expect(read("src/pages/BillingSettings.tsx")).toContain("const canAddBalance =");
     expect(billingCard).not.toContain("Personal activation without a subscription");
     expect(billingRoutes).not.toContain("credit top-up activates a pending account");
   });

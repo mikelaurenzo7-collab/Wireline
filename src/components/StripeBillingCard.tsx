@@ -182,7 +182,7 @@ export default function StripeBillingCard() {
   const startCreditCheckout = async (amountUsd: number) => {
     const hasPaidSubscription =
       !!sub?.has_subscription &&
-      (sub.status === "active" || sub.status === "trialing" || sub.status === "past_due");
+      (sub.status === "active" || sub.status === "trialing");
     if (!hasPaidSubscription) {
       setError("Choose a live plan before adding Runtime Balance.");
       return;
@@ -272,6 +272,8 @@ export default function StripeBillingCard() {
   const hasActive =
     !!sub?.has_subscription &&
     (sub.status === "active" || sub.status === "trialing" || sub.status === "past_due");
+  const canAddBalance =
+    !!sub?.has_subscription && (sub.status === "active" || sub.status === "trialing");
 
   return (
     <div className="space-y-8">
@@ -316,7 +318,7 @@ export default function StripeBillingCard() {
           )}
         </div>
       ) : null}
-      {hasActive && <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />}
+      {canAddBalance && <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />}
       {error && (
         <div
           role="alert"

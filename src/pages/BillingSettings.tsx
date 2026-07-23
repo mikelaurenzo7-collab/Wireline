@@ -103,14 +103,18 @@ export default function BillingSettings() {
   );
   const paidPlan = isPaidPlan(subscription?.plan_id);
   const hasSubscription = Boolean(paidPlan && subscription?.has_subscription);
+  const canAddBalance =
+    paidPlan && (subscription?.status === "active" || subscription?.status === "trialing");
   const planStatus = subscription?.status?.replace(/_/g, " ") || "free builder";
   const balanceDue = Math.max(0, -(balanceUsd ?? 0));
   const balanceMinuteEstimates = conversationBalanceMinuteEstimates();
 
   async function addBalance(amountUsd: number) {
-    if (!paidPlan) {
+    if (!canAddBalance) {
       setActionError(
-        "Choose Starter, Starter Plus, Pro, or Business before adding Conversation Balance.",
+        paidPlan
+          ? "Restore your active subscription before adding Runtime Balance."
+          : "Choose Starter, Starter Plus, Pro, or Business before adding Runtime Balance.",
       );
       return;
     }
@@ -260,14 +264,14 @@ export default function BillingSettings() {
                   {balanceDue > 0 ? `$${balanceDue.toFixed(2)} due` : formatUsd(balanceUsd)}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {!paidPlan
+                  {!canAddBalance
                     ? "Available after a live plan is active."
                     : balanceDue > 0
                       ? "A previous call finished after coverage ran out. Restore this amount before another paid action."
                       : "Extra usage draws only from this balance—never an automatic overage invoice."}
                 </p>
 
-                {paidPlan ? (
+                {canAddBalance ? (
                   <div className="mt-5 flex flex-wrap gap-2">
                     {CONVERSATION_BALANCE_PRESETS_USD.map((amount) => {
                       const minutes =
