@@ -14,14 +14,13 @@ describe("authenticated surfaces", () => {
       "Billing",
       "Phone",
       "Team",
-      "Brand",
-      "Legal",
+      "Appearance",
+      "Apps",
+      "Compliance",
     ]);
     expect(AUTHENTICATED_SURFACE_CONTRACT.training.tabs).toEqual([
-      "Knowledge",
-      "Voice",
-      "Flows",
-      "Simulator",
+      "Business knowledge",
+      "Reports",
     ]);
   });
 
@@ -33,17 +32,16 @@ describe("authenticated surfaces", () => {
     ]);
     expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.mobilePrimary).toEqual([
       "Overview",
-      "Studio",
-      "Phone",
+      "AI Employee",
       "Inbox",
+      "Calls",
       "More",
     ]);
     expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.mobileMore).toEqual([
-      "Training",
-      "Wire",
+      "Connections",
+      "Knowledge",
       "Approvals",
-      "Insights",
-      "Apps",
+      "Activity",
       "Settings",
     ]);
     expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.sourceOfTruth).toBe(

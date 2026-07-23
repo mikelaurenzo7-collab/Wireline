@@ -20,9 +20,14 @@ export default function ConnectionsPage() {
         <WorkspacePageIntro
           title="Connections"
           action={
-            <Button asChild size="sm" variant="secondary">
-              <Link to="/settings/phone">Phone setup</Link>
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button asChild size="sm" variant="secondary">
+                <Link to="/settings/phone#company-identity">Caller identity</Link>
+              </Button>
+              <Button asChild size="sm" variant="secondary">
+                <Link to="/settings/phone">Phone setup</Link>
+              </Button>
+            </div>
           }
         />
         <MailboxConnectionCard />

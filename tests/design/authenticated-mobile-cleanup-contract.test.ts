@@ -19,8 +19,14 @@ describe("authenticated mobile cleanup", () => {
     expect(tabs).toContain('shortLabel: "Camps"');
     expect(tabs).toContain('shortLabel: "Seq"');
     expect(tabs).toContain('shortLabel: "Cbks"');
-    expect(settingsTabs).toContain('shortLabel: "Acct"');
-    expect(settingsTabs).toContain('shortLabel: "Bill"');
+    // Settings uses full labels on every viewport — no redundant shortLabel twins.
+    expect(settingsTabs).toContain('label: "Account"');
+    expect(settingsTabs).toContain('label: "Billing"');
+    expect(settingsTabs).toContain('label: "Appearance"');
+    expect(settingsTabs).toContain('label: "Compliance"');
+    expect(settingsTabs).not.toContain("shortLabel:");
+    expect(settingsTabs).not.toContain('shortLabel: "Acct"');
+    expect(settingsTabs).not.toContain('shortLabel: "Bill"');
     expect(approvals).toContain('escalations: "Esc."');
   });
 

@@ -61,7 +61,7 @@ export default function StudioContextChrome() {
         <div className="flex shrink-0 items-center gap-2">
           {readyLabel ? (
             <span
-              className={`hidden min-h-8 items-center rounded-full border px-3 font-mono text-[9px] font-semibold uppercase tracking-[0.1em] sm:inline-flex ${
+              className={`inline-flex min-h-8 items-center rounded-md border px-2.5 font-mono text-[9px] font-semibold uppercase tracking-[0.1em] sm:px-3 ${
                 activeAgent?.phone_number
                   ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground"
                   : "border-border bg-muted/50 text-muted-foreground"

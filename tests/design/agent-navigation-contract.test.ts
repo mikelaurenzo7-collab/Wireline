@@ -166,7 +166,7 @@ describe("agent navigation contract", () => {
     expect(read("src/components/integrations/IntegrationOperatingMap.tsx")).toMatch(
       /Integration map/,
     );
-    expect(read("src/lib/wireline-onboarding-copy.ts")).toMatch(/Open Wire/);
+    expect(read("src/lib/wireline-onboarding-copy.ts")).toMatch(/Open Connections/);
   });
 
   it("keeps Knowledge tabs compact and resilient across narrow workspaces", () => {

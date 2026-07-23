@@ -542,11 +542,13 @@ export default function OverviewPage() {
   return (
     <WorkspaceShell contentClassName="pt-7 pb-10 lg:pt-8">
       <WorkspacePageFrame mode="standard" className="wl-overview">
-        <section className="relative wl-overview-greeting text-center">
+        <section className={`relative wl-overview-greeting ${hasAgents ? "text-left" : "text-center"}`}>
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             {todayLabel()}
           </p>
-          <div className="mt-3 flex flex-col items-center gap-5">
+          <div
+            className={`mt-3 flex flex-col gap-5 ${hasAgents ? "items-start" : "items-center"}`}
+          >
             <div className="max-w-2xl">
               <h1 className="wl-display-2 text-balance">
                 {isFirstRun
@@ -554,7 +556,9 @@ export default function OverviewPage() {
                   : `${dayGreeting()}, ${workspaceFirstName(user?.full_name, user?.email)}.`}
               </h1>
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-2">
+            <div
+              className={`flex flex-wrap items-center gap-2 ${hasAgents ? "justify-start" : "justify-center"}`}
+            >
               {hasAgents ? (
                 <>
                   <Button asChild className="shrink-0 justify-center sm:min-w-[170px]">

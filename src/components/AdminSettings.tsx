@@ -433,8 +433,19 @@ export default function AdminSettings() {
                       id="admin-panel-branding"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="h-full"
+                      className="h-full space-y-4"
                     >
+                      <p className="rounded-xl border border-border bg-card px-4 py-3 text-sm leading-6 text-muted-foreground">
+                        Workspace brand also lives under{" "}
+                        <Link
+                          to="/settings/customization"
+                          className="font-semibold text-primary hover:underline"
+                        >
+                          Settings → Appearance
+                        </Link>{" "}
+                        for everyday owner edits. Admin keeps the same controls for advanced
+                        configuration.
+                      </p>
                       <BrandingPanel
                         settings={settings}
                         onUpdate={setSettings}

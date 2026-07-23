@@ -219,7 +219,7 @@ export default function StudioAgentWorkspacePanel({
                     to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
                     className="shrink-0 text-xs font-medium text-primary hover:underline"
                   >
-                    Open full Training
+                    Open Knowledge
                   </Link>
                 </div>
                 <textarea

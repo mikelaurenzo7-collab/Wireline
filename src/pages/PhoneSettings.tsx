@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import CompanyIdentityPack from "../components/settings/CompanyIdentityPack";
-import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
+import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
@@ -37,6 +37,7 @@ function formatProvisionedDate(value?: string | null) {
 
 export default function PhoneSettings() {
   const { agents } = useAgents();
+  const location = useLocation();
   const [numbers, setNumbers] = useState<PhoneNumberRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
@@ -47,6 +48,17 @@ export default function PhoneSettings() {
     () => agents.find((agent) => agent.id === activeNumber?.agent_id),
     [activeNumber?.agent_id, agents],
   );
+
+  useEffect(() => {
+    if (location.hash !== "#company-identity") return;
+    const id = window.setTimeout(() => {
+      document.getElementById("company-identity")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [location.hash, location.pathname]);
 
   async function loadNumbers() {
     setLoading(true);
@@ -101,6 +113,7 @@ export default function PhoneSettings() {
     <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
+        <WorkspacePageIntro title="Phone" />
 
         <section className="rounded-2xl border border-primary/20 bg-primary p-5 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
           <div className="flex items-start justify-between gap-4">
@@ -132,41 +145,33 @@ export default function PhoneSettings() {
           ) : null}
         </section>
 
-        <CompanyIdentityPack key={activeNumber?.id ?? "no-number"} />
-
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <section className="studio-card p-5 sm:p-6">
-            <p className={WL_APP_CLASSES.wiredEyebrow}>Routing</p>
-            {attachedAgent ? (
-              <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
-                <p className="text-sm font-semibold text-foreground">{attachedAgent.name}</p>
-                <p className="mt-1 text-xs text-muted-foreground">Attached agent</p>
-              </div>
-            ) : (
-              <p className="mt-4 text-sm text-muted-foreground">No agent attached</p>
-            )}
-            <div className="mt-4">
-              <Button asChild variant="secondary" size="sm">
-                <Link
-                  to={
-                    attachedAgent
-                      ? `/studio?agent=${encodeURIComponent(attachedAgent.id)}`
-                      : "/studio"
-                  }
-                >
-                  Open Studio
-                </Link>
-              </Button>
+        {/* Number → attach → identity: keep the next operating action above compliance depth */}
+        <section className="studio-card mt-5 p-5 sm:p-6">
+          <p className={WL_APP_CLASSES.wiredEyebrow}>Routing</p>
+          {attachedAgent ? (
+            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+              <p className="text-sm font-semibold text-foreground">{attachedAgent.name}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Attached AI employee</p>
             </div>
-          </section>
-        </div>
-
-        <section className="studio-card mt-5 flex flex-col items-center gap-3 p-5 sm:flex-row sm:justify-between sm:p-6">
-          <p className={WL_APP_CLASSES.wiredEyebrow}>Apps</p>
-          <Button asChild variant="secondary" size="sm">
-            <Link to="/settings/apps">View apps</Link>
-          </Button>
+          ) : (
+            <p className="mt-4 text-sm text-muted-foreground">No AI employee attached yet</p>
+          )}
+          <div className="mt-4">
+            <Button asChild size="sm">
+              <Link
+                to={
+                  attachedAgent
+                    ? `/studio?agent=${encodeURIComponent(attachedAgent.id)}`
+                    : "/studio"
+                }
+              >
+                {attachedAgent ? "Open Studio" : "Attach in Studio"}
+              </Link>
+            </Button>
+          </div>
         </section>
+
+        <CompanyIdentityPack key={activeNumber?.id ?? "no-number"} />
 
         {message ? (
           <StatusNotice tone="info" className="mt-5" title="Phone line updated">
