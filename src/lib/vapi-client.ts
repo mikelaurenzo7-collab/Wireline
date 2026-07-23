@@ -46,7 +46,7 @@ import {
   clampVoiceTemperature,
   isGeminiModelId,
   isOpenAIModelId,
-  resolveVapiVoiceModelSelection,
+  resolveCoherentVoiceModel,
 } from "./ai-models";
 
 // Retry configuration for transient failures
@@ -367,11 +367,10 @@ export async function placeOutboundCall(opts: {
   const { rules: archetypeRules, temp: llmTemp } = getArchetypeConfig(archetype);
   const ambientNoiseActive = agentConfig.ambientNoise && agentConfig.ambientNoise !== "off";
   const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[outboundAgentRole] || "";
-  // Per-agent brain first (mirrors the inbound factory), tenant default second.
-  const voiceSelection = resolveVapiVoiceModelSelection({
-    provider: agentConfig.llmProvider || settings?.voiceLlmProvider || VAPI_TENANT_DEFAULT_PROVIDER,
-    model: agentConfig.llmModel || settings?.voiceLlmModel || VAPI_TENANT_DEFAULT_MODEL,
-  });
+  // Per-agent brain first (mirrors the inbound factory), tenant default second
+  // — resolved as a coherent pair so a partially-configured agent can't cross
+  // its provider with the tenant's model and silently collapse to the default.
+  const voiceSelection = resolveCoherentVoiceModel(agentConfig, settings);
   const voiceLlmProvider = voiceSelection.provider;
   const voiceLlmModel = voiceSelection.model;
 

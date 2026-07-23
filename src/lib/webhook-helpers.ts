@@ -188,16 +188,22 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
       { method: "POST", headers, body, redirect: "manual" },
       10_000,
     );
-    statusCode = res.status;
-    // A 3xx under redirect:"manual" surfaces as an opaqueredirect/300-399
-    // response — never treat it as a delivered webhook.
-    success = res.ok && (res.status < 300 || res.status >= 400);
-    if (res.status >= 300 && res.status < 400) {
+    // undici surfaces a blocked 3xx as an *opaque-redirect* response
+    // (`type: "opaqueredirect"`, `status: 0`, `ok: false`) — not a 300-399
+    // status — so detect it by type as well as status range.
+    const isRedirect = res.type === "opaqueredirect" || (res.status >= 300 && res.status < 400);
+    if (isRedirect) {
+      success = false;
+      // status is 0 for an opaque redirect; record null rather than a bogus 0.
+      statusCode = res.status || null;
       log.warn("Webhook delivery blocked — endpoint attempted a redirect", {
         deliveryId: String(deliveryId),
         webhookId: hook.id,
-        status: res.status,
+        responseType: res.type,
       });
+    } else {
+      statusCode = res.status;
+      success = res.ok;
     }
   } catch (err: unknown) {
     log.warn("Webhook delivery attempt failed", { deliveryId, error: getErrorMessage(err) });

@@ -1,9 +1,7 @@
 type JsonRecord = Record<string, unknown>;
 
 function asRecord(value: unknown): JsonRecord {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as JsonRecord)
-    : {};
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {};
 }
 
 const healthSchemaRef = { $ref: "#/components/schemas/HealthResponse" };
@@ -88,6 +86,7 @@ export function normalizeOpenApiForManagedRuntime<T>(document: T): T {
           "concurrent_dials",
           "knowledge_rows",
           "intake_rpm",
+          "simulation_minutes_daily",
         ],
         properties: {
           ai_tokens_daily: {
@@ -98,6 +97,10 @@ export function normalizeOpenApiForManagedRuntime<T>(document: T): T {
           concurrent_dials: { type: "integer" },
           knowledge_rows: { type: "integer" },
           intake_rpm: { type: "integer" },
+          simulation_minutes_daily: {
+            type: "integer",
+            description: "Live-simulation (realtime voice test) minute ceiling per UTC day.",
+          },
         },
         additionalProperties: false,
       },
@@ -109,6 +112,7 @@ export function normalizeOpenApiForManagedRuntime<T>(document: T): T {
           "concurrent_dials",
           "knowledge_rows",
           "intake_rpm",
+          "simulation_minutes_daily",
         ],
         properties: {
           ai_tokens_daily: { type: "integer" },
@@ -116,6 +120,7 @@ export function normalizeOpenApiForManagedRuntime<T>(document: T): T {
           concurrent_dials: { type: "integer" },
           knowledge_rows: { type: "integer" },
           intake_rpm: { type: "integer" },
+          simulation_minutes_daily: { type: "integer" },
         },
         additionalProperties: false,
       },

@@ -47,9 +47,11 @@ describe("inbound/outbound runtime parity contract", () => {
     expect(outbound).toContain("maxDurationSeconds: VAPI_MAX_OUTBOUND_CALL_SECONDS");
   });
 
-  it("outbound respects the per-agent brain before tenant defaults", () => {
-    expect(outbound).toMatch(/agentConfig\.llmProvider\s*\|\|\s*settings\?\.voiceLlmProvider/);
-    expect(outbound).toMatch(/agentConfig\.llmModel\s*\|\|\s*settings\?\.voiceLlmModel/);
+  it("outbound respects the per-agent brain as a coherent pair, then tenant defaults", () => {
+    // resolveCoherentVoiceModel prevents crossing the agent's provider with the
+    // tenant's model (which would collapse to the default and lose the choice).
+    expect(outbound).toContain("resolveCoherentVoiceModel(agentConfig, settings)");
+    expect(factory).toContain("resolveCoherentVoiceModel(configured, userSettings)");
     expect(outbound).toContain("clampVoiceTemperature(agentConfig.llmTemperature");
   });
 

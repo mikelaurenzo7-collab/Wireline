@@ -18,12 +18,7 @@ import {
   resolveAssistantBasePrompt,
   type AgentRuntimeProfile,
 } from "./agent-runtime";
-import {
-  clampVoiceTemperature,
-  resolveVapiVoiceModelSelection,
-  VAPI_TENANT_DEFAULT_MODEL,
-  VAPI_TENANT_DEFAULT_PROVIDER,
-} from "./ai-models";
+import { clampVoiceTemperature, resolveCoherentVoiceModel } from "./ai-models";
 import { buildGrokStrengthsPromptSection, isGrokModelId } from "./grok-features";
 import { vapiVoiceVersion } from "./voice-catalog";
 import { DEFAULT_MANAGED_VOICE_ID, isManagedVapiVoiceId } from "../data/voice-roster";
@@ -78,11 +73,10 @@ export async function buildVapiAssistant({
   const configured = agentRows[0];
   if (!configured) throw new Error("Agent not found for Vapi assistant request");
 
-  const modelSelection = resolveVapiVoiceModelSelection({
-    provider:
-      configured.llmProvider || userSettings?.voiceLlmProvider || VAPI_TENANT_DEFAULT_PROVIDER,
-    model: configured.llmModel || userSettings?.voiceLlmModel || VAPI_TENANT_DEFAULT_MODEL,
-  });
+  // Coherent (provider, model) pair — agent brain first, tenant default
+  // second — so a partially-configured agent never crosses its provider with
+  // the tenant's model and collapses to the managed default.
+  const modelSelection = resolveCoherentVoiceModel(configured, userSettings);
   const requestedVoice = isOutbound
     ? configured.voiceIdOutbound || configured.voiceId
     : configured.voiceIdInbound || configured.voiceId;

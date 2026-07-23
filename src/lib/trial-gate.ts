@@ -88,9 +88,15 @@ export async function startTrialForUser(
   // passes everything through, and the usage snapshot still displays a
   // "hard cap" that doesn't exist. Paid checkout later raises the limit via
   // the same helper in syncSubscriptionFromStripe.
+  //
+  // Pass the SAME executor (`tx`) so the seed runs inside the signup
+  // transaction — the spend_budgets → users FK references the user row this
+  // tx just inserted, which is not yet visible on a separate pooled
+  // connection. Seeding on the module `drizzle` would throw 23503 and be
+  // swallowed below, leaving password signups permanently unmetered.
   try {
     const { ensureDefaultAiSpendBudget } = await import("./workspace-usage-snapshot");
-    await ensureDefaultAiSpendBudget(userId, null);
+    await ensureDefaultAiSpendBudget(userId, null, tx);
   } catch (error: any) {
     log.warn("startTrialForUser budget seed failed (continuing signup)", {
       userId,

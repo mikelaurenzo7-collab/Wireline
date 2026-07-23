@@ -119,19 +119,28 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
  * Seed the plan-default AI spend budget. Called at signup (free tier) and
  * from Stripe sync on every subscription change.
  *
- * Upgrade rule: a budget whose limit matches ANY tier default was auto-seeded
- * — raise it when the new tier's default is higher (a signup-seeded $0.50
- * free cap must not survive into a paid plan). A limit that matches no tier
- * default was set by the Account Holder in spend controls — never touch it.
+ * Upgrade rule: only a budget at (or below) the free-tier default is treated
+ * as auto-seeded and raised to a higher tier default — a signup-seeded $0.50
+ * free cap must not survive into a paid plan. ANY budget above the free
+ * default is left untouched, so a hand-set spend cap (even one that happens to
+ * equal a paid-tier default) is never silently overwritten.
+ *
+ * `executor` lets a caller pass an open transaction so the seed participates
+ * in the same tx as the user insert — without it, seeding during signup runs
+ * on a separate pooled connection and the spend_budgets → users FK fails
+ * against the still-uncommitted user row (silently dropping the seed).
  */
 export async function ensureDefaultAiSpendBudget(
   userId: string,
   planId: string | null,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- drizzle tx and the base client share the query surface but not a common exported type
+  executor: any = drizzle,
 ): Promise<void> {
   const tier = subscriptionPlanToTier(planId);
   const limit = defaultAiSpendBudgetUsdForTier(tier);
+  const freeDefault = defaultAiSpendBudgetUsdForTier("free");
 
-  const [existing] = await drizzle
+  const [existing] = await executor
     .select({ monthlyLimitUsd: schema.spendBudgets.monthlyLimitUsd })
     .from(schema.spendBudgets)
     .where(eq(schema.spendBudgets.userId, userId))
@@ -139,14 +148,14 @@ export async function ensureDefaultAiSpendBudget(
 
   if (existing && Number(existing.monthlyLimitUsd) > 0) {
     const current = Number(existing.monthlyLimitUsd);
-    const tierDefaults = (["free", "personal", "team", "business", "enterprise"] as const).map(
-      (t) => defaultAiSpendBudgetUsdForTier(t),
-    );
-    const wasAutoSeeded = tierDefaults.some((d) => Math.abs(d - current) < 0.005);
-    if (!wasAutoSeeded || limit <= current) return;
+    // Only the auto-seeded free-tier cap is eligible for an automatic raise.
+    // A hand-set cap (anything above the free default) is the Account Holder's
+    // explicit choice and must never be overwritten.
+    const isAutoSeededFreeCap = current <= freeDefault + 0.005;
+    if (!isAutoSeededFreeCap || limit <= current) return;
   }
 
-  await drizzle
+  await executor
     .insert(schema.spendBudgets)
     .values({
       userId,

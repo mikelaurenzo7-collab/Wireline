@@ -111,6 +111,33 @@ export function resolveVapiVoiceModelSelection(input?: {
   };
 }
 
+/**
+ * Resolve the voice brain as a COHERENT (provider, model) pair.
+ *
+ * `llmProvider`/`llmModel` (agent) and `voiceLlmProvider`/`voiceLlmModel`
+ * (tenant) are independently-nullable columns. Resolving provider and model
+ * through separate `||` chains can cross sources — e.g. an agent that set only
+ * `llmProvider="openai"` combined with a tenant `voiceLlmModel="gemini-…"`
+ * yields the incoherent pair openai+gemini, which `resolveVapiVoiceModelSelection`
+ * then collapses to the default gpt-4o, silently discarding the tenant's chosen
+ * Gemini model. Only a COMPLETE pair (both fields set) is used, agent first,
+ * tenant second, else the managed default.
+ */
+export function resolveCoherentVoiceModel(
+  agent: { llmProvider?: string | null; llmModel?: string | null } | null | undefined,
+  tenant: { voiceLlmProvider?: string | null; voiceLlmModel?: string | null } | null | undefined,
+): VapiVoiceModelSelection {
+  const agentPair =
+    agent?.llmProvider && agent?.llmModel
+      ? { provider: agent.llmProvider, model: agent.llmModel }
+      : null;
+  const tenantPair =
+    tenant?.voiceLlmProvider && tenant?.voiceLlmModel
+      ? { provider: tenant.voiceLlmProvider, model: tenant.voiceLlmModel }
+      : null;
+  return resolveVapiVoiceModelSelection(agentPair || tenantPair || undefined);
+}
+
 export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
   {
     provider: "openai",
