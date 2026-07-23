@@ -42,24 +42,22 @@ export default function EmailPage() {
         <WorkspacePageIntro
           title="Inbox"
           action={
-            <div className="flex flex-wrap items-center gap-2">
-              <Button asChild size="sm" variant="secondary">
-                <Link to="/approvals">
-                  <CheckSquare className="size-3.5" aria-hidden="true" />
-                  Approvals
-                </Link>
-              </Button>
-              <WorkspaceTabStrip
-                ariaLabel="Inbox channels"
-                tabs={inboxTabs}
-                activeId={activeTab}
-                onSelect={(id) => setActiveTab(id as InboxTabId)}
-                align="start"
-                density="compact"
-                className="mb-0 border-b-0 pb-0 md:w-auto"
-              />
-            </div>
+            <Button asChild size="sm" variant="secondary">
+              <Link to="/approvals">
+                <CheckSquare className="size-3.5" aria-hidden="true" />
+                Approvals
+              </Link>
+            </Button>
           }
+        />
+        <WorkspaceTabStrip
+          ariaLabel="Inbox channels"
+          tabs={inboxTabs}
+          activeId={activeTab}
+          onSelect={(id) => setActiveTab(id as InboxTabId)}
+          align="start"
+          density="compact"
+          className="mb-4 border-b border-border/70 pb-3"
         />
         <div className="wl-inbox-route flex min-h-0 flex-1 flex-col">
           {activeTab === "email" ? <EmailInbox embedded /> : <SmsThreads embedded />}

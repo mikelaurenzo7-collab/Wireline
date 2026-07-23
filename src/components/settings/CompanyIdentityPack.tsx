@@ -143,11 +143,11 @@ function providerStatusLabel(status: ProviderStatus): string {
 
 function statusTone(status: ProviderStatus, ready: boolean) {
   if (status === "approved") {
-    return "border-emerald-500/25 bg-emerald-500/8 text-emerald-700 dark:text-emerald-300";
+    return "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground";
   }
   if (status === "rejected") return "border-destructive/25 bg-destructive/8 text-destructive";
   if (status === "review_requested" || status === "in_review") {
-    return "border-amber-500/25 bg-amber-500/8 text-amber-700 dark:text-amber-300";
+    return "border-[var(--wireline-color-feedback-warning-border)] bg-[var(--wireline-color-feedback-warning-surface)] text-foreground";
   }
   if (ready) return "border-primary/25 bg-primary/8 text-primary";
   return "border-border bg-muted/35 text-muted-foreground";
@@ -167,19 +167,22 @@ function reviewSummary(identity: IdentityResponse | null) {
   if (statuses.every((status) => status === "approved")) {
     return {
       label: "Identity approved",
-      className: "border-emerald-500/25 bg-emerald-500/8 text-emerald-700 dark:text-emerald-300",
+      className:
+        "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground",
     };
   }
   if (statuses.includes("in_review")) {
     return {
       label: "Provider review",
-      className: "border-amber-500/25 bg-amber-500/8 text-amber-700 dark:text-amber-300",
+      className:
+        "border-[var(--wireline-color-feedback-warning-border)] bg-[var(--wireline-color-feedback-warning-surface)] text-foreground",
     };
   }
   if (statuses.includes("review_requested")) {
     return {
       label: "Review requested",
-      className: "border-amber-500/25 bg-amber-500/8 text-amber-700 dark:text-amber-300",
+      className:
+        "border-[var(--wireline-color-feedback-warning-border)] bg-[var(--wireline-color-feedback-warning-surface)] text-foreground",
     };
   }
   if (statuses.includes("limited")) {
@@ -245,7 +248,11 @@ function ChannelCard({
         </p>
       ) : (
         <p className="mt-4 flex items-center gap-2 text-xs font-medium text-foreground">
-          <CheckCircle2 size={14} className="text-emerald-600" aria-hidden="true" />
+          <CheckCircle2
+            size={14}
+            className="text-[var(--wireline-color-status-success)]"
+            aria-hidden="true"
+          />
           Identity profile is ready for review.
         </p>
       )}

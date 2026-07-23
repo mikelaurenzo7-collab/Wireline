@@ -83,7 +83,6 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
       "Your Wireline number",
       "company-identity",
       "Routing",
-      "Brand surfaces",
     ],
     retiredPatterns: ["settingsDestinations", "link tile hub", "Call forwarding card grid"],
   },

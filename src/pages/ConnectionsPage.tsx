@@ -19,7 +19,6 @@ export default function ConnectionsPage() {
       <WorkspacePageFrame mode="standard" className="gap-4">
         <WorkspacePageIntro
           title="Connections"
-          description="Link mailbox, CRM, and tools. Set caller identity and phone before sharing a live number."
           action={
             <div className="flex flex-wrap items-center gap-2">
               <Button asChild size="sm" variant="secondary">

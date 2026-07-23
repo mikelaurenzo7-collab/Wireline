@@ -150,16 +150,8 @@ export default function StudioAgentReviewPanel({
           aria-label="Next actions"
         >
           <h3 className="text-base font-semibold text-foreground">Next action</h3>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <Button type="button" variant="secondary" onClick={onEdit} className="justify-center">
-              <Settings2 className="size-4" aria-hidden="true" />
-              Edit setup
-            </Button>
-            <Button type="button" variant="secondary" onClick={onTest} className="justify-center">
-              <MessageCircle className="size-4" aria-hidden="true" />
-              Test conversation
-            </Button>
-            <Button asChild className="justify-center">
+          <div className="mt-4 flex flex-col gap-3">
+            <Button asChild className="w-full justify-center sm:w-auto sm:self-start">
               <Link to={hasPhone ? "/phone?tab=logs" : "/settings/phone"}>
                 {hasPhone ? (
                   <CheckCircle2 className="size-4" aria-hidden="true" />
@@ -169,14 +161,24 @@ export default function StudioAgentReviewPanel({
                 {hasPhone ? "Review outcomes" : "Connect phone"}
               </Link>
             </Button>
-            <Button asChild variant="secondary" className="justify-center">
-              <Link to="/settings/phone#company-identity">
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="secondary" onClick={onEdit} className="justify-center">
                 <Settings2 className="size-4" aria-hidden="true" />
-                Caller identity
-              </Link>
-            </Button>
+                Edit setup
+              </Button>
+              <Button type="button" variant="secondary" onClick={onTest} className="justify-center">
+                <MessageCircle className="size-4" aria-hidden="true" />
+                Test conversation
+              </Button>
+            </div>
           </div>
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-border pt-4 text-sm">
+            <Link
+              to="/settings/phone#company-identity"
+              className="font-medium text-primary hover:underline"
+            >
+              Caller identity
+            </Link>
             <Link
               to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
               className="font-medium text-primary hover:underline"

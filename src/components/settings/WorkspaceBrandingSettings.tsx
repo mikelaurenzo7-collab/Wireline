@@ -1,18 +1,12 @@
 import { useEffect, useState } from "react";
 
-import { BrandingPanel } from "../admin/BrandingPanel";
+import WorkspaceBrandEditor, { type WorkspaceBrandForm } from "./WorkspaceBrandEditor";
 import { useBranding } from "../../contexts/BrandingContext";
 import { useToast } from "../../contexts/ToastContext";
 import { authFetch, safeJson } from "../../lib/api";
 import { BRAND } from "../../constants/brand-colors";
 
-type BrandingForm = {
-  brand_name: string;
-  brand_logo_url: string;
-  primary_color: string;
-};
-
-const EMPTY: BrandingForm = {
+const EMPTY: WorkspaceBrandForm = {
   brand_name: "",
   brand_logo_url: "",
   primary_color: BRAND.colors.primary,
@@ -25,7 +19,7 @@ const EMPTY: BrandingForm = {
 export default function WorkspaceBrandingSettings() {
   const { branding, updateBranding, isLoading } = useBranding();
   const { success: toastSuccess, error: toastError } = useToast();
-  const [form, setForm] = useState<BrandingForm>(EMPTY);
+  const [form, setForm] = useState<WorkspaceBrandForm>(EMPTY);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -65,19 +59,13 @@ export default function WorkspaceBrandingSettings() {
   }
 
   return (
-    <section id="brand" className="mt-5 scroll-mt-24">
-      <BrandingPanel
+    <div id="brand" className="mt-5 scroll-mt-24">
+      <WorkspaceBrandEditor
         settings={form}
-        onUpdate={(next) =>
-          setForm({
-            brand_name: next.brand_name || "",
-            brand_logo_url: next.brand_logo_url || "",
-            primary_color: next.primary_color || BRAND.colors.primary,
-          })
-        }
+        onUpdate={setForm}
         onSave={() => void save()}
         isSaving={saving}
       />
-    </section>
+    </div>
   );
 }

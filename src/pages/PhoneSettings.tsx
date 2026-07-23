@@ -6,7 +6,7 @@ import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import CompanyIdentityPack from "../components/settings/CompanyIdentityPack";
-import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
+import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
@@ -101,6 +101,7 @@ export default function PhoneSettings() {
     <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
+        <WorkspacePageIntro title="Phone" />
 
         <section className="rounded-2xl border border-primary/20 bg-primary p-5 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
           <div className="flex items-start justify-between gap-4">
@@ -134,55 +135,36 @@ export default function PhoneSettings() {
 
         <CompanyIdentityPack key={activeNumber?.id ?? "no-number"} />
 
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <section className="studio-card p-5 sm:p-6">
-            <p className={WL_APP_CLASSES.wiredEyebrow}>Routing</p>
-            {attachedAgent ? (
-              <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
-                <p className="text-sm font-semibold text-foreground">{attachedAgent.name}</p>
-                <p className="mt-1 text-xs text-muted-foreground">Attached AI employee</p>
-              </div>
-            ) : (
-              <p className="mt-4 text-sm text-muted-foreground">No AI employee attached yet</p>
-            )}
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Advanced carrier routing, forwarding destinations, and number inventory live in Admin
-              → Carrier.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button asChild variant="secondary" size="sm">
-                <Link
-                  to={
-                    attachedAgent
-                      ? `/studio?agent=${encodeURIComponent(attachedAgent.id)}`
-                      : "/studio"
-                  }
-                >
-                  Open Studio
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" size="sm">
-                <Link to="/admin?tab=carrier">Carrier routing</Link>
-              </Button>
+        <section className="studio-card mt-5 p-5 sm:p-6">
+          <p className={WL_APP_CLASSES.wiredEyebrow}>Routing</p>
+          {attachedAgent ? (
+            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+              <p className="text-sm font-semibold text-foreground">{attachedAgent.name}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Attached AI employee</p>
             </div>
-          </section>
-
-          <section className="studio-card p-5 sm:p-6">
-            <p className={WL_APP_CLASSES.wiredEyebrow}>Brand surfaces</p>
-            <p className="mt-4 text-sm leading-6 text-muted-foreground">
-              Workspace theme, logo, and color sit under Appearance. Caller ID and legal business
-              identity sit in the pack above.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button asChild variant="secondary" size="sm">
-                <Link to="/settings/customization">Appearance & brand</Link>
-              </Button>
-              <Button asChild variant="secondary" size="sm">
-                <Link to="/settings/apps">Companion apps</Link>
-              </Button>
-            </div>
-          </section>
-        </div>
+          ) : (
+            <p className="mt-4 text-sm text-muted-foreground">No AI employee attached yet</p>
+          )}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button asChild variant="secondary" size="sm">
+              <Link
+                to={
+                  attachedAgent
+                    ? `/studio?agent=${encodeURIComponent(attachedAgent.id)}`
+                    : "/studio"
+                }
+              >
+                Open Studio
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/admin?tab=carrier">Carrier routing</Link>
+            </Button>
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/settings/customization">Appearance</Link>
+            </Button>
+          </div>
+        </section>
 
         {message ? (
           <StatusNotice tone="info" className="mt-5" title="Phone line updated">

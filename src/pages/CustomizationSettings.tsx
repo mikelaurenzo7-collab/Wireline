@@ -59,27 +59,22 @@ export default function CustomizationSettings() {
     <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
-        <WorkspacePageIntro
-          title="Appearance & brand"
-          description="Theme, workspace brand, and the controls that shape how customers experience your AI employee."
-        />
+        <WorkspacePageIntro title="Appearance & brand" />
 
         <AppearanceSettings />
         <WorkspaceBrandingSettings />
 
         <section className="mt-8" aria-label="Customization destinations">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            Customize next
-          </p>
-          <ul className="mt-3 divide-y divide-border rounded-2xl border border-border bg-card">
+          <p className="wl-eyebrow wl-eyebrow--muted">Customize next</p>
+          <ul className="mt-3 divide-y divide-border border-y border-border">
             {customizationLinks.map(({ label, detail, href, icon: Icon }) => (
               <li key={href}>
                 <Link
                   to={href}
-                  className="flex min-h-[64px] items-center gap-4 px-4 py-3.5 transition-colors hover:bg-muted/60 sm:px-5"
+                  className="flex min-h-[64px] items-center gap-4 py-3.5 transition-colors hover:bg-muted/40"
                 >
-                  <span className="grid size-10 shrink-0 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
-                    <Icon aria-hidden="true" size={18} />
+                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-primary">
+                    <Icon aria-hidden="true" size={16} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold text-foreground">{label}</span>
