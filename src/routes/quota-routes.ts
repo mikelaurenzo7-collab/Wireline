@@ -4,7 +4,7 @@ import { drizzle, log, auditLogger, quotaTracker } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
-import { quotaRateLimit } from "../middleware/api-rate-limits";
+import { quotaRateLimit, createIpRateLimiter } from "../middleware/api-rate-limits";
 import { getErrorMessage } from "../lib/server-utils";
 import { PLAN_DEFAULTS, validateOverride } from "../lib/tenant-quotas";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -61,8 +61,18 @@ router.get(
   },
 );
 
+// Public plan comparison table — no session. It must use an IP-based limiter:
+// the per-user `quotaRateLimit` (createRateLimiter) throws unauthorized() when
+// there is no req.user, and nothing populates req.user on this unauthenticated
+// route, so the endpoint returned 401 for everyone.
+const plansPublicRateLimit = createIpRateLimiter({
+  bucket: "api:quotas:plans",
+  windowMs: 60_000,
+  max: 60,
+});
+
 /** GET /api/quotas/plans — public plan comparison table. */
-router.get("/plans", quotaRateLimit, (_req: Request, res: Response) => {
+router.get("/plans", plansPublicRateLimit, (_req: Request, res: Response) => {
   res.json({
     plans: Object.fromEntries(
       Object.entries(PLAN_DEFAULTS).map(([plan, profile]) => [plan, publicQuotaProfile(profile)]),
