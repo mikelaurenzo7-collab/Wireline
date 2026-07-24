@@ -125,6 +125,14 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
               toolCallsFailed: stagedReliability?.toolCallsFailed ?? 0,
               escalationAttempted: stagedReliability?.escalationAttempted ?? false,
               escalationSucceeded: stagedReliability?.escalationSucceeded ?? false,
+              // Clear the "dialing" placeholder marker so a subsequent duplicate
+              // Vapi retry no longer matches isOutboundCallPlaceholder() and falls
+              // to the duplicate-ignore branch. Without this the outbound path
+              // re-finalizes on every retry, re-setting insertedFresh=true and
+              // re-firing usage metering, the call.completed webhook, and the
+              // TCPA consent-log row — the exact double-counting the unique-index
+              // idempotency boundary is meant to prevent (see note above).
+              pipelineError: null,
             })
             .where(eq(schema.callLogs.vapiCallId, vapiCallId));
           insertedFresh = true;

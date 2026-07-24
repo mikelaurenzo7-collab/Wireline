@@ -198,21 +198,55 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
               }
             });
           } else if (userId && (charge.amount_refunded ?? 0) > 0) {
-            // Fallback when the event omits the refunds list: reverse the
-            // cumulative amount keyed on charge.id (idempotent for the common
-            // single-refund case).
+            // The event omitted the inline refunds list (the pinned API version
+            // no longer expands charge.refunds by default). Fetch them so each
+            // partial refund is reversed once, keyed on its OWN id — reversing
+            // the cumulative amount_refunded under charge.id would collide on
+            // the (user, ref) unique index and silently drop every partial
+            // refund after the first, leaving refunded money spendable.
+            const listed = await stripe.refunds
+              .list({ charge: charge.id, limit: 100 })
+              .then((r) =>
+                r.data.filter(
+                  (x) => (!x.status || x.status === "succeeded") && (x.amount ?? 0) > 0,
+                ),
+              )
+              .catch(() => [] as Stripe.Refund[]);
             await tenantStore.run(userId, async () => {
-              await reverseCredit(userId, (charge.amount_refunded ?? 0) / 100, "web_topup_refund", {
-                type: "stripe_refund",
-                id: charge.id,
-                entryKind: "refund",
-                source: "stripe",
-                provider: "stripe",
-                providerEventId: event.id,
-                providerObjectId: charge.id,
-                customerReason: "Conversation Balance refund",
-                metadata: { payment_intent_id: piId },
-              });
+              if (listed.length) {
+                for (const refund of listed) {
+                  await reverseCredit(userId, (refund.amount ?? 0) / 100, "web_topup_refund", {
+                    type: "stripe_refund",
+                    id: refund.id,
+                    entryKind: "refund",
+                    source: "stripe",
+                    provider: "stripe",
+                    providerEventId: event.id,
+                    providerObjectId: refund.id,
+                    customerReason: "Conversation Balance refund",
+                    metadata: { payment_intent_id: piId, charge_id: charge.id },
+                  });
+                }
+              } else {
+                // Last resort if the refund list is unexpectedly empty: reverse
+                // the cumulative total keyed on charge.id (single-refund-safe).
+                await reverseCredit(
+                  userId,
+                  (charge.amount_refunded ?? 0) / 100,
+                  "web_topup_refund",
+                  {
+                    type: "stripe_refund",
+                    id: charge.id,
+                    entryKind: "refund",
+                    source: "stripe",
+                    provider: "stripe",
+                    providerEventId: event.id,
+                    providerObjectId: charge.id,
+                    customerReason: "Conversation Balance refund",
+                    metadata: { payment_intent_id: piId },
+                  },
+                );
+              }
             });
           }
         }

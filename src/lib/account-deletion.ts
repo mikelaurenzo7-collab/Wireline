@@ -5,8 +5,10 @@
 // invoked from the delayed `purge_deleted_account` job after the 30-day grace
 // period. All normal callers should use POST /api/account/delete instead.
 
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "./server-context";
+import * as schema from "../db/schema";
+import { getErrorMessage } from "./server-utils";
 
 type AccountDeletionTarget = {
   table: string;
@@ -160,6 +162,123 @@ export interface PurgeAccountResult {
   tablesTouched: string[];
   error?: string;
   authRemoved: boolean;
+}
+
+export interface ExternalReleaseSummary {
+  subscriptionsCanceled: number;
+  numbersReleased: number;
+  /** Non-fatal number-release failures (carrier orphans, retried out-of-band). */
+  numberErrors: string[];
+}
+
+/** Stripe "already gone" errors — treat as success, not a reason to retry. */
+function isStripeAlreadyGone(err: unknown): boolean {
+  const code = (err as { code?: string; statusCode?: number } | null)?.code;
+  const status = (err as { statusCode?: number } | null)?.statusCode;
+  return code === "resource_missing" || status === 404;
+}
+
+/**
+ * Releases the tenant's PAID external resources before the local hard-delete.
+ *
+ * The DB purge alone left two money leaks: the Stripe subscription kept billing
+ * a customer whose account no longer existed, and provisioned Twilio/Vapi
+ * numbers stayed rented (and callable) with no owner. This runs first, from the
+ * `purge_deleted_account` job, so both are torn down at the carrier/Stripe level
+ * while we still hold the ids — after `purgeAccount` deletes the rows, they are
+ * unrecoverable.
+ *
+ * Stripe cancellation is treated as blocking: on a real Stripe error (not an
+ * already-canceled subscription) this THROWS so the job retries rather than
+ * purging the ids and orphaning a live, still-billing subscription. Number
+ * release is best-effort — a carrier hiccup is a recoverable cost, not a reason
+ * to indefinitely block a GDPR deletion — so those failures are collected and
+ * logged, never thrown.
+ */
+export async function releaseExternalResourcesForPurge(
+  userId: string,
+  deps: PurgeAccountDeps,
+): Promise<ExternalReleaseSummary> {
+  const { db, log } = deps;
+  const numberErrors: string[] = [];
+  let subscriptionsCanceled = 0;
+  let numbersReleased = 0;
+
+  // 1. Cancel every active Stripe subscription on the customer — the plan row
+  //    AND any add-on that shares the customer (e.g. the live-video add-on is a
+  //    separate subscription untracked by wireline_subscriptions).
+  const [sub] = await db
+    .select({
+      stripeCustomerId: schema.subscriptions.stripeCustomerId,
+      stripeSubscriptionId: schema.subscriptions.stripeSubscriptionId,
+    })
+    .from(schema.subscriptions)
+    .where(eq(schema.subscriptions.userId, userId))
+    .limit(1);
+
+  if (sub?.stripeCustomerId || sub?.stripeSubscriptionId) {
+    const { stripe, stripeAvailable } = await import("./stripe-helpers");
+    if (stripeAvailable()) {
+      const ids = new Set<string>();
+      if (sub.stripeCustomerId) {
+        // status:"all" then filter — "active" alone misses trialing/past_due/
+        // unpaid subscriptions, each of which is still a live billing
+        // relationship that must be torn down on account deletion.
+        const all = await stripe.subscriptions.list({
+          customer: sub.stripeCustomerId,
+          status: "all",
+          limit: 100,
+        });
+        for (const s of all.data) {
+          if (s.status !== "canceled" && s.status !== "incomplete_expired") ids.add(s.id);
+        }
+      }
+      if (sub.stripeSubscriptionId) ids.add(sub.stripeSubscriptionId);
+      for (const id of ids) {
+        try {
+          await stripe.subscriptions.cancel(id);
+          subscriptionsCanceled++;
+        } catch (err) {
+          if (isStripeAlreadyGone(err)) continue;
+          log.error("purge subscription cancel failed — deferring purge", {
+            userId,
+            subscriptionId: id,
+            error: getErrorMessage(err),
+          });
+          throw err;
+        }
+      }
+    }
+  }
+
+  // 2. Release provisioned numbers at the carrier (Vapi/Twilio) and drop the DB
+  //    row. Best-effort: collect failures rather than blocking the purge.
+  const numbers = await db
+    .select({ phoneNumber: schema.phoneNumbers.phoneNumber })
+    .from(schema.phoneNumbers)
+    .where(eq(schema.phoneNumbers.userId, userId));
+
+  if (numbers.length) {
+    const { releaseTenantNumber } = await import("./phone-provisioning");
+    for (const { phoneNumber } of numbers) {
+      const res = await releaseTenantNumber(userId, phoneNumber).catch((err) => ({
+        ok: false as const,
+        error: getErrorMessage(err),
+      }));
+      if (res.ok) {
+        numbersReleased++;
+      } else {
+        numberErrors.push(`${phoneNumber}: ${res.error ?? "unknown"}`);
+        log.warn("purge number release failed — carrier may retain the number", {
+          userId,
+          phoneNumber,
+          error: res.error,
+        });
+      }
+    }
+  }
+
+  return { subscriptionsCanceled, numbersReleased, numberErrors };
 }
 
 /**

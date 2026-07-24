@@ -16,7 +16,7 @@ import {
   enrichLead as apolloEnrich,
   searchLeads as apolloSearch,
 } from "./apollo-service";
-import { purgeAccount } from "./account-deletion";
+import { purgeAccount, releaseExternalResourcesForPurge } from "./account-deletion";
 
 type SupportedCrmType = "salesforce" | "hubspot";
 
@@ -476,6 +476,20 @@ export async function handleJob(job: JobRow): Promise<void> {
       });
       return;
     }
+
+    // Tear down PAID external resources (Stripe subscriptions, Twilio/Vapi
+    // numbers) BEFORE the irreversible row purge — once purgeAccount deletes
+    // wireline_subscriptions/wireline_phone_numbers we lose the ids forever.
+    // A hard Stripe failure throws here so the job retries instead of purging
+    // a still-billing subscription; number-release failures are logged only.
+    const release = await releaseExternalResourcesForPurge(p.user_id, { db: drizzle, log });
+    log.info("purge_deleted_account external release", {
+      jobId: job.id,
+      user_id: p.user_id,
+      subscriptions_canceled: release.subscriptionsCanceled,
+      numbers_released: release.numbersReleased,
+      number_errors: release.numberErrors.length,
+    });
 
     const result = await purgeAccount(p.user_id, { db: drizzle, log });
     if (!result.ok) {

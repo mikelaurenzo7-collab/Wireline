@@ -13,6 +13,7 @@ import { rateLimit, distributedLimiterStatus } from "../lib/rate-limit";
 import { runInBackground } from "../lib/background-work";
 import { placeOutboundCall } from "../lib/vapi-client";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
+import { assertOutboundVoiceAllowed } from "../lib/voice-spend-control";
 
 const router = express.Router();
 
@@ -308,6 +309,38 @@ async function processIntakeLead(
             leadId: String(insertedId),
             reason: gate.reason,
             status: gate.status,
+          });
+          return;
+        }
+
+        // Wallet solvency + daily voice quota + spend cap. Every other outbound
+        // path (campaign, cadence, callback, manual, mobile) runs this; intake
+        // auto-dial previously skipped it, so an active-but-depleted tenant with
+        // auto-dial intake keys could keep dialing inbound leads and accrue
+        // uncontrolled completion-grace debt. placeOutboundCall only checks that
+        // the subscription is active, not that the tenant can afford the call.
+        try {
+          await assertOutboundVoiceAllowed({
+            userId: key.user_id,
+            source: "automation",
+            units: 0,
+          });
+        } catch (spendErr) {
+          await drizzle
+            .update(schema.outboundLeads)
+            .set({
+              status: "AutoDialFailed",
+              metadata: toJsonbSafe({
+                ...(metadata || {}),
+                auto_dial_error:
+                  spendErr instanceof Error ? spendErr.message : "voice spend controls blocked",
+                auto_dial_status: "voice_spend_blocked",
+              }) as any,
+            })
+            .where(eq(schema.outboundLeads.id, insertedId!));
+          log.warn("Auto-dial blocked by voice spend controls", {
+            leadId: String(insertedId),
+            error: spendErr instanceof Error ? spendErr.message : String(spendErr),
           });
           return;
         }
