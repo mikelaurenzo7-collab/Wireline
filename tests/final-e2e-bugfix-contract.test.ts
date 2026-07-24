@@ -74,4 +74,58 @@ describe("final e2e bugfix contracts", () => {
     expect(purgeAt).toBeGreaterThan(-1);
     expect(releaseAt).toBeLessThan(purgeAt);
   });
+
+  // ── Second-wave findings from the parallel deep-dive bug hunt ──────────────
+
+  it("outbound end-of-call finalization clears the dialing placeholder marker", () => {
+    const handlers = read("src/lib/vapi-handlers.ts");
+    // The placeholder-finalization UPDATE must null pipelineError so a duplicate
+    // Vapi retry no longer matches isOutboundCallPlaceholder() and falls to the
+    // side-effect-free duplicate-ignore branch (no double metering / webhook /
+    // TCPA ledger row).
+    const finalizeAt = handlers.indexOf("isOutboundCallPlaceholder(existing)");
+    expect(finalizeAt).toBeGreaterThan(-1);
+    const finalizeBlock = handlers.slice(finalizeAt, finalizeAt + 1800);
+    expect(finalizeBlock).toContain("pipelineError: null");
+  });
+
+  it("cadence tick atomically claims a run before running the side-effecting step", () => {
+    const cadence = read("src/lib/cadence-engine.ts");
+    // Lease-based claim (not a null-claim) so a mid-step crash self-heals.
+    expect(cadence).toContain("CADENCE_STEP_LEASE_MS");
+    const claimAt = cadence.indexOf(".update(schema.cadenceRuns)");
+    const executeAt = cadence.indexOf("await executeStep(");
+    expect(claimAt).toBeGreaterThan(-1);
+    expect(executeAt).toBeGreaterThan(-1);
+    // The claim + `if (!claimed.length) continue;` must precede executeStep.
+    expect(cadence).toContain("if (!claimed.length) continue;");
+    expect(cadence.indexOf("if (!claimed.length) continue;")).toBeLessThan(executeAt);
+  });
+
+  it("charge.refunded fallback keys each refund on its own id, not the cumulative charge total", () => {
+    const billing = read("src/routes/billing-routes.ts");
+    // When the event omits the inline refunds list, the handler must fetch them
+    // and reverse each keyed on refund.id — reversing the cumulative
+    // amount_refunded under charge.id drops every partial refund after the first.
+    const fallbackAt = billing.indexOf("The event omitted the inline refunds list");
+    expect(fallbackAt).toBeGreaterThan(-1);
+    const fallbackBlock = billing.slice(fallbackAt, fallbackAt + 2200);
+    expect(fallbackBlock).toContain("stripe.refunds");
+    expect(fallbackBlock).toContain("providerObjectId: refund.id");
+  });
+
+  it("password-reset, resend-verification, and migrate-session limiters fail closed without a distributed limiter", () => {
+    const mw = read("src/middleware/rate-limit-middleware.ts");
+    for (const fn of [
+      "resetPasswordRateLimiter",
+      "resendVerificationRateLimiter",
+      "migrateSessionRateLimiter",
+    ]) {
+      const at = mw.indexOf(`export async function ${fn}`);
+      expect(at).toBeGreaterThan(-1);
+      const body = mw.slice(at, at + 900);
+      expect(body).toContain("refusedForNoDistributedLimiter(res)");
+      expect(body).toContain("authRateLimitOptions(");
+    }
+  });
 });

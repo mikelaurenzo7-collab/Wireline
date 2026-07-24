@@ -140,6 +140,15 @@ async function executeStep(
   return { ok: false, result: `unknown step type ${step.type}` };
 }
 
+/**
+ * Lease window for an atomically-claimed cadence step. The claim pushes
+ * nextDueAt out by this much before the side-effecting step runs; a tick that
+ * dies mid-step self-heals when the lease expires (the step is retried) rather
+ * than stranding the run forever, which a null-claim (as callback-engine uses
+ * for its one-shot) would do to a multi-step cadence.
+ */
+const CADENCE_STEP_LEASE_MS = 15 * 60 * 1000;
+
 export async function tickDueCadenceRuns({
   limit = 50,
 }: {
@@ -186,6 +195,27 @@ export async function tickDueCadenceRuns({
 
   for (const run of dueRuns) {
     try {
+      // Atomic lease-claim BEFORE any side-effecting work so a concurrent or
+      // retried cadence_tick (the sweep enqueues one every 5 min with no
+      // dedup, and workers drain with FOR UPDATE SKIP LOCKED) can't select the
+      // same due run and dial/SMS/email the same step twice. Postgres
+      // serializes the two UPDATEs on the row: the winner flips nextDueAt to a
+      // future lease and returns its id; the loser's `nextDueAt <= now`
+      // predicate no longer holds, returns zero rows, and skips. On success
+      // the step-advance below overwrites the lease with the real next time.
+      const claimed = await drizzle
+        .update(schema.cadenceRuns)
+        .set({ nextDueAt: new Date(Date.now() + CADENCE_STEP_LEASE_MS), updatedAt: now })
+        .where(
+          and(
+            eq(schema.cadenceRuns.id, run.id),
+            eq(schema.cadenceRuns.status, "active"),
+            lte(schema.cadenceRuns.nextDueAt, now),
+          ),
+        )
+        .returning({ id: schema.cadenceRuns.id });
+      if (!claimed.length) continue;
+
       const cadenceRow = cadenceById.get(run.cadenceId);
       if (!cadenceRow || cadenceRow.active === false) {
         await drizzle

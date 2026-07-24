@@ -192,59 +192,95 @@ export async function resendVerificationRateLimiter(req: any, res: any, next: an
   if (isTestEnv()) return next();
   const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  // Same fail-closed posture as the auth-entry buckets: without a distributed
+  // limiter this bucket would silently degrade to a per-invocation Map (no
+  // real limit on Vercel), so refuse in production when none is configured.
+  if (refusedForNoDistributedLimiter(res)) return;
   const ip = req.ip || "anon";
-  const result = await rateLimit(`verify:${userId}:${ip}`, {
-    bucket: "resend_verification",
-    windowMs: RESEND_VERIFICATION_RATE_WINDOW_MS,
-    max: RESEND_VERIFICATION_RATE_MAX,
-  });
-  if (!result.allowed) {
-    auditRateLimitExceeded({ userId, resource: "auth_resend_verification", ip: req.ip });
-    res.setHeader("Retry-After", Math.ceil(RESEND_VERIFICATION_RATE_WINDOW_MS / 1000));
-    return res.status(429).json({
-      error: "Too many verification email requests. Wait 15 minutes and try again.",
-      code: "RESEND_VERIFICATION_RATE_LIMIT",
+  try {
+    const result = await rateLimit(
+      `verify:${userId}:${ip}`,
+      authRateLimitOptions(
+        "resend_verification",
+        RESEND_VERIFICATION_RATE_WINDOW_MS,
+        RESEND_VERIFICATION_RATE_MAX,
+      ),
+    );
+    if (!result.allowed) {
+      auditRateLimitExceeded({ userId, resource: "auth_resend_verification", ip: req.ip });
+      res.setHeader("Retry-After", Math.ceil(RESEND_VERIFICATION_RATE_WINDOW_MS / 1000));
+      return res.status(429).json({
+        error: "Too many verification email requests. Wait 15 minutes and try again.",
+        code: "RESEND_VERIFICATION_RATE_LIMIT",
+      });
+    }
+    next();
+  } catch {
+    return res.status(503).json({
+      error: "Verification email is temporarily unavailable. Try again shortly.",
+      code: "RATE_LIMIT_UNAVAILABLE",
     });
   }
-  next();
 }
 
 export async function migrateSessionRateLimiter(req: any, res: any, next: any) {
   if (isTestEnv()) return next();
+  if (refusedForNoDistributedLimiter(res)) return;
   const ip = req.ip || "anon";
   const key = `migrate_session:${ip}`;
-  const result = await rateLimit(key, {
-    bucket: "migrate_session",
-    windowMs: MIGRATE_SESSION_RATE_WINDOW_MS,
-    max: MIGRATE_SESSION_RATE_MAX,
-  });
-  if (!result.allowed) {
-    auditRateLimitExceeded({ resource: "auth_migrate_session", ip: req.ip });
-    res.setHeader("Retry-After", Math.ceil(MIGRATE_SESSION_RATE_WINDOW_MS / 1000));
-    return res.status(429).json({
-      error: "Too many session migration attempts. Wait 15 minutes and try again.",
-      code: "MIGRATE_SESSION_RATE_LIMIT",
+  try {
+    const result = await rateLimit(
+      key,
+      authRateLimitOptions(
+        "migrate_session",
+        MIGRATE_SESSION_RATE_WINDOW_MS,
+        MIGRATE_SESSION_RATE_MAX,
+      ),
+    );
+    if (!result.allowed) {
+      auditRateLimitExceeded({ resource: "auth_migrate_session", ip: req.ip });
+      res.setHeader("Retry-After", Math.ceil(MIGRATE_SESSION_RATE_WINDOW_MS / 1000));
+      return res.status(429).json({
+        error: "Too many session migration attempts. Wait 15 minutes and try again.",
+        code: "MIGRATE_SESSION_RATE_LIMIT",
+      });
+    }
+    next();
+  } catch {
+    return res.status(503).json({
+      error: "Session migration is temporarily unavailable. Try again shortly.",
+      code: "RATE_LIMIT_UNAVAILABLE",
     });
   }
-  next();
 }
 
 export async function resetPasswordRateLimiter(req: any, res: any, next: any) {
   if (isTestEnv()) return next();
+  if (refusedForNoDistributedLimiter(res)) return;
   const ip = req.ip || "anon";
   const key = `resetpw:${ip}`;
-  const result = await rateLimit(key, {
-    bucket: "reset_password",
-    windowMs: RESET_PASSWORD_RATE_WINDOW_MS,
-    max: RESET_PASSWORD_RATE_MAX,
-  });
-  if (!result.allowed) {
-    auditRateLimitExceeded({ resource: "auth_reset_password", ip: req.ip });
-    res.setHeader("Retry-After", Math.ceil(RESET_PASSWORD_RATE_WINDOW_MS / 1000));
-    return res.status(429).json({
-      error: "Too many password reset attempts. Wait 15 minutes and try again.",
-      code: "RESET_PASSWORD_RATE_LIMIT",
+  try {
+    const result = await rateLimit(
+      key,
+      authRateLimitOptions(
+        "reset_password",
+        RESET_PASSWORD_RATE_WINDOW_MS,
+        RESET_PASSWORD_RATE_MAX,
+      ),
+    );
+    if (!result.allowed) {
+      auditRateLimitExceeded({ resource: "auth_reset_password", ip: req.ip });
+      res.setHeader("Retry-After", Math.ceil(RESET_PASSWORD_RATE_WINDOW_MS / 1000));
+      return res.status(429).json({
+        error: "Too many password reset attempts. Wait 15 minutes and try again.",
+        code: "RESET_PASSWORD_RATE_LIMIT",
+      });
+    }
+    next();
+  } catch {
+    return res.status(503).json({
+      error: "Password reset is temporarily unavailable. Try again shortly.",
+      code: "RATE_LIMIT_UNAVAILABLE",
     });
   }
-  next();
 }
