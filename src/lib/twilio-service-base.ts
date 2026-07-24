@@ -363,9 +363,10 @@ export async function sendManagerAlert(
  * Send an SMS alert to an EXPLICITLY supplied destination phone — used
  * by the per-agent escalation override path. Bypasses
  * `managerAlertsEnabled` (the per-agent override IS the Account Holder's
- * opt-in) but still respects all carrier guardrails (DNC, business
- * hours, etc.) via buildMessagePayload's `ignoreMessagingToggle: true`
- * flag, mirroring sendManagerAlert.
+ * opt-in). These are staff-facing operational alerts to a number the
+ * Account Holder configured, NOT consumer marketing — so no DNC/quiet-hours
+ * evaluation runs here (that lives in sendTenantMessage for customer-facing
+ * sends). buildMessagePayload only supplies carrier plumbing.
  */
 export async function sendDirectAlert(
   userId: string,

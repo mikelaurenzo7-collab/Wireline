@@ -3,7 +3,7 @@ import { AppError } from "../lib/api-error";
 import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, lte, gte } from "drizzle-orm";
+import { eq, and, lte, gte, or, inArray, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { jobsRateLimit, jobsSweepRateLimit } from "../middleware/api-rate-limits";
 import { getErrorMessage } from "../lib/server-utils";
@@ -404,6 +404,22 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
           }),
         );
       }
+
+      // Retire finished system-sentinel jobs. The per-tenant retention purge
+      // iterates wireline_settings rows, and the all-zero sentinel has no
+      // settings row — so cadence_tick/callback_tick (~576 rows/day) plus the
+      // daily canary/margin/orphan jobs accumulated forever, slowing every
+      // sweep dedup query. Seven days keeps plenty of operator context.
+      await drizzle
+        .execute(
+          sql`DELETE FROM wireline_jobs
+              WHERE user_id = ${SYSTEM_USER_ID}
+                AND status IN ('done', 'dead')
+                AND created_at < now() - interval '7 days'`,
+        )
+        .catch((e: unknown) =>
+          log.warn("sentinel job cleanup failed", { error: getErrorMessage(e) }),
+        );
     }
 
     // Daily at 05:00 UTC: margin-at-risk founder alert
@@ -461,7 +477,32 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
         .limit(50);
 
       if (dueDeletions) {
+        const purgeDedupSince = new Date(Date.now() - 23 * 60 * 60 * 1000);
         for (const row of dueDeletions) {
+          // Same dedup guard as the daily system jobs above: without it a
+          // persistently-failing purge (e.g. Stripe teardown throwing so the
+          // job dead-letters) is re-enqueued by every 5-minute sweep forever —
+          // hundreds of jobs and Stripe cancel attempts per day — and two
+          // pending copies can even be claimed concurrently. Skipping while a
+          // job is pending/running or was created in the last 23h bounds a
+          // stuck purge to one attempt-set per day; its dead-letter Sentry
+          // event is the operator signal, and the purge self-heals on the
+          // next day's sweep once the upstream failure clears.
+          const [existingPurge] = await drizzle
+            .select({ id: schema.jobs.id })
+            .from(schema.jobs)
+            .where(
+              and(
+                eq(schema.jobs.type, "purge_deleted_account"),
+                eq(schema.jobs.userId, row.userId),
+                or(
+                  inArray(schema.jobs.status, ["pending", "running"]),
+                  gte(schema.jobs.createdAt, purgeDedupSince),
+                ),
+              ),
+            )
+            .limit(1);
+          if (existingPurge) continue;
           await enqueue(drizzle, {
             userId: row.userId,
             type: "purge_deleted_account",

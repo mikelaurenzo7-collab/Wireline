@@ -77,8 +77,24 @@ interface FieldSpec {
     | "autoZoomLink"
     | "autonomyLevel";
   label: string;
-  kind: "text" | "vibe" | "phone" | "email" | "boolean" | "url";
+  kind: "text" | "vibe" | "phone" | "email" | "boolean" | "url" | "ambient";
   maxLen: number;
+}
+
+/**
+ * Vapi's `backgroundSound` accepts exactly these values (or a hosted URL,
+ * which Wireline does not expose). Free-text here ("cafe", "busy office")
+ * made every outbound dial for the agent fail at Vapi with a generic
+ * carrier-rejected error, so the field is enum-validated at write time.
+ */
+export const WORKSPACE_AMBIENT_OPTIONS = ["off", "office"] as const;
+
+/** Runtime-side sanitizer: legacy rows may hold free text from before the
+ *  enum validation existed; collapse anything unknown to "off" so a stored
+ *  bad value can never fail a live dial. */
+export function sanitizeAmbientNoise(value: string | null | undefined): "off" | "office" {
+  const normalized = (value || "").trim().toLowerCase();
+  return normalized === "office" ? "office" : "off";
 }
 
 export const WORKSPACE_FIELDS: Record<WorkspaceFieldKey, FieldSpec> = {
@@ -152,7 +168,7 @@ export const WORKSPACE_FIELDS: Record<WorkspaceFieldKey, FieldSpec> = {
   ambient_noise: {
     column: "ambientNoise",
     label: "Ambient noise",
-    kind: "text",
+    kind: "ambient",
     maxLen: 20,
   },
   slack_channel_id: {

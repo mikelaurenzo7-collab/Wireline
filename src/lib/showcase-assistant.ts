@@ -752,6 +752,10 @@ export function buildShowcaseAssistantPayload(
     backgroundDenoisingEnabled: false,
     backchannelingEnabled: true,
     backgroundSound: "office",
+    // The public demo line is the most abusable surface — it was the only
+    // call path without a COGS ceiling after VAPI_MAX_*_CALL_SECONDS landed
+    // on both tenant paths. Ten minutes is generous for a showcase call.
+    maxDurationSeconds: 600,
     clientMessages: [
       "transcript",
       "hang",

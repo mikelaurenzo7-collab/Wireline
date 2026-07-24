@@ -12,6 +12,12 @@ import { useAuth } from "./contexts/AuthContext";
 import { isWorkspaceRoute } from "./lib/workspace-route-scope";
 
 import ToastStack from "./components/Toast";
+// Static import, not lazy: the consent notice is a compliance surface and must
+// render reliably on first paint of any route. It was previously never mounted
+// anywhere, so the footer "Privacy choices" control dispatched an event with
+// no listener and EU/UK visitors never saw a consent choice (leaving optional
+// ad measurement permanently dark — the loader correctly defaults it off).
+import CookieConsent from "./components/CookieConsent";
 
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const Features = lazy(() => import("./pages/Features"));
@@ -136,6 +142,7 @@ export default function App() {
                   <AgentsProvider>
                     <AppRouter />
                     <ToastStack />
+                    <CookieConsent />
                   </AgentsProvider>
                 </AccountProvider>
               </BrandingProvider>

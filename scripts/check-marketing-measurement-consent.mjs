@@ -115,6 +115,11 @@ assert(
 );
 
 assert(
+  app.includes('import CookieConsent from "./components/CookieConsent";') &&
+    app.includes("<CookieConsent />"),
+  "the consent notice must actually be MOUNTED in App.tsx — asserting only the component's contents let the banner sit unmounted while every content check passed (footer 'Privacy choices' dispatched to no listener; visitors never saw a consent choice).",
+);
+assert(
   app.includes('const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicyPage"));'),
   "the public /privacy route must use the consent-aware privacy policy.",
 );

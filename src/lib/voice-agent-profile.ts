@@ -156,6 +156,20 @@ export const VAPI_VOICEMAIL_DETECTION_PLAN = {
 };
 
 /**
+ * Wireline-tuned post-call analysis, shared by BOTH call directions. Before
+ * this was shared, only the inbound factory sent an analysisPlan — outbound
+ * calls fell back to Vapi's generic defaults, degrading call-log summaries,
+ * lesson extraction, and success metrics for the entire outbound fleet.
+ */
+export const VAPI_ANALYSIS_PLAN = {
+  summaryPrompt:
+    "Summarize the call in 2-3 sentences with caller intent, agent action, and committed follow-up.",
+  structuredDataPrompt: "Extract caller intent, outcome, commitments, and sentiment as JSON.",
+  successEvaluationPrompt:
+    "Did the agent accomplish the caller's primary goal or the configured call objective? Consider resolution, correct escalation, and follow-through commitments.",
+} as const;
+
+/**
  * Deterministic voicemail fallback spoken when native detection fires.
  * Deliberately says nothing about WHY we called: voicemails can be heard by
  * third parties, and roles like collections are legally barred (FDCPA) from

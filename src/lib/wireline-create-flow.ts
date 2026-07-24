@@ -1,7 +1,9 @@
 /** Session key for non-fatal warnings after Fast Start agent creation. */
 export const CREATE_WARNING_SESSION_KEY = "wireline:create-warning";
 
-/** Post-create wizard payload — Train → Channels → Wire → Test after Fast Start. */
+/** Post-create wizard payload — Train → Wire → Test after Fast Start.
+ *  ("channels" survives in the step type only as a legacy stored value that
+ *  the wizard coerces to "wire" on mount; no live path renders it.) */
 export const POST_CREATE_WIZARD_KEY = "wireline:post-create-wizard";
 export const POST_CREATE_WIZARD_STEP_KEY = "wireline:post-create-wizard-step";
 

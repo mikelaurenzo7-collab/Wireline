@@ -213,9 +213,9 @@ export function TermsOfService() {
           for any reason within 30 days of your first paid invoice, email{" "}
           <strong>support@trywireline.com</strong> with the subject "Refund request" and we'll
           refund that month's charge in full — no forms, no escalation, no questions about your
-          reason. The 30-day window starts on the date of your first paid invoice (not the trial
-          start). Outbound call minutes consumed prior to the refund request are not separately
-          deducted — the refund is on the subscription line item.
+          reason. The 30-day window starts on the date of your first paid invoice. Outbound call
+          minutes consumed prior to the refund request are not separately deducted — the refund is
+          on the subscription line item.
         </p>
         <p>
           After the 30-day window, no refunds are issued for partial periods, but you can cancel

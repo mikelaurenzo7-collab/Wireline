@@ -346,16 +346,24 @@ export class IntegrationService {
   // --- Private Helpers ---
 
   private async getAccounts(type: "calendar" | "mail") {
+    // Tag every row with its source table. Token refresh used to infer the
+    // table from `emailAddress` presence — but calendar rows deliberately
+    // mirror the email address (see schema), so a Microsoft *calendar*
+    // account's refreshed tokens were written to wireline_email_accounts
+    // WHERE id = <calendar uuid>: zero rows, tokens never persisted, and the
+    // invalid_grant terminal cleanup could never self-heal the row either.
     if (type === "calendar") {
-      return await drizzle
+      const rows = await drizzle
         .select()
         .from(schema.calendarAccounts)
         .where(eq(schema.calendarAccounts.userId, this.userId));
+      return rows.map((row) => ({ ...row, __accountTable: "calendar" as const }));
     } else {
-      return await drizzle
+      const rows = await drizzle
         .select()
         .from(schema.emailAccounts)
         .where(eq(schema.emailAccounts.userId, this.userId));
+      return rows.map((row) => ({ ...row, __accountTable: "mail" as const }));
     }
   }
 
@@ -509,7 +517,17 @@ export class IntegrationService {
       body: params.toString(),
     });
     const d = (await r.json()) as any;
-    const table = account.emailAddress ? schema.emailAccounts : schema.calendarAccounts;
+    // Use the tagged source table (see getAccounts). The old emailAddress
+    // inference silently mis-routed calendar-account token writes. Fall back
+    // to the legacy inference only for untagged account objects.
+    const table =
+      account.__accountTable === "calendar"
+        ? schema.calendarAccounts
+        : account.__accountTable === "mail"
+          ? schema.emailAccounts
+          : account.emailAddress
+            ? schema.emailAccounts
+            : schema.calendarAccounts;
 
     if (!r.ok || !d.access_token) {
       const isTerminal =
@@ -528,9 +546,7 @@ export class IntegrationService {
           })
           .where(eq((table as any).id, account.id));
       }
-      throw new Error(
-        d.error_description || d.error || "Microsoft token refresh failed",
-      );
+      throw new Error(d.error_description || d.error || "Microsoft token refresh failed");
     }
 
     await drizzle

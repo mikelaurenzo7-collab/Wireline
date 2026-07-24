@@ -231,14 +231,19 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
             // the cumulative amount_refunded under charge.id would collide on
             // the (user, ref) unique index and silently drop every partial
             // refund after the first, leaving refunded money spendable.
+            // A transient list failure must THROW (the handler releases the
+            // stripe_events claim and 500s, so Stripe redelivers cleanly) —
+            // degrading to the cumulative charge.id reversal here would stack
+            // on top of any per-refund.id rows already written by earlier
+            // events and over-debit the tenant (different ref keys defeat the
+            // (user, ref) dedupe).
             const listed = await stripe.refunds
               .list({ charge: charge.id, limit: 100 })
               .then((r) =>
                 r.data.filter(
                   (x) => (!x.status || x.status === "succeeded") && (x.amount ?? 0) > 0,
                 ),
-              )
-              .catch(() => [] as Stripe.Refund[]);
+              );
             await tenantStore.run(userId, async () => {
               if (listed.length) {
                 for (const refund of listed) {

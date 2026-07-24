@@ -9,6 +9,7 @@ import {
   getVoiceLatencyProfile,
   resolveOutboundStartSpeakingPlan,
   resolveVapiSpeechPipeline,
+  VAPI_ANALYSIS_PLAN,
   VAPI_MAX_INBOUND_CALL_SECONDS,
   VAPI_MAX_OUTBOUND_CALL_SECONDS,
   VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
@@ -21,7 +22,12 @@ import {
 import { clampVoiceTemperature, resolveCoherentVoiceModel } from "./ai-models";
 import { buildGrokStrengthsPromptSection, isGrokModelId } from "./grok-features";
 import { vapiVoiceVersion } from "./voice-catalog";
-import { DEFAULT_MANAGED_VOICE_ID, isManagedVapiVoiceId } from "../data/voice-roster";
+import {
+  DEFAULT_MANAGED_VOICE_ID,
+  isManagedVapiVoiceId,
+  resolvePstnVoiceCandidate,
+} from "../data/voice-roster";
+import { sanitizeAmbientNoise } from "./workspace-planner";
 
 export interface AssistantRequestPayload {
   message: { type: string; call?: any };
@@ -77,9 +83,14 @@ export async function buildVapiAssistant({
   // second — so a partially-configured agent never crosses its provider with
   // the tenant's model and collapses to the managed default.
   const modelSelection = resolveCoherentVoiceModel(configured, userSettings);
-  const requestedVoice = isOutbound
-    ? configured.voiceIdOutbound || configured.voiceId
-    : configured.voiceIdInbound || configured.voiceId;
+  // Presenter/live-voice agents store a non-Vapi studio voice; their dedicated
+  // PSTN pick (phone_voice_id) applies before the roster default.
+  const requestedVoice = resolvePstnVoiceCandidate(
+    isOutbound
+      ? configured.voiceIdOutbound || configured.voiceId
+      : configured.voiceIdInbound || configured.voiceId,
+    configured.phoneVoiceId,
+  );
   const voiceId = isManagedVapiVoiceId(requestedVoice) ? requestedVoice : DEFAULT_MANAGED_VOICE_ID;
   const speech = resolveVapiSpeechPipeline();
   const latency = getVoiceLatencyProfile({
@@ -197,7 +208,18 @@ export async function buildVapiAssistant({
     startSpeakingPlan: isOutbound
       ? resolveOutboundStartSpeakingPlan(speech)
       : speech.startSpeakingPlan,
-    silenceTimeoutSeconds: configured.silenceTimeoutSeconds || latency.silenceTimeoutSeconds,
+    // Vapi's silenceTimeoutSeconds ENDS the call after that much continuous
+    // caller silence (documented minimum 10, default 30) — it is not a
+    // turn-taking nudge window. The latency profile's 2-3s value was
+    // semantically wrong here: clamped to Vapi's minimum it hung up on
+    // callers who went quiet for ~10 seconds ("let me find my card…").
+    // Send it only when the column carries an explicit, valid end-call
+    // timeout; otherwise omit and take Vapi's 30s default, matching the
+    // outbound path. Turn-taking pacing is startSpeakingPlan's job.
+    ...(typeof configured.silenceTimeoutSeconds === "number" &&
+    configured.silenceTimeoutSeconds >= 10
+      ? { silenceTimeoutSeconds: configured.silenceTimeoutSeconds }
+      : {}),
     responseDelaySeconds: latency.responseDelaySeconds,
     numWordsToInterruptAssistant: latency.numWordsToInterruptAssistant,
     backgroundDenoisingEnabled: false,
@@ -211,12 +233,9 @@ export async function buildVapiAssistant({
       "speech-update",
     ],
     clientMessages: ["transcript", "hang", "function-call", "speech-update", "conversation-update"],
-    analysisPlan: {
-      summaryPrompt:
-        "Summarize the call in 2-3 sentences with caller intent, agent action, and committed follow-up.",
-      structuredDataPrompt: "Extract caller intent, outcome, commitments, and sentiment as JSON.",
-      successEvaluationPrompt:
-        "Did the agent accomplish the caller's primary goal or the configured call objective? Consider resolution, correct escalation, and follow-through commitments.",
-    },
+    analysisPlan: VAPI_ANALYSIS_PLAN,
+    // Ambient noise parity with outbound — the user-settable field only
+    // affected outbound dials before; inbound calls silently ignored it.
+    backgroundSound: sanitizeAmbientNoise(configured.ambientNoise),
   };
 }

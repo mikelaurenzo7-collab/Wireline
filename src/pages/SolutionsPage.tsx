@@ -54,7 +54,10 @@ const SOLUTIONS = {
     description:
       "Give one trained employee your policies, calendar, and handoff rules. It answers calls, texts, and email, then resolves or routes the next step.",
     icon: Headphones,
-    primary: { href: "/signup?plan=business", label: "Create a front desk employee" },
+    // Wedge intent only — preselecting the $59 5-employee Pro plan for a
+    // one-employee front-desk buyer mis-tuned the later "Matched from visit"
+    // badge in billing; the sales wedge passes intent the same way.
+    primary: { href: "/signup?wedge=support", label: "Create a front desk employee" },
     secondary: { href: "/showcase", label: "Hear a demo" },
     sequence: [
       [

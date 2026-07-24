@@ -26,11 +26,40 @@ const MANAGED_VOICE_ROSTER = MANAGED_VOICE_IDS.map((voiceId) => {
 
 export const DEFAULT_MANAGED_VOICE_ID = MANAGED_VOICE_ROSTER[0].id;
 
+/**
+ * Runtime acceptance covers the ENTIRE curated Vapi catalog, not just the
+ * rotation pool above. The pickers (SimpleVoicePicker, DeployAgentModal) offer
+ * all curated voices and the PATCH stores the pick verbatim — when this check
+ * only knew the 8 rotation voices, a user who picked Kai/Rohan/Sagar/Godfrey/
+ * Naina previewed one voice and every live call silently spoke as Savannah.
+ * Rotation (pickRotatedVoiceId) intentionally stays on the smaller pool so
+ * quick-deploy defaults keep their curated feel.
+ */
 export function isManagedVapiVoiceId(value: unknown): value is string {
   return (
     typeof value === "string" &&
-    MANAGED_VOICE_ROSTER.some((voice) => voice.id.toLowerCase() === value.trim().toLowerCase())
+    VAPI_CURATED_VOICES.some(
+      (voice) => voice.provider === "vapi" && voice.id.toLowerCase() === value.trim().toLowerCase(),
+    )
   );
+}
+
+/**
+ * PSTN voice resolution shared by the inbound factory and the outbound client.
+ * Studio voices that are not managed Vapi ids (presenter uuids, xAI live-voice
+ * ids like "eve"/"ara") fall back to the agent's dedicated phone voice
+ * (`agents.phone_voice_id`, defaulted at PATCH time) before the roster
+ * default — previously phoneVoiceId was stored and surfaced in the UI but
+ * never read at call time, so presenter/live-voice agents always spoke as the
+ * default voice on PSTN regardless of their configured pick.
+ */
+export function resolvePstnVoiceCandidate(
+  studioVoiceId: string | null | undefined,
+  phoneVoiceId: string | null | undefined,
+): string | null | undefined {
+  if (isManagedVapiVoiceId(studioVoiceId)) return studioVoiceId;
+  if (isManagedVapiVoiceId(phoneVoiceId)) return phoneVoiceId;
+  return studioVoiceId;
 }
 
 /**

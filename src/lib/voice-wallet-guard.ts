@@ -113,7 +113,7 @@ export async function assertVoiceWalletSolvent(userId: string): Promise<void> {
     ? {
         code: "LIVE_PLAN_REQUIRED",
         error:
-          "Free Builder is for setup and private simulation. Choose Starter, Team, or Business before placing live calls.",
+          "Free Builder is for setup and private simulation. Choose Starter, Starter Plus, or Pro before placing live calls.",
         recovery_path: "/settings/billing",
         recovery_action: "choose_plan",
         current_call_policy: snapshot.current_call_policy,

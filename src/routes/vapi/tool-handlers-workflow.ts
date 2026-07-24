@@ -234,13 +234,19 @@ export async function handleWorkflowToolCall(
           const [row] = await drizzle
             .select({
               phone: schema.agents.escalationPhone,
+              transferPhone: schema.agents.transferPhone,
               enabled: schema.agents.escalationHandoffEnabled,
             })
             .from(schema.agents)
             .where(eq(schema.agents.id, agent.id))
             .limit(1);
-          if (row?.enabled && row?.phone && row.phone.trim().length >= 7) {
-            warmTransferPhone = row.phone.trim();
+          // transferPhone is the workspace-chat-settable destination ("transfer
+          // calls to 555-…"); it backs up escalationPhone so the field the
+          // planner writes actually influences live transfers instead of being
+          // stored and never read.
+          const destination = row?.phone?.trim() || row?.transferPhone?.trim() || "";
+          if (row?.enabled && destination.length >= 7) {
+            warmTransferPhone = destination;
           }
         } catch (lookupErr: any) {
           log.warn("escalate_to_human: warm-transfer lookup failed; using async path", {

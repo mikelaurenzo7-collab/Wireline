@@ -22,6 +22,7 @@ import { findOwnedAgentProfile } from "../lib/agent-ownership";
 import {
   planWorkspace,
   WORKSPACE_FIELDS,
+  WORKSPACE_AMBIENT_OPTIONS,
   WORKSPACE_VIBE_OPTIONS,
   type WorkspaceFieldKey,
 } from "../lib/workspace-planner";
@@ -562,6 +563,14 @@ router.post(
           return res.status(400).json({
             code: "BAD_REQUEST",
             error: `Vibe must be one of: ${WORKSPACE_VIBE_OPTIONS.join(", ")}`,
+          });
+        }
+      } else if (spec.kind === "ambient") {
+        value = String(value).toLowerCase();
+        if (!(WORKSPACE_AMBIENT_OPTIONS as readonly string[]).includes(value as string)) {
+          return res.status(400).json({
+            code: "BAD_REQUEST",
+            error: `Ambient noise must be one of: ${WORKSPACE_AMBIENT_OPTIONS.join(", ")}`,
           });
         }
       } else if (

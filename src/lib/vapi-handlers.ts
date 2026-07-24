@@ -25,7 +25,12 @@ import { isHardSpendCapExceeded } from "./spend-guards";
 import { getDefaultChannel, postMessage as slackPostMessage } from "./slack-service";
 import { trackVoiceMinutes } from "./voice-usage";
 import { runPostCallDigest } from "./post-call-digest";
-import { findCallLogByVapiCallId, isOutboundCallPlaceholder } from "./outbound-call-tracking";
+import {
+  findCallLogByVapiCallId,
+  isOutboundCallPlaceholder,
+  OUTBOUND_CALL_DIALING_MARKER,
+  OUTBOUND_CALL_PLACEHOLDER_SUMMARY,
+} from "./outbound-call-tracking";
 import { takeStagedReliabilityMetrics } from "./call-reliability-capture";
 import { notifyCallRecap } from "./mobile-push";
 import { emitServerProductEventOnce } from "./product-event-server";
@@ -112,7 +117,18 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       if (vapiCallId) {
         const existing = await findCallLogByVapiCallId(vapiCallId);
         if (existing && isOutboundCallPlaceholder(existing)) {
-          await drizzle
+          // Atomic finalize-claim: the WHERE re-checks the placeholder markers
+          // and the SET clears both (summary replaced, pipelineError nulled),
+          // so when two workers process duplicate end-of-call jobs
+          // concurrently (cron sweep + manual sweep, or worker + sweep on
+          // self-hosted), Postgres serializes the row UPDATEs and exactly one
+          // RETURNING comes back non-empty. Only that winner sets
+          // insertedFresh and fires the side effects (usage metering, the
+          // call.completed webhook, the TCPA consent-log row); the loser falls
+          // through to the side-effect-free duplicate branch. A plain
+          // read-then-update here re-opened the double-metering window the
+          // unique-index idempotency boundary is meant to close.
+          const finalized = await drizzle
             .update(schema.callLogs)
             .set({
               durationSeconds: duration,
@@ -125,21 +141,23 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
               toolCallsFailed: stagedReliability?.toolCallsFailed ?? 0,
               escalationAttempted: stagedReliability?.escalationAttempted ?? false,
               escalationSucceeded: stagedReliability?.escalationSucceeded ?? false,
-              // Clear the "dialing" placeholder marker so a subsequent duplicate
-              // Vapi retry no longer matches isOutboundCallPlaceholder() and falls
-              // to the duplicate-ignore branch. Without this the outbound path
-              // re-finalizes on every retry, re-setting insertedFresh=true and
-              // re-firing usage metering, the call.completed webhook, and the
-              // TCPA consent-log row — the exact double-counting the unique-index
-              // idempotency boundary is meant to prevent (see note above).
               pipelineError: null,
             })
-            .where(eq(schema.callLogs.vapiCallId, vapiCallId));
-          insertedFresh = true;
-          insertedCallLogId = existing.id;
-          log.info("Outbound placeholder call log finalized from end-of-call-report", {
-            callId: vapiCallId,
-          });
+            .where(
+              sql`${schema.callLogs.vapiCallId} = ${vapiCallId} AND (${schema.callLogs.pipelineError} = ${OUTBOUND_CALL_DIALING_MARKER} OR ${schema.callLogs.summary} = ${OUTBOUND_CALL_PLACEHOLDER_SUMMARY})`,
+            )
+            .returning({ id: schema.callLogs.id });
+          if (finalized.length) {
+            insertedFresh = true;
+            insertedCallLogId = finalized[0].id;
+            log.info("Outbound placeholder call log finalized from end-of-call-report", {
+              callId: vapiCallId,
+            });
+          } else {
+            log.info("Outbound placeholder already finalized by a concurrent worker", {
+              callId: vapiCallId,
+            });
+          }
         } else {
           if (message.transcript?.trim()) {
             await drizzle

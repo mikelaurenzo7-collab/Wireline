@@ -68,7 +68,15 @@ describe("inbound/outbound runtime parity contract", () => {
     expect(buildOutboundVoicemailMessage.length).toBe(1);
   });
 
-  it("call analysis includes success evaluation for the agent scorecard", () => {
-    expect(factory).toContain("successEvaluationPrompt");
+  it("call analysis includes success evaluation on BOTH call directions", () => {
+    // The Wireline-tuned analysis plan lives in one shared constant so the
+    // outbound fleet can never silently fall back to Vapi generic defaults
+    // again (it did, until round 4 — inbound-only analysisPlan).
+    const profile = read("src/lib/voice-agent-profile.ts");
+    expect(profile).toContain("VAPI_ANALYSIS_PLAN");
+    expect(profile).toContain("successEvaluationPrompt");
+    expect(factory).toContain("analysisPlan: VAPI_ANALYSIS_PLAN");
+    const client = read("src/lib/vapi-client.ts");
+    expect(client).toContain("analysisPlan: VAPI_ANALYSIS_PLAN");
   });
 });
