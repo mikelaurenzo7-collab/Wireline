@@ -50,10 +50,20 @@ function safetyIdentifierForUser(userId: string): string {
 
 export function buildOpenAIRealtimeSessionConfig(input: CreateOpenAIRealtimeClientSecretInput) {
   const tools = input.tools ?? OPENAI_REALTIME_WIRELINE_TOOLS;
+  // Sessions are minted on the PLATFORM OpenAI key, so the model is pinned to
+  // the platform-configured default. Forwarding a caller-supplied model string
+  // here let any authenticated user mint sessions on arbitrary (potentially
+  // far more expensive) realtime models at platform cost.
+  const requestedModel = input.model?.trim();
+  if (requestedModel && requestedModel !== OPENAI_REALTIME_DEFAULT_MODEL) {
+    log.warn("openai realtime session requested non-platform model — using default", {
+      requested: requestedModel.slice(0, 80),
+    });
+  }
   return {
     session: {
       type: "realtime",
-      model: input.model?.trim() || OPENAI_REALTIME_DEFAULT_MODEL,
+      model: OPENAI_REALTIME_DEFAULT_MODEL,
       output_modalities: ["audio"],
       instructions:
         input.instructions?.trim().slice(0, 16_000) ||

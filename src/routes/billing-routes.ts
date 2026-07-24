@@ -43,6 +43,28 @@ async function validateFounderCatalogPriceId(priceId: string): Promise<string | 
   }
 }
 
+/**
+ * Scale a gross (tax-inclusive) refunded/disputed Stripe amount down to the
+ * portion of the wallet credit it actually represents. Top-up checkouts run
+ * with automatic_tax enabled but credit only the pre-tax `credit_usd`, so
+ * reversing the gross amount would claw back more than was ever granted —
+ * a fully-refunded customer would land at a negative balance and be blocked
+ * on completion-grace debt they never spent. `credit_usd` rides on the
+ * PaymentIntent metadata (set at checkout creation), and `pi.amount` is the
+ * tax-inclusive total, so each reversal scales by credited/charged. Rounds
+ * DOWN so cumulative partial reversals can never exceed the granted credit.
+ * Falls back to the gross amount when the metadata is absent (legacy top-ups)
+ * or no exclusive tax was added (ratio = 1 — identical to prior behavior).
+ */
+function creditPortionUsd(grossCents: number, pi: Stripe.PaymentIntent): number {
+  const grossUsd = (grossCents || 0) / 100;
+  const creditUsd = Number(pi.metadata?.credit_usd);
+  const chargedUsd = (pi.amount || 0) / 100;
+  if (!Number.isFinite(creditUsd) || creditUsd <= 0 || chargedUsd <= 0) return grossUsd;
+  if (creditUsd >= chargedUsd) return grossUsd;
+  return Math.min(creditUsd, Math.floor(grossUsd * (creditUsd / chargedUsd) * 100) / 100);
+}
+
 // ─── Stripe Webhook ──────────────────────────────────────────────────────────
 
 router.post("/stripe-webhook", async (req: Request, res: Response) => {
@@ -184,38 +206,11 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
           if (userId && reversible.length) {
             await tenantStore.run(userId, async () => {
               for (const refund of reversible) {
-                await reverseCredit(userId, (refund.amount ?? 0) / 100, "web_topup_refund", {
-                  type: "stripe_refund",
-                  id: refund.id,
-                  entryKind: "refund",
-                  source: "stripe",
-                  provider: "stripe",
-                  providerEventId: event.id,
-                  providerObjectId: refund.id,
-                  customerReason: "Conversation Balance refund",
-                  metadata: { payment_intent_id: piId, charge_id: charge.id },
-                });
-              }
-            });
-          } else if (userId && (charge.amount_refunded ?? 0) > 0) {
-            // The event omitted the inline refunds list (the pinned API version
-            // no longer expands charge.refunds by default). Fetch them so each
-            // partial refund is reversed once, keyed on its OWN id — reversing
-            // the cumulative amount_refunded under charge.id would collide on
-            // the (user, ref) unique index and silently drop every partial
-            // refund after the first, leaving refunded money spendable.
-            const listed = await stripe.refunds
-              .list({ charge: charge.id, limit: 100 })
-              .then((r) =>
-                r.data.filter(
-                  (x) => (!x.status || x.status === "succeeded") && (x.amount ?? 0) > 0,
-                ),
-              )
-              .catch(() => [] as Stripe.Refund[]);
-            await tenantStore.run(userId, async () => {
-              if (listed.length) {
-                for (const refund of listed) {
-                  await reverseCredit(userId, (refund.amount ?? 0) / 100, "web_topup_refund", {
+                await reverseCredit(
+                  userId,
+                  creditPortionUsd(refund.amount ?? 0, pi),
+                  "web_topup_refund",
+                  {
                     type: "stripe_refund",
                     id: refund.id,
                     entryKind: "refund",
@@ -225,14 +220,56 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                     providerObjectId: refund.id,
                     customerReason: "Conversation Balance refund",
                     metadata: { payment_intent_id: piId, charge_id: charge.id },
-                  });
+                  },
+                );
+              }
+            });
+          } else if (userId && (charge.amount_refunded ?? 0) > 0) {
+            // The event omitted the inline refunds list (the pinned API version
+            // no longer expands charge.refunds by default). Fetch them so each
+            // partial refund is reversed once, keyed on its OWN id — reversing
+            // the cumulative amount_refunded under charge.id would collide on
+            // the (user, ref) unique index and silently drop every partial
+            // refund after the first, leaving refunded money spendable.
+            // A transient list failure must THROW (the handler releases the
+            // stripe_events claim and 500s, so Stripe redelivers cleanly) —
+            // degrading to the cumulative charge.id reversal here would stack
+            // on top of any per-refund.id rows already written by earlier
+            // events and over-debit the tenant (different ref keys defeat the
+            // (user, ref) dedupe).
+            const listed = await stripe.refunds
+              .list({ charge: charge.id, limit: 100 })
+              .then((r) =>
+                r.data.filter(
+                  (x) => (!x.status || x.status === "succeeded") && (x.amount ?? 0) > 0,
+                ),
+              );
+            await tenantStore.run(userId, async () => {
+              if (listed.length) {
+                for (const refund of listed) {
+                  await reverseCredit(
+                    userId,
+                    creditPortionUsd(refund.amount ?? 0, pi),
+                    "web_topup_refund",
+                    {
+                      type: "stripe_refund",
+                      id: refund.id,
+                      entryKind: "refund",
+                      source: "stripe",
+                      provider: "stripe",
+                      providerEventId: event.id,
+                      providerObjectId: refund.id,
+                      customerReason: "Conversation Balance refund",
+                      metadata: { payment_intent_id: piId, charge_id: charge.id },
+                    },
+                  );
                 }
               } else {
                 // Last resort if the refund list is unexpectedly empty: reverse
                 // the cumulative total keyed on charge.id (single-refund-safe).
                 await reverseCredit(
                   userId,
-                  (charge.amount_refunded ?? 0) / 100,
+                  creditPortionUsd(charge.amount_refunded ?? 0, pi),
                   "web_topup_refund",
                   {
                     type: "stripe_refund",
@@ -265,7 +302,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         const pi = await stripe.paymentIntents.retrieve(piId);
         if (pi.metadata?.purpose === "credit_topup") {
           const userId = pi.metadata.wireline_user_id;
-          const disputedUsd = (dispute.amount ?? 0) / 100;
+          const disputedUsd = creditPortionUsd(dispute.amount ?? 0, pi);
           if (userId && disputedUsd > 0) {
             await tenantStore.run(userId, async () => {
               await reverseCredit(userId, disputedUsd, "web_topup_dispute", {

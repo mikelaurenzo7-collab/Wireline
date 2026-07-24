@@ -16,6 +16,10 @@ import {
   sanitizePhone,
   KNOWLEDGE_GAP_PREFIX,
   MAX_RUNTIME_LESSONS,
+  MAX_RUNTIME_DIRECTIVES,
+  MAX_RUNTIME_KNOWLEDGE,
+  truncateRuntimeSnippet,
+  clampRuntimePromptPreservingTail,
   buildCallerProfileBlock,
   OUTBOUND_ARCHETYPE_BY_ROLE,
   getArchetypeConfig,
@@ -30,11 +34,17 @@ import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runt
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
 import { vapiVoiceVersion } from "./voice-catalog";
-import { DEFAULT_MANAGED_VOICE_ID, isManagedVapiVoiceId } from "../data/voice-roster";
+import {
+  DEFAULT_MANAGED_VOICE_ID,
+  isManagedVapiVoiceId,
+  resolvePstnVoiceCandidate,
+} from "../data/voice-roster";
+import { sanitizeAmbientNoise } from "./workspace-planner";
 import {
   buildOutboundVoicemailMessage,
   resolveOutboundStartSpeakingPlan,
   resolveVapiSpeechPipeline,
+  VAPI_ANALYSIS_PLAN,
   VAPI_MAX_OUTBOUND_CALL_SECONDS,
   VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
   VAPI_VOICEMAIL_DETECTION_PLAN,
@@ -277,13 +287,22 @@ export async function placeOutboundCall(opts: {
     outboundCapturedProfileRes,
   ] = await Promise.all([
     drizzle.select().from(schema.agents).where(eq(schema.agents.id, agentId)).limit(1),
+    // Prompt size is the largest cost lever on voice calls (the system prompt
+    // is re-sent every turn). Load only what the prompt will actually carry —
+    // the highest-priority directives and most recent knowledge — instead of
+    // 500 of each, mirroring the inbound factory's caps.
     drizzle
       .select()
       .from(schema.directives)
       .where(eq(schema.directives.agentId, agentId))
       .orderBy(desc(schema.directives.priority))
-      .limit(500),
-    drizzle.select().from(schema.knowledge).where(eq(schema.knowledge.agentId, agentId)).limit(500),
+      .limit(MAX_RUNTIME_DIRECTIVES),
+    drizzle
+      .select()
+      .from(schema.knowledge)
+      .where(eq(schema.knowledge.agentId, agentId))
+      .orderBy(desc(schema.knowledge.createdAt))
+      .limit(MAX_RUNTIME_KNOWLEDGE),
     drizzle
       .select()
       .from(schema.personality)
@@ -459,10 +478,10 @@ Never end an outbound call without:
 Never invent prices, availability, dates, or product specs. If you don't know: "Great question — let me have someone with the exact details reach out to you. What's the best email?"
 
 ## ABSOLUTE Account Holder RULES
-${(directivesRes || []).map((d: any) => `[PRIORITY ${d.priority}] ${d.content}`).join("\n") || "Follow all standard professional and ethical guidelines."}
+${(directivesRes || []).map((d: any) => `[PRIORITY ${d.priority}] ${truncateRuntimeSnippet(d.content || "")}`).join("\n") || "Follow all standard professional and ethical guidelines."}
 
 ## KNOWLEDGE BASE
-${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No specific knowledge base entries loaded."}
+${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || "")}`).join("\n") || "No specific knowledge base entries loaded."}
     `;
 
   const runtimeProfile: AgentRuntimeProfile = {
@@ -486,7 +505,10 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
         "Outbound dialing is suspended outside this agent's configured business hours.",
     };
   }
-  const finalSystemPrompt = runtime.prompt;
+  // Final size clamp that never drops the compliance/escalation guardrail
+  // tail — the last defense when a tenant's directives/knowledge are long
+  // even after the per-item caps above.
+  const finalSystemPrompt = clampRuntimePromptPreservingTail(runtime.prompt);
 
   const outboundServerUrl = process.env.APP_URL
     ? `${process.env.APP_URL}/api/vapi-webhook?agentId=${agentId}`
@@ -513,7 +535,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
         agentConfig.name || "your representative",
         customerName,
       ),
-    backgroundSound: agentConfig.ambientNoise || "off",
+    backgroundSound: sanitizeAmbientNoise(agentConfig.ambientNoise),
     firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
     maxDurationSeconds: VAPI_MAX_OUTBOUND_CALL_SECONDS,
     voicemailDetection: VAPI_VOICEMAIL_DETECTION_PLAN,
@@ -521,6 +543,10 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
     responseDelaySeconds: 0,
     numWordsToInterruptAssistant: 2,
     backgroundDenoisingEnabled: false,
+    backchannelingEnabled: true,
+    // Same Wireline-tuned post-call analysis as inbound — without it,
+    // outbound summaries/success metrics fell back to Vapi generic defaults.
+    analysisPlan: VAPI_ANALYSIS_PLAN,
     startSpeakingPlan: resolveOutboundStartSpeakingPlan(speechPipeline),
     transcriber: speechPipeline.transcriber,
     ...(outboundServerUrl && { server: buildVapiServerConfig(outboundServerUrl) }),
@@ -541,10 +567,20 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       temperature: clampVoiceTemperature(agentConfig.llmTemperature, llmTemp),
       tools: outboundTools,
     },
-    recordingEnabled: true,
+    // Recording parity with the inbound factory: HIPAA-mode agents must not
+    // record on EITHER direction — a hardcoded true here recorded every
+    // outbound call (manual, campaign, cadence, callback, intake auto-dial)
+    // for agents whose owners selected HIPAA compliance, and persisted the
+    // recording URL to call logs.
+    recordingEnabled: agentConfig.complianceMode !== "hipaa",
     voice: (() => {
       // Outbound calls use the same managed Vapi voice roster as inbound calls.
-      const requestedVoiceId = agentConfig.voiceIdOutbound || agentConfig.voiceId;
+      // Presenter/live-voice agents store a non-Vapi studio voice; their
+      // dedicated PSTN pick (phoneVoiceId) applies before the roster default.
+      const requestedVoiceId = resolvePstnVoiceCandidate(
+        agentConfig.voiceIdOutbound || agentConfig.voiceId,
+        agentConfig.phoneVoiceId,
+      );
       const voiceId = isManagedVapiVoiceId(requestedVoiceId)
         ? requestedVoiceId
         : DEFAULT_MANAGED_VOICE_ID;

@@ -218,35 +218,43 @@ export async function releaseExternalResourcesForPurge(
 
   if (sub?.stripeCustomerId || sub?.stripeSubscriptionId) {
     const { stripe, stripeAvailable } = await import("./stripe-helpers");
-    if (stripeAvailable()) {
-      const ids = new Set<string>();
-      if (sub.stripeCustomerId) {
-        // status:"all" then filter — "active" alone misses trialing/past_due/
-        // unpaid subscriptions, each of which is still a live billing
-        // relationship that must be torn down on account deletion.
-        const all = await stripe.subscriptions.list({
-          customer: sub.stripeCustomerId,
-          status: "all",
-          limit: 100,
-        });
-        for (const s of all.data) {
-          if (s.status !== "canceled" && s.status !== "incomplete_expired") ids.add(s.id);
-        }
+    if (!stripeAvailable()) {
+      // The whole point of this function is to never purge the ids of a
+      // possibly-still-billing subscription. Silently skipping here when the
+      // Stripe key is absent/misconfigured would do exactly that during a
+      // config incident — throw instead so the purge job retries and the
+      // deletion completes once billing config is restored.
+      throw new Error(
+        "Stripe is not configured but the account holds Stripe ids — deferring purge so a live subscription is not orphaned.",
+      );
+    }
+    const ids = new Set<string>();
+    if (sub.stripeCustomerId) {
+      // status:"all" then filter — "active" alone misses trialing/past_due/
+      // unpaid subscriptions, each of which is still a live billing
+      // relationship that must be torn down on account deletion.
+      const all = await stripe.subscriptions.list({
+        customer: sub.stripeCustomerId,
+        status: "all",
+        limit: 100,
+      });
+      for (const s of all.data) {
+        if (s.status !== "canceled" && s.status !== "incomplete_expired") ids.add(s.id);
       }
-      if (sub.stripeSubscriptionId) ids.add(sub.stripeSubscriptionId);
-      for (const id of ids) {
-        try {
-          await stripe.subscriptions.cancel(id);
-          subscriptionsCanceled++;
-        } catch (err) {
-          if (isStripeAlreadyGone(err)) continue;
-          log.error("purge subscription cancel failed — deferring purge", {
-            userId,
-            subscriptionId: id,
-            error: getErrorMessage(err),
-          });
-          throw err;
-        }
+    }
+    if (sub.stripeSubscriptionId) ids.add(sub.stripeSubscriptionId);
+    for (const id of ids) {
+      try {
+        await stripe.subscriptions.cancel(id);
+        subscriptionsCanceled++;
+      } catch (err) {
+        if (isStripeAlreadyGone(err)) continue;
+        log.error("purge subscription cancel failed — deferring purge", {
+          userId,
+          subscriptionId: id,
+          error: getErrorMessage(err),
+        });
+        throw err;
       }
     }
   }

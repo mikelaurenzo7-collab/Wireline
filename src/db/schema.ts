@@ -1247,6 +1247,9 @@ export const outboundLeads = pgTable(
     userCampaignIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_user_campaign ON wireline_outbound_leads USING btree (user_id, campaign_id)`,
     userStatusIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_user_status ON wireline_outbound_leads USING btree (user_id, status)`,
     callbackIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_callback_scheduled_at ON wireline_outbound_leads USING btree (user_id, callback_scheduled_at) WHERE callback_scheduled_at IS NOT NULL`,
+    // Global due-scan for the callback tick (no user_id predicate) — the
+    // user-leading partial index above cannot serve it.
+    callbackDueGlobalIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_callback_due_global ON wireline_outbound_leads USING btree (callback_scheduled_at) WHERE callback_scheduled_at IS NOT NULL`,
     createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_created_at ON wireline_outbound_leads USING btree (created_at)`,
     userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_user_created ON wireline_outbound_leads USING btree (user_id, created_at DESC)`,
     statusNextAttemptIdx: sql`CREATE INDEX IF NOT EXISTS idx_leads_status_next_attempt ON wireline_outbound_leads USING btree (status, callback_scheduled_at) WHERE status IN ('Pending', 'Retrying')`,
@@ -1690,6 +1693,8 @@ export const jobs = pgTable(
   () => ({
     statusRunAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_jobs_status_run_at ON wireline_jobs USING btree (status, run_at)`,
     userStatusIdx: sql`CREATE INDEX IF NOT EXISTS idx_jobs_user_status ON wireline_jobs USING btree (user_id, status)`,
+    // The sweep's dedup guards all filter WHERE type = $1 AND created_at >= $2.
+    typeCreatedAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_jobs_type_created_at ON wireline_jobs USING btree (type, created_at)`,
   }),
 );
 

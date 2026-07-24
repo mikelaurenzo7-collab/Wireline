@@ -1,4 +1,5 @@
 import { useCallback, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Cookie, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
@@ -73,8 +74,10 @@ export default function CookieConsent() {
     return () => window.removeEventListener(OPEN_PRIVACY_CHOICES_EVENT, openPrivacyChoices);
   }, []);
 
-  const onAuthRoute = isAuthPortalPath(location.pathname);
-  const clearMarketingSticky = !hasSession && isMarketingStickyCtaRoute(location.pathname);
+  const clearMarketingSticky =
+    !hasSession &&
+    isMarketingStickyCtaRoute(location.pathname) &&
+    !isAuthPortalPath(location.pathname);
 
   const saveChoice = useCallback(
     (choice: MeasurementConsent) => {
@@ -108,7 +111,22 @@ export default function CookieConsent() {
     return () => window.removeEventListener("keydown", onKey);
   }, [dismiss, visible]);
 
-  return (
+  // Never render over the auth portal: at phone/tablet widths the 283px card
+  // physically cannot fit beside the auth form, and wherever it sits it
+  // intercepts taps on either the OAuth buttons (top) or the submit button
+  // (bottom) — a first-visit mobile user literally could not tap "Sign in".
+  // Consent stays reachable on every marketing/app surface and via /privacy,
+  // and no optional measurement fires without an explicit grant, so skipping
+  // the notice here is the privacy-preserving default, not a bypass.
+  // (After all hooks — rules-of-hooks.)
+  if (isAuthPortalPath(location.pathname)) return null;
+
+  // Portal to <body>: rendered inside the app tree, the fixed box stretched
+  // to the full viewport height (an app-shell ancestor perturbs fixed-child
+  // sizing), painting the card at the TOP of the screen over the sign-in
+  // brand header and OAuth buttons. Portaling out of the tree — the same
+  // pattern the toast stack uses — restores true viewport anchoring.
+  return createPortal(
     <AnimatePresence>
       {visible && (
         <motion.div
@@ -118,16 +136,22 @@ export default function CookieConsent() {
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
           className={cn(
             "fixed z-[9999] left-3 right-3 sm:right-5 sm:left-auto sm:max-w-[390px]",
-            onAuthRoute
-              ? "top-[max(0.75rem,env(safe-area-inset-top,0))]"
-              : clearMarketingSticky
-                ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))]"
-                : "bottom-[calc(4.25rem+env(safe-area-inset-bottom,0))]",
+            // Bottom placement everywhere. The old auth-route top pin (written
+            // while this component was unmounted) covered the brand header,
+            // tab switcher, and OAuth buttons on mobile sign-in; the auth
+            // portal has no bottom-fixed elements, so the standard bottom
+            // offset sits over empty space below the card instead.
+            clearMarketingSticky
+              ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))]"
+              : "bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))]",
           )}
           role="dialog"
           aria-label="Privacy choices"
         >
-          <div className="rounded-md border border-border backdrop-blur-xl shadow-lg px-3.5 py-3 flex items-start gap-2.5 wl-cookie-card">
+          {/* bg-background/95 is load-bearing: the legacy wl-cookie-card class
+              has no CSS definition, so without an explicit background the card
+              was transparent-with-blur and page text ghosted through it. */}
+          <div className="rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg px-3.5 py-3 flex items-start gap-2.5 wl-cookie-card">
             <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5 wl-cookie-icon">
               <Cookie className="w-3.5 h-3.5 text-brand" />
             </div>
@@ -194,6 +218,7 @@ export default function CookieConsent() {
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

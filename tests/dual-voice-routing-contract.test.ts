@@ -20,13 +20,25 @@ describe("dual-voice PSTN routing contracts", () => {
 
   it("clamps every PSTN call to a curated managed Vapi voice", () => {
     // The managed runtime replaced per-provider PSTN substitution: the factory
-    // accepts only curated Vapi voice ids and falls back to the managed default.
+    // accepts only curated Vapi voice ids and falls back to the managed
+    // default. Presenter/live-voice agents' dedicated phone pick
+    // (agents.phone_voice_id) participates via resolvePstnVoiceCandidate,
+    // which itself only passes MANAGED ids through — so the clamp invariant
+    // holds while the UI-promised phone voice actually reaches the call
+    // (previously it was stored and surfaced but never read at dial time).
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
     expect(factory).toContain("isManagedVapiVoiceId");
     expect(factory).toContain("DEFAULT_MANAGED_VOICE_ID");
     expect(factory).toContain('provider: "vapi" as const');
-    expect(factory).not.toContain("configured.phoneVoiceId");
+    expect(factory).toContain("resolvePstnVoiceCandidate");
     expect(factory).not.toContain('voiceProvider === "presenter"');
+    const roster = read("src/data/voice-roster.ts");
+    const helper = roster.slice(roster.indexOf("export function resolvePstnVoiceCandidate"));
+    expect(helper).toContain("if (isManagedVapiVoiceId(studioVoiceId)) return studioVoiceId;");
+    expect(helper).toContain("if (isManagedVapiVoiceId(phoneVoiceId)) return phoneVoiceId;");
+    // The outbound client applies the same candidate resolution.
+    const client = read("src/lib/vapi-client.ts");
+    expect(client).toContain("resolvePstnVoiceCandidate");
   });
 
   it("routes Studio phone picks through the managed voice PATCH", () => {
