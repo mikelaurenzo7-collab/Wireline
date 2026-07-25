@@ -110,18 +110,28 @@ export async function buildVapiAssistant({
   const flowBlock = flow.length
     ? `\n## CALL FLOW\n${flow.map((step, index) => `${index + 1}. ${step.name || "Stage"}: ${step.instructions || ""}${step.transitionCondition ? ` (advance when ${step.transitionCondition})` : ""}${step.isEndNode ? " (end call after completion)" : ""}`).join("\n")}\n`
     : "";
-  const identityBlock = [
-    `You are ${configured.name}, a Wireline ${configured.role || "agent"}.`,
-    "Be accurate, concise, kind, and action-oriented. Never invent business facts, prices, availability, or commitments.",
-    "When an action is outside your permissions or confidence, clearly explain the limitation and escalate to a human.",
-  ].join("\n");
+  const isBusinessAgent = configured.isBusinessAgent !== false;
+  const identityBlock = isBusinessAgent
+    ? [
+        `You are ${configured.name}, a Wireline ${configured.role || "agent"}.`,
+        "Be accurate, concise, kind, and action-oriented. Never invent business facts, prices, availability, or commitments.",
+        "When an action is outside your permissions or confidence, clearly explain the limitation and escalate to a human.",
+      ].join("\n")
+    : [
+        `You are ${configured.name}, a personal Wireline agent for your principal.`,
+        "Be accurate, concise, discreet, and protective of their time. Never invent personal facts, schedule commitments, or private details.",
+        "Represent your principal professionally. When something is outside your authority, say so and offer to relay a message or escalate.",
+        "Default to privacy: do not volunteer address, family, health, finances, or schedule details unless required for the immediate task.",
+      ].join("\n");
   const callSpecificContext = [
     personality ? `\n## TONE\n${personality}\n` : "",
     promptItem("OPERATING RULES", directives),
     promptItem("APPROVED TRAINING", knowledge),
     flowBlock,
     configured.escalationPhone || configured.escalationEmail
-      ? "\n## ESCALATION\nEscalate when the caller requests a human, a policy exception, legal/medical/financial advice, a final price, or anything not covered by approved Training.\n"
+      ? isBusinessAgent
+        ? "\n## ESCALATION\nEscalate when the caller requests a human, a policy exception, legal/medical/financial advice, a final price, or anything not covered by approved Training.\n"
+        : "\n## ESCALATION\nEscalate when the caller is urgent, distressed, asks for your principal by name with a time-sensitive matter, or anything exceeds your approved personal preferences.\n"
       : "",
   ]
     .filter(Boolean)
@@ -154,14 +164,18 @@ export async function buildVapiAssistant({
   // message-taking mode and opens with the Account Holder's after-hours line.
   const afterHours = !isOutbound && !runtime.inHours;
   const systemPrompt = afterHours
-    ? `${runtime.prompt}\n\n## AFTER-HOURS MODE\nThe business is currently closed. Let the caller know, take a complete message (name, number, reason for calling), promise a follow-up during business hours, and do NOT commit to appointments, prices, or actions that require the business to be open.`
+    ? isBusinessAgent
+      ? `${runtime.prompt}\n\n## AFTER-HOURS MODE\nThe business is currently closed. Let the caller know, take a complete message (name, number, reason for calling), promise a follow-up during business hours, and do NOT commit to appointments, prices, or actions that require the business to be open.`
+      : `${runtime.prompt}\n\n## QUIET-HOURS MODE\nYour principal is not available right now. Let the caller know, take a complete message (name, number, reason for calling), promise a relay, and do NOT commit to appointments or personal details you are not cleared to share.`
     : runtime.prompt;
   const finalSystemPrompt = isGrokModelId(modelSelection.model)
     ? `${systemPrompt}\n\n${buildGrokStrengthsPromptSection()}`
     : systemPrompt;
   const afterHoursGreeting = afterHours
     ? runtime.outOfHoursMessage ||
-      `Hi, you've reached ${configured.name}. We're currently closed, but I can take a message and make sure the right person follows up.`
+      (isBusinessAgent
+        ? `Hi, you've reached ${configured.name}. We're currently closed, but I can take a message and make sure the right person follows up.`
+        : `Hi, you've reached ${configured.name}. They're not available right now, but I can take a message and make sure they get it.`)
     : null;
   const functionTools = toVapiFunctionTools(
     await buildRoleToolDefsForTenant(

@@ -11,14 +11,12 @@ import { getErrorMessage } from "../lib/server-utils";
 import { listAgentsForUser } from "../lib/agents-store";
 import { isManagedVapiVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
-import { composeAgentPersonality, TEMPLATE_OVERLAYS } from "../lib/template-overlays";
-import { ROLE_PERSONALITY_TEMPLATES } from "../lib/agent-constants";
 import {
-  getDefaultAgentTools,
   isAgentToolName,
   normalizeEnabledTools,
   type AgentToolName,
 } from "../lib/agent-capabilities";
+import { resolveCreateEnabledTools, resolveCreatePersonality } from "../lib/agent-create-defaults";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import { defaultPresenterPhoneVoicePayload } from "../lib/voice-catalog";
 import { AI_TOOLS } from "../lib/ai-tools";
@@ -269,18 +267,18 @@ router.post(
     const firstMessage =
       cleanText(req.body?.firstMessage, 500) || `Hi, this is ${name}. How can I help?`;
     const templateId = cleanText(req.body?.templateId, 80);
-    // Stack role methodology + template overlay and substitute business
-    // tokens; the factory consumes the stored personality verbatim.
-    const templatePersonality =
-      templateId && TEMPLATE_OVERLAYS[templateId]
-        ? composeAgentPersonality({
-            rolePersonality: ROLE_PERSONALITY_TEMPLATES[role] || "",
-            templateId,
-          })
-        : null;
+    // Always seed a real personality. Fast Start used to leave personal agents
+    // with a one-line tone from the client; Studio Set up then overwrote it with
+    // business-ready copy. Templates still win when templateId is present.
+    const seededPersonality = resolveCreatePersonality({
+      role,
+      isBusinessAgent,
+      templateId,
+      agentName: name,
+    });
 
     const id = `agent-${randomUUID()}`;
-    const enabledTools = getDefaultAgentTools();
+    const enabledTools = resolveCreateEnabledTools(role, isBusinessAgent);
     const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
 
     await drizzle.transaction(async (tx) => {
@@ -338,13 +336,13 @@ router.post(
         ...videoPresenter,
       });
 
-      if (templatePersonality) {
+      if (seededPersonality) {
         await tx
           .insert(schema.personality)
-          .values({ agentId: id, userId: req.user.id, content: templatePersonality })
+          .values({ agentId: id, userId: req.user.id, content: seededPersonality })
           .onConflictDoUpdate({
             target: schema.personality.agentId,
-            set: { userId: req.user.id, content: templatePersonality },
+            set: { userId: req.user.id, content: seededPersonality },
           });
       }
     });

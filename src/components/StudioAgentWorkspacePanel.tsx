@@ -3,6 +3,7 @@ import { CheckCircle2, Loader2, PlugZap, Save } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { authFetch } from "../lib/api";
+import { composeSetupPersonality } from "../lib/compose-setup-personality";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
@@ -17,6 +18,7 @@ const PERSONALITIES = [
 type StudioAgentWorkspacePanelProps = {
   agentId: string;
   agentName: string;
+  isBusinessAgent?: boolean;
   onTestVoiceInChat: () => void;
   className?: string;
 };
@@ -42,14 +44,19 @@ function existingGreeting(directives: AgentSetupResponse["directives"]) {
 export default function StudioAgentWorkspacePanel({
   agentId,
   agentName,
+  isBusinessAgent = true,
   onTestVoiceInChat,
   className = "",
 }: StudioAgentWorkspacePanelProps) {
   const defaultGreeting = useMemo(
-    () => `Hello, this is ${agentName || "your AI employee"}. How can I help?`,
-    [agentName],
+    () =>
+      isBusinessAgent
+        ? `Hello, this is ${agentName || "your AI employee"}. How can I help?`
+        : `Hi, this is ${agentName || "your personal agent"}. How can I help?`,
+    [agentName, isBusinessAgent],
   );
   const [setupPersonality, setSetupPersonality] = useState("Clear");
+  const [loadedPersonality, setLoadedPersonality] = useState<string | null>(null);
   const [setupGreeting, setSetupGreeting] = useState(defaultGreeting);
   const [setupKnowledge, setSetupKnowledge] = useState("");
   const [loadingSetup, setLoadingSetup] = useState(true);
@@ -69,7 +76,9 @@ export default function StudioAgentWorkspacePanel({
       })
       .then((data) => {
         if (cancelled) return;
-        setSetupPersonality(inferPersonality(data.personality));
+        const personality = typeof data.personality === "string" ? data.personality : "";
+        setLoadedPersonality(personality || null);
+        setSetupPersonality(inferPersonality(personality));
         setSetupGreeting(existingGreeting(data.directives) || defaultGreeting);
       })
       .catch((reason) => {
@@ -105,11 +114,16 @@ export default function StudioAgentWorkspacePanel({
     setSetupError(null);
     setSetupNotice(null);
     try {
-      const personalityText = `${setupPersonality}. Concise, useful, and business-ready.`;
+      const personalityText = composeSetupPersonality(
+        loadedPersonality,
+        setupPersonality,
+        isBusinessAgent,
+      );
       const greetingTrimmed = setupGreeting.trim();
       const knowledgeTrimmed = setupKnowledge.trim();
 
       await saveManual("personality", personalityText);
+      setLoadedPersonality(personalityText);
       if (greetingTrimmed) {
         await saveManual("directive", `Opening greeting: ${greetingTrimmed}`);
       }
@@ -119,11 +133,21 @@ export default function StudioAgentWorkspacePanel({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ agentId, message: knowledgeTrimmed }),
         });
-        if (!knowledgeResponse.ok) throw new Error("Business information could not be saved.");
+        if (!knowledgeResponse.ok) {
+          throw new Error(
+            isBusinessAgent
+              ? "Business information could not be saved."
+              : "Personal preferences could not be saved.",
+          );
+        }
         setSetupKnowledge("");
       }
 
-      setSetupNotice("Changes saved. Run a customer test before connecting live traffic.");
+      setSetupNotice(
+        isBusinessAgent
+          ? "Changes saved. Run a customer test before connecting live traffic."
+          : "Changes saved. Run a private test before connecting a live line.",
+      );
     } catch (reason) {
       setSetupError(reason instanceof Error ? reason.message : "Setup could not be saved.");
     } finally {
@@ -212,7 +236,7 @@ export default function StudioAgentWorkspacePanel({
                     className="text-sm font-semibold text-foreground"
                     htmlFor="setup-knowledge"
                   >
-                    Essential business facts
+                    {isBusinessAgent ? "Essential business facts" : "Essential personal facts"}
                     <span className="ml-2 font-normal text-muted-foreground">Optional</span>
                   </label>
                   <Link
@@ -227,7 +251,11 @@ export default function StudioAgentWorkspacePanel({
                   value={setupKnowledge}
                   onChange={(event) => setSetupKnowledge(event.target.value)}
                   className="min-h-28 w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm leading-6 outline-none focus:border-primary/50"
-                  placeholder="Hours, services, pricing, policies, FAQs, and when to hand off to a person…"
+                  placeholder={
+                    isBusinessAgent
+                      ? "Hours, services, pricing, policies, FAQs, and when to hand off to a person…"
+                      : "Preferences, hard rules, calendar constraints, and when to text or interrupt you…"
+                  }
                 />
               </div>
 
@@ -272,9 +300,13 @@ export default function StudioAgentWorkspacePanel({
         >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-base font-semibold text-foreground">Test before going live</h3>
+              <h3 className="text-base font-semibold text-foreground">
+                {isBusinessAgent ? "Test before going live" : "Test before connecting a line"}
+              </h3>
               <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
-                Run one realistic customer test before connecting live channels.
+                {isBusinessAgent
+                  ? "Run one realistic customer test before connecting live channels."
+                  : "Run one private conversation test before connecting a live number."}
               </p>
             </div>
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">

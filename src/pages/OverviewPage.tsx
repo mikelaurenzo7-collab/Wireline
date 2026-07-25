@@ -125,26 +125,47 @@ function AgentLoadingRows() {
 
 function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
   const language = customerAgentLanguage(posture);
-  const steps = [
-    {
-      title: "Choose one real job",
-      detail:
-        "Start with missed calls, appointment booking, lead qualification, or customer support.",
-      icon: Bot,
-    },
-    {
-      title: "Connect the customer line",
-      detail:
-        "Activate a paid plan, then claim an included Wireline number—or route calls customers already make to your business.",
-      icon: Phone,
-    },
-    {
-      title: "Review the first outcome",
-      detail:
-        "See what the customer needed, what Wireline completed, and what needs your approval.",
-      icon: Sparkles,
-    },
-  ];
+  const steps =
+    posture === "personal"
+      ? [
+          {
+            title: "Choose one personal job",
+            detail:
+              "Start with screening unknown callers, booking appointments, or taking messages for you.",
+            icon: Bot,
+          },
+          {
+            title: "Connect your line",
+            detail:
+              "Activate a paid plan, then claim an included Wireline number so your agent can answer and text you.",
+            icon: Phone,
+          },
+          {
+            title: "Review the first outcome",
+            detail: "See who called, what your agent handled, and what needs your attention.",
+            icon: Sparkles,
+          },
+        ]
+      : [
+          {
+            title: "Choose one real job",
+            detail:
+              "Start with missed calls, appointment booking, lead qualification, or customer support.",
+            icon: Bot,
+          },
+          {
+            title: "Connect the customer line",
+            detail:
+              "Activate a paid plan, then claim an included Wireline number—or route calls customers already make to your business.",
+            icon: Phone,
+          },
+          {
+            title: "Review the first outcome",
+            detail:
+              "See what the customer needed, what Wireline completed, and what needs your approval.",
+            icon: Sparkles,
+          },
+        ];
 
   return (
     <section
@@ -153,12 +174,16 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
     >
       <div className="grid gap-7 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center">
         <div>
-          <p className="wl-eyebrow wl-eyebrow--primary">Start with demand</p>
+          <p className="wl-eyebrow wl-eyebrow--primary">
+            {posture === "personal" ? "Start with your calls" : "Start with demand"}
+          </p>
           <h2
             id="first-run-title"
             className="mt-2 text-xl font-semibold text-foreground sm:text-2xl"
           >
-            Put one customer-facing job to work today.
+            {posture === "personal"
+              ? "Put one personal job to work today."
+              : "Put one customer-facing job to work today."}
           </h2>
           <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
             Give one {language.singular} a clear job, test it, then connect only the channels that
@@ -166,7 +191,11 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
           </p>
           <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
             <Button asChild className="w-full justify-center sm:w-auto">
-              <Link to="/studio?create=1">
+              <Link
+                to={
+                  posture === "personal" ? "/studio?create=1" : "/studio?create=1&posture=business"
+                }
+              >
                 {language.createCta}
                 <ArrowRight size={15} aria-hidden="true" />
               </Link>
@@ -183,7 +212,14 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
           </p>
         </div>
 
-        <ol className="grid gap-2" aria-label="First customer-demand workflow">
+        <ol
+          className="grid gap-2"
+          aria-label={
+            posture === "personal"
+              ? "First personal-agent workflow"
+              : "First customer-demand workflow"
+          }
+        >
           {steps.map((step, index) => {
             const Icon = step.icon;
             return (

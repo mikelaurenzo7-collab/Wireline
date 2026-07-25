@@ -28,6 +28,7 @@ import { authFetch, safeJson, isApiErrorBody } from "../lib/api";
 import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
 import { cn } from "../lib/utils";
 import { BRAND } from "../constants/brand-colors";
+import { isBusinessTemplateCategory } from "../lib/agent-create-defaults";
 import { useToast } from "../contexts/ToastContext";
 import { EmptyState } from "./ui/EmptyState";
 import { Input } from "./ui/shadcn/Input";
@@ -576,6 +577,7 @@ export default function AgentTemplates() {
           voice_id: values.voiceId,
           templateId: modalTemplate.id,
           firstMessage: modalTemplate.firstMessage,
+          is_business_agent: isBusinessTemplateCategory(modalTemplate.category),
         }),
       });
       const data = await safeJson(resp);

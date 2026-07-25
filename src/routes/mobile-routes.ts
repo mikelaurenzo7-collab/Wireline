@@ -44,11 +44,11 @@ import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
 import {
-  getDefaultAgentTools,
   isAgentToolName,
   normalizeEnabledTools,
   type AgentToolName,
 } from "../lib/agent-capabilities";
+import { resolveCreateEnabledTools, resolveCreatePersonality } from "../lib/agent-create-defaults";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import type { AuthenticatedRequest } from "../types/auth";
 import {
@@ -241,21 +241,37 @@ router.post(
       const id = `agent-${randomUUID()}`;
       const existing = Number(count);
       const voiceId = pickRotatedVoiceId(existing);
-      const enabledTools = getDefaultAgentTools();
-      const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
-      await drizzle.insert(schema.agents).values({
-        id,
-        userId: req.user.id,
-        name,
+      const enabledTools = resolveCreateEnabledTools(role, isBusinessAgent);
+      const seededPersonality = resolveCreatePersonality({
         role,
-        channel: "voice",
-        archetype: resolveAgentRoleArchetype(role),
-        voiceId,
-        voiceProvider: "vapi",
-        enabledTools,
-        firstMessage: `Hi, this is ${name}. How can I help?`,
         isBusinessAgent,
-        ...videoPresenter,
+        agentName: name,
+      });
+      const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
+      await drizzle.transaction(async (tx) => {
+        await tx.insert(schema.agents).values({
+          id,
+          userId: req.user.id,
+          name,
+          role,
+          channel: "voice",
+          archetype: resolveAgentRoleArchetype(role),
+          voiceId,
+          voiceProvider: "vapi",
+          enabledTools,
+          firstMessage: `Hi, this is ${name}. How can I help?`,
+          isBusinessAgent,
+          ...videoPresenter,
+        });
+        if (seededPersonality) {
+          await tx
+            .insert(schema.personality)
+            .values({ agentId: id, userId: req.user.id, content: seededPersonality })
+            .onConflictDoUpdate({
+              target: schema.personality.agentId,
+              set: { userId: req.user.id, content: seededPersonality },
+            });
+        }
       });
       res.status(201).json({
         id,
