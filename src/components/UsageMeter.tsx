@@ -202,6 +202,8 @@ export default function UsageMeter({
           <span className="flex items-center gap-2 wl-label text-foreground/55 font-medium">
             <Wallet className="w-3.5 h-3.5" />
             {BALANCE_TITLE}
+          </span>
+          {completionDue > 0 ? (
             <span className="text-right leading-tight">
               <span className="tabular-nums font-bold text-[var(--wireline-typography-body-size)] text-rose-400">
                 ${completionDue.toFixed(2)} due

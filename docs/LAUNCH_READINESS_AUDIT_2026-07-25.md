@@ -39,6 +39,10 @@ Status: **Active** — deep E2E audit + verified code/ops fixes shipped this pas
 15. DeployAgentModal `assistant-name` → `agent-name`; hard-gate comment matches deferred DNC.
 16. Master plan iOS **Beta → Planned** (matches `CLIENT_SURFACES.md`).
 
+
+17. **Runtime policy / IntegrationLogos** — unused marketing strip removed; contracts assert logo catalog keys directly.
+18. **Live voice contract drift** — `code-review-hardening` now reads `OpenAILiveVoiceSandbox` (LiveVoiceSandbox is a re-export).
+
 ## Ops still open (not code-blockable)
 
 | Item | Notes |

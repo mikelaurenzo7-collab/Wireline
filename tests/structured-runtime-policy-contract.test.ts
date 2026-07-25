@@ -64,9 +64,11 @@ describe("structured runtime policy", () => {
     expect(privacyPage).not.toContain("<strong>Anthropic</strong>");
     expect(legalPage).not.toContain("Anthropic's Claude API");
     expect(legalPage).not.toContain("<strong>Anthropic</strong>");
-    expect(integrationLogos).toContain("ALL_LOGOS.xai");
-    expect(integrationLogos).toContain("ALL_LOGOS.openai");
+    expect(integrationLogos).toMatch(/^\s*xai:\s*\{/m);
+    expect(integrationLogos).toMatch(/^\s*openai:\s*\{/m);
+    expect(integrationLogos).not.toMatch(/^\s*anthropic:\s*\{/m);
     expect(integrationLogos).not.toContain("ALL_LOGOS.anthropic");
+    expect(integrationLogos).not.toContain('aria-label="Anthropic"');
     expect(migrationCorpus).toContain("voice_llm_provider SET DEFAULT 'openai'");
     expect(migrationCorpus).toContain("voice_llm_model SET DEFAULT 'gpt-4o'");
     expect(migrationCorpus).toContain("claude-haiku-4-5");
