@@ -46,15 +46,29 @@ export default function CookieConsent() {
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     void (async () => {
+      let sessionPresent = false;
       try {
         const sessionRes = await fetch("/api/auth/session", { credentials: "include" });
         if (cancelled) return;
-        const sessionPresent = sessionRes.ok;
+        sessionPresent = sessionRes.ok;
         setHasSession(sessionPresent);
       } catch {
-        /* Session probe failed — still show the notice so EU/UK visitors get a
-           consent choice regardless of auth state. */
+        /* Session probe failed — treat as signed out so EU/UK visitors still
+           get a consent choice. */
       }
+
+      // A signed-in visitor reached the app through the public site, where the
+      // notice already had its chance. Auto-opening it again inside the
+      // workspace is both late and intrusive: it is bottom-anchored, so it
+      // lands on top of the Overview onboarding card and the Billing
+      // subscription panel, and on phone it covers the primary next action.
+      //
+      // Suppressing the AUTO-open is not a bypass. Optional measurement stays
+      // off until an explicit grant, so silence is the privacy-preserving
+      // state, and "Privacy choices" in the footer still opens this card on
+      // demand from anywhere (the listener below is unconditional).
+      if (sessionPresent) return;
+
       if (!cancelled) {
         timeoutId = setTimeout(() => {
           if (!cancelled) setVisible(true);
