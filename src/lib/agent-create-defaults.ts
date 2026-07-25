@@ -18,10 +18,32 @@ export const PERSONAL_FAST_START_ROLE = "personal_assistant" as const;
 /** Concierge overlay applied when personal Fast Start has no explicit template. */
 export const PERSONAL_DEFAULT_TEMPLATE_ID = "personal-concierge" as const;
 
+/**
+ * Device actions dispatch directly to the Account Holder's phone. They remain
+ * explicit opt-ins and are never granted by a web/mobile/template create path.
+ */
+const CREATE_PATH_DEVICE_ACTIONS = new Set<AgentToolName>([
+  "navigate_to",
+  "add_reminder",
+  "play_music",
+]);
+
+/** Teams and Slack are equivalent business collaboration surfaces. */
+const PERSONAL_CREATE_BUSINESS_TOOLS = new Set<AgentToolName>([
+  ...BUSINESS_TOOL_NAMES,
+  "send_teams_message",
+]);
+
 export function resolveCreateEnabledTools(role: string, isBusinessAgent: boolean): AgentToolName[] {
-  if (isBusinessAgent) return getDefaultAgentTools();
-  const toolRole = role === "ceo" || role === "custom" ? PERSONAL_FAST_START_ROLE : role;
-  return getRoleToolSet(toolRole).filter((tool) => !BUSINESS_TOOL_NAMES.has(tool));
+  const candidateTools = isBusinessAgent
+    ? getDefaultAgentTools()
+    : getRoleToolSet(role === "ceo" || role === "custom" ? PERSONAL_FAST_START_ROLE : role);
+
+  return candidateTools.filter(
+    (tool) =>
+      !CREATE_PATH_DEVICE_ACTIONS.has(tool) &&
+      (isBusinessAgent || !PERSONAL_CREATE_BUSINESS_TOOLS.has(tool)),
+  );
 }
 
 export function resolveCreatePersonality(opts: {
