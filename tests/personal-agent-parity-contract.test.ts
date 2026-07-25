@@ -29,18 +29,30 @@ describe("personal agent parity — create defaults", () => {
     expect(personality!).toContain("Sarah");
   });
 
-  it("strips business-only tools from personal create while business keeps the full catalog", () => {
+  it("strips business-only tools from personal create and keeps device actions opt-in", () => {
     const personalTools = resolveCreateEnabledTools("personal_assistant", false);
     const businessTools = resolveCreateEnabledTools("sales", true);
-    expect(businessTools).toEqual(getDefaultAgentTools());
+    const deviceActions = ["navigate_to", "add_reminder", "play_music"] as const;
+
     expect(personalTools.length).toBeGreaterThan(0);
     for (const tool of personalTools) {
       expect(BUSINESS_TOOL_NAMES.has(tool)).toBe(false);
+    }
+    for (const tool of deviceActions) {
+      expect(personalTools).not.toContain(tool);
+      expect(businessTools).not.toContain(tool);
+    }
+    for (const tool of getDefaultAgentTools()) {
+      if (!deviceActions.includes(tool as (typeof deviceActions)[number])) {
+        expect(businessTools).toContain(tool);
+      }
     }
     expect(personalTools).toContain("book_appointment");
     expect(personalTools).toContain("send_text_message");
     expect(personalTools).not.toContain("crm_log_call");
     expect(personalTools).not.toContain("search_leads");
+    expect(personalTools).not.toContain("send_slack_notification");
+    expect(personalTools).not.toContain("send_teams_message");
   });
 
   it("marks Personal & Lifestyle templates as non-business", () => {
