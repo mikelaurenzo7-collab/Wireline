@@ -139,13 +139,50 @@ export async function trackVoiceMinutes(opts: {
       Math.round(incrementalOverageMinutes * plan.overage_per_min_usd * 100) / 100;
     if (overageCostUsd <= 0) return;
 
-    const charge = await chargeCompletedVoiceUsage({
-      userId,
-      costUsd: overageCostUsd,
-      providerCallId: vapiCallId,
-      billableMinutes: incrementalOverageMinutes,
-      rateUsd: plan.overage_per_min_usd,
-    });
+    let charge;
+    try {
+      charge = await chargeCompletedVoiceUsage({
+        userId,
+        costUsd: overageCostUsd,
+        providerCallId: vapiCallId,
+        billableMinutes: incrementalOverageMinutes,
+        rateUsd: plan.overage_per_min_usd,
+      });
+    } catch (chargeError) {
+      // The counter has already committed, and the overage band is derived
+      // from it (previousUsed -> newUsed). If the charge fails here and we
+      // leave the counter inflated, the next call recomputes previousOverage
+      // from the higher number, so this band's incremental minutes become 0
+      // forever: never charged, never retried, and completion-grace debt never
+      // recorded — so the pre-call solvency gate keeps authorising calls
+      // against coverage that was already spent.
+      //
+      // Rolling the counter back by exactly the minutes just added makes the
+      // same band re-derivable, so the next call retries the charge (the
+      // ledger key is per-call and idempotent, so a late success cannot double
+      // charge). The trade-off is that monthly usage under-reports until that
+      // next call — billability is the more important of the two to preserve.
+      await drizzle
+        .update(schema.quotaUsage)
+        .set({ used: sql`GREATEST(0, ${schema.quotaUsage.used} - ${BigInt(minutes)})` })
+        .where(
+          and(
+            eq(schema.quotaUsage.userId, userId),
+            eq(schema.quotaUsage.dimension, DIMENSION),
+            eq(schema.quotaUsage.periodKey, periodKey),
+          ),
+        )
+        .catch(() => {});
+      log.error("Voice overage charge failed — usage counter rolled back for retry", {
+        userId,
+        callId: vapiCallId,
+        minutes,
+        incrementalOverageMinutes,
+        overageCostUsd,
+        error: getErrorMessage(chargeError),
+      });
+      return;
+    }
 
     if (charge.used_completion_grace) {
       log.warn("Completed call used voice completion grace", {
