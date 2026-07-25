@@ -1,6 +1,7 @@
 import { chromium } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { resolvePreinstalledChromium } from "./lib/resolve-preinstalled-chromium.mjs";
 
 const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "http://localhost:3000").replace(
   /\/$/,
@@ -508,10 +509,10 @@ await mkdir(outputDir, { recursive: true });
 const proxyServer = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.https_proxy;
 const browser = await chromium.launch({
   headless: true,
-  // Sandboxes with a preinstalled Chromium can point at it instead of
-  // downloading a browser (e.g. /opt/pw-browsers/chromium).
-  ...(process.env.WIRELINE_E2E_CHROMIUM
-    ? { executablePath: process.env.WIRELINE_E2E_CHROMIUM }
+  // Sandboxes with a preinstalled Chromium (and browser downloads disabled)
+  // resolve it automatically; WIRELINE_E2E_CHROMIUM still overrides.
+  ...(resolvePreinstalledChromium()
+    ? { executablePath: resolvePreinstalledChromium() }
     : {}),
   // Chromium does not read HTTPS_PROXY from the environment on its own —
   // sandboxes that route outbound HTTPS through an agent proxy need it wired

@@ -1,4 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
+import { resolvePreinstalledChromium } from "./scripts/lib/resolve-preinstalled-chromium.mjs";
+
+const preinstalledChromium = resolvePreinstalledChromium();
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -12,11 +15,10 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:3000",
     trace: "on-first-retry",
-    // Sandboxes with a preinstalled Chromium can point at it instead of
-    // downloading a browser (e.g. /opt/pw-browsers/chromium).
-    ...(process.env.WIRELINE_E2E_CHROMIUM
-      ? { launchOptions: { executablePath: process.env.WIRELINE_E2E_CHROMIUM } }
-      : {}),
+    // Sandboxes with a preinstalled Chromium (and browser downloads disabled)
+    // point at it automatically; WIRELINE_E2E_CHROMIUM still overrides. CI and
+    // local installs resolve browsers through Playwright as usual.
+    ...(preinstalledChromium ? { launchOptions: { executablePath: preinstalledChromium } } : {}),
   },
   projects: [
     {

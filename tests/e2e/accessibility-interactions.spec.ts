@@ -63,11 +63,13 @@ test.describe("keyboard accessibility interactions", () => {
   }
 
   test("sign-in form exposes labeled editable controls", async ({ page }) => {
-    await page.goto("/signin", { waitUntil: "commit" });
-    await expect(page.locator("body")).toBeVisible();
+    // Same cold-hydration discipline as the route loop above: the production
+    // bundle's auth chunk takes >5s to mount on a cold serial worker, so anchor
+    // on the hydrated main landmark before asserting on form controls.
+    await gotoPublicRouteWithMain(page, "/signin");
 
     const editables = page.getByRole("textbox");
-    await expect(editables.first()).toBeVisible();
+    await expect(editables.first()).toBeVisible({ timeout: 15_000 });
 
     const editableCount = await editables.count();
     expect(editableCount).toBeGreaterThan(0);
