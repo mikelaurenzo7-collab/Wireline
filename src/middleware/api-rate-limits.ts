@@ -60,8 +60,8 @@ function getErrorMessage(err: unknown): string {
 }
 
 /**
- * Daily aggregate ceiling on realtime simulation sessions (Grok + OpenAI
- * live-voice test paths). Each session mints a vendor-metered 5-minute
+ * Daily aggregate ceiling on realtime simulation sessions (OpenAI Realtime
+ * live-voice test paths; optional Grok experiment if enabled). Each session mints a vendor-metered 5-minute
  * client secret, so every mint charges 5 simulation minutes. The per-minute
  * limiter above this stops bursts; without this cap a tenant could still run
  * back-to-back sessions all day on paid realtime keys with zero accounting.

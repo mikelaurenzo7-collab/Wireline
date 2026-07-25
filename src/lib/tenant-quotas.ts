@@ -40,8 +40,8 @@ export interface QuotaProfile {
   /** Lead-intake API requests per minute per tenant. */
   intake_rpm: number;
   /**
-   * Live-simulation minutes per UTC day (Grok/OpenAI realtime test
-   * sessions). Each session mint charges its 5-minute secret TTL — the
+   * Live-simulation minutes per UTC day (OpenAI Realtime test sessions,
+   * plus any optional Grok experiment path). Each session mint charges its 5-minute secret TTL — the
    * per-minute rate limiter stops bursts, this stops a tenant running
    * back-to-back realtime sessions all day on vendor-metered keys.
    */

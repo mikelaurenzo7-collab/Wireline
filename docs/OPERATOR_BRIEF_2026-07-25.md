@@ -10,7 +10,8 @@ live-infrastructure audits performed the same day.
 
 | Change | PR | Verified |
 | ------ | -- | -------- |
-| Grok 4.5 promoted to managed structured primary (xAI → OpenAI → Gemini → AI Gateway; opt-in flag retired) | #859 | Prod bundle serves the new privacy disclosure; policy gate + 963 tests green |
+| Grok 4.5 temporarily promoted, then **superseded the same day by OpenAI-unified demo+runtime** (`main` `5ee2ba65`): OpenAI → Gemini → Gateway; all live demos on OpenAI Realtime; xAI opt-in only | #859 + #869 | Policy gate + OpenAI-first contracts green |
+
 | Deep-review fixes: campaign temporal-gate retirement, $0 campaign cost stats, inert mid-call DNC termination, WhatsApp sender cross-tenant guard, health-probe cost memoization, partial-refund allowance clamp, timezone date math | #859 | Contract tests lock each fix |
 | Stripe catalog copy drift (55/120/285) synced to live account | #860 | Live product re-read |
 | E2E harness auto-resolves preinstalled Chromium; signin test hardened | #861 | 61/61 runnable e2e green in-sandbox |
@@ -82,7 +83,7 @@ live-infrastructure audits performed the same day.
 - Pricing/margin policy: `docs/PRICING_DECISION_2026-07-25.md` (the two-floor
   policy and the v6 table) with method in
   `docs/PLAN_CAPACITY_HEADROOM_2026-07-25.md`.
-- Runtime/provider policy: `scripts/check-runtime-policy.mjs` (Grok-first) and
-  `tests/runtime-provider-chain-contract.test.ts`.
+- Runtime/provider policy: `scripts/check-runtime-policy.mjs` (OpenAI-first) and
+  `tests/runtime-provider-chain-contract.test.ts` / `tests/openai-live-demo-contract.test.ts`.
 - Vendor state: `docs/VENDOR_LAUNCH_MAP.md` (balances there are a 2026-07-20
   snapshot; re-probe with `npm run vendor:readiness` before relying on them).

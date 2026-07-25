@@ -25,7 +25,7 @@ export const CONTACT_AGENT_TINTS = {
  *
  * Employee lines can escalate via `escalate_to_human`. Demo lines cannot.
  *
- * Voice design: every agent uses a curated Vapi voice (V2, powered by xAI Grok)
+ * Voice design: every agent uses a curated Vapi managed voice (V2 roster)
  * so prospects hear a varied, role-authentic team — not the same voice on
  * every line. Sync via POST /api/admin/sync-vapi-knowledge after edits.
  */

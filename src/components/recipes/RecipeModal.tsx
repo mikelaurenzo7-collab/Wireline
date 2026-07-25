@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- recipe payload bridges loosely typed agent API. */
 /**
  * Recipe modal shell — picks up `recipe`, mounts the matching form,
- * polls the managed xAI Grok reasoning runtime, and provides the close affordance.
+ * polls the managed OpenAI structured runtime, and provides the close affordance.
  *
  * The recipe forms live beside the workflow they implement so this shell stays
  * focused on availability, agent selection, and modal lifecycle.
