@@ -65,10 +65,10 @@ for (const envTarget of ["STRIPE_EXTRA_AGENT_PRICE_ID"]) {
 }
 
 const expectedPlans = [
-  ["starter", 9, 99],
-  ["team", 24, 240],
-  ["business", 59, 590],
-  ["enterprise", 149, 1490],
+  ["starter", 19, 190],
+  ["team", 39, 390],
+  ["business", 79, 790],
+  ["enterprise", 159, 1590],
 ];
 for (const [id, monthly, annual] of expectedPlans) {
   const pattern = new RegExp(
@@ -80,10 +80,10 @@ for (const [id, monthly, annual] of expectedPlans) {
 }
 
 const expectedCapacity = [
-  ["starter", 1, 1, 20],
-  ["team", 2, 2, 55],
-  ["business", 5, 5, 120],
-  ["enterprise", 15, 15, 285],
+  ["starter", 1, 1, 60],
+  ["team", 2, 2, 120],
+  ["business", 5, 5, 250],
+  ["enterprise", 15, 15, 450],
 ];
 for (const [planId, agents, numbers, voiceMinutes] of expectedCapacity) {
   const product = FOUNDER_PRODUCTS.find(

@@ -43,7 +43,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     title: "Your best salesperson, without the commission.",
     lead: "Call warm lists, revive old leads, promote offers, text or email the follow-up, book appointments, and log profit-moving outcomes with one tireless employee.",
     bestFor: ["Lead response", "Quote follow-up", "Appointment setting"],
-    cta: "Start on Starter — $9/mo",
+    cta: "Start on Starter — $19/mo",
     ctaPath: "/signup?plan=starter&mode=outbound",
   },
   inbound: {
@@ -51,7 +51,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     title: "Answer demand before profit leaks.",
     lead: "Handle front-desk calls, inbound qualification, scheduling, callbacks, overflow, after-hours coverage, and the next SMS or email from one shared customer record.",
     bestFor: ["Front desk", "Lead qualifier", "Support triage"],
-    cta: "Start on Starter — $9/mo",
+    cta: "Start on Starter — $19/mo",
     ctaPath: "/signup?plan=starter&mode=inbound",
   },
   hybrid: {
@@ -59,7 +59,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     title: "The employee who does the follow-through.",
     lead: "When sales, service, callbacks, email, SMS, scheduling, recovery, and CRM updates belong in one workflow, Wireline owns the busywork and shows you the result.",
     bestFor: ["Sales desk", "Collections desk", "Appointment desk"],
-    cta: "Start on Starter — $9/mo",
+    cta: "Start on Starter — $19/mo",
     ctaPath: "/signup?plan=starter&mode=hybrid",
   },
 };
@@ -91,7 +91,7 @@ const PLAN_PREVIEW = [
     price: `$${planCatalog.starter.price_usd_monthly}`,
     period: "/mo",
     body: `${planCatalog.starter.max_agents} live AI Voice Employee, ${planCatalog.starter.included_phone_numbers} included Wireline number, and ${planCatalog.starter.voice_minutes_monthly} guaranteed voice minutes—plus connected SMS and email workflows.`,
-    cta: "Start for $9",
+    cta: "Start for $19",
     ctaPath: "/signup?plan=starter",
     highlight: false,
   },

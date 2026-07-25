@@ -9,7 +9,7 @@ export const PHONE_NUMBER_COST_MONTHLY_USD = 1.15;
 export const PAYMENT_PROCESSING_RATE = 0.029;
 export const PAYMENT_PROCESSING_FIXED_USD = 0.3;
 
-export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v5";
+export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v6";
 
 export const EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY = 15;
 export const EXTRA_AGENT_ADDON_VOICE_MINUTES_MONTHLY = 50;
@@ -122,7 +122,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 1,
     voice_minutes_monthly: 0,
     runtime_allowance_usd_monthly: 0,
-    overage_per_min_usd: 0.25,
+    overage_per_min_usd: 0.22,
     included_phone_numbers: 0,
     priceIdEnv: "STRIPE_PERSONAL_PRICE_ID",
     annualPriceIdEnv: "STRIPE_PERSONAL_ANNUAL_PRICE_ID",
@@ -136,26 +136,26 @@ export const STRIPE_PLANS: StripePlan[] = [
   {
     id: "starter",
     name: "Wireline Starter",
-    price_usd_monthly: 9,
-    price_usd_annual: 99,
+    price_usd_monthly: 19,
+    price_usd_annual: 190,
     max_agents: 1,
-    voice_minutes_monthly: 20,
-    runtime_allowance_usd_monthly: 0.5,
-    overage_per_min_usd: 0.25,
+    voice_minutes_monthly: 60,
+    runtime_allowance_usd_monthly: 1,
+    overage_per_min_usd: 0.22,
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_STARTER_9_PRICE_ID",
     annualPriceIdEnv: "STRIPE_STARTER_9_ANNUAL_PRICE_ID",
-    fallbackPriceId: "price_1Tv9K08e6If87QKmt8n8bkiX",
-    fallbackAnnualPriceId: "price_1TvlQa8e6If87QKmm9GTajo6",
-    lookupKeyMonthly: "starter_monthly_founder_2026_07_v2",
-    lookupKeyAnnual: "starter_annual_founder_2026_07_v3",
+    fallbackPriceId: "price_1Tx5X78e6If87QKmltXpASRU",
+    fallbackAnnualPriceId: "price_1Tx5XD8e6If87QKmCuwmYCK5",
+    lookupKeyMonthly: "starter_monthly_founder_2026_07_v6",
+    lookupKeyAnnual: "starter_annual_founder_2026_07_v6",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
       "1 live AI communications agent",
       "1 production-number slot, provisioned when needed",
-      "20 guaranteed live-voice minutes each month",
+      "60 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
-      "$0.50 monthly flexible Runtime Allowance",
+      "$1 monthly flexible Runtime Allowance",
       "Voice, SMS, and email under one employee identity",
       "Lead Hunt access and connected email workflows",
       "Automatic post-call summary, outcome, note, and next action",
@@ -165,26 +165,26 @@ export const STRIPE_PLANS: StripePlan[] = [
   {
     id: "team",
     name: "Wireline Starter Plus",
-    price_usd_monthly: 24,
-    price_usd_annual: 240,
+    price_usd_monthly: 39,
+    price_usd_annual: 390,
     max_agents: 2,
-    voice_minutes_monthly: 55,
-    runtime_allowance_usd_monthly: 1,
+    voice_minutes_monthly: 120,
+    runtime_allowance_usd_monthly: 3,
     overage_per_min_usd: 0.22,
     included_phone_numbers: 2,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
     annualPriceIdEnv: "STRIPE_STARTER_ANNUAL_PRICE_ID",
-    fallbackPriceId: "price_1TwueT8e6If87QKmTtr6cZx5",
-    fallbackAnnualPriceId: "price_1TwueU8e6If87QKmMd7x8Urj",
-    lookupKeyMonthly: "team_monthly_founder_2026_07_v5",
-    lookupKeyAnnual: "team_annual_founder_2026_07_v5",
+    fallbackPriceId: "price_1Tx5XK8e6If87QKmQG9Jg0j2",
+    fallbackAnnualPriceId: "price_1Tx5XU8e6If87QKmIwF251n6",
+    lookupKeyMonthly: "team_monthly_founder_2026_07_v6",
+    lookupKeyAnnual: "team_annual_founder_2026_07_v6",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
       "2 live agents — personal Concierge + business AI employee",
       "2 production-number slots, provisioned when needed",
-      "55 guaranteed live-voice minutes each month",
+      "120 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
-      "$1 monthly flexible Runtime Allowance",
+      "$3 monthly flexible Runtime Allowance",
       "Full Lead Hunt, enrichment, niche research, email, and SMS workflows",
       "Branded call and weekly recap share links",
       "Automatic post-call summary, outcome, note, and next action",
@@ -194,26 +194,26 @@ export const STRIPE_PLANS: StripePlan[] = [
   {
     id: "business",
     name: "Wireline Pro",
-    price_usd_monthly: 59,
-    price_usd_annual: 590,
+    price_usd_monthly: 79,
+    price_usd_annual: 790,
     max_agents: 5,
-    voice_minutes_monthly: 120,
-    runtime_allowance_usd_monthly: 4,
-    overage_per_min_usd: 0.19,
+    voice_minutes_monthly: 250,
+    runtime_allowance_usd_monthly: 6,
+    overage_per_min_usd: 0.22,
     included_phone_numbers: 5,
     priceIdEnv: "STRIPE_TEAM_PRICE_ID",
     annualPriceIdEnv: "STRIPE_TEAM_ANNUAL_PRICE_ID",
-    fallbackPriceId: "price_1Tv9K28e6If87QKmoe22FUz1",
-    fallbackAnnualPriceId: "price_1Tv9K38e6If87QKm3OsZgYcy",
-    lookupKeyMonthly: "business_monthly_founder_2026_07_v2",
-    lookupKeyAnnual: "business_annual_founder_2026_07_v2",
+    fallbackPriceId: "price_1Tx5Xa8e6If87QKmf1bWe8ol",
+    fallbackAnnualPriceId: "price_1Tx5Xg8e6If87QKmYFwRlCwi",
+    lookupKeyMonthly: "business_monthly_founder_2026_07_v6",
+    lookupKeyAnnual: "business_annual_founder_2026_07_v6",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
       "Up to 5 live AI communications agents",
       "Up to 5 production-number slots, provisioned when needed",
-      "120 guaranteed live-voice minutes each month",
+      "250 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
-      "$4 monthly flexible Runtime Allowance",
+      "$6 monthly flexible Runtime Allowance",
       "Lead Hunt campaigns, enrichment, niche research, routing, and approvals",
       "Connected calendar, CRM, email, SMS, contracts, and commerce actions",
       "Branded call and weekly recap share links",
@@ -224,26 +224,26 @@ export const STRIPE_PLANS: StripePlan[] = [
   {
     id: "enterprise",
     name: "Wireline Business",
-    price_usd_monthly: 149,
-    price_usd_annual: 1490,
+    price_usd_monthly: 159,
+    price_usd_annual: 1590,
     max_agents: 15,
-    voice_minutes_monthly: 285,
-    runtime_allowance_usd_monthly: 10,
-    overage_per_min_usd: 0.17,
+    voice_minutes_monthly: 450,
+    runtime_allowance_usd_monthly: 12,
+    overage_per_min_usd: 0.22,
     included_phone_numbers: 15,
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
     annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
-    fallbackPriceId: "price_1Tv9K38e6If87QKmkWgepqBn",
-    fallbackAnnualPriceId: "price_1Tv9K48e6If87QKm4pwXGJGl",
-    lookupKeyMonthly: "enterprise_monthly_founder_2026_07_v2",
-    lookupKeyAnnual: "enterprise_annual_founder_2026_07_v2",
+    fallbackPriceId: "price_1Tx5Xm8e6If87QKm7mC84oe8",
+    fallbackAnnualPriceId: "price_1Tx5Xs8e6If87QKmGxEvongq",
+    lookupKeyMonthly: "enterprise_monthly_founder_2026_07_v6",
+    lookupKeyAnnual: "enterprise_annual_founder_2026_07_v6",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
       "Up to 15 live AI communications agents",
       "Up to 15 production-number slots, provisioned when needed",
-      "285 guaranteed live-voice minutes each month",
+      "450 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
-      "$10 monthly flexible Runtime Allowance",
+      "$12 monthly flexible Runtime Allowance",
       "Lead Hunt, enrichment, analytics, CRM controls, routing, and approvals",
       "Connected calendar, email, SMS, contracts, payments, and commerce actions",
       "Branded call and weekly recap share links",
@@ -253,7 +253,20 @@ export const STRIPE_PLANS: StripePlan[] = [
   },
 ];
 
+/**
+ * Two-floor margin policy (catalog v6 — see docs/PRICING_DECISION_2026-07-25.md).
+ *
+ * Planning floor: contribution at EXPECTED_INCLUDED_UTILIZATION of minutes and
+ * allowance (numbers always reserved in full — a provisioned line bills
+ * regardless of use) must clear LAUNCH_CONTRIBUTION_MARGIN_FLOOR.
+ *
+ * Hard floor: contribution at 100% utilization — the bounded worst case of a
+ * prepaid-only catalog — must clear HARD_CONTRIBUTION_MARGIN_FLOOR on both
+ * intervals; annual (discounted revenue, unchanged COGS) is always binding.
+ */
 export const LAUNCH_CONTRIBUTION_MARGIN_FLOOR = 0.45;
+export const HARD_CONTRIBUTION_MARGIN_FLOOR = 0.3;
+export const EXPECTED_INCLUDED_UTILIZATION = 0.7;
 
 export type BillingInterval = "month" | "year";
 
@@ -263,6 +276,7 @@ export type BillingInterval = "month" | "year";
  * This is intentionally stricter than observed-use margin: it reserves every
  * included voice minute, every number slot, the flexible runtime allowance,
  * and Stripe processing. Shared SaaS and founder time are not included.
+ * Judged against HARD_CONTRIBUTION_MARGIN_FLOOR.
  */
 export function estimatedContributionMarginAtFullIncludedUsage(
   plan: StripePlan,
@@ -283,6 +297,33 @@ export function estimatedContributionMarginAtFullIncludedUsage(
     processingCost;
 
   return (recurringRevenue - reservedVariableCost) / recurringRevenue;
+}
+
+/**
+ * Contribution margin at expected included utilization — the planning-floor
+ * view. Minutes and allowance are reserved at EXPECTED_INCLUDED_UTILIZATION;
+ * number slots stay fully reserved because a provisioned line bills whether or
+ * not it is used. Judged against LAUNCH_CONTRIBUTION_MARGIN_FLOOR.
+ */
+export function estimatedContributionMarginAtExpectedUsage(
+  plan: StripePlan,
+  interval: BillingInterval,
+): number {
+  const recurringRevenue =
+    interval === "year" ? plan.price_usd_annual / 12 : plan.price_usd_monthly;
+  if (recurringRevenue <= 0) return 1;
+
+  const processingCost =
+    interval === "year"
+      ? (plan.price_usd_annual * PAYMENT_PROCESSING_RATE + PAYMENT_PROCESSING_FIXED_USD) / 12
+      : plan.price_usd_monthly * PAYMENT_PROCESSING_RATE + PAYMENT_PROCESSING_FIXED_USD;
+  const expectedVariableCost =
+    plan.voice_minutes_monthly * EXPECTED_INCLUDED_UTILIZATION * VOICE_VARIABLE_COST_PER_MIN_USD +
+    plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD +
+    plan.runtime_allowance_usd_monthly * EXPECTED_INCLUDED_UTILIZATION +
+    processingCost;
+
+  return (recurringRevenue - expectedVariableCost) / recurringRevenue;
 }
 
 export function canonicalPlanId(id: string | null | undefined): StripePlanId | null {

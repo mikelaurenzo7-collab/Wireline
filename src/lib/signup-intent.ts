@@ -84,7 +84,7 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
   },
   support: {
     label: "customer coverage",
-    // One-employee front desk — Starter ($9), not Pro. Wedge-only CTAs
+    // One-employee front desk — Starter ($19), not Pro. Wedge-only CTAs
     // omit ?plan= so billing does not pretune a mismatched badge.
     defaultPlanId: "starter",
     templateId: "support-tier1",

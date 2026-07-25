@@ -181,8 +181,7 @@ export default function StripeBillingCard() {
 
   const startCreditCheckout = async (amountUsd: number) => {
     const hasPaidSubscription =
-      !!sub?.has_subscription &&
-      (sub.status === "active" || sub.status === "trialing");
+      !!sub?.has_subscription && (sub.status === "active" || sub.status === "trialing");
     if (!hasPaidSubscription) {
       setError("Choose a live plan before adding Runtime Balance.");
       return;
@@ -461,7 +460,7 @@ function PlanPicker({
               Choose operating capacity
             </h3>
             <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
-              {PRODUCT_VERSATILITY.short} Build free, go live from $9/mo with guaranteed voice
+              {PRODUCT_VERSATILITY.short} Build free, go live from $19/mo with guaranteed voice
               minutes, and move into shared capacity when you need routing, numbers, approvals, and
               team operations. Stripe-secured. Cancel anytime.
             </p>
@@ -594,9 +593,7 @@ function PlanPicker({
                   type="button"
                   disableAnimations
                   variant="outline"
-                  onClick={() =>
-                    onSelectPlan(plan.id, showAnnual ? "year" : "month")
-                  }
+                  onClick={() => onSelectPlan(plan.id, showAnnual ? "year" : "month")}
                   disabled={isBusy || !plan.configured}
                   className={cn(
                     "w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-border hover:border-[color:var(--wireline-color-border-strong)] text-foreground bg-card hover:bg-muted hover-premium-glow",

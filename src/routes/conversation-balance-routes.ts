@@ -79,7 +79,7 @@ router.post(
 
       const plan = planById(subscription?.plan);
       // Every paid plan can top up. `personal` is the free Builder tier; the
-      // `enterprise` id is the self-serve $149 Business plan, which must be
+      // `enterprise` id is the self-serve $159 Business plan, which must be
       // allowed (it exhausts its included minutes like any paid plan).
       const activePaidPlan =
         !!plan &&

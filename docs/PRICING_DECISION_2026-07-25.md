@@ -1,9 +1,11 @@
 # Pricing Decision — 2026-07-25 (founder catalog v6)
 
-Status: **Active — decided, not yet executed.** This document records the
-deep pricing audit, the analysis, and the decision for the next founder
-catalog. Execution (Stripe v6 sync + code sweep) is a separate pass with its
-own checklist below. Supersedes the *conclusions* (not the method) of
+Status: **Active — decided and executed 2026-07-25.** This document records
+the deep pricing audit, the analysis, and the decision for the founder
+catalog now live. Execution followed the checklist below: v6 prices minted in
+Stripe alongside v5, the code/catalog sweep landed with the two-floor policy,
+Vercel plan price-id env vars were updated to the v6 ids, and the v5
+recurring prices were archived once the deploy served v6. Supersedes the *conclusions* (not the method) of
 `PLAN_CAPACITY_HEADROOM_2026-07-25.md`, whose margin arithmetic remains the
 reference model and which explicitly anticipated this decision: *"Lower the
 floor… is a deliberate business decision, not a code change."* That decision

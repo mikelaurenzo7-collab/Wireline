@@ -69,8 +69,8 @@ const DIFFERENCES = [
 const MARKET_OPTIONS = [
   {
     name: "Wireline",
-    price: "$0 to build · live from $9/mo",
-    usage: "20 included live-voice minutes, one number slot, and prepaid overflow on Starter",
+    price: "$0 to build · live from $19/mo",
+    usage: "60 included live-voice minutes, one number slot, and prepaid overflow on Starter",
     fit: "Owners who want one trained employee across voice, SMS, email, follow-up, and outcomes",
     href: "/pricing",
     source: "Wireline pricing",

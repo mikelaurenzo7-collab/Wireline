@@ -134,17 +134,21 @@ export async function countAtRiskTenants(): Promise<number> {
 }
 
 export function assertPlanMarginFloors(): { ok: boolean; violations: string[] } {
+  // Catalog v6 (docs/PRICING_DECISION_2026-07-25.md): one flat $0.22 top-up
+  // rate and a uniform 30% hard contribution floor at full utilization —
+  // launch readiness enforces the same bar on every paid tier instead of the
+  // old per-tier ladder.
   const overageFloors: Record<string, number> = {
     starter: 35,
-    team: 30,
-    business: 25,
-    enterprise: 20,
+    team: 35,
+    business: 35,
+    enterprise: 35,
   };
   const includedFloors: Record<string, number> = {
-    starter: 25,
-    team: 20,
-    business: 18,
-    enterprise: 15,
+    starter: 30,
+    team: 30,
+    business: 30,
+    enterprise: 30,
   };
   const violations: string[] = [];
 

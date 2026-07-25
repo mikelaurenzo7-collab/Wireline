@@ -21,7 +21,7 @@ describe("Cadence Stripe + GDPR purge contracts", () => {
     const catalog = read("src/lib/plan-catalog.ts");
     expect(catalog).toContain("acct_1TkyXL8e6If87QKm");
     expect(catalog).toContain("price_1Tv9K58e6If87QKm7rzn3MNS");
-    expect(catalog).toContain("price_1Tv9K08e6If87QKmt8n8bkiX");
+    expect(catalog).toContain("price_1Tx5X78e6If87QKmltXpASRU");
     expect(catalog).not.toMatch(/JohDtfy3Ik/);
     expect(catalog).not.toMatch(/price_1Tr[a-zA-Z0-9]+JohDtfy3Ik/);
   });
@@ -29,7 +29,7 @@ describe("Cadence Stripe + GDPR purge contracts", () => {
   it(".env.example documents Cadence catalog price ids, not the retired account", () => {
     const example = read(".env.example");
     expect(example).toContain("acct_1TkyXL8e6If87QKm");
-    expect(example).toContain("price_1Tv9K08e6If87QKmt8n8bkiX");
+    expect(example).toContain("price_1Tx5X78e6If87QKmltXpASRU");
     expect(example).toContain("price_1Tv9K58e6If87QKm7rzn3MNS");
     expect(example).toContain("price_1Tv9K58e6If87QKmYM6sqWkL");
     expect(example).not.toMatch(/JohDtfy3Ik/);
