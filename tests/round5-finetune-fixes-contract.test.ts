@@ -73,4 +73,11 @@ describe("round-5 fine-tune verified fixes", () => {
     expect(pkg).toContain("scripts/patch-liveavatar-sdk.mjs");
     expect(patch).toContain("btoa(audioChunk)");
   });
+
+  it("keeps privacy consent off Fast Start so Create stays tappable on mobile", () => {
+    const consent = read("src/components/CookieConsent.tsx");
+    expect(consent).toContain('get("create") === "1"');
+    expect(consent).toContain("createFlowOpen");
+    expect(consent).toContain("isAuthPortalPath(location.pathname) || createFlowOpen");
+  });
 });
