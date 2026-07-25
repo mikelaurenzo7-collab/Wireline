@@ -24,7 +24,7 @@ This pass explicitly re-grouped rather than re-litigating: four parallel researc
   All three are bare `app.use(router)` mounts (each router declares its own full path internally) added to `src/server/register-api-routes.ts`. `docs/AUTHZ_MATRIX.md` regenerated (291 routes scanned, 250 protected, 41 public, **0 violations**).
 - **Four dead files deleted**, each confirmed to have zero remaining importers before removal:
   - `src/lib/agent-tool-dispatch-v2.ts` — zero importers anywhere in `src/`.
-  - `src/routes/contact-routes.ts` — deliberately orphaned per `docs/TAKEOVER_AUDIT_2026-07-05.md` (the frontend `ContactProfile.tsx` it served was already deleted as dead code in that prior audit; this route had no remaining caller).
+  - `src/routes/contact-routes.ts` — deliberately orphaned by the earlier design-system takeover pass: the frontend `ContactProfile.tsx` it served was already deleted as dead code there, and this route had no remaining caller.
   - `src/lib/contact-profile.ts`, `src/lib/phone-tail-sql.ts` — both exclusively consumed by `contact-routes.ts`.
 - **`livekit-client` removed from `package.json`** — zero imports anywhere in `src/`; redundant with `@heygen/liveavatar-web-sdk`'s own transitive LiveKit dependency.
 - Every deletion was verified against the test suite (`grep` for any test referencing the removed files: none) before removal, and `npm run verify:full` (below) confirms nothing broke.

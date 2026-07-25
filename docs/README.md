@@ -97,30 +97,14 @@ Wireline's durable documentation follows the active product model. The customer-
 | [INCIDENT_RESPONSE.md](./INCIDENT_RESPONSE.md)                                               | **Active** — incident response runbook.                                                                                                                                                                                              |
 | [SLA.md](./SLA.md)                                                                           | **Active** — service-level commitments.                                                                                                                                                                                              |
 | [LOAD_TEST.md](./LOAD_TEST.md)                                                               | **Active** — load-test methodology for the primary voice webhook ingress.                                                                                                                                                            |
-| [soc2-policies.md](./soc2-policies.md)                                                       | **Active** — current SOC 2 control narrative and observation window; source of truth over `SOC2_EVIDENCE_PACK.md`.                                                                                                                   |
 | [security/auth-password-controls.md](./security/auth-password-controls.md)                   | **Active** — custom scrypt password hashing and HIBP screening posture (Wireline does not use Supabase Auth).                                                                                                                        |
 
 ## Historical / planning material
 
 | Location                                                   | Status                                                                                                                |
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `docs/superpowers/specs/**`                                | Historical design/spec plans. Promote durable decisions into canonical docs before using as active truth.             |
-| `docs/superpowers/plans/**`                                | Historical execution plans. Useful for context, not the current source of truth.                                      |
 | `docs/mobile-web-native-strategy-audit.md`                 | Strategic context for mobile/browser/native split; verify against current `CLIENT_SURFACES.md` before implementation. |
 | `docs/ONE-AGENT-STRATEGY.md`                               | Strategic framing; keep aligned with Create -> Train -> Wire -> Run and current pricing docs.                         |
-| [LAUNCH_OPERATING_SYSTEM.md](./LAUNCH_OPERATING_SYSTEM.md) | Historical — pre-dates the Create -> Train -> Wire -> Run model and AI-employees wedge.                               |
-| [SOC2_EVIDENCE_PACK.md](./SOC2_EVIDENCE_PACK.md)           | Historical/superseded — contains inaccurate auth claims; `soc2-policies.md` is current.                               |
-| [REPO_HEALTH_AUDIT_2026-07-04.md](./REPO_HEALTH_AUDIT_2026-07-04.md) | Historical — first repo-health pass; superseded by later passes in `CODEBASE_HEALTH.md`'s changelog. |
-| [OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md](./OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md) | Historical — "AI Profit Agents" thesis superseded by the AI-employees wedge; mechanics now in `GUIDED_AGENT_SETUP_2026-07-08.md` / `WIRELINE_CEO_LAUNCH_CHECKLIST_2026-07-10.md`. |
-| [PERFECTION_PLAN.md](./PERFECTION_PLAN.md)                 | Historical — rolling launch-readiness record superseded by the dated `LAUNCH_*` audit sequence. |
-| [TAKEOVER_AUDIT_2026-07-05.md](./TAKEOVER_AUDIT_2026-07-05.md) | Historical — completed design-system takeover pass; outcomes now live in `design-tokens/wireline.tokens.json`. |
-| [COMPOSER_CERTIFICATION_2026-07-05.md](./COMPOSER_CERTIFICATION_2026-07-05.md) | Historical — dated pre-push certification snapshot; test counts and phase status are stale. |
-| [LAUNCH_DESIGN_QA_2026-07-14.md](./LAUNCH_DESIGN_QA_2026-07-14.md) | Historical — closed pre-launch visual/QA pass tied to a specific commit. |
-| [STRICT_BUSINESS_DESIGN_REVIEW_2026-07-07.md](./STRICT_BUSINESS_DESIGN_REVIEW_2026-07-07.md) | Historical — dated branch-review snapshot; fixes already merged, doctrine restated in `docs/README.md` / `CODEBASE_HEALTH.md`. |
-| [INTEGRATION_VENDOR_AUDIT.md](./INTEGRATION_VENDOR_AUDIT.md) | Historical — vendor/runtime decision superseded by `VENDOR_LAUNCH_MAP.md`'s runtime-decision table. |
-| [WIRELINE_FORWARD_PLAN_2026-07.md](./WIRELINE_FORWARD_PLAN_2026-07.md) | Historical — thin early roadmap superseded in detail by `WIRELINE_LEVEL_UP_MASTER_PLAN.md`. |
-| [CODE_REVIEW_MASTER_PLAN_2026-07-06.md](./CODE_REVIEW_MASTER_PLAN_2026-07-06.md) | Historical — self-described completed code-review record; no open follow-on thread. |
-| [MAIN_ORIGIN_CODE_REVIEW_2026-07-22.md](./MAIN_ORIGIN_CODE_REVIEW_2026-07-22.md) | Historical — dated main/origin verification-branch review snapshot; findings landed in the 07-22 audit sequence. |
 
 ## Documentation hygiene rules
 

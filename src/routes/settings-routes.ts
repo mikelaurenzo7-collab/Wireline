@@ -58,11 +58,7 @@ const CLIENT_WRITABLE_SETTINGS = new Set([
 ]);
 
 /** Platform-admin-only capacity fields — never via Stripe-bypass self-service. */
-const ADMIN_WRITABLE_SETTINGS = new Set([
-  "subscriptionStatus",
-  "maxAgents",
-  "extraAgents",
-]);
+const ADMIN_WRITABLE_SETTINGS = new Set(["subscriptionStatus", "maxAgents", "extraAgents"]);
 
 function pickWritableSettings(
   update: Record<string, unknown>,
@@ -110,6 +106,52 @@ router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, 
   }
 });
 
+/**
+ * The tenant-wide telecom identity fields are client-writable, but every
+ * tenant's line lives in ONE shared Vapi account and ONE shared Twilio account.
+ * Format validation alone is therefore not a boundary: another workspace's real
+ * number passes E.164 and its Vapi id passes the id shape, and the provider
+ * accepts both because the platform credential owns them.
+ *
+ * Left unchecked, writing a neighbour's identifier here is enough to place
+ * outbound calls under their caller ID (resolveAgentVapiPhoneNumberId falls
+ * back to this column when an agent has no dedicated line) and to send SMS
+ * from their business number — landing the carrier spam reports, STIR/SHAKEN
+ * reputation damage, and TCPA exposure on a workspace that never sent anything.
+ * A number may only be claimed as a tenant identity if that tenant owns the row.
+ */
+async function assertTelecomIdentityOwned(
+  userId: string,
+  update: Record<string, unknown>,
+): Promise<void> {
+  const vapiId =
+    typeof update.vapiPhoneNumberId === "string" ? update.vapiPhoneNumberId.trim() : "";
+  const smsFrom =
+    typeof update.twilioSmsFromNumber === "string" ? update.twilioSmsFromNumber.trim() : "";
+  if (!vapiId && !smsFrom) return;
+
+  const owned = await drizzle
+    .select({
+      vapiNumberId: schema.phoneNumbers.vapiNumberId,
+      phoneNumber: schema.phoneNumbers.phoneNumber,
+    })
+    .from(schema.phoneNumbers)
+    .where(eq(schema.phoneNumbers.userId, userId));
+
+  if (vapiId && !owned.some((row) => row.vapiNumberId === vapiId)) {
+    throw AppError.fromHttpStatus(
+      403,
+      "That voice line is not provisioned to this workspace. Provision a number before setting it as the default.",
+    );
+  }
+  if (smsFrom && !owned.some((row) => row.phoneNumber === smsFrom)) {
+    throw AppError.fromHttpStatus(
+      403,
+      "That SMS number is not provisioned to this workspace. Provision a number before sending from it.",
+    );
+  }
+}
+
 router.post(
   "/api/settings",
   authenticateUser,
@@ -123,6 +165,7 @@ router.post(
         mapObjectToCamel(req.body) as Record<string, unknown>,
         isAccountHolder,
       );
+      await assertTelecomIdentityOwned(req.user.id, update);
       update.updatedAt = new Date();
 
       let [data] = (await drizzle

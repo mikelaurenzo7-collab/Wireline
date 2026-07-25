@@ -35,7 +35,6 @@ function walk(dir) {
 
 for (const file of walk("docs")) {
   const rel = file.replace(/\\/g, "/");
-  if (rel.startsWith("docs/superpowers/")) continue;
   const text = readFileSync(file, "utf8");
   const header = text.slice(0, 800);
   const claimsActive = activeMarkers.some((marker) => header.includes(marker));

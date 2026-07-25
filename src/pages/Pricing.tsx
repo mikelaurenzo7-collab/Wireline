@@ -97,22 +97,22 @@ const CHANNEL_RULES = [
   {
     icon: PhoneCall,
     title: "Voice + included number",
-    body: "Every paid plan includes a Wireline number at no extra line fee and pooled voice minutes. Additional completed usage draws only from prepaid Conversation Balance. Active calls finish normally; new work pauses if coverage is depleted.",
+    body: "A Wireline number on every paid plan, no line fee. Extra minutes draw from prepaid balance — and a live call is never cut off mid-conversation.",
   },
   {
     icon: MessageSquareText,
     title: "Text / SMS",
-    body: "The same employee can continue the conversation by SMS. Carrier and messaging API usage draws from Conversation Balance by segment, keeping consent and campaign spend visible.",
+    body: "The same employee picks the conversation back up by text. Consent and spend stay visible, billed by segment.",
   },
   {
     icon: Mail,
     title: "Email",
-    body: "Connect Gmail, Outlook, iCloud, or customer email infrastructure. Yahoo inbox sync is planned. Provider limits and reputation controls remain authoritative; platform-funded sending or enrichment can draw from prepaid balance.",
+    body: "Connect Gmail, Outlook, iCloud, or your own infrastructure. Your provider's limits and sending reputation stay authoritative.",
   },
   {
     icon: Crosshair,
     title: "Lead Hunt",
-    body: "Available on every paid plan. Wireline can research a niche, define prospect criteria, enrich connected data, and hand qualified targets to the same employee. Paid provider work is prepaid or customer-connected.",
+    body: "Research a niche, set the criteria, enrich the data — qualified targets land with the same employee. On every paid plan.",
   },
 ] as const;
 
@@ -248,9 +248,8 @@ export default function Pricing() {
                 Start with one employee. Add specialists when demand earns them.
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
-                Every paid plan supports voice, SMS, and email for the same employee and includes a
-                Wireline number slot. Higher tiers primarily buy more simultaneous roles, voice
-                capacity, number slots, collaboration, analytics, and governance.
+                Every paid plan: voice, SMS, and email under one employee, plus a Wireline number.
+                Higher tiers buy capacity, not features.
               </p>
               <div
                 className="mx-auto mt-8 inline-flex rounded-full border border-border bg-muted/40 p-1"
@@ -456,8 +455,8 @@ export default function Pricing() {
                 One employee. No channel seat tax. Clear usage costs.
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
-                One employee can call, text, and email under a single subscription. Costs track the
-                real boundaries: numbers, calls, message segments, delivery, enrichment, and data.
+                One employee calls, texts, and emails on one subscription. Costs track real
+                boundaries — numbers, minutes, message segments — not seats per channel.
               </p>
             </div>
             <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">

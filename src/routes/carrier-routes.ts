@@ -481,12 +481,30 @@ router.get(
       );
       const data = (await response.json()) as VapiPhoneNumber[];
 
-      // The Vapi response is usually an array of phone number objects
-      const formatted = (data || []).map((num: VapiPhoneNumber) => ({
-        id: num.id,
-        number: num.number,
-        provider: num.provider,
-      }));
+      // Every tenant's line is provisioned into ONE shared Vapi account under
+      // the platform key, so the raw upstream response is the whole customer
+      // base: each row is another workspace's live business number plus the
+      // internal id that outbound dialing and inbound routing key off. This
+      // endpoint is only authenticateUser-gated, so returning it unfiltered
+      // handed any free signup a directory of every Wireline customer. Return
+      // only lines this tenant actually owns.
+      const owned = await drizzle
+        .select({
+          vapiNumberId: schema.phoneNumbers.vapiNumberId,
+          phoneNumber: schema.phoneNumbers.phoneNumber,
+        })
+        .from(schema.phoneNumbers)
+        .where(eq(schema.phoneNumbers.userId, req.user.id));
+      const ownedVapiIds = new Set(owned.map((row) => row.vapiNumberId).filter(Boolean));
+      const ownedNumbers = new Set(owned.map((row) => row.phoneNumber).filter(Boolean));
+
+      const formatted = (data || [])
+        .filter((num) => ownedVapiIds.has(num.id) || ownedNumbers.has(num.number))
+        .map((num: VapiPhoneNumber) => ({
+          id: num.id,
+          number: num.number,
+          provider: num.provider,
+        }));
 
       res.json({ numbers: formatted });
     } catch (error: any) {
