@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { listVercelEnvs, resolveVercelEnvValue } from "./lib/vercel-env-values.mjs";
+import { FOUNDER_CATALOG_VERSION } from "./lib/stripe-founder-catalog.mjs";
 
 const TARGETS = ["production", "preview", "development"];
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -20,7 +21,18 @@ if (!token) {
   process.exit(1);
 }
 
-const canon = JSON.parse(readFileSync(join(ROOT, "scripts", ".stripe-env.generated.json"), "utf8"));
+const generated = JSON.parse(
+  readFileSync(join(ROOT, "scripts", ".stripe-env.generated.json"), "utf8"),
+);
+if (generated.wireline_catalog_version !== FOUNDER_CATALOG_VERSION) {
+  console.error(
+    `Generated Stripe env file is stale: catalog version ` +
+      `${JSON.stringify(generated.wireline_catalog_version ?? "none (legacy flat file)")} vs code ` +
+      `"${FOUNDER_CATALOG_VERSION}". Run \`npm run stripe:setup\` before checking parity.`,
+  );
+  process.exit(1);
+}
+const canon = generated.env;
 const keys = [...new Set([...Object.keys(canon), ...EXTRA_KEYS])];
 
 const envs = await listVercelEnvs(token);

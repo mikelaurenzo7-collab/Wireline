@@ -61,7 +61,7 @@
     "csp:sync": "node scripts/check-csp-drift.mjs --write",
     "authz:check": "tsx scripts/generate-authz-matrix.ts",
     "api-error:check": "node scripts/check-api-error-shape.mjs",
-    "security:audit": "npm audit --audit-level=high --omit=dev",
+    "security:audit": "node scripts/check-security-audit.mjs",
     "security:audit:dev": "npm audit",
     "security:audit:full": "npm audit --omit=dev",
     "smoke:server": "node -e \"process.env.VERCEL='1'; process.env.POSTGRES_URL ||= 'postgresql://wireline:wireline@127.0.0.1:5432/wireline'; require('./dist/server.cjs'); console.log('server bundle imports')\"",
@@ -175,5 +175,11 @@
     "typescript": "^6.0.3",
     "vite": "^6.4.3",
     "vitest": "^4.1.9"
+  },
+  "overrides": {
+    "brace-expansion@5": "5.0.8",
+    "glob": {
+      "minimatch": "^10.2.5"
+    }
   }
 }
