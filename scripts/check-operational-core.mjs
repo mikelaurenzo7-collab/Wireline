@@ -153,7 +153,7 @@ requirePattern(
 requirePattern(
   "src/lib/csp.ts",
   /api\.x\.ai/,
-  "Grok live voice runs a browser WebSocket to api.x.ai and must be an allowed browser boundary.",
+  "Optional xAI experiment hosts remain allowlisted in the browser CSP boundary.",
 );
 forbidPattern(
   "src/lib/csp.ts",

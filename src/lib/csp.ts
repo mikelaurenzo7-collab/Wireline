@@ -31,10 +31,12 @@ export const MARKETING_SCRIPT_SRCS = [
 export function buildConnectSrcs(isDev: boolean = false): string {
   const base = [
     "'self'",
-    // xAI Grok: server mints the realtime client secret; the browser opens the
-    // live-voice WebSocket directly to wss://api.x.ai.
+    // Optional xAI hosts retained for experimental surfaces and curated
+    // server-proxied previews; customer demos and the managed runtime use OpenAI.
     "https://api.x.ai",
     "wss://api.x.ai",
+    // OpenAI Realtime: Studio + ChatGPT private voice mint ephemeral secrets
+    // server-side; the browser posts the WebRTC SDP offer to api.openai.com.
     "https://api.openai.com",
     "https://api.vapi.ai",
     "wss://api.vapi.ai",

@@ -16,7 +16,7 @@ describe("runtime integrations registry launch policy", () => {
     );
     expect(source).toContain('"xai",\n    "xAI Grok",');
     expect(source).toContain(
-      "Optional Grok experiments and Wireline Live voice; excluded from the launch default chain.",
+      "Optional Grok experiments; excluded from the launch default chain and customer demos.",
     );
     expect(source).toContain("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK");
     expect(compactSource).toMatch(/item\(\s*"openai".{0,500}?, true,/);

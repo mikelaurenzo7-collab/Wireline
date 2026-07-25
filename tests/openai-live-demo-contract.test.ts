@@ -43,4 +43,20 @@ describe("OpenAI/Vapi-only demo architecture", () => {
     expect(metadata).toContain("enabled: false");
     expect(docs).toContain("retired from demo routing");
   });
+
+  it("routes ChatGPT private simulation through OpenAI Realtime WebRTC", () => {
+    const accountRoutes = read("src/routes/chatgpt-mcp-account-routes.ts");
+    const widget = read("src/lib/chatgpt-mcp-account.ts");
+    expect(accountRoutes).toContain("createOpenAIRealtimeClientSecret");
+    expect(accountRoutes).toContain('connectDomains: ["https://api.openai.com"]');
+    expect(widget).toContain("new RTCPeerConnection()");
+    expect(widget).not.toContain("xai-client-secret.");
+  });
+
+  it("signals Studio live voice with ephemeral client secret + application/sdp", () => {
+    const service = read("src/lib/voice/openai-live-agent-service.ts");
+    expect(service).toContain("realtime/client_secrets");
+    expect(service).toContain('"Content-Type": "application/sdp"');
+    expect(service).not.toContain("new FormData()");
+  });
 });

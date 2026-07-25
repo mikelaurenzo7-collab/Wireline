@@ -50,18 +50,18 @@ describe("dual-voice PSTN routing contracts", () => {
 });
 
 describe("ChatGPT private voice simulation routing", () => {
-  it("starts the private voice simulation on the managed Grok contract, not OpenAI", () => {
+  it("starts the private voice simulation on OpenAI Realtime, not Grok", () => {
     const accountRoutes = read("src/routes/chatgpt-mcp-account-routes.ts");
     expect(accountRoutes).toContain(
-      'import { createGrokVoiceClientSession } from "../lib/voice/grok-voice-service";',
+      'import { createOpenAIRealtimeClientSecret } from "../lib/voice/openai-realtime-service";',
     );
-    expect(accountRoutes).not.toContain("createOpenAIRealtimeClientSecret");
+    expect(accountRoutes).not.toContain("createGrokVoiceClientSession");
 
     const simulationHandler = accountRoutes.slice(
       accountRoutes.indexOf('if (name === "start_private_voice_simulation")'),
       accountRoutes.indexOf('if (name === "list_wireline_agents")'),
     );
-    expect(simulationHandler).toContain("createGrokVoiceClientSession({");
+    expect(simulationHandler).toContain("createOpenAIRealtimeClientSecret({");
     expect(simulationHandler).toContain("instructions: draft.runtimeInstructions");
     expect(simulationHandler).toContain("agentName: draft.view.name");
     expect(simulationHandler).toContain("tools: []");
@@ -69,47 +69,41 @@ describe("ChatGPT private voice simulation routing", () => {
     expect(simulationHandler).toContain('apiKeyPurpose: "chatgpt_demo"');
   });
 
-  it("gives createGrokVoiceClientSession a draft-mode input shape that mirrors the OpenAI realtime service", () => {
-    const grokService = read("src/lib/voice/grok-voice-service.ts");
-    expect(grokService).toContain("instructions?: string | null");
-    expect(grokService).toContain("agentName?: string | null");
-    expect(grokService).toContain("tools?: readonly GrokRealtimeFunction[]");
-    expect(grokService).toContain('toolChoice?: "auto" | "none"');
-    expect(grokService).toContain('apiKeyPurpose?: "runtime" | "chatgpt_demo"');
-
-    // Draft (not-yet-persisted) ChatGPT agents must bypass the persisted-agent lookup.
-    expect(grokService).toContain("const isDraftSession = Boolean(");
-    expect(grokService).toContain(
-      "const runtime = isDraftSession ? null : await loadAgentRuntime(input.agentId, input.userId);",
+  it("keeps createOpenAIRealtimeClientSecret draft-ready for ChatGPT spend isolation", () => {
+    const openaiService = read("src/lib/voice/openai-realtime-service.ts");
+    expect(openaiService).toContain("instructions?: string | null");
+    expect(openaiService).toContain("agentName?: string | null");
+    expect(openaiService).toContain("tools?: OpenAIRealtimeToolDefinition[]");
+    expect(openaiService).toContain('toolChoice?: "auto" | "none"');
+    expect(openaiService).toContain('apiKeyPurpose?: "runtime" | "chatgpt_demo"');
+    expect(openaiService).toContain("OPENAI_API_KEY_CHATKIT");
+    expect(openaiService).toContain(
+      'purpose === "chatgpt_demo" ? process.env.OPENAI_API_KEY_CHATKIT',
     );
-
-    // Spend-isolated xAI key, mirroring OPENAI_API_KEY_CHATKIT.
-    expect(grokService).toContain("XAI_API_KEY_CHATKIT");
-    expect(grokService).toContain('purpose === "chatgpt_demo" ? process.env.XAI_API_KEY_CHATKIT');
+    expect(openaiService).toContain('endpoint: "https://api.openai.com/v1/realtime/calls"');
+    expect(openaiService).toContain("rate: 24000");
   });
 
-  it("keeps XAI_API_KEY_CHATKIT documented alongside XAI_API_KEY", () => {
+  it("keeps OPENAI_API_KEY_CHATKIT documented alongside OPENAI_API_KEY", () => {
     const envExample = read(".env.example");
-    const xaiIndex = envExample.indexOf("XAI_API_KEY=");
-    const chatkitIndex = envExample.indexOf("XAI_API_KEY_CHATKIT=");
-    expect(xaiIndex).toBeGreaterThan(-1);
-    expect(chatkitIndex).toBeGreaterThan(xaiIndex);
-    expect(chatkitIndex - xaiIndex).toBeLessThan(200);
+    const openaiIndex = envExample.indexOf("OPENAI_API_KEY=");
+    const chatkitIndex = envExample.indexOf("OPENAI_API_KEY_CHATKIT=");
+    expect(openaiIndex).toBeGreaterThan(-1);
+    expect(chatkitIndex).toBeGreaterThan(openaiIndex);
   });
 
-  it("connects the account MCP widget to Grok WebSocket PCM, not OpenAI WebRTC", () => {
+  it("connects the account MCP widget to OpenAI Realtime WebRTC", () => {
     const widget = read("src/lib/chatgpt-mcp-account.ts");
     const accountRoutes = read("src/routes/chatgpt-mcp-account-routes.ts");
 
-    expect(widget).toContain("new WebSocket");
-    expect(widget).toContain("xai-client-secret.");
-    expect(widget).toContain('type: "session.update"');
-    expect(widget).toContain("session.endpoint");
-    expect(widget).toContain("input_audio_buffer.append");
-    expect(widget).not.toContain("api.openai.com/v1/realtime/calls");
-    expect(widget).not.toContain("RTCPeerConnection");
+    expect(widget).toContain("new RTCPeerConnection()");
+    expect(widget).toContain("https://api.openai.com/v1/realtime/calls");
+    expect(widget).toContain('Content-Type": "application/sdp"');
+    expect(widget).not.toContain("xai-client-secret.");
+    expect(widget).not.toContain("api.x.ai");
+    expect(widget).not.toContain("input_audio_buffer.append");
 
-    expect(accountRoutes).toContain('connectDomains: ["https://api.x.ai", "wss://api.x.ai"]');
-    expect(accountRoutes).not.toContain('connectDomains: ["https://api.openai.com"]');
+    expect(accountRoutes).toContain('connectDomains: ["https://api.openai.com"]');
+    expect(accountRoutes).not.toContain('connectDomains: ["https://api.x.ai", "wss://api.x.ai"]');
   });
 });

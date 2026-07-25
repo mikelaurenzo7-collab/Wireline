@@ -64,8 +64,8 @@ describe("managed Vapi runtime policy", () => {
     for (const source of [csp, vercel]) {
       expect(source).toMatch(/api\.openai\.com/);
       expect(source).toMatch(/api\.vapi\.ai/);
-      // Grok live-voice runs a browser WebSocket to wss://api.x.ai, so the xAI
-      // host is a first-class browser boundary.
+      // Optional xAI hosts remain allowlisted for experimental surfaces; customer
+      // demos and the managed runtime use OpenAI.
       expect(source).toMatch(/api\.x\.ai/);
       // ElevenLabs is invoked server-side only; it must never be reachable from
       // the browser.

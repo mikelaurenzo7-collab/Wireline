@@ -133,16 +133,16 @@ assert(content?.uri === accountWidgetUri, "Account-bound widget resource did not
 assert(content?.mimeType === "text/html;profile=mcp-app", "Widget resource MIME type is incorrect.");
 assert(typeof content?.text === "string" && content.text.includes("Wireline agent draft"), "Widget HTML is missing or malformed.");
 assert(
-  content?._meta?.ui?.csp?.connectDomains?.includes("wss://api.x.ai"),
-  "Widget CSP must explicitly allow the Grok realtime WebSocket domain.",
+  content?._meta?.ui?.csp?.connectDomains?.includes("https://api.openai.com"),
+  "Widget CSP must explicitly allow the OpenAI Realtime HTTPS domain.",
 );
 assert(
-  content?._meta?.ui?.csp?.connectDomains?.includes("https://api.x.ai"),
-  "Widget CSP must explicitly allow the Grok realtime HTTPS domain.",
+  !content?._meta?.ui?.csp?.connectDomains?.includes("wss://api.x.ai"),
+  "Account widget CSP must not require Grok realtime — private voice is OpenAI Realtime.",
 );
 assert(
-  !content?._meta?.ui?.csp?.connectDomains?.includes("https://api.openai.com"),
-  "Account widget CSP must not require OpenAI Realtime — private voice is Grok.",
+  !content?._meta?.ui?.csp?.connectDomains?.includes("https://api.x.ai"),
+  "Account widget CSP must not require xAI hosts for private voice.",
 );
 
 console.log(`ChatGPT App release probe passed for ${origin}.`);

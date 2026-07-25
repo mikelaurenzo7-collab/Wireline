@@ -214,10 +214,10 @@ export default function PrivacyPolicyPage() {
           <Section title="3. How We Use Data">
             <p>
               We use data to provide and secure Wireline; process managed AI requests primarily
-              through xAI (Grok), with OpenAI, Google Gemini, and Vercel AI Gateway as continuity
-              routes; route calls and messages; execute connected workflows; provide support;
-              prevent fraud and abuse; bill through Stripe; and understand aggregate product
-              performance.
+              through OpenAI, with Google Gemini and Vercel AI Gateway as continuity routes (and
+              xAI only when explicitly enabled); route calls and messages; execute connected
+              workflows; provide support; prevent fraud and abuse; bill through Stripe; and
+              understand aggregate product performance.
             </p>
             <p>
               Optional Meta measurement is used only after your explicit choice to attribute
@@ -242,11 +242,8 @@ export default function PrivacyPolicyPage() {
                 SMS transport, and communications processing
               </li>
               <li>
-                <strong>xAI</strong> — Primary managed AI inference and realtime voice sessions
-              </li>
-              <li>
-                <strong>OpenAI</strong> — Managed continuity inference, call models, and realtime
-                sessions
+                <strong>OpenAI</strong> — Primary managed AI inference, call models, and realtime
+                voice sessions
               </li>
               <li>
                 <strong>Google Gemini</strong> — Managed continuity inference and grounded search
@@ -254,6 +251,9 @@ export default function PrivacyPolicyPage() {
               <li>
                 <strong>Vercel AI Gateway</strong> — Governed multi-model continuity, budgets, and
                 inference observability
+              </li>
+              <li>
+                <strong>xAI</strong> — Optional experiment infrastructure when explicitly enabled
               </li>
               <li>
                 <strong>Stripe</strong> — Payment processing, billing, and tax calculation

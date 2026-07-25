@@ -12,6 +12,7 @@ import {
   type OpenAIRealtimeVoice,
 } from "./openai-realtime-config";
 
+const OPENAI_REALTIME_CLIENT_SECRETS_URL = "https://api.openai.com/v1/realtime/client_secrets";
 const OPENAI_REALTIME_CALLS_URL = "https://api.openai.com/v1/realtime/calls";
 const MAX_PROMPT_LINE_LENGTH = 700;
 const MAX_INITIAL_KNOWLEDGE_ITEMS = 8;
@@ -279,20 +280,56 @@ export async function createOpenAILiveVoiceCall(input: {
       },
     },
   };
-  const form = new FormData();
-  form.append("sdp", new Blob([sdp], { type: "application/sdp" }), "offer.sdp");
-  form.append("session", new Blob([JSON.stringify(session)], { type: "application/json" }), "session.json");
-
+  // GA Realtime WebRTC expects an ephemeral client secret first, then an
+  // application/sdp offer against /v1/realtime/calls. Multipart FormData with
+  // the platform key is rejected by the current API shape.
   try {
+    const secretResponse = await fetchWithTimeout(
+      OPENAI_REALTIME_CLIENT_SECRETS_URL,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "OpenAI-Safety-Identifier": safetyIdentifierForUser(input.userId),
+        },
+        body: JSON.stringify({ session }),
+      },
+      15_000,
+    );
+    const secretText = await secretResponse.text();
+    let secretPayload: { value?: string } = {};
+    if (secretText) {
+      try {
+        secretPayload = JSON.parse(secretText) as { value?: string };
+      } catch {
+        secretPayload = {};
+      }
+    }
+    const ephemeralKey = secretPayload.value?.trim() || "";
+    if (!secretResponse.ok || !ephemeralKey) {
+      log.warn("OpenAI Realtime client secret mint failed", {
+        userId: input.userId,
+        agentId: input.agentId,
+        status: secretResponse.status,
+        body: secretText.slice(0, 500),
+      });
+      throw AppError.fromHttpStatus(
+        secretResponse.status || 502,
+        "Live voice session could not be created. Check OpenAI model access and billing.",
+      );
+    }
+
     const response = await fetchWithTimeout(
       OPENAI_REALTIME_CALLS_URL,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${ephemeralKey}`,
+          "Content-Type": "application/sdp",
           "OpenAI-Safety-Identifier": safetyIdentifierForUser(input.userId),
         },
-        body: form,
+        body: sdp,
       },
       20_000,
     );

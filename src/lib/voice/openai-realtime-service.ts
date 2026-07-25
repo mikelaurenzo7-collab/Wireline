@@ -83,6 +83,7 @@ export function buildOpenAIRealtimeSessionConfig(input: CreateOpenAIRealtimeClie
         output: {
           format: {
             type: "audio/pcm",
+            rate: 24000,
           },
           voice: normalizeOpenAIRealtimeVoice(input.voice),
         },
@@ -152,6 +153,11 @@ export async function createOpenAIRealtimeClientSecret(
 
     return {
       ...((payload || {}) as Record<string, unknown>),
+      token:
+        typeof (payload as { value?: unknown } | null)?.value === "string"
+          ? String((payload as { value: string }).value)
+          : undefined,
+      endpoint: "https://api.openai.com/v1/realtime/calls",
       wireline: {
         provider: "openai_realtime",
         model: body.session.model,

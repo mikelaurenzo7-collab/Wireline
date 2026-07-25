@@ -72,7 +72,7 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "xai",
     "xAI Grok",
-    "Optional Grok experiments and Wireline Live voice; excluded from the launch default chain.",
+    "Optional Grok experiments; excluded from the launch default chain and customer demos.",
     "ai",
     false,
     ["XAI_API_KEY"],
@@ -101,7 +101,7 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "openai-realtime",
     "OpenAI Realtime",
-    "Optional web/mobile voice mode, separate from phone routing.",
+    "Studio, ChatGPT, and guest browser/mobile live-voice demos (separate from phone routing).",
     "voice",
     false,
     ["OPENAI_API_KEY"],
