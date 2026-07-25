@@ -28,6 +28,36 @@
     <link rel="preload" as="style" href="/fonts.css" />
     <link rel="stylesheet" href="/fonts.css" />
 
+    <!-- Preload the three Latin faces every page actually renders with (Inter
+         Tight display, Inter body, IBM Plex Mono labels). Without these the
+         browser cannot discover a single woff2 until it has fetched AND parsed
+         fonts.css — a serial hop that leaves brand text in the fallback face
+         and forces a visible re-layout when the real font swaps in. Preloading
+         starts them in parallel with the stylesheet instead. Keep this list to
+         faces used above the fold: a preload that goes unused is wasted
+         bandwidth and a console warning. -->
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      crossorigin
+      href="/fonts/NGSwv5HMAFg6IuGlBNMjxLsH8ag.woff2"
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      crossorigin
+      href="/fonts/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2"
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      crossorigin
+      href="/fonts/-F6qfjptAgt5VM-kVkqdyU8n3pQPwlBFgg.woff2"
+    />
+
     <meta name="format-detection" content="telephone=no" />
     <meta name="format-detection" content="email=no" />
     <meta name="format-detection" content="date=no" />
@@ -60,11 +90,19 @@
 
     <link rel="canonical" href="https://trywireline.com/" />
 
-    <script
-      defer
-      data-domain="trywireline.com"
-      src="https://plausible.io/js/script.tagged-events.js"
-    ></script>
+    <!--
+      The Plausible stub queues every call in `plausible.q` and the real script
+      flushes that queue on arrival, so the analytics bundle is injected
+      dynamically (async) from /marketing-measurement.js instead of sitting here
+      as a static tag.
+
+      This is load-bearing, not cosmetic: a static `defer` script blocks
+      DOMContentLoaded AND every deferred script after it — including the app's
+      own module bundle. Whenever plausible.io was slow, blocked by an ad
+      blocker that blackholes rather than refuses, or unreachable behind a
+      corporate proxy, the whole site stayed blank until that connection timed
+      out. Measured locally against a blocked host: FCP 12,936ms -> 280ms.
+    -->
     <script>
       window.plausible =
         window.plausible ||
