@@ -59,3 +59,16 @@ describe("round-8 billing integrity", () => {
     expect(usage).toContain("usage counter rolled back for retry");
   });
 });
+
+describe("round-8 usage meter truthfulness", () => {
+  it("drives the progress fill from value, not a decorative attribute", () => {
+    // The indicator was w-full with only a data-progress attribute that no
+    // stylesheet reads, so every bar rendered 100% full: "0 / 120 · 0% used"
+    // sat beside a completely full Voice minutes meter, and 95% looked the same.
+    const progress = read("src/components/ui/shadcn/Progress.tsx");
+    expect(progress).toContain("transform: `translateX(-${100 - clampPercent(value)}%)`");
+    expect(progress).toContain("function clampPercent");
+    // Overage can push usage past 100%; the fill must stop at the track end.
+    expect(progress).toContain("Math.min(100, Math.max(0, value as number))");
+  });
+});
