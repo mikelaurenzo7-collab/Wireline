@@ -13,10 +13,10 @@ describe("E2E cleanliness contracts", () => {
 
     expect(registry).toContain('app.use("/api", openapiRouter)');
     expect(openapi).toContain('router.get("/openapi.json"');
-    expect(developers).toContain('/api/openapi.json');
+    expect(developers).toContain("/api/openapi.json");
   });
 
-  it("keeps OpenAI as the managed default for voice and chat intelligence", () => {
+  it("keeps OpenAI as the managed default for voice intelligence with the OpenAI structured fallback lane intact", () => {
     const models = read("src/lib/ai-models.ts");
 
     expect(models).toContain('VAPI_TENANT_DEFAULT_PROVIDER = "openai"');
@@ -38,7 +38,7 @@ describe("E2E cleanliness contracts", () => {
     expect(portal).toContain("stripe.billingPortal.sessions.create");
     expect(portal).toContain("MANAGED_PORTAL_IDEMPOTENCY_KEY");
     expect(portal).toContain("FOUNDER_CATALOG_VERSION");
-    expect(portal).toContain('return_url: `${appUrl.url}/settings/billing`');
+    expect(portal).toContain("return_url: `${appUrl.url}/settings/billing`");
     expect(billingRoutes).not.toContain('router.post(\n  "/billing/portal"');
     expect(billingRoutes).not.toContain('router.post(\n  "/billing/checkout"');
   });

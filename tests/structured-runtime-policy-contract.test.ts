@@ -18,7 +18,7 @@ const LEGACY_CLAUDE_MODULES = [
 ];
 
 describe("structured runtime policy", () => {
-  it("exports managed OpenAI-first structured models", () => {
+  it("exports managed Grok-first structured models", () => {
     const models = read("src/lib/structured-runtime-models.ts");
     const aiModels = read("src/lib/ai-models.ts");
     const schema = read("src/db/schema.ts");

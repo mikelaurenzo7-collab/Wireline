@@ -23,7 +23,7 @@ describe("studio chat stream settlement", () => {
     expect(
       publicAiStreamFailureMessage(
         new Error(
-          '[GoogleGenerativeAI Error]: [403 Forbidden] API_KEY_SERVICE_BLOCKED Requests to this API are blocked.',
+          "[GoogleGenerativeAI Error]: [403 Forbidden] API_KEY_SERVICE_BLOCKED Requests to this API are blocked.",
         ),
         "fallback",
       ),
@@ -33,9 +33,9 @@ describe("studio chat stream settlement", () => {
       /AI is temporarily unavailable/i,
     );
 
-    expect(publicAiStreamFailureMessage(new Error("model returned empty tool_use"), "fallback")).toBe(
-      "fallback",
-    );
+    expect(
+      publicAiStreamFailureMessage(new Error("model returned empty tool_use"), "fallback"),
+    ).toBe("fallback");
   });
 
   it("preserves server error event after onError-style UI reset", () => {
@@ -44,7 +44,7 @@ describe("studio chat stream settlement", () => {
       'data: {"agentId":"a1"}',
       "",
       "event: error",
-      'data: {"message":"AI is temporarily unavailable. Configure a reachable AI provider (OpenAI, Gemini, or AI Gateway), then try again."}',
+      'data: {"message":"AI is temporarily unavailable. Configure a reachable AI provider (xAI, OpenAI, Gemini, or AI Gateway), then try again."}',
       "",
       "",
     ].join("\n");

@@ -16,7 +16,7 @@ See `docs/CUSTOMER_TERMINOLOGY.md`.
 Do not move the launch runtime to ElevenLabs. ElevenLabs is optional TTS,
 cloning, and showcase infrastructure. Keep:
 
-1. OpenAI Responses for managed structured reasoning; xAI Grok only for authenticated Studio realtime voice and explicitly enabled experiments.
+1. xAI Grok 4.5 for managed structured reasoning (direct OpenAI, Gemini, then the AI Gateway as ordered continuity); Grok realtime for authenticated Studio live voice.
 2. Twilio + Vapi for PSTN orchestration.
 3. OpenAI with Gemini fallback inside the Vapi phone runtime.
 4. Vercel AI Gateway as the funded last-resort structured route.
@@ -66,10 +66,10 @@ Live snapshot **2026-07-21**: Stripe available **$0.00**; Twilio **$23.664**.
 | Stripe | Keep a **$300–500** operating buffer before paid invites; no retired-account deficit is carried into this launch account. |
 | Twilio | Top to **$150–250**; Usage Triggers daily $25 / monthly $200 until ~20 paid accounts; confirm API key + Auth Token. |
 | Vapi | **$200–400** or ≥2 weeks expected minutes; auto-reload on; concurrency = peak+2. |
-| OpenAI | Month-1 project budget **$150–300**; soft 50/75 + hard stop; PSTN depends on this key. |
+| xAI | Month-1 project budget **$150–300** for the Grok 4.5 structured primary + Studio live-voice tests; soft 50/75 + hard stop. |
+| OpenAI | **$100–200**; the PSTN call model, OpenAI Realtime, and the first structured fallback depend on this key. |
 | Gemini | **$50–100** separate fallback budget. |
 | AI Gateway | **$50** reserve + auto top-up + monthly key budget. |
-| xAI | **$50–100** for Studio live-voice tests; structured fallback stays off. |
 | Perplexity | **$0–40** optional research quality. |
 | ElevenLabs | **$0** extra — Creator credits for clones/showcase only; never core PSTN. |
 | Federal DNC | Credits for **2×** first marketing list; no marketing dial without scrub. |
@@ -85,10 +85,10 @@ The generated current record is `docs/LAUNCH_STATUS.generated.json`; executable 
 
 ### Structured work
 
-`OpenAI → Gemini → Vercel AI Gateway`
+`xAI (Grok 4.5) → OpenAI → Gemini → Vercel AI Gateway`
 
-- Do not route every request through the most expensive model.
-- Keep Grok direct only for authenticated realtime testing and explicitly enabled experiments; it is not in the managed structured fallback chain.
+- Do not route every request through the most expensive model — simple/medium tasks ride Grok 4.1 Fast Reasoning.
+- Grok 4.5 is the managed structured primary; keep a per-key xAI budget and alert when fallback rates rise.
 - Tag and budget Gateway usage before promoting it above last-resort status.
 - Record provider, model, tokens, latency, feature, account, and cost for each
   paid action.

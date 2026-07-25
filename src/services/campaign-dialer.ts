@@ -259,6 +259,31 @@ export class CampaignDialerService {
           return;
         }
 
+        // Temporal denials (TCPA quiet hours, the lead's own 24h duplicate
+        // window) must leave the lead processable. Writing their gate status
+        // would retire the lead from LEAD_PROCESSABLE_STATUSES with no
+        // callbackScheduledAt, so no engine ever re-dials it, max_attempts
+        // becomes a no-op, and the campaign flips to "completed" without ever
+        // dialing the lead. Record the trace in metadata and let the next
+        // sweep re-evaluate once the window opens.
+        if (
+          gate.reason === "outside_permitted_calling_hours" ||
+          gate.reason === "self_recent_call_scheduled"
+        ) {
+          if (gate.metadataPatch) {
+            await drizzle
+              .update(schema.outboundLeads)
+              .set({ metadata: toJsonbSafe(gate.metadataPatch) as any })
+              .where(eq(schema.outboundLeads.id, lead.id));
+          }
+          log.info("Dial deferred by temporal gate; lead stays processable", {
+            leadId: leadIdStr,
+            campaignId: campaign.id,
+            reason: gate.reason,
+          });
+          return;
+        }
+
         await drizzle
           .update(schema.outboundLeads)
           .set({
@@ -279,10 +304,7 @@ export class CampaignDialerService {
               ...(gate.metadataPatch?.tcpa ? { tcpa: gate.metadataPatch.tcpa } : {}),
             }),
           });
-        } else if (
-          gate.reason === "skipped_duplicate" ||
-          gate.reason === "self_recent_call_scheduled"
-        ) {
+        } else if (gate.reason === "skipped_duplicate") {
           log.info("Dial blocked by duplicate guard", {
             leadId: leadIdStr,
             campaignId: campaign.id,

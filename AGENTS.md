@@ -19,8 +19,9 @@ surfaces and are not needed for core web/API development.
 
 - Core secrets needed for the authenticated product loop (signup + create agent):
   `POSTGRES_URL`, `INTERNAL_JWT_SECRET`, and at least one AI key
-  (`GEMINI_API_KEY` / `OPENAI_API_KEY` / `AI_GATEWAY_API_KEY`). These are
-  provided as Cursor secrets and are present in the process environment.
+  (`XAI_API_KEY` (primary) / `OPENAI_API_KEY` / `GEMINI_API_KEY` /
+  `AI_GATEWAY_API_KEY`). These are provided as Cursor secrets and are present
+  in the process environment.
 - The full set of 150+ integration vars (Stripe, Vapi, Twilio, OAuth, Resend,
   etc. — see `.env.example` for the canonical list) lives in the Vercel
   project. Pull them into a local `.env` with:

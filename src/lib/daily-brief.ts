@@ -102,6 +102,7 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
         and(
           eq(schema.callLogs.userId, userId),
           gte(schema.callLogs.createdAt, yStart),
+          lt(schema.callLogs.createdAt, yEnd),
           gte(schema.callLogs.leadScore, 70),
         ),
       )
@@ -118,6 +119,7 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
         and(
           eq(schema.callLogs.userId, userId),
           gte(schema.callLogs.createdAt, yStart),
+          lt(schema.callLogs.createdAt, yEnd),
           lt(schema.callLogs.leadScore, 30),
         ),
       )

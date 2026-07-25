@@ -45,6 +45,12 @@ const TAG_META: Record<EntryTag, { label: string; tone: string; icon: typeof Spa
 
 const ENTRIES: ChangelogEntry[] = [
   {
+    date: "Jul 25, 2026",
+    tag: "infra",
+    title: "Structured runtime promoted — Grok 4.5 primary",
+    body: "Managed structured reasoning now runs xAI Grok 4.5 first, with OpenAI GPT-5.6 Terra as the first continuity fallback, Gemini second, and the Vercel AI Gateway as the governed last route. Simple and medium tasks ride Grok 4.1 Fast Reasoning for lower latency and cost. Production PSTN calls are unchanged on Twilio + Vapi with the managed OpenAI call model.",
+  },
+  {
     date: "Jul 13, 2026",
     tag: "feature",
     title: "Fast Start turns a blank workspace into a first working agent",

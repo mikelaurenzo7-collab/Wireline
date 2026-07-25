@@ -9,7 +9,7 @@
 
 | Level  | Criteria                                              | Examples                                                                   |
 | ------ | ----------------------------------------------------- | -------------------------------------------------------------------------- |
-| **P0** | All live calls or the core platform down              | Vapi/OpenAI/Twilio chain outage, DB unreachable, DNS failure               |
+| **P0** | All live calls or the core platform down              | Vapi/OpenAI/Twilio call-chain or xAI structured-runtime outage, DB unreachable, DNS failure |
 | **P1** | Voice agents degraded or subset of customers affected | Latency >2s, one provider down (fallback active), webhook delivery stalled |
 | **P2** | Non-critical features broken                          | Dashboard slow, billing portal error, email delivery delayed               |
 | **P3** | Minor issues                                          | UI cosmetic bug, documentation error, single-user edge case                |
@@ -53,7 +53,7 @@
    □ Check Sentry for error spike patterns
 
 3. MITIGATE
-   □ If OpenAI structured runtime is down → verify Gemini/Gateway fallback
+   □ If the xAI structured runtime is down → verify OpenAI/Gemini/Gateway fallback
    □ If OpenAI PSTN model is down → verify Vapi moved calls to Gemini
    □ If Vapi is down → pause new calls and verify limited Twilio fallback behavior
    □ If Twilio is down → pause number/SMS provisioning; assess Vapi-owned inventory
@@ -170,7 +170,7 @@ Level 3: Upstream provider support (Vapi, Twilio, xAI/OpenAI/Google, Supabase)
 - **Dependency health:** Integration health panel in AdminSettings
 - **Budget guards:** Spend caps prevent runaway costs during incidents
 - **Rate limits:** Per-user and system-wide limits prevent cascading load
-- **Fallback providers:** structured OpenAI → Gemini → Gateway; Vapi PSTN OpenAI → Gemini. xAI remains opt-in for structured experiments and authenticated realtime tests.
+- **Fallback providers:** structured xAI → OpenAI → Gemini → Gateway; Vapi PSTN OpenAI → Gemini. xAI also powers authenticated realtime tests.
 - **Idempotent webhooks:** Stripe event deduplication prevents double-processing
 - **Job queue retry:** Failed background jobs retry with exponential backoff
 
