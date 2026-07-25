@@ -296,8 +296,8 @@ export default function Pricing() {
                   <span className="pb-1 text-sm text-muted-foreground">forever</span>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Build, train, connect knowledge, and privately simulate one AI Voice Employee.
-                  Production numbers and paid provider actions remain locked until activation.
+                  Build, train, and privately simulate one AI Voice Employee. Live numbers unlock
+                  after activation.
                 </p>
                 <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
                   {planById.personal.features.map((feature) => (
@@ -416,9 +416,7 @@ export default function Pricing() {
                 </div>
                 <div className="mt-6 text-4xl font-semibold tracking-[-0.04em]">Custom</div>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Committed usage, negotiated channel economics, advanced governance, SSO, custom
-                  integrations, implementation support, security review, retention controls, and
-                  SLAs.
+                  Custom capacity, governance, SSO, integrations, security review, and SLAs.
                 </p>
                 <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
                   {[
