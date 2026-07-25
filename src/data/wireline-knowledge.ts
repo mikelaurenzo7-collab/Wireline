@@ -38,11 +38,11 @@ export const WIRELINE_PLANS = [
   },
   {
     name: "Wireline Starter Plus",
-    price: "$19/mo",
-    bestFor: "Growing solo operations that need more coverage.",
+    price: "$24/mo",
+    bestFor: "Founders who need a personal Concierge and a business AI employee.",
     includes: [
-      "1 live agent and 1 production number, provisioned when needed",
-      "40 guaranteed live-voice minutes each month",
+      "2 live agents and 2 production numbers, provisioned when needed",
+      "55 guaranteed live-voice minutes each month",
       "$1 monthly flexible Runtime Allowance",
       "Full Lead Hunt, enrichment, research, email, and SMS workflows",
     ],
@@ -53,7 +53,7 @@ export const WIRELINE_PLANS = [
     bestFor: "Revenue, support, and front desk teams.",
     includes: [
       "Up to 5 live agents and 5 production numbers, provisioned when needed",
-      "100 guaranteed live-voice minutes each month",
+      "120 guaranteed live-voice minutes each month",
       "$4 monthly flexible Runtime Allowance",
       "CRM sync, routing, approvals, and campaign workflows",
     ],
@@ -64,7 +64,7 @@ export const WIRELINE_PLANS = [
     bestFor: "Governed rollout for larger teams.",
     includes: [
       "Up to 15 live agents and 15 production numbers, provisioned when needed",
-      "250 guaranteed live-voice minutes each month",
+      "285 guaranteed live-voice minutes each month",
       "$10 monthly flexible Runtime Allowance",
       "Priority support posture and no automatic overages",
     ],

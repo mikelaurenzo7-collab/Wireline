@@ -15,7 +15,7 @@ This note is the current launch source for billing operations. Historical billin
 | --- | ---: | ---: | --- |
 | Free Builder | $0 | — | No Stripe product |
 | Starter | $9 | $99 | Fixed subscription |
-| Starter Plus | $19 | $190 | Fixed subscription |
+| Starter Plus | $24 | $240 | Fixed subscription |
 | Pro | $59 | $590 | Fixed subscription |
 | Business | $149 | $1,490 | Fixed subscription |
 | Scale & Enterprise | Custom | Custom | Sales-assisted |

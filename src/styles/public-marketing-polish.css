@@ -7,8 +7,13 @@
  */
 
 .marketing-surface {
-  --wl-public-section-space: clamp(3.75rem, 6.5vw, 6rem);
-  --wl-public-section-space-tight: clamp(3rem, 5vw, 4.5rem);
+  /* Section rhythm. Previously 60→96px, which stacked to ~190px of empty
+     canvas between one section's last line and the next section's first —
+     read as unfinished rather than premium. Tightened to 52→76px: still an
+     unmistakable section break, roughly a fifth of a desktop viewport
+     recovered per boundary. */
+  --wl-public-section-space: clamp(3.25rem, 5vw, 4.75rem);
+  --wl-public-section-space-tight: clamp(2.5rem, 4vw, 3.75rem);
 }
 
 .marketing-surface main {
@@ -21,11 +26,19 @@
 
 /* Shared hero: one centered scale across Solutions, Features, Pricing, Demos,
    and the landing page. */
+/* min-height and padding-block compound here: the content is grid-centered
+   inside the box, so a tall min-height already supplies the breathing room and
+   the padding only pushes the box taller. At 1440 the pair resolved to a 704px
+   hero holding ~300px of content — an eyebrow, headline, subhead, two buttons,
+   three chips — leaving a ~200px dead band above and below it, and pushing the
+   first real section entirely below the fold on every public page. Both sides
+   pulled back; the hero still opens with air, it just no longer opens with
+   emptiness. */
 .marketing-surface .marketing-hero {
   display: grid;
-  min-height: clamp(32rem, 66svh, 44rem);
+  min-height: clamp(26rem, 52svh, 34rem);
   align-items: center;
-  padding-block: clamp(4.75rem, 8vw, 7rem);
+  padding-block: clamp(3.5rem, 5vw, 4.75rem);
 }
 
 .marketing-surface .marketing-hero__content {

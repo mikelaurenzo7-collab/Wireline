@@ -99,7 +99,7 @@ const PLAN_PREVIEW = [
     name: "Starter Plus",
     price: `$${planCatalog.team.price_usd_monthly}`,
     period: "/mo",
-    body: `${planCatalog.team.voice_minutes_monthly} guaranteed voice minutes and the full SMS + Lead Hunt workflow—still one focused AI employee, with room to answer real customer demand.`,
+    body: `${planCatalog.team.max_agents} live agents (personal + business), ${planCatalog.team.included_phone_numbers} numbers, and ${planCatalog.team.voice_minutes_monthly} guaranteed voice minutes—plus full SMS and Lead Hunt workflow.`,
     cta: "Get Starter Plus",
     ctaPath: "/signup?plan=team",
     highlight: true,

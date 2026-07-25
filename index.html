@@ -18,15 +18,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="stylesheet" href="/app-shell.css" />
 
-    <!-- Fonts load in parallel with the app bundle. Previously imported via a
-         CSS @import inside the bundled stylesheet, which forced a serial
-         download chain (bundle CSS → Google Fonts CSS → font files). -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700;800&display=swap"
-    />
+    <!-- Fonts are self-hosted (public/fonts.css + public/fonts/*.woff2), a
+         verbatim mirror of the Google Fonts css2 response with the gstatic URLs
+         rewritten. Previously this was a render-blocking cross-origin request
+         chain (preconnect → Google CSS → gstatic woff2), which meant the entire
+         Letterpress identity degraded to system fonts whenever Google Fonts was
+         slow, blocked by a privacy extension, or unreachable. First-party also
+         removes the EU IP-disclosure question and lets the CSP drop both hosts. -->
+    <link rel="preload" as="style" href="/fonts.css" />
+    <link rel="stylesheet" href="/fonts.css" />
 
     <meta name="format-detection" content="telephone=no" />
     <meta name="format-detection" content="email=no" />

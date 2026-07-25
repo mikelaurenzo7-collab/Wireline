@@ -203,10 +203,10 @@ export const PRODUCT_VERSATILITY = {
 
 export const PRODUCT_POSTURE = {
   personal: {
-    badge: "Personal best employee",
+    badge: "Personal agent",
     badgeShort: "Personal",
-    createCta: "Build personal employee",
-    emptyTitle: "Your best employee.",
+    createCta: "Build personal agent",
+    emptyTitle: "Your personal agent.",
     emptyBody: "Your calls. Your texts. Your email. Your outcomes.",
   },
   business: {

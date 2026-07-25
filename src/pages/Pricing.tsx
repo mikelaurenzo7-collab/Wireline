@@ -53,10 +53,9 @@ const PAID_TIERS = [
   {
     plan: planById.team,
     publicName: "Starter Plus",
-    eyebrow: "Best one-employee value",
-    tagline: "2× the voice minutes, full SMS + Lead Hunt workflow — for $10 more.",
-    detail:
-      "Same one-employee limit, with 2× voice minutes plus Lead Hunt, inbox, SMS, and email under one memory.",
+    eyebrow: "Founder hybrid",
+    tagline: "Personal Concierge + business employee — from $24/month.",
+    detail: `Two live agents and two number slots: one for your life, one for the company—with ${planById.team.voice_minutes_monthly} voice minutes and full Lead Hunt, inbox, SMS, and email.`,
     ctaMonthly: "Choose Starter Plus",
     ctaAnnual: "Choose annual Starter Plus",
     ctaPath: "/signup?plan=team",
@@ -128,7 +127,7 @@ const FAQ = [
   ],
   [
     "Why are there two Starter plans?",
-    "Starter is the lowest-risk way to put one AI Voice Employee live. Starter Plus keeps the same one-employee limit but supplies much more monthly voice capacity and the fuller Lead Hunt, inbox, email, SMS, and automation experience.",
+    "Starter is the lowest-risk way to put one AI Voice Employee live. Starter Plus is the founder hybrid: personal Concierge plus a business AI employee, two number slots, more voice minutes, and the fuller Lead Hunt, inbox, email, SMS, and automation experience.",
   ],
   [
     "Does every employee automatically create a phone-number cost?",
@@ -337,80 +336,73 @@ export default function Pricing() {
                   const showAnnual = annual && plan.price_usd_annual > 0;
                   const price = showAnnual ? plan.price_usd_annual : plan.price_usd_monthly;
                   const priceSuffix = showAnnual ? "/year" : "/month";
-                  const savings = annualSavingsLabel(
-                    plan.price_usd_monthly,
-                    plan.price_usd_annual,
-                  );
+                  const savings = annualSavingsLabel(plan.price_usd_monthly, plan.price_usd_annual);
                   const path = showAnnual ? `${ctaPath}&interval=year` : ctaPath;
                   return (
-                  <article
-                    key={plan.id}
-                    className={`relative rounded-[28px] border p-6 text-center shadow-sm ${
-                      featured
-                        ? "border-primary/50 bg-card ring-2 ring-primary/45 shadow-lg xl:-translate-y-1"
-                        : "border-border bg-card"
-                    }`}
-                  >
-                    {featured ? (
-                      <span
-                        className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary-foreground shadow-sm"
-                        aria-label="Most popular plan"
-                      >
-                        Most popular
-                      </span>
-                    ) : null}
-                    <div className="flex flex-col items-center justify-center gap-3 text-center">
-                      <div>
-                        <p className="wl-stitch-label">{eyebrow}</p>
-                        <h3 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">
-                          {publicName}
-                        </h3>
-                      </div>
-                      <Icon className="h-6 w-6 text-primary" aria-hidden="true" />
-                    </div>
-                    <p className="mt-3 text-sm font-semibold text-foreground">{tagline}</p>
-                    <div className="mt-5 flex items-end justify-center gap-2">
-                      <span className="text-4xl font-semibold tracking-[-0.04em]">
-                        ${price}
-                      </span>
-                      <span className="pb-1 text-sm text-muted-foreground">{priceSuffix}</span>
-                    </div>
-                    {showAnnual && savings ? (
-                      <p className="mt-1 text-xs text-muted-foreground">{savings} vs monthly</p>
-                    ) : plan.price_usd_annual > 0 ? (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {savings
-                          ? `or $${plan.price_usd_annual}/yr · ${savings}`
-                          : `or $${plan.price_usd_annual}/yr`}
-                      </p>
-                    ) : null}
-                    <p className="mt-4 text-sm leading-6 text-muted-foreground">{detail}</p>
-                    <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
-                      {plan.features.map((feature) => (
-                        <li key={feature} className="flex gap-3">
-                          <Check
-                            className="mt-0.5 h-4 w-4 shrink-0 text-primary"
-                            aria-hidden="true"
-                          />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Link
-                      to={path}
-                      className={`mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition ${
+                    <article
+                      key={plan.id}
+                      className={`relative rounded-[28px] border p-6 text-center shadow-sm ${
                         featured
-                          ? "marketing-btn-primary border-0"
-                          : "marketing-btn-secondary"
+                          ? "border-primary/50 bg-card ring-2 ring-primary/45 shadow-lg xl:-translate-y-1"
+                          : "border-border bg-card"
                       }`}
                     >
-                      {showAnnual ? ctaAnnual : ctaMonthly}{" "}
-                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                    </Link>
-                    <p className="mt-3 text-center text-xs text-muted-foreground">
-                      {featured ? "Cancel anytime · no long-term contract" : badge}
-                    </p>
-                  </article>
+                      {featured ? (
+                        <span
+                          className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary-foreground shadow-sm"
+                          aria-label="Most popular plan"
+                        >
+                          Most popular
+                        </span>
+                      ) : null}
+                      <div className="flex flex-col items-center justify-center gap-3 text-center">
+                        <div>
+                          <p className="wl-stitch-label">{eyebrow}</p>
+                          <h3 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">
+                            {publicName}
+                          </h3>
+                        </div>
+                        <Icon className="h-6 w-6 text-primary" aria-hidden="true" />
+                      </div>
+                      <p className="mt-3 text-sm font-semibold text-foreground">{tagline}</p>
+                      <div className="mt-5 flex items-end justify-center gap-2">
+                        <span className="text-4xl font-semibold tracking-[-0.04em]">${price}</span>
+                        <span className="pb-1 text-sm text-muted-foreground">{priceSuffix}</span>
+                      </div>
+                      {showAnnual && savings ? (
+                        <p className="mt-1 text-xs text-muted-foreground">{savings} vs monthly</p>
+                      ) : plan.price_usd_annual > 0 ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {savings
+                            ? `or $${plan.price_usd_annual}/yr · ${savings}`
+                            : `or $${plan.price_usd_annual}/yr`}
+                        </p>
+                      ) : null}
+                      <p className="mt-4 text-sm leading-6 text-muted-foreground">{detail}</p>
+                      <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
+                        {plan.features.map((feature) => (
+                          <li key={feature} className="flex gap-3">
+                            <Check
+                              className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                              aria-hidden="true"
+                            />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <Link
+                        to={path}
+                        className={`mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition ${
+                          featured ? "marketing-btn-primary border-0" : "marketing-btn-secondary"
+                        }`}
+                      >
+                        {showAnnual ? ctaAnnual : ctaMonthly}{" "}
+                        <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                      </Link>
+                      <p className="mt-3 text-center text-xs text-muted-foreground">
+                        {featured ? "Cancel anytime · no long-term contract" : badge}
+                      </p>
+                    </article>
                   );
                 },
               )}

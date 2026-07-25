@@ -20,6 +20,14 @@ import { customerAgentLanguage } from "../lib/product-copy";
 
 const ROLE_TEMPLATES = [
   {
+    value: "personal_assistant",
+    label: "Concierge",
+    personalPrompt:
+      "Answer unknown callers, book appointments, take messages, and text me what happened.",
+    businessPrompt: "Handle personal admin for the owner alongside business coverage.",
+    personalOnly: true,
+  },
+  {
     value: "scheduler",
     label: "Scheduler",
     personalPrompt: "Book, confirm, and reschedule my appointments.",
@@ -58,6 +66,12 @@ const FAST_START_IDLE =
 
 type Role = (typeof ROLE_TEMPLATES)[number]["value"];
 type Posture = "personal" | "business";
+
+function rolesForPosture(posture: Posture) {
+  return ROLE_TEMPLATES.filter((template) =>
+    posture === "personal" ? true : !("personalOnly" in template && template.personalOnly),
+  );
+}
 
 /**
  * Map create-agent server responses to user-safe strings. Raw error strings
@@ -110,7 +124,7 @@ function defaultBrief(posture: Posture) {
 }
 
 function defaultRole(posture: Posture): Role {
-  return posture === "business" ? "sales" : "scheduler";
+  return posture === "business" ? "sales" : "personal_assistant";
 }
 
 export default function CreateAgentDialog({
@@ -183,9 +197,8 @@ export default function CreateAgentDialog({
     if (creating) return;
     const finalBrief = brief.trim() || defaultBrief(activePosture);
     const finalName = name.trim() || defaultAgentName(activePosture, role);
-    const personalityText = `Warm. Concise. Useful. ${
-      activePosture === "business" ? "Business-ready." : "Personal and discreet."
-    }`;
+    // Server create already seeds role + template personality. Do not overwrite
+    // that depth with a one-line tone stub from the client.
     setCreating(true);
     setError("");
     try {
@@ -208,22 +221,11 @@ export default function CreateAgentDialog({
         return;
       }
 
-      // The agent now exists. Applying the personality + brief is best-effort:
-      // if either call fails, keep the created agent and surface a truthful
-      // warning instead of letting the outer catch misreport "could not be
-      // created" (which would prompt a duplicate retry).
+      // The agent now exists with server-seeded personality. Applying the first
+      // brief is best-effort: if extract fails, keep the created agent and
+      // surface a truthful warning instead of prompting a duplicate retry.
       let trainingApplied = true;
       try {
-        const manualRes = await authFetch(
-          `/api/agent-config/${encodeURIComponent(body.id)}/manual`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "personality", content: personalityText }),
-          },
-        );
-        if (!manualRes.ok) trainingApplied = false;
-
         const extractRes = await authFetch("/api/train/extract", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -232,7 +234,6 @@ export default function CreateAgentDialog({
             message: [
               `Role: ${role}.`,
               `Posture: ${activePosture}.`,
-              `Personality: ${personalityText}`,
               `First brief: ${finalBrief}`,
             ].join("\n"),
           }),
@@ -429,7 +430,7 @@ export default function CreateAgentDialog({
           </label>
 
           <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Quick briefs">
-            {ROLE_TEMPLATES.map((item) => {
+            {rolesForPosture(activePosture).map((item) => {
               const prompt =
                 activePosture === "business" ? item.businessPrompt : item.personalPrompt;
               return (

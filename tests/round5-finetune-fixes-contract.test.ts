@@ -12,7 +12,9 @@ describe("round-5 fine-tune verified fixes", () => {
   it("credits Extra Agent phone slots in entitlement math", () => {
     expect(includedPhoneSlotsForPlan("starter", 0)).toBe(1);
     expect(includedPhoneSlotsForPlan("starter", 2)).toBe(3);
-    expect(includedPhoneSlotsForPlan("team", 1)).toBe(2);
+    // Starter Plus ships 2 base slots (personal + business agent); one paid
+    // Extra Agent add-on brings the total to 3.
+    expect(includedPhoneSlotsForPlan("team", 1)).toBe(3);
   });
 
   it("honors admin maxAgents when higher than catalog + extras", () => {

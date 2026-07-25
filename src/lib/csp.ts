@@ -64,16 +64,16 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
     : nonce
       ? `'self' 'nonce-${nonce}' ${inlineHashes} ${marketingSrcs}`
       : `'self' ${inlineHashes} ${marketingSrcs}`;
-  const styleSrcElem = isDev
-    ? "'self' 'unsafe-inline' https://fonts.googleapis.com"
-    : `'self' ${INLINE_STYLE_HASHES.join(" ")} https://fonts.googleapis.com`;
+  // Typefaces are served first-party from /fonts.css + /fonts/*.woff2, so
+  // neither Google font host needs to be allowlisted any more.
+  const styleSrcElem = isDev ? "'self' 'unsafe-inline'" : `'self' ${INLINE_STYLE_HASHES.join(" ")}`;
   return [
     "default-src 'self'",
     `script-src ${scriptSrc}`,
     `style-src-elem ${styleSrcElem}`,
     "style-src-attr 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
-    "font-src 'self' data: https://fonts.gstatic.com",
+    "font-src 'self' data:",
     `connect-src ${connectSrcs}`,
     "media-src 'self' blob:",
     "worker-src 'self' blob:",

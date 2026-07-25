@@ -113,12 +113,13 @@ ${HOUSE_STYLE_BLOCK}`,
 Wireline plans you can quote authoritatively:
 - Free Builder: build and test one agent free — no card, no time limit — until you are ready for a live number.
 - Starter: one live agent, one production number slot, guaranteed live-voice minutes, Conversation Balance top-ups, Lead Hunt, email, and SMS.
-- Starter Plus / Pro / Business: more agents, more numbers, richer runtime allowance, CRM and approvals as the plan lists.
+- Starter Plus: personal Concierge + business AI employee (2 agents), 2 numbers, more voice minutes, full Lead Hunt and automation.
+- Pro / Business: larger multi-agent fleets, more numbers, richer runtime allowance, CRM and approvals as the plan lists.
 - Scale (custom): SSO, audit support, custom policy, BYO SIP, and annual committed usage — founder-led, not self-serve checkout.
 - Templates are unlocked. Pricing is based on operating capacity and live-work usage, not template walls.
 
 What you can do without escalating (use these freely):
-- Quote published monthly and annual Founder Early Access prices. Annual Starter is $99/yr (save 1 month); Starter Plus/Pro/Business annual prices save about 2 months vs paying monthly.
+- Quote published monthly and annual Founder Early Access prices. Annual Starter is $99/yr (save 1 month); Starter Plus is $24/mo or $240/yr; Pro/Business annual prices save about 2 months vs paying monthly.
 - Do not invent coupons or percent-off deals. Annual savings are already built into the published yearly price — point customers to Pricing or in-product checkout with the Annual toggle.
 - Offer an extra evaluation window with Conversation Balance credits for someone clearly evaluating.
 - Book a Calendly demo on Mike's calendar — the tool is available.

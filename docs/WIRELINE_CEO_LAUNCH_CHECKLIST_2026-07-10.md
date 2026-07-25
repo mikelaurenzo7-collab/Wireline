@@ -59,9 +59,9 @@ Paid extra agents should add useful capacity, not just another seat consuming th
 Founder catalog decision:
 
 - Starter: $9/mo, 1 live agent, 20 guaranteed live-voice minutes.
-- Starter Plus: $19/mo, 1 live agent, 40 guaranteed live-voice minutes.
-- Pro: $59/mo, up to 5 live agents, 100 guaranteed live-voice minutes.
-- Business: $149/mo, up to 15 live agents, 250 guaranteed live-voice minutes.
+- Starter Plus: $24/mo, 2 live agents (personal Concierge + business employee), 55 guaranteed live-voice minutes.
+- Pro: $59/mo, up to 5 live agents, 120 guaranteed live-voice minutes.
+- Business: $149/mo, up to 15 live agents, 285 guaranteed live-voice minutes.
 - Extra live agent add-on: $15/mo, plus 1 additional live agent, 1 production-number slot, and 50 additional guaranteed live-voice minutes.
 
 These deliberately low founder prices remain well below the cost of hiring. Upper-tier included

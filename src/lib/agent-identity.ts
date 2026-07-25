@@ -123,12 +123,12 @@ export const AGENT_IDENTITY_PERSONAS: Record<AgentIdentityPersonaId, AgentIdenti
   },
   private_operator: {
     id: "private_operator",
-    label: "Private Assistant",
-    shortLabel: "Discreet assistant",
+    label: "Personal Concierge",
+    shortLabel: "Personal agent",
     defaultName: "Sarah",
-    microcopy: "Answers unknowns and briefs you privately.",
+    microcopy: "Screens callers, books for you, and briefs you privately.",
     promptDirective:
-      "Sound discreet, concise, and protective of the user's time. Take clear messages and never expose private context unnecessarily.",
+      "Sound discreet, concise, and protective of the principal's time. Take clear messages, book only what you are cleared to book, and never expose private context unnecessarily.",
   },
 };
 

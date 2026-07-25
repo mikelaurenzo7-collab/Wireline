@@ -37,7 +37,7 @@ function StudioLoadingState() {
     <main
       className="flex min-h-[55vh] flex-col bg-background px-4 py-8 sm:px-6"
       aria-busy="true"
-      aria-label="Loading employee workspace"
+      aria-label="Loading Studio workspace"
     >
       <div className="mx-auto w-full max-w-4xl space-y-4">
         <Skeleton shape="text" className="h-3 w-20" />
@@ -193,34 +193,53 @@ export default function StudioWorkspaceV2() {
 
   const startCustomerTest = useCallback(() => {
     setSection("test");
+    const personal = active?.is_business_agent === false;
     window.setTimeout(() => {
       workroomRef.current?.focusComposer(
-        "Hi, I’m a customer. Can you explain your services and help me choose the next step?",
+        personal
+          ? "Hi — can you help me book something and text me what happened?"
+          : "Hi, I’m a customer. Can you explain your services and help me choose the next step?",
       );
     }, 120);
-  }, [setSection]);
+  }, [active?.is_business_agent, setSection]);
 
   if (loading) return <StudioLoadingState />;
   if (agents.length === 0) return <StudioEmptyState posture={accountType} />;
 
   if (!active) {
+    const emptyLanguage = customerAgentLanguage(accountType);
     return (
       <EmptyState
         fill
         icon={Users}
-        title="Choose an AI employee"
+        title={`Choose ${emptyLanguage.indefiniteSingular}`}
         description="Select one from the sidebar, or create a new one to get started."
         action={
           <Button asChild>
             <Link to="/studio?create=1">
               <Plus size={15} aria-hidden="true" />
-              New AI employee
+              {emptyLanguage.createCta.replace(/^Create /, "New ")}
             </Link>
           </Button>
         }
       />
     );
   }
+
+  const activePosture = active.is_business_agent ? "business" : "personal";
+  const activeLanguage = customerAgentLanguage(activePosture);
+  const sectionCopy =
+    activePosture === "personal"
+      ? {
+          setup: "Job, greeting, preferences, and voice",
+          test: "Try a private conversation",
+          review: "Confirm readiness and go live",
+        }
+      : {
+          setup: "Job, greeting, facts, and voice",
+          test: "Try a customer conversation",
+          review: "Confirm readiness and go live",
+        };
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
@@ -231,11 +250,12 @@ export default function StudioWorkspaceV2() {
         <div
           className="mx-auto grid w-full max-w-3xl grid-cols-3 gap-1.5 sm:gap-2"
           role="tablist"
-          aria-label="Employee setup steps"
+          aria-label={`${activeLanguage.singular} setup steps`}
         >
           {SECTIONS.map((item, index) => {
             const selected = section === item.id;
             const Icon = item.icon;
+            const description = sectionCopy[item.id];
             return (
               <button
                 key={item.id}
@@ -266,7 +286,7 @@ export default function StudioWorkspaceV2() {
                   <span className="truncate text-xs font-semibold sm:text-sm">{item.label}</span>
                 </span>
                 <span className="mt-1 hidden truncate pl-8 text-[11px] text-muted-foreground md:block">
-                  {item.description}
+                  {description}
                 </span>
               </button>
             );
@@ -280,6 +300,7 @@ export default function StudioWorkspaceV2() {
             key={active.id}
             agentId={active.id}
             agentName={active.name}
+            isBusinessAgent={Boolean(active.is_business_agent)}
             onTestVoiceInChat={startCustomerTest}
             className="h-full border-t-0"
           />

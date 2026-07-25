@@ -185,8 +185,14 @@ describe("authenticated agent flow", () => {
     expect(routes).toContain("cleanText(req.body?.firstMessage, 500)");
     // Template personalities stack role methodology + overlay and substitute
     // business tokens; the factory consumes the stored personality verbatim.
-    expect(routes).toContain("composeAgentPersonality");
-    expect(routes).toContain("TEMPLATE_OVERLAYS[templateId]");
+    // The composition itself lives in the shared create-defaults helper so web,
+    // template deploy, and mobile all seed identically — assert the delegation
+    // here and the composition where it actually happens.
+    expect(routes).toContain("resolveCreatePersonality({");
+    expect(routes).toContain("resolveCreateEnabledTools(role, isBusinessAgent)");
+    const createDefaults = read("src/lib/agent-create-defaults.ts");
+    expect(createDefaults).toContain("composeAgentPersonality");
+    expect(createDefaults).toContain("TEMPLATE_OVERLAYS[opts.templateId]");
     expect(templates).toContain("voice_id: values.voiceId");
     expect(deployModal).toContain("VAPI_CURATED_VOICES");
     expect(deployModal).toContain("MANAGED_VOICE_BY_GENDER");
