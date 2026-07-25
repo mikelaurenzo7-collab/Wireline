@@ -181,8 +181,10 @@ describe("product voice cohesion", () => {
     const entitlements = read("src/lib/phone-line-entitlements.ts");
     const provisioning = read("src/lib/phone-provisioning.ts");
 
-    expect(entitlements).toContain("return tier.included_phone_numbers");
-    expect(provisioning).toContain("existing >= plan.included_phone_numbers");
+    expect(entitlements).toContain("includedPhoneSlotsForPlan");
+    expect(entitlements).toContain("extra_agent_included_phone_numbers");
+    expect(provisioning).toContain("existing >= phoneSlots");
+    expect(provisioning).toContain("includedPhoneSlotsForPlan");
     expect(provisioning).toContain("findAgentPhoneLine(userId, opts.agentId)");
     expect(provisioning).toContain("purchaseTwilioLocalNumber");
     expect(provisioning).toContain("importTwilioNumberToVapi");

@@ -74,6 +74,7 @@
     "db:health": "tsx scripts/db-health-check.ts",
     "marketing:kit": "node scripts/marketing-kit.mjs",
     "prepare": "husky",
+    "postinstall": "node scripts/patch-liveavatar-sdk.mjs",
     "dogfood:reset": "node scripts/dogfood-reset.mjs",
     "dogfood:prod": "node scripts/prod-dogfood.mjs",
     "dogfood:marketing": "node scripts/dogfood-marketing.mjs",

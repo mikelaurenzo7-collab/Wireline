@@ -343,6 +343,14 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
               .update(schema.settings)
               .set({ liveVideoAddonEnabled: !disable, updatedAt: new Date() })
               .where(eq(schema.settings.userId, userId));
+            // When the add-on ends, clear provider opt-in on every agent so
+            // session/sample minting cannot continue on a canceled entitlement.
+            if (disable) {
+              await drizzle
+                .update(schema.agents)
+                .set({ videoPresenterProvider: "synthetic" })
+                .where(eq(schema.agents.userId, userId));
+            }
           }
           break;
         }
@@ -618,6 +626,8 @@ router.get(
           acquisitionSource: schema.settings.acquisitionSource,
           acquisitionMedium: schema.settings.acquisitionMedium,
           acquisitionCampaign: schema.settings.acquisitionCampaign,
+          extraAgents: schema.settings.extraAgents,
+          maxAgents: schema.settings.maxAgents,
         })
         .from(schema.settings)
         .where(eq(schema.settings.userId, req.user.id))
@@ -684,7 +694,14 @@ router.get(
               plan: sub.plan,
               plan_id: sub.plan,
               plan_name: planMeta?.name || null,
-              max_agents: planMeta?.max_agents || null,
+              max_agents: (() => {
+                const catalog =
+                  (planMeta?.max_agents ?? 0) + Math.max(0, settingsRow?.extraAgents ?? 0);
+                const stored =
+                  typeof settingsRow?.maxAgents === "number" ? settingsRow.maxAgents : 0;
+                return Math.max(catalog, stored) || planMeta?.max_agents || null;
+              })(),
+              extra_agents: settingsRow?.extraAgents ?? 0,
               status: sub.status,
               current_period_end: sub.currentPeriodEnd,
               cancel_at_period_end: !!sub.cancelAtPeriodEnd,

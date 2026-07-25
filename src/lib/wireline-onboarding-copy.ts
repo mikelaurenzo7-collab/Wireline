@@ -157,8 +157,7 @@ export const POST_CREATE_WIZARD_COPY = {
       phoneTitle: "Business phone line",
       phoneDetail: "Provision a US number on the next step — callers reach this agent directly.",
       connectionsTitle: "Connections",
-      connectionsDetail:
-        "Mailbox, Salesforce, SMS threads, and routing live under Connections.",
+      connectionsDetail: "Mailbox, Salesforce, SMS threads, and routing live under Connections.",
       connectionsCta: "Open Connections",
       continue: "Continue to phone line",
     },
@@ -166,7 +165,7 @@ export const POST_CREATE_WIZARD_COPY = {
       label: "Number",
       title: "Connect a live line",
       detail:
-        "Provision a US number so callers reach this agent. Conversation Balance or a paid plan is required.",
+        "Provision a US number so callers reach this agent. A paid plan is required for live number provisioning.",
       primary: "Provision number",
       skip: "Connect later",
       activationRequired:

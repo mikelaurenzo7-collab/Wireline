@@ -15,7 +15,6 @@
  */
 
 export interface VoiceLatencyProfile {
-  silenceTimeoutSeconds: number;
   responseDelaySeconds: number;
   numWordsToInterruptAssistant: number;
   optimizeStreamingLatency: number;
@@ -184,34 +183,12 @@ export function getVoiceLatencyProfile(input: {
   role?: string;
   isOutbound?: boolean;
 }): VoiceLatencyProfile {
-  const role = input.role || "customer_service";
-  const salesLike =
-    input.isOutbound || ["sales", "lead_qualifier", "collections", "scheduler"].includes(role);
-
-  // Archetype-based silence floor. Sales/outbound archetypes get tight
-  // 2s windows — a hesitating prospect needs a nudge, not three seconds
-  // of dead air. Negotiator sits between (callers weighing terms).
-  // Scheduler/Receptionist callers are often consulting calendars or
-  // looking up info; 3s gives them room without feeling abandoned.
-  const archetypeBase: Record<string, number> = {
-    "The Closer": 2,
-    "The Hunter": 2,
-    "The Negotiator": 2,
-    Scheduler: 3,
-    Receptionist: 3,
-  };
-
-  const archetype = input.archetype || "Receptionist";
-  let silenceTimeoutSeconds = archetypeBase[archetype] ?? (salesLike ? 2 : 3);
-
-  // Hard caps applied universally — used to be paid-tier-only. Every
-  // tenant gets snappy turn-taking now.
-  silenceTimeoutSeconds = salesLike
-    ? Math.min(silenceTimeoutSeconds, 2)
-    : Math.min(silenceTimeoutSeconds, 3);
+  // Turn-taking pacing is startSpeakingPlan's job. Vapi's silenceTimeoutSeconds
+  // ENDS the call after continuous caller silence (min 10s) — never emit a
+  // 2–3s "nudge" value here that could be mistaken for that end-call timeout.
+  void input;
 
   return {
-    silenceTimeoutSeconds,
     // Vapi waits this long after the caller stops talking before the
     // agent starts speaking. Zero across all tiers — streaming TTS
     // handles first-token latency, so there's no quality reason to

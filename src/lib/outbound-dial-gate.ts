@@ -62,8 +62,15 @@ export async function evaluateOutboundDialGate(opts: {
    * lands on DNC after requesting a callback stays protected.
    */
   isRequestedCallback?: boolean;
+  /**
+   * In-session follow-up (e.g. SMS during a live call the consumer is on).
+   * Keeps tenant + federal DNC; skips quiet hours and the 24h duplicate
+   * window because the consumer is already engaged on the line.
+   */
+  isLiveSessionFollowUp?: boolean;
 }): Promise<OutboundDialGateResult> {
-  const isRequestedCallback = opts.isRequestedCallback === true;
+  const isLiveSessionFollowUp = opts.isLiveSessionFollowUp === true;
+  const isRequestedCallback = opts.isRequestedCallback === true || isLiveSessionFollowUp;
   const isMarketingCall = isRequestedCallback ? false : opts.isMarketingCall !== false;
   const metadata = opts.metadata || {};
   const hasExpressWrittenConsent =
@@ -72,18 +79,21 @@ export async function evaluateOutboundDialGate(opts: {
     isRequestedCallback;
 
   // TCPA quiet hours first — local computation, cheapest fail-closed check.
-  const callingHours = resolveCallingHoursForPhone(opts.phone);
-  if (!callingHours.allowed) {
-    return {
-      allowed: false,
-      status: "AutoDialFailed",
-      reason: "outside_permitted_calling_hours",
-      metadataPatch: {
-        ...metadata,
-        auto_dial_error: "Outside TCPA permitted calling hours (8am–9pm local).",
-        calling_hours: callingHours,
-      },
-    };
+  // Live-session follow-up skips this: the consumer is already on the line.
+  if (!isLiveSessionFollowUp) {
+    const callingHours = resolveCallingHoursForPhone(opts.phone);
+    if (!callingHours.allowed) {
+      return {
+        allowed: false,
+        status: "AutoDialFailed",
+        reason: "outside_permitted_calling_hours",
+        metadataPatch: {
+          ...metadata,
+          auto_dial_error: "Outside TCPA permitted calling hours (8am–9pm local).",
+          calling_hours: callingHours,
+        },
+      };
+    }
   }
 
   if (isMarketingCall) {

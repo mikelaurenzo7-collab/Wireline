@@ -61,9 +61,9 @@ Wireline Letterpress — Aurora palette — is the only active design system.
 - Ink is structure.
 - A cool, near-black obsidian canvas is calm in dark mode; a cool near-white canvas carries the same story in light mode.
 - Silver is the wire accent, not a broad decorative palette.
-- Instrument Serif carries big ideas; DM Sans carries work; Space Mono carries labels.
+- Inter Tight carries display; Inter carries body; IBM Plex Mono carries labels/metadata.
 - Touch targets stay at least 44px. Focus rings stay visible. Accessible names must survive visual polish.
-- Do not reintroduce the retired forest-green/copper Letterpress palette, signal blue, dark Studio experiments, mesh/nebula primitives, or ad-hoc token aliases.
+- Do not reintroduce the retired forest-green/copper Letterpress palette, Instrument Serif / DM Sans / Space Mono as primary product fonts, signal blue, dark Studio experiments, mesh/nebula primitives, or ad-hoc token aliases.
 
 ## Product-language discipline
 

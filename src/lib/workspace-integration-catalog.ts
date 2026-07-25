@@ -57,7 +57,7 @@ export const WORKSPACE_INTEGRATION_CATALOG: WorkspaceIntegration[] = [
     purpose:
       "Microsoft work graph for Outlook, Teams notifications, Excel logging, and Office context.",
     detail: "Microsoft work context and collaboration, scoped per agent.",
-    capabilities: ["Outlook", "Calendar", "Teams", "Excel", "OneDrive", "PowerPoint"],
+    capabilities: ["Outlook", "Calendar", "Teams", "Excel", "OneDrive"],
     agentScope: "Book meetings, post Teams alerts, and append call outcomes to OneDrive workbooks.",
     guardrail:
       "Teams channel selection and Excel target selection must remain explicit after OAuth.",
@@ -71,7 +71,8 @@ export const WORKSPACE_INTEGRATION_CATALOG: WorkspaceIntegration[] = [
     label: "Twilio Messaging",
     family: "Messaging",
     purpose: "SMS, phone intelligence, and imported number support behind voice agents.",
-    detail: "Text follow-ups and phone-number checks while Vapi owns live PSTN call orchestration. WhatsApp stays private beta until an ONLINE Twilio sender and approved templates are live.",
+    detail:
+      "Text follow-ups and phone-number checks while Vapi owns live PSTN call orchestration. WhatsApp stays private beta until an ONLINE Twilio sender and approved templates are live.",
     capabilities: ["SMS", "Phone lookup", "Number import"],
     agentScope:
       "Send consented follow-ups, validate phone numbers, and support call-line provisioning.",
