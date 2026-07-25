@@ -1,6 +1,6 @@
-/* Google Fonts are loaded via <link> in index.html (preconnect + stylesheet)
+/* Typefaces are self-hosted and loaded via <link> to /fonts.css in index.html,
    so they download in parallel with the app bundle instead of chaining behind
-   this stylesheet's @import. */
+   this stylesheet's @import — and without a cross-origin round trip. */
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
