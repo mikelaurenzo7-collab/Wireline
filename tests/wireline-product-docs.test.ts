@@ -102,7 +102,7 @@ describe("Wireline product documentation contract", () => {
 
     expect(head).toContain("Wireline — Your next AI employee calls, texts &amp; emails");
     expect(head).toContain("customer conversations across voice, SMS, and email");
-    expect(head).toContain("follows up, books the next step, and logs every outcome");
+    expect(head).toContain("follows up, books, and logs every outcome");
     expect(ogImage).toMatch(/YOUR AI VOICE EMPLOYEE[\s\S]*CALLS · TEXTS · EMAILS/);
     expect(ogImage).toContain("VOICE · SMS · EMAIL · NUMBER INCLUDED · OUTCOMES · CONTROL");
     expectNoTerms(head, retiredProductTerms);

@@ -411,8 +411,8 @@ export default function WireAgentLanding() {
             </div>
             <div className="mt-8 text-center">
               <p className="mx-auto max-w-[48ch] text-[13px] leading-[1.6] text-muted-foreground">
-                Included minutes first. Extra voice, SMS, and enrichment draw from prepaid Runtime
-                Balance—never a surprise postpaid invoice.
+                Included minutes first. Extra voice, SMS, and enrichment draw from prepaid Runtime Balance
+                you control—never a surprise postpaid invoice.
               </p>
               <Link
                 to="/pricing"

@@ -126,7 +126,7 @@ export const MARKETING_VOICE = {
   /** Public hero CTA — voice-led marketing noun; product noun stays "AI employee". */
   primaryCta: "Build your AI Voice Employee",
   subline:
-    "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.",
+    "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books, and logs every outcome.",
   channelProof: [
     "Voice calling",
     "Text / SMS",

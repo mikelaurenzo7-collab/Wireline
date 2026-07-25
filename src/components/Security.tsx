@@ -271,8 +271,8 @@ export default function Security() {
                   transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.4) }}
                 >
                   <div className="mb-3 flex items-center justify-center gap-2.5 text-center">
-                    <Icon className="w-4 h-4 text-brand" strokeWidth={1.8} />
-                    <h2 className="font-display italic text-lg text-foreground leading-tight">
+                    <Icon className="h-4 w-4 text-brand" strokeWidth={1.8} />
+                    <h2 className="font-display text-lg leading-tight text-foreground">
                       {title}
                     </h2>
                   </div>

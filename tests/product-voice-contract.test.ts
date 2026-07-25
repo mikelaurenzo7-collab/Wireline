@@ -42,7 +42,7 @@ describe("product voice cohesion", () => {
     expect(MARKETING_VOICE.primaryCta).toBe("Build your AI Voice Employee");
     expect(MARKETING_VOICE.buyingNoun).toBe(BRAND_SYSTEM.buyingNoun);
     expect(MARKETING_VOICE.subline).toBe(
-      "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.",
+      "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books, and logs every outcome.",
     );
     expect(MARKETING_VOICE.channelProof).toEqual([
       "Voice calling",

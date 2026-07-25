@@ -16,7 +16,7 @@ describe("marketing metadata contract", () => {
     );
     for (const source of [staticHead, runtimeMeta]) {
       expect(source).toContain("customer conversations across voice, SMS, and email");
-      expect(source).toContain("follows up, books the next step, and logs every outcome");
+      expect(source).toContain("follows up, books, and logs every outcome");
     }
     expect(staticHead).not.toContain("AI phone employees that turn calls into sales");
     expect(runtimeMeta).not.toContain("Personal & Business AI Assistants");
