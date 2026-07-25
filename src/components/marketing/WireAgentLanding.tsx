@@ -418,7 +418,7 @@ export default function WireAgentLanding() {
             <div className="mt-8 text-center">
               <p className="mx-auto max-w-[52ch] text-[13px] leading-[1.6] text-muted-foreground">
                 Included voice minutes are used first. Additional provider-funded voice, SMS, email,
-                enrichment, or automation draws from prepaid Conversation Balance you control—never
+                enrichment, or automation draws from prepaid Runtime Balance you control—never
                 a surprise postpaid invoice.
               </p>
               <Link

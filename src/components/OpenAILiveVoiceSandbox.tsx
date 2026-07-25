@@ -476,7 +476,7 @@ export default function OpenAILiveVoiceSandbox({
                 setState("idle");
               }}
               aria-label="Reset live voice"
-              className="grid h-7 w-7 place-items-center rounded-md hover:bg-secondary"
+              className="grid h-11 w-11 place-items-center rounded-md hover:bg-secondary"
             >
               <RotateCcw size={14} />
             </button>

@@ -126,6 +126,25 @@ router.post(
       });
     }
 
+    // Source-of-truth guard: local row can lag the webhook. If Stripe already
+    // has a live subscription for this customer, refuse another Checkout.
+    if (existing?.stripeCustomerId) {
+      const remote = await stripe.subscriptions.list({
+        customer: existing.stripeCustomerId,
+        status: "all",
+        limit: 20,
+      });
+      const liveRemote = remote.data.find((sub) => LIVE_SUBSCRIPTION_STATUSES.has(sub.status));
+      if (liveRemote) {
+        return res.status(409).json({
+          code: "ALREADY_SUBSCRIBED",
+          error: "You already have a subscription. Use the Customer Portal to change plans.",
+          current_plan: existing.plan,
+          current_status: liveRemote.status,
+        });
+      }
+    }
+
     const [signupIntent] = await drizzle
       .select({
         signupPlanInterest: schema.settings.signupPlanInterest,

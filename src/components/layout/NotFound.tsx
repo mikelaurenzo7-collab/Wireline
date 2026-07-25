@@ -112,7 +112,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               to="/pricing"
               icon={Compass}
               label="Pricing"
-              hint="Plans + Conversation Balance"
+              hint="Plans + Runtime Balance"
               accent={BRAND.colors.primary}
             />
           </>

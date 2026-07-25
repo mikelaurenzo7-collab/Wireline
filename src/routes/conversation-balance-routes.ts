@@ -135,8 +135,8 @@ router.post(
               currency: "usd",
               unit_amount: Math.round(amountUsd * 100),
               product_data: {
-                name: "Wireline Conversation Balance",
-                description: `$${amountUsd} prepaid balance for extra calls, texts, and live work`,
+                name: "Wireline Runtime Balance",
+                description: `$${amountUsd} prepaid Runtime Balance for extra calls, texts, and live work`,
               },
             },
           },

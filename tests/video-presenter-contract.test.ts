@@ -57,7 +57,7 @@ describe("video presenter integration", () => {
     expect(routes).toContain("LIVE_VIDEO_NO_VOICE");
     const live = source("src/components/LiveVideoPresenter.tsx");
     expect(live).toContain("feedPcmDelta");
-    const sandbox = source("src/components/LiveVoiceSandbox.tsx");
+    const sandbox = source("src/components/OpenAILiveVoiceSandbox.tsx");
     expect(sandbox).toContain("onAgentAudioDelta");
   });
 

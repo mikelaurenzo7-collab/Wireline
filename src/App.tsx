@@ -79,6 +79,7 @@ function AppRouter() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/features" element={<Features />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/billing" element={<Navigate to="/settings/billing" replace />} />
         <Route path="/showcase" element={<Showcase />} />
         <Route path="/compare" element={<Compare />} />
         <Route path="/solutions" element={<Navigate to="/solutions/support" replace />} />

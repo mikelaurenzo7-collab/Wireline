@@ -121,7 +121,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             ) : null}
             <button
               type="button"
-              className="grid h-9 w-9 place-items-center rounded border border-border bg-card text-foreground md:hidden"
+              className="grid h-11 w-11 place-items-center rounded border border-border bg-card text-foreground md:hidden"
               aria-expanded={menuOpen}
               aria-controls="public-mobile-nav"
               aria-label={menuOpen ? "Close menu" : "Open menu"}

@@ -15,6 +15,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { validateBody, smsReplySchema } from "../lib/api-validation";
 import { smsRateLimit } from "../middleware/api-rate-limits";
+import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import { sendTenantMessage } from "../lib/twilio-service";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -100,6 +101,23 @@ router.post(
         .limit(1);
       if (!thread) throw AppError.fromHttpStatus(404, "Thread not found");
 
+      // Manual inbox replies are service/conversation SMS (not cold marketing),
+      // but still must clear tenant DNC + TCPA quiet hours via the shared gate.
+      const gate = await evaluateOutboundDialGate({
+        userId: req.user.id,
+        phone: thread.customerNumber!,
+        isMarketingCall: false,
+      });
+      if (!gate.allowed) {
+        throw AppError.fromHttpStatus(
+          403,
+          gate.federalDncMessage ||
+            gate.reason ||
+            "Outbound SMS blocked by compliance policy for this number.",
+          { code: gate.federalDncCode || gate.reason },
+        );
+      }
+
       const result = await sendTenantMessage(req.user.id, {
         to: thread.customerNumber!,
         body,
@@ -138,8 +156,9 @@ router.post(
         );
       res.json({ ok: true });
     } catch (e: any) {
-      log.warn("SMS mark-read failed", { error: e?.message });
-      res.json({ ok: false });
+      rethrowIfAppError(e);
+      log.error("SMS mark-read failed", { error: getErrorMessage(e) });
+      throw AppError.fromHttpStatus(500, "Failed to mark SMS thread read");
     }
   },
 );

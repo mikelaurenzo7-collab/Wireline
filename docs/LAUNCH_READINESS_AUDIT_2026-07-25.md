@@ -43,6 +43,24 @@ Status: **Active** — deep E2E audit + verified code/ops fixes shipped this pas
 17. **Runtime policy / IntegrationLogos** — unused marketing strip removed; contracts assert logo catalog keys directly.
 18. **Live voice contract drift** — `code-review-hardening` now reads `OpenAILiveVoiceSandbox` (LiveVoiceSandbox is a re-export).
 
+
+## Double pass (same evening)
+
+Additional verified fixes landed after a second fierce pass:
+
+1. Stripe webhook never 2xx unfinished `processing` claims (Stripe stops retries after 2xx).
+2. Runtime Allowance grant failures rethrow so webhooks retry.
+3. Unmapped active Stripe prices refuse plan wipe to null / maxAgents=1.
+4. Dead `/billing` payment+dunning links → `/pricing` + `/settings/billing` (+ route redirect).
+5. Checkout lists Stripe live subscriptions before opening another session.
+6. Forgot-password timing includes email send; `equalizedDuration` pads rejections.
+7. Runtime reserve idempotency lookup is tenant-scoped.
+8. Manual SMS replies use `evaluateOutboundDialGate`; mark-read returns real errors.
+9. Settings GET no longer returns empty `{}` on outage.
+10. Live-voice contracts point at OpenAI Realtime implementation.
+11. Daily Brief / trial email / sales persona / Runtime Balance customer-copy honesty.
+12. Public nav + live-voice reset hit targets ≥44px.
+
 ## Ops still open (not code-blockable)
 
 | Item | Notes |

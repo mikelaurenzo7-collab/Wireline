@@ -151,7 +151,7 @@ describe("agent navigation contract", () => {
     for (const tier of ["Free Builder", "Starter Plus", "Pro", "Business"]) {
       expect(pricingPage).toContain(tier);
     }
-    expect(pricingPage).toMatch(/Conversation Balance/);
+    expect(pricingPage).toMatch(/Runtime Balance/);
     expect(pricingPage).toMatch(/Founder Early Access/);
     expect(pricingPage).not.toMatch(/Try 7 days free/);
   });

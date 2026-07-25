@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { addCredit } from "./credit-wallet";
@@ -40,7 +40,12 @@ export async function reserveRuntimeUsage(input: {
     const [existing] = await tx
       .select({ id: schema.creditLedger.id, balanceAfterUsd: schema.creditLedger.balanceAfterUsd })
       .from(schema.creditLedger)
-      .where(eq(schema.creditLedger.idempotencyKey, idempotencyKey))
+      .where(
+        and(
+          eq(schema.creditLedger.userId, input.userId),
+          eq(schema.creditLedger.idempotencyKey, idempotencyKey),
+        ),
+      )
       .limit(1);
     if (existing) {
       return {

@@ -207,10 +207,10 @@ export async function handleSendPaymentLink(
     }
 
     const appUrl = resolveAppUrl(deps.appUrl);
-    // Checkout link — the pricing page deep-links to Stripe checkout
-    // per plan once the caller is signed in.
+    // Checkout link — pricing deep-links into plan checkout once signed in.
+    // `/billing` is not a routed page; authenticated billing lives at /settings/billing.
     const planParam = plan ? `?plan=${encodeURIComponent(plan)}` : "";
-    const payUrl = `${appUrl}/billing${planParam}`;
+    const payUrl = `${appUrl}/pricing${planParam}`;
     const r = await deps.sendPaymentLinkEmail({
       to: to_email,
       payUrl,
@@ -242,7 +242,7 @@ export async function handleSendPaymentLink(
     });
     return {
       result:
-        "I wasn't able to send that link right now. Let the caller know they can visit trywireline.com/billing to get started.",
+        "I wasn't able to send that link right now. Let the caller know they can visit trywireline.com/pricing to get started.",
     };
   }
 }

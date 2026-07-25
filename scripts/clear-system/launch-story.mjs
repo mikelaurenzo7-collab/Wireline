@@ -122,8 +122,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /Conversation Balance/,
-    "landing economics must explain prepaid variable usage",
+    /Runtime Balance/,
+    "landing economics must explain prepaid Runtime Balance",
   );
   mustInclude(
     "src/pages/LandingPage.tsx",
@@ -159,8 +159,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /Conversation Balance/,
-    "pricing must explain prepaid Conversation Balance",
+    /Runtime Balance/,
+    "pricing must explain prepaid Runtime Balance",
   );
   mustExclude(
     "src/pages/Pricing.tsx",

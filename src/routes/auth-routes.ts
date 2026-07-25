@@ -465,11 +465,13 @@ router.post("/api/auth/signout", async (_req: Request, res: Response) => {
  * the slower path.
  */
 async function equalizedDuration<T>(promise: Promise<T>, minMs: number): Promise<T> {
-  const [value] = await Promise.all([
-    promise,
-    new Promise<void>((resolve) => setTimeout(resolve, minMs)),
-  ]);
-  return value;
+  // Always wait the full floor even when work rejects — otherwise error paths
+  // (DB blips, password rejection) leak timing the floor was meant to hide.
+  const sleep = new Promise<void>((resolve) => setTimeout(resolve, minMs));
+  const settled = await Promise.allSettled([promise, sleep]);
+  const work = settled[0];
+  if (work.status === "rejected") throw work.reason;
+  return work.value;
 }
 
 /**
@@ -538,16 +540,15 @@ router.post(
       // Email is now validated by Zod middleware
 
       const issued = await equalizedDuration(
-        authService.createPasswordResetToken(email, req.ip),
-        FORGOT_PASSWORD_MIN_DURATION_MS,
-      );
-
-      if (issued) {
-        const appUrl = resolveCanonicalAppUrl();
-        if ("error" in appUrl) {
-          log.error("Password reset skipped: APP_URL not configured in production");
-        } else {
-          const resetUrl = `${appUrl.url}/reset-password?token=${encodeURIComponent(issued.token)}`;
+        (async () => {
+          const token = await authService.createPasswordResetToken(email, req.ip);
+          if (!token) return null;
+          const appUrl = resolveCanonicalAppUrl();
+          if ("error" in appUrl) {
+            log.error("Password reset skipped: APP_URL not configured in production");
+            return token;
+          }
+          const resetUrl = `${appUrl.url}/reset-password?token=${encodeURIComponent(token.token)}`;
           // SECURITY: NEVER log the plaintext token — that's account
           // takeover for anyone with log access. The email helper logs
           // only the resetUrl when transport is the dev-fallback path,
@@ -555,12 +556,12 @@ router.post(
           const sendResult = await sendPasswordResetEmail({
             to: email,
             resetUrl,
-            expiresAt: issued.expiresAt,
+            expiresAt: token.expiresAt,
           });
           log.info("Password reset token issued", {
             email,
-            expiresAt: issued.expiresAt.toISOString(),
-            tokenPrefix: issued.token.slice(0, 6) + "…",
+            expiresAt: token.expiresAt.toISOString(),
+            tokenPrefix: token.token.slice(0, 6) + "…",
             transport: sendResult.provider,
             delivery_ok: sendResult.ok,
           });
@@ -571,9 +572,13 @@ router.post(
               error: sendResult.error,
             });
           }
-        }
-      }
+          return token;
+        })(),
+        FORGOT_PASSWORD_MIN_DURATION_MS,
+      );
 
+      // Always the same body — issued only affects side effects above.
+      void issued;
       return res.json({
         ok: true,
         message:
