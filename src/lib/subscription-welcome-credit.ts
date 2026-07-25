@@ -30,25 +30,20 @@ export async function grantSubscriptionRuntimeAllowance(
   const amountUsd = runtimeAllowanceUsdForPlan(planId, interval);
   if (!(amountUsd > 0)) return;
 
-  const { applied } = await addCredit(
-    userId,
-    amountUsd,
-    "subscription_runtime_allowance",
-    {
-      type: "subscription_runtime_allowance",
-      id: billingPeriodReference,
-      entryKind: "grant",
-      source: "stripe",
-      provider: "stripe",
-      customerReason: "Included Wireline Runtime Allowance",
-      metadata: {
-        plan_id: planId,
-        billing_interval: interval,
-        runtime_allowance_usd: amountUsd,
-        voice_capacity_separate: true,
-      },
+  const { applied } = await addCredit(userId, amountUsd, "subscription_runtime_allowance", {
+    type: "subscription_runtime_allowance",
+    id: billingPeriodReference,
+    entryKind: "grant",
+    source: "stripe",
+    provider: "stripe",
+    customerReason: "Included Wireline Runtime Allowance",
+    metadata: {
+      plan_id: planId,
+      billing_interval: interval,
+      runtime_allowance_usd: amountUsd,
+      voice_capacity_separate: true,
     },
-  );
+  });
 
   if (applied > 0) {
     log.info("subscription runtime allowance granted", {
@@ -56,6 +51,70 @@ export async function grantSubscriptionRuntimeAllowance(
       planId,
       interval,
       billingPeriodReference,
+      applied,
+    });
+  }
+}
+
+/**
+ * Claw the Runtime Allowance back when the subscription payment behind it is
+ * refunded or disputed.
+ *
+ * Credit top-ups have been protected against this since round 4, but the
+ * subscription path was not: charge.refunded / charge.dispute.created check for
+ * `purpose === "credit_topup"` on the PaymentIntent, and a subscription invoice
+ * PaymentIntent carries no such marker, so the handler simply broke out. A
+ * refunded annual Business plan kept its $120 of Runtime Balance to spend as
+ * real provider work — ~6,000 SMS segments or ~480 artifact jobs — on top of
+ * the $1,490 already reversed.
+ *
+ * The reversal is keyed on the refund/dispute id rather than on the grant's own
+ * period reference. That id is unique per event, so the (user, ref) ledger index
+ * makes a redelivery idempotent, and a second partial refund reverses under its
+ * own key instead of colliding with the first and being silently dropped.
+ */
+export async function reverseSubscriptionRuntimeAllowance(
+  userId: string,
+  reversalReference: string,
+  planId: string | null | undefined,
+  interval: SubscriptionBillingInterval = "month",
+  reason: "refund" | "dispute" = "refund",
+): Promise<void> {
+  if (!userId || !reversalReference) return;
+  const amountUsd = runtimeAllowanceUsdForPlan(planId, interval);
+  if (!(amountUsd > 0)) return;
+
+  const { reverseCredit } = await import("./credit-wallet");
+  const { applied } = await reverseCredit(
+    userId,
+    amountUsd,
+    "subscription_runtime_allowance_reversal",
+    {
+      type: "subscription_runtime_allowance_reversal",
+      id: reversalReference,
+      entryKind: "reversal",
+      source: "stripe",
+      provider: "stripe",
+      customerReason:
+        reason === "dispute"
+          ? "Runtime Allowance reversed after a payment dispute"
+          : "Runtime Allowance reversed after a refund",
+      metadata: {
+        plan_id: planId,
+        billing_interval: interval,
+        runtime_allowance_usd: amountUsd,
+        reversal_reason: reason,
+      },
+    },
+  );
+
+  if (applied > 0) {
+    log.info("subscription runtime allowance reversed", {
+      userId,
+      planId,
+      interval,
+      reversalReference,
+      reason,
       applied,
     });
   }

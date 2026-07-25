@@ -72,3 +72,37 @@ describe("round-8 usage meter truthfulness", () => {
     expect(progress).toContain("Math.min(100, Math.max(0, value as number))");
   });
 });
+
+describe("round-9 subscription allowance reversal", () => {
+  it("reverses the Runtime Allowance when a subscription charge is refunded or disputed", () => {
+    // Top-ups have been protected since round 4, but a subscription invoice
+    // PaymentIntent carries no purpose=credit_topup marker, so these charges
+    // fell straight through and left the allowance spendable after the money
+    // went back — e.g. a refunded annual Business kept $120 of Runtime Balance.
+    const billing = read("src/routes/billing-routes.ts");
+    expect(billing).toContain("async function reverseRuntimeAllowanceForCharge");
+    expect(billing).toContain('reverseRuntimeAllowanceForCharge(charge, "refund")');
+    expect(billing).toContain('reverseRuntimeAllowanceForCharge(disputedCharge, "dispute"');
+  });
+
+  it("resolves plan and interval from the subscription behind the charge", () => {
+    const billing = read("src/routes/billing-routes.ts");
+    const fn = billing.slice(
+      billing.indexOf("async function reverseRuntimeAllowanceForCharge"),
+      billing.indexOf("// ─── Stripe Webhook"),
+    );
+    expect(fn).toContain("stripe.invoices.retrieve(invoiceId)");
+    expect(fn).toContain("schema.subscriptions.stripeSubscriptionId, subscriptionId");
+    expect(fn).toContain('recurring?.interval === "year"');
+    expect(fn).toContain("tenantStore.run(row.userId");
+  });
+
+  it("keys the reversal on the refund/dispute id so redelivery is idempotent", () => {
+    const helper = read("src/lib/subscription-welcome-credit.ts");
+    expect(helper).toContain("export async function reverseSubscriptionRuntimeAllowance");
+    expect(helper).toContain('type: "subscription_runtime_allowance_reversal"');
+    expect(helper).toContain("id: reversalReference");
+    // Same amount basis as the grant, so a reversal cannot exceed it.
+    expect(helper).toContain("runtimeAllowanceUsdForPlan(planId, interval)");
+  });
+});

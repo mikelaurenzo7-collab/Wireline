@@ -13,6 +13,7 @@ import { planById, plansForClient, FOUNDER_CATALOG_VERSION } from "../lib/plan-c
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import { getWorkspaceUsageSnapshot } from "../lib/workspace-usage-snapshot";
 import { addCredit, reverseCredit } from "../lib/credit-wallet";
+import { reverseSubscriptionRuntimeAllowance } from "../lib/subscription-welcome-credit";
 import Stripe from "stripe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
@@ -63,6 +64,73 @@ function creditPortionUsd(grossCents: number, pi: Stripe.PaymentIntent): number 
   if (!Number.isFinite(creditUsd) || creditUsd <= 0 || chargedUsd <= 0) return grossUsd;
   if (creditUsd >= chargedUsd) return grossUsd;
   return Math.min(creditUsd, Math.floor(grossUsd * (creditUsd / chargedUsd) * 100) / 100);
+}
+
+/**
+ * Reverse the Runtime Allowance funded by a refunded/disputed SUBSCRIPTION
+ * charge. Top-ups are handled separately (they carry purpose=credit_topup);
+ * a subscription invoice PaymentIntent carries no such marker, which is why
+ * these charges previously fell straight through and left the allowance
+ * spendable after the money went back.
+ *
+ * Resolves charge -> invoice -> subscription so the plan and billing interval
+ * match what was actually granted, then reverses under the refund/dispute id.
+ */
+async function reverseRuntimeAllowanceForCharge(
+  charge: Stripe.Charge,
+  reason: "refund" | "dispute",
+  explicitReference?: string,
+): Promise<void> {
+  try {
+    const invoiceId = typeof charge.invoice === "string" ? charge.invoice : charge.invoice?.id;
+    if (!invoiceId) return;
+
+    const invoice = await stripe.invoices.retrieve(invoiceId);
+    const subField = (invoice as Stripe.Invoice & { subscription?: string | { id: string } })
+      .subscription;
+    const subscriptionId = typeof subField === "string" ? subField : subField?.id;
+    if (!subscriptionId) return;
+
+    const [row] = await drizzle
+      .select({ userId: schema.subscriptions.userId, plan: schema.subscriptions.plan })
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.stripeSubscriptionId, subscriptionId))
+      .limit(1);
+    if (!row?.userId) return;
+
+    const sub = await stripe.subscriptions.retrieve(subscriptionId);
+    const interval =
+      sub.items.data[0]?.price?.recurring?.interval === "year"
+        ? ("year" as const)
+        : ("month" as const);
+
+    // The refund/dispute id is unique per event, so redelivery is idempotent
+    // through the (user, ref) ledger index and a second partial refund cannot
+    // collide with the first.
+    const reference =
+      explicitReference ??
+      charge.refunds?.data?.find((r) => !r.status || r.status === "succeeded")?.id ??
+      charge.id;
+
+    await tenantStore.run(row.userId, async () => {
+      await reverseSubscriptionRuntimeAllowance(
+        row.userId as string,
+        reference,
+        row.plan,
+        interval,
+        reason,
+      );
+    });
+  } catch (error) {
+    // Never fail the webhook on this path: the money movement Stripe cares
+    // about has already been recorded, and throwing here would force a
+    // redelivery that re-runs the primary handler.
+    log.error("subscription runtime allowance reversal failed", {
+      chargeId: charge.id,
+      reason,
+      error: getErrorMessage(error),
+    });
+  }
 }
 
 // ─── Stripe Webhook ──────────────────────────────────────────────────────────
@@ -316,6 +384,11 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
               }
             });
           }
+        } else {
+          // Not a top-up — but a subscription invoice charge funds the Runtime
+          // Allowance, which was granted on subscription sync and never came
+          // back on a refund. Reverse it under the refund's own id.
+          await reverseRuntimeAllowanceForCharge(charge, "refund");
         }
         break;
       }
@@ -348,6 +421,11 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
               });
             });
           }
+        } else if (dispute.charge) {
+          const disputedCharge = await stripe.charges.retrieve(
+            typeof dispute.charge === "string" ? dispute.charge : dispute.charge.id,
+          );
+          await reverseRuntimeAllowanceForCharge(disputedCharge, "dispute", dispute.id);
         }
         break;
       }
