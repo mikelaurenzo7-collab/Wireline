@@ -98,14 +98,44 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
   try {
     await drizzle
       .insert(schema.stripeEvents)
-      .values({ eventId: idempotencyKey, eventType: event.type });
+      .values({ eventId: idempotencyKey, eventType: event.type, status: "processing" });
 
     claimed = true;
   } catch (err: any) {
     if (err.code === "23505" || /duplicate key/i.test(err.message)) {
+      // A duplicate is only genuinely a duplicate if the prior attempt actually
+      // finished. A claim still sitting at "processing" means an earlier
+      // invocation was killed mid-handler (maxDuration, OOM, recycle) and its
+      // rollback never ran — answering 2xx there would permanently drop the
+      // event, which for a credit top-up means the customer paid and their
+      // balance never moved. Release the stale claim and make Stripe redeliver.
+      const [prior] = await drizzle
+        .select({ status: schema.stripeEvents.status, at: schema.stripeEvents.processedAt })
+        .from(schema.stripeEvents)
+        .where(eq(schema.stripeEvents.eventId, idempotencyKey))
+        .limit(1);
+
+      const abandonedAfterMs = 5 * 60 * 1000;
+      const stale =
+        prior?.status === "processing" &&
+        Date.now() - new Date(prior.at ?? 0).getTime() > abandonedAfterMs;
+
+      if (stale) {
+        log.warn("Releasing abandoned Stripe webhook claim for redelivery", {
+          eventId: idempotencyKey,
+          eventType: event.type,
+        });
+        await drizzle
+          .delete(schema.stripeEvents)
+          .where(eq(schema.stripeEvents.eventId, idempotencyKey))
+          .catch(() => {});
+        throw AppError.fromHttpStatus(503, "Prior delivery did not complete. Retry.");
+      }
+
       log.info("Stripe webhook duplicate event ignored", {
         eventId: idempotencyKey,
         eventType: event.type,
+        priorStatus: prior?.status ?? "unknown",
       });
       return res.json({ received: true, duplicate: true });
     }
@@ -483,6 +513,11 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
       default:
         break;
     }
+    // Only now is the claim a real "already handled" marker.
+    await drizzle
+      .update(schema.stripeEvents)
+      .set({ status: "processed", processedAt: new Date() })
+      .where(eq(schema.stripeEvents.eventId, idempotencyKey));
     res.json({ received: true });
   } catch (err: any) {
     log.error("Stripe webhook handler error", { error: getErrorMessage(err) });
@@ -979,6 +1014,7 @@ router.post(
         .limit(1);
       const plan = planById(row?.plan_id || "personal");
       if (!plan) throw AppError.fromHttpStatus(400, "Plan not found");
+      const currentExtraAgents = Math.max(0, Number(row?.extra_agents ?? 0));
 
       const priceIdEnv = plan.extraAgentPriceIdEnv;
       const configuredPriceId = priceIdEnv ? process.env[priceIdEnv] : undefined;
@@ -1023,18 +1059,57 @@ router.post(
             // Find existing extra-agent line item (if any).
             const sub = await stripe.subscriptions.retrieve(subscriptionId);
             const existing = sub.items.data.find((i) => i.price?.id === priceId);
+
+            // Raising the count grants included voice minutes the instant the
+            // settings column is written (includedVoiceMinutes adds
+            // extra_agent_voice_minutes_monthly per unit), but a bare quantity
+            // change only prorates onto the NEXT invoice. That gap was free
+            // capacity: buy 100 agents, burn the ~5,000 minutes it unlocks,
+            // then drop back to 0 for a proration credit — and because
+            // incremental overage is computed at record time, none of the
+            // consumed minutes is ever re-priced. Invoice the increase now, so
+            // capacity and collection happen together.
+            const isIncrease = target > currentExtraAgents;
+            const prorationBehavior = isIncrease ? "always_invoice" : "create_prorations";
+
             if (existing) {
               if (target === 0) {
                 await stripe.subscriptionItems.del(existing.id);
               } else {
-                await stripe.subscriptionItems.update(existing.id, { quantity: target });
+                await stripe.subscriptionItems.update(existing.id, {
+                  quantity: target,
+                  proration_behavior: prorationBehavior,
+                });
               }
             } else if (target > 0) {
               await stripe.subscriptionItems.create({
                 subscription: subscriptionId,
                 price: priceId,
                 quantity: target,
+                proration_behavior: prorationBehavior,
               });
+            }
+
+            // Fail closed on an increase Stripe could not collect: without this
+            // an unpayable card still walks away with the capacity.
+            if (isIncrease) {
+              const invoices = await stripe.invoices.list({
+                subscription: subscriptionId,
+                limit: 1,
+              });
+              const latest = invoices.data[0];
+              if (latest && latest.status !== "paid" && latest.status !== "draft") {
+                log.warn("Extra-agent increase left an uncollected invoice", {
+                  userId: req.user!.id,
+                  invoiceId: latest.id,
+                  status: latest.status,
+                });
+                return res.status(402).json({
+                  code: "PAYMENT_REQUIRED",
+                  error:
+                    "We couldn't collect payment for the additional agents. Update your payment method and try again.",
+                });
+              }
             }
           } catch (e) {
             if (e instanceof AppError) throw e;

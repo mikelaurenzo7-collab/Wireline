@@ -474,12 +474,19 @@ async function captureRouteInFreshPage(context, viewportName, route, issues, opt
 
 async function signIn(page, viewportName, issues) {
   if (!email || !password) return false;
-  await page.goto(`${baseUrl}/signin?redirect=%2Foverview`, {
-    waitUntil: "domcontentloaded",
-    timeout: 45_000,
-  });
-  await settle(page);
   try {
+    // The seed navigation was outside the try below, so a slow or unreachable
+    // third-party beacon on /signin threw past every handler and killed the
+    // whole run before a single screenshot was written — the authenticated
+    // matrix simply never existed. Beacons are blocked here too (this page did
+    // not go through captureRouteInFreshPage, which is where the blocking was
+    // installed), and a failed seed now degrades to "public routes only".
+    await blockThirdPartyBeacons(page);
+    await page.goto(`${baseUrl}/signin?redirect=%2Foverview`, {
+      waitUntil: "domcontentloaded",
+      timeout: 45_000,
+    });
+    await settle(page);
     await page.locator("#auth-email").fill(email);
     await page.locator("#auth-password").fill(password);
     await page.locator('form button[type="submit"]').click();

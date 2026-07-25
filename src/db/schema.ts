@@ -1582,6 +1582,13 @@ export const stripeEvents = pgTable("wireline_stripe_events", {
   eventId: text("event_id").primaryKey(),
   eventType: text("event_type").notNull(),
   processedAt: timestamp("processed_at", { withTimezone: true }).defaultNow(),
+  /**
+   * "processing" until the handler completes, then "processed". A killed
+   * invocation cannot run the JS rollback, so without this a redelivery of an
+   * abandoned claim is indistinguishable from a genuine duplicate and the work
+   * is silently dropped. Migration 0112.
+   */
+  status: text("status").notNull().default("processed"),
 });
 
 // 4.5 TEAM & RBAC
