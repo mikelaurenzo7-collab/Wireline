@@ -14,6 +14,23 @@
      recovered per boundary. */
   --wl-public-section-space: clamp(3.25rem, 5vw, 4.75rem);
   --wl-public-section-space-tight: clamp(2.5rem, 4vw, 3.75rem);
+  --wl-public-gutter-inline: clamp(1.25rem, 2.5vw, 2.5rem);
+}
+
+/* Canonical public section padding. Prefer this over ad-hoc py-12/14/16/20
+   stacks so Landing, Features, Pricing, About, and Compare share one beat. */
+.marketing-surface .wl-public-section {
+  padding-block: var(--wl-public-section-space);
+  padding-inline: var(--wl-public-gutter-inline);
+}
+
+.marketing-surface .wl-public-section--tight {
+  padding-block: var(--wl-public-section-space-tight);
+  padding-inline: var(--wl-public-gutter-inline);
+}
+
+.marketing-surface .wl-public-section--flush-x {
+  padding-inline: 0;
 }
 
 .marketing-surface main {
@@ -169,8 +186,26 @@
 }
 
 .wl-pricing-page #plans article {
-  border-radius: 1.25rem;
+  border-radius: 1.05rem;
+  box-shadow: none;
   padding: clamp(1.35rem, 1.05rem + 0.8vw, 1.8rem);
+}
+
+/* Features / About / Compare: same gutter + section beat as the landing rail. */
+.marketing-surface.wl-features-page main > section:not(.marketing-hero),
+.marketing-surface.wl-about-page main > section:not(.marketing-hero),
+.marketing-surface.wl-compare-page main > section:not(.marketing-hero) {
+  padding-block: var(--wl-public-section-space);
+  padding-inline: var(--wl-public-gutter-inline);
+}
+
+/* Security / Trust hub: document pages share the public rail rhythm. */
+.marketing-surface.wl-security-page {
+  --wl-public-section-space: clamp(3rem, 4.5vw, 4.25rem);
+}
+
+.marketing-surface.wl-security-page .wl-security-doc {
+  padding-block: var(--wl-public-section-space-tight);
 }
 
 .wl-pricing-page #plans article > p,
@@ -215,6 +250,12 @@
 .wl-pricing-page main > section:last-child > div a {
   background: var(--wireline-color-action-primary-default);
   color: var(--wireline-color-canvas-default);
+}
+
+/* Trust strip: match the public section beat instead of a compressed py-10 band. */
+.marketing-surface [data-testid="trust-signals"] {
+  padding-block: var(--wl-public-section-space-tight);
+  padding-inline: var(--wl-public-gutter-inline);
 }
 
 /* Demos: make the journey read as one story and keep the closing CTA compact. */

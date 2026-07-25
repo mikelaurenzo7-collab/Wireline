@@ -191,10 +191,10 @@ const TRUST_PACK_SECTIONS = [
 ];
 
 const SECURITY_SUMMARY = [
-  ["Runtime", "Encrypted transport, webhook verification, fallback voice path, and public probes."],
-  ["Data", "Tenant-scoped access, encrypted transcripts, opt-in recordings, deletion workflow."],
-  ["Compliance", "TCPA/DNC controls, HIPAA guardrails, SOC 2 roadmap stated without fake badges."],
-  ["Billing", "Stripe card handling, prepaid Runtime Balance, and spend controls."],
+  ["Runtime", "Encrypted transport, webhook verification, fallback voice, public probes."],
+  ["Data", "Tenant-scoped access, encrypted transcripts, opt-in recordings, deletion."],
+  ["Compliance", "TCPA/DNC controls, HIPAA guardrails, SOC 2 roadmap without fake badges."],
+  ["Billing", "Stripe card handling, prepaid Runtime Balance, spend controls."],
 ] as const;
 
 export default function Security() {
@@ -210,13 +210,13 @@ export default function Security() {
         // single canonical so search engines don't see competing duplicates.
         path="/security"
       />
-      <MarketingChrome stickyCta={false}>
-        <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
+      <MarketingChrome stickyCta={false} className="wl-security-page">
+        <div className="wl-security-doc relative z-10 mx-auto max-w-3xl px-5 sm:px-6">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-foreground transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"
+            className="mb-8 -mx-2 inline-flex min-h-[44px] items-center gap-2 rounded-md px-2 py-2 text-caption font-medium text-muted transition-colors hover:bg-black/[0.03] hover:text-foreground"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back home
+            <ArrowLeft className="h-3.5 w-3.5" /> Back home
           </Link>
 
           <motion.div
@@ -226,23 +226,21 @@ export default function Security() {
             className="mb-10 text-center"
           >
             <div className="mb-5 flex flex-col items-center justify-center gap-3 text-center">
-              <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-brand">
-                <ShieldCheck className="w-5 h-5 text-on-brand" />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand">
+                <ShieldCheck className="h-5 w-5 text-on-brand" />
               </div>
               <div className="text-center">
-                <p className="text-eyebrow">Security · Compliance · Honesty</p>
-                <h1 className="marketing-hero-title text-2xl sm:text-3xl">
+                <p className="wl-overline text-muted-foreground">Security · Compliance · Honesty</p>
+                <h1 className="wl-public-section-heading mt-3 max-w-[22ch]">
                   {isTrustHub
                     ? "Trust Center — how Wireline earns live calls."
                     : "How we keep your calls — and your data — safe."}
                 </h1>
               </div>
             </div>
-            <p className="marketing-hero-lead mx-auto max-w-prose">
-              Wireline runs every call on infrastructure designed for the moments that matter: a
-              customer trusting you, a regulator auditing you, a hacker testing you. This page is
-              the honest summary of what we ship today, where we still have work to do, and how to
-              reach us if you find something we missed.
+            <p className="wl-public-copy mx-auto">
+              What we ship today, what is still on the roadmap, and how to reach us if you find a
+              gap.
             </p>
             <p className="mt-4 inline-flex flex-wrap justify-center gap-x-3 gap-y-1 text-eyebrow !text-[0.625rem]">
               <span className="whitespace-nowrap">Last updated · July 7, 2026</span>
@@ -254,7 +252,7 @@ export default function Security() {
             {SECURITY_SUMMARY.map(([label, detail]) => (
               <div
                 key={label}
-                className="rounded-md border border-border bg-background/45 p-4 text-center"
+                className="rounded-[1.05rem] border border-border bg-background/45 p-4 text-center"
               >
                 <p className="text-sm font-semibold text-foreground">{label}</p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>

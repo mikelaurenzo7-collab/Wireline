@@ -41,8 +41,7 @@ const PAID_TIERS = [
     publicName: "Starter",
     eyebrow: "Put one employee live",
     tagline: "Your AI Voice Employee from $19/month.",
-    detail:
-      "One focused employee for inbound, outbound follow-up, or scheduling—with an included Wireline number.",
+    detail: "One focused employee for inbound, outbound, or scheduling—with an included Wireline number.",
     ctaMonthly: "Start for $19",
     ctaAnnual: "Start for $190/yr",
     ctaPath: "/signup?plan=starter",
@@ -55,7 +54,7 @@ const PAID_TIERS = [
     publicName: "Starter Plus",
     eyebrow: "Founder hybrid",
     tagline: "Personal Concierge + business employee — from $39/month.",
-    detail: `Two live agents and two number slots: one for your life, one for the company—with ${planById.team.voice_minutes_monthly} voice minutes and full Lead Hunt, inbox, SMS, and email.`,
+    detail: `Two live agents, two numbers, ${planById.team.voice_minutes_monthly} voice minutes, Lead Hunt, inbox, SMS, and email.`,
     ctaMonthly: "Choose Starter Plus",
     ctaAnnual: "Choose annual Starter Plus",
     ctaPath: "/signup?plan=team",
@@ -68,8 +67,7 @@ const PAID_TIERS = [
     publicName: "Pro",
     eyebrow: "For a growing operation",
     tagline: "Five specialized employees. One supervised workspace.",
-    detail:
-      "Up to five specialized employees with shared routing, approvals, channel controls, and analytics.",
+    detail: "Up to five specialized employees with shared routing, approvals, and analytics.",
     ctaMonthly: "Go Pro",
     ctaAnnual: "Go Pro annually",
     ctaPath: "/signup?plan=business",
@@ -82,8 +80,7 @@ const PAID_TIERS = [
     publicName: "Business",
     eyebrow: "For serious operators",
     tagline: "A complete AI conversation workforce.",
-    detail:
-      "Up to fifteen purpose-built employees across lines of work, with stronger governance and oversight.",
+    detail: "Up to fifteen purpose-built employees with stronger governance and oversight.",
     ctaMonthly: "Start Business",
     ctaAnnual: "Start Business annually",
     ctaPath: "/signup?plan=enterprise",
@@ -97,22 +94,22 @@ const CHANNEL_RULES = [
   {
     icon: PhoneCall,
     title: "Voice + included number",
-    body: "A Wireline number on every paid plan, no line fee. Extra minutes draw from prepaid balance — and a live call is never cut off mid-conversation.",
+    body: "A Wireline number on every paid plan. Extra minutes draw from prepaid balance—live calls never cut mid-conversation.",
   },
   {
     icon: MessageSquareText,
     title: "Text / SMS",
-    body: "The same employee picks the conversation back up by text. Consent and spend stay visible, billed by segment.",
+    body: "The same employee continues by text. Consent and spend stay visible, billed by segment.",
   },
   {
     icon: Mail,
     title: "Email",
-    body: "Connect Gmail, Outlook, iCloud, or your own infrastructure. Your provider's limits and sending reputation stay authoritative.",
+    body: "Connect Gmail, Outlook, iCloud, or your own stack. Your provider's limits stay authoritative.",
   },
   {
     icon: Crosshair,
     title: "Lead Hunt",
-    body: "Research a niche, set the criteria, enrich the data — qualified targets land with the same employee. On every paid plan.",
+    body: "Research a niche, enrich targets, and hand them to the same employee. On every paid plan.",
   },
 ] as const;
 
@@ -227,7 +224,7 @@ export default function Pricing() {
         <MarketingHero
           eyebrow="Founder Early Access"
           title="Build free. Launch for $19. Scale when it pays."
-          description="One subscription unlocks calls, texts, email, follow-up, and Lead Hunt—plus a number on every paid plan. Extra usage stays prepaid, never a surprise bill."
+          description="Calls, texts, email, follow-up, and Lead Hunt—plus a number on every paid plan. Extra usage stays prepaid."
           primaryAction={{
             label: annual ? "Launch for $190/yr" : "Launch for $19/mo",
             to: annual ? "/signup?plan=starter&interval=year" : "/signup?plan=starter",
@@ -240,7 +237,7 @@ export default function Pricing() {
           proof={assurances.slice(0, 3).map(({ label }) => label)}
         />
 
-        <section id="plans" className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+        <section id="plans" className="wl-public-section">
           <div className="wl-public-rail mx-auto max-w-[1500px]">
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-overline text-primary">Plans for different stages</p>
@@ -248,8 +245,8 @@ export default function Pricing() {
                 Start with one employee. Add specialists when demand earns them.
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
-                Every paid plan: voice, SMS, and email under one employee, plus a Wireline number.
-                Higher tiers buy capacity, not features.
+                Every paid plan includes voice, SMS, email, and a Wireline number. Higher tiers buy
+                capacity, not features.
               </p>
               <div
                 className="mx-auto mt-8 inline-flex rounded-full border border-border bg-muted/40 p-1"
@@ -286,7 +283,7 @@ export default function Pricing() {
             </div>
 
             <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <article className="rounded-[28px] border border-border bg-card p-6 text-center shadow-sm">
+              <article className="rounded-[var(--radius-xl)] border border-border bg-card p-6 text-center">
                 <div className="flex flex-col items-center justify-center gap-3 text-center">
                   <div>
                     <p className="wl-stitch-label">Build before billing</p>
@@ -340,9 +337,9 @@ export default function Pricing() {
                   return (
                     <article
                       key={plan.id}
-                      className={`relative rounded-[28px] border p-6 text-center shadow-sm ${
+                      className={`relative rounded-[var(--radius-xl)] border p-6 text-center ${
                         featured
-                          ? "border-primary/50 bg-card ring-2 ring-primary/45 shadow-lg xl:-translate-y-1"
+                          ? "border-primary/50 bg-card ring-2 ring-primary/45 xl:-translate-y-1"
                           : "border-border bg-card"
                       }`}
                     >
@@ -408,7 +405,7 @@ export default function Pricing() {
 
               <article
                 id="scale"
-                className="rounded-[28px] border border-border bg-card p-6 text-center shadow-sm scroll-mt-24"
+                className="scroll-mt-24 rounded-[var(--radius-xl)] border border-border bg-card p-6 text-center"
               >
                 <div className="flex flex-col items-center justify-center gap-3 text-center">
                   <div>
@@ -447,7 +444,7 @@ export default function Pricing() {
           </div>
         </section>
 
-        <section className="border-y border-border bg-muted/35 px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+        <section className="wl-public-section border-y border-border bg-muted/35">
           <div className="wl-public-rail mx-auto max-w-[1400px]">
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-overline text-primary">Channel economics</p>
@@ -455,15 +452,15 @@ export default function Pricing() {
                 One employee. No channel seat tax. Clear usage costs.
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
-                One employee calls, texts, and emails on one subscription. Costs track real
-                boundaries — numbers, minutes, message segments — not seats per channel.
+                One employee calls, texts, and emails on one subscription. Costs track numbers,
+                minutes, and segments—not seats per channel.
               </p>
             </div>
             <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {CHANNEL_RULES.map(({ icon: Icon, title, body }) => (
                 <article
                   key={title}
-                  className="rounded-3xl border border-border bg-card p-6 text-center"
+                  className="rounded-[var(--radius-xl)] border border-border bg-card p-6 text-center"
                 >
                   <Icon className="mx-auto h-6 w-6" aria-hidden="true" />
                   <h3 className="mt-5 text-lg font-semibold">{title}</h3>
@@ -474,7 +471,7 @@ export default function Pricing() {
           </div>
         </section>
 
-        <section className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+        <section className="wl-public-section">
           <div className="wl-public-rail mx-auto max-w-[1000px]">
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-overline text-primary">Questions before launch</p>
@@ -482,8 +479,7 @@ export default function Pricing() {
                 Predictable enough for owners. Flexible enough to grow.
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
-                Your subscription funds employee capacity. Prepaid balance funds variable provider
-                work.
+                Subscription funds employee capacity. Prepaid balance funds variable provider work.
               </p>
             </div>
             <div className="mx-auto mt-10 max-w-3xl space-y-3">
@@ -502,8 +498,8 @@ export default function Pricing() {
           </div>
         </section>
 
-        <section className="px-5 pb-16 sm:px-8 sm:pb-24 lg:px-10">
-          <div className="wl-public-rail mx-auto max-w-[1200px] rounded-[32px] marketing-ink-panel p-8 sm:p-12">
+        <section className="wl-public-section">
+          <div className="wl-public-rail mx-auto max-w-[1200px] rounded-[1.35rem] marketing-ink-panel p-8 sm:p-12">
             <div className="grid justify-items-center gap-8 text-center">
               <div className="mx-auto max-w-3xl">
                 <p className="wl-overline text-primary">Founder Early Access</p>
@@ -511,8 +507,8 @@ export default function Pricing() {
                   Build the employee first. Let real demand choose the plan.
                 </h2>
                 <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-2xl text-base leading-7">
-                  Start with a private build, launch your AI Voice Employee for $19 with an included
-                  number, then upgrade when completed work justifies more capacity or specialists.
+                  Start private, launch for $19 with an included number, then upgrade when completed
+                  work justifies more capacity.
                 </p>
               </div>
               <Link

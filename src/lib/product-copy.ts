@@ -97,7 +97,7 @@ export const AGENT_DIRECTION_MODES = {
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Every paid AI employee includes a Wireline number at no extra line fee, so it can call out, receive callbacks, text follow-ups, and own the handoff under your direction." as const;
+  "Every paid AI employee includes a Wireline number at no extra line fee—so it can call, take callbacks, text follow-ups, and own the handoff under your direction." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,

@@ -15,7 +15,7 @@ const PRINCIPLES = [
   },
   {
     title: "One agent, complete context.",
-    copy: "Handles calls, follows up by text/email, books, and logs everything your way.",
+    copy: "Handles calls, follows up by text or email, books, and logs your way.",
   },
 ] as const;
 
@@ -23,7 +23,7 @@ const ABOUT_HERO_ITEMS = ["Your training", "Your voice", "Your playbook", "Your 
 
 export default function About() {
   return (
-    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
+    <MarketingPageFrame className="wl-about-page" mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title="About Wireline | AI Agents for Calls and Follow-up"
         description="Wireline is a customizable agent platform built for calls, texts, follow-up, browser context, email, and integrations."
@@ -33,14 +33,14 @@ export default function About() {
       <MarketingHero
         eyebrow="About Wireline"
         title="Agents that run your calls exactly like you would."
-        description="Train them on your business, your voice, and your playbook — then hold every call, handoff, and follow-up to the standard you'd set yourself."
+        description="Train them on your business, voice, and playbook—then hold every call and follow-up to your standard."
         primaryAction={{ label: "Get started now", to: "/pricing" }}
         secondaryAction={{ label: "Contact support", to: "/contact", tone: "secondary" }}
         proof={ABOUT_HERO_ITEMS}
       />
 
-      <section className="border-y border-border bg-card px-5 py-5 sm:px-8 sm:py-7">
-        <div className="mx-auto grid max-w-6xl overflow-hidden border border-border bg-border lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
+      <section className="wl-public-section border-y border-border bg-card">
+        <div className="mx-auto grid max-w-6xl overflow-hidden rounded-[1.05rem] border border-border bg-border lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
           <div className="bg-card px-5 py-9 text-center sm:px-8 sm:py-12 lg:px-10">
             <p className="wl-stitch-eyebrow">Built with accountability</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
@@ -49,13 +49,12 @@ export default function About() {
           </div>
           <div className="bg-card px-5 py-9 text-center sm:px-8 sm:py-12 lg:px-10">
             <p className="mx-auto max-w-xl text-base leading-7 text-muted-foreground">
-              Independently built. Every agent is fully customizable. Your Training. Your voice.
-              Your playbook.
+              Independently built. Every agent is fully customizable—your training, voice, and
+              playbook.
             </p>
             <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-muted-foreground">
-              The goal is simple: empower businesses to automate customer interactions, capture hot
-              opportunities instantly, and scale front-desk reception and sales qualification
-              seamlessly.
+              Automate customer conversations, catch hot opportunities, and scale front-desk and
+              sales qualification without losing quality.
             </p>
             <a
               href="mailto:support@trywireline.com"
@@ -68,39 +67,40 @@ export default function About() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
-        <div className="mx-auto grid max-w-4xl gap-6 text-center">
-          <div>
-            <p className="wl-stitch-eyebrow">What guides the product</p>
-            <h2 className="wl-stitch-display mt-3 text-balance">
-              A business agent should be completely predictable, trained, and brand-safe.
-            </h2>
+      <section className="wl-public-section">
+        <div className="mx-auto max-w-6xl">
+          <div className="mx-auto grid max-w-4xl gap-6 text-center">
+            <div>
+              <p className="wl-stitch-eyebrow">What guides the product</p>
+              <h2 className="wl-stitch-display mt-3 text-balance">
+                A business agent should be predictable, trained, and brand-safe.
+              </h2>
+            </div>
+            <p className="mx-auto max-w-xl text-base leading-7 text-muted-foreground">
+              Answer inbound queries, qualify sales opportunities, book calendar invites, and follow
+              your operating playbook consistently.
+            </p>
           </div>
-          <p className="mx-auto max-w-xl text-base leading-7 text-muted-foreground">
-            Wireline is designed around enterprise-grade execution: answer inbound queries, qualify
-            sales opportunities, book CRM-synced calendar invites, and follow your operating
-            playbook consistently.
-          </p>
-        </div>
-        <div className="mt-10 grid gap-3 md:grid-cols-3">
-          {PRINCIPLES.map((principle) => (
-            <article
-              className="wl-stitch-card group p-6 text-center transition-all hover:-translate-y-px hover:shadow-sm"
-              key={principle.title}
-            >
-              <span className="mx-auto grid h-9 w-9 place-items-center rounded bg-muted text-primary transition group-hover:bg-primary/10">
-                <Check className="h-4 w-4 transition group-hover:scale-110" />
-              </span>
-              <h3 className="mt-6 text-lg font-semibold tracking-[-.025em] text-foreground">
-                {principle.title}
-              </h3>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">{principle.copy}</p>
-            </article>
-          ))}
+          <div className="mt-10 grid gap-3 md:grid-cols-3">
+            {PRINCIPLES.map((principle) => (
+              <article
+                className="wl-stitch-card group p-6 text-center transition-all hover:-translate-y-px"
+                key={principle.title}
+              >
+                <span className="mx-auto grid h-9 w-9 place-items-center rounded bg-muted text-primary transition group-hover:bg-primary/10">
+                  <Check className="h-4 w-4 transition group-hover:scale-110" />
+                </span>
+                <h3 className="mt-6 text-lg font-semibold tracking-[-.025em] text-foreground">
+                  {principle.title}
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">{principle.copy}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="border-t border-border bg-card px-5 py-16 sm:px-8 sm:py-20">
+      <section className="wl-public-section border-t border-border bg-card">
         <div className="mx-auto grid max-w-4xl justify-items-center gap-9 text-center">
           <div>
             <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
