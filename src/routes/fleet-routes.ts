@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- task and job payloads are stored as Postgres jsonb. */
 import { Router, Response } from "express";
-import { AppError } from "../lib/api-error";
+import { AppError, rethrowIfAppError } from "../lib/api-error";
 
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -158,8 +158,9 @@ router.get(
 
       res.json({ signals });
     } catch (error: any) {
+      rethrowIfAppError(error);
       log.error("Presence fetch failed", { error: getErrorMessage(error) });
-      res.json({ signals: [] });
+      throw AppError.fromHttpStatus(500, "Failed to load Assistants presence");
     }
   },
 );
@@ -264,8 +265,9 @@ router.get(
 
       res.json({ tasks: sortedTasks });
     } catch (error: any) {
+      rethrowIfAppError(error);
       log.error("Fetch tasks failed", { error: getErrorMessage(error) });
-      res.json({ tasks: [] });
+      throw AppError.fromHttpStatus(500, "Failed to load Assistants tasks");
     }
   },
 );
@@ -450,6 +452,7 @@ router.post(
         });
       }
     } catch (error: any) {
+      rethrowIfAppError(error);
       log.error("Task approval failed", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to approve task");
     }

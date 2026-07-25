@@ -106,7 +106,7 @@ export async function assertVoiceWalletSolvent(userId: string): Promise<void> {
       ? "A paid plan is required for live voice."
       : completionGraceDue
         ? "A completed call has an outstanding completion-grace balance."
-        : "Included minutes and Conversation Balance are depleted.",
+        : "Included minutes and Runtime Balance are depleted.",
   );
   (err as Error & { status: number; body: Record<string, unknown> }).status = 402;
   (err as Error & { status: number; body: Record<string, unknown> }).body = noLivePlan
@@ -122,7 +122,7 @@ export async function assertVoiceWalletSolvent(userId: string): Promise<void> {
       ? {
           code: "VOICE_COMPLETION_GRACE_DUE",
           error:
-            "Your previous call finished normally after prepaid coverage ran out. Add Conversation Balance before starting another live call.",
+            "Your previous call finished normally after prepaid coverage ran out. Add Runtime Balance before starting another live call.",
           balance_usd: snapshot.balance_usd,
           completion_grace_due_usd: snapshot.completion_grace_due_usd,
           included_minutes_remaining: snapshot.included_minutes_remaining,
@@ -133,7 +133,7 @@ export async function assertVoiceWalletSolvent(userId: string): Promise<void> {
       : {
           code: "VOICE_COVERAGE_DEPLETED",
           error:
-            "Your included live-call minutes are used. Add Conversation Balance or wait for the next monthly reset before starting another live call.",
+            "Your included live-call minutes are used. Add Runtime Balance or wait for the next monthly reset before starting another live call.",
           balance_usd: snapshot.balance_usd,
           included_minutes_remaining: snapshot.included_minutes_remaining,
           required_usd: snapshot.required_usd,

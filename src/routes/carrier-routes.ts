@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Request, Response } from "express";
-import { AppError } from "../lib/api-error";
+import { AppError, rethrowIfAppError } from "../lib/api-error";
 import { log, fetchWithTimeout, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -508,8 +508,9 @@ router.get(
 
       res.json({ numbers: formatted });
     } catch (error: any) {
+      rethrowIfAppError(error);
       log.error("Vapi sync error", { error: getErrorMessage(error) });
-      res.json({ numbers: [] });
+      throw AppError.fromHttpStatus(500, "Failed to sync carrier numbers");
     }
   },
 );

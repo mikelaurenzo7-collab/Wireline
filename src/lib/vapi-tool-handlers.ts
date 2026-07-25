@@ -141,7 +141,7 @@ export async function handleCreateAccount(
 
     return {
       result: emailed
-        ? `Account created for ${to_email}. I've emailed them a link to set their password — once they do, they can sign in, create an agent, and fund Conversation Balance when ready for live work. Confirm they got the email before ending the call.`
+        ? `Account created for ${to_email}. I've emailed them a link to set their password — once they do, they can sign in, create an agent, and choose Starter when ready for live work. Runtime Balance covers overflow after a paid plan. Confirm they got the email before ending the call.`
         : `Account created for ${to_email}, but the welcome email didn't send. Tell the caller to go to trywireline.com, click "Forgot password", and set their password to get in. Their free Builder account is already active.`,
     };
   } catch (err: unknown) {
@@ -207,10 +207,10 @@ export async function handleSendPaymentLink(
     }
 
     const appUrl = resolveAppUrl(deps.appUrl);
-    // Checkout link — the pricing page deep-links to Stripe checkout
-    // per plan once the caller is signed in.
+    // Checkout link — pricing deep-links into plan checkout once signed in.
+    // `/billing` is not a routed page; authenticated billing lives at /settings/billing.
     const planParam = plan ? `?plan=${encodeURIComponent(plan)}` : "";
-    const payUrl = `${appUrl}/billing${planParam}`;
+    const payUrl = `${appUrl}/pricing${planParam}`;
     const r = await deps.sendPaymentLinkEmail({
       to: to_email,
       payUrl,
@@ -242,7 +242,7 @@ export async function handleSendPaymentLink(
     });
     return {
       result:
-        "I wasn't able to send that link right now. Let the caller know they can visit trywireline.com/billing to get started.",
+        "I wasn't able to send that link right now. Let the caller know they can visit trywireline.com/pricing to get started.",
     };
   }
 }

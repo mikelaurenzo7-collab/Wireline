@@ -150,7 +150,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "billing",
     label: "Billing and usage",
-    description: "Review plan, conversation balance, invoices, and payment details.",
+    description: "Review plan, Runtime Balance, invoices, and payment details.",
     icon: CreditCard,
     href: "/settings/billing",
     category: "Manage",

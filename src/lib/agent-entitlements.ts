@@ -39,7 +39,7 @@ export function resolveAgentEntitlement(input: AgentEntitlementInput): AgentEnti
       ? Math.max(0, Math.floor(input.maxAgents))
       : 0;
   return {
-    subscriptionStatus: input.subscriptionStatus || "active",
+    subscriptionStatus: input.subscriptionStatus || "pending_activation",
     planAgents,
     purchasedExtras,
     effectiveCap: Math.max(catalogCap, storedCap),

@@ -122,7 +122,8 @@ describe("code review hardening contracts", () => {
   it("tracks post-create roleplay starts only from a connected live voice test", () => {
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     const roleplay = read("src/components/RoleplaySandbox.tsx");
-    const liveVoice = read("src/components/LiveVoiceSandbox.tsx");
+    // LiveVoiceSandbox is a thin re-export; the OpenAI Realtime implementation owns the callback.
+    const liveVoice = read("src/components/OpenAILiveVoiceSandbox.tsx");
 
     expect(wizard).not.toContain("onFocusCapture");
     expect(wizard).toContain("onTestStarted={() =>");

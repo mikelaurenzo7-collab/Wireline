@@ -211,7 +211,7 @@ describe("company identity pack", () => {
     const phoneSettings = read("src/pages/PhoneSettings.tsx");
     const normalizedSurface = surface.replace(/\s+/g, " ");
 
-    expect(normalizedSurface).toContain("Brand the employee, not just the dashboard.");
+    expect(normalizedSurface).toContain("Brand the employee, not just the workspace.");
     expect(normalizedSurface).toContain(
       "Provider approval and recipient-device display remain external states.",
     );

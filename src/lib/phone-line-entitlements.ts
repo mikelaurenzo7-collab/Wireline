@@ -31,7 +31,7 @@ export async function getIncludedPhoneLineSlots(userId: string): Promise<number>
     .where(eq(schema.settings.userId, userId))
     .limit(1);
 
-  const subStatus = settings?.subscriptionStatus || "active";
+  const subStatus = settings?.subscriptionStatus ?? "pending_activation";
   if (subStatus !== "active") return 0;
 
   const [sub] = await drizzle

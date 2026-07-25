@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Response } from "express";
-import { AppError } from "../lib/api-error";
+import { AppError, rethrowIfAppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, asc } from "drizzle-orm";
@@ -74,6 +74,7 @@ router.patch(
 
       res.json({ success: true });
     } catch (error: any) {
+      rethrowIfAppError(error);
       log.error("Failed to update email account assignment", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to update email account assignment");
     }

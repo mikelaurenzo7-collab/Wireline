@@ -143,28 +143,38 @@ router.post(
       } = req.body;
       // Body is now validated by Zod middleware (email already lowercased + trimmed).
 
-      // Pre-check for existing account — gives a clean 409 with a
-      // user-actionable message instead of a confusing 500.
-      // (Race-condition backstop lives in the catch block below.)
-      const [existing] = await drizzle
-        .select({ id: schema.users.id })
-        .from(schema.users)
-        .where(eq(schema.users.email, email))
-        .limit(1);
-      if (existing) {
+      // Equalize the fast "email already taken" SELECT against the slower
+      // scrypt+insert success path so signup timing is not an enumeration oracle.
+      // Email delivery stays outside the floor — it is best-effort and only runs
+      // after a real account is created.
+      const gate = await equalizedDuration(
+        (async () => {
+          const [existing] = await drizzle
+            .select({ id: schema.users.id })
+            .from(schema.users)
+            .where(eq(schema.users.email, email))
+            .limit(1);
+          if (existing) return { kind: "taken" as const };
+          const result = await authService.signUp(email, password, fullName, {
+            preferredPlanId,
+            signupWedge,
+            utmSource,
+            utmMedium,
+            utmCampaign,
+          });
+          return { kind: "created" as const, result };
+        })(),
+        SIGNUP_MIN_DURATION_MS,
+      );
+
+      if (gate.kind === "taken") {
         return res.status(409).json({
           error: "An account with this email already exists. Try signing in instead.",
           code: "EMAIL_TAKEN",
         });
       }
 
-      const result = await authService.signUp(email, password, fullName, {
-        preferredPlanId,
-        signupWedge,
-        utmSource,
-        utmMedium,
-        utmCampaign,
-      });
+      const result = gate.result;
 
       emitServerProductEventOnce({
         event: "signup_completed",
@@ -227,6 +237,8 @@ router.post(
 
       const pgCode = getPostgresErrorCode(error);
       if (pgCode === "23505") {
+        // Race backstop: work already waited the floor inside equalizedDuration
+        // (rejection path is padded). Do not pad again.
         return res.status(409).json({
           error: "An account with this email already exists. Try signing in instead.",
           code: "EMAIL_TAKEN",
@@ -453,11 +465,13 @@ router.post("/api/auth/signout", async (_req: Request, res: Response) => {
  * the slower path.
  */
 async function equalizedDuration<T>(promise: Promise<T>, minMs: number): Promise<T> {
-  const [value] = await Promise.all([
-    promise,
-    new Promise<void>((resolve) => setTimeout(resolve, minMs)),
-  ]);
-  return value;
+  // Always wait the full floor even when work rejects — otherwise error paths
+  // (DB blips, password rejection) leak timing the floor was meant to hide.
+  const sleep = new Promise<void>((resolve) => setTimeout(resolve, minMs));
+  const settled = await Promise.allSettled([promise, sleep]);
+  const work = settled[0];
+  if (work.status === "rejected") throw work.reason;
+  return work.value;
 }
 
 /**
@@ -492,6 +506,16 @@ const FORGOT_PASSWORD_MIN_DURATION_MS = 1000;
 const SIGNIN_MIN_DURATION_MS = 400;
 
 /**
+ * /signup floor. The pre-insert "email taken" SELECT is fast; a successful
+ * signUp runs scrypt + insert. Without a floor, timing distinguishes
+ * registered vs unregistered emails even though both return distinct
+ * status codes (409 vs 200) — useful as a secondary oracle under rate
+ * limits. Tune near the scrypt path so legitimate new accounts are not
+ * perceptibly slowed.
+ */
+const SIGNUP_MIN_DURATION_MS = 500;
+
+/**
  * POST /api/auth/forgot-password
  *
  * Issue a single-use reset token (1h TTL) and email the user a reset
@@ -516,16 +540,15 @@ router.post(
       // Email is now validated by Zod middleware
 
       const issued = await equalizedDuration(
-        authService.createPasswordResetToken(email, req.ip),
-        FORGOT_PASSWORD_MIN_DURATION_MS,
-      );
-
-      if (issued) {
-        const appUrl = resolveCanonicalAppUrl();
-        if ("error" in appUrl) {
-          log.error("Password reset skipped: APP_URL not configured in production");
-        } else {
-          const resetUrl = `${appUrl.url}/reset-password?token=${encodeURIComponent(issued.token)}`;
+        (async () => {
+          const token = await authService.createPasswordResetToken(email, req.ip);
+          if (!token) return null;
+          const appUrl = resolveCanonicalAppUrl();
+          if ("error" in appUrl) {
+            log.error("Password reset skipped: APP_URL not configured in production");
+            return token;
+          }
+          const resetUrl = `${appUrl.url}/reset-password?token=${encodeURIComponent(token.token)}`;
           // SECURITY: NEVER log the plaintext token — that's account
           // takeover for anyone with log access. The email helper logs
           // only the resetUrl when transport is the dev-fallback path,
@@ -533,12 +556,12 @@ router.post(
           const sendResult = await sendPasswordResetEmail({
             to: email,
             resetUrl,
-            expiresAt: issued.expiresAt,
+            expiresAt: token.expiresAt,
           });
           log.info("Password reset token issued", {
             email,
-            expiresAt: issued.expiresAt.toISOString(),
-            tokenPrefix: issued.token.slice(0, 6) + "…",
+            expiresAt: token.expiresAt.toISOString(),
+            tokenPrefix: token.token.slice(0, 6) + "…",
             transport: sendResult.provider,
             delivery_ok: sendResult.ok,
           });
@@ -549,9 +572,13 @@ router.post(
               error: sendResult.error,
             });
           }
-        }
-      }
+          return token;
+        })(),
+        FORGOT_PASSWORD_MIN_DURATION_MS,
+      );
 
+      // Always the same body — issued only affects side effects above.
+      void issued;
       return res.json({
         ok: true,
         message:

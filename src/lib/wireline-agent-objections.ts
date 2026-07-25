@@ -215,7 +215,7 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
     ],
     response_template:
       "Honest answer — it'll happen occasionally. The safety net is built in: any time the AI isn't confident, it transfers to a human. Every call is recorded and transcribed, so you see exactly what was said.",
-    follow_up_question: "Want me to show you the live transfer flow and the call review dashboard?",
+    follow_up_question: "Want me to show you the live transfer flow and call review in Studio?",
     rationale:
       "Don't oversell. Lead with humility, then pivot to the safety net (graceful escalation + observability). Invites a product walkthrough.",
   },

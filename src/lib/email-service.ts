@@ -490,14 +490,14 @@ export async function sendTrialEndingSoonEmail(opts: {
   }
 
   const dayWord = opts.daysLeft === 1 ? "1 day" : `${opts.daysLeft} days`;
-  const subject = `Add Conversation Balance within ${dayWord}`;
+  const subject = `Choose a live plan within ${dayWord}`;
   const text =
     [
       "Hi,",
       "",
       `Your Wireline activation window closes in ${dayWord}.`,
       "",
-      "Add Conversation Balance now to keep your agents live — your phone number, call history, and agent configuration all carry over.",
+      "Choose Starter or higher to keep your agents live — your phone number, call history, and agent configuration all carry over. Runtime Balance covers overflow after a paid plan is active.",
       "",
       opts.checkoutUrl,
       "",
@@ -509,7 +509,7 @@ export async function sendTrialEndingSoonEmail(opts: {
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23;">
       <h2 style="margin: 0 0 16px; font-weight: 600;">Fund live work within ${escapeHtml(dayWord)}</h2>
       <p style="margin: 0 0 16px; line-height: 1.55;">Your Wireline activation window closes in <strong>${escapeHtml(dayWord)}</strong>.</p>
-      <p style="margin: 0 0 24px; line-height: 1.55;">Add Conversation Balance now to keep your agents live — your phone number, call history, and agent configuration all carry over.</p>
+      <p style="margin: 0 0 24px; line-height: 1.55;">Choose Starter or higher to keep your agents live — your phone number, call history, and agent configuration all carry over. Runtime Balance covers overflow after a paid plan is active.</p>
       <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.checkoutUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upgrade now</a></p>
       <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you decide not to fund live work, your agents will stop answering calls when activation lapses.</p>
       ${buildComplianceFooterHtml(opts.to)}

@@ -178,9 +178,24 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
       ?.map((item) => basePlanByStripePrice(item.price))
       .find((candidate): candidate is StripePlan => !!candidate) ?? null;
   const extraAgents = extraAgentQuantityFromSubscription(sub);
+  const stripeStatus = sub.status;
+
+  // Active/trialing Stripe status with an unmapped price must not wipe a
+  // known-good plan down to null / maxAgents=1 (catalog/env drift footgun).
+  if ((stripeStatus === "active" || stripeStatus === "trialing") && !plan) {
+    log.error("Stripe sync: active subscription price did not map to a catalog plan — refusing overwrite", {
+      userId,
+      customerId,
+      subscriptionId: sub.id,
+      priceIds: (sub.items?.data || []).map((item) =>
+        typeof item.price === "string" ? item.price : item.price?.id,
+      ),
+    });
+    throw new Error("Stripe subscription price is not mapped to a Wireline plan catalog entry");
+  }
+
   const baseMaxAgents = plan?.max_agents ?? 1;
   const effectiveMaxAgents = baseMaxAgents + extraAgents;
-  const stripeStatus = sub.status;
 
   const localStatus =
     stripeStatus === "active" || stripeStatus === "trialing"
@@ -270,16 +285,9 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   if ((stripeStatus === "active" || stripeStatus === "trialing") && plan?.id) {
     const interval = subscriptionBillingInterval(sub);
     const periodReference = subscriptionPeriodReference(sub);
-    await grantSubscriptionRuntimeAllowance(userId, periodReference, plan.id, interval).catch(
-      (error: unknown) =>
-        log.warn("subscription runtime allowance grant failed", {
-          userId,
-          planId: plan.id,
-          interval,
-          periodReference,
-          error: getErrorMessage(error),
-        }),
-    );
+    // Must succeed — swallowing here marks the webhook processed with no
+    // included Runtime Allowance, and Stripe will not retry.
+    await grantSubscriptionRuntimeAllowance(userId, periodReference, plan.id, interval);
   }
 
   void auditLogger

@@ -14,6 +14,7 @@ import {
   defaultCompanyIdentityPreferences,
   readCompanyIdentityPreferences,
 } from "../lib/company-identity";
+import { isOwnerEmail } from "../lib/auth-service";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { authenticateUser } from "../middleware/auth";
@@ -377,6 +378,10 @@ router.post(
           .values({
             id: req.user.id,
             userId: req.user.id,
+            // Match signup (`startTrialForUser`): Free Builder tenants start
+            // pending_activation. Never omit status — the DB default is a
+            // footgun (`active`) and would bypass enforceLiveWorkActivation.
+            subscriptionStatus: isOwnerEmail(req.user.email) ? "active" : "pending_activation",
             businessName: nextBusinessName,
             brandName: nextBrandName,
             brandLogoUrl: nextLogoUrl,

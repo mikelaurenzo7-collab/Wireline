@@ -99,10 +99,11 @@ if (!privacyPage.includes("xAI") || !privacyPage.includes("explicitly enabled"))
   fail("public privacy page does not bound xAI as optional");
 if (privacyPage.includes("Anthropic's Claude API") || privacyPage.includes("<strong>Anthropic</strong>"))
   fail("public privacy page still names Anthropic as active inference infrastructure");
-if (!integrationLogos.includes("ALL_LOGOS.openai"))
-  fail("powered-by logo strip does not advertise OpenAI");
-if (integrationLogos.includes("ALL_LOGOS.anthropic") || integrationLogos.includes('aria-label="Anthropic"'))
-  fail("powered-by logo strip still advertises Anthropic");
+if (!/^\s*openai:\s*\{/m.test(integrationLogos))
+  fail("integration logo catalog does not include OpenAI");
+if (/^\s*anthropic:\s*\{/m.test(integrationLogos) || integrationLogos.includes('aria-label="Anthropic"'))
+  fail("integration logo catalog still advertises Anthropic");
+if (!/^\s*xai:\s*\{/m.test(integrationLogos)) fail("integration logo catalog does not include xAI");
 
 if (!registerApiRoutes.includes("openaiRealtimeRouter"))
   fail("OpenAI Realtime router is not registered");

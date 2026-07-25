@@ -102,7 +102,7 @@ router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, 
   } catch (error) {
     if (error instanceof AppError) throw error;
     log.error("Failed to fetch settings", { error: getErrorMessage(error) });
-    res.json({ settings: {} });
+    throw AppError.fromHttpStatus(500, "Failed to load settings");
   }
 });
 

@@ -177,18 +177,20 @@ export const quotaTracker = new QuotaTracker({
         case "custom":
           return "enterprise";
         case "business":
-        case "starter":
         case "pro":
         case "business-growth":
           return "business";
         case "team":
+        case "shared":
+          return "team";
+        case "starter":
         case "business-starter":
         case "business-lite":
         case "lite":
         case "personal-plus":
-          return "team";
-        case "personal":
           return "personal";
+        case "personal":
+          return "free";
         default:
           return "free";
       }

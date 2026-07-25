@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Activity, AlertTriangle, Loader2, TrendingUp, Wallet } from "lucide-react";
 import { authFetch } from "../lib/api";
+import { CONVERSATION_BALANCE_COPY } from "../lib/conversation-balance";
 import { cn } from "../lib/utils";
 import { Progress } from "./ui/shadcn/Progress";
 import { Button } from "./atoms";
 import type { WorkspaceUsageResponse } from "../types/api";
 
 const REFRESH_MS = 60_000;
+const BALANCE_TITLE = CONVERSATION_BALANCE_COPY.title;
 
 export default function UsageMeter({
   compact = false,
@@ -73,7 +75,7 @@ export default function UsageMeter({
   const compactTitle = isBlocked
     ? completionDue > 0
       ? `New live calls paused — restore $${completionDue.toFixed(2)} after the previous call finished normally.`
-      : "New live calls paused — add Conversation Balance or wait for the monthly reset."
+      : `New live calls paused — add ${BALANCE_TITLE} or wait for the monthly reset.`
     : `${used} of ${included} included voice minutes used — resets ${resetLabel}`;
 
   if (compact) {
@@ -145,8 +147,8 @@ export default function UsageMeter({
             </span>
             <span className="text-foreground/85">
               {completionDue > 0
-                ? `The previous call finished normally and used $${completionDue.toFixed(2)} of completion grace. Restore Conversation Balance before starting another live call.`
-                : "Your included minutes are used and Conversation Balance cannot cover another attempt. Add balance or wait for the monthly reset."}
+                ? `The previous call finished normally and used $${completionDue.toFixed(2)} of completion grace. Restore ${BALANCE_TITLE} before starting another live call.`
+                : `Your included minutes are used and ${BALANCE_TITLE} cannot cover another attempt. Add balance or wait for the monthly reset.`}
             </span>
             <span className="block text-foreground/55 mt-1">
               Wireline never cuts off an active call because billing coverage changes mid-conversation.
@@ -164,7 +166,7 @@ export default function UsageMeter({
               {snap.overage_minutes === 1 ? "" : "s"}
             </span>
             <span className="text-foreground/65 ml-1">
-              covered by Conversation Balance at ${snap.overage_per_min_usd.toFixed(2)}/min. No
+              covered by {BALANCE_TITLE} at ${snap.overage_per_min_usd.toFixed(2)}/min. No
               automatic invoice overage.
             </span>
           </div>
@@ -175,8 +177,8 @@ export default function UsageMeter({
         <div className="flex items-center gap-2 p-2.5 rounded-md bg-amber-500/8 border border-amber-500/20 text-[var(--wireline-typography-overline-size)] text-amber-500 font-medium">
           <TrendingUp className="w-3.5 h-3.5" />
           <span>
-            Approaching your {included.toLocaleString()} included minutes. After that, new calls use
-            Conversation Balance at ${snap.overage_per_min_usd.toFixed(2)}/min—never an automatic
+            Approaching your {included.toLocaleString()} included minutes. After that, new calls use{" "}
+            {BALANCE_TITLE} at ${snap.overage_per_min_usd.toFixed(2)}/min—never an automatic
             overage invoice.
           </span>
         </div>
@@ -199,7 +201,7 @@ export default function UsageMeter({
         <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/8">
           <span className="flex items-center gap-2 wl-label text-foreground/55 font-medium">
             <Wallet className="w-3.5 h-3.5" />
-            Conversation Balance
+            {BALANCE_TITLE}
           </span>
           {completionDue > 0 ? (
             <span className="text-right leading-tight">

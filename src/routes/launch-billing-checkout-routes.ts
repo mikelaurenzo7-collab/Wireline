@@ -92,8 +92,8 @@ router.post(
       return res.status(410).json({
         code: "LEGACY_PLAN_RETIRED",
         error:
-          "This personal subscription is no longer offered. Start free. Fund live work with Conversation Balance when you are ready.",
-        replacement: "conversation_balance",
+          "This personal subscription is no longer offered. Start free on Builder, then choose Starter or higher for live work. Runtime Balance covers overflow after a paid plan is active.",
+        replacement: "starter",
       });
     }
     if (plan.id === "personal" || plan.price_usd_monthly === 0) {
@@ -124,6 +124,25 @@ router.post(
         current_plan: existing.plan,
         current_status: existing.status,
       });
+    }
+
+    // Source-of-truth guard: local row can lag the webhook. If Stripe already
+    // has a live subscription for this customer, refuse another Checkout.
+    if (existing?.stripeCustomerId) {
+      const remote = await stripe.subscriptions.list({
+        customer: existing.stripeCustomerId,
+        status: "all",
+        limit: 20,
+      });
+      const liveRemote = remote.data.find((sub) => LIVE_SUBSCRIPTION_STATUSES.has(sub.status));
+      if (liveRemote) {
+        return res.status(409).json({
+          code: "ALREADY_SUBSCRIBED",
+          error: "You already have a subscription. Use the Customer Portal to change plans.",
+          current_plan: existing.plan,
+          current_status: liveRemote.status,
+        });
+      }
     }
 
     const [signupIntent] = await drizzle

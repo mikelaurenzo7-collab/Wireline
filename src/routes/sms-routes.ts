@@ -8,22 +8,23 @@
  */
 
 import { Router, Response } from "express";
-import { AppError } from "../lib/api-error";
+import { AppError, rethrowIfAppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { validateBody, smsReplySchema } from "../lib/api-validation";
 import { smsRateLimit } from "../middleware/api-rate-limits";
+import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import { sendTenantMessage } from "../lib/twilio-service";
-import { mapObjectToSnake } from "../lib/server-utils";
+import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
 /**
  * GET /api/sms/threads — list threads sorted by recency.
- * Read-only; safe on cold DB (returns [] when sms tables don't exist yet).
+ * Read-only. Empty result means no threads — never mask outages as [].
  */
 router.get(
   "/api/sms/threads",
@@ -38,8 +39,9 @@ router.get(
         .limit(200);
       res.json({ threads: mapObjectToSnake(threads || []) });
     } catch (e: any) {
-      log.warn("/api/sms/threads failed (migration may be pending)", { error: e?.message });
-      res.json({ threads: [] });
+      rethrowIfAppError(e);
+      log.error("/api/sms/threads failed", { error: getErrorMessage(e) });
+      throw AppError.fromHttpStatus(500, "Failed to load SMS threads");
     }
   },
 );
@@ -68,8 +70,9 @@ router.get(
         .orderBy(schema.smsMessages.createdAt);
       res.json({ messages: mapObjectToSnake(messages || []) });
     } catch (e: any) {
-      log.warn("/api/sms/threads/:id/messages failed", { error: e?.message });
-      res.json({ messages: [] });
+      rethrowIfAppError(e);
+      log.error("/api/sms/threads/:id/messages failed", { error: getErrorMessage(e) });
+      throw AppError.fromHttpStatus(500, "Failed to load SMS messages");
     }
   },
 );
@@ -97,6 +100,26 @@ router.post(
         .where(and(eq(schema.smsThreads.id, threadId), eq(schema.smsThreads.userId, req.user.id)))
         .limit(1);
       if (!thread) throw AppError.fromHttpStatus(404, "Thread not found");
+
+      // Manual inbox replies are ongoing service SMS on an existing thread —
+      // not cold dials. Use live-session follow-up so dial-only 24h duplicate
+      // and quiet-hours guards do not block a normal reply after a recent call;
+      // tenant + federal DNC still apply.
+      const gate = await evaluateOutboundDialGate({
+        userId: req.user.id,
+        phone: thread.customerNumber!,
+        isMarketingCall: false,
+        isLiveSessionFollowUp: true,
+      });
+      if (!gate.allowed) {
+        throw AppError.fromHttpStatus(
+          403,
+          gate.federalDncMessage ||
+            gate.reason ||
+            "Outbound SMS blocked by compliance policy for this number.",
+          { code: gate.federalDncCode || gate.reason },
+        );
+      }
 
       const result = await sendTenantMessage(req.user.id, {
         to: thread.customerNumber!,
@@ -136,8 +159,9 @@ router.post(
         );
       res.json({ ok: true });
     } catch (e: any) {
-      log.warn("SMS mark-read failed", { error: e?.message });
-      res.json({ ok: false });
+      rethrowIfAppError(e);
+      log.error("SMS mark-read failed", { error: getErrorMessage(e) });
+      throw AppError.fromHttpStatus(500, "Failed to mark SMS thread read");
     }
   },
 );

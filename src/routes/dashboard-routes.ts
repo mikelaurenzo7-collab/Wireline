@@ -458,7 +458,7 @@ router.get(
     } catch (error) {
       if (error instanceof AppError) throw error;
       log.error("Dossier fetch failed", { error: getErrorMessage(error) });
-      res.json({ dossiers: {} });
+      throw AppError.fromHttpStatus(500, "Failed to load lead dossiers");
     }
   },
 );

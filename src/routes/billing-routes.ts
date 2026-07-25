@@ -203,28 +203,48 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         .limit(1);
 
       const abandonedAfterMs = 5 * 60 * 1000;
+      const isProcessing = prior?.status === "processing";
       const stale =
-        prior?.status === "processing" &&
-        Date.now() - new Date(prior.at ?? 0).getTime() > abandonedAfterMs;
+        isProcessing && Date.now() - new Date(prior.at ?? 0).getTime() > abandonedAfterMs;
 
-      if (stale) {
-        log.warn("Releasing abandoned Stripe webhook claim for redelivery", {
-          eventId: idempotencyKey,
-          eventType: event.type,
-        });
-        await drizzle
-          .delete(schema.stripeEvents)
-          .where(eq(schema.stripeEvents.eventId, idempotencyKey))
-          .catch(() => {});
+      // Never 2xx an unfinished claim. Stripe stops redelivering after 2xx, so
+      // a mid-flight "processing" row would permanently drop paid events
+      // (top-ups, entitlement sync) even when the first attempt died.
+      if (isProcessing) {
+        if (stale) {
+          log.warn("Releasing abandoned Stripe webhook claim for redelivery", {
+            eventId: idempotencyKey,
+            eventType: event.type,
+          });
+          await drizzle
+            .delete(schema.stripeEvents)
+            .where(eq(schema.stripeEvents.eventId, idempotencyKey))
+            .catch(() => {});
+        } else {
+          log.warn("Stripe webhook still processing — asking Stripe to retry", {
+            eventId: idempotencyKey,
+            eventType: event.type,
+          });
+        }
         throw AppError.fromHttpStatus(503, "Prior delivery did not complete. Retry.");
       }
 
-      log.info("Stripe webhook duplicate event ignored", {
+      if (prior?.status === "processed") {
+        log.info("Stripe webhook duplicate event ignored", {
+          eventId: idempotencyKey,
+          eventType: event.type,
+          priorStatus: prior.status,
+        });
+        return res.json({ received: true, duplicate: true });
+      }
+
+      // Unknown/missing prior status — refuse to ack so Stripe retries.
+      log.warn("Stripe webhook duplicate with unexpected prior status", {
         eventId: idempotencyKey,
         eventType: event.type,
         priorStatus: prior?.status ?? "unknown",
       });
-      return res.json({ received: true, duplicate: true });
+      throw AppError.fromHttpStatus(503, "Webhook claim state unclear. Retry.");
     }
     log.warn("Stripe idempotency claim failed — refusing to process event", {
       error: getErrorMessage(err),
@@ -552,7 +572,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                   to: userRow.email,
                   amountDisplay,
                   invoiceUrl: inv.hosted_invoice_url ?? undefined,
-                  updateCardUrl: `${appUrl}/billing`,
+                  updateCardUrl: `${appUrl}/settings/billing`,
                 })
                   .then((r) => {
                     if (!r.ok)

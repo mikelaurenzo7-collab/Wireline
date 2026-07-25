@@ -54,7 +54,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jul 13, 2026",
     tag: "feature",
     title: "Fast Start turns a blank workspace into a first working agent",
-    body: "New workspaces now open directly into a focused two-step builder with a recommended voice already selected. After creation, Wireline guides the owner through review, number connection, and one real test call instead of dropping them into an empty dashboard.",
+    body: "New workspaces now open directly into a focused two-step builder with a recommended voice already selected. After creation, Wireline guides the owner through review, number connection, and one real test call instead of dropping them into an empty workspace.",
   },
   {
     date: "Jul 13, 2026",

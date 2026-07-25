@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Loader2, Plus, ReceiptText, Wallet } from "lucide-react";
 import { authFetch } from "../lib/api";
+import { CONVERSATION_BALANCE_COPY } from "../lib/conversation-balance";
 import { emitProductEvent } from "../lib/product-event-client";
 
 type LedgerEntry = {
@@ -36,6 +37,7 @@ export default function ConversationBalanceCard() {
   const [loading, setLoading] = useState(true);
   const [busyAmount, setBusyAmount] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const balanceTitle = CONVERSATION_BALANCE_COPY.title;
 
   const load = async () => {
     setLoading(true);
@@ -48,11 +50,11 @@ export default function ConversationBalanceCard() {
         | null;
       if (!response.ok)
         throw new Error(
-          (body as { error?: string } | null)?.error || "Could not load Conversation Balance.",
+          (body as { error?: string } | null)?.error || `Could not load ${balanceTitle}.`,
         );
       setBalance(body as BalanceResponse);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load Conversation Balance.");
+      setError(cause instanceof Error ? cause.message : `Could not load ${balanceTitle}.`);
     } finally {
       setLoading(false);
     }
@@ -60,6 +62,7 @@ export default function ConversationBalanceCard() {
 
   useEffect(() => {
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time data load on mount
   }, []);
 
   useEffect(() => {
@@ -68,6 +71,7 @@ export default function ConversationBalanceCard() {
     const timeout = window.setTimeout(() => void load(), 1200);
     window.history.replaceState({}, "", window.location.pathname);
     return () => window.clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh once after Stripe return
   }, []);
 
   const addBalance = async (amountUsd: number) => {
@@ -101,19 +105,13 @@ export default function ConversationBalanceCard() {
         <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-muted text-primary">
           <Loader2 className="size-4 animate-spin" />
         </span>
-        <p className="text-sm text-muted-foreground">Loading Conversation Balance...</p>
+        <p className="text-sm text-muted-foreground">Loading {balanceTitle}...</p>
       </section>
     );
   }
 
   const presets = balance?.presets_usd?.length ? balance.presets_usd : [10, 25, 50, 100];
-  const copy = balance?.copy ?? {
-    title: "Runtime Balance",
-    subtitle:
-      "Your subscription guarantees monthly voice capacity and includes flexible runtime for optional AI, SMS, research, enrichment, and business artifacts. Add prepaid balance only when you need more.",
-    reassurance:
-      "No automatic overages or auto-refill by default. Active calls finish normally; the next paid action pauses when included capacity and balance are depleted.",
-  };
+  const copy = balance?.copy ?? CONVERSATION_BALANCE_COPY;
   const balanceUsd = balance?.balance_usd ?? 0;
 
   return (

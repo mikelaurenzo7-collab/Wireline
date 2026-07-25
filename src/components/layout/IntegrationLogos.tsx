@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React from "react";
-import { motion } from "motion/react";
 
 /**
  * Compact monochrome SVG logos for integrations and partners we ship.
- * Rendered as structured strips on the Landing and About pages.
+ * Used via getIntegrationLogo() on connection cards and operating maps.
  * All logos render in `currentColor` so they inherit the muted text color.
  * Sourced from official asset kits and simplified to single-color form.
  */
@@ -293,70 +292,6 @@ const ALL_LOGOS: Record<string, LogoDef> = {
   },
 };
 
-const INTEGRATES_WITH: LogoDef[] = [
-  ALL_LOGOS.hubspot,
-  ALL_LOGOS.salesforce,
-  ALL_LOGOS.shopify,
-  ALL_LOGOS.square,
-  ALL_LOGOS.docusign,
-  ALL_LOGOS.slack,
-  ALL_LOGOS.microsoft_teams,
-  ALL_LOGOS.twilio,
-  ALL_LOGOS.zoom,
-  ALL_LOGOS.google_calendar,
-  ALL_LOGOS.microsoft_outlook,
-  ALL_LOGOS.gmail,
-  ALL_LOGOS.stripe,
-  ALL_LOGOS.meta,
-  ALL_LOGOS.apollo,
-  ALL_LOGOS.google_sheets,
-  ALL_LOGOS.microsoft_excel,
-];
-
-const POWERED_BY: LogoDef[] = [
-  ALL_LOGOS.xai,
-  ALL_LOGOS.openai,
-  ALL_LOGOS.gemini,
-  ALL_LOGOS.vapi,
-  ALL_LOGOS.supabase,
-  ALL_LOGOS.vercel,
-];
-
-function LogoRow({ logos, height = 22 }: { logos: LogoDef[]; height?: number }) {
-  return (
-    <div className="flex items-center justify-center flex-wrap gap-x-8 gap-y-4 opacity-75 hover:opacity-100 transition-opacity duration-300">
-      {logos.map((logo) => {
-        const px = Math.round(height * (logo.scale ?? 1));
-        return (
-          <div
-            key={logo.name}
-            className="text-foreground/70 hover:text-foreground transition-colors duration-200"
-            title={logo.name}
-            data-logo-height={height}
-            data-logo-scale={logo.scale}
-          >
-            <div className="inline-flex items-center">
-              {React.cloneElement(logo.svg as React.ReactElement<any>, {
-                className: "wl-integration-logo-svg block",
-                // Pixel height lives on the SVG's style object (a JS prop, not a
-                // JSX `style={}` attribute) so the CSP inline-style ratchet stays
-                // at zero. The logo height is genuinely dynamic (base × per-logo
-                // scale), so a static utility class can't express it.
-                style: {
-                  height: `${px}px`,
-                  width: "auto",
-                  display: "block",
-                  fill: "currentColor",
-                },
-              })}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 export function getIntegrationLogo(name: string): React.ReactNode | null {
   const normName = name.toLowerCase().replace(/\s+/g, "_");
   const logo = ALL_LOGOS[normName] || ALL_LOGOS[name.toLowerCase()];
@@ -364,47 +299,4 @@ export function getIntegrationLogo(name: string): React.ReactNode | null {
   return React.cloneElement(logo.svg as React.ReactElement<any>, {
     style: { height: "100%", width: "auto", display: "block", fill: "currentColor" },
   });
-}
-
-export default function IntegrationLogos({ compact = false }: { compact?: boolean }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: compact ? 0.2 : 0.45, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-      className={compact ? "mt-2 pt-2 space-y-6" : "mt-10 pt-8 border-t border-white/8 space-y-8"}
-      aria-label="Wireline integrations and platform powerups"
-    >
-      {/* Integrates With Row */}
-      <div className="space-y-3">
-        <p
-          className={
-            compact
-              ? "wl-label-muted opacity-70 mb-2 text-center"
-              : "wl-label-muted opacity-70 mb-3 text-center"
-          }
-        >
-          integrates with
-        </p>
-        <LogoRow logos={INTEGRATES_WITH} height={compact ? 16 : 22} />
-      </div>
-
-      {/* Divider */}
-      <div className="w-16 h-px bg-white/10 mx-auto" />
-
-      {/* Powered By Row */}
-      <div className="space-y-3">
-        <p
-          className={
-            compact
-              ? "wl-label-muted opacity-70 mb-2 text-center"
-              : "wl-label-muted opacity-70 mb-3 text-center"
-          }
-        >
-          powered by
-        </p>
-        <LogoRow logos={POWERED_BY} height={compact ? 16 : 22} />
-      </div>
-    </motion.div>
-  );
 }

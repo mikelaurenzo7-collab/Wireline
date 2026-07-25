@@ -47,7 +47,6 @@ Start with conservative alerts:
 
 Candidate code surfaces:
 
-- `src/components/analytics/ObservabilityDashboard.tsx`
 - `src/routes/health-routes.ts`
 - `src/routes/voice-observability-routes.ts`
 - `src/lib/conversation-balance.ts`
