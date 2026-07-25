@@ -15,7 +15,7 @@ export const GROK_REALTIME_VOICE = {
 } as const;
 
 export const GROK_MODEL_OPTIONS = {
-  note: "Grok structured use is an explicit opt-in experiment behind WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK; the managed structured primary is OpenAI, and the Vercel AI Gateway carries any multi-model routing.",
+  note: "Grok 4.5 is the managed structured primary (STRUCTURED_PRIMARY_MODEL); direct OpenAI, Gemini, and the Vercel AI Gateway carry ordered continuity fallback. Override the model with WIRELINE_XAI_STRUCTURED_MODEL.",
 } as const;
 
 export const GROK_AGENT_STRENGTHS = {

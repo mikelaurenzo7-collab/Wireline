@@ -9,12 +9,14 @@ const source = readFileSync(
 const compactSource = source.replace(/\s+/g, " ");
 
 describe("runtime integrations registry launch policy", () => {
-  it("presents OpenAI as required primary and xAI as optional", () => {
-    expect(source).toContain('"openai",\n    "OpenAI",');
-    expect(source).toContain("Primary structured runtime, primary Vapi PSTN call model");
+  it("presents xAI as the required primary with OpenAI as required continuity", () => {
     expect(source).toContain('"xai",\n    "xAI Grok",');
-    expect(source).toContain("excluded from the launch default chain");
-    expect(source).toContain("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=true");
+    expect(source).toContain("Primary managed structured runtime (Grok 4.5)");
+    expect(source).toContain('"openai",\n    "OpenAI",');
+    expect(source).toContain("First structured continuity fallback, primary Vapi PSTN call model");
+    expect(source).not.toContain("excluded from the launch default chain");
+    expect(source).not.toContain("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK");
+    expect(compactSource).toMatch(/item\(\s*"xai".{0,300}?, true,/);
   });
 
   it("marks the monetized communications control plane as required", () => {

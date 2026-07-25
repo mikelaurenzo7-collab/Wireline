@@ -13,6 +13,7 @@ import { getPlatformSloSnapshot } from "../lib/operator-slos";
 import { evaluatePlatformOperationalSlos } from "../lib/platform-operational-slos";
 import {
   OPENAI_STRUCTURED_PRIMARY_MODEL,
+  STRUCTURED_PRIMARY_MODEL,
   GEMINI_STRUCTURED_FALLBACK_MODEL,
   VAPI_PREMIUM_MODEL,
   VAPI_TENANT_DEFAULT_MODEL,
@@ -201,7 +202,7 @@ router.get(
       uptime_s: Math.round((process as any).uptime?.() || 0),
       db,
       capabilities: getHealthCapabilities(),
-      app_model: OPENAI_STRUCTURED_PRIMARY_MODEL,
+      app_model: STRUCTURED_PRIMARY_MODEL,
       voice_agent_model: VAPI_TENANT_DEFAULT_MODEL,
       voice_agent_premium_model: VAPI_PREMIUM_MODEL,
       llm_tiering: {
@@ -216,14 +217,14 @@ router.get(
           reason: "Automatic failure fallback.",
         },
         reasoning_layer: {
-          provider: "openai",
-          model: OPENAI_STRUCTURED_PRIMARY_MODEL,
+          provider: "xai",
+          model: STRUCTURED_PRIMARY_MODEL,
           reason: "Managed primary for training, QA, insights, and post-call work.",
         },
         reasoning_fallback: {
-          provider: "google",
-          model: GEMINI_STRUCTURED_FALLBACK_MODEL,
-          reason: "Automatic failure fallback.",
+          provider: "openai",
+          model: OPENAI_STRUCTURED_PRIMARY_MODEL,
+          reason: "First automatic fallback; Gemini and the AI Gateway follow.",
         },
       },
       timestamp: new Date().toISOString(),

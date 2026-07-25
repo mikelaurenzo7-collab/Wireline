@@ -9,7 +9,7 @@ router.get("/api/ai/status", authenticateUser, (_req, res) => {
   res.setHeader("Cache-Control", "private, max-age=30");
   res.json({
     available: isRuntimeAvailable(),
-    primary_provider: "openai",
+    primary_provider: "xai",
     primary_model: STRUCTURED_PRIMARY_MODEL,
   });
 });

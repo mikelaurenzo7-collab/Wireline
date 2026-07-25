@@ -17,9 +17,7 @@ describe("annual billing purchase path", () => {
     expect(billingCard).toContain("interval },");
     expect(billingCard).toContain('billingInterval === "year"');
     expect(launchCheckout).toContain('req.body?.interval === "year"');
-    expect(parseSignupIntent("?plan=starter&interval=year")?.preferredBillingInterval).toBe(
-      "year",
-    );
+    expect(parseSignupIntent("?plan=starter&interval=year")?.preferredBillingInterval).toBe("year");
   });
 
   it("keeps sales persona honest about annual savings without fake coupons", () => {
@@ -36,9 +34,9 @@ describe("annual billing purchase path", () => {
 });
 
 describe("structured model routing", () => {
-  it("routes simple and medium tasks to GPT-5 and complex to Terra", () => {
-    expect(selectModelForTask("simple")).toBe("gpt-5");
-    expect(selectModelForTask("medium")).toBe("gpt-5");
-    expect(selectModelForTask("complex")).toBe("gpt-5.6-terra");
+  it("routes simple and medium tasks to Grok 4.1 Fast and complex to Grok 4.5", () => {
+    expect(selectModelForTask("simple")).toBe("grok-4.1-fast-reasoning");
+    expect(selectModelForTask("medium")).toBe("grok-4.1-fast-reasoning");
+    expect(selectModelForTask("complex")).toBe("grok-4.5");
   });
 });

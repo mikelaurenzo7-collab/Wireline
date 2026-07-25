@@ -63,7 +63,8 @@ const required = [
     process.env.UPSTASH_REDIS_REST_URL,
   ],
   ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token", process.env.UPSTASH_REDIS_REST_TOKEN],
-  ["OPENAI_API_KEY", "Primary managed runtime and OpenAI Realtime sessions", process.env.OPENAI_API_KEY],
+  ["XAI_API_KEY", "Primary managed structured runtime (Grok 4.5)", process.env.XAI_API_KEY],
+  ["OPENAI_API_KEY", "Structured continuity fallback and OpenAI Realtime sessions", process.env.OPENAI_API_KEY],
   ["VAPI_PRIVATE_KEY", "Vapi managed inbound and outbound voice runtime", process.env.VAPI_PRIVATE_KEY],
   ["VAPI_WEBHOOK_SECRET", "Vapi webhook HMAC secret", process.env.VAPI_WEBHOOK_SECRET],
   ["TWILIO_ACCOUNT_SID", "Twilio programmable voice and messaging account", process.env.TWILIO_ACCOUNT_SID],
@@ -118,8 +119,6 @@ const recommended = [
 ];
 
 const optional = [
-  ["WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK", "Explicit switch for optional xAI experiments"],
-  ["XAI_API_KEY", "Optional xAI experiments; never part of the launch default without the explicit switch"],
   ["XAI_API_KEY_CHATKIT", "Optional isolated xAI demo key"],
   ["WIRELINE_LAUNCH_DEMO_MODE", "Mark launch telemetry as demo-only until real customers are admitted"],
   ["GOOGLE_CLIENT_ID", "Gmail OAuth - disables email integration when unset"],

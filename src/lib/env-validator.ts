@@ -101,7 +101,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "XAI_API_KEY",
     group: "ai",
     required: false,
-    description: "Optional xAI experiment credential; not part of the launch default",
+    description: "Primary managed structured runtime credential (Grok 4.5)",
     validate: nonEmpty,
   },
   {
@@ -110,14 +110,6 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     required: false,
     description: "Optional scoped xAI credential for isolated experiments",
     validate: nonEmpty,
-  },
-  {
-    name: "WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK",
-    group: "ai",
-    required: false,
-    description: "Explicit opt-in for direct xAI structured fallback",
-    validate: (value) => value === "true" || value === "false",
-    formatHint: "true or false",
   },
   {
     name: "PERPLEXITY_API_KEY",
@@ -465,15 +457,16 @@ export function validateEnv(): EnvValidationResult {
 
   const gateway =
     process.env.AI_GATEWAY_API_KEY?.trim() || (isProd && process.env.VERCEL_OIDC_TOKEN?.trim());
-  const managedRuntime = process.env.OPENAI_API_KEY?.trim() || gateway;
+  const managedRuntime =
+    process.env.XAI_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim() || gateway;
   if (!managedRuntime) {
     result.valid = false;
     byGroup.ai.invalid++;
     result.errors.push({
-      var: "OPENAI_API_KEY / AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN",
+      var: "XAI_API_KEY / OPENAI_API_KEY / AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN",
       group: "ai",
       message:
-        "Configure the OpenAI managed runtime or Vercel AI Gateway before serving AI requests",
+        "Configure the Grok managed runtime (primary), OpenAI fallback, or Vercel AI Gateway before serving AI requests",
     });
   }
   return result;
