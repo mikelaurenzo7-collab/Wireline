@@ -185,6 +185,7 @@ function pushIssue(issues, issue) {
     "control-overflow",
     "redirect",
     "auth",
+    "shell-not-mounted",
   ]);
   issues.push({ ...issue, severity: P0.has(issue.kind) ? "P0" : "P1" });
 }
@@ -358,6 +359,25 @@ async function captureRoute(page, viewportName, route, issues, options = {}) {
   if (!routeReached(baseUrl, route, finalUrl)) {
     pushIssue(issues, { viewport: viewportName, route, kind: "redirect", detail: finalUrl });
   }
+  // A screenshot of an interstitial (proxy error, gateway page, unmounted
+  // shell) is indistinguishable from a good capture in the output directory,
+  // and every downstream "reviewed N screenshots" claim inherits the lie. Fail
+  // loudly instead: the app is only really on screen once #root has children.
+  const shellMounted = await page
+    .evaluate(() => {
+      const root = document.getElementById("root");
+      return Boolean(root && root.childElementCount > 0);
+    })
+    .catch(() => false);
+  if (!shellMounted) {
+    pushIssue(issues, {
+      viewport: viewportName,
+      route,
+      kind: "shell-not-mounted",
+      detail: "#root has no children — captured page is not the Wireline app",
+    });
+  }
+
   await auditResponsiveLayout(page, viewportName, route, issues);
   const file = path.join(outputDir, `${viewportName}-${fileName(route)}.png`);
   await page.screenshot({ path: file, fullPage: true, animations: "disabled", timeout: 30_000 });
@@ -464,8 +484,15 @@ const browser = await chromium.launch({
   // sandboxes that route outbound HTTPS through an agent proxy need it wired
   // through explicitly or every navigation hangs until timeout. Local targets
   // must bypass the proxy or agent proxies refuse the loopback CONNECT.
+  //
+  // Do NOT add "<-loopback>" here. In Chromium's --proxy-bypass-list grammar it
+  // is a SUBTRACTIVE rule that removes the implicit loopback bypass, i.e. it
+  // forces localhost through the proxy — the exact opposite of the line above.
+  // With it set, every local capture silently screenshotted the agent proxy's
+  // "only accepts HTTPS CONNECT tunnels" error page instead of the app, and the
+  // run still reported success.
   ...(proxyServer
-    ? { proxy: { server: proxyServer, bypass: "localhost,127.0.0.1,<-loopback>" } }
+    ? { proxy: { server: proxyServer, bypass: "localhost,127.0.0.1,::1" } }
     : {}),
 });
 const issues = [];
