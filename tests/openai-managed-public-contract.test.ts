@@ -10,15 +10,18 @@ const read = (path: string) =>
 
 describe("OpenAI managed public contracts", () => {
   it("publishes the real health response and OpenAI-backed insight contract", () => {
-    const spec = normalizeOpenApiForManagedRuntime(getOpenApiSpec("https://trywireline.com")) as any;
+    const spec = normalizeOpenApiForManagedRuntime(
+      getOpenApiSpec("https://trywireline.com"),
+    ) as any;
     const health = spec.components.schemas.HealthResponse;
     const serialized = JSON.stringify(spec);
 
     expect(health.required).toEqual(["ok", "timestamp"]);
     expect(health.properties.ok.type).toBe("boolean");
     expect(health.properties).not.toHaveProperty("claude_model");
-    expect(spec.components.schemas.DailyBrief.description).toContain("OpenAI-authored");
-    expect(spec.paths["/api/insights/daily-brief"].get.summary).toContain("OpenAI-authored");
+    expect(spec.components.schemas.DailyBrief.description).toContain("AI-authored");
+    expect(spec.paths["/api/insights/daily-brief"].get.summary).toContain("AI-authored");
+    expect(serialized).not.toContain("OpenAI-authored");
     expect(serialized).not.toContain("Claude-authored");
     expect(serialized).not.toContain("Claude / Stripe unconfigured");
   });
@@ -35,7 +38,9 @@ describe("OpenAI managed public contracts", () => {
     expect(quotaRoute).toContain('PUBLIC_AI_TOKEN_DIMENSION = "ai_tokens_daily"');
     expect(quotaRoute).toContain('INTERNAL_AI_TOKEN_DIMENSION = "claude_tokens_daily"');
     expect(quotaRoute).toContain("value: numericValue");
-    expect(quotaRoute).not.toContain("res.json({ success: true, dimension: publicDimension, value, enabled })");
+    expect(quotaRoute).not.toContain(
+      "res.json({ success: true, dimension: publicDimension, value, enabled })",
+    );
     expect(workspaceUsage).toContain("ai_tokens_used_today");
     expect(workspaceUsage).not.toContain("claude_tokens_used_today");
     expect(billingTypes).toContain("ai_tokens_daily_limit");

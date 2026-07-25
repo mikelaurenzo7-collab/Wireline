@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { ChevronRight, Compass, Home, LayoutGrid, MessageSquare, Phone } from "lucide-react";
 import { BRAND } from "../../constants/brand-colors";
+import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 
 /**
  * NotFound — context-aware 404. Detects whether the visitor is signed-in
@@ -13,6 +14,10 @@ import { BRAND } from "../../constants/brand-colors";
  * The `mode` prop forces a specific render for the public route; the
  * default behaviour is to detect signed-in via the absence of `mode`.
  */
+// A real public demo line (these can't escalate to a human), not a support
+// employee number — the 404's "Try the demo" CTA must dial a demo agent.
+const DEMO_LINE = LANDING_PUBLIC_DEMO_AGENTS[0];
+
 export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
   const location = useLocation();
   const isPublic = mode === "public";
@@ -92,7 +97,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               accent={BRAND.colors.primary}
             />
             <a
-              href="tel:+16305811834"
+              href={`tel:${DEMO_LINE.tel}`}
               className="group relative flex items-center gap-3 p-4 rounded-md wl-paper wl-press wl-focus-ring-halo"
             >
               <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 wl-brand-icon-solid">
@@ -100,14 +105,14 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               </div>
               <div className="text-left flex-1 min-w-0">
                 <p className="wl-eyebrow wl-eyebrow--no-rule !text-[0.625rem]">Try the demo</p>
-                <p className="text-sm text-foreground font-medium truncate">(630) 581-1834</p>
+                <p className="text-sm text-foreground font-medium truncate">{DEMO_LINE.display}</p>
               </div>
             </a>
             <NotFoundCard
               to="/pricing"
               icon={Compass}
               label="Pricing"
-              hint="4 plans, Conversation Balance"
+              hint="Plans + Conversation Balance"
               accent={BRAND.colors.primary}
             />
           </>

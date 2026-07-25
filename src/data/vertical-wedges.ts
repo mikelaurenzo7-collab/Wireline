@@ -333,7 +333,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "What about voicemail / hold music / phone trees? Doesn't that break it?",
-        a: 'Your agent handles all of it. Navigates IVR menus by saying "agent" or pressing the right digits. Stays on hold without complaining for 45+ minutes if needed. Leaves voicemails using your script. Re-dials missed calls. This is exactly what AI is good at — the boring, infinite-patience parts of a phone call.',
+        a: 'Your agent handles all of it. Navigates IVR menus by saying "agent" or pressing the right digits. Waits on hold as long as it takes — no complaints, no clock-watching. Leaves voicemails using your script. Re-dials missed calls. This is exactly what AI is good at — the boring, infinite-patience parts of a phone call.',
       },
       {
         q: "How is this different from just having a friend or family member call for me?",

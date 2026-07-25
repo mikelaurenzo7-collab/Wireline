@@ -248,19 +248,15 @@ record(
   "Set an API-key budget and alerting; add credits or auto-top-up before scale.",
 );
 
-const xaiFallbackEnabled =
-  process.env.WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK?.trim().toLowerCase() === "true";
 record(
   "xai",
-  false,
+  true,
   xai?.ok ? "ready" : "degraded",
   xai?.ok
-    ? `xAI key accepted; optional Grok and Wireline Live voice APIs are reachable${
-        xaiFallbackEnabled ? " and the structured fallback switch is enabled" : ""
-      }.`
-    : "Optional xAI layer missing or rejected.",
-  "Keep xAI opt-in until quality, latency, and unit economics beat the OpenAI launch default.",
-  { structured_fallback_enabled: xaiFallbackEnabled },
+    ? "xAI key accepted; the Grok 4.5 structured primary and Wireline Live voice APIs are reachable."
+    : "Primary xAI layer missing or rejected; structured turns degrade to the OpenAI continuity fallback.",
+  "Keep the Grok 4.5 primary funded and healthy; OpenAI, Gemini, and the AI Gateway carry ordered continuity.",
+  { structured_primary_model: "grok-4.5" },
 );
 
 const vapiPhoneInventory = arrayAt(vapiPhones?.body, "data");

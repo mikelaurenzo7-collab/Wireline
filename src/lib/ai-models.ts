@@ -1,10 +1,10 @@
 /**
  * Wireline model policy.
- * Managed runtime: OpenAI primary for structured reasoning and Vapi call
- * intelligence, with Gemini as the first automatic fallback and the Vercel AI
- * Gateway as the governed multi-model continuity route. xAI remains available
- * only through explicit opt-in experiments; it is not part of the launch
- * default provider chain.
+ * Managed runtime: xAI Grok 4.5 primary for structured reasoning, with direct
+ * OpenAI as the first automatic fallback, Gemini as the second, and the Vercel
+ * AI Gateway as the governed multi-model continuity route. OpenAI GPT-4o
+ * remains the managed Vapi call model — the voice path is a separate axis and
+ * does not follow the structured default.
  */
 export const XAI_MODELS = {
   GROK_4_5: "grok-4.5",
@@ -25,18 +25,18 @@ export const GEMINI_MODELS = {
   PRO_3_1: "gemini-3.1-pro-preview",
 } as const;
 
-/** Optional xAI structured model for explicitly enabled experiments. */
+/** Managed structured default through the direct xAI Responses API. */
 export const XAI_STRUCTURED_PRIMARY_MODEL =
   process.env.WIRELINE_XAI_STRUCTURED_MODEL?.trim() || XAI_MODELS.GROK_4_5;
-/** Managed structured default through the direct OpenAI Responses API. */
+/** First automatic fallback lane through the direct OpenAI Responses API. */
 export const OPENAI_STRUCTURED_PRIMARY_MODEL =
   process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() || OPENAI_MODELS.GPT_5_6_TERRA;
-/** First automatic fallback if direct OpenAI is unavailable. */
+/** Second automatic fallback if xAI and direct OpenAI are unavailable. */
 export const GEMINI_STRUCTURED_FALLBACK_MODEL =
   process.env.WIRELINE_GEMINI_STRUCTURED_FALLBACK_MODEL?.trim() || GEMINI_MODELS.FLASH_3_5;
 
 /** The managed structured default the runtime asks for first. */
-export const STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL;
+export const STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL;
 
 export type VapiVoiceProvider = "google" | "openai";
 export type VoiceModelSpeed = "fastest" | "fast" | "balanced" | "heavy";
@@ -177,13 +177,14 @@ export const MODEL_PRICING = {
 } as const;
 export const DEFAULT_MODEL = STRUCTURED_PRIMARY_MODEL;
 /**
- * Route structured work by complexity inside the OpenAI primary lane.
- * Gemini remains the automatic continuity fallback (see ai-client), not a
- * complexity selector — OpenAI only accepts gpt-* ids on the primary path.
- * GPT-5 is ~½ the input cost of GPT-5.6 Terra for simple/medium tasks.
+ * Route structured work by complexity inside the xAI primary lane.
+ * OpenAI and Gemini remain the automatic continuity fallbacks (see ai-client),
+ * not complexity selectors — the xAI path only accepts grok ids and coerces
+ * anything else to the structured primary. Grok 4.1 Fast Reasoning is ~1/10
+ * the cost of Grok 4.5 for simple/medium tasks.
  */
 export function selectModelForTask(complexity: TaskComplexity): string {
-  if (complexity === "simple" || complexity === "medium") return OPENAI_MODELS.GPT_5;
+  if (complexity === "simple" || complexity === "medium") return XAI_MODELS.GROK_4_1_FAST_REASONING;
   return STRUCTURED_PRIMARY_MODEL;
 }
 export function modelLabel(model: string): string {

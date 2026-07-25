@@ -283,9 +283,9 @@ router.get(
         call_stats = computeCallStats(
           callRows.map((c) => ({
             duration_seconds: c.durationSeconds,
-            cost: c.costUsd,
+            cost_usd: c.costUsd,
             lead_score: c.leadScore,
-          })) as any,
+          })),
         );
       }
 

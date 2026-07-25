@@ -125,11 +125,12 @@ export async function runCompletionResilient(opts: CompletionOptions): Promise<{
   text: string;
   cacheRead: number;
   cacheCreate: number;
-  provider: "openai" | "gemini";
+  provider: "xai" | "openai" | "gemini";
 }> {
   const result = await runCompletion(opts);
+  const model = modelFor(opts).toLowerCase();
   return {
     ...result,
-    provider: modelFor(opts).toLowerCase().includes("gemini") ? "gemini" : "openai",
+    provider: model.includes("grok") ? "xai" : model.includes("gemini") ? "gemini" : "openai",
   };
 }

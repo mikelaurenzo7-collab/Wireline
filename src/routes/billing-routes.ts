@@ -7,7 +7,12 @@ import { eq, count } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { getErrorMessage } from "../lib/server-utils";
-import { stripe, stripeAvailable, syncSubscriptionFromStripe } from "../lib/stripe-helpers";
+import {
+  stripe,
+  stripeAvailable,
+  subscriptionBillingInterval,
+  syncSubscriptionFromStripe,
+} from "../lib/stripe-helpers";
 import { sendPaymentFailedEmail } from "../lib/email-service";
 import { planById, plansForClient, FOUNDER_CATALOG_VERSION } from "../lib/plan-catalog";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
@@ -99,18 +104,31 @@ async function reverseRuntimeAllowanceForCharge(
     if (!row?.userId) return;
 
     const sub = await stripe.subscriptions.retrieve(subscriptionId);
-    const interval =
-      sub.items.data[0]?.price?.recurring?.interval === "year"
-        ? ("year" as const)
-        : ("month" as const);
+    // Resolve the interval the SAME way the grant did (any yearly item ⇒
+    // yearly), not off items.data[0] — a yearly plan carrying a monthly
+    // extra-agent item at index 0 was reversing a month's allowance against a
+    // year's grant.
+    const interval = subscriptionBillingInterval(sub);
 
-    // The refund/dispute id is unique per event, so redelivery is idempotent
-    // through the (user, ref) ledger index and a second partial refund cannot
-    // collide with the first.
-    const reference =
-      explicitReference ??
-      charge.refunds?.data?.find((r) => !r.status || r.status === "succeeded")?.id ??
-      charge.id;
+    // Stripe orders refunds newest-first, so find() returns the refund that
+    // triggered THIS event; its id is unique per event, so redelivery is
+    // idempotent through the (user, ref) ledger index.
+    const succeededRefund = charge.refunds?.data?.find(
+      (r) => !r.status || r.status === "succeeded",
+    );
+    const reference = explicitReference ?? succeededRefund?.id ?? charge.id;
+
+    // Reverse only the portion of the charge actually refunded. A dispute
+    // holds the entire charge; a refund reverses its own share. Without this,
+    // each of two partial refunds clawed back the FULL allowance (each under
+    // its own reference, so idempotency did not stop it), driving a paying
+    // customer's wallet negative and hard-blocking their live voice.
+    const chargeCents = charge.amount || 0;
+    const refundedCents =
+      reason === "dispute"
+        ? chargeCents
+        : (succeededRefund?.amount ?? charge.amount_refunded ?? chargeCents);
+    const portion = chargeCents > 0 ? Math.min(1, refundedCents / chargeCents) : 1;
 
     await tenantStore.run(row.userId, async () => {
       await reverseSubscriptionRuntimeAllowance(
@@ -119,6 +137,7 @@ async function reverseRuntimeAllowanceForCharge(
         row.plan,
         interval,
         reason,
+        portion,
       );
     });
   } catch (error) {

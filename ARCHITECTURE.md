@@ -76,9 +76,8 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
   - Neither realtime test surface is automatic failover for customer PSTN calls.
 - **LLM / structured reasoning:**
   - Central policy and catalog: `src/lib/ai-models.ts`.
-  - Primary: direct OpenAI Responses API using GPT-5.6 Terra by default.
-  - Continuity: Gemini, then Vercel AI Gateway as the governed final multi-model route.
-  - Direct xAI structured use is disabled unless `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=true`.
+  - Primary: direct xAI Responses API using Grok 4.5 by default (`WIRELINE_XAI_STRUCTURED_MODEL` overrides).
+  - Continuity: direct OpenAI (GPT-5.6 Terra), then Gemini, then Vercel AI Gateway as the governed final multi-model route.
   - ElevenLabs is optional TTS/cloning/showcase infrastructure, not a reasoning runtime or tenant PSTN default.
 - **Video presenters:**
   - `src/lib/video-presenter/` wraps provider details behind Wireline-owned copy, status, consent, metering, and fallback language.

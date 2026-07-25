@@ -81,7 +81,7 @@ Every tenant-scoped query runs as Postgres role `wireline_server` with a per-req
 
 ### AI/voice provider chain
 
-Structured reasoning (`src/lib/ai-models.ts` is the central policy/catalog): direct OpenAI Responses API primary (GPT-5.6 Terra default) -> Gemini automatic fallback -> Vercel AI Gateway as the governed last-resort multi-model route. Direct xAI structured use is disabled unless `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=true`.
+Structured reasoning (`src/lib/ai-models.ts` is the central policy/catalog): direct xAI Responses API primary (Grok 4.5 default) -> direct OpenAI (GPT-5.6 Terra) first automatic fallback -> Gemini -> Vercel AI Gateway as the governed last-resort multi-model route. xAI joins the chain on `XAI_API_KEY` presence; `WIRELINE_XAI_STRUCTURED_MODEL` overrides the Grok model id.
 
 Voice is a separate, easy-to-conflate set of paths (`src/lib/voice/`, `docs/GROK_LIVE_VOICE.md`): production PSTN calls run through Twilio (numbers, signed inbound SMS, opt-out, delivery callbacks) with Vapi orchestrating the call itself using OpenAI GPT-4o as the managed call model (Gemini fallback). Separately, the xAI Grok realtime contract powers *authenticated* live-voice test/simulation sessions (Studio sandbox, ChatGPT account simulation) via server-minted ephemeral secrets, and OpenAI Realtime powers the *unauthenticated* guest voice demo. Neither realtime test path is failover for real customer calls — conflating "realtime voice" with "the production call path" is a common category error when reading this code.
 

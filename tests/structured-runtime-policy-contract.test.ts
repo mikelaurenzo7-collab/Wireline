@@ -18,7 +18,7 @@ const LEGACY_CLAUDE_MODULES = [
 ];
 
 describe("structured runtime policy", () => {
-  it("exports managed OpenAI-first structured models", () => {
+  it("exports managed Grok-first structured models", () => {
     const models = read("src/lib/structured-runtime-models.ts");
     const aiModels = read("src/lib/ai-models.ts");
     const schema = read("src/db/schema.ts");
@@ -38,11 +38,11 @@ describe("structured runtime policy", () => {
     expect(models).toContain("STRUCTURED_RUNTIME_MODELS");
     expect(models).toContain("STRUCTURED_DIRECTOR_DEEP_MODEL");
     expect(models).toContain("STRUCTURED_PRIMARY_MODEL");
-    expect(aiModels).toContain("export const OPENAI_STRUCTURED_PRIMARY_MODEL");
-    expect(aiModels).toContain(
-      "export const STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL",
-    );
     expect(aiModels).toContain("export const XAI_STRUCTURED_PRIMARY_MODEL");
+    expect(aiModels).toContain(
+      "export const STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL",
+    );
+    expect(aiModels).toContain("export const OPENAI_STRUCTURED_PRIMARY_MODEL");
     expect(schema).toContain('voiceLlmProvider: text("voice_llm_provider").default("openai")');
     expect(schema).toContain('voiceLlmModel: text("voice_llm_model").default("gpt-4o")');
     expect(adminSettings).toContain("VAPI_TENANT_DEFAULT_PROVIDER");
@@ -55,15 +55,14 @@ describe("structured runtime policy", () => {
     expect(carrierPanel).not.toContain("Anthropic voice disruptions");
     expect(carrierPanel).not.toContain('v: "anthropic"');
     expect(prodEnvCheck).not.toContain("ANTHROPIC_API_KEY");
-    expect(prodEnvCheck).toContain("Primary managed runtime and OpenAI Realtime sessions");
-    expect(prodEnvCheck).toContain("Optional xAI experiments");
+    expect(prodEnvCheck).toContain("Primary managed structured runtime (Grok 4.5)");
+    expect(prodEnvCheck).toContain("Structured continuity fallback and OpenAI Realtime sessions");
+    expect(prodEnvCheck).not.toContain("Optional xAI experiments");
     // The live /privacy page (PrivacyPolicyPage.tsx) owns the sub-processor
     // disclosure; LegalPage.tsx now carries only Terms of Service.
-    expect(privacyPage).toContain("<strong>OpenAI</strong> — Primary managed AI inference");
+    expect(privacyPage).toContain("<strong>xAI</strong> — Primary managed AI inference");
     expect(privacyPage).toContain("<strong>Google Gemini</strong>");
-    expect(privacyPage).toContain(
-      "<strong>xAI</strong> — Optional explicitly enabled AI and realtime-voice experiments",
-    );
+    expect(privacyPage).toContain("<strong>OpenAI</strong> — Managed continuity inference");
     expect(privacyPage).not.toContain("Anthropic's Claude API");
     expect(privacyPage).not.toContain("<strong>Anthropic</strong>");
     expect(legalPage).not.toContain("Anthropic's Claude API");

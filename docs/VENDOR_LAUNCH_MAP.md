@@ -6,14 +6,17 @@ Executable probe: `npm run vendor:readiness`.
 ## Current launch snapshot — 2026-07-20
 
 The production deployment and Supabase database are reachable. The managed
-runtime remains OpenAI-first (structured), Vapi-orchestrated (PSTN), and Twilio
-for carrier/SMS, with Gemini continuity, Vercel AI Gateway as the governed last
-route, and xAI structured fallback still opt-in only.
+runtime is Grok-first (structured, xAI Grok 4.5 — promoted 2026-07-25),
+Vapi-orchestrated (PSTN), and Twilio for carrier/SMS, with direct OpenAI as the
+first structured continuity fallback, Gemini second, and the Vercel AI Gateway
+as the governed last route.
 
 A production-scoped vendor + inventory pass on `2026-07-20` verified:
 
 - OpenAI, Gemini, Vercel AI Gateway, and xAI credentials are accepted.
-- xAI structured fallback remains disabled (`WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK` unset/false).
+- Since 2026-07-25, xAI Grok 4.5 is the managed structured primary; the legacy
+  `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK` opt-in switch is retired and xAI joins the
+  chain on `XAI_API_KEY` presence.
 - Vapi credentials are accepted, with 18 reachable phone numbers and assistant inventory access.
 - Twilio is active (~`$23.66` balance); **9/9** incoming numbers are voice+SMS capable and now
   point SMS at `https://trywireline.com/api/twilio-webhook/sms` (stale `coordinagents.com`
@@ -64,7 +67,7 @@ The launch runtime is deliberately layered rather than vendor-maximal:
 
 | Plane                 | Primary                                  | Fallback / boundary                                         |
 | --------------------- | ---------------------------------------- | ----------------------------------------------------------- |
-| Structured reasoning  | OpenAI GPT-5.6 Terra direct              | Gemini → Vercel AI Gateway; xAI only behind explicit opt-in |
+| Structured reasoning  | xAI Grok 4.5 direct                      | OpenAI GPT-5.6 Terra → Gemini → Vercel AI Gateway           |
 | PSTN calls            | Twilio carrier number → Vapi             | OpenAI GPT-4o call model → Gemini                           |
 | Phone speech          | Deepgram STT + managed Vapi voice roster | Twilio fallback response                                    |
 | Authenticated live voice | xAI Grok realtime (Studio/mobile/sim) | OpenAI Realtime continuity                                  |
@@ -72,12 +75,13 @@ The launch runtime is deliberately layered rather than vendor-maximal:
 | Live public research (PSTN tool) | Perplexity (optional) → Gemini grounded | Unavailable if neither key                                  |
 | Cloning/showcase TTS  | ElevenLabs                               | Optional Creator entitlement; never core phone runtime      |
 
-Use OpenAI as Wireline's default structured-reasoning runtime. Keep Vapi as
-the PSTN orchestration layer and Twilio as the carrier/messaging layer. Keep
-Gemini as direct continuity, Vercel AI Gateway as the governed final route, and
-xAI structured use behind `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=true` until measured quality,
-latency, reliability, and unit economics justify promotion. Authenticated live-voice
-tests already use Grok; do not conflate that with the production PSTN path.
+Use xAI Grok 4.5 as Wireline's default structured-reasoning runtime. Keep Vapi
+as the PSTN orchestration layer and Twilio as the carrier/messaging layer. Keep
+direct OpenAI as the first structured continuity fallback, Gemini as the
+second, and the Vercel AI Gateway as the governed final route. Authenticated
+live-voice tests also use Grok; do not conflate structured reasoning or live
+voice with the production PSTN call model, which stays OpenAI GPT-4o under
+Vapi.
 
 Vercel AI Gateway should provide centralized budget controls, observability,
 and a final multi-model route. It should not add an unnecessary hop to every
@@ -114,9 +118,9 @@ compatibility fallback until it is rotated.
 | Vercel AI Gateway   | Governed final AI route             | credential/model catalog ready            | Set per-key budget, alerts, and reserve before scale                           |
 | Supabase            | Postgres data plane                 | connected project healthy                 | Run DB health and migrations; retain password-screening controls              |
 | Stripe              | Customer billing                    | **ready (Cadence AI, $0 available)**      | Keep buffer before paid invites; webhook aligned 2026-07-20                   |
-| OpenAI              | Primary reasoning + Realtime        | credential ready                          | Maintain budget, payment method, alerts, and scoped keys                       |
+| xAI                 | Primary structured reasoning + live voice | credential ready; structured primary since 2026-07-25 | Fund, cap, and monitor the Grok 4.5 primary; alert on fallback rates |
+| OpenAI              | Continuity reasoning + Realtime + Vapi call model | credential ready                  | Maintain budget, payment method, alerts, and scoped keys                       |
 | Gemini              | Direct AI continuity                | credential ready                          | Retain quota/billing fallback                                                  |
-| xAI                 | Optional voice/reasoning experiment | credential ready; structured fallback off | Keep capped and opt-in; do not make launch depend on it                        |
 | Vapi                | PSTN orchestration                  | credential ready; 18 numbers reachable    | Confirm billing/auto-reload and complete live call matrix                      |
 | Twilio              | Carrier, numbers, SMS, WhatsApp     | active; ~$23.66; 9 voice/SMS; API key pair installed | Rotate Auth Token when convenient; Usage Triggers; channel E2E |
 | ElevenLabs          | Optional clones/showcase            | Creator; Voice API ready; not on PSTN path | Keep optional, consented, and monitored                        |

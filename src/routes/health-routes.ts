@@ -13,6 +13,7 @@ import { getPlatformSloSnapshot } from "../lib/operator-slos";
 import { evaluatePlatformOperationalSlos } from "../lib/platform-operational-slos";
 import {
   OPENAI_STRUCTURED_PRIMARY_MODEL,
+  STRUCTURED_PRIMARY_MODEL,
   GEMINI_STRUCTURED_FALLBACK_MODEL,
   VAPI_PREMIUM_MODEL,
   VAPI_TENANT_DEFAULT_MODEL,
@@ -201,7 +202,7 @@ router.get(
       uptime_s: Math.round((process as any).uptime?.() || 0),
       db,
       capabilities: getHealthCapabilities(),
-      app_model: OPENAI_STRUCTURED_PRIMARY_MODEL,
+      app_model: STRUCTURED_PRIMARY_MODEL,
       voice_agent_model: VAPI_TENANT_DEFAULT_MODEL,
       voice_agent_premium_model: VAPI_PREMIUM_MODEL,
       llm_tiering: {
@@ -216,14 +217,14 @@ router.get(
           reason: "Automatic failure fallback.",
         },
         reasoning_layer: {
-          provider: "openai",
-          model: OPENAI_STRUCTURED_PRIMARY_MODEL,
+          provider: "xai",
+          model: STRUCTURED_PRIMARY_MODEL,
           reason: "Managed primary for training, QA, insights, and post-call work.",
         },
         reasoning_fallback: {
-          provider: "google",
-          model: GEMINI_STRUCTURED_FALLBACK_MODEL,
-          reason: "Automatic failure fallback.",
+          provider: "openai",
+          model: OPENAI_STRUCTURED_PRIMARY_MODEL,
+          reason: "First automatic fallback; Gemini and the AI Gateway follow.",
         },
       },
       timestamp: new Date().toISOString(),
@@ -328,7 +329,17 @@ router.get(
     });
   },
 );
-router.get("/public", healthRateLimiter, async (_req, res) => {
+// Memoize the unauthenticated public probe so a burst of requests (or a
+// rotating-IP flood that slips past the per-IP limiter, which itself fails
+// open) cannot translate 1:1 into billed OpenAI Responses calls. One probe
+// pair per PUBLIC_PROBE_TTL_MS is shared by every caller in that window.
+const PUBLIC_PROBE_TTL_MS = 60_000;
+let publicProbeCache: {
+  expiresAt: number;
+  promise: Promise<{ overall: string; components: Record<string, string>; last_checked: string }>;
+} | null = null;
+
+async function computePublicHealth() {
   const [voice, reasoning] = await Promise.all([
     probeOpenAI(VAPI_TENANT_DEFAULT_MODEL),
     probeOpenAI(OPENAI_STRUCTURED_PRIMARY_MODEL),
@@ -350,8 +361,24 @@ router.get("/public", healthRateLimiter, async (_req, res) => {
     (current, value) => (order[value] > order[current] ? value : current),
     "operational",
   );
-  res.setHeader("Cache-Control", "public, max-age=60");
-  res.json({ overall: worst, components, last_checked: new Date().toISOString() });
+  return { overall: worst, components, last_checked: new Date().toISOString() };
+}
+
+router.get("/public", healthRateLimiter, async (_req, res) => {
+  const now = Date.now();
+  if (!publicProbeCache || publicProbeCache.expiresAt <= now) {
+    publicProbeCache = { expiresAt: now + PUBLIC_PROBE_TTL_MS, promise: computePublicHealth() };
+    // A rejected probe pair must not be cached as a poison promise.
+    publicProbeCache.promise.catch(() => {
+      publicProbeCache = null;
+    });
+  }
+  const payload = await publicProbeCache.promise;
+  // s-maxage lets the shared edge cache absorb distributed/rotating-IP traffic
+  // that the per-IP limiter (which fails open) cannot, so origin only ever runs
+  // one probe pair per TTL regardless of caller count.
+  res.setHeader("Cache-Control", "public, max-age=60, s-maxage=60, stale-while-revalidate=30");
+  res.json(payload);
 });
 router.get("/models", healthRateLimiter, authenticateUser, async (_req, res) => {
   const started = Date.now();

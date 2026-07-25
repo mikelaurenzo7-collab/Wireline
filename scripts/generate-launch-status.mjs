@@ -321,8 +321,8 @@ const record = {
   production: vercel,
   live_checks: { readiness, stripe, database, twilio },
   runtime_policy: {
-    managed_structured_chain: ["OpenAI", "Gemini", "Vercel AI Gateway"],
-    xai: "authenticated realtime tests and explicitly enabled experiments only",
+    managed_structured_chain: ["xAI", "OpenAI", "Gemini", "Vercel AI Gateway"],
+    xai: "primary managed structured runtime (Grok 4.5) and authenticated realtime tests",
   },
   surface_posture: {
     web: "public self-serve candidate",

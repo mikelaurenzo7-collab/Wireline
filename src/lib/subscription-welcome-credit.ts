@@ -79,9 +79,17 @@ export async function reverseSubscriptionRuntimeAllowance(
   planId: string | null | undefined,
   interval: SubscriptionBillingInterval = "month",
   reason: "refund" | "dispute" = "refund",
+  /** Fraction of the charge actually refunded (0–1). A dispute holds the whole
+   *  charge (1); a partial refund reverses only its share so cumulative partial
+   *  reversals can never exceed the grant. Defaults to 1 for legacy callers. */
+  portion = 1,
 ): Promise<void> {
   if (!userId || !reversalReference) return;
-  const amountUsd = runtimeAllowanceUsdForPlan(planId, interval);
+  const clampedPortion = Number.isFinite(portion) ? Math.min(1, Math.max(0, portion)) : 1;
+  // Round the reversed share DOWN to the cent so the sum of partial reversals
+  // stays at or below the granted allowance.
+  const amountUsd =
+    Math.floor(runtimeAllowanceUsdForPlan(planId, interval) * clampedPortion * 100) / 100;
   if (!(amountUsd > 0)) return;
 
   const { reverseCredit } = await import("./credit-wallet");
@@ -103,6 +111,7 @@ export async function reverseSubscriptionRuntimeAllowance(
         plan_id: planId,
         billing_interval: interval,
         runtime_allowance_usd: amountUsd,
+        reversal_portion: clampedPortion,
         reversal_reason: reason,
       },
     },

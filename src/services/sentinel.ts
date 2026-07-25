@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq } from "drizzle-orm";
-import { isDncBlocked, normalizeDncPhone } from "../lib/compliance";
+import { eq, inArray } from "drizzle-orm";
+import { dncPhoneCandidates, isDncBlocked, normalizeDncPhone } from "../lib/compliance";
 import { fetchWithTimeout } from "../lib/server-context";
 
 export interface SentinelResult {
@@ -65,11 +65,17 @@ export class SentinelService {
    * Terminate active calls if a number is added to DNC mid-call.
    */
   async terminateActiveCallsForNumber(phoneNumber: string) {
-    const normalized = normalizeDncPhone(phoneNumber);
+    // Presence rows store the number exactly as Vapi sent it (E.164 "+1...")
+    // while DNC paths normalize to digits-only — match every stored variant
+    // (same posture as isDncBlocked) or a live call is never found and the
+    // mid-call termination silently does nothing. Presence rows are deleted
+    // at call end, so every match is a live call.
+    const candidates = dncPhoneCandidates(phoneNumber);
+    if (!candidates.length) return;
     const activeCalls = await drizzle
       .select({ id: schema.signalPresence.id })
       .from(schema.signalPresence)
-      .where(eq(schema.signalPresence.customerNumber, normalized));
+      .where(inArray(schema.signalPresence.customerNumber, candidates));
 
     for (const call of activeCalls) {
       await this.killCall(call.id, "DNC_UPDATE_DURING_CALL");

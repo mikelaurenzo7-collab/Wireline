@@ -36,7 +36,7 @@ export function normalizeOpenApiForManagedRuntime<T>(document: T): T {
 
   schemas.DailyBrief = {
     type: "object",
-    description: "OpenAI-authored daily brief comparing yesterday with the seven-day baseline.",
+    description: "AI-authored daily brief comparing yesterday with the seven-day baseline.",
     required: ["brief", "stats_yesterday", "week_delta", "generated_at"],
     properties: {
       brief: {
@@ -91,7 +91,7 @@ export function normalizeOpenApiForManagedRuntime<T>(document: T): T {
         properties: {
           ai_tokens_daily: {
             type: "integer",
-            description: "Managed OpenAI input and output token ceiling per UTC day.",
+            description: "Managed AI input and output token ceiling per UTC day.",
           },
           voice_minutes_daily: { type: "integer" },
           concurrent_dials: { type: "integer" },
@@ -141,9 +141,9 @@ export function normalizeOpenApiForManagedRuntime<T>(document: T): T {
 
   const dailyBriefPath = asRecord(paths["/api/insights/daily-brief"]);
   const dailyBriefGet = asRecord(dailyBriefPath.get);
-  dailyBriefGet.summary = "OpenAI-authored daily operating brief";
+  dailyBriefGet.summary = "AI-authored daily operating brief";
   dailyBriefGet.description =
-    "Generates a concise OpenAI-authored operating brief from the tenant's measured activity and seven-day baseline.";
+    "Generates a concise AI-authored operating brief from the tenant's measured activity and seven-day baseline.";
 
   for (const pathItem of Object.values(paths)) {
     const item = asRecord(pathItem);
@@ -154,7 +154,7 @@ export function normalizeOpenApiForManagedRuntime<T>(document: T): T {
       if (typeof unavailable.description === "string") {
         unavailable.description = unavailable.description.replace(
           /Dependency unavailable \(e\.g\. Claude \/ Stripe unconfigured\)\./g,
-          "Dependency unavailable (for example, the managed OpenAI runtime or Stripe is unconfigured).",
+          "Dependency unavailable (for example, the managed AI runtime or Stripe is unconfigured).",
         );
       }
     }

@@ -93,7 +93,9 @@ describe("round-9 subscription allowance reversal", () => {
     );
     expect(fn).toContain("stripe.invoices.retrieve(invoiceId)");
     expect(fn).toContain("schema.subscriptions.stripeSubscriptionId, subscriptionId");
-    expect(fn).toContain('recurring?.interval === "year"');
+    // Interval is resolved the same way the grant did (any yearly item ⇒
+    // yearly), via the shared helper rather than an index-0 read.
+    expect(fn).toContain("subscriptionBillingInterval(sub)");
     expect(fn).toContain("tenantStore.run(row.userId");
   });
 
@@ -102,7 +104,8 @@ describe("round-9 subscription allowance reversal", () => {
     expect(helper).toContain("export async function reverseSubscriptionRuntimeAllowance");
     expect(helper).toContain('type: "subscription_runtime_allowance_reversal"');
     expect(helper).toContain("id: reversalReference");
-    // Same amount basis as the grant, so a reversal cannot exceed it.
-    expect(helper).toContain("runtimeAllowanceUsdForPlan(planId, interval)");
+    // Reversal basis is the grant scaled by the refunded portion, so cumulative
+    // partial reversals can never exceed the granted allowance.
+    expect(helper).toContain("runtimeAllowanceUsdForPlan(planId, interval) * clampedPortion");
   });
 });
