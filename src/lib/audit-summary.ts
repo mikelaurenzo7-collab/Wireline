@@ -101,16 +101,13 @@ const num = (n: unknown): number => {
 /** Input $/MTok for audit dashboards — derived from MODEL_PRICING (single source of truth). */
 export function inputRateForModel(model: string | null | undefined): number {
   if (!model) return 15;
-  // AI-Gateway-served turns report prefixed ids ("xai/grok-4.5"); price by
-  // the bare model so gateway and direct routes share one rate table.
-  const bare = model.includes("/") ? model.slice(model.lastIndexOf("/") + 1) : model;
-  const pricing = MODEL_PRICING[bare as keyof typeof MODEL_PRICING];
+  const pricing = MODEL_PRICING[model as keyof typeof MODEL_PRICING];
   if (pricing) return pricing.input;
-  if (bare.includes("haiku")) return 1;
-  if (bare.includes("sonnet")) return 3;
-  if (bare.includes("opus")) return 5;
-  if (bare.includes("gemini") && bare.includes("flash")) return 0.3;
-  if (bare.includes("gpt-4o")) return 5;
+  if (model.includes("haiku")) return 1;
+  if (model.includes("sonnet")) return 3;
+  if (model.includes("opus")) return 5;
+  if (model.includes("gemini") && model.includes("flash")) return 0.3;
+  if (model.includes("gpt-4o")) return 5;
   return 15;
 }
 

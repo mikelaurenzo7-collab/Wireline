@@ -1,48 +1,13 @@
-# Grok Live Voice (Active Realtime Architecture)
+# Grok Live Voice — retired from demo routing
 
-Wireline's authenticated browser, mobile, and ChatGPT voice sessions run on the managed **xAI Grok realtime contract** in `src/lib/voice/grok-voice-service.ts` and `src/routes/grok-voice-routes.ts`. This is the active, default live-voice architecture. The OpenAI Realtime implementation in `src/lib/voice/openai-realtime-service.ts` and `src/routes/openai-realtime-routes.ts` remains registered as a separate manual continuity endpoint; the current Studio client does not automatically fail over from Grok to OpenAI.
+The xAI realtime implementation remains in the repository only as an explicit internal experiment. It is not mounted as Wireline's default structured runtime and it does not own any public, authenticated, mobile, Studio, Showcase, or ChatGPT demo path.
 
-The live-voice sandbox (`src/components/LiveVoiceSandbox.tsx`) opens a session against `/api/voice/live/session` and connects with the `xai-client-secret.<token>` WebSocket subprotocol. Sessions are authenticated, agent-scoped, and never expose the long-lived xAI key to a browser or native client.
+## Active architecture
 
-## Active xAI environment
+- Structured reasoning: direct OpenAI Responses API by default, with Gemini and the Vercel AI Gateway providing continuity.
+- Browser and mobile live tests: OpenAI Realtime over WebRTC through `/api/voice/live/session`.
+- Public/guest voice previews: OpenAI Realtime using the isolated demo credential when configured.
+- Phone-call demonstrations and production PSTN: Vapi orchestration with OpenAI as the managed call model and Twilio as carrier/messaging authority.
+- Custom phone voices: Vapi/ElevenLabs voice-library workflow. Browser demos use the managed OpenAI voice-profile mapping.
 
-Set these in Vercel for the environments that use authenticated realtime voice:
-
-```bash
-XAI_API_KEY=
-XAI_GROK_VOICE_MODEL=          # optional; defaults to grok-voice-think-fast-1.0
-XAI_GROK_VOICE_REASONING_EFFORT=
-XAI_GROK_VOICE_SPEED=
-```
-
-The server mints short-lived client secrets (`https://api.x.ai/v1/realtime/client_secrets`), applies a hashed safety identifier, and returns only the ephemeral secret and endpoint to the client.
-
-## Active product behavior
-
-- Live sessions are authenticated and scoped to the selected agent or a confirmed private draft.
-- Sessions use 24 kHz PCM audio and server-owned instructions.
-- Standard Wireline realtime tools are bounded and server-defined; private ChatGPT simulations explicitly receive `tools: []` and `tool_choice: none`.
-- Browser and mobile clients receive only a short-lived client secret.
-- Production PSTN calls remain on the approved telephony path (Vapi) and continue to enforce billing, consent, DNC, and launch policy server-side.
-- Customer-facing voice names remain Wireline profiles rather than provider brands.
-
-## OpenAI Realtime continuity environment
-
-The OpenAI Realtime path stays available as an operator-selected continuity path for authenticated realtime tests:
-
-```bash
-OPENAI_API_KEY=
-OPENAI_API_KEY_CHATKIT=        # optional; isolates ChatGPT acquisition/demo spend
-OPENAI_REALTIME_MODEL=
-OPENAI_REALTIME_VOICE=
-```
-
-`OPENAI_API_KEY_CHATKIT` is optional; the general OpenAI key is the fallback. The server never returns the long-lived API key to a browser or native client.
-
-## Verification
-
-1. Sign in, open Studio, choose an agent, and start **Test & Simulate**.
-2. Confirm the session metadata reports the Grok live-voice model and the selected Wireline voice profile without exposing a provider name in the UI.
-3. Confirm approved tools are present for authenticated product tests and absent for private ChatGPT simulations.
-4. Interrupt the agent during speech and confirm it returns to listening.
-5. Confirm failure messages identify configuration or access problems without leaking upstream credentials or raw provider responses.
+No customer-facing surface should connect with an xAI client-secret subprotocol or present Grok as a default runtime.

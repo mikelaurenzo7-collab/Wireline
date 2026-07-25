@@ -10,12 +10,14 @@ import {
 } from "../lib/voice/voice-preview-service";
 import type { AuthenticatedRequest } from "../types/auth";
 import {
-  createGrokVoiceClientSession,
-  getGrokVoiceStatus,
-  runGrokVoiceTool,
-} from "../lib/voice/grok-voice-service";
-import grokLiveProfileRouter from "./grok-live-profile-routes";
+  createOpenAILiveVoiceCall,
+  getOpenAILiveVoiceStatus,
+  runOpenAILiveVoiceTool,
+} from "../lib/voice/openai-live-agent-service";
+import liveProfileRouter from "./grok-live-profile-routes";
 
+// Legacy filename retained to avoid route-registry churn. All /api/voice/live/*
+// customer-facing demo traffic is OpenAI Realtime; phone demos remain on Vapi.
 const router = express.Router();
 const sessionLimiter = createRateLimiter({
   bucket: "api:live-voice-session",
@@ -39,7 +41,7 @@ const previewLimiter = createRateLimiter({
 });
 const sessionSchema = z.object({
   agentId: z.string().min(1).max(200),
-  languageHint: z.string().max(20).optional(),
+  sdp: z.string().min(100).max(60_000),
 });
 const toolSchema = z.object({
   agentId: z.string().min(1).max(200),
@@ -47,7 +49,7 @@ const toolSchema = z.object({
   arguments: z.record(z.string(), z.unknown()).optional(),
 });
 
-router.use(grokLiveProfileRouter);
+router.use(liveProfileRouter);
 
 router.get(
   "/api/voices/curated/preview",
@@ -56,11 +58,8 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     const provider = typeof req.query.provider === "string" ? req.query.provider : "";
     const voiceId = typeof req.query.voiceId === "string" ? req.query.voiceId.trim() : "";
-
-    if (!isCuratedPreviewProvider(provider) || !voiceId) {
+    if (!isCuratedPreviewProvider(provider) || !voiceId)
       throw AppError.fromHttpStatus(400, "A valid provider and voice are required.");
-    }
-
     const audio = await generateCuratedVoicePreview(provider, voiceId);
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("Cache-Control", "private, max-age=3600");
@@ -73,7 +72,7 @@ router.get(
   authenticateUser,
   statusLimiter,
   async (_req: AuthenticatedRequest, res: Response) => {
-    res.json(getGrokVoiceStatus());
+    res.json(getOpenAILiveVoiceStatus());
   },
 );
 
@@ -84,10 +83,10 @@ router.post(
   simulationMinuteQuota,
   validateBody(sessionSchema),
   async (req: AuthenticatedRequest, res: Response) => {
-    const session = await createGrokVoiceClientSession({
+    const session = await createOpenAILiveVoiceCall({
       userId: req.user.id,
       agentId: req.body.agentId,
-      languageHint: req.body.languageHint,
+      sdp: req.body.sdp,
     });
     res.setHeader("Cache-Control", "no-store");
     res.json(session);
@@ -100,7 +99,7 @@ router.post(
   toolLimiter,
   validateBody(toolSchema),
   async (req: AuthenticatedRequest, res: Response) => {
-    const result = await runGrokVoiceTool({
+    const result = await runOpenAILiveVoiceTool({
       userId: req.user.id,
       agentId: req.body.agentId,
       name: req.body.name,

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AsyncLocalStorage } from "node:async_hooks";
-import { DEFAULT_MODEL, MODEL_PRICING, XAI_MODELS, isXAIModelId } from "./ai-models";
+import { DEFAULT_MODEL, MODEL_PRICING, OPENAI_MODELS, isXAIModelId } from "./ai-models";
 
 export interface RuntimeCallMeta {
   model: string;
@@ -44,9 +44,10 @@ function pricingFor(model: string) {
   // "xai/grok-4.5" or "openai/gpt-5.6-terra"). Price them by the
   // bare model so every route shares one audited price table.
   const bare = model.includes("/") ? model.slice(model.lastIndexOf("/") + 1) : model;
-  // Unknown ids anchor to the structured primary (Grok 4.5) so estimates
-  // track the lane that actually serves default traffic.
-  return MODEL_PRICING[bare as keyof typeof MODEL_PRICING] ?? MODEL_PRICING[XAI_MODELS.GROK_4_5];
+  return (
+    MODEL_PRICING[bare as keyof typeof MODEL_PRICING] ??
+    MODEL_PRICING[OPENAI_MODELS.GPT_5_6_TERRA]
+  );
 }
 export function estimateCost(
   usage: {
@@ -117,7 +118,7 @@ function push(record: RuntimeCallMeta) {
 function providerFor(model: string): RuntimeCallMeta["provider"] {
   if (/^gpt-/i.test(model)) return "openai";
   if (model.toLowerCase().includes("gemini")) return "google";
-  // Bare grok ids come from the direct xAI primary lane;
+  // Bare grok ids come from the explicitly enabled direct xAI runtime;
   // provider/model form ("xai/grok-4.5") comes back from AI Gateway.
   if (isXAIModelId(model) && !model.includes("/")) return "xai";
   return "gateway";
