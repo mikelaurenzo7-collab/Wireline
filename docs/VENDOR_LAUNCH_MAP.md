@@ -6,17 +6,17 @@ Executable probe: `npm run vendor:readiness`.
 ## Current launch snapshot — 2026-07-20
 
 The production deployment and Supabase database are reachable. The managed
-runtime is Grok-first (structured, xAI Grok 4.5 — promoted 2026-07-25),
-Vapi-orchestrated (PSTN), and Twilio for carrier/SMS, with direct OpenAI as the
-first structured continuity fallback, Gemini second, and the Vercel AI Gateway
-as the governed last route.
+runtime is OpenAI-first (structured, GPT-5.6 Terra), Vapi-orchestrated (PSTN),
+and Twilio for carrier/SMS, with Gemini as the first structured continuity
+fallback and the Vercel AI Gateway as the governed last route. xAI remains
+optional experiment-only.
 
 A production-scoped vendor + inventory pass on `2026-07-20` verified:
 
 - OpenAI, Gemini, Vercel AI Gateway, and xAI credentials are accepted.
-- Since 2026-07-25, xAI Grok 4.5 is the managed structured primary; the legacy
-  `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK` opt-in switch is retired and xAI joins the
-  chain on `XAI_API_KEY` presence.
+- Since 2026-07-25, OpenAI is the managed structured primary and the live-demo
+  voice default; `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK` remains the explicit
+  opt-in for appending direct xAI after the AI Gateway.
 - Vapi credentials are accepted, with 18 reachable phone numbers and assistant inventory access.
 - Twilio is active (~`$23.66` balance); **9/9** incoming numbers are voice+SMS capable and now
   point SMS at `https://trywireline.com/api/twilio-webhook/sms` (stale `coordinagents.com`
@@ -67,21 +67,20 @@ The launch runtime is deliberately layered rather than vendor-maximal:
 
 | Plane                 | Primary                                  | Fallback / boundary                                         |
 | --------------------- | ---------------------------------------- | ----------------------------------------------------------- |
-| Structured reasoning  | xAI Grok 4.5 direct                      | OpenAI GPT-5.6 Terra → Gemini → Vercel AI Gateway           |
+| Structured reasoning  | OpenAI GPT-5.6 Terra direct              | Gemini → Vercel AI Gateway → optional opt-in xAI            |
 | PSTN calls            | Twilio carrier number → Vapi             | OpenAI GPT-4o call model → Gemini                           |
 | Phone speech          | Deepgram STT + managed Vapi voice roster | Twilio fallback response                                    |
-| Authenticated live voice | xAI Grok realtime (Studio/mobile/sim) | OpenAI Realtime continuity                                  |
-| Guest / unauth demo voice | OpenAI Realtime                       | —                                                           |
+| Live voice demos      | OpenAI Realtime (Studio/ChatGPT/guest)   | —                                                           |
 | Live public research (PSTN tool) | Perplexity (optional) → Gemini grounded | Unavailable if neither key                                  |
 | Cloning/showcase TTS  | ElevenLabs                               | Optional Creator entitlement; never core phone runtime      |
 
-Use xAI Grok 4.5 as Wireline's default structured-reasoning runtime. Keep Vapi
-as the PSTN orchestration layer and Twilio as the carrier/messaging layer. Keep
-direct OpenAI as the first structured continuity fallback, Gemini as the
-second, and the Vercel AI Gateway as the governed final route. Authenticated
-live-voice tests also use Grok; do not conflate structured reasoning or live
-voice with the production PSTN call model, which stays OpenAI GPT-4o under
-Vapi.
+Use OpenAI GPT-5.6 Terra as Wireline's default structured-reasoning runtime and
+OpenAI Realtime for every customer-facing live-voice demo. Keep Vapi as the
+PSTN orchestration layer and Twilio as the carrier/messaging layer. Keep Gemini
+as the first structured continuity fallback and the Vercel AI Gateway as the
+governed final route. Do not split providers between demos and runtime, and do
+not conflate live-voice demos with the production PSTN call model, which stays
+OpenAI GPT-4o under Vapi.
 
 Vercel AI Gateway should provide centralized budget controls, observability,
 and a final multi-model route. It should not add an unnecessary hop to every

@@ -63,8 +63,7 @@ const required = [
     process.env.UPSTASH_REDIS_REST_URL,
   ],
   ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token", process.env.UPSTASH_REDIS_REST_TOKEN],
-  ["XAI_API_KEY", "Primary managed structured runtime (Grok 4.5)", process.env.XAI_API_KEY],
-  ["OPENAI_API_KEY", "Structured continuity fallback and OpenAI Realtime sessions", process.env.OPENAI_API_KEY],
+  ["OPENAI_API_KEY", "Primary managed runtime and OpenAI Realtime sessions", process.env.OPENAI_API_KEY],
   ["VAPI_PRIVATE_KEY", "Vapi managed inbound and outbound voice runtime", process.env.VAPI_PRIVATE_KEY],
   ["VAPI_WEBHOOK_SECRET", "Vapi webhook HMAC secret", process.env.VAPI_WEBHOOK_SECRET],
   ["TWILIO_ACCOUNT_SID", "Twilio programmable voice and messaging account", process.env.TWILIO_ACCOUNT_SID],
@@ -94,6 +93,7 @@ const recommended = [
   ["OPENAI_API_KEY_CHATKIT", "Scoped ChatGPT app realtime voice key for spend isolation"],
   ["GEMINI_API_KEY", "Gemini continuity fallback when direct OpenAI is unavailable"],
   ["AI_GATEWAY_API_KEY", "Vercel AI Gateway governed final fallback and centralized budgets"],
+  ["XAI_API_KEY", "Optional xAI experiments (structured fallback requires explicit opt-in)"],
   ["VITE_VAPI_PUBLIC_KEY", "Vapi browser-side test calls"],
   ["TWILIO_API_KEY", "Scoped Twilio REST API key SID; preferred over the Account Auth Token"],
   ["TWILIO_API_SECRET", "Secret paired with TWILIO_API_KEY for production REST calls"],
@@ -119,7 +119,8 @@ const recommended = [
 ];
 
 const optional = [
-  ["XAI_API_KEY_CHATKIT", "Optional isolated xAI demo key"],
+  ["XAI_API_KEY_CHATKIT", "Optional isolated xAI experiment key"],
+  ["WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK", "Optional xAI experiments — set true to append direct xAI after the AI Gateway"],
   ["WIRELINE_LAUNCH_DEMO_MODE", "Mark launch telemetry as demo-only until real customers are admitted"],
   ["GOOGLE_CLIENT_ID", "Gmail OAuth - disables email integration when unset"],
   ["GOOGLE_CLIENT_SECRET", "Gmail OAuth"],

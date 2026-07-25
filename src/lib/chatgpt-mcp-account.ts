@@ -7,8 +7,8 @@ export const CHATGPT_ACCOUNT_WIDGET_URI = "ui://widget/wireline-agent-draft-v2.h
  * occurs through the OAuth-protected tool so every resulting draft belongs to
  * the connected Wireline workspace.
  *
- * Private voice uses the same Grok/xAI WebSocket + PCM contract as Studio
- * LiveVoiceSandbox — not OpenAI Realtime WebRTC.
+ * Private voice uses the same OpenAI Realtime WebRTC contract as Studio live
+ * voice — an ephemeral client secret plus a browser SDP exchange.
  */
 export function buildAccountBoundWidgetHtml(): string {
   return `<!doctype html>
@@ -22,130 +22,54 @@ export function buildAccountBoundWidgetHtml(): string {
 <div id="app"><div class="card"><div class="eyebrow">Wireline agent draft</div><h2 id="name">Your private phone agent</h2><p id="summary">Connect Wireline, then describe the agent you want to create in your workspace.</p><div class="meta"><div><strong>Role</strong><span id="role">Not configured</span></div><div><strong>Business</strong><span id="business">Wireline workspace</span></div></div><div class="actions"><button id="voice" class="primary" type="button" disabled>Try private voice</button><a id="open" class="button" href="https://trywireline.com/studio" target="_blank" rel="noreferrer">Open in Wireline</a></div><div class="live" id="live">Private simulation ready. It cannot place calls, access records, or take an external action.</div><div class="status" id="status" aria-live="polite">Connect Wireline to create a private agent draft.</div><p class="note">Agent drafts are saved to your Wireline account. Phone numbers, real calls, messaging, integrations, and launch are configured separately in Wireline.</p></div></div>
 <script>
 (() => {
-  const RATE = 24000;
-  const CHUNK = 2400;
   const state = {
     agentId: null,
     pending: new Map(),
     sequence: 0,
-    ws: null,
+    peer: null,
+    channel: null,
     stream: null,
-    audio: null,
-    processor: null,
-    source: null,
-    sink: null,
-    micQueue: new Int16Array(0),
-    playTime: 0,
-    sources: [],
+    remoteAudio: null,
   };
   const $ = (id) => document.getElementById(id);
   const status = (text) => { $("status").textContent = text || ""; };
 
-  function resample(input, inputRate) {
-    if (inputRate === RATE) return input;
-    const ratio = inputRate / RATE;
-    const output = new Float32Array(Math.max(1, Math.round(input.length / ratio)));
-    for (let i = 0; i < output.length; i += 1) {
-      const index = i * ratio;
-      const left = Math.floor(index);
-      const right = Math.min(left + 1, input.length - 1);
-      const fraction = index - left;
-      output[i] = (input[left] || 0) * (1 - fraction) + (input[right] || 0) * fraction;
-    }
-    return output;
-  }
-
-  function floatToPcm(input, inputRate) {
-    const sampled = resample(input, inputRate);
-    const pcm = new Int16Array(sampled.length);
-    for (let i = 0; i < sampled.length; i += 1) {
-      const value = Math.max(-1, Math.min(1, sampled[i] || 0));
-      pcm[i] = value < 0 ? value * 0x8000 : value * 0x7fff;
-    }
-    return pcm;
-  }
-
-  function encodePcm(pcm) {
-    const bytes = new Uint8Array(pcm.buffer, pcm.byteOffset, pcm.byteLength);
-    let binary = "";
-    for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
-    return btoa(binary);
-  }
-
-  function decodePcm(input) {
-    const binary = atob(input);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-    return new Int16Array(bytes.buffer);
-  }
-
-  function stopPlayback() {
-    state.sources.forEach((node) => { try { node.stop(); } catch (_) {} });
-    state.sources = [];
-    state.playTime = state.audio ? state.audio.currentTime : 0;
-  }
-
-  function playDelta(delta) {
-    if (!state.audio || !delta) return;
-    const pcm = decodePcm(delta);
-    const buffer = state.audio.createBuffer(1, pcm.length, RATE);
-    const channel = buffer.getChannelData(0);
-    for (let i = 0; i < pcm.length; i += 1) channel[i] = (pcm[i] || 0) / 0x8000;
-    const source = state.audio.createBufferSource();
-    source.buffer = buffer;
-    source.connect(state.audio.destination);
-    const startAt = Math.max(state.playTime, state.audio.currentTime);
-    source.start(startAt);
-    state.playTime = startAt + buffer.duration;
-    state.sources.push(source);
-    source.onended = () => {
-      state.sources = state.sources.filter((node) => node !== source);
-    };
-  }
-
-  function flushMic() {
-    if (!state.ws || state.ws.readyState !== WebSocket.OPEN || state.micQueue.length < CHUNK) return;
-    while (state.micQueue.length >= CHUNK) {
-      const frame = state.micQueue.subarray(0, CHUNK);
-      state.micQueue = state.micQueue.subarray(CHUNK);
-      state.ws.send(JSON.stringify({ type: "input_audio_buffer.append", audio: encodePcm(frame) }));
-    }
-  }
-
-  function queueMic(floatSamples, sampleRate) {
-    const pcm = floatToPcm(floatSamples, sampleRate);
-    const next = new Int16Array(state.micQueue.length + pcm.length);
-    next.set(state.micQueue, 0);
-    next.set(pcm, state.micQueue.length);
-    state.micQueue = next.length > CHUNK * 80 ? next.subarray(next.length - CHUNK * 80) : next;
-    flushMic();
+  function waitForIce(peer) {
+    if (peer.iceGatheringState === "complete") return Promise.resolve();
+    return new Promise((resolve) => {
+      const done = () => {
+        if (peer.iceGatheringState === "complete") {
+          peer.removeEventListener("icegatheringstatechange", done);
+          resolve();
+        }
+      };
+      peer.addEventListener("icegatheringstatechange", done);
+      setTimeout(() => {
+        peer.removeEventListener("icegatheringstatechange", done);
+        resolve();
+      }, 2500);
+    });
   }
 
   function stopVoice() {
-    stopPlayback();
-    if (state.ws) {
-      try { state.ws.close(); } catch (_) {}
+    if (state.channel) {
+      try { state.channel.close(); } catch (_) {}
     }
-    if (state.processor) {
-      try { state.processor.disconnect(); } catch (_) {}
-    }
-    if (state.source) {
-      try { state.source.disconnect(); } catch (_) {}
-    }
-    if (state.sink) {
-      try { state.sink.disconnect(); } catch (_) {}
+    if (state.peer) {
+      try { state.peer.close(); } catch (_) {}
     }
     if (state.stream) state.stream.getTracks().forEach((track) => track.stop());
-    if (state.audio) {
-      try { state.audio.close(); } catch (_) {}
+    if (state.remoteAudio) {
+      try {
+        state.remoteAudio.pause();
+        state.remoteAudio.srcObject = null;
+        state.remoteAudio.remove();
+      } catch (_) {}
     }
-    state.ws = null;
+    state.peer = null;
+    state.channel = null;
     state.stream = null;
-    state.audio = null;
-    state.processor = null;
-    state.source = null;
-    state.sink = null;
-    state.micQueue = new Int16Array(0);
+    state.remoteAudio = null;
     $("voice").textContent = "Try private voice";
     $("live").classList.remove("show");
   }
@@ -208,7 +132,7 @@ export function buildAccountBoundWidgetHtml(): string {
   );
 
   $("voice").addEventListener("click", async () => {
-    if (state.ws) {
+    if (state.peer) {
       stopVoice();
       status("Private voice simulation ended.");
       return;
@@ -226,11 +150,8 @@ export function buildAccountBoundWidgetHtml(): string {
         parsed.meta.realtime_session ||
         (parsed.result && parsed.result._meta && parsed.result._meta.realtime_session);
       const token = session && (session.token || session.value || session.client_secret);
-      const endpoint = session && session.endpoint;
-      const sessionConfig = session && session.session;
-      if (!token || !endpoint || !sessionConfig) {
-        throw new Error("Private voice simulation is not available right now.");
-      }
+      const endpoint = (session && session.endpoint) || "https://api.openai.com/v1/realtime/calls";
+      if (!token) throw new Error("Private voice simulation is not available right now.");
 
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -240,85 +161,58 @@ export function buildAccountBoundWidgetHtml(): string {
           channelCount: 1,
         },
       });
-      const audio = new AudioContext({ sampleRate: RATE });
-      await audio.resume();
-      const source = audio.createMediaStreamSource(stream);
-      const processor = audio.createScriptProcessor(2048, 1, 1);
-      const sink = audio.createGain();
-      sink.gain.value = 0;
-      processor.onaudioprocess = (event) =>
-        queueMic(event.inputBuffer.getChannelData(0), audio.sampleRate);
-      source.connect(processor);
-      processor.connect(sink);
-      sink.connect(audio.destination);
-
-      const ws = new WebSocket(String(endpoint), ["xai-client-secret." + token]);
+      const peer = new RTCPeerConnection();
+      const channel = peer.createDataChannel("oai-events");
+      const remoteAudio = document.createElement("audio");
+      remoteAudio.autoplay = true;
+      remoteAudio.setAttribute("playsinline", "true");
+      document.body.appendChild(remoteAudio);
       state.stream = stream;
-      state.audio = audio;
-      state.source = source;
-      state.processor = processor;
-      state.sink = sink;
-      state.ws = ws;
-      state.playTime = 0;
+      state.peer = peer;
+      state.channel = channel;
+      state.remoteAudio = remoteAudio;
 
-      await new Promise((resolve, reject) => {
-        const watchdog = setTimeout(() => {
-          reject(new Error("Private voice simulation did not connect."));
-        }, 10000);
-        ws.onopen = () => {
-          clearTimeout(watchdog);
-          ws.send(JSON.stringify({ type: "session.update", session: sessionConfig }));
-          flushMic();
-          if (session.greeting) {
-            ws.send(
-              JSON.stringify({
-                type: "conversation.item.create",
-                item: {
-                  type: "force_message",
-                  role: "assistant",
-                  interruptible: true,
-                  content: [{ type: "output_text", text: session.greeting }],
-                },
-              }),
-            );
-          }
-          resolve();
-        };
-        ws.onerror = () => {
-          clearTimeout(watchdog);
-          reject(new Error("Private voice simulation could not start."));
-        };
-        ws.onclose = () => {
-          clearTimeout(watchdog);
-          reject(new Error("Private voice simulation closed before it was ready."));
-        };
-      });
-
-      ws.onmessage = (message) => {
-        let event;
-        try {
-          event = JSON.parse(String(message.data));
-        } catch (_) {
-          return;
-        }
-        const type = String(event.type || "");
-        if (type === "response.output_audio.delta" && typeof event.delta === "string") {
-          playDelta(event.delta);
-        }
-        if (type === "input_audio_buffer.speech_started") stopPlayback();
-        if (type === "error") {
-          const detail = event.error && event.error.message ? event.error.message : "Private voice encountered an error.";
-          stopVoice();
-          status(detail);
-        }
+      stream.getTracks().forEach((track) => peer.addTrack(track, stream));
+      peer.ontrack = (event) => {
+        remoteAudio.srcObject = event.streams[0] || new MediaStream([event.track]);
       };
-
-      ws.onclose = () => {
-        if (state.ws === ws) {
+      peer.onconnectionstatechange = () => {
+        if (["failed", "closed", "disconnected"].includes(peer.connectionState) && state.peer === peer) {
           stopVoice();
           status("Private voice simulation ended.");
         }
       };
+
+      const offer = await peer.createOffer();
+      await peer.setLocalDescription(offer);
+      await waitForIce(peer);
+      const localSdp = peer.localDescription && peer.localDescription.sdp ? peer.localDescription.sdp : offer.sdp;
+      const sdpResponse = await fetch(String(endpoint), {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/sdp",
+        },
+        body: localSdp,
+      });
+      const answer = await sdpResponse.text();
+      if (!sdpResponse.ok || !String(answer).startsWith("v=")) {
+        throw new Error("Private voice simulation could not start.");
+      }
+      await peer.setRemoteDescription({ type: "answer", sdp: answer });
+
+      const greeting = session.greeting && String(session.greeting).trim();
+      if (greeting) {
+        const sendGreeting = () => {
+          if (channel.readyState !== "open") return;
+          channel.send(JSON.stringify({
+            type: "response.create",
+            response: { instructions: "Begin the conversation with this greeting: " + greeting },
+          }));
+        };
+        if (channel.readyState === "open") sendGreeting();
+        else channel.addEventListener("open", sendGreeting, { once: true });
+      }
 
       $("voice").textContent = "End private voice";
       $("live").classList.add("show");

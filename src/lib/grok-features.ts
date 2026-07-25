@@ -1,42 +1,35 @@
 /**
- * Grok-powered differentiators (xAI integration points).
- * These represent substantive capabilities, not marketing copy.
- * Real-time voice sessions, tool use, and reasoning paths are implemented
- * in src/lib/voice/grok-voice-* and related Grok realtime routes.
+ * Optional xAI experiment metadata.
  *
- * World-class unique value: Grok's search, wit, and reasoning enable agents that are
- * more truthful, up-to-date, and delightfully capable than generic LLMs.
- * Integrated without vendor exposure.
+ * Wireline's managed reasoning default is OpenAI, browser/mobile demos use
+ * OpenAI Realtime, and phone demonstrations use Vapi. xAI is not part of any
+ * default or customer-facing demo path.
  */
 export const GROK_REALTIME_VOICE = {
-  description: "Authenticated browser and mobile live voice sessions using xAI Voice Agent API",
-  enabled: true,
-  constraints: "Knowledge search tool only during tests; production PSTN stays on Vapi",
+  description: "Optional internal xAI realtime experiment",
+  enabled: false,
+  constraints: "Never mounted as a default or customer-facing demo; production PSTN stays on Vapi",
 } as const;
 
 export const GROK_MODEL_OPTIONS = {
-  note: "Grok 4.5 is the managed structured primary (STRUCTURED_PRIMARY_MODEL); direct OpenAI, Gemini, and the Vercel AI Gateway carry ordered continuity fallback. Override the model with WIRELINE_XAI_STRUCTURED_MODEL.",
+  note: "xAI structured use is explicit opt-in only. OpenAI is the managed default with Gemini and the AI Gateway providing continuity.",
 } as const;
 
 export const GROK_AGENT_STRENGTHS = {
-  realtimeSearch:
-    "Search approved Training knowledge during live voice tests for accurate, grounded answers.",
-  personalityTuning:
-    "Distinct profiles (bright/warm/clear/etc) leverage a helpful, maximally truthful style.",
-  advancedReasoning:
-    "High-effort reasoning paths for complex tasks like planning or objection handling.",
-  creativeCustomization:
-    "Enables agents with unique voice and mind combinations for standout caller experiences.",
+  realtimeSearch: "Optional experimental live search.",
+  personalityTuning: "Optional experimental personality tuning.",
+  advancedReasoning: "Optional experimental reasoning evaluation.",
+  creativeCustomization: "Optional experimental customization evaluation.",
 } as const;
 
 export function isGrokModelId(model: string | null | undefined): boolean {
   return typeof model === "string" && /grok/i.test(model);
 }
 
-/** Runtime-only prompt section — never surface vendor names in customer UI. */
+/** Runtime-only prompt section for explicitly enabled xAI experiments. */
 export function buildGrokStrengthsPromptSection(): string {
   return [
-    "## Model capabilities",
+    "## Optional experimental model capabilities",
     ...Object.values(GROK_AGENT_STRENGTHS).map((line) => `- ${line}`),
     "- Stay maximally truthful; say when live context is unavailable instead of guessing.",
   ].join("\n");

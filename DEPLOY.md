@@ -92,8 +92,8 @@ specific branch for Preview which is awkward — prefer the UI.
 | `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN`          | Outbound SMS, inbound webhook                                                                                       |
 | `OWNER_PHONE` / `OWNER_EMAIL` / `PLATFORM_SMS_FROM` | Escalation routing (where agent escalations go). Set `OWNER_EMAIL=mikelaurenzo7@gmail.com` for the founder account. |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`       | Billing                                                                                                             |
-| `XAI_API_KEY`                                       | Primary managed structured runtime (direct xAI Responses API, Grok 4.5) and Grok realtime live-voice tests          |
-| `OPENAI_API_KEY`                                    | First automatic structured fallback (GPT-5.6 Terra) and OpenAI Realtime sessions                                    |
+| `OPENAI_API_KEY`                                    | Primary managed structured runtime (direct OpenAI Responses API, GPT-5.6 Terra) and OpenAI Realtime live-voice demos |
+| `XAI_API_KEY`                                       | Optional xAI experiments only; structured fallback also requires `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=true`      |
 | `GEMINI_API_KEY`                                    | Second automatic structured fallback and grounded-search fallback                                                   |
 | `OPENROUTER_API_KEY`                                | Optional — Director chat model picker (Pro+ in app; company key; voice runtime unchanged)                           |
 

@@ -16,11 +16,12 @@ See `docs/CUSTOMER_TERMINOLOGY.md`.
 Do not move the launch runtime to ElevenLabs. ElevenLabs is optional TTS,
 cloning, and showcase infrastructure. Keep:
 
-1. xAI Grok 4.5 for managed structured reasoning (direct OpenAI, Gemini, then the AI Gateway as ordered continuity); Grok realtime for authenticated Studio live voice.
+1. OpenAI GPT-5.6 Terra for managed structured reasoning (Gemini, then the AI Gateway as ordered continuity); OpenAI Realtime for Studio / ChatGPT / guest live voice.
 2. Twilio + Vapi for PSTN orchestration.
 3. OpenAI with Gemini fallback inside the Vapi phone runtime.
 4. Vercel AI Gateway as the funded last-resort structured route.
 5. ElevenLabs as optional voice identity, not reasoning.
+6. xAI only as an explicit opt-in experiment — never a split default for demos vs runtime.
 
 ## Current go/no-go
 

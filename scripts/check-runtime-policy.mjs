@@ -31,44 +31,37 @@ if (packageJson.includes('"@anthropic-ai/sdk"')) fail("Anthropic SDK remains in 
 if (client.includes("@anthropic-ai/sdk") || client.includes("api.anthropic.com"))
   fail("managed runtime references Anthropic");
 
-if (!client.includes('const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses"'))
-  fail("managed runtime is not using the direct xAI Responses endpoint");
 if (!client.includes("https://api.openai.com/v1/responses"))
-  fail("managed runtime lost the direct OpenAI Responses fallback endpoint");
-if (!client.includes("xAI request failed; trying OpenAI fallback"))
-  fail("xAI-to-OpenAI fallback order is missing");
+  fail("managed runtime is not using the direct OpenAI Responses endpoint");
 if (!client.includes("OpenAI request failed; trying Gemini fallback"))
   fail("OpenAI-to-Gemini fallback order is missing");
 if (!client.includes("Gemini request failed; trying AI Gateway fallback"))
   fail("Gemini-to-AI-Gateway fallback order is missing");
-const xaiPosition = client.indexOf('providers.push({ name: "xAI"');
 const openAIPosition = client.indexOf('providers.push({ name: "OpenAI"');
 const geminiPosition = client.indexOf('providers.push({ name: "Gemini"');
 const gatewayPosition = client.indexOf('providers.push({ name: "AI Gateway"');
+const xaiPosition = client.indexOf('providers.push({ name: "xAI"');
 if (
-  xaiPosition < 0 ||
   openAIPosition < 0 ||
   geminiPosition < 0 ||
   gatewayPosition < 0 ||
-  !(xaiPosition < openAIPosition && openAIPosition < geminiPosition && geminiPosition < gatewayPosition)
+  !(openAIPosition < geminiPosition && geminiPosition < gatewayPosition)
 )
-  fail("managed runtime provider chain is not xAI -> OpenAI -> Gemini -> AI Gateway");
-if (client.includes("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK"))
-  fail("retired xAI opt-in switch still gates the managed Grok primary");
+  fail("managed runtime provider chain is not OpenAI -> Gemini -> AI Gateway");
+if (xaiPosition >= 0 && !(gatewayPosition < xaiPosition))
+  fail("optional direct xAI fallback appears before the governed AI Gateway route");
+if (!client.includes("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK"))
+  fail("direct xAI fallback is not protected by an explicit opt-in switch");
 if (!client.includes("if (isAbortError(error, options?.signal)) throw error"))
   fail("aborted AI requests can still cascade into fallback providers");
-if (!models.includes("export const XAI_STRUCTURED_PRIMARY_MODEL"))
-  fail("ai-models does not export the xAI structured primary model");
-if (!models.includes("export const STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL"))
-  fail("managed structured default is not the Grok primary");
-if (!models.includes('GROK_4_5: "grok-4.5"')) fail("Grok 4.5 model id is not registered");
-if (!models.includes("XAI_MODELS.GROK_4_5")) fail("managed xAI default is not Grok 4.5");
 if (!models.includes("export const OPENAI_STRUCTURED_PRIMARY_MODEL"))
-  fail("ai-models does not export the OpenAI continuity fallback model");
+  fail("ai-models does not export the OpenAI structured primary model");
+if (!models.includes("export const STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL"))
+  fail("managed structured default is not the OpenAI primary");
 if (!models.includes('GPT_5_6_TERRA: "gpt-5.6-terra"'))
   fail("GPT-5.6 Terra model id is not registered");
 if (!models.includes("OPENAI_MODELS.GPT_5_6_TERRA"))
-  fail("OpenAI continuity fallback default is not GPT-5.6 Terra");
+  fail("managed OpenAI default is not GPT-5.6 Terra");
 if (!structuredModels.includes("STRUCTURED_PRIMARY_MODEL"))
   fail("structured-runtime-models does not route through the managed structured primary");
 
@@ -90,20 +83,20 @@ if (carrierPanel.includes("Claude Sonnet") || carrierPanel.includes('v: "anthrop
   fail("carrier cognitive routing still presents Claude as the managed default");
 
 if (prodEnvCheck.includes("ANTHROPIC_API_KEY")) fail("production env check still asks for Anthropic");
-if (!prodEnvCheck.includes("Primary managed structured runtime (Grok 4.5)"))
-  fail("production env check does not name the Grok primary runtime dependency");
-if (!prodEnvCheck.includes("Structured continuity fallback and OpenAI Realtime sessions"))
-  fail("production env check does not name the OpenAI fallback dependency");
-if (prodEnvCheck.includes("Optional xAI experiments"))
-  fail("production env check still classifies the Grok primary as optional");
+if (!prodEnvCheck.includes("Primary managed runtime and OpenAI Realtime sessions"))
+  fail("production env check does not name the OpenAI runtime dependency");
+if (!prodEnvCheck.includes("Optional xAI experiments"))
+  fail("production env check does not classify xAI as optional");
 if (legalPage.includes("Anthropic's Claude API") || legalPage.includes("<strong>Anthropic</strong>"))
   fail("public legal page still names Anthropic as active inference infrastructure");
-if (!privacyPage.includes("<strong>xAI</strong> — Primary managed AI inference"))
-  fail("public privacy page does not name xAI as the primary inference infrastructure");
-if (!privacyPage.includes("<strong>OpenAI</strong> — Managed continuity inference"))
-  fail("public privacy page does not name OpenAI continuity infrastructure");
+if (!privacyPage.includes("<strong>OpenAI</strong> — Primary managed AI inference"))
+  fail("public privacy page does not name OpenAI as the primary inference infrastructure");
 if (!privacyPage.includes("<strong>Google Gemini</strong>"))
   fail("public privacy page does not name Gemini fallback infrastructure");
+if (!privacyPage.includes("<strong>xAI</strong>"))
+  fail("public privacy page does not disclose optional xAI infrastructure");
+if (!privacyPage.includes("xAI") || !privacyPage.includes("explicitly enabled"))
+  fail("public privacy page does not bound xAI as optional");
 if (privacyPage.includes("Anthropic's Claude API") || privacyPage.includes("<strong>Anthropic</strong>"))
   fail("public privacy page still names Anthropic as active inference infrastructure");
 if (!integrationLogos.includes("ALL_LOGOS.openai"))
@@ -141,4 +134,4 @@ const legacyFiles = ["claude-brain.ts", "claude-client.ts", "claude-models.ts", 
 const remaining = legacyFiles.filter((file) => existsSync(resolve(root, "src/lib", file)));
 if (remaining.length) fail(`legacy Claude modules remain: ${remaining.join(", ")}`);
 if (existsSync(resolve(root, "src/routes/claude-routes.ts"))) fail("legacy Claude routes remain");
-if (!process.exitCode) console.log("Grok-first managed runtime policy check passed");
+if (!process.exitCode) console.log("OpenAI-first runtime policy check passed");

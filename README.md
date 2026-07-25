@@ -26,8 +26,8 @@ The current product doctrine is simple. The customer-facing product loop is **Cr
 - **Web / API**: React 19, Vite, Express, TypeScript, Tailwind, Drizzle ORM, Supabase Postgres, Vercel-capable server bundle.
 - **Design**: The Wireline Letterpress design system — Letterpress tokens, brand colors, generated platform tokens, and `src/styles/design-system.css` as the visual source of truth.
 - **Browser**: Manifest V3 command surface with Chromium and Firefox manifest overlays.
-- **Managed runtime**: direct xAI Responses API primary (Grok 4.5 default), direct OpenAI (GPT-5.6 Terra) as the first automatic fallback, Gemini second, and the Vercel AI Gateway as the governed multi-model continuity route (`src/lib/ai-client.ts`, `src/lib/ai-models.ts`).
-- **Voice / realtime**: Twilio + Vapi own production PSTN calls (OpenAI GPT-4o managed call model with Gemini fallback); the xAI Grok realtime voice contract powers authenticated live-voice test and simulation sessions, and no realtime test surface ever takes over customer PSTN calls (`src/lib/voice/`, `docs/GROK_LIVE_VOICE.md`).
+- **Managed runtime**: direct OpenAI Responses API primary (GPT-5.6 Terra default), Gemini as the first automatic fallback, and the Vercel AI Gateway as the governed multi-model continuity route. xAI is opt-in experiment-only (`src/lib/ai-client.ts`, `src/lib/ai-models.ts`).
+- **Voice / realtime**: Twilio + Vapi own production PSTN calls (OpenAI GPT-4o managed call model with Gemini fallback); OpenAI Realtime powers Studio, ChatGPT, and guest live-voice demos, and no realtime test surface ever takes over customer PSTN calls (`src/lib/voice/`, `docs/GROK_LIVE_VOICE.md`).
 - **Video**: HeyGen/LiveAvatar SDK-backed presenter infrastructure wrapped behind Wireline-owned copy and consent states.
 - **Mobile**: Native Kotlin/Compose and SwiftUI.
 

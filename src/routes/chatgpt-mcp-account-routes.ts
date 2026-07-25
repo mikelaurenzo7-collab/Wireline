@@ -27,7 +27,7 @@ import {
 } from "../lib/mcp-transport";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import { rateLimit } from "../lib/rate-limit";
-import { createGrokVoiceClientSession } from "../lib/voice/grok-voice-service";
+import { createOpenAIRealtimeClientSecret } from "../lib/voice/openai-realtime-service";
 import * as schema from "../db/schema";
 
 const router = express.Router();
@@ -409,7 +409,7 @@ function resourceMeta(req: Request) {
     ui: {
       prefersBorder: true,
       domain: issuer(req),
-      csp: { connectDomains: ["https://api.x.ai", "wss://api.x.ai"], resourceDomains: [] },
+      csp: { connectDomains: ["https://api.openai.com"], resourceDomains: [] },
     },
     "openai/widgetDescription":
       "Shows a connected Wireline agent draft, private voice simulation, aggregate workspace status, and a secure path to continue configuration in Wireline.",
@@ -560,9 +560,8 @@ router.post("/mcp", async (req, res) => {
         throw AppError.tooManyRequests(
           "The private voice simulation limit has been reached. Continue testing from Wireline.",
         );
-      const session = await createGrokVoiceClientSession({
+      const session = await createOpenAIRealtimeClientSecret({
         userId: authed.userId,
-        agentId: draft.view.id,
         agentName: draft.view.name,
         instructions: draft.runtimeInstructions,
         tools: [],
@@ -572,7 +571,13 @@ router.post("/mcp", async (req, res) => {
       return jsonRpc(res, id, {
         content: [{ type: "text", text: "Private voice simulation ready." }],
         structuredContent: { status: "ready", agent_id: draft.view.id },
-        _meta: { realtime_session: session, agent_id: draft.view.id },
+        _meta: {
+          realtime_session: {
+            ...session,
+            greeting: `Hi, this is ${draft.view.name}. How can I help?`,
+          },
+          agent_id: draft.view.id,
+        },
       });
     }
 

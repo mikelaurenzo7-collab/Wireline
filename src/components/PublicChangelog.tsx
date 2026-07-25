@@ -47,8 +47,8 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Jul 25, 2026",
     tag: "infra",
-    title: "Structured runtime promoted — Grok 4.5 primary",
-    body: "Managed structured reasoning now runs xAI Grok 4.5 first, with OpenAI GPT-5.6 Terra as the first continuity fallback, Gemini second, and the Vercel AI Gateway as the governed last route. Simple and medium tasks ride Grok 4.1 Fast Reasoning for lower latency and cost. Production PSTN calls are unchanged on Twilio + Vapi with the managed OpenAI call model.",
+    title: "OpenAI unified for reasoning and live demos",
+    body: "Managed structured reasoning and every customer-facing live-voice demo (Studio, ChatGPT private simulation, guest previews) now default to OpenAI, with Gemini and the Vercel AI Gateway as ordered continuity. Production PSTN stays on Twilio + Vapi with the managed OpenAI call model. xAI remains optional experiment-only — never the split default for demos or runtime.",
   },
   {
     date: "Jul 13, 2026",
@@ -126,7 +126,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jan 27, 2026",
     tag: "infra",
     title: "Voice runtime rebalanced — OpenAI primary, Gemini continuity",
-    body: "Structured reasoning runs OpenAI GPT-5.6 Terra first, with Gemini as direct continuity and Vercel AI Gateway as the governed last route. Authenticated Studio live-voice tests use xAI Grok realtime; guest demos use OpenAI Realtime. Production PSTN stays on Twilio + Vapi — model shopping is not the product.",
+    body: "Structured reasoning runs OpenAI GPT-5.6 Terra first, with Gemini as direct continuity and Vercel AI Gateway as the governed last route. Studio and guest live-voice demos use OpenAI Realtime. Production PSTN stays on Twilio + Vapi — model shopping is not the product.",
   },
   {
     date: "Jan 27, 2026",
