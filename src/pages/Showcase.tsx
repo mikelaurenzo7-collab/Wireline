@@ -51,13 +51,32 @@ export default function Showcase() {
               </p>
             </div>
             <div className="mt-8 rounded-[16px] border border-border bg-background/70 p-4">
-              <BrowserCallWidget agentName={primaryDemo.name} buttonLabel="Start live demo" />
+              <BrowserCallWidget
+                agentName={primaryDemo.name}
+                buttonLabel="Start live demo"
+                fallback={
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Prefer the phone? Call a live demo line — no signup to listen.
+                    </p>
+                    <a
+                      href={`tel:${primaryDemo.tel}`}
+                      className="marketing-btn-secondary mt-3 inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
+                    >
+                      Call {primaryDemo.display}
+                    </a>
+                  </div>
+                }
+              />
             </div>
           </div>
         }
       />
 
-      <section id="demo-lines" className="border-b border-border bg-card px-5 py-14 sm:px-8 sm:py-20">
+      <section
+        id="demo-lines"
+        className="border-b border-border bg-card px-5 py-14 sm:px-8 sm:py-20"
+      >
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-2xl text-center">
             <p className="wl-stitch-eyebrow">Prefer the phone?</p>
@@ -81,10 +100,15 @@ export default function Showcase() {
                   {agent.name}
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">{agent.role}</p>
-                <p className="mt-4 font-mono text-sm font-semibold text-foreground">{agent.display}</p>
+                <p className="mt-4 font-mono text-sm font-semibold text-foreground">
+                  {agent.display}
+                </p>
                 <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
                   Call now
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                  <ArrowRight
+                    className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  />
                 </span>
               </a>
             ))}

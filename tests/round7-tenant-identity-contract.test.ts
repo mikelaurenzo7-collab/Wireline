@@ -35,6 +35,10 @@ describe("round-7 shared-provider tenant identity", () => {
     expect(fn).toContain("schema.phoneNumbers.userId, userId");
     expect(fn).toContain("row.vapiNumberId === vapiId");
     expect(fn).toContain("row.phoneNumber === smsFrom");
+    // The WhatsApp sender is the enumerable variant of the same shared-credential
+    // identity and must be owned before it can be adopted.
+    expect(fn).toContain("update.twilioWhatsappFromNumber");
+    expect(fn).toContain("row.phoneNumber === whatsappFrom");
     expect(fn).toContain("403");
   });
 

@@ -113,7 +113,7 @@ export async function emitVoiceMinuteOverageEvent(_opts: {
   return;
 }
 
-function subscriptionBillingInterval(sub: Stripe.Subscription): SubscriptionBillingInterval {
+export function subscriptionBillingInterval(sub: Stripe.Subscription): SubscriptionBillingInterval {
   return sub.items.data.some((item) => item.price.recurring?.interval === "year")
     ? "year"
     : "month";

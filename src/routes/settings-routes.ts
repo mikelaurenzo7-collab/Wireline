@@ -128,7 +128,15 @@ async function assertTelecomIdentityOwned(
     typeof update.vapiPhoneNumberId === "string" ? update.vapiPhoneNumberId.trim() : "";
   const smsFrom =
     typeof update.twilioSmsFromNumber === "string" ? update.twilioSmsFromNumber.trim() : "";
-  if (!vapiId && !smsFrom) return;
+  // The WhatsApp sender is the same shape of shared-credential identity as the
+  // SMS from-number and takes precedence in buildMessagePayload — and a
+  // competitor's WhatsApp business number is public, so it is the enumerable
+  // spoofing vector. Guard it against owned lines exactly like smsFrom.
+  const whatsappFrom =
+    typeof update.twilioWhatsappFromNumber === "string"
+      ? update.twilioWhatsappFromNumber.trim()
+      : "";
+  if (!vapiId && !smsFrom && !whatsappFrom) return;
 
   const owned = await drizzle
     .select({
@@ -148,6 +156,12 @@ async function assertTelecomIdentityOwned(
     throw AppError.fromHttpStatus(
       403,
       "That SMS number is not provisioned to this workspace. Provision a number before sending from it.",
+    );
+  }
+  if (whatsappFrom && !owned.some((row) => row.phoneNumber === whatsappFrom)) {
+    throw AppError.fromHttpStatus(
+      403,
+      "That WhatsApp number is not provisioned to this workspace. Provision a number before sending from it.",
     );
   }
 }

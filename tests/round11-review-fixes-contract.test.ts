@@ -52,4 +52,48 @@ describe("round-11 review fixes", () => {
     const structured = read("src/lib/ai-structured.ts");
     expect(structured).toContain('provider: "xai" | "openai" | "gemini"');
   });
+
+  it("guards the WhatsApp sender identity against cross-tenant adoption", () => {
+    const settings = read("src/routes/settings-routes.ts");
+    const fn = settings.slice(
+      settings.indexOf("async function assertTelecomIdentityOwned"),
+      settings.indexOf('router.post(\n  "/api/settings"'),
+    );
+    expect(fn).toContain("update.twilioWhatsappFromNumber");
+    expect(fn).toContain("row.phoneNumber === whatsappFrom");
+    expect(fn).toContain("403");
+  });
+
+  it("memoizes the unauthenticated public health probe and marks it shared-cacheable", () => {
+    const health = read("src/routes/health-routes.ts");
+    expect(health).toContain("publicProbeCache");
+    expect(health).toContain("PUBLIC_PROBE_TTL_MS");
+    expect(health).toContain("s-maxage=60");
+    // A rejected probe pair must not stick as a poison cache entry.
+    expect(health).toContain("publicProbeCache = null");
+  });
+
+  it("scales the Runtime Allowance reversal to the refunded portion", () => {
+    const credit = read("src/lib/subscription-welcome-credit.ts");
+    expect(credit).toContain("portion = 1");
+    expect(credit).toContain("runtimeAllowanceUsdForPlan(planId, interval) * clampedPortion");
+    const billing = read("src/routes/billing-routes.ts");
+    // Interval resolved the same way the grant did, not off items.data[0].
+    expect(billing).toContain("subscriptionBillingInterval(sub)");
+    expect(billing).toContain("refundedCents / chargeCents");
+  });
+
+  it("dials a real demo line (not a support employee) from the 404 CTA", () => {
+    const notFound = read("src/components/layout/NotFound.tsx");
+    expect(notFound).toContain("LANDING_PUBLIC_DEMO_AGENTS");
+    expect(notFound).toContain("tel:${DEMO_LINE.tel}");
+    expect(notFound).not.toContain("tel:+16305811834");
+    // The stale "4 plans" hint (there are five paid tiers plus Scale) is gone.
+    expect(notFound).not.toContain("4 plans");
+  });
+
+  it("renders in-page hash CTAs as native anchors so they actually scroll", () => {
+    const hero = read("src/components/marketing/MarketingHero.tsx");
+    expect(hero).toContain("tel:|mailto:|https?:|#");
+  });
 });

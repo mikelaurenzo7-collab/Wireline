@@ -31,7 +31,10 @@ type MarketingHeroProps = {
 };
 
 function isExternalHref(href: string): boolean {
-  return /^(tel:|mailto:|https?:)/.test(href);
+  // In-page hash targets ("#demo-lines") must render as native anchors too:
+  // React Router's <Link> uses pushState, which does not trigger the browser's
+  // hash-scroll, so a hero CTA pointing at a "#section" silently does nothing.
+  return /^(tel:|mailto:|https?:|#)/.test(href);
 }
 
 export default function MarketingHero({

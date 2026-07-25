@@ -371,14 +371,16 @@ export async function placeOutboundCall(opts: {
   const outboundRawProfileDesc = outboundCapturedProfileRes[0]?.description || "";
   const outboundCustomerIntelBlock = buildCustomerIntelBlock(outboundRawProfileDesc, true);
 
+  const outboundTimeZone = agentConfig.timezone || "America/New_York";
   const currentDateTime = new Date().toLocaleString("en-US", {
-    timeZone: agentConfig.timezone || "America/New_York",
+    timeZone: outboundTimeZone,
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZoneName: "short",
   });
   const outboundAgentRole = mapOutboundVoiceRole(agentConfig.role || DEFAULT_AGENT_ROLE);
   const archetype =
@@ -447,7 +449,7 @@ If you detect you have reached a voicemail or answering machine (recorded greeti
 - On outbound calls, brief silence after your opener often means the contact is processing, not dismissing. Be patient.
 
 ## OUTBOUND CONVERSATION DISCIPLINE
-Today is ${currentDateTime} (Eastern Time). Calculate specific dates for "tomorrow," "next week," etc.
+Today is ${currentDateTime} in the agent's local timezone (${outboundTimeZone}). Calculate specific dates for "tomorrow," "next week," etc. in that timezone.
 - Be confident and thorough. These calls are often unexpected for the contact — take the time to explain clearly. Don't rush through value props or gloss over details. If they're listening, earn their attention with substance.
 - Opener discipline: No generic "How are you today?" Get to the reason for the call naturally, but don't be abrupt. A warm, confident introduction builds trust.
 - One question per turn by default, but you may ask multiple questions at once if you need more context to answer sufficiently. Let them finish before you respond.
