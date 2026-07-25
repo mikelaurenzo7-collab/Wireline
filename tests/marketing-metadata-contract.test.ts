@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { planById } from "../src/lib/plan-catalog";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -31,14 +32,13 @@ describe("marketing metadata contract", () => {
   it("keeps public pricing and contact copy aligned to the active catalog", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const contact = read("src/components/ContactPage.tsx");
-    const catalog = read("src/lib/plan-catalog.ts");
-
-    expect(catalog).toContain('id: "team"');
-    expect(catalog).toContain("price_usd_monthly: 19");
-    expect(catalog).toContain("included_phone_numbers: 1");
-    expect(catalog).toContain('id: "business"');
-    expect(catalog).toContain("price_usd_monthly: 59");
-    expect(catalog).toContain("included_phone_numbers: 5");
+    // Assert catalog capacity through the module, not raw substrings: a bare
+    // `included_phone_numbers: 1` matches whichever plan happens to own it and
+    // silently passes after a reprice.
+    expect(planById("team")?.price_usd_monthly).toBe(24);
+    expect(planById("team")?.included_phone_numbers).toBe(2);
+    expect(planById("business")?.price_usd_monthly).toBe(59);
+    expect(planById("business")?.included_phone_numbers).toBe(5);
 
     expect(pricing).toContain("Build free. Launch for $9. Scale when it pays.");
     expect(contact).toContain('planById("starter")');

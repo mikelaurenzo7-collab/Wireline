@@ -55,8 +55,7 @@ const PAID_TIERS = [
     publicName: "Starter Plus",
     eyebrow: "Founder hybrid",
     tagline: "Personal Concierge + business employee — from $24/month.",
-    detail:
-      "Two live agents and two number slots: one for your life, one for the company—with 50 voice minutes and full Lead Hunt, inbox, SMS, and email.",
+    detail: `Two live agents and two number slots: one for your life, one for the company—with ${planById.team.voice_minutes_monthly} voice minutes and full Lead Hunt, inbox, SMS, and email.`,
     ctaMonthly: "Choose Starter Plus",
     ctaAnnual: "Choose annual Starter Plus",
     ctaPath: "/signup?plan=team",

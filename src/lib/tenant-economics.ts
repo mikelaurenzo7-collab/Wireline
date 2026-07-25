@@ -10,6 +10,7 @@ import {
   PHONE_NUMBER_COST_MONTHLY_USD,
   VOICE_VARIABLE_COST_PER_MIN_USD,
   planById,
+  type BillingInterval,
   type StripePlan,
 } from "./plan-catalog";
 import { getVoiceUsageSnapshot } from "./voice-usage";
@@ -40,17 +41,32 @@ export function computeGrossMarginPct(revenuePerMin: number, cogsPerMin: number)
   return Math.round(((revenuePerMin - cogsPerMin) / revenuePerMin) * 1000) / 10;
 }
 
-export function computePlanFullUtilizationMarginPct(plan: StripePlan): number | null {
-  if (!Number.isFinite(plan.price_usd_monthly) || plan.price_usd_monthly <= 0) return null;
+/**
+ * Contribution margin at full included utilization for one billing interval.
+ *
+ * Annual is billed at a discount (roughly two months free) while the reserved
+ * monthly COGS is unchanged, so the annual interval is always the tighter of
+ * the two. Callers that guard pricing must check both — see
+ * {@link assertPlanMarginFloors}.
+ */
+export function computePlanFullUtilizationMarginPct(
+  plan: StripePlan,
+  interval: BillingInterval = "month",
+): number | null {
+  const recurringRevenue =
+    interval === "year" ? plan.price_usd_annual / 12 : plan.price_usd_monthly;
+  if (!Number.isFinite(recurringRevenue) || recurringRevenue <= 0) return null;
   const paymentCost =
-    plan.price_usd_monthly * PAYMENT_PROCESSING_RATE + PAYMENT_PROCESSING_FIXED_USD;
+    interval === "year"
+      ? (plan.price_usd_annual * PAYMENT_PROCESSING_RATE + PAYMENT_PROCESSING_FIXED_USD) / 12
+      : plan.price_usd_monthly * PAYMENT_PROCESSING_RATE + PAYMENT_PROCESSING_FIXED_USD;
   const voiceCost = plan.voice_minutes_monthly * VOICE_VARIABLE_COST_PER_MIN_USD;
   const numberCost = plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD;
   // Treat every included Runtime Allowance dollar as fully consumed COGS. This
   // intentionally understates margin because most optional actions cost less
   // than their customer-facing reserve.
   const totalCost = voiceCost + numberCost + plan.runtime_allowance_usd_monthly + paymentCost;
-  return Math.round(((plan.price_usd_monthly - totalCost) / plan.price_usd_monthly) * 1000) / 10;
+  return Math.round(((recurringRevenue - totalCost) / recurringRevenue) * 1000) / 10;
 }
 
 export async function getTenantEconomics(userId: string): Promise<TenantEconomics> {
@@ -145,17 +161,20 @@ export function assertPlanMarginFloors(): { ok: boolean; violations: string[] } 
     );
     const overageFloor = overageFloors[id];
     if (overageMargin == null || overageMargin < overageFloor) {
-      violations.push(
-        `${id}: overage margin ${overageMargin ?? "n/a"}% < floor ${overageFloor}%`,
-      );
+      violations.push(`${id}: overage margin ${overageMargin ?? "n/a"}% < floor ${overageFloor}%`);
     }
 
-    const includedMargin = computePlanFullUtilizationMarginPct(plan);
     const includedFloor = includedFloors[id];
-    if (includedMargin == null || includedMargin < includedFloor) {
-      violations.push(
-        `${id}: full-utilization contribution ${includedMargin ?? "n/a"}% < floor ${includedFloor}%`,
-      );
+    // Annual is the binding interval (discounted revenue, unchanged monthly
+    // COGS). Checking only the monthly side would have let an annual plan sink
+    // below its floor without ever tripping launch readiness.
+    for (const interval of ["month", "year"] as const) {
+      const includedMargin = computePlanFullUtilizationMarginPct(plan, interval);
+      if (includedMargin == null || includedMargin < includedFloor) {
+        violations.push(
+          `${id}: ${interval}ly full-utilization contribution ${includedMargin ?? "n/a"}% < floor ${includedFloor}%`,
+        );
+      }
     }
   }
 

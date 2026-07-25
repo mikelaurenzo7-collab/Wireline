@@ -81,9 +81,9 @@ for (const [id, monthly, annual] of expectedPlans) {
 
 const expectedCapacity = [
   ["starter", 1, 1, 20],
-  ["team", 2, 2, 50],
-  ["business", 5, 5, 100],
-  ["enterprise", 15, 15, 250],
+  ["team", 2, 2, 55],
+  ["business", 5, 5, 120],
+  ["enterprise", 15, 15, 285],
 ];
 for (const [planId, agents, numbers, voiceMinutes] of expectedCapacity) {
   const product = FOUNDER_PRODUCTS.find(

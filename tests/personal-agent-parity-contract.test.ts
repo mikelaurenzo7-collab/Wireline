@@ -157,7 +157,7 @@ describe("founder hybrid pricing — Starter Plus pair capacity", () => {
     expect(team?.price_usd_annual).toBe(240);
     expect(team?.max_agents).toBe(2);
     expect(team?.included_phone_numbers).toBe(2);
-    expect(team?.voice_minutes_monthly).toBe(50);
+    expect(team?.voice_minutes_monthly).toBe(55);
     expect(supportsFounderAgentPair("team")).toBe(true);
     expect(supportsFounderAgentPair("starter")).toBe(false);
     const catalog = read("src/lib/plan-catalog.ts");

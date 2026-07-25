@@ -888,6 +888,10 @@ export const BUSINESS_TOOL_NAMES = new Set<AgentToolName>([
   "crm_log_call",
   "crm_create_opportunity",
   "send_slack_notification",
+  // Teams is the same class of workplace-chat tool as Slack. Leaving it out
+  // let personal creates keep a business-workspace integration and split it
+  // to the wrong side of the everyday/business UI grouping.
+  "send_teams_message",
   "list_x_ad_campaigns",
   "get_x_ad_campaign_stats",
   "send_contract",
