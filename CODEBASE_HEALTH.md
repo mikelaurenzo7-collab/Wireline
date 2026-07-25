@@ -88,7 +88,6 @@ Use customer-facing language consistently:
 | `docs/business-usage-pricing-decision.md` | Billing catalog and Stripe product model. |
 | `docs/CLIENT_SURFACES.md` | Web, browser, native, and ChatGPT ownership boundaries. |
 | `docs/CHATGPT_APP.md` | ChatGPT App contract and release verification. |
-| `docs/superpowers/**` | Historical planning/spec artifacts only unless promoted into canonical docs. |
 
 ## Verification
 
@@ -118,7 +117,7 @@ Run the narrowest sufficient check while developing, then the full gate before m
 
 ### 2026-07-09 launch-readiness pass
 
-- Rewrote `docs/PERFECTION_PLAN.md` as a self-contained launch-readiness record (it previously pointed at a personal `Downloads` pack) and linked it from `docs/README.md`.
+- Rewrote the launch-readiness record as self-contained (it previously pointed at a personal `Downloads` pack). Retired 2026-07-25 once its contents were fully reflected in code and the active docs.
 - Deleted stale `references/` design-migration planning files (kept `design-system-navigation-plan.md`, which a contract test reads) and the empty `.stitch/` placeholder.
 - Hardened Vercel secret handling: sync scripts write `encrypted` (never `plain`), secret reads go through `scripts/lib/vercel-env-values.mjs` per-variable decryption, and `DATABASE_POOL_URL` joined the env examples and checks.
 - Added `npm run stripe:webhook:check` / `stripe:webhook:align` so the production Stripe webhook's `enabled_events` cannot drift from the handlers in `src/routes/billing-routes.ts`.
@@ -139,7 +138,7 @@ Run the narrowest sufficient check while developing, then the full gate before m
 
 - Added `.grok/artifacts/` and `.grok/tmp/` to `.gitignore`.
 - Refreshed `README.md`, `CODEBASE_HEALTH.md`, `ARCHITECTURE.md`, and `docs/README.md` around the active Create -> Train -> Wire -> Run model.
-- Added `docs/REPO_HEALTH_AUDIT_2026-07-04.md` as the current source of truth for this health pass.
+- Recorded this health pass in a dated audit doc, retired 2026-07-25 after its findings landed; this file is the durable source of truth.
 - Removed tracked Grok/generated review artifacts discovered in `.grok/artifacts/`.
 - Marked generated/local AI artifacts as non-durable source-control material.
 

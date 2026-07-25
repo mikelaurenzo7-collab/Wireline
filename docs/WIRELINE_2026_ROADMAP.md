@@ -28,11 +28,11 @@ Wireline is a **voice + chat AI-employee** SaaS on the **Wireline Letterpress** 
 | `ARCHITECTURE.md`                      | ✅     | Runtime boundaries, security             |
 | `CODEBASE_HEALTH.md`                   | ✅     | Branching, deletion policy               |
 | `docs/README.md`                       | ✅     | Canonical doc index                      |
-| `docs/REPO_HEALTH_AUDIT_2026-07-04.md` | ✅     | Health pass findings                     |
+| `CODEBASE_HEALTH.md` (health log)      | ✅     | Health pass findings                     |
 | CI `npm run verify:full`               | ✅     | Lint, design, authz, tests, build, smoke |
 | Contract tests                         | ✅     | Product voice, agent flow, docs          |
 
-**Ongoing:** Keep generated artifacts out of git; promote durable decisions from `docs/superpowers/**` into canonical docs.
+**Ongoing:** Keep generated artifacts out of git; promote durable decisions into canonical docs rather than leaving them in dated pass notes.
 
 ### Security & secrets
 
