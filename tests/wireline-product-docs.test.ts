@@ -35,7 +35,11 @@ describe("Wireline product documentation contract", () => {
   it("keeps the docs index aligned with current product truth", () => {
     const readme = read("docs/README.md");
     expect(readme).toContain("Create -> Train -> Run");
-    expect(readme).toContain("Agents");
+    // The bare capitalised "Agents" this used to assert only ever appeared
+    // inside a retired-thesis footnote ("AI Profit Agents"), so it passed by
+    // accident and would have kept passing while the real terminology drifted.
+    // Assert the contextual naming rule the index actually states instead.
+    expect(readme).toContain("personal agents");
     expect(readme).toContain("AI employees");
     expect(readme).toContain("AI sales agents");
     expect(readme).toContain("included number");

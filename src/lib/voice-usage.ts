@@ -17,7 +17,8 @@
 import { and, eq, sql } from "drizzle-orm";
 import { chargeCompletedVoiceUsage } from "./voice-completion-grace";
 import { planById } from "./plan-catalog";
-import { drizzle, log } from "./server-context";
+import { drizzle, log, quotaTracker } from "./server-context";
+import { getErrorMessage } from "./server-utils";
 import * as schema from "../db/schema";
 
 const DIMENSION = "voice_minutes_monthly";
@@ -100,6 +101,23 @@ export async function trackVoiceMinutes(opts: {
 
     const newUsed = Number(upsertRows[0]?.used ?? minutes);
     const previousUsed = Math.max(0, newUsed - minutes);
+
+    // Settle the per-day burst cap with the minutes actually consumed. The
+    // pre-dial gate calls checkAndIncrement("voice_minutes_daily", units) with
+    // units 0 at every single call site, so without this the counter never
+    // leaves zero and VOICE_BURST_DAILY — the only per-day ceiling on voice
+    // COGS — can never fire. Settling after the call (rather than reserving a
+    // guess before it) keeps a legitimate long call from being refused, while
+    // still stopping the NEXT dial once the day's real usage is spent.
+    await quotaTracker
+      .checkAndIncrement(userId, "voice_minutes_daily", minutes)
+      .catch((error: unknown) => {
+        log.error("voice daily quota settle failed", {
+          userId,
+          minutes,
+          error: getErrorMessage(error),
+        });
+      });
 
     const [billing] = await drizzle
       .select({ plan: schema.subscriptions.plan, extraAgents: schema.settings.extraAgents })
