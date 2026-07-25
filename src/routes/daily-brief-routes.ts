@@ -5,6 +5,7 @@ import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { and, eq } from "drizzle-orm";
+import { isOwnerEmail } from "../lib/auth-service";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import { sendDailyBriefEmail } from "../lib/daily-brief";
@@ -95,6 +96,10 @@ router.put(
         .values({
           id: req.user.id,
           userId: req.user.id,
+          // Match signup (`startTrialForUser`): Free Builder tenants start
+          // pending_activation. Never omit status — the DB default is a
+          // footgun (`active`) and would bypass enforceLiveWorkActivation.
+          subscriptionStatus: isOwnerEmail(req.user.email) ? "active" : "pending_activation",
           dailyBriefEnabled: enabled,
           dailyBriefSendAt: send_at,
           dailyBriefRecipient: recipient,

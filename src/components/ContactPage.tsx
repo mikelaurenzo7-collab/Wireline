@@ -30,8 +30,8 @@ const CONTACT_PROMISES = [
   ["Clear next step", "If Wireline is not the right fit, we will say so directly."],
 ] as const;
 
-const STARTER_PRICE = planById("starter")?.price_usd_monthly ?? 9;
-const STARTER_PLUS_PRICE = planById("team")?.price_usd_monthly ?? 19;
+const STARTER_PRICE = planById("starter")?.price_usd_monthly ?? 19;
+const STARTER_PLUS_PRICE = planById("team")?.price_usd_monthly ?? 39;
 
 export function ContactPage() {
   const [searchParams] = useSearchParams();

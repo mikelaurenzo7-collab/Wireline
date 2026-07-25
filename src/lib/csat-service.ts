@@ -14,7 +14,8 @@
  *   1. Tenant must have `csat_sms_enabled = true` in settings
  *   2. Twilio messaging must be configured for the tenant
  *   3. Customer number must be a real phone (not empty/null)
- *   4. DNC list must not include this number
+ *   4. Shared outbound dial gate (tenant DNC + TCPA; live-session follow-up
+ *      skips quiet hours / 24h duplicate because the consumer just hung up)
  *
  * Opt-in only (csatSmsEnabled defaults to false). TCPA-compliant
  * because it includes STOP instructions and respects the DNC table.
@@ -23,6 +24,7 @@
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { evaluateOutboundDialGate } from "./outbound-dial-gate";
 import { sendTenantMessage } from "./twilio-service";
 import { sanitizePhone } from "./vapi-helpers";
 
@@ -60,18 +62,16 @@ export async function sendPostCallCsatSms(params: {
       return { sent: false, reason: "invalid_customer_number" };
     }
 
-    // Gate 4: DNC check — respect opt-outs
-    try {
-      const [dncRow] = await drizzle
-        .select({ id: schema.dncList.id })
-        .from(schema.dncList)
-        .where(and(eq(schema.dncList.userId, userId), eq(schema.dncList.phone, e164)))
-        .limit(1);
-      if (dncRow) {
-        return { sent: false, reason: "dnc_listed" };
-      }
-    } catch {
-      // DNC table may not exist yet — proceed cautiously
+    // Gate 4: Shared outbound compliance (tenant DNC + TCPA). Post-call CSAT
+    // is a live-session follow-up — consumer just finished the call.
+    const gate = await evaluateOutboundDialGate({
+      userId,
+      phone: e164,
+      isMarketingCall: false,
+      isLiveSessionFollowUp: true,
+    });
+    if (!gate.allowed) {
+      return { sent: false, reason: gate.reason };
     }
 
     // Build the CSAT message

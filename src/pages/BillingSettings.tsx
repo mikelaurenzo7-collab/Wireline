@@ -72,7 +72,7 @@ export default function BillingSettings() {
           const data = (await balanceRes.json()) as ConversationBalanceResponse;
           setBalanceUsd(Number(data.balance_usd ?? 0));
         } else if (statusRes.ok) {
-          setLoadError("Conversation Balance is temporarily unavailable.");
+          setLoadError(`${CONVERSATION_BALANCE_COPY.title} is temporarily unavailable.`);
         }
       } catch {
         if (!cancelled) {

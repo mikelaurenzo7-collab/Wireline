@@ -8,7 +8,7 @@
  */
 
 import { Router, Response } from "express";
-import { AppError } from "../lib/api-error";
+import { AppError, rethrowIfAppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -16,14 +16,14 @@ import { authenticateUser } from "../middleware/auth";
 import { validateBody, smsReplySchema } from "../lib/api-validation";
 import { smsRateLimit } from "../middleware/api-rate-limits";
 import { sendTenantMessage } from "../lib/twilio-service";
-import { mapObjectToSnake } from "../lib/server-utils";
+import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
 /**
  * GET /api/sms/threads — list threads sorted by recency.
- * Read-only; safe on cold DB (returns [] when sms tables don't exist yet).
+ * Read-only. Empty result means no threads — never mask outages as [].
  */
 router.get(
   "/api/sms/threads",
@@ -38,8 +38,9 @@ router.get(
         .limit(200);
       res.json({ threads: mapObjectToSnake(threads || []) });
     } catch (e: any) {
-      log.warn("/api/sms/threads failed (migration may be pending)", { error: e?.message });
-      res.json({ threads: [] });
+      rethrowIfAppError(e);
+      log.error("/api/sms/threads failed", { error: getErrorMessage(e) });
+      throw AppError.fromHttpStatus(500, "Failed to load SMS threads");
     }
   },
 );
@@ -68,8 +69,9 @@ router.get(
         .orderBy(schema.smsMessages.createdAt);
       res.json({ messages: mapObjectToSnake(messages || []) });
     } catch (e: any) {
-      log.warn("/api/sms/threads/:id/messages failed", { error: e?.message });
-      res.json({ messages: [] });
+      rethrowIfAppError(e);
+      log.error("/api/sms/threads/:id/messages failed", { error: getErrorMessage(e) });
+      throw AppError.fromHttpStatus(500, "Failed to load SMS messages");
     }
   },
 );

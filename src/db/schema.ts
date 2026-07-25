@@ -112,7 +112,7 @@ export const settings = pgTable("wireline_settings", {
   userId: uuid("user_id")
     .unique()
     .references(() => users.id, { onDelete: "cascade" }),
-  subscriptionStatus: text("subscription_status").default("active"),
+  subscriptionStatus: text("subscription_status").default("pending_activation"),
   /**
    * Wall-clock end of the 14-day soft trial that fires at signup.
    * NULL on grandfathered accounts created before the trial gate

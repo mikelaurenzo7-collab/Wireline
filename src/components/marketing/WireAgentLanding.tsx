@@ -373,7 +373,7 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
-              <h2 className="wl-display-2 mt-4">Build free. Activate live work from $9.</h2>
+              <h2 className="wl-display-2 mt-4">Build free. Activate live work from $19.</h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
                 Free Builder lets you create and train privately. Every paid plan includes live
                 voice capacity and a Wireline number at no extra line fee, with SMS and email

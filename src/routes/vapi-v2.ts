@@ -180,7 +180,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
       .where(eq(schema.settings.userId, agent.user_id))
       .limit(1);
 
-    const subscriptionStatus = userSettings?.subscriptionStatus || "active";
+    const subscriptionStatus = userSettings?.subscriptionStatus ?? "pending_activation";
 
     if (subscriptionStatus !== "active") {
       if (message?.type === "assistant-request") {

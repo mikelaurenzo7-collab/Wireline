@@ -227,7 +227,7 @@ export async function placeOutboundCall(opts: {
     .where(eq(schema.settings.userId, userId))
     .limit(1);
 
-  const subscriptionStatus = userSettings?.subscriptionStatus || "active";
+  const subscriptionStatus = userSettings?.subscriptionStatus ?? "pending_activation";
   if (subscriptionStatus !== "active") {
     return {
       ok: false,

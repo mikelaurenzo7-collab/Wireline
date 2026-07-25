@@ -186,11 +186,11 @@ export default function DeployAgentModal({
               <div className="relative z-10 px-7 py-6 space-y-6">
                 {/* Name */}
                 <div className="space-y-2">
-                  <label htmlFor="assistant-name" className="wl-label-muted opacity-80">
+                  <label htmlFor="agent-name" className="wl-label-muted opacity-80">
                     Agent name
                   </label>
                   <Input
-                    id="assistant-name"
+                    id="agent-name"
                     ref={nameInputRef}
                     type="text"
                     value={name}

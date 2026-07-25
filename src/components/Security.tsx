@@ -194,7 +194,7 @@ const SECURITY_SUMMARY = [
   ["Runtime", "Encrypted transport, webhook verification, fallback voice path, and public probes."],
   ["Data", "Tenant-scoped access, encrypted transcripts, opt-in recordings, deletion workflow."],
   ["Compliance", "TCPA/DNC controls, HIPAA guardrails, SOC 2 roadmap stated without fake badges."],
-  ["Billing", "Stripe card handling, prepaid Conversation Balance, and spend controls."],
+  ["Billing", "Stripe card handling, prepaid Runtime Balance, and spend controls."],
 ] as const;
 
 export default function Security() {

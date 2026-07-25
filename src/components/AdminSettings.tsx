@@ -196,8 +196,8 @@ export default function AdminSettings() {
         setSettings({
           vapi_phone_number_id: settingsRes.vapi_phone_number_id || "",
           vapi_phone_inbound_agent_id: settingsRes.vapi_phone_inbound_agent_id || "",
-          subscription_status: settingsRes.subscription_status || "active",
-          max_agents: settingsRes.max_agents || 3,
+          subscription_status: settingsRes.subscription_status || "pending_activation",
+          max_agents: settingsRes.max_agents || 1,
           voice_llm_provider: settingsRes.voice_llm_provider || VAPI_TENANT_DEFAULT_PROVIDER,
           voice_llm_model: settingsRes.voice_llm_model || VAPI_TENANT_DEFAULT_MODEL,
           twilio_messaging_enabled: !!settingsRes.twilio_messaging_enabled,

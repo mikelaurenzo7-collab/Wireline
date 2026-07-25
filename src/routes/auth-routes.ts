@@ -143,28 +143,38 @@ router.post(
       } = req.body;
       // Body is now validated by Zod middleware (email already lowercased + trimmed).
 
-      // Pre-check for existing account — gives a clean 409 with a
-      // user-actionable message instead of a confusing 500.
-      // (Race-condition backstop lives in the catch block below.)
-      const [existing] = await drizzle
-        .select({ id: schema.users.id })
-        .from(schema.users)
-        .where(eq(schema.users.email, email))
-        .limit(1);
-      if (existing) {
+      // Equalize the fast "email already taken" SELECT against the slower
+      // scrypt+insert success path so signup timing is not an enumeration oracle.
+      // Email delivery stays outside the floor — it is best-effort and only runs
+      // after a real account is created.
+      const gate = await equalizedDuration(
+        (async () => {
+          const [existing] = await drizzle
+            .select({ id: schema.users.id })
+            .from(schema.users)
+            .where(eq(schema.users.email, email))
+            .limit(1);
+          if (existing) return { kind: "taken" as const };
+          const result = await authService.signUp(email, password, fullName, {
+            preferredPlanId,
+            signupWedge,
+            utmSource,
+            utmMedium,
+            utmCampaign,
+          });
+          return { kind: "created" as const, result };
+        })(),
+        SIGNUP_MIN_DURATION_MS,
+      );
+
+      if (gate.kind === "taken") {
         return res.status(409).json({
           error: "An account with this email already exists. Try signing in instead.",
           code: "EMAIL_TAKEN",
         });
       }
 
-      const result = await authService.signUp(email, password, fullName, {
-        preferredPlanId,
-        signupWedge,
-        utmSource,
-        utmMedium,
-        utmCampaign,
-      });
+      const result = gate.result;
 
       emitServerProductEventOnce({
         event: "signup_completed",
@@ -227,6 +237,8 @@ router.post(
 
       const pgCode = getPostgresErrorCode(error);
       if (pgCode === "23505") {
+        // Race backstop: pad so concurrent-dupe path isn't a fast oracle either.
+        await equalizedDuration(Promise.resolve(), SIGNUP_MIN_DURATION_MS);
         return res.status(409).json({
           error: "An account with this email already exists. Try signing in instead.",
           code: "EMAIL_TAKEN",
@@ -490,6 +502,16 @@ const FORGOT_PASSWORD_MIN_DURATION_MS = 1000;
  * gap without adding a full second to every login.
  */
 const SIGNIN_MIN_DURATION_MS = 400;
+
+/**
+ * /signup floor. The pre-insert "email taken" SELECT is fast; a successful
+ * signUp runs scrypt + insert. Without a floor, timing distinguishes
+ * registered vs unregistered emails even though both return distinct
+ * status codes (409 vs 200) — useful as a secondary oracle under rate
+ * limits. Tune near the scrypt path so legitimate new accounts are not
+ * perceptibly slowed.
+ */
+const SIGNUP_MIN_DURATION_MS = 500;
 
 /**
  * POST /api/auth/forgot-password
