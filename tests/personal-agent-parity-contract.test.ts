@@ -26,7 +26,20 @@ describe("personal agent parity — create defaults", () => {
     expect(personality).toBeTruthy();
     expect(personality!).toContain("elite personal assistant");
     expect(personality!).toContain("TEMPLATE SPECIALTY — Personal Concierge");
-    expect(personality!).toContain("Sarah");
+    expect(personality!).toContain("You represent your principal");
+    expect(personality!).not.toContain("You represent Sarah");
+    expect(personality!).not.toContain("your business — a single individual");
+  });
+
+  it("never substitutes the agent name as the company in business templates", () => {
+    const personality = resolveCreatePersonality({
+      role: "sales",
+      isBusinessAgent: true,
+      templateId: "sales-sdr",
+      agentName: "Revenue Desk",
+    });
+    expect(personality).toContain("from your business");
+    expect(personality).not.toContain("from Revenue Desk");
   });
 
   it("strips business-only tools from personal create and keeps device actions opt-in", () => {
