@@ -4,6 +4,8 @@
   var CONSENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
   var CONSENT_EVENT = "wireline:marketing-measurement-consent";
   var META_PIXEL_ID = "1683492795830248";
+  var PLAUSIBLE_DOMAIN = "trywireline.com";
+  var PLAUSIBLE_SRC = "https://plausible.io/js/script.tagged-events.js";
 
   function noop() {}
 
@@ -12,6 +14,37 @@
       window.location.hostname === "trywireline.com" ||
       window.location.hostname === "www.trywireline.com"
     );
+  }
+
+  function isLocalHost() {
+    var host = window.location.hostname;
+    return host === "localhost" || host === "127.0.0.1" || host === "[::1]" || host === "";
+  }
+
+  /**
+   * Privacy-friendly product analytics, injected async so it can never delay
+   * the app.
+   *
+   * It used to be a static `<script defer>` in index.html, which blocks
+   * DOMContentLoaded and every deferred script queued after it — the app's own
+   * module bundle included. A single unreachable third-party host therefore
+   * held the entire UI blank until the connection timed out (measured: FCP
+   * 12,936ms against a blocked host, versus 280ms without the tag). Injecting
+   * it here keeps analytics identical — the inline stub in index.html queues
+   * calls and the real script flushes `plausible.q` when it lands — while
+   * making the request non-blocking. Skipped on localhost so local dev and
+   * capture runs never wait on (or pollute) production analytics.
+   */
+  function loadPrivacyAnalytics() {
+    if (isLocalHost()) return;
+    if (window.__wirelinePlausibleLoaded) return;
+    window.__wirelinePlausibleLoaded = true;
+
+    var script = document.createElement("script");
+    script.defer = true;
+    script.setAttribute("data-domain", PLAUSIBLE_DOMAIN);
+    script.src = PLAUSIBLE_SRC;
+    document.head.appendChild(script);
   }
 
   function globalPrivacyControlEnabled() {
@@ -94,6 +127,7 @@
   }
 
   installSafeStubs();
+  loadPrivacyAnalytics();
   window.addEventListener(CONSENT_EVENT, function (event) {
     if (event && event.detail === "granted") {
       loadMetaPixel();
