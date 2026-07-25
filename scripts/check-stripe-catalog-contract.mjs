@@ -180,6 +180,34 @@ requireText(
   "Stripe audit must reject active superseded prices.",
 );
 
+// The generated-env pipeline must be version-guarded end to end: the writer
+// stamps the catalog version, and both consumers refuse a mismatched file, so
+// a stale local .stripe-env.generated.json can never push or "verify" retired
+// price ids against live Vercel. No blind fallback env map may reappear.
+const setupScript = read("scripts/setup-stripe-catalog.mjs");
+const syncScript = read("scripts/sync-stripe-env-to-vercel.mjs");
+const parityScript = read("scripts/verify-stripe-vercel-parity.mjs");
+requireText(
+  setupScript,
+  "wireline_catalog_version: FOUNDER_CATALOG_VERSION",
+  "setup-stripe-catalog must stamp the generated env file with the catalog version.",
+);
+for (const [name, source] of [
+  ["sync-stripe-env-to-vercel", syncScript],
+  ["verify-stripe-vercel-parity", parityScript],
+]) {
+  requireText(
+    source,
+    "wireline_catalog_version",
+    `${name} must refuse a generated env file whose catalog version mismatches the code.`,
+  );
+}
+if (syncScript.includes("FALLBACK_ENV") || syncScript.includes("STRIPE_BUSINESS_STARTER_PRICE_ID")) {
+  errors.push(
+    "sync-stripe-env-to-vercel must not carry a fallback env map of retired price-id names.",
+  );
+}
+
 if (errors.length) {
   console.error("Stripe catalog contract check failed:");
   for (const error of errors) console.error(`- ${error}`);

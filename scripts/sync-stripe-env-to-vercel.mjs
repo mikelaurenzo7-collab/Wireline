@@ -10,14 +10,18 @@
  *
  * Default JSON path: scripts/.stripe-env.generated.json
  *
- * Safety: the fallback intentionally leaves Stripe price IDs blank. The prior
- * committed generated file pointed at the old $49/$149 catalog; syncing stale
- * IDs would silently overcharge launch customers. Run stripe:setup first.
+ * Safety: the generated file must exist AND carry the same
+ * wireline_catalog_version as the code manifest — a stale file from a prior
+ * catalog generation (the old $49/$149 set, or an archived founder version)
+ * would silently push retired price ids over the live configuration. There is
+ * deliberately no fallback: run `npm run stripe:setup` first, always.
  */
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { FOUNDER_CATALOG_VERSION } from "./lib/stripe-founder-catalog.mjs";
 
 const TEAM_ID = "team_ssX7cPECdHvXGFHSOuS9iXos";
 const PROJECT_ID = "prj_mCjWa69TtFye8z11u8bSaWwO41f2";
@@ -25,19 +29,6 @@ const TARGETS = ["production", "preview", "development"];
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const defaultJsonPath = join(__dirname, ".stripe-env.generated.json");
-
-const FALLBACK_ENV = {
-  STRIPE_VOICE_OVERAGE_METER_EVENT_NAME: "voice_minutes_overage",
-  STRIPE_BUSINESS_STARTER_PRICE_ID: "",
-  STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID: "",
-  STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID: "",
-  STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID: "",
-  STRIPE_PRO_PRICE_ID: "",
-  STRIPE_PRO_ANNUAL_PRICE_ID: "",
-  STRIPE_PRO_EXTRA_AGENT_PRICE_ID: "",
-  STRIPE_PRO_OVERAGE_PRICE_ID: "",
-  STRIPE_LIVE_VIDEO_ADDON_PRICE_ID: "",
-};
 
 const token = process.env.VERCEL_TOKEN || process.env.VERCEL_OIDC_TOKEN;
 if (!token) {
@@ -74,13 +65,24 @@ async function vercelFetch(path, opts = {}) {
 
 function loadEnvMap(argvPath) {
   const jsonPath = argvPath || defaultJsonPath;
-  if (existsSync(jsonPath)) {
-    const raw = readFileSync(jsonPath, "utf8");
-    const parsed = JSON.parse(raw);
-    if (parsed.env) return parsed.env;
-    return parsed;
+  if (!existsSync(jsonPath)) {
+    console.error(
+      `Generated Stripe env file not found at ${jsonPath}. Run \`npm run stripe:setup\` first — ` +
+        "there is intentionally no fallback, so stale or retired price ids can never be synced.",
+    );
+    process.exit(1);
   }
-  return FALLBACK_ENV;
+  const parsed = JSON.parse(readFileSync(jsonPath, "utf8"));
+  const fileVersion = parsed.wireline_catalog_version;
+  if (fileVersion !== FOUNDER_CATALOG_VERSION) {
+    console.error(
+      `Generated Stripe env file is stale: it carries catalog version ` +
+        `${JSON.stringify(fileVersion ?? "none (legacy flat file)")} but the code manifest is ` +
+        `"${FOUNDER_CATALOG_VERSION}". Run \`npm run stripe:setup\` to regenerate before syncing.`,
+    );
+    process.exit(1);
+  }
+  return parsed.env;
 }
 
 async function listProjectEnv() {

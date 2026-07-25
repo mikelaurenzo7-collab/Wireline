@@ -66,6 +66,16 @@ live-infrastructure audits performed the same day.
    visitor's browser console. Harmless and by design, but a `200
    {authenticated:false}` probe shape would silence it; touching it means
    updating the auth-probe contract tests deliberately.
+7. **P3 — Accepted security advisory to retire later**: react-router
+   GHSA-qwww-vcr4-c8h2 (RSC-mode CSRF) is explicitly accepted in
+   `scripts/check-security-audit.mjs` because the app has no RSC and no
+   data-router actions and no patched 7.x release exists. When
+   react-router-dom ships a release above the advisory range, upgrade and
+   delete the acceptance. The other high advisory from the same audit (the
+   brace-expansion DoS chain under googleapis-common) was actually fixed —
+   patched 5.0.8 enforced via package.json overrides with glob lifted to
+   minimatch 10 — so the audit gate is green and stays sensitive to anything
+   new.
 
 ## Standing references
 
