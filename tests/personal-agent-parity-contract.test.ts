@@ -115,3 +115,21 @@ describe("personal agent parity — presentation and runtime", () => {
     });
   });
 });
+
+describe("founder hybrid pricing — Starter Plus pair capacity", () => {
+  it("prices Starter Plus as the personal+business founder pair without breaking slot parity", async () => {
+    const { planById, supportsFounderAgentPair } = await import("../src/lib/plan-catalog");
+    const team = planById("team");
+    expect(team?.price_usd_monthly).toBe(24);
+    expect(team?.price_usd_annual).toBe(240);
+    expect(team?.max_agents).toBe(2);
+    expect(team?.included_phone_numbers).toBe(2);
+    expect(team?.voice_minutes_monthly).toBe(50);
+    expect(supportsFounderAgentPair("team")).toBe(true);
+    expect(supportsFounderAgentPair("starter")).toBe(false);
+    const catalog = read("src/lib/plan-catalog.ts");
+    expect(catalog).toContain("2 live agents — personal Concierge + business AI employee");
+    expect(read("src/pages/Pricing.tsx")).toContain("Founder hybrid");
+    expect(read("src/pages/OverviewPage.tsx")).toContain("Complete your founder pair");
+  });
+});

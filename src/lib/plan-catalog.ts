@@ -9,7 +9,7 @@ export const PHONE_NUMBER_COST_MONTHLY_USD = 1.15;
 export const PAYMENT_PROCESSING_RATE = 0.029;
 export const PAYMENT_PROCESSING_FIXED_USD = 0.3;
 
-export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v4";
+export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v5";
 
 export const EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY = 15;
 export const EXTRA_AGENT_ADDON_VOICE_MINUTES_MONTHLY = 50;
@@ -165,24 +165,24 @@ export const STRIPE_PLANS: StripePlan[] = [
   {
     id: "team",
     name: "Wireline Starter Plus",
-    price_usd_monthly: 19,
-    price_usd_annual: 190,
-    max_agents: 1,
-    voice_minutes_monthly: 40,
+    price_usd_monthly: 24,
+    price_usd_annual: 240,
+    max_agents: 2,
+    voice_minutes_monthly: 50,
     runtime_allowance_usd_monthly: 1,
     overage_per_min_usd: 0.22,
-    included_phone_numbers: 1,
+    included_phone_numbers: 2,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
     annualPriceIdEnv: "STRIPE_STARTER_ANNUAL_PRICE_ID",
-    fallbackPriceId: "price_1Tv9K18e6If87QKmJno3YyTp",
-    fallbackAnnualPriceId: "price_1Tv9K18e6If87QKmOLPol6N3",
-    lookupKeyMonthly: "team_monthly_founder_2026_07_v2",
-    lookupKeyAnnual: "team_annual_founder_2026_07_v2",
+    fallbackPriceId: "price_1TwueT8e6If87QKmTtr6cZx5",
+    fallbackAnnualPriceId: "price_1TwueU8e6If87QKmMd7x8Urj",
+    lookupKeyMonthly: "team_monthly_founder_2026_07_v5",
+    lookupKeyAnnual: "team_annual_founder_2026_07_v5",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
-      "1 live AI communications agent",
-      "1 production-number slot, provisioned when needed",
-      "40 guaranteed live-voice minutes each month",
+      "2 live agents — personal Concierge + business AI employee",
+      "2 production-number slots, provisioned when needed",
+      "50 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
       "$1 monthly flexible Runtime Allowance",
       "Full Lead Hunt, enrichment, niche research, email, and SMS workflows",
@@ -350,6 +350,12 @@ export function planById(id: string | null | undefined): StripePlan | null {
   const canonical = canonicalPlanId(id);
   if (!canonical) return null;
   return STRIPE_PLANS.find((plan) => plan.id === canonical) || null;
+}
+
+/** Paid plans that include room for a personal agent + a business AI employee. */
+export function supportsFounderAgentPair(planId: string | null | undefined): boolean {
+  const plan = planById(planId);
+  return Boolean(plan && plan.price_usd_monthly > 0 && plan.max_agents >= 2);
 }
 
 export function planLookupKey(plan: StripePlan, interval: "month" | "year"): string | null {

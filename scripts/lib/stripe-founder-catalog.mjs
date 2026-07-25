@@ -4,7 +4,7 @@
  * Keep customer-facing plan ids aligned with src/lib/plan-catalog.ts:
  * personal is the free builder and intentionally has no Stripe product.
  */
-export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v4";
+export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v5";
 
 export const FOUNDER_PRODUCTS = [
   {
@@ -29,16 +29,16 @@ export const FOUNDER_PRODUCTS = [
     key: "team",
     name: "Wireline Starter Plus",
     description:
-      "Expanded one-agent founder plan: 1 on-demand production number, 40 pooled voice minutes monthly, full Lead Hunt workflows, shared conversation inbox, connected email and SMS automation, and prepaid Conversation Balance for additional usage.",
-    defaultPriceKey: "team_monthly_founder_2026_07_v2",
+      "Founder hybrid plan: personal Concierge + business AI employee (2 live agents), 2 on-demand production numbers, 50 pooled voice minutes monthly, full Lead Hunt workflows, shared conversation inbox, connected email and SMS automation, and prepaid Conversation Balance for additional usage.",
+    defaultPriceKey: "team_monthly_founder_2026_07_v5",
     metadata: {
       wireline_plan_id: "team",
-      wireline_customer_tier: "starter_plus_19",
+      wireline_customer_tier: "starter_plus_24",
       wireline_billing_model: "guaranteed_voice_plus_flexible_runtime",
       wireline_catalog_state: "launch_active",
-      included_agents: "1",
-      included_numbers: "1",
-      included_voice_minutes: "40",
+      included_agents: "2",
+      included_numbers: "2",
+      included_voice_minutes: "50",
       overage_policy: "prepaid_balance_only",
       wireline_templates: "unlocked",
     },
@@ -151,24 +151,24 @@ export const FOUNDER_PRICES = [
     metadata: { wireline_plan_id: "starter", included_voice_minutes: "20" },
   },
   {
-    key: "team_monthly_founder_2026_07_v2",
+    key: "team_monthly_founder_2026_07_v5",
     productKey: "team",
     nickname: "Wireline Starter Plus — Founder Monthly",
-    lookupKey: "team_monthly_founder_2026_07_v2",
-    unitAmount: 1900,
+    lookupKey: "team_monthly_founder_2026_07_v5",
+    unitAmount: 2400,
     recurring: { interval: "month", usage_type: "licensed" },
     envTarget: "STRIPE_STARTER_PRICE_ID",
-    metadata: { wireline_plan_id: "team", included_voice_minutes: "40" },
+    metadata: { wireline_plan_id: "team", included_voice_minutes: "50" },
   },
   {
-    key: "team_annual_founder_2026_07_v2",
+    key: "team_annual_founder_2026_07_v5",
     productKey: "team",
     nickname: "Wireline Starter Plus — Founder Annual",
-    lookupKey: "team_annual_founder_2026_07_v2",
-    unitAmount: 19000,
+    lookupKey: "team_annual_founder_2026_07_v5",
+    unitAmount: 24000,
     recurring: { interval: "year", usage_type: "licensed" },
     envTarget: "STRIPE_STARTER_ANNUAL_PRICE_ID",
-    metadata: { wireline_plan_id: "team", included_voice_minutes: "40" },
+    metadata: { wireline_plan_id: "team", included_voice_minutes: "50" },
   },
   {
     key: "business_monthly_founder_2026_07_v2",

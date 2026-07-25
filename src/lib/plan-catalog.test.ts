@@ -64,7 +64,11 @@ describe("plan-catalog", () => {
 
   it("locks canonical Founder Early Access voice and capacity rates", () => {
     expect(planById("starter")?.voice_minutes_monthly).toBe(20);
-    expect(planById("team")?.voice_minutes_monthly).toBe(40);
+    expect(planById("team")?.voice_minutes_monthly).toBe(50);
+    expect(planById("team")?.max_agents).toBe(2);
+    expect(planById("team")?.included_phone_numbers).toBe(2);
+    expect(planById("team")?.price_usd_monthly).toBe(24);
+    expect(planById("team")?.price_usd_annual).toBe(240);
     expect(planById("business")?.voice_minutes_monthly).toBe(100);
     expect(planById("enterprise")?.voice_minutes_monthly).toBe(250);
     expect(planById("team")?.overage_per_min_usd).toBe(0.22);
@@ -131,13 +135,21 @@ describe("plan-catalog", () => {
     expect(
       planByStripePrice({
         id: "price_not_in_env",
-        metadata: { wireline_price_key: "team_annual_founder_2026_07_v2" },
+        metadata: { wireline_price_key: "team_annual_founder_2026_07_v5" },
       })?.id,
     ).toBe("team");
   });
 
   it("uses lookup keys as a compatibility fallback", () => {
-    expect(planByStripePrice({ lookup_key: "team_monthly_founder_2026_07_v2" })?.id).toBe("team");
+    expect(planByStripePrice({ lookup_key: "team_monthly_founder_2026_07_v5" })?.id).toBe("team");
+  });
+
+  it("treats Starter Plus and above as founder personal+business pair capacity", async () => {
+    const { supportsFounderAgentPair } = await import("./plan-catalog");
+    expect(supportsFounderAgentPair("starter")).toBe(false);
+    expect(supportsFounderAgentPair("team")).toBe(true);
+    expect(supportsFounderAgentPair("business")).toBe(true);
+    expect(supportsFounderAgentPair("personal")).toBe(false);
   });
 
   it("documents extra-agent prices as add-ons, not standalone base-plan purchases", () => {

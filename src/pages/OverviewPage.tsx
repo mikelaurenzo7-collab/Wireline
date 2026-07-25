@@ -565,6 +565,18 @@ export default function OverviewPage() {
   const businessAgents = agents.filter((agent) => agent.is_business_agent);
   const hasAgents = !loading && agents.length > 0;
   const isFirstRun = !loading && !degraded && agents.length === 0;
+  const missingFounderPairPosture =
+    hasAgents &&
+    ((personalAgents.length === 0 && businessAgents.length > 0) ||
+      (businessAgents.length === 0 && personalAgents.length > 0));
+  const founderPairHref =
+    personalAgents.length === 0 ? "/studio?create=1" : "/studio?create=1&posture=business";
+  const founderPairLabel =
+    personalAgents.length === 0 ? "Create personal agent" : "Create AI employee";
+  const founderPairDetail =
+    personalAgents.length === 0
+      ? "Add a personal Concierge for screening, booking, and private briefings alongside your business coverage."
+      : "Add a business AI employee for customer calls, texts, and follow-up alongside your personal agent.";
   const primaryAgent = agents[0];
   const hasLiveLine = agents.some((agent) => Boolean(agent.phone_number));
   const hasConversationHistory = recentCalls.length > 0;
@@ -729,6 +741,20 @@ export default function OverviewPage() {
                   <div className="grid gap-5">
                     <AgentSection kind="personal" agents={personalAgents} />
                     <AgentSection kind="business" agents={businessAgents} />
+                    {missingFounderPairPosture ? (
+                      <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
+                        <p className="text-sm font-semibold text-foreground">
+                          Complete your founder pair
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                          {founderPairDetail} Starter Plus and above include both; Starter can add
+                          an Extra Agent (+$15) or upgrade.
+                        </p>
+                        <Button asChild size="sm" className="mt-3">
+                          <Link to={founderPairHref}>{founderPairLabel}</Link>
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
                 ) : (
                   <EmptyState
@@ -739,7 +765,7 @@ export default function OverviewPage() {
                     title={`No ${language.plural} yet`}
                     description={
                       accountType === "business"
-                        ? "Create one for a specific customer-facing job."
+                        ? "Create one for a specific customer-facing job — or start the founder pair with personal + business."
                         : "Create one for a call, appointment, or personal task."
                     }
                     action={

@@ -38,11 +38,11 @@ export const WIRELINE_PLANS = [
   },
   {
     name: "Wireline Starter Plus",
-    price: "$19/mo",
-    bestFor: "Growing solo operations that need more coverage.",
+    price: "$24/mo",
+    bestFor: "Founders who need a personal Concierge and a business AI employee.",
     includes: [
-      "1 live agent and 1 production number, provisioned when needed",
-      "40 guaranteed live-voice minutes each month",
+      "2 live agents and 2 production numbers, provisioned when needed",
+      "50 guaranteed live-voice minutes each month",
       "$1 monthly flexible Runtime Allowance",
       "Full Lead Hunt, enrichment, research, email, and SMS workflows",
     ],
