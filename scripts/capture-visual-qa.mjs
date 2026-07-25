@@ -111,6 +111,12 @@ const ignoredRequestHosts = new Set([
   "region1.google-analytics.com",
   "www.google-analytics.com",
   "www.googletagmanager.com",
+  // The two beacons the app actually ships (see MARKETING_SCRIPT_SRCS in
+  // src/lib/csp.ts). They render nothing, and waiting on them was the single
+  // largest cost per navigation.
+  "plausible.io",
+  "connect.facebook.net",
+  "www.facebook.com",
   ...parseList(process.env.WIRELINE_VISUAL_IGNORED_REQUEST_HOSTS),
 ]);
 
@@ -425,8 +431,28 @@ async function withTimeout(work, timeoutMs, message) {
   }
 }
 
+/**
+ * Third-party beacons (analytics, pixels) are not part of the surface under
+ * review, but every navigation still waits on them — and on a network where
+ * they are unreachable each one burns its full connect timeout, making a full
+ * matrix take hours and the results non-deterministic. Abort them at the edge:
+ * same pixels, same layout, no dependency on someone else's uptime.
+ */
+async function blockThirdPartyBeacons(page) {
+  await page.route("**/*", (route) => {
+    let host = "";
+    try {
+      host = new URL(route.request().url()).hostname;
+    } catch {
+      return route.continue();
+    }
+    return ignoredRequestHosts.has(host) ? route.abort() : route.continue();
+  });
+}
+
 async function captureRouteInFreshPage(context, viewportName, route, issues, options = {}) {
   const page = await context.newPage();
+  await blockThirdPartyBeacons(page);
   attachPageDiagnostics(page, viewportName, issues);
   try {
     await withTimeout(
