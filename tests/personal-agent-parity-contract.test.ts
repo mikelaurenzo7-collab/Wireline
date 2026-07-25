@@ -106,6 +106,14 @@ describe("personal agent parity — presentation and runtime", () => {
     expect(again).not.toContain("Warm. Concise");
   });
 
+  it("preserves concise custom personality text when updating delivery tone", () => {
+    const concise = "Never interrupt meetings. Text before transferring unknown callers.";
+    const composed = composeSetupPersonality(concise, "Calm", false);
+    expect(composed).toContain(concise);
+    expect(composed).toContain("## DELIVERY TONE");
+    expect(composed).toContain("Calm. Concise, useful, and personally discreet.");
+  });
+
   it("softens personal posture copy away from business-employee wording", () => {
     expect(PRODUCT_POSTURE.personal).toMatchObject({
       badge: "Personal agent",
