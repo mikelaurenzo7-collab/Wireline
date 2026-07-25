@@ -384,6 +384,35 @@ export async function handleCoreToolCall(
         };
       }
 
+      if (!agent?.user_id) {
+        return {
+          toolCallId,
+          result:
+            "I wasn't able to send that text right now. Let me note that and have someone follow up.",
+        };
+      }
+
+      // Mid-call SMS must clear the shared outbound gate (tenant DNC + federal
+      // DNC listing). Quiet hours + 24h duplicate are skipped because the
+      // consumer is already on the live line requesting follow-up.
+      const { evaluateOutboundDialGate } = await import("../../lib/outbound-dial-gate");
+      const gate = await evaluateOutboundDialGate({
+        userId: agent.user_id,
+        phone: targetNumber,
+        isMarketingCall: false,
+        hasExpressWrittenConsent: true,
+        isLiveSessionFollowUp: true,
+      });
+      if (!gate.allowed) {
+        return {
+          toolCallId,
+          result:
+            gate.reason === "blocked_internal_dnc" || gate.reason === "blocked_tcpa"
+              ? "I can't text that number — it's on a do-not-contact list."
+              : "I wasn't able to send that text right now. Let me note that and have someone follow up.",
+        };
+      }
+
       const reviewed = await superviseClientCommunication({
         channel: "sms",
         agentName: webhookAgentId,
@@ -399,7 +428,7 @@ export async function handleCoreToolCall(
           result: "I've queued that message for you. It should go out shortly.",
         };
       }
-      const outcome = await sendTenantMessage(agent?.user_id, {
+      const outcome = await sendTenantMessage(agent.user_id, {
         to: targetNumber,
         body: reviewed.body,
         channel: channel === "whatsapp" ? "whatsapp" : "sms",

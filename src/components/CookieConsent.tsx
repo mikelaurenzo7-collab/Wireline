@@ -118,8 +118,15 @@ export default function CookieConsent() {
   // Consent stays reachable on every marketing/app surface and via /privacy,
   // and no optional measurement fires without an explicit grant, so skipping
   // the notice here is the privacy-preserving default, not a bypass.
+  //
+  // Same rule for Fast Start (?create=1): the create CTA sits at the bottom of
+  // a full-viewport dialog; the consent card covered "Create AI employee" and
+  // made first-agent creation untappable on phone.
   // (After all hooks — rules-of-hooks.)
-  if (isAuthPortalPath(location.pathname)) return null;
+  const createFlowOpen =
+    new URLSearchParams(location.search).get("create") === "1" ||
+    new URLSearchParams(location.search).get("create") === "true";
+  if (isAuthPortalPath(location.pathname) || createFlowOpen) return null;
 
   // Portal to <body>: rendered inside the app tree, the fixed box stretched
   // to the full viewport height (an app-shell ancestor perturbs fixed-child
@@ -136,14 +143,14 @@ export default function CookieConsent() {
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
           className={cn(
             "fixed z-[9999] left-3 right-3 sm:right-5 sm:left-auto sm:max-w-[390px]",
-            // Bottom placement everywhere. The old auth-route top pin (written
-            // while this component was unmounted) covered the brand header,
-            // tab switcher, and OAuth buttons on mobile sign-in; the auth
-            // portal has no bottom-fixed elements, so the standard bottom
-            // offset sits over empty space below the card instead.
+            // Bottom placement everywhere. Authenticated app shell has a
+            // mobile bottom nav (~4.25rem); clear it so Overview CTAs stay
+            // tappable. Marketing sticky CTAs need a taller offset.
             clearMarketingSticky
               ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))]"
-              : "bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))]",
+              : hasSession
+                ? "bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))]"
+                : "bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))]",
           )}
           role="dialog"
           aria-label="Privacy choices"
@@ -151,15 +158,36 @@ export default function CookieConsent() {
           {/* bg-background/95 is load-bearing: the legacy wl-cookie-card class
               has no CSS definition, so without an explicit background the card
               was transparent-with-blur and page text ghosted through it. */}
-          <div className="rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg px-3.5 py-3 flex items-start gap-2.5 wl-cookie-card">
+          <div
+            className={cn(
+              "rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg flex items-start gap-2.5 wl-cookie-card",
+              hasSession ? "px-3 py-2.5" : "px-3.5 py-3",
+            )}
+          >
             <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5 wl-cookie-icon">
               <Cookie className="w-3.5 h-3.5 text-brand" />
             </div>
 
-            <div className="flex-1 min-w-0 space-y-2.5">
-              <p className="text-[var(--wireline-typography-caption-size)] leading-relaxed text-foreground/80">
-                Essential storage and privacy-friendly product analytics help Wireline operate.
-                Optional advertising measurement stays off unless you allow it.{" "}
+            <div className="flex-1 min-w-0 space-y-2">
+              <p
+                className={cn(
+                  "leading-relaxed text-foreground/80",
+                  hasSession
+                    ? "text-[11px] sm:text-[var(--wireline-typography-caption-size)]"
+                    : "text-[var(--wireline-typography-caption-size)]",
+                )}
+              >
+                {hasSession ? (
+                  <>
+                    Essential storage keeps Wireline working. Optional ad measurement stays off
+                    unless you allow it.{" "}
+                  </>
+                ) : (
+                  <>
+                    Essential storage and privacy-friendly product analytics help Wireline operate.
+                    Optional advertising measurement stays off unless you allow it.{" "}
+                  </>
+                )}
                 <Link
                   to="/privacy"
                   className="text-brand hover:text-brand/80 underline"

@@ -6,7 +6,8 @@ const OPEN_PRIVACY_CHOICES_EVENT = "wireline:open-privacy-choices";
 
 const PRODUCT_LINKS = [
   { to: "/for/personal", label: "Personal" },
-  { to: "/solutions/sales", label: "Business" },
+  { to: "/solutions/sales", label: "Sales" },
+  { to: "/solutions/support", label: "Support" },
   { to: "/features", label: "Features" },
   { to: "/pricing", label: "Pricing" },
   { to: "/compare", label: "Compare" },

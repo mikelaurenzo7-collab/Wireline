@@ -48,13 +48,12 @@ describe("signup intent contract", () => {
   it("lets vertical intent choose the plan when the URL did not specify one", () => {
     expect(recommendedPlanFromIntent(parseSignupIntent("?wedge=sales"))).toBe("business");
     expect(recommendedPlanFromIntent(parseSignupIntent("?wedge=home-services"))).toBe("team");
+    expect(recommendedPlanFromIntent(parseSignupIntent("?wedge=support"))).toBe("starter");
   });
 
   it("captures paid landing attribution before an internal CTA can drop query parameters", () => {
     expect(
-      parseSignupIntent(
-        "?utm_source=chatgpt&utm_medium=cpc&utm_campaign=wireline_launch_2026_07",
-      ),
+      parseSignupIntent("?utm_source=chatgpt&utm_medium=cpc&utm_campaign=wireline_launch_2026_07"),
     ).toMatchObject({
       utmSource: "chatgpt",
       utmMedium: "cpc",

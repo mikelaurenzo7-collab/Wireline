@@ -28,14 +28,21 @@ export function resolveAgentEntitlement(input: AgentEntitlementInput): AgentEnti
   }
 
   // Look up plan limits from the plan catalog. No subscription defaults to Personal (1 agent).
+  // settings.maxAgents is synced to plan+extras on Stripe sync and may be raised by
+  // platform admin — honor the higher of catalog math vs the stored cap.
   const plan = planById(input.planId);
   const planAgents = plan ? plan.max_agents : 1;
-  const purchasedExtras = input.extraAgents ?? 0;
+  const purchasedExtras = Math.max(0, input.extraAgents ?? 0);
+  const catalogCap = planAgents + purchasedExtras;
+  const storedCap =
+    typeof input.maxAgents === "number" && Number.isFinite(input.maxAgents)
+      ? Math.max(0, Math.floor(input.maxAgents))
+      : 0;
   return {
     subscriptionStatus: input.subscriptionStatus || "active",
     planAgents,
     purchasedExtras,
-    effectiveCap: planAgents + purchasedExtras,
+    effectiveCap: Math.max(catalogCap, storedCap),
     unlimited: false,
   };
 }

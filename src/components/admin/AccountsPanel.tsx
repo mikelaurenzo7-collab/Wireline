@@ -103,7 +103,8 @@ export function AccountsPanel() {
           Keep personal and business work separate.
         </h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Switch the active workspace without mixing agents, recaps, or connected accounts.
+          Switch personalization and defaults between personal and business context. Agents stay
+          under your user account today — workspace-scoped isolation is the next hardening step.
         </p>
       </header>
 
@@ -121,7 +122,9 @@ export function AccountsPanel() {
       {(canAddPersonal || canAddBusiness) && (
         <section className="rounded-2xl border border-border bg-card/60 p-4 sm:p-5">
           <p className="text-sm font-semibold text-foreground">Add another context</p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">One personal, one business.</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            One personal, one business.
+          </p>
           <div className="mt-4 flex flex-wrap gap-3">
             {canAddPersonal && (
               <button

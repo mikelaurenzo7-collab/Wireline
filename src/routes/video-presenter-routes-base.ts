@@ -247,6 +247,12 @@ router.post(
     if (!agent.isBusinessAgent) {
       throw AppError.fromHttpStatus(400, "Live video is available for business agents only.");
     }
+    const entitlement = await resolveLiveVideoEntitlement(req.user.id, {
+      isOwner: isOwnerEmail(req.user.email),
+    });
+    if (!entitlement.billingEntitled) {
+      throwLiveVideoBillingError(entitlement);
+    }
     if (!agentLiveVideoOptedIn(agent)) {
       throw new AppError(
         400,
@@ -347,6 +353,12 @@ router.post(
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
     if (!agent.isBusinessAgent) {
       throw AppError.fromHttpStatus(400, "Live video is available for business agents only.");
+    }
+    const sampleEntitlement = await resolveLiveVideoEntitlement(req.user.id, {
+      isOwner: isOwnerEmail(req.user.email),
+    });
+    if (!sampleEntitlement.billingEntitled) {
+      throwLiveVideoBillingError(sampleEntitlement);
     }
     if (!agentLiveVideoOptedIn(agent)) {
       throw new AppError(

@@ -18,6 +18,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import { getTwilioClient } from "./twilio-service";
 import { STRIPE_PLANS, planById, type StripePlanId } from "./plan-catalog";
+import { includedPhoneSlotsForPlan } from "./phone-line-entitlements";
 import { runCompanyIdentityMutation } from "./company-identity-mutation";
 import {
   ensureTenantTelecomDefaults,
@@ -62,19 +63,28 @@ export interface ProvisionResult {
 async function resolveTenantPlan(userId: string): Promise<{
   plan: (typeof STRIPE_PLANS)[number];
   status: string | null;
+  phoneSlots: number;
 }> {
-  const [row] = await drizzle
-    .select({
-      plan: schema.subscriptions.plan,
-      status: schema.subscriptions.status,
-    })
-    .from(schema.subscriptions)
-    .where(eq(schema.subscriptions.userId, userId))
-    .limit(1);
+  const [[row], [settings]] = await Promise.all([
+    drizzle
+      .select({
+        plan: schema.subscriptions.plan,
+        status: schema.subscriptions.status,
+      })
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.userId, userId))
+      .limit(1),
+    drizzle
+      .select({ extraAgents: schema.settings.extraAgents })
+      .from(schema.settings)
+      .where(eq(schema.settings.userId, userId))
+      .limit(1),
+  ]);
 
   const planId = (row?.plan as StripePlanId) || "personal";
   const plan = planById(planId) || STRIPE_PLANS[0];
-  return { plan, status: row?.status ?? null };
+  const phoneSlots = includedPhoneSlotsForPlan(plan.id, settings?.extraAgents);
+  return { plan, status: row?.status ?? null, phoneSlots };
 }
 
 async function countExistingNumbers(userId: string): Promise<number> {
@@ -208,10 +218,10 @@ export async function provisionTenantNumber(
     }
   }
 
-  const { plan } = await resolveTenantPlan(userId);
+  const { plan, phoneSlots } = await resolveTenantPlan(userId);
   const existing = await countExistingNumbers(userId);
 
-  if (existing >= plan.included_phone_numbers) {
+  if (existing >= phoneSlots) {
     const reusable = await findFirstUnassignedNumber(userId);
     if (reusable && opts.agentId) {
       await drizzle
@@ -231,7 +241,7 @@ export async function provisionTenantNumber(
     }
     return {
       ok: false,
-      error: `${plan.name} includes ${plan.included_phone_numbers} dedicated line${plan.included_phone_numbers === 1 ? "" : "s"}; upgrade to add more.`,
+      error: `${plan.name} includes ${phoneSlots} dedicated line${phoneSlots === 1 ? "" : "s"}; upgrade or add an Extra Agent for more.`,
     };
   }
 

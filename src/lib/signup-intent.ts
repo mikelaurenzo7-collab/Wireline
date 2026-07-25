@@ -12,6 +12,7 @@ export const SIGNUP_WEDGE_KEYS = [
   "insurance",
   "restaurants",
   "sales",
+  "support",
 ] as const;
 export type SignupWedgeKey = (typeof SIGNUP_WEDGE_KEYS)[number];
 
@@ -80,6 +81,14 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
     defaultPlanId: "business",
     templateId: "sales-sdr",
     templateLabel: "SDR — Outbound Prospecting",
+  },
+  support: {
+    label: "customer coverage",
+    // One-employee front desk — Starter ($9), not Pro. Wedge-only CTAs
+    // omit ?plan= so billing does not pretune a mismatched badge.
+    defaultPlanId: "starter",
+    templateId: "support-tier1",
+    templateLabel: "Tier-1 Phone Support",
   },
 };
 

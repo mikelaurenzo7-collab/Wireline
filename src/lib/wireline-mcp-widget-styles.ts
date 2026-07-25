@@ -15,7 +15,7 @@ export const WIRELINE_MCP_WIDGET_TOKENS = {
   radiusLg: "12px",
   radiusMd: "10px",
   shadowCard: "0 8px 24px -16px rgba(0, 0, 0, 0.6)",
-  fontDisplay: '"Instrument Serif", Georgia, ui-serif, serif',
+  fontDisplay: '"Inter Tight", Inter, ui-sans-serif, system-ui, sans-serif',
 } as const;
 
 export function buildWirelineMcpWidgetCss(): string {

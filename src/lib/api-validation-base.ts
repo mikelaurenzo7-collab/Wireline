@@ -164,6 +164,7 @@ export const signupSchema = z.object({
       "insurance",
       "restaurants",
       "sales",
+      "support",
     ])
     .optional(),
   utmSource: z.string().trim().max(120).optional(),

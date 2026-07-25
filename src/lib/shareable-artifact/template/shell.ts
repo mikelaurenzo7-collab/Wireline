@@ -56,12 +56,13 @@ const BASE_STYLES = `
       --wl-space-8: 64px;
       --wl-space-9: 96px;
       --wl-font-display:
-        "Instrument Serif", "Iowan Old Style", "Charter", ui-serif, Georgia, serif;
+        "Inter Tight", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+        "Helvetica Neue", Arial, sans-serif;
       --wl-font-body:
-        "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+        "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
         "Helvetica Neue", Arial, sans-serif;
       --wl-font-mono:
-        "Space Mono", "SF Mono", ui-monospace, "JetBrains Mono", "Menlo",
+        "IBM Plex Mono", "SF Mono", ui-monospace, "JetBrains Mono", "Menlo",
         Consolas, monospace;
     }
 

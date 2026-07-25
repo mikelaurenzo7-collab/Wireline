@@ -107,7 +107,7 @@ const SECTIONS = [
     icon: Database,
     title: "Database posture",
     items: [
-      "Postgres on Supabase (US-East). Tenant isolation is enforced in application queries today; Supabase RLS policy coverage is actively being hardened.",
+      "Postgres on Supabase (US-East). Tenant isolation uses SET LOCAL ROLE wireline_server with per-request app.current_user_id RLS policies on tenant tables.",
       "Foreign keys CASCADE delete from user → all downstream rows in one transaction.",
       "Nightly snapshots; point-in-time recovery within 24 h. Tested quarterly.",
     ],
@@ -118,7 +118,7 @@ const SECTIONS = [
     items: [
       "Found a vulnerability? Email security@trywireline.com with details and we'll respond within one business day.",
       "We don't (yet) run a paid bug bounty, but contributors who report real issues will be credited and rewarded.",
-      "Please do not test exploits against tenant data; use your own trial account.",
+      "Please do not test exploits against tenant data; use your own Free Builder account.",
     ],
   },
 ];
@@ -164,8 +164,8 @@ const TRUST_PACK_SECTIONS = [
     icon: CreditCard,
     title: "Billing & spend controls",
     items: [
-      "Conversation Balance is a prepaid ledger — live voice work cannot silently exceed funded balance on Personal.",
-      "Every paid plan draws extra voice, SMS, and enrichment from prepaid Conversation Balance with visible rates; active calls finish, and the next action pauses if coverage is depleted.",
+      "Runtime Balance is a prepaid ledger — paid plans draw overflow voice and SMS from funded balance after included minutes. Free Builder cannot run live voice until a paid plan is active.",
+      "Every paid plan draws extra voice, SMS, and enrichment from prepaid Runtime Balance with visible rates; active calls finish, and the next action pauses if coverage is depleted.",
       "Daily spend accumulators and economics-at-risk alerts help the platform owner catch margin leaks early.",
     ],
   },
@@ -299,7 +299,7 @@ export default function Security() {
             <ul className="mx-auto max-w-2xl space-y-1 pl-5 text-left marketing-body">
               <li>SOC 2 Type II certification — audit firm engaged, target 2026 Q4.</li>
               <li>
-                Supabase RLS policy coverage + GraphQL exposure cleanup for all tenant tables.
+                Continuous RLS regression checks and GraphQL exposure cleanup for all tenant tables.
               </li>
               <li>EU data residency (Frankfurt / Dublin) — target 2026 Q4.</li>
               <li>Hardware-key 2FA for Account Holder logins — target 2026 Q3.</li>
