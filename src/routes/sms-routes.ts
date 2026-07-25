@@ -101,12 +101,15 @@ router.post(
         .limit(1);
       if (!thread) throw AppError.fromHttpStatus(404, "Thread not found");
 
-      // Manual inbox replies are service/conversation SMS (not cold marketing),
-      // but still must clear tenant DNC + TCPA quiet hours via the shared gate.
+      // Manual inbox replies are ongoing service SMS on an existing thread —
+      // not cold dials. Use live-session follow-up so dial-only 24h duplicate
+      // and quiet-hours guards do not block a normal reply after a recent call;
+      // tenant + federal DNC still apply.
       const gate = await evaluateOutboundDialGate({
         userId: req.user.id,
         phone: thread.customerNumber!,
         isMarketingCall: false,
+        isLiveSessionFollowUp: true,
       });
       if (!gate.allowed) {
         throw AppError.fromHttpStatus(

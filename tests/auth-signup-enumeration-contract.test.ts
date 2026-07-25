@@ -13,8 +13,9 @@ describe("auth signup enumeration timing", () => {
     expect(source).toContain("kind: \"taken\"");
     expect(source).toContain("kind: \"created\"");
     expect(source).toContain("SIGNUP_MIN_DURATION_MS");
-    // Race 23505 path is also padded.
-    expect(source).toMatch(
+    // Race 23505 path is already equalized inside the create work (rejection is padded).
+    expect(source).toContain('pgCode === "23505"');
+    expect(source).not.toMatch(
       /pgCode === "23505"[\s\S]*?equalizedDuration\(Promise\.resolve\(\),\s*SIGNUP_MIN_DURATION_MS\)/,
     );
   });

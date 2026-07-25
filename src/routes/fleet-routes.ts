@@ -452,6 +452,7 @@ router.post(
         });
       }
     } catch (error: any) {
+      rethrowIfAppError(error);
       log.error("Task approval failed", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to approve task");
     }

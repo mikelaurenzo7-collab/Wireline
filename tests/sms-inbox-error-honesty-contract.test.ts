@@ -13,6 +13,7 @@ describe("sms inbox error honesty", () => {
     expect(source).toContain('throw AppError.fromHttpStatus(500, "Failed to load SMS messages")');
     expect(source).toContain('throw AppError.fromHttpStatus(500, "Failed to mark SMS thread read")');
     expect(source).toContain("evaluateOutboundDialGate");
+    expect(source).toContain("isLiveSessionFollowUp: true");
     expect(source).not.toContain('res.json({ threads: [] })');
     expect(source).not.toContain('res.json({ messages: [] })');
     expect(source).not.toContain("res.json({ ok: false })");

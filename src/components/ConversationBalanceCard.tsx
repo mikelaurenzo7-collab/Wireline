@@ -62,6 +62,7 @@ export default function ConversationBalanceCard() {
 
   useEffect(() => {
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time data load on mount
   }, []);
 
   useEffect(() => {
@@ -70,6 +71,7 @@ export default function ConversationBalanceCard() {
     const timeout = window.setTimeout(() => void load(), 1200);
     window.history.replaceState({}, "", window.location.pathname);
     return () => window.clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh once after Stripe return
   }, []);
 
   const addBalance = async (amountUsd: number) => {

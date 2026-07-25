@@ -211,7 +211,7 @@ export function renderDailyBriefEmail(
     const sign = v >= 0 ? "+" : "";
     return `${sign}${v.toFixed(0)}%`;
   };
-  const link = opts.appUrl ? `${opts.appUrl.replace(/\/+$/, "")}/` : null;
+  const link = opts.appUrl ? `${opts.appUrl.replace(/\/+$/, "")}/overview` : null;
 
   const subject = `Wireline · ${escapeHtml(headline)} · ${opts.dateLabel}`;
 

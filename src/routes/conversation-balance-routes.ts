@@ -1,6 +1,6 @@
 import express, { Response } from "express";
 import { eq } from "drizzle-orm";
-import { AppError } from "../lib/api-error";
+import { AppError, rethrowIfAppError } from "../lib/api-error";
 import { auditLogger, drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
@@ -41,14 +41,15 @@ router.get(
         stripe_configured: stripeAvailable(),
       });
     } catch (err) {
+      rethrowIfAppError(err);
       log.error("conversation balance read failed", { error: getErrorMessage(err) });
-      throw AppError.fromHttpStatus(500, "Could not load Conversation Balance.");
+      throw AppError.fromHttpStatus(500, `Could not load ${CONVERSATION_BALANCE_COPY.title}.`);
     }
   },
 );
 
 /**
- * One-time prepaid top-up. A live paid plan is required because Conversation
+ * One-time prepaid top-up. A live paid plan is required because Runtime
  * Balance is controlled overflow, not a back door around Starter activation.
  */
 router.post(
@@ -160,8 +161,12 @@ router.post(
           log.warn("conversation balance checkout audit failed", { error: getErrorMessage(err) }),
         );
     } catch (err) {
+      rethrowIfAppError(err);
       log.error("conversation balance checkout failed", { error: getErrorMessage(err) });
-      throw AppError.fromHttpStatus(500, "Could not start Conversation Balance checkout.");
+      throw AppError.fromHttpStatus(
+        500,
+        `Could not start ${CONVERSATION_BALANCE_COPY.title} checkout.`,
+      );
     }
   },
 );

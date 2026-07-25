@@ -141,7 +141,7 @@ export async function handleCreateAccount(
 
     return {
       result: emailed
-        ? `Account created for ${to_email}. I've emailed them a link to set their password — once they do, they can sign in, create an agent, and fund Conversation Balance when ready for live work. Confirm they got the email before ending the call.`
+        ? `Account created for ${to_email}. I've emailed them a link to set their password — once they do, they can sign in, create an agent, and choose Starter when ready for live work. Runtime Balance covers overflow after a paid plan. Confirm they got the email before ending the call.`
         : `Account created for ${to_email}, but the welcome email didn't send. Tell the caller to go to trywireline.com, click "Forgot password", and set their password to get in. Their free Builder account is already active.`,
     };
   } catch (err: unknown) {

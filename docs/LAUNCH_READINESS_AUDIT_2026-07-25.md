@@ -61,6 +61,13 @@ Additional verified fixes landed after a second fierce pass:
 11. Daily Brief / trial email / sales persona / Runtime Balance customer-copy honesty.
 12. Public nav + live-voice reset hit targets ≥44px.
 
+## Final polish (pre-merge)
+
+- Inbox SMS gate uses `isLiveSessionFollowUp` so dial 24h-duplicate does not block replies
+- Conversation-balance / fleet approve rethrow AppErrors; daily-brief CTA → `/overview`
+- ESLint mount-load disables aligned with AdminSettings pattern
+- Signup 23505 no longer double-pads after equalized rejection
+
 ## Ops still open (not code-blockable)
 
 | Item | Notes |

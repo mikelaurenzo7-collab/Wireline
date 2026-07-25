@@ -237,8 +237,8 @@ router.post(
 
       const pgCode = getPostgresErrorCode(error);
       if (pgCode === "23505") {
-        // Race backstop: pad so concurrent-dupe path isn't a fast oracle either.
-        await equalizedDuration(Promise.resolve(), SIGNUP_MIN_DURATION_MS);
+        // Race backstop: work already waited the floor inside equalizedDuration
+        // (rejection path is padded). Do not pad again.
         return res.status(409).json({
           error: "An account with this email already exists. Try signing in instead.",
           code: "EMAIL_TAKEN",
