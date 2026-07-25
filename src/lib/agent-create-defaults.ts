@@ -28,12 +28,6 @@ const CREATE_PATH_DEVICE_ACTIONS = new Set<AgentToolName>([
   "play_music",
 ]);
 
-/** Teams and Slack are equivalent business collaboration surfaces. */
-const PERSONAL_CREATE_BUSINESS_TOOLS = new Set<AgentToolName>([
-  ...BUSINESS_TOOL_NAMES,
-  "send_teams_message",
-]);
-
 export function resolveCreateEnabledTools(role: string, isBusinessAgent: boolean): AgentToolName[] {
   const candidateTools = isBusinessAgent
     ? getDefaultAgentTools()
@@ -41,8 +35,7 @@ export function resolveCreateEnabledTools(role: string, isBusinessAgent: boolean
 
   return candidateTools.filter(
     (tool) =>
-      !CREATE_PATH_DEVICE_ACTIONS.has(tool) &&
-      (isBusinessAgent || !PERSONAL_CREATE_BUSINESS_TOOLS.has(tool)),
+      !CREATE_PATH_DEVICE_ACTIONS.has(tool) && (isBusinessAgent || !BUSINESS_TOOL_NAMES.has(tool)),
   );
 }
 
@@ -50,6 +43,10 @@ export function resolveCreatePersonality(opts: {
   role: string;
   isBusinessAgent: boolean;
   templateId?: string | null;
+  /**
+   * Retained for create-call compatibility. An agent's name is never the
+   * Account Holder, principal, or business name and must not fill those tokens.
+   */
   agentName?: string | null;
 }): string | null {
   const rolePersonality =
@@ -72,11 +69,16 @@ export function resolveCreatePersonality(opts: {
     return rolePersonality.trim() || null;
   }
 
-  return composeAgentPersonality({
+  const composed = composeAgentPersonality({
     rolePersonality: rolePersonality || ROLE_PERSONALITY_TEMPLATES.personal_assistant,
     templateId,
-    businessContext: opts.agentName ? { businessName: opts.agentName } : undefined,
   });
+
+  // Personal overlays share the business-template token system. Their safe
+  // generic subject is the principal, never the agent and never "your business."
+  return opts.isBusinessAgent
+    ? composed
+    : composed.replace(/\byour business\b/gi, "your principal");
 }
 
 /** Infer is_business_agent when template deploy omits the flag. */
