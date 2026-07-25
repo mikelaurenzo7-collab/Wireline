@@ -15,7 +15,7 @@ export function composeSetupPersonality(
     ? `${toneLabel}. Concise, useful, and business-ready.`
     : `${toneLabel}. Concise, useful, and personally discreet.`;
   const existing = (existingPersonality || "").trim();
-  if (!existing || existing.length < 80) return toneLine;
+  if (!existing) return toneLine;
   const withoutOldTone = existing
     .replace(new RegExp(`\\n*${DELIVERY_TONE_MARKER}\\n[\\s\\S]*$`, "i"), "")
     .trimEnd();
