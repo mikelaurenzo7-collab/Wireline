@@ -209,38 +209,8 @@ router.post(
       }
       const role = canonicalizeAgentRoleForCreate(rawRole);
       const isBusinessAgent = req.body?.is_business_agent === true;
-      const [{ count }] = await drizzle
-        .select({ count: sql<number>`count(*)` })
-        .from(schema.agents)
-        .where(eq(schema.agents.userId, req.user.id));
-      const [settingsRow] = await drizzle
-        .select({
-          subscriptionStatus: schema.settings.subscriptionStatus,
-          maxAgents: schema.settings.maxAgents,
-          extraAgents: schema.settings.extraAgents,
-          planId: schema.subscriptions.plan,
-        })
-        .from(schema.settings)
-        .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
-        .where(eq(schema.settings.userId, req.user.id))
-        .limit(1);
-      const entitlement = resolveAgentEntitlement({
-        isOwner: isOwnerEmail(req.user.email),
-        subscriptionStatus: settingsRow?.subscriptionStatus,
-        planId: settingsRow?.planId,
-        maxAgents: settingsRow?.maxAgents,
-        extraAgents: settingsRow?.extraAgents,
-      });
-      if (agentCapHit(Number(count), entitlement)) {
-        return res.status(402).json({
-          code: "AGENT_CAPACITY_REACHED",
-          error: "Your plan has reached its agent capacity.",
-        });
-      }
 
       const id = `agent-${randomUUID()}`;
-      const existing = Number(count);
-      const voiceId = pickRotatedVoiceId(existing);
       const enabledTools = resolveCreateEnabledTools(role, isBusinessAgent);
       const seededPersonality = resolveCreatePersonality({
         role,
@@ -248,7 +218,40 @@ router.post(
         agentName: name,
       });
       const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
-      await drizzle.transaction(async (tx) => {
+
+      // Count, entitlement, and insert must share one serialized transaction —
+      // reading the count outside it let concurrent mobile creates all observe
+      // the same pre-insert total and every one of them clear the cap.
+      const created = await drizzle.transaction(async (tx) => {
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
+
+        const [{ count }] = await tx
+          .select({ count: sql<number>`count(*)` })
+          .from(schema.agents)
+          .where(eq(schema.agents.userId, req.user.id));
+        const existing = Number(count || 0);
+
+        const [settingsRow] = await tx
+          .select({
+            subscriptionStatus: schema.settings.subscriptionStatus,
+            maxAgents: schema.settings.maxAgents,
+            extraAgents: schema.settings.extraAgents,
+            planId: schema.subscriptions.plan,
+          })
+          .from(schema.settings)
+          .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+          .where(eq(schema.settings.userId, req.user.id))
+          .limit(1);
+        const entitlement = resolveAgentEntitlement({
+          isOwner: isOwnerEmail(req.user.email),
+          subscriptionStatus: settingsRow?.subscriptionStatus,
+          planId: settingsRow?.planId,
+          maxAgents: settingsRow?.maxAgents,
+          extraAgents: settingsRow?.extraAgents,
+        });
+        if (agentCapHit(existing, entitlement)) return null;
+
+        const voiceId = pickRotatedVoiceId(existing);
         await tx.insert(schema.agents).values({
           id,
           userId: req.user.id,
@@ -272,14 +275,23 @@ router.post(
               set: { userId: req.user.id, content: seededPersonality },
             });
         }
+        return { voiceId };
       });
+
+      if (!created) {
+        return res.status(402).json({
+          code: "AGENT_CAPACITY_REACHED",
+          error: "Your plan has reached its agent capacity.",
+        });
+      }
+
       res.status(201).json({
         id,
         name,
         role,
         archetype: resolveAgentRoleArchetype(role),
         channels: ["voice"],
-        voiceId,
+        voiceId: created.voiceId,
         isBusinessAgent,
       });
     } catch (err) {

@@ -3,7 +3,7 @@ import { Router, Request, Response } from "express";
 import { AppError } from "../lib/api-error";
 import { log, fetchWithTimeout, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import {
   validateBody,
@@ -16,6 +16,7 @@ import * as rateLimiters from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { ensureTenantTelecomDefaults } from "../lib/agent-phone-lines";
 import { runCompanyIdentityMutation } from "../lib/company-identity-mutation";
+import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import {
   listVapiNumbers,
   provisionVapiNumber,
@@ -81,6 +82,39 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { phone_number, vapi_number_id } = req.body;
+
+      // This endpoint binds a caller-supplied line to the tenant. Without a
+      // capacity gate it was an unmetered way to accumulate billable numbers,
+      // and without an ownership gate a tenant could bind another tenant's
+      // vapi_number_id and capture their inbound calls (the webhook resolver
+      // keys on that column). Migration 0111 makes the duplicate physically
+      // impossible; these checks return a clean error instead of a 500.
+      const slots = await getIncludedPhoneLineSlots(req.user.id);
+      const [{ held }] = await drizzle
+        .select({ held: sql<number>`count(*)` })
+        .from(schema.phoneNumbers)
+        .where(eq(schema.phoneNumbers.userId, req.user.id));
+      if (Number(held || 0) >= slots) {
+        return res.status(403).json({
+          code: "PHONE_CAPACITY_REACHED",
+          error: `Your plan includes ${slots} dedicated line${slots === 1 ? "" : "s"}; upgrade or add an Extra Agent for more.`,
+        });
+      }
+
+      if (vapi_number_id) {
+        const [claimed] = await drizzle
+          .select({ userId: schema.phoneNumbers.userId })
+          .from(schema.phoneNumbers)
+          .where(eq(schema.phoneNumbers.vapiNumberId, vapi_number_id))
+          .limit(1);
+        if (claimed && claimed.userId !== req.user.id) {
+          return res.status(409).json({
+            code: "NUMBER_ALREADY_BOUND",
+            error: "That line is already bound to another workspace.",
+          });
+        }
+      }
+
       await runCompanyIdentityMutation(req.user.id, "phone_number_changed", async (tx) => {
         await tx.insert(schema.phoneNumbers).values({
           phoneNumber: phone_number,
@@ -90,7 +124,14 @@ router.post(
       });
       res.json({ success: true });
     } catch (err: any) {
-      log.error("POST /api/phone-numbers failed", { error: getErrorMessage(err) });
+      const message = getErrorMessage(err);
+      if (/duplicate key|unique constraint/i.test(message)) {
+        return res.status(409).json({
+          code: "NUMBER_ALREADY_BOUND",
+          error: "That line is already registered.",
+        });
+      }
+      log.error("POST /api/phone-numbers failed", { error: message });
       throw AppError.fromHttpStatus(500, "Failed to add phone number");
     }
   },
