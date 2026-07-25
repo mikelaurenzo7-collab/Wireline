@@ -6,7 +6,7 @@ import { Link, useLocation } from "react-router-dom";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { cn } from "../lib/utils";
 import { isMarketingStickyCtaRoute } from "../lib/marketing-mobile";
-import { isAuthPortalPath } from "../lib/public-routes";
+import { isAuthPortalPath, isMarketingPublicPath } from "../lib/public-routes";
 
 const NOTICE_STORAGE_KEY = "wireline_cookie_consent";
 const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
@@ -36,6 +36,7 @@ function noticeAcknowledged(): boolean {
 
 export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
+  const [explicitlyOpened, setExplicitlyOpened] = useState(false);
   const location = useLocation();
   const [hasSession, setHasSession] = useState(false);
   const privacySignalEnabled = globalPrivacyControlEnabled();
@@ -83,7 +84,14 @@ export default function CookieConsent() {
   }, []);
 
   useEffect(() => {
-    const openPrivacyChoices = () => setVisible(true);
+    // Deliberately session- and route-agnostic: "Privacy choices" must work
+    // everywhere, including inside the workspace where the auto-open is
+    // suppressed. explicitlyOpened is what lets the render guard below know
+    // the card was asked for rather than volunteered.
+    const openPrivacyChoices = () => {
+      setExplicitlyOpened(true);
+      setVisible(true);
+    };
     window.addEventListener(OPEN_PRIVACY_CHOICES_EVENT, openPrivacyChoices);
     return () => window.removeEventListener(OPEN_PRIVACY_CHOICES_EVENT, openPrivacyChoices);
   }, []);
@@ -141,6 +149,19 @@ export default function CookieConsent() {
     new URLSearchParams(location.search).get("create") === "1" ||
     new URLSearchParams(location.search).get("create") === "true";
   if (isAuthPortalPath(location.pathname) || createFlowOpen) return null;
+
+  // The session probe above only runs once, at mount. The most common real
+  // path defeats it: land on marketing signed out, leave the notice sitting
+  // there, sign in — and the card rides into the workspace, where it is
+  // bottom-anchored on top of the Overview onboarding card. Caught by watching
+  // the walkthrough recording, where exactly that happened.
+  //
+  // Gate on the ROUTE as well, so placement never depends on probe timing.
+  // Auto-opening belongs to the public site; inside the app the notice is
+  // reachable only through the explicit "Privacy choices" control, which is
+  // why that path stays session-agnostic.
+  const onPublicSurface = isMarketingPublicPath(location.pathname);
+  if (!onPublicSurface && !explicitlyOpened) return null;
 
   // Portal to <body>: rendered inside the app tree, the fixed box stretched
   // to the full viewport height (an app-shell ancestor perturbs fixed-child

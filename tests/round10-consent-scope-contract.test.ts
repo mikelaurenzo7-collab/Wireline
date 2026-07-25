@@ -40,3 +40,26 @@ describe("round-10 consent notice scope", () => {
     expect(consent).toContain("isAuthPortalPath(location.pathname) || createFlowOpen");
   });
 });
+
+describe("round-10 consent placement cannot depend on probe timing", () => {
+  it("gates rendering on the route, not just the one-shot session probe", () => {
+    // The probe runs once at mount. The common real path defeats it: land on
+    // marketing signed out, leave the notice up, sign in — and the card rides
+    // into the workspace on top of the Overview onboarding card. Observed in
+    // the walkthrough recording.
+    expect(consent).toContain("isMarketingPublicPath");
+    expect(consent).toContain("const onPublicSurface = isMarketingPublicPath(location.pathname)");
+    expect(consent).toContain("if (!onPublicSurface && !explicitlyOpened) return null;");
+  });
+
+  it("still lets Privacy choices open the card inside the app", () => {
+    // The route guard must not strand a signed-in user with no way to revisit
+    // their choice, so the explicit control sets its own escape hatch.
+    expect(consent).toContain("setExplicitlyOpened(true)");
+    const listener = consent.slice(
+      consent.indexOf("const openPrivacyChoices"),
+      consent.indexOf("window.addEventListener(OPEN_PRIVACY_CHOICES_EVENT"),
+    );
+    expect(listener).not.toContain("onPublicSurface");
+  });
+});
