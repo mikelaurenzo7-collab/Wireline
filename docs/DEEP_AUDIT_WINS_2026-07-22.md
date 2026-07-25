@@ -9,7 +9,7 @@ Status: **Active** — verified product/runtime fixes from a full Wireline audit
 | --- | --- | --- |
 | AI structured | Keep OpenAI → Gemini → AI Gateway | Already fail-over ready; uniqueness is the product loop, not model shopping |
 | PSTN voice | Keep Twilio + Vapi | Carrier + orchestration fit; alternatives don't replace Create→Train→Wire→Run |
-| Realtime test | Keep Grok (auth) + OpenAI Realtime (guest) | Correctly separated from production PSTN |
+| Realtime test | OpenAI Realtime for Studio/ChatGPT/guest | Correctly separated from production PSTN |
 | Email | Keep Resend | Transactional fit; swap later if deliverability demands |
 | Video | Keep LiveAvatar/HeyGen **gated** | Demand is demo/presenter add-on, not default calls |
 | Payments / DB / host | Keep Stripe Cadence, Supabase, Vercel | Catalog + health confirmed this pass |

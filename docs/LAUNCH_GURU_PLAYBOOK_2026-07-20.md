@@ -19,7 +19,7 @@ Snapshot verified live on **2026-07-20 (evening hardening)**: Stripe on **Cadenc
 | Hero | “Your next AI employee” / “The best employee you've ever had, for next to nothing.” |
 | CTA | “Start free” → Free Builder → “Launch for $9/mo” |
 | Money model | Included minutes + prepaid Conversation Balance (no silent postpaid meter; active calls finish) |
-| Runtime | xAI Grok 4.5 → OpenAI → Gemini → AI Gateway; PSTN = Twilio → Vapi (GPT-4o → Gemini); Grok realtime = auth live test |
+| Runtime | OpenAI GPT-5.6 Terra → Gemini → AI Gateway; PSTN = Twilio → Vapi (GPT-4o → Gemini); OpenAI Realtime = Studio/ChatGPT/guest live demos |
 | Do not sell as GA | WhatsApp marketing, iOS/Android store, browser-extension stores, Jobber/ServiceTitan, SSO, auto-retrain, video presenter as core |
 | Surface to launch | **Web only** — Command / MCP / Android / iPhone are optional companions, not admission criteria |
 
@@ -67,8 +67,8 @@ Amounts are **recommended working capital to start**, not vendor list prices. Re
 | **Stripe** | Processing 2.9%+$0.30; Cadence AI live catalog | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `VITE_STRIPE_PUBLIC_KEY`, plan `STRIPE_*_PRICE_ID` | Available **$0** today — keep **$300–500** buffer before paid invites | Bank auto-debit on; Tax sub review monthly |
 | **Twilio** | Numbers ~$1.15/mo COGS each; SMS; PSTN carrier | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_API_KEY`, `TWILIO_API_SECRET` | **$150–250** prepaid (today ~$24 — top up) | Daily trigger $25; monthly $200 until 20 paid accounts |
 | **Vapi** | Call orchestration + model pass-through | `VAPI_PRIVATE_KEY`, `VAPI_WEBHOOK_SECRET`, `VITE_VAPI_PUBLIC_KEY` | **$200–400** or 2 weeks of expected minutes | Auto-reload on; concurrency ≥ expected peak+2 |
-| **xAI** | Primary structured AI (Grok 4.5); auth Studio/sim live voice (not PSTN) | `XAI_API_KEY`, optional `XAI_API_KEY_CHATKIT` | **$150–300** project budget month 1 | Soft 50/75; hard monthly stop |
-| **OpenAI** | Structured fallback (GPT-5.6 Terra); Vapi GPT-4o; optional account-bound private simulation | `OPENAI_API_KEY`, optional `OPENAI_API_KEY_CHATKIT`, `OPENAI_REALTIME_*` | **$100–200** project budget month 1 | Soft 50/75; hard monthly stop |
+| **xAI** | Optional experiment only (not launch default) | `XAI_API_KEY`, optional `XAI_API_KEY_CHATKIT` | **$0–100** only if opt-in fallback enabled | Soft 50/75; hard monthly stop |
+| **OpenAI** | Primary structured (GPT-5.6 Terra); Vapi GPT-4o; Studio/ChatGPT/guest Realtime | `OPENAI_API_KEY`, optional `OPENAI_API_KEY_CHATKIT`, `OPENAI_REALTIME_*` | **$200–400** project budget month 1 | Soft 50/75; hard monthly stop |
 | **Gemini** | Structured second fallback + live research fallback | `GEMINI_API_KEY` | **$50–100** | Separate project budget |
 | **Vercel AI Gateway** | Last multi-model route | `AI_GATEWAY_API_KEY` / OIDC | **$50** reserve + auto top-up | Monthly key budget |
 | **Perplexity** | Optional mid-call research | `PERPLEXITY_API_KEY`, `LIVE_RESEARCH_TIMEOUT_MS=8000` | **$0–40** until research demos matter | Optional |
@@ -140,14 +140,14 @@ Inbound/Outbound PSTN
 SMS
   Twilio Messaging → signed webhooks → $0.02/segment Conversation Balance
 
-Studio live voice test (auth)
-  xAI Grok realtime (NOT production PSTN)
+Studio / ChatGPT / guest live voice
+  OpenAI Realtime (NOT production PSTN)
 
 Mid-call research tool
   Perplexity (optional) → Gemini grounded | timeout LIVE_RESEARCH_TIMEOUT_MS
 
 Structured AI (train, summaries, tools off-call)
-  xAI Grok 4.5 → OpenAI → Gemini → AI Gateway | Runtime Allowance then wallet
+  OpenAI GPT-5.6 Terra → Gemini → AI Gateway | Runtime Allowance then wallet
 
 Artifacts (PDF/DOCX/XLSX/PPTX)
   Platform reserves $0.25–$0.50 from Runtime Allowance/wallet

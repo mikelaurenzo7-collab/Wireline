@@ -67,8 +67,8 @@ Live snapshot **2026-07-21**: Stripe available **$0.00**; Twilio **$23.664**.
 | Stripe | Keep a **$300–500** operating buffer before paid invites; no retired-account deficit is carried into this launch account. |
 | Twilio | Top to **$150–250**; Usage Triggers daily $25 / monthly $200 until ~20 paid accounts; confirm API key + Auth Token. |
 | Vapi | **$200–400** or ≥2 weeks expected minutes; auto-reload on; concurrency = peak+2. |
-| xAI | Month-1 project budget **$150–300** for the Grok 4.5 structured primary + Studio live-voice tests; soft 50/75 + hard stop. |
-| OpenAI | **$100–200**; the PSTN call model, OpenAI Realtime, and the first structured fallback depend on this key. |
+| xAI | **$0–100** optional experiment budget only if `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK` is intentionally enabled. |
+| OpenAI | **$200–400**; primary structured runtime, PSTN call model, and OpenAI Realtime demos depend on this key. |
 | Gemini | **$50–100** separate fallback budget. |
 | AI Gateway | **$50** reserve + auto top-up + monthly key budget. |
 | Perplexity | **$0–40** optional research quality. |
@@ -86,13 +86,17 @@ The generated current record is `docs/LAUNCH_STATUS.generated.json`; executable 
 
 ### Structured work
 
-`xAI (Grok 4.5) → OpenAI → Gemini → Vercel AI Gateway`
+`OpenAI (GPT-5.6 Terra) → Gemini → Vercel AI Gateway` (optional opt-in xAI after Gateway)
 
-- Do not route every request through the most expensive model — simple/medium tasks ride Grok 4.1 Fast Reasoning.
-- Grok 4.5 is the managed structured primary; keep a per-key xAI budget and alert when fallback rates rise.
+- Do not route every request through the most expensive model — simple/medium tasks ride GPT-5 inside the OpenAI lane.
+- OpenAI is the managed structured primary for personal agents, business agents, and hybrid direction alike.
 - Tag and budget Gateway usage before promoting it above last-resort status.
 - Record provider, model, tokens, latency, feature, account, and cost for each
   paid action.
+
+### Live voice demos
+
+`OpenAI Realtime` for Studio, ChatGPT private simulation, and guest previews. Phone demos and production PSTN stay on Vapi.
 
 ### Phone calls
 
@@ -229,7 +233,8 @@ Canonical references:
 | Stripe           | Pause checkout/top-ups; do not alter ledger manually; replay verified webhooks after fix.          |
 | Vapi/OpenAI PSTN | Pause new calls; preserve inbound fallback; post degraded status.                                  |
 | Twilio           | Pause number/SMS provisioning; preserve Vapi-owned paths; rotate credentials if unauthorized.      |
-| xAI              | Structured chain should move to OpenAI/Gemini/Gateway; disable Studio live voice if sessions fail. |
+| OpenAI structured/Realtime | Structured chain should move to Gemini/Gateway; pause Studio/ChatGPT live demos if Realtime sessions fail. |
+| xAI (optional)   | Only relevant if opt-in fallback is enabled; otherwise ignore. Do not disable OpenAI demos for an xAI outage. |
 | DNC vendor       | Hard-stop marketing outbound. Inbound/support may continue.                                        |
 | Resend           | Keep app available; surface verification/reset degradation and use support escalation.             |
 | Bad release      | Promote previous Vercel production deployment; verify DB/catalog compatibility first.              |

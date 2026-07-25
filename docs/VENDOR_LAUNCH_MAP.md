@@ -117,8 +117,8 @@ compatibility fallback until it is rotated.
 | Vercel AI Gateway   | Governed final AI route             | credential/model catalog ready            | Set per-key budget, alerts, and reserve before scale                           |
 | Supabase            | Postgres data plane                 | connected project healthy                 | Run DB health and migrations; retain password-screening controls              |
 | Stripe              | Customer billing                    | **ready (Cadence AI, $0 available)**      | Keep buffer before paid invites; webhook aligned 2026-07-20                   |
-| xAI                 | Primary structured reasoning + live voice | credential ready; structured primary since 2026-07-25 | Fund, cap, and monitor the Grok 4.5 primary; alert on fallback rates |
-| OpenAI              | Continuity reasoning + Realtime + Vapi call model | credential ready                  | Maintain budget, payment method, alerts, and scoped keys                       |
+| xAI                 | Optional experiment only                | credential ready; not launch-default      | Fund only if explicitly opting into structured fallback; alert if enabled |
+| OpenAI              | Primary structured + Realtime + Vapi call model | credential ready                  | Maintain budget, payment method, alerts, and scoped keys                       |
 | Gemini              | Direct AI continuity                | credential ready                          | Retain quota/billing fallback                                                  |
 | Vapi                | PSTN orchestration                  | credential ready; 18 numbers reachable    | Confirm billing/auto-reload and complete live call matrix                      |
 | Twilio              | Carrier, numbers, SMS, WhatsApp     | active; ~$23.66; 9 voice/SMS; API key pair installed | Rotate Auth Token when convenient; Usage Triggers; channel E2E |

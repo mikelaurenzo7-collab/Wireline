@@ -10,9 +10,9 @@ import {
 
 /**
  * Managed PSTN / Vapi voice model policy tests.
- * Live browser/mobile voice runs through the dedicated Grok voice-profile path
- * covered in src/lib/voice/grok-voice-config.test.ts.
- * This suite keeps the Vapi-managed OpenAI/Gemini/OpenRouter routing stable.
+ * Live browser/mobile voice runs through OpenAI Realtime
+ * (`src/lib/voice/openai-live-agent-service.ts` / Studio sandbox).
+ * This suite keeps the Vapi-managed OpenAI/Gemini routing stable.
  */
 
 describe("managed PSTN voice model policy", () => {

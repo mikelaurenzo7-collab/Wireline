@@ -805,7 +805,7 @@ export function buildShowcaseAssistantPayload(
     },
   };
 
-  // All showcase agents use Vapi's curated V2 voices (powered by xAI Grok),
+  // All showcase agents use Vapi's curated V2 managed voices,
   // included at $0.0025/min with lower latency and more natural
   // conversational quality.
   const vapiVoiceId = agent.vapiVoiceId || options?.existingVoiceId || "Elliot";

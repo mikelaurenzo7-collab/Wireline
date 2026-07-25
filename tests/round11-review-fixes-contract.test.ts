@@ -42,15 +42,16 @@ describe("round-11 review fixes", () => {
     expect(upperBounds).toBeGreaterThanOrEqual(2);
   });
 
-  it("prices gateway-prefixed and unknown models against the Grok-first table", () => {
-    // Gateway-served ids ("xai/grok-4.5") must normalize to the bare model.
+  it("prices gateway-prefixed and unknown models against the OpenAI-first table", () => {
+    // Gateway-served ids ("openai/gpt-5.6-terra") must normalize to the bare model.
+    expect(inputRateForModel("openai/gpt-5.6-terra")).toBe(2.5);
+    expect(inputRateForModel("gpt-5")).toBe(1.25);
     expect(inputRateForModel("xai/grok-4.5")).toBe(2);
     expect(inputRateForModel("grok-4.1-fast-reasoning")).toBe(0.2);
-    expect(inputRateForModel("openai/gpt-5.6-terra")).toBe(2.5);
     const audit = read("src/lib/ai-audit.ts");
-    expect(audit).toContain("MODEL_PRICING[XAI_MODELS.GROK_4_5]");
+    expect(audit).toContain("MODEL_PRICING[OPENAI_MODELS.GPT_5_6_TERRA]");
     const structured = read("src/lib/ai-structured.ts");
-    expect(structured).toContain('provider: "xai" | "openai" | "gemini"');
+    expect(structured).toContain('provider: "openai" | "gemini"');
   });
 
   it("guards the WhatsApp sender identity against cross-tenant adoption", () => {

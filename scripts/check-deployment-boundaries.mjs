@@ -29,8 +29,8 @@ if (isProduction) {
   requireValue("POSTGRES_URL", "production API database connection is missing");
   requireValue("INTERNAL_JWT_SECRET", "production session signing is missing");
   requireValue("OAUTH_STATE_SECRET", "OAuth state signing is missing");
-  requireValue("XAI_API_KEY", "the primary managed structured runtime (Grok 4.5) is missing");
-  requireValue("OPENAI_API_KEY", "the structured continuity fallback and Realtime runtime is missing");
+  requireValue("OPENAI_API_KEY", "the primary managed structured runtime and OpenAI Realtime sessions are missing");
+  // XAI_API_KEY is optional experiment-only; never a production launch requirement.
   requireValue("VAPI_PRIVATE_KEY", "the managed live-call runtime is missing");
   requireValue("VAPI_WEBHOOK_SECRET", "Vapi callbacks cannot be verified");
   requireValue("TWILIO_ACCOUNT_SID", "Twilio account binding is missing");

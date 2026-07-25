@@ -34,7 +34,7 @@ Status: **Historical snapshot, superseded** — this audit records the 2026-07-1
 
 ## Code and docs defects fixed in this pass
 
-- **Runtime narrative unified to code truth** (OpenAI Responses primary → Gemini → AI Gateway; xAI structured strictly opt-in; Grok realtime powers authenticated live-voice test/simulation). The guest MCP demo referenced in the original 2026-07-19 audit was fully retired on 2026-07-21.
+- **Runtime narrative unified to code truth** (OpenAI Responses primary → Gemini → AI Gateway; xAI structured strictly opt-in; OpenAI Realtime powers Studio/ChatGPT/guest live-voice demos). The guest MCP demo referenced in the original 2026-07-19 audit was fully retired on 2026-07-21.
 - **`/api/ai/status` reported `primary_provider: "xai"` while serving GPT-5.6 Terra**, and `RecipeModal` disabled all recipe forms unless the provider equaled `"xai"` — a coupling landmine. The route now reports `openai`, the client gates only on availability, and `managed-ai-recipe-health-contract` enforces the decoupling.
 - **Signup/verification emails promised a "14-day trial" that no longer exists** (`email-service.ts` signup-link + verification templates, Vapi `create_account` fallback line, `EmailVerifyBanner`). All now speak the Free Builder truth: build/train/simulate free, pick a live plan for a customer number.
 - **Tenant webhook deliveries were silently unsigned** for any webhook created through the current API: creation stores the secret vault-encrypted (`secretEncrypted`) and nulls the legacy `secret` column, but delivery signed only from the legacy column. Delivery now decrypts the vault secret (legacy plaintext still honored) and fails closed with `secret_decrypt_failed` instead of sending an unsigned request.

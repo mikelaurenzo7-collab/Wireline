@@ -93,18 +93,19 @@ describe("integration vendor operating map", () => {
     ]);
   });
 
-  it("keeps environment and launch gates aligned with the Grok-first funded runtime", () => {
+  it("keeps environment and launch gates aligned with the OpenAI-first funded runtime", () => {
     const envValidator = readFileSync(resolve(process.cwd(), "src/lib/env-validator.ts"), "utf8");
     const launchReadiness = readFileSync(
       resolve(process.cwd(), "src/lib/launch-readiness.ts"),
       "utf8",
     );
 
-    expect(envValidator).toContain("process.env.XAI_API_KEY");
-    expect(envValidator).toContain("process.env.OPENAI_API_KEY");
-    expect(envValidator).toContain("process.env.AI_GATEWAY_API_KEY");
+    expect(envValidator).toContain('name: "XAI_API_KEY"');
+    expect(envValidator).toContain('name: "OPENAI_API_KEY"');
+    expect(envValidator).toContain('name: "AI_GATEWAY_API_KEY"');
     expect(envValidator).toContain("const managedRuntime");
-    expect(envValidator).toContain("Primary managed structured runtime credential (Grok 4.5)");
+    expect(envValidator).toContain("Primary managed reasoning and OpenAI Realtime credential");
+    expect(envValidator).toContain("Optional xAI experiment credential");
     expect(envValidator).not.toContain("const directRuntime");
     expect(launchReadiness).toContain("TWILIO_ACCOUNT_SID+TWILIO_AUTH_TOKEN");
     expect(launchReadiness).toContain("PSTN voice + number stack");

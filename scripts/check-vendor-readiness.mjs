@@ -250,13 +250,13 @@ record(
 
 record(
   "xai",
-  true,
+  false,
   xai?.ok ? "ready" : "degraded",
   xai?.ok
-    ? "xAI key accepted; the Grok 4.5 structured primary and Wireline Live voice APIs are reachable."
-    : "Primary xAI layer missing or rejected; structured turns degrade to the OpenAI continuity fallback.",
-  "Keep the Grok 4.5 primary funded and healthy; OpenAI, Gemini, and the AI Gateway carry ordered continuity.",
-  { structured_primary_model: "grok-4.5" },
+    ? "xAI key accepted; optional Grok experiment APIs are reachable."
+    : "Optional xAI layer missing or rejected; launch defaults stay on OpenAI → Gemini → AI Gateway.",
+  "Keep xAI experiment-only. Fund only if WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK is intentionally enabled.",
+  { structured_primary_model: "gpt-5.6-terra", xai_role: "optional_experiment" },
 );
 
 const vapiPhoneInventory = arrayAt(vapiPhones?.body, "data");

@@ -92,12 +92,13 @@ describe("industry-leader audit hardening contracts", () => {
     expect(customization).not.toMatch(/label:\s*"Goals"[\s\S]*?href:\s*"\/knowledge"/);
   });
 
-  it("keeps public changelog on the Grok-first runtime truth", () => {
+  it("keeps public changelog on the OpenAI-first runtime truth", () => {
     const changelog = read("src/components/PublicChangelog.tsx");
     expect(changelog).not.toContain("Claude Sonnet 4.6");
     expect(changelog).not.toContain("Claude Opus 4.7");
-    expect(changelog).toContain("Grok 4.5 primary");
+    expect(changelog).toContain("OpenAI unified for reasoning and live demos");
     expect(changelog).toContain("OpenAI GPT-5.6 Terra");
+    expect(changelog).not.toContain("Grok 4.5 primary");
     expect(changelog).not.toContain("Recaps · Triage · Activity · Cockpit");
   });
 

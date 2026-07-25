@@ -34,9 +34,9 @@ describe("annual billing purchase path", () => {
 });
 
 describe("structured model routing", () => {
-  it("routes simple and medium tasks to Grok 4.1 Fast and complex to Grok 4.5", () => {
-    expect(selectModelForTask("simple")).toBe("grok-4.1-fast-reasoning");
-    expect(selectModelForTask("medium")).toBe("grok-4.1-fast-reasoning");
-    expect(selectModelForTask("complex")).toBe("grok-4.5");
+  it("routes simple and medium tasks to GPT-5 and complex to GPT-5.6 Terra", () => {
+    expect(selectModelForTask("simple")).toBe("gpt-5");
+    expect(selectModelForTask("medium")).toBe("gpt-5");
+    expect(selectModelForTask("complex")).toBe("gpt-5.6-terra");
   });
 });
