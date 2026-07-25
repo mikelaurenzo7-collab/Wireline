@@ -61,7 +61,7 @@ workflow, Vercel author invite) were confirmed out of code scope.
 | --- | --- | --- |
 | Structured AI | OpenAI → Gemini → Gateway | Already fail-over ready |
 | PSTN | Twilio + Vapi | Carrier + orchestration fit |
-| Live test voice | Grok (auth) + OpenAI Realtime (guest) | Correctly separated from PSTN |
+| Live test voice | OpenAI Realtime (Studio/ChatGPT/guest) | Correctly separated from PSTN |
 | Email | Resend (+ mailbox OAuth) | Transactional + tenant send |
 | Video | LiveAvatar/HeyGen gated | Add-on, not core calls |
 | Billing / DB / host | Stripe Cadence, Supabase, Vercel | Confirmed |
