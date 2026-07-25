@@ -40,11 +40,11 @@ const PAID_TIERS = [
     plan: planById.starter,
     publicName: "Starter",
     eyebrow: "Put one employee live",
-    tagline: "Your AI Voice Employee from $9/month.",
+    tagline: "Your AI Voice Employee from $19/month.",
     detail:
       "One focused employee for inbound, outbound follow-up, or scheduling—with an included Wireline number.",
-    ctaMonthly: "Start for $9",
-    ctaAnnual: "Start for $99/yr",
+    ctaMonthly: "Start for $19",
+    ctaAnnual: "Start for $190/yr",
     ctaPath: "/signup?plan=starter",
     icon: Sparkles,
     featured: false,
@@ -54,7 +54,7 @@ const PAID_TIERS = [
     plan: planById.team,
     publicName: "Starter Plus",
     eyebrow: "Founder hybrid",
-    tagline: "Personal Concierge + business employee — from $24/month.",
+    tagline: "Personal Concierge + business employee — from $39/month.",
     detail: `Two live agents and two number slots: one for your life, one for the company—with ${planById.team.voice_minutes_monthly} voice minutes and full Lead Hunt, inbox, SMS, and email.`,
     ctaMonthly: "Choose Starter Plus",
     ctaAnnual: "Choose annual Starter Plus",
@@ -213,8 +213,8 @@ export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page min-h-screen bg-background text-foreground">
       <PageMeta
-        title="Pricing | Wireline AI Voice Employee from $9/month"
-        description="Build an AI Voice Employee free, then launch from $9/month with an included Wireline number, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls."
+        title="Pricing | Wireline AI Voice Employee from $19/month"
+        description="Build an AI Voice Employee free, then launch from $19/month with an included Wireline number, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls."
         path="/pricing"
       />
       <script
@@ -226,10 +226,10 @@ export default function Pricing() {
       <main id="main-content" className="pt-16" tabIndex={-1}>
         <MarketingHero
           eyebrow="Founder Early Access"
-          title="Build free. Launch for $9. Scale when it pays."
+          title="Build free. Launch for $19. Scale when it pays."
           description="One subscription unlocks calls, texts, email, follow-up, and Lead Hunt—plus a number on every paid plan. Extra usage stays prepaid, never a surprise bill."
           primaryAction={{
-            label: annual ? "Launch for $99/yr" : "Launch for $9/mo",
+            label: annual ? "Launch for $190/yr" : "Launch for $19/mo",
             to: annual ? "/signup?plan=starter&interval=year" : "/signup?plan=starter",
           }}
           secondaryAction={{
@@ -511,7 +511,7 @@ export default function Pricing() {
                   Build the employee first. Let real demand choose the plan.
                 </h2>
                 <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-2xl text-base leading-7">
-                  Start with a private build, launch your AI Voice Employee for $9 with an included
+                  Start with a private build, launch your AI Voice Employee for $19 with an included
                   number, then upgrade when completed work justifies more capacity or specialists.
                 </p>
               </div>

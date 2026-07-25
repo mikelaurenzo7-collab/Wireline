@@ -55,7 +55,7 @@ describe("voice-wallet-guard", () => {
     vi.mocked(drizzle.select).mockImplementation(
       selectSequence([
         [{ plan: "team", status: "active" }],
-        [{ used: 75 }],
+        [{ used: 120 }],
         [{ extraAgents: 0 }],
       ]) as never,
     );
@@ -87,8 +87,8 @@ describe("voice-wallet-guard", () => {
   });
 
   it("counts paid extra-agent minutes in the included pool", async () => {
-    // team base = 55 min; each extra agent adds 50. With 2 extra agents the
-    // customer has 155 included, so 75 used still leaves 80 — the call must be
+    // team base = 120 min; each extra agent adds 50. With 2 extra agents the
+    // customer has 220 included, so 75 used still leaves 145 — the call must be
     // allowed even with a zero balance instead of being blocked at the base cap.
     vi.mocked(drizzle.select).mockImplementation(
       selectSequence([
@@ -100,8 +100,8 @@ describe("voice-wallet-guard", () => {
     vi.mocked(getCreditBalanceUsd).mockResolvedValue(0);
 
     const snapshot = await getVoiceWalletSnapshot("user-1");
-    expect(snapshot.included_minutes).toBe(155);
-    expect(snapshot.included_minutes_remaining).toBe(80);
+    expect(snapshot.included_minutes).toBe(220);
+    expect(snapshot.included_minutes_remaining).toBe(145);
     expect(snapshot.sufficient).toBe(true);
     await expect(assertVoiceWalletSolvent("user-1")).resolves.toBeUndefined();
   });

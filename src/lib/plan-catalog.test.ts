@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID,
+  HARD_CONTRIBUTION_MARGIN_FLOOR,
   LAUNCH_CONTRIBUTION_MARGIN_FLOOR,
   STRIPE_PLANS,
   VOICE_VARIABLE_COST_PER_MIN_USD,
+  estimatedContributionMarginAtExpectedUsage,
   estimatedContributionMarginAtFullIncludedUsage,
   planById,
   planByPriceId,
@@ -51,7 +53,7 @@ describe("plan-catalog", () => {
   it("keeps Enterprise the top self-serve capacity tier", () => {
     const enterprise = planById("enterprise");
     expect(enterprise?.name).toBe("Wireline Business");
-    expect(enterprise?.price_usd_monthly).toBe(149);
+    expect(enterprise?.price_usd_monthly).toBe(159);
     expect(enterprise?.max_agents).toBe(15);
   });
 
@@ -63,39 +65,44 @@ describe("plan-catalog", () => {
   });
 
   it("locks canonical Founder Early Access voice and capacity rates", () => {
-    expect(planById("starter")?.voice_minutes_monthly).toBe(20);
-    expect(planById("team")?.voice_minutes_monthly).toBe(55);
+    expect(planById("starter")?.voice_minutes_monthly).toBe(60);
+    expect(planById("team")?.voice_minutes_monthly).toBe(120);
     expect(planById("team")?.max_agents).toBe(2);
     expect(planById("team")?.included_phone_numbers).toBe(2);
-    expect(planById("team")?.price_usd_monthly).toBe(24);
-    expect(planById("team")?.price_usd_annual).toBe(240);
-    expect(planById("business")?.voice_minutes_monthly).toBe(120);
-    expect(planById("enterprise")?.voice_minutes_monthly).toBe(285);
+    expect(planById("team")?.price_usd_monthly).toBe(39);
+    expect(planById("team")?.price_usd_annual).toBe(390);
+    expect(planById("business")?.voice_minutes_monthly).toBe(250);
+    expect(planById("enterprise")?.voice_minutes_monthly).toBe(450);
+    // Catalog v6: one flat top-up rate on every plan.
+    expect(planById("starter")?.overage_per_min_usd).toBe(0.22);
     expect(planById("team")?.overage_per_min_usd).toBe(0.22);
-    expect(planById("business")?.overage_per_min_usd).toBe(0.19);
-    expect(planById("enterprise")?.overage_per_min_usd).toBe(0.17);
+    expect(planById("business")?.overage_per_min_usd).toBe(0.22);
+    expect(planById("enterprise")?.overage_per_min_usd).toBe(0.22);
   });
 
-  it("keeps price leadership while protecting full-use contribution margin", () => {
+  it("keeps price leadership while protecting the two-floor margin policy", () => {
+    // Catalog v6 (docs/PRICING_DECISION_2026-07-25.md): the planning floor is
+    // judged at expected utilization, the hard floor at 100% utilization —
+    // both on both intervals, with annual always the binding side.
     const paid = STRIPE_PLANS.filter((plan) => plan.price_usd_monthly > 0);
     for (const plan of paid) {
-      expect(
-        estimatedContributionMarginAtFullIncludedUsage(plan, "month"),
-        `${plan.id} monthly`,
-      ).toBeGreaterThanOrEqual(LAUNCH_CONTRIBUTION_MARGIN_FLOOR);
+      for (const interval of ["month", "year"] as const) {
+        expect(
+          estimatedContributionMarginAtExpectedUsage(plan, interval),
+          `${plan.id} ${interval} expected-usage`,
+        ).toBeGreaterThanOrEqual(LAUNCH_CONTRIBUTION_MARGIN_FLOOR);
+        expect(
+          estimatedContributionMarginAtFullIncludedUsage(plan, interval),
+          `${plan.id} ${interval} full-use`,
+        ).toBeGreaterThanOrEqual(HARD_CONTRIBUTION_MARGIN_FLOOR);
+      }
     }
 
+    // Uniform annual discount: every paid tier gives exactly two months free.
     for (const plan of paid) {
-      expect(
-        estimatedContributionMarginAtFullIncludedUsage(plan, "year"),
-        `${plan.id} annual`,
-      ).toBeGreaterThanOrEqual(LAUNCH_CONTRIBUTION_MARGIN_FLOOR);
+      expect(plan.price_usd_annual, plan.id).toBe(plan.price_usd_monthly * 10);
     }
-
-    expect(planById("starter")?.price_usd_annual).toBe(99);
-    expect(
-      estimatedContributionMarginAtFullIncludedUsage(planById("starter")!, "year"),
-    ).toBeGreaterThanOrEqual(LAUNCH_CONTRIBUTION_MARGIN_FLOOR);
+    expect(planById("starter")?.price_usd_annual).toBe(190);
   });
 
   it("keeps paid extra-agent add-ons as capacity bundles", () => {
@@ -128,10 +135,12 @@ describe("plan-catalog", () => {
     expect(
       planByStripePrice({
         id: "price_not_in_env",
-        metadata: { wireline_price_key: "business_monthly_founder_2026_07_v2" },
+        metadata: { wireline_price_key: "business_monthly_founder_2026_07_v6" },
       })?.id,
     ).toBe("business");
 
+    // Prefix-based resolution keeps retired-generation keys resolving so old
+    // webhook payloads never lose their plan mapping.
     expect(
       planByStripePrice({
         id: "price_not_in_env",
@@ -141,7 +150,7 @@ describe("plan-catalog", () => {
   });
 
   it("uses lookup keys as a compatibility fallback", () => {
-    expect(planByStripePrice({ lookup_key: "team_monthly_founder_2026_07_v5" })?.id).toBe("team");
+    expect(planByStripePrice({ lookup_key: "team_monthly_founder_2026_07_v6" })?.id).toBe("team");
   });
 
   it("treats Starter Plus and above as founder personal+business pair capacity", async () => {

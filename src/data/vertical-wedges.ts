@@ -100,7 +100,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How much does it cost vs. an answering service?",
-        a: "Most after hours answering services charge one to two dollars per minute or two to four hundred dollars per month per business. Wireline plans start at $9/mo with guaranteed voice minutes included, plus Conversation Balance for anything beyond that. The agent actually books jobs instead of just taking messages.",
+        a: "Most after hours answering services charge one to two dollars per minute or two to four hundred dollars per month per business. Wireline plans start at $19/mo with guaranteed voice minutes included, plus Conversation Balance for anything beyond that. The agent actually books jobs instead of just taking messages.",
       },
     ],
   },
@@ -286,7 +286,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "personal",
     metaTitle: "Wireline for Everyone — Your AI Handles the Calls You Hate",
     metaDescription:
-      "Personal AI phone agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow-ups. Starts at $9/mo, with Conversation Balance covering anything beyond your included minutes.",
+      "Personal AI phone agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow-ups. Starts at $19/mo, with Conversation Balance covering anything beyond your included minutes.",
     eyebrow: "For everyone who hates the phone",
     headline: "Never make an awkward call again.",
     subhead:

@@ -35,12 +35,12 @@ describe("marketing metadata contract", () => {
     // Assert catalog capacity through the module, not raw substrings: a bare
     // `included_phone_numbers: 1` matches whichever plan happens to own it and
     // silently passes after a reprice.
-    expect(planById("team")?.price_usd_monthly).toBe(24);
+    expect(planById("team")?.price_usd_monthly).toBe(39);
     expect(planById("team")?.included_phone_numbers).toBe(2);
-    expect(planById("business")?.price_usd_monthly).toBe(59);
+    expect(planById("business")?.price_usd_monthly).toBe(79);
     expect(planById("business")?.included_phone_numbers).toBe(5);
 
-    expect(pricing).toContain("Build free. Launch for $9. Scale when it pays.");
+    expect(pricing).toContain("Build free. Launch for $19. Scale when it pays.");
     expect(contact).toContain('planById("starter")');
     expect(contact).toContain('planById("team")');
     expect(contact).toContain("Starter launches at ${STARTER_PRICE}/mo");
