@@ -14,36 +14,36 @@ function position(value: string) {
   return index;
 }
 
-describe("Grok-first structured runtime provider chain", () => {
-  it("tries direct xAI, then OpenAI, then Gemini, then the AI Gateway", () => {
-    const xai = position('providers.push({ name: "xAI"');
+describe("OpenAI-first structured runtime provider chain", () => {
+  it("tries OpenAI, then Gemini, then the AI Gateway, then explicitly enabled xAI", () => {
     const openAI = position('providers.push({ name: "OpenAI"');
     const gemini = position('providers.push({ name: "Gemini"');
     const gateway = position('providers.push({ name: "AI Gateway"');
+    const xai = position('providers.push({ name: "xAI"');
 
-    expect(xai).toBeLessThan(openAI);
     expect(openAI).toBeLessThan(gemini);
     expect(gemini).toBeLessThan(gateway);
-    expect(client).toContain("xAI request failed; trying OpenAI fallback");
+    expect(gateway).toBeLessThan(xai);
     expect(client).toContain("OpenAI request failed; trying Gemini fallback");
     expect(client).toContain("Gemini request failed; trying AI Gateway fallback");
+    expect(client).toContain(
+      "AI Gateway request failed; trying explicitly enabled xAI fallback",
+    );
   });
 
-  it("keeps direct xAI as the managed primary gated only on key presence", () => {
+  it("keeps direct OpenAI as the managed primary and gates xAI behind explicit opt-in", () => {
+    expect(client).toContain('endpoint: "https://api.openai.com/v1/responses"');
+    expect(client).toContain("if (process.env.OPENAI_API_KEY)");
+    expect(client).toContain("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK");
+    expect(client).toContain("xaiStructuredFallbackEnabled() && process.env.XAI_API_KEY");
     expect(client).toContain('const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses"');
-    expect(client).toContain("if (process.env.XAI_API_KEY)");
-    expect(client).not.toContain("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK");
-    expect(client).toContain("/grok/i.test(requested) ? requested : XAI_STRUCTURED_PRIMARY_MODEL");
+    expect(models).toContain(
+      "export const STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL",
+    );
     expect(models).toContain('GROK_4_5: "grok-4.5"');
-    expect(models).toContain(
-      "process.env.WIRELINE_XAI_STRUCTURED_MODEL?.trim() || XAI_MODELS.GROK_4_5",
-    );
-    expect(models).toContain(
-      "export const STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL",
-    );
   });
 
-  it("routes continuity turns to current explicit OpenAI model IDs", () => {
+  it("routes primary turns to current explicit OpenAI model IDs", () => {
     expect(client).toContain('endpoint: "https://api.openai.com/v1/responses"');
     expect(client).toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
     expect(client).toContain(
