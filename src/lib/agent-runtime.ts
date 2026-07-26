@@ -152,10 +152,14 @@ export function isWithinBusinessHours(
 }
 
 /**
- * Compliance presets — opt-in disclosures appended to the agent's
- * first-message + woven into directive guardrails. The text is short
- * and intentionally generic; account holders must consult counsel for the
- * binding language in their jurisdiction.
+ * Compliance presets — opt-in guardrails woven into the agent's SYSTEM prompt.
+ * The text is short and intentionally generic; account holders must consult
+ * counsel for the binding language in their jurisdiction.
+ *
+ * A system-prompt instruction alone does not GUARANTEE what the agent says
+ * first, so modes with an at-start-of-call disclosure requirement (currently
+ * `tcpa`) also get a spoken disclosure prepended to the opening line — see
+ * complianceFirstMessagePrefix().
  *
  * 'none' returns an empty block.
  */
@@ -220,6 +224,25 @@ export function complianceDisclosure(mode: ComplianceMode | string | null | unde
     default:
       return "";
   }
+}
+
+/**
+ * Spoken AI-disclosure prefix for the agent's opening line. Only `tcpa` requires
+ * an at-START-of-call disclosure — the FCC's Feb 8, 2024 ruling (FCC 24-17)
+ * requires artificial/AI-voice calls to disclose the automated voice and identify
+ * the responsible entity, and a system-prompt guardrail alone can't guarantee the
+ * disclosure is actually the first thing spoken. Returns a short prefix for `tcpa`
+ * (with the business name when available) and an empty string for every other mode.
+ * Callers prepend this to the agent's firstMessage.
+ */
+export function complianceFirstMessagePrefix(
+  mode: ComplianceMode | string | null | undefined,
+  businessName?: string | null,
+): string {
+  if (mode !== "tcpa") return "";
+  const name = (businessName ?? "").trim();
+  const onBehalf = name ? ` on behalf of ${name}` : "";
+  return `Just so you know, this call uses an automated AI assistant${onBehalf}. `;
 }
 
 /**
