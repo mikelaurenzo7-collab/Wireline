@@ -3,13 +3,13 @@
 Canonical operating proof runbook: [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md).
 
 **Status:** the "Target commercial structure," "Pricing lock," and "Exact applied Stripe writes"
-sections below are a historical record of the Jun/early-Jul 2026 zero-included-minutes catalog. As
-of 2026-07-10 the live catalog is the **Founder Early Access** model (5 tiers with guaranteed
-included voice minutes and a recurring monthly Runtime Allowance, replacing the one-time welcome
-credit). Duplicating prices in this doc is exactly why it drifted stale before —
-**`src/lib/plan-catalog.ts` is the single source of truth** for plan ids, prices, included voice
-minutes, Runtime Allowance, overage rates, and Stripe price/lookup-key resolution. Treat the
-numbers below as historical unless just re-verified against that file and the live Stripe catalog.
+sections below are historical records of earlier 2026 catalog experiments. The live self-serve
+catalog is **Founder Early Access v6**: Free Builder plus four paid tiers with guaranteed included
+voice minutes, a recurring monthly Runtime Allowance, flat $0.22/min Runtime Balance top-ups, and a
+licensed extra-agent add-on. **`src/lib/plan-catalog.ts` is the single source of truth** for plan
+ids, prices, included voice minutes, Runtime Allowance, overage rates, and Stripe price/lookup-key
+resolution. Treat any duplicated number in docs as stale unless it has just been verified against
+that file and the live Stripe catalog.
 
 ## Product model
 
@@ -22,17 +22,17 @@ Wireline sells operating capacity, not template access.
 
 ## Current commercial structure (Founder Early Access, live in Stripe as of 2026-07-10)
 
-| Plan id | Product name | Monthly / Annual | Included voice minutes | Runtime Allowance | Max agents |
-| --- | --- | ---: | ---: | ---: | ---: |
-| `personal` | Wireline Free Builder | $0 | 0 | $0 | 1 |
-| `starter` | Wireline Starter | $9 / $99 | 20 | $0.50/mo | 1 |
-| `team` | Wireline Starter Plus | $19 / $190 | 40 | $1/mo | 1 |
-| `business` | Wireline Pro | $59 / $590 | 100 | $4/mo | 5 |
-| `enterprise` | Wireline Business | $149 / $1,490 | 250 | $10/mo | 15 |
+| Plan id | Product name | Monthly / Annual | Included voice minutes | Runtime Allowance | Max agents | Number slots |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| `personal` | Wireline Free Builder | $0 | 0 | $0 | 1 draft | 0 |
+| `starter` | Wireline Starter | $19 / $190 | 60 | $1/mo | 1 | 1 |
+| `team` | Wireline Starter Plus | $39 / $390 | 120 | $3/mo | 2 | 2 |
+| `business` | Wireline Pro | $79 / $790 | 250 | $6/mo | 5 | 5 |
+| `enterprise` | Wireline Business | $159 / $1,590 | 450 | $12/mo | 15 | 15 |
 
-Overage beyond included voice minutes ranges $0.25/min (Starter) down to $0.17/min (top tier) — see
-`overage_per_min_usd` per plan. SMS outbound segments still bill Conversation Balance at
-**$0.02/segment** (`SMS_COST_PER_SEGMENT_USD` in `src/lib/sms-billing.ts`, unchanged by this pivot).
+Runtime Balance top-ups cover extra voice at a flat **$0.22/min** across paid tiers; there are no
+automatic postpaid overages. SMS outbound segments still bill Runtime Balance at **$0.02/segment**
+(`SMS_COST_PER_SEGMENT_USD` in `src/lib/sms-billing.ts`).
 
 ## Call length vs the "8 second" research timeout (locked 2026-07-20)
 
@@ -135,18 +135,27 @@ Capacity sells agents, lines, routing, and governance — not bundled minutes.
 
 ## Current env mapping
 
-Vercel production, preview, and development envs were repointed to the live Team and Business price ids. Keep the existing env contract until the app is refactored away from transitional identifiers:
+Vercel envs intentionally keep a few transitional names while Stripe products carry the clearer
+Founder Early Access v6 names. Do not infer the plan from the env-var label; resolve through
+`src/lib/plan-catalog.ts`, lookup keys, and Stripe price metadata.
 
-- `STRIPE_BUSINESS_STARTER_PRICE_ID` -> `Wireline Team - Monthly`
-- `STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID` -> `Wireline Team - Annual`
-- `STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID` -> `Wireline Team - Extra Agent`
-- `STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID` -> `Wireline Team - Voice Overage`
-- `STRIPE_PRO_PRICE_ID` -> `Wireline Business - Monthly`
-- `STRIPE_PRO_ANNUAL_PRICE_ID` -> `Wireline Business - Annual`
-- `STRIPE_PRO_EXTRA_AGENT_PRICE_ID` -> `Wireline Business - Extra Agent`
-- `STRIPE_PRO_OVERAGE_PRICE_ID` -> `Wireline Business - Voice Overage`
+| Env var | Live product / interval |
+| --- | --- |
+| `STRIPE_STARTER_9_PRICE_ID` | Wireline Starter monthly |
+| `STRIPE_STARTER_9_ANNUAL_PRICE_ID` | Wireline Starter annual |
+| `STRIPE_STARTER_PRICE_ID` | Wireline Starter Plus monthly |
+| `STRIPE_STARTER_ANNUAL_PRICE_ID` | Wireline Starter Plus annual |
+| `STRIPE_TEAM_PRICE_ID` | Wireline Pro monthly |
+| `STRIPE_TEAM_ANNUAL_PRICE_ID` | Wireline Pro annual |
+| `STRIPE_BUSINESS_PRICE_ID` | Wireline Business monthly |
+| `STRIPE_BUSINESS_ANNUAL_PRICE_ID` | Wireline Business annual |
+| `STRIPE_EXTRA_AGENT_PRICE_ID` | Extra Agent + 50 Minutes add-on |
+| `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID` | Live Video add-on |
+| `STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID` | Live Video monthly alias |
 
-Retired Personal, Plus, Starter, and old Business/Enterprise price env vars were removed from Vercel. Stripe secrets and webhook secrets were left intact.
+Retired zero-included-minutes price env vars and OpenRouter-era runtime assumptions must stay out of
+new deploy guidance. Stripe secrets and webhook secrets are separate credentials and must not be
+renamed with catalog changes.
 
 ## Migration guardrails
 
@@ -182,19 +191,19 @@ Wireline's commercial story is intentionally narrow and repeatable:
 
 - **Create free** — short intake, no subscription wall, all templates unlocked.
 - **Train deeply** — facts, instructions, voice, memory, and sources live in Training, not checkout.
-- **Fund live work** — Conversation Balance is customer-controlled; Personal never requires a plan.
-- **Buy capacity when shared** — Team, Business, and Enterprise add routing, governance, and pooled usage.
+- **Fund live work** — Runtime Balance is customer-controlled; Free Builder never requires a plan.
+- **Buy capacity when shared** — Starter, Starter Plus, Pro, and Business add live agents, number slots, governance, and included usage.
 
 These messages must stay aligned across:
 
-| Surface                   | Canonical copy anchor                                                           |
-| ------------------------- | ------------------------------------------------------------------------------- |
-| `/pricing`                | "Create free. Train deeply. Fund live work when it matters."                    |
-| Billing settings          | "Start free. Fund live work."                                                   |
-| Conversation Balance API  | `CONVERSATION_BALANCE_COPY` in `src/lib/conversation-balance.ts`                |
-| Stripe catalog            | Product names: Conversation Balance, Wireline Personal/Team/Business/Enterprise |
-| ChatGPT MCP widgets       | Wireline Letterpress tokens via `src/lib/wireline-mcp-widget-styles.ts`         |
-| iOS / Android / extension | Generated `WirelineDesignTokens` from `design-tokens/wireline.tokens.json`      |
+| Surface                   | Canonical copy anchor |
+| ------------------------- | --- |
+| `/pricing`                | Founder Early Access v6 from `src/lib/plan-catalog.ts` |
+| Billing settings          | "Start free. Fund live work." |
+| Runtime Balance API       | `CONVERSATION_BALANCE_COPY` in `src/lib/conversation-balance.ts` |
+| Stripe catalog            | Product names and lookup keys generated by `scripts/lib/stripe-founder-catalog.mjs` |
+| ChatGPT MCP widgets       | Wireline Letterpress tokens via `src/lib/wireline-mcp-widget-styles.ts` |
+| iOS / Android / extension | Generated `WirelineDesignTokens` from `design-tokens/wireline.tokens.json` |
 
 ## Still required before live rollout
 
