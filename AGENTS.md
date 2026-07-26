@@ -19,12 +19,15 @@ surfaces and are not needed for core web/API development.
 
 - Core secrets needed for the authenticated product loop (signup + create agent):
   `POSTGRES_URL`, `INTERNAL_JWT_SECRET`, and at least one AI key
-  (`XAI_API_KEY` (primary) / `OPENAI_API_KEY` / `GEMINI_API_KEY` /
-  `AI_GATEWAY_API_KEY`). These are provided as Cursor secrets and are present
+  (`OPENAI_API_KEY` (primary) / `GEMINI_API_KEY` / `AI_GATEWAY_API_KEY`;
+  `XAI_API_KEY` is experiment-only). These are provided as Cursor secrets and are present
   in the process environment.
 - The full set of 150+ integration vars (Stripe, Vapi, Twilio, OAuth, Resend,
   etc. — see `.env.example` for the canonical list) lives in the Vercel
-  project. Pull them into a local `.env` with:
+  project. Live credentials and production provider configuration are scoped to
+  Production only. Preview/Development may use dedicated sandbox values; never
+  widen a production value across Vercel targets. `scripts/check-deployment-boundaries.mjs`
+  enforces this policy. Pull development-only values into a local `.env` with:
   `npx vercel env pull .env --environment=development --yes --token="$VERCEL_TOKEN"`
   This is only needed for exercising those specific integrations — the server
   boots and the core signup/agent flow works without them.
