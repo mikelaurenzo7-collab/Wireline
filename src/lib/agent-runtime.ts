@@ -9,7 +9,7 @@
 //  Every helper is tested in src/lib/agent-runtime.test.ts.
 // ────────────────────────────────────────────────────────────────────────
 
-export type ComplianceMode = "none" | "hipaa" | "pci" | "gdpr" | "financial" | "legal";
+export type ComplianceMode = "none" | "hipaa" | "pci" | "gdpr" | "financial" | "legal" | "tcpa";
 
 export type DayOfWeek = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
@@ -199,6 +199,22 @@ export function complianceDisclosure(mode: ComplianceMode | string | null | unde
         "- Do not provide legal advice. You may share general public information only.",
         "- Schedule consultations with the attorney rather than answering jurisdictional questions.",
         '- State on the first interaction: "This conversation does not establish an attorney-client relationship."',
+      ].join("\n");
+    case "tcpa":
+      // AI-voice / automated-calling disclosure. Grounded in the FCC's Feb 8, 2024
+      // Declaratory Ruling (FCC 24-17), which classifies AI-generated voices as
+      // "artificial or prerecorded voice" under the TCPA — with no carve-out for
+      // tech that "purports to provide the equivalent of a live agent" — and
+      // requires identification/disclosure of the entity responsible for the call
+      // (and, per the FCC 24-84 NPRM, an up-front AI disclosure). Generic by design;
+      // Account Holders must confirm the binding language for their jurisdiction.
+      return [
+        "## COMPLIANCE — TCPA (AI voice disclosure)",
+        "Automated / AI-voice calling rules:",
+        "- At the start of the call, clearly disclose that this is an automated AI assistant, and state the name of the business you are calling on behalf of.",
+        '- Honor any "do not call", "stop calling", "remove me", or opt-out request immediately: confirm the removal, do not re-solicit, and end the call.',
+        '- Honor "speak to a human" / "is this a real person" requests directly and without deflecting.',
+        "- Do not place or continue a marketing or telemarketing call without the Account Holder's confirmed prior express written consent for this contact.",
       ].join("\n");
     case "none":
     default:
