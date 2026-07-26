@@ -31,6 +31,7 @@ describe("marketing metadata contract", () => {
 
   it("keeps public pricing and contact copy aligned to the active catalog", () => {
     const pricing = read("src/pages/Pricing.tsx");
+    const planCatalog = read("src/lib/plan-catalog.ts");
     const contact = read("src/components/ContactPage.tsx");
     // Assert catalog capacity through the module, not raw substrings: a bare
     // `included_phone_numbers: 1` matches whichever plan happens to own it and
@@ -57,6 +58,11 @@ describe("marketing metadata contract", () => {
       expect(source).not.toContain("~$0.05/min");
       expect(source).not.toContain("~$0.08/min");
       expect(source).not.toContain("Team starts at $29");
+    }
+
+    for (const source of [pricing, planCatalog]) {
+      expect(source).not.toMatch(/\bemployees?\b/i);
+      expect(source).not.toMatch(/\bAI Voice Employees?\b/i);
     }
   });
 });
