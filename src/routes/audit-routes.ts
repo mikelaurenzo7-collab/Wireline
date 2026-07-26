@@ -23,7 +23,8 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
+      const rawDays = parseInt(String(req.query.days ?? ""), 10);
+      const days = Math.min(Math.max(1, Number.isNaN(rawDays) ? 30 : rawDays), 365);
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
       const rows = await drizzle
@@ -46,7 +47,8 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const limit = Math.min(parseInt((req.query.limit as string) || "100"), 500);
+      const rawLimit = parseInt(String(req.query.limit ?? ""), 10);
+      const limit = Math.min(Math.max(1, Number.isNaN(rawLimit) ? 100 : rawLimit), 500);
       const data = await drizzle
         .select()
         .from(schema.auditLog)

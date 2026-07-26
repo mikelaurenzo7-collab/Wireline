@@ -29,6 +29,7 @@ import { eq, and, inArray } from "drizzle-orm";
 import { sanitizePhone } from "../lib/vapi-helpers";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
+import { matchesCarrierKeyword } from "../lib/carrier-keywords";
 
 const router = Router();
 const twilioVoiceRateLimiter = createIpRateLimiter({
@@ -151,7 +152,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
 
   return tenantStore.run(tenantUserId, async () => {
     // ─── OPT-OUT FLOW ──────────────────────────────────────────────
-    if (OPT_OUT_KEYWORDS.has(trimmed)) {
+    if (matchesCarrierKeyword(trimmed, OPT_OUT_KEYWORDS)) {
       try {
         // Add to DNC (idempotent — onConflictDoNothing on user_id+phone)
         await drizzle
@@ -192,7 +193,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
     }
 
     // ─── OPT-IN FLOW (resubscribe) ─────────────────────────────────
-    if (OPT_IN_KEYWORDS.has(trimmed)) {
+    if (matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS)) {
       try {
         await drizzle.delete(schema.dncList).where(
           and(
@@ -221,7 +222,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
     }
 
     // ─── HELP FLOW ─────────────────────────────────────────────────
-    if (HELP_KEYWORDS.has(trimmed)) {
+    if (matchesCarrierKeyword(trimmed, HELP_KEYWORDS)) {
       return res
         .status(200)
         .send(
@@ -413,7 +414,9 @@ router.post(
     const from = typeof req.body?.From === "string" ? req.body.From : "";
     const to = typeof req.body?.To === "string" ? req.body.To : "";
     const durationRaw = Number(req.body?.RecordingDuration);
-    const durationSeconds = Number.isFinite(durationRaw) ? Math.max(0, Math.round(durationRaw)) : null;
+    const durationSeconds = Number.isFinite(durationRaw)
+      ? Math.max(0, Math.round(durationRaw))
+      : null;
 
     // Persist + notify off the critical Twilio response path — hang up first
     // so the caller isn't waiting on DB/email, then run tenant work.
