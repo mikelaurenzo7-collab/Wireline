@@ -26,7 +26,7 @@ import { PageMeta } from "../lib/page-meta";
 const OPERATING_LOOP = [
   {
     step: "Build",
-    title: "Define the employee",
+    title: "Define the agent",
     body: "Choose the job, audience, success criteria, channels, and limits.",
   },
   {
@@ -88,7 +88,7 @@ const CORE_FEATURES = [
   {
     icon: SlidersHorizontal,
     title: "Training by workflow",
-    body: "Tune one employee to sales, support, billing, scheduling, recovery, or a custom playbook.",
+    body: "Tune one voice agent for sales, support, billing, scheduling, recovery, or a custom playbook.",
   },
   {
     icon: BarChart3,
@@ -141,7 +141,7 @@ const USE_CASES = [
     title: "Custom workflow",
     icon: Workflow,
     to: "/signup",
-    body: "Train one employee on the conversation work you want off your plate.",
+    body: "Train one voice agent on the conversation work you want off your plate.",
   },
 ] as const;
 
@@ -151,8 +151,8 @@ export default function Features() {
   return (
     <div className="marketing-surface wl-features-page min-h-screen bg-background text-foreground">
       <PageMeta
-        title="Features | Your Wireline AI Voice Employee"
-        description="Build and train one AI Voice Employee that calls, texts, emails, books, follows up, updates connected systems, and logs outcomes under shared rules and memory."
+        title="Features | Wireline AI Voice Agents"
+        description="Build and train AI voice agents that call, text, email, book, follow up, update connected systems, and log outcomes under shared rules and memory."
         path="/features"
       />
       <PrecisionPublicHeader />
@@ -160,9 +160,9 @@ export default function Features() {
       <main id="main-content" className="pt-16" tabIndex={-1}>
         <MarketingHero
           eyebrow="Features"
-          title="One AI Voice Employee. Every customer conversation."
-          description="Train one employee with your rules and channels. It handles the conversation, finishes the next step, and keeps one outcome record."
-          primaryAction={{ label: "Build your AI Voice Employee", to: "/signup" }}
+          title="AI Voice Agents for every customer conversation."
+          description="Train one voice agent or a coordinated team with your rules and channels. Each agent handles the conversation, finishes the next step, and keeps one outcome record."
+          primaryAction={{ label: "Build your AI Voice Agent", to: "/signup" }}
           secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
           proof={FEATURE_HERO_PROOF}
         />
@@ -172,7 +172,7 @@ export default function Features() {
             <div className="mx-auto mb-10 max-w-3xl text-center">
               <p className="wl-overline text-primary">Voice first · multichannel by design</p>
               <h2 className="wl-public-section-heading mt-3">
-                Calls, SMS, and email belong to the same employee.
+                Calls, SMS, and email belong to the same agent.
               </h2>
               <p className="wl-public-copy mx-auto mt-5">
                 Voice handles the live moment. Text and email keep momentum—without splitting
@@ -299,11 +299,11 @@ export default function Features() {
           <div className="wl-public-rail text-center">
             <p className="wl-overline text-primary">Private to start · ready when you are</p>
             <h2 className="wl-public-section-heading mt-3">
-              Train the employee. Test the work. Launch with confidence.
+              Train the agent. Test the work. Launch with confidence.
             </h2>
             <div className="marketing-hero__actions mt-8">
               <Link to="/signup" className="marketing-btn-primary px-6 text-sm font-semibold">
-                Build your AI Voice Employee
+                Build your AI Voice Agent
               </Link>
               <Link to="/pricing" className="marketing-btn-secondary px-6 text-sm font-semibold">
                 See plans <ArrowRight size={15} aria-hidden="true" />
