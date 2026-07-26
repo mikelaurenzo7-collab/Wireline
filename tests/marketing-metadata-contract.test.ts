@@ -61,8 +61,8 @@ describe("marketing metadata contract", () => {
     }
 
     for (const source of [pricing, planCatalog]) {
-      expect(source).not.toMatch(/\\bemployees?\\b/i);
-      expect(source).not.toMatch(/\\bAI Voice Employees?\\b/i);
+      expect(source).not.toMatch(/\bemployees?\b/i);
+      expect(source).not.toMatch(/\bAI Voice Employees?\b/i);
     }
   });
 });
