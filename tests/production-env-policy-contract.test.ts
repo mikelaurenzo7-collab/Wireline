@@ -12,6 +12,9 @@ const deploymentBoundaryPath = resolve(
 );
 const deploymentBoundary = readFileSync(deploymentBoundaryPath, "utf8");
 const vercelBuild = readFileSync(resolve(process.cwd(), "scripts/vercel-build.mjs"), "utf8");
+const serverContext = readFileSync(resolve(process.cwd(), "src/lib/server-context.ts"), "utf8");
+const startup = readFileSync(resolve(process.cwd(), "src/lib/startup.ts"), "utf8");
+const packageJson = JSON.parse(readFileSync(resolve(process.cwd(), "package.json"), "utf8"));
 
 const runPreviewBoundary = (overrides: NodeJS.ProcessEnv = {}) =>
   spawnSync(process.execPath, [deploymentBoundaryPath], {
@@ -69,6 +72,17 @@ describe("production environment launch policy", () => {
     expect(envValidator).toContain("const isHttpsUrl");
     expect(envValidator).toContain("validate: (value) => !value || isHttpsUrl(value)");
     expect(prodCheck).toContain('new URL(String(value).trim()).protocol === "https:"');
+  });
+
+  it("marks no-database server import smoke so production env logs stay actionable", () => {
+    const smokeServer = packageJson.scripts["smoke:server"];
+
+    expect(smokeServer).toContain("WIRELINE_IMPORT_SMOKE_NO_DATABASE");
+    expect(smokeServer).toContain("delete process.env.DATABASE_POOL_URL");
+    expect(smokeServer).toContain("delete process.env.POSTGRES_URL");
+    expect(serverContext).toContain("Database intentionally unavailable for no-database import smoke");
+    expect(startup).toContain("Skipping startup env error log during no-database import smoke");
+    expect(startup).toContain("No-database import smoke observed missing prod env vars as expected");
   });
 
   it("fails preview builds that inherit production credentials or provider configuration", () => {

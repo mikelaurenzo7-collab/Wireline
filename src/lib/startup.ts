@@ -3,6 +3,8 @@ import { getInternalJwtSecret } from "./internal-jwt-secret";
 import { validateEnv, logEnvValidation, generateSetupChecklist } from "./env-validator";
 import { isFederalDncVendorConfigured } from "./federal-dnc-service";
 
+const isNoDatabaseImportSmoke = () => process.env.WIRELINE_IMPORT_SMOKE_NO_DATABASE === "true";
+
 /**
  * Startup env validation — fail fast in production rather than
  * silently booting with placeholder Supabase URLs / missing webhook
@@ -14,9 +16,18 @@ import { isFederalDncVendorConfigured } from "./federal-dnc-service";
 export function validateStartupEnv() {
   // Run comprehensive validation
   const validation = validateEnv();
+  const importSmokeWithoutDatabase = isNoDatabaseImportSmoke();
 
-  // Log results with verbose mode in production
-  logEnvValidation(IS_PROD);
+  // Log results with verbose mode in production. The no-database import smoke
+  // deliberately removes DB env vars, so logging it as a production env failure
+  // makes deploy audits look broken even when runtime env is present.
+  if (importSmokeWithoutDatabase) {
+    log.info("Skipping startup env error log during no-database import smoke", {
+      missing: validation.errors.map((error) => error.var),
+    });
+  } else {
+    logEnvValidation(IS_PROD);
+  }
 
   // Additional legacy checks for backward compatibility
   // Validates that JWT secret can be resolved (throws if missing in prod)
@@ -35,7 +46,11 @@ export function validateStartupEnv() {
   // We do not throw (see the note below on why boot-time throws hurt more than
   // they help), but we log at `error` in prod so it surfaces in incident review
   // and the daily env-health audit script has a distinct signal to key on.
-  if (IS_PROD && (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)) {
+  if (
+    !importSmokeWithoutDatabase &&
+    IS_PROD &&
+    (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)
+  ) {
     log.error(
       "UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN not set in production — " +
         "rate limits are per-invocation only and provide no protection in serverless. " +
@@ -63,17 +78,24 @@ export function validateStartupEnv() {
     const missing = validation.errors.map((e) => e.var);
 
     if (IS_PROD) {
-      log.error(
-        "Missing required env vars in production. Affected features will return errors at request time.",
-        {
+      if (importSmokeWithoutDatabase) {
+        log.info("No-database import smoke observed missing prod env vars as expected", {
           missing,
           groupSummary: validation.byGroup,
-        },
-      );
+        });
+      } else {
+        log.error(
+          "Missing required env vars in production. Affected features will return errors at request time.",
+          {
+            missing,
+            groupSummary: validation.byGroup,
+          },
+        );
 
-      // Generate setup checklist for easier onboarding
-      generateSetupChecklist();
-      log.info("Environment setup checklist generated. See logs above for details.");
+        // Generate setup checklist for easier onboarding
+        generateSetupChecklist();
+        log.info("Environment setup checklist generated. See logs above for details.");
+      }
     } else {
       log.warn("Required env vars missing (dev mode — continuing with placeholders)", {
         missing,
@@ -82,19 +104,19 @@ export function validateStartupEnv() {
     }
   }
 
-  if (IS_PROD && !isFederalDncVendorConfigured()) {
+  if (!importSmokeWithoutDatabase && IS_PROD && !isFederalDncVendorConfigured()) {
     log.warn(
       "Federal DNC vendor is not configured (missing FEDERAL_DNC_API_URL/KEY or rejected placeholder key) — marketing/campaign outbound fails closed until a real DNCScrub loginId is set.",
     );
   }
 
-  if (IS_PROD && !process.env.SENTRY_DSN) {
+  if (!importSmokeWithoutDatabase && IS_PROD && !process.env.SENTRY_DSN) {
     log.warn(
       "SENTRY_DSN not set in production — 5xx and unhandled errors rely on manual log review. Set in Vercel before scaling traffic.",
     );
   }
 
-  if (recommended.length) {
+  if (!importSmokeWithoutDatabase && recommended.length) {
     log.warn("Recommended env vars not set", { recommended });
   }
 
