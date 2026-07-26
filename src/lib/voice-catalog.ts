@@ -9,7 +9,14 @@ export type VoiceOption = {
   gender?: "female" | "male";
 };
 
-/** Wireline Live voices — low-latency realtime speech (xAI Grok). */
+/**
+ * Legacy curated preview voices for browser auditioning only.
+ *
+ * These are not the production PSTN voice engine. Browser/mobile live
+ * conversations use OpenAI Realtime voice profiles, and phone calls use curated
+ * Vapi voices unless a Vapi-supported streaming custom voice is explicitly
+ * approved and provisioned.
+ */
 export const WIRELINE_LIVE_VOICES: readonly VoiceOption[] = [
   { id: "eve", name: "Eve — Bright & Energetic", provider: "xai" },
   { id: "ara", name: "Ara — Warm & Professional", provider: "xai" },
@@ -122,14 +129,14 @@ export function resolveVoiceLabel(voiceId: string | null | undefined): string {
 
 /** User-facing provider family — no third-party vendor names. */
 export function providerLabel(provider: string | null | undefined): string {
-  if (provider === "xai") return "Wireline Live";
+  if (provider === "xai") return "Wireline Preview";
   if (provider === "vapi") return "Wireline Phone";
   if (provider === "presenter") return "Presenter voice";
   return "Wireline Voice";
 }
 
 export function voiceFamilyLabel(provider: VoiceProvider): string {
-  if (provider === "xai") return "Wireline Live";
+  if (provider === "xai") return "Wireline Preview";
   if (provider === "vapi") return "Wireline Phone";
   if (provider === "presenter") return "Presenter voice";
   return "Wireline Voice";
@@ -138,7 +145,7 @@ export function voiceFamilyLabel(provider: VoiceProvider): string {
 /** Short routing hint for create-flow voice picks. */
 export function voiceRoutingHint(provider: VoiceProvider): string | null {
   if (provider === "xai") {
-    return "Best for browser simulator and low-latency tests. For PSTN phone calls, prefer Wireline Phone.";
+    return "Legacy audio preview only. Live browser/mobile conversations use OpenAI voice profiles; PSTN phone calls use Wireline Phone.";
   }
   if (provider === "vapi") {
     return "Optimized for live phone calls on your Vapi line.";

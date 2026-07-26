@@ -1,4 +1,4 @@
-/** Exact server-side previews for Wireline Live voices. */
+/** Preview-only audio samples for legacy curated Wireline preview voices. */
 import { AppError } from "../api-error";
 import { log } from "../server-logger";
 import { VAPI_CURATED_VOICES, WIRELINE_LIVE_VOICES } from "../voice-catalog";
@@ -9,6 +9,8 @@ const XAI_TTS_URL = "https://api.x.ai/v1/tts";
 const XAI_VOICE_IDS = new Set(WIRELINE_LIVE_VOICES.map((voice) => voice.id));
 
 type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
+// "xai" remains a compatibility token for legacy preview URLs. It must not be
+// used as evidence that xAI owns live browser/mobile voice or production PSTN.
 export type CuratedPreviewProvider = "xai" | "vapi";
 
 export function curatedVoicePreviewPath(provider: CuratedPreviewProvider, voiceId: string): string {
@@ -28,10 +30,10 @@ export function isCuratedPreviewProvider(value: string): value is CuratedPreview
 }
 
 /**
- * Generate an MP3 with the provider and exact voice the user selected.
+ * Generate an MP3 preview for an exact legacy preview voice.
  * Vapi does not expose a documented standalone preview endpoint, so its voices
  * are intentionally auditioned during a phone test instead of being faked with
- * a different provider.
+ * a different provider. This path never participates in live call routing.
  */
 export async function generateCuratedVoicePreview(
   provider: CuratedPreviewProvider,
