@@ -25,15 +25,15 @@ export default function Showcase() {
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title="Try Wireline"
-        description="Hear the AI employee your customers will meet first, then build one for voice, SMS, and email."
+        description="Hear the AI voice agent your customers will meet first, then build one for voice, SMS, and email."
         path="/showcase"
       />
 
       <MarketingHero
         eyebrow="Try Wireline"
-        title="Hear the employee your customer meets first."
-        description="Start a live preview, ask a real question, and hear how a trained employee turns the conversation into a clear next step."
-        primaryAction={{ label: "Create an employee", to: "/signup" }}
+        title="Hear the voice agent your customer meets first."
+        description="Start a live preview, ask a real question, and hear how a trained voice agent turns the conversation into a clear next step."
+        primaryAction={{ label: "Create an agent", to: "/signup" }}
         secondaryAction={{ label: "Call a demo line", to: "#demo-lines", tone: "secondary" }}
         proof={SHOWCASE_HERO_PROOF}
         visual={
@@ -132,7 +132,7 @@ export default function Showcase() {
               to="/signup"
               className="marketing-btn-primary min-h-12 px-6 text-sm font-semibold"
             >
-              Create an employee <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              Create an agent <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
         </div>

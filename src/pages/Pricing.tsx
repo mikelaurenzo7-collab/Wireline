@@ -39,10 +39,10 @@ const PAID_TIERS = [
   {
     plan: planById.starter,
     publicName: "Starter",
-    eyebrow: "Put one employee live",
-    tagline: "Your AI Voice Employee from $19/month.",
+    eyebrow: "Put one agent live",
+    tagline: "Your AI Voice Agent from $19/month.",
     detail:
-      "One focused employee for inbound, outbound, or scheduling—with an included Wireline number.",
+      "One focused agent for inbound, outbound, or scheduling—with an included Wireline number.",
     ctaMonthly: "Start for $19",
     ctaAnnual: "Start for $190/yr",
     ctaPath: "/signup?plan=starter",
@@ -54,7 +54,7 @@ const PAID_TIERS = [
     plan: planById.team,
     publicName: "Starter Plus",
     eyebrow: "Founder hybrid",
-    tagline: "Personal Concierge + business employee — from $39/month.",
+    tagline: "Personal Concierge + business voice agent — from $39/month.",
     detail: `Two live agents, two numbers, ${planById.team.voice_minutes_monthly} voice minutes, Lead Hunt, inbox, SMS, and email.`,
     ctaMonthly: "Choose Starter Plus",
     ctaAnnual: "Choose annual Starter Plus",
@@ -67,21 +67,21 @@ const PAID_TIERS = [
     plan: planById.business,
     publicName: "Pro",
     eyebrow: "For a growing operation",
-    tagline: "Five specialized employees. One supervised workspace.",
-    detail: "Up to five specialized employees with shared routing, approvals, and analytics.",
+    tagline: "Five specialized agents. One supervised workspace.",
+    detail: "Up to five specialized agents with shared routing, approvals, and analytics.",
     ctaMonthly: "Go Pro",
     ctaAnnual: "Go Pro annually",
     ctaPath: "/signup?plan=business",
     icon: Users,
     featured: false,
-    badge: "Multi-employee",
+    badge: "Multi-agent",
   },
   {
     plan: planById.enterprise,
     publicName: "Business",
     eyebrow: "For serious operators",
     tagline: "A complete AI conversation workforce.",
-    detail: "Up to fifteen purpose-built employees with stronger governance and oversight.",
+    detail: "Up to fifteen purpose-built agents with stronger governance and oversight.",
     ctaMonthly: "Start Business",
     ctaAnnual: "Start Business annually",
     ctaPath: "/signup?plan=enterprise",
@@ -100,7 +100,7 @@ const CHANNEL_RULES = [
   {
     icon: MessageSquareText,
     title: "Text / SMS",
-    body: "The same employee continues by text. Consent and spend stay visible, billed by segment.",
+    body: "The same agent continues by text. Consent and spend stay visible, billed by segment.",
   },
   {
     icon: Mail,
@@ -110,14 +110,14 @@ const CHANNEL_RULES = [
   {
     icon: Crosshair,
     title: "Lead Hunt",
-    body: "Research a niche, enrich targets, and hand them to the same employee. On every paid plan.",
+    body: "Research a niche, enrich targets, and hand them to the same agent. On every paid plan.",
   },
 ] as const;
 
 const FAQ = [
   [
-    "Does one employee handle voice, SMS, and email?",
-    "Yes. A single Wireline employee can call, text, and email under one business identity, memory, rule set, approval posture, and outcome record. Additional employees are for concurrency or specialized roles—not to unlock basic channels.",
+    "Does one agent handle voice, SMS, and email?",
+    "Yes. A single Wireline agent can call, text, and email under one business identity, memory, rule set, approval posture, and outcome record. Additional agents are for concurrency or specialized roles—not to unlock basic channels.",
   ],
   [
     "Is the Wireline number free?",
@@ -125,11 +125,11 @@ const FAQ = [
   ],
   [
     "Why are there two Starter plans?",
-    "Starter is the lowest-risk way to put one AI Voice Employee live. Starter Plus is the founder hybrid: personal Concierge plus a business AI employee, two number slots, more voice minutes, and the fuller Lead Hunt, inbox, email, SMS, and automation experience.",
+    "Starter is the lowest-risk way to put one AI Voice Agent live. Starter Plus is the founder hybrid: personal Concierge plus a business voice agent, two number slots, more voice minutes, and the fuller Lead Hunt, inbox, email, SMS, and automation experience.",
   ],
   [
-    "Does every employee automatically create a phone-number cost?",
-    "No. Plans provide number slots, but Wireline provisions production numbers only when needed. Unused employee capacity does not create unnecessary carrier spend.",
+    "Does every agent automatically create a phone-number cost?",
+    "No. Plans provide number slots, but Wireline provisions production numbers only when needed. Unused agent capacity does not create unnecessary carrier spend.",
   ],
   [
     "What happens when included voice minutes run out?",
@@ -149,7 +149,7 @@ const FAQ = [
   ],
   [
     "What is the Scale plan?",
-    "Scale is a custom committed-usage agreement for organizations needing 25 or more employees, negotiated channel economics, SSO, custom integrations, security review, retention controls, implementation support, or SLAs. See the Scale card above.",
+    "Scale is a custom committed-usage agreement for organizations needing 25 or more agents, negotiated channel economics, SSO, custom integrations, security review, retention controls, implementation support, or SLAs. See the Scale card above.",
   ],
 ] as const;
 
@@ -157,12 +157,12 @@ const assurances = [
   {
     icon: WalletCards,
     label: "Build free",
-    detail: "Train and simulate one private AI Voice Employee before paying.",
+    detail: "Train and simulate one private AI Voice Agent before paying.",
   },
   {
     icon: PhoneCall,
     label: "Number included",
-    detail: "Every paid employee can claim a Wireline number at no extra line fee.",
+    detail: "Every paid agent can claim a Wireline number at no extra line fee.",
   },
   {
     icon: CircleDollarSign,
@@ -184,7 +184,7 @@ const assurances = [
 const pricingJsonLd = {
   "@context": "https://schema.org",
   "@type": "OfferCatalog",
-  name: "Wireline AI Voice Employee pricing",
+  name: "Wireline AI Voice Agents pricing",
   url: "https://trywireline.com/pricing",
   itemListElement: [
     {
@@ -192,7 +192,7 @@ const pricingJsonLd = {
       name: "Wireline Free Builder",
       price: 0,
       priceCurrency: "USD",
-      description: "Build, train, and privately simulate one AI Voice Employee.",
+      description: "Build, train, and privately simulate one AI Voice Agent.",
     },
     ...PAID_TIERS.map(({ plan, publicName, detail }) => ({
       "@type": "Offer",
@@ -211,8 +211,8 @@ export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page min-h-screen bg-background text-foreground">
       <PageMeta
-        title="Pricing | Wireline AI Voice Employee from $19/month"
-        description="Build an AI Voice Employee free, then launch from $19/month with an included Wireline number, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls."
+        title="Pricing | Wireline AI Voice Agents from $19/month"
+        description="Build an AI voice agent free, then launch from $19/month with an included Wireline number, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls."
         path="/pricing"
       />
       <script
@@ -243,7 +243,7 @@ export default function Pricing() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-overline text-primary">Plans for different stages</p>
               <h2 className="wl-public-section-heading mt-3">
-                Start with one employee. Add specialists when demand earns them.
+                Start with one agent. Add specialists when demand earns them.
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
                 Every paid plan includes voice, SMS, email, and a Wireline number. Higher tiers buy
@@ -297,7 +297,7 @@ export default function Pricing() {
                   <span className="pb-1 text-sm text-muted-foreground">forever</span>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Build, train, and privately simulate one AI Voice Employee. Live numbers unlock
+                  Build, train, and privately simulate one AI Voice Agent. Live numbers unlock
                   after activation.
                 </p>
                 <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
@@ -410,7 +410,7 @@ export default function Pricing() {
               >
                 <div className="flex flex-col items-center justify-center gap-3 text-center">
                   <div>
-                    <p className="wl-stitch-label">25+ employees or custom needs</p>
+                    <p className="wl-stitch-label">25+ agents or custom needs</p>
                     <h3 className="mt-2 text-2xl font-semibold">Scale &amp; Enterprise</h3>
                   </div>
                   <ShieldCheck className="h-6 w-6 text-primary" aria-hidden="true" />
@@ -421,7 +421,7 @@ export default function Pricing() {
                 </p>
                 <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
                   {[
-                    "25+ live employee capacity",
+                    "25+ live agent capacity",
                     "Committed voice, SMS, email, and data economics",
                     "Custom telephony and integrations",
                     "Security, rollout, and support plan",
@@ -448,10 +448,10 @@ export default function Pricing() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-overline text-primary">Channel economics</p>
               <h2 className="wl-public-section-heading mt-3">
-                One employee. No channel seat tax. Clear usage costs.
+                One agent. No channel seat tax. Clear usage costs.
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
-                One employee calls, texts, and emails on one subscription. Costs track numbers,
+                One agent calls, texts, and emails on one subscription. Costs track numbers,
                 minutes, and segments—not seats per channel.
               </p>
             </div>
@@ -478,7 +478,7 @@ export default function Pricing() {
                 Predictable enough for owners. Flexible enough to grow.
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
-                Subscription funds employee capacity. Prepaid balance funds variable provider work.
+                Subscription funds agent capacity. Prepaid balance funds variable provider work.
               </p>
             </div>
             <div className="mx-auto mt-10 max-w-3xl space-y-3">
@@ -503,7 +503,7 @@ export default function Pricing() {
               <div className="mx-auto max-w-3xl">
                 <p className="wl-overline text-primary">Founder Early Access</p>
                 <h2 className="wl-public-section-heading mt-3 text-[var(--wireline-color-text-primary)]">
-                  Build the employee first. Let real demand choose the plan.
+                  Build the agent first. Let real demand choose the plan.
                 </h2>
                 <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-2xl text-base leading-7">
                   Start private, launch for $19 with an included number, then upgrade when completed
@@ -514,7 +514,7 @@ export default function Pricing() {
                 to="/signup?plan=personal"
                 className="marketing-btn-primary min-h-12 justify-center px-6 text-sm font-semibold"
               >
-                Build your AI Voice Employee <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                Build your AI Voice Agent <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </div>
           </div>
