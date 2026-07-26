@@ -25,9 +25,10 @@ import { Router, Request, Response } from "express";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, or } from "drizzle-orm";
 import { sanitizePhone } from "../lib/vapi-helpers";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
+import { reportError } from "../lib/error-reporter";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { matchesCarrierKeyword } from "../lib/carrier-keywords";
 
@@ -180,7 +181,22 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
 
         log.info("SMS opt-out processed", { tenant: tenantUserId, from: fromNormalized });
       } catch (e: any) {
+        // The suppression row never landed — do NOT confirm an opt-out that
+        // does not exist. Tell the consumer to retry and page ops: an
+        // unhonored STOP is a compliance incident, not telemetry.
         log.error("SMS opt-out write failed", { error: e?.message });
+        reportError(e instanceof Error ? e : new Error(String(e?.message || e)), {
+          route: "/api/twilio-webhook/sms",
+          flow: "sms_opt_out",
+          tenant: tenantUserId,
+        });
+        return res
+          .status(200)
+          .send(
+            twimlReply(
+              "We couldn't process your unsubscribe request just now. Please reply STOP again in a few minutes.",
+            ),
+          );
       }
 
       return res
@@ -195,12 +211,21 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
     // ─── OPT-IN FLOW (resubscribe) ─────────────────────────────────
     if (matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS)) {
       try {
+        // A customer SMS opt-in can reverse only an SMS-created suppression.
+        // Manual, federal, voice, legal, complaint, and workspace DNC entries
+        // remain intact until an authorized account holder removes them —
+        // "yes please" to an appointment text must never clear a legal record.
         await drizzle.delete(schema.dncList).where(
           and(
             eq(schema.dncList.userId, tenantUserId),
             // Remove every stored variant so resubscribe clears legacy
             // "+"-prefixed and 10/11-digit rows too.
             inArray(schema.dncList.phone, dncPhoneCandidates(from)),
+            eq(schema.dncList.reason, "opt-out"),
+            or(
+              eq(schema.dncList.source, "twilio_advanced_opt_out"),
+              eq(schema.dncList.source, "sms_opt_out"),
+            ),
           ),
         );
 
@@ -215,7 +240,16 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
 
         log.info("SMS opt-in processed", { tenant: tenantUserId, from: fromNormalized });
       } catch (e: any) {
+        // The DNC rows are still in place; a "resubscribed" confirmation
+        // would be false (outbound stays blocked). Be honest instead.
         log.error("SMS opt-in write failed", { error: e?.message });
+        return res
+          .status(200)
+          .send(
+            twimlReply(
+              "We couldn't process your resubscribe request just now. Please reply START again in a few minutes.",
+            ),
+          );
       }
 
       return res.status(200).send(twimlReply("You have been resubscribed. Welcome back."));

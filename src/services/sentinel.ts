@@ -85,7 +85,7 @@ export class SentinelService {
   private async killCall(callId: string, reason: string) {
     log.info(`Terminating call ${callId} due to ${reason}`);
     try {
-      await fetchWithTimeout(
+      const response = await fetchWithTimeout(
         `https://api.vapi.ai/call/${callId}/terminate`,
         {
           method: "POST",
@@ -95,6 +95,18 @@ export class SentinelService {
         },
         5000,
       );
+
+      // fetchWithTimeout does not throw on non-2xx. If Vapi refused the
+      // terminate, the agent is still talking — recording the presence row as
+      // "terminated" would falsify the ops audit trail for a call that keeps
+      // running (e.g. right after the consumer asked for DNC).
+      if (!response.ok) {
+        log.error(`Vapi terminate rejected for call ${callId}`, {
+          reason,
+          status: response.status,
+        });
+        return;
+      }
 
       // Update presence
       await drizzle

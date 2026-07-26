@@ -301,6 +301,38 @@ async function ensureMcpSchema(): Promise<void> {
           END LOOP;
         END $$;
       `);
+      // Match migrations 0104 + 0115 — a runtime CREATE TABLE IF NOT EXISTS on a
+      // fresh environment must not leave wireline_server without grants or a
+      // permissive policy (tenant-context queries run as SET LOCAL ROLE
+      // wireline_server and would otherwise default-deny to zero rows, silently
+      // breaking the GDPR purge of these tables).
+      await drizzle.execute(sql`
+        DO $$
+        DECLARE
+          mcp_table text;
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'wireline_server') THEN
+            RETURN;
+          END IF;
+
+          FOREACH mcp_table IN ARRAY ARRAY[
+            'wireline_mcp_oauth_codes',
+            'wireline_mcp_access_tokens',
+            'wireline_mcp_refresh_tokens'
+          ] LOOP
+            EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.%I TO wireline_server', mcp_table);
+            EXECUTE format('DROP POLICY IF EXISTS tenant_isolation ON public.%I', mcp_table);
+            EXECUTE format(
+              'CREATE POLICY tenant_isolation ON public.%I FOR ALL TO wireline_server USING (user_id = (SELECT public.wireline_current_user_id())) WITH CHECK (user_id = (SELECT public.wireline_current_user_id()))',
+              mcp_table
+            );
+          END LOOP;
+
+          EXECUTE 'GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.wireline_mcp_oauth_clients TO wireline_server';
+          EXECUTE 'DROP POLICY IF EXISTS wireline_server_access ON public.wireline_mcp_oauth_clients';
+          EXECUTE 'CREATE POLICY wireline_server_access ON public.wireline_mcp_oauth_clients FOR ALL TO wireline_server USING (true) WITH CHECK (true)';
+        END $$;
+      `);
       const resource = mcpResourceUrl();
       const backfilled = await backfillMcpOAuthResourceBindings(resource);
       if (backfilled > 0) {
@@ -359,7 +391,6 @@ async function issueTokens(input: {
     resource: input.resource,
   };
 }
-
 
 router.get(
   [

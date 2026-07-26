@@ -518,8 +518,12 @@ router.post("/api/webhooks/meta/deletion", async (req: Request, res: Response) =
       facebookUserId,
       error: getErrorMessage(err),
     });
-    // Still return 200 with the code — Facebook will retry on 5xx
-    // and we don't want to fail their UX over a transient DB blip.
+    // A 200 here is exactly what STOPS Facebook's retries — the connection
+    // would stay active (token retained, leads still ingesting) while the
+    // user holds a confirmation code implying deletion was accepted, and
+    // nothing is persisted to retry later. 503 is the honest answer: Facebook
+    // redelivers the callback and the deactivation gets another chance.
+    throw AppError.fromHttpStatus(503, "deletion request could not be recorded — retry");
   }
 
   const baseUrl =

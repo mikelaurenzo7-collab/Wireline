@@ -287,11 +287,13 @@ export class QuotaTracker {
   }
 
   /**
-   * Check + reserve `delta` units against the dimension. Atomic upsert
-   * via Postgres RPC (`wireline_quota_increment`); falls back to a
-   * non-atomic select/update path when the RPC isn't installed yet
-   * (older deployments). Fail-OPEN on DB errors so we never lock out
-   * legitimate traffic when the counter store is degraded.
+   * Check + reserve `delta` units against the dimension via an atomic
+   * ON CONFLICT upsert, with a non-atomic select fallback when the upsert
+   * errors. NOTE: despite the historical claim, this is NOT fail-open — the
+   * fallback re-queries the same database (getUsage rethrows when it's truly
+   * down) and getProfile runs outside any try at all, so callers see an
+   * exception when the counter store is unavailable. Callers that want
+   * fail-open must catch and decide themselves (api-rate-limits.ts does).
    */
   async checkAndIncrement(
     userId: string,
