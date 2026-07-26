@@ -4,7 +4,6 @@ const environment = process.env.VERCEL_ENV || process.env.NODE_ENV || "developme
 const isProduction = environment === "production";
 const isPreview = environment === "preview";
 const failures = [];
-const warnings = [];
 
 const value = (name) => String(process.env[name] || "").trim();
 const requireValue = (name, reason) => {
@@ -27,17 +26,29 @@ function validHttpsUrl(name, required = false) {
 
 if (isProduction) {
   requireValue("POSTGRES_URL", "production API database connection is missing");
+  requireValue("DATABASE_POOL_URL", "the serverless transaction pool is missing");
   requireValue("INTERNAL_JWT_SECRET", "production session signing is missing");
+  requireValue("WIRELINE_DATA_KEY", "encrypted tenant credentials cannot be stored safely");
   requireValue("OAUTH_STATE_SECRET", "OAuth state signing is missing");
+  requireValue("OAUTH_BRIDGE_SECRET", "MCP authorization bridging is missing");
+  requireValue("MCP_OAUTH_TOKEN_PEPPER", "MCP OAuth tokens cannot be hashed safely");
   requireValue("OPENAI_API_KEY", "the primary managed structured runtime and OpenAI Realtime sessions are missing");
   // XAI_API_KEY is optional experiment-only; never a production launch requirement.
   requireValue("VAPI_PRIVATE_KEY", "the managed live-call runtime is missing");
   requireValue("VAPI_WEBHOOK_SECRET", "Vapi callbacks cannot be verified");
+  requireValue("VITE_VAPI_PUBLIC_KEY", "the public live-call client cannot initialize");
   requireValue("TWILIO_ACCOUNT_SID", "Twilio account binding is missing");
+  requireValue("TWILIO_API_KEY", "scoped Twilio REST authentication is missing");
+  requireValue("TWILIO_API_SECRET", "scoped Twilio REST authentication is incomplete");
   requireValue("TWILIO_AUTH_TOKEN", "Twilio callbacks cannot be verified");
+  requireValue("PLATFORM_SMS_FROM", "platform SMS escalation routing is missing");
   requireValue("STRIPE_SECRET_KEY", "production billing is missing");
   requireValue("STRIPE_WEBHOOK_SECRET", "Stripe callbacks cannot be verified");
   requireValue("VITE_STRIPE_PUBLIC_KEY", "production checkout cannot initialize");
+  requireValue("RESEND_API_KEY", "transactional email delivery is missing");
+  requireValue("UPSTASH_REDIS_REST_URL", "distributed rate limiting is missing");
+  requireValue("UPSTASH_REDIS_REST_TOKEN", "distributed rate limiting cannot authenticate");
+  requireValue("CRON_SECRET", "scheduled jobs cannot authenticate");
   validHttpsUrl("APP_URL", true);
   validHttpsUrl("TWILIO_WEBHOOK_BASE_URL", false);
 
@@ -52,41 +63,66 @@ if (isProduction) {
   }
 }
 
+const productionOnlyPreviewKeys = [
+  "APOLLO_CLIENT_ID",
+  "APP_URL",
+  "CORS_ORIGINS",
+  "FEDERAL_DNC_API_KEY",
+  "GOOGLE_CLIENT_ID",
+  "HUBSPOT_CLIENT_ID",
+  "DATABASE_POOL_URL",
+  "MCP_OAUTH_ALLOWED_CLIENT_IDS",
+  "MCP_OAUTH_ALLOWED_REDIRECT_URIS",
+  "META_APP_ID",
+  "MICROSOFT_CLIENT_ID",
+  "OWNER_EMAIL",
+  "OWNER_PHONE",
+  "POSTGRES_URL",
+  "PLATFORM_SMS_FROM",
+  "SALESFORCE_CLIENT_ID",
+  "SHOPIFY_CLIENT_ID",
+  "SLACK_CLIENT_ID",
+  "SQUARE_APPLICATION_ID",
+  "TWILIO_ACCOUNT_SID",
+  "UPSTASH_REDIS_REST_URL",
+  "VITE_STRIPE_PUBLIC_KEY",
+  "VITE_VAPI_PUBLIC_KEY",
+  "X_CLIENT_ID",
+  "YAHOO_CLIENT_ID",
+  "ZOOM_CLIENT_ID",
+];
+
+const credentialLikeName =
+  /(?:^|_)(?:API_KEY|API_SECRET|AUTH_KEY|AUTH_TOKEN|ACCESS_TOKEN|CLIENT_SECRET|PRIVATE_KEY|SERVICE_ROLE_KEY|PASSWORD|WEBHOOK_SECRET|JWT_SECRET|DATA_KEY|TOKEN_PEPPER|CRON_SECRET|MONITOR_TOKEN|SECRET|TOKEN)(?:_|$)/;
+const platformManagedCredential = /^(?:VERCEL|TURBO|NPM|NODE|GITHUB|CI)_/;
+
 if (isPreview) {
-  const allowLiveProviders = value("WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW") === "true";
+  const productionOnlyPreviewKeySet = new Set(productionOnlyPreviewKeys);
 
-  if (allowLiveProviders) {
-    warnings.push(
-      "Live provider credentials were explicitly enabled in preview. Treat this deployment as production-adjacent and audit every side effect.",
-    );
-  } else {
-    if (value("STRIPE_SECRET_KEY").startsWith("sk_live_")) {
-      warnings.push(
-        "STRIPE_SECRET_KEY: inherited live Stripe credential detected; the preview build and runtime will disable Stripe.",
+  for (const name of productionOnlyPreviewKeys) {
+    if (value(name)) {
+      failures.push(
+        `${name}: production-only configuration must not be available to preview builds or runtime`,
       );
     }
-    if (value("VITE_STRIPE_PUBLIC_KEY").startsWith("pk_live_")) {
-      warnings.push(
-        "VITE_STRIPE_PUBLIC_KEY: inherited live Stripe credential detected; the preview client build will remove it.",
-      );
-    }
-    if (value("STRIPE_WEBHOOK_SECRET")) {
-      warnings.push(
-        "STRIPE_WEBHOOK_SECRET: preview webhook processing will be disabled unless live-provider access is explicitly enabled.",
+  }
+
+  for (const name of Object.keys(process.env)) {
+    if (
+      !productionOnlyPreviewKeySet.has(name) &&
+      !platformManagedCredential.test(name) &&
+      credentialLikeName.test(name) &&
+      value(name)
+    ) {
+      failures.push(
+        `${name}: credential-like project configuration requires an explicit, reviewed preview sandbox policy`,
       );
     }
 
-    const appUrl = value("APP_URL");
-    if (/^https:\/\/(www\.)?trywireline\.com\/?$/i.test(appUrl)) {
-      if (value("VERCEL_URL")) {
-        warnings.push(
-          "APP_URL: production origin inherited by preview; the build and runtime will resolve to the Vercel preview origin.",
-        );
-      } else {
-        failures.push(
-          "APP_URL: preview inherited the production origin and VERCEL_URL is unavailable for safe replacement.",
-        );
-      }
+    if (/^STRIPE_.*(?:PRICE_ID|METER_EVENT_NAME)$/.test(name) && value(name)) {
+      failures.push(
+        `${name}: the production Stripe catalog must not be available to preview builds or runtime`,
+      );
     }
   }
 
@@ -98,11 +134,6 @@ if (isPreview) {
       "WIRELINE_RUN_MIGRATIONS: preview migrations require WIRELINE_PREVIEW_DATABASE_ISOLATED=true and a non-production database.",
     );
   }
-}
-
-if (warnings.length) {
-  console.warn("Deployment-boundary warnings:");
-  for (const warning of warnings) console.warn(`- ${warning}`);
 }
 
 if (failures.length) {
