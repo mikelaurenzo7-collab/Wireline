@@ -295,7 +295,7 @@ export default function Status() {
           <div className="marketing-panel-muted p-4 sm:p-5">
             <p className="text-eyebrow mb-2">How we measure</p>
             <p className="marketing-body">
-              Every 60 seconds, Wireline pings each production LLM tier with a 1-token probe.
+              Every 60 seconds, Wireline pings each production LLM tier with a minimal 16-token probe.
               Operational means the model responded within timeout. Degraded means a layer is
               partially available or a fallback is covering a primary probe. Outage is reserved for
               a confirmed lack of serving paths. We never store, log, or render the content of these

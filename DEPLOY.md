@@ -33,9 +33,9 @@ Both production aliases (`trywireline.com`, `wireline-chi.vercel.app`,
 
 ### Node.js runtime
 
-The repo prefers **Node 22** (`.nvmrc`, `vercel.json` `build.env.NODE_VERSION`) for full modern features, but `package.json` `engines` accepts `>=20 <23` to prevent install warnings when the Vercel project dashboard is still set to 20.x.
+The repo is pinned to **Node 22** across `.nvmrc`, `package.json` (`engines.node: "22.x"`), and `vercel.json` (`build.env.NODE_VERSION: "22"`). Keep Vercel -> wireline -> Settings -> General on **Node.js 22.x** before promoting production builds.
 
-In Vercel → wireline → Settings → General, set **Node.js Version** to **22.x** (recommended). Vercel uses `package.json` `engines.node` during installs, so once the dashboard is updated to 22 the strict preference takes effect cleanly. The flexible engines eliminate the known "project 20.x / package 22.x" warning in the meantime.
+If Vercel reports an install/runtime mismatch, fix the project dashboard setting rather than widening `package.json` engines. The strict pin is intentional so previews, CI, and production use the same runtime family.
 
 ### Release gate and preview migration policy
 
@@ -74,9 +74,11 @@ https://vercel.com/revaluate/wireline/settings/environment-variables
 | **Preview**     | Every branch PR — auto-deployed preview URLs |
 | **Development** | Local `vercel dev` runs (rarely used here)   |
 
-When adding a new var, **check all 3 boxes** in the Vercel UI so it
-applies everywhere. The CLI version (`vercel env add`) requires a
-specific branch for Preview which is awkward — prefer the UI.
+When adding a new var, set it only in the targets where that value is
+safe. Production secrets belong in **Production**; Preview/Development
+must use dedicated sandbox credentials or stay unset. Do not widen a
+production value across all targets unless `.env.example`, this guide,
+and `scripts/check-deployment-boundaries.mjs` explicitly allow it.
 
 ### Var inventory (key ones)
 
@@ -89,13 +91,14 @@ specific branch for Preview which is awkward — prefer the UI.
 | `VAPI_PRIVATE_KEY`                                  | Server-side Vapi API calls                                                                                          |
 | `VITE_VAPI_PUBLIC_KEY`                              | In-browser Vapi widget                                                                                              |
 | `VAPI_WEBHOOK_SECRET`                               | Auth on `/api/vapi-webhook` and `/api/escalate`                                                                     |
-| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN`          | Outbound SMS, inbound webhook                                                                                       |
+| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN`          | Account identity and webhook signature validation. Keep `TWILIO_AUTH_TOKEN` for webhook auth even when REST uses API keys. |
+| `TWILIO_API_KEY` / `TWILIO_API_SECRET`              | Preferred scoped REST credential for outbound Twilio API calls.                                                     |
 | `OWNER_PHONE` / `OWNER_EMAIL` / `PLATFORM_SMS_FROM` | Escalation routing (where agent escalations go). Set `OWNER_EMAIL=mikelaurenzo7@gmail.com` for the founder account. |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`       | Billing                                                                                                             |
 | `OPENAI_API_KEY`                                    | Primary managed structured runtime (direct OpenAI Responses API, GPT-5.6 Terra) and OpenAI Realtime live-voice demos |
+| `GEMINI_API_KEY`                                    | First automatic structured fallback and grounded-search fallback                                                    |
+| `AI_GATEWAY_API_KEY`                                | Governed continuity route through Vercel AI Gateway                                                                 |
 | `XAI_API_KEY`                                       | Optional xAI experiments only; structured fallback also requires `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=true`      |
-| `GEMINI_API_KEY`                                    | Second automatic structured fallback and grounded-search fallback                                                   |
-| `OPENROUTER_API_KEY`                                | Optional — Director chat model picker (Pro+ in app; company key; voice runtime unchanged)                           |
 
 ### Internal JWT secret cleanup
 
@@ -117,28 +120,30 @@ attribution columns are missing.
 ## Vapi agents
 
 Phone numbers live in the Vapi dashboard
-(https://dashboard.vapi.ai → Phone Numbers). Currently 10 numbers:
+(https://dashboard.vapi.ai -> Phone Numbers). The code source of truth is
+`src/data/contact-agents.ts`; update this section whenever that roster changes.
 
-**4 customer-service lines (real Wireline support):**
+**2 Wireline employee lines (support + sales, owner escalation enabled):**
 
-- Sarah — Customer Support — (630) 642-5661
-- Liam — Sales & Demos — (630) 581-1834
-- Tyler — Technical Support — (564) 238-9455
-- Maya — Book a Demo — (630) 642-5927
+- Sarah - Wireline Specialist - (630) 642-5661
+- Liam - Wireline Specialist - (630) 581-1834
 
-Each has the `escalate_to_human` tool wired to
+Both employee agents have the `escalate_to_human` tool wired to
 `https://trywireline.com/api/escalate` with the shared webhook secret.
 
-**6 vertical demos (proof of platform breadth):**
+**7 public demo lines (role-play showcases, no owner escalation):**
 
-- Marcus · Medical Office Intake · (617) 313-4469
-- Aisha · Real Estate Lead Capture · (973) 363-8874
-- Devon · Bill Negotiator · (207) 593-5155
-- Elena · Insurance Claims Intake · (904) 460-1596
-- Priya · Executive Assistant · (572) 726-9365
-- Jake · Outbound SDR · (469) 257-1581
+- Jordan - Inbound Customer Service Demo - (630) 642-5927
+- Ria - Demo Concierge - (564) 238-9455
+- Marcus - Medical Practice Demo - (617) 313-4469
+- Diana - Law Firm Demo - (572) 726-9365
+- Aisha - Real Estate Demo - (973) 363-8874
+- Elena - Insurance Demo - (904) 460-1596
+- Jake - Outbound Sales Demo - (469) 257-1581
 
-Each demo agent role-plays their job and pitches Wireline when asked.
+Jordan and Jake are the primary landing-page demo calls. All demo agents
+role-play their job and pitch Wireline when asked; demo lines cannot page the
+owner.
 
 If you rotate `VAPI_WEBHOOK_SECRET`, you ALSO need to update the
 `server.secret` on each customer-service agent's `escalate_to_human`
