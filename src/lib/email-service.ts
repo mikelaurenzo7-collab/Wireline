@@ -69,6 +69,9 @@ async function sendViaResend(args: {
         text: args.text,
         ...(args.headers && Object.keys(args.headers).length ? { headers: args.headers } : {}),
       }),
+      // Cap the send so a hung Resend request can't stall auth/billing critical
+      // paths (password reset, security alerts) indefinitely.
+      signal: AbortSignal.timeout(10_000),
     });
     const body = await res.text();
     if (!res.ok) {

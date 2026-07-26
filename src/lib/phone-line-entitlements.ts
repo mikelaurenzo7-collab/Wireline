@@ -6,7 +6,6 @@
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
-import { stripeAvailable } from "./stripe-helpers";
 import { planById } from "./plan-catalog";
 
 /** Catalog-backed phone slots including purchased Extra Agent add-ons. */
@@ -43,7 +42,8 @@ export async function getIncludedPhoneLineSlots(userId: string): Promise<number>
   const slots = includedPhoneSlotsForPlan(sub?.plan || undefined, settings?.extraAgents);
   if (slots > 0) return slots;
 
-  if (!stripeAvailable()) return 999;
-
+  // Degraded catalog lookup for an active subscriber: fail SAFE, not generous.
+  // A `return 999` here let an outage hand out effectively unlimited carrier
+  // numbers (real Twilio spend); cap the degraded fallback at a single slot.
   return 1;
 }

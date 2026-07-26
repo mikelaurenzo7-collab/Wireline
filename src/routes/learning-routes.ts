@@ -51,7 +51,12 @@ router.get(
       const digest = await getLearningDigest(req.user.id, req.params.id);
       return res.json({ ok: true, digest });
     } catch (e: unknown) {
-      return res.status(500).json({ ok: false, code: "INTERNAL_ERROR", error: getErrorMessage(e) });
+      // Log the real error server-side; return a generic message so internal
+      // details (query fragments, stack text) never reach the client.
+      log.error("learning digest failed", { error: getErrorMessage(e) });
+      return res
+        .status(500)
+        .json({ ok: false, code: "INTERNAL_ERROR", error: "Failed to load learning digest" });
     }
   },
 );

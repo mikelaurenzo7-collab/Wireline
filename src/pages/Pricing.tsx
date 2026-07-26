@@ -27,7 +27,7 @@ const planById = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan]))
   (typeof STRIPE_PLANS)[number]
 >;
 
-/** Honest annual savings vs paying monthly for 12 months (Starter is 1 month, most tiers 2). */
+/** Honest annual savings vs paying monthly for 12 months (every paid tier's annual is 10x monthly, i.e. 2 months free). */
 function annualSavingsLabel(monthlyUsd: number, annualUsd: number): string | null {
   if (!(monthlyUsd > 0) || !(annualUsd > 0)) return null;
   const monthsSaved = Math.max(0, Math.round(12 - annualUsd / monthlyUsd));
@@ -41,7 +41,8 @@ const PAID_TIERS = [
     publicName: "Starter",
     eyebrow: "Put one employee live",
     tagline: "Your AI Voice Employee from $19/month.",
-    detail: "One focused employee for inbound, outbound, or scheduling—with an included Wireline number.",
+    detail:
+      "One focused employee for inbound, outbound, or scheduling—with an included Wireline number.",
     ctaMonthly: "Start for $19",
     ctaAnnual: "Start for $190/yr",
     ctaPath: "/signup?plan=starter",

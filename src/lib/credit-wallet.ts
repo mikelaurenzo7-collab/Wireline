@@ -168,59 +168,6 @@ export async function reverseCredit(
 }
 
 /**
- * Debit the wallet to absorb a voice-overage charge, but ONLY when the balance
- * covers the full cost — partial coverage is skipped so we never both debit
- * credits AND meter the same minutes to Stripe (no double-charge). Idempotent
- * per call id. Returns the USD debited (0 if not covered / on error).
- */
-export async function debitForOverage(
-  userId: string,
-  costUsd: number,
-  vapiCallId: string,
-): Promise<number> {
-  const cost = cents(costUsd);
-  if (!(cost > 0)) return 0;
-  try {
-    return await drizzle.transaction(async (tx: any) => {
-      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${userId}))`);
-      const [sumRow] = await tx
-        .select({ balance: sql<string>`COALESCE(SUM(${schema.creditLedger.deltaUsd}), 0)` })
-        .from(schema.creditLedger)
-        .where(eq(schema.creditLedger.userId, userId));
-      const balance = Number(sumRow?.balance ?? 0);
-      if (balance < cost) return 0; // can't fully cover → let Stripe meter it
-
-      const inserted = await tx
-        .insert(schema.creditLedger)
-        .values({
-          userId,
-          deltaUsd: String(-cost),
-          balanceAfterUsd: String(cents(balance - cost)),
-          entryKind: "burn",
-          reason: "voice_overage",
-          customerReason: "Voice overage covered by Conversation Balance",
-          refType: "voice_overage",
-          refId: vapiCallId,
-          idempotencyKey: `voice_overage:${vapiCallId}`,
-          source: "vapi",
-          provider: "vapi",
-          providerObjectId: vapiCallId,
-          metadata: { burn_reason: "voice_overage" },
-        })
-        .onConflictDoNothing()
-        .returning({ id: schema.creditLedger.id });
-      return inserted.length === 0 ? 0 : cost; // conflict → already debited
-    });
-  } catch (err) {
-    log.error("debitForOverage failed", {
-      userId,
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return 0;
-  }
-}
-
-/**
  * Debit Conversation Balance for pay-as-you-go voice usage. Debits up to the
  * available balance (partial coverage) so we never silently absorb COGS.
  * Idempotent per call id.

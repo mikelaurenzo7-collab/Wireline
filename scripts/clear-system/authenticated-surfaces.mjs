@@ -261,7 +261,6 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "src/pages/OverviewPage.tsx",
     "src/pages/SettingsPage.tsx",
     "src/pages/BillingSettings.tsx",
-    "src/components/ConversationBalanceCard.tsx",
     "src/components/StudioWorkroom.tsx",
   ]) {
     mustExclude(file, read(file), /Â|â|�/, "authenticated surfaces must not expose mojibake");

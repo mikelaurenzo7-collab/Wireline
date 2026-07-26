@@ -57,14 +57,26 @@ export default function OutboundDialDialog({
   const [consentConfirmed, setConsentConfirmed] = useState(false);
   const [placing, setPlacing] = useState(false);
 
+  // Reset the form when the dialog opens or its seed values change — but NOT
+  // when the agents list refreshes in the background. Keeping `voiceAgents` in
+  // the deps here wiped whatever the user had typed the moment AgentsContext
+  // refetched (or finished its initial load) while the dialog was open.
   useEffect(() => {
     if (!open) return;
-    setAgentId(initialAgentId || voiceAgents[0]?.id || "");
+    setAgentId(initialAgentId);
     setNumber(initialNumber);
     setContext(initialContext);
     setCallPurpose("service_or_requested");
     setConsentConfirmed(false);
-  }, [open, initialAgentId, initialNumber, initialContext, voiceAgents]);
+  }, [open, initialAgentId, initialNumber, initialContext]);
+
+  // Seed the first voice agent only when none is selected yet. This covers a
+  // late-loading agents list without disturbing fields the user is editing.
+  useEffect(() => {
+    if (!open || agentId) return;
+    const fallback = initialAgentId || voiceAgents[0]?.id || "";
+    if (fallback) setAgentId(fallback);
+  }, [open, agentId, initialAgentId, voiceAgents]);
 
   const canPlace =
     !placing &&

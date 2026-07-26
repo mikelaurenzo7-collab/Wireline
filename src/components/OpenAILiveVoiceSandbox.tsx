@@ -224,7 +224,8 @@ export default function OpenAILiveVoiceSandbox({
     if (currentGeneration !== generation.current) return;
     const type = String(event.type || "");
     if (
-      (type === "response.output_audio_transcript.delta" || type === "response.output_text.delta") &&
+      (type === "response.output_audio_transcript.delta" ||
+        type === "response.output_text.delta") &&
       typeof event.delta === "string"
     ) {
       appendAssistant(event.delta);
@@ -360,12 +361,14 @@ export default function OpenAILiveVoiceSandbox({
         body: JSON.stringify({ agentId, sdp }),
       });
       const session = (await response.json().catch(() => null)) as SignalResponse | null;
-      if (!response.ok || !session?.sdp)
+      if (!response.ok || !session?.sdp) {
+        const sessionError = (session as { error?: unknown } | null)?.error;
         throw new Error(
-          typeof (session as { error?: unknown } | null)?.error === "string"
-            ? String((session as { error: string }).error)
+          typeof sessionError === "string"
+            ? sessionError
             : "Live voice is unavailable for this agent.",
         );
+      }
       await connection.setRemoteDescription({ type: "answer", sdp: session.sdp });
       const greeting = session.greeting?.trim();
       if (greeting) {
@@ -401,7 +404,12 @@ export default function OpenAILiveVoiceSandbox({
         <div className="flex min-w-0 items-start gap-3">
           <div className="wl-presence__frame wl-presence--inline shrink-0">
             <div className="wl-presence__face">
-              <AgentFace seed={agentName} size={44} speaking={state === "speaking"} title={`${agentName} face`} />
+              <AgentFace
+                seed={agentName}
+                size={44}
+                speaking={state === "speaking"}
+                title={`${agentName} face`}
+              />
             </div>
           </div>
           <div className="min-w-0">
@@ -457,7 +465,8 @@ export default function OpenAILiveVoiceSandbox({
         ) : (
           <div className="grid min-h-[96px] place-items-center text-center">
             <p className="max-w-md text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-              Start a test, ask a real question, and interrupt naturally. This safe channel can search approved Training facts but cannot perform external actions.
+              Start a test, ask a real question, and interrupt naturally. This safe channel can
+              search approved Training facts but cannot perform external actions.
             </p>
           </div>
         )}

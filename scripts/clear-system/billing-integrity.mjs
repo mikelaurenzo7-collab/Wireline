@@ -6,7 +6,6 @@
 export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   const billingSettingsPage = read("src/pages/BillingSettings.tsx");
   const stripeBillingCard = read("src/components/StripeBillingCard.tsx");
-  const conversationBalanceCard = read("src/components/ConversationBalanceCard.tsx");
   const trialGateModal = read("src/components/TrialGateModal.tsx");
   const conversationBalanceRoutes = read("src/routes/conversation-balance-routes.ts");
   const dbSchema = read("src/db/schema.ts");
@@ -39,12 +38,6 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     stripeBillingCard,
     /Build and test for free/,
     "billing screen must not revive retired Build-first billing copy",
-  );
-  mustExclude(
-    "src/components/ConversationBalanceCard.tsx",
-    conversationBalanceCard,
-    /Build and test for free/,
-    "Conversation Balance card must not revive retired Build-first activation copy",
   );
   mustExclude(
     "src/components/TrialGateModal.tsx",
@@ -116,7 +109,7 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/lib/credit-wallet.ts",
     creditWallet,
-    /customerReason:\s*"Voice overage covered by Conversation Balance"/,
+    /customerReason:\s*"Voice minutes covered by Conversation Balance"/,
     "voice burns must have a customer-visible Conversation Balance reason",
   );
   mustInclude(
@@ -196,8 +189,7 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   // card, no time limit) → pick a live plan for a customer number. There
   // is no time-boxed trial to promise or "extend" — live sales/support
   // agent scripts that offer one are lying to real prospects on the phone.
-  const TRIAL_LANGUAGE_PATTERN =
-    /14-day trial|fourteen-day trial|trial extension|extend a trial/i;
+  const TRIAL_LANGUAGE_PATTERN = /14-day trial|fourteen-day trial|trial extension|extend a trial/i;
   mustExclude(
     "src/lib/wireline-agent-personas.ts",
     wirelinePersonas,
@@ -278,12 +270,6 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     stripeFounderCatalog,
     /\[10, 25, 50, 100\]\.map/,
     "Stripe founder catalog balance prices must match Runtime Balance presets",
-  );
-  mustExclude(
-    "src/components/ConversationBalanceCard.tsx",
-    conversationBalanceCard,
-    /\[5, 10, 25, 50\]/,
-    "Conversation Balance card fallback must not revive $5 presets",
   );
   mustExclude(
     "docs/P0_BILLING_OPS_NOTE.md",
