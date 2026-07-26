@@ -29,10 +29,10 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
 }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await gotoHomepageWithMain(page);
-  await expect(page.getByRole("heading", { name: /^your next ai employee$/i })).toBeVisible();
   await expect(
-    page.getByText(/one trained employee handles customer conversations/i),
+    page.getByRole("heading", { name: MARKETING_VOICE.headline, exact: true }),
   ).toBeVisible();
+  await expect(page.getByText(MARKETING_VOICE.subline, { exact: true })).toBeVisible();
 
   const brandSpine = page.getByLabel("Wire to Work to Win");
   await expect(brandSpine).toBeVisible();
@@ -90,4 +90,27 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
   );
 
   expect(blockingViolations).toEqual([]);
+});
+
+test("homepage hero stays inside the desktop viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 1365, height: 900 });
+  await gotoHomepageWithMain(page);
+
+  const headline = page.getByRole("heading", {
+    name: MARKETING_VOICE.headline,
+    exact: true,
+  });
+  await expect(headline).toBeVisible();
+
+  const bounds = await headline.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      left: rect.left,
+      right: rect.right,
+      viewportWidth: document.documentElement.clientWidth,
+    };
+  });
+
+  expect(bounds.left).toBeGreaterThanOrEqual(0);
+  expect(bounds.right).toBeLessThanOrEqual(bounds.viewportWidth);
 });
