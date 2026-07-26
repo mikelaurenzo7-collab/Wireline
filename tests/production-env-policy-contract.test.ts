@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -5,6 +6,23 @@ import { isProductionDeployment } from "../src/lib/deployment-environment";
 
 const envValidator = readFileSync(resolve(process.cwd(), "src/lib/env-validator.ts"), "utf8");
 const prodCheck = readFileSync(resolve(process.cwd(), "scripts/check-prod-env.mjs"), "utf8");
+const deploymentBoundaryPath = resolve(
+  process.cwd(),
+  "scripts/check-deployment-boundaries.mjs",
+);
+const deploymentBoundary = readFileSync(deploymentBoundaryPath, "utf8");
+const vercelBuild = readFileSync(resolve(process.cwd(), "scripts/vercel-build.mjs"), "utf8");
+
+const runPreviewBoundary = (overrides: NodeJS.ProcessEnv = {}) =>
+  spawnSync(process.execPath, [deploymentBoundaryPath], {
+    encoding: "utf8",
+    env: {
+      PATH: process.env.PATH || "",
+      NODE_ENV: "production",
+      VERCEL_ENV: "preview",
+      ...overrides,
+    },
+  });
 
 describe("production environment launch policy", () => {
   it("distinguishes production from Vercel preview even though NODE_ENV is production", () => {
@@ -51,5 +69,26 @@ describe("production environment launch policy", () => {
     expect(envValidator).toContain("const isHttpsUrl");
     expect(envValidator).toContain("validate: (value) => !value || isHttpsUrl(value)");
     expect(prodCheck).toContain('new URL(String(value).trim()).protocol === "https:"');
+  });
+
+  it("fails preview builds that inherit production credentials or provider configuration", () => {
+    for (const [name, configuredValue] of [
+      ["POSTGRES_URL", "postgresql://production.invalid/wireline"],
+      ["STRIPE_SECRET_KEY", "sk_live_configured"],
+      ["VAPI_PRIVATE_KEY", "configured"],
+      ["VITE_VAPI_PUBLIC_KEY", "configured"],
+      ["APP_URL", "https://trywireline.com"],
+    ]) {
+      const result = runPreviewBoundary({ [name]: configuredValue });
+      expect(result.status).toBe(1);
+      expect(`${result.stdout}${result.stderr}`).toContain(name);
+    }
+
+    const cleanPreview = runPreviewBoundary();
+    expect(cleanPreview.status).toBe(0);
+    expect(deploymentBoundary).toContain("production-only configuration");
+    expect(deploymentBoundary).not.toContain("WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW");
+    expect(vercelBuild).toContain("configurePreviewEnvironment");
+    expect(vercelBuild).not.toContain("runtime will disable");
   });
 });
