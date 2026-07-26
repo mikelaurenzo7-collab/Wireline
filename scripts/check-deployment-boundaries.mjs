@@ -4,7 +4,6 @@ const environment = process.env.VERCEL_ENV || process.env.NODE_ENV || "developme
 const isProduction = environment === "production";
 const isPreview = environment === "preview";
 const failures = [];
-const warnings = [];
 
 const value = (name) => String(process.env[name] || "").trim();
 const requireValue = (name, reason) => {
@@ -52,41 +51,94 @@ if (isProduction) {
   }
 }
 
+
+const productionOnlyPreviewKeys = [
+  "AI_GATEWAY_API_KEY",
+  "APOLLO_API_KEY",
+  "APOLLO_CLIENT_ID",
+  "APOLLO_CLIENT_SECRET",
+  "APP_URL",
+  "CORS_ORIGINS",
+  "CRON_SECRET",
+  "DATABASE_POOL_URL",
+  "DOGFOOD_PASSWORD",
+  "E2E_USER_PASSWORD",
+  "FEDERAL_DNC_API_KEY",
+  "GEMINI_API_KEY",
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
+  "HEALTH_MONITOR_TOKEN",
+  "HUBSPOT_CLIENT_ID",
+  "HUBSPOT_CLIENT_SECRET",
+  "INTERNAL_JWT_SECRET",
+  "LIVEAVATAR_API_KEY",
+  "MCP_OAUTH_ALLOWED_CLIENT_IDS",
+  "MCP_OAUTH_ALLOWED_REDIRECT_URIS",
+  "MCP_OAUTH_TOKEN_PEPPER",
+  "META_APP_ID",
+  "META_APP_SECRET",
+  "META_VERIFY_TOKEN",
+  "MICROSOFT_CLIENT_ID",
+  "MICROSOFT_CLIENT_SECRET",
+  "OAUTH_BRIDGE_SECRET",
+  "OAUTH_STATE_SECRET",
+  "OPENAI_API_KEY",
+  "OPENAI_API_KEY_CHATKIT",
+  "OWNER_EMAIL",
+  "OWNER_PHONE",
+  "PLATFORM_SMS_FROM",
+  "POSTGRES_URL",
+  "RESEND_API_KEY",
+  "SALESFORCE_CLIENT_ID",
+  "SALESFORCE_CLIENT_SECRET",
+  "SHOPIFY_CLIENT_ID",
+  "SHOPIFY_CLIENT_SECRET",
+  "SHOPIFY_STOREFRONT_ACCESS_TOKEN",
+  "SLACK_CLIENT_ID",
+  "SLACK_CLIENT_SECRET",
+  "SQUARE_APPLICATION_ID",
+  "SQUARE_APPLICATION_SECRET",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "TWILIO_ACCOUNT_SID",
+  "TWILIO_API_KEY",
+  "TWILIO_API_SECRET",
+  "TWILIO_AUTH_TOKEN",
+  "UPSTASH_REDIS_REST_TOKEN",
+  "UPSTASH_REDIS_REST_URL",
+  "VAPI_PRIVATE_KEY",
+  "VAPI_WEBHOOK_SECRET",
+  "VITE_STRIPE_PUBLIC_KEY",
+  "VITE_VAPI_PUBLIC_KEY",
+  "WIRELINE_DATA_KEY",
+  "WIRELINE_E2E_PASSWORD",
+  "XAI_API_KEY",
+  "XAI_API_KEY_CHATKIT",
+  "X_API_KEY",
+  "X_API_SECRET",
+  "X_CLIENT_ID",
+  "X_CLIENT_SECRET",
+  "YAHOO_CLIENT_ID",
+  "YAHOO_CLIENT_SECRET",
+  "ZOOM_CLIENT_ID",
+  "ZOOM_CLIENT_SECRET",
+];
+
 if (isPreview) {
-  const allowLiveProviders = value("WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW") === "true";
+  for (const name of productionOnlyPreviewKeys) {
+    if (value(name)) {
+      failures.push(
+        `${name}: production-only configuration must not be available to preview builds or runtime`,
+      );
+    }
+  }
 
-  if (allowLiveProviders) {
-    warnings.push(
-      "Live provider credentials were explicitly enabled in preview. Treat this deployment as production-adjacent and audit every side effect.",
-    );
-  } else {
-    if (value("STRIPE_SECRET_KEY").startsWith("sk_live_")) {
-      warnings.push(
-        "STRIPE_SECRET_KEY: inherited live Stripe credential detected; the preview build and runtime will disable Stripe.",
+  for (const name of Object.keys(process.env)) {
+    if (/^STRIPE_.*(?:PRICE_ID|METER_EVENT_NAME)$/.test(name) && value(name)) {
+      failures.push(
+        `${name}: the production Stripe catalog must not be available to preview builds or runtime`,
       );
-    }
-    if (value("VITE_STRIPE_PUBLIC_KEY").startsWith("pk_live_")) {
-      warnings.push(
-        "VITE_STRIPE_PUBLIC_KEY: inherited live Stripe credential detected; the preview client build will remove it.",
-      );
-    }
-    if (value("STRIPE_WEBHOOK_SECRET")) {
-      warnings.push(
-        "STRIPE_WEBHOOK_SECRET: preview webhook processing will be disabled unless live-provider access is explicitly enabled.",
-      );
-    }
-
-    const appUrl = value("APP_URL");
-    if (/^https:\/\/(www\.)?trywireline\.com\/?$/i.test(appUrl)) {
-      if (value("VERCEL_URL")) {
-        warnings.push(
-          "APP_URL: production origin inherited by preview; the build and runtime will resolve to the Vercel preview origin.",
-        );
-      } else {
-        failures.push(
-          "APP_URL: preview inherited the production origin and VERCEL_URL is unavailable for safe replacement.",
-        );
-      }
     }
   }
 
@@ -99,12 +151,6 @@ if (isPreview) {
     );
   }
 }
-
-if (warnings.length) {
-  console.warn("Deployment-boundary warnings:");
-  for (const warning of warnings) console.warn(`- ${warning}`);
-}
-
 if (failures.length) {
   console.error(`Deployment-boundary check failed for ${environment}:`);
   for (const failure of failures) console.error(`- ${failure}`);
