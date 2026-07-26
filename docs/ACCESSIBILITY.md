@@ -14,12 +14,12 @@ operator-facing surfaces.
 | Category | Implementation | Evidence |
 |----------|---------------|----------|
 | **Keyboard navigation** | All interactive elements reachable via Tab/Enter/Escape | CommandBar, modal dismissal, form navigation |
-| **Touch targets** | Minimum 44×44px hit area on mobile via invisible ::after pseudo-elements (visual elements stay compact: 36px inputs, 32px buttons, 20px icons) | CSS utility `hit-area-44` / `hit-area-48`; ShadButton ::after expansion |
-| **Color contrast** | Dark theme with high-contrast text (slate-100 on dark navy) | Tailwind palette selections |
+| **Touch targets** | Minimum 44×44px interactive target on CTAs, inputs, and buttons | `min-height: 44px` enforced in `design-system.css` / `cta-readability.css`; comfortable-target token `--wireline-interaction-target-comfortable` |
+| **Color contrast** | Wireline Letterpress (Aurora) palette — near-white text on obsidian canvas in dark mode, obsidian text on near-white in light mode | `design-tokens/wireline.tokens.json` + `src/styles/design-system.css` |
 | **Reduced motion** | `motion/react` respects `prefers-reduced-motion` | Framer Motion default behavior |
 | **Focus indicators** | Visible focus rings on all interactive elements | Tailwind's `focus:ring-2` pattern |
 | **Semantic HTML** | Proper heading hierarchy, landmark regions | Layout components use `<nav>`, `<main>`, `<header>` |
-| **Form labels** | All inputs have associated labels or aria-label | AuthPortal, FleetSettings, agent config forms |
+| **Form labels** | All inputs have associated labels or aria-label | AuthPortal, TeamSettings, agent config forms |
 | **Error messages** | Validation errors announced to screen readers | `role="alert"` on error containers |
 | **Responsive text** | Minimum 11px on mobile (global CSS scaling) | `src/index.css` media query |
 

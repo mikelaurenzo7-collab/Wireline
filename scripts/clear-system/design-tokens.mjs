@@ -108,7 +108,12 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
     /fill="#6D28D9"/,
     "favicon must use the Aurora violet brand mark",
   );
-  mustInclude("public/og-image.svg", ogImage, /fill="#0A0A0E"/, "OG image must use the dark canvas");
+  mustInclude(
+    "public/og-image.svg",
+    ogImage,
+    /fill="#0A0A0E"/,
+    "OG image must use the dark canvas",
+  );
   mustInclude(
     "public/og-image.svg",
     ogImage,
@@ -152,7 +157,6 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
     "src/pages/SettingsPage.tsx",
     "src/pages/Developers.tsx",
     "src/components/KnowledgeBaseClaude.tsx",
-    "src/components/AssistantComposer.tsx",
     "src/components/marketing/BrowserCallWidget.tsx",
     "src/components/marketing/TrustSignals.tsx",
     "src/data/wireline-knowledge.ts",

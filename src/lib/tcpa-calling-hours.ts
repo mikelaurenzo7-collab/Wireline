@@ -71,6 +71,31 @@ const STATE_PRIMARY_TIMEZONE: Record<string, string> = {
   GU: "Pacific/Guam",
 };
 
+/**
+ * States whose NANP footprint straddles a timezone line. A single area code
+ * can cover both sides (e.g. FL 850 spans Eastern Tallahassee and Central
+ * Pensacola), so the number alone can't pin the exact zone. To stay fail-safe
+ * on TCPA hours we require the call to fall inside 8am–9pm local in EVERY zone
+ * the state spans — a number in the western (or eastern) slice is then never
+ * dialed outside permitted hours, at the cost of the one boundary hour for
+ * those states. Under-blocking here is a per-call TCPA violation; over-blocking
+ * only defers the edge hour, so we accept the trade in the compliant direction.
+ */
+const STATE_SPANNED_TIMEZONES: Record<string, readonly string[]> = {
+  FL: ["America/New_York", "America/Chicago"], // panhandle (e.g. 850) is Central
+  MI: ["America/Detroit", "America/Chicago"], // western UP is Central
+  IN: ["America/Indiana/Indianapolis", "America/Chicago"], // NW/SW counties are Central
+  KY: ["America/New_York", "America/Chicago"], // western KY is Central
+  TN: ["America/Chicago", "America/New_York"], // eastern TN is Eastern
+  TX: ["America/Chicago", "America/Denver"], // El Paso/Hudspeth are Mountain
+  KS: ["America/Chicago", "America/Denver"], // western KS is Mountain
+  NE: ["America/Chicago", "America/Denver"], // western panhandle is Mountain
+  ND: ["America/Chicago", "America/Denver"], // southwestern ND is Mountain
+  SD: ["America/Chicago", "America/Denver"], // western SD is Mountain
+  OR: ["America/Los_Angeles", "America/Denver"], // Malheur County is Mountain
+  ID: ["America/Boise", "America/Los_Angeles"], // northern ID is Pacific
+};
+
 /** Conservative continental intersection when state/timezone is unknown. */
 const UNKNOWN_DESTINATION_TIMEZONE = "America/New_York";
 const UNKNOWN_DESTINATION_START_HOUR = 11;
@@ -102,6 +127,35 @@ export function resolveCallingHoursForPhone(
   now: Date = new Date(),
 ): CallingHoursDecision {
   const state = inferStateFromPhone(phone);
+
+  // Split-timezone states: the call must be within permitted hours in every
+  // zone the state spans (fail-safe intersection). Report the binding zone —
+  // the first one that is out of hours, or the last checked when all pass.
+  const spannedZones = state ? STATE_SPANNED_TIMEZONES[state] : undefined;
+  if (spannedZones && spannedZones.length > 0) {
+    let allowed = true;
+    let bindingZone = spannedZones[0];
+    let bindingHour = localHourInZone(now, spannedZones[0]);
+    for (const zone of spannedZones) {
+      const hour = localHourInZone(now, zone);
+      bindingZone = zone;
+      bindingHour = hour;
+      if (!(hour >= TCPA_CALLING_HOUR_START && hour < TCPA_CALLING_HOUR_END)) {
+        allowed = false;
+        break;
+      }
+    }
+    return {
+      allowed,
+      state,
+      timeZone: bindingZone,
+      localHour: bindingHour,
+      startHour: TCPA_CALLING_HOUR_START,
+      endHour: TCPA_CALLING_HOUR_END,
+      inferred: true,
+    };
+  }
+
   const inferredZone = state ? STATE_PRIMARY_TIMEZONE[state] : null;
   const inferred = Boolean(inferredZone);
   const timeZone = inferredZone || UNKNOWN_DESTINATION_TIMEZONE;

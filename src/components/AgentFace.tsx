@@ -137,13 +137,13 @@ export default function AgentFace({
           cx="78"
           cy="18"
           r="4.5"
-          fill="var(--wireline-color-action-secondary-default, #D4823F)"
+          fill="var(--wireline-color-action-secondary-default, #C7CCD6)"
         />
         <circle
           cx="78"
           cy="18"
           r="8"
-          fill="var(--wireline-color-action-secondary-default, #D4823F)"
+          fill="var(--wireline-color-action-secondary-default, #C7CCD6)"
           opacity="0.2"
         />
       </g>

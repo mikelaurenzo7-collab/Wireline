@@ -62,7 +62,7 @@ const DIFFERENCES = [
   {
     icon: Sparkles,
     title: "It improves with every call.",
-    copy: "Post-call review in Studio captures lessons today. Automated retrain from every call is on the roadmap — not claimed as live beta yet.",
+    copy: "Post-call review in Studio captures lessons. Automated retrain from every call is on the roadmap.",
   },
 ] as const;
 
@@ -132,7 +132,7 @@ const COMPARE_HERO_PROOF = ["Make the call", "Keep the result", "Improve the nex
 
 export default function Compare() {
   return (
-    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
+    <MarketingPageFrame className="wl-compare-page" mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title="Why Wireline"
         description="Compare Wireline's owner-ready AI employee with per-agent, per-call, and developer voice-infrastructure pricing."
@@ -142,14 +142,14 @@ export default function Compare() {
       <MarketingHero
         eyebrow="Why Wireline"
         title="Wireline vs. other voice AI."
-        description="Compare the buying model—not only the headline price. One trained employee across voice, SMS, and email, with prepaid overflow instead of surprise per-call bills."
+        description="One trained employee across voice, SMS, and email—with prepaid overflow instead of surprise per-call bills."
         primaryAction={{ label: "Start free", to: "/signup?plan=personal" }}
         secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
         proof={COMPARE_HERO_PROOF}
       />
 
-      <section className="border-y border-border bg-card px-5 py-5 sm:px-8 sm:py-7">
-        <div className="mx-auto grid max-w-6xl gap-px overflow-hidden border border-border bg-border md:grid-cols-3">
+      <section className="wl-public-section border-y border-border bg-card">
+        <div className="mx-auto grid max-w-6xl gap-px overflow-hidden rounded-[1.05rem] border border-border bg-border md:grid-cols-3">
           {DIFFERENCES.map(({ icon: Icon, title, copy }) => (
             <article className="bg-card px-5 py-8 text-center sm:px-7 sm:py-10" key={title}>
               <span className="mx-auto grid h-9 w-9 place-items-center rounded bg-muted text-primary">
@@ -166,17 +166,16 @@ export default function Compare() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+      <section className="wl-public-section">
         <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl">
+          <div className="mx-auto max-w-3xl text-center">
             <p className="wl-stitch-eyebrow">Market reference · Verified July 19, 2026</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
               Compare the buying model, not only the headline price.
             </h2>
             <p className="mt-4 text-base leading-7 text-muted-foreground">
-              These products sell different things. Some meter minutes, calls, or unique customers.
-              Wireline bundles a trained, multichannel employee with visible capacity and prepaid
-              overflow. The honest comparison is what you receive and what can make the bill move.
+              Some products meter minutes or calls. Wireline bundles a multichannel employee with
+              visible capacity and prepaid overflow—compare what you get and what can move the bill.
             </p>
           </div>
 
@@ -265,7 +264,7 @@ export default function Compare() {
         </div>
       </section>
 
-      <section className="border-y border-border bg-card px-5 py-16 sm:px-8 sm:py-20">
+      <section className="wl-public-section border-y border-border bg-card">
         <div className="mx-auto grid max-w-4xl gap-8">
           <div className="text-center">
             <p className="wl-stitch-eyebrow">A simpler default</p>
@@ -292,7 +291,7 @@ export default function Compare() {
         </div>
       </section>
 
-      <section className="border-t border-border bg-card px-5 py-16 sm:px-8 sm:py-20">
+      <section className="wl-public-section border-t border-border bg-card">
         <div className="mx-auto grid max-w-4xl justify-items-center gap-9 text-center">
           <div>
             <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">

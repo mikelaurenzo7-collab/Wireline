@@ -8,7 +8,9 @@ describe("voice observability production paths", () => {
   it("registers voice metrics and voice-status under /api so Vercel rewrites reach Express", () => {
     const routes = read("src/routes/voice-observability-routes.ts");
     expect(routes).toContain('router.post("/api/voice/metrics"');
-    expect(routes).toContain('router.get("/api/health/voice-status"');
+    // Tolerate a wrapped multi-line registration (path on its own line when the
+    // route carries extra middleware) — the invariant is the /api prefix.
+    expect(routes).toMatch(/router\.get\(\s*"\/api\/health\/voice-status"/);
     expect(routes).not.toContain('router.post("/voice/metrics"');
     expect(routes).not.toContain('router.get("/health/voice-status"');
   });

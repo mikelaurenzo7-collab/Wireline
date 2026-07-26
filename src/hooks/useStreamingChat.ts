@@ -10,7 +10,7 @@
  * Built on native EventSource-style fetch (POST body support requires
  * manual SSE parsing since EventSource only supports GET).
  */
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AUTH_SESSION_EXPIRED_MESSAGE,
   isAuthHttpStatus,
@@ -19,13 +19,7 @@ import {
 } from "../lib/api";
 
 export type StreamPhase =
-  | "idle"
-  | "connecting"
-  | "preparing"
-  | "thinking"
-  | "replying"
-  | "done"
-  | "error";
+  "idle" | "connecting" | "preparing" | "thinking" | "replying" | "done" | "error";
 
 /** One live mission-log entry mirrored from server `action_start` / `action_end` events. */
 export interface StreamTurnAction {
@@ -232,13 +226,27 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
     setState((s) => (s.phase === "idle" || s.phase === "done" ? s : { ...s, phase: "idle" }));
   }, []);
 
+  // Abort any in-flight SSE stream when the consumer unmounts so the network
+  // read (and its completion callbacks) don't outlive the component.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      abortRef.current?.abort();
+      abortRef.current = null;
+    };
+  }, []);
+
   const finalizeComplete = useCallback((data: Record<string, unknown>) => {
+    if (!mountedRef.current) return;
     if (completionRef.current) return;
     completionRef.current = true;
     optionsRef.current?.onComplete?.(data);
   }, []);
 
   const finalizeError = useCallback((message: string) => {
+    if (!mountedRef.current) return;
     if (completionRef.current) return;
     completionRef.current = true;
     optionsRef.current?.onError?.(message, {

@@ -10,7 +10,7 @@ describe("static marketing metadata", () => {
 
     expect(index).toContain("Your next AI employee calls, texts &amp; emails");
     expect(index).toContain("customer conversations across voice, SMS, and email");
-    expect(index).toContain("follows up, books the next step, and logs every outcome");
+    expect(index).toContain("follows up, books, and logs every outcome");
     expect(index).toContain('"slogan": "Wire → Work → Win"');
     expect(index).not.toContain("Your AI Voice Employee Calls, Texts &amp; Emails");
     expect(index).not.toContain("Voice AI employee for real conversations.");
@@ -60,7 +60,7 @@ describe("static marketing metadata", () => {
     expect(manifest.name).toBe("Wireline - Your next AI employee");
     expect(manifest.description).toContain("One trained AI employee");
     expect(manifest.description).toContain("voice, SMS, and email");
-    expect(manifest.description).toContain("books the next step");
+    expect(manifest.description).toContain("books, and logs every outcome");
     expect(manifest.description).toContain("logs every outcome");
     expect(manifest.description).not.toContain("included numbers");
   });

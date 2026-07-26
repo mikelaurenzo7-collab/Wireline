@@ -14,7 +14,7 @@ const SITE_URL = "https://trywireline.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 const DEFAULT_TITLE = "Wireline - Your next AI employee calls, texts & emails";
 const DEFAULT_DESCRIPTION =
-  "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.";
+  "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books, and logs every outcome.";
 
 function setMeta(attr: "name" | "property", key: string, content: string | null) {
   const selector = `meta[${attr}="${key}"]`;

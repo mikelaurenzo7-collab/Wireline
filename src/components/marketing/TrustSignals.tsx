@@ -27,7 +27,7 @@ const TRUST_POINTS = [
 export default function TrustSignals() {
   return (
     <section
-      className="border-t border-border px-5 py-10 sm:px-8 sm:py-12 lg:px-10"
+      className="wl-public-section--tight border-t border-border"
       aria-labelledby="trust-heading"
       data-testid="trust-signals"
     >
@@ -39,7 +39,7 @@ export default function TrustSignals() {
           </h2>
         </div>
 
-        <div className="mt-8 grid overflow-hidden rounded-[18px] border border-border bg-card sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border">
+        <div className="mt-8 grid overflow-hidden rounded-[1.05rem] border border-border bg-card sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border">
           {TRUST_POINTS.map(({ icon: Icon, title, detail }) => (
             <article key={title} className="p-5 text-center sm:p-6">
               <span className="mx-auto grid h-9 w-9 place-items-center rounded-full bg-primary/8 text-primary">

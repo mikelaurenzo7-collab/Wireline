@@ -60,6 +60,9 @@ async function vapiFetch(path: string, init?: RequestInit): Promise<any> {
       "content-type": "application/json",
       ...(init?.headers || {}),
     },
+    // Bound every Vapi control-plane call (provisioning, listing, release) so a
+    // hung upstream can't stall number setup indefinitely.
+    signal: init?.signal ?? AbortSignal.timeout(15_000),
   });
   const body = await res.text();
   let parsed: any = null;

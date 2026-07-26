@@ -141,6 +141,7 @@ export function isWithinBusinessHours(
   const open = parseHHMM(today.open);
   const close = parseHHMM(today.close);
   if (open == null || close == null) return true; // malformed → don't gate
+  if (open === close) return false; // zero-length window ([open, open)) is never open
 
   if (close > open) {
     // Same-day window: open <= now < close

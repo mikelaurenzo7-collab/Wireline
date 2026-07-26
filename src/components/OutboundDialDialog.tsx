@@ -57,14 +57,32 @@ export default function OutboundDialDialog({
   const [consentConfirmed, setConsentConfirmed] = useState(false);
   const [placing, setPlacing] = useState(false);
 
+  // Reset the form when the dialog opens or its seed values change — but NOT
+  // when the agents list refreshes in the background. Keeping `voiceAgents` in
+  // the deps here wiped whatever the user had typed the moment AgentsContext
+  // refetched (or finished its initial load) while the dialog was open.
   useEffect(() => {
     if (!open) return;
-    setAgentId(initialAgentId || voiceAgents[0]?.id || "");
+    setAgentId(initialAgentId);
     setNumber(initialNumber);
     setContext(initialContext);
     setCallPurpose("service_or_requested");
     setConsentConfirmed(false);
-  }, [open, initialAgentId, initialNumber, initialContext, voiceAgents]);
+  }, [open, initialAgentId, initialNumber, initialContext]);
+
+  // Keep the selected agent valid without disturbing typed fields: seed a
+  // fallback when nothing is chosen yet, and drop a selection that no longer
+  // exists in the roster (agent deleted or lost its phone line on a background
+  // refresh) so placeCall can't submit a stale id the <select> no longer shows.
+  useEffect(() => {
+    if (!open || voiceAgents.length === 0) return;
+    if (agentId && voiceAgents.some((agent) => agent.id === agentId)) return;
+    const fallback =
+      (initialAgentId && voiceAgents.some((agent) => agent.id === initialAgentId)
+        ? initialAgentId
+        : voiceAgents[0]?.id) || "";
+    if (fallback && fallback !== agentId) setAgentId(fallback);
+  }, [open, agentId, initialAgentId, voiceAgents]);
 
   const canPlace =
     !placing &&

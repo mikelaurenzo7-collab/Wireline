@@ -50,17 +50,17 @@ const CHANNEL_CAPABILITIES = [
   {
     icon: PhoneCall,
     title: "Voice",
-    body: "Answer inbound calls, place outbound calls, qualify, book, transfer, recap, and follow up.",
+    body: "Answer or place calls, qualify, book, transfer, and recap.",
   },
   {
     icon: MessageSquareText,
     title: "Text / SMS",
-    body: "Confirm, nurture, remind, recover, and escalate under visible consent and spend rules.",
+    body: "Confirm, nurture, remind, and recover under consent and spend rules.",
   },
   {
     icon: Mail,
     title: "Email",
-    body: "Read connected inboxes, draft or send approved replies, follow up, and record the result.",
+    body: "Draft or send approved replies, follow up, and record the result.",
   },
 ] as const;
 
@@ -161,13 +161,13 @@ export default function Features() {
         <MarketingHero
           eyebrow="Features"
           title="One AI Voice Employee. Every customer conversation."
-          description="Give one employee your business truth, rules, approvals, and connected channels. It handles the conversation, completes the next step, and preserves one outcome record."
+          description="Train one employee with your rules and channels. It handles the conversation, finishes the next step, and keeps one outcome record."
           primaryAction={{ label: "Build your AI Voice Employee", to: "/signup" }}
           secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
           proof={FEATURE_HERO_PROOF}
         />
 
-        <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-3xl text-center">
               <p className="wl-overline text-primary">Voice first · multichannel by design</p>
@@ -175,8 +175,8 @@ export default function Features() {
                 Calls, SMS, and email belong to the same employee.
               </h2>
               <p className="wl-public-copy mx-auto mt-5">
-                Voice handles the live moment. Text and email preserve momentum before and after the
-                call without splitting identity, memory, or ownership.
+                Voice handles the live moment. Text and email keep momentum—without splitting
+                identity, memory, or ownership.
               </p>
             </div>
             <div className="grid gap-3 lg:grid-cols-3">
@@ -190,7 +190,7 @@ export default function Features() {
           </div>
         </section>
 
-        <section className="border-b border-border bg-card/45 px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <section className="wl-public-section border-b border-border bg-card/45">
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-overline text-primary">Build → Train → Launch → Improve</p>
@@ -217,7 +217,7 @@ export default function Features() {
           </div>
         </section>
 
-        <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-overline text-primary">Core product</p>
@@ -233,7 +233,7 @@ export default function Features() {
           </div>
         </section>
 
-        <section className="border-b border-border bg-card/45 px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <section className="wl-public-section border-b border-border bg-card/45">
           <div className="wl-public-rail">
             <div className="mx-auto max-w-3xl text-center">
               <Workflow size={22} className="mx-auto text-primary" aria-hidden="true" />
@@ -242,8 +242,7 @@ export default function Features() {
                 Connect tools only when they improve the outcome.
               </h2>
               <p className="wl-public-copy mx-auto mt-5">
-                Every connection shows what the employee can access, its current status, and the
-                most recent useful result.
+                Each connection shows access, status, and the most recent useful result.
               </p>
             </div>
             <div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -263,7 +262,7 @@ export default function Features() {
           </div>
         </section>
 
-        <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
             <div className="mx-auto max-w-2xl text-center">
               <p className="wl-overline text-primary">Useful on day one</p>
@@ -296,7 +295,7 @@ export default function Features() {
           </div>
         </section>
 
-        <section className="px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <section className="wl-public-section">
           <div className="wl-public-rail text-center">
             <p className="wl-overline text-primary">Private to start · ready when you are</p>
             <h2 className="wl-public-section-heading mt-3">

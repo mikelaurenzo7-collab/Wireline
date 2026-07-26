@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { cn } from "../../lib/utils";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
+import { useModalFocusTrap } from "../../lib/use-modal-focus-trap";
 import SkipToContentLink from "../layout/SkipToContentLink";
 
 export type PublicNavActive = "signin" | "signup" | "home";
@@ -29,6 +31,7 @@ type PublicSiteHeaderProps = {
 
 export default function PublicSiteHeader({ className, active = "home" }: PublicSiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const mobileNavRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const isAuth = active === "signin" || active === "signup";
@@ -39,17 +42,25 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
 
   useEffect(() => setMenuOpen(false), [active, location.pathname]);
 
+  // The mobile nav is `md:hidden`. If it is open and the viewport grows past the
+  // md breakpoint (resize/rotate), the dialog visually disappears but stays
+  // mounted — close it so the focus trap and scroll lock below don't strand
+  // desktop keyboard/scroll behavior on an invisible container.
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  useEffect(() => {
+    if (isDesktop && menuOpen) setMenuOpen(false);
+  }, [isDesktop, menuOpen]);
+
+  // Give the mobile-nav dialog a real modal keyboard lifecycle: initial focus,
+  // Tab containment, Escape-to-close, and focus restored to the toggle on close.
+  useModalFocusTrap(mobileNavRef, { active: menuOpen, onEscape: () => setMenuOpen(false) });
+
   useEffect(() => {
     if (!menuOpen) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenuOpen(false);
-    };
-    window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKeyDown);
     };
   }, [menuOpen]);
 
@@ -135,6 +146,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
       </header>
       {menuOpen && (
         <div
+          ref={mobileNavRef}
           id="public-mobile-nav"
           className="fixed inset-0 z-[60] md:hidden"
           role="dialog"

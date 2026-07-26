@@ -13,12 +13,12 @@ describe("managed AI recipe availability", () => {
   it("uses a real provider-neutral status contract instead of the dead Claude route", () => {
     expect(modal).toContain('authFetch("/api/ai/status")');
     // Availability must not be coupled to any single provider id — the managed
-    // chain (Grok primary, OpenAI, Gemini, AI Gateway) can serve regardless.
+    // chain (OpenAI primary, Gemini, AI Gateway) can serve regardless.
     expect(modal).toContain("setAvailable(status.available === true)");
     expect(modal).not.toContain('primary_provider === "');
     expect(modal).not.toContain("/api/claude/status");
     expect(route).toContain('router.get("/api/ai/status", authenticateUser');
-    expect(route).toContain('primary_provider: "xai"');
+    expect(route).toContain('primary_provider: "openai"');
     expect(route).toContain("STRUCTURED_PRIMARY_MODEL");
     expect(registry).toContain("app.use(aiStatusRouter)");
   });

@@ -97,7 +97,7 @@ export const AGENT_DIRECTION_MODES = {
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Every paid AI employee includes a Wireline number at no extra line fee, so it can call out, receive callbacks, text follow-ups, and own the handoff under your direction." as const;
+  "Every paid AI employee includes a Wireline number at no extra line fee—so it can call, take callbacks, text follow-ups, and own the handoff under your direction." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
@@ -126,7 +126,7 @@ export const MARKETING_VOICE = {
   /** Public hero CTA — voice-led marketing noun; product noun stays "AI employee". */
   primaryCta: "Build your AI Voice Employee",
   subline:
-    "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.",
+    "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books, and logs every outcome.",
   channelProof: [
     "Voice calling",
     "Text / SMS",

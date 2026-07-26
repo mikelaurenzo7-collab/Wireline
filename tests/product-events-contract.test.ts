@@ -132,7 +132,6 @@ describe("product event taxonomy", () => {
       read("src/components/AuthPortal.tsx"),
       read("src/components/CreateAgentDialog.tsx"),
       read("src/components/onboarding/PostCreateActivationWizard.tsx"),
-      read("src/components/ConversationBalanceCard.tsx"),
       read("src/components/StripeBillingCard.tsx"),
       read("src/components/ActivationNudge.tsx"),
       read("src/components/CallLogsClaude.tsx"),

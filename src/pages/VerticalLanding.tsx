@@ -64,9 +64,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   const isPersonal = slug === "personal";
   if (!cfg) return null;
 
-  const heroProof = isPersonal
-    ? ["Your voice", "Clear outcomes", "Private by default"]
-    : undefined;
+  const heroProof = isPersonal ? ["Your voice", "Clear outcomes", "Private by default"] : undefined;
   const heroDescription = isPersonal
     ? "Hand the phone work to Wireline so your day stays yours."
     : cfg.subhead;
@@ -88,7 +86,10 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           {
             "@type": "ListItem",
             position: 2,
-            name: cfg.metaTitle.split("—")[0].trim() || slug,
+            // metaTitles use either an em-dash or a pipe to separate the crumb
+            // from the SEO tail — split on both so pipe-titled verticals don't
+            // emit the entire title as the breadcrumb name.
+            name: cfg.metaTitle.split(/\s*[—|]\s*/)[0].trim() || slug,
             item: `https://trywireline.com/for/${slug}`,
           },
         ],
@@ -110,7 +111,11 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         title={cfg.headline}
         description={heroDescription}
         primaryAction={{ label: cfg.primaryCta.label, to: cfg.primaryCta.href }}
-        secondaryAction={{ label: cfg.secondaryCta.label, to: cfg.secondaryCta.href, tone: "secondary" }}
+        secondaryAction={{
+          label: cfg.secondaryCta.label,
+          to: cfg.secondaryCta.href,
+          tone: "secondary",
+        }}
         proof={heroProof}
       />
 

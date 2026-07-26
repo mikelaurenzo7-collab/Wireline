@@ -41,7 +41,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
   outbound: {
     eyebrow: "Sales and growth",
     title: "Your best salesperson, without the commission.",
-    lead: "Call warm lists, revive old leads, promote offers, text or email the follow-up, book appointments, and log profit-moving outcomes with one tireless employee.",
+    lead: "Call warm lists, revive leads, promote offers, follow up by text or email, book the meeting, and log the outcome.",
     bestFor: ["Lead response", "Quote follow-up", "Appointment setting"],
     cta: "Start on Starter — $19/mo",
     ctaPath: "/signup?plan=starter&mode=outbound",
@@ -49,7 +49,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
   inbound: {
     eyebrow: "Front desk and support",
     title: "Answer demand before profit leaks.",
-    lead: "Handle front-desk calls, inbound qualification, scheduling, callbacks, overflow, after-hours coverage, and the next SMS or email from one shared customer record.",
+    lead: "Catch the call, qualify, schedule, cover after hours, and continue by SMS or email from one shared record.",
     bestFor: ["Front desk", "Lead qualifier", "Support triage"],
     cta: "Start on Starter — $19/mo",
     ctaPath: "/signup?plan=starter&mode=inbound",
@@ -57,7 +57,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
   hybrid: {
     eyebrow: "Right-hand employee",
     title: "The employee who does the follow-through.",
-    lead: "When sales, service, callbacks, email, SMS, scheduling, recovery, and CRM updates belong in one workflow, Wireline owns the busywork and shows you the result.",
+    lead: "Sales, service, callbacks, scheduling, and CRM updates stay one workflow—Wireline owns the busywork and shows the result.",
     bestFor: ["Sales desk", "Collections desk", "Appointment desk"],
     cta: "Start on Starter — $19/mo",
     ctaPath: "/signup?plan=starter&mode=hybrid",
@@ -65,10 +65,10 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
 };
 
 const LOOP_COPY = [
-  "Tell it the outcome, audience, limits, and rules.",
-  "Add the offer, voice, knowledge, objections, approvals, and handoff logic.",
-  "Activate a paid plan, claim the included number, connect email, SMS, tools, and spend controls.",
-  "Let it answer, sell, support, book, follow up, update systems, and log what happened.",
+  "Set the outcome, audience, limits, and rules.",
+  "Add voice, knowledge, objections, approvals, and handoff logic.",
+  "Activate a paid plan, claim the number, connect channels and spend controls.",
+  "Let it answer, sell, support, book, follow up, and log what happened.",
 ] as const;
 
 const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
@@ -81,7 +81,7 @@ const PLAN_PREVIEW = [
     name: "Free Builder",
     price: "$0",
     period: "to create",
-    body: "Build, train, and privately test your first AI Voice Employee. Activate a paid plan when you are ready for live calling, SMS, email workflows, and a Wireline number.",
+    body: "Build, train, and test privately. Activate a paid plan when you are ready for live voice, SMS, email, and a Wireline number.",
     cta: "Start free",
     ctaPath: "/signup?plan=personal",
     highlight: false,
@@ -90,7 +90,7 @@ const PLAN_PREVIEW = [
     name: "Starter",
     price: `$${planCatalog.starter.price_usd_monthly}`,
     period: "/mo",
-    body: `${planCatalog.starter.max_agents} live AI Voice Employee, ${planCatalog.starter.included_phone_numbers} included Wireline number, and ${planCatalog.starter.voice_minutes_monthly} guaranteed voice minutes—plus connected SMS and email workflows.`,
+    body: `${planCatalog.starter.max_agents} live AI Voice Employee, ${planCatalog.starter.included_phone_numbers} Wireline number, ${planCatalog.starter.voice_minutes_monthly} voice minutes—plus SMS and email.`,
     cta: "Start for $19",
     ctaPath: "/signup?plan=starter",
     highlight: false,
@@ -99,7 +99,7 @@ const PLAN_PREVIEW = [
     name: "Starter Plus",
     price: `$${planCatalog.team.price_usd_monthly}`,
     period: "/mo",
-    body: `${planCatalog.team.max_agents} live agents (personal + business), ${planCatalog.team.included_phone_numbers} numbers, and ${planCatalog.team.voice_minutes_monthly} guaranteed voice minutes—plus full SMS and Lead Hunt workflow.`,
+    body: `${planCatalog.team.max_agents} live agents, ${planCatalog.team.included_phone_numbers} numbers, ${planCatalog.team.voice_minutes_monthly} voice minutes—plus SMS and Lead Hunt.`,
     cta: "Get Starter Plus",
     ctaPath: "/signup?plan=team",
     highlight: true,
@@ -108,7 +108,7 @@ const PLAN_PREVIEW = [
     name: "Pro",
     price: `$${planCatalog.business.price_usd_monthly}`,
     period: "/mo",
-    body: `${planCatalog.business.max_agents} live AI employees and ${planCatalog.business.included_phone_numbers} included numbers with shared voice, SMS, email, CRM sync, analytics, roles, approvals, and oversight.`,
+    body: `${planCatalog.business.max_agents} live AI employees, ${planCatalog.business.included_phone_numbers} numbers, shared channels, analytics, roles, and approvals.`,
     cta: "Go Pro",
     ctaPath: "/signup?plan=business",
     highlight: false,
@@ -185,8 +185,7 @@ export default function WireAgentLanding() {
                   Hear it now — live in your browser
                 </div>
                 <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-                  Ask a real question out loud. Your microphone turns on only after you start, and
-                  no signup is needed to listen.
+                  Ask out loud. Mic on only after you start — no signup to listen.
                 </p>
               </div>
               <div className="mt-6 rounded-[16px] border border-border bg-background/70 p-4">
@@ -196,7 +195,7 @@ export default function WireAgentLanding() {
                   fallback={
                     <div className="text-center">
                       <p className="text-sm text-muted-foreground">
-                        Prefer the phone? Call a live demo line — no signup to listen.
+                        Prefer the phone? Call a live demo line — no signup.
                       </p>
                       <a
                         href={`tel:${HERO_DEMO_AGENT.tel}`}
@@ -212,7 +211,7 @@ export default function WireAgentLanding() {
           }
         />
 
-        <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+        <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">
@@ -220,25 +219,21 @@ export default function WireAgentLanding() {
               </p>
               <h2 className="wl-display-2 mt-4">Train it once. Put it to work everywhere.</h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
-                Voice is the front door. SMS and email keep the conversation moving. The same
-                employee carries the business knowledge, rules, approvals, memory, and outcome
-                history across all three.
+                Voice opens the door. SMS and email keep momentum. One employee carries knowledge,
+                rules, approvals, and outcomes across all three.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 ["Voice", "Answers and places calls, qualifies, books, transfers, and recaps."],
-                [
-                  "Text / SMS",
-                  "Confirms, nurtures, reminds, recovers, and escalates under consent rules.",
-                ],
+                ["Text / SMS", "Confirms, nurtures, reminds, and recovers under consent rules."],
                 [
                   "Email",
-                  "Reads, drafts, sends approved replies, follows up, and records the result.",
+                  "Drafts, sends approved replies, follows up, and records the result.",
                 ],
                 [
                   "One operating record",
-                  "Every channel shares context, coaching, spend controls, and proof.",
+                  "Shared context, coaching, spend controls, and proof.",
                 ],
               ].map(([title, body]) => (
                 <article key={title} className="wl-paper rounded-[16px] p-6 text-center">
@@ -250,14 +245,14 @@ export default function WireAgentLanding() {
           </div>
         </section>
 
-        <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+        <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">How it works</p>
               <h2 className="wl-display-2 mt-4">Four steps from idea to employee.</h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
-                Build one AI employee, train the business truth, activate the live channels, then
-                improve from a clean record behind every conversation.
+                Build one AI employee, train the business truth, activate live channels, then improve
+                from a clean record behind every conversation.
               </p>
             </div>
             <div className="grid overflow-hidden rounded-[16px] border border-border bg-card sm:grid-cols-4 sm:divide-x sm:divide-border">
@@ -284,16 +279,16 @@ export default function WireAgentLanding() {
           </div>
         </section>
 
-        <section className="border-b border-border bg-card/40 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+        <section className="wl-public-section border-b border-border bg-card/40">
           <div className="wl-public-rail">
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">Work lanes</p>
               <h2 className="wl-display-2 mx-auto mt-4 max-w-[18ch]">
                 Choose the outcome. Your employee handles the conversation.
               </h2>
-              <p className="mx-auto mt-4 max-w-[46rem] text-[16px] leading-[1.6] text-muted-foreground">
-                Start with sales, service, or all-purpose follow-through. Voice, SMS, email,
-                handoff, memory, and proof remain one system. {AGENT_NUMBER_PROMISE}
+              <p className="mx-auto mt-4 max-w-[42rem] text-[16px] leading-[1.6] text-muted-foreground">
+                Start with sales, service, or all-purpose follow-through. Voice, SMS, email, and
+                proof stay one system. {AGENT_NUMBER_PROMISE}
               </p>
               <div
                 className="wl-segmented mx-auto mt-7 flex w-fit max-w-full"
@@ -369,15 +364,14 @@ export default function WireAgentLanding() {
           </div>
         </section>
 
-        <section className="border-b border-border bg-card/40 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+        <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
               <h2 className="wl-display-2 mt-4">Build free. Activate live work from $19.</h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
-                Free Builder lets you create and train privately. Every paid plan includes live
-                voice capacity and a Wireline number at no extra line fee, with SMS and email
-                available to the same employee under visible usage controls.
+                Train privately on Free Builder. Every paid plan includes live voice, a Wireline
+                number, and SMS/email under visible usage controls.
               </p>
             </div>
             <div className="mx-auto grid max-w-[1200px] gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -416,10 +410,9 @@ export default function WireAgentLanding() {
               ))}
             </div>
             <div className="mt-8 text-center">
-              <p className="mx-auto max-w-[52ch] text-[13px] leading-[1.6] text-muted-foreground">
-                Included voice minutes are used first. Additional provider-funded voice, SMS, email,
-                enrichment, or automation draws from prepaid Runtime Balance you control—never
-                a surprise postpaid invoice.
+              <p className="mx-auto max-w-[48ch] text-[13px] leading-[1.6] text-muted-foreground">
+                Included minutes first. Extra voice, SMS, and enrichment draw from prepaid Runtime Balance
+                you control—never a surprise postpaid invoice.
               </p>
               <Link
                 to="/pricing"
@@ -431,9 +424,9 @@ export default function WireAgentLanding() {
           </div>
         </section>
 
-        <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+        <section className="wl-public-section">
           <div className="wl-public-rail">
-            <div className="wl-featured-wire wl-featured-wire--live relative overflow-hidden rounded-[20px] marketing-ink-panel px-6 py-14 text-center sm:px-10 sm:py-20">
+            <div className="wl-featured-wire wl-featured-wire--live relative overflow-hidden rounded-[20px] marketing-ink-panel px-6 py-14 text-center sm:px-10 sm:py-16">
               <div
                 className="pointer-events-none absolute inset-0"
                 aria-hidden="true"
@@ -444,9 +437,9 @@ export default function WireAgentLanding() {
               />
               <div className="relative">
                 <h2 className="wl-display-2 mx-auto max-w-[18ch]">Build your AI Voice Employee.</h2>
-                <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-[580px] text-[16px] leading-[1.6]">
-                  Train it free. Activate a paid plan to claim the included Wireline number, connect
-                  SMS and email, and see the outcome after the first real customer conversation.
+                <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-[34rem] text-[16px] leading-[1.6]">
+                  Train free. Activate a paid plan to claim the number, connect SMS and email, and
+                  see the outcome after the first real conversation.
                 </p>
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                   <Link
