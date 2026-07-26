@@ -50,17 +50,17 @@
   </g>
 
   <text x="80" y="220" font-family="Inter Tight, Georgia, ui-serif, serif" font-size="67" font-weight="400" letter-spacing="-3" fill="#F5F4F8">
-    YOUR AI VOICE EMPLOYEE
+    AI VOICE AGENTS
   </text>
   <text x="80" y="304" font-family="Inter Tight, Georgia, ui-serif, serif" font-size="54" font-style="italic" font-weight="400" letter-spacing="-2" fill="#A78BFA">
-    CALLS · TEXTS · EMAILS
+    PERSONAL · BUSINESS
   </text>
 
   <text x="84" y="374" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="27" font-weight="500" fill="#B6B1C6">
-    One trained employee. One shared memory.
+    Start with one. Add a coordinated team.
   </text>
   <text x="84" y="420" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="23" font-weight="500" fill="#B6B1C6">
-    Books · follows up · updates systems · logs outcomes
+    Calls · texts · email · follow-through
   </text>
 
   <g transform="translate(760, 156)">
@@ -74,10 +74,10 @@
       <circle cx="122" cy="33" r="6.5"/>
     </g>
     <text x="104" y="48" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700" fill="#F5F4F8">
-      AI Voice Employee
+      AI Voice Agent
     </text>
     <text x="104" y="72" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="10" font-weight="700" letter-spacing="1.4" fill="#A78BFA">
-      TRAINED ON YOUR BUSINESS
+      PERSONAL OR BUSINESS
     </text>
 
     <rect x="24" y="108" width="94" height="38" rx="15" fill="#201E29"/>
