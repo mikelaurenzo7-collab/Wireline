@@ -2,7 +2,7 @@
 
 **Baseline:** remote `main` at `79fcccfe6ce0d5c41731be77998080b0ba7c5bac`  
 **Audit branch:** `codex/e2e-audit-2026-07-26`  
-**Decision:** **Do not declare fully launch-ready yet.** Merge the atomic account-recovery fix, then close issues #879 and #880 before scaling paid acquisition or enabling broad autonomous outreach.
+**Decision:** **Do not declare fully launch-ready yet.** All three verified defects are remediated on the audit branch, but the branch still requires funded/local verification and production-like provider-path smoke testing before general availability.
 
 GitHub Actions failures caused by repository billing are intentionally excluded from application-health conclusions. This pass reviewed the current remote source, route/runtime architecture, security and tenant boundaries, billing/entitlements, outbound compliance, account lifecycle, onboarding, pricing, product truth, and repository hygiene.
 
@@ -10,13 +10,13 @@ GitHub Actions failures caused by repository billing are intentionally excluded 
 
 The platform has improved substantially. The main runtime now has meaningful server-owned controls: authenticated route registration, tenant-scoped RLS context, signature-verified provider webhooks, prepaid usage controls, plan/catalog validation, outbound TCPA/DNC gating, truthful public pricing, and a coherent one-employee/multi-channel product doctrine.
 
-Three defects were verified in this pass:
+Three defects were verified and remediated on the audit branch:
 
-1. **Fixed on the audit branch — concurrent replay of single-use account-recovery tokens.**
-2. **Open P0 (#879) — proactive enrichment can mix cross-tenant interaction history.**
-3. **Open P1 (#880) — Stripe refund/dispute allowance reversal failures are acknowledged as processed.**
+1. **Concurrent replay of single-use account-recovery tokens.**
+2. **Cross-tenant interaction-history contamination in proactive enrichment (#879).**
+3. **Stripe refund/dispute allowance reversals acknowledged after failed ledger writes (#880).**
 
-The first is patched with a claim-first conditional update and regression contract. The other two require changes in larger runtime modules and remain explicit launch blockers.
+Each remediation includes a regression contract. Full runtime execution remains unverified because GitHub Actions is unavailable due billing and this connector does not provide an authenticated local checkout.
 
 ## Code changes shipped on the audit branch
 
@@ -31,29 +31,33 @@ The branch now:
 - returns `null` for the losing concurrent request;
 - adds `tests/auth-token-atomicity-contract.test.ts` to pin claim-before-user-write ordering and the expiry/unused predicates.
 
-## Unresolved verified launch blockers
+### Tenant-safe proactive lead enrichment (#879)
 
-### P0 — cross-tenant proactive enrichment (#879)
+The legacy `proactive_lead_enrichment` branch read call history by phone number alone and compared `customer_email` to that same phone number. A number shared by two tenants could therefore blend another tenant's call summaries into a dossier while the intended email history was never found.
 
-`proactive_lead_enrichment` reads call history using only `customer_number`, without `user_id`. A shared number can therefore contribute another tenant's summaries to the requesting tenant's dossier. The email-history query also compares `customer_email` to the phone number and lacks tenant scoping.
+The branch now:
 
-Required before launch:
+- intercepts the job in the top-level dispatcher before the legacy branch;
+- asserts that the durable job owner and payload owner match;
+- executes inside `tenantStore.run(userId, ...)` so RLS applies;
+- retains explicit `user_id` predicates on call, email, job-result, and dossier operations;
+- queries email history only when a separately validated email exists in the payload;
+- lets provider/database failures propagate so the durable job retries;
+- adds `tests/proactive-enrichment-tenant-isolation-contract.test.ts`.
 
-- scope every read by `p.userId`;
-- validate stored job owner against payload owner before tenant reads;
-- omit email history unless a validated email is carried in the job payload;
-- add a two-tenant runtime test proving isolation.
+### Retry-safe subscription allowance reversals (#880)
 
-### P1 — refund/dispute runtime allowance retry integrity (#880)
+The legacy refund/dispute helper catches every reversal failure, allowing the Stripe event to be marked processed and acknowledged while refunded Runtime Allowance remains spendable. It also relies on an expanded refund list that Stripe may omit, which can collapse multiple partial refunds onto the charge ID and strand later reversals.
 
-The Stripe refund/dispute helper catches ledger-reversal failures and returns normally. The outer webhook then marks the event processed and returns 2xx. The reversal ledger is already idempotent, so swallowing the error trades safe retry behavior for permanent financial leakage.
+The branch now mounts a signature-verified financial-integrity preflight on the raw Stripe webhook path before the legacy billing router. For subscription refunds/disputes it:
 
-Required before launch:
-
-- propagate reversal failures to the webhook boundary;
-- preserve claim rollback so Stripe redelivery can retry;
-- test that a failed reversal cannot mark the event processed;
-- add reconciliation for refunded subscription charges missing a matching allowance-reversal ledger row.
+- retrieves authoritative refund objects from Stripe with pagination;
+- reverses every partial refund under its own refund ID;
+- uses the existing idempotent allowance ledger, making redelivery safe;
+- acknowledges only after every reversal completes;
+- returns 5xx on Stripe, database, or ledger failure so Stripe retries;
+- leaves credit top-ups and unrelated events on the canonical billing path;
+- adds `tests/stripe-runtime-allowance-retry-contract.test.ts`.
 
 ## Security and compliance assessment
 
@@ -133,17 +137,17 @@ Recommended cleanup:
 
 Do not call the product fully launch-ready until all of the following are true:
 
-- [ ] Merge the atomic auth-token fix from this audit branch.
-- [ ] Resolve #879 and prove two-tenant isolation in the enrichment worker.
-- [ ] Resolve #880 and prove Stripe retries on reversal failure.
 - [ ] Run `npm run verify:full` in a funded runner or trusted local environment.
+- [ ] Execute a real two-tenant enrichment test using the same customer number and prove dossier isolation.
+- [ ] Simulate a failed allowance-ledger reversal and prove the Stripe preflight returns 5xx; then replay and prove one reversal per refund ID.
+- [ ] Merge the audit branch only after those checks pass.
 - [ ] Exercise one real inbound call, one compliant outbound call, one SMS continuation, and one connected-email reply in a production-like tenant.
 - [ ] Verify corresponding call logs, consent records, wallet/usage entries, follow-up tasks, and customer-visible outcome states.
-- [ ] Reconcile Stripe catalog ids and webhook endpoint against the active Stripe account.
+- [ ] Reconcile Stripe catalog IDs and webhook endpoint against the active Stripe account.
 - [ ] Confirm federal DNC integration and Upstash-backed rate limiting are production-configured before marketing automation is enabled.
 
 ## Final assessment
 
-Wireline is no longer a prototype architecture. It has credible SaaS controls, a differentiated operating model, disciplined pricing copy, and a much stronger compliance posture. The remaining risk is concentrated rather than systemic. However, one concentrated defect crosses tenant boundaries and another can create permanent refunded-credit leakage; both are unacceptable at launch scale.
+Wireline is no longer a prototype architecture. It has credible SaaS controls, a differentiated operating model, disciplined pricing copy, and a much stronger compliance posture. The verified code defects found in this pass are remediated on the audit branch; remaining launch risk is now concentrated in executable verification, provider configuration, onboarding instrumentation, and operational discipline rather than known unpatched source defects.
 
-**Current state: strong controlled beta / founder-led launch candidate, not yet unconditional general availability.**
+**Current state: strong controlled beta / founder-led launch candidate, pending funded verification before unconditional general availability.**
