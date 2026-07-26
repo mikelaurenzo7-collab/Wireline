@@ -65,7 +65,7 @@ const MCP_CLIENTS = [
   {
     title: "ChatGPT",
     description:
-      "Create and refine a private AI employee draft, then run a private voice simulation before continuing in Wireline.",
+      "Create and refine a private AI voice-agent draft, then run a private voice simulation before continuing in Wireline.",
     action: "Open ChatGPT apps",
     href: "https://chatgpt.com/",
     icon: MessageSquareText,
@@ -137,7 +137,7 @@ export default function Developers() {
             Connect once. Draft and simulate in the client you already open.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-            Use one account-bound MCP connector to draft an AI employee in natural language, test
+            Use one account-bound MCP connector to draft an AI voice agent in natural language, test
             its voice privately, and continue configuration in Wireline when you are ready.
           </p>
 
@@ -173,7 +173,7 @@ export default function Developers() {
             </code>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
               Private-by-default boundary: this connector cannot place calls, send messages,
-              provision numbers, or launch an AI employee.
+              provision numbers, or launch a live AI voice agent.
             </p>
             <Button variant="outline" size="sm" onClick={handleCopy} className="mt-4">
               <Copy className="mr-1 h-3.5 w-3.5" />
