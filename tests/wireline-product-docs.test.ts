@@ -104,6 +104,10 @@ describe("Wireline product documentation contract", () => {
     expect(head).toContain("Wireline — AI Voice Agents for Personal &amp; Business");
     expect(head).toContain("personal tasks and business conversations");
     expect(head).toContain("follow-through across voice, SMS, and email");
+    expect(head).toContain("personal voice agent");
+    expect(head).toContain("business voice agent");
+    expect(head).not.toContain("AI employee");
+    expect(head).not.toContain("multichannel AI employee");
     expect(ogImage).toMatch(/AI VOICE AGENTS[\s\S]*PERSONAL · BUSINESS/);
     expect(ogImage).toContain("VOICE · SMS · EMAIL · PERSONAL · BUSINESS · OUTCOMES · CONTROL");
     expectNoTerms(head, retiredProductTerms);
