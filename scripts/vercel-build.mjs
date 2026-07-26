@@ -86,6 +86,7 @@ run("npx", [
   "tests/mailbox-and-daily-brief-hardening-contract.test.ts",
   "tests/managed-vapi-runtime-contract.test.ts",
   "tests/vapi-modern-payload-contract.test.ts",
+  "tests/twilio-webhook-privacy.test.ts",
 ]);
 runLiveVapiSchemaAuditIfRequested();
 configurePreviewEnvironment();
