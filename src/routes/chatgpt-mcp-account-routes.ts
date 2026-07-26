@@ -437,6 +437,8 @@ router.post("/mcp", async (req, res) => {
     req.body && typeof req.body === "object" ? (req.body as Record<string, unknown>) : null;
   const id = body?.id ?? null;
   const method = text(body?.method, 128);
+  const params =
+    body?.params && typeof body.params === "object" ? (body.params as Record<string, unknown>) : {};
   const principal = await principalFromRequest(req).catch((error) => {
     log.warn("ChatGPT account MCP token lookup failed", {
       error: error instanceof Error ? error.message : String(error),
