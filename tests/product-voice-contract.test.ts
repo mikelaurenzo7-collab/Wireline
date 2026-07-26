@@ -41,11 +41,11 @@ describe("product voice cohesion", () => {
       "On broad public surfaces, prefer AI Voice Agent; use personal agent or AI employee only when the audience context is explicit.",
     );
     expect(MARKETING_VOICE.eyebrow).toBeNull();
-    expect(MARKETING_VOICE.headline).toBe("AI voice agents for life and work");
+    expect(MARKETING_VOICE.headline).toBe("AI VOICE AGENTS");
     expect(MARKETING_VOICE.primaryCta).toBe("Build your AI Voice Agent");
     expect(MARKETING_VOICE.buyingNoun).toBe(BRAND_SYSTEM.buyingNoun);
     expect(MARKETING_VOICE.subline).toBe(
-      "Build one AI voice agent or a coordinated team for personal tasks, customer conversations, and follow-through across voice, SMS, and email.",
+      "Build one AI voice agent for personal tasks or a coordinated team for your business—across calls, SMS, email, and follow-through.",
     );
     expect(MARKETING_VOICE.channelProof).toEqual([
       "Voice calling",
