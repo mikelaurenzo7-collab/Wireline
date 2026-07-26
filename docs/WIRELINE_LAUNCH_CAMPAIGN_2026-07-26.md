@@ -17,7 +17,7 @@ This pack intentionally avoids broad "one AI employee" positioning. Business wor
 - Live plan floor: **Starter - $19/mo**
 - Builder posture: Free Builder is for creating, training, and simulating before a paid live launch.
 - Number promise: Every paid AI voice agent includes a Wireline number.
-- Retired line: Do not use "from $9" or "Launch for $9" in active launch assets.
+- Retired line: Do not use sub-$19 launch pricing in active launch assets.
 
 ## Brand Spine
 
@@ -47,7 +47,7 @@ Avoid:
 - "one AI employee" on broad public surfaces
 - "your next AI employee" as the general hero
 - "best employee you've ever had"
-- "$9", "Launch for $9", or "from $9"
+- sub-$19 launch pricing
 - "fully autonomous", "guaranteed booking", or compliance promises
 - WhatsApp public-launch claims while WhatsApp remains private beta
 
@@ -130,7 +130,7 @@ Audience: beta-friendly operators.
 | Small business calls | Turn Calls Into Outcomes; Missed Calls Cost Revenue; Follow Up Every Lead | Build free. Go live from $19/mo with a paid-plan Wireline number. |
 | Personal call assistant | Personal Voice Agent; Delegate Calls Privately; Train Before Launch | Personal and business-friendly AI voice agents with private simulation before live use. |
 
-Negative / avoid terms: free phone number, robocall, auto-dialer, guaranteed leads, WhatsApp public API, $9 AI employee.
+Negative / avoid terms: free phone number, robocall, auto-dialer, guaranteed leads, WhatsApp public API, retired employee-price copy.
 
 ## Organic Launch Posts
 
