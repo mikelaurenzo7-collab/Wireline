@@ -55,8 +55,8 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     ctaPath: "/signup?plan=starter&mode=inbound",
   },
   hybrid: {
-    eyebrow: "Right-hand employee",
-    title: "The employee who does the follow-through.",
+    eyebrow: "All-purpose agent",
+    title: "The agent who does the follow-through.",
     lead: "Sales, service, callbacks, scheduling, and CRM updates stay one workflow—Wireline owns the busywork and shows the result.",
     bestFor: ["Sales desk", "Collections desk", "Appointment desk"],
     cta: "Start on Starter — $19/mo",
@@ -102,7 +102,7 @@ const PLAN_PREVIEW = [
     name: "Starter",
     price: `$${planCatalog.starter.price_usd_monthly}`,
     period: "/mo",
-    body: `${planCatalog.starter.max_agents} live AI Voice Employee, ${planCatalog.starter.included_phone_numbers} Wireline number, ${planCatalog.starter.voice_minutes_monthly} voice minutes—plus SMS and email.`,
+    body: `${planCatalog.starter.max_agents} live AI voice agent, ${planCatalog.starter.included_phone_numbers} Wireline number, ${planCatalog.starter.voice_minutes_monthly} voice minutes—plus SMS and email.`,
     cta: "Start for $19",
     ctaPath: "/signup?plan=starter",
     highlight: false,
@@ -120,7 +120,7 @@ const PLAN_PREVIEW = [
     name: "Pro",
     price: `$${planCatalog.business.price_usd_monthly}`,
     period: "/mo",
-    body: `${planCatalog.business.max_agents} live AI employees, ${planCatalog.business.included_phone_numbers} numbers, shared channels, analytics, roles, and approvals.`,
+    body: `${planCatalog.business.max_agents} live AI voice agents, ${planCatalog.business.included_phone_numbers} numbers, shared channels, analytics, roles, and approvals.`,
     cta: "Go Pro",
     ctaPath: "/signup?plan=business",
     highlight: false,
@@ -240,11 +240,11 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">
-                One employee · every channel
+                One agent · every channel
               </p>
-              <h2 className="wl-display-2 mt-4">Train it once. Put it to work everywhere.</h2>
+              <h2 className="wl-display-2 mt-4">Train each once. Put them to work everywhere.</h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
-                Voice opens the door. SMS and email keep momentum. One employee carries knowledge,
+                Voice opens the door. SMS and email keep momentum. Each agent carries knowledge,
                 rules, approvals, and outcomes across all three.
               </p>
             </div>
@@ -268,9 +268,9 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">How it works</p>
-              <h2 className="wl-display-2 mt-4">Four steps from idea to employee.</h2>
+              <h2 className="wl-display-2 mt-4">Four steps from idea to live agent.</h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
-                Build one AI employee, train the business truth, activate live channels, then
+                Build one AI voice agent, train it for the job, activate live channels, then
                 improve from a clean record behind every conversation.
               </p>
             </div>
@@ -303,7 +303,7 @@ export default function WireAgentLanding() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">Work lanes</p>
               <h2 className="wl-display-2 mx-auto mt-4 max-w-[18ch]">
-                Choose the outcome. Your employee handles the conversation.
+                Choose the outcome. Your agent handles the conversation.
               </h2>
               <p className="mx-auto mt-4 max-w-[42rem] text-[16px] leading-[1.6] text-muted-foreground">
                 Start with sales, service, or all-purpose follow-through. Voice, SMS, email, and
@@ -455,7 +455,7 @@ export default function WireAgentLanding() {
                 }}
               />
               <div className="relative">
-                <h2 className="wl-display-2 mx-auto max-w-[18ch]">Build your AI Voice Employee.</h2>
+                <h2 className="wl-display-2 mx-auto max-w-[18ch]">Build your AI Voice Agent.</h2>
                 <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-[34rem] text-[16px] leading-[1.6]">
                   Train free. Activate a paid plan to claim the number, connect SMS and email, and
                   see the outcome after the first real conversation.
@@ -465,7 +465,7 @@ export default function WireAgentLanding() {
                     to="/signup"
                     className="marketing-btn-primary min-h-12 w-full justify-center px-7 text-[15px] font-semibold sm:w-auto"
                   >
-                    Build your AI Voice Employee
+                    Build your AI Voice Agent
                     <ArrowRight size={16} aria-hidden="true" />
                   </Link>
                   <Link
