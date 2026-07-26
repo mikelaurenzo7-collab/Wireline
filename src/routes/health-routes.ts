@@ -217,14 +217,15 @@ router.get(
           reason: "Automatic failure fallback.",
         },
         reasoning_layer: {
-          provider: "xai",
+          provider: "openai",
           model: STRUCTURED_PRIMARY_MODEL,
-          reason: "Managed primary for training, QA, insights, and post-call work.",
+          reason:
+            "Managed OpenAI Responses primary for training, QA, insights, and post-call work.",
         },
         reasoning_fallback: {
-          provider: "openai",
-          model: OPENAI_STRUCTURED_PRIMARY_MODEL,
-          reason: "First automatic fallback; Gemini and the AI Gateway follow.",
+          provider: "google",
+          model: GEMINI_STRUCTURED_FALLBACK_MODEL,
+          reason: "First automatic fallback; the AI Gateway follows.",
         },
       },
       timestamp: new Date().toISOString(),

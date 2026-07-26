@@ -96,6 +96,7 @@ export async function sendContract(params: SendContractParams): Promise<DocuSign
       `${DOCUSIGN_BASE_URI}/v2.1/accounts/${DOCUSIGN_ACCOUNT_ID}/envelopes`,
       {
         method: "POST",
+        signal: AbortSignal.timeout(15_000),
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
@@ -139,6 +140,7 @@ export async function getEnvelopeStatus(envelopeId: string): Promise<string | nu
     const response = await fetch(
       `${DOCUSIGN_BASE_URI}/v2.1/accounts/${DOCUSIGN_ACCOUNT_ID}/envelopes/${envelopeId}`,
       {
+        signal: AbortSignal.timeout(15_000),
         headers: { Authorization: `Bearer ${accessToken}` },
       },
     );

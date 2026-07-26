@@ -7,7 +7,7 @@
 //  and yield a stable fallback when that fails.
 //
 //  Same shape as src/lib/safe-date.ts — pure functions only, tested in
-//  src/lib/safe-number.test.ts.
+//  tests/safe-number.test.ts.
 // ────────────────────────────────────────────────────────────────────────
 
 /**

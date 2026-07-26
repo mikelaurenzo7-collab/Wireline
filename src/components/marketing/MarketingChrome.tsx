@@ -1,13 +1,11 @@
 import type { ReactNode } from "react";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
-import type { PublicNavActive } from "./PublicSiteHeader";
 import MarketingFooter from "./MarketingFooter";
 import MarketingStickyCta from "./MarketingStickyCta";
 import { cn } from "../../lib/utils";
 
 type Props = {
   children: ReactNode;
-  active?: PublicNavActive;
   /** Opt-in mobile bottom conversion bar. In-flow CTAs are the default. */
   stickyCta?: boolean;
   footer?: boolean;
@@ -45,7 +43,7 @@ export default function MarketingChrome({
              overflow-y-auto viewport squeezed long content (legal pages)
              into the space left over by the always-visible footer. */
           "relative z-10 flex-1 flex flex-col",
-          /* PublicSiteHeader is fixed h-16 — reserve space so hero copy isn't clipped. */
+          /* PrecisionPublicHeader is fixed h-16 — reserve space so hero copy isn't clipped. */
           !authCanvas && "pt-16 sm:pt-20",
           stickyCta && "marketing-has-sticky-cta",
         )}

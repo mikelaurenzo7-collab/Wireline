@@ -35,11 +35,9 @@ const router = Router();
 
 async function ipRateLimit(req: Request, res: Response, next: NextFunction) {
   try {
-    const ip = (
-      req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
-      req.ip ||
-      "anon"
-    ).trim();
+    // Key on Express's trust-proxy-resolved req.ip, NOT the raw X-Forwarded-For header:
+    // XFF is client-writable, so keying on XFF[0] lets a flooder mint a fresh bucket per request.
+    const ip = (req.ip || "anon").trim();
     const decision = await rateLimit(`recap:ip:${ip}`, {
       bucket: "recap:ip",
       windowMs: 60_000,

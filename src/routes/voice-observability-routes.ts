@@ -163,7 +163,7 @@ router.get(
   insightsRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const days = Math.min(parseInt((req.query.days as string) || "30"), 90);
+      const days = Math.min(90, Math.max(1, parseInt(String(req.query.days ?? "30"), 10) || 30));
       const trends = await getLatencyTrends({ userId: req.user.id, days });
       res.json({
         days,
@@ -188,7 +188,7 @@ router.get(
   insightsRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const limit = Math.min(parseInt((req.query.limit as string) || "50"), 200);
+      const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit ?? "50"), 10) || 50));
       const rows = await drizzle
         .select({
           id: schema.callLogs.id,

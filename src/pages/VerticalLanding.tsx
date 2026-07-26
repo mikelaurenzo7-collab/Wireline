@@ -4,7 +4,7 @@ import { ArrowRight, ShieldCheck } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import MarketingHero from "../components/marketing/MarketingHero";
-import { type VerticalKey, type VerticalConfig, WEDGES } from "../data/vertical-wedges";
+import { type VerticalKey, WEDGES } from "../data/vertical-wedges";
 
 function isExternalHref(href: string): boolean {
   return /^(tel:|mailto:|https?:)/.test(href);
@@ -50,14 +50,6 @@ const PERSONAL_FAQ_TITLES: Record<string, string> = {
     "Why not ask a friend?",
   "What can't it do?": "What can't it do?",
 };
-
-export function getVerticalSlugs(): VerticalKey[] {
-  return Object.keys(WEDGES) as VerticalKey[];
-}
-
-export function getVerticalConfig(slug: VerticalKey): VerticalConfig {
-  return WEDGES[slug];
-}
 
 export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   const cfg = WEDGES[slug];

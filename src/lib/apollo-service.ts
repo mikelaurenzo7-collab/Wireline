@@ -259,6 +259,7 @@ export async function searchLeads(
   try {
     const response = await fetch(`${APOLLO_BASE}/mixed_people/search`, {
       method: "POST",
+      signal: AbortSignal.timeout(15_000),
       headers: {
         "Content-Type": "application/json",
         "Cache-Control": "no-cache",
@@ -316,6 +317,7 @@ export async function enrichLead(
   try {
     const response = await fetch(`${APOLLO_BASE}/people/match`, {
       method: "POST",
+      signal: AbortSignal.timeout(15_000),
       headers: {
         "Content-Type": "application/json",
         ...auth.header,
