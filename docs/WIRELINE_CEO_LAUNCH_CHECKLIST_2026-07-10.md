@@ -23,7 +23,7 @@ Business workspace copy may use "AI employee" when the audience is explicitly bu
 | --- | --- |
 | Phone loop | Inbound call, outbound call, SMS follow-up, outcome log, and handoff state verified |
 | Payment loop | Starter checkout, entitlement, Customer Portal, cancellation, and Conversation Balance behavior verified |
-| Positioning | Public copy says AI Voice Agents; no broad "one AI employee"; no $9 launch copy |
+| Positioning | Public copy says AI Voice Agents; no broad "one AI employee"; no sub-$19 launch copy |
 | Capacity | Pricing and included minutes match `src/lib/plan-catalog.ts` |
 | Compliance | DNC/SMS consent/STOP posture reviewed before outbound spend |
 | Runtime | Vercel production deploy READY and runtime errors clean |
@@ -68,6 +68,6 @@ Extra agent add-on: $15/mo, +50 live voice minutes, +1 included number. Enterpri
 ## Campaign Readiness
 
 - Use `utm_campaign=wl_launch_ai_voice_agents_v6`.
-- Ship the active media kit assets only after stale employee/$9 files are regenerated.
+- Ship the active media kit assets only after stale employee/old-price files are regenerated.
 - Use AI Voice Generator audio for marketing/reference only.
 - Keep daily paid test spend capped until phone and payment loops are manually verified.
