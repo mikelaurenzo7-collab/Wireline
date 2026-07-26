@@ -252,24 +252,38 @@ export async function handleCoreToolCall(
       const customerPhone =
         (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
         (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-      if (customerPhone) {
-        const safePhone = sanitizePhone(customerPhone);
-        await drizzle
-          .update(schema.outboundLeads)
-          .set({ status, context: notes || "", lastCalledAt: new Date() })
-          .where(
-            and(
-              eq(schema.outboundLeads.userId, agent?.user_id),
-              ilike(schema.outboundLeads.customerNumber, `%${safePhone}%`),
-              not(inArray(schema.outboundLeads.status, PRESERVED_LEAD_STATUSES)),
-            ),
-          );
+      if (!customerPhone) {
+        // Inbound SIP/web callers and blocked caller IDs have no number to
+        // match a lead on — say so instead of claiming a write that never ran.
+        return {
+          toolCallId,
+          result:
+            "I couldn't match this call to a lead record (no caller number), so the status wasn't updated.",
+        };
       }
-      return { toolCallId, result: `Lead status updated to '${status}'.` };
+      const safePhone = sanitizePhone(customerPhone);
+      const updated = await drizzle
+        .update(schema.outboundLeads)
+        .set({ status, context: notes || "", lastCalledAt: new Date() })
+        .where(
+          and(
+            eq(schema.outboundLeads.userId, agent?.user_id),
+            ilike(schema.outboundLeads.customerNumber, `%${safePhone}%`),
+            not(inArray(schema.outboundLeads.status, PRESERVED_LEAD_STATUSES)),
+          ),
+        )
+        .returning({ id: schema.outboundLeads.id });
+      return {
+        toolCallId,
+        result: updated.length
+          ? `Lead status updated to '${status}'.`
+          : "I couldn't find a matching lead record for this caller, so the status wasn't updated.",
+      };
     } catch {
       return {
         toolCallId,
-        result: "I've noted that update. Someone from the team will confirm shortly.",
+        result:
+          "I wasn't able to update the lead status right now. I'll note it for the team to apply manually.",
       };
     }
   }
@@ -375,6 +389,7 @@ export async function handleCoreToolCall(
       const fallbackNumber =
         (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
         (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
+      const liveCallerNumber = sanitizePhone(fallbackNumber);
       const targetNumber = sanitizePhone(to_number || fallbackNumber);
 
       if (!targetNumber) {
@@ -392,16 +407,21 @@ export async function handleCoreToolCall(
         };
       }
 
-      // Mid-call SMS must clear the shared outbound gate (tenant DNC + federal
-      // DNC listing). Quiet hours + 24h duplicate are skipped because the
-      // consumer is already on the live line requesting follow-up.
+      // Mid-call SMS must clear the shared outbound gate. The live-session
+      // exemptions (skip quiet hours + 24h duplicate, supply consent) are only
+      // valid when the text goes to the consumer who is on this call —
+      // to_number is a model-supplied argument, so any OTHER destination is a
+      // cold outbound text and gets the full gate: quiet hours, duplicate
+      // window, tenant DNC, and consent evaluation with no synthesized
+      // express-written-consent.
+      const isLiveCounterpart = Boolean(liveCallerNumber) && targetNumber === liveCallerNumber;
       const { evaluateOutboundDialGate } = await import("../../lib/outbound-dial-gate");
       const gate = await evaluateOutboundDialGate({
         userId: agent.user_id,
         phone: targetNumber,
         isMarketingCall: false,
-        hasExpressWrittenConsent: true,
-        isLiveSessionFollowUp: true,
+        hasExpressWrittenConsent: isLiveCounterpart,
+        isLiveSessionFollowUp: isLiveCounterpart,
       });
       if (!gate.allowed) {
         return {
@@ -409,7 +429,9 @@ export async function handleCoreToolCall(
           result:
             gate.reason === "blocked_internal_dnc" || gate.reason === "blocked_tcpa"
               ? "I can't text that number — it's on a do-not-contact list."
-              : "I wasn't able to send that text right now. Let me note that and have someone follow up.",
+              : gate.reason === "outside_permitted_calling_hours"
+                ? "I can't text that number right now — it's outside permitted contact hours. I'll note the request for follow-up."
+                : "I wasn't able to send that text right now. Let me note that and have someone follow up.",
         };
       }
 
@@ -536,9 +558,13 @@ export async function handleCoreToolCall(
         result: `${rawPhone || normalizedPhone} is now on the Do Not Call list.`,
       };
     } catch {
+      // The DNC insert failed — nothing was recorded and nothing retries it.
+      // Telling the consumer their opt-out "is taken care of" would be false
+      // assurance on a legal request; be honest so they can repeat it.
       return {
         toolCallId,
-        result: "I've noted your preference. We'll make sure that's taken care of.",
+        result:
+          "I wasn't able to add that number to the Do Not Call list just now. Please ask me again in a moment, or contact us directly so we can record it.",
       };
     }
   }

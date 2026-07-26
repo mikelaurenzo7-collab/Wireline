@@ -54,7 +54,15 @@ describe("round-5 fine-tune verified fixes", () => {
   it("gates live-call SMS through the shared outbound dial gate", () => {
     const handlers = read("src/routes/vapi/tool-handlers-core.ts");
     expect(handlers).toContain("evaluateOutboundDialGate");
-    expect(handlers).toContain("isLiveSessionFollowUp: true");
+    // The live-session exemptions (skip quiet hours/duplicates, supply
+    // consent) only apply when the destination IS the live caller — a
+    // model-supplied third-party to_number must clear the full gate.
+    expect(handlers).toContain(
+      "const isLiveCounterpart = Boolean(liveCallerNumber) && targetNumber === liveCallerNumber",
+    );
+    expect(handlers).toContain("hasExpressWrittenConsent: isLiveCounterpart");
+    expect(handlers).toContain("isLiveSessionFollowUp: isLiveCounterpart");
+    expect(handlers).not.toContain("isLiveSessionFollowUp: true,");
     const gate = read("src/lib/outbound-dial-gate.ts");
     expect(gate).toContain("isLiveSessionFollowUp");
   });

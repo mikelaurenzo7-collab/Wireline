@@ -6,7 +6,7 @@
 // period. All normal callers should use POST /api/account/delete instead.
 
 import { eq, sql } from "drizzle-orm";
-import { drizzle } from "./server-context";
+import { drizzle, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "./server-utils";
 
@@ -199,6 +199,15 @@ export async function releaseExternalResourcesForPurge(
   userId: string,
   deps: PurgeAccountDeps,
 ): Promise<ExternalReleaseSummary> {
+  // Escape any ambient tenant context (see purgeAccount below) so the reads
+  // that discover Stripe/Twilio ids always see the TARGET user's rows.
+  return tenantStore.exit(() => releaseExternalResourcesOutsideTenantContext(userId, deps));
+}
+
+async function releaseExternalResourcesOutsideTenantContext(
+  userId: string,
+  deps: PurgeAccountDeps,
+): Promise<ExternalReleaseSummary> {
   const { db, log } = deps;
   const numberErrors: string[] = [];
   let subscriptionsCanceled = 0;
@@ -294,6 +303,21 @@ export async function releaseExternalResourcesForPurge(
  * local auth record. Idempotent: subsequent runs simply find no rows to delete.
  */
 export async function purgeAccount(
+  userId: string,
+  deps: PurgeAccountDeps,
+): Promise<PurgeAccountResult> {
+  // The purge must delete the TARGET user's rows regardless of who triggered
+  // it. The manual jobs sweep and POST /api/jobs/:id/run execute job handlers
+  // inside the caller's AsyncLocalStorage tenant scope, where every query runs
+  // as wireline_server under RLS — deletes would silently affect zero rows
+  // (or fail outright on deliberately-ungranted tables like
+  // wireline_oauth_pending_codes) while still reporting a completed purge.
+  // Running outside tenant context restores the cron-path behavior (worker
+  // role, explicit ownership predicates below) on every invocation path.
+  return tenantStore.exit(() => purgeAccountOutsideTenantContext(userId, deps));
+}
+
+async function purgeAccountOutsideTenantContext(
   userId: string,
   deps: PurgeAccountDeps,
 ): Promise<PurgeAccountResult> {

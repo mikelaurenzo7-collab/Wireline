@@ -6,6 +6,13 @@
  * full paths, and rejects any mounted route that is neither protected nor on a
  * deliberate public allowlist. Standalone serverless transports (for example
  * the ChatGPT MCP entrypoint) own dedicated protocol contract tests instead.
+ *
+ * Route extraction is a small balanced-call scanner rather than a single regex:
+ * factory/named handlers (`createAuditEventsHandler(deps)`, `sweepHandler`),
+ * comments between the method call and the path string, array path arguments,
+ * and sub-routers composed via `router.use(subRouter)` (the oauth/ provider
+ * pattern, twilio-webhook-base, video-presenter-routes-base,
+ * grok-live-profile-routes) are all resolved instead of silently skipped.
  */
 
 import fs from "node:fs";
@@ -26,6 +33,9 @@ const AUTH_MIDDLEWARE = [
   "requirePlatformAdmin",
   "requireMonitorToken",
   "requireInternalJwtSecret",
+  // Route-local composite gate on /api/jobs/sweep (src/routes/job-routes.ts):
+  // timing-safe CRON_SECRET bearer OR authenticated owner/admin.
+  "cronOrAdminAuth",
 ];
 
 const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
@@ -54,6 +64,11 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     reason: "API-key auth via X-Wireline-Key + rate limit",
   },
   { pattern: /^\/api\/oauth\//, reason: "OAuth initiation/callback (state-validated)" },
+  {
+    pattern: /^\/api\/ecommerce\/oauth\/callback$/,
+    reason:
+      "Square OAuth callback (redirect URL registered with Square); state verified in-handler via verifyOAuthState",
+  },
   { pattern: /^\/api\/auth\//, reason: "Signup/login/refresh (public by definition)" },
   {
     pattern: /^\/api\/email\/unsubscribe$/,
@@ -160,33 +175,302 @@ function resolveFullPath(base: string, rawPath: string): string {
   return full;
 }
 
-function scanFile(filePath: string, mountBase: string): RouteEntry[] {
+/** Characters after which a `/` begins a regex literal rather than division. */
+const REGEX_PRECEDING_CHARS = new Set("(,=:[!&|?{};+-*%<>~^".split(""));
+
+/**
+ * Index of the `)` closing the call whose `(` sits at `openParen`, skipping
+ * strings, template literals (with nested interpolations), comments, and
+ * regex literals. Returns -1 when the call never closes (malformed source).
+ */
+function findCallEnd(content: string, openParen: number): number {
+  let depth = 0;
+  let lastSignificant = "";
+  const stack: string[] = [];
+
+  for (let i = openParen; i < content.length; i++) {
+    const ch = content[i];
+    const next = content[i + 1];
+    const mode = stack[stack.length - 1];
+
+    if (mode === "line") {
+      if (ch === "\n") stack.pop();
+      continue;
+    }
+    if (mode === "block") {
+      if (ch === "*" && next === "/") {
+        stack.pop();
+        i++;
+      }
+      continue;
+    }
+    if (mode === "single" || mode === "double") {
+      if (ch === "\\") i++;
+      else if ((mode === "single" && ch === "'") || (mode === "double" && ch === '"')) {
+        stack.pop();
+        lastSignificant = ch;
+      }
+      continue;
+    }
+    if (mode === "template") {
+      if (ch === "\\") i++;
+      else if (ch === "`") {
+        stack.pop();
+        lastSignificant = ch;
+      } else if (ch === "$" && next === "{") {
+        stack.push("interp");
+        i++;
+      }
+      continue;
+    }
+    if (mode === "regex") {
+      if (ch === "\\") i++;
+      else if (ch === "[") stack.push("class");
+      else if (ch === "/") {
+        stack.pop();
+        lastSignificant = ")"; // a value: a following slash is division
+      }
+      continue;
+    }
+    if (mode === "class") {
+      if (ch === "\\") i++;
+      else if (ch === "]") stack.pop();
+      continue;
+    }
+
+    // Code context: top level, or inside a template interpolation.
+    if (ch === "/" && next === "/") {
+      stack.push("line");
+      i++;
+      continue;
+    }
+    if (ch === "/" && next === "*") {
+      stack.push("block");
+      i++;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === "`") {
+      stack.push(ch === "'" ? "single" : ch === '"' ? "double" : "template");
+      continue;
+    }
+    if (ch === "/") {
+      if (lastSignificant === "" || REGEX_PRECEDING_CHARS.has(lastSignificant)) {
+        stack.push("regex");
+      } else {
+        lastSignificant = ch;
+      }
+      continue;
+    }
+    if (mode === "interp" || mode === "brace") {
+      if (ch === "{") {
+        stack.push("brace");
+        lastSignificant = ch;
+        continue;
+      }
+      if (ch === "}") {
+        stack.pop();
+        lastSignificant = ch;
+        continue;
+      }
+    }
+    if (stack.length === 0) {
+      if (ch === "(") depth++;
+      else if (ch === ")") {
+        depth--;
+        if (depth === 0) return i;
+      }
+    }
+    if (!/\s/.test(ch)) lastSignificant = ch;
+  }
+
+  return -1;
+}
+
+/** Advance past whitespace and comments, staying within [index, end). */
+function skipInsignificant(content: string, index: number, end: number): number {
+  let i = index;
+  while (i < end) {
+    const ch = content[i];
+    if (/\s/.test(ch)) {
+      i++;
+    } else if (ch === "/" && content[i + 1] === "/") {
+      const newline = content.indexOf("\n", i);
+      if (newline === -1 || newline >= end) return end;
+      i = newline + 1;
+    } else if (ch === "/" && content[i + 1] === "*") {
+      const close = content.indexOf("*/", i + 2);
+      if (close === -1 || close + 2 > end) return end;
+      i = close + 2;
+    } else {
+      return i;
+    }
+  }
+  return end;
+}
+
+function readStringLiteral(content: string, index: number): { value: string; end: number } | null {
+  const quote = content[index];
+  if (quote !== '"' && quote !== "'" && quote !== "`") return null;
+  let value = "";
+  for (let i = index + 1; i < content.length; i++) {
+    const ch = content[i];
+    if (ch === "\\") {
+      value += content[i + 1] ?? "";
+      i++;
+    } else if (ch === quote) {
+      return { value, end: i + 1 };
+    } else {
+      value += ch;
+    }
+  }
+  return null;
+}
+
+/** Read the path argument: a string literal or an array of string literals. */
+function readPathArgument(
+  content: string,
+  argStart: number,
+  callEnd: number,
+): { paths: string[]; end: number } | null {
+  let i = skipInsignificant(content, argStart, callEnd);
+  if (content[i] === "[") {
+    const paths: string[] = [];
+    i = skipInsignificant(content, i + 1, callEnd);
+    while (i < callEnd && content[i] !== "]") {
+      const literal = readStringLiteral(content, i);
+      if (!literal) return null;
+      paths.push(literal.value);
+      i = skipInsignificant(content, literal.end, callEnd);
+      if (content[i] === ",") i = skipInsignificant(content, i + 1, callEnd);
+    }
+    if (content[i] !== "]") return null;
+    return { paths, end: i + 1 };
+  }
+  const literal = readStringLiteral(content, i);
+  if (!literal) return null;
+  return { paths: [literal.value], end: literal.end };
+}
+
+/**
+ * Match a sub-router mount exactly: `router.use(subRouter)` or
+ * `router.use("/prefix", subRouter)`. Path middleware chains such as
+ * `router.use("/api/settings", authenticateUser, handler)` do not match.
+ */
+function readSubRouterMount(
+  content: string,
+  argStart: number,
+  callEnd: number,
+): { prefix: string; identifier: string } | null {
+  let prefix = "";
+  let i = skipInsignificant(content, argStart, callEnd);
+  const literal = readStringLiteral(content, i);
+  if (literal) {
+    prefix = literal.value;
+    i = skipInsignificant(content, literal.end, callEnd);
+    if (content[i] !== ",") return null;
+    i = skipInsignificant(content, i + 1, callEnd);
+  }
+  const identifierMatch = /^[A-Za-z_$][\w$]*/.exec(content.slice(i, callEnd));
+  if (!identifierMatch) return null;
+  i = skipInsignificant(content, i + identifierMatch[0].length, callEnd);
+  if (content[i] === ",") i = skipInsignificant(content, i + 1, callEnd);
+  if (i !== callEnd) return null;
+  return { prefix, identifier: identifierMatch[0] };
+}
+
+/** Resolve a relative import specifier to a route module on disk, if any. */
+function resolveLocalModule(fromDir: string, specifier: string): string | null {
+  const base = path.resolve(fromDir, specifier);
+  for (const candidate of [`${base}.ts`, path.join(base, "index.ts")]) {
+    if (candidate.startsWith(ROUTES_DIR + path.sep) && fs.existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
+/** Map each default-imported identifier to the local route module it names. */
+function parseDefaultImports(filePath: string, content: string): Map<string, string> {
+  const imports = new Map<string, string>();
+  const importRe = /import\s+([A-Za-z_$][\w$]*)\s+from\s+["'](\.[^"']+)["']/g;
+  let match: RegExpExecArray | null;
+  while ((match = importRe.exec(content)) !== null) {
+    const resolved = resolveLocalModule(path.dirname(filePath), match[2]);
+    if (resolved) imports.set(match[1], resolved);
+  }
+  return imports;
+}
+
+const ROUTE_CALL_RE = /\brouter\.(get|post|put|patch|delete|use)\s*\(/g;
+const INLINE_HANDLER_RE = /async\s*\(|\(\s*(?:_?req|_)\b|\bfunction\b/;
+const MAX_SUBROUTER_DEPTH = 4;
+
+function scanFile(
+  filePath: string,
+  mountBase: string,
+  inheritedRouterAuth = false,
+  visited: readonly string[] = [],
+): RouteEntry[] {
+  if (visited.includes(filePath) || visited.length >= MAX_SUBROUTER_DEPTH) return [];
   const content = fs.readFileSync(filePath, "utf8");
-  const file = path.basename(filePath);
-  const routerAuth = new RegExp(`router\\.use\\(\\s*(?:${AUTH_MIDDLEWARE.join("|")})`).test(
-    content,
-  );
-  const routeRe =
-    /router\.(get|post|put|patch|delete)\s*\(\s*["'`]([^"'`]+)["'`]([\s\S]*?)(?:async\s*\(|\(\s*(?:_?req|_)\b|\bfunction\b)/g;
+  const file = path.relative(ROUTES_DIR, filePath);
+  const routerAuth =
+    inheritedRouterAuth ||
+    new RegExp(`router\\.use\\(\\s*(?:${AUTH_MIDDLEWARE.join("|")})`).test(content);
+  const defaultImports = parseDefaultImports(filePath, content);
   const entries: RouteEntry[] = [];
+  const callRe = new RegExp(ROUTE_CALL_RE.source, "g");
   let match: RegExpExecArray | null;
 
-  while ((match = routeRe.exec(content)) !== null) {
-    const middlewareChain = match[3] || "";
-    const fullPath = resolveFullPath(mountBase, match[2]);
-    entries.push({
-      file,
-      method: match[1].toUpperCase(),
-      rawPath: match[2],
-      fullPath,
-      mountBase,
-      hasInlineAuth: AUTH_MIDDLEWARE.some((middleware) => middlewareChain.includes(middleware)),
-      hasRouterAuth: routerAuth,
-      hasRequirePermission: middlewareChain.includes("requirePermission"),
-      hasRequirePlatformAdmin: middlewareChain.includes("requirePlatformAdmin"),
-      allowReason: allowlistReason(fullPath),
-      line: lineOf(content, match.index),
-    });
+  while ((match = callRe.exec(content)) !== null) {
+    const openParen = match.index + match[0].length - 1;
+    const argStart = openParen + 1;
+    const callEnd = findCallEnd(content, openParen);
+    // If the scanner cannot balance the call, bound it at the next declaration
+    // so one unparseable route can never swallow the ones that follow it.
+    const boundedEnd =
+      callEnd !== -1
+        ? callEnd
+        : (() => {
+            const rest = content.slice(argStart);
+            const next = rest.search(new RegExp(ROUTE_CALL_RE.source));
+            return next === -1 ? content.length : argStart + next;
+          })();
+
+    if (match[1] === "use") {
+      const mount = readSubRouterMount(content, argStart, boundedEnd);
+      const target = mount ? defaultImports.get(mount.identifier) : undefined;
+      if (mount && target) {
+        entries.push(
+          ...scanFile(target, `${mountBase}${mount.prefix}`, routerAuth, [...visited, filePath]),
+        );
+      }
+    } else {
+      const pathArg = readPathArgument(content, argStart, boundedEnd);
+      if (pathArg) {
+        const chain = content.slice(pathArg.end, boundedEnd);
+        const inlineHandlerAt = chain.search(INLINE_HANDLER_RE);
+        const middlewareChain = inlineHandlerAt === -1 ? chain : chain.slice(0, inlineHandlerAt);
+        for (const rawPath of pathArg.paths) {
+          const fullPath = resolveFullPath(mountBase, rawPath);
+          entries.push({
+            file,
+            method: match[1].toUpperCase(),
+            rawPath,
+            fullPath,
+            mountBase,
+            hasInlineAuth: AUTH_MIDDLEWARE.some((middleware) =>
+              middlewareChain.includes(middleware),
+            ),
+            hasRouterAuth: routerAuth,
+            hasRequirePermission: middlewareChain.includes("requirePermission"),
+            hasRequirePlatformAdmin: middlewareChain.includes("requirePlatformAdmin"),
+            allowReason: allowlistReason(fullPath),
+            line: lineOf(content, match.index),
+          });
+        }
+      }
+    }
+
+    if (callEnd !== -1) callRe.lastIndex = callEnd + 1;
   }
 
   return entries;

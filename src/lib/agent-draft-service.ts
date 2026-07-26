@@ -152,35 +152,43 @@ export async function createAgentDraft(
 ): Promise<AgentDraftView> {
   const profile = normalizeAgentCustomization(input, source);
   return tenantStore.run(principal.userId, async () => {
-    const [{ count }] = await drizzle
-      .select({ count: sql`count(*)` })
-      .from(schema.agents)
-      .where(eq(schema.agents.userId, principal.userId));
-    const existingCount = Number(count || 0);
-    await assertAgentCapacity(principal, existingCount);
-
     const id = `agent-${randomBytes(16).toString("hex")}`;
-    await drizzle.insert(schema.agents).values({
-      id,
-      userId: principal.userId,
-      name: profile.identity.name,
-      role: profile.identity.role,
-      channel: "voice",
-      archetype: ROLE_ARCHETYPES[profile.identity.role],
-      voiceId: pickRotatedVoiceId(existingCount),
-      voiceProvider: "vapi",
-      // A draft records intended actions in its customization profile, but it
-      // never receives external tools until the user configures and enables
-      // them explicitly in Wireline.
-      enabledTools: [],
-      firstMessage: `Hi, this is ${profile.identity.name}. How can I help?`,
-      personalityVibe: profile.identity.tone,
-      isBusinessAgent: profile.identity.businessName !== "Your business",
-      businessVariables: persistedBusinessVariables(profile),
-      systemPromptOverride: compileAgentRuntimeInstructions(profile),
-      disallowedTopics: profile.behavior.prohibitedTopics,
-      escalationKeywords: [],
-      escalationHandoffEnabled: profile.behavior.escalationPolicy === "handoff_when_configured",
+    let existingCount = 0;
+    // Count + capacity check + insert must be one serialized unit — MCP tool
+    // calls arrive in parallel as a matter of course, and three independent
+    // statements let two concurrent creates both read count = cap-1 and both
+    // insert. Same advisory-lock pattern as agent-routes-v2 / mobile-routes.
+    await drizzle.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${principal.userId}))`);
+      const [{ count }] = await tx
+        .select({ count: sql`count(*)` })
+        .from(schema.agents)
+        .where(eq(schema.agents.userId, principal.userId));
+      existingCount = Number(count || 0);
+      await assertAgentCapacity(principal, existingCount);
+
+      await tx.insert(schema.agents).values({
+        id,
+        userId: principal.userId,
+        name: profile.identity.name,
+        role: profile.identity.role,
+        channel: "voice",
+        archetype: ROLE_ARCHETYPES[profile.identity.role],
+        voiceId: pickRotatedVoiceId(existingCount),
+        voiceProvider: "vapi",
+        // A draft records intended actions in its customization profile, but it
+        // never receives external tools until the user configures and enables
+        // them explicitly in Wireline.
+        enabledTools: [],
+        firstMessage: `Hi, this is ${profile.identity.name}. How can I help?`,
+        personalityVibe: profile.identity.tone,
+        isBusinessAgent: profile.identity.businessName !== "Your business",
+        businessVariables: persistedBusinessVariables(profile),
+        systemPromptOverride: compileAgentRuntimeInstructions(profile),
+        disallowedTopics: profile.behavior.prohibitedTopics,
+        escalationKeywords: [],
+        escalationHandoffEnabled: profile.behavior.escalationPolicy === "handoff_when_configured",
+      });
     });
     emitServerProductEventOnce({
       event: "agent_draft_created",

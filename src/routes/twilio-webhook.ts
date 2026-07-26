@@ -122,6 +122,26 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
         optOutType: optOutType || "LEGACY_START",
         error: getErrorMessage(error),
       });
+      // STOP: Twilio Advanced Opt-Out already suppressed the number at the
+      // carrier level, but the DNC row that gates outbound VOICE never landed
+      // — page ops instead of dropping the failure on the floor.
+      if (optOutType === "STOP") {
+        reportError(error instanceof Error ? error : new Error(getErrorMessage(error)), {
+          route: "/api/twilio-webhook/sms",
+          flow: "twilio_advanced_opt_out",
+          tenant: userId,
+        });
+      }
+      res.setHeader("Content-Type", "text/xml");
+      // Never confirm a resubscribe whose delete failed — the DNC rows are
+      // still blocking outbound and "Welcome back" would be false.
+      return res
+        .status(200)
+        .send(
+          legacyOptIn
+            ? `<?xml version="1.0" encoding="UTF-8"?><Response><Message>We couldn't process your resubscribe request just now. Please reply START again in a few minutes.</Message></Response>`
+            : emptyTwiml(),
+        );
     }
     res.setHeader("Content-Type", "text/xml");
     return res.status(200).send(legacyOptIn ? optInConfirmationTwiml() : emptyTwiml());

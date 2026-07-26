@@ -10,9 +10,10 @@ import { AppError } from "../lib/api-error";
  *   POST /api/email/unsubscribe?token=…   ← mailbox-provider one-click button
  *   GET  /api/email/unsubscribe?token=…   ← the human link in the footer
  *
- * The POST must return 2xx promptly (Gmail/Yahoo penalize senders whose
- * one-click endpoint errors), so the IP limiter is generous and the handler
- * never surfaces a hard failure to providers.
+ * The POST must return 2xx promptly on success (Gmail/Yahoo penalize senders
+ * whose one-click endpoint errors), so the IP limiter is generous. When the
+ * suppression write itself fails, both handlers answer 503 — a 2xx would end
+ * provider retries while the opt-out was never recorded.
  */
 
 import { Router, type Request, type Response, type NextFunction } from "express";
@@ -52,14 +53,25 @@ router.post("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request,
       res.status(200).json({ ok: true, unsubscribed: false });
       return;
     }
-    await recordEmailSuppression(email, "one_click_unsubscribe");
+    // recordEmailSuppression never throws — it returns false on failure. A
+    // 200 here would tell Gmail/Yahoo the opt-out was honored and stop their
+    // retries while the suppression row never landed (CAN-SPAM's 10-day
+    // obligation silently broken). 503 is the honest, retryable answer; a
+    // transient outage's occasional 503 is recoverable, a dropped opt-out
+    // is not.
+    const recorded = await recordEmailSuppression(email, "one_click_unsubscribe");
+    if (!recorded) {
+      res.setHeader("Retry-After", "300");
+      res.status(503).json({ ok: false, unsubscribed: false });
+      return;
+    }
     log.info("Email one-click unsubscribe recorded", { email });
     res.status(200).json({ ok: true, unsubscribed: true });
   } catch (err) {
     if (err instanceof AppError) throw err;
-    // Never make a mailbox provider hammer-retry a one-click POST.
     log.error("POST /api/email/unsubscribe failed", { error: getErrorMessage(err) });
-    res.status(200).json({ ok: true });
+    res.setHeader("Retry-After", "300");
+    res.status(503).json({ ok: false, unsubscribed: false });
   }
 });
 
@@ -72,13 +84,25 @@ router.get("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request, 
       .send(renderPage("Invalid unsubscribe link", "This unsubscribe link is invalid or expired."));
     return;
   }
-  try {
-    await recordEmailSuppression(email, "link_unsubscribe");
-    log.info("Email unsubscribe (link) recorded", { email });
-  } catch (err) {
-    if (err instanceof AppError) throw err;
-    log.error("GET /api/email/unsubscribe failed", { error: getErrorMessage(err) });
+  // recordEmailSuppression returns false instead of throwing. Rendering
+  // "You're unsubscribed" over a failed write hands the visitor a screenshot
+  // of an opt-out that doesn't exist — show an honest retry page instead.
+  const recorded = await recordEmailSuppression(email, "link_unsubscribe");
+  if (!recorded) {
+    log.error("GET /api/email/unsubscribe failed to record suppression", { email });
+    res
+      .status(503)
+      .type("html")
+      .send(
+        renderPage(
+          "We couldn't process that just now",
+          `Your unsubscribe request for <strong>${escapeHtml(email)}</strong> didn't go through. ` +
+            `Please refresh this page in a few minutes to try again, or email support@trywireline.com and we'll remove you manually.`,
+        ),
+      );
+    return;
   }
+  log.info("Email unsubscribe (link) recorded", { email });
   res
     .status(200)
     .type("html")
