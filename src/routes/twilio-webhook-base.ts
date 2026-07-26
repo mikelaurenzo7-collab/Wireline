@@ -31,6 +31,11 @@ import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
 import { reportError } from "../lib/error-reporter";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { matchesCarrierKeyword } from "../lib/carrier-keywords";
+import {
+  buildFailoverVoicemailEmail,
+  opaqueIdSuffixForLog,
+  phoneSuffixForLog,
+} from "../lib/twilio-webhook-privacy";
 
 const router = Router();
 const twilioVoiceRateLimiter = createIpRateLimiter({
@@ -130,10 +135,10 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
   const trimmed = body.trim().toLowerCase();
 
   log.info("Twilio inbound SMS", {
-    from: from.slice(0, 16),
-    to: to.slice(0, 16),
-    body: body.slice(0, 80),
-    messageSid,
+    from_suffix: phoneSuffixForLog(from),
+    to_suffix: phoneSuffixForLog(to),
+    body_length: body.length,
+    message_sid_suffix: opaqueIdSuffixForLog(messageSid),
   });
 
   res.setHeader("Content-Type", "text/xml");
@@ -145,7 +150,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
   const tenantUserId = await lookupTenant(to);
   if (!tenantUserId) {
     // We received an SMS at a number we don't recognize. Log + drop.
-    log.warn("Twilio webhook: unknown To-number", { to: to.slice(0, 16) });
+    log.warn("Twilio webhook: unknown To-number", { to_suffix: phoneSuffixForLog(to) });
     return res.status(200).send(twimlEmpty());
   }
 
@@ -179,7 +184,10 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
           state: "opted_out",
         });
 
-        log.info("SMS opt-out processed", { tenant: tenantUserId, from: fromNormalized });
+        log.info("SMS opt-out processed", {
+          tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
+          from_suffix: phoneSuffixForLog(fromNormalized),
+        });
       } catch (e: any) {
         // The suppression row never landed — do NOT confirm an opt-out that
         // does not exist. Tell the consumer to retry and page ops: an
@@ -188,7 +196,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         reportError(e instanceof Error ? e : new Error(String(e?.message || e)), {
           route: "/api/twilio-webhook/sms",
           flow: "sms_opt_out",
-          tenant: tenantUserId,
+          tenant: opaqueIdSuffixForLog(tenantUserId),
         });
         return res
           .status(200)
@@ -238,7 +246,10 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
           state: "opted_in",
         });
 
-        log.info("SMS opt-in processed", { tenant: tenantUserId, from: fromNormalized });
+        log.info("SMS opt-in processed", {
+          tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
+          from_suffix: phoneSuffixForLog(fromNormalized),
+        });
       } catch (e: any) {
         // The DNC rows are still in place; a "resubscribed" confirmation
         // would be false (outbound stays blocked). Be honest instead.
@@ -380,7 +391,10 @@ router.post(
 
     const to = (req.body?.To as string | undefined) || "";
     const from = (req.body?.From as string | undefined) || "";
-    log.error("VAPI FAILOVER TRIGGERED", { to, from });
+    log.error("VAPI FAILOVER TRIGGERED", {
+      to_suffix: phoneSuffixForLog(to),
+      from_suffix: phoneSuffixForLog(from),
+    });
 
     res.setHeader("Content-Type", "text/xml");
 
@@ -458,14 +472,20 @@ router.post(
     res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`);
 
     if (!recordingUrl) {
-      log.warn("Voicemail complete missing RecordingUrl", { from, to });
+      log.warn("Voicemail complete missing RecordingUrl", {
+        from_suffix: phoneSuffixForLog(from),
+        to_suffix: phoneSuffixForLog(to),
+      });
       return;
     }
 
     try {
       const tenantUserId = to ? await lookupTenant(to) : null;
       if (!tenantUserId) {
-        log.warn("Voicemail recorded but no tenant matched To number", { to, from, recordingUrl });
+        log.warn("Voicemail recorded but no tenant matched To number", {
+          to_suffix: phoneSuffixForLog(to),
+          from_suffix: phoneSuffixForLog(from),
+        });
         return;
       }
 
@@ -491,33 +511,17 @@ router.post(
             .limit(1);
           if (owner?.email) {
             const { sendEmail } = await import("../lib/email-service");
+            const voicemailEmail = buildFailoverVoicemailEmail({
+              from,
+              to,
+              durationSeconds,
+              recordingUrl,
+              transcription,
+            });
             await sendEmail({
               to: owner.email,
               subject: "Wireline: voicemail left during call failover",
-              text: [
-                "A caller left a voicemail while your AI voice line was in failover mode.",
-                "",
-                from ? `From: ${from}` : null,
-                to ? `To: ${to}` : null,
-                durationSeconds != null ? `Duration: ${durationSeconds}s` : null,
-                `Recording: ${recordingUrl}`,
-                transcription ? `Transcript: ${transcription}` : null,
-                "",
-                "Open Phone → History in Wireline to review.",
-              ]
-                .filter(Boolean)
-                .join("\n"),
-              html: `
-              <p>A caller left a voicemail while your AI voice line was in failover mode.</p>
-              <ul>
-                ${from ? `<li><strong>From:</strong> ${from}</li>` : ""}
-                ${to ? `<li><strong>To:</strong> ${to}</li>` : ""}
-                ${durationSeconds != null ? `<li><strong>Duration:</strong> ${durationSeconds}s</li>` : ""}
-                <li><strong>Recording:</strong> <a href="${recordingUrl}">${recordingUrl}</a></li>
-                ${transcription ? `<li><strong>Transcript:</strong> ${transcription}</li>` : ""}
-              </ul>
-              <p>Open Phone → History in Wireline to review.</p>
-            `,
+              ...voicemailEmail,
             });
           }
         } catch (notifyErr) {
@@ -528,18 +532,18 @@ router.post(
       });
 
       log.info("Voicemail persisted during Vapi failover", {
-        userId: tenantUserId,
-        from,
-        to,
-        recordingUrl,
-        hasTranscript: Boolean(transcription),
+        tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
+        from_suffix: phoneSuffixForLog(from),
+        to_suffix: phoneSuffixForLog(to),
+        has_recording: true,
+        has_transcript: Boolean(transcription),
       });
     } catch (err) {
       log.error("Failed to persist failover voicemail", {
         error: err instanceof Error ? err.message : String(err),
-        recordingUrl,
-        from,
-        to,
+        from_suffix: phoneSuffixForLog(from),
+        to_suffix: phoneSuffixForLog(to),
+        has_recording: Boolean(recordingUrl),
       });
     }
   },
@@ -585,7 +589,9 @@ router.post(
       return res.status(403).send(twimlEmpty());
     }
     const from = (req.body?.From as string | undefined) || "";
-    log.info("Singing receptionist demo line hit", { from: from.slice(0, 16) });
+    log.info("Singing receptionist demo line hit", {
+      from_suffix: phoneSuffixForLog(from),
+    });
 
     res.setHeader("Content-Type", "text/xml");
 
