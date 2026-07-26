@@ -5,18 +5,17 @@ import { AppError, formatErrorResponse } from "../lib/api-error";
 import { reportError } from "../lib/error-reporter";
 import { mcpIssuer } from "../lib/mcp-oauth-security";
 import { mcpOAuthChallenge, mcpToolErrorResult } from "../lib/mcp-transport";
-import { mcpOAuthConsentSessionBridge } from "../middleware/mcp-oauth-consent-session";
+import { mcpOAuthIssuerBinding } from "../middleware/mcp-oauth-issuer-binding";
 
 const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
 
-// ChatGPT's account-linking browser can retain the authenticated consent GET
-// while omitting the global SameSite=Lax session cookie on the following POST.
-// Bridge only this exact OAuth form with a short-lived, path-scoped handoff and
-// a double-submit nonce; do not weaken the application-wide session cookie.
-app.use(mcpOAuthConsentSessionBridge);
+// Bind authorization responses to the discovered issuer (RFC 9207). This is
+// especially important for CIMD clients such as ChatGPT, whose callback can be
+// shared across multiple authorization servers and is validated before token exchange.
+app.use(mcpOAuthIssuerBinding);
 
 // Normalize OAuth challenges at the public MCP boundary. ChatGPT expects
 // tool-level auth failures as `isError` results carrying
