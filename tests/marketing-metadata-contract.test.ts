@@ -10,15 +10,16 @@ describe("marketing metadata contract", () => {
     const staticHead = read("index.html");
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
-    expect(staticHead).toContain("Wireline — Your next AI employee calls, texts &amp; emails");
+    expect(staticHead).toContain("Wireline — AI Voice Agents for Personal &amp; Business");
     expect(runtimeMeta).toContain(
-      'const DEFAULT_TITLE = "Wireline - Your next AI employee calls, texts & emails"',
+      'const DEFAULT_TITLE = "Wireline — AI Voice Agents for Personal & Business"',
     );
     for (const source of [staticHead, runtimeMeta]) {
-      expect(source).toContain("customer conversations across voice, SMS, and email");
-      expect(source).toContain("follows up, books, and logs every outcome");
+      expect(source).toContain("personal tasks");
+      expect(source).toContain("a coordinated team for your business");
+      expect(source).toContain("calls, SMS, email, and follow-through");
     }
-    expect(staticHead).not.toContain("AI phone employees that turn calls into sales");
+    expect(staticHead).not.toContain("Your next AI employee");
     expect(runtimeMeta).not.toContain("Personal & Business AI Assistants");
   });
 
