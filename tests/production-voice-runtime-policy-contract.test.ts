@@ -8,8 +8,8 @@ describe("production voice runtime policy", () => {
   it("keeps audio-file generators out of live PSTN voice routing", () => {
     const policy = read("docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md");
     expect(policy).toContain("AI Voice Generator creates audio assets");
-    expect(policy).toContain("not live PSTN runtime engines");
-    expect(policy).toContain("Vapi-supported streaming voice-library workflow");
+    expect(policy).toContain("No as the live phone-call runtime");
+    expect(policy).toContain("future Vapi-supported streaming custom voices");
   });
 
   it("labels legacy xAI preview voices as preview-only, not production runtime", () => {
