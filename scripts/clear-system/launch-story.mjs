@@ -36,7 +36,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "Wireline — AI Voice Agents for Personal & Business"/,
+    /DEFAULT_TITLE = "Wireline - AI Voice Agents for Personal & Business"/,
     "runtime metadata must state the current product promise",
   );
   mustInclude(
