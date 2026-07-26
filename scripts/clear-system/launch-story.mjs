@@ -1,5 +1,5 @@
 /**
- * Launch story — Wire → Work → Win and the AI-employee operating model are
+ * Launch story — Wire → Work → Win and the AI voice-agent operating model are
  * the active truth across metadata, install surfaces, shared copy, conversion,
  * and billing. Retired brand eras must not return to active product surfaces.
  */
@@ -24,37 +24,37 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /<title>Wireline — Your next AI employee calls, texts &amp; emails<\/title>/,
+    /<title>Wireline — AI Voice Agents for Personal &amp; Business<\/title>/,
     "static metadata must state the current product promise",
   );
   mustInclude(
     "index.html",
     indexHtml,
-    /One trained employee handles customer conversations across voice, SMS, and email/,
+    /Build one AI voice agent—or a coordinated team—for personal tasks and business conversations/,
     "static metadata must state the current product category",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "Wireline - Your next AI employee calls, texts & emails"/,
+    /DEFAULT_TITLE = "Wireline - AI Voice Agents for Personal & Business"/,
     "runtime metadata must state the current product promise",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /One trained employee handles customer conversations across voice, SMS, and email/,
+    /Build one AI voice agent—or a coordinated team—for personal tasks and business conversations/,
     "runtime metadata must use the current product description",
   );
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"name"\s*:\s*"Wireline - Your next AI employee"/,
-    "install metadata must use the canonical single-employee positioning",
+    /"name"\s*:\s*"Wireline - AI Voice Agents"/,
+    "install metadata must use the canonical AI voice-agent positioning",
   );
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /One trained AI employee handles customer conversations across voice, SMS, and email/,
+    /Build one AI voice agent—or a coordinated team—for personal tasks and business conversations/,
     "install metadata must explain the multichannel operating value",
   );
   mustExclude(
@@ -67,13 +67,13 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/product-copy.ts",
     productCopy,
-    /northStar:\s*"The best employee you've ever had, for next to nothing\."/,
+    /northStar:\s*"AI voice agents for every conversation—personal or business\."/,
     "shared copy must preserve the north-star promise",
   );
   mustInclude(
     "src/lib/product-copy.ts",
     productCopy,
-    /productNoun:\s*"AI employee"/,
+    /productNoun:\s*"AI voice agent"/,
     "shared copy must define the canonical product noun",
   );
   mustInclude(

@@ -19,12 +19,16 @@ surfaces and are not needed for core web/API development.
 
 - Core secrets needed for the authenticated product loop (signup + create agent):
   `POSTGRES_URL`, `INTERNAL_JWT_SECRET`, and at least one AI key
-  (`XAI_API_KEY` (primary) / `OPENAI_API_KEY` / `GEMINI_API_KEY` /
-  `AI_GATEWAY_API_KEY`). These are provided as Cursor secrets and are present
+  (`OPENAI_API_KEY` (primary) / `GEMINI_API_KEY` / `AI_GATEWAY_API_KEY`;
+  `XAI_API_KEY` is experiment-only). These are provided as Cursor secrets and are present
   in the process environment.
 - The full set of 150+ integration vars (Stripe, Vapi, Twilio, OAuth, Resend,
   etc. — see `.env.example` for the canonical list) lives in the Vercel
-  project. Pull them into a local `.env` with:
+  project. Live credentials and production provider configuration are scoped to
+  Production only. Preview/Development values must be purpose-built sandboxes and
+  explicitly reviewed in `scripts/check-deployment-boundaries.mjs`; never widen a
+  production value across Vercel targets. Pull development-only values into a local
+  `.env` with:
   `npx vercel env pull .env --environment=development --yes --token="$VERCEL_TOKEN"`
   This is only needed for exercising those specific integrations — the server
   boots and the core signup/agent flow works without them.
@@ -33,8 +37,9 @@ surfaces and are not needed for core web/API development.
   (e.g. `POSTGRES_URL`, `INTERNAL_JWT_SECRET`) win over any value in `.env`.
 - The dev server never throws on missing env (`src/lib/startup.ts`); unconfigured
   features return actionable `503` JSON at request time instead of crashing.
-- **Federal DNC scrub (outbound):** set `FEDERAL_DNC_API_URL` + `FEDERAL_DNC_API_KEY`
-  (real DNCScrub `loginId`, not a Vercel token) before marketing outbound. Unconfigured
+- **Federal DNC scrub (outbound):** the key is intentionally absent pending business
+  registration and EIN. Before marketing outbound, set `FEDERAL_DNC_API_URL` +
+  `FEDERAL_DNC_API_KEY` (real DNCScrub `loginId`, not a Vercel token). Unconfigured
   vendor **blocks** marketing/campaign dials fail-closed; non-marketing Studio dials
   still use tenant DNC + TCPA.
 

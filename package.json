@@ -64,7 +64,7 @@
     "security:audit": "node scripts/check-security-audit.mjs",
     "security:audit:dev": "npm audit",
     "security:audit:full": "npm audit --omit=dev",
-    "smoke:server": "node -e \"process.env.VERCEL='1'; process.env.POSTGRES_URL ||= 'postgresql://wireline:wireline@127.0.0.1:5432/wireline'; require('./dist/server.cjs'); console.log('server bundle imports')\"",
+    "smoke:server": "node -e \"process.env.VERCEL='1'; delete process.env.DATABASE_POOL_URL; delete process.env.POSTGRES_URL; const bundled = require('./dist/server.cjs'); if (!bundled.app) throw new Error('server app export missing'); console.log('server bundle imports without database configuration')\"",
     "oauth:redirects": "node scripts/print-oauth-redirects.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

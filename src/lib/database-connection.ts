@@ -46,9 +46,9 @@ export function isPostgresConnectionString(value: string | null | undefined): bo
  * parseable as part of a postgres URL but not a deployable production database
  * endpoint. Local development can still use localhost or an IP literal.
  */
-export function resolveDatabaseConnection(
+export function tryResolveDatabaseConnection(
   env: DatabaseEnvironment = process.env,
-): DatabaseConnectionSelection {
+): DatabaseConnectionSelection | null {
   const poolUrl = env.DATABASE_POOL_URL?.trim();
   if (isPostgresConnectionString(poolUrl)) {
     return {
@@ -66,6 +66,20 @@ export function resolveDatabaseConnection(
       ignoredInvalidPoolUrl: Boolean(poolUrl),
     };
   }
+
+  return null;
+}
+
+/**
+ * Strict resolver for paths that cannot operate without a database.
+ * Import-time server wiring uses the optional selector above so deployments
+ * with deliberately isolated credentials can boot and fail at request time.
+ */
+export function resolveDatabaseConnection(
+  env: DatabaseEnvironment = process.env,
+): DatabaseConnectionSelection {
+  const selected = tryResolveDatabaseConnection(env);
+  if (selected) return selected;
 
   throw new Error("Database connection is not configured with a valid PostgreSQL URL.");
 }

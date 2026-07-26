@@ -3,6 +3,7 @@ import {
   isLikelyResolvableDatabaseHost,
   isPostgresConnectionString,
   resolveDatabaseConnection,
+  tryResolveDatabaseConnection,
 } from "../src/lib/database-connection";
 
 describe("database connection selection", () => {
@@ -52,6 +53,16 @@ describe("database connection selection", () => {
     expect(isLikelyResolvableDatabaseHost("127.0.0.1")).toBe(true);
     expect(isLikelyResolvableDatabaseHost("base")).toBe(false);
     expect(isPostgresConnectionString("postgresql://user:secret@base:5432/postgres")).toBe(false);
+  });
+
+  it("supports deliberately unconfigured deployments without weakening strict callers", () => {
+    expect(tryResolveDatabaseConnection({})).toBeNull();
+    expect(
+      tryResolveDatabaseConnection({
+        DATABASE_POOL_URL: "base",
+        POSTGRES_URL: "also-not-a-url",
+      }),
+    ).toBeNull();
   });
 
   it("fails without echoing invalid connection material", () => {

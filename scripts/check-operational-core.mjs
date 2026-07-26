@@ -111,8 +111,23 @@ requirePattern(
 );
 requirePattern(
   "scripts/vercel-build.mjs",
-  /sanitizePreviewEnvironment/,
-  "Vercel preview builds must neutralize inherited production credentials before compilation.",
+  /configurePreviewEnvironment/,
+  "Preview builds must derive their public origin only after credential isolation passes.",
+);
+requirePattern(
+  "scripts/check-deployment-boundaries.mjs",
+  /productionOnlyPreviewKeys/,
+  "Preview builds must fail closed when production provider configuration is inherited.",
+);
+requirePattern(
+  "scripts/check-deployment-boundaries.mjs",
+  /credentialLikeName/,
+  "New credential-like variables must default to blocked in preview.",
+);
+forbidPattern(
+  "scripts/vercel-build.mjs",
+  /sanitizePreviewEnvironment|WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW/,
+  "Preview builds must fail on production credentials instead of masking them only during compilation.",
 );
 requirePattern(
   "scripts/check-deployment-boundaries.mjs",

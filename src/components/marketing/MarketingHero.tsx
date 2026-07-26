@@ -120,7 +120,7 @@ export default function MarketingHero({
               "marketing-hero__title mx-auto max-w-[28ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4.3vw,3.5rem)] font-bold uppercase leading-[0.98] tracking-[-.005em] text-foreground",
               eyebrow || isHomeHero ? "mt-6" : "mt-0",
               isHomeHero &&
-                "max-w-[24ch] text-[clamp(2.45rem,5.2vw,4.85rem)] leading-[0.94] tracking-[-.012em] sm:whitespace-nowrap",
+                "max-w-[24ch] text-[clamp(2.45rem,5.2vw,4.85rem)] leading-[0.94] tracking-[-.012em]",
             )}
           >
             {title}
