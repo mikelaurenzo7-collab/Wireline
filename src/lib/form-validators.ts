@@ -69,7 +69,15 @@ export const BusinessHoursSchema = z
   })
   .strict();
 
-export const ComplianceModeSchema = z.enum(["none", "hipaa", "pci", "gdpr", "financial", "legal"]);
+export const ComplianceModeSchema = z.enum([
+  "none",
+  "hipaa",
+  "pci",
+  "gdpr",
+  "financial",
+  "legal",
+  "tcpa",
+]);
 export const KpiFocusSchema = z.enum([
   "general",
   "conversions",
