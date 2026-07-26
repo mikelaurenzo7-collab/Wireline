@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent } from "react";
-import { ArrowRight, Volume2 } from "lucide-react";
+import { ArrowRight, Check, Volume2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import MarketingFooter from "./MarketingFooter";
@@ -69,6 +69,18 @@ const LOOP_COPY = [
   "Add voice, knowledge, objections, approvals, and handoff logic.",
   "Activate a paid plan, claim the number, connect channels and spend controls.",
   "Let it answer, sell, support, book, follow up, and log what happened.",
+] as const;
+
+// Risk-reversal strip — answers the visitor's real hesitations up front, all
+// true: Free Builder needs no card, the browser demo needs no signup, paid
+// plans include a Wireline number, actions run under approvals, and every paid
+// plan is month-to-month.
+const REASSURANCES = [
+  "Build free — no card",
+  "Hear it live before you pay",
+  "Your own number on paid plans",
+  "You approve the actions",
+  "Cancel anytime",
 ] as const;
 
 const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
@@ -211,6 +223,19 @@ export default function WireAgentLanding() {
           }
         />
 
+        <section className="border-b border-border bg-card/40" aria-label="What to expect">
+          <div className="wl-public-rail py-5">
+            <ul className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-x-6 gap-y-2.5 text-[13px] font-medium text-muted-foreground">
+              {REASSURANCES.map((item) => (
+                <li key={item} className="inline-flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
@@ -227,14 +252,8 @@ export default function WireAgentLanding() {
               {[
                 ["Voice", "Answers and places calls, qualifies, books, transfers, and recaps."],
                 ["Text / SMS", "Confirms, nurtures, reminds, and recovers under consent rules."],
-                [
-                  "Email",
-                  "Drafts, sends approved replies, follows up, and records the result.",
-                ],
-                [
-                  "One operating record",
-                  "Shared context, coaching, spend controls, and proof.",
-                ],
+                ["Email", "Drafts, sends approved replies, follows up, and records the result."],
+                ["One operating record", "Shared context, coaching, spend controls, and proof."],
               ].map(([title, body]) => (
                 <article key={title} className="wl-paper rounded-[16px] p-6 text-center">
                   <h3 className="wl-display-4">{title}</h3>
@@ -251,8 +270,8 @@ export default function WireAgentLanding() {
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">How it works</p>
               <h2 className="wl-display-2 mt-4">Four steps from idea to employee.</h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
-                Build one AI employee, train the business truth, activate live channels, then improve
-                from a clean record behind every conversation.
+                Build one AI employee, train the business truth, activate live channels, then
+                improve from a clean record behind every conversation.
               </p>
             </div>
             <div className="grid overflow-hidden rounded-[16px] border border-border bg-card sm:grid-cols-4 sm:divide-x sm:divide-border">
@@ -411,8 +430,8 @@ export default function WireAgentLanding() {
             </div>
             <div className="mt-8 text-center">
               <p className="mx-auto max-w-[48ch] text-[13px] leading-[1.6] text-muted-foreground">
-                Included minutes first. Extra voice, SMS, and enrichment draw from prepaid Runtime Balance
-                you control—never a surprise postpaid invoice.
+                Included minutes first. Extra voice, SMS, and enrichment draw from prepaid Runtime
+                Balance you control—never a surprise postpaid invoice.
               </p>
               <Link
                 to="/pricing"
@@ -456,6 +475,9 @@ export default function WireAgentLanding() {
                     Hear a demo
                   </Link>
                 </div>
+                <p className="marketing-ink-panel__soft mx-auto mt-5 text-[12.5px] tracking-wide opacity-80">
+                  No card to build · hear it live before you pay · cancel anytime.
+                </p>
               </div>
             </div>
           </div>
