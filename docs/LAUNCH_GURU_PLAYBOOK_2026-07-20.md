@@ -20,7 +20,7 @@ Status: Active ops playbook; pricing and campaign copy refreshed to Founder Earl
 
 1. **Phone loop:** inbound call, outbound call, SMS follow-up, outcome log, handoff.
 2. **Billing loop:** checkout, entitlement, Customer Portal, cancel, Conversation Balance behavior.
-3. **Copy drift:** no broad "one AI employee"; no "$9" launch promise; no public WhatsApp claim.
+3. **Copy drift:** no broad "one AI employee"; no sub-$19 launch promise; no public WhatsApp claim.
 4. **Compliance:** consent, STOP handling, DNC posture, and outbound safeguards reviewed.
 5. **Runtime:** production deploy READY; runtime errors and fatal logs clean.
 6. **Secret hygiene:** revoke/rotate any personal tokens shared outside approved secret stores.
