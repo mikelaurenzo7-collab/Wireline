@@ -122,7 +122,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /Runtime Balance/,
+    /Runtime\s+Balance/,
     "landing economics must explain prepaid Runtime Balance",
   );
   mustInclude(
@@ -159,7 +159,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /Runtime Balance/,
+    /Runtime\s+Balance/,
     "pricing must explain prepaid Runtime Balance",
   );
   mustExclude(

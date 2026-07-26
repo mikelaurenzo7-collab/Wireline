@@ -437,25 +437,6 @@ router.post("/mcp", async (req, res) => {
     req.body && typeof req.body === "object" ? (req.body as Record<string, unknown>) : null;
   const id = body?.id ?? null;
   const method = text(body?.method, 128);
-  const params =
-    body?.params && typeof body.params === "object" ? (body.params as Record<string, unknown>) : {};
-
-  // Throttle by IP BEFORE the token lookup so an anonymous flood can't amplify
-  // into repeated wireline_mcp_access_tokens reads. Fails OPEN (default) — unlike
-  // the OAuth token/register endpoints, /mcp must keep serving legitimate
-  // anonymous initialize/tools-list handshakes if the limiter backend blips; the
-  // limit is generous enough that a real initialize -> tools/list -> tools/call
-  // sequence never trips it.
-  const mcpThrottle = await rateLimit(`mcp-transport:${req.ip || "anon"}`, {
-    bucket: "mcp-transport",
-    windowMs: 60_000,
-    max: 120,
-  });
-  if (!mcpThrottle.allowed) {
-    res.setHeader("Retry-After", "60");
-    return jsonRpcError(res, id, -32000, "Too many requests. Please retry shortly.", 429);
-  }
-
   const principal = await principalFromRequest(req).catch((error) => {
     log.warn("ChatGPT account MCP token lookup failed", {
       error: error instanceof Error ? error.message : String(error),

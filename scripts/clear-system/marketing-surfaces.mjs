@@ -116,7 +116,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /Runtime Balance/,
+    /Runtime\s+Balance/,
     "landing pricing must explain prepaid Runtime Balance",
   );
   mustExclude(
@@ -168,7 +168,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /Runtime Balance/,
+    /Runtime\s+Balance/,
     "pricing must explain Runtime Balance",
   );
   mustInclude(
