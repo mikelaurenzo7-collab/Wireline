@@ -15,34 +15,37 @@ import { isSessionOptionalPublicPath } from "../src/lib/public-routes";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("product voice cohesion", () => {
-  it("keeps the one-employee multichannel hero and direction modes in one shared module", () => {
-    // Customer-facing positioning must feel like the owner's best employee,
-    // not three separate channel products or a menu of departments to configure.
-    expect(BRAND_SYSTEM.northStar).toBe("The best employee you've ever had, for next to nothing.");
-    expect(BRAND_SYSTEM.productNoun).toBe("AI employee");
-    expect(BRAND_SYSTEM.buyingNoun).toBe("AI Voice Employee");
-    expect(BRAND_SYSTEM.defaultRole).toBe("Your best employee");
+  it("keeps personal, business, and multi-agent positioning in one shared module", () => {
+    // Public positioning must welcome personal and business buyers, while making
+    // clear that a customer can start with one agent and expand to a roster.
+    expect(BRAND_SYSTEM.northStar).toBe("AI agents for every conversation—personal or business.");
+    expect(BRAND_SYSTEM.productNoun).toBe("AI agent");
+    expect(BRAND_SYSTEM.buyingNoun).toBe("AI Voice Agent");
+    expect(BRAND_SYSTEM.defaultRole).toBe("Your AI agent");
     expect(BRAND_SYSTEM.brandSpine).toEqual(["Wire", "Work", "Win"]);
     expect(BRAND_SYSTEM.proofLoop).toEqual(["Brief", "Train", "Launch", "Improve"]);
-    expect(BRAND_SYSTEM.toneRules).toContain("Lead with business outcomes before AI mechanics.");
+    expect(BRAND_SYSTEM.toneRules).toContain("Lead with outcomes before AI mechanics.");
     expect(BRAND_SYSTEM.toneRules).toContain(
-      "Make the default feel like the owner's best employee, not another executive title.",
+      "Welcome both personal and business use without making either audience feel secondary.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
-      "Present calling, texting, and email as channels of one trained employee, not three required employees.",
+      "Make clear that customers can start with one agent and add specialized agents as their needs grow.",
+    );
+    expect(BRAND_SYSTEM.toneRules).toContain(
+      "Present calling, texting, and email as channels each trained agent can use, not separate products customers must assemble.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
       "State that the included Wireline number applies to paid plans so the free builder is never misrepresented.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
-      "On public buying surfaces, prefer the voice-led buying noun (AI Voice Employee) over the generic product noun.",
+      "On broad public surfaces, prefer AI Voice Agent; use personal agent or AI employee only when the audience context is explicit.",
     );
     expect(MARKETING_VOICE.eyebrow).toBeNull();
-    expect(MARKETING_VOICE.headline).toBe("Your next AI employee");
-    expect(MARKETING_VOICE.primaryCta).toBe("Build your AI Voice Employee");
+    expect(MARKETING_VOICE.headline).toBe("AI agents for life and work");
+    expect(MARKETING_VOICE.primaryCta).toBe("Build your AI Voice Agent");
     expect(MARKETING_VOICE.buyingNoun).toBe(BRAND_SYSTEM.buyingNoun);
     expect(MARKETING_VOICE.subline).toBe(
-      "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books, and logs every outcome.",
+      "Build one agent or a coordinated team for personal tasks, customer conversations, and follow-through across voice, SMS, and email.",
     );
     expect(MARKETING_VOICE.channelProof).toEqual([
       "Voice calling",
@@ -55,8 +58,9 @@ describe("product voice cohesion", () => {
     expect(MARKETING_VOICE.spine).toEqual(BRAND_SYSTEM.brandSpine);
     expect(MARKETING_VOICE.proof).toEqual(["Brief", "Train", "Launch", "Improve"]);
 
-    expect(OUTBOUND_WEDGE.headline).toBe("Your best employee for growth work.");
-    expect(OUTBOUND_WEDGE.subline).toContain("one all-in-one AI employee");
+    expect(OUTBOUND_WEDGE.headline).toBe("Your AI agent for growth work.");
+    expect(OUTBOUND_WEDGE.subline).toContain("all-in-one AI agent");
+    expect(OUTBOUND_WEDGE.subline).toContain("specialized agents");
     expect(OUTBOUND_WEDGE.subline).toContain("calls");
     expect(OUTBOUND_WEDGE.subline).toContain("texts");
     expect(OUTBOUND_WEDGE.subline).toContain("emails");
@@ -64,7 +68,7 @@ describe("product voice cohesion", () => {
     expect(OUTBOUND_WEDGE.subline).toContain("sells");
     expect(OUTBOUND_WEDGE.subline).toContain("logs proof");
     expect(OUTBOUND_WEDGE.loop).toEqual(["Research", "Call", "Book", "Log"]);
-    expect(AGENT_NUMBER_PROMISE).toContain("Every paid AI employee");
+    expect(AGENT_NUMBER_PROMISE).toContain("Every paid AI agent");
     expect(AGENT_NUMBER_PROMISE).toContain("includes a Wireline number");
     expect(AGENT_NUMBER_PROMISE).toContain("text follow-ups");
     expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Act", "Log"]);
