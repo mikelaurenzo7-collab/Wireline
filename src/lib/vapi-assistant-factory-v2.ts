@@ -16,6 +16,7 @@ import {
 } from "./voice-agent-profile";
 import {
   buildAgentRuntimeContext,
+  complianceFirstMessagePrefix,
   resolveAssistantBasePrompt,
   type AgentRuntimeProfile,
 } from "./agent-runtime";
@@ -194,12 +195,18 @@ export async function buildVapiAssistant({
     ? buildVapiServerConfig(`${appUrl}/api/vapi-webhook?agentId=${encodeURIComponent(agentId)}`)
     : undefined;
 
+  // TCPA (FCC 24-17) requires the AI/automated voice + responsible entity to be
+  // disclosed at the START of the call. The system-prompt guardrail can't guarantee
+  // that, so for `tcpa` mode we prepend a spoken disclosure to whatever opening the
+  // agent would otherwise use. Empty string for every other mode (no behavior change).
+  const disclosurePrefix = complianceFirstMessagePrefix(configured.complianceMode, configured.name);
   return {
     name: configured.name,
     firstMessage:
-      afterHoursGreeting ||
-      configured.firstMessage ||
-      `Hi, this is ${configured.name}. How can I help?`,
+      disclosurePrefix +
+      (afterHoursGreeting ||
+        configured.firstMessage ||
+        `Hi, this is ${configured.name}. How can I help?`),
     ...(isOutbound ? { firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE } : {}),
     maxDurationSeconds: isOutbound ? VAPI_MAX_OUTBOUND_CALL_SECONDS : VAPI_MAX_INBOUND_CALL_SECONDS,
     model: {

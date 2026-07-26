@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { complianceDisclosure } from "../src/lib/agent-runtime";
+import { complianceDisclosure, complianceFirstMessagePrefix } from "../src/lib/agent-runtime";
 import { ComplianceModeSchema } from "../src/lib/form-validators";
 
 /**
@@ -43,6 +43,34 @@ describe("complianceDisclosure", () => {
     });
     it("bars marketing calls without prior express written consent", () => {
       expect(block).toContain("prior express written consent");
+    });
+  });
+
+  describe("complianceFirstMessagePrefix (spoken opening disclosure)", () => {
+    it("prepends an AI disclosure that names the business for tcpa mode", () => {
+      const prefix = complianceFirstMessagePrefix("tcpa", "Acme Plumbing");
+      expect(prefix).toContain("automated AI assistant");
+      expect(prefix).toContain("on behalf of Acme Plumbing");
+      expect(prefix.endsWith(" ")).toBe(true); // safe to concatenate before the greeting
+    });
+    it("still discloses AI when the business name is missing/blank", () => {
+      const prefix = complianceFirstMessagePrefix("tcpa", "  ");
+      expect(prefix).toContain("automated AI assistant");
+      expect(prefix).not.toContain("on behalf of");
+    });
+    it("returns an empty prefix for every non-tcpa mode (no behavior change)", () => {
+      for (const mode of [
+        "none",
+        "hipaa",
+        "pci",
+        "gdpr",
+        "financial",
+        "legal",
+        null,
+        undefined,
+      ] as const) {
+        expect(complianceFirstMessagePrefix(mode, "Acme")).toBe("");
+      }
     });
   });
 
