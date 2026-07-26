@@ -265,44 +265,43 @@ export const authService = {
   },
 
   /**
-   * Consume an email-verification token. Validates hash, TTL, and
-   * unused state in a single round-trip, then marks the user as
-   * verified and the token as used. Returns the user id on success
-   * so the route can issue a fresh session JWT. Null on any failure
-   * (bad hash, expired, already used) so the route returns a generic
-   * "this link is no longer valid" error without leaking which case.
+   * Consume an email-verification token. The conditional UPDATE is the
+   * single-use claim: only one concurrent request can transition used_at from
+   * NULL while the token is still live. User verification occurs in the same
+   * transaction, so a failed user write rolls the claim back.
    */
   async completeEmailVerification(token: string) {
     if (!token) return null;
     const tokenHash = createHash("sha256").update(token).digest("hex");
-    const [row] = await drizzle
-      .select({
-        id: schema.emailVerificationTokens.id,
-        userId: schema.emailVerificationTokens.userId,
-        expiresAt: schema.emailVerificationTokens.expiresAt,
-        usedAt: schema.emailVerificationTokens.usedAt,
-      })
-      .from(schema.emailVerificationTokens)
-      .where(eq(schema.emailVerificationTokens.tokenHash, tokenHash))
-      .limit(1);
-    if (!row || row.usedAt || row.expiresAt < new Date()) return null;
-
     const now = new Date();
-    await drizzle.transaction(async (tx) => {
-      await tx
-        .update(schema.users)
-        .set({ emailVerifiedAt: now, updatedAt: now })
-        .where(eq(schema.users.id, row.userId));
-      await tx
+
+    const userId = await drizzle.transaction(async (tx) => {
+      const [claimed] = await tx
         .update(schema.emailVerificationTokens)
         .set({ usedAt: now })
-        .where(eq(schema.emailVerificationTokens.id, row.id));
+        .where(
+          and(
+            eq(schema.emailVerificationTokens.tokenHash, tokenHash),
+            gte(schema.emailVerificationTokens.expiresAt, now),
+            isNull(schema.emailVerificationTokens.usedAt),
+          ),
+        )
+        .returning({ userId: schema.emailVerificationTokens.userId });
+      if (!claimed) return null;
+
+      const [updated] = await tx
+        .update(schema.users)
+        .set({ emailVerifiedAt: now, updatedAt: now })
+        .where(eq(schema.users.id, claimed.userId))
+        .returning({ id: schema.users.id });
+      return updated?.id ?? null;
     });
+    if (!userId) return null;
 
     const [user] = await drizzle
       .select({ id: schema.users.id, email: schema.users.email, fullName: schema.users.fullName })
       .from(schema.users)
-      .where(eq(schema.users.id, row.userId))
+      .where(eq(schema.users.id, userId))
       .limit(1);
     return user;
   },
@@ -341,9 +340,11 @@ export const authService = {
   },
 
   /**
-   * Consume a password-reset token: verify hash, TTL, and unused status; rehash
-   * the new password; mark the token used. Returns the freshly authenticated
-   * user + JWT on success, null on any failure (expired, used, not found).
+   * Consume a password-reset token. Password safety is evaluated before the
+   * transaction, then the transaction atomically claims the still-live token
+   * with a conditional UPDATE and rotates the password for that claimed user.
+   * A replay or concurrent second request receives null and cannot overwrite
+   * the first request's password.
    */
   async completePasswordReset(token: string, newPassword: string) {
     if (!token || !newPassword || newPassword.length < 8) return null;
@@ -351,41 +352,36 @@ export const authService = {
     const tokenHash = createHash("sha256").update(token).digest("hex");
     const now = new Date();
 
-    const [row] = await drizzle
-      .select()
-      .from(schema.passwordResetTokens)
-      .where(
-        and(
-          eq(schema.passwordResetTokens.tokenHash, tokenHash),
-          gte(schema.passwordResetTokens.expiresAt, now),
-          isNull(schema.passwordResetTokens.usedAt),
-        ),
-      )
-      .limit(1);
-    if (!row) return null;
-
     await requirePasswordSafety(newPassword, "reset");
     const newHash = hashPassword(newPassword);
-    // Wrap password update + token mark-used in a single transaction so
-    // we can never leave a "password rotated but token still consumable"
-    // state (replay window) or "token marked used but password not
-    // rotated" state (user locked out). Same defense-in-depth rationale
-    // as the audit3 hotfix on tenant demo backfill.
-    await drizzle.transaction(async (tx) => {
-      await tx
-        .update(schema.users)
-        .set({ passwordHash: newHash, updatedAt: now })
-        .where(eq(schema.users.id, row.userId));
-      await tx
+
+    const userId = await drizzle.transaction(async (tx) => {
+      const [claimed] = await tx
         .update(schema.passwordResetTokens)
         .set({ usedAt: now })
-        .where(eq(schema.passwordResetTokens.id, row.id));
+        .where(
+          and(
+            eq(schema.passwordResetTokens.tokenHash, tokenHash),
+            gte(schema.passwordResetTokens.expiresAt, now),
+            isNull(schema.passwordResetTokens.usedAt),
+          ),
+        )
+        .returning({ userId: schema.passwordResetTokens.userId });
+      if (!claimed) return null;
+
+      const [updated] = await tx
+        .update(schema.users)
+        .set({ passwordHash: newHash, updatedAt: now })
+        .where(eq(schema.users.id, claimed.userId))
+        .returning({ id: schema.users.id });
+      return updated?.id ?? null;
     });
+    if (!userId) return null;
 
     const [user] = await drizzle
       .select()
       .from(schema.users)
-      .where(eq(schema.users.id, row.userId))
+      .where(eq(schema.users.id, userId))
       .limit(1);
     if (!user) return null;
 
