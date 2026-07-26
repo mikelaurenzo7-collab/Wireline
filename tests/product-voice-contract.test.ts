@@ -122,6 +122,30 @@ describe("product voice cohesion", () => {
     expect(footer).not.toContain("One trained employee");
   });
 
+
+  it("keeps active launch docs agent-first, inclusive, and on current pricing", () => {
+    const campaign = read("docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md");
+    const mediaKit = read("docs/LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md");
+    const launchGuru = read("docs/LAUNCH_GURU_PLAYBOOK_2026-07-20.md");
+    const checklist = read("docs/WIRELINE_CEO_LAUNCH_CHECKLIST_2026-07-10.md");
+
+    for (const source of [campaign, mediaKit, launchGuru, checklist]) {
+      expect(source).toContain("AI Voice Agents");
+      expect(source).toContain("Build free. Go live from $19/mo");
+      expect(source).not.toContain("Launch for $9");
+      expect(source).not.toContain("from $9");
+      expect(source).not.toContain("The best employee you've ever had");
+    }
+
+    expect(campaign).toContain("AI voice agents for personal tasks and business conversations");
+    expect(campaign).toContain("wl_launch_ai_voice_agents_v6");
+    expect(campaign).toContain("AI Voice Generator Audio");
+    expect(campaign).toContain("marketing/reference use only");
+    expect(mediaKit).toContain("Legacy filenames containing");
+    expect(launchGuru).toContain("Personal call delegation");
+    expect(checklist).toContain("Business workspace copy may use \"AI employee\" when the audience is explicitly business");
+  });
+
   it("wires landing, workroom, and extension surfaces to shared voice constants", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const workroom = read("src/components/StudioWorkroom.tsx");
