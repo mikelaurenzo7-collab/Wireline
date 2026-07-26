@@ -70,12 +70,18 @@ export default function OutboundDialDialog({
     setConsentConfirmed(false);
   }, [open, initialAgentId, initialNumber, initialContext]);
 
-  // Seed the first voice agent only when none is selected yet. This covers a
-  // late-loading agents list without disturbing fields the user is editing.
+  // Keep the selected agent valid without disturbing typed fields: seed a
+  // fallback when nothing is chosen yet, and drop a selection that no longer
+  // exists in the roster (agent deleted or lost its phone line on a background
+  // refresh) so placeCall can't submit a stale id the <select> no longer shows.
   useEffect(() => {
-    if (!open || agentId) return;
-    const fallback = initialAgentId || voiceAgents[0]?.id || "";
-    if (fallback) setAgentId(fallback);
+    if (!open || voiceAgents.length === 0) return;
+    if (agentId && voiceAgents.some((agent) => agent.id === agentId)) return;
+    const fallback =
+      (initialAgentId && voiceAgents.some((agent) => agent.id === initialAgentId)
+        ? initialAgentId
+        : voiceAgents[0]?.id) || "";
+    if (fallback && fallback !== agentId) setAgentId(fallback);
   }, [open, agentId, initialAgentId, voiceAgents]);
 
   const canPlace =
