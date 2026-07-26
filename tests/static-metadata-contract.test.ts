@@ -29,8 +29,8 @@ describe("static marketing metadata", () => {
       'aria-label={isHomeHero && typeof title === "string" ? title : undefined}',
     );
     expect(hero).toContain("text-[clamp(2.45rem,5.2vw,4.85rem)]");
-    expect(hero).toContain("sm:whitespace-nowrap");
     expect(hero).toContain("max-w-[24ch]");
+    expect(hero).not.toContain("tracking-[-.012em] sm:whitespace-nowrap");
     expect(landing).toContain('title="Wireline — AI Voice Agents for Personal & Business"');
     expect(landing).toContain("MARKETING_VOICE.subline");
     expect(landing).not.toContain(
