@@ -22,9 +22,7 @@ export function validateStartupEnv() {
   // deliberately removes DB env vars, so logging it as a production env failure
   // makes deploy audits look broken even when runtime env is present.
   if (importSmokeWithoutDatabase) {
-    log.info("Skipping startup env error log during no-database import smoke", {
-      missing: validation.errors.map((error) => error.var),
-    });
+    log.info("Skipping startup env error log during no-database import smoke.");
   } else {
     logEnvValidation(IS_PROD);
   }
@@ -79,10 +77,7 @@ export function validateStartupEnv() {
 
     if (IS_PROD) {
       if (importSmokeWithoutDatabase) {
-        log.info("No-database import smoke observed missing prod env vars as expected", {
-          missing,
-          groupSummary: validation.byGroup,
-        });
+        log.info("No-database import smoke validated import-safe degraded startup path.");
       } else {
         log.error(
           "Missing required env vars in production. Affected features will return errors at request time.",

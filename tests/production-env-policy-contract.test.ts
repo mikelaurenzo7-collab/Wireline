@@ -82,7 +82,8 @@ describe("production environment launch policy", () => {
     expect(smokeServer).toContain("delete process.env.POSTGRES_URL");
     expect(serverContext).toContain("Database intentionally unavailable for no-database import smoke");
     expect(startup).toContain("Skipping startup env error log during no-database import smoke");
-    expect(startup).toContain("No-database import smoke observed missing prod env vars as expected");
+    expect(startup).toContain("No-database import smoke validated import-safe degraded startup path");
+    expect(startup).not.toContain("No-database import smoke observed missing prod env vars as expected");
   });
 
   it("fails preview builds that inherit production credentials or provider configuration", () => {
