@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 import { google } from "googleapis";
-import { drizzle, log } from "./server-context";
+import { drizzle, log, fetchWithTimeout } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { decryptSecret, encryptSecret } from "./secret-vault";
@@ -276,7 +276,11 @@ export class IntegrationService {
       params.set("$filter", `receivedDateTime ge ${opts.sinceIso}`);
     }
     const url = `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?${params.toString()}`;
-    const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const r = await fetchWithTimeout(
+      url,
+      { headers: { Authorization: `Bearer ${token}` } },
+      15_000,
+    );
     if (!r.ok) {
       log.warn("Microsoft inbox fetch non-200", { status: r.status });
       return [];
@@ -458,7 +462,17 @@ export class IntegrationService {
   private async getMicrosoftBusySlots(account: any, start: Date, end: Date): Promise<string[]> {
     const token = await this.getMicrosoftToken(account);
     const url = `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${start.toISOString()}&endDateTime=${end.toISOString()}`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetchWithTimeout(
+      url,
+      { headers: { Authorization: `Bearer ${token}` } },
+      15_000,
+    );
+    // Fail CLOSED: a non-2xx (401/429/503/timeout) must not be read as "no busy slots",
+    // or a booked calendar would be reported free during a live booking call (double-booking).
+    // Throwing here reaches checkAvailability's catch -> "Failed to check calendar availability."
+    if (!res.ok) {
+      throw new Error(`Microsoft calendar list failed: ${res.status}`);
+    }
     const data = (await res.json()) as any;
     return (data.value || []).map(
       (e: any) =>
@@ -468,36 +482,44 @@ export class IntegrationService {
 
   private async createMicrosoftEvent(account: any, params: any): Promise<boolean> {
     const token = await this.getMicrosoftToken(account);
-    const res = await fetch("https://graph.microsoft.com/v1.0/me/events", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        subject: params.title,
-        body: { contentType: "HTML", content: params.description },
-        start: { dateTime: params.startTime, timeZone: "UTC" },
-        end: { dateTime: params.endTime, timeZone: "UTC" },
-        attendees: params.attendees?.map((email: string) => ({
-          emailAddress: { address: email },
-          type: "required",
-        })),
-      }),
-    });
+    const res = await fetchWithTimeout(
+      "https://graph.microsoft.com/v1.0/me/events",
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: params.title,
+          body: { contentType: "HTML", content: params.description },
+          start: { dateTime: params.startTime, timeZone: "UTC" },
+          end: { dateTime: params.endTime, timeZone: "UTC" },
+          attendees: params.attendees?.map((email: string) => ({
+            emailAddress: { address: email },
+            type: "required",
+          })),
+        }),
+      },
+      15_000,
+    );
     return res.ok;
   }
 
   private async sendMicrosoftEmail(account: any, params: any): Promise<boolean> {
     const token = await this.getMicrosoftToken(account);
-    const res = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: {
-          subject: params.subject,
-          body: { contentType: "HTML", content: params.body },
-          toRecipients: [{ emailAddress: { address: params.to } }],
-        },
-      }),
-    });
+    const res = await fetchWithTimeout(
+      "https://graph.microsoft.com/v1.0/me/sendMail",
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: {
+            subject: params.subject,
+            body: { contentType: "HTML", content: params.body },
+            toRecipients: [{ emailAddress: { address: params.to } }],
+          },
+        }),
+      },
+      15_000,
+    );
     return res.ok;
   }
 
@@ -511,11 +533,15 @@ export class IntegrationService {
       grant_type: "refresh_token",
       refresh_token: decryptSecret(account.refreshToken),
     });
-    const r = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params.toString(),
-    });
+    const r = await fetchWithTimeout(
+      "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params.toString(),
+      },
+      15_000,
+    );
     const d = (await r.json()) as any;
     // Use the tagged source table (see getAccounts). The old emailAddress
     // inference silently mis-routed calendar-account token writes. Fall back

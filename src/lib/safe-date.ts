@@ -14,7 +14,7 @@
 //  toLocale*() flows through the helpers below — they coerce
 //  unparsable inputs to a stable fallback so the UI keeps rendering.
 //
-//  Pure functions only. Tested in src/lib/safe-date.test.ts.
+//  Pure functions only. Tested in tests/safe-date.test.ts.
 // ────────────────────────────────────────────────────────────────────────
 
 const DEFAULT_FALLBACK = "—";

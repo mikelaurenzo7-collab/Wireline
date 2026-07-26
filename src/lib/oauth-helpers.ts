@@ -88,11 +88,15 @@ export async function refreshMicrosoftToken(account: {
     refresh_token: decryptSecret(account.refreshToken),
     scope: MS_SCOPES,
   });
-  const r = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params.toString(),
-  });
+  const r = await fetchWithTimeout(
+    "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+    },
+    15_000,
+  );
   const d = (await r.json()) as any;
   if (!r.ok || !d.access_token)
     throw new Error(d.error_description || "Microsoft token refresh failed");

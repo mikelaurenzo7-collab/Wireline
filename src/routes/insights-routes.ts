@@ -36,7 +36,7 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
+      const days = Math.min(365, Math.max(1, parseInt(String(req.query.days ?? "30"), 10) || 30));
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
       const userId = req.user.id;
@@ -128,7 +128,7 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
+      const days = Math.min(365, Math.max(1, parseInt(String(req.query.days ?? "30"), 10) || 30));
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
       const buckets = await drizzle
         .select({
@@ -177,7 +177,7 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const days = Math.min(parseInt((req.query.days as string) || "30"), 365);
+      const days = Math.min(365, Math.max(1, parseInt(String(req.query.days ?? "30"), 10) || 30));
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
       const userId = req.user.id;
