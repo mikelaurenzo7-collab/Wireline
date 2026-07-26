@@ -19,10 +19,10 @@ Use:
 
 Do not use:
 
-- "Your next AI employee" as broad hero copy
-- "One AI employee" as the default public promise
-- "The best employee you've ever had"
-- "Launch for $9" or "from $9"
+- broad AI-employee hero copy
+- one-employee public promises
+- old best-employee slogans
+- sub-$19 launch pricing
 
 Business-context assets may use "AI employee" only when the placement is explicitly Business workspace or Business plan oriented.
 
