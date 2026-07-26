@@ -1,58 +1,44 @@
-# Wireline Best Employee Success Playbook
+# Wireline Agent Success Playbook
 
-How we win: owners **trust their AI employee** - on the phone, in Studio, and in their CRM.
+How we win: owners and busy people trust their **AI voice agents** - on the phone, in Studio, and in the outcomes they review.
 
-## North-star metrics
+## Activation Definition
 
-| Metric | Target | Where to measure |
-| --- | --- | --- |
-| Time to first call | < 10 minutes | Onboarding quickstart on Home |
-| Weekly active account holders | > 80% of paid accounts | Product analytics |
-| Post-call book rate | Trending up | Insights -> Funnel |
-| Escalation rate | Trending down | Triage + Insights -> Failures |
-| Voice p95 latency | Stable or down | Insights -> Latency |
-| Mobile layout quality | Zero horizontal overflow | `npm run qa:design-screenshots` |
+A workspace is activated when the user has:
 
-## Activation ladder
+1. Created an AI voice agent.
+2. Trained it with role, facts, tone, rules, and escalation behavior.
+3. Completed a private simulation or test call.
+4. Wired a paid-plan number or clearly understands what remains before live launch.
+5. Reviewed a real or simulated outcome in Studio.
 
-1. **Build best employee** - one outcome -> all-purpose employee or specialist preset.
-2. **Training** - website scrape or paste pricing and hours.
-3. **Number** - included on plan; confirm routing.
-4. **Test call** - browser test or dial demo line **(630) 581-1834**.
-5. **Integration** - Gmail or Outlook plus CRM when ready.
-6. **Go live** - flip agent to active and watch **Live** on Home.
+## Onboarding Motion
 
-## Agent quality checklist
+1. **Build AI voice agent** - choose personal or business context and one clear outcome.
+2. **Train the rules** - facts, approved answers, prohibited topics, escalation path, tone.
+3. **Wire the channel** - paid-plan number, SMS/email, routing, approvals, billing controls.
+4. **Run and review** - call, follow-up, log, coach, improve.
 
-- First message is short, warm, and scope-clear.
-- Personality matches the job.
-- Tools are enabled only for connected integrations.
-- Post-call follow-up is created when configured.
-- QA score is reviewed weekly in Insights -> Quality.
+## Success Standards
 
-## Voice reliability defaults
+- The agent's personality matches the job.
+- Personal users feel protected, not sold a CRM.
+- Business users understand the agent can behave like an employee when the workspace context is explicit.
+- Multi-agent growth is clear: start with one, add specialists when needed.
+- Every live workflow shows what happened, what was sent, and what needs approval.
 
-- Max **3** parallel tools per Vapi webhook.
-- **8s** tool timeout; **1,200** character speakable cap.
-- Agent prompt budget around **18k** with trimmed directives and facts.
-- Fail-open supervision so one bad tool does not kill the call.
+## Coaching Prompts
 
-## Sales and demo
+- "What should this agent never promise?"
+- "When should it hand off to you?"
+- "What is a successful outcome for this call?"
+- "Which follow-up should happen automatically?"
+- "What needs to be logged for review?"
 
-- Demo account credentials live only in environment secrets.
-- Marketing captures come from `npm run marketing:kit` or `npm run qa:design-showcase`.
-- Compare pages stay honest about where Wireline wins.
+## Red Flags
 
-## Production hygiene
-
-- `main` -> Vercel production; promote via `scripts/promote-vercel-production.mjs` if needed.
-- **INTERNAL_JWT_SECRET** (or legacy `SUPABASE_JWT_SECRET`) must be set on Vercel - sign-in returns **503** with `AUTH_NOT_CONFIGURED` when missing.
-- `POSTGRES_URL` is required for authenticated routes.
-
-## Next strategic bets
-
-1. Vercel AI Gateway - cost tags and failover for managed reasoning traffic.
-2. E2E golden paths in CI.
-3. Hosted call recordings in Logs.
-4. Zapier and Make distribution.
-5. Enterprise SSO plus SCIM.
+- The user thinks Free Builder includes a live production number.
+- The user thinks Wireline only supports one agent forever.
+- Public-facing copy says "one AI employee" without Business context.
+- Launch copy still says "$9" or "Launch for $9".
+- WhatsApp is described as publicly available before beta release.
