@@ -29,6 +29,7 @@ export async function fetchWithTimeout(
 }
 
 const databaseConnection = tryResolveDatabaseConnection();
+const isNoDatabaseImportSmoke = process.env.WIRELINE_IMPORT_SMOKE_NO_DATABASE === "true";
 if (databaseConnection?.ignoredInvalidPoolUrl) {
   log.warn("Ignoring invalid DATABASE_POOL_URL; using validated POSTGRES_URL fallback", {
     selected: databaseConnection.source,
@@ -59,7 +60,11 @@ function createUnavailablePool(): InstanceType<typeof Pool> {
 }
 
 if (!databaseConnection) {
-  log.warn("Database unavailable for this deployment; database-backed routes will return 503.");
+  if (isNoDatabaseImportSmoke) {
+    log.info("Database intentionally unavailable for no-database import smoke.");
+  } else {
+    log.warn("Database unavailable for this deployment; database-backed routes will return 503.");
+  }
 }
 
 const pool = databaseConnection
