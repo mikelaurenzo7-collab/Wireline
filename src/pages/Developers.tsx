@@ -65,7 +65,7 @@ const MCP_CLIENTS = [
   {
     title: "ChatGPT",
     description:
-      "Create and refine a private AI voice-agent draft, then run a private voice simulation before continuing in Wireline.",
+      "Create and refine a private AI voice agent draft, then run a private voice simulation before continuing in Wireline.",
     action: "Open ChatGPT apps",
     href: "https://chatgpt.com/",
     icon: MessageSquareText,
