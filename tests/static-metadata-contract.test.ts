@@ -5,12 +5,12 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("static marketing metadata", () => {
-  it("keeps the HTML shell aligned with the multichannel AI employee promise", () => {
+  it("keeps the HTML shell aligned with the inclusive AI voice-agent promise", () => {
     const index = read("index.html");
 
-    expect(index).toContain("Your next AI employee calls, texts &amp; emails");
-    expect(index).toContain("customer conversations across voice, SMS, and email");
-    expect(index).toContain("follows up, books, and logs every outcome");
+    expect(index).toContain("AI Voice Agents for Personal &amp; Business");
+    expect(index).toContain("personal tasks and business conversations");
+    expect(index).toContain("follow-through across voice, SMS, and email");
     expect(index).toContain('"slogan": "Wire → Work → Win"');
     expect(index).not.toContain("Your AI Voice Employee Calls, Texts &amp; Emails");
     expect(index).not.toContain("Voice AI employee for real conversations.");
@@ -31,7 +31,7 @@ describe("static marketing metadata", () => {
     expect(hero).toContain("text-[clamp(2.45rem,5.2vw,4.85rem)]");
     expect(hero).toContain("sm:whitespace-nowrap");
     expect(hero).toContain("max-w-[24ch]");
-    expect(landing).toContain('title="Wireline — Your next AI employee calls, texts & emails"');
+    expect(landing).toContain('title="Wireline — AI Voice Agents for Personal & Business"');
     expect(landing).toContain("MARKETING_VOICE.subline");
     expect(landing).not.toContain(
       'title="Wireline — Your AI Voice Employee Calls, Texts & Emails"',
@@ -42,12 +42,12 @@ describe("static marketing metadata", () => {
   it("keeps the OG image aligned with voice, channels, number, and outcomes", () => {
     const ogImage = read("public/og-image.svg");
 
-    expect(ogImage).toContain("YOUR AI VOICE EMPLOYEE");
-    expect(ogImage).toContain("CALLS · TEXTS · EMAILS");
+    expect(ogImage).toContain("AI VOICE AGENTS");
+    expect(ogImage).toContain("PERSONAL · BUSINESS");
     expect(ogImage).toContain("PAID PLAN NUMBER INCLUDED");
-    expect(ogImage).toContain("One trained employee. One shared memory.");
+    expect(ogImage).toContain("One agent or a coordinated team.");
     expect(ogImage).toContain("Conversation handled. Work completed.");
-    expect(ogImage).toContain("VOICE · SMS · EMAIL · NUMBER INCLUDED · OUTCOMES · CONTROL");
+    expect(ogImage).toContain("VOICE · SMS · EMAIL · PERSONAL · BUSINESS · OUTCOMES · CONTROL");
     expect(ogImage).not.toContain("YOUR NEXT AI EMPLOYEE");
   });
 
@@ -57,11 +57,11 @@ describe("static marketing metadata", () => {
       description: string;
     };
 
-    expect(manifest.name).toBe("Wireline - Your next AI employee");
-    expect(manifest.description).toContain("One trained AI employee");
-    expect(manifest.description).toContain("voice, SMS, and email");
-    expect(manifest.description).toContain("books, and logs every outcome");
-    expect(manifest.description).toContain("logs every outcome");
+    expect(manifest.name).toBe("Wireline - AI Voice Agents");
+    expect(manifest.description).toContain("one AI voice agent");
+    expect(manifest.description).toContain("personal tasks and business conversations");
+    expect(manifest.description).toContain("follow-through across voice, SMS, and email");
+    expect(manifest.description).toContain("coordinated team");
     expect(manifest.description).not.toContain("included numbers");
   });
 });

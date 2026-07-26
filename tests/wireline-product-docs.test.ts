@@ -100,11 +100,11 @@ describe("Wireline product documentation contract", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("Wireline — Your next AI employee calls, texts &amp; emails");
-    expect(head).toContain("customer conversations across voice, SMS, and email");
-    expect(head).toContain("follows up, books, and logs every outcome");
-    expect(ogImage).toMatch(/YOUR AI VOICE EMPLOYEE[\s\S]*CALLS · TEXTS · EMAILS/);
-    expect(ogImage).toContain("VOICE · SMS · EMAIL · NUMBER INCLUDED · OUTCOMES · CONTROL");
+    expect(head).toContain("Wireline — AI Voice Agents for Personal &amp; Business");
+    expect(head).toContain("personal tasks and business conversations");
+    expect(head).toContain("follow-through across voice, SMS, and email");
+    expect(ogImage).toMatch(/AI VOICE AGENTS[\s\S]*PERSONAL · BUSINESS/);
+    expect(ogImage).toContain("VOICE · SMS · EMAIL · PERSONAL · BUSINESS · OUTCOMES · CONTROL");
     expectNoTerms(head, retiredProductTerms);
     expectNoTerms(ogImage, retiredProductTerms);
   });
