@@ -11,7 +11,8 @@ import {
 } from "../lib/voice/openai-live-agent-service";
 
 // Legacy filename retained for stable imports. Profiles now map exclusively to
-// OpenAI Realtime voices; Vapi/ElevenLabs owns custom phone voices.
+// OpenAI Realtime voices; production custom phone voices must be provisioned
+// through a Vapi-supported streaming voice-library workflow.
 const router = express.Router();
 const limiter = createRateLimiter({ bucket: "api:live-voice-profile", windowMs: 60_000, max: 30 });
 const profileSchema = z.object({
@@ -59,7 +60,7 @@ router.patch(
   validateBody(customVoiceSchema),
   async (_req: AuthenticatedRequest, res) => {
     res.status(409).json({
-      error: "Custom browser-demo voices are not supported. Configure custom phone voices through the Vapi voice library.",
+      error: "Custom browser-demo voices are not supported. Production phone calls use Vapi-managed phone voices; generated marketing voiceovers are not live call voices.",
       code: "LIVE_CUSTOM_VOICE_UNSUPPORTED",
       customVoiceConfigured: false,
     });
