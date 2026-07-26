@@ -17,6 +17,7 @@ import {
   generateScheduledOperatingReport,
   type ScheduledReportJobPayload,
 } from "./scheduled-report-service";
+import { handleProactiveLeadEnrichmentJob } from "./proactive-lead-enrichment-job";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { startWorker, type JobRow } from "./job-queue";
@@ -131,6 +132,7 @@ async function withRuntimeReservation<T>(
           job_id: job.id,
           job_type: job.type,
           attempt: attemptNumber(job),
+          format,
           error: getErrorMessage(error),
         },
       });
@@ -201,6 +203,12 @@ export async function handleJob(job: JobRow): Promise<void> {
   }
   if (job.type === "scheduled_report") {
     await handleScheduledReport(job);
+    return;
+  }
+  // Intercept the legacy handler before it can run unscoped phone-only history
+  // reads. The replacement asserts job/payload ownership and enters tenant RLS.
+  if (job.type === "proactive_lead_enrichment") {
+    await handleProactiveLeadEnrichmentJob(job);
     return;
   }
   await handleBaseJob(job as never);

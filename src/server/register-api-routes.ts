@@ -13,6 +13,7 @@ import aiStatusRouter from "../routes/ai-status-routes";
 import openaiRealtimeRouter from "../routes/openai-realtime-routes";
 import grokVoiceRouter from "../routes/grok-voice-routes";
 import billingRouter from "../routes/billing-routes";
+import { stripeRuntimeAllowanceRetryPreflight } from "../middleware/stripe-runtime-allowance-retry";
 import billingPortalReadinessRouter from "../routes/billing-portal-readiness-routes";
 import launchBillingCheckoutRouter from "../routes/launch-billing-checkout-routes";
 import conversationBalanceRouter from "../routes/conversation-balance-routes";
@@ -116,6 +117,10 @@ export function registerApiRoutes(app: Express): void {
   // prices, /admin return URLs, and unconfigured Stripe Dashboard portals.
   app.use(launchBillingCheckoutRouter);
   app.use(billingPortalReadinessRouter);
+  // Financial-integrity preflight for subscription refunds/disputes. It runs on
+  // the same raw-body Stripe path before the legacy billing router and only
+  // acknowledges after the idempotent Runtime Allowance reversal succeeds.
+  app.use("/api/stripe-webhook", stripeRuntimeAllowanceRetryPreflight);
   app.use("/api", billingRouter);
   app.use(emailRouter);
   // Dashboard data plane: /api/dashboard/*, /api/calls, /api/appointments,

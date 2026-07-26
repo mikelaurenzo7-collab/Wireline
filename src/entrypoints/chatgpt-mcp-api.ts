@@ -5,11 +5,17 @@ import { AppError, formatErrorResponse } from "../lib/api-error";
 import { reportError } from "../lib/error-reporter";
 import { mcpIssuer } from "../lib/mcp-oauth-security";
 import { mcpOAuthChallenge, mcpToolErrorResult } from "../lib/mcp-transport";
+import { mcpOAuthIssuerBinding } from "../middleware/mcp-oauth-issuer-binding";
 
 const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
+
+// Bind authorization responses to the discovered issuer (RFC 9207). This is
+// especially important for CIMD clients such as ChatGPT, whose callback can be
+// shared across multiple authorization servers and is validated before token exchange.
+app.use(mcpOAuthIssuerBinding);
 
 // Normalize OAuth challenges at the public MCP boundary. ChatGPT expects
 // tool-level auth failures as `isError` results carrying
