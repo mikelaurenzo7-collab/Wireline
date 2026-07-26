@@ -45,34 +45,8 @@ function runDeepLaunchAuditIfRequested() {
   run("npm", ["run", "test:run"]);
 }
 
-function sanitizePreviewEnvironment() {
-  if (
-    environment !== "preview" ||
-    process.env.WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW === "true"
-  ) {
-    return;
-  }
-
-  const liveStripeInherited = String(process.env.STRIPE_SECRET_KEY || "").startsWith("sk_live_");
-  const livePublishableInherited = String(process.env.VITE_STRIPE_PUBLIC_KEY || "").startsWith(
-    "pk_live_",
-  );
-
-  if (liveStripeInherited || livePublishableInherited || process.env.STRIPE_WEBHOOK_SECRET) {
-    for (const key of Object.keys(process.env)) {
-      if (
-        key === "STRIPE_SECRET_KEY" ||
-        key === "STRIPE_WEBHOOK_SECRET" ||
-        key === "VITE_STRIPE_PUBLIC_KEY" ||
-        /^STRIPE_.*_PRICE_ID$/.test(key) ||
-        key === "STRIPE_VOICE_OVERAGE_METER_EVENT_NAME"
-      ) {
-        delete process.env[key];
-      }
-    }
-    process.env.WIRELINE_STRIPE_DISABLED_IN_PREVIEW = "true";
-    console.warn("Preview isolation: Stripe credentials and catalog identifiers were removed.");
-  }
+function configurePreviewEnvironment() {
+  if (environment !== "preview") return;
 
   const previewHost = String(process.env.VERCEL_URL || "")
     .trim()
@@ -80,11 +54,14 @@ function sanitizePreviewEnvironment() {
     .replace(/\/+$/, "");
   if (previewHost) {
     process.env.APP_URL = `https://${previewHost}`;
-    console.log(`Preview isolation: APP_URL resolved to https://${previewHost}.`);
+    console.log(
+      `Preview build: APP_URL resolved to https://${previewHost}; runtime origin remains request-derived.`,
+    );
   }
 }
 
 run("node", ["scripts/check-deployment-boundaries.mjs"]);
+run("node", ["scripts/check-wireline-clear-system.mjs"]);
 run("node", ["scripts/check-native-release-horizon.mjs"]);
 run("node", ["scripts/check-password-screening-disclosure.mjs"]);
 run("node", ["scripts/check-provider-neutral-studio-entry.mjs"]);
@@ -101,12 +78,16 @@ run("npx", [
   "tests/vendor-readiness-contract.test.ts",
   "tests/runtime-integrations-registry-contract.test.ts",
   "tests/production-env-policy-contract.test.ts",
+  "tests/product-voice-contract.test.ts",
+  "tests/marketing-metadata-contract.test.ts",
+  "tests/static-metadata-contract.test.ts",
+  "tests/wireline-product-docs.test.ts",
   "tests/mailbox-and-daily-brief-hardening-contract.test.ts",
   "tests/managed-vapi-runtime-contract.test.ts",
   "tests/vapi-modern-payload-contract.test.ts",
 ]);
 runLiveVapiSchemaAuditIfRequested();
-sanitizePreviewEnvironment();
+configurePreviewEnvironment();
 runDeepLaunchAuditIfRequested();
 run("node", ["scripts/check-operational-core.mjs"]);
 run("node", ["scripts/build-design-tokens.mjs"]);
