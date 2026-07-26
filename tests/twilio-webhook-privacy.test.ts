@@ -59,7 +59,7 @@ describe("Twilio webhook privacy hardening", () => {
       'log.error("VAPI FAILOVER TRIGGERED", { to, from })',
       'log.warn("Voicemail complete missing RecordingUrl", { from, to })',
       'log.warn("Voicemail recorded but no tenant matched To number", { to, from, recordingUrl })',
-      `<li><strong>Transcript:</strong> ${transcription}</li>`,
+      "<li><strong>Transcript:</strong> ${transcription}</li>",
     ];
 
     for (const snippet of forbiddenSnippets) {
