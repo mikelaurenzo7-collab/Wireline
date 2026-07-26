@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 275
-**Protected:** 233
-**Public (allowlisted):** 42
+**Routes scanned:** 347
+**Protected:** 286
+**Public (allowlisted):** 61
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -45,10 +45,29 @@
 | `POST /api/webhooks/meta/deletion` | Meta HMAC-SHA256 signature + rate limit |
 | `GET /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
 | `POST /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
+| `GET /api/oauth/apollo/callback` | OAuth initiation/callback (state-validated) |
+| `GET /api/oauth/google_sheets/callback` | OAuth initiation/callback (state-validated) |
+| `GET /api/oauth/google/callback` | OAuth initiation/callback (state-validated) |
+| `GET /api/oauth/hubspot/callback` | OAuth initiation/callback (state-validated) |
+| `GET /api/oauth/meta/callback` | OAuth initiation/callback (state-validated) |
+| `GET /api/oauth/microsoft_excel/callback` | OAuth initiation/callback (state-validated) |
+| `GET /api/oauth/microsoft_teams/callback` | OAuth initiation/callback (state-validated) |
+| `GET /api/oauth/microsoft/callback` | OAuth initiation/callback (state-validated) |
+| `GET /api/oauth/salesforce/callback` | OAuth initiation/callback (state-validated) |
+| `GET /api/oauth/shopify/callback` | OAuth initiation/callback (state-validated) |
+| `GET /api/oauth/slack/callback` | OAuth initiation/callback (state-validated) |
+| `GET /api/ecommerce/oauth/callback` | Square OAuth callback (redirect URL registered with Square); state verified in-handler via verifyOAuthState |
+| `GET /api/oauth/x/callback` | OAuth initiation/callback (state-validated) |
+| `GET /api/oauth/yahoo/callback` | OAuth initiation/callback (state-validated) |
+| `GET /api/oauth/zoom/callback` | OAuth initiation/callback (state-validated) |
 | `GET /api/openapi.json` | Public OpenAPI spec; rate-limited + CDN cached |
 | `GET /api/quotas/plans` | Public plan limits comparison table |
 | `GET /recap/:slug` | Signed shareable call/weekly recap; opaque slug + bearer token verified against stored SHA-256 hash, timing-safe; per-IP + per-slug rate limits |
 | `POST /api/support/ticket` | Public support/contact form; strict validation + 5/15min IP rate limit |
+| `POST /api/twilio-webhook/singing-receptionist` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/sms` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/voice-fallback` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/voicemail-complete` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/message-status` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/sms` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/usage-alert` | Twilio signature validation; valid provider retries are never IP-throttled |
@@ -93,8 +112,11 @@
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/toggle-tool` | inline | — | — | Protected |
 | ai-status-routes.ts | GET | `/api/ai/status` | inline | — | — | Protected |
 | audit-routes.ts | GET | `/api/audit/events` | inline | — | — | Protected |
+| audit-routes.ts | GET | `/api/audit/export` | inline | — | — | Protected |
 | audit-routes.ts | GET | `/api/audit/recent` | inline | — | — | Protected |
+| audit-routes.ts | GET | `/api/audit/stats` | inline | — | — | Protected |
 | audit-routes.ts | GET | `/api/audit/summary` | inline | — | — | Protected |
+| audit-routes.ts | GET | `/api/spend/budget` | inline | — | — | Protected |
 | auth-oauth-routes.ts | GET | `/api/auth/google/callback` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | GET | `/api/auth/google/url` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | GET | `/api/auth/microsoft/callback` | — | — | yes | Public (allowlisted) |
@@ -204,6 +226,9 @@
 | goals-routes.ts | GET | `/api/goals` | inline | — | — | Protected |
 | goals-routes.ts | POST | `/api/goals` | inline | — | — | Protected |
 | goals-routes.ts | DELETE | `/api/goals/:id` | inline | — | — | Protected |
+| grok-live-profile-routes.ts | PATCH | `/api/voice/live/custom` | inline | — | — | Protected |
+| grok-live-profile-routes.ts | GET | `/api/voice/live/profile` | inline | — | — | Protected |
+| grok-live-profile-routes.ts | PATCH | `/api/voice/live/profile` | inline | — | — | Protected |
 | grok-voice-routes.ts | POST | `/api/voice/live/session` | inline | — | — | Protected |
 | grok-voice-routes.ts | GET | `/api/voice/live/status` | inline | — | — | Protected |
 | grok-voice-routes.ts | POST | `/api/voice/live/tool` | inline | — | — | Protected |
@@ -233,10 +258,13 @@
 | intake-routes.ts | POST | `/api/intake/lead` | — | — | yes | Public (allowlisted) |
 | intake-routes.ts | POST | `/api/intake/leads` | — | — | yes | Public (allowlisted) |
 | integrations-cert-routes.ts | GET | `/api/integrations/certified` | — | — | yes | Public (allowlisted) |
+| job-routes.ts | GET | `/api/jobs/:id([0-9a-fA-F-]{36})` | inline | — | — | Protected |
 | job-routes.ts | POST | `/api/jobs/:id([0-9a-fA-F-]{36})/run` | inline | — | — | Protected |
 | job-routes.ts | POST | `/api/jobs/knowledge-crawl` | inline | — | — | Protected |
 | job-routes.ts | POST | `/api/jobs/prospect` | inline | — | — | Protected |
 | job-routes.ts | GET | `/api/jobs/stats` | inline | — | — | Protected |
+| job-routes.ts | GET | `/api/jobs/sweep` | inline | — | — | Protected |
+| job-routes.ts | POST | `/api/jobs/sweep` | inline | — | — | Protected |
 | knowledge-routes.ts | GET | `/api/knowledge` | inline | — | — | Protected |
 | knowledge-routes.ts | POST | `/api/knowledge` | inline | — | — | Protected |
 | knowledge-routes.ts | PATCH | `/api/knowledge/:id` | inline | — | — | Protected |
@@ -266,6 +294,56 @@
 | mobile-routes.ts | GET | `/api/mobile/me` | inline | — | — | Protected |
 | mobile-routes.ts | PUT | `/api/mobile/settings` | inline | — | — | Protected |
 | mobile-routes.ts | GET | `/api/mobile/wallet` | inline | — | — | Protected |
+| oauth/apollo.ts | GET | `/api/oauth/apollo/callback` | — | — | yes | Public (allowlisted) |
+| oauth/apollo.ts | POST | `/api/oauth/apollo/disconnect` | inline | — | yes | Protected |
+| oauth/apollo.ts | GET | `/api/oauth/apollo/url` | inline | — | yes | Protected |
+| oauth/google-sheets.ts | GET | `/api/oauth/google_sheets/callback` | — | — | yes | Public (allowlisted) |
+| oauth/google-sheets.ts | POST | `/api/oauth/google_sheets/disconnect` | inline | — | yes | Protected |
+| oauth/google-sheets.ts | GET | `/api/oauth/google_sheets/url` | inline | — | yes | Protected |
+| oauth/google.ts | GET | `/api/oauth/google/callback` | — | — | yes | Public (allowlisted) |
+| oauth/google.ts | GET | `/api/oauth/google/url` | inline | — | yes | Protected |
+| oauth/hubspot.ts | GET | `/api/oauth/hubspot/callback` | — | — | yes | Public (allowlisted) |
+| oauth/hubspot.ts | POST | `/api/oauth/hubspot/disconnect` | inline | — | yes | Protected |
+| oauth/hubspot.ts | GET | `/api/oauth/hubspot/url` | inline | — | yes | Protected |
+| oauth/meta.ts | GET | `/api/oauth/meta/callback` | — | — | yes | Public (allowlisted) |
+| oauth/meta.ts | POST | `/api/oauth/meta/disconnect` | inline | — | yes | Protected |
+| oauth/meta.ts | GET | `/api/oauth/meta/url` | inline | — | yes | Protected |
+| oauth/microsoft-graph.ts | GET | `/api/oauth/microsoft_excel/callback` | — | — | yes | Public (allowlisted) |
+| oauth/microsoft-graph.ts | POST | `/api/oauth/microsoft_excel/disconnect` | inline | — | yes | Protected |
+| oauth/microsoft-graph.ts | GET | `/api/oauth/microsoft_excel/url` | inline | — | yes | Protected |
+| oauth/microsoft-graph.ts | GET | `/api/oauth/microsoft_teams/callback` | — | — | yes | Public (allowlisted) |
+| oauth/microsoft-graph.ts | GET | `/api/oauth/microsoft_teams/channels` | inline | — | yes | Protected |
+| oauth/microsoft-graph.ts | POST | `/api/oauth/microsoft_teams/disconnect` | inline | — | yes | Protected |
+| oauth/microsoft-graph.ts | POST | `/api/oauth/microsoft_teams/notify-target` | inline | — | yes | Protected |
+| oauth/microsoft-graph.ts | GET | `/api/oauth/microsoft_teams/url` | inline | — | yes | Protected |
+| oauth/microsoft.ts | GET | `/api/oauth/microsoft/callback` | — | — | yes | Public (allowlisted) |
+| oauth/microsoft.ts | GET | `/api/oauth/microsoft/url` | inline | — | yes | Protected |
+| oauth/salesforce.ts | GET | `/api/oauth/salesforce/callback` | — | — | yes | Public (allowlisted) |
+| oauth/salesforce.ts | POST | `/api/oauth/salesforce/disconnect` | inline | — | yes | Protected |
+| oauth/salesforce.ts | GET | `/api/oauth/salesforce/url` | inline | — | yes | Protected |
+| oauth/shopify.ts | GET | `/api/oauth/shopify/callback` | — | — | yes | Public (allowlisted) |
+| oauth/shopify.ts | POST | `/api/oauth/shopify/disconnect` | inline | — | yes | Protected |
+| oauth/shopify.ts | GET | `/api/oauth/shopify/url` | inline | — | yes | Protected |
+| oauth/slack.ts | GET | `/api/oauth/slack/callback` | — | — | yes | Public (allowlisted) |
+| oauth/slack.ts | GET | `/api/oauth/slack/channels` | inline | — | yes | Protected |
+| oauth/slack.ts | POST | `/api/oauth/slack/default-channel` | inline | — | yes | Protected |
+| oauth/slack.ts | POST | `/api/oauth/slack/disconnect` | inline | — | yes | Protected |
+| oauth/slack.ts | GET | `/api/oauth/slack/url` | inline | — | yes | Protected |
+| oauth/square.ts | GET | `/api/ecommerce/oauth/callback` | — | — | yes | Public (allowlisted) |
+| oauth/square.ts | POST | `/api/oauth/square/disconnect` | inline | — | yes | Protected |
+| oauth/square.ts | GET | `/api/oauth/square/url` | inline | — | yes | Protected |
+| oauth/status.ts | PUT | `/api/oauth/crm/salesforce/preferences` | inline | — | yes | Protected |
+| oauth/status.ts | GET | `/api/oauth/crm/status` | inline | — | yes | Protected |
+| oauth/status.ts | GET | `/api/oauth/integration-health` | inline | — | yes | Protected |
+| oauth/x.ts | GET | `/api/oauth/x/callback` | — | — | yes | Public (allowlisted) |
+| oauth/x.ts | POST | `/api/oauth/x/disconnect` | inline | — | yes | Protected |
+| oauth/x.ts | GET | `/api/oauth/x/url` | inline | — | yes | Protected |
+| oauth/yahoo.ts | GET | `/api/oauth/yahoo/callback` | — | — | yes | Public (allowlisted) |
+| oauth/yahoo.ts | POST | `/api/oauth/yahoo/disconnect` | inline | — | yes | Protected |
+| oauth/yahoo.ts | GET | `/api/oauth/yahoo/url` | inline | — | yes | Protected |
+| oauth/zoom.ts | GET | `/api/oauth/zoom/callback` | — | — | yes | Public (allowlisted) |
+| oauth/zoom.ts | POST | `/api/oauth/zoom/disconnect` | inline | — | yes | Protected |
+| oauth/zoom.ts | GET | `/api/oauth/zoom/url` | inline | — | yes | Protected |
 | openai-realtime-routes.ts | POST | `/api/voice/openai/session` | inline | — | — | Protected |
 | openai-realtime-routes.ts | GET | `/api/voice/openai/status` | inline | — | — | Protected |
 | openapi-routes.ts | GET | `/api/openapi.json` | — | — | yes | Public (allowlisted) |
@@ -315,11 +393,24 @@
 | team-routes.ts | GET | `/api/team` | inline | permission | — | Protected |
 | team-routes.ts | DELETE | `/api/team/:id` | inline | permission | — | Protected |
 | team-routes.ts | POST | `/api/team/invite` | inline | permission | — | Protected |
+| twilio-webhook-base.ts | POST | `/api/twilio-webhook/singing-receptionist` | — | — | yes | Public (allowlisted) |
+| twilio-webhook-base.ts | POST | `/api/twilio-webhook/sms` | — | — | yes | Public (allowlisted) |
+| twilio-webhook-base.ts | POST | `/api/twilio-webhook/voice-fallback` | — | — | yes | Public (allowlisted) |
+| twilio-webhook-base.ts | POST | `/api/twilio-webhook/voicemail-complete` | — | — | yes | Public (allowlisted) |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/message-status` | — | — | yes | Public (allowlisted) |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/sms` | — | — | yes | Public (allowlisted) |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/usage-alert` | — | — | yes | Public (allowlisted) |
 | user-preference-guard-routes.ts | POST | `/api/user-preferences` | inline | — | — | Protected |
 | vapi-v2.ts | POST | `/api/vapi-webhook` | — | — | yes | Public (allowlisted) |
+| video-presenter-routes-base.ts | GET | `/api/agents/:id/video-presenter` | inline | — | — | Protected |
+| video-presenter-routes-base.ts | PATCH | `/api/agents/:id/video-presenter` | inline | — | — | Protected |
+| video-presenter-routes-base.ts | POST | `/api/agents/:id/video-presenter/enable` | inline | — | — | Protected |
+| video-presenter-routes-base.ts | POST | `/api/agents/:id/video-presenter/sample` | inline | — | — | Protected |
+| video-presenter-routes-base.ts | POST | `/api/agents/:id/video-presenter/session` | inline | — | — | Protected |
+| video-presenter-routes-base.ts | GET | `/api/video-presenter/avatars` | inline | — | — | Protected |
+| video-presenter-routes-base.ts | GET | `/api/video-presenter/avatars/:avatarId/matched-voice` | inline | — | — | Protected |
+| video-presenter-routes-base.ts | GET | `/api/video-presenter/entitlement` | inline | — | — | Protected |
+| video-presenter-routes-base.ts | GET | `/api/video-presenter/status` | inline | — | — | Protected |
 | video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/enable` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/health/voice-status` | — | — | yes | Public (allowlisted) |
 | voice-observability-routes.ts | GET | `/api/insights/latency` | inline | — | — | Protected |
