@@ -123,11 +123,11 @@ export const OUTBOUND_WEDGE = {
 
 export const MARKETING_VOICE = {
   eyebrow: null,
-  headline: "AI voice agents for life and work",
+  headline: "AI VOICE AGENTS",
   /** Public hero CTA — broad enough for personal and business buyers. */
   primaryCta: "Build your AI Voice Agent",
   subline:
-    "Build one AI voice agent or a coordinated team for personal tasks, customer conversations, and follow-through across voice, SMS, and email.",
+    "Build one AI voice agent—or a coordinated team—for personal tasks and business conversations, with follow-through across voice, SMS, and email.",
   channelProof: [
     "Voice calling",
     "Text / SMS",

@@ -1,7 +1,7 @@
 {
-  "name": "Wireline - Your next AI employee",
+  "name": "Wireline - AI Voice Agents",
   "short_name": "Wireline",
-  "description": "One trained AI employee handles customer conversations across voice, SMS, and email, then follows up, books, and logs every outcome.",
+  "description": "Build one AI voice agent—or a coordinated team—for personal tasks and business conversations, with follow-through across voice, SMS, and email.",
   "id": "/",
   "start_url": "/studio",
   "scope": "/",

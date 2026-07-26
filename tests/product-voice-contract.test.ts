@@ -41,11 +41,11 @@ describe("product voice cohesion", () => {
       "On broad public surfaces, prefer AI Voice Agent; use personal agent or AI employee only when the audience context is explicit.",
     );
     expect(MARKETING_VOICE.eyebrow).toBeNull();
-    expect(MARKETING_VOICE.headline).toBe("AI voice agents for life and work");
+    expect(MARKETING_VOICE.headline).toBe("AI VOICE AGENTS");
     expect(MARKETING_VOICE.primaryCta).toBe("Build your AI Voice Agent");
     expect(MARKETING_VOICE.buyingNoun).toBe(BRAND_SYSTEM.buyingNoun);
     expect(MARKETING_VOICE.subline).toBe(
-      "Build one AI voice agent or a coordinated team for personal tasks, customer conversations, and follow-through across voice, SMS, and email.",
+      "Build one AI voice agent—or a coordinated team—for personal tasks and business conversations, with follow-through across voice, SMS, and email.",
     );
     expect(MARKETING_VOICE.channelProof).toEqual([
       "Voice calling",
@@ -106,6 +106,20 @@ describe("product voice cohesion", () => {
     const starterPlus = STRIPE_PLANS.find((plan) => plan.id === "team");
     expect(starterPlus?.extra_agent_price_usd).toBe(15);
     expect(starterPlus?.extra_agent_voice_minutes_monthly).toBe(50);
+  });
+
+  it("keeps the homepage agent-first and personal/business inclusive", () => {
+    const landing = read("src/components/marketing/WireAgentLanding.tsx");
+    const trust = read("src/components/marketing/TrustSignals.tsx");
+    const footer = read("src/components/marketing/MarketingFooter.tsx");
+
+    expect(landing).toContain("One agent · every channel");
+    expect(landing).toContain("Build your AI Voice Agent");
+    expect(landing).not.toContain("One employee · every channel");
+    expect(landing).not.toContain("Build your AI Voice Employee");
+    expect(trust).not.toContain("before the employee");
+    expect(footer).toContain("personal and business conversations");
+    expect(footer).not.toContain("One trained employee");
   });
 
   it("wires landing, workroom, and extension surfaces to shared voice constants", () => {

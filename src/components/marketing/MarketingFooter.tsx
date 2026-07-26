@@ -66,7 +66,7 @@ export default function MarketingFooter({
               <span>Wireline</span>
             </Link>
             <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-              Voice, SMS, and email. One trained employee.
+              AI voice agents for personal and business conversations.
             </p>
           </div>
 

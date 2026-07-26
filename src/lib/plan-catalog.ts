@@ -15,7 +15,7 @@ export const EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY = 15;
 export const EXTRA_AGENT_ADDON_VOICE_MINUTES_MONTHLY = 50;
 export const EXTRA_AGENT_ADDON_PHONE_NUMBERS = 1;
 export const EXTRA_AGENT_ADDON_PRICE_ENV = "STRIPE_EXTRA_AGENT_PRICE_ID";
-/** Cadence AI (acct_1TkyXL8e6If87QKm) founder catalog — keep in sync with scripts/.stripe-env.generated.json */
+/** Wireline founder catalog — keep in sync with scripts/.stripe-env.generated.json */
 export const EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID = "price_1Tv9K58e6If87QKm7rzn3MNS";
 
 export type StripePlanId = "personal" | "starter" | "team" | "business" | "enterprise";

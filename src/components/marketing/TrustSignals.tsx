@@ -5,7 +5,7 @@ const TRUST_POINTS = [
   {
     icon: LockKeyhole,
     title: "Private by default",
-    detail: "Build, train, and test before the employee reaches a customer.",
+    detail: "Build, train, and test before the agent reaches a real conversation.",
   },
   {
     icon: CircleDollarSign,
