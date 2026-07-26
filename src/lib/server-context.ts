@@ -1,5 +1,6 @@
 import { log, IS_PROD } from "./server-logger";
-import { resolveDatabaseConnection } from "./database-connection";
+import { tryResolveDatabaseConnection } from "./database-connection";
+import { AppError } from "./api-error";
 
 export { log, IS_PROD };
 
@@ -27,22 +28,51 @@ export async function fetchWithTimeout(
   }
 }
 
-const databaseConnection = resolveDatabaseConnection();
-if (databaseConnection.ignoredInvalidPoolUrl) {
+const databaseConnection = tryResolveDatabaseConnection();
+if (databaseConnection?.ignoredInvalidPoolUrl) {
   log.warn("Ignoring invalid DATABASE_POOL_URL; using validated POSTGRES_URL fallback", {
     selected: databaseConnection.source,
   });
 }
 
-const pool = new Pool({
-  connectionString: databaseConnection.connectionString,
-  // Serverless: avoid eager min connections per instance (Supabase pooler ~100 cap).
-  max: 5,
-  min: 0,
-  idleTimeoutMillis: 30_000,
-  connectionTimeoutMillis: 5_000,
-  allowExitOnIdle: true,
-});
+const databaseUnavailable = () =>
+  AppError.serviceUnavailable("Database is not configured for this deployment.");
+
+function rejectDatabaseOperation(callback?: unknown): Promise<never> | void {
+  const error = databaseUnavailable();
+  if (typeof callback === "function") {
+    queueMicrotask(() => callback(error));
+    return;
+  }
+  return Promise.reject(error);
+}
+
+function createUnavailablePool(): InstanceType<typeof Pool> {
+  return {
+    connect(callback?: unknown) {
+      return rejectDatabaseOperation(callback);
+    },
+    query(_config: unknown, values?: unknown, callback?: unknown) {
+      return rejectDatabaseOperation(typeof values === "function" ? values : callback);
+    },
+  } as unknown as InstanceType<typeof Pool>;
+}
+
+if (!databaseConnection) {
+  log.warn("Database unavailable for this deployment; database-backed routes will return 503.");
+}
+
+const pool = databaseConnection
+  ? new Pool({
+      connectionString: databaseConnection.connectionString,
+      // Serverless: avoid eager min connections per instance (Supabase pooler ~100 cap).
+      max: 5,
+      min: 0,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 5_000,
+      allowExitOnIdle: true,
+    })
+  : createUnavailablePool();
 
 export const tenantStore = new AsyncLocalStorage<string>();
 

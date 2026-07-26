@@ -78,6 +78,7 @@ run("npx", [
   "tests/vendor-readiness-contract.test.ts",
   "tests/runtime-integrations-registry-contract.test.ts",
   "tests/production-env-policy-contract.test.ts",
+  "tests/database-connection.test.ts",
   "tests/product-voice-contract.test.ts",
   "tests/marketing-metadata-contract.test.ts",
   "tests/static-metadata-contract.test.ts",
@@ -111,6 +112,7 @@ if (shouldMigrate) {
 }
 
 run("npm", ["run", "build"]);
+run("npm", ["run", "smoke:server"]);
 run("npx", [
   "esbuild",
   "src/entrypoints/chatgpt-mcp-api.ts",
