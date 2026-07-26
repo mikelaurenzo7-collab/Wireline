@@ -39,11 +39,11 @@ Use:
 
 Avoid on broad surfaces:
 
-> Your next AI employee.
+> Broad AI-employee hero lines.
 
-> One AI employee.
+> One-employee public promises.
 
-> The best employee you've ever had.
+> Old best-employee slogans.
 
 ## Product Doctrine
 
