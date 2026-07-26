@@ -8,7 +8,6 @@
   "include": [
     "server.ts",
     "api/**/*.ts",
-    "src/entrypoints/**/*.ts",
-    "src/types/anthropic-legacy.d.ts"
+    "src/entrypoints/**/*.ts"
   ]
 }
