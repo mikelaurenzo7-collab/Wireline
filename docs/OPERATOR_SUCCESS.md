@@ -40,5 +40,5 @@ A workspace is activated when the user has:
 - The user thinks Free Builder includes a live production number.
 - The user thinks Wireline only supports one agent forever.
 - Public-facing copy says "one AI employee" without Business context.
-- Launch copy still says "$9" or "Launch for $9".
+- Launch copy still uses sub-$19 pricing.
 - WhatsApp is described as publicly available before beta release.
