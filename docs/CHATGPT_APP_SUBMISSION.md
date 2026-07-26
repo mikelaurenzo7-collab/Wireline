@@ -3,7 +3,7 @@
 ## App identity
 
 - **Name:** Wireline
-- **Subtitle:** Build and inspect AI employees
+- **Subtitle:** Build and inspect AI voice agents
 - **Category:** Business productivity / customer communications
 - **Hosted logo:** `https://trywireline.com/wireline-chatgpt-app-icon.svg`
 - **Public MCP endpoint:** `https://trywireline.com/mcp`
@@ -27,11 +27,11 @@ Use the identifiers from the already-approved Developer Mode app when creating t
 
 ## One-sentence value proposition
 
-**Connect Wireline, describe the AI employee you need in ChatGPT, create and privately simulate a real unlaunched draft, then inspect aggregate workspace status across calls, texts, and email.**
+**Connect Wireline, describe the AI voice agent you need in ChatGPT, create and privately simulate a real unlaunched draft, then inspect aggregate workspace status across calls, texts, and email.**
 
 ## What the app does inside ChatGPT
 
-Wireline requires a connected account. A user can use normal language to create or refine one AI employee — for example a sales and support phone agent — for personal call delegation, sales, support, scheduling, front-desk, or call-center work in their private workspace. The agent profile can include its business identity, goal, tone, operating rules, prohibited topics, intended actions, escalation policy, and Training summary. The user can run a short private, tool-free voice simulation for the saved draft, list existing agents, inspect privacy-minimized aggregate workspace activity and channel connection state, and continue full configuration in Wireline.
+Wireline requires a connected account. A user can use normal language to create or refine one AI voice agent - for example a sales and support phone agent - for personal call delegation, sales, support, scheduling, front-desk, or call-center work in their private workspace. The agent profile can include its business identity, goal, tone, operating rules, prohibited topics, intended actions, escalation policy, and Training summary. The user can run a short private, tool-free voice simulation for the saved draft, list existing agents, inspect privacy-minimized aggregate workspace activity and channel connection state, and continue full configuration in Wireline.
 
 ## Why ChatGPT is essential
 
@@ -77,7 +77,7 @@ The simulation tool is intentionally declared `readOnlyHint: false` because it c
 ### Account-bound creation path
 
 1. Use the approved Wireline app in the ChatGPT review environment with MCP endpoint `https://trywireline.com/mcp`.
-2. Run: **"Use Wireline to create a sales and support AI employee for my business. It should qualify new callers, answer approved FAQs, route urgent issues, and never promise pricing or availability."**
+2. Run: **"Use Wireline to create a sales and support AI voice agent for my business. It should qualify new callers, answer approved FAQs, route urgent issues, and never promise pricing or availability."**
 3. Confirm ChatGPT requests a Wireline account connection.
 4. Sign in to the supplied reviewer account in Wireline and approve the requested permissions.
 5. Repeat the request and review the proposed profile summary.
@@ -112,7 +112,7 @@ The simulation tool is intentionally declared `readOnlyHint: false` because it c
 
 ### Direct
 
-1. "Use Wireline to create a sales and support AI employee for my business."
+1. "Use Wireline to create a sales and support AI voice agent for my business."
 2. "Create a Wireline agent that qualifies new dental patients and captures a preferred appointment time."
 3. "Make me a Wireline sales agent for a property-management company. It should qualify fit but never promise pricing."
 4. "Create a law-firm intake agent that takes a message and never gives legal advice."

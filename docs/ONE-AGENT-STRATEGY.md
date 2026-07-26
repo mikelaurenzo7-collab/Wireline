@@ -1,76 +1,59 @@
-# Wireline One-Employee Strategy
+# Wireline Agent-First Strategy
 
-## Executive decision
+Date: 2026-07-26  
+Status: Active positioning note; supersedes broad "one AI employee" launch framing
 
-Wireline should lead with one all-encompassing default: **the best employee you've ever had, for next to nothing**.
+## Decision
 
-The buyer promise is not “configure five agents” or “replace yourself with an AI CEO.” It is: connect your number, teach Wireline the business, and let one trained AI employee handle the first pass across sales, marketing, front desk, support, scheduling, light finance, follow-up, recovery, and personal admin under your rules.
+Wireline should lead broad public surfaces with **AI voice agents for every conversation - personal or business**.
 
-Role-specific agents still matter, but they should be framed as optional specialist presets after the user understands the core outcome.
+The product can still start from one capable default agent. The important nuance is that public copy must not imply Wireline only creates a single business employee or that personal plans are secondary. Customers can begin with one agent, then add specialized AI voice agents when volume, channels, or roles justify it.
 
-## Product shape
+## Positioning Rules
 
-1. Default create role: `ceo` internally for compatibility, labeled externally as **Wireline Operator** / **Best Employee**.
-2. Default capability posture: broad toolbox, narrowed by integration availability and explicit owner permissions.
-3. Specialist presets: Sales, Support, Scheduler, Receptionist, Marketing, Collections, Technical Support, E-commerce, and Personal Assistant.
-4. Personal plan posture: “protect my time and handle my calls,” not “run my CRM.” The same default operator gracefully behaves like a privacy-first personal assistant when the account is personal.
+| Context | Preferred Language |
+| --- | --- |
+| Broad public marketing | AI Voice Agents |
+| Personal workspace | personal voice agent |
+| Business workspace | AI voice employee / AI employee when context is explicit |
+| Technical code/contracts | agent |
+| Multi-role growth | coordinated AI voice agents, roster, specialists |
+| CTA | Build your AI Voice Agent |
 
-## Why this is stronger
+## Why
 
-- Lower setup friction: one obvious starting point.
-- Better launch positioning: “your best employee” is easier to buy than “AI CEO,” especially for SMB owners who want control.
-- Better team acceptance: right-hand operators and managers are less threatened by an employee that takes busywork than by a product labeled CEO.
-- Works for solopreneurs: they do not have departments, but they still have sales, admin, support, marketing, and follow-up.
-- Works for teams: specialists can be added later once volume proves where the business needs separation.
-- Works for personal plans: the same operating model becomes a privacy-first personal assistant.
+- Personal plans are first-class and should not feel like an awkward business employee metaphor.
+- "One agent" is a useful onboarding posture, but "only one agent" is not the product promise.
+- Business customers can still understand the value of an AI employee once the workspace, plan, or role context is explicit.
+- AI voice agents better matches the real runtime: voice-first, cross-channel follow-through, trained behavior, included paid-plan numbers, and outcome logging.
 
-## Live public intelligence
+## Launch Copy
 
-Agents have a provider-agnostic fresh-public-research path:
+Use:
 
-- `PERPLEXITY_API_KEY` enables Perplexity-first live research.
-- `GEMINI_API_KEY` remains the fallback grounded-search provider.
-- The existing `gemini_ground` tool name is preserved for compatibility, but the runtime chooses the best configured provider.
+> AI voice agents for every conversation - personal or business.
 
-Use cases:
+> Start with one agent. Build a team when you need one.
 
-- current business hours and local facts
-- lead-gen prep before or during calls
-- competitor pricing and market context
-- regulatory or policy updates
-- “what changed recently?” caller questions
+> Build free. Go live from $19/mo.
 
-## Pricing capacity rule
+Avoid on broad surfaces:
 
-Extra paid agents are not seat-only upsells.
+> Broad AI-employee hero lines.
 
-The launch add-on is:
+> One-employee public promises.
 
-- $15/month
-- 1 additional live agent
-- 1 additional production-number slot
-- 50 additional guaranteed live-voice minutes each month
+> Old best-employee slogans.
 
-Runtime must treat that as real capacity: Stripe subscription sync mirrors extra-agent quantity into local settings, agent creation uses the increased cap, and voice usage counts the additional included minutes before charging Conversation Balance.
+## Product Doctrine
 
-## Implemented posture
+The public loop stays simple:
 
-- Canonical `ceo` role remains in the role API for compatibility.
-- Customer-facing role label changes to `Wireline Operator`.
-- Web/mobile create default remains the broad all-purpose operator.
-- Runtime fallback remains broad by default.
-- Default personality template says best employee / right-hand operator, not CEO.
-- Public SEO/social metadata leads with best-employee positioning.
-- Stripe extra-agent add-on remains documented.
-- Extra-agent quantity syncs from Stripe to local agent and voice-minute capacity.
+1. Create a focused AI voice agent.
+2. Train it on facts, sources, policies, voice, tone, and workflows.
+3. Wire it to a paid-plan number, integrations, routing, approvals, and billing controls.
+4. Run it in Studio across calls, texts, follow-up, handoffs, and review.
 
-## Metrics goal
+## Success Metric
 
-70% of new signups complete one successful test call within 5 minutes and understand that they can start with one AI employee before adding specialists.
-
-## Next
-
-1. Verify Vercel production envs exactly match the launch checklist.
-2. Run one founder signup → free build → paid checkout → first live test call flow.
-3. Validate extra-agent quantity in Stripe increases `extra_agents`, deployable agent cap, and included voice minutes.
-4. Track first-call completion, first-use lane, second-agent creation, and whether users describe the product back as “employee,” “operator,” or “agent.”
+70% of new signups complete one successful private simulation or test call within 5 minutes and understand two things: they can start with one AI voice agent, and they can add specialized agents when their needs grow.
