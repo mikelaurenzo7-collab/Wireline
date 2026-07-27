@@ -18,17 +18,19 @@ Wireline remains a strong controlled-beta / founder-led launch candidate. Prior 
 1. **`GET /api/carrier/numbers` empty-success** — missing `VAPI_PRIVATE_KEY` now returns **503** instead of `200 { numbers: [] }`.
 2. **AdminSettings** — no longer coerces phone/agent failures (or `degraded: true` 503 payloads) into empty inventories; carrier sync toasts on non-OK.
 3. **OutcomeLedger / ApprovalInbox / IntakeKeysManager** — non-OK fetches surface errors instead of silent empty lists.
-4. **Onboarding `has_voice` / settings `has_vapi_key`** — stopped reading the dead tenant `vapi_private_key` column; report managed platform `VAPI_PRIVATE_KEY` + tenant number binding.
+4. **VoiceReliabilityView / Call analytics** — latency recent + analytics tab no longer collapse failures to empty success.
+5. **Onboarding `has_voice` / settings `has_vapi_key`** — stopped reading the dead tenant `vapi_private_key` column; report managed platform `VAPI_PRIVATE_KEY` + tenant number binding.
 
 ### Security residuals
 
-5. **OAuth state nonce single-use claim** — `verifyAndClaimOAuthState` claims the embedded nonce via Upstash Redis (`SET NX`) after HMAC+TTL verification. All 14 integration OAuth callbacks updated. Replay of a captured callback URL within the 20-minute TTL is blocked when Redis is available.
-6. **Unsafe proactive enrichment dead path** — `job-worker-base.ts` no longer contains the phone-only cross-tenant history reads; it hard-throws if the intercept is ever removed (#879 landmine closed).
+6. **OAuth state nonce single-use claim** — `verifyAndClaimOAuthState` claims the embedded nonce via Upstash Redis (`SET NX`) after HMAC+TTL verification. All 14 integration OAuth callbacks **and** Google/Microsoft/Yahoo sign-in callbacks updated. Replay of a captured callback URL within the 20-minute TTL is blocked when Redis is available.
+7. **Unsafe proactive enrichment dead path** — `job-worker-base.ts` no longer contains the phone-only cross-tenant history reads; it hard-throws if the intercept is ever removed (#879 landmine closed).
 
 ### Product / UX polish
 
-7. **Anonymous session probe** — `GET /api/auth/session` returns `200 { user: null }` instead of `401`, silencing public-page console noise. CookieConsent now keys off `body.user`, not bare `ok`.
-8. **Voice-agent copy alignment** — verification email, Compare meta, Client Apps, Privacy Policy, StudioWorkroom fallback, and Call Logs fallback use **AI voice agent** on broad/default surfaces.
+8. **Anonymous session probe** — `GET /api/auth/session` returns `200 { user: null }` instead of `401`, silencing public-page console noise. CookieConsent now keys off `body.user`, not bare `ok`.
+9. **Voice-agent copy alignment** — verification email, Compare meta, Client Apps, Privacy Policy, StudioWorkroom fallback, and Call Logs fallback use **AI voice agent** on broad/default surfaces.
+10. **Docs index** — promoted `ONE-AGENT-STRATEGY.md` to Active (was Active-status but only historically linked).
 
 ### Contracts
 

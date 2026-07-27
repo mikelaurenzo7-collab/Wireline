@@ -41,7 +41,7 @@ import { sql } from "drizzle-orm";
 import { generateToken, isOwnerEmail } from "../lib/auth-service";
 import { authSuccessBody, setSessionCookie } from "../lib/session-cookie";
 import { scheduleFounderBootstrap } from "../lib/founder-bootstrap";
-import { generateOAuthState, verifyOAuthState } from "../lib/oauth-helpers";
+import { generateOAuthState, verifyAndClaimOAuthState } from "../lib/oauth-helpers";
 import { getCanonicalAppUrl } from "../lib/app-url";
 import {
   createOAuthBridgeState,
@@ -391,7 +391,7 @@ router.get("/api/auth/google/url", oauthRateLimiter, (req: Request, res: Respons
 router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
   const baseUrl = oauthAppBaseUrl();
   const { code, state } = req.query;
-  const vs = verifyOAuthState(state as string | undefined);
+  const vs = await verifyAndClaimOAuthState(state as string | undefined);
   if (!vs.ok) {
     return res.redirect(
       await bridgeRedirect(baseUrl, {} as any, "", "Invalid or expired sign-in state."),
@@ -474,7 +474,7 @@ router.get("/api/auth/microsoft/url", oauthRateLimiter, (req: Request, res: Resp
 router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) => {
   const baseUrl = oauthAppBaseUrl();
   const { code, state, error_description } = req.query;
-  const vs = verifyOAuthState(state as string | undefined);
+  const vs = await verifyAndClaimOAuthState(state as string | undefined);
   if (!vs.ok) {
     return res.redirect(
       await bridgeRedirect(baseUrl, {} as any, "", "Invalid or expired sign-in state."),
@@ -589,7 +589,7 @@ router.get("/api/auth/yahoo/url", oauthRateLimiter, (req: Request, res: Response
 router.get("/api/auth/yahoo/callback", async (req: Request, res: Response) => {
   const baseUrl = oauthAppBaseUrl();
   const { code, state, error_description } = req.query;
-  const vs = verifyOAuthState(state as string | undefined);
+  const vs = await verifyAndClaimOAuthState(state as string | undefined);
   if (!vs.ok) {
     return res.redirect(
       await bridgeRedirect(baseUrl, {} as any, "", "Invalid or expired sign-in state."),

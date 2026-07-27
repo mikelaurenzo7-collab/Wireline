@@ -656,18 +656,26 @@ function AnalyticsTab() {
 function AnalyticsContent() {
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setError(null);
     authFetch("/api/calls?limit=500")
-      .then((response) => (response.ok ? response.json() : null))
-      .then((body: CallsResponse | null) => {
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Could not load call analytics.");
+        return response.json() as Promise<CallsResponse>;
+      })
+      .then((body) => {
         if (cancelled) return;
-        setCalls(Array.isArray(body?.calls) ? body!.calls! : []);
+        setCalls(Array.isArray(body?.calls) ? body.calls : []);
       })
       .catch(() => {
-        if (!cancelled) setCalls([]);
+        if (!cancelled) {
+          setCalls([]);
+          setError("Could not load call analytics.");
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -711,6 +719,16 @@ function AnalyticsContent() {
   ];
 
   if (loading) return <CardRowSkeleton />;
+  if (error) {
+    return (
+      <EmptyState
+        title="Analytics unavailable"
+        description={error}
+        density="compact"
+        withHalo={false}
+      />
+    );
+  }
   if (!calls.length) {
     return (
       <EmptyState

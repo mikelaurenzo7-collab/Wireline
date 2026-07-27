@@ -78,6 +78,21 @@ describe("launch readiness fine-tune 2026-07-27", () => {
       expect(src).toContain("await verifyAndClaimOAuthState");
       expect(src).not.toMatch(/const vs = verifyOAuthState\(/);
     }
+
+    const authOauth = read("src/routes/auth-oauth-routes.ts");
+    expect(authOauth).toContain("verifyAndClaimOAuthState");
+    expect(authOauth).toContain("await verifyAndClaimOAuthState");
+    expect(authOauth).not.toMatch(/const vs = verifyOAuthState\(/);
+  });
+
+  it("does not mask insights latency or analytics call failures as empty success", () => {
+    const reliability = read("src/components/insights/VoiceReliabilityView.tsx");
+    expect(reliability).not.toContain(".catch(\n        () => ({ calls: [] }),");
+    expect(reliability).not.toContain("() => ({ calls: [] })");
+
+    const analytics = read("src/components/CallLogsClaude.tsx");
+    expect(analytics).toContain('setError("Could not load call analytics.")');
+    expect(analytics).toContain("Analytics unavailable");
   });
 
   it("reports managed Vapi readiness instead of the dead tenant vapi_private_key column", () => {
