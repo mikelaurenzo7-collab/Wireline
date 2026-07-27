@@ -74,9 +74,18 @@ export default function OutcomeLedger({
         authFetch("/api/Assistants/tasks?status=pending"),
         authFetch("/api/Assistants/tasks?status=completed"),
       ]);
-      const callsBody = callsRes.ok ? await callsRes.json() : { calls: [] };
+      if (!callsRes.ok) {
+        setError("Could not load outcome ledger.");
+        setRows([]);
+        return;
+      }
+      const callsBody = await callsRes.json();
       const pendingBody = pendingRes.ok ? await pendingRes.json() : { tasks: [] };
       const completedBody = completedRes.ok ? await completedRes.json() : { tasks: [] };
+      if (!pendingRes.ok || !completedRes.ok) {
+        // Tasks are enrichment — surface the failure without blanking calls.
+        setError("Some follow-up tasks could not be loaded.");
+      }
       const calls = Array.isArray(callsBody?.calls) ? callsBody.calls : [];
       const pendingTasks = (
         Array.isArray(pendingBody?.tasks) ? pendingBody.tasks : []

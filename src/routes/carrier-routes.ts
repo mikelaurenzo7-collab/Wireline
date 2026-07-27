@@ -469,8 +469,16 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const vapiSecret = process.env.VAPI_PRIVATE_KEY;
-      if (!vapiSecret) return res.json({ numbers: [] });
+      const vapiSecret = process.env.VAPI_PRIVATE_KEY?.trim();
+      if (!vapiSecret) {
+        // Missing platform voice credential is a configuration outage, not an
+        // empty inventory. Returning 200 [] made AdminSettings render "no
+        // numbers" while dial/inbound paths were 503.
+        throw AppError.fromHttpStatus(
+          503,
+          "Voice carrier sync is temporarily unavailable. Platform voice is not configured.",
+        );
+      }
 
       const response = await fetchWithTimeout(
         "https://api.vapi.ai/phone-number",

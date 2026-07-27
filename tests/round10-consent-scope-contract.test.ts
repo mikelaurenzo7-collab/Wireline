@@ -31,9 +31,11 @@ describe("round-10 consent notice scope", () => {
 
   it("still treats a failed session probe as signed out", () => {
     // Fail-open to showing the choice: never silently skip consent because a
-    // network hiccup made auth state unknown.
+    // network hiccup made auth state unknown. Anonymous 200 `{ user: null }`
+    // must also count as signed out — only a real user suppresses auto-open.
     expect(consent).toContain("let sessionPresent = false;");
     expect(consent).toContain("treat as signed out");
+    expect(consent).toContain("sessionPresent = Boolean(body?.user)");
   });
 
   it("keeps the existing auth-portal and Fast Start suppressions", () => {

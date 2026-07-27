@@ -8,7 +8,7 @@ import { oauthRateLimiter } from "../../middleware/rate-limit-middleware";
 import { authenticateUser } from "../../middleware/auth";
 import {
   generateOAuthState,
-  verifyOAuthState,
+  verifyAndClaimOAuthState,
   resolveUserIdFromOAuthSession,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
@@ -57,7 +57,7 @@ router.get(
     if (oauthError) {
       return res.status(400).send(`Zoom OAuth error: ${oauthError}`);
     }
-    const vs = verifyOAuthState(state as string | undefined);
+    const vs = await verifyAndClaimOAuthState(state as string | undefined);
     if (!vs.ok) {
       return res.status(400).send("Invalid or expired OAuth state.");
     }

@@ -563,7 +563,7 @@ function IntelTab({ items, loading }: { items: Call[]; loading: boolean }) {
                 {call.intent_label || call.summary || "Follow up requested"}
               </div>
               <div className="mt-0.5 truncate text-xs text-[var(--wireline-color-text-tertiary)]">
-                {call.agent_name || "AI employee"} · {formatTime(call.created_at)}
+                {call.agent_name || "AI voice agent"} · {formatTime(call.created_at)}
               </div>
             </div>
             <span
@@ -639,7 +639,7 @@ function TriageTab({ items, loading }: { items: Call[]; loading: boolean }) {
             </div>
             <div className="mt-3 flex items-center justify-between text-xs">
               <span className="text-[var(--wireline-color-text-tertiary)]">
-                {call.agent_name || "AI employee"}
+                {call.agent_name || "AI voice agent"}
               </span>
             </div>
           </li>

@@ -93,7 +93,10 @@ router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, 
       safe.founderUnlimitedAgents = true;
     }
     if ("vapiPrivateKey" in safe) {
-      safe.has_vapi_key = !!safe.vapiPrivateKey;
+      // Managed Vapi: the runtime reads process.env.VAPI_PRIVATE_KEY, not the
+      // tenant column (which stays null for normal workspaces). Report platform
+      // voice readiness so clients do not think voice is unconfigured.
+      safe.has_vapi_key = Boolean(process.env.VAPI_PRIVATE_KEY?.trim());
       delete safe.vapiPrivateKey;
     }
 
@@ -317,7 +320,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user.id;
-      const [[agentRow], [callLogRow], [settingsRow], [prefsRow]] = await Promise.all([
+      const [[agentRow], [callLogRow], [settingsRow], [prefsRow], [phoneRow]] = await Promise.all([
         drizzle
           .select({ count: sql<number>`count(*)` })
           .from(agents)
@@ -329,7 +332,7 @@ router.get(
         drizzle
           .select({
             subscriptionStatus: settings.subscriptionStatus,
-            vapiPrivateKey: settings.vapiPrivateKey,
+            vapiPhoneNumberId: settings.vapiPhoneNumberId,
           })
           .from(settings)
           .where(eq(settings.userId, userId))
@@ -339,13 +342,23 @@ router.get(
           .from(userPreferences)
           .where(eq(userPreferences.userId, userId))
           .limit(1),
+        drizzle
+          .select({ count: sql<number>`count(*)` })
+          .from(schema.phoneNumbers)
+          .where(eq(schema.phoneNumbers.userId, userId)),
       ]);
+
+      const platformVoiceReady = Boolean(process.env.VAPI_PRIVATE_KEY?.trim());
+      const tenantHasNumber =
+        Number(phoneRow?.count || 0) > 0 || Boolean(settingsRow?.vapiPhoneNumberId);
 
       res.json({
         has_agents: Number(agentRow?.count || 0) > 0,
         has_calls: Number(callLogRow?.count || 0) > 0,
         has_billing: settingsRow?.subscriptionStatus === "active",
-        has_voice: !!settingsRow?.vapiPrivateKey,
+        // Managed Vapi: voice is ready when the platform key is present and the
+        // tenant has a bound number (or legacy settings phone id).
+        has_voice: platformVoiceReady && tenantHasNumber,
         completed: !!prefsRow?.onboardingCompleted,
       });
     } catch (error) {

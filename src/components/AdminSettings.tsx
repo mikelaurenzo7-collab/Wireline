@@ -185,40 +185,54 @@ export default function AdminSettings() {
     setIsLoading(true);
     try {
       const [settingsRes, agentsRes, numbersRes] = await Promise.all([
-        authFetch("/api/settings").then((r) => r.json()),
-        authFetch("/api/agents").then((r) => r.json()),
-        authFetch("/api/phone-numbers")
-          .then((r) => r.json())
-          .catch(() => ({ numbers: [] })),
+        authFetch("/api/settings"),
+        authFetch("/api/agents"),
+        authFetch("/api/phone-numbers"),
       ]);
 
-      if (settingsRes) {
+      const settingsJson = settingsRes.ok ? await settingsRes.json() : null;
+      const agentsJson = agentsRes.ok ? await agentsRes.json() : null;
+      const numbersJson = numbersRes.ok ? await numbersRes.json() : null;
+
+      if (!settingsRes.ok || !agentsRes.ok) {
+        toastError("Settings unavailable", "Could not load settings. Please refresh.");
+        return;
+      }
+
+      if (!numbersRes.ok || numbersJson?.degraded) {
+        toastError(
+          "Phone numbers unavailable",
+          numbersJson?.error || "Could not load phone numbers. Please refresh.",
+        );
+      }
+
+      if (settingsJson) {
         setSettings({
-          vapi_phone_number_id: settingsRes.vapi_phone_number_id || "",
-          vapi_phone_inbound_agent_id: settingsRes.vapi_phone_inbound_agent_id || "",
-          subscription_status: settingsRes.subscription_status || "pending_activation",
-          max_agents: settingsRes.max_agents || 1,
-          voice_llm_provider: settingsRes.voice_llm_provider || VAPI_TENANT_DEFAULT_PROVIDER,
-          voice_llm_model: settingsRes.voice_llm_model || VAPI_TENANT_DEFAULT_MODEL,
-          twilio_messaging_enabled: !!settingsRes.twilio_messaging_enabled,
-          twilio_lookup_enabled: !!settingsRes.twilio_lookup_enabled,
-          twilio_manager_alerts_enabled: !!settingsRes.twilio_manager_alerts_enabled,
-          twilio_messaging_service_sid: settingsRes.twilio_messaging_service_sid || "",
-          twilio_sms_from_number: settingsRes.twilio_sms_from_number || "",
-          twilio_whatsapp_from_number: settingsRes.twilio_whatsapp_from_number || "",
-          twilio_manager_alert_number: settingsRes.twilio_manager_alert_number || "",
-          prospecting_enabled: !!settingsRes.prospecting_enabled,
-          target_titles: settingsRes.target_titles || [],
-          target_industries: settingsRes.target_industries || [],
-          target_states: settingsRes.target_states || [],
-          target_employee_ranges: settingsRes.target_employee_ranges || ["1,10", "11,50"],
-          brand_name: settingsRes.brand_name || "",
-          brand_logo_url: settingsRes.brand_logo_url || "",
-          primary_color: settingsRes.primary_color || BRAND.colors.primary,
+          vapi_phone_number_id: settingsJson.vapi_phone_number_id || "",
+          vapi_phone_inbound_agent_id: settingsJson.vapi_phone_inbound_agent_id || "",
+          subscription_status: settingsJson.subscription_status || "pending_activation",
+          max_agents: settingsJson.max_agents || 1,
+          voice_llm_provider: settingsJson.voice_llm_provider || VAPI_TENANT_DEFAULT_PROVIDER,
+          voice_llm_model: settingsJson.voice_llm_model || VAPI_TENANT_DEFAULT_MODEL,
+          twilio_messaging_enabled: !!settingsJson.twilio_messaging_enabled,
+          twilio_lookup_enabled: !!settingsJson.twilio_lookup_enabled,
+          twilio_manager_alerts_enabled: !!settingsJson.twilio_manager_alerts_enabled,
+          twilio_messaging_service_sid: settingsJson.twilio_messaging_service_sid || "",
+          twilio_sms_from_number: settingsJson.twilio_sms_from_number || "",
+          twilio_whatsapp_from_number: settingsJson.twilio_whatsapp_from_number || "",
+          twilio_manager_alert_number: settingsJson.twilio_manager_alert_number || "",
+          prospecting_enabled: !!settingsJson.prospecting_enabled,
+          target_titles: settingsJson.target_titles || [],
+          target_industries: settingsJson.target_industries || [],
+          target_states: settingsJson.target_states || [],
+          target_employee_ranges: settingsJson.target_employee_ranges || ["1,10", "11,50"],
+          brand_name: settingsJson.brand_name || "",
+          brand_logo_url: settingsJson.brand_logo_url || "",
+          primary_color: settingsJson.primary_color || BRAND.colors.primary,
         });
       }
-      setAgents(agentsRes.agents || []);
-      setPhoneNumbers(numbersRes.numbers || []);
+      setAgents(agentsJson?.agents || []);
+      setPhoneNumbers(Array.isArray(numbersJson?.numbers) ? numbersJson.numbers : []);
 
       // Fetch team members
       const teamRes = await authFetch("/api/team");
@@ -237,12 +251,20 @@ export default function AdminSettings() {
     setIsSyncing(true);
     try {
       const res = await authFetch("/api/carrier/numbers");
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toastError(
+          "Sync failed",
+          data?.error || "Could not fetch available Wireline phone numbers.",
+        );
+        return;
+      }
       setCarrierNumbers(data.numbers || []);
     } catch {
       toastError("Sync failed", "Could not fetch available Wireline phone numbers.");
+    } finally {
+      setIsSyncing(false);
     }
-    setIsSyncing(false);
   };
 
   const saveSettings = async () => {

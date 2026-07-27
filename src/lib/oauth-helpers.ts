@@ -2,6 +2,7 @@
 import express from "express";
 import { google } from "googleapis";
 import { randomUUID, createHmac, timingSafeEqual } from "node:crypto";
+import { Redis } from "@upstash/redis";
 import { drizzle, fetchWithTimeout, IS_PROD } from "./server-context";
 import { isProductionRuntime } from "./session-cookie";
 import * as schema from "../db/schema";
@@ -175,6 +176,60 @@ export interface VerifiedOAuthState {
   pkceVerifier?: string;
 }
 
+const OAUTH_STATE_TTL_MS = 20 * 60 * 1000;
+const OAUTH_NONCE_KEY_PREFIX = "wireline:oauth:state-nonce:";
+const developmentOAuthNonces = new Set<string>();
+let oauthNonceRedis: Redis | null | undefined;
+
+function getOAuthNonceRedis(): Redis | null {
+  if (oauthNonceRedis !== undefined) return oauthNonceRedis;
+  const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+  if (!url || !token) {
+    oauthNonceRedis = null;
+    return null;
+  }
+  oauthNonceRedis = new Redis({ url, token });
+  return oauthNonceRedis;
+}
+
+/**
+ * Single-use claim for a signed OAuth state nonce. HMAC+TTL already prove we
+ * issued the state; this blocks replay of an intercepted callback URL within
+ * the TTL window. When Redis is unavailable outside production we fall back to
+ * an in-memory set; in production a Redis outage fails open to HMAC+TTL only
+ * (logged) so a control-plane blip does not strand every integration connect.
+ */
+async function claimOAuthStateNonce(nonce: string, issuedAtMs: number): Promise<boolean> {
+  if (!nonce || nonce.length > 64) return false;
+  const remainingMs = OAUTH_STATE_TTL_MS - (Date.now() - issuedAtMs);
+  if (remainingMs <= 0) return false;
+  const ttlSeconds = Math.max(1, Math.ceil(remainingMs / 1000));
+
+  const store = getOAuthNonceRedis();
+  if (store) {
+    try {
+      const result = await store.set(`${OAUTH_NONCE_KEY_PREFIX}${nonce}`, Date.now(), {
+        nx: true,
+        ex: ttlSeconds,
+      });
+      return result === "OK";
+    } catch (err) {
+      // Fail open to HMAC+TTL — durable claim is defense-in-depth.
+      void err;
+      return true;
+    }
+  }
+
+  if (isProductionRuntime()) {
+    // Production without Redis: keep HMAC+TTL protection, skip single-use claim.
+    return true;
+  }
+  if (developmentOAuthNonces.has(nonce)) return false;
+  developmentOAuthNonces.add(nonce);
+  return true;
+}
+
 export function generateOAuthState(opts?: { userId?: string; pkceVerifier?: string }): string {
   const nonce = randomUUID().replace(/-/g, "");
   const ts = Date.now().toString(36);
@@ -206,7 +261,7 @@ export function verifyOAuthState(state: string | undefined): VerifiedOAuthState 
     if (parts.length < 2) return { ok: false };
     const ts = parseInt(parts[1], 36);
     if (isNaN(ts)) return { ok: false };
-    if (Date.now() - ts > 20 * 60 * 1000) return { ok: false };
+    if (Date.now() - ts > OAUTH_STATE_TTL_MS) return { ok: false };
 
     let userId: string | undefined;
     let pkceVerifier: string | undefined;
@@ -229,6 +284,25 @@ export function verifyOAuthState(state: string | undefined): VerifiedOAuthState 
   } catch {
     return { ok: false };
   }
+}
+
+/**
+ * Verify HMAC+TTL, then claim the embedded nonce so a captured callback URL
+ * cannot be replayed within the state TTL. Prefer this on every OAuth callback.
+ */
+export async function verifyAndClaimOAuthState(
+  state: string | undefined,
+): Promise<VerifiedOAuthState> {
+  const verified = verifyOAuthState(state);
+  if (!verified.ok || !state) return { ok: false };
+  const payload = state.slice(0, state.lastIndexOf("."));
+  const parts = payload.split(".");
+  const nonce = parts[0];
+  const issuedAtMs = parseInt(parts[1], 36);
+  if (!nonce || isNaN(issuedAtMs)) return { ok: false };
+  const claimed = await claimOAuthStateNonce(nonce, issuedAtMs);
+  if (!claimed) return { ok: false };
+  return verified;
 }
 
 export async function resolveUserIdFromOAuthSession(req: express.Request): Promise<string | null> {

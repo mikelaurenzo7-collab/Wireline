@@ -13,7 +13,7 @@ import {
   MS_SCOPES,
   getMicrosoftRedirectUri,
   generateOAuthState,
-  verifyOAuthState,
+  verifyAndClaimOAuthState,
   resolveUserIdFromOAuthSession,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
@@ -62,7 +62,7 @@ router.get(
       return res.status(400).send(`Microsoft OAuth error: ${error_description}`);
     }
 
-    const vs = verifyOAuthState(state as string);
+    const vs = await verifyAndClaimOAuthState(state as string);
     if (!vs.ok) {
       return res.status(400).send("Invalid or expired OAuth state. Please restart.");
     }

@@ -8,7 +8,7 @@ import { oauthRateLimiter } from "../../middleware/rate-limit-middleware";
 import { authenticateUser } from "../../middleware/auth";
 import {
   generateOAuthState,
-  verifyOAuthState,
+  verifyAndClaimOAuthState,
   resolveUserIdFromOAuthSession,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
@@ -63,7 +63,7 @@ router.get(
       log.warn("Meta OAuth error from provider", { error, error_description });
       return res.status(400).send(`Meta OAuth error: ${error_description}`);
     }
-    const vs = verifyOAuthState(state as string | undefined);
+    const vs = await verifyAndClaimOAuthState(state as string | undefined);
     if (!vs.ok) {
       return res
         .status(400)
