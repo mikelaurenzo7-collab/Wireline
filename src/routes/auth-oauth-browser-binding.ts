@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { Router, type Request, type Response } from "express";
 
 import { getCanonicalAppUrl } from "../lib/app-url";
@@ -8,7 +8,6 @@ import {
   readOAuthBridgeStateCookie,
 } from "../lib/oauth-bridge-cookie";
 import { generateOAuthState, verifyOAuthState } from "../lib/oauth-helpers";
-import { hashOAuthBridgeValue } from "./auth-oauth-routes";
 
 type SignInOAuthProvider = "google" | "microsoft" | "yahoo";
 
@@ -18,6 +17,20 @@ const INVALID_STATE_MESSAGE = "Invalid or expired sign-in state. Please try agai
 
 function isSignInOAuthProvider(value: string): value is SignInOAuthProvider {
   return value === "google" || value === "microsoft" || value === "yahoo";
+}
+
+function oauthBridgeSecret(): string {
+  const secret =
+    process.env.OAUTH_BRIDGE_SECRET ||
+    process.env.OAUTH_STATE_SECRET ||
+    process.env.INTERNAL_JWT_SECRET ||
+    process.env.JWT_SECRET;
+  if (!secret) throw new Error("OAuth bridge secret is not configured.");
+  return secret;
+}
+
+function hashOAuthBridgeValue(value: string): string {
+  return createHmac("sha256", oauthBridgeSecret()).update(value, "utf8").digest("hex");
 }
 
 function safeStringEqual(left: string, right: string): boolean {
