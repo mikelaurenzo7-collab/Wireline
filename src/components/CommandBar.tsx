@@ -61,8 +61,8 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   },
   {
     id: "agents",
-    label: "AI Employee",
-    description: "Open Studio and manage your live AI employees.",
+    label: "Agent Studio",
+    description: "Open Studio and manage your live voice agents.",
     icon: Bot,
     href: "/studio",
     category: "Workspace",
@@ -70,7 +70,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "knowledge",
     label: "Knowledge",
-    description: "Manage the facts, context, sources, and policies each AI employee uses.",
+    description: "Manage the facts, context, sources, and policies each voice agent uses.",
     icon: Database,
     href: "/knowledge",
     category: "Workspace",
@@ -78,7 +78,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "connections",
     label: "Connections",
-    description: "Choose the accounts, integrations, and actions an AI employee can use.",
+    description: "Choose the accounts, integrations, and actions a voice agent can use.",
     icon: Cable,
     href: "/connections",
     category: "Workspace",
@@ -133,8 +133,8 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   },
   {
     id: "create-business",
-    label: "Create an AI employee",
-    description: "Give one customer-facing job to a business-ready AI employee.",
+    label: "Create a business voice agent",
+    description: "Give one customer-facing job to a business-ready voice agent.",
     icon: BriefcaseBusiness,
     href: "/studio?create=1&posture=business",
     category: "Create",
@@ -373,7 +373,7 @@ export default function CommandBar() {
                       : undefined
                   }
                   aria-autocomplete="list"
-                  placeholder="Search workspace, AI employees, or settings…"
+                  placeholder="Search workspace, agents, or settings…"
                   className="h-8 border-none bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -479,7 +479,7 @@ export default function CommandBar() {
                     className="m-4 min-h-48 border-dashed"
                     icon={<Terminal className="size-5" />}
                     title="No matching commands."
-                    description="Try an AI employee, integration, workspace destination, or setting."
+                    description="Try an agent, integration, workspace destination, or setting."
                   />
                 )}
               </ScrollArea>
