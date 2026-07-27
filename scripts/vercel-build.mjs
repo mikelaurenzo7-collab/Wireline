@@ -42,9 +42,11 @@ function runLiveVapiSchemaAuditIfRequested() {
 
 function runDeepLaunchAuditIfRequested() {
   const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
-  if (environment !== "preview" || !commitMessage.includes("[launch-deep-audit]")) return;
+  if (!commitMessage.includes("[launch-deep-audit]")) return;
 
-  console.log("Running one-shot full TypeScript, ESLint, and Vitest launch audit.");
+  console.log(
+    `Running one-shot full TypeScript, ESLint, and Vitest launch audit for ${environment || "local"}.`,
+  );
   run("npm", ["run", "lint"]);
   run("npm", ["run", "lint:server"]);
   run("npm", ["run", "lint:audit-modules"]);
@@ -90,10 +92,13 @@ run("npx", [
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
   "tests/auth-journey-hardening-contract.test.ts",
-  // OAuth state, bridge-code binding, and one-check throttling protect
-  // account-session integrity, so both contracts run in every build gate.
+  // OAuth state, bridge-code binding, provider identity, and one-check
+  // throttling protect account-session integrity, so every contract runs in
+  // each preview and production-equivalent build.
   "tests/auth-oauth-browser-binding-contract.test.ts",
   "tests/oauth-rate-limit-middleware.test.ts",
+  "tests/oauth-provider-identity-integrity-contract.test.ts",
+  "tests/yahoo-openid-security.test.ts",
   "tests/marketing-metadata-contract.test.ts",
   "tests/static-metadata-contract.test.ts",
   "tests/wireline-product-docs.test.ts",
