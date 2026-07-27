@@ -51,7 +51,6 @@ describe("current-state UI contract", () => {
     expect(apps).toContain("CLIENT_SURFACE_POSTURE");
     expect(apps).toContain('title: "Cursor"');
     expect(apps).toContain('href: "/settings/apps/command"');
-    // ChatGPT setup stays in the authenticated Apps shell (no public marketing eject).
     expect(apps).toContain('href: "/settings/apps#chatgpt-mcp"');
     expect(apps).toContain('id="chatgpt-mcp"');
     expect(apps).toContain("https://trywireline.com/mcp");
@@ -82,7 +81,6 @@ describe("current-state UI contract", () => {
     expect(developers).toContain(
       "this connector cannot place calls, send messages,\n              provision numbers, or launch a live AI voice agent.",
     );
-    // No fake API-key product — session OpenAPI + MCP OAuth only.
     expect(developers).not.toContain("Settings -> API Access");
     expect(developers).not.toContain("wl_YOUR_API_KEY");
     expect(developers).not.toContain("https://chatgpt.com/plugins");
@@ -111,13 +109,11 @@ describe("current-state UI contract", () => {
     expect(landing).toContain("/signup?plan=starter&mode=outbound");
     expect(landing).toContain("/signup?plan=starter&mode=inbound");
     expect(landing).toContain("/signup?plan=starter&mode=hybrid");
-    expect(hero).toContain('aria-label="Wire to Work to Win"');
+    expect(hero).toContain('aria-label={MARKETING_VOICE.spine.join(", ")}');
     expect(hero).toContain("MARKETING_VOICE.spine.map");
-    // Pill wraps when the label doesn't fit on 360px screens rather than
-    // forcing horizontal page overflow. Keep the label allocation gates.
     expect(hero).toContain("flex-wrap");
     expect(hero).toContain("size-[1em] shrink-0");
-    expect(hero).toContain("max-w-[22rem] grid-cols-2");
+    expect(hero).toContain("max-w-[24rem] grid-cols-2");
     expect(hero).toContain("col-span-2 sm:col-span-1");
 
     expect(auth).toContain('pathname === "/signup" || pathname === "/get-started"');
