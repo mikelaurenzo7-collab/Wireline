@@ -240,6 +240,8 @@ export async function createMeeting(
 }
 
 export async function disconnectZoom(userId: string): Promise<void> {
+  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
+  await revokeCrmProviderTokens(userId, "zoom");
   await drizzle
     .delete(schema.crmConnections)
     .where(

@@ -565,6 +565,8 @@ export async function disconnectMicrosoftGraph(
   userId: string,
   provider: MsGraphProvider,
 ): Promise<void> {
+  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
+  await revokeCrmProviderTokens(userId, provider);
   await drizzle
     .delete(schema.crmConnections)
     .where(

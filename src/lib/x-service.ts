@@ -444,6 +444,8 @@ export async function listXMentions(userId: string, limit = 10): Promise<XMentio
 }
 
 export async function disconnectX(userId: string): Promise<void> {
+  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
+  await revokeCrmProviderTokens(userId, "x");
   await drizzle
     .delete(schema.crmConnections)
     .where(and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "x")));

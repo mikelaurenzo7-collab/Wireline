@@ -198,7 +198,7 @@ export async function debitForVoiceUsage(
           balanceAfterUsd: String(cents(balance - debitAmount)),
           entryKind: "burn",
           reason: "voice_usage",
-          customerReason: "Voice minutes covered by Conversation Balance",
+          customerReason: "Voice minutes covered by Runtime Balance",
           refType: "voice_usage",
           refId: vapiCallId,
           idempotencyKey: `voice_usage:${vapiCallId}`,

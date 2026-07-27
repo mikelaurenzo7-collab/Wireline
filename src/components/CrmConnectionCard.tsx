@@ -310,11 +310,21 @@ export default function CrmConnectionCard() {
       )
     )
       return;
+    setError(null);
     try {
-      await authFetch(`/api/oauth/${provider}/disconnect`, { method: "POST" });
-      fetchStatus();
+      const response = await authFetch(`/api/oauth/${provider}/disconnect`, { method: "POST" });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        setError(
+          typeof body?.error === "string"
+            ? body.error
+            : `Could not disconnect ${PROVIDERS.find((p) => p.key === provider)?.label || "this integration"}.`,
+        );
+        return;
+      }
+      await fetchStatus();
     } catch {
-      /* ignore */
+      setError("Could not disconnect this integration. Please try again.");
     }
   };
 

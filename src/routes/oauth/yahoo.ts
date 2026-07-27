@@ -169,6 +169,20 @@ router.post(
     const userId = req.user?.id;
     if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
     try {
+      const accounts = await drizzle
+        .select({
+          provider: schema.emailAccounts.provider,
+          accessToken: schema.emailAccounts.accessToken,
+          refreshToken: schema.emailAccounts.refreshToken,
+        })
+        .from(schema.emailAccounts)
+        .where(
+          and(eq(schema.emailAccounts.userId, userId), eq(schema.emailAccounts.provider, "yahoo")),
+        );
+      const { revokeMailboxAccountTokens } = await import("../../lib/oauth-provider-revocation");
+      for (const account of accounts) {
+        await revokeMailboxAccountTokens(account);
+      }
       await drizzle
         .delete(schema.emailAccounts)
         .where(

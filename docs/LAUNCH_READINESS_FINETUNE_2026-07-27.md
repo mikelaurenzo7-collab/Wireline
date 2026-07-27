@@ -9,7 +9,7 @@ Status: **Active** — deep E2E audit across code, product honesty, security res
 
 Wireline remains a strong controlled-beta / founder-led launch candidate. Prior Round-4/5 remediations (token atomicity, enrichment isolation, Stripe allowance retry, MCP RLS, dial-gate honesty) are on `main` and contract-pinned. This pass found and fixed additional verified honesty, security-defense, and product-truth gaps, plus one production env correction.
 
-**Do not declare unconditional GA** until federal DNC vendor credentials are real, browser Sentry is configured, and one live $19 checkout has been exercised end-to-end.
+**Do not declare unconditional GA** until federal DNC vendor credentials are real and one live $19 checkout has been exercised end-to-end. Browser errors already report via `/api/health/report` → server `SENTRY_DSN`.
 
 ## Code fixes shipped
 
@@ -61,6 +61,7 @@ Wireline remains a strong controlled-beta / founder-led launch candidate. Prior 
 3. One live Starter checkout → webhook → entitlement → portal → refund.
 4. Restore GitHub Actions spending so CI is a real gate again.
 5. Rotate the personal Vercel token pasted into chat after this session.
+6. Optionally rename the live Stripe product from legacy “Conversation Balance” to “Runtime Balance” via catalog sync (`scripts/setup-stripe-catalog.mjs` accepts both names).
 
 ## Deep pass (same day)
 
@@ -89,4 +90,14 @@ Contract: `tests/launch-readiness-deep-pass-2026-07-27-contract.test.ts`.
 9. **Runtime Balance** — agent knowledge plan name no longer says Conversation Balance.
 
 Contract: `tests/launch-readiness-triple-pass-2026-07-27-contract.test.ts`.
+
+## Quadruple pass (same day)
+
+1. **OAuth provider revoke (P1)** — disconnect paths and GDPR external release now best-effort revoke grants at Google / Microsoft / Slack / HubSpot / Salesforce / Zoom / Meta / X / Shopify / Square / Yahoo before local token delete.
+2. **Mailbox disconnect honesty** — email account delete revokes tokens and cleans the matching calendar row for Google/Microsoft.
+3. **Portal plan-switch fingerprint (P1)** — managed Stripe portal configs key off catalog version **and** a price/product fingerprint so upgrade/downgrade choices cannot go stale inside one founder catalog version.
+4. **CRM disconnect UI honesty (P2)** — `CrmConnectionCard` checks `response.ok` and surfaces errors.
+5. **Runtime Balance copy** — buyer-facing wedges, showcase, voice pricing, Stripe founder catalog product name, and ledger `customerReason` strings use Runtime Balance.
+
+Contract: `tests/launch-readiness-quadruple-pass-2026-07-27-contract.test.ts`.
 

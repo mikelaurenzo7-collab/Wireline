@@ -227,6 +227,8 @@ async function getApolloAuth(userId?: string): Promise<{ header: Record<string, 
 }
 
 export async function disconnectApollo(userId: string): Promise<void> {
+  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
+  await revokeCrmProviderTokens(userId, "apollo");
   await drizzle
     .update(schema.crmConnections)
     .set({ active: false, updatedAt: new Date() })

@@ -90,7 +90,7 @@ router.post(
         return res.status(402).json({
           code: "LIVE_PLAN_REQUIRED",
           error:
-            "Choose Starter, Starter Plus, Pro, or Business before adding Conversation Balance. Paid plans include live-call minutes first.",
+            "Choose Starter, Starter Plus, Pro, or Business before adding Runtime Balance. Paid plans include live-call minutes first.",
           recovery_path: "/settings/billing",
         });
       }

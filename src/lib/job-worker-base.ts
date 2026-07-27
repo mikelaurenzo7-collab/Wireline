@@ -488,6 +488,8 @@ export async function handleJob(job: JobRow): Promise<void> {
       subscriptions_canceled: release.subscriptionsCanceled,
       numbers_released: release.numbersReleased,
       number_errors: release.numberErrors.length,
+      oauth_attempted: release.oauthAttempted,
+      oauth_revoked: release.oauthRevoked,
     });
 
     const result = await purgeAccount(p.user_id, { db: drizzle, log });

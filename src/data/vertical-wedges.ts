@@ -50,7 +50,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "home-services",
     metaTitle: "Wireline for Home Services | AI Receptionist that Books Every Call",
     metaDescription:
-      "AI voice + email agent for HVAC, plumbing, electrical, and roofing teams. Answer after-hours calls, book jobs, and follow up through Conversation Balance.",
+      "AI voice + email agent for HVAC, plumbing, electrical, and roofing teams. Answer after-hours calls, book jobs, and follow up through Runtime Balance.",
     eyebrow: "For Home Services Pros",
     headline: "Stop missing $500 after-hours calls.",
     subhead:
@@ -100,7 +100,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How much does it cost vs. an answering service?",
-        a: "Most after hours answering services charge one to two dollars per minute or two to four hundred dollars per month per business. Wireline plans start at $19/mo with guaranteed voice minutes included, plus Conversation Balance for anything beyond that. The agent actually books jobs instead of just taking messages.",
+        a: "Most after hours answering services charge one to two dollars per minute or two to four hundred dollars per month per business. Wireline plans start at $19/mo with guaranteed voice minutes included, plus Runtime Balance for anything beyond that. The agent actually books jobs instead of just taking messages.",
       },
     ],
   },
@@ -269,7 +269,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Does it work for a single agent or full brokerage?",
-        a: "Both. Solo agents can start on Starter: one Wireline number, one active agent, and guaranteed voice minutes plus Conversation Balance for overflow. Brokerages use Starter Plus, Pro, or Business capacity to assign different numbers to different listing agents, with a brokerage-level fallback when the listing agent is in a showing.",
+        a: "Both. Solo agents can start on Starter: one Wireline number, one active agent, and guaranteed voice minutes plus Runtime Balance for overflow. Brokerages use Starter Plus, Pro, or Business capacity to assign different numbers to different listing agents, with a brokerage-level fallback when the listing agent is in a showing.",
       },
       {
         q: "How does it qualify the buyer?",
@@ -286,7 +286,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "personal",
     metaTitle: "Wireline for Everyone — Your AI Handles the Calls You Hate",
     metaDescription:
-      "Personal AI phone agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow-ups. Starts at $19/mo, with Conversation Balance covering anything beyond your included minutes.",
+      "Personal AI phone agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow-ups. Starts at $19/mo, with Runtime Balance covering anything beyond your included minutes.",
     eyebrow: "For everyone who hates the phone",
     headline: "Never make an awkward call again.",
     subhead:
@@ -400,7 +400,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How does it compare to a 24/7 answering service?",
-        a: "Most answering services charge $400-1,200/month plus per-call fees and just take messages. Wireline agents qualify the lead, book the renewal review, and email you a producer-ready intake, with guaranteed voice minutes on every plan and Conversation Balance covering anything beyond that.",
+        a: "Most answering services charge $400-1,200/month plus per-call fees and just take messages. Wireline agents qualify the lead, book the renewal review, and email you a producer-ready intake, with guaranteed voice minutes on every plan and Runtime Balance covering anything beyond that.",
       },
     ],
   },
