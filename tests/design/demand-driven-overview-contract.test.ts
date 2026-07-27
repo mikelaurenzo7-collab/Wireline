@@ -54,7 +54,7 @@ describe("demand-driven authenticated experience", () => {
   });
 
   it("keeps empty-state actions in prerequisite order", () => {
-    expect(phoneHistory).toContain('title: "Create your first AI employee"');
+    expect(phoneHistory).toContain('title: "Create your first voice agent"');
     expect(phoneHistory).toContain('title: "Connect a phone number"');
     expect(phoneHistory).toContain("Call your Wireline number");
     expect(phoneHistory).toContain("agentsDegraded && !hasAgents");
@@ -64,11 +64,11 @@ describe("demand-driven authenticated experience", () => {
     expect(insightEmpty).toContain("agents.length === 0");
     expect(insightEmpty).toContain("agentsDegraded && agents.length === 0");
     expect(insightEmpty).toContain("phoneLookupDegraded && agents.length > 0");
-    expect(insightEmpty).toContain("Retry employee status");
+    expect(insightEmpty).toContain("Retry voice agent status");
     expect(agentsContext).toContain("const phoneLookupDegraded = !numbersResponse?.ok");
     expect(agentsContext).toContain("setPhoneLookupDegraded(nextPhoneLookupDegraded)");
     expect(insightEmpty).toContain('label: "Connect phone"');
-    expect(insightEmpty).toContain('label: "Test employee"');
+    expect(insightEmpty).toContain('label: "Test voice agent"');
   });
 
   it("tracks only verifiable customer-readiness milestones", () => {
