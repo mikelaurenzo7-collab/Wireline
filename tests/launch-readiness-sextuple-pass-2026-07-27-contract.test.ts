@@ -43,8 +43,8 @@ describe("launch readiness sextuple-pass 2026-07-27", () => {
   it("keeps public Trust and tenant Compliance free of vendor/env operator copy", () => {
     const security = read("src/components/Security.tsx");
     const compliance = read("src/components/ComplianceCenter.tsx");
-    expect(security).toContain(
-      "Marketing and campaign outbound stay blocked until Wireline finishes federal DNC setup",
+    expect(security).toMatch(
+      /Marketing and campaign outbound[^.]*fail closed[^.]*stay blocked[^.]*federal DNC setup/i,
     );
     expect(security).not.toContain("DNCScrub");
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");
