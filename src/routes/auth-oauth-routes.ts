@@ -1,5 +1,10 @@
 import { AppError } from "../lib/api-error";
-import { decodeJwtClaims, resolveMicrosoftVerifiedEmail } from "../lib/oauth-email-trust";
+import {
+  decodeJwtClaims,
+  resolveGoogleAuthoritativeEmail,
+  resolveMicrosoftVerifiedEmail,
+} from "../lib/oauth-email-trust";
+import { verifyYahooIdToken } from "../lib/yahoo-openid";
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 /**
  * Wireline native sign-in OAuth (Google / Microsoft / Yahoo).
@@ -8,27 +13,22 @@ import { decodeJwtClaims, resolveMicrosoftVerifiedEmail } from "../lib/oauth-ema
  * OAuth-based SIGN-IN (distinct from the mailbox-connect OAuth in oauth/).
  *
  * The flow:
- *   1. Visitor clicks "Continue with Google" on /auth (no session yet).
- *   2. GET /api/auth/google/url → returns an authorization URL with
- *      minimal scopes (openid email profile) and a signed state with
- *      intent=signin.
- *   3. Provider sends them back to /api/auth/google/callback.
- *   4. We exchange the code, read the email + name, look up the user
- *      in wireline_users by email, create the row if it doesn't exist,
- *      issue a Wireline JWT, and redirect to
- *      /auth/oauth-complete?token=…&email=…&name=… so the SPA's
- *      AuthContext can populate localStorage and route to /.
+ *   1. Visitor clicks a provider button on /auth (no session yet).
+ *   2. GET /api/auth/:provider/url returns a minimal-scope authorization URL.
+ *      The browser-binding layer replaces the placeholder state with a signed,
+ *      provider-specific value bound to the initiating HttpOnly cookie.
+ *   3. Provider sends the browser back to /api/auth/:provider/callback.
+ *   4. Wireline verifies provider identity, atomically finds or creates the
+ *      email-keyed user, stores a short-lived browser-bound bridge code, and
+ *      redirects to /auth/oauth-complete with the code in the URL fragment.
  *
- * The PUBLIC client IDs for Google/Microsoft are reused from the
- * existing mailbox-connect OAuth — account holders only configure them once.
- * The scopes differ (no Gmail/Calendar.send here, just identity), so
- * the access token returned by sign-in is NOT mailbox-usable. If a
- * user later wants to attach their mailbox to an agent, they go
- * through the existing higher-scope OAuth flow.
+ * The PUBLIC client IDs for Google/Microsoft are reused from the existing
+ * mailbox-connect OAuth — account holders only configure them once. The scopes
+ * differ, so sign-in access tokens are not mailbox-usable. A user who later
+ * connects a mailbox goes through the higher-scope integration flow.
  *
- * Email/password sign-in remains untouched. OAuth is an additional
- * option, not a replacement — customers who don't have a Gmail or
- * Outlook can keep using email/password.
+ * Email/password sign-in remains available. OAuth is an additional option,
+ * not a replacement.
  */
 
 import { createHmac, randomBytes } from "node:crypto";
@@ -82,9 +82,7 @@ const GOOGLE_SIGNIN_SCOPES = ["openid", "email", "profile"];
 //   (B) decode the OIDC id_token claims for email/name and skip Graph
 //       — cleaner long-term but a bigger code change.
 //
-// Going with (A) because it's a one-line fix and keeps the existing
-// callback shape working. If we later need claims-from-id-token (e.g.
-// for tenants that disable Graph access), revisit.
+// Going with (A) because it keeps the existing callback shape working.
 const MICROSOFT_SIGNIN_SCOPES = ["openid", "email", "profile", "offline_access", "User.Read"];
 const YAHOO_SIGNIN_SCOPES = ["openid", "email", "profile"];
 
@@ -96,21 +94,18 @@ function beginOAuthSignIn(res: Response): void {
   setOAuthBridgeStateCookie(res, createOAuthBridgeState());
 }
 
-function findOrCreateUserByEmail(
-  email: string,
-  fullName: string | null,
-): Promise<{ id: string; email: string; fullName: string | null }> {
-  return (async () => {
-    const normalized = email.trim().toLowerCase();
-    const [existing] = await drizzle
-      .select()
-      .from(schema.users)
-      .where(eq(schema.users.email, normalized))
-      .limit(1);
-    if (existing) {
-      return { id: existing.id, email: existing.email, fullName: existing.fullName };
-    }
-    const inserted = (await drizzle
+type OAuthUser = { id: string; email: string; fullName: string | null };
+
+/**
+ * Email is the cross-provider account-link key, so first-sign-in creation must
+ * be atomic. A transaction plus ON CONFLICT prevents concurrent callbacks from
+ * surfacing a unique-constraint error or leaving a new user without activation
+ * settings and its default AI hard cap.
+ */
+async function findOrCreateUserByEmail(email: string, fullName: string | null): Promise<OAuthUser> {
+  const normalized = email.trim().toLowerCase();
+  return drizzle.transaction(async (tx) => {
+    const inserted = (await tx
       .insert(schema.users)
       .values({
         email: normalized,
@@ -119,20 +114,54 @@ function findOrCreateUserByEmail(
         fullName,
         emailVerifiedAt: new Date(),
       })
-      .returning()) as Array<{ id: string; email: string; fullName: string | null }>;
-    const u = inserted[0];
-    const { startTrialForUser } = await import("../lib/trial-gate");
-    await startTrialForUser(u.id);
-    log.info("auth oauth: created new user", { email: normalized });
-    return { id: u.id, email: u.email, fullName: u.fullName };
-  })();
+      .onConflictDoNothing({ target: schema.users.email })
+      .returning({
+        id: schema.users.id,
+        email: schema.users.email,
+        fullName: schema.users.fullName,
+      })) as OAuthUser[];
+
+    const created = inserted[0];
+    if (created) {
+      const { startTrialForUser } = await import("../lib/trial-gate");
+      await startTrialForUser(created.id, {}, tx);
+      log.info("auth oauth: created new user", { email: normalized });
+      return created;
+    }
+
+    const [existing] = await tx
+      .select({
+        id: schema.users.id,
+        email: schema.users.email,
+        fullName: schema.users.fullName,
+        emailVerifiedAt: schema.users.emailVerifiedAt,
+      })
+      .from(schema.users)
+      .where(eq(schema.users.email, normalized))
+      .limit(1);
+    if (!existing) throw new Error("OAuth user conflict could not be resolved.");
+
+    const verifiedAt = existing.emailVerifiedAt ?? new Date();
+    const resolvedName = existing.fullName || fullName || null;
+    if (!existing.emailVerifiedAt || (!existing.fullName && fullName)) {
+      await tx
+        .update(schema.users)
+        .set({
+          emailVerifiedAt: verifiedAt,
+          fullName: resolvedName,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.users.id, existing.id));
+    }
+
+    return { id: existing.id, email: existing.email, fullName: resolvedName };
+  });
 }
 
 /**
- * Bridge-code store for the OAuth sign-in callback → /oauth-complete
- * SPA redirect. Persisted to Postgres (was an in-process Map) so the
- * redirect can land on any Vercel function instance and still find
- * the row. Codes live ~60s and are deleted on read.
+ * Bridge-code store for the OAuth sign-in callback → /oauth-complete SPA
+ * redirect. Persisted to Postgres so the redirect may land on any Vercel
+ * function instance. Codes live about 60 seconds and are deleted on read.
  */
 const PENDING_CODE_TTL_MS = 60_000;
 let pendingCodeSchemaReady = false;
@@ -224,7 +253,7 @@ async function ensurePendingCodeSchema(): Promise<void> {
 async function insertPendingCode(
   code: string,
   entry: {
-    user: { id: string; email: string; fullName: string | null };
+    user: OAuthUser;
     isOwner: boolean;
     bridgeState: string;
   },
@@ -243,7 +272,7 @@ async function insertPendingCode(
 async function storePendingCode(
   code: string,
   entry: {
-    user: { id: string; email: string; fullName: string | null };
+    user: OAuthUser;
     isOwner: boolean;
     bridgeState: string;
   },
@@ -281,7 +310,7 @@ async function storePendingCode(
 }
 
 async function consumePendingCode(code: string): Promise<{
-  user: { id: string; email: string; fullName: string | null };
+  user: OAuthUser;
   isOwner: boolean;
   bridgeStateHash: string | null;
 } | null> {
@@ -331,7 +360,7 @@ async function gcExpiredPendingCodes(): Promise<void> {
 
 async function bridgeRedirect(
   baseUrl: string,
-  user: { id: string; email: string; fullName: string | null },
+  user: OAuthUser,
   _token: string,
   errorMessage?: string,
   req?: Request,
@@ -413,22 +442,23 @@ router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
     client.setCredentials(tokens);
     const oauth2 = google.oauth2({ auth: client, version: "v2" });
     const userInfo = await oauth2.userinfo.get();
-    const email = userInfo.data.email;
     const name = userInfo.data.name || userInfo.data.given_name || null;
+    const email = resolveGoogleAuthoritativeEmail({
+      email: userInfo.data.email,
+      verifiedEmail: userInfo.data.verified_email,
+      hostedDomain: userInfo.data.hd,
+    });
     if (!email) {
-      return res.redirect(
-        await bridgeRedirect(baseUrl, {} as any, "", "Google did not return an email address."),
-      );
-    }
-    // Never attach to an account on an unverified email — Google marks
-    // unverified addresses explicitly, and account linking is email-keyed.
-    if (userInfo.data.verified_email === false) {
+      log.warn("auth oauth google: non-authoritative email rejected", {
+        verified: userInfo.data.verified_email === true,
+        hasHostedDomain: Boolean(userInfo.data.hd),
+      });
       return res.redirect(
         await bridgeRedirect(
           baseUrl,
           {} as any,
           "",
-          "Your Google email isn't verified yet. Verify it with Google, then sign in again.",
+          "For your security, sign in with the method you used to create your Wireline account. Google couldn't verify current ownership of this email.",
         ),
       );
     }
@@ -552,12 +582,10 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
 
 /* ─────────────────────────  Yahoo  ─────────────────────── */
 /**
- * Yahoo OAuth 2.0 / OpenID Connect sign-in. Yahoo's developer console
- * issues a CLIENT_ID + CLIENT_SECRET; Account Holder registers
- * https://trywireline.com/api/auth/yahoo/callback as the redirect URI.
- * Auth endpoint:  https://api.login.yahoo.com/oauth2/request_auth
- * Token endpoint: https://api.login.yahoo.com/oauth2/get_token
- * Userinfo:       https://api.login.yahoo.com/openid/v1/userinfo
+ * Yahoo OpenID Connect sign-in. The browser-binding layer adds Yahoo's
+ * required per-session nonce and embeds it in signed state. The callback then
+ * verifies the returned ID token's JWS signature and identity claims before
+ * any email-keyed account lookup or creation.
  */
 
 router.get("/api/auth/yahoo/url", oauthRateLimiter, (req: Request, res: Response) => {
@@ -573,6 +601,7 @@ router.get("/api/auth/yahoo/url", oauthRateLimiter, (req: Request, res: Response
       response_type: "code",
       redirect_uri: redirectUri,
       scope: YAHOO_SIGNIN_SCOPES.join(" "),
+      // Replaced by the browser-binding middleware before this response leaves.
       state: generateOAuthState({ userId: "signin" }),
       prompt: "login",
     });
@@ -622,22 +651,13 @@ router.get("/api/auth/yahoo/callback", async (req: Request, res: Response) => {
       const body = await tokenRes.text();
       throw new Error(`Yahoo token exchange failed (${tokenRes.status}): ${body.slice(0, 200)}`);
     }
-    const tokenJson = (await tokenRes.json()) as { access_token?: string };
-    if (!tokenJson.access_token) throw new Error("no access_token in Yahoo response");
-
-    const meRes = await fetch("https://api.login.yahoo.com/openid/v1/userinfo", {
-      headers: { Authorization: `Bearer ${tokenJson.access_token}` },
+    const tokenJson = (await tokenRes.json()) as { id_token?: string };
+    const identity = await verifyYahooIdToken(tokenJson.id_token, {
+      clientId: process.env.YAHOO_CLIENT_ID!,
+      nonce: vs.pkceVerifier,
     });
-    if (!meRes.ok) throw new Error(`Yahoo userinfo failed (${meRes.status})`);
-    const me = (await meRes.json()) as { email?: string; name?: string; given_name?: string };
-    const email = me.email;
-    const name = me.name || me.given_name || null;
-    if (!email) {
-      return res.redirect(
-        await bridgeRedirect(baseUrl, {} as any, "", "Yahoo did not return an email address."),
-      );
-    }
-    const user = await findOrCreateUserByEmail(email, name);
+
+    const user = await findOrCreateUserByEmail(identity.email, identity.fullName);
     scheduleFounderBootstrap(user.id, user.email);
     return res.redirect(await bridgeRedirect(baseUrl, user, "", undefined, req));
   } catch (err: unknown) {
