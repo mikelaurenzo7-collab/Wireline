@@ -92,7 +92,7 @@ router.get(
   async (req: express.Request, res: express.Response) => {
     const { code, state, shop, error } = req.query;
     if (error) {
-      log.warn("Shopify OAuth error from provider", { error });
+      log.warn("Shopify OAuth authorization was not completed");
       return res
         .status(400)
         .type("text/plain")

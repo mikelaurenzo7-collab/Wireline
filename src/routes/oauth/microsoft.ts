@@ -58,7 +58,7 @@ router.get(
   async (req: express.Request, res: express.Response) => {
     const { code, state, error, error_description } = req.query;
     if (error) {
-      log.warn("Microsoft OAuth error from provider", { error, error_description });
+      log.warn("Microsoft OAuth authorization was not completed");
       return res
         .status(400)
         .type("text/plain")

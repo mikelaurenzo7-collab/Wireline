@@ -21,15 +21,24 @@ const oauthCallbackRoutes = [
 ] as const;
 
 describe("OAuth provider-error responses", () => {
-  it("logs provider detail without reflecting it into an HTML response", () => {
+  it("returns static text and rate-limits callbacks without logging provider-controlled detail", () => {
     const reflectedProviderError =
       /\.send\(\s*`[^`]*\$\{(?:error|error_description|oauthError)\b/;
+
+    const callbackLimiter =
+      /router\.get\(\s*["\'][^"\']*\/callback["\'],\s*oauthRateLimiter\b/g;
+    const providerDetailLog =
+      /log\.warn\(\s*["\'][^"\']*OAuth[^"\']*["\']\s*,\s*\{\s*(?:error|error_description|oauthError)\b/s;
 
     for (const path of oauthCallbackRoutes) {
       const source = read(path);
       expect(source, path).not.toMatch(reflectedProviderError);
       expect(source, path).toContain('.type("text/plain")');
       expect(source, path).toContain("authorization was not completed");
+      expect(source, path).not.toMatch(providerDetailLog);
+      expect(source.match(callbackLimiter)?.length ?? 0, path).toBe(
+        path.endsWith("microsoft-graph.ts") ? 2 : 1,
+      );
     }
   });
 });

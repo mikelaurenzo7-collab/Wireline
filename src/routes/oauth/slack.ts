@@ -59,7 +59,7 @@ router.get(
   async (req: express.Request, res: express.Response) => {
     const { code, state, error: oauthError } = req.query;
     if (oauthError) {
-      log.warn("Slack OAuth error from provider", { oauthError });
+      log.warn("Slack OAuth authorization was not completed");
       return res
         .status(400)
         .type("text/plain")

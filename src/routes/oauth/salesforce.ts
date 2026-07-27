@@ -57,7 +57,7 @@ router.get(
   async (req: express.Request, res: express.Response) => {
     const { code, state, error, error_description } = req.query;
     if (error) {
-      log.warn("Salesforce OAuth error from provider", { error, error_description });
+      log.warn("Salesforce OAuth authorization was not completed");
       return res
         .status(400)
         .type("text/plain")

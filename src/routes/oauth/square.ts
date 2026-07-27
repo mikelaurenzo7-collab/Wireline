@@ -55,11 +55,14 @@ router.get(
   },
 );
 
-router.get("/api/ecommerce/oauth/callback", async (req: express.Request, res: express.Response) => {
+router.get(
+  "/api/ecommerce/oauth/callback",
+  oauthRateLimiter,
+  async (req: express.Request, res: express.Response) => {
   const { code, state, error: oauthError } = req.query as Record<string, string | undefined>;
 
   if (oauthError) {
-    log.warn("Square OAuth error from provider", { oauthError });
+    log.warn("Square OAuth authorization was not completed");
     return res
       .status(400)
       .type("text/plain")
@@ -130,7 +133,8 @@ router.get("/api/ecommerce/oauth/callback", async (req: express.Request, res: ex
     log.error("Square OAuth callback failed", { error: e?.message || String(e) });
     res.status(500).send("Square authentication failed. Please try again.");
   }
-});
+  },
+);
 
 router.post(
   "/api/oauth/square/disconnect",
