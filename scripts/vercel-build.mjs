@@ -87,6 +87,7 @@ run("npx", [
   "tests/production-env-policy-contract.test.ts",
   "tests/database-connection.test.ts",
   "tests/product-voice-contract.test.ts",
+  "tests/design-brand-polish-contract.test.ts",
   "tests/marketing-metadata-contract.test.ts",
   "tests/static-metadata-contract.test.ts",
   "tests/wireline-product-docs.test.ts",
