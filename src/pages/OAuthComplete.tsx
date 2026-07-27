@@ -3,7 +3,7 @@
  * callback and the client-side AuthContext.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
@@ -13,18 +13,37 @@ import MarketingChrome from "../components/marketing/MarketingChrome";
 import { PageMeta } from "../lib/page-meta";
 import { sanitizeOAuthSignInError } from "../lib/oauth-public-error";
 
+function readCompletionParams(search: string, hash: string): URLSearchParams {
+  const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+  const fragment = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
+  for (const key of ["code", "error"] as const) {
+    const value = fragment.get(key);
+    if (value) params.set(key, value);
+  }
+  return params;
+}
+
 export default function OAuthComplete() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
   const handledRef = useRef(false);
+  const completionParamsRef = useRef<URLSearchParams | null>(null);
+
+  useLayoutEffect(() => {
+    completionParamsRef.current = readCompletionParams(location.search, location.hash);
+    if (location.search || location.hash) {
+      window.history.replaceState(window.history.state, "", location.pathname);
+    }
+  }, [location.hash, location.pathname, location.search]);
 
   useEffect(() => {
     if (handledRef.current) return;
     handledRef.current = true;
 
-    const params = new URLSearchParams(location.search);
+    const params =
+      completionParamsRef.current ?? readCompletionParams(location.search, location.hash);
     const errorParam = params.get("error");
     if (errorParam) {
       setError(sanitizeOAuthSignInError(errorParam));
@@ -60,8 +79,8 @@ export default function OAuthComplete() {
         }
         await syncSignupIntent(getStoredSignupIntent()).catch(() => {});
         signIn({ user });
-        // Resolve post-OAuth destination (defaults to /overview for logged-in; studio create for fresh signup session).
-        navigate(resolvePostAuthDestination(readStoredWorkspaceMode(), location.search), {
+        // Redirect intent is persisted before OAuth begins; never carry bridge secrets forward.
+        navigate(resolvePostAuthDestination(readStoredWorkspaceMode(), ""), {
           replace: true,
         });
       } catch {
@@ -69,7 +88,7 @@ export default function OAuthComplete() {
       }
     };
     void complete();
-  }, [location.search, signIn, navigate]);
+  }, [location.hash, location.search, signIn, navigate]);
 
   return (
     <MarketingChrome stickyCta={false} footer={false}>
