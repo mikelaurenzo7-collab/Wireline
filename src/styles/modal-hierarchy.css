@@ -1,0 +1,129 @@
+/* Wireline modal hierarchy — one calm interaction grammar across authenticated surfaces.
+ * The shared Radix primitive owns structure; these rules also normalize the small set
+ * of legacy/custom dialogs that still render their own shells. */
+
+:root {
+  --wireline-modal-inline-gutter: 1rem;
+  --wireline-modal-title-size: clamp(1.25rem, 1.12rem + 0.6vw, 1.625rem);
+  --wireline-modal-copy-size: 0.875rem;
+  --wireline-modal-copy-leading: 1.5rem;
+}
+
+[data-slot="dialog-content"][data-presentation="modal"],
+.wl-ui-caps [role="dialog"] {
+  text-align: left;
+}
+
+[data-slot="dialog-header"],
+[data-slot="dialog-title"],
+[data-slot="dialog-description"] {
+  text-align: left;
+}
+
+[data-slot="dialog-content"][data-presentation="modal"] {
+  max-width: min(32rem, calc(100vw - (var(--wireline-modal-inline-gutter) * 2)));
+}
+
+[data-slot="dialog-content"][data-presentation="modal"] :where(h1, h2, h3, p, li, label),
+.wl-ui-caps [role="dialog"] :where(h1, h2, h3, p, li, label) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* Legacy/custom dialog titles use the same contained scale as the shared primitive.
+ * This specifically prevents a popup from inheriting page/hero typography. */
+#trial-gate-title,
+#deploy-agent-title,
+#create-agent-title,
+#post-create-wizard-title,
+#team-invite-title,
+#phone-agent-blueprint-title {
+  max-width: 100%;
+  font-family: var(--wireline-font-family-display) !important;
+  font-size: var(--wireline-modal-title-size) !important;
+  font-style: normal !important;
+  font-weight: 600 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.025em !important;
+  text-align: left !important;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+#trial-gate-description,
+#deploy-agent-description,
+#phone-agent-blueprint-description {
+  max-width: 60ch !important;
+  font-size: var(--wireline-modal-copy-size) !important;
+  line-height: var(--wireline-modal-copy-leading) !important;
+  text-align: left !important;
+  text-wrap: pretty;
+}
+
+/* Activation / billing used to read like a centered marketing sheet. Keep it a
+ * compact product dialog on every viewport instead. */
+[role="dialog"][aria-labelledby="trial-gate-title"],
+[role="dialog"][aria-labelledby="post-create-wizard-title"] {
+  align-items: center !important;
+  padding: max(1rem, env(safe-area-inset-top, 0px)) var(--wireline-modal-inline-gutter)
+    max(1rem, env(safe-area-inset-bottom, 0px)) !important;
+}
+
+[role="dialog"][aria-labelledby="trial-gate-title"] > div,
+[role="dialog"][aria-labelledby="post-create-wizard-title"] > div {
+  width: min(100%, 48rem) !important;
+  max-height: calc(100dvh - 2rem) !important;
+  border-radius: var(--wireline-radius-xl) !important;
+}
+
+[role="dialog"][aria-labelledby="trial-gate-title"] .font-display.italic,
+[role="dialog"][aria-labelledby="deploy-agent-title"] .font-display.italic {
+  font-style: normal !important;
+}
+
+/* Fast Start's job prompt is important, but it lives inside a modal rather than
+ * a page hero. Keep a clear step down from page-level display typography. */
+[role="dialog"][aria-labelledby="create-agent-title"] h3 {
+  max-width: 28ch;
+  font-size: clamp(1.5rem, 1.32rem + 0.8vw, 1.9rem) !important;
+  font-weight: 600 !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.025em !important;
+  text-wrap: balance;
+}
+
+/* Guided call-plan is intentionally dense; containment matters more than making
+ * it tiny. Preserve its working area while removing viewport-edge collisions. */
+.studio-blueprint-dialog {
+  width: min(58rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  border-radius: var(--wireline-radius-xl);
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 639px) {
+  :root {
+    --wireline-modal-inline-gutter: 0.75rem;
+  }
+
+  [data-slot="dialog-content"][data-presentation="modal"] {
+    width: calc(100vw - 1.5rem);
+    max-height: calc(100dvh - 1.5rem);
+    border-radius: var(--wireline-radius-xl);
+  }
+
+  [role="dialog"][aria-labelledby="create-agent-title"],
+  [role="dialog"][aria-labelledby="team-invite-title"],
+  [role="dialog"][aria-labelledby="deploy-agent-title"],
+  .studio-blueprint-dialog {
+    width: calc(100vw - 1.5rem) !important;
+    max-width: calc(100vw - 1.5rem) !important;
+    max-height: calc(100dvh - 1.5rem) !important;
+    border-radius: var(--wireline-radius-xl) !important;
+  }
+
+  [data-slot="dialog-footer"] {
+    gap: 0.5rem;
+  }
+}
