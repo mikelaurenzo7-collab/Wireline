@@ -96,14 +96,19 @@ const credentialLikeName =
   /(?:^|_)(?:API_KEY|API_SECRET|AUTH_KEY|AUTH_TOKEN|ACCESS_TOKEN|CLIENT_SECRET|PRIVATE_KEY|SERVICE_ROLE_KEY|PASSWORD|WEBHOOK_SECRET|JWT_SECRET|DATA_KEY|TOKEN_PEPPER|CRON_SECRET|MONITOR_TOKEN|SECRET|TOKEN)(?:_|$)/;
 const platformManagedCredential = /^(?:VERCEL|TURBO|NPM|NODE|GITHUB|CI)_/;
 
-// Reviewed preview sandbox policy:
-// - PERPLEXITY_API_KEY is allowed in previews because the runtime only uses it
-//   for public research (no tenant OAuth, no tenant database credentials).
-// - Use a spend-capped/sandbox Perplexity key whenever possible. If ops must
-//   temporarily share the production key, preview still cannot reach production
-//   DB, Stripe, Vapi, Twilio, or tenant OAuth secrets because those stay blocked
-//   by productionOnlyPreviewKeys and the generic credential guard below.
-const reviewedPreviewSandboxCredentialKeys = new Set(["PERPLEXITY_API_KEY"]);
+/**
+ * Narrow, reviewed preview policy for Perplexity only:
+ * - PERPLEXITY_API_KEY may be inherited from Vercel project configuration, but
+ *   src/lib/perplexity-platform.ts deliberately ignores it when VERCEL_ENV=preview.
+ * - PERPLEXITY_PREVIEW_API_KEY is the only Perplexity credential preview runtime
+ *   may use; when configured it must be a dedicated budget-capped preview key.
+ *
+ * This is intentionally not a generic provider-key bypass.
+ */
+const reviewedPreviewCredentialKeys = new Set([
+  "PERPLEXITY_API_KEY",
+  "PERPLEXITY_PREVIEW_API_KEY",
+]);
 
 if (isPreview) {
   const productionOnlyPreviewKeySet = new Set(productionOnlyPreviewKeys);
@@ -119,7 +124,7 @@ if (isPreview) {
   for (const name of Object.keys(process.env)) {
     if (
       !productionOnlyPreviewKeySet.has(name) &&
-      !reviewedPreviewSandboxCredentialKeys.has(name) &&
+      !reviewedPreviewCredentialKeys.has(name) &&
       !platformManagedCredential.test(name) &&
       credentialLikeName.test(name) &&
       value(name)
