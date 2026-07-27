@@ -29,7 +29,7 @@ export const FOUNDER_PRODUCTS = [
     key: "team",
     name: "Wireline Starter Plus",
     description:
-      "Founder hybrid plan: personal Concierge + business AI employee (2 live agents), 2 on-demand production numbers, 120 pooled voice minutes monthly, full Lead Hunt workflows, shared conversation inbox, connected email and SMS automation, and prepaid Runtime Balance for additional usage.",
+      "Founder hybrid plan: personal Concierge + business AI voice agent (2 live agents), 2 on-demand production numbers, 120 pooled voice minutes monthly, full Lead Hunt workflows, shared conversation inbox, connected email and SMS automation, and prepaid Runtime Balance for additional usage.",
     defaultPriceKey: "team_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "team",
