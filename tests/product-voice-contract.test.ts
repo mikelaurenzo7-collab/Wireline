@@ -140,6 +140,7 @@ describe("product voice cohesion", () => {
     const about = read("src/pages/About.tsx");
     const compare = read("src/pages/Compare.tsx");
     const privacy = read("src/components/PrivacyPolicyPage.tsx");
+    const publicChangelog = read("src/components/PublicChangelog.tsx");
     const contactAgents = read("src/data/contact-agents.ts");
 
     expect(landing).toContain("One agent · every channel");
@@ -147,6 +148,7 @@ describe("product voice cohesion", () => {
     expect(about).toContain("front-desk or sales voice agent");
     expect(compare).toContain("multichannel voice agent");
     expect(privacy).toContain("AI voice agent platform");
+    expect(publicChangelog).toContain("AI voice agent");
     expect(contactAgents).toContain("Wireline specialists");
 
     const stalePublicPhrases = [
@@ -155,6 +157,7 @@ describe("product voice cohesion", () => {
       ["before the", "employee"].join(" "),
       ["One trained", "employee"].join(" "),
       ["AI", "employee"].join(" "),
+      ["each AI", "employee"].join(" "),
       ["trained", "employee"].join(" "),
       ["multichannel", "employee"].join(" "),
       ["front-desk or sales", "employee"].join(" "),
@@ -163,7 +166,7 @@ describe("product voice cohesion", () => {
       ["every", "employee"].join(" "),
     ];
 
-    for (const source of [landing, trust, footer, about, compare, privacy, contactAgents]) {
+    for (const source of [landing, trust, footer, about, compare, privacy, publicChangelog, contactAgents]) {
       for (const phrase of stalePublicPhrases) {
         expect(source).not.toContain(phrase);
       }
