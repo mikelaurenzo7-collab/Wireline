@@ -13,12 +13,14 @@ export interface PerplexitySource {
 export interface PerplexityResearchResult {
   answer: string;
   sources: PerplexitySource[];
-  route: "search_chat" | "agent";
+  route: "sonar" | "search_sonar" | "agent";
   semanticRerank: boolean;
 }
 
 export interface PerplexityResearchOptions {
+  /** Fast is the only live-call-safe mode; deep is for asynchronous/Director work. */
   depth?: PerplexityResearchDepth;
+  /** Search + embeddings reranking is opt-in because it adds latency and spend. */
   semanticRerank?: boolean;
   timeoutMs?: number;
 }
@@ -27,16 +29,30 @@ const API_ROOT = (process.env.PERPLEXITY_API_BASE_URL || "https://api.perplexity
 const CHAT_URL = process.env.PERPLEXITY_CHAT_API_URL || `${API_ROOT}/chat/completions`;
 const SEARCH_URL = process.env.PERPLEXITY_SEARCH_API_URL || `${API_ROOT}/search`;
 const CHAT_MODEL = process.env.PERPLEXITY_MODEL || "sonar";
+
+// Agent + embeddings product contracts are intentionally endpoint-configured.
+// The key alone enables Sonar + Search today; these planes become active only
+// after ops supplies the exact endpoint/model contract provisioned for Wireline.
 const AGENT_URL = process.env.PERPLEXITY_AGENT_API_URL?.trim() || "";
-const AGENT_MODEL = process.env.PERPLEXITY_AGENT_MODEL?.trim() || "sonar-deep-research";
+const AGENT_MODEL = process.env.PERPLEXITY_AGENT_MODEL?.trim() || "";
 const EMBEDDINGS_URL = process.env.PERPLEXITY_EMBEDDINGS_API_URL?.trim() || "";
 const EMBEDDINGS_MODEL = process.env.PERPLEXITY_EMBEDDINGS_MODEL?.trim() || "";
+
 const DEFAULT_TIMEOUT_MS = Number(process.env.LIVE_RESEARCH_TIMEOUT_MS || 8_000);
 const MAX_SEARCH_RESULTS = 8;
 const MAX_QUERY_CHARS = 600;
 const MAX_ANSWER_CHARS = 1_000;
 
+/**
+ * Production Perplexity credentials are intentionally inert on Vercel previews.
+ * A preview can use Perplexity only with a dedicated PERPLEXITY_PREVIEW_API_KEY.
+ * This lets Vercel project configuration drift remain build-safe without turning
+ * preview branches into an unbounded path to production vendor spend.
+ */
 function apiKey(): string {
+  if (process.env.VERCEL_ENV === "preview") {
+    return process.env.PERPLEXITY_PREVIEW_API_KEY?.trim() || "";
+  }
   return process.env.PERPLEXITY_API_KEY?.trim() || "";
 }
 
@@ -146,11 +162,8 @@ export async function searchPerplexityWeb(
     const sources = parseSearchSources(payload);
     if (sources.length === 0) return null;
 
-    if (!opts?.semanticRerank || !EMBEDDINGS_URL || !EMBEDDINGS_MODEL) {
-      return { sources, semanticRerank: false };
-    }
-
-    const ranked = await rerankWithEmbeddings(safeQuery, sources, timeoutMs);
+    if (!opts?.semanticRerank) return { sources, semanticRerank: false };
+    const ranked = await rerankSourcesWithPerplexityEmbeddings(safeQuery, sources, timeoutMs);
     return ranked ? { sources: ranked, semanticRerank: true } : { sources, semanticRerank: false };
   } catch (error) {
     log.warn("Perplexity Search API unavailable", { error: getErrorMessage(error) });
@@ -158,7 +171,10 @@ export async function searchPerplexityWeb(
   }
 }
 
-async function runChatResearch(query: string, timeoutMs: number): Promise<{ answer: string; sources: PerplexitySource[] } | null> {
+async function runSonarResearch(
+  query: string,
+  timeoutMs: number,
+): Promise<{ answer: string; sources: PerplexitySource[] } | null> {
   const key = apiKey();
   if (!key) return null;
   try {
@@ -195,9 +211,12 @@ async function runChatResearch(query: string, timeoutMs: number): Promise<{ answ
   }
 }
 
-async function runAgentResearch(query: string, timeoutMs: number): Promise<PerplexityResearchResult | null> {
+async function runAgentResearch(
+  query: string,
+  timeoutMs: number,
+): Promise<PerplexityResearchResult | null> {
   const key = apiKey();
-  if (!key || !AGENT_URL) return null;
+  if (!key || !AGENT_URL || !AGENT_MODEL) return null;
   try {
     const payload = await readJson(
       AGENT_URL,
@@ -216,18 +235,14 @@ async function runAgentResearch(query: string, timeoutMs: number): Promise<Perpl
       (typeof payload?.answer === "string" && payload.answer) ||
       payload?.choices?.[0]?.message?.content;
     if (typeof answer !== "string" || !answer.trim()) return null;
-    const sources = dedupeSources([
-      ...parseSearchSources(payload),
-      ...parseChatSources(payload),
-    ]);
     return {
       answer: cleanAnswer(answer),
-      sources,
+      sources: dedupeSources([...parseSearchSources(payload), ...parseChatSources(payload)]),
       route: "agent",
       semanticRerank: false,
     };
   } catch (error) {
-    log.warn("Perplexity Agent API unavailable; falling back to fast research", {
+    log.warn("Perplexity Agent API unavailable; falling back to Sonar", {
       error: getErrorMessage(error),
     });
     return null;
@@ -253,12 +268,13 @@ async function requestEmbeddings(inputs: string[], timeoutMs: number): Promise<n
     const rows = Array.isArray(payload?.data) ? payload.data : [];
     const embeddings = rows
       .map((row: any) => row?.embedding)
-      .filter((value: unknown): value is number[] =>
-        Array.isArray(value) && value.length > 0 && value.every((n) => typeof n === "number"),
+      .filter(
+        (value: unknown): value is number[] =>
+          Array.isArray(value) && value.length > 0 && value.every((n) => typeof n === "number"),
       );
     return embeddings.length === inputs.length ? embeddings : null;
   } catch (error) {
-    log.warn("Perplexity Embeddings API unavailable; preserving provider-ranked search", {
+    log.warn("Perplexity Embeddings API unavailable; preserving original ranking", {
       error: getErrorMessage(error),
     });
     return null;
@@ -279,7 +295,21 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-async function rerankWithEmbeddings(
+export async function rerankTextsWithPerplexityEmbeddings(
+  query: string,
+  texts: string[],
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+): Promise<number[] | null> {
+  const safeQuery = cleanQuery(query);
+  if (!safeQuery || texts.length === 0 || !EMBEDDINGS_URL || !EMBEDDINGS_MODEL) return null;
+  const safeTexts = texts.slice(0, MAX_SEARCH_RESULTS).map((text) => text.slice(0, 1_500));
+  const embeddings = await requestEmbeddings([safeQuery, ...safeTexts], timeoutMs);
+  if (!embeddings || embeddings.length !== safeTexts.length + 1) return null;
+  const [queryEmbedding, ...textEmbeddings] = embeddings;
+  return textEmbeddings.map((embedding) => cosineSimilarity(queryEmbedding, embedding));
+}
+
+async function rerankSourcesWithPerplexityEmbeddings(
   query: string,
   sources: PerplexitySource[],
   timeoutMs: number,
@@ -287,11 +317,10 @@ async function rerankWithEmbeddings(
   const texts = sources.map((source) =>
     [source.title, source.snippet, source.uri].filter(Boolean).join(" — ").slice(0, 1_500),
   );
-  const embeddings = await requestEmbeddings([query, ...texts], timeoutMs);
-  if (!embeddings || embeddings.length !== sources.length + 1) return null;
-  const [queryEmbedding, ...sourceEmbeddings] = embeddings;
+  const scores = await rerankTextsWithPerplexityEmbeddings(query, texts, timeoutMs);
+  if (!scores || scores.length !== sources.length) return null;
   return sources
-    .map((source, index) => ({ source, score: cosineSimilarity(queryEmbedding, sourceEmbeddings[index]) }))
+    .map((source, index) => ({ source, score: scores[index] }))
     .sort((a, b) => b.score - a.score)
     .map((item) => item.source);
 }
@@ -310,20 +339,24 @@ export async function researchPerplexity(
     if (agent) return agent;
   }
 
-  // Search and Sonar run in parallel: richer source metadata without adding a
-  // second serial network hop to latency-sensitive call turns.
-  const [search, chat] = await Promise.all([
-    searchPerplexityWeb(safeQuery, {
-      timeoutMs,
-      semanticRerank: options.semanticRerank === true,
-    }),
-    runChatResearch(safeQuery, timeoutMs),
+  // Live-call default: one Sonar request only. Search + embeddings is reserved
+  // for explicit semantic-research jobs so voice latency and COGS stay bounded.
+  if (!options.semanticRerank) {
+    const sonar = await runSonarResearch(safeQuery, timeoutMs);
+    return sonar
+      ? { answer: sonar.answer, sources: sonar.sources, route: "sonar", semanticRerank: false }
+      : null;
+  }
+
+  const [search, sonar] = await Promise.all([
+    searchPerplexityWeb(safeQuery, { timeoutMs, semanticRerank: true }),
+    runSonarResearch(safeQuery, timeoutMs),
   ]);
-  if (!chat) return null;
+  if (!sonar) return null;
   return {
-    answer: chat.answer,
-    sources: dedupeSources([...(search?.sources || []), ...chat.sources]),
-    route: "search_chat",
+    answer: sonar.answer,
+    sources: dedupeSources([...(search?.sources || []), ...sonar.sources]),
+    route: "search_sonar",
     semanticRerank: search?.semanticRerank === true,
   };
 }
@@ -332,9 +365,11 @@ export function getPerplexityCapabilityPosture() {
   const key = Boolean(apiKey());
   return {
     key,
-    search: key,
     sonar: key,
-    agent: key && Boolean(AGENT_URL),
+    search: key,
+    agent: key && Boolean(AGENT_URL) && Boolean(AGENT_MODEL),
     embeddings: key && Boolean(EMBEDDINGS_URL) && Boolean(EMBEDDINGS_MODEL),
+    productionKeyIgnoredInPreview:
+      process.env.VERCEL_ENV === "preview" && Boolean(process.env.PERPLEXITY_API_KEY?.trim()),
   } as const;
 }
