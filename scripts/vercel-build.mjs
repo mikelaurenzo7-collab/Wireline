@@ -90,6 +90,8 @@ run("npx", [
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
   "tests/auth-journey-hardening-contract.test.ts",
+  // OAuth state and bridge-code binding protect account-session integrity, so
+  // this contract belongs in every preview and production-equivalent build.
   "tests/auth-oauth-browser-binding-contract.test.ts",
   "tests/marketing-metadata-contract.test.ts",
   "tests/static-metadata-contract.test.ts",
