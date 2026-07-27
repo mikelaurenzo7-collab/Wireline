@@ -38,7 +38,7 @@ describe("product voice cohesion", () => {
       "State that the included Wireline number applies to paid plans so the free builder is never misrepresented.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
-      "On broad public surfaces, prefer AI Voice Agent; use personal agent or AI employee only when the audience context is explicit.",
+      "On broad and default product surfaces, prefer AI Voice Agent; use personal voice agent or business voice agent when the audience context is explicit.",
     );
     expect(MARKETING_VOICE.eyebrow).toBeNull();
     expect(MARKETING_VOICE.headline).toBe("AI VOICE AGENTS");
@@ -84,9 +84,9 @@ describe("product voice cohesion", () => {
       createCta: "Create personal voice agent",
     });
     expect(customerAgentLanguage("business")).toMatchObject({
-      singular: "AI voice employee",
-      plural: "AI voice employees",
-      createCta: "Create AI voice employee",
+      singular: "business voice agent",
+      plural: "business voice agents",
+      createCta: "Create business voice agent",
     });
   });
 
@@ -145,7 +145,7 @@ describe("product voice cohesion", () => {
     expect(campaign).toContain("marketing/reference use only");
     expect(mediaKit).toContain("Legacy filenames containing");
     expect(launchGuru).toContain("Personal call delegation");
-    expect(checklist).toContain("Business workspace copy may use \"AI employee\" when the audience is explicitly business");
+    expect(checklist).toContain("Business workspace copy should use \"business voice agent\" when the audience is explicitly business");
   });
 
   it("wires landing, workroom, and extension surfaces to shared voice constants", () => {
