@@ -3,7 +3,7 @@
 export const BRAND_SYSTEM = {
   northStar: "AI voice agents for every conversation—personal or business.",
   productNoun: "AI voice agent",
-  /** Public buying-surface noun. Business contexts may still use "AI employee". */
+  /** Public buying-surface noun. Business contexts should use "business voice agent". */
   buyingNoun: "AI Voice Agent",
   defaultRole: "Your AI voice agent",
   brandSpine: ["Wire", "Work", "Win"],
@@ -220,7 +220,7 @@ export const PRODUCT_POSTURE = {
 } as const;
 
 export function formatAgentRoleLabel(role?: string | null): string {
-  if (role === "ceo") return "Best Employee";
+  if (role === "ceo") return "Lead Agent";
   return (role || "agent").replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 

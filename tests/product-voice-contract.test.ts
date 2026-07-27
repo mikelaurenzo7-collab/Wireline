@@ -6,6 +6,7 @@ import {
   AGENT_NUMBER_PROMISE,
   BRAND_SYSTEM,
   customerAgentLanguage,
+  formatAgentRoleLabel,
   MARKETING_VOICE,
   OUTBOUND_WEDGE,
 } from "../src/lib/product-copy";
@@ -88,6 +89,28 @@ describe("product voice cohesion", () => {
       plural: "business voice agents",
       createCta: "Create business voice agent",
     });
+    expect(formatAgentRoleLabel("ceo")).toBe("Lead Agent");
+
+    const productCopy = read("src/lib/product-copy.ts");
+    const roleDefinitions = read("src/lib/agent-role-definitions.ts");
+    const roleTemplates = read("src/lib/agent-constants.ts");
+    const activationChecklist = read("src/components/ActivationChecklist.tsx");
+
+    expect(roleDefinitions).toContain('label: "Lead Agent"');
+    expect(roleDefinitions).toContain('archetype: "All-Purpose Voice Agent"');
+    expect(activationChecklist).toContain("Your voice agent is live");
+
+    const staleRolePhrases = [
+      ["Best", "Employee"].join(" "),
+      ["All-Purpose", "AI", "Employee"].join(" "),
+      ["AI", "employee"].join(" "),
+      ["best", "employee"].join(" "),
+    ];
+    for (const source of [productCopy, roleDefinitions, roleTemplates, activationChecklist]) {
+      for (const phrase of staleRolePhrases) {
+        expect(source).not.toContain(phrase);
+      }
+    }
   });
 
   it("keeps the canonical operating loop across public buying surfaces", () => {
@@ -131,12 +154,13 @@ describe("product voice cohesion", () => {
     const launchGuru = read("docs/LAUNCH_GURU_PLAYBOOK_2026-07-20.md");
     const checklist = read("docs/WIRELINE_CEO_LAUNCH_CHECKLIST_2026-07-10.md");
 
+    const staleLaunchClaim = ["The best", "employee you've ever had"].join(" ");
     for (const source of [campaign, mediaKit, launchGuru, checklist]) {
       expect(source).toContain("AI Voice Agents");
       expect(source).toContain("Build free. Go live from $19/mo");
       expect(source).not.toContain("Launch for $9");
       expect(source).not.toContain("from $9");
-      expect(source).not.toContain("The best employee you've ever had");
+      expect(source).not.toContain(staleLaunchClaim);
     }
 
     expect(campaign).toContain("AI voice agents for personal tasks and business conversations");
