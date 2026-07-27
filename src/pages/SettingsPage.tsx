@@ -23,11 +23,30 @@ function DangerZone() {
     setMessage(null);
     setError(null);
     try {
-      const response = await authFetch("/api/account/delete", { method: "POST" });
-      if (!response.ok) throw new Error(String(response.status));
-      setMessage("Deletion in progress. You'll receive an email when it completes.");
-    } catch {
-      setError("Couldn't queue the deletion. Try again in a moment.");
+      const response = await authFetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation: "DELETE" }),
+      });
+      const data = (await response.json().catch(() => null)) as {
+        error?: string;
+        scheduled_purge_at?: string;
+        already_pending?: boolean;
+        grace_days?: number;
+      } | null;
+      if (!response.ok) {
+        throw new Error(data?.error || `Couldn't queue deletion (${response.status}).`);
+      }
+      const when = data?.scheduled_purge_at
+        ? new Date(data.scheduled_purge_at).toLocaleDateString()
+        : "about 30 days";
+      setMessage(
+        data?.already_pending
+          ? `Deletion is already scheduled for ${when}. Billing continues until then; contact support to cancel.`
+          : `Deletion queued. Data purge is scheduled for ${when}. Billing continues until purge; contact support to cancel before then.`,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't queue the deletion. Try again in a moment.");
     } finally {
       setWorking(false);
     }
@@ -41,7 +60,8 @@ function DangerZone() {
             Delete account
           </p>
           <p className="mt-2 max-w-[48ch] text-sm leading-6 text-muted-foreground">
-            Permanently delete your account and all workspace data. Requires typed confirmation.
+            Schedules permanent deletion after a 30-day grace period. Billing continues until
+            purge. Type DELETE to confirm.
           </p>
         </div>
         <Trash2 className="hidden size-5 shrink-0 text-[var(--wireline-color-status-error)] sm:block" />

@@ -25,14 +25,20 @@ const TIER_PITCH: Record<string, string> = {
 };
 
 /** Public self-serve plans only. Retained plans stay serviceable but are never reacquired accidentally. */
-const SELF_SERVE_TIERS = STRIPE_PLANS.filter(
-  (plan) => plan.price_usd_monthly > 0 && plan.public !== false,
-).map((plan) => ({
-  id: plan.id,
-  label: plan.name,
-  price: plan.price_usd_monthly,
-  pitch: TIER_PITCH[plan.id] ?? plan.features[0] ?? "",
-}));
+function selfServeTiers(interval: "month" | "year") {
+  return STRIPE_PLANS.filter(
+    (plan) => plan.price_usd_monthly > 0 && plan.public !== false,
+  ).map((plan) => {
+    const annual = interval === "year" && plan.price_usd_annual > 0;
+    return {
+      id: plan.id,
+      label: plan.name,
+      price: annual ? plan.price_usd_annual : plan.price_usd_monthly,
+      suffix: annual ? "/yr" : "/mo",
+      pitch: TIER_PITCH[plan.id] ?? plan.features[0] ?? "",
+    };
+  });
+}
 
 function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: string } {
   switch (detail.code) {
@@ -115,6 +121,9 @@ export default function TrialGateModal() {
 
   const { title, body } = headlineForCode(detail);
   const recommendedPlanId = recommendedPlanFromIntent(getStoredSignupIntent());
+  const preferredInterval =
+    getStoredSignupIntent()?.preferredBillingInterval === "year" ? "year" : "month";
+  const checkoutTiers = selfServeTiers(preferredInterval);
   const eyebrow =
     detail.code === "ACTIVATION_REQUIRED"
       ? "Activate live work"
@@ -132,10 +141,12 @@ export default function TrialGateModal() {
     setPending(planId);
     setError(null);
     try {
+      const interval =
+        getStoredSignupIntent()?.preferredBillingInterval === "year" ? "year" : "month";
       const response = await authFetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan_id: planId }),
+        body: JSON.stringify({ plan_id: planId, interval }),
         signal: controller.signal,
       });
       const data = (await safeJson<{ url?: string; error?: string }>(response)) as {
@@ -152,7 +163,12 @@ export default function TrialGateModal() {
       if (typeof window !== "undefined") {
         try {
           const prices: Record<string, number> = Object.fromEntries(
-            STRIPE_PLANS.map((plan) => [plan.id, plan.price_usd_monthly]),
+            STRIPE_PLANS.map((plan) => [
+              plan.id,
+              interval === "year" && plan.price_usd_annual > 0
+                ? plan.price_usd_annual
+                : plan.price_usd_monthly,
+            ]),
           );
           const windowWithAnalytics = window as unknown as {
             fbq?: (event: string, action: string, data?: Record<string, unknown>) => void;
@@ -374,7 +390,7 @@ export default function TrialGateModal() {
               )}
               {showPlanCheckout && (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {SELF_SERVE_TIERS.map((tier) => {
+                  {checkoutTiers.map((tier) => {
                     const isPending = pending === tier.id;
                     const isRecommended = tier.id === recommendedPlanId;
                     return (
@@ -404,7 +420,7 @@ export default function TrialGateModal() {
                           <span className="font-display text-2xl italic text-foreground">
                             ${tier.price}
                           </span>
-                          <span className="wl-label-muted/70">/mo</span>
+                          <span className="wl-label-muted/70">{tier.suffix}</span>
                         </div>
                         <p className="mb-3 text-[var(--wireline-typography-overline-size)] leading-relaxed text-foreground/65">
                           {tier.pitch}

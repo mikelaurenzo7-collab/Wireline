@@ -76,3 +76,17 @@ Additional verified fixes after a fiercer second pass:
 
 Contract: `tests/launch-readiness-deep-pass-2026-07-27-contract.test.ts`.
 
+## Triple pass (same day)
+
+1. **Account delete CTA (P0)** — Settings Danger Zone now POSTs `{ confirmation: "DELETE" }` and tells the truth about the 30-day grace (no fake completion email).
+2. **Admin delete copy honesty** — scheduled purge + billing continues until then.
+3. **Email suppressions live (P0 CAN-SPAM)** — applied `wireline_email_suppressions` + RLS/grants on shared Supabase; committed `0116_email_suppressions_live.sql`.
+4. **TrialGate annual checkout** — passes stored `preferredBillingInterval` and shows `/yr` prices.
+5. **StripeBillingCard** — annual Subscribe disabled unless `annual_configured`.
+6. **Support/Contact honesty** — 503 when Resend fails; clients require `sent: true`.
+7. **Phone bind activation gate** — `POST /api/phone-numbers` uses `enforceLiveWorkActivation`.
+8. **Checkout customer race** — advisory lock around first Stripe customer create.
+9. **Runtime Balance** — agent knowledge plan name no longer says Conversation Balance.
+
+Contract: `tests/launch-readiness-triple-pass-2026-07-27-contract.test.ts`.
+

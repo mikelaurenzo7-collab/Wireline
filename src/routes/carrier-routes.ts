@@ -77,6 +77,7 @@ router.get(
 router.post(
   "/api/phone-numbers",
   authenticateUser,
+  enforceLiveWorkActivation,
   rateLimiters.phoneNumberRateLimiter,
   validateBody(PhoneNumberCreateRequestSchema),
   async (req: AuthenticatedRequest, res: Response) => {

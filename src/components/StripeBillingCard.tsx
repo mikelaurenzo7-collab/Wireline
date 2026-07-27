@@ -509,6 +509,7 @@ function PlanPicker({
             const isSignupMatch = signupPlanInterest === plan.id;
             const annual = plan.price_usd_annual > 0;
             const showAnnual = billingInterval === "year" && annual;
+            const canSubscribe = showAnnual ? plan.annual_configured : plan.configured;
             const price = showAnnual ? plan.price_usd_annual : plan.price_usd_monthly;
             const priceSuffix = showAnnual ? "/yr" : "/mo";
             const monthsSaved =
@@ -594,15 +595,15 @@ function PlanPicker({
                   disableAnimations
                   variant="outline"
                   onClick={() => onSelectPlan(plan.id, showAnnual ? "year" : "month")}
-                  disabled={isBusy || !plan.configured}
+                  disabled={isBusy || !canSubscribe}
                   className={cn(
                     "w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-border hover:border-[color:var(--wireline-color-border-strong)] text-foreground bg-card hover:bg-muted hover-premium-glow",
-                    !isBusy && plan.configured && "wl-accent-subscribe",
+                    !isBusy && canSubscribe && "wl-accent-subscribe",
                   )}
                 >
                   {isBusy ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : plan.configured ? (
+                  ) : canSubscribe ? (
                     <>
                       Subscribe {showAnnual ? "annually" : ""} <ArrowRight className="w-3 h-3" />
                     </>
@@ -610,7 +611,7 @@ function PlanPicker({
                     "Contact sales"
                   )}
                 </ShadButton>
-                {!plan.configured && (
+                {!canSubscribe && (
                   <p className="text-[var(--wireline-typography-overline-size)] text-muted-foreground text-center leading-relaxed">
                     Stripe catalog still being consolidated for this tier
                   </p>

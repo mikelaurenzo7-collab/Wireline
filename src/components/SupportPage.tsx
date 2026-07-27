@@ -53,6 +53,10 @@ export function SupportPage() {
         body: JSON.stringify({ issueType, email, subject, body }),
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = (await response.json().catch(() => null)) as { sent?: boolean } | null;
+      if (!payload?.sent) {
+        throw new Error("Support ticket was not delivered.");
+      }
       setSubmitted(true);
       if (typeof window !== "undefined" && (window as any).plausible) {
         (window as any).plausible("SupportTicketSubmitted", { props: { issueType } });

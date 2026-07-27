@@ -39,7 +39,8 @@ export function SubscriptionPanel({ onDeleteAccount }: SubscriptionPanelProps) {
                   Delete account
                 </p>
                 <p className="text-xs text-muted/80">
-                  Permanently deletes your account and all associated data.
+                  Schedules permanent deletion after a 30-day grace period. Billing and numbers
+                  continue until purge; contact support to cancel.
                 </p>
               </div>
             </div>
