@@ -154,10 +154,10 @@ function readBridgeStateFromSetCookie(res: Response): string | undefined {
   return undefined;
 }
 
-function rejectInvalidCallback(res: Response): Response {
+function rejectInvalidCallback(res: Response): void {
   clearOAuthBridgeStateCookie(res);
   const error = encodeURIComponent(INVALID_STATE_MESSAGE);
-  return res.redirect(`${getCanonicalAppUrl()}/auth/oauth-complete#error=${error}`);
+  res.redirect(`${getCanonicalAppUrl()}/auth/oauth-complete#error=${error}`);
 }
 
 function protectOAuthCompletionRedirect(res: Response): void {
