@@ -1,5 +1,5 @@
 /**
- * Launch story — Wire → Work → Win and the AI voice-agent operating model are
+ * Launch story. Build, Train, Launch and the AI voice agent operating model are
  * the active truth across metadata, install surfaces, shared copy, conversion,
  * and billing. Retired brand eras must not return to active product surfaces.
  */
@@ -24,38 +24,38 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /<title>Wireline — AI Voice Agents for Personal &amp; Business<\/title>/,
+    /<title>Wireline \| AI voice agents that get work done<\/title>/,
     "static metadata must state the current product promise",
   );
   mustInclude(
     "index.html",
     indexHtml,
-    /Build one AI voice agent—or a coordinated team—for personal tasks and business conversations/,
-    "static metadata must state the current product category",
+    /Build one for your business or your life\. It can call, answer, text, email, book, and follow through while you stay in control\./,
+    "static metadata must state the current product category and value",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "Wireline - AI Voice Agents for Personal & Business"/,
+    /DEFAULT_TITLE = "Wireline \| AI voice agents that get work done"/,
     "runtime metadata must state the current product promise",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /Build one AI voice agent—or a coordinated team—for personal tasks and business conversations/,
+    /Build one for your business or your life\. It can call, answer, text, email, book, and follow through while you stay in control\./,
     "runtime metadata must use the current product description",
   );
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"name"\s*:\s*"Wireline - AI Voice Agents"/,
-    "install metadata must use the canonical AI voice-agent positioning",
+    /"name"\s*:\s*"Wireline \| AI Voice Agents"/,
+    "install metadata must use the canonical AI voice agent positioning",
   );
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /Build one AI voice agent—or a coordinated team—for personal tasks and business conversations/,
-    "install metadata must explain the multichannel operating value",
+    /Build one for your business or your life\. It can call, answer, text, email, book, and follow through while you stay in control\./,
+    "install metadata must explain the operating value",
   );
   mustExclude(
     "public/site.webmanifest",
@@ -67,8 +67,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/product-copy.ts",
     productCopy,
-    /northStar:\s*"AI voice agents for every conversation—personal or business\."/,
-    "shared copy must preserve the north-star promise",
+    /northStar:\s*"AI voice agents that call, answer, follow up, and finish the work\."/,
+    "shared copy must preserve the north star promise",
   );
   mustInclude(
     "src/lib/product-copy.ts",
@@ -79,20 +79,20 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/product-copy.ts",
     productCopy,
-    /brandSpine:\s*\["Wire", "Work", "Win"\]/,
+    /brandSpine:\s*\["Build", "Train", "Launch"\]/,
     "shared copy must define the canonical brand spine",
   );
   mustInclude(
     "src/lib/product-copy.ts",
     productCopy,
     /AGENT_NUMBER_PROMISE/,
-    "shared copy must expose the included-number promise",
+    "shared copy must expose the included number promise",
   );
   mustInclude(
     "src/lib/product-copy.ts",
     productCopy,
     /includes a Wireline number at no extra line fee/,
-    "the included-number promise must stay explicit",
+    "the included number promise must stay explicit",
   );
   mustExclude(
     "src/lib/product-copy.ts",
@@ -105,7 +105,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
     /MARKETING_VOICE\.headline/,
-    "landing must consume the shared brand spine",
+    "landing must consume the shared headline",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
@@ -128,8 +128,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/pages/LandingPage.tsx",
     landingPage,
-    /Wire → Work → Win|MARKETING_VOICE/,
-    "landing metadata or composition must preserve the brand spine",
+    /MARKETING_VOICE/,
+    "landing metadata or composition must preserve shared product voice",
   );
 
   mustInclude(
@@ -142,7 +142,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     "src/lib/plan-catalog.ts",
     planCatalog,
     /included_phone_numbers/,
-    "the plan catalog must back included-number claims",
+    "the plan catalog must back included number claims",
   );
   mustInclude(
     "src/pages/Pricing.tsx",
@@ -169,13 +169,19 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     "pricing must not imply uncontrolled or silent variable usage",
   );
 
-  for (const [file, source] of [
+  const coreBuyingSurfaces = [
     ["index.html", indexHtml],
     ["src/lib/page-meta.tsx", pageMeta],
+    ["public/site.webmanifest", manifest],
     ["src/lib/product-copy.ts", productCopy],
     ["src/components/marketing/WireAgentLanding.tsx", wireAgentLanding],
-    ["public/site.webmanifest", manifest],
-  ]) {
+    ["src/pages/LandingPage.tsx", landingPage],
+  ];
+
+  for (const [file, source] of coreBuyingSurfaces) {
+    if (source.includes("—")) {
+      failures.push(`${file}: em dash found on a core buying surface`);
+    }
     const lower = source.toLowerCase();
     const found = RETIRED_PRODUCT_TERMS.filter((term) => lower.includes(term.toLowerCase()));
     if (found.length) {
