@@ -170,7 +170,7 @@ export function CarrierPanel({
 
           <div className="space-y-1.5">
             <label htmlFor="vapi-inbound-agent-id" className="wl-label text-foreground/55">
-              Default employee for unassigned inbound calls
+              Default voice agent for unassigned inbound calls
             </label>
             <Select
               value={settings.vapi_phone_inbound_agent_id || CARRIER_AGENT_UNSET}
@@ -182,10 +182,10 @@ export function CarrierPanel({
               }
             >
               <SelectTrigger id="vapi-inbound-agent-id" className="h-auto w-full rounded-md border border-input bg-black/5 py-2 pl-3 text-sm text-foreground">
-                <SelectValue placeholder="Oldest voice employee" />
+                <SelectValue placeholder="Oldest voice agent" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={CARRIER_AGENT_UNSET}>Oldest voice employee</SelectItem>
+                <SelectItem value={CARRIER_AGENT_UNSET}>Oldest voice agent</SelectItem>
                 {voiceAgents.map((agent) => (
                   <SelectItem key={agent.id} value={agent.id}>
                     {agent.name}
@@ -221,7 +221,7 @@ export function CarrierPanel({
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs leading-5 text-muted-foreground">
-              Assign each customer line to one AI employee. Add campaign labels only when attribution is useful.
+              Assign each customer line to one voice agent. Add campaign labels only when attribution is useful.
             </p>
             <ShadButton
               type="button"
@@ -238,7 +238,7 @@ export function CarrierPanel({
           {phoneNumbers.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border py-8 text-center">
               <p className="text-sm font-semibold text-foreground">No active customer lines</p>
-              <p className="mt-1 text-xs text-muted-foreground">Claim a number above when the employee is ready.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Claim a number above when the voice agent is ready.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -286,7 +286,7 @@ export function CarrierPanel({
                         }
                       >
                         <SelectTrigger
-                          aria-label={`Assign employee to ${number.phone_number}`}
+                          aria-label={`Assign voice agent to ${number.phone_number}`}
                           className="h-auto min-w-[150px] rounded-md border border-input bg-black/5 py-1.5 pl-2.5 text-xs text-foreground"
                         >
                           <SelectValue placeholder="Unassigned" />
