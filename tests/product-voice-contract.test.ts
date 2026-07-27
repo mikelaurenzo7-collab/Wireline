@@ -6,6 +6,7 @@ import {
   AGENT_NUMBER_PROMISE,
   BRAND_SYSTEM,
   customerAgentLanguage,
+  formatAgentRoleLabel,
   MARKETING_VOICE,
   OUTBOUND_WEDGE,
 } from "../src/lib/product-copy";
@@ -88,6 +89,28 @@ describe("product voice cohesion", () => {
       plural: "business voice agents",
       createCta: "Create business voice agent",
     });
+    expect(formatAgentRoleLabel("ceo")).toBe("Lead Agent");
+
+    const productCopy = read("src/lib/product-copy.ts");
+    const roleDefinitions = read("src/lib/agent-role-definitions.ts");
+    const roleTemplates = read("src/lib/agent-constants.ts");
+    const activationChecklist = read("src/components/ActivationChecklist.tsx");
+
+    expect(roleDefinitions).toContain('label: "Lead Agent"');
+    expect(roleDefinitions).toContain('archetype: "All-Purpose Voice Agent"');
+    expect(activationChecklist).toContain("Your voice agent is live");
+
+    const staleRolePhrases = [
+      ["Best", "Employee"].join(" "),
+      ["All-Purpose", "AI", "Employee"].join(" "),
+      ["AI", "employee"].join(" "),
+      ["best", "employee"].join(" "),
+    ];
+    for (const source of [productCopy, roleDefinitions, roleTemplates, activationChecklist]) {
+      for (const phrase of staleRolePhrases) {
+        expect(source).not.toContain(phrase);
+      }
+    }
   });
 
   it("keeps the canonical operating loop across public buying surfaces", () => {
@@ -110,18 +133,41 @@ describe("product voice cohesion", () => {
     expect(starterPlus?.extra_agent_voice_minutes_monthly).toBe(50);
   });
 
-  it("keeps the homepage agent-first and personal/business inclusive", () => {
+  it("keeps public copy agent-first and personal/business inclusive", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const trust = read("src/components/marketing/TrustSignals.tsx");
     const footer = read("src/components/marketing/MarketingFooter.tsx");
+    const about = read("src/pages/About.tsx");
+    const compare = read("src/pages/Compare.tsx");
+    const privacy = read("src/components/PrivacyPolicyPage.tsx");
+    const contactAgents = read("src/data/contact-agents.ts");
 
     expect(landing).toContain("One agent · every channel");
     expect(landing).toContain("Build your AI Voice Agent");
-    expect(landing).not.toContain("One employee · every channel");
-    expect(landing).not.toContain("Build your AI Voice Employee");
-    expect(trust).not.toContain("before the employee");
-    expect(footer).toContain("personal and business conversations");
-    expect(footer).not.toContain("One trained employee");
+    expect(about).toContain("front-desk or sales voice agent");
+    expect(compare).toContain("multichannel voice agent");
+    expect(privacy).toContain("AI voice agent platform");
+    expect(contactAgents).toContain("Wireline specialists");
+
+    const stalePublicPhrases = [
+      ["One", "employee", "· every channel"].join(" "),
+      ["Build your AI Voice", "Employee"].join(" "),
+      ["before the", "employee"].join(" "),
+      ["One trained", "employee"].join(" "),
+      ["AI", "employee"].join(" "),
+      ["trained", "employee"].join(" "),
+      ["multichannel", "employee"].join(" "),
+      ["front-desk or sales", "employee"].join(" "),
+      ["Wireline", "employees"].join(" "),
+      ["Employee", "lines"].join(" "),
+      ["every", "employee"].join(" "),
+    ];
+
+    for (const source of [landing, trust, footer, about, compare, privacy, contactAgents]) {
+      for (const phrase of stalePublicPhrases) {
+        expect(source).not.toContain(phrase);
+      }
+    }
   });
 
 
@@ -131,12 +177,13 @@ describe("product voice cohesion", () => {
     const launchGuru = read("docs/LAUNCH_GURU_PLAYBOOK_2026-07-20.md");
     const checklist = read("docs/WIRELINE_CEO_LAUNCH_CHECKLIST_2026-07-10.md");
 
+    const staleLaunchClaim = ["The best", "employee you've ever had"].join(" ");
     for (const source of [campaign, mediaKit, launchGuru, checklist]) {
       expect(source).toContain("AI Voice Agents");
       expect(source).toContain("Build free. Go live from $19/mo");
       expect(source).not.toContain("Launch for $9");
       expect(source).not.toContain("from $9");
-      expect(source).not.toContain("The best employee you've ever had");
+      expect(source).not.toContain(staleLaunchClaim);
     }
 
     expect(campaign).toContain("AI voice agents for personal tasks and business conversations");

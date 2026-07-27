@@ -46,7 +46,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
     {
       id: "job",
       label: "Job and greeting defined",
-      detail: "Give the employee one clear customer-facing responsibility.",
+      detail: "Give the voice agent one clear customer-facing responsibility.",
       done: p.agents > 0,
       href: "/studio?section=setup",
       icon: Sparkles,
@@ -67,7 +67,8 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
       done: p.numbers > 0,
       href: "/settings/phone",
       icon: Cable,
-    },    {
+    },
+    {
       id: "live",
       label: "First live customer handled",
       detail: "Confirm the line received a real conversation and logged the outcome.",
@@ -130,7 +131,7 @@ export default function ActivationChecklist({ className }: { className?: string 
     return (
       <section
         className={cn("wl-paper wl-paper-elevated relative overflow-hidden p-5 sm:p-6", className)}
-        aria-label="Your best employee is live"
+        aria-label="Your voice agent is live"
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
@@ -138,7 +139,7 @@ export default function ActivationChecklist({ className }: { className?: string 
               <Trophy className="size-5" aria-hidden="true" />
             </span>
             <div>
-              <p className="wl-eyebrow wl-eyebrow--primary">Your best employee is live</p>
+              <p className="wl-eyebrow wl-eyebrow--primary">Your voice agent is live</p>
               <h2 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
                 All 5 customer-ready steps are done.
               </h2>
