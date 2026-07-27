@@ -16,6 +16,7 @@ import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
+import type { BillingPlansResponse, ClientPlan } from "../types/api-billing";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 const TIER_PITCH: Record<string, string> = {
@@ -24,18 +25,62 @@ const TIER_PITCH: Record<string, string> = {
   enterprise: "Governed rollout, security review, custom policy, and committed usage",
 };
 
-/** Public self-serve plans only. Retained plans stay serviceable but are never reacquired accidentally. */
-function selfServeTiers(interval: "month" | "year") {
-  return STRIPE_PLANS.filter(
-    (plan) => plan.price_usd_monthly > 0 && plan.public !== false,
-  ).map((plan) => {
-    const annual = interval === "year" && plan.price_usd_annual > 0;
+type CheckoutTier = {
+  id: string;
+  label: string;
+  price: number;
+  suffix: "/yr" | "/mo";
+  pitch: string;
+  interval: "month" | "year";
+  disabled?: boolean;
+  disabledReason?: string;
+};
+
+/**
+ * Public self-serve plans only. Prefer live `/api/billing/plans` so annual CTAs
+ * honor `annual_configured` instead of client catalog wishful thinking.
+ */
+function selfServeTiers(
+  preferredInterval: "month" | "year",
+  livePlans: ClientPlan[] | null,
+): CheckoutTier[] {
+  const source =
+    livePlans && livePlans.length > 0
+      ? livePlans.filter((plan) => plan.price_usd_monthly > 0 && plan.public !== false)
+      : STRIPE_PLANS.filter((plan) => plan.price_usd_monthly > 0 && plan.public !== false).map(
+          (plan) => ({
+            id: plan.id,
+            name: plan.name,
+            price_usd_monthly: plan.price_usd_monthly,
+            price_usd_annual: plan.price_usd_annual,
+            features: plan.features,
+            configured: true,
+            // Without live config, never claim annual is buyable.
+            annual_configured: false,
+            public: true as const,
+          }),
+        );
+
+  return source.map((plan) => {
+    const wantAnnual = preferredInterval === "year" && plan.price_usd_annual > 0;
+    const annualReady = plan.annual_configured === true;
+    // When the customer preferred annual but Stripe annual is not configured,
+    // fall back to monthly rather than offering a broken checkout.
+    const useAnnual = wantAnnual && annualReady;
+    const monthlyReady = plan.configured !== false;
     return {
       id: plan.id,
       label: plan.name,
-      price: annual ? plan.price_usd_annual : plan.price_usd_monthly,
-      suffix: annual ? "/yr" : "/mo",
+      price: useAnnual ? plan.price_usd_annual : plan.price_usd_monthly,
+      suffix: useAnnual ? ("/yr" as const) : ("/mo" as const),
       pitch: TIER_PITCH[plan.id] ?? plan.features[0] ?? "",
+      interval: useAnnual ? ("year" as const) : ("month" as const),
+      disabled: !monthlyReady,
+      disabledReason: !monthlyReady
+        ? "This plan is not available for checkout yet."
+        : wantAnnual && !annualReady
+          ? "Annual billing is not configured for this plan yet — monthly is shown."
+          : undefined,
     };
   });
 }
@@ -82,6 +127,7 @@ export default function TrialGateModal() {
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resend, setResend] = useState<ResendOutcome>("idle");
+  const [livePlans, setLivePlans] = useState<ClientPlan[] | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const checkoutAbortRef = useRef<AbortController | null>(null);
 
@@ -117,13 +163,35 @@ export default function TrialGateModal() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!detail) return;
+    let cancelled = false;
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const response = await authFetch("/api/billing/plans", { signal: controller.signal });
+        if (!response.ok) return;
+        const data = (await safeJson<BillingPlansResponse>(
+          response,
+        )) as BillingPlansResponse | null;
+        if (!cancelled && data?.plans?.length) setLivePlans(data.plans);
+      } catch {
+        /* keep catalog fallback; annual stays disabled without live config */
+      }
+    })();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [detail]);
+
   if (!detail) return null;
 
   const { title, body } = headlineForCode(detail);
   const recommendedPlanId = recommendedPlanFromIntent(getStoredSignupIntent());
   const preferredInterval =
     getStoredSignupIntent()?.preferredBillingInterval === "year" ? "year" : "month";
-  const checkoutTiers = selfServeTiers(preferredInterval);
+  const checkoutTiers = selfServeTiers(preferredInterval, livePlans);
   const eyebrow =
     detail.code === "ACTIVATION_REQUIRED"
       ? "Activate live work"
@@ -133,16 +201,17 @@ export default function TrialGateModal() {
   const showBillingPortal = detail.code === "SUBSCRIPTION_REQUIRED";
   const showPlanCheckout =
     detail.code !== "EMAIL_UNVERIFIED" && detail.code !== "SUBSCRIPTION_REQUIRED";
+  const annualFallbackNote =
+    preferredInterval === "year" &&
+    checkoutTiers.some((tier) => tier.interval === "month" && tier.price > 0);
 
-  async function checkout(planId: string) {
+  async function checkout(planId: string, interval: "month" | "year") {
     checkoutAbortRef.current?.abort();
     const controller = new AbortController();
     checkoutAbortRef.current = controller;
     setPending(planId);
     setError(null);
     try {
-      const interval =
-        getStoredSignupIntent()?.preferredBillingInterval === "year" ? "year" : "month";
       const response = await authFetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -163,12 +232,7 @@ export default function TrialGateModal() {
       if (typeof window !== "undefined") {
         try {
           const prices: Record<string, number> = Object.fromEntries(
-            STRIPE_PLANS.map((plan) => [
-              plan.id,
-              interval === "year" && plan.price_usd_annual > 0
-                ? plan.price_usd_annual
-                : plan.price_usd_monthly,
-            ]),
+            checkoutTiers.map((tier) => [tier.id, tier.price]),
           );
           const windowWithAnalytics = window as unknown as {
             fbq?: (event: string, action: string, data?: Record<string, unknown>) => void;
@@ -235,7 +299,9 @@ export default function TrialGateModal() {
     } catch (portalError: unknown) {
       if (controller.signal.aborted) return;
       setError(
-        portalError instanceof Error ? portalError.message : "Network error opening Stripe billing.",
+        portalError instanceof Error
+          ? portalError.message
+          : "Network error opening Stripe billing.",
       );
       setPending(null);
     } finally {
@@ -389,59 +455,67 @@ export default function TrialGateModal() {
                 </div>
               )}
               {showPlanCheckout && (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {checkoutTiers.map((tier) => {
-                    const isPending = pending === tier.id;
-                    const isRecommended = tier.id === recommendedPlanId;
-                    return (
-                      <ShadButton
-                        key={tier.id}
-                        type="button"
-                        disableAnimations
-                        variant="outline"
-                        onClick={() => checkout(tier.id)}
-                        disabled={!!pending}
-                        className={cn(
-                          "relative h-auto w-full justify-start rounded-md p-4 text-left touch-manipulation",
-                          isRecommended
-                            ? "border-brand/50 bg-brand/5 hover:border-brand hover:bg-brand/10"
-                            : "hover:border-brand/30 hover:bg-black/3",
-                        )}
-                      >
-                        {isRecommended && (
-                          <div className="absolute -top-2 left-4 rounded-full bg-brand px-2 py-0.5 font-medium text-on-brand wl-label">
-                            Recommended
-                          </div>
-                        )}
-                        <div className="mb-1 font-display text-lg italic text-foreground">
-                          {tier.label}
-                        </div>
-                        <div className="mb-2 flex items-baseline gap-1">
-                          <span className="font-display text-2xl italic text-foreground">
-                            ${tier.price}
-                          </span>
-                          <span className="wl-label-muted/70">{tier.suffix}</span>
-                        </div>
-                        <p className="mb-3 text-[var(--wireline-typography-overline-size)] leading-relaxed text-foreground/65">
-                          {tier.pitch}
-                        </p>
-                        <div className="inline-flex items-center gap-1.5 text-brand wl-label">
-                          {isPending ? (
-                            <>
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                              Opening
-                            </>
-                          ) : (
-                            <>
-                              <CreditCard className="h-3 w-3" />
-                              Pick {tier.label}
-                            </>
+                <>
+                  {annualFallbackNote && (
+                    <p className="mb-3 text-xs leading-relaxed text-foreground/65">
+                      Annual billing is not configured for checkout yet — monthly prices are shown.
+                    </p>
+                  )}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {checkoutTiers.map((tier) => {
+                      const isPending = pending === tier.id;
+                      const isRecommended = tier.id === recommendedPlanId;
+                      return (
+                        <ShadButton
+                          key={tier.id}
+                          type="button"
+                          disableAnimations
+                          variant="outline"
+                          onClick={() => checkout(tier.id, tier.interval)}
+                          disabled={!!pending || !!tier.disabled}
+                          title={tier.disabledReason}
+                          className={cn(
+                            "relative h-auto w-full justify-start rounded-md p-4 text-left touch-manipulation",
+                            isRecommended
+                              ? "border-brand/50 bg-brand/5 hover:border-brand hover:bg-brand/10"
+                              : "hover:border-brand/30 hover:bg-black/3",
                           )}
-                        </div>
-                      </ShadButton>
-                    );
-                  })}
-                </div>
+                        >
+                          {isRecommended && (
+                            <div className="absolute -top-2 left-4 rounded-full bg-brand px-2 py-0.5 font-medium text-on-brand wl-label">
+                              Recommended
+                            </div>
+                          )}
+                          <div className="mb-1 font-display text-lg italic text-foreground">
+                            {tier.label}
+                          </div>
+                          <div className="mb-2 flex items-baseline gap-1">
+                            <span className="font-display text-2xl italic text-foreground">
+                              ${tier.price}
+                            </span>
+                            <span className="wl-label-muted/70">{tier.suffix}</span>
+                          </div>
+                          <p className="mb-3 text-[var(--wireline-typography-overline-size)] leading-relaxed text-foreground/65">
+                            {tier.pitch}
+                          </p>
+                          <div className="inline-flex items-center gap-1.5 text-brand wl-label">
+                            {isPending ? (
+                              <>
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                Opening
+                              </>
+                            ) : (
+                              <>
+                                <CreditCard className="h-3 w-3" />
+                                Pick {tier.label}
+                              </>
+                            )}
+                          </div>
+                        </ShadButton>
+                      );
+                    })}
+                  </div>
+                </>
               )}
 
               {error && (

@@ -20,15 +20,26 @@ export default function LearningMetricsView() {
   const [agents, setAgents] = useState<AgentRow[]>([]);
   const [digests, setDigests] = useState<LearningDigest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const agentsRes = await authFetch("/api/agents").then((r) => r.json());
+        const agentsResponse = await authFetch("/api/agents");
+        if (!agentsResponse.ok) {
+          if (!cancelled) {
+            setAgents([]);
+            setDigests([]);
+            setLoadError("Could not load agents for learning metrics. Try again shortly.");
+          }
+          return;
+        }
+        const agentsRes = await agentsResponse.json();
         const list: AgentRow[] = (agentsRes?.agents ?? []).slice(0, 12);
         if (cancelled) return;
         setAgents(list);
+        setLoadError(null);
         const results = await Promise.all(
           list.map((a) =>
             authFetch(`/api/agents/${a.id}/learning-digest`)
@@ -39,6 +50,12 @@ export default function LearningMetricsView() {
         );
         if (cancelled) return;
         setDigests(results.filter((d): d is LearningDigest => d != null));
+      } catch {
+        if (!cancelled) {
+          setAgents([]);
+          setDigests([]);
+          setLoadError("Could not load learning metrics. Try again shortly.");
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -58,6 +75,17 @@ export default function LearningMetricsView() {
 
   const pendingTotal = digests.reduce((n, d) => n + d.lessonsPending, 0);
   const approvedTotal = digests.reduce((n, d) => n + d.lessonsApproved, 0);
+
+  if (loadError) {
+    return (
+      <EmptyState
+        title="Learning metrics unavailable"
+        description={loadError}
+        icon={BrainCircuit}
+        actions={[{ label: "Studio", to: "/studio", primary: true }]}
+      />
+    );
+  }
 
   if (agents.length === 0) {
     return (

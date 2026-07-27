@@ -27,7 +27,7 @@ npm run format                # prettier --write
 npm run format:check
 ```
 
-Tests (Vitest, `vmThreads` pool; Playwright for e2e):
+Tests (Vitest, `forks` pool; Playwright for e2e):
 
 ```bash
 npm run test                          # watch mode, excludes tests/e2e/**

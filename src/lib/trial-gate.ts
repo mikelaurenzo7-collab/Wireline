@@ -340,6 +340,95 @@ async function verifyLiveWorkAccount(req: Request, res: Response): Promise<Trial
   return state;
 }
 
+/**
+ * Non-middleware live-work entitlement check for service-layer paths
+ * (outbound SMS, cadence, action engine, tool handlers) that spend provider
+ * money without an Express request chain.
+ *
+ * Mirrors verifyLiveWorkAccount: email verified + paid/trialing status.
+ * Fail-closed on lookup errors. Owner bypass is intentional for founder ops.
+ */
+export async function assertLiveWorkEntitlementForUser(
+  userId: string,
+  opts: { email?: string | null } = {},
+): Promise<
+  | { ok: true; status: TrialStatus }
+  | {
+      ok: false;
+      httpStatus: 402 | 503;
+      code: SubscriptionGateCode;
+      error: string;
+      recovery_path?: string;
+      retryable?: boolean;
+    }
+> {
+  if (opts.email && isOwnerEmail(opts.email)) {
+    return { ok: true, status: "active" };
+  }
+
+  const email = await getEmailVerificationState(userId);
+  if (email.lookupFailed) {
+    return {
+      ok: false,
+      httpStatus: 503,
+      code: "BILLING_STATE_UNAVAILABLE",
+      error:
+        "Wireline could not verify live-work access. No provider action was started; try again shortly.",
+      retryable: true,
+    };
+  }
+  if (!email.verified) {
+    return {
+      ok: false,
+      httpStatus: 402,
+      code: "EMAIL_UNVERIFIED",
+      error: "Verify your email to continue — check your inbox for a link from Wireline.",
+    };
+  }
+
+  const state = await getTrialState(userId);
+  if (state.lookupFailed || state.status === "unknown") {
+    return {
+      ok: false,
+      httpStatus: 503,
+      code: "BILLING_STATE_UNAVAILABLE",
+      error:
+        "Wireline could not verify subscription access. No provider action was started; try again shortly.",
+      retryable: true,
+    };
+  }
+  if (state.status === "pending_activation") {
+    return {
+      ok: false,
+      httpStatus: 402,
+      code: "ACTIVATION_REQUIRED",
+      error:
+        "Choose Starter, Starter Plus, or Pro before wiring a production number or starting live work.",
+      recovery_path: "/settings/billing",
+    };
+  }
+  if (state.status === "trial_expired" || state.status === "canceled") {
+    return {
+      ok: false,
+      httpStatus: 402,
+      code: "TRIAL_EXPIRED",
+      error: "Your live access has ended — choose a plan to continue.",
+      recovery_path: "/settings/billing",
+    };
+  }
+  if (state.status === "past_due") {
+    return {
+      ok: false,
+      httpStatus: 402,
+      code: "SUBSCRIPTION_REQUIRED",
+      error: "Your subscription is past due — update payment before starting another live action.",
+      recovery_path: "/settings/billing",
+    };
+  }
+
+  return { ok: true, status: state.status };
+}
+
 /** Block number wiring and other provider-spending live actions until verified. */
 export async function enforceLiveWorkActivation(req: Request, res: Response, next: NextFunction) {
   const state = await verifyLiveWorkAccount(req, res);

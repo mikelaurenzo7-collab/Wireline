@@ -36,6 +36,9 @@ export interface TwilioSendResult {
   configured: boolean;
   enabled: boolean;
   reason?: string;
+  /** Machine code when blocked by live-work entitlement or similar gates. */
+  code?: string;
+  recovery_path?: string;
   sid?: string;
   status?: string | null;
   to?: string;

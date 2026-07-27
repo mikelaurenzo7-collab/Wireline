@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // assertVoiceWalletSolvent() re-fetches the snapshot internally, so each test
 // that both reads a snapshot and asserts on the guard needs the
@@ -19,20 +19,28 @@ function selectSequence(rowsPerCall: unknown[][], repeat = 2) {
   return impl;
 }
 
-vi.mock("../src/lib/server-context", () => ({
-  drizzle: { select: vi.fn() },
-}));
+beforeEach(() => {
+  vi.resetModules();
+});
 
-vi.mock("../src/lib/credit-wallet", () => ({
-  getCreditBalanceUsd: vi.fn(),
-}));
-
-import { drizzle } from "../src/lib/server-context";
-import { getCreditBalanceUsd } from "../src/lib/credit-wallet";
-import { assertVoiceWalletSolvent, getVoiceWalletSnapshot } from "../src/lib/voice-wallet-guard";
+async function loadModules() {
+  vi.doMock("../src/lib/server-context", () => ({
+    drizzle: { select: vi.fn() },
+  }));
+  vi.doMock("../src/lib/credit-wallet", () => ({
+    getCreditBalanceUsd: vi.fn(),
+  }));
+  const { drizzle } = await import("../src/lib/server-context");
+  const { getCreditBalanceUsd } = await import("../src/lib/credit-wallet");
+  const { assertVoiceWalletSolvent, getVoiceWalletSnapshot } =
+    await import("../src/lib/voice-wallet-guard");
+  return { drizzle, getCreditBalanceUsd, assertVoiceWalletSolvent, getVoiceWalletSnapshot };
+}
 
 describe("voice-wallet-guard", () => {
   it("requires a paid plan before any live voice work", async () => {
+    const { drizzle, getCreditBalanceUsd, assertVoiceWalletSolvent, getVoiceWalletSnapshot } =
+      await loadModules();
     vi.mocked(drizzle.select).mockImplementation(
       selectSequence([
         [{ plan: null, status: null }],
@@ -52,6 +60,8 @@ describe("voice-wallet-guard", () => {
   });
 
   it("blocks a paid plan whose included minutes and balance are both depleted", async () => {
+    const { drizzle, getCreditBalanceUsd, assertVoiceWalletSolvent, getVoiceWalletSnapshot } =
+      await loadModules();
     vi.mocked(drizzle.select).mockImplementation(
       selectSequence([
         [{ plan: "team", status: "active" }],
@@ -72,6 +82,8 @@ describe("voice-wallet-guard", () => {
   });
 
   it("passes for a paid plan with included minutes remaining", async () => {
+    const { drizzle, getCreditBalanceUsd, assertVoiceWalletSolvent, getVoiceWalletSnapshot } =
+      await loadModules();
     vi.mocked(drizzle.select).mockImplementation(
       selectSequence([
         [{ plan: "team", status: "active" }],
@@ -87,6 +99,8 @@ describe("voice-wallet-guard", () => {
   });
 
   it("counts paid extra-agent minutes in the included pool", async () => {
+    const { drizzle, getCreditBalanceUsd, assertVoiceWalletSolvent, getVoiceWalletSnapshot } =
+      await loadModules();
     // team base = 120 min; each extra agent adds 50. With 2 extra agents the
     // customer has 220 included, so 75 used still leaves 145 — the call must be
     // allowed even with a zero balance instead of being blocked at the base cap.

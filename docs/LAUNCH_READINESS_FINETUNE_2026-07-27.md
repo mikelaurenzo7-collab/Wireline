@@ -101,3 +101,22 @@ Contract: `tests/launch-readiness-triple-pass-2026-07-27-contract.test.ts`.
 
 Contract: `tests/launch-readiness-quadruple-pass-2026-07-27-contract.test.ts`.
 
+## Quintuple pass (same day)
+
+1. **SMS live-work gate (P0)** — `sendTenantMessage` now calls `assertLiveWorkEntitlementForUser` before DNC/settings/`reserveRuntimeUsage`, so Free Builder and pending-activation tenants cannot burn Runtime Balance on carrier SMS/WhatsApp. Failures return machine `code` + `recovery_path` on `TwilioSendResult`.
+2. **TrialGate annual honesty (P1)** — modal loads `/api/billing/plans` and only posts annual checkout when `annual_configured`; otherwise falls back to monthly with an explicit note (matches StripeBillingCard).
+3. **P0 billing ops note (P1)** — rewritten to founder catalog v6 ($19 / $39 / $79 / $159) and Runtime Balance language.
+4. **Client empty-success honesty (P2)** — `fleet-setup-progress`, `LearningMetricsView`, and `AuditActivityPanel` require `response.ok` before treating payloads as empty inventories.
+5. **Runtime Balance recovery codes (P2)** — voice wallet `recovery_action` uses `restore_runtime_balance` / `add_runtime_balance`; completion-grace comment uses Runtime Balance.
+6. **Vitest isolation** — keep forks pool + per-test module reset for `voice-wallet-guard` (correct under concurrent suites).
+
+Contract: `tests/launch-readiness-quintuple-pass-2026-07-27-contract.test.ts`.
+
+### Still open after quintuple (ops / founder)
+
+1. Federal DNC vendor `FEDERAL_DNC_API_KEY` (`loginId`) still absent — marketing outbound stays fail-closed.
+2. Confirm `WIRELINE_LAUNCH_DEMO_MODE=false` on Production via dashboard (CLI pull redacts the value).
+3. One live $19 Starter checkout → webhook → entitlement proof.
+4. Restore GitHub Actions spending; rotate any Vercel token pasted into chat.
+5. Preview env remains intentionally sparse per deployment boundaries — do not copy production secrets.
+

@@ -32,19 +32,38 @@ export function AuditActivityPanel() {
   const [recent, setRecent] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [recentLoading, setRecentLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [recentError, setRecentError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     const controller = new AbortController();
     setLoading(true);
+    setSummaryError(null);
 
     authFetch(`/api/audit/summary?days=${days}`, { signal: controller.signal })
-      .then((r) => r.json())
-      .then((d) => {
-        if (active) setSummary(d);
+      .then(async (r) => {
+        if (!r.ok) {
+          if (active) {
+            setSummary(null);
+            setSummaryError("Could not load AI usage summary.");
+          }
+          return;
+        }
+        const d = await r.json();
+        if (active) {
+          setSummary(d);
+          setSummaryError(null);
+        }
       })
       .catch((err) => {
-        if (err.name !== "AbortError") clientLog.error("audit-panel:summary", err);
+        if (err.name !== "AbortError") {
+          clientLog.error("audit-panel:summary", err);
+          if (active) {
+            setSummary(null);
+            setSummaryError("Could not load AI usage summary.");
+          }
+        }
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -60,14 +79,31 @@ export function AuditActivityPanel() {
     let active = true;
     const controller = new AbortController();
     setRecentLoading(true);
+    setRecentError(null);
 
     authFetch(`/api/audit/recent?limit=20`, { signal: controller.signal })
-      .then((r) => r.json())
-      .then((d) => {
-        if (active) setRecent(d.logs || []);
+      .then(async (r) => {
+        if (!r.ok) {
+          if (active) {
+            setRecent([]);
+            setRecentError("Could not load recent audit activity.");
+          }
+          return;
+        }
+        const d = await r.json();
+        if (active) {
+          setRecent(d.logs || []);
+          setRecentError(null);
+        }
       })
       .catch((err) => {
-        if (err.name !== "AbortError") clientLog.error("audit-panel:recent", err);
+        if (err.name !== "AbortError") {
+          clientLog.error("audit-panel:recent", err);
+          if (active) {
+            setRecent([]);
+            setRecentError("Could not load recent audit activity.");
+          }
+        }
       })
       .finally(() => {
         if (active) setRecentLoading(false);
@@ -113,6 +149,12 @@ export function AuditActivityPanel() {
         <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12">
           <Loader2 className="w-5 h-5 animate-spin text-primary/40" />
           <p className="wl-micro-meta--muted uppercase tracking-[0.2em]">Aggregating ledger...</p>
+        </div>
+      ) : summaryError ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12">
+          <p className="text-sm text-rose-600" role="alert">
+            {summaryError}
+          </p>
         </div>
       ) : (
         <>
@@ -245,7 +287,13 @@ export function AuditActivityPanel() {
               {recentLoading && <Loader2 className="w-3 h-3 animate-spin text-muted" />}
             </div>
             <div className="space-y-1">
-              {recent.length === 0 && !recentLoading ? (
+              {recentError ? (
+                <div className="py-20 text-center">
+                  <p className="text-sm text-rose-600" role="alert">
+                    {recentError}
+                  </p>
+                </div>
+              ) : recent.length === 0 && !recentLoading ? (
                 <div className="py-20 text-center">
                   <p className="wl-micro-meta--muted uppercase tracking-[0.3em]">
                     No recent activity found

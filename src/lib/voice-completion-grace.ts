@@ -14,7 +14,7 @@ function cents(value: number): number {
 /**
  * Finalize prepaid voice usage after a provider call has ended.
  *
- * This intentionally permits a temporary negative Conversation Balance. Wireline
+ * This intentionally permits a temporary negative Runtime Balance. Wireline
  * never terminates an active call because the included pool or prepaid balance is
  * exhausted mid-conversation. Instead, the completed call is charged in full and
  * the pre-call gate blocks the next live action until the amount due is restored.

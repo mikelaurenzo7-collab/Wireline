@@ -66,7 +66,7 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 - **Auth and authorization:** Wireline-owned session middleware, scrypt password hashes, HIBP k-anonymous password screening, and user-scoped ownership checks. Supabase Auth is not the authentication authority.
 - **Launch readiness API:** the launch-readiness health endpoint is protected by a server-owned monitor credential rather than tenant session authentication; it exposes capability levels for operational monitors.
 - **Database:** Drizzle schema and migrations in `src/db` and `drizzle/migrations`, hosted on Supabase Postgres.
-- **Billing:** Stripe-backed entitlements, plan catalog, Conversation Balance, checkout, portal, webhooks, and ledger-style reconciliation stay server-owned.
+- **Billing:** Stripe-backed entitlements, plan catalog, Runtime Balance (Conversation Balance API/module path retained), checkout, portal, webhooks, and ledger-style reconciliation stay server-owned.
 - **Voice and telephony:**
   - Production PSTN calls: Twilio carrier numbers imported into Vapi with SMS ownership disabled in Vapi.
   - Vapi orchestrates the call; OpenAI GPT-4o is the managed call model with Gemini fallback.
@@ -103,7 +103,7 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 | -------------------- | ----------------------------------------------------------------------------------------------------- |
 | Product language     | `src/lib/product-copy.ts`, `docs/README.md`                                                           |
 | Pricing              | `docs/business-usage-pricing-decision.md`, `src/lib/plan-catalog.ts`                                  |
-| Conversation Balance | `src/lib/conversation-balance.ts`                                                                     |
+| Runtime Balance (Conversation Balance module) | `src/lib/conversation-balance.ts`                                                                     |
 | Design               | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css` |
 | Models               | `src/lib/ai-models.ts`                                                                                |
 | Video presenter copy | `src/lib/video-presenter/copy.ts`                                                                     |

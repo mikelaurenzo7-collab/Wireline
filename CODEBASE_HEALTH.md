@@ -69,7 +69,7 @@ Wireline Letterpress — Aurora palette — is the only active design system.
 
 Use customer-facing language consistently:
 
-- Prefer: `Agents`, `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, `Conversation Balance`, `presenter`, `face`, `live video add-on`.
+- Prefer: `Agents`, `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, `Runtime Balance`, `presenter`, `face`, `live video add-on`.
 - Avoid reviving generic `assistant`, `dashboard`, `operator`, `manager`, `control center`, or vendor names unless the term is internal code, provider configuration, or an external API name.
 
 ## Documentation taxonomy
@@ -110,7 +110,7 @@ Run the narrowest sufficient check while developing, then the full gate before m
 - Added regression coverage for valid pooler selection, malformed pooler fallback, and invalid production database host rejection.
 - Refreshed README verification guidance so environment shape checks are explicit before deploy.
 - Revalidated Supabase: project `ogenlhodmwvyacvnrsnj` is active healthy; RLS is enabled on listed app tables; the remaining security advisor is Supabase Auth leaked-password protection, which is not the active custom-auth control; unused-index lints remain evidence-gated, not automatic deletion targets.
-- Revalidated Stripe: the active catalog includes Personal, Team, Business, Enterprise, Conversation Balance, and Live Video products; zero-dollar `Retired catalog anchor` prices are not referenced by source and remain an ops cleanup candidate before broad public checkout.
+- Revalidated Stripe: the active catalog includes Personal, Team, Business, Enterprise, Runtime Balance, and Live Video products; zero-dollar `Retired catalog anchor` prices are not referenced by source and remain an ops cleanup candidate before broad public checkout.
 - Revalidated Vercel: latest `wireline` production deployment is READY; runtime errors were clear over the last 30 minutes at the time of this pass.
 
 - Audited authenticated route and chrome surfaces; removed stale redirect-only client routes for pulse/fleet/ops/training/chat/actions/nexus/wires and deleted unmounted legacy shell components while preserving only defensive `/agents`, `/call-logs`, and `/logs` redirects.

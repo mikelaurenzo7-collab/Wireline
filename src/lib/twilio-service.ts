@@ -10,6 +10,7 @@ import { refundRuntimeUsage, reserveRuntimeUsage } from "./runtime-usage-billing
 import { SMS_COST_PER_SEGMENT_USD } from "./sms-billing";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
+import { assertLiveWorkEntitlementForUser } from "./trial-gate";
 import {
   getTwilioClient,
   isTwilioConfigured,
@@ -266,6 +267,22 @@ export async function sendTenantMessage(
       enabled: false,
       reason: "A destination and message body are required.",
       channel,
+    };
+  }
+
+  // Live SMS/WhatsApp spends carrier money and Runtime Balance. Free Builder
+  // and pending-activation tenants must not burn prepaid balance (or leftover
+  // grants) without a paid live plan — same commercial boundary as voice.
+  const entitlement = await assertLiveWorkEntitlementForUser(userId);
+  if (!entitlement.ok) {
+    return {
+      ok: false,
+      configured: isTwilioConfigured(),
+      enabled: false,
+      reason: entitlement.error,
+      channel,
+      code: entitlement.code,
+      recovery_path: entitlement.recovery_path,
     };
   }
 

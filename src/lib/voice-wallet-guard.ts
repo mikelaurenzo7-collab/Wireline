@@ -127,7 +127,7 @@ export async function assertVoiceWalletSolvent(userId: string): Promise<void> {
           completion_grace_due_usd: snapshot.completion_grace_due_usd,
           included_minutes_remaining: snapshot.included_minutes_remaining,
           recovery_path: "/settings/billing",
-          recovery_action: "restore_conversation_balance",
+          recovery_action: "restore_runtime_balance",
           current_call_policy: snapshot.current_call_policy,
         }
       : {
@@ -139,7 +139,7 @@ export async function assertVoiceWalletSolvent(userId: string): Promise<void> {
           required_usd: snapshot.required_usd,
           minute_rate_usd: snapshot.minute_rate_usd,
           recovery_path: "/settings/billing",
-          recovery_action: "add_conversation_balance",
+          recovery_action: "add_runtime_balance",
           current_call_policy: snapshot.current_call_policy,
         };
   throw err;

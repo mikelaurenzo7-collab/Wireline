@@ -30,16 +30,25 @@ export async function fetchActivationStatus(): Promise<boolean> {
 export async function fetchAssistantSetupProgress(): Promise<AssistantSetupProgress> {
   const [agents, knowledge, numbers, calls, activation] = await Promise.all([
     authFetch("/api/agents")
-      .then((r) => r.json())
-      .then((d) => d.agents?.length ?? 0)
+      .then(async (r) => {
+        if (!r.ok) return 0;
+        const d = await r.json();
+        return d.agents?.length ?? 0;
+      })
       .catch(() => 0),
     authFetch("/api/knowledge")
-      .then((r) => r.json())
-      .then((d) => d.total ?? d.knowledge?.length ?? 0)
+      .then(async (r) => {
+        if (!r.ok) return 0;
+        const d = await r.json();
+        return d.total ?? d.knowledge?.length ?? 0;
+      })
       .catch(() => 0),
     authFetch("/api/phone-numbers")
-      .then((r) => r.json())
-      .then((d) => d.numbers?.length ?? 0)
+      .then(async (r) => {
+        if (!r.ok) return 0;
+        const d = await r.json();
+        return d.numbers?.length ?? 0;
+      })
       .catch(() => 0),
     authFetch("/api/calls?limit=1")
       .then((r) => (r.ok ? r.json() : { calls: [] }))
