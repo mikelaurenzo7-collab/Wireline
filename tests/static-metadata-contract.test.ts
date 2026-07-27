@@ -20,6 +20,21 @@ describe("static marketing metadata", () => {
     expect(index).not.toContain("Your phone, finally answering for you.");
   });
 
+  it("keeps install, icon, analytics, and WebSite identity assets in the HTML shell", () => {
+    const index = read("index.html");
+
+    expect(index).toContain('<link rel="preconnect" href="https://plausible.io" crossorigin />');
+    expect(index).toContain('<link rel="icon" type="image/png" href="/favicon.png" />');
+    expect(index).toContain('<link rel="mask-icon" href="/favicon.svg" color="#6D28D9" />');
+    expect(index).toContain(
+      '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />',
+    );
+    expect(index).toContain('<link rel="manifest" href="/site.webmanifest" />');
+    expect(index).toContain('"@type": "WebSite"');
+    expect(index).toContain('"@id": "https://trywireline.com/#website"');
+    expect(index).toContain('"publisher": { "@id": "https://trywireline.com/#organization" }');
+  });
+
   it("keeps the runtime hero readable and metadata aligned", () => {
     const hero = read("src/components/marketing/MarketingHero.tsx");
     const landing = read("src/pages/LandingPage.tsx");
