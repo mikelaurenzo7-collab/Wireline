@@ -8,6 +8,7 @@ export const PRODUCT_EVENT_NAMES = [
   "signup_intent_captured",
   "signup_started",
   "signup_completed",
+  "onboarding_create_redirect",
   "agent_draft_created",
   "agent_created",
   "agent_template_selected",

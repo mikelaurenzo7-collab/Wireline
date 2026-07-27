@@ -298,6 +298,18 @@ export async function provisionTenantNumber(
 
     try {
       await runCompanyIdentityMutation(userId, "phone_number_changed", async (tx) => {
+        // Re-check capacity under the identity advisory lock after the carrier
+        // buy. Two concurrent provisioners can both pass the pre-buy count;
+        // the loser releases the purchased number instead of exceeding slots.
+        const [{ held }] = await tx
+          .select({ held: sql<number>`count(*)` })
+          .from(schema.phoneNumbers)
+          .where(eq(schema.phoneNumbers.userId, userId));
+        if (Number(held || 0) >= phoneSlots) {
+          const err = new Error("PHONE_CAPACITY_RACE");
+          (err as Error & { code?: string }).code = "PHONE_CAPACITY_RACE";
+          throw err;
+        }
         await tx.insert(schema.phoneNumbers).values({
           userId,
           phoneNumber,
@@ -314,6 +326,15 @@ export async function provisionTenantNumber(
         removeTwilio: Boolean(twilioPurchased),
         persistenceError,
       });
+      if (
+        (persistenceError as Error & { code?: string })?.code === "PHONE_CAPACITY_RACE" ||
+        /PHONE_CAPACITY_RACE/.test(getErrorMessage(persistenceError))
+      ) {
+        return {
+          ok: false,
+          error: `${plan.name} includes ${phoneSlots} dedicated line${phoneSlots === 1 ? "" : "s"}; upgrade or add an Extra Agent for more.`,
+        };
+      }
       return {
         ok: false,
         error: "Number provisioning could not be saved; the provider allocation was released.",

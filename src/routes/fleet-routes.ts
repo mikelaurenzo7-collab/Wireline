@@ -4,7 +4,7 @@ import { AppError, rethrowIfAppError } from "../lib/api-error";
 
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc, like, ne, gte } from "drizzle-orm";
+import { eq, and, desc, like, ne, gte } from "drizzle-orm";
 import { presenceStreams } from "../services/presence-stream-service";
 import { authenticateUser, authenticateEventStream } from "../middleware/auth";
 import { fleetRateLimit } from "../middleware/api-rate-limits";
@@ -13,10 +13,8 @@ import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
 import { parseFormData, FollowUpTaskCreateSchema } from "../lib/form-validators";
 import { compileActivityFeed } from "../lib/fleet-activity";
-import { ROLE_PERSONALITY_TEMPLATES } from "../lib/agent-constants";
 import { executeAction } from "../lib/action-engine";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
-import { pickRotatedVoiceId } from "../data/voice-roster";
 import type { ActionItem } from "../lib/action-types";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -29,120 +27,15 @@ router.post(
   "/api/Assistants/seed",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    const userId = req.user.id;
-    const specializedAgents = [
-      {
-        id: `riley-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        name: "Riley",
-        channel: "voice",
-        role: "receptionist",
-        archetype: "Receptionist",
-        first_message:
-          "Hi — this is Riley at Wireline. Thanks for reaching us today. What can I help you with?",
-        personality: ROLE_PERSONALITY_TEMPLATES.receptionist,
-      },
-      {
-        id: `billing-spec-${Date.now()}`,
-        name: "Billing Specialist",
-        channel: "voice",
-        role: "collections",
-        archetype: "The Collector",
-        first_message:
-          "Hello, this is the billing department. I'm calling regarding your recent account inquiry. How can I assist you with your statement today?",
-        personality: ROLE_PERSONALITY_TEMPLATES.collections,
-      },
-      {
-        id: `prospector-${Date.now()}`,
-        name: "Outbound Prospector",
-        channel: "voice",
-        role: "sales",
-        archetype: "The Closer",
-        first_message:
-          "Hi there! I'm calling from the growth team. We saw you were interested in our services and I wanted to see if we could set up a quick strategy session?",
-        personality: ROLE_PERSONALITY_TEMPLATES.sales,
-      },
-      {
-        id: `growth-email-${Date.now()}`,
-        name: "Growth Coordinator",
-        channel: "email",
-        role: "marketing",
-        archetype: "Receptionist",
-        email_agent_tone: "Friendly",
-        email_signature: "The Growth Team",
-        personality: ROLE_PERSONALITY_TEMPLATES.marketing,
-      },
-      {
-        id: `tech-support-${Date.now()}`,
-        name: "Tier 2 Technical Lead",
-        channel: "voice",
-        role: "technical_support",
-        archetype: "Support Tech",
-        first_message:
-          "Wireline Technical Support, this is the Tier 2 lead speaking. I understand you're having a complex issue. Let's get this resolved. What symptoms are you seeing?",
-        personality: ROLE_PERSONALITY_TEMPLATES.technical_support,
-      },
-    ] as Array<{
-      id: string;
-      name: string;
-      channel: string;
-      role: string;
-      archetype?: string;
-      first_message?: string;
-      email_agent_tone?: string;
-      email_signature?: string;
-      personality: string;
-    }>;
-
-    try {
-      await drizzle.transaction(async (tx) => {
-        // Snapshot the tenant's current agent count once before the loop
-        // so rotation indices are stable + distinct across this seed
-        // batch even though the COUNT(*) result changes mid-loop.
-        const [{ existing }] = await tx
-          .select({ existing: sql<number>`COUNT(*)::int` })
-          .from(schema.agents)
-          .where(eq(schema.agents.userId, userId));
-        const existingCount = Number(existing) || 0;
-
-        for (let i = 0; i < specializedAgents.length; i++) {
-          const agent = specializedAgents[i];
-          // Voice rotation — bypasses the /api/agents fallback path because
-          // this seed inserts directly. Without this every seeded agent
-          // would inherit the factory's PLATFORM_DEFAULT_VOICE_ID and
-          // sound identical, undercutting the voice-picker selling point.
-          const rotatedVoiceId = pickRotatedVoiceId(existingCount + i);
-          await tx.insert(schema.agents).values({
-            id: agent.id,
-            userId: userId,
-            name: agent.name,
-            channel: agent.channel,
-            role: agent.role,
-            archetype: agent.archetype,
-            firstMessage: agent.first_message,
-            emailAgentTone: agent.email_agent_tone,
-            emailSignature: agent.email_signature,
-            voiceId: rotatedVoiceId,
-          });
-
-          await tx.insert(schema.personality).values({
-            agentId: agent.id,
-            userId: userId,
-            content: agent.personality,
-          });
-
-          await tx.insert(schema.directives).values({
-            agentId: agent.id,
-            userId: userId,
-            content: "Always verify the customer's identity before discussing account details.",
-            priority: 10,
-          });
-        }
-      });
-      res.json({ success: true, count: specializedAgents.length });
-    } catch (error: any) {
-      log.error("Assistants seeding failed", { error: getErrorMessage(error) });
-      throw AppError.fromHttpStatus(500, "Failed to seed Assistants");
-    }
+    // Retired: this path inserted five agents with no entitlement check and
+    // blew past Free/Starter caps. Founder seeding lives on
+    // POST /api/admin/seed-founder-Assistants; customers create via Studio.
+    void req;
+    return res.status(410).json({
+      code: "FLEET_SEED_RETIRED",
+      error:
+        "Bulk Assistants seed is retired. Create agents from Studio, or use the founder admin seed when operating as owner.",
+    });
   },
 );
 

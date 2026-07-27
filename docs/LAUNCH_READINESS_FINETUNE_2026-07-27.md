@@ -57,11 +57,22 @@ Wireline remains a strong controlled-beta / founder-led launch candidate. Prior 
 ## Still open (ops / founder, not code-blockable)
 
 1. Register business + set real DNCScrub `FEDERAL_DNC_API_KEY` (`loginId`) on Production/Preview/Development → `npm run dnc:probe`.
-2. Add `SENTRY_DSN` + build-time `VITE_SENTRY_DSN`, redeploy.
+2. ~~Add `SENTRY_DSN`…~~ **Done** — Production/Preview/Development `SENTRY_DSN` from `revaluate/wireline-backend`. Browser errors already report via `/api/health/report` → server DSN (`VITE_SENTRY_DSN` is not an app code consumer).
 3. One live Starter checkout → webhook → entitlement → portal → refund.
 4. Restore GitHub Actions spending so CI is a real gate again.
 5. Rotate the personal Vercel token pasted into chat after this session.
 
-## Final assessment
+## Deep pass (same day)
 
-**Current state: launch-ready for founder-led / design-partner admission after the DNC + Sentry + live-checkout ops checklist.** Code honesty and OAuth replay posture are tighter; demo-mode no longer mis-tags production events.
+Additional verified fixes after a fiercer second pass:
+
+1. **Phone claim + search capacity gate (P0)** — `/api/phone-numbers/claim` and `/search` now enforce `getIncludedPhoneLineSlots` (search before buy; claim under identity lock).
+2. **Provision TOCTOU (P0)** — `provisionTenantNumber` re-checks capacity under lock after carrier buy and compensates the loser.
+3. **Assistants seed retired (P1)** — uncapped 5-agent insert returns `410 FLEET_SEED_RETIRED`.
+4. **Meta OAuth page fetch honesty (P2)** — non-OK `/me/accounts` fails the callback instead of storing empty `page_ids`.
+5. **Stripe allowance preflight claims `stripe_events` (P2)** — idempotent claim/mark/release before ACK.
+6. **Sentry env honesty** — `VITE_SENTRY_DSN` removed from prod-env optional list; browser errors ride `SENTRY_DSN` via `/api/health/report` (already wired).
+7. **Onboarding funnel** — `onboarding_create_redirect` product event on the create shell.
+
+Contract: `tests/launch-readiness-deep-pass-2026-07-27-contract.test.ts`.
+

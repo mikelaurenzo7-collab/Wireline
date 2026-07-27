@@ -12,6 +12,7 @@ import {
   resolveUserIdFromOAuthSession,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
+import { getErrorMessage } from "../../lib/server-utils";
 import {
   metaOAuthConfigured,
   getMetaAuthUrl,
@@ -91,14 +92,35 @@ router.get(
       // Pull the pages the user manages so the Lead Ads webhook can
       // route incoming events to this tenant. The /me/accounts call
       // returns each page's own access_token (needed to subscribe
-      // that page to leadgen events). We use a quick refetch with
-      // access_token in the field selector to keep both calls under
-      // a single roundtrip cost.
-      const pageRows = await fetch(
-        `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token&access_token=${encodeURIComponent(tokens.access_token)}`,
-      )
-        .then((r) => (r.ok ? r.json() : { data: [] }))
-        .catch(() => ({ data: [] }));
+      // that page to leadgen events). Fail closed on a non-OK / network
+      // error — empty-success left a "connected" CRM with no page_ids
+      // and Lead Ads never routed.
+      let pageRows: { data?: { id: string; name: string; access_token?: string }[] };
+      try {
+        const pageRes = await fetch(
+          `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token&access_token=${encodeURIComponent(tokens.access_token)}`,
+        );
+        if (!pageRes.ok) {
+          log.warn("Meta /me/accounts failed during OAuth callback", {
+            status: pageRes.status,
+          });
+          return res
+            .status(502)
+            .send(
+              "Connected to Meta, but we could not load your Facebook Pages. Reconnect from Wire → Integrations.",
+            );
+        }
+        pageRows = (await pageRes.json()) as typeof pageRows;
+      } catch (pageErr) {
+        log.warn("Meta /me/accounts network failure during OAuth callback", {
+          error: getErrorMessage(pageErr),
+        });
+        return res
+          .status(502)
+          .send(
+            "Connected to Meta, but we could not load your Facebook Pages. Reconnect from Wire → Integrations.",
+          );
+      }
       const pages: { id: string; name: string; access_token?: string }[] = pageRows.data || [];
       const pageIds = pages.map((p) => p.id);
 
