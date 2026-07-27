@@ -106,7 +106,7 @@ const SheetTitle = React.forwardRef<
     ref={ref}
     data-slot="sheet-title"
     className={cn(
-      "break-words text-left font-[var(--wireline-font-family-display)] text-[1.125rem] font-semibold leading-tight tracking-[-.02em] text-foreground",
+      "break-words pr-8 text-left font-[var(--wireline-font-family-display)] text-[1.125rem] font-semibold leading-tight tracking-[-.02em] text-foreground",
       className,
     )}
     {...props}
