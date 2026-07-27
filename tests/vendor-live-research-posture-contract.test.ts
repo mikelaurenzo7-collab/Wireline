@@ -7,15 +7,26 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("vendor live-research and voice posture", () => {
   it("keeps PSTN live research on Perplexity→Gemini without inventing Tavily/Serper", () => {
     const research = read("src/lib/fresh-public-research.ts");
+    const perplexity = read("src/lib/perplexity-platform.ts");
     const flags = read("src/lib/platform-integration-flags.ts");
     const tools = read("src/lib/vapi-helpers.ts");
 
-    expect(research).toContain("PERPLEXITY_API_KEY");
-    expect(research).toContain("groundedSearch");
+    expect(perplexity).toContain("PERPLEXITY_API_KEY");
+    expect(perplexity).toContain("PERPLEXITY_SEARCH_API_URL");
+    expect(perplexity).toContain("PERPLEXITY_AGENT_API_URL");
+    expect(perplexity).toContain("PERPLEXITY_EMBEDDINGS_API_URL");
+    expect(research).toContain("perplexity_agent");
+    expect(research).toContain("researchPerplexity");
     expect(research).not.toMatch(/tavily|serper|bing/i);
     expect(flags).toContain("liveResearch: gemini || perplexity");
     expect(tools).toContain("gemini_ground");
-    expect(tools).toMatch(/Perplexity when configured/i);
+  });
+
+  it("documents that Perplexity is an explicitly reviewed preview sandbox credential", () => {
+    const boundary = read("scripts/check-deployment-boundaries.mjs");
+    expect(boundary).toContain("reviewedPreviewSandboxCredentialKeys");
+    expect(boundary).toContain('"PERPLEXITY_API_KEY"');
+    expect(boundary).toMatch(/public research/i);
   });
 
   it("does not claim Grok voice sessions have open-web search tools", () => {
