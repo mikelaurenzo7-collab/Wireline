@@ -35,18 +35,18 @@ function EmptyKnowledge() {
         density="default"
         className="wl-paper wl-paper-elevated w-full max-w-[620px] px-8 py-12 text-center sm:px-10"
         icon={<BookOpen size={30} strokeWidth={1.7} />}
-        title="Knowledge starts with an AI employee"
+        title="Knowledge starts with an AI voice agent"
         action={
           <div className="space-y-4">
             <p className="mx-auto max-w-[44ch] text-sm leading-relaxed text-muted-foreground">
-              Create the employee first, then add the business facts, policies, and answers it may
+              Create the agent first, then add the business facts, policies, and answers it may
               use with customers.
             </p>
             <div className="flex flex-col items-stretch justify-center gap-2 sm:flex-row">
               <Button asChild>
                 <Link to="/studio?create=1">
                   <WandSparkles aria-hidden="true" size={16} />
-                  Create AI employee
+                  Create voice agent
                 </Link>
               </Button>
               <Button asChild variant="secondary">
@@ -140,7 +140,7 @@ export default function KnowledgePage() {
                     { replace: true },
                   )
                 }
-                aria-label="Choose AI employee"
+                aria-label="Choose voice agent"
                 className="w-full min-w-[220px] sm:w-auto"
               >
                 {agents.map((agent) => (

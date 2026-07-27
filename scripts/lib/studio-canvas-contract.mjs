@@ -77,7 +77,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "mobile-more", pattern: /MobileNavMoreSheet/ },
   ],
   navigation: [
-    { id: "studio-label", pattern: /label: "AI Employee"/ },
+    { id: "studio-label", pattern: /label: "Agent Studio"/ },
     { id: "studio-active-state", pattern: /target === "\/studio"/ },
     { id: "apps-breadcrumb", pattern: /"\/apps": "Apps"/ },
   ],
@@ -88,9 +88,9 @@ export const STUDIO_CANVAS_REQUIRED = {
   ],
   overview: [
     // Nav carries the "Overview" label; the page itself leads with a
-    // personalized greeting headline and the first-employee path.
+    // personalized greeting headline and the first-agent path.
     { id: "overview-greeting", pattern: /dayGreeting\(\)/ },
-    { id: "first-employee-cta", pattern: /\{language\.createCta\}/ },
+    { id: "first-agent-cta", pattern: /\{language\.createCta\}/ },
     { id: "full-roster", pattern: /agents\.map/ },
     { id: "studio-target", pattern: /\/studio\?agent=/ },
   ],

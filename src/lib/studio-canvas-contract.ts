@@ -76,7 +76,7 @@ export const STUDIO_CANVAS_REQUIRED = {
   ],
   navigation: [
     { id: "studio-route", pattern: /target === "\/studio"/ },
-    { id: "studio-label", pattern: /label: "AI Employee"/ },
+    { id: "studio-label", pattern: /label: "Agent Studio"/ },
     { id: "apps-breadcrumb", pattern: /"\/apps": "Apps"/ },
   ],
   studioChrome: [
@@ -87,7 +87,7 @@ export const STUDIO_CANVAS_REQUIRED = {
   ],
   overview: [
     { id: "overview-greeting", pattern: /dayGreeting\(\)/ },
-    { id: "first-employee-cta", pattern: /\{language\.createCta\}/ },
+    { id: "first-agent-cta", pattern: /\{language\.createCta\}/ },
     { id: "all-agents", pattern: /agents\.map/ },
     { id: "studio-link", pattern: /to=\{`\/studio\?agent=\$\{enc\}`\}/ },
   ],

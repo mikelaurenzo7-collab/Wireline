@@ -101,6 +101,8 @@ describe("product voice cohesion", () => {
     expect(authPortal).toContain("customerAgentLanguage(workspaceMode)");
     expect(features).toContain("Build → Train → Launch → Improve");
     expect(features).not.toContain("Create → Train → Wire → Run");
+    expect(features).not.toMatch(/\bemployees?\b/i);
+    expect(features).toContain("AI Voice Agents for every customer conversation.");
     expect(pricing).not.toContain("create, train, wire, run");
     expect(pricing).not.toContain("Extra employees at");
     const starterPlus = STRIPE_PLANS.find((plan) => plan.id === "team");

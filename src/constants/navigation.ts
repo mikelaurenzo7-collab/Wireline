@@ -59,7 +59,7 @@ export function desktopNavParentHref(pathname: string): string | null {
 
 /**
  * Primary setup destinations. Knowledge remains available as a contextual deep
- * link from the employee workspace rather than competing in the main rail.
+ * link from the agent workspace rather than competing in the main rail.
  */
 export const WORKSPACE_NAV: ShellNavItem[] = [
   {
@@ -71,8 +71,8 @@ export const WORKSPACE_NAV: ShellNavItem[] = [
   },
   {
     href: "/studio",
-    label: "AI Employee",
-    shortLabel: "Employee",
+    label: "Agent Studio",
+    shortLabel: "Studio",
     icon: Bot,
     matches: ["/studio", "/agents"],
   },
@@ -103,8 +103,8 @@ export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
   },
   {
     href: "/studio",
-    label: "AI Employee",
-    shortLabel: "Employee",
+    label: "Agent Studio",
+    shortLabel: "Studio",
     icon: Bot,
     matches: ["/studio", "/agents"],
   },
@@ -209,7 +209,7 @@ export function findNavItemForPath(pathname: string): NavItem | undefined {
 
 export const PAGE_TITLES: Record<string, string> = {
   "/overview": "Overview",
-  "/studio": "AI Employee",
+  "/studio": "Agent Studio",
   "/studio/handoff": "Browser handoff",
   "/templates": "Templates",
   "/knowledge": "Knowledge",

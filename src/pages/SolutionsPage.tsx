@@ -19,12 +19,12 @@ const SOLUTIONS = {
     eyebrow: "Sales conversations",
     title: "Every good lead gets a next step.",
     description:
-      "Give one trained employee your offer, qualification rules, calendar, and follow-up. It calls, texts, and emails until the next step is booked or clearly logged.",
+      "Give a trained voice agent your offer, qualification rules, calendar, and follow-up. It calls, texts, and emails until the next step is booked or clearly logged.",
     icon: PhoneOutgoing,
-    primary: { href: "/signup?wedge=sales", label: "Create a sales employee" },
+    primary: { href: "/signup?wedge=sales", label: "Create a sales agent" },
     secondary: { href: "/showcase", label: "Hear a demo" },
     sequence: [
-      ["A lead reaches out", "One employee responds on the channel the lead already chose."],
+      ["A lead reaches out", "A voice agent responds on the channel the lead already chose."],
       [
         "It qualifies by your rules",
         "Your offer, criteria, objections, and escalation path guide the conversation.",
@@ -52,17 +52,17 @@ const SOLUTIONS = {
     eyebrow: "Customer coverage",
     title: "A front desk that answers before demand goes cold.",
     description:
-      "Give one trained employee your policies, calendar, and handoff rules. It answers calls, texts, and email, then resolves or routes the next step.",
+      "Give a trained voice agent your policies, calendar, and handoff rules. It answers calls, texts, and email, then resolves or routes the next step.",
     icon: Headphones,
-    // Wedge intent only — preselecting the $79 5-employee Pro plan for a
-    // one-employee front-desk buyer mis-tuned the later "Matched from visit"
+    // Wedge intent only — preselecting the $79 5-agent Pro plan for a
+    // one-agent front-desk buyer mis-tuned the later "Matched from visit"
     // badge in billing; the sales wedge passes intent the same way.
-    primary: { href: "/signup?wedge=support", label: "Create a front desk employee" },
+    primary: { href: "/signup?wedge=support", label: "Create a front desk agent" },
     secondary: { href: "/showcase", label: "Hear a demo" },
     sequence: [
       [
         "A customer reaches out",
-        "One employee answers on call, text, or email with the same identity.",
+        "A voice agent answers on call, text, or email with the same identity.",
       ],
       [
         "It uses your business truth",
@@ -205,7 +205,7 @@ export default function SolutionsPage() {
             to={page.primary.href}
             className="marketing-btn-primary min-h-12 shrink-0 px-6 text-[var(--wireline-typography-caption-size)] font-semibold"
           >
-            Build this employee <ArrowRight size={15} aria-hidden="true" />
+            Build this agent <ArrowRight size={15} aria-hidden="true" />
           </Link>
         </div>
       </section>
