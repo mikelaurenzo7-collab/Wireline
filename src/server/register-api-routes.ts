@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import authRouter from "../routes/auth-routes";
+import authOAuthBrowserBindingRouter from "../routes/auth-oauth-browser-binding";
 import authOAuthRouter from "../routes/auth-oauth-routes";
 import productEventRouter from "../routes/product-event-routes";
 import oauthRouter from "../routes/oauth";
@@ -83,6 +84,9 @@ export function registerApiRoutes(app: Express): void {
   app.use(openaiRealtimeRouter);
   app.use(grokVoiceRouter);
   app.use(videoPresenterRouter);
+  // Must precede the sign-in OAuth router: it binds provider state to the
+  // initiating browser cookie before the canonical callbacks claim the nonce.
+  app.use(authOAuthBrowserBindingRouter);
   app.use(authOAuthRouter);
   app.use(authRouter);
   app.use(oauthRouter);

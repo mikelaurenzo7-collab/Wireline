@@ -72,18 +72,38 @@ export async function emailRateLimiter(req: any, res: any, next: any) {
 }
 
 export function oauthRateLimiter(req: any, res: any, next: any) {
-  if (isTestEnv()) return next();
+  res.locals ||= {};
+  if (res.locals.oauthRateLimitChecked === true) return next();
+  if (isTestEnv()) {
+    res.locals.oauthRateLimitChecked = true;
+    return next();
+  }
+  if (refusedForNoDistributedLimiter(res)) return;
+
   const key = req.ip || "anon";
-  rateLimit(key, { bucket: "oauth", windowMs: OAUTH_RATE_WINDOW_MS, max: OAUTH_RATE_MAX })
+  rateLimit(key, {
+    bucket: "oauth",
+    windowMs: OAUTH_RATE_WINDOW_MS,
+    max: OAUTH_RATE_MAX,
+    failClosedOnError: process.env.NODE_ENV === "production",
+  })
     .then((result) => {
       if (!result.allowed) {
+        auditRateLimitExceeded({ resource: "auth_oauth", ip: req.ip });
+        res.setHeader("Retry-After", Math.ceil(OAUTH_RATE_WINDOW_MS / 1000));
         return res
           .status(429)
           .json({ error: "Too many OAuth requests.", code: "OAUTH_RATE_LIMIT" });
       }
+      res.locals.oauthRateLimitChecked = true;
       next();
     })
-    .catch(next);
+    .catch(() =>
+      res.status(503).json({
+        error: "OAuth sign-in is temporarily unavailable. Try again shortly.",
+        code: "RATE_LIMIT_UNAVAILABLE",
+      }),
+    );
 }
 
 function authRateLimitOptions(bucket: string, windowMs: number, max: number) {

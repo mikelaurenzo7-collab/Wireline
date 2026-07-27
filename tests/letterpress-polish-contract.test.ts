@@ -334,15 +334,18 @@ describe("Wireline Letterpress polish layer", () => {
     expect(portal).not.toContain("AuthBrandPanel");
   });
 
-  it("removes the raw rose palette from AuthPortal error and success notices", () => {
+  it("routes AuthPortal error and success notices through the shared tokenized primitive", () => {
     const portal = read("src/components/AuthPortal.tsx");
     const statusNotice = read("src/components/molecules/StatusNotice.tsx");
     expect(portal).not.toMatch(/border-rose-500|bg-rose-500|text-rose-600/);
-    expect(portal).toContain('tone="destructive"');
+    expect(portal).toContain('<StatusNotice tone="destructive" title={error} />');
+    expect(portal).toContain('<StatusNotice tone="success" title={message} />');
     expect(statusNotice).toContain(
       "var(--wireline-color-feedback-error-border)",
     );
-    expect(portal).toContain("var(--wireline-color-feedback-success-surface)");
+    expect(statusNotice).toContain(
+      "var(--wireline-color-feedback-success-surface)",
+    );
   });
 
   it("adopts the MetricTile atom in the Knowledge surface", () => {

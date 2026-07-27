@@ -4,7 +4,8 @@ import type { Request, Response } from "express";
 import { baseCookieOptions, parseCookieHeader } from "./session-cookie";
 
 export const OAUTH_BRIDGE_STATE_COOKIE = "oauth_bridge_state";
-const BRIDGE_STATE_MAX_AGE_MS = 10 * 60 * 1000;
+/** Keep the required browser binding alive for the full signed OAuth-state TTL. */
+export const OAUTH_BRIDGE_STATE_MAX_AGE_MS = 20 * 60 * 1000;
 
 export function createOAuthBridgeState(): string {
   return randomBytes(32).toString("base64url");
@@ -13,7 +14,7 @@ export function createOAuthBridgeState(): string {
 export function oauthBridgeStateCookieOptions(): CookieOptions {
   return {
     ...baseCookieOptions(),
-    maxAge: BRIDGE_STATE_MAX_AGE_MS,
+    maxAge: OAUTH_BRIDGE_STATE_MAX_AGE_MS,
   };
 }
 
