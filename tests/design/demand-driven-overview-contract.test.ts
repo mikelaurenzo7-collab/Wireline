@@ -58,7 +58,7 @@ describe("demand-driven authenticated experience", () => {
     expect(phoneHistory).toContain('title: "Connect a phone number"');
     expect(phoneHistory).toContain("Call your Wireline number");
     expect(phoneHistory).toContain("agentsDegraded && !hasAgents");
-    expect(phoneHistory).toContain("Employee readiness unavailable");
+    expect(phoneHistory).toContain("Voice agent readiness unavailable");
     expect(phoneHistory).toContain("phoneLookupDegraded && hasAgents");
     expect(phoneHistory).toContain("Phone readiness unavailable");
     expect(insightEmpty).toContain("agents.length === 0");
@@ -97,7 +97,7 @@ describe("demand-driven authenticated experience", () => {
     expect(studioReview).toMatch(/Connect phone/);
   });
 
-  it("tests the saved employee configuration without persisting roleplay messages", () => {
+  it("tests the saved voice-agent configuration without persisting roleplay messages", () => {
     expect(routeRegistry).toMatch(/agentTestRouter/);
     expect(routeRegistry).toMatch(/app\.use\(agentTestRouter\)/);
     expect(studioTestRoute).toMatch(/personality/);
