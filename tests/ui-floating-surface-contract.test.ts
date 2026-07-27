@@ -50,6 +50,19 @@ describe("Wireline floating surface design contract", () => {
     expect(modalCss).toContain("overflow-wrap: anywhere");
   });
 
+  it("keeps confirmation dialogs contained and visually subordinate to page headings", () => {
+    const alertDialog = read("src/components/ui/shadcn/AlertDialog.tsx");
+
+    expect(alertDialog).toContain('data-slot="alert-dialog-content"');
+    expect(alertDialog).toContain("w-[calc(100vw-2rem)]");
+    expect(alertDialog).toContain("max-h-[calc(100dvh-2rem)]");
+    expect(alertDialog).toContain("overflow-y-auto overscroll-contain");
+    expect(alertDialog).toContain('data-slot="alert-dialog-header"');
+    expect(alertDialog).toContain("text-left");
+    expect(alertDialog).not.toContain("text-center sm:text-left");
+    expect(alertDialog).not.toContain("font-display italic");
+  });
+
   it("keeps popovers, menus, and selects inside narrow viewports", () => {
     const popover = read("src/components/ui/shadcn/Popover.tsx");
     const menu = read("src/components/ui/shadcn/DropdownMenu.tsx");
