@@ -470,7 +470,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Compliance-first phone agents for sales teams. Speed-to-lead, quote follow-up, warm reactivation, and governed outbound queues with approved CRM actions.",
     eyebrow: "For Sales Teams",
-    headline: "Your sales employee works the queue while your team works the deals.",
+    headline: "Your sales voice agent works the queue while your team works the deals.",
     subhead:
       "Calls new leads fast, qualifies cleanly, books meetings, and logs every outcome — from speed-to-lead and missed-call recovery to governed warm follow-up from approved lead lists.",
     pains: [
@@ -499,7 +499,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "< 60s",
     statLabel:
       "Target speed-to-lead on inbound form and demo requests. Governed queues handle warm follow-up with consent, caps, and full audit trail.",
-    primaryCta: { label: "Create sales employee", href: signupHrefForWedge("sales") },
+    primaryCta: { label: "Create sales voice agent", href: signupHrefForWedge("sales") },
     secondaryCta: { label: "Call outbound sales demo", href: "tel:+14692571581" },
     trustLine:
       "Connects to HubSpot and Salesforce. Approved actions sync to your connected CRM. Apollo enrichment available in beta.",
