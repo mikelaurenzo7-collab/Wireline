@@ -27,6 +27,8 @@ type AccountDeletionTarget = {
  * - wireline_stripe_events (global Stripe idempotency ledger)
  * - wireline_mcp_oauth_clients (platform OAuth client registry)
  * - wireline_demo_call_events (public showcase telemetry)
+ * - wireline_orphan_carrier_resources (platform cleanup ledger for failed
+ *   carrier-number releases during purge — must outlive the tenant)
  */
 export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_audit_log", userColumns: ["user_id"] },
@@ -191,9 +193,10 @@ function isStripeAlreadyGone(err: unknown): boolean {
  * Stripe cancellation is treated as blocking: on a real Stripe error (not an
  * already-canceled subscription) this THROWS so the job retries rather than
  * purging the ids and orphaning a live, still-billing subscription. Number
- * release is best-effort — a carrier hiccup is a recoverable cost, not a reason
- * to indefinitely block a GDPR deletion — so those failures are collected and
- * logged, never thrown.
+ * release is best-effort for GDPR latency — a carrier hiccup must not
+ * indefinitely block deletion — but failed releases are written to
+ * `wireline_orphan_carrier_resources` before the hard-delete so ops/janitor
+ * retain the e164 + provider ids after tenant rows are gone.
  */
 export async function releaseExternalResourcesForPurge(
   userId: string,
@@ -268,16 +271,20 @@ async function releaseExternalResourcesOutsideTenantContext(
     }
   }
 
-  // 2. Release provisioned numbers at the carrier (Vapi/Twilio) and drop the DB
-  //    row. Best-effort: collect failures rather than blocking the purge.
+  // 2. Release provisioned numbers at the carrier (Vapi/Twilio). Best-effort
+  //    for GDPR latency, but ALWAYS hand failed releases to the platform orphan
+  //    ledger BEFORE the hard-delete so ownership ids survive purgeAccount.
   const numbers = await db
-    .select({ phoneNumber: schema.phoneNumbers.phoneNumber })
+    .select({
+      phoneNumber: schema.phoneNumbers.phoneNumber,
+      vapiNumberId: schema.phoneNumbers.vapiNumberId,
+    })
     .from(schema.phoneNumbers)
     .where(eq(schema.phoneNumbers.userId, userId));
 
   if (numbers.length) {
     const { releaseTenantNumber } = await import("./phone-provisioning");
-    for (const { phoneNumber } of numbers) {
+    for (const { phoneNumber, vapiNumberId } of numbers) {
       const res = await releaseTenantNumber(userId, phoneNumber).catch((err) => ({
         ok: false as const,
         error: getErrorMessage(err),
@@ -285,12 +292,31 @@ async function releaseExternalResourcesOutsideTenantContext(
       if (res.ok) {
         numbersReleased++;
       } else {
-        numberErrors.push(`${phoneNumber}: ${res.error ?? "unknown"}`);
-        log.warn("purge number release failed — carrier may retain the number", {
+        const errorText = res.error ?? "unknown";
+        numberErrors.push(`${phoneNumber}: ${errorText}`);
+        log.warn("purge number release failed — recording orphan for janitor", {
           userId,
           phoneNumber,
-          error: res.error,
+          error: errorText,
         });
+        try {
+          await db.insert(schema.orphanCarrierResources).values({
+            formerUserId: userId,
+            phoneNumber,
+            vapiNumberId: vapiNumberId ?? null,
+            lastError: errorText,
+            status: "pending",
+          });
+        } catch (ledgerErr) {
+          // Ledger write failure is still non-blocking for GDPR purge timing,
+          // but escalate loudly — without this row the number is unrecoverable
+          // after purgeAccount deletes wireline_phone_numbers.
+          log.error("orphan carrier ledger insert failed during purge", {
+            userId,
+            phoneNumber,
+            error: getErrorMessage(ledgerErr),
+          });
+        }
       }
     }
   }

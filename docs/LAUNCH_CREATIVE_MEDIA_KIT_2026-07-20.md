@@ -80,6 +80,20 @@ This voiceover was generated for promotion/reference only. It is not approved as
 - Full audio: https://www.aidocmaker.com/g0/audio?name=acdf9b5a628e4558923c63ba0ed2d821
 - Script: "Missed calls should not become lost revenue. Wireline helps you build AI voice agents for personal tasks and business conversations. Start with one agent, train it on your rules, connect calls, texts, and email, and let it handle the next conversation with every outcome logged. Build free. Go live from nineteen dollars a month at trywireline dot com."
 
+## Generated Assets — 2026-07-27
+
+These files were generated for immediate promotional use and live in the cloud-agent artifacts folder (not source control):
+
+- `wireline-launch-campaign-2026-07-27/social/wireline-social-ai-voice-agents.png`
+- `wireline-launch-campaign-2026-07-27/social/wireline-social-missed-call.png`
+- `wireline-launch-campaign-2026-07-27/ads/wireline-ad-build-free-live-19.png`
+- `wireline-launch-campaign-2026-07-27/stories/wireline-story-voice-agent.png`
+
+HeyGen:
+
+- https://app.heygen.com/video-agent/0bfcca47221b4484a51fff39d9c7ad8b (portrait)
+- https://app.heygen.com/video-agent/6cbcb77395fa4bb888140131c64b7609 (landscape)
+
 ## Placement Plan
 
 | Channel | Asset | Notes |

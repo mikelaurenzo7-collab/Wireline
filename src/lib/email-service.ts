@@ -336,7 +336,7 @@ export async function sendEmailVerification(opts: {
   const text = [
     greetingText,
     "",
-    "Welcome to Wireline. Click the link below to verify your email and start building your first AI employee:",
+    "Welcome to Wireline. Click the link below to verify your email and start building your first AI voice agent:",
     "",
     opts.verifyUrl,
     "",
@@ -348,7 +348,7 @@ export async function sendEmailVerification(opts: {
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
       <p style="margin: 0 0 16px; line-height: 1.55;">${greetingHtml}</p>
-      <p style="margin: 0 0 16px; line-height: 1.55;">Welcome to Wireline. Click the button below to verify your email and start building your first AI employee.</p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Welcome to Wireline. Click the button below to verify your email and start building your first AI voice agent.</p>
       <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.verifyUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Verify email</a></p>
       <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${escapeHtml(opts.verifyUrl)}</span></p>
       <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">The link expires in 24 hours. If you didn't sign up, you can ignore this email.</p>

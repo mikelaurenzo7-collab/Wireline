@@ -114,6 +114,10 @@ describe("product voice cohesion", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const trust = read("src/components/marketing/TrustSignals.tsx");
     const footer = read("src/components/marketing/MarketingFooter.tsx");
+    const compare = read("src/pages/Compare.tsx");
+    const privacy = read("src/components/PrivacyPolicyPage.tsx");
+    const changelog = read("src/components/PublicChangelog.tsx");
+    const emailService = read("src/lib/email-service.ts");
 
     expect(landing).toContain("One agent · every channel");
     expect(landing).toContain("Build your AI Voice Agent");
@@ -122,6 +126,16 @@ describe("product voice cohesion", () => {
     expect(trust).not.toContain("before the employee");
     expect(footer).toContain("personal and business conversations");
     expect(footer).not.toContain("One trained employee");
+    expect(compare).toContain("One trained AI voice agent");
+    expect(compare).not.toContain("One trained employee");
+    expect(compare).not.toContain("owner-ready AI employee");
+    expect(privacy).toContain("AI voice agent platform");
+    expect(privacy).toContain("AI voice agents");
+    expect(privacy).not.toContain("AI employee platform");
+    expect(changelog).toContain("each AI voice agent");
+    expect(changelog).not.toContain("each AI employee");
+    expect(emailService).toContain("first AI voice agent");
+    expect(emailService).not.toContain("first AI employee");
   });
 
 

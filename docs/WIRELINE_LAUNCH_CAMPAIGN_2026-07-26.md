@@ -211,6 +211,24 @@ Create a 6-slide promotional deck:
 5. Founder Early Access pricing from $19/mo
 6. CTA: Build your AI Voice Agent
 
+## Generated Creatives — 2026-07-27
+
+Branded static ads produced this pass (download from the agent artifacts walkthrough; not committed to git):
+
+| File | Ratio | Use |
+| --- | --- | --- |
+| `social/wireline-social-ai-voice-agents.png` | 1:1 | Meta/LinkedIn organic + paid |
+| `social/wireline-social-missed-call.png` | 1:1 | Missed-call recovery ad |
+| `ads/wireline-ad-build-free-live-19.png` | 16:9 | Homepage support / LinkedIn banner |
+| `stories/wireline-story-voice-agent.png` | 9:16 | Reels / Shorts / Stories |
+
+HeyGen video sessions (open to review/download when rendering completes):
+
+- Portrait social: https://app.heygen.com/video-agent/0bfcca47221b4484a51fff39d9c7ad8b
+- Landscape retry: https://app.heygen.com/video-agent/6cbcb77395fa4bb888140131c64b7609
+
+UTM for this creative pack: `utm_campaign=wl_launch_ai_voice_agents_v7`
+
 ## Activation QA
 
 Before spending paid media budget:

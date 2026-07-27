@@ -71,7 +71,7 @@ const MARKET_OPTIONS = [
     name: "Wireline",
     price: "$0 to build · live from $19/mo",
     usage: "60 included live-voice minutes, one number slot, and prepaid overflow on Starter",
-    fit: "Owners who want one trained employee across voice, SMS, email, follow-up, and outcomes",
+    fit: "Owners who want one trained AI voice agent across voice, SMS, email, follow-up, and outcomes",
     href: "/pricing",
     source: "Wireline pricing",
     internal: true,
@@ -135,14 +135,14 @@ export default function Compare() {
     <MarketingPageFrame className="wl-compare-page" mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title="Why Wireline"
-        description="Compare Wireline's owner-ready AI employee with per-agent, per-call, and developer voice-infrastructure pricing."
+        description="Compare Wireline's owner-ready AI voice agent with per-agent, per-call, and developer voice-infrastructure pricing."
         path="/compare"
       />
 
       <MarketingHero
         eyebrow="Why Wireline"
         title="Wireline vs. other voice AI."
-        description="One trained employee across voice, SMS, and email—with prepaid overflow instead of surprise per-call bills."
+        description="One trained AI voice agent across voice, SMS, and email—with prepaid overflow instead of surprise per-call bills."
         primaryAction={{ label: "Start free", to: "/signup?plan=personal" }}
         secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
         proof={COMPARE_HERO_PROOF}

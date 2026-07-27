@@ -206,7 +206,10 @@ export function verifyOAuthState(state: string | undefined): VerifiedOAuthState 
     if (parts.length < 2) return { ok: false };
     const ts = parseInt(parts[1], 36);
     if (isNaN(ts)) return { ok: false };
-    if (Date.now() - ts > 20 * 60 * 1000) return { ok: false };
+    // Keep signed-state TTL aligned with the oauth bridge cookie (10 minutes).
+    // A longer state window left a dead zone where state still verified but the
+    // bridge cookie was gone, producing "Sign-in session expired" for valid states.
+    if (Date.now() - ts > 10 * 60 * 1000) return { ok: false };
 
     let userId: string | undefined;
     let pkceVerifier: string | undefined;

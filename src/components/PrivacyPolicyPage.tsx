@@ -171,9 +171,9 @@ export default function PrivacyPolicyPage() {
         <div className="prose prose-sm sm:prose-base max-w-none space-y-8 text-foreground/85 leading-relaxed">
           <Section title="1. Who We Are">
             <p>
-              <strong>Wireline</strong> ("we", "our", or "us") operates an AI employee platform for
-              business conversations across voice, SMS, and email. Questions about this policy can
-              be sent to <strong>support@trywireline.com</strong>.
+              <strong>Wireline</strong> ("we", "our", or "us") operates an AI voice agent platform for
+              personal and business conversations across voice, SMS, and email. Questions about this
+              policy can be sent to <strong>support@trywireline.com</strong>.
             </p>
           </Section>
 
@@ -184,7 +184,7 @@ export default function PrivacyPolicyPage() {
             </p>
             <p>
               <strong>Agent configuration</strong> — Names, personas, directives, knowledge entries,
-              connected tools, and voice settings you create for your AI employees.
+              connected tools, and voice settings you create for your AI voice agents.
             </p>
             <p>
               <strong>Conversation data</strong> — Phone numbers, message addresses, recordings,

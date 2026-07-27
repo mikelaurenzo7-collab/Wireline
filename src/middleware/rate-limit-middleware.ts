@@ -71,19 +71,28 @@ export async function emailRateLimiter(req: any, res: any, next: any) {
   next();
 }
 
-export function oauthRateLimiter(req: any, res: any, next: any) {
+export async function oauthRateLimiter(req: any, res: any, next: any) {
   if (isTestEnv()) return next();
+  // OAuth start/callback paths must not degrade to per-invocation memory buckets
+  // when Upstash is absent — same fail-closed posture as signin/signup.
+  if (refusedForNoDistributedLimiter(res)) return;
   const key = req.ip || "anon";
-  rateLimit(key, { bucket: "oauth", windowMs: OAUTH_RATE_WINDOW_MS, max: OAUTH_RATE_MAX })
-    .then((result) => {
-      if (!result.allowed) {
-        return res
-          .status(429)
-          .json({ error: "Too many OAuth requests.", code: "OAUTH_RATE_LIMIT" });
-      }
-      next();
-    })
-    .catch(next);
+  try {
+    const result = await rateLimit(
+      key,
+      authRateLimitOptions("oauth", OAUTH_RATE_WINDOW_MS, OAUTH_RATE_MAX),
+    );
+    if (!result.allowed) {
+      auditRateLimitExceeded({ resource: "oauth", ip: req.ip });
+      res.setHeader("Retry-After", Math.ceil(OAUTH_RATE_WINDOW_MS / 1000));
+      return res
+        .status(429)
+        .json({ error: "Too many OAuth requests.", code: "OAUTH_RATE_LIMIT" });
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
 }
 
 function authRateLimitOptions(bucket: string, windowMs: number, max: number) {

@@ -3,7 +3,7 @@ import { Router, Response } from "express";
 import { AppError } from "../lib/api-error";
 import type { AuthenticatedRequest } from "../types/auth";
 import { drizzle, log, auditLogger } from "../lib/server-context";
-import { settings, userPreferences, agents, callLogs, deletionQueue } from "../db/schema";
+import { settings, userPreferences, agents, callLogs, deletionQueue, phoneNumbers } from "../db/schema";
 import * as schema from "../db/schema";
 import { eq, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
@@ -317,7 +317,11 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user.id;
-      const [[agentRow], [callLogRow], [settingsRow], [prefsRow]] = await Promise.all([
+      // Voice readiness is platform-owned (env VAPI_PRIVATE_KEY), not a
+      // per-tenant vapi_private_key column — virtually every live settings row
+      // leaves that column empty. Provisioned phone numbers are the durable
+      // signal that the tenant has a live voice line to train against.
+      const [[agentRow], [callLogRow], [settingsRow], [prefsRow], [phoneRow]] = await Promise.all([
         drizzle
           .select({ count: sql<number>`count(*)` })
           .from(agents)
@@ -329,7 +333,6 @@ router.get(
         drizzle
           .select({
             subscriptionStatus: settings.subscriptionStatus,
-            vapiPrivateKey: settings.vapiPrivateKey,
           })
           .from(settings)
           .where(eq(settings.userId, userId))
@@ -339,14 +342,64 @@ router.get(
           .from(userPreferences)
           .where(eq(userPreferences.userId, userId))
           .limit(1),
+        drizzle
+          .select({ count: sql<number>`count(*)` })
+          .from(phoneNumbers)
+          .where(eq(phoneNumbers.userId, userId)),
       ]);
 
+      const hasAgents = Number(agentRow?.count || 0) > 0;
+      const hasCalls = Number(callLogRow?.count || 0) > 0;
+      const hasBilling = settingsRow?.subscriptionStatus === "active";
+      const hasVoice = Number(phoneRow?.count || 0) > 0;
+      const completed = !!prefsRow?.onboardingCompleted;
+
+      // Persist derived activation steps so wireline_onboarding_progress is a
+      // real activation ledger (it previously had writers nowhere in src/).
+      const derivedSteps: Array<{ stepId: string; done: boolean }> = [
+        { stepId: "create_agent", done: hasAgents },
+        { stepId: "connect_voice", done: hasVoice },
+        { stepId: "first_call", done: hasCalls },
+        { stepId: "activate_billing", done: hasBilling },
+        { stepId: "onboarding_completed", done: completed },
+      ];
+      const now = new Date();
+      await Promise.all(
+        derivedSteps.map(async ({ stepId, done }) => {
+          try {
+            await drizzle.execute(sql`
+              INSERT INTO wireline_onboarding_progress
+                (user_id, step_id, completed, completed_at, metadata)
+              VALUES
+                (
+                  ${userId}::uuid,
+                  ${stepId},
+                  ${done},
+                  ${done ? now : null},
+                  ${JSON.stringify({ source: "derived_progress" })}::jsonb
+                )
+              ON CONFLICT (user_id, step_id) DO UPDATE SET
+                completed = EXCLUDED.completed,
+                completed_at = EXCLUDED.completed_at,
+                metadata = EXCLUDED.metadata
+            `);
+          } catch (error) {
+            // Progress persistence must not break the activation read path.
+            log.warn("onboarding progress upsert failed", {
+              userId,
+              stepId,
+              error: getErrorMessage(error),
+            });
+          }
+        }),
+      );
+
       res.json({
-        has_agents: Number(agentRow?.count || 0) > 0,
-        has_calls: Number(callLogRow?.count || 0) > 0,
-        has_billing: settingsRow?.subscriptionStatus === "active",
-        has_voice: !!settingsRow?.vapiPrivateKey,
-        completed: !!prefsRow?.onboardingCompleted,
+        has_agents: hasAgents,
+        has_calls: hasCalls,
+        has_billing: hasBilling,
+        has_voice: hasVoice,
+        completed,
       });
     } catch (error) {
       if (error instanceof AppError) throw error;

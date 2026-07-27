@@ -20,7 +20,7 @@ import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
 // Schema version: latest committed migration is
-// `drizzle/migrations/0106_default_privileges_wireline_server.sql`.
+// `drizzle/migrations/0116_orphan_carrier_resources.sql`.
 // Live Supabase schema may also be ahead via out-of-band applies — see AGENTS.md.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
 
@@ -1590,6 +1590,30 @@ export const stripeEvents = pgTable("wireline_stripe_events", {
    */
   status: text("status").notNull().default("processed"),
 });
+
+/**
+ * Platform orphan ledger for carrier numbers that failed release during GDPR
+ * purge. Survives the tenant hard-delete so ops/janitor can finish teardown
+ * without the deleted phone-number ownership row. Not tenant-scoped — no RLS
+ * user_id policy; wireline_server gets full access (migration 0116).
+ */
+export const orphanCarrierResources = pgTable(
+  "wireline_orphan_carrier_resources",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    formerUserId: uuid("former_user_id").notNull(),
+    phoneNumber: text("phone_number").notNull(),
+    vapiNumberId: text("vapi_number_id"),
+    lastError: text("last_error"),
+    status: text("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  },
+  () => ({
+    statusIdx: sql`CREATE INDEX IF NOT EXISTS idx_orphan_carrier_resources_status ON wireline_orphan_carrier_resources USING btree (status) WHERE status = 'pending'`,
+    phoneIdx: sql`CREATE INDEX IF NOT EXISTS idx_orphan_carrier_resources_phone ON wireline_orphan_carrier_resources USING btree (phone_number)`,
+  }),
+);
 
 // 4.5 TEAM & RBAC
 export const teamMembers = pgTable(
