@@ -2,10 +2,15 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import {
+  OAUTH_BRIDGE_STATE_MAX_AGE_MS,
+  oauthBridgeStateCookieOptions,
+} from "../src/lib/oauth-bridge-cookie";
 import { generateOAuthState, verifyOAuthState } from "../src/lib/oauth-helpers";
 import {
   createBoundOAuthSignInState,
   isBoundOAuthSignInState,
+  rewriteOAuthCompletionLocation,
 } from "../src/routes/auth-oauth-browser-binding";
 
 const root = process.cwd();
@@ -55,7 +60,30 @@ describe("auth OAuth browser binding contract", () => {
     expect(state).not.toContain(bridgeState);
   });
 
-  it("mounts the binding guard before canonical callbacks and preserves nonce claiming", () => {
+  it("moves internal completion secrets from query strings into fragments", () => {
+    const rewritten = new URL(
+      rewriteOAuthCompletionLocation(
+        "https://trywireline.com/auth/oauth-complete?code=one-time-code&keep=1",
+      ),
+    );
+    expect(rewritten.searchParams.get("keep")).toBe("1");
+    expect(rewritten.searchParams.has("code")).toBe(false);
+    expect(new URLSearchParams(rewritten.hash.slice(1)).get("code")).toBe("one-time-code");
+
+    expect(rewriteOAuthCompletionLocation("/auth/oauth-complete?error=Sign-in%20failed")).toBe(
+      "/auth/oauth-complete#error=Sign-in+failed",
+    );
+    expect(rewriteOAuthCompletionLocation("https://trywireline.com/pricing?code=public")).toBe(
+      "https://trywireline.com/pricing?code=public",
+    );
+  });
+
+  it("keeps the bridge cookie alive for the full 20-minute signed-state window", () => {
+    expect(OAUTH_BRIDGE_STATE_MAX_AGE_MS).toBe(20 * 60 * 1000);
+    expect(oauthBridgeStateCookieOptions().maxAge).toBe(OAUTH_BRIDGE_STATE_MAX_AGE_MS);
+  });
+
+  it("mounts the binding guard before callbacks and scrubs secrets before exchange", () => {
     const registry = read("src/server/register-api-routes.ts");
     const bindingIndex = registry.indexOf("app.use(authOAuthBrowserBindingRouter)");
     const callbackIndex = registry.indexOf("app.use(authOAuthRouter)");
@@ -65,11 +93,21 @@ describe("auth OAuth browser binding contract", () => {
     const binding = read("src/routes/auth-oauth-browser-binding.ts");
     expect(binding).toContain("verifyOAuthState(state)");
     expect(binding).not.toContain("verifyAndClaimOAuthState(state)");
+    expect(binding).toContain("protectOAuthCompletionRedirect(res)");
+    expect(binding).toContain("clearOAuthBridgeStateCookie(res)");
 
     const callbacks = read("src/routes/auth-oauth-routes.ts");
     expect(callbacks.match(/verifyAndClaimOAuthState\(state as string \| undefined\)/g)).toHaveLength(
       3,
     );
-    expect(binding).toContain("clearOAuthBridgeStateCookie(res)");
+
+    const completion = read("src/pages/OAuthComplete.tsx");
+    expect(completion).toContain("useLayoutEffect");
+    expect(completion).toContain("window.history.replaceState");
+    expect(completion).toContain("readCompletionParams(location.search, location.hash)");
+    expect(completion.indexOf("window.history.replaceState")).toBeLessThan(
+      completion.indexOf('fetch("/api/auth/oauth/exchange"'),
+    );
+    expect(completion).toContain('resolvePostAuthDestination(readStoredWorkspaceMode(), "")');
   });
 });
