@@ -108,8 +108,9 @@ const router = Router();
 
 router.use((req: Request, res: Response, next) => {
   const startMatch = req.method === "GET" ? START_ROUTE.exec(req.path) : null;
-  if (startMatch && isSignInOAuthProvider(startMatch[1] || "")) {
-    const provider = startMatch[1];
+  const startProvider = startMatch?.[1] || "";
+  if (isSignInOAuthProvider(startProvider)) {
+    const provider = startProvider;
     const originalJson = res.json.bind(res);
 
     res.json = ((body: unknown) => {
@@ -143,10 +144,10 @@ router.use((req: Request, res: Response, next) => {
   }
 
   const callbackMatch = req.method === "GET" ? CALLBACK_ROUTE.exec(req.path) : null;
-  if (callbackMatch && isSignInOAuthProvider(callbackMatch[1] || "")) {
-    const provider = callbackMatch[1];
+  const callbackProvider = callbackMatch?.[1] || "";
+  if (isSignInOAuthProvider(callbackProvider)) {
     const bridgeState = readOAuthBridgeStateCookie(req);
-    if (!isBoundOAuthSignInState(provider, req.query.state, bridgeState)) {
+    if (!isBoundOAuthSignInState(callbackProvider, req.query.state, bridgeState)) {
       return rejectInvalidCallback(res);
     }
   }
