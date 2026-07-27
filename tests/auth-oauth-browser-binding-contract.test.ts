@@ -1,0 +1,75 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+
+import { generateOAuthState, verifyOAuthState } from "../src/lib/oauth-helpers";
+import {
+  createBoundOAuthSignInState,
+  isBoundOAuthSignInState,
+} from "../src/routes/auth-oauth-browser-binding";
+
+const root = process.cwd();
+const read = (path: string) => readFileSync(resolve(root, path), "utf8");
+const originalStateSecret = process.env.OAUTH_STATE_SECRET;
+const originalBridgeSecret = process.env.OAUTH_BRIDGE_SECRET;
+
+beforeAll(() => {
+  process.env.OAUTH_STATE_SECRET = "wireline-test-oauth-state-secret-at-least-32-bytes";
+  process.env.OAUTH_BRIDGE_SECRET = "wireline-test-oauth-bridge-secret-at-least-32-bytes";
+});
+
+afterAll(() => {
+  if (originalStateSecret === undefined) delete process.env.OAUTH_STATE_SECRET;
+  else process.env.OAUTH_STATE_SECRET = originalStateSecret;
+  if (originalBridgeSecret === undefined) delete process.env.OAUTH_BRIDGE_SECRET;
+  else process.env.OAUTH_BRIDGE_SECRET = originalBridgeSecret;
+});
+
+describe("auth OAuth browser binding contract", () => {
+  it("binds state to both the initiating browser and provider", () => {
+    const bridgeState = "browser-session-a";
+    const state = createBoundOAuthSignInState("google", bridgeState);
+
+    expect(isBoundOAuthSignInState("google", state, bridgeState)).toBe(true);
+    expect(isBoundOAuthSignInState("google", state, "browser-session-b")).toBe(false);
+    expect(isBoundOAuthSignInState("microsoft", state, bridgeState)).toBe(false);
+    expect(isBoundOAuthSignInState("yahoo", state, bridgeState)).toBe(false);
+    expect(isBoundOAuthSignInState("google", state, undefined)).toBe(false);
+  });
+
+  it("rejects legacy generic, malformed, and unsigned state values", () => {
+    const genericState = generateOAuthState({ userId: "signin" });
+    expect(isBoundOAuthSignInState("google", genericState, "browser-session-a")).toBe(false);
+    expect(isBoundOAuthSignInState("google", "not-signed", "browser-session-a")).toBe(false);
+    expect(isBoundOAuthSignInState("google", undefined, "browser-session-a")).toBe(false);
+  });
+
+  it("keeps the raw bridge cookie out of the provider-visible state payload", () => {
+    const bridgeState = "raw-bridge-cookie-value";
+    const state = createBoundOAuthSignInState("yahoo", bridgeState);
+    const verified = verifyOAuthState(state);
+
+    expect(verified.ok).toBe(true);
+    expect(verified.userId).toMatch(/^signin:yahoo:[a-f0-9]{64}$/);
+    expect(verified.userId).not.toContain(bridgeState);
+    expect(state).not.toContain(bridgeState);
+  });
+
+  it("mounts the binding guard before canonical callbacks and preserves nonce claiming", () => {
+    const registry = read("src/server/register-api-routes.ts");
+    const bindingIndex = registry.indexOf("app.use(authOAuthBrowserBindingRouter)");
+    const callbackIndex = registry.indexOf("app.use(authOAuthRouter)");
+    expect(bindingIndex).toBeGreaterThan(-1);
+    expect(callbackIndex).toBeGreaterThan(bindingIndex);
+
+    const binding = read("src/routes/auth-oauth-browser-binding.ts");
+    expect(binding).toContain("verifyOAuthState(state)");
+    expect(binding).not.toContain("verifyAndClaimOAuthState(state)");
+
+    const callbacks = read("src/routes/auth-oauth-routes.ts");
+    expect(callbacks.match(/verifyAndClaimOAuthState\(state as string \| undefined\)/g)).toHaveLength(
+      3,
+    );
+    expect(binding).toContain("clearOAuthBridgeStateCookie(res)");
+  });
+});
