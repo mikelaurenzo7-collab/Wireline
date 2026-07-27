@@ -93,7 +93,11 @@ const PLAN_PREVIEW = [
     name: "Free Builder",
     price: "$0",
     period: "to create",
-    body: "Build, train, and test privately. Activate a paid plan when you are ready for live voice, SMS, email, and a Wireline number.",
+    facts: [
+      "1 private draft agent",
+      "Training + private simulation",
+      "Live channels unlock after activation",
+    ],
     cta: "Start free",
     ctaPath: "/signup?plan=personal",
     highlight: false,
@@ -102,7 +106,12 @@ const PLAN_PREVIEW = [
     name: "Starter",
     price: `$${planCatalog.starter.price_usd_monthly}`,
     period: "/mo",
-    body: `${planCatalog.starter.max_agents} live AI voice agent, ${planCatalog.starter.included_phone_numbers} Wireline number, ${planCatalog.starter.voice_minutes_monthly} voice minutes—plus SMS and email.`,
+    facts: [
+      `${planCatalog.starter.max_agents} live AI voice agent`,
+      `${planCatalog.starter.included_phone_numbers} Wireline number`,
+      `${planCatalog.starter.voice_minutes_monthly} voice minutes / month`,
+      "SMS + email",
+    ],
     cta: "Start for $19",
     ctaPath: "/signup?plan=starter",
     highlight: false,
@@ -111,7 +120,12 @@ const PLAN_PREVIEW = [
     name: "Starter Plus",
     price: `$${planCatalog.team.price_usd_monthly}`,
     period: "/mo",
-    body: `${planCatalog.team.max_agents} live agents, ${planCatalog.team.included_phone_numbers} numbers, ${planCatalog.team.voice_minutes_monthly} voice minutes—plus SMS and Lead Hunt.`,
+    facts: [
+      `${planCatalog.team.max_agents} live agents`,
+      `${planCatalog.team.included_phone_numbers} Wireline numbers`,
+      `${planCatalog.team.voice_minutes_monthly} voice minutes / month`,
+      "SMS + Lead Hunt",
+    ],
     cta: "Get Starter Plus",
     ctaPath: "/signup?plan=team",
     highlight: true,
@@ -120,7 +134,12 @@ const PLAN_PREVIEW = [
     name: "Pro",
     price: `$${planCatalog.business.price_usd_monthly}`,
     period: "/mo",
-    body: `${planCatalog.business.max_agents} live AI voice agents, ${planCatalog.business.included_phone_numbers} numbers, shared channels, analytics, roles, and approvals.`,
+    facts: [
+      `${planCatalog.business.max_agents} live AI voice agents`,
+      `${planCatalog.business.included_phone_numbers} Wireline numbers`,
+      `${planCatalog.business.voice_minutes_monthly} voice minutes / month`,
+      "Shared channels + analytics + approvals",
+    ],
     cta: "Go Pro",
     ctaPath: "/signup?plan=business",
     highlight: false,
@@ -192,12 +211,12 @@ export default function WireAgentLanding() {
           visual={
             <div id="hear-a-demo" className="flex flex-col justify-between text-center">
               <div>
-                <div className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-foreground">
+                <div className="inline-flex items-center justify-center gap-2 text-[13px] font-bold uppercase tracking-[0.1em] text-foreground">
                   <Volume2 className="h-4 w-4 text-primary" aria-hidden="true" />
-                  Hear it now — live in your browser
+                  Live browser demo
                 </div>
                 <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-                  Ask out loud. Mic on only after you start — no signup to listen.
+                  Ask out loud. Mic turns on only after you start — no signup to listen.
                 </p>
               </div>
               <div className="mt-6 rounded-[16px] border border-border bg-background/70 p-4">
@@ -358,15 +377,18 @@ export default function WireAgentLanding() {
                           {detail.lead}
                         </p>
                       </div>
-                      <div className="grid gap-2 sm:grid-cols-3">
-                        {detail.bestFor.map((item) => (
-                          <div
-                            key={item}
-                            className="rounded-[12px] border border-border bg-muted px-4 py-3 text-center text-[13px] font-semibold text-foreground"
-                          >
-                            {item}
-                          </div>
-                        ))}
+                      <div>
+                        <p className="wl-overline text-primary">Best for</p>
+                        <ul className="mt-3 grid gap-2 sm:grid-cols-3">
+                          {detail.bestFor.map((item) => (
+                            <li
+                              key={item}
+                              className="rounded-[12px] border border-border bg-muted px-4 py-3 text-center text-[13px] font-semibold text-foreground"
+                            >
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                       <Link
                         to={detail.ctaPath}
@@ -397,7 +419,7 @@ export default function WireAgentLanding() {
               {PLAN_PREVIEW.map((plan) => (
                 <article
                   key={plan.name}
-                  className={`wl-paper relative flex min-h-[260px] flex-col rounded-[16px] p-7 text-center ${
+                  className={`wl-paper relative flex min-h-[300px] flex-col rounded-[16px] p-7 text-center ${
                     plan.highlight ? "ring-2 ring-primary/60 shadow-lg" : ""
                   }`}
                 >
@@ -414,9 +436,11 @@ export default function WireAgentLanding() {
                     <span className="wl-display-2 leading-none">{plan.price}</span>
                     <span className="text-[13px] text-muted-foreground">{plan.period}</span>
                   </div>
-                  <p className="mt-5 flex-1 text-[14px] leading-[1.6] text-muted-foreground">
-                    {plan.body}
-                  </p>
+                  <ul className="wl-info-list mx-auto w-full max-w-[30ch] flex-1" aria-label={`${plan.name} highlights`}>
+                    {plan.facts.map((fact) => (
+                      <li key={fact}>{fact}</li>
+                    ))}
+                  </ul>
                   <Link
                     to={plan.ctaPath}
                     className={`mt-6 min-h-11 justify-center text-[13px] font-semibold ${
