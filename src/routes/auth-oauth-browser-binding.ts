@@ -170,11 +170,7 @@ function protectOAuthCompletionRedirect(res: Response): void {
   }) as Response["redirect"];
 }
 
-async function guardOAuthExchangeBrowserBinding(
-  req: Request,
-  _res: Response,
-  next: NextFunction,
-): Promise<void> {
+async function guardOAuthExchangeBrowserBinding(req: Request): Promise<void> {
   const code = req.body?.code;
   if (!isOAuthBridgeCode(code)) {
     throw AppError.fromHttpStatus(400, "Invalid or expired code");
@@ -206,22 +202,33 @@ async function guardOAuthExchangeBrowserBinding(
     // A wrong-cookie request must never consume a legitimate browser's code.
     throw AppError.fromHttpStatus(400, "Invalid or expired code");
   }
+}
 
-  next();
+function enforceOAuthRateLimit(req: Request, res: Response, next: NextFunction): void {
+  void import("../middleware/rate-limit-middleware")
+    .then(({ oauthRateLimiter }) => oauthRateLimiter(req, res, next))
+    .catch(next);
 }
 
 const router = Router();
 
-router.use(async (req: Request, res: Response, next: NextFunction) => {
-  const isExchange = req.method === "POST" && req.path === EXCHANGE_ROUTE;
+router.post(
+  EXCHANGE_ROUTE,
+  (_req: Request, res: Response, next: NextFunction) => {
+    setOAuthNoStoreHeaders(res);
+    next();
+  },
+  enforceOAuthRateLimit,
+  async (req: Request, _res: Response, next: NextFunction) => {
+    await guardOAuthExchangeBrowserBinding(req);
+    next();
+  },
+);
+
+router.use((req: Request, res: Response, next: NextFunction) => {
   const startMatch = req.method === "GET" ? START_ROUTE.exec(req.path) : null;
   const callbackMatch = req.method === "GET" ? CALLBACK_ROUTE.exec(req.path) : null;
-  if (isExchange || startMatch || callbackMatch) setOAuthNoStoreHeaders(res);
-
-  if (isExchange) {
-    await guardOAuthExchangeBrowserBinding(req, res, next);
-    return;
-  }
+  if (startMatch || callbackMatch) setOAuthNoStoreHeaders(res);
 
   const startProvider = startMatch?.[1] || "";
   if (isSignInOAuthProvider(startProvider)) {
