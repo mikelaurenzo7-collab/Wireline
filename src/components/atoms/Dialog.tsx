@@ -109,7 +109,7 @@ const DialogTitle = React.forwardRef<
     ref={ref}
     data-slot="dialog-title"
     className={cn(
-      "break-words pr-10 text-left font-[var(--wireline-font-family-display)] text-xl font-semibold leading-[1.15] tracking-[-.025em] text-foreground",
+      "break-words pr-14 text-left font-[var(--wireline-font-family-display)] text-xl font-semibold leading-[1.15] tracking-[-.025em] text-foreground",
       className,
     )}
     {...props}
