@@ -54,7 +54,7 @@ router.get(
   "/api/oauth/apollo/callback",
   oauthRateLimiter,
   async (req: express.Request, res: express.Response) => {
-    const { code, state, error, error_description } = req.query;
+    const { code, state, error } = req.query;
     if (error) {
       log.warn("Apollo OAuth authorization was not completed");
       return res

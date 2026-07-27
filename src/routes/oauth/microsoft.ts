@@ -56,7 +56,7 @@ router.get(
   "/api/oauth/microsoft/callback",
   oauthRateLimiter,
   async (req: express.Request, res: express.Response) => {
-    const { code, state, error, error_description } = req.query;
+    const { code, state, error } = req.query;
     if (error) {
       log.warn("Microsoft OAuth authorization was not completed");
       return res

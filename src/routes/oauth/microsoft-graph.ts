@@ -67,7 +67,7 @@ async function handleMsGraphCallback(
   req: express.Request,
   res: express.Response,
 ) {
-  const { code, state, error, error_description } = req.query;
+  const { code, state, error } = req.query;
   if (error) {
     log.warn("Microsoft Graph OAuth authorization was not completed", { provider });
     return res

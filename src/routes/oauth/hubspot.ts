@@ -55,7 +55,7 @@ router.get(
   "/api/oauth/hubspot/callback",
   oauthRateLimiter,
   async (req: express.Request, res: express.Response) => {
-    const { code, state, error, error_description } = req.query;
+    const { code, state, error } = req.query;
     if (error) {
       log.warn("HubSpot OAuth authorization was not completed");
       return res

@@ -66,7 +66,7 @@ router.get(
   "/api/oauth/yahoo/callback",
   oauthRateLimiter,
   async (req: express.Request, res: express.Response) => {
-    const { code, state, error, error_description } = req.query;
+    const { code, state, error } = req.query;
     if (error) {
       log.warn("Yahoo Mail OAuth authorization was not completed");
       return res
