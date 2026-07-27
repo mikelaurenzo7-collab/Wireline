@@ -154,12 +154,13 @@ describe("product voice cohesion", () => {
     const launchGuru = read("docs/LAUNCH_GURU_PLAYBOOK_2026-07-20.md");
     const checklist = read("docs/WIRELINE_CEO_LAUNCH_CHECKLIST_2026-07-10.md");
 
+    const staleLaunchClaim = ["The best", "employee you've ever had"].join(" ");
     for (const source of [campaign, mediaKit, launchGuru, checklist]) {
       expect(source).toContain("AI Voice Agents");
       expect(source).toContain("Build free. Go live from $19/mo");
       expect(source).not.toContain("Launch for $9");
       expect(source).not.toContain("from $9");
-      expect(source).not.toContain("The best employee you've ever had");
+      expect(source).not.toContain(staleLaunchClaim);
     }
 
     expect(campaign).toContain("AI voice agents for personal tasks and business conversations");
