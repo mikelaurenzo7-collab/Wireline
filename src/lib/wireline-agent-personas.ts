@@ -78,7 +78,7 @@ export const WIRELINE_PERSONAS: Record<WirelinePersonaId, WirelinePersona> = Obj
     id: "reception",
     name: "Mira",
     role: "wireline_reception",
-    // Sarah Soft — warm front-door, distinct from employee-line Charlotte (Sarah).
+    // Sarah Soft — warm front-door, distinct from dedicated-line Charlotte (Sarah).
     voiceId: "EXAVITQu4vr4xnSDxMaL",
     firstMessage:
       "Hey there — Mira with Wireline! Are you calling to learn about us, get help with your account, or something else?",
