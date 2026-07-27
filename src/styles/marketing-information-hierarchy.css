@@ -1,0 +1,97 @@
+/*
+ * Marketing information hierarchy
+ *
+ * Keeps public pages easy to scan: display copy leads, card headings are
+ * visibly distinct from supporting copy, and grouped items read as groups.
+ * This file is intentionally narrow to marketing surfaces so authenticated
+ * density and component contracts stay untouched.
+ */
+
+.marketing-surface :where(.wl-paper, .wl-stitch-card, article) > h3,
+.marketing-surface :where(.wl-paper, .wl-stitch-card, article) > div > h3 {
+  font-family: var(--wireline-font-family-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+/* A title and its explanation should never read like two equal-weight lines. */
+.marketing-surface :where(.wl-paper, .wl-stitch-card, article) > h3 + p,
+.marketing-surface :where(.wl-paper, .wl-stitch-card, article) > div + p {
+  text-wrap: pretty;
+}
+
+/* Trust points were the clearest mobile hierarchy miss: 14px heading over
+   13px body looked like one paragraph. Give the label real visual authority. */
+.marketing-surface [data-testid="trust-signals"] .wl-trust-point__title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.marketing-surface [data-testid="trust-signals"] .wl-trust-point__detail {
+  max-width: 31ch;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+/* Mobile trust points belong to one system, but each idea needs a visible
+   boundary. Desktop keeps the clean multi-column grid. */
+@media (max-width: 639px) {
+  .marketing-surface [data-testid="trust-signals"] .wl-trust-point + .wl-trust-point {
+    border-top: 1px solid var(--wireline-color-border-default);
+  }
+
+  .marketing-surface [data-testid="trust-signals"] .wl-trust-point {
+    padding-block: 1.4rem;
+  }
+}
+
+/* Pricing already uses semantic feature lists. Strengthen the line between
+   plan promise and detail instead of adding redundant bullets. */
+.wl-pricing-page #plans article > p.font-semibold {
+  max-width: 30ch;
+  font-size: 0.975rem;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.wl-pricing-page #plans article ul li {
+  align-items: flex-start;
+}
+
+.wl-pricing-page #plans article ul li > span {
+  text-wrap: pretty;
+}
+
+/* Reusable list language for marketing cards that contain multiple facts.
+   Single explanatory sentences should remain plain paragraphs. */
+.marketing-surface .wl-info-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.marketing-surface .wl-info-list > li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.marketing-surface .wl-info-list > li::before {
+  content: "";
+  width: 0.35rem;
+  height: 0.35rem;
+  margin-top: 0.48rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--wireline-color-action-primary-default);
+}
