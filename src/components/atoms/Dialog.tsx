@@ -109,7 +109,7 @@ const DialogTitle = React.forwardRef<
     ref={ref}
     data-slot="dialog-title"
     className={cn(
-      "wl-card-title break-words text-left font-[var(--wireline-font-family-display)] text-[1.125rem] font-semibold leading-tight tracking-[-.02em]",
+      "wl-card-title break-words pr-8 text-left font-[var(--wireline-font-family-display)] text-[1.125rem] font-semibold leading-tight tracking-[-.02em]",
       className,
     )}
     {...props}
