@@ -38,6 +38,9 @@ const AGENT_MODEL = process.env.PERPLEXITY_AGENT_MODEL?.trim() || "";
 const EMBEDDINGS_URL = process.env.PERPLEXITY_EMBEDDINGS_API_URL?.trim() || "";
 const EMBEDDINGS_MODEL = process.env.PERPLEXITY_EMBEDDINGS_MODEL?.trim() || "";
 
+// LIVE_RESEARCH_TIMEOUT_MS limits one public-research vendor request. The 8_000
+// millisecond default is NOT a call-duration or billing cap; active PSTN calls
+// follow the independent completion-grace and Runtime Balance policy.
 const DEFAULT_TIMEOUT_MS = Number(process.env.LIVE_RESEARCH_TIMEOUT_MS || 8_000);
 const MAX_SEARCH_RESULTS = 8;
 const MAX_QUERY_CHARS = 600;
@@ -341,35 +344,18 @@ export async function researchPerplexity(
 
   // Live-call default: one Sonar request only. Search + embeddings is reserved
   // for explicit semantic-research jobs so voice latency and COGS stay bounded.
+  const sonar = await runSonarResearch(safeQuery, timeoutMs);
+  if (!sonar) return null;
+
   if (!options.semanticRerank) {
-    const sonar = await runSonarResearch(safeQuery, timeoutMs);
-    return sonar
-      ? { answer: sonar.answer, sources: sonar.sources, route: "sonar", semanticRerank: false }
-      : null;
+    return { ...sonar, route: "sonar", semanticRerank: false };
   }
 
-  const [search, sonar] = await Promise.all([
-    searchPerplexityWeb(safeQuery, { timeoutMs, semanticRerank: true }),
-    runSonarResearch(safeQuery, timeoutMs),
-  ]);
-  if (!sonar) return null;
+  const search = await searchPerplexityWeb(safeQuery, { timeoutMs, semanticRerank: true });
   return {
     answer: sonar.answer,
-    sources: dedupeSources([...(search?.sources || []), ...sonar.sources]),
-    route: "search_sonar",
+    sources: search?.sources?.length ? search.sources : sonar.sources,
+    route: search ? "search_sonar" : "sonar",
     semanticRerank: search?.semanticRerank === true,
   };
-}
-
-export function getPerplexityCapabilityPosture() {
-  const key = Boolean(apiKey());
-  return {
-    key,
-    sonar: key,
-    search: key,
-    agent: key && Boolean(AGENT_URL) && Boolean(AGENT_MODEL),
-    embeddings: key && Boolean(EMBEDDINGS_URL) && Boolean(EMBEDDINGS_MODEL),
-    productionKeyIgnoredInPreview:
-      process.env.VERCEL_ENV === "preview" && Boolean(process.env.PERPLEXITY_API_KEY?.trim()),
-  } as const;
 }
