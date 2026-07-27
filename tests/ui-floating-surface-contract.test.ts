@@ -76,4 +76,14 @@ describe("Wireline floating surface design contract", () => {
     expect(sectionHeader).toContain("break-words text-pretty");
     expect(sectionHeader).toContain("[&>*]:w-full sm:w-auto sm:[&>*]:w-auto");
   });
+
+  it("keeps status copy readable while actions stack below it on narrow screens", () => {
+    const statusNotice = read("src/components/molecules/StatusNotice.tsx");
+
+    expect(statusNotice).toContain("flex min-w-0 flex-col gap-3 sm:flex-row");
+    expect(statusNotice).toContain("min-w-0 flex-1 break-words");
+    expect(statusNotice).toContain("max-w-prose break-words leading-5");
+    expect(statusNotice).toContain("w-full min-w-0 pl-7");
+    expect(statusNotice).toContain("sm:w-auto sm:shrink-0 sm:pl-0");
+  });
 });
