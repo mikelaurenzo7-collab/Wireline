@@ -11,6 +11,43 @@ import { getErrorMessage } from "../lib/server-utils";
 
 const router = express.Router();
 
+type PersistedSpendBudget = typeof schema.spendBudgets.$inferSelect;
+
+async function readPersistedSpendBudget(userId: string): Promise<PersistedSpendBudget | null> {
+  const [budget] = await drizzle
+    .select()
+    .from(schema.spendBudgets)
+    .where(eq(schema.spendBudgets.userId, userId))
+    .limit(1);
+  return budget ?? null;
+}
+
+/**
+ * Repair legacy/demo accounts that predate spend-budget seeding. Runtime
+ * provider work still fails closed independently; this read path restores the
+ * plan default so the Account Holder can view and edit a real persisted guard.
+ */
+async function ensurePersistedSpendBudget(userId: string): Promise<PersistedSpendBudget> {
+  const existing = await readPersistedSpendBudget(userId);
+  if (existing) return existing;
+
+  const [subscription] = await drizzle
+    .select({ plan: schema.subscriptions.plan })
+    .from(schema.subscriptions)
+    .where(eq(schema.subscriptions.userId, userId))
+    .limit(1);
+  const { ensureDefaultAiSpendBudget } = await import("../lib/workspace-usage-snapshot");
+  await ensureDefaultAiSpendBudget(userId, subscription?.plan ?? null);
+  clearBudgetCache(userId);
+
+  const repaired = await readPersistedSpendBudget(userId);
+  if (!repaired) {
+    throw AppError.fromHttpStatus(503, "Spend guard is temporarily unavailable.");
+  }
+  log.info("Repaired missing spend budget", { userId, plan: subscription?.plan ?? null });
+  return repaired;
+}
+
 /**
  * This router intentionally mounts before the legacy billing router. It keeps
  * the request shape compatible while making a user-selected hard cap real for
@@ -21,30 +58,18 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const [data] = await drizzle
-        .select()
-        .from(schema.spendBudgets)
-        .where(eq(schema.spendBudgets.userId, req.user.id))
-        .limit(1);
-
+      const data = await ensurePersistedSpendBudget(req.user.id);
       res.json({
-        budget: data
-          ? {
-              monthly_limit_usd: data.monthlyLimitUsd,
-              hard_cap: data.hardCap,
-              warn_threshold_pct: data.warnThresholdPct,
-              enabled: data.enabled,
-              updated_at: data.updatedAt,
-            }
-          : {
-              monthly_limit_usd: 0,
-              hard_cap: false,
-              warn_threshold_pct: 80,
-              enabled: true,
-              updated_at: null,
-            },
+        budget: {
+          monthly_limit_usd: data.monthlyLimitUsd,
+          hard_cap: data.hardCap,
+          warn_threshold_pct: data.warnThresholdPct,
+          enabled: data.enabled,
+          updated_at: data.updatedAt,
+        },
       });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("Failed to load spend budget", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to load budget");
     }
@@ -112,6 +137,7 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      await ensurePersistedSpendBudget(req.user.id);
       const snap = await getBudgetSnapshot(req.user.id, true);
       const alerts = await drizzle
         .select({
@@ -143,6 +169,7 @@ router.get(
         alerts_fired: alerts,
       });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("Failed to load spend status", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to load spend status");
     }
