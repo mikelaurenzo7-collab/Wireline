@@ -41,19 +41,20 @@ export default function TrustSignals() {
 
         <div className="mt-8 grid overflow-hidden rounded-[1.05rem] border border-border bg-card sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border">
           {TRUST_POINTS.map(({ icon: Icon, title, detail }) => (
-            <article key={title} className="p-5 text-center sm:p-6">
+            <article key={title} className="wl-trust-point p-5 text-center sm:p-6">
               <span className="mx-auto grid h-9 w-9 place-items-center rounded-full bg-primary/8 text-primary">
                 <Icon className="h-4 w-4" aria-hidden="true" />
               </span>
-              <h3 className="mt-4 text-sm font-semibold text-foreground">{title}</h3>
-              <p className="mx-auto mt-2 max-w-[28ch] text-[13px] leading-5 text-muted-foreground">
-                {detail}
-              </p>
+              <h3 className="wl-trust-point__title mt-4 text-foreground">{title}</h3>
+              <p className="wl-trust-point__detail mx-auto mt-2 text-muted-foreground">{detail}</p>
             </article>
           ))}
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+        <nav
+          className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground"
+          aria-label="Trust resources"
+        >
           {[
             ["/trust", "Trust Center"],
             ["/security", "Security"],
@@ -64,7 +65,7 @@ export default function TrustSignals() {
               <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>
           ))}
-        </div>
+        </nav>
       </div>
     </section>
   );
