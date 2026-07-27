@@ -78,6 +78,20 @@ describe("Wireline floating surface design contract", () => {
     expect(tooltip).toContain("wireline-elevation-md");
   });
 
+  it("keeps sheets calm, left-aligned, and fully usable on narrow screens", () => {
+    const sheet = read("src/components/ui/shadcn/Sheet.tsx");
+
+    expect(sheet).toContain('data-slot="sheet-content"');
+    expect(sheet).toContain("overflow-y-auto overscroll-contain");
+    expect(sheet).toContain("w-[min(88vw,24rem)]");
+    expect(sheet).toContain("max-h-[85dvh]");
+    expect(sheet).toContain("duration-200");
+    expect(sheet).not.toContain("cubic-bezier(0.34,1.56,0.64,1)");
+    expect(sheet).not.toContain("text-center sm:text-left");
+    expect(sheet).toContain('data-slot="sheet-header"');
+    expect(sheet).toContain("text-left");
+  });
+
   it("keeps shared section headings and actions from competing on narrow screens", () => {
     const sectionHeader = read("src/components/ui/SectionHeader.tsx");
 
