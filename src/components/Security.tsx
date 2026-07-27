@@ -290,19 +290,57 @@ export default function Security() {
             )}
           </div>
 
-          <section className="mt-12 border-t border-border pt-8 text-center">
-            <h2 className="font-display text-lg font-semibold text-foreground">Need more detail?</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Request the security packet, DPA, or vendor review materials at{" "}
-              <a
-                className="font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground"
-                href="mailto:security@trywireline.com"
-              >
+          <div className="mt-12 border-t border-border pt-6 text-center">
+            <p className="text-eyebrow mb-2">On the roadmap</p>
+            <ul className="mx-auto max-w-2xl space-y-1 pl-5 text-left marketing-body">
+              <li>SOC 2 Type II certification — audit firm engaged, target 2026 Q4.</li>
+              <li>
+                Continuous RLS regression checks and GraphQL exposure cleanup for all tenant tables.
+              </li>
+              <li>EU data residency (Frankfurt / Dublin) — target 2026 Q4.</li>
+              <li>Hardware-key 2FA for Account Holder logins — target 2026 Q3.</li>
+              <li>
+                Paid bug bounty program — private invite launch target 2026 Q3, public program 2026
+                Q4.
+              </li>
+            </ul>
+          </div>
+
+          <div className="mt-10 border-t border-border pt-6 text-center">
+            <p className="text-eyebrow mb-3">Vertical trust packs</p>
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 marketing-body">
+              <Link to="/trust/medical" className="text-brand hover:underline">
+                Healthcare
+              </Link>
+              <Link to="/trust/legal" className="text-brand hover:underline">
+                Legal
+              </Link>
+              <Link to="/trust/insurance" className="text-brand hover:underline">
+                Insurance
+              </Link>
+              <Link to="/trust/enterprise" className="text-brand hover:underline">
+                Enterprise
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-10 text-caption text-center space-y-2">
+            <p>
+              Questions?{" "}
+              <a href="mailto:security@trywireline.com" className="text-brand hover:underline">
                 security@trywireline.com
               </a>
-              .
             </p>
-          </section>
+            <p>
+              <Link to="/trust" className="text-brand hover:underline">
+                Trust Center (sales-ready overview)
+              </Link>
+              {" · "}
+              <Link to="/status" className="text-brand hover:underline">
+                Live system status
+              </Link>
+            </p>
+          </div>
         </div>
       </MarketingChrome>
     </>
