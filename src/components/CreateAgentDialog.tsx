@@ -113,7 +113,7 @@ function defaultAgentName(posture: Posture, role: Role) {
   if (role === "sales") return "Revenue Desk";
   if (role === "customer_service") return "Support Desk";
   if (role === "scheduler") return "Scheduling Desk";
-  if (role === "custom") return "Wireline Employee";
+  if (role === "custom") return "Wireline Voice Agent";
   return "Front Desk";
 }
 
