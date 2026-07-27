@@ -12,6 +12,7 @@ import * as schema from "../db/schema";
 import { eq, and, gte, sql } from "drizzle-orm";
 import { recordDailySpendUsd, getDailySpendUsd } from "./daily-spend-accumulator";
 import { getErrorMessage } from "./server-utils";
+import { resolveHardSpendCapStatus } from "./spend-budget-policy";
 
 interface BudgetRow {
   monthly_limit_usd: number;
@@ -166,10 +167,19 @@ type AuthedRequest = Request & { user?: { id?: string } };
 /** True when a tenant has enabled hard_cap and month-to-date spend meets/exceeds limit. */
 export async function isHardSpendCapExceeded(userId: string): Promise<boolean> {
   const snap = await getBudgetSnapshot(userId);
-  if (!snap.budget?.enabled || !snap.budget.hard_cap) return false;
-  const limit = snap.budget.monthly_limit_usd;
-  if (!(limit > 0)) return false;
-  return snap.mtdCost >= limit;
+  const status = resolveHardSpendCapStatus(snap);
+  if (status === "unavailable") {
+    throw new Error("Spend budget is missing or invalid.");
+  }
+  return status === "exceeded";
+}
+
+function sendSpendGuardUnavailable(res: Response) {
+  return res.status(503).json({
+    code: "SPEND_GUARD_UNAVAILABLE",
+    error:
+      "Wireline could not verify your spend guard. New live work is paused until the check recovers.",
+  });
 }
 
 /**
@@ -184,12 +194,12 @@ export async function enforceSpendCap(req: AuthedRequest, res: Response, next: N
 
   try {
     const snap = await getBudgetSnapshot(userId);
-    const budget = snap.budget;
-    if (!budget?.enabled || !budget.hard_cap || !(budget.monthly_limit_usd > 0)) {
-      return next();
+    const status = resolveHardSpendCapStatus(snap);
+    if (status === "unavailable") {
+      log.error("enforceSpendCap found missing or invalid budget", { userId });
+      return sendSpendGuardUnavailable(res);
     }
-
-    if (snap.mtdCost < budget.monthly_limit_usd) return next();
+    if (status === "disabled" || status === "within_limit") return next();
 
     return res.status(402).json({
       code: "SPEND_CAP_REACHED",
@@ -197,16 +207,12 @@ export async function enforceSpendCap(req: AuthedRequest, res: Response, next: N
         "Your monthly hard cap has been reached. Increase or disable the cap to start new live work.",
       period: snap.period,
       month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
-      monthly_limit_usd: budget.monthly_limit_usd,
+      monthly_limit_usd: snap.budget!.monthly_limit_usd,
       hard_cap: true,
     });
   } catch (err) {
     log.error("enforceSpendCap could not verify budget", { userId, error: getErrorMessage(err) });
-    return res.status(503).json({
-      code: "SPEND_GUARD_UNAVAILABLE",
-      error:
-        "Wireline could not verify your spend guard. New live work is paused until the check recovers.",
-    });
+    return sendSpendGuardUnavailable(res);
   }
 }
 
