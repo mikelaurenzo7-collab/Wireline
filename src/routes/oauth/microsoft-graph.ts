@@ -70,7 +70,10 @@ async function handleMsGraphCallback(
   const { code, state, error, error_description } = req.query;
   if (error) {
     log.warn("Microsoft Graph OAuth error from provider", { provider, error, error_description });
-    return res.status(400).send(`Microsoft OAuth error: ${error_description || error}`);
+    return res
+      .status(400)
+      .type("text/plain")
+      .send("Microsoft authorization was not completed. Please restart the connection.");
   }
   const vs = await verifyAndClaimOAuthState(state as string | undefined);
   if (!vs.ok) {
