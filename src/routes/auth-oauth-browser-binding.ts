@@ -74,6 +74,37 @@ export function isBoundOAuthSignInState(
   }
 }
 
+/**
+ * Keeps Wireline's short-lived bridge code and sanitized error details out of
+ * HTTP requests, access logs, and referrer headers. Provider callbacks still
+ * use their required query parameters; only the internal SPA handoff changes.
+ */
+export function rewriteOAuthCompletionLocation(location: string): string {
+  const isAbsolute = /^https?:\/\//i.test(location);
+  try {
+    const url = isAbsolute
+      ? new URL(location)
+      : new URL(location, "https://wireline.invalid");
+    if (url.pathname !== "/auth/oauth-complete") return location;
+
+    const fragment = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : url.hash);
+    let movedSensitiveValue = false;
+    for (const key of ["code", "error"] as const) {
+      const value = url.searchParams.get(key);
+      if (!value) continue;
+      fragment.set(key, value);
+      url.searchParams.delete(key);
+      movedSensitiveValue = true;
+    }
+    if (!movedSensitiveValue) return location;
+
+    url.hash = fragment.toString();
+    return isAbsolute ? url.toString() : `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return location;
+  }
+}
+
 function readBridgeStateFromSetCookie(res: Response): string | undefined {
   const rawHeader = res.getHeader("set-cookie");
   const headers = Array.isArray(rawHeader)
@@ -101,7 +132,17 @@ function readBridgeStateFromSetCookie(res: Response): string | undefined {
 function rejectInvalidCallback(res: Response): Response {
   clearOAuthBridgeStateCookie(res);
   const error = encodeURIComponent(INVALID_STATE_MESSAGE);
-  return res.redirect(`${getCanonicalAppUrl()}/auth/oauth-complete?error=${error}`);
+  return res.redirect(`${getCanonicalAppUrl()}/auth/oauth-complete#error=${error}`);
+}
+
+function protectOAuthCompletionRedirect(res: Response): void {
+  const originalRedirect = res.redirect.bind(res);
+  res.redirect = ((statusOrUrl: number | string, maybeUrl?: string) => {
+    if (typeof statusOrUrl === "number") {
+      return originalRedirect(statusOrUrl, rewriteOAuthCompletionLocation(maybeUrl || ""));
+    }
+    return originalRedirect(rewriteOAuthCompletionLocation(statusOrUrl));
+  }) as Response["redirect"];
 }
 
 const router = Router();
@@ -150,6 +191,7 @@ router.use((req: Request, res: Response, next) => {
     if (!isBoundOAuthSignInState(callbackProvider, req.query.state, bridgeState)) {
       return rejectInvalidCallback(res);
     }
+    protectOAuthCompletionRedirect(res);
   }
 
   return next();
