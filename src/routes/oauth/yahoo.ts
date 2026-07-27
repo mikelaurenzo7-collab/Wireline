@@ -17,6 +17,7 @@ import {
   resolveUserIdFromOAuthSession,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
+import { createYahooOidcNonce, verifyYahooIdToken } from "../../lib/yahoo-openid";
 
 const router = express.Router();
 
@@ -25,23 +26,30 @@ const router = express.Router();
 //
 //  Distinct from /api/auth/yahoo/* (sign-in, openid+email+profile only).
 //  This flow is auth-gated: the Account Holder must already be signed in
-//  before they can connect their Yahoo Mail account. We store the
-//  tokens in wireline_email_accounts with provider='yahoo'. Actual
-//  IMAP/SMTP polling + sending lands in a future phase — having the
+//  before they can connect their Yahoo Mail account. We store the tokens in
+//  wireline_email_accounts with provider='yahoo'. Actual IMAP/SMTP polling +
+//  sending lands in a future phase — having verified ownership and encrypted
 //  OAuth tokens persisted is the precondition for that wiring.
 //
-//  Yahoo Mail uses XOAUTH2 over IMAP (imap.mail.yahoo.com:993) +
-//  SMTP (smtp.mail.yahoo.com:465). The same access_token we store
-//  here is what those clients will use as the SASL credential.
+//  Yahoo Mail uses XOAUTH2 over IMAP (imap.mail.yahoo.com:993) + SMTP
+//  (smtp.mail.yahoo.com:465). The same access_token we store is what those
+//  clients will use as the SASL credential.
 // ────────────────────────────────────────────────────────────────────
 
 const YAHOO_MAIL_SCOPES = ["openid", "email", "profile", "mail-r", "mail-w"].join(" ");
+
+function setOAuthNoStoreHeaders(res: express.Response): void {
+  res.set("Cache-Control", "no-store, max-age=0");
+  res.set("Pragma", "no-cache");
+  res.set("Referrer-Policy", "no-referrer");
+}
 
 router.get(
   "/api/oauth/yahoo/url",
   oauthRateLimiter,
   authenticateUser,
   (req: express.Request, res: express.Response) => {
+    setOAuthNoStoreHeaders(res);
     if (!process.env.YAHOO_CLIENT_ID || !process.env.YAHOO_CLIENT_SECRET) {
       throw AppError.fromHttpStatus(503, "Yahoo mailbox integration is finishing setup.");
     }
@@ -50,12 +58,14 @@ router.get(
       `${req.protocol}://${req.get("host")}`;
     const redirectUri = `${baseUrl}/api/oauth/yahoo/callback`;
     const uid = req.user?.id as string | undefined;
+    const nonce = createYahooOidcNonce();
     const params = new URLSearchParams({
       client_id: process.env.YAHOO_CLIENT_ID,
       response_type: "code",
       redirect_uri: redirectUri,
       scope: YAHOO_MAIL_SCOPES,
-      state: generateOAuthState(uid ? { userId: uid } : undefined),
+      state: generateOAuthState({ userId: uid, pkceVerifier: nonce }),
+      nonce,
       prompt: "login",
     });
     res.json({ url: `https://api.login.yahoo.com/oauth2/request_auth?${params.toString()}` });
@@ -66,6 +76,7 @@ router.get(
   "/api/oauth/yahoo/callback",
   oauthRateLimiter,
   async (req: express.Request, res: express.Response) => {
+    setOAuthNoStoreHeaders(res);
     const { code, state, error } = req.query;
     if (error) {
       log.warn("Yahoo Mail OAuth authorization was not completed");
@@ -112,21 +123,18 @@ router.get(
         access_token?: string;
         refresh_token?: string;
         expires_in?: number;
+        id_token?: string;
       };
       if (!tokens.access_token) throw new Error("no access_token in Yahoo response");
+      const identity = await verifyYahooIdToken(tokens.id_token, {
+        clientId: process.env.YAHOO_CLIENT_ID!,
+        nonce: vs.pkceVerifier,
+      });
 
       const userId = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
       if (!userId) {
         return res.status(401).send("Could not identify user. Please reconnect from the app.");
       }
-
-      const meRes = await fetch("https://api.login.yahoo.com/openid/v1/userinfo", {
-        headers: { Authorization: `Bearer ${tokens.access_token}` },
-      });
-      if (!meRes.ok) throw new Error(`Yahoo userinfo failed (${meRes.status})`);
-      const me = (await meRes.json()) as { email?: string };
-      const emailAddress = me.email?.trim().toLowerCase();
-      if (!emailAddress) throw new Error("Yahoo did not return an email address");
 
       const accessTokenY = encryptSecret(tokens.access_token);
       const refreshTokenY = tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null;
@@ -134,7 +142,7 @@ router.get(
 
       const emailAccountConnected = await upsertOwnedEmailAccount({
         userId,
-        emailAddress,
+        emailAddress: identity.email,
         provider: "yahoo",
         accessToken: accessTokenY,
         refreshToken: refreshTokenY,
@@ -153,7 +161,7 @@ router.get(
       res.send(`
       <html><body><script nonce="${cspNonce}">
         if (window.opener) {
-          window.opener.postMessage({ type: 'EMAIL_OAUTH_SUCCESS', provider: 'yahoo', email: ${JSON.stringify(emailAddress)} }, ${JSON.stringify(targetOrigin)});
+          window.opener.postMessage({ type: 'EMAIL_OAUTH_SUCCESS', provider: 'yahoo', email: ${JSON.stringify(identity.email)} }, ${JSON.stringify(targetOrigin)});
           window.close();
         } else { window.location.href = '/'; }
       </script><p>Yahoo Mail connected. You can close this window.</p></body></html>
