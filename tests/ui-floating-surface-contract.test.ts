@@ -40,6 +40,7 @@ describe("Wireline floating surface design contract", () => {
       const source = read(path);
       expect(source, path).toContain("grid size-11 place-items-center");
       expect(source, path).not.toContain("grid size-9 place-items-center");
+      expect(source, path).toContain("break-words pr-8 text-left");
     }
   });
 
