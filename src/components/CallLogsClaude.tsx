@@ -326,7 +326,7 @@ export default function CallLogsClaude() {
                 className="wl-metric-tile__value tabular-nums"
                 style={isWarning ? { color: "var(--wireline-color-status-warning)" } : undefined}
               >
-                {loading ? "—" : kpi.value}
+                {loading || error ? "—" : kpi.value}
               </div>
             </article>
           );
@@ -370,6 +370,7 @@ export default function CallLogsClaude() {
             <FloorTab
               calls={live.length > 0 ? floorList : floorList.slice(0, visibleFloorCount)}
               loading={loading}
+              loadFailed={Boolean(error)}
               hasLive={live.length > 0 || presenceSignals.length > 0}
               onOutboundCall={() => setShowOutboundDial(true)}
               canLoadMore={floorCanLoadMore}
@@ -378,8 +379,12 @@ export default function CallLogsClaude() {
             />
           </>
         ) : null}
-        {activeTab === "intel" ? <IntelTab items={intel} loading={loading} /> : null}
-        {activeTab === "triage" ? <TriageTab items={escalations} loading={loading} /> : null}
+        {activeTab === "intel" ? (
+          <IntelTab items={intel} loading={loading} loadFailed={Boolean(error)} />
+        ) : null}
+        {activeTab === "triage" ? (
+          <TriageTab items={escalations} loading={loading} loadFailed={Boolean(error)} />
+        ) : null}
         {activeTab === "analytics" ? <AnalyticsTab /> : null}
       </div>
       <OutboundDialDialog open={showOutboundDial} onClose={() => setShowOutboundDial(false)} />
@@ -390,6 +395,7 @@ export default function CallLogsClaude() {
 function FloorTab({
   calls,
   loading,
+  loadFailed,
   hasLive,
   onOutboundCall,
   canLoadMore,
@@ -398,6 +404,7 @@ function FloorTab({
 }: {
   calls: Call[];
   loading: boolean;
+  loadFailed: boolean;
   hasLive: boolean;
   onOutboundCall: () => void;
   canLoadMore: boolean;
@@ -405,6 +412,8 @@ function FloorTab({
   onLoadMore: () => void;
 }) {
   if (loading) return <CardRowSkeleton />;
+  // Primary fetch failed with an empty list — show the banner only, not a fake empty inventory.
+  if (loadFailed && !calls.length) return null;
   if (!calls.length) {
     return (
       <EmptyState
@@ -528,8 +537,17 @@ function FloorTab({
   );
 }
 
-function IntelTab({ items, loading }: { items: Call[]; loading: boolean }) {
+function IntelTab({
+  items,
+  loading,
+  loadFailed,
+}: {
+  items: Call[];
+  loading: boolean;
+  loadFailed: boolean;
+}) {
   if (loading) return <CardRowSkeleton />;
+  if (loadFailed && !items.length) return null;
   if (!items.length) {
     return (
       <EmptyState
@@ -588,8 +606,17 @@ function IntelTab({ items, loading }: { items: Call[]; loading: boolean }) {
   );
 }
 
-function TriageTab({ items, loading }: { items: Call[]; loading: boolean }) {
+function TriageTab({
+  items,
+  loading,
+  loadFailed,
+}: {
+  items: Call[];
+  loading: boolean;
+  loadFailed: boolean;
+}) {
   if (loading) return <CardRowSkeleton />;
+  if (loadFailed && !items.length) return null;
   if (!items.length) {
     return (
       <EmptyState

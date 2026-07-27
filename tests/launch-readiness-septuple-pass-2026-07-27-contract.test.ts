@@ -10,6 +10,10 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
     const logs = read("src/components/CallLogsClaude.tsx");
     expect(logs).toContain('throw new Error("Couldn\'t load calls. Try again in a moment.")');
     expect(logs).not.toContain("response.ok ? response.json() : null");
+    expect(logs).toContain("loadFailed={Boolean(error)}");
+    expect(logs).toContain("if (loadFailed && !calls.length) return null");
+    expect(logs).toContain("if (loadFailed && !items.length) return null");
+    expect(logs).toContain('{loading || error ? "—" : kpi.value}');
   });
 
   it("surfaces Webhooks and Intake Keys load failures instead of empty success", () => {
