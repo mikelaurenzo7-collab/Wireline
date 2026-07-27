@@ -14,7 +14,7 @@ describe("conversation trust surfaces", () => {
     expect(message).toContain("author: {");
     expect(message).toContain("customer:");
     expect(message).toContain("assistant:");
-    expect(message).toContain("channel?: \"email\" | \"text\" | \"voice\"");
+    expect(message).toContain('channel?: "email" | "text" | "voice"');
   });
 
   it("keeps lifecycle activity semantic and reusable", () => {
@@ -43,7 +43,7 @@ describe("conversation trust surfaces", () => {
     const notice = source("src/components/molecules/StatusNotice.tsx");
 
     expect(notice).toContain("action?: React.ReactNode");
-    expect(notice).toContain("{action ? <div");
-    expect(notice).toContain("({ tone = \"info\", title, icon, action");
+    expect(notice).toMatch(/\{action\s*\?\s*\(\s*<div/);
+    expect(notice).toContain('({ tone = "info", title, icon, action');
   });
 });
