@@ -6,17 +6,18 @@ import { planById } from "../src/lib/plan-catalog";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("marketing metadata contract", () => {
-  it("keeps static and runtime fallback metadata aligned to the inclusive voice-agent promise", () => {
+  it("keeps static and runtime fallback metadata aligned to the direct voice agent promise", () => {
     const staticHead = read("index.html");
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
-    expect(staticHead).toContain("Wireline — AI Voice Agents for Personal &amp; Business");
+    expect(staticHead).toContain("Wireline | AI voice agents that get work done");
     expect(runtimeMeta).toContain(
-      'const DEFAULT_TITLE = "Wireline - AI Voice Agents for Personal & Business"',
+      'const DEFAULT_TITLE = "Wireline | AI voice agents that get work done"',
     );
     for (const source of [staticHead, runtimeMeta]) {
-      expect(source).toContain("personal tasks and business conversations");
-      expect(source).toContain("follow-through across voice, SMS, and email");
+      expect(source).toContain("Build one for your business or your life.");
+      expect(source).toContain("call, answer, text, email, book, and follow through");
+      expect(source).not.toContain("—");
     }
     expect(staticHead).not.toContain("AI phone employees that turn calls into sales");
     expect(runtimeMeta).not.toContain("Personal & Business AI Assistants");
