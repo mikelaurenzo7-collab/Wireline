@@ -34,6 +34,20 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-router-dom"
         update-types: ["version-update:semver-major"]
+      # TypeScript majors break Vercel's local-user-provided function compile
+      # (TS 7 crashed with `Cannot read properties of undefined (reading 'readFile')`
+      # after a green app build). Bump only with an explicit Vercel compatibility proof.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # Vite majors (e.g. Vite 8 / Rolldown) need a deliberate migration PR, not a
+      # grouped dev-tooling bump.
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: ["version-update:semver-major"]
+      # Keep @types/node on the same major family as engines.node (22.x).
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions — keep workflow runners on supported versions.
   - package-ecosystem: "github-actions"

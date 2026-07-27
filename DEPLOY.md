@@ -31,11 +31,32 @@ To promote a preview to production:
 Both production aliases (`trywireline.com`, `wireline-chi.vercel.app`,
 `wireline-revaluate.vercel.app`) update together when a deployment is promoted.
 
+### Canonical Vercel project
+
+**Only `revaluate/wireline` may be linked to this GitHub repo.** That project owns
+trywireline.com and the production secrets inventory. A second linked project
+(historically named `workspace`) will also receive every `main`/PR push, fail
+`scripts/check-deployment-boundaries.mjs` when Production env is empty, and
+paint a red **Vercel – workspace** status on the commit even when `wireline` is
+green. If that happens: unlink the duplicate under Vercel → project → Settings →
+Git (or delete the project). Do not copy production secrets into a second
+project to silence the check.
+
 ### Node.js runtime
 
 The repo is pinned to **Node 22** across `.nvmrc`, `package.json` (`engines.node: "22.x"`), and `vercel.json` (`build.env.NODE_VERSION: "22"`). Keep Vercel -> wireline -> Settings -> General on **Node.js 22.x** before promoting production builds.
 
 If Vercel reports an install/runtime mismatch, fix the project dashboard setting rather than widening `package.json` engines. The strict pin is intentional so previews, CI, and production use the same runtime family.
+
+### Tooling majors (TypeScript / Vite)
+
+Dependabot must not open major bumps for `typescript`, `vite`, `@vitejs/plugin-react`,
+or `@types/node` (see `.github/dependabot.yml`). Vercel’s post-`build:vercel`
+function step uses the **local user-provided** TypeScript from `node_modules`;
+TypeScript 7.0.2 failed there with `Cannot read properties of undefined (reading
+'readFile')` even after a green app build + smoke. Vite 8 is a separate Rolldown
+migration. Keep `typescript` on 6.x, `vite` on 6.x, and `@types/node` on 22.x
+until an intentional upgrade PR proves Vercel + CI green.
 
 ### Release gate and preview migration policy
 
