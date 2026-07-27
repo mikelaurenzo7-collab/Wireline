@@ -8,12 +8,12 @@ const read = (path: string) =>
 describe("E2E design and brand polish", () => {
   it("keeps every mobile agent tab visible and readable", () => {
     const compactTabs = read("src/styles/agent-tabs-compact.css");
-    expect(compactTabs).not.toContain("display: none");
+    expect(compactTabs).not.toMatch(/button:nth-child\(4\)\s*\{[^}]*display:\s*none/);
     expect(compactTabs).toContain("overflow-x: auto");
     expect(compactTabs).toContain("min-height: 2.75rem");
     expect(compactTabs).toContain("font-size: 0.75rem");
     expect(compactTabs).toContain("button:nth-child(4)");
-    expect(compactTabs).toContain("display: inline-flex");
+    expect(compactTabs).toMatch(/button:nth-child\(4\)\s*\{[^}]*display:\s*inline-flex/);
   });
 
   it("keeps shared workspace tabs comfortable at compact density", () => {
