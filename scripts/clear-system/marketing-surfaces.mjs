@@ -1,6 +1,6 @@
 /**
- * Public marketing surfaces — centered rails, shared product voice, accessible
- * work-lane interactions, the wire signature, and honest Founder economics.
+ * Public marketing surfaces with centered rails, shared product voice, accessible
+ * work lane interactions, the wire signature, and honest Founder economics.
  */
 export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   const claritySystemCss = read("src/styles/clarity-system.css");
@@ -61,8 +61,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/marketing/PrecisionPublicHeader.tsx",
     publicHeader,
-    /MARKETING_VOICE\.headline/,
-    "mobile navigation must consume the canonical brand spine",
+    /MARKETING_VOICE\.buyingNoun/,
+    "mobile navigation must consume the canonical product noun",
   );
   mustExclude(
     "src/components/marketing/PrecisionPublicHeader.tsx",
@@ -79,8 +79,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/marketing/MarketingHero.tsx",
     marketingHero,
-    /aria-label="Wireline proof points"/,
-    "hero proof chips must have an accessible list name",
+    /aria-label="Wireline capabilities"/,
+    "hero capability chips must have an accessible list name",
   );
 
   mustInclude(

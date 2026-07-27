@@ -97,19 +97,21 @@ describe("Wireline product documentation contract", () => {
     }
   });
 
-  it("keeps static metadata and OG positioning aligned with the current product truth", () => {
+  it("keeps static metadata and OG positioning aligned with current product truth", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("Wireline — AI Voice Agents for Personal &amp; Business");
-    expect(head).toContain("personal tasks and business conversations");
-    expect(head).toContain("follow-through across voice, SMS, and email");
+    expect(head).toContain("Wireline | AI voice agents that get work done");
+    expect(head).toContain("Build one for your business or your life.");
+    expect(head).toContain("call, answer, text, email, book, and follow through");
     expect(head).toContain("personal voice agent");
     expect(head).toContain("business voice agent");
     expect(head).not.toContain("AI employee");
     expect(head).not.toContain("multichannel AI employee");
-    expect(ogImage).toMatch(/AI VOICE AGENTS[\s\S]*PERSONAL · BUSINESS/);
-    expect(ogImage).toContain("VOICE · SMS · EMAIL · PERSONAL · BUSINESS · OUTCOMES · CONTROL");
+    expect(head).not.toContain("—");
+    expect(ogImage).toMatch(/Voice agents that[\s\S]*get the work done\./);
+    expect(ogImage).toContain("VOICE | TEXT | EMAIL | BOOKINGS | FOLLOW UP | CONTROL");
+    expect(ogImage).not.toContain("·");
     expectNoTerms(head, retiredProductTerms);
     expectNoTerms(ogImage, retiredProductTerms);
   });
@@ -117,8 +119,8 @@ describe("Wireline product documentation contract", () => {
   it("keeps authenticated workspace routes out of crawler policy and public sitemap", () => {
     const robots = read("public/robots.txt");
     const sitemap = read("public/sitemap.xml");
-    // Real authenticated surfaces from src/routes/AppRoutes.tsx — kept in sync
-    // with the router so crawler policy never drifts from the actual app.
+    // Real authenticated surfaces from src/routes/AppRoutes.tsx. Keep these in
+    // sync with the router so crawler policy never drifts from the actual app.
     const privateRoutes = [
       "/admin",
       "/agents",

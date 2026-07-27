@@ -16,7 +16,7 @@ export default function LandingPage() {
   // Reuse the canonical SoftwareApplication @id declared in index.html's
   // JSON-LD @graph so crawlers merge this into that single entity instead of
   // seeing two conflicting SoftwareApplication nodes. This runtime node only
-  // contributes the plan OfferCatalog the static graph doesn't carry.
+  // contributes the plan OfferCatalog the static graph does not carry.
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -37,7 +37,7 @@ export default function LandingPage() {
   return (
     <>
       <PageMeta
-        title="Wireline — AI Voice Agents for Personal & Business"
+        title="Wireline | AI voice agents that get work done"
         description={PUBLIC_DESCRIPTION}
         path="/"
       />

@@ -37,7 +37,8 @@ const SCANNED_FILES = [
 describe("sales trust copy contract", () => {
   it("exports canonical trust disclosure FAQ in product-copy", () => {
     expect(TRUST_DISCLOSURE_FAQ).toContain("disclosure policy");
-    expect(TRUST_DISCLOSURE_FAQ).toContain("logged automatically");
+    expect(TRUST_DISCLOSURE_FAQ).toContain("logs it automatically");
+    expect(TRUST_DISCLOSURE_FAQ).toContain("consent rules");
   });
 
   it("forbids prohibited trust and performance claims in public marketing surfaces", () => {
@@ -60,8 +61,6 @@ describe("sales trust copy contract", () => {
     expect(wedges).toContain("Profit Recovery Phone Agents");
     expect(wedges).toContain("speed-to-lead");
     expect(wedges).toContain("Approved actions sync");
-    // The sales wedge answers disclosure with the canonical constant so the
-    // copy can never drift from product-copy's trust posture again.
     expect(wedges).toContain('import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy"');
     expect(wedges).toContain("a: TRUST_DISCLOSURE_FAQ,");
   });

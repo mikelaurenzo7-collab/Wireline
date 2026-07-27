@@ -46,7 +46,7 @@ export default function PrecisionPublicHeader() {
             <span>Wireline</span>
           </Link>
           <nav
-            className="absolute left-1/2 top-0 hidden h-full -translate-x-1/2 items-center gap-6 lg:flex"
+            className="absolute left-1/2 top-0 hidden h-full -translate-x-1/2 items-center gap-7 lg:flex"
             aria-label="Site"
           >
             {links.map((link) => {
@@ -56,7 +56,7 @@ export default function PrecisionPublicHeader() {
                   key={link.to}
                   to={link.to}
                   aria-current={active ? "page" : undefined}
-                  className={`flex h-full items-center border-b-2 text-[var(--wireline-typography-caption-size)] font-medium transition-colors ${active ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                  className={`flex h-full items-center border-b-2 text-sm font-medium transition-colors ${active ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
                 >
                   {link.label}
                 </Link>
@@ -66,13 +66,13 @@ export default function PrecisionPublicHeader() {
           <div className="ml-auto hidden items-center gap-5 lg:flex">
             <Link
               to="/signin"
-              className="text-[var(--wireline-typography-caption-size)] font-medium text-foreground transition-colors hover:text-primary"
+              className="text-sm font-medium text-foreground transition-colors hover:text-primary"
             >
               Sign in
             </Link>
             <Link
               to="/signup"
-              className="marketing-btn-primary min-h-9 px-4 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
+              className="marketing-btn-primary min-h-10 px-4 text-sm font-semibold"
             >
               Start free
             </Link>
@@ -103,10 +103,10 @@ export default function PrecisionPublicHeader() {
           Browse Wireline product pages or open your account.
         </DialogDescription>
         <div className="mx-auto flex min-h-full w-full max-w-lg flex-col px-5 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-          <div className="flex items-center justify-between border-b border-border pb-4">
+          <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
             <p className="wl-overline">Wireline</p>
-            <span className="font-[var(--wireline-font-display)] text-sm font-semibold tracking-[-.02em] text-foreground">
-              {MARKETING_VOICE.headline}
+            <span className="text-right font-[var(--wireline-font-display)] text-sm font-semibold tracking-[-.02em] text-foreground">
+              {MARKETING_VOICE.buyingNoun}
             </span>
           </div>
           <nav className="mt-2" aria-label="Mobile site">

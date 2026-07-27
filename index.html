@@ -31,7 +31,7 @@
     <!-- Preload the three Latin faces every page actually renders with (Inter
          Tight display, Inter body, IBM Plex Mono labels). Without these the
          browser cannot discover a single woff2 until it has fetched AND parsed
-         fonts.css — a serial hop that leaves brand text in the fallback face
+         fonts.css, a serial hop that leaves brand text in the fallback face
          and forces a visible re-layout when the real font swaps in. Preloading
          starts them in parallel with the stylesheet instead. Keep this list to
          faces used above the fold: a preload that goes unused is wasted
@@ -63,10 +63,10 @@
     <meta name="format-detection" content="date=no" />
     <meta name="format-detection" content="address=no" />
 
-    <title>Wireline — AI Voice Agents for Personal &amp; Business</title>
+    <title>Wireline | AI voice agents that get work done</title>
     <meta
       name="description"
-      content="Build one AI voice agent—or a coordinated team—for personal tasks and business conversations, with follow-through across voice, SMS, and email."
+      content="Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control."
     />
     <meta
       name="keywords"
@@ -89,6 +89,11 @@
     <meta name="color-scheme" content="dark" />
 
     <link rel="canonical" href="https://trywireline.com/" />
+    <link rel="preconnect" href="https://plausible.io" crossorigin />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="mask-icon" href="/favicon.svg" color="#6D28D9" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
 
     <!--
       The Plausible stub queues every call in `plausible.q` and the real script
@@ -97,7 +102,7 @@
       as a static tag.
 
       This is load-bearing, not cosmetic: a static `defer` script blocks
-      DOMContentLoaded AND every deferred script after it — including the app's
+      DOMContentLoaded AND every deferred script after it, including the app's
       own module bundle. Whenever plausible.io was slow, blocked by an ad
       blocker that blackholes rather than refuses, or unreachable behind a
       corporate proxy, the whole site stayed blank until that connection timed
@@ -115,40 +120,28 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://trywireline.com/" />
     <meta property="og:site_name" content="Wireline" />
-    <meta
-      property="og:title"
-      content="Wireline — AI Voice Agents for Personal &amp; Business"
-    />
+    <meta property="og:title" content="Wireline | AI voice agents that get work done" />
     <meta
       property="og:description"
-      content="Build one AI voice agent—or a coordinated team—for personal tasks and business conversations, with follow-through across voice, SMS, and email."
+      content="Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control."
     />
     <meta property="og:image" content="https://trywireline.com/og-image.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta
-      property="og:image:alt"
-      content="Wireline — AI Voice Agents for Personal and Business."
-    />
+    <meta property="og:image:alt" content="Wireline AI voice agents that get work done." />
     <meta property="og:locale" content="en_US" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@wirelineapp" />
     <meta name="twitter:creator" content="@wirelineapp" />
-    <meta
-      name="twitter:title"
-      content="Wireline — AI Voice Agents for Personal &amp; Business"
-    />
+    <meta name="twitter:title" content="Wireline | AI voice agents that get work done" />
     <meta
       name="twitter:description"
-      content="Build one AI voice agent—or a coordinated team—for personal tasks and business conversations, with follow-through across voice, SMS, and email."
+      content="Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control."
     />
     <meta name="twitter:image" content="https://trywireline.com/og-image.png" />
-    <meta
-      name="twitter:image:alt"
-      content="Wireline — AI Voice Agents for Personal and Business."
-    />
+    <meta name="twitter:image:alt" content="Wireline AI voice agents that get work done." />
 
     <script type="application/ld+json">
       {
@@ -163,7 +156,7 @@
             "logo": "https://trywireline.com/wireline-icon.svg",
             "image": "https://trywireline.com/og-image.png",
             "description": "AI voice agents for personal tasks and business conversations across voice, SMS, and email.",
-            "slogan": "Wire → Work → Win",
+            "slogan": "Build. Train. Launch.",
             "foundingDate": "2024",
             "email": "support@trywireline.com",
             "sameAs": ["https://twitter.com/wirelineapp"]
@@ -175,7 +168,7 @@
             "applicationCategory": "CommunicationApplication",
             "operatingSystem": "Web",
             "url": "https://trywireline.com/",
-            "description": "Wireline helps people and businesses build one AI voice agent—or a coordinated team—to handle calls, texts, emails, follow-through, and logged outcomes.",
+            "description": "Wireline helps people and businesses build AI voice agents that call, answer, text, email, book, follow through, and log outcomes.",
             "publisher": { "@id": "https://trywireline.com/#organization" }
           },
           {
@@ -188,13 +181,6 @@
         ]
       }
     </script>
-
-    <link rel="preconnect" href="https://plausible.io" crossorigin />
-
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="mask-icon" href="/favicon.svg" color="#6D28D9" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
   </head>
   <body>
     <div id="root"></div>

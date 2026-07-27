@@ -100,8 +100,8 @@ export default function MarketingHero({
 
           {isHomeHero ? (
             <div
-              aria-label="Wire to Work to Win"
-              className="inline-flex max-w-full flex-wrap items-center justify-center gap-x-[clamp(.4rem,2.5vw,.75rem)] gap-y-1 rounded-2xl border border-border bg-card px-[clamp(.8rem,4vw,1.25rem)] py-2 font-[var(--wireline-font-family-mono)] text-[clamp(.7rem,3.3vw,.82rem)] font-semibold uppercase tracking-[.12em] text-muted-foreground shadow-[var(--wireline-elevation-sm)]"
+              aria-label={MARKETING_VOICE.spine.join(", ")}
+              className="inline-flex max-w-full flex-wrap items-center justify-center gap-x-[clamp(.4rem,2.5vw,.75rem)] gap-y-1 rounded-2xl border border-border bg-card px-[clamp(.8rem,4vw,1.25rem)] py-2 font-[var(--wireline-font-family-mono)] text-[clamp(.75rem,3.3vw,.875rem)] font-semibold tracking-[.04em] text-muted-foreground shadow-[var(--wireline-elevation-sm)]"
             >
               {MARKETING_VOICE.spine.map((item, index) => (
                 <Fragment key={item}>
@@ -117,10 +117,10 @@ export default function MarketingHero({
           <h1
             aria-label={isHomeHero && typeof title === "string" ? title : undefined}
             className={cn(
-              "marketing-hero__title mx-auto max-w-[28ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4.3vw,3.5rem)] font-bold uppercase leading-[0.98] tracking-[-.005em] text-foreground",
+              "marketing-hero__title mx-auto max-w-[28ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4.3vw,3.5rem)] font-semibold leading-[1.02] tracking-[-.035em] text-foreground",
               eyebrow || isHomeHero ? "mt-6" : "mt-0",
               isHomeHero &&
-                "max-w-[24ch] text-[clamp(2.45rem,5.2vw,4.85rem)] leading-[0.94] tracking-[-.012em]",
+                "max-w-[19ch] text-[clamp(2.45rem,5vw,4.75rem)] leading-[0.99] tracking-[-.04em]",
             )}
           >
             {title}
@@ -128,9 +128,8 @@ export default function MarketingHero({
 
           <p
             className={cn(
-              "marketing-hero__description mx-auto mt-6 max-w-[52rem] text-pretty text-[1.0625rem] leading-8 text-muted-foreground sm:text-[1.2rem] sm:leading-[1.62]",
-              isHomeHero &&
-                "max-w-[48rem] font-[var(--wireline-font-family-display)] text-[clamp(1.05rem,2.1vw,1.4rem)] font-semibold leading-snug tracking-[-.015em]",
+              "marketing-hero__description mx-auto mt-6 max-w-[46rem] text-pretty font-[var(--wireline-font-family-body)] text-[1.0625rem] font-normal leading-8 text-muted-foreground sm:text-[1.1875rem] sm:leading-[1.62]",
+              isHomeHero && "max-w-[42rem] text-[clamp(1.0625rem,1.8vw,1.25rem)]",
             )}
           >
             {description}
@@ -176,14 +175,14 @@ export default function MarketingHero({
 
           {proof.length ? (
             <ul
-              className="mt-7 grid w-full max-w-[22rem] grid-cols-2 gap-2 sm:flex sm:max-w-3xl sm:flex-wrap sm:justify-center"
-              aria-label="Wireline proof points"
+              className="mt-7 grid w-full max-w-[24rem] grid-cols-2 gap-2 sm:flex sm:max-w-3xl sm:flex-wrap sm:justify-center"
+              aria-label="Wireline capabilities"
             >
               {proof.map((item, index) => (
                 <li
                   key={item}
                   className={cn(
-                    "inline-flex min-h-8 min-w-0 items-center justify-center gap-2 rounded-full border border-border bg-card px-2.5 text-center text-[12px] font-medium leading-tight text-muted-foreground sm:whitespace-nowrap sm:px-3.5 sm:text-[13px]",
+                    "inline-flex min-h-9 min-w-0 items-center justify-center gap-2 rounded-full border border-border bg-card px-3 text-center text-[13px] font-medium leading-tight text-muted-foreground sm:whitespace-nowrap sm:px-4 sm:text-sm",
                     proof.length % 2 === 1 && index === proof.length - 1
                       ? "col-span-2 sm:col-span-1"
                       : undefined,
@@ -207,10 +206,10 @@ export default function MarketingHero({
                     key={metric.label}
                     className="rounded-[14px] border border-border bg-card/70 p-4 text-center"
                   >
-                    <p className="font-[var(--wireline-font-family-display)] text-3xl font-bold leading-none tracking-[-.04em] text-foreground">
+                    <p className="font-[var(--wireline-font-family-display)] text-3xl font-semibold leading-none tracking-[-.035em] text-foreground">
                       {metric.value}
                     </p>
-                    <p className="mt-2 text-[12px] font-semibold uppercase tracking-[.12em] text-muted-foreground">
+                    <p className="mt-2 text-[13px] font-semibold text-muted-foreground">
                       {metric.label}
                     </p>
                   </div>
@@ -222,10 +221,10 @@ export default function MarketingHero({
           <div className="mx-auto mt-12 grid max-w-4xl gap-3 sm:grid-cols-3">
             {metrics.map((metric) => (
               <div key={metric.label} className="wl-paper rounded-[14px] p-5 text-center">
-                <p className="font-[var(--wireline-font-family-display)] text-3xl font-bold leading-none tracking-[-.04em] text-foreground">
+                <p className="font-[var(--wireline-font-family-display)] text-3xl font-semibold leading-none tracking-[-.035em] text-foreground">
                   {metric.value}
                 </p>
-                <p className="mt-2 text-[12px] font-semibold uppercase tracking-[.12em] text-muted-foreground">
+                <p className="mt-2 text-[13px] font-semibold text-muted-foreground">
                   {metric.label}
                 </p>
               </div>

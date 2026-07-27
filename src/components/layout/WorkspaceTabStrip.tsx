@@ -25,10 +25,12 @@ type WorkspaceTabStripProps = {
 
 function tabClassName(active: boolean, density: "default" | "compact") {
   return cn(
-    "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-lg border font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40",
-    density === "compact" ? "min-h-8 px-2 text-xs sm:px-2.5" : "min-h-[44px] px-4 text-sm",
+    "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-lg border font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/60",
+    density === "compact"
+      ? "min-h-10 px-3 text-[13px] sm:px-3.5"
+      : "min-h-[44px] px-4 text-sm",
     active
-      ? "border-primary/30 bg-primary/15 text-primary shadow-none"
+      ? "border-primary/35 bg-primary/15 text-primary shadow-none"
       : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
   );
 }
@@ -48,7 +50,7 @@ function WorkspaceTabLabel({ tab }: { tab: WorkspaceTabItem }) {
   );
 }
 
-/** Shared workspace tab strip — settings, inbox, studio, and operate surfaces. */
+/** Shared workspace tab strip for settings, inbox, studio, and operate surfaces. */
 export function WorkspaceTabStrip({
   tabs,
   activeId,
@@ -69,9 +71,9 @@ export function WorkspaceTabStrip({
       className={cn(
         "wl-workspace-tabs w-full",
         wrap
-          ? "overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] lg:overflow-visible [&::-webkit-scrollbar]:hidden"
-          : "overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-        compact ? "min-h-8" : "mb-4 min-h-[44px] border-b border-border/70 pb-3",
+          ? "overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] lg:overflow-visible [&::-webkit-scrollbar]:hidden"
+          : "overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        compact ? "min-h-10" : "mb-4 min-h-[44px] border-b border-border/70 pb-3",
         className,
       )}
     >
@@ -79,7 +81,7 @@ export function WorkspaceTabStrip({
         className={cn(
           "flex items-center",
           wrap ? "min-w-max lg:w-full lg:min-w-0 lg:flex-wrap" : "min-w-max",
-          compact ? "gap-0.5 sm:gap-1" : "gap-2",
+          compact ? "gap-1" : "gap-2",
           wrap
             ? align === "start"
               ? "justify-start"

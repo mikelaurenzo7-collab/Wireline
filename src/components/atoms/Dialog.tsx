@@ -35,7 +35,7 @@ export const dialogContentVariants = cva(
     variants: {
       presentation: {
         modal:
-          "wl-panel glass-xl left-[50%] top-[50%] z-50 max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto overscroll-contain rounded-xl border p-6 shadow-[var(--wireline-elevation-lg)] data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
+          "wl-panel glass-xl left-[50%] top-[50%] z-50 max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-5 overflow-y-auto overscroll-contain rounded-xl border p-5 shadow-[var(--wireline-elevation-lg)] data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:p-6",
         navigation:
           "inset-x-0 bottom-0 top-16 z-[70] w-auto max-w-none gap-0 overflow-y-auto rounded-none border-x-0 border-b-0 border-t border-border bg-[var(--wireline-color-canvas-default)] p-0 shadow-none data-[state=closed]:slide-out-to-top-0 data-[state=open]:slide-in-from-top-0",
         drawer:
@@ -74,7 +74,7 @@ const DialogContent = React.forwardRef<
       {children}
       {showClose ? (
         <DialogPrimitive.Close className="absolute right-2 top-2 grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
-          <X className="h-4 w-4" />
+          <X className="h-[18px] w-[18px]" aria-hidden="true" />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       ) : null}
@@ -86,7 +86,7 @@ DialogContent.displayName = DialogPrimitive.Content.displayName;
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     data-slot="dialog-header"
-    className={cn("flex flex-col space-y-1.5 text-left", className)}
+    className={cn("flex flex-col space-y-2 text-left", className)}
     {...props}
   />
 );
@@ -109,7 +109,7 @@ const DialogTitle = React.forwardRef<
     ref={ref}
     data-slot="dialog-title"
     className={cn(
-      "wl-card-title break-words pr-8 text-left font-[var(--wireline-font-family-display)] text-[1.125rem] font-semibold leading-tight tracking-[-.02em]",
+      "break-words pr-14 text-left font-[var(--wireline-font-family-display)] text-xl font-semibold leading-[1.15] tracking-[-.025em] text-foreground",
       className,
     )}
     {...props}
@@ -125,7 +125,7 @@ const DialogDescription = React.forwardRef<
     ref={ref}
     data-slot="dialog-description"
     className={cn(
-      "max-w-prose break-words text-left text-sm leading-6 text-[var(--wireline-color-text-secondary)]",
+      "max-w-prose break-words text-left text-[15px] leading-6 text-[var(--wireline-color-text-secondary)]",
       className,
     )}
     {...props}

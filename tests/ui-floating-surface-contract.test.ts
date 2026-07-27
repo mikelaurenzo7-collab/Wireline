@@ -31,7 +31,7 @@ describe("Wireline floating surface design contract", () => {
     }
   });
 
-  it("keeps dialog and sheet close controls at the 44px product touch-target floor", () => {
+  it("keeps dialog and sheet close controls at the 44px floor with a fully clear title lane", () => {
     for (const path of [
       "src/components/atoms/Dialog.tsx",
       "src/components/ui/shadcn/Dialog.tsx",
@@ -40,7 +40,8 @@ describe("Wireline floating surface design contract", () => {
       const source = read(path);
       expect(source, path).toContain("grid size-11 place-items-center");
       expect(source, path).not.toContain("grid size-9 place-items-center");
-      expect(source, path).toContain("break-words pr-8 text-left");
+      expect(source, path).toContain("break-words pr-14 text-left");
+      expect(source, path).toContain('text-[15px] leading-6');
     }
   });
 

@@ -1,0 +1,86 @@
+/*
+ * Terminal E2E design contract.
+ *
+ * This layer resolves the final rendered behavior after legacy responsive and
+ * page-specific rules. It does not create a new visual language. It protects
+ * the shared Letterpress system from compressed type, hidden navigation, and
+ * inconsistent customer-facing casing.
+ */
+
+.marketing-surface .marketing-hero__title,
+.marketing-surface .wireline-home-hero .marketing-hero__title {
+  max-width: min(100%, 19ch);
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-transform: none;
+  text-wrap: balance;
+  white-space: normal;
+}
+
+.marketing-surface .wireline-home-hero .marketing-hero__description {
+  max-width: 42rem;
+  font-family: var(--wireline-font-family-body);
+  font-weight: 400;
+  line-height: 1.62;
+  letter-spacing: -0.01em;
+}
+
+.marketing-surface :where(.marketing-btn-primary, .marketing-btn-secondary) {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.marketing-surface :where(.wl-eyebrow, .wl-overline) {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+.marketing-surface :where(.wl-body-sm, .wl-info-list, .wl-info-list li) {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.marketing-surface .wl-segmented__item {
+  min-height: 2.75rem;
+  font-size: 0.875rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.wl-workspace-tabs[data-density="compact"] :where(a, button) {
+  min-height: 2.75rem;
+  font-size: 0.8125rem;
+}
+
+[data-slot="dialog-content"][data-presentation="modal"] [data-slot="dialog-description"] {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 639px) {
+  .marketing-surface .marketing-hero__title,
+  .marketing-surface .wireline-home-hero .marketing-hero__title {
+    width: 100%;
+    max-width: 12ch;
+    font-size: clamp(2.35rem, 10.8vw, 3.45rem) !important;
+    line-height: 1.01;
+    letter-spacing: -0.04em;
+  }
+
+  .marketing-surface .marketing-hero__description {
+    font-size: 1.0625rem;
+    line-height: 1.58;
+  }
+
+  [data-slot="dialog-footer"] > :where(button, a, [role="button"]) {
+    width: 100%;
+  }
+}
+
+@media (max-width: 380px) {
+  .marketing-surface .marketing-hero__title,
+  .marketing-surface .wireline-home-hero .marketing-hero__title {
+    font-size: clamp(2.2rem, 10.5vw, 3rem) !important;
+  }
+}
