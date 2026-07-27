@@ -99,6 +99,8 @@ run("npx", [
   "tests/oauth-rate-limit-middleware.test.ts",
   "tests/oauth-provider-identity-integrity-contract.test.ts",
   "tests/yahoo-openid-security.test.ts",
+  // Missing or malformed spend controls are provider-cost integrity failures.
+  "tests/spend-guard-integrity-contract.test.ts",
   "tests/marketing-metadata-contract.test.ts",
   "tests/static-metadata-contract.test.ts",
   "tests/wireline-product-docs.test.ts",
