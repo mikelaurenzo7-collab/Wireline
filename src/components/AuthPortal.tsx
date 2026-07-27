@@ -44,6 +44,7 @@ import {
   readDemoSourceCookie,
 } from "../lib/demo-attribution-client";
 import { emitProductEventOnce } from "../lib/product-event-client";
+import { isAllowedOAuthUrl } from "../lib/oauth-url";
 
 /**
  * Redact common infrastructure/DB error leakage before surfacing anything to
@@ -109,8 +110,8 @@ function signupPlanLabel(
   const name = plan.name.replace(/^Wireline /, "");
   if (plan.price_usd_monthly === 0) return name;
   return interval === "year"
-    ? `${name} · ${plan.price_usd_annual}/year`
-    : `${name} · ${plan.price_usd_monthly}/month`;
+    ? `${name} · $${plan.price_usd_annual}/year`
+    : `${name} · $${plan.price_usd_monthly}/month`;
 }
 
 function signupIntentLabel(intent: SignupIntent | null): string | null {
@@ -190,7 +191,7 @@ function OAuthSignInButtons({
         );
       }
       const url = j?.url;
-      if (typeof url !== "string" || !url.startsWith("http")) {
+      if (!isAllowedOAuthUrl(url)) {
         throw new Error("Received invalid sign-in URL from server.");
       }
       window.location.assign(url);
@@ -824,12 +825,7 @@ export default function AuthPortal() {
               )}
 
               {error ? <StatusNotice tone="destructive" title={error} /> : null}
-              {message && (
-                <div className="flex items-start gap-2 rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] p-3 text-sm text-[var(--wireline-color-text-primary)]">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--wireline-color-status-success)]" />
-                  <div>{message}</div>
-                </div>
-              )}
+              {message ? <StatusNotice tone="success" title={message} /> : null}
 
               <button
                 type="submit"
