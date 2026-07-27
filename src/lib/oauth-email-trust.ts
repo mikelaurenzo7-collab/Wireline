@@ -15,6 +15,11 @@
  * token itself proves ownership:
  *   - a personal Microsoft account (the fixed consumer tenant), or
  *   - an id_token asserting `xms_edov` (email domain owner verified).
+ *
+ * Google also documents that `email_verified=true` alone does not make Google
+ * authoritative for a third-party address on a personal Google Account. For
+ * email-keyed account linking, Wireline therefore accepts only Gmail/Googlemail
+ * addresses or Google Workspace addresses carrying the hosted-domain claim.
  */
 
 /** Personal Microsoft accounts (MSA) always resolve to this tenant id. */
@@ -39,6 +44,30 @@ export function decodeJwtClaims(
   }
 }
 
+function normalizeEmail(value: string | null | undefined): string | null {
+  const normalized = value?.trim().toLowerCase();
+  return normalized && normalized.includes("@") && normalized.length <= 320 ? normalized : null;
+}
+
+/**
+ * Resolve a Google email only when Google is currently authoritative for it.
+ * Personal accounts using non-Google mailboxes must use the original Wireline
+ * sign-in method or separately verify that mailbox.
+ */
+export function resolveGoogleAuthoritativeEmail(input: {
+  email?: string | null;
+  verifiedEmail?: boolean | null;
+  hostedDomain?: string | null;
+}): string | null {
+  if (input.verifiedEmail !== true) return null;
+  const email = normalizeEmail(input.email);
+  if (!email) return null;
+  const domain = email.slice(email.lastIndexOf("@") + 1);
+  const isGoogleMailbox = domain === "gmail.com" || domain === "googlemail.com";
+  const hasWorkspaceAuthority = Boolean(input.hostedDomain?.trim());
+  return isGoogleMailbox || hasWorkspaceAuthority ? email : null;
+}
+
 /** True only when the token proves the caller owns the email. */
 export function microsoftEmailIsVerified(claims: Record<string, unknown> | null): boolean {
   if (!claims) return false;
@@ -58,6 +87,5 @@ export function resolveMicrosoftVerifiedEmail(
 ): string | null {
   if (!microsoftEmailIsVerified(claims)) return null;
   const claimEmail = typeof claims?.email === "string" ? claims.email : null;
-  const email = claimEmail || graph.mail || graph.userPrincipalName || null;
-  return email ? email.trim().toLowerCase() : null;
+  return normalizeEmail(claimEmail || graph.mail || graph.userPrincipalName || null);
 }
