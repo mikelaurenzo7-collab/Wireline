@@ -90,6 +90,7 @@ run("npx", [
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
   "tests/auth-journey-hardening-contract.test.ts",
+  "tests/auth-oauth-browser-binding-contract.test.ts",
   "tests/marketing-metadata-contract.test.ts",
   "tests/static-metadata-contract.test.ts",
   "tests/wireline-product-docs.test.ts",
