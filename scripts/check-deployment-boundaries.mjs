@@ -96,6 +96,15 @@ const credentialLikeName =
   /(?:^|_)(?:API_KEY|API_SECRET|AUTH_KEY|AUTH_TOKEN|ACCESS_TOKEN|CLIENT_SECRET|PRIVATE_KEY|SERVICE_ROLE_KEY|PASSWORD|WEBHOOK_SECRET|JWT_SECRET|DATA_KEY|TOKEN_PEPPER|CRON_SECRET|MONITOR_TOKEN|SECRET|TOKEN)(?:_|$)/;
 const platformManagedCredential = /^(?:VERCEL|TURBO|NPM|NODE|GITHUB|CI)_/;
 
+// Reviewed preview sandbox policy:
+// - PERPLEXITY_API_KEY is allowed in previews because the runtime only uses it
+//   for public research (no tenant OAuth, no tenant database credentials).
+// - Use a spend-capped/sandbox Perplexity key whenever possible. If ops must
+//   temporarily share the production key, preview still cannot reach production
+//   DB, Stripe, Vapi, Twilio, or tenant OAuth secrets because those stay blocked
+//   by productionOnlyPreviewKeys and the generic credential guard below.
+const reviewedPreviewSandboxCredentialKeys = new Set(["PERPLEXITY_API_KEY"]);
+
 if (isPreview) {
   const productionOnlyPreviewKeySet = new Set(productionOnlyPreviewKeys);
 
@@ -110,6 +119,7 @@ if (isPreview) {
   for (const name of Object.keys(process.env)) {
     if (
       !productionOnlyPreviewKeySet.has(name) &&
+      !reviewedPreviewSandboxCredentialKeys.has(name) &&
       !platformManagedCredential.test(name) &&
       credentialLikeName.test(name) &&
       value(name)
