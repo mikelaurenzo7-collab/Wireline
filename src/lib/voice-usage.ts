@@ -7,7 +7,7 @@
  *   rejected, busy, voicemail, and zero-second outbound attempts.
  * - Paid plans consume their monthly included pool first.
  * - Paid extra-agent add-ons increase both agent capacity and included minutes.
- * - Usage beyond the included pool is finalized against Conversation Balance.
+ * - Usage beyond the included pool is finalized against Runtime Balance.
  * - A live call is never terminated for billing. If the call exceeds available
  *   prepaid coverage, completion grace records the amount due and the next live
  *   action is blocked until the balance is restored.
