@@ -32,7 +32,7 @@ describe("authenticated surfaces", () => {
     ]);
     expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.mobilePrimary).toEqual([
       "Overview",
-      "AI Employee",
+      "Agent Studio",
       "Inbox",
       "Calls",
       "More",
