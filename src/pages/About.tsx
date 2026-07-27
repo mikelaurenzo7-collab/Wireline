@@ -108,7 +108,7 @@ export default function About() {
               Your custom agent begins as a private draft.
             </p>
             <h2 className="wl-stitch-display mx-auto mt-4 max-w-2xl text-balance">
-              Create your first custom front-desk or sales employee.
+              Create your first custom front-desk or sales voice agent.
             </h2>
           </div>
           <Link
