@@ -13,10 +13,18 @@ function envPresent(name: string): boolean {
   return typeof v === "string" && v.trim().length > 0;
 }
 
+/** Mirrors src/lib/perplexity-platform.ts so tool exposure matches runtime key policy. */
+function perplexityRuntimeAvailable(): boolean {
+  if (process.env.VERCEL_ENV === "preview") {
+    return envPresent("PERPLEXITY_PREVIEW_API_KEY");
+  }
+  return envPresent("PERPLEXITY_API_KEY");
+}
+
 export function loadPlatformIntegrationFlags(): PlatformIntegrationFlags {
   const apolloOAuth = envPresent("APOLLO_CLIENT_ID") && envPresent("APOLLO_CLIENT_SECRET");
   const gemini = envPresent("GEMINI_API_KEY");
-  const perplexity = envPresent("PERPLEXITY_API_KEY");
+  const perplexity = perplexityRuntimeAvailable();
   return {
     apollo: envPresent("APOLLO_API_KEY") || apolloOAuth,
     docusign:
