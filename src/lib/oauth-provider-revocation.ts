@@ -364,10 +364,15 @@ export async function revokeAllOAuthGrantsForUser(
 
 /** Revoke a single mailbox/calendar-style account row before local delete. */
 export async function revokeMailboxAccountTokens(account: {
-  provider: string;
+  provider: string | null;
   accessToken: string | null;
   refreshToken: string | null;
 }): Promise<boolean> {
+  if (!account.provider) {
+    log.warn("oauth mailbox revoke skipped because provider is missing");
+    return false;
+  }
+
   return revokeProviderGrant({
     provider: account.provider,
     accessToken: account.accessToken,
