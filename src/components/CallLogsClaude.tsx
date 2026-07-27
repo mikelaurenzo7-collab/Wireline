@@ -195,14 +195,20 @@ export default function CallLogsClaude() {
     setLoading(true);
     setError(null);
     authFetch("/api/calls?limit=100&offset=0")
-      .then((response) => (response.ok ? response.json() : null))
-      .then((body: CallsResponse | null) => {
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Couldn't load calls. Try again in a moment.");
+        }
+        return response.json() as Promise<CallsResponse>;
+      })
+      .then((body) => {
         if (cancelled) return;
-        setCalls(Array.isArray(body?.calls) ? body!.calls! : []);
+        setCalls(Array.isArray(body?.calls) ? body.calls : []);
         setHasMore(Boolean(body?.hasMore));
       })
       .catch(() => {
         if (cancelled) return;
+        setCalls([]);
         setError("Couldn't load calls. Try again in a moment.");
       })
       .finally(() => {
@@ -254,16 +260,18 @@ export default function CallLogsClaude() {
     if (!floorHasMoreServer || loadingMore) return;
     setLoadingMore(true);
     authFetch(`/api/calls?limit=${FLOOR_PAGE_SIZE}&offset=${calls.length}`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((body: CallsResponse | null) => {
-        if (!body) return;
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Couldn't load more calls.");
+        return response.json() as Promise<CallsResponse>;
+      })
+      .then((body) => {
         const nextCalls = Array.isArray(body.calls) ? body.calls : [];
         setCalls((prev) => [...prev, ...nextCalls]);
         setHasMore(Boolean(body.hasMore));
         setVisibleFloorCount((prev) => prev + FLOOR_PAGE_SIZE);
       })
       .catch(() => {
-        // Leave hasMore as-is so the button stays available to retry.
+        setError("Couldn't load more calls. Try again in a moment.");
       })
       .finally(() => setLoadingMore(false));
   }, [calls.length, floorHasMoreVisible, floorHasMoreServer, loadingMore]);

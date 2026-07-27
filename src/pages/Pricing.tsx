@@ -80,7 +80,7 @@ const PAID_TIERS = [
     plan: planById.enterprise,
     publicName: "Business",
     eyebrow: "For serious operators",
-    tagline: "A complete AI conversation workforce.",
+    tagline: "Full phone coverage for growing teams.",
     detail: "Up to fifteen purpose-built agents with stronger governance and oversight.",
     ctaMonthly: "Start Business",
     ctaAnnual: "Start Business annually",
@@ -297,8 +297,8 @@ export default function Pricing() {
                   <span className="pb-1 text-sm text-muted-foreground">forever</span>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Build, train, and privately simulate one AI Voice Agent. Live numbers unlock
-                  after activation.
+                  Build, train, and privately simulate one AI Voice Agent. Live numbers unlock after
+                  activation.
                 </p>
                 <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
                   {planById.personal.features.map((feature) => (

@@ -77,11 +77,16 @@ export default function StripeBillingCard() {
     setLoading(true);
     setError(null);
     try {
-      const [statusRes, plansRes, entitlementRes] = await Promise.all([
-        authFetch("/api/billing/status").then((r) => r.json() as Promise<BillingStatusResponse>),
-        authFetch("/api/billing/plans").then((r) => r.json() as Promise<BillingPlansResponse>),
+      const [statusRaw, plansRaw, entitlementRes] = await Promise.all([
+        authFetch("/api/billing/status"),
+        authFetch("/api/billing/plans"),
         authFetch("/api/video-presenter/entitlement").then((r) => (r.ok ? r.json() : null)),
       ]);
+      if (!statusRaw.ok || !plansRaw.ok) {
+        throw new Error("Billing details could not be loaded. Refresh and try again.");
+      }
+      const statusRes = (await statusRaw.json()) as BillingStatusResponse;
+      const plansRes = (await plansRaw.json()) as BillingPlansResponse;
       setStripeConfigured(!!statusRes.stripe_configured && !!plansRes.stripe_configured);
       setSub(statusRes.subscription || null);
       setAgentCount(statusRes.agent_count ?? 0);
@@ -685,8 +690,8 @@ function ActiveSubCard({
                         : ""
                   }
                 >
-                  {agentCount} / {sub.max_agents} {sub.max_agents === 1 ? "voice agent" : "voice agents"}{" "}
-                  in use
+                  {agentCount} / {sub.max_agents}{" "}
+                  {sub.max_agents === 1 ? "voice agent" : "voice agents"} in use
                 </span>
               ) : (
                 ""

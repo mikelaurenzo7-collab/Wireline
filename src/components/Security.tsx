@@ -157,7 +157,7 @@ const TRUST_PACK_SECTIONS = [
     items: [
       "Outbound calls require consent checks before dial — marketing calls respect do-not-call posture.",
       "Tenant DNC lists are enforced before expensive PSTN actions.",
-      "Marketing and campaign outbound fail closed until Federal DNC scrub is enabled. Studio non-marketing dials still use tenant DNC + TCPA. Operators: register the business, obtain a DNCScrub loginId, then set FEDERAL_DNC_API_URL + FEDERAL_DNC_API_KEY.",
+      "Marketing and campaign outbound stay blocked until Wireline finishes federal DNC setup for the platform. Studio non-marketing dials still use your tenant DNC list and TCPA consent checks.",
     ],
   },
   {
@@ -272,9 +272,7 @@ export default function Security() {
                 >
                   <div className="mb-3 flex items-center justify-center gap-2.5 text-center">
                     <Icon className="h-4 w-4 text-brand" strokeWidth={1.8} />
-                    <h2 className="font-display text-lg leading-tight text-foreground">
-                      {title}
-                    </h2>
+                    <h2 className="font-display text-lg leading-tight text-foreground">{title}</h2>
                   </div>
                   <ul className="mx-auto max-w-2xl space-y-1.5 text-left marketing-body">
                     {items.map((line, i) => (

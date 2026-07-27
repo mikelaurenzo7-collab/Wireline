@@ -75,11 +75,10 @@
   text-wrap: balance;
 }
 
-/* Home hero: keep "YOUR NEXT AI EMPLOYEE" on one line from tablet up.
-   ~21 characters — previous 15ch cap forced a scrunched two-line wrap
-   and left empty gutters on both sides of the first viewport. */
+/* Home hero: keep "AI VOICE AGENTS" (~15 chars) on one line from tablet up.
+   Wider caps from the retired employee headline left empty gutters. */
 .marketing-surface .wireline-home-hero .marketing-hero__title {
-  max-width: min(100%, 24ch);
+  max-width: min(100%, 16ch);
   font-size: clamp(2.55rem, 4.2vw + 1.1rem, 4.85rem);
   letter-spacing: -0.035em;
   text-wrap: nowrap;
@@ -323,7 +322,7 @@
   .marketing-surface .marketing-hero__title,
   .marketing-surface .wireline-home-hero .marketing-hero__title {
     width: 100%;
-    max-width: 11ch;
+    max-width: 10ch;
     font-size: clamp(2.35rem, 11.5vw, 3.35rem) !important;
     line-height: 0.96;
     overflow-wrap: normal;

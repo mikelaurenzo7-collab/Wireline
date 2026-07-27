@@ -60,14 +60,16 @@ export default function ComplianceChecklist() {
         ]);
         if (cancelled) return;
         const dncLen = Array.isArray(dncRes?.entries) ? dncRes.entries.length : 0;
-        setDncCount(dncLen);
+        setDncCount(dncRes ? dncLen : null);
+        // Failed health fetches must stay pending — never treat null as "all clear".
         const intOk =
-          !intRes?.reconnect_google_calendar &&
-          !intRes?.reconnect_microsoft_calendar &&
-          !(Array.isArray(intRes?.reasons) && intRes.reasons.length > 0);
+          intRes != null &&
+          !intRes.reconnect_google_calendar &&
+          !intRes.reconnect_microsoft_calendar &&
+          !(Array.isArray(intRes.reasons) && intRes.reasons.length > 0);
         setItems((prev) =>
           prev.map((item) => {
-            if (item.id === "dnc") return { ...item, done: dncLen > 0 };
+            if (item.id === "dnc") return { ...item, done: dncRes != null && dncLen > 0 };
             if (item.id === "integrations") return { ...item, done: intOk };
             return item;
           }),

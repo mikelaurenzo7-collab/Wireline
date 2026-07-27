@@ -38,6 +38,7 @@ interface IntakeKey {
 export default function IntakeKeysManager() {
   const [keys, setKeys] = useState<IntakeKey[]>([]);
   const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
@@ -52,15 +53,27 @@ export default function IntakeKeysManager() {
 
   const refresh = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const [keysRes, agentsRes] = await Promise.all([
         authFetch("/api/intake/keys"),
         authFetch("/api/agents"),
       ]);
-      const keysJson = keysRes.ok ? await keysRes.json() : null;
+      if (!keysRes.ok) {
+        const body = (await keysRes.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error || "Couldn't load intake keys.");
+      }
+      const keysJson = await keysRes.json();
       const agentsJson = agentsRes.ok ? await agentsRes.json() : null;
       setKeys(keysJson?.keys || []);
       setAgents(Array.isArray(agentsJson?.agents) ? agentsJson.agents : []);
+      if (!agentsRes.ok) {
+        setLoadError("Intake keys loaded, but agents could not be refreshed.");
+      }
+    } catch (e) {
+      setKeys([]);
+      setAgents([]);
+      setLoadError(e instanceof Error ? e.message : "Couldn't load intake keys.");
     } finally {
       setLoading(false);
     }
@@ -165,6 +178,19 @@ export default function IntakeKeysManager() {
           {showForm ? "Cancel" : "New Key"}
         </ShadButton>
       </div>
+
+      {loadError ? (
+        <p className="mt-3 text-sm text-[var(--wireline-color-status-error)]" role="alert">
+          {loadError}{" "}
+          <button
+            type="button"
+            className="underline underline-offset-2"
+            onClick={() => void refresh()}
+          >
+            Retry
+          </button>
+        </p>
+      ) : null}
 
       {/* One-time plaintext reveal */}
       <AnimatePresence>

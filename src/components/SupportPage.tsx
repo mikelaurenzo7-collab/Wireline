@@ -52,7 +52,12 @@ export function SupportPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ issueType, email, subject, body }),
       });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) {
+        const failBody = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(
+          failBody?.error || `Support ticket could not be sent (${response.status}).`,
+        );
+      }
       const payload = (await response.json().catch(() => null)) as { sent?: boolean } | null;
       if (!payload?.sent) {
         throw new Error("Support ticket was not delivered.");
@@ -61,12 +66,21 @@ export function SupportPage() {
       if (typeof window !== "undefined" && (window as any).plausible) {
         (window as any).plausible("SupportTicketSubmitted", { props: { issueType } });
       }
-    } catch {
-      const fallback = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[Support / ${issueType}] ${subject || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email}\n\n${body}`)}`;
-      window.location.href = fallback;
-      setError(
-        "The ticket service did not respond, so your email client has opened with everything filled in.",
-      );
+    } catch (reason) {
+      const message =
+        reason instanceof Error ? reason.message : "The ticket service did not respond.";
+      const isTransport =
+        /did not respond|failed to fetch|network|503|502|504|was not delivered/i.test(message) ||
+        message.includes("(5");
+      if (isTransport) {
+        const fallback = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[Support / ${issueType}] ${subject || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email}\n\n${body}`)}`;
+        window.location.href = fallback;
+        setError(
+          "The ticket service did not respond, so your email client has opened with everything filled in.",
+        );
+      } else {
+        setError(message);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -113,7 +127,10 @@ export function SupportPage() {
         </div>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-3">
-          <a href={`tel:${supportAgent.tel}`} className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
+          <a
+            href={`tel:${supportAgent.tel}`}
+            className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
+          >
             <Phone className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 text-sm font-semibold text-foreground">Call Wireline</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">

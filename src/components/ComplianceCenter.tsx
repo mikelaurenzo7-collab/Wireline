@@ -111,13 +111,13 @@ export default function ComplianceCenter() {
               </p>
               <p className="mt-1 text-sm font-medium text-foreground">
                 {summary.federal_dnc_configured
-                  ? "Vendor configured"
-                  : "Not configured — marketing dials blocked"}
+                  ? "Platform federal scrub active"
+                  : "Marketing outbound blocked"}
               </p>
               {!summary.federal_dnc_configured ? (
                 <p className="mt-1.5 text-xs text-muted-foreground">
-                  Register the business with DNCScrub, then set the vendor login on the platform.
-                  Studio non-marketing dials still use tenant DNC + TCPA.{" "}
+                  Marketing dials stay blocked until Wireline completes federal DNC setup. Studio
+                  non-marketing dials still use your tenant DNC list and TCPA consent.{" "}
                   <Link to="/security" className="text-primary underline-offset-2 hover:underline">
                     Open Trust / Security
                   </Link>

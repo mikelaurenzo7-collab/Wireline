@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Webhook,
@@ -68,23 +68,36 @@ export default function WebhooksManager() {
   const [hooks, setHooks] = useState<WebhookRow[]>([]);
   const [availableEvents, setAvailableEvents] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const { error: toastError } = useToast();
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const r = await authFetch("/api/webhooks");
+      if (!r.ok) {
+        const d = (await r.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(d?.error || "Couldn't load webhooks.");
+      }
       const d = await r.json();
       setHooks(d.webhooks || []);
       setAvailableEvents(d.available_events || []);
+    } catch (e) {
+      setHooks([]);
+      setAvailableEvents([]);
+      const message = e instanceof Error ? e.message : "Couldn't load webhooks.";
+      setLoadError(message);
+      toastError("Webhooks unavailable", message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [toastError]);
 
   useEffect(() => {
-    refresh();
-  }, []);
+    void refresh();
+  }, [refresh]);
 
   return (
     <div className={WL_APP_CLASSES.settingsPanel}>
@@ -130,6 +143,13 @@ export default function WebhooksManager() {
       <div className="space-y-2">
         {loading ? (
           <PanelSkeleton rows={3} />
+        ) : loadError ? (
+          <EmptyState
+            icon={AlertTriangle}
+            title="Couldn't load webhooks"
+            description={loadError}
+            actions={[{ label: "Retry", onClick: () => void refresh(), primary: true }]}
+          />
         ) : hooks.length === 0 ? (
           <EmptyState
             icon={Webhook}

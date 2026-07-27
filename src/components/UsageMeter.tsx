@@ -21,15 +21,24 @@ export default function UsageMeter({
 }) {
   const [snap, setSnap] = useState<WorkspaceUsageResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
     const fetchOnce = async () => {
       try {
         const res = await authFetch("/api/billing/usage");
-        if (!res.ok) return;
+        if (!res.ok) {
+          if (alive) setLoadError("Voice usage unavailable right now.");
+          return;
+        }
         const data = (await res.json()) as WorkspaceUsageResponse;
-        if (alive) setSnap(data);
+        if (alive) {
+          setSnap(data);
+          setLoadError(null);
+        }
+      } catch {
+        if (alive) setLoadError("Voice usage unavailable right now.");
       } finally {
         if (alive) setLoading(false);
       }
@@ -57,6 +66,19 @@ export default function UsageMeter({
   }
 
   if (!snap || !snap.plan_id || snap.plan_id === "personal") {
+    if (loadError) {
+      return (
+        <div
+          className={cn(
+            "flex items-center gap-2 wl-label text-[var(--wireline-color-status-warning)]",
+            compact ? "py-1.5 px-3" : "py-4 px-5",
+          )}
+          role="status"
+        >
+          {loadError}
+        </div>
+      );
+    }
     return null;
   }
 
@@ -151,7 +173,8 @@ export default function UsageMeter({
                 : `Your included minutes are used and ${BALANCE_TITLE} cannot cover another attempt. Add balance or wait for the monthly reset.`}
             </span>
             <span className="block text-foreground/55 mt-1">
-              Wireline never cuts off an active call because billing coverage changes mid-conversation.
+              Wireline never cuts off an active call because billing coverage changes
+              mid-conversation.
             </span>
           </div>
         </div>
@@ -166,8 +189,8 @@ export default function UsageMeter({
               {snap.overage_minutes === 1 ? "" : "s"}
             </span>
             <span className="text-foreground/65 ml-1">
-              covered by {BALANCE_TITLE} at ${snap.overage_per_min_usd.toFixed(2)}/min. No
-              automatic invoice overage.
+              covered by {BALANCE_TITLE} at ${snap.overage_per_min_usd.toFixed(2)}/min. No automatic
+              invoice overage.
             </span>
           </div>
         </div>
@@ -178,8 +201,8 @@ export default function UsageMeter({
           <TrendingUp className="w-3.5 h-3.5" />
           <span>
             Approaching your {included.toLocaleString()} included minutes. After that, new calls use{" "}
-            {BALANCE_TITLE} at ${snap.overage_per_min_usd.toFixed(2)}/min—never an automatic
-            overage invoice.
+            {BALANCE_TITLE} at ${snap.overage_per_min_usd.toFixed(2)}/min—never an automatic overage
+            invoice.
           </span>
         </div>
       )}

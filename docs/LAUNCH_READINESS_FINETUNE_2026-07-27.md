@@ -114,9 +114,32 @@ Contract: `tests/launch-readiness-quintuple-pass-2026-07-27-contract.test.ts`.
 
 ### Still open after quintuple (ops / founder)
 
-1. Federal DNC vendor `FEDERAL_DNC_API_KEY` (`loginId`) still absent — marketing outbound stays fail-closed.
+1. Federal DNC vendor `FEDERAL_DNC_API_KEY` (`loginId`) deferred until business registration — marketing outbound stays fail-closed by design.
 2. Confirm `WIRELINE_LAUNCH_DEMO_MODE=false` on Production via dashboard (CLI pull redacts the value).
 3. One live $19 Starter checkout → webhook → entitlement proof.
 4. Restore GitHub Actions spending; rotate any Vercel token pasted into chat.
 5. Preview env remains intentionally sparse per deployment boundaries — do not copy production secrets.
+
+## Sextuple pass (same day)
+
+1. **Billing continuity contract** — aligned to Runtime Balance (was still pinning Conversation Balance).
+2. **Launch-status gate** — Starter annual expects catalog v6 **$190** (was stale $99).
+3. **Knowledge upload honesty** — UI accept/copy match text+image API; PDF/DOCX rejected with a clear error; config load no longer silent empty-success.
+4. **ComplianceChecklist** — failed OAuth health fetch stays pending (never false-green).
+5. **Buyer Trust / Compliance copy** — scrubbed DNCScrub/env operator instructions from public + tenant surfaces.
+6. **Copy polish** — Blog voice-agent meta, Pricing no “workforce,” Messaging playbook WhatsApp private-beta, AI stream errors OpenAI→Gemini→Gateway, Browser Command no “dogfood.”
+7. **Contact/Support** — validation/API errors stay inline; mailto only on transport failure.
+8. **Hero CSS** — retuned for `AI VOICE AGENTS`; Admin team fetch surfaces errors.
+9. **Stripe (Cadence AI acct_1TkyXL…)** — live products renamed/updated: **Runtime Balance**, Starter/Starter Plus descriptions. Platform account display name + statement descriptor remain **Cadence AI / CADENCE AI** — Stripe forbids updating your own account via API; rename in Dashboard (see below).
+
+Contract: `tests/launch-readiness-sextuple-pass-2026-07-27-contract.test.ts`.
+
+### Stripe Dashboard rename (required — API blocked)
+
+Stripe returns: *“You cannot use this method on your own account.”* Do this once in [Account settings](https://dashboard.stripe.com/acct_1TkyXL8e6If87QKm/settings/account) for `acct_1TkyXL8e6If87QKm`:
+
+1. **Account / public business name** → `Wireline Production` (currently `Cadence AI`)
+2. **Statement descriptor** → `WIRELINE` (currently `CADENCE AI`)
+3. **Statement descriptor prefix** → `WIRELINE` (currently `CADENCE AI`)
+4. **Business website** → `https://trywireline.com` (currently `https://wireline-chi.vercel.app`)
 

@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Cookie, X } from "lucide-react";
@@ -7,6 +7,7 @@ import { ShadButton } from "./ui/shadcn/ShadButton";
 import { cn } from "../lib/utils";
 import { isMarketingStickyCtaRoute } from "../lib/marketing-mobile";
 import { isAuthPortalPath, isMarketingPublicPath } from "../lib/public-routes";
+import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 
 const NOTICE_STORAGE_KEY = "wireline_cookie_consent";
 const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
@@ -40,6 +41,7 @@ export default function CookieConsent() {
   const location = useLocation();
   const [hasSession, setHasSession] = useState(false);
   const privacySignalEnabled = globalPrivacyControlEnabled();
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (noticeAcknowledged()) return;
@@ -128,6 +130,11 @@ export default function CookieConsent() {
 
   const dismiss = useCallback(() => saveChoice("denied"), [saveChoice]);
 
+  useModalFocusTrap(dialogRef, {
+    active: visible,
+    onEscape: dismiss,
+  });
+
   // Escape chooses the privacy-preserving default and dismisses the notice.
   useEffect(() => {
     if (!visible) return;
@@ -147,7 +154,7 @@ export default function CookieConsent() {
   // the notice here is the privacy-preserving default, not a bypass.
   //
   // Same rule for Fast Start (?create=1): the create CTA sits at the bottom of
-  // a full-viewport dialog; the consent card covered "Create AI employee" and
+  // a full-viewport dialog; the consent card covered the primary create action and
   // made first-agent creation untappable on phone.
   // (After all hooks — rules-of-hooks.)
   const createFlowOpen =
@@ -193,7 +200,9 @@ export default function CookieConsent() {
                 : "bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))]",
           )}
           role="dialog"
+          aria-modal="true"
           aria-label="Privacy choices"
+          ref={dialogRef}
         >
           {/* bg-background/95 is load-bearing: the legacy wl-cookie-card class
               has no CSS definition, so without an explicit background the card

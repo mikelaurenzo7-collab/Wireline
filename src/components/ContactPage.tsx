@@ -69,7 +69,10 @@ export function ContactPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ issueType: inquiryType, email, subject, body: composedBody }),
       });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) {
+        const failBody = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(failBody?.error || `Message could not be sent (${response.status}).`);
+      }
       const payload = (await response.json().catch(() => null)) as { sent?: boolean } | null;
       if (!payload?.sent) {
         throw new Error("Message was not delivered.");
@@ -84,11 +87,22 @@ export function ContactPage() {
           { props: { inquiryType } },
         );
       }
-    } catch {
-      window.location.href = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[Wireline / ${inquiryType}] ${subject || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email}\n\n${composedBody}`)}`;
-      setError(
-        "The message service did not respond, so your email client has opened with the note prepared.",
-      );
+    } catch (reason) {
+      const message =
+        reason instanceof Error ? reason.message : "The message service did not respond.";
+      // Only fall back to mailto for transport failures — keep validation/API errors inline.
+      const isTransport =
+        /did not respond|failed to fetch|network|503|502|504|Message was not delivered/i.test(
+          message,
+        ) || message.includes("(5");
+      if (isTransport) {
+        window.location.href = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[Wireline / ${inquiryType}] ${subject || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email}\n\n${composedBody}`)}`;
+        setError(
+          "The message service did not respond, so your email client has opened with the note prepared.",
+        );
+      } else {
+        setError(message);
+      }
     } finally {
       setSubmitting(false);
     }

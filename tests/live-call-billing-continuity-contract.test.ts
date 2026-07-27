@@ -32,17 +32,21 @@ describe("live-call billing continuity contract", () => {
 
     expect(usage).toContain("chargeCompletedVoiceUsage");
     expect(usage).toContain('policy: "finish_current_block_next"');
-    expect(grace).toContain("temporary negative Conversation Balance");
-    expect(grace).toContain('idempotencyKey: `voice_completion:${opts.providerCallId}`');
+    expect(grace).toContain("temporary negative Runtime Balance");
+    expect(grace).toContain("idempotencyKey: `voice_completion:${opts.providerCallId}`");
     expect(grace).toContain('entryKind: "burn"');
   });
 
   it("requires prepaid coverage on every public paid plan", () => {
     const wallet = read("src/lib/voice-wallet-guard.ts");
     const workspace = read("src/lib/workspace-usage-snapshot.ts");
-    expect(wallet).toContain('const liveVoiceEnabled = activeSubscription && planId !== "personal"');
+    expect(wallet).toContain(
+      'const liveVoiceEnabled = activeSubscription && planId !== "personal"',
+    );
     expect(wallet).not.toContain("enterpriseContract");
     expect(workspace).not.toContain("enterpriseContract");
-    expect(wallet).toContain("includedRemaining >= MIN_BILLABLE_MINUTES_BUFFER || balance >= requiredUsd");
+    expect(wallet).toContain(
+      "includedRemaining >= MIN_BILLABLE_MINUTES_BUFFER || balance >= requiredUsd",
+    );
   });
 });

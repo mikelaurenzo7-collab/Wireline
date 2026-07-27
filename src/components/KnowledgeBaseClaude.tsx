@@ -102,11 +102,35 @@ function readAsDataUrl(file: File) {
 }
 
 async function readAsset(file: File): Promise<AssetBody> {
-  const mimeType = file.type || "text/plain";
+  const mimeType = (file.type || "text/plain").toLowerCase();
   if (/^image\/(png|jpe?g|webp|gif)$/.test(mimeType)) {
     return { fileName: file.name, mimeType, dataUrl: await readAsDataUrl(file) };
   }
-  return { fileName: file.name, mimeType, text: await file.text() };
+  const name = file.name.toLowerCase();
+  if (
+    name.endsWith(".pdf") ||
+    name.endsWith(".doc") ||
+    name.endsWith(".docx") ||
+    mimeType.includes("pdf") ||
+    mimeType.includes("msword") ||
+    mimeType.includes("wordprocessingml")
+  ) {
+    throw new Error(
+      `${file.name} is not supported yet. Upload TXT, MD, CSV, or a PNG/JPG/WEBP/GIF image.`,
+    );
+  }
+  if (
+    !mimeType.startsWith("text/") &&
+    !name.endsWith(".txt") &&
+    !name.endsWith(".md") &&
+    !name.endsWith(".csv") &&
+    !name.endsWith(".markdown")
+  ) {
+    throw new Error(
+      `${file.name} is not a supported text or image type. Use TXT, MD, CSV, PNG, JPG, WEBP, or GIF.`,
+    );
+  }
+  return { fileName: file.name, mimeType: mimeType || "text/plain", text: await file.text() };
 }
 
 export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
@@ -130,17 +154,28 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
     if (!agentId) {
       setConfig(null);
       setLoading(false);
+      setError(null);
       return;
     }
     let cancelled = false;
     setLoading(true);
+    setError(null);
     authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data: AgentConfig | null) => {
+      .then(async (response) => {
+        if (!response.ok) {
+          const body = (await safeJson(response)) as { error?: string } | null;
+          throw new Error(body?.error || "Knowledge could not be loaded.");
+        }
+        return response.json() as Promise<AgentConfig>;
+      })
+      .then((data) => {
         if (!cancelled) setConfig(data);
       })
-      .catch(() => {
-        if (!cancelled) setConfig(null);
+      .catch((reason) => {
+        if (!cancelled) {
+          setConfig(null);
+          setError(reason instanceof Error ? reason.message : "Knowledge could not be loaded.");
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -294,7 +329,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         multiple
         className="sr-only"
         onChange={onFilePick}
-        accept=".pdf,.doc,.docx,.txt,.csv,.md,image/*"
+        accept=".txt,.csv,.md,.markdown,image/png,image/jpeg,image/jpg,image/webp,image/gif"
       />
 
       <section className="grid grid-cols-3 gap-2 sm:gap-3.5" aria-label="Knowledge stats">
@@ -338,9 +373,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
               className="h-[68px] animate-pulse rounded-[12px] bg-[var(--wireline-color-surface-subtle)]"
             />
           ))
-        ) : knowledge.length ===
-          0 ? // Drop zone below already invites uploads — keep this row out of the
-        // way when empty so the page reads as: stats -> upload, not
+        ) : knowledge.length === 0 ? // way when empty so the page reads as: stats -> upload, not // Drop zone below already invites uploads — keep this row out of the
         // stats -> empty pill -> identical upload pill.
         null : (
           <>
@@ -427,7 +460,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
           <div
             className={`text-xs text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "mt-0.5" : "mt-1"}`}
           >
-            PDF, DOCX, TXT, CSV — max 50 MB
+            TXT, MD, CSV, or images (PNG, JPG, WEBP, GIF) — max 50 MB
           </div>
         </div>
         <div

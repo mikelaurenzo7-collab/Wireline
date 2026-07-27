@@ -263,11 +263,11 @@ if (!worktreeClean) blockers.push("source_worktree_dirty");
 if (behind !== 0) blockers.push("source_behind_origin_main");
 if (readiness.overall_score !== 100) blockers.push("launch_readiness_below_100");
 if (
-  stripe.starter_annual?.unit_amount_usd !== 99 ||
+  stripe.starter_annual?.unit_amount_usd !== 190 ||
   stripe.starter_annual?.active !== true ||
   stripe.starter_annual?.livemode !== true
 ) {
-  blockers.push("starter_annual_price_not_live_99");
+  blockers.push("starter_annual_price_not_live_190");
 }
 if (database.recap_agent_index_present !== true) blockers.push("recap_agent_index_missing");
 if (typeof twilio.prepaid_balance_usd !== "number" || twilio.prepaid_balance_usd < 150) {

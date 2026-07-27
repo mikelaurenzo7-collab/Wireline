@@ -14,7 +14,7 @@ export function publicAiStreamFailureMessage(error: unknown, fallback: string): 
     /Requests to this API[\s\S]*are blocked/i.test(msg) ||
     (/403/.test(msg) && /generativelanguage|Gemini|OpenAI|googleapis/i.test(msg))
   ) {
-    return "AI is temporarily unavailable. Configure a reachable AI provider (xAI, OpenAI, Gemini, or AI Gateway), then try again.";
+    return "AI is temporarily unavailable. Configure a reachable AI provider (OpenAI, Gemini, or AI Gateway), then try again.";
   }
   return fallback;
 }

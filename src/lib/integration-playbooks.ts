@@ -104,14 +104,15 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   twilio: {
     integration: "twilio",
     label: "Messaging",
-    headline: "SMS and WhatsApp follow-ups while the conversation is still warm.",
+    headline: "SMS follow-ups while the conversation is still warm (WhatsApp in private beta).",
     orbitHint: "Text + number intelligence",
     connectPath: "/connections",
     tasks: [
       {
         id: "sms-followup",
         callerMoment: '"Text me the link" / appointment confirmation',
-        agentAction: "Sends an SMS or WhatsApp message with the agreed details (with consent).",
+        agentAction:
+          "Sends an SMS with the agreed details (with consent). WhatsApp is available in private beta when enabled.",
         tools: ["send_text_message"],
       },
       {

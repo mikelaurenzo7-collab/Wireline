@@ -113,12 +113,17 @@ export default function PostCreateActivationWizard({
     setLoadingPhone(true);
     try {
       const response = await authFetch("/api/phone-numbers");
-      const body = response.ok ? await response.json() : null;
+      if (!response.ok) {
+        setWireError("Couldn't refresh phone lines. Retry before provisioning another number.");
+        return;
+      }
+      const body = await response.json();
       const numbers = Array.isArray(body?.numbers) ? body.numbers : [];
       const match = numbers.find((row: { agent_id?: string }) => row.agent_id === payload.agentId);
       setPhoneNumber(match?.phone_number ?? null);
+      setWireError(null);
     } catch {
-      setPhoneNumber(null);
+      setWireError("Couldn't refresh phone lines. Retry before provisioning another number.");
     } finally {
       setLoadingPhone(false);
     }
@@ -572,7 +577,13 @@ export default function PostCreateActivationWizard({
 
         <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-4 sm:px-6">
           {step !== "complete" ? (
-            <Button type="button" variant="ghost" size="sm" onClick={dismiss} disabled={provisioning}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={dismiss}
+              disabled={provisioning}
+            >
               Skip for now
             </Button>
           ) : null}

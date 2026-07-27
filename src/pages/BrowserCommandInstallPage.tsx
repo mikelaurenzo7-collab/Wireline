@@ -26,7 +26,7 @@ const DOWNLOADS = [
       "Unzip the package on your computer.",
       "Open about:debugging#/runtime/this-firefox.",
       "Click Load Temporary Add-on… and select manifest.json in the unzipped folder.",
-      "Note: temporary add-ons are removed when Firefox restarts — use Chromium for day-to-day dogfood.",
+      "Note: temporary add-ons are removed when Firefox restarts — use Chromium for day-to-day use.",
     ],
   },
 ] as const;

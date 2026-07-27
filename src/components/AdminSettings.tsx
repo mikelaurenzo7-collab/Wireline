@@ -172,12 +172,14 @@ export default function AdminSettings() {
   const fetchTeam = async () => {
     try {
       const r = await authFetch("/api/team");
-      if (r.ok) {
-        const d = await r.json();
-        setTeamMembers(d.members || []);
+      if (!r.ok) {
+        toastError("Team unavailable", "Could not load team members. Please refresh.");
+        return;
       }
+      const d = await r.json();
+      setTeamMembers(d.members || []);
     } catch {
-      /* non-critical */
+      toastError("Team unavailable", "Could not load team members. Please refresh.");
     }
   };
 

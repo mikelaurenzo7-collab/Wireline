@@ -130,17 +130,27 @@ export default function Cadences() {
         authFetch("/api/cadences"),
         authFetch("/api/cadences/runs"),
       ]);
-      if (cR.ok) {
-        const d = await cR.json();
-        setCadences(d.cadences || []);
+      if (!cR.ok) {
+        throw new Error("Could not load sequences. Check your connection and retry.");
       }
+      const cD = await cR.json();
+      setCadences(cD.cadences || []);
       if (rR.ok) {
         const d = await rR.json();
         setRuns(d.runs || []);
+      } else {
+        setRuns([]);
+        setLoadErr("Sequences loaded, but recent runs could not be refreshed.");
       }
     } catch (e) {
       logFetchError("Failed to load cadences", e);
-      setLoadErr("Could not load sequences. Check your connection and retry.");
+      setCadences([]);
+      setRuns([]);
+      setLoadErr(
+        e instanceof Error
+          ? e.message
+          : "Could not load sequences. Check your connection and retry.",
+      );
     } finally {
       setLoading(false);
     }
