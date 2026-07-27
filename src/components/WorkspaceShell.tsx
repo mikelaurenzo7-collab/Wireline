@@ -228,7 +228,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
               New
             </Link>
           </div>
-          <nav className="grid gap-1 pr-0.5" aria-label="AI employees">
+          <nav className="grid gap-1 pr-0.5" aria-label={language.plural}>
             {visibleAgents.map((agent) => {
               const active = isNavActive(pathname, "/studio") && resolvedId === agent.id;
               return (
