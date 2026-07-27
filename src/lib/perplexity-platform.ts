@@ -344,18 +344,35 @@ export async function researchPerplexity(
 
   // Live-call default: one Sonar request only. Search + embeddings is reserved
   // for explicit semantic-research jobs so voice latency and COGS stay bounded.
-  const sonar = await runSonarResearch(safeQuery, timeoutMs);
-  if (!sonar) return null;
-
   if (!options.semanticRerank) {
-    return { ...sonar, route: "sonar", semanticRerank: false };
+    const sonar = await runSonarResearch(safeQuery, timeoutMs);
+    return sonar
+      ? { answer: sonar.answer, sources: sonar.sources, route: "sonar", semanticRerank: false }
+      : null;
   }
 
-  const search = await searchPerplexityWeb(safeQuery, { timeoutMs, semanticRerank: true });
+  const [search, sonar] = await Promise.all([
+    searchPerplexityWeb(safeQuery, { timeoutMs, semanticRerank: true }),
+    runSonarResearch(safeQuery, timeoutMs),
+  ]);
+  if (!sonar) return null;
   return {
     answer: sonar.answer,
-    sources: search?.sources?.length ? search.sources : sonar.sources,
-    route: search ? "search_sonar" : "sonar",
+    sources: dedupeSources([...(search?.sources || []), ...sonar.sources]),
+    route: "search_sonar",
     semanticRerank: search?.semanticRerank === true,
   };
+}
+
+export function getPerplexityCapabilityPosture() {
+  const key = Boolean(apiKey());
+  return {
+    key,
+    sonar: key,
+    search: key,
+    agent: key && Boolean(AGENT_URL) && Boolean(AGENT_MODEL),
+    embeddings: key && Boolean(EMBEDDINGS_URL) && Boolean(EMBEDDINGS_MODEL),
+    productionKeyIgnoredInPreview:
+      process.env.VERCEL_ENV === "preview" && Boolean(process.env.PERPLEXITY_API_KEY?.trim()),
+  } as const;
 }
