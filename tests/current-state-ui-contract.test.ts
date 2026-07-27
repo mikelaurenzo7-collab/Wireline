@@ -80,7 +80,7 @@ describe("current-state UI contract", () => {
     expect(developers).toContain("Cursor");
     expect(developers).toContain("one account-bound MCP connector");
     expect(developers).toContain(
-      "this connector cannot place calls, send messages,\n              provision numbers, or launch an AI employee.",
+      "this connector cannot place calls, send messages,\n              provision numbers, or launch a live AI voice agent.",
     );
     // No fake API-key product — session OpenAPI + MCP OAuth only.
     expect(developers).not.toContain("Settings -> API Access");
