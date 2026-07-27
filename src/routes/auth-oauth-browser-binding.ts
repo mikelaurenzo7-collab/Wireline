@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { Router, type Request, type Response } from "express";
+import { Router, type NextFunction, type Request, type Response } from "express";
 
+import { AppError } from "../lib/api-error";
 import { getCanonicalAppUrl } from "../lib/app-url";
 import {
   OAUTH_BRIDGE_STATE_COOKIE,
@@ -13,7 +14,9 @@ type SignInOAuthProvider = "google" | "microsoft" | "yahoo";
 
 const START_ROUTE = /^\/api\/auth\/(google|microsoft|yahoo)\/url$/;
 const CALLBACK_ROUTE = /^\/api\/auth\/(google|microsoft|yahoo)\/callback$/;
+const EXCHANGE_ROUTE = "/api/auth/oauth/exchange";
 const INVALID_STATE_MESSAGE = "Invalid or expired sign-in state. Please try again.";
+const BRIDGE_CODE_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 function isSignInOAuthProvider(value: string): value is SignInOAuthProvider {
   return value === "google" || value === "microsoft" || value === "yahoo";
@@ -41,6 +44,28 @@ function safeStringEqual(left: string, right: string): boolean {
 
 function bindingMarker(provider: SignInOAuthProvider, bridgeState: string): string {
   return `signin:${provider}:${hashOAuthBridgeValue(bridgeState)}`;
+}
+
+function setOAuthNoStoreHeaders(res: Response): void {
+  res.set("Cache-Control", "no-store, max-age=0");
+  res.set("Pragma", "no-cache");
+  res.set("Referrer-Policy", "no-referrer");
+}
+
+export function isOAuthBridgeCode(value: unknown): value is string {
+  return typeof value === "string" && BRIDGE_CODE_PATTERN.test(value);
+}
+
+export function isStoredBridgeStateHashMatch(
+  storedHash: string | null | undefined,
+  bridgeState: string | undefined,
+): boolean {
+  if (!storedHash || !bridgeState) return false;
+  try {
+    return safeStringEqual(storedHash, hashOAuthBridgeValue(bridgeState));
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -145,10 +170,59 @@ function protectOAuthCompletionRedirect(res: Response): void {
   }) as Response["redirect"];
 }
 
+async function guardOAuthExchangeBrowserBinding(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const code = req.body?.code;
+  if (!isOAuthBridgeCode(code)) {
+    throw AppError.fromHttpStatus(400, "Invalid or expired code");
+  }
+
+  const bridgeState = readOAuthBridgeStateCookie(req);
+  if (!bridgeState) {
+    throw AppError.fromHttpStatus(400, "Invalid or expired code");
+  }
+
+  const [{ drizzle }, schema, { and, eq, gt }] = await Promise.all([
+    import("../lib/server-context"),
+    import("../db/schema"),
+    import("drizzle-orm"),
+  ]);
+  const [entry] = await drizzle
+    .select({ bridgeStateHash: schema.oauthPendingCodes.bridgeStateHash })
+    .from(schema.oauthPendingCodes)
+    .where(
+      and(
+        eq(schema.oauthPendingCodes.codeHash, hashOAuthBridgeValue(code)),
+        gt(schema.oauthPendingCodes.expiresAt, new Date()),
+      ),
+    )
+    .limit(1);
+
+  if (!isStoredBridgeStateHashMatch(entry?.bridgeStateHash, bridgeState)) {
+    // Deliberately reject before the canonical DELETE ... RETURNING exchange.
+    // A wrong-cookie request must never consume a legitimate browser's code.
+    throw AppError.fromHttpStatus(400, "Invalid or expired code");
+  }
+
+  next();
+}
+
 const router = Router();
 
-router.use((req: Request, res: Response, next) => {
+router.use(async (req: Request, res: Response, next: NextFunction) => {
+  const isExchange = req.method === "POST" && req.path === EXCHANGE_ROUTE;
   const startMatch = req.method === "GET" ? START_ROUTE.exec(req.path) : null;
+  const callbackMatch = req.method === "GET" ? CALLBACK_ROUTE.exec(req.path) : null;
+  if (isExchange || startMatch || callbackMatch) setOAuthNoStoreHeaders(res);
+
+  if (isExchange) {
+    await guardOAuthExchangeBrowserBinding(req, res, next);
+    return;
+  }
+
   const startProvider = startMatch?.[1] || "";
   if (isSignInOAuthProvider(startProvider)) {
     const provider = startProvider;
@@ -181,20 +255,21 @@ router.use((req: Request, res: Response, next) => {
       }
     }) as Response["json"];
 
-    return next();
+    next();
+    return;
   }
 
-  const callbackMatch = req.method === "GET" ? CALLBACK_ROUTE.exec(req.path) : null;
   const callbackProvider = callbackMatch?.[1] || "";
   if (isSignInOAuthProvider(callbackProvider)) {
     const bridgeState = readOAuthBridgeStateCookie(req);
     if (!isBoundOAuthSignInState(callbackProvider, req.query.state, bridgeState)) {
-      return rejectInvalidCallback(res);
+      rejectInvalidCallback(res);
+      return;
     }
     protectOAuthCompletionRedirect(res);
   }
 
-  return next();
+  next();
 });
 
 export default router;
