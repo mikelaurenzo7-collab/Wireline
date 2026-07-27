@@ -67,7 +67,8 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
       done: p.numbers > 0,
       href: "/settings/phone",
       icon: Cable,
-    },    {
+    },
+    {
       id: "live",
       label: "First live customer handled",
       detail: "Confirm the line received a real conversation and logged the outcome.",
