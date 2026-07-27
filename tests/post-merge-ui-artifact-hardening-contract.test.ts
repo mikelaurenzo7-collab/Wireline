@@ -16,7 +16,7 @@ describe("post-merge UI and artifact hardening", () => {
     expect(theme).toContain('dark: "#0A0A0E"');
   });
 
-  it("keeps the environment template aligned with prepaid runtime billing", () => {
+  it("keeps the complete environment template aligned with prepaid runtime billing", () => {
     const env = read(".env.example");
 
     expect(env).toContain("Usage draws from prepaid Runtime Balance.");
@@ -24,6 +24,22 @@ describe("post-merge UI and artifact hardening", () => {
     expect(env).not.toContain("STRIPE_VOICE_OVERAGE_METER_EVENT_NAME");
     expect(env).not.toContain("tenant overages bill through Stripe");
     expect(env).not.toContain("Cadence AI Stripe");
+
+    for (const preservedKey of [
+      "WIRELINE_LIVE_VIDEO_CATALOG_READY",
+      "MCP_OAUTH_TOKEN_PEPPER",
+      "UPSTASH_REDIS_REST_URL",
+      "RESEND_API_KEY",
+      "GOOGLE_CLIENT_ID",
+      "HUBSPOT_CLIENT_ID",
+      "META_APP_ID",
+      "DOCUSIGN_ACCOUNT_ID",
+      "SENTRY_DSN",
+      "VITE_SUPABASE_URL",
+      "E2E_USER_EMAIL",
+    ]) {
+      expect(env).toContain(`${preservedKey}=`);
+    }
   });
 
   it("keeps official asset capture portable, fail-safe, and on current brand language", () => {
