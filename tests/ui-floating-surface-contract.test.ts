@@ -31,6 +31,18 @@ describe("Wireline floating surface design contract", () => {
     }
   });
 
+  it("keeps dialog and sheet close controls at the 44px product touch-target floor", () => {
+    for (const path of [
+      "src/components/atoms/Dialog.tsx",
+      "src/components/ui/shadcn/Dialog.tsx",
+      "src/components/ui/shadcn/Sheet.tsx",
+    ]) {
+      const source = read(path);
+      expect(source, path).toContain("grid size-11 place-items-center");
+      expect(source, path).not.toContain("grid size-9 place-items-center");
+    }
+  });
+
   it("normalizes custom popup titles so page-scale typography cannot leak into dialogs", () => {
     const modalCss = read("src/styles/modal-hierarchy.css");
 
@@ -117,7 +129,6 @@ describe("Wireline floating surface design contract", () => {
 
   it("keeps status copy readable while actions stack below it on narrow screens", () => {
     const statusNotice = read("src/components/molecules/StatusNotice.tsx");
-
     expect(statusNotice).toContain("flex min-w-0 flex-col gap-3 sm:flex-row");
     expect(statusNotice).toContain("min-w-0 flex-1 break-words");
     expect(statusNotice).toContain("max-w-prose break-words leading-5");
