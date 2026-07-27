@@ -3,7 +3,9 @@
  *
  * Each user can own at most two accounts: one personal and one business.
  * The first account created at signup is the "primary" (is_primary=true).
- * Agents, settings, and billing scope to an account.
+ * Account type currently drives product lens and agent archetype defaults;
+ * agents, settings, and billing remain user-scoped until workspace isolation
+ * is enforced end-to-end.
  */
 import { eq, and } from "drizzle-orm";
 import * as schema from "../db/schema";

@@ -113,10 +113,10 @@
     border-radius: var(--wireline-radius-xl);
   }
 
+  /* Studio blueprint stays a dedicated bottom-sheet; phone-agent-blueprint.css owns its geometry. */
   [role="dialog"][aria-labelledby="create-agent-title"],
   [role="dialog"][aria-labelledby="team-invite-title"],
-  [role="dialog"][aria-labelledby="deploy-agent-title"],
-  .studio-blueprint-dialog {
+  [role="dialog"][aria-labelledby="deploy-agent-title"] {
     width: calc(100vw - 1.5rem) !important;
     max-width: calc(100vw - 1.5rem) !important;
     max-height: calc(100dvh - 1.5rem) !important;

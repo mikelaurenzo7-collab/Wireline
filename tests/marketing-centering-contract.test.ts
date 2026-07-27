@@ -38,12 +38,18 @@ describe("marketing centering contract", () => {
     );
   });
 
-  it("loads the public QA layer last and keeps centered labels on the shared axis", () => {
+  it("loads public polish then hierarchy, and keeps centered labels on the shared axis", () => {
     const marketingBundle = read("src/styles/wireline-marketing-surfaces.css");
     const publicPolish = read("src/styles/public-marketing-polish.css");
     const hero = read("src/components/marketing/MarketingHero.tsx");
+    const polishIndex = marketingBundle.indexOf("public-marketing-polish.css");
+    const hierarchyIndex = marketingBundle.indexOf("marketing-information-hierarchy.css");
 
-    expect(marketingBundle.trimEnd()).toMatch(/@import "\.\/public-marketing-polish\.css";$/);
+    expect(polishIndex).toBeGreaterThanOrEqual(0);
+    expect(hierarchyIndex).toBeGreaterThan(polishIndex);
+    expect(marketingBundle.trimEnd()).toMatch(
+      /@import "\.\/marketing-information-hierarchy\.css";$/,
+    );
     expect(publicPolish).toContain(":where(.text-center, .wl-marketing-center)");
     expect(publicPolish).toContain("text-align: center");
     expect(publicPolish).toContain(".marketing-footer-rail");

@@ -221,6 +221,18 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     "Vapi tool handler docs/copy must not describe a time-boxed trial (Free Builder has no expiry)",
   );
   mustExclude(
+    "src/lib/showcase-assistant.ts",
+    read("src/lib/showcase-assistant.ts"),
+    /free-trial|Wireline trial|toward trial|want the trial|email a free.trial/i,
+    "showcase/demo agents must not sell a time-boxed trial (Free Builder has no expiry)",
+  );
+  mustExclude(
+    "src/lib/showcase-assistant.ts",
+    read("src/lib/showcase-assistant.ts"),
+    /listen\/whisper\/barge in beta/i,
+    "showcase agents must not claim supervisor listen/whisper/barge as live beta",
+  );
+  mustExclude(
     "scripts/capture-prod-visual-qa.mjs",
     read("scripts/capture-prod-visual-qa.mjs"),
     /create-assistant|knowledge-base|Create assistant|Knowledge Base|standard business subscription starts at \$49/i,

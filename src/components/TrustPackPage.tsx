@@ -14,7 +14,7 @@ const PACKS: Record<
     title: "Healthcare account holders",
     subtitle: "Controls implemented today — BAA and HIPAA certification on the Enterprise roadmap.",
     bullets: [
-      "Server-enforced tenant isolation on every query (Supabase RLS coverage in progress)",
+      "Server-enforced tenant isolation on every query (Postgres RLS with per-request tenant context)",
       "Audit log for security-relevant events",
       "TCPA consent capture on outbound voice",
       "Configurable retention and account deletion",
@@ -27,7 +27,7 @@ const PACKS: Record<
     title: "Legal & professional services",
     subtitle: "Confidentiality-first defaults for intake and client communications.",
     bullets: [
-      "Server-enforced tenant isolation on every query (Supabase RLS coverage in progress)",
+      "Server-enforced tenant isolation on every query (Postgres RLS with per-request tenant context)",
       "DNC list and consent ledger",
       "Role-based access for team members",
       "Export and deletion on request",

@@ -5,7 +5,6 @@ import {
   CalendarClock,
   CheckCircle2,
   Contact,
-  CreditCard,
   Mail,
   MessageSquareText,
   PhoneCall,
@@ -101,7 +100,6 @@ const TOOL_STACK = [
   { icon: ShoppingBag, label: "Shopify", status: "Orders" },
   { icon: Store, label: "Square", status: "Customers" },
   { icon: BarChart3, label: "HubSpot", status: "CRM" },
-  { icon: CreditCard, label: "Stripe", status: "Billing" },
   { icon: Puzzle, label: "Salesforce", status: "Pipeline" },
   { icon: Mail, label: "Google & Microsoft", status: "Inbox" },
 ] as const;
@@ -245,7 +243,7 @@ export default function Features() {
                 Each connection shows access, status, and the most recent useful result.
               </p>
             </div>
-            <div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {TOOL_STACK.map(({ icon: Icon, label, status }) => (
                 <div
                   key={label}

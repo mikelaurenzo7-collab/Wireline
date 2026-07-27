@@ -263,8 +263,8 @@ Cut: Home → Overview → Studio → Phone → Pricing
 CTA: Link in bio
 
 ### Meta ad primary text
-Create and train a phone agent for free. Live work draws from Conversation Balance.
-Personal · Team · Business — clear rates, no surprise math.
+Create and train a phone agent for free. Live work draws from Runtime Balance.
+Free Builder · Starter · Growth · Scale · Business — clear rates, no surprise math.
 
 ### App Store subtitle
 AI phone agents for sales & support

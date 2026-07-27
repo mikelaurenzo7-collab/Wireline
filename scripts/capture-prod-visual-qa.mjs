@@ -512,7 +512,7 @@ try {
           await titleInput.fill("Pricing & Packages");
         }
         await contentTextarea.fill(
-          "Wireline Business uses shared operating capacity, approvals, analytics, CRM sync, roles, and pooled Conversation Balance.",
+          "Wireline Business uses shared operating capacity, approvals, analytics, CRM sync, roles, and pooled Runtime Balance.",
         );
         if (await saveBtn.isVisible().catch(() => false)) {
           await saveBtn.click();
