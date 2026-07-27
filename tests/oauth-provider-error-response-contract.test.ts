@@ -27,8 +27,11 @@ describe("OAuth provider-error responses", () => {
 
     const callbackLimiter =
       /router\.get\(\s*["'][^"']*\/callback["'],\s*oauthRateLimiter\b/g;
+    // Only reject provider-controlled detail logged from the provider-error branch.
+    // Other callback diagnostics (for example an internal fetch/network error) may
+    // legitimately use an `error` field without reflecting OAuth query data.
     const providerDetailLog =
-      /log\.warn\(\s*["'][^"']*OAuth[^"']*["']\s*,\s*\{\s*(?:error|error_description|oauthError)\b/s;
+      /if\s*\(\s*(?:error|oauthError)\s*\)\s*\{[\s\S]{0,600}?log\.warn\(\s*["'][^"']*OAuth[^"']*["']\s*,\s*\{[\s\S]{0,200}?\b(?:error|error_description|oauthError)\b/s;
 
     for (const path of oauthCallbackRoutes) {
       const source = read(path);
