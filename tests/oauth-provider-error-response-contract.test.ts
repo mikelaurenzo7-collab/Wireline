@@ -26,9 +26,9 @@ describe("OAuth provider-error responses", () => {
       /\.send\(\s*`[^`]*\$\{(?:error|error_description|oauthError)\b/;
 
     const callbackLimiter =
-      /router\.get\(\s*["\'][^"\']*\/callback["\'],\s*oauthRateLimiter\b/g;
+      /router\.get\(\s*["'][^"']*\/callback["'],\s*oauthRateLimiter\b/g;
     const providerDetailLog =
-      /log\.warn\(\s*["\'][^"\']*OAuth[^"\']*["\']\s*,\s*\{\s*(?:error|error_description|oauthError)\b/s;
+      /log\.warn\(\s*["'][^"']*OAuth[^"']*["']\s*,\s*\{\s*(?:error|error_description|oauthError)\b/s;
 
     for (const path of oauthCallbackRoutes) {
       const source = read(path);
