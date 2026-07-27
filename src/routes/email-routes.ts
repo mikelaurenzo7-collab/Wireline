@@ -175,14 +175,42 @@ router.delete(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      await drizzle
-        .delete(schema.emailAccounts)
+      const [account] = await drizzle
+        .select({
+          id: schema.emailAccounts.id,
+          provider: schema.emailAccounts.provider,
+          accessToken: schema.emailAccounts.accessToken,
+          refreshToken: schema.emailAccounts.refreshToken,
+          emailAddress: schema.emailAccounts.emailAddress,
+        })
+        .from(schema.emailAccounts)
         .where(
           and(
             eq(schema.emailAccounts.id, req.params.id),
             eq(schema.emailAccounts.userId, req.user.id),
           ),
-        );
+        )
+        .limit(1);
+
+      if (account) {
+        const { revokeMailboxAccountTokens } = await import("../lib/oauth-provider-revocation");
+        await revokeMailboxAccountTokens(account);
+        // Google/Microsoft connect also upsert a calendar row for the same
+        // mailbox — drop it with the inbox so reconnects start clean.
+        if (account.emailAddress && (account.provider === "google" || account.provider === "microsoft")) {
+          await drizzle
+            .delete(schema.calendarAccounts)
+            .where(
+              and(
+                eq(schema.calendarAccounts.userId, req.user.id),
+                eq(schema.calendarAccounts.emailAddress, account.emailAddress),
+                eq(schema.calendarAccounts.provider, account.provider),
+              ),
+            );
+        }
+        await drizzle.delete(schema.emailAccounts).where(eq(schema.emailAccounts.id, account.id));
+      }
+
       res.json({ success: true });
     } catch (err: any) {
       log.error("DELETE /api/emails/accounts/:id failed", { error: getErrorMessage(err) });

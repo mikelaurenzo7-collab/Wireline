@@ -1,5 +1,5 @@
 /**
- * Conversation Balance and billing integrity — durable ledger metadata,
+ * Runtime Balance and billing integrity — durable ledger metadata,
  * idempotency, webhook writebacks, and honest catalog/pricing knowledge on
  * the surfaces that quote it.
  */
@@ -31,7 +31,7 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     "src/components/StripeBillingCard.tsx",
     stripeBillingCard,
     /CONVERSATION_BALANCE_COPY/,
-    "billing screen must expose Conversation Balance activation",
+    "billing screen must expose Runtime Balance activation",
   );
   mustExclude(
     "src/components/StripeBillingCard.tsx",
@@ -68,31 +68,31 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     "src/db/schema.ts",
     dbSchema,
     /entryKind:\s*text\("entry_kind"/,
-    "Conversation Balance ledger must store entry kind",
+    "Runtime Balance ledger must store entry kind",
   );
   mustInclude(
     "src/db/schema.ts",
     dbSchema,
     /idempotencyKey:\s*text\("idempotency_key"/,
-    "Conversation Balance ledger must store provider-neutral idempotency keys",
+    "Runtime Balance ledger must store provider-neutral idempotency keys",
   );
   mustInclude(
     "src/db/schema.ts",
     dbSchema,
     /providerEventId:\s*text\("provider_event_id"/,
-    "Conversation Balance ledger must store provider event ids",
+    "Runtime Balance ledger must store provider event ids",
   );
   mustInclude(
     "src/db/schema.ts",
     dbSchema,
     /customerReason:\s*text\("customer_reason"/,
-    "Conversation Balance ledger must store customer-visible reasons",
+    "Runtime Balance ledger must store customer-visible reasons",
   );
   mustInclude(
     "src/db/schema.ts",
     dbSchema,
     /metadata:\s*jsonb\("metadata"\)/,
-    "Conversation Balance ledger must store sanitized metadata",
+    "Runtime Balance ledger must store sanitized metadata",
   );
   mustInclude(
     "src/lib/credit-wallet.ts",
@@ -109,32 +109,32 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/lib/credit-wallet.ts",
     creditWallet,
-    /customerReason:\s*"Voice minutes covered by Conversation Balance"/,
-    "voice burns must have a customer-visible Conversation Balance reason",
+    /customerReason:\s*"Voice minutes covered by Runtime Balance"/,
+    "voice burns must have a customer-visible Runtime Balance reason",
   );
   mustInclude(
     "src/routes/billing-routes.ts",
     billingRoutes,
-    /entryKind:\s*"top_up"[\s\S]*customerReason:\s*"Conversation Balance top-up"/,
-    "Stripe top-up webhook must write durable Conversation Balance metadata",
+    /entryKind:\s*"top_up"[\s\S]*customerReason:\s*"Runtime Balance top-up"/,
+    "Stripe top-up webhook must write durable Runtime Balance metadata",
   );
   mustInclude(
     "src/routes/billing-routes.ts",
     billingRoutes,
-    /entryKind:\s*"refund"[\s\S]*customerReason:\s*"Conversation Balance refund"/,
-    "Stripe refund webhook must write durable Conversation Balance metadata",
+    /entryKind:\s*"refund"[\s\S]*customerReason:\s*"Runtime Balance refund"/,
+    "Stripe refund webhook must write durable Runtime Balance metadata",
   );
   mustInclude(
     "src/routes/billing-routes.ts",
     billingRoutes,
-    /entryKind:\s*"reversal"[\s\S]*customerReason:\s*"Conversation Balance dispute reversal"/,
-    "Stripe dispute webhook must write durable Conversation Balance metadata",
+    /entryKind:\s*"reversal"[\s\S]*customerReason:\s*"Runtime Balance dispute reversal"/,
+    "Stripe dispute webhook must write durable Runtime Balance metadata",
   );
   mustInclude(
     "drizzle/migrations/0074_harden_conversation_balance_ledger.sql",
     balanceMigration,
     /CREATE UNIQUE INDEX IF NOT EXISTS wireline_credit_ledger_idempotency_key/,
-    "ledger migration must enforce idempotent Conversation Balance entries",
+    "ledger migration must enforce idempotent Runtime Balance entries",
   );
   mustInclude(
     "drizzle/migrations/0074_harden_conversation_balance_ledger.sql",
@@ -146,8 +146,8 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /Conversation Balance/,
-    "shared product knowledge must include Conversation Balance",
+    /Runtime Balance/,
+    "shared product knowledge must include Runtime Balance",
   );
   mustInclude(
     "src/data/wireline-knowledge.ts",

@@ -16,6 +16,21 @@ describe("round-6 phone-line tenant binding", () => {
     expect(handler).toContain("PHONE_CAPACITY_REACHED");
   });
 
+  it("gates the pool claim and area-code search endpoints on plan capacity", () => {
+    const claim = carrier.slice(
+      carrier.indexOf('"/api/phone-numbers/claim"'),
+      carrier.indexOf('"/api/carrier/numbers"'),
+    );
+    expect(claim).toContain("getIncludedPhoneLineSlots(req.user.id)");
+    expect(claim).toContain("rethrowIfAppError");
+
+    const search = carrier.slice(
+      carrier.indexOf('"/api/phone-numbers/search"'),
+      carrier.indexOf('"/api/phone-numbers/claim"'),
+    );
+    expect(search).toContain("PHONE_CAPACITY_REACHED");
+  });
+
   it("refuses to bind a Vapi line already held by another workspace", () => {
     const handler = carrier.slice(
       carrier.indexOf('"/api/phone-numbers",'),

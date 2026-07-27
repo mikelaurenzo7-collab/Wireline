@@ -70,7 +70,7 @@ export const WIRELINE_PLANS = [
     ],
   },
   {
-    name: "Conversation Balance",
+    name: "Runtime Balance",
     price: "Optional top-up funding for usage beyond your plan",
     bestFor: "Customers who want direct control over usage funding.",
     includes: [

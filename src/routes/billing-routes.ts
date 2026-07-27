@@ -300,7 +300,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                 provider: "stripe",
                 providerEventId: event.id,
                 providerObjectId: session.id,
-                customerReason: "Conversation Balance top-up",
+                customerReason: "Runtime Balance top-up",
                 metadata: {
                   checkout_session_id: session.id,
                   payment_intent:
@@ -355,7 +355,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                     provider: "stripe",
                     providerEventId: event.id,
                     providerObjectId: refund.id,
-                    customerReason: "Conversation Balance refund",
+                    customerReason: "Runtime Balance refund",
                     metadata: { payment_intent_id: piId, charge_id: charge.id },
                   },
                 );
@@ -396,7 +396,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                       provider: "stripe",
                       providerEventId: event.id,
                       providerObjectId: refund.id,
-                      customerReason: "Conversation Balance refund",
+                      customerReason: "Runtime Balance refund",
                       metadata: { payment_intent_id: piId, charge_id: charge.id },
                     },
                   );
@@ -416,7 +416,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                     provider: "stripe",
                     providerEventId: event.id,
                     providerObjectId: charge.id,
-                    customerReason: "Conversation Balance refund",
+                    customerReason: "Runtime Balance refund",
                     metadata: { payment_intent_id: piId },
                   },
                 );
@@ -455,7 +455,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                 provider: "stripe",
                 providerEventId: event.id,
                 providerObjectId: dispute.id,
-                customerReason: "Conversation Balance dispute reversal",
+                customerReason: "Runtime Balance dispute reversal",
                 metadata: { payment_intent_id: piId },
               });
             });

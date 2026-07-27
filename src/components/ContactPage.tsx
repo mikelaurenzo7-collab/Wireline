@@ -70,6 +70,10 @@ export function ContactPage() {
         body: JSON.stringify({ issueType: inquiryType, email, subject, body: composedBody }),
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = (await response.json().catch(() => null)) as { sent?: boolean } | null;
+      if (!payload?.sent) {
+        throw new Error("Message was not delivered.");
+      }
       setSubmitted(true);
       if (
         typeof window !== "undefined" &&

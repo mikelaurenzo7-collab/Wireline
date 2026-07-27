@@ -268,6 +268,8 @@ export async function setDefaultChannel(userId: string, channelId: string): Prom
 }
 
 export async function disconnectSlack(userId: string): Promise<void> {
+  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
+  await revokeCrmProviderTokens(userId, "slack");
   await drizzle
     .delete(schema.crmConnections)
     .where(

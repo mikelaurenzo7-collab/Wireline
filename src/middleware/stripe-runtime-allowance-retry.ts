@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Stripe webhook objects are vendor-defined payloads. */
 import type { NextFunction, Request, Response } from "express";
 import Stripe from "stripe";
 
@@ -23,8 +22,9 @@ import { reverseSubscriptionRuntimeAllowance } from "../lib/subscription-welcome
 async function listSucceededRefunds(chargeId: string): Promise<Stripe.Refund[]> {
   const refunds: Stripe.Refund[] = [];
   let startingAfter: string | undefined;
+  let hasMore = true;
 
-  do {
+  while (hasMore) {
     const page = await stripe.refunds.list({
       charge: chargeId,
       limit: 100,
@@ -35,11 +35,12 @@ async function listSucceededRefunds(chargeId: string): Promise<Stripe.Refund[]> 
         (refund) => (!refund.status || refund.status === "succeeded") && refund.amount > 0,
       ),
     );
-    if (!page.has_more) break;
+    hasMore = page.has_more;
+    if (!hasMore) break;
     const last = page.data.at(-1);
     if (!last) throw new Error("Stripe refund pagination returned has_more without a cursor.");
     startingAfter = last.id;
-  } while (true);
+  }
 
   return refunds;
 }
@@ -184,8 +185,24 @@ export async function stripeRuntimeAllowanceRetryPreflight(
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       if (paymentIntent.metadata?.purpose === "credit_topup") return next();
 
-      await reverseSubscriptionRuntimeAllowanceForChargeStrict(charge, "refund");
-      res.json({ received: true, runtime_allowance_reversal: true });
+      const claimed = await claimStripeEventForPreflight(event);
+      if (claimed === "already_processed") {
+        res.json({ received: true, runtime_allowance_reversal: true, duplicate: true });
+        return;
+      }
+      if (claimed === "in_flight") {
+        next(AppError.fromHttpStatus(503, "Webhook still processing. Retry."));
+        return;
+      }
+
+      try {
+        await reverseSubscriptionRuntimeAllowanceForChargeStrict(charge, "refund");
+        await markStripeEventProcessed(event.id);
+        res.json({ received: true, runtime_allowance_reversal: true });
+      } catch (error) {
+        await releaseStripeEventClaim(event.id);
+        throw error;
+      }
       return;
     }
 
@@ -200,11 +217,27 @@ export async function stripeRuntimeAllowanceRetryPreflight(
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       if (paymentIntent.metadata?.purpose === "credit_topup" || !dispute.charge) return next();
 
-      const charge = await stripe.charges.retrieve(
-        typeof dispute.charge === "string" ? dispute.charge : dispute.charge.id,
-      );
-      await reverseSubscriptionRuntimeAllowanceForChargeStrict(charge, "dispute", dispute.id);
-      res.json({ received: true, runtime_allowance_reversal: true });
+      const claimed = await claimStripeEventForPreflight(event);
+      if (claimed === "already_processed") {
+        res.json({ received: true, runtime_allowance_reversal: true, duplicate: true });
+        return;
+      }
+      if (claimed === "in_flight") {
+        next(AppError.fromHttpStatus(503, "Webhook still processing. Retry."));
+        return;
+      }
+
+      try {
+        const charge = await stripe.charges.retrieve(
+          typeof dispute.charge === "string" ? dispute.charge : dispute.charge.id,
+        );
+        await reverseSubscriptionRuntimeAllowanceForChargeStrict(charge, "dispute", dispute.id);
+        await markStripeEventProcessed(event.id);
+        res.json({ received: true, runtime_allowance_reversal: true });
+      } catch (error) {
+        await releaseStripeEventClaim(event.id);
+        throw error;
+      }
       return;
     }
 
@@ -217,4 +250,53 @@ export async function stripeRuntimeAllowanceRetryPreflight(
     });
     next(AppError.fromHttpStatus(500, "Webhook handler failed"));
   }
+}
+
+type StripeClaimResult = "claimed" | "already_processed" | "in_flight";
+
+async function claimStripeEventForPreflight(event: Stripe.Event): Promise<StripeClaimResult> {
+  try {
+    await drizzle.insert(schema.stripeEvents).values({
+      eventId: event.id,
+      eventType: event.type,
+      status: "processing",
+    });
+    return "claimed";
+  } catch (err: unknown) {
+    const message = getErrorMessage(err);
+    if (!/duplicate key|23505/i.test(message) && (err as { code?: string }).code !== "23505") {
+      return "in_flight";
+    }
+    const [prior] = await drizzle
+      .select({ status: schema.stripeEvents.status, at: schema.stripeEvents.processedAt })
+      .from(schema.stripeEvents)
+      .where(eq(schema.stripeEvents.eventId, event.id))
+      .limit(1);
+    if (prior?.status === "processed") return "already_processed";
+    const abandonedAfterMs = 5 * 60 * 1000;
+    const isProcessing = prior?.status === "processing";
+    const stale =
+      isProcessing && Date.now() - new Date(prior.at ?? 0).getTime() > abandonedAfterMs;
+    if (isProcessing && stale) {
+      await releaseStripeEventClaim(event.id);
+      await drizzle.insert(schema.stripeEvents).values({
+        eventId: event.id,
+        eventType: event.type,
+        status: "processing",
+      });
+      return "claimed";
+    }
+    return "in_flight";
+  }
+}
+
+async function markStripeEventProcessed(eventId: string): Promise<void> {
+  await drizzle
+    .update(schema.stripeEvents)
+    .set({ status: "processed", processedAt: new Date() })
+    .where(eq(schema.stripeEvents.eventId, eventId));
+}
+
+async function releaseStripeEventClaim(eventId: string): Promise<void> {
+  await drizzle.delete(schema.stripeEvents).where(eq(schema.stripeEvents.eventId, eventId));
 }

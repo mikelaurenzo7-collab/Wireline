@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- job and webhook payloads are stored as Postgres jsonb. */
 import { log, quotaTracker, auditLogger, drizzle } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import * as claudeBrain from "./ai-brains";
 import * as geminiBrain from "./gemini-brain";
 import { getErrorMessage } from "./server-utils";
@@ -13,7 +13,6 @@ import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import { CRMService } from "./crm-service";
 import {
   apolloPlatformConfigured,
-  enrichLead as apolloEnrich,
   searchLeads as apolloSearch,
 } from "./apollo-service";
 import { purgeAccount, releaseExternalResourcesForPurge } from "./account-deletion";
@@ -489,6 +488,8 @@ export async function handleJob(job: JobRow): Promise<void> {
       subscriptions_canceled: release.subscriptionsCanceled,
       numbers_released: release.numbersReleased,
       number_errors: release.numberErrors.length,
+      oauth_attempted: release.oauthAttempted,
+      oauth_revoked: release.oauthRevoked,
     });
 
     const result = await purgeAccount(p.user_id, { db: drizzle, log });
@@ -527,99 +528,13 @@ export async function handleJob(job: JobRow): Promise<void> {
   }
 
   if (job.type === "proactive_lead_enrichment") {
-    const p = job.payload as { userId: string; customerNumber: string };
-
-    log.info("Starting proactive lead enrichment", {
-      userId: p.userId,
-      customerNumber: p.customerNumber,
-    });
-
-    try {
-      const [enrichment, calls, emails] = await Promise.all([
-        apolloEnrich(p.customerNumber, p.userId),
-        drizzle
-          .select({ summary: schema.callLogs.summary, createdAt: schema.callLogs.createdAt })
-          .from(schema.callLogs)
-          .where(eq(schema.callLogs.customerNumber, p.customerNumber))
-          .orderBy(desc(schema.callLogs.createdAt))
-          .limit(3),
-        drizzle
-          .select({
-            summary: schema.emailThreads.summary,
-            lastMessageAt: schema.emailThreads.lastMessageAt,
-          })
-          .from(schema.emailThreads)
-          .where(eq(schema.emailThreads.customerEmail, p.customerNumber))
-          .orderBy(desc(schema.emailThreads.lastMessageAt))
-          .limit(3),
-      ]);
-
-      let summaryText = "";
-      if (calls?.length)
-        summaryText +=
-          "Recent Calls: " + calls.map((c) => c.summary || "No summary").join("; ") + ". ";
-      if (emails?.length)
-        summaryText +=
-          "Recent Emails: " + emails.map((e) => e.summary || "No summary").join("; ") + ". ";
-
-      if (enrichment) {
-        await drizzle
-          .insert(schema.leadDossiers)
-          .values({
-            userId: p.userId,
-            customerNumber: p.customerNumber,
-            fullName:
-              enrichment.first_name && enrichment.last_name
-                ? `${enrichment.first_name} ${enrichment.last_name}`
-                : undefined,
-            jobTitle: enrichment.title,
-            company: enrichment.company,
-            linkedInUrl: enrichment.linkedin_url,
-            metadata: enrichment,
-            interactionSummary: summaryText || "No prior interactions found.",
-          })
-          .onConflictDoUpdate({
-            target: [schema.leadDossiers.userId, schema.leadDossiers.customerNumber],
-            set: {
-              fullName:
-                enrichment.first_name && enrichment.last_name
-                  ? `${enrichment.first_name} ${enrichment.last_name}`
-                  : undefined,
-              jobTitle: enrichment.title,
-              company: enrichment.company,
-              linkedInUrl: enrichment.linkedin_url,
-              metadata: enrichment,
-              interactionSummary: summaryText || "No prior interactions found.",
-            },
-          });
-
-        log.info("Lead enrichment successful", {
-          userId: p.userId,
-          customerNumber: p.customerNumber,
-          company: enrichment.company,
-        });
-
-        // Sync to CRM
-        const crmService = new CRMService(p.userId);
-        void crmService
-          .syncEnrichedLead({
-            customerNumber: p.customerNumber,
-            fullName:
-              enrichment.first_name && enrichment.last_name
-                ? `${enrichment.first_name} ${enrichment.last_name}`
-                : undefined,
-            jobTitle: enrichment.title,
-            company: enrichment.company,
-            linkedInUrl: enrichment.linkedin_url,
-            leadScore: 85, // Default lead score for highly enriched lead
-          })
-          .catch((e) => log.warn("CRM enrichment sync failed", { error: getErrorMessage(e) }));
-      } else {
-        log.info("No enrichment data found for lead", { customerNumber: p.customerNumber });
-      }
-    } catch (error) {
-      log.error("Proactive lead enrichment failed", { error: getErrorMessage(error) });
-    }
+    // Unreachable by design: job-worker.ts intercepts this type before the
+    // base handler and runs the tenant-scoped replacement. Keeping a hard
+    // throw here means removing the intercept cannot silently revive the
+    // phone-only cross-tenant history reads that caused #879.
+    throw new Error(
+      "proactive_lead_enrichment must be handled by the tenant-safe intercept in job-worker.ts",
+    );
   }
 
   if (job.type === "autonomous_prospecting") {

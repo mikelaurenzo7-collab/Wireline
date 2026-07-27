@@ -23,7 +23,7 @@ export function publishedVoiceRates(): VoiceRateRow[] {
       label: plan.name.replace("Wireline ", ""),
       rateUsd: plan.overage_per_min_usd,
       includedMinutes: plan.voice_minutes_monthly,
-      detail: `${plan.voice_minutes_monthly.toLocaleString()} minutes included monthly. Extra live usage draws from prepaid Conversation Balance at $${plan.overage_per_min_usd.toFixed(2)}/min.`,
+      detail: `${plan.voice_minutes_monthly.toLocaleString()} minutes included monthly. Extra live usage draws from prepaid Runtime Balance at $${plan.overage_per_min_usd.toFixed(2)}/min.`,
     };
   });
 }

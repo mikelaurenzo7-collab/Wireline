@@ -137,10 +137,15 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
     const sent = result.ok;
     if (!sent) {
       log.warn("Support ticket email send failed", { error: result.error });
+      return res.status(503).json({
+        ok: false,
+        sent: false,
+        error: "Couldn't deliver your message just now. Email support@trywireline.com or try again.",
+      });
     }
 
-    log.info("Support ticket received", { issueType, email, sent });
-    return res.json({ ok: true, sent });
+    log.info("Support ticket received", { issueType, email, sent: true });
+    return res.json({ ok: true, sent: true });
   } catch (e) {
     if (e instanceof AppError) throw e;
     log.error("Support ticket route failed", { error: getErrorMessage(e) });

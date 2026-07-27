@@ -5,6 +5,7 @@ import TransitionSurface from "../components/TransitionSurface";
 import { PageMeta } from "../lib/page-meta";
 import { readStoredWorkspaceMode } from "../lib/auth-redirect";
 import { customerAgentLanguage } from "../lib/product-copy";
+import { emitProductEventOnce } from "../lib/product-event-client";
 
 export default function OnboardingFlow() {
   const navigate = useNavigate();
@@ -28,8 +29,12 @@ export default function OnboardingFlow() {
   ];
 
   useEffect(() => {
+    emitProductEventOnce({
+      event: "onboarding_create_redirect",
+      metadata: { workspace_mode: workspaceMode, target },
+    });
     navigate(target, { replace: true });
-  }, [navigate, target]);
+  }, [navigate, target, workspaceMode]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setShowFallback(true), 1800);

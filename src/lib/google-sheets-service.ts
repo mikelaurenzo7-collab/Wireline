@@ -358,6 +358,8 @@ export async function logToGoogleSheets(params: {
 }
 
 export async function disconnectGoogleSheets(userId: string): Promise<void> {
+  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
+  await revokeCrmProviderTokens(userId, "google_sheets");
   await drizzle
     .delete(schema.crmConnections)
     .where(

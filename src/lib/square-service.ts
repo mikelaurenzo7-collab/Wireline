@@ -516,6 +516,8 @@ export async function squareCreatePaymentLink(params: {
 }
 
 export async function disconnectSquare(userId: string): Promise<void> {
+  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
+  await revokeCrmProviderTokens(userId, "square");
   await drizzle
     .delete(schema.crmConnections)
     .where(

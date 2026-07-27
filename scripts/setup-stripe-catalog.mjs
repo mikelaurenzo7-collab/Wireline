@@ -312,6 +312,7 @@ async function main() {
     const looksManaged =
       product?.name?.startsWith("Wireline ") ||
       product?.name === "Conversation Balance" ||
+      product?.name === "Runtime Balance" ||
       !!price.metadata?.wireline_plan_id ||
       !!price.metadata?.wireline_addon_id ||
       !!price.metadata?.wireline_price_key ||
@@ -351,7 +352,7 @@ async function main() {
 
   for (const product of productsBefore.filter((row) => row.active)) {
     if (canonicalProductIds.has(product.id)) continue;
-    if (!product.name?.startsWith("Wireline ") && product.name !== "Conversation Balance") continue;
+    if (!product.name?.startsWith("Wireline ") && product.name !== "Conversation Balance" && product.name !== "Runtime Balance") continue;
 
     const productPriceIds = activePricesBefore
       .filter((price) => productIdOf(price) === product.id)

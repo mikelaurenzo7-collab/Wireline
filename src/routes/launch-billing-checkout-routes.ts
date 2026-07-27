@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { FOUNDER_CATALOG_VERSION, planById, planLookupKey } from "../lib/plan-catalog";
@@ -169,22 +169,34 @@ router.post(
 
     let customerId = existing?.stripeCustomerId || null;
     if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: req.user.email,
-        metadata: { wireline_user_id: req.user.id, ...attributionMetadata },
-      });
-      customerId = customer.id;
-      await drizzle
-        .insert(schema.subscriptions)
-        .values({
-          userId: req.user.id,
-          stripeCustomerId: customerId,
-          updatedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: schema.subscriptions.userId,
-          set: { stripeCustomerId: customerId, updatedAt: new Date() },
+      // Serialize first-time Stripe customer creation per tenant so parallel
+      // checkout clicks cannot orphan duplicate Stripe customers.
+      customerId = await drizzle.transaction(async (tx) => {
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
+        const [locked] = await tx
+          .select({ stripeCustomerId: schema.subscriptions.stripeCustomerId })
+          .from(schema.subscriptions)
+          .where(eq(schema.subscriptions.userId, req.user.id))
+          .limit(1);
+        if (locked?.stripeCustomerId) return locked.stripeCustomerId;
+
+        const customer = await stripe.customers.create({
+          email: req.user.email,
+          metadata: { wireline_user_id: req.user.id, ...attributionMetadata },
         });
+        await tx
+          .insert(schema.subscriptions)
+          .values({
+            userId: req.user.id,
+            stripeCustomerId: customer.id,
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: schema.subscriptions.userId,
+            set: { stripeCustomerId: customer.id, updatedAt: new Date() },
+          });
+        return customer.id;
+      });
     } else if (Object.keys(attributionMetadata).length > 0) {
       await stripe.customers.update(customerId, {
         metadata: { wireline_user_id: req.user.id, ...attributionMetadata },

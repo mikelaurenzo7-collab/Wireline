@@ -51,7 +51,12 @@ export default function CookieConsent() {
       try {
         const sessionRes = await fetch("/api/auth/session", { credentials: "include" });
         if (cancelled) return;
-        sessionPresent = sessionRes.ok;
+        // Anonymous visitors now get 200 `{ user: null }` — only a real user
+        // counts as a session for suppressing the public consent auto-open.
+        if (sessionRes.ok) {
+          const body = (await sessionRes.json().catch(() => null)) as { user?: unknown } | null;
+          sessionPresent = Boolean(body?.user);
+        }
         setHasSession(sessionPresent);
       } catch {
         /* Session probe failed — treat as signed out so EU/UK visitors still

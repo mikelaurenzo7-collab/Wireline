@@ -240,6 +240,8 @@ export async function sendMetaConversion(params: {
 }
 
 export async function disconnectMeta(userId: string): Promise<void> {
+  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
+  await revokeCrmProviderTokens(userId, "meta");
   await drizzle
     .update(schema.crmConnections)
     .set({ active: false, updatedAt: new Date() })

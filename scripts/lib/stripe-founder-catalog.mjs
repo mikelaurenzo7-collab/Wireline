@@ -11,7 +11,7 @@ export const FOUNDER_PRODUCTS = [
     key: "starter",
     name: "Wireline Starter",
     description:
-      "Founder plan for one live AI communications agent: 1 on-demand production number, 60 pooled voice minutes monthly, Lead Hunt access, connected email workflows, and prepaid Conversation Balance for additional usage.",
+      "Founder plan for one live AI communications agent: 1 on-demand production number, 60 pooled voice minutes monthly, Lead Hunt access, connected email workflows, and prepaid Runtime Balance for additional usage.",
     defaultPriceKey: "starter_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "starter",
@@ -29,7 +29,7 @@ export const FOUNDER_PRODUCTS = [
     key: "team",
     name: "Wireline Starter Plus",
     description:
-      "Founder hybrid plan: personal Concierge + business AI employee (2 live agents), 2 on-demand production numbers, 120 pooled voice minutes monthly, full Lead Hunt workflows, shared conversation inbox, connected email and SMS automation, and prepaid Conversation Balance for additional usage.",
+      "Founder hybrid plan: personal Concierge + business AI employee (2 live agents), 2 on-demand production numbers, 120 pooled voice minutes monthly, full Lead Hunt workflows, shared conversation inbox, connected email and SMS automation, and prepaid Runtime Balance for additional usage.",
     defaultPriceKey: "team_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "team",
@@ -116,9 +116,9 @@ export const FOUNDER_PRODUCTS = [
   },
   {
     key: "conversation_balance",
-    name: "Conversation Balance",
+    name: "Runtime Balance",
     description:
-      "One-time prepaid balance for live calls, texts, follow-up, and provider-backed work.",
+      "One-time prepaid Runtime Balance for live calls, texts, follow-up, and provider-backed work.",
     defaultPriceKey: "balance_25",
     metadata: {
       wireline_offer: "conversation_balance",

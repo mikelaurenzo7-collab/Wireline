@@ -783,6 +783,8 @@ export async function addOrderNote(params: {
 }
 /** Remove the Shopify connection for a tenant. */
 export async function disconnectShopify(userId: string): Promise<void> {
+  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
+  await revokeCrmProviderTokens(userId, "shopify");
   await drizzle
     .delete(schema.crmConnections)
     .where(

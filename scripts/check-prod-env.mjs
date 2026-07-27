@@ -126,8 +126,10 @@ const optional = [
   ["GOOGLE_CLIENT_SECRET", "Gmail OAuth"],
   ["MICROSOFT_CLIENT_ID", "Outlook OAuth"],
   ["MICROSOFT_CLIENT_SECRET", "Outlook OAuth"],
-  ["SENTRY_DSN", "Backend error monitoring"],
-  ["VITE_SENTRY_DSN", "Frontend error monitoring"],
+  ["SENTRY_DSN", "Backend + browser error monitoring (browser reports via /api/health/report)"],
+  // VITE_SENTRY_DSN is intentionally absent: the browser reporter beacons to
+  // /api/health/report and the server forwards with SENTRY_DSN. A build-time
+  // browser DSN is not read by app code.
   ["CLAUDE_MONTHLY_BUDGET_USD", "Legacy alias for rolling-24h AI spend alert threshold"],
   [
     "STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID",

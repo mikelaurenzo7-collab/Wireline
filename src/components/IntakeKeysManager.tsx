@@ -54,13 +54,13 @@ export default function IntakeKeysManager() {
     setLoading(true);
     try {
       const [keysRes, agentsRes] = await Promise.all([
-        authFetch("/api/intake/keys").then((r) => r.json()),
-        authFetch("/api/agents")
-          .then((r) => r.json())
-          .catch(() => ({ agents: [] })),
+        authFetch("/api/intake/keys"),
+        authFetch("/api/agents"),
       ]);
-      setKeys(keysRes.keys || []);
-      setAgents(agentsRes.agents || []);
+      const keysJson = keysRes.ok ? await keysRes.json() : null;
+      const agentsJson = agentsRes.ok ? await agentsRes.json() : null;
+      setKeys(keysJson?.keys || []);
+      setAgents(Array.isArray(agentsJson?.agents) ? agentsJson.agents : []);
     } finally {
       setLoading(false);
     }

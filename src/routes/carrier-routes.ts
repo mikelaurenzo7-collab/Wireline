@@ -77,6 +77,7 @@ router.get(
 router.post(
   "/api/phone-numbers",
   authenticateUser,
+  enforceLiveWorkActivation,
   rateLimiters.phoneNumberRateLimiter,
   validateBody(PhoneNumberCreateRequestSchema),
   async (req: AuthenticatedRequest, res: Response) => {
@@ -352,6 +353,20 @@ router.post(
         throw AppError.fromHttpStatus(400, "area_code must be a 3-digit US code.");
       }
 
+      // Tenant plan capacity first — search provisions a fresh Vapi number, so
+      // an uncapped search+claim path was free carrier spend past plan slots.
+      const slots = await getIncludedPhoneLineSlots(req.user.id);
+      const [{ held }] = await drizzle
+        .select({ held: sql<number>`count(*)` })
+        .from(schema.phoneNumbers)
+        .where(eq(schema.phoneNumbers.userId, req.user.id));
+      if (Number(held || 0) >= slots) {
+        return res.status(403).json({
+          code: "PHONE_CAPACITY_REACHED",
+          error: `Your plan includes ${slots} dedicated line${slots === 1 ? "" : "s"}; upgrade or add an Extra Agent for more.`,
+        });
+      }
+
       const headroom = await vapiAccountHeadroom();
       if (headroom.remaining <= 0) {
         return res.status(409).json({
@@ -433,7 +448,21 @@ router.post(
         if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
       }
 
+      // Plan capacity under the same company-identity advisory lock used for
+      // the insert, so concurrent claim/search/bind cannot race past slots.
       await runCompanyIdentityMutation(req.user.id, "phone_number_changed", async (tx) => {
+        const slots = await getIncludedPhoneLineSlots(req.user.id);
+        const [{ held }] = await tx
+          .select({ held: sql<number>`count(*)` })
+          .from(schema.phoneNumbers)
+          .where(eq(schema.phoneNumbers.userId, req.user.id));
+        if (Number(held || 0) >= slots) {
+          throw new AppError(
+            403,
+            "PHONE_CAPACITY_REACHED",
+            `Your plan includes ${slots} dedicated line${slots === 1 ? "" : "s"}; upgrade or add an Extra Agent for more.`,
+          );
+        }
         await tx.insert(schema.phoneNumbers).values({
           userId: req.user.id,
           phoneNumber,
@@ -449,6 +478,7 @@ router.post(
 
       res.json({ success: true, phone_number: phoneNumber, agent_id: agentId });
     } catch (e: any) {
+      rethrowIfAppError(e);
       // Unique-constraint race winner already inserted the row — surface
       // a clean conflict so the picker can re-fetch the pool.
       const msg = getErrorMessage(e);
@@ -469,8 +499,16 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const vapiSecret = process.env.VAPI_PRIVATE_KEY;
-      if (!vapiSecret) return res.json({ numbers: [] });
+      const vapiSecret = process.env.VAPI_PRIVATE_KEY?.trim();
+      if (!vapiSecret) {
+        // Missing platform voice credential is a configuration outage, not an
+        // empty inventory. Returning 200 [] made AdminSettings render "no
+        // numbers" while dial/inbound paths were 503.
+        throw AppError.fromHttpStatus(
+          503,
+          "Voice carrier sync is temporarily unavailable. Platform voice is not configured.",
+        );
+      }
 
       const response = await fetchWithTimeout(
         "https://api.vapi.ai/phone-number",

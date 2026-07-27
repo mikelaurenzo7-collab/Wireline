@@ -431,6 +431,8 @@ export async function createDeal(
 }
 
 export async function disconnectHubSpot(userId: string): Promise<void> {
+  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
+  await revokeCrmProviderTokens(userId, "hubspot");
   await drizzle
     .delete(schema.crmConnections)
     .where(

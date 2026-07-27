@@ -8,7 +8,7 @@ import { oauthRateLimiter } from "../../middleware/rate-limit-middleware";
 import { authenticateUser } from "../../middleware/auth";
 import {
   generateOAuthState,
-  verifyOAuthState,
+  verifyAndClaimOAuthState,
   resolveUserIdFromOAuthSession,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
@@ -64,7 +64,7 @@ router.get("/api/ecommerce/oauth/callback", async (req: express.Request, res: ex
   if (!state) {
     return res.status(400).send("Missing OAuth state. Please restart the connect flow.");
   }
-  const vs = verifyOAuthState(state as string | undefined);
+  const vs = await verifyAndClaimOAuthState(state as string | undefined);
   if (!vs.ok) {
     return res.status(400).send("Invalid or expired OAuth state. Please restart the connect flow.");
   }

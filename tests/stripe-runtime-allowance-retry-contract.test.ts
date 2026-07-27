@@ -47,10 +47,21 @@ describe("subscription Runtime Allowance refunds fail closed", () => {
       middleware.indexOf('if (event.type === "charge.dispute.created")'),
     );
     const reverse = refundBlock.indexOf(
-      "await reverseSubscriptionRuntimeAllowanceForChargeStrict(charge, \"refund\")",
+      'await reverseSubscriptionRuntimeAllowanceForChargeStrict(charge, "refund")',
     );
-    const response = refundBlock.indexOf("res.json");
+    const marked = refundBlock.indexOf("await markStripeEventProcessed(event.id)");
+    const successAck = refundBlock.indexOf(
+      'res.json({ received: true, runtime_allowance_reversal: true });',
+      reverse,
+    );
     expect(reverse).toBeGreaterThan(-1);
-    expect(response).toBeGreaterThan(reverse);
+    expect(marked).toBeGreaterThan(reverse);
+    expect(successAck).toBeGreaterThan(marked);
+  });
+
+  it("claims stripe_events before acknowledging subscription reversals", () => {
+    expect(middleware).toContain("claimStripeEventForPreflight");
+    expect(middleware).toContain("markStripeEventProcessed");
+    expect(middleware).toContain("releaseStripeEventClaim");
   });
 });

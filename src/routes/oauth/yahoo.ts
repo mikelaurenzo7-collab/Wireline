@@ -13,7 +13,7 @@ import { oauthRateLimiter } from "../../middleware/rate-limit-middleware";
 import { authenticateUser } from "../../middleware/auth";
 import {
   generateOAuthState,
-  verifyOAuthState,
+  verifyAndClaimOAuthState,
   resolveUserIdFromOAuthSession,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
@@ -71,7 +71,7 @@ router.get(
       log.warn("Yahoo Mail OAuth error from provider", { error, error_description });
       return res.status(400).send(`Yahoo OAuth error: ${error_description}`);
     }
-    const vs = verifyOAuthState(state as string | undefined);
+    const vs = await verifyAndClaimOAuthState(state as string | undefined);
     if (!vs.ok) {
       return res
         .status(400)
@@ -169,6 +169,20 @@ router.post(
     const userId = req.user?.id;
     if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
     try {
+      const accounts = await drizzle
+        .select({
+          provider: schema.emailAccounts.provider,
+          accessToken: schema.emailAccounts.accessToken,
+          refreshToken: schema.emailAccounts.refreshToken,
+        })
+        .from(schema.emailAccounts)
+        .where(
+          and(eq(schema.emailAccounts.userId, userId), eq(schema.emailAccounts.provider, "yahoo")),
+        );
+      const { revokeMailboxAccountTokens } = await import("../../lib/oauth-provider-revocation");
+      for (const account of accounts) {
+        await revokeMailboxAccountTokens(account);
+      }
       await drizzle
         .delete(schema.emailAccounts)
         .where(

@@ -7,7 +7,7 @@ import {
   generateToken,
   isOwnerEmail,
 } from "../lib/auth-service";
-import { log, drizzle } from "../lib/server-context";
+import { log, drizzle, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import {
@@ -34,7 +34,12 @@ import {
   bootstrapFounderAssistantIfEmpty,
   scheduleFounderBootstrap,
 } from "../lib/founder-bootstrap";
-import { authSuccessBody, clearSessionCookie, setSessionCookie } from "../lib/session-cookie";
+import {
+  authSuccessBody,
+  clearSessionCookie,
+  getSessionTokenFromRequest,
+  setSessionCookie,
+} from "../lib/session-cookie";
 import { verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
@@ -377,38 +382,62 @@ router.post(
 
 /**
  * GET /api/auth/session — hydrate client user from httpOnly cookie.
+ *
+ * Anonymous visitors get 200 `{ user: null }` (not 401) so public pages do not
+ * log a console error on every load. Invalid/expired cookies also resolve to
+ * `user: null` so the client can treat the visitor as signed out cleanly.
  */
-router.get(
-  "/api/auth/session",
-  authenticateUser,
-  async (req: AuthenticatedRequest, res: Response) => {
+router.get("/api/auth/session", async (req: Request, res: Response) => {
+  const token = getSessionTokenFromRequest(req);
+  if (!token) {
+    return res.json({ user: null });
+  }
+
+  let secret: string;
+  try {
+    secret = requireInternalJwtSecret();
+  } catch {
+    return res.status(503).json({
+      error: "Authentication is temporarily unavailable. Platform configuration is incomplete.",
+      code: "AUTH_NOT_CONFIGURED",
+      requestId: res.locals?.requestId,
+    });
+  }
+
+  const payload = await verifyInternalJwt(token, secret);
+  if (!payload?.sub) {
+    return res.json({ user: null });
+  }
+
+  return tenantStore.run(payload.sub, async () => {
     const [[row], [sub]] = await Promise.all([
       drizzle
         .select({ fullName: schema.users.fullName, email: schema.users.email })
         .from(schema.users)
-        .where(eq(schema.users.id, req.user.id))
+        .where(eq(schema.users.id, payload.sub))
         .limit(1),
       drizzle
         .select({ plan: schema.subscriptions.plan })
         .from(schema.subscriptions)
-        .where(eq(schema.subscriptions.userId, req.user.id))
+        .where(eq(schema.subscriptions.userId, payload.sub))
         .limit(1),
     ]);
     const { resolveAccountType } = await import("../lib/account-type");
     const fallbackAccountType = resolveAccountType(sub?.plan);
-    const account_type = (await ensureDefaultAccount(req.user.id, fallbackAccountType)).type;
+    const account_type = (await ensureDefaultAccount(payload.sub, fallbackAccountType)).type;
+    const email = row?.email ?? payload.email;
 
     return res.json({
       user: {
-        id: req.user.id,
-        email: row?.email ?? req.user.email,
+        id: payload.sub,
+        email,
         full_name: row?.fullName ?? undefined,
-        is_owner: isOwnerEmail(req.user.email),
+        is_owner: isOwnerEmail(email),
         account_type,
       },
     });
-  },
-);
+  });
+});
 
 /**
  * POST /api/auth/migrate-session — one-time move from legacy localStorage JWT.

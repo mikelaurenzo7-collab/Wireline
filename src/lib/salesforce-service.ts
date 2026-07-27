@@ -439,6 +439,8 @@ export async function createOpportunity(
 }
 
 export async function disconnectSalesforce(userId: string): Promise<void> {
+  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
+  await revokeCrmProviderTokens(userId, "salesforce");
   await drizzle
     .delete(schema.crmConnections)
     .where(

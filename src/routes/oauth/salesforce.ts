@@ -9,7 +9,7 @@ import { oauthRateLimiter } from "../../middleware/rate-limit-middleware";
 import { authenticateUser } from "../../middleware/auth";
 import {
   generateOAuthState,
-  verifyOAuthState,
+  verifyAndClaimOAuthState,
   resolveUserIdFromOAuthSession,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
@@ -61,7 +61,7 @@ router.get(
       return res.status(400).send(`Salesforce OAuth error: ${error_description}`);
     }
 
-    const vs = verifyOAuthState(state as string | undefined);
+    const vs = await verifyAndClaimOAuthState(state as string | undefined);
     if (!vs.ok) {
       return res
         .status(400)

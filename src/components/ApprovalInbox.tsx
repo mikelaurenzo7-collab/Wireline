@@ -322,8 +322,17 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         authFetch("/api/triage"),
         authFetch("/api/Assistants/tasks?status=pending"),
       ]);
+      if (!triageRes.ok && !tasksRes.ok) {
+        setError("Could not load approval inbox.");
+        setTriage(null);
+        setTasks([]);
+        return;
+      }
       const triageBody = triageRes.ok ? await triageRes.json() : null;
-      const tasksBody = tasksRes.ok ? await tasksRes.json() : { tasks: [] };
+      const tasksBody = tasksRes.ok ? await tasksRes.json() : null;
+      if (!tasksRes.ok) {
+        setError("Could not load pending approvals.");
+      }
       setTriage(triageBody);
       setTasks(Array.isArray(tasksBody?.tasks) ? tasksBody.tasks : []);
     } catch {

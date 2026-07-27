@@ -169,6 +169,9 @@ export interface ExternalReleaseSummary {
   numbersReleased: number;
   /** Non-fatal number-release failures (carrier orphans, retried out-of-band). */
   numberErrors: string[];
+  /** Best-effort OAuth provider revoke counts (never blocks purge). */
+  oauthRevoked: number;
+  oauthAttempted: number;
 }
 
 /** Stripe "already gone" errors — treat as success, not a reason to retry. */
@@ -212,6 +215,8 @@ async function releaseExternalResourcesOutsideTenantContext(
   const numberErrors: string[] = [];
   let subscriptionsCanceled = 0;
   let numbersReleased = 0;
+  let oauthRevoked = 0;
+  let oauthAttempted = 0;
 
   // 1. Cancel every active Stripe subscription on the customer — the plan row
   //    AND any add-on that shares the customer (e.g. the live-video add-on is a
@@ -295,7 +300,29 @@ async function releaseExternalResourcesOutsideTenantContext(
     }
   }
 
-  return { subscriptionsCanceled, numbersReleased, numberErrors };
+  // 3. Best-effort revoke of provider OAuth grants while encrypted tokens still
+  //    exist. Never throws — a provider outage must not block GDPR erasure.
+  try {
+    const { revokeAllOAuthGrantsForUser } = await import("./oauth-provider-revocation");
+    const oauth = await revokeAllOAuthGrantsForUser(userId);
+    oauthAttempted = oauth.attempted;
+    oauthRevoked = oauth.revoked;
+    if (oauth.errors.length) {
+      log.warn("purge oauth revoke incomplete", {
+        userId,
+        attempted: oauth.attempted,
+        revoked: oauth.revoked,
+        errors: oauth.errors.slice(0, 12),
+      });
+    }
+  } catch (err) {
+    log.warn("purge oauth revoke failed — continuing with local erasure", {
+      userId,
+      error: getErrorMessage(err),
+    });
+  }
+
+  return { subscriptionsCanceled, numbersReleased, numberErrors, oauthRevoked, oauthAttempted };
 }
 
 /**

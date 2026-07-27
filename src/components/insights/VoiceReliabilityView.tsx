@@ -47,9 +47,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
 
     Promise.all([
       fetchInsight<VoiceReliabilityResponse>(`/api/insights/voice-reliability?days=${days}`),
-      fetchInsight<{ calls: VoiceLatencyRecentCallRow[] }>(`/api/insights/latency/recent?limit=25`).catch(
-        () => ({ calls: [] }),
-      ),
+      fetchInsight<{ calls: VoiceLatencyRecentCallRow[] }>(`/api/insights/latency/recent?limit=25`),
     ])
       .then(([reliability, recentData]) => {
         if (!active) return;

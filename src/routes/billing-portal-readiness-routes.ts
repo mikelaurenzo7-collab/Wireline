@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { Router } from "express";
 
@@ -13,14 +14,20 @@ import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 const MANAGED_PORTAL_METADATA_KEY = "wireline_managed";
-const MANAGED_PORTAL_IDEMPOTENCY_KEY =
-  `wireline-managed-customer-portal-${FOUNDER_CATALOG_VERSION}`;
+const PORTAL_PRODUCTS_FINGERPRINT_KEY = "wireline_portal_products_fp";
 
 type PortalProduct = {
   product: string;
   prices: string[];
 };
 
+type PortalConfigCache = {
+  id: string;
+  fingerprint: string;
+  baseUrl: string;
+};
+
+let portalConfigurationCache: PortalConfigCache | null = null;
 let portalConfigurationPromise: Promise<string> | null = null;
 
 function managedPriceIds(): string[] {
@@ -31,6 +38,15 @@ function managedPriceIds(): string[] {
     process.env[plan.annualPriceIdEnv]?.trim() || plan.fallbackAnnualPriceId || "",
   ]);
   return [...new Set(ids.filter(Boolean))];
+}
+
+/** Stable fingerprint so portal upgrade/downgrade choices track live price ids. */
+export function portalProductsFingerprint(products: PortalProduct[]): string {
+  const normalized = products
+    .map((item) => `${item.product}:${[...item.prices].sort().join(",")}`)
+    .sort()
+    .join("|");
+  return createHash("sha256").update(normalized).digest("hex").slice(0, 32);
 }
 
 async function managedPortalProducts(): Promise<PortalProduct[]> {
@@ -56,16 +72,20 @@ async function managedPortalProducts(): Promise<PortalProduct[]> {
   return [...byProduct.entries()].map(([product, prices]) => ({ product, prices }));
 }
 
-async function createManagedPortalConfiguration(baseUrl: string): Promise<string> {
+async function createManagedPortalConfiguration(
+  baseUrl: string,
+  products: PortalProduct[],
+  fingerprint: string,
+): Promise<string> {
   const existing = await stripe.billingPortal.configurations.list({ active: true, limit: 100 });
   const managed = existing.data.find(
     (configuration) =>
       configuration.metadata?.[MANAGED_PORTAL_METADATA_KEY] === "true" &&
-      configuration.metadata?.wireline_catalog_version === FOUNDER_CATALOG_VERSION,
+      configuration.metadata?.wireline_catalog_version === FOUNDER_CATALOG_VERSION &&
+      configuration.metadata?.[PORTAL_PRODUCTS_FINGERPRINT_KEY] === fingerprint,
   );
   if (managed) return managed.id;
 
-  const products = await managedPortalProducts();
   const configuration = await stripe.billingPortal.configurations.create(
     {
       business_profile: {
@@ -102,24 +122,45 @@ async function createManagedPortalConfiguration(baseUrl: string): Promise<string
       metadata: {
         [MANAGED_PORTAL_METADATA_KEY]: "true",
         wireline_catalog_version: FOUNDER_CATALOG_VERSION,
+        [PORTAL_PRODUCTS_FINGERPRINT_KEY]: fingerprint,
       },
     },
-    { idempotencyKey: MANAGED_PORTAL_IDEMPOTENCY_KEY },
+    {
+      idempotencyKey: `wireline-managed-customer-portal-${FOUNDER_CATALOG_VERSION}-${fingerprint}`,
+    },
   );
 
   log.info("Created managed Stripe customer portal configuration", {
     configurationId: configuration.id,
     products: products.length,
+    fingerprint,
   });
   return configuration.id;
 }
 
 async function ensureManagedPortalConfiguration(baseUrl: string): Promise<string> {
+  const products = await managedPortalProducts();
+  const fingerprint = portalProductsFingerprint(products);
+
+  if (
+    portalConfigurationCache &&
+    portalConfigurationCache.baseUrl === baseUrl &&
+    portalConfigurationCache.fingerprint === fingerprint
+  ) {
+    return portalConfigurationCache.id;
+  }
+
   if (!portalConfigurationPromise) {
-    portalConfigurationPromise = createManagedPortalConfiguration(baseUrl).catch((error) => {
-      portalConfigurationPromise = null;
-      throw error;
-    });
+    portalConfigurationPromise = createManagedPortalConfiguration(baseUrl, products, fingerprint)
+      .then((id) => {
+        portalConfigurationCache = { id, fingerprint, baseUrl };
+        portalConfigurationPromise = null;
+        return id;
+      })
+      .catch((error) => {
+        portalConfigurationPromise = null;
+        throw error;
+      });
   }
   return portalConfigurationPromise;
 }
@@ -127,7 +168,8 @@ async function ensureManagedPortalConfiguration(baseUrl: string): Promise<string
 /**
  * Canonical customer-portal writer — sole owner of POST /api/billing/portal.
  * Self-heals missing Stripe Dashboard defaults so paying customers are never
- * stranded on an unconfigured portal configuration.
+ * stranded on an unconfigured portal configuration. Rebuilds when the live
+ * price/product fingerprint drifts inside the same founder catalog version.
  */
 router.post(
   "/api/billing/portal",

@@ -10,7 +10,7 @@ import { authenticateUser } from "../../middleware/auth";
 import {
   getGoogleOAuthClient,
   generateOAuthState,
-  verifyOAuthState,
+  verifyAndClaimOAuthState,
   resolveUserIdFromOAuthSession,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
@@ -57,7 +57,7 @@ router.get(
   async (req: express.Request, res: express.Response) => {
     const { code, state } = req.query;
 
-    const vs = verifyOAuthState(state as string | undefined);
+    const vs = await verifyAndClaimOAuthState(state as string | undefined);
     if (!vs.ok) {
       return res
         .status(400)
