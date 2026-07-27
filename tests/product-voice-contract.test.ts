@@ -133,18 +133,41 @@ describe("product voice cohesion", () => {
     expect(starterPlus?.extra_agent_voice_minutes_monthly).toBe(50);
   });
 
-  it("keeps the homepage agent-first and personal/business inclusive", () => {
+  it("keeps public copy agent-first and personal/business inclusive", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const trust = read("src/components/marketing/TrustSignals.tsx");
     const footer = read("src/components/marketing/MarketingFooter.tsx");
+    const about = read("src/pages/About.tsx");
+    const compare = read("src/pages/Compare.tsx");
+    const privacy = read("src/components/PrivacyPolicyPage.tsx");
+    const contactAgents = read("src/data/contact-agents.ts");
 
     expect(landing).toContain("One agent · every channel");
     expect(landing).toContain("Build your AI Voice Agent");
-    expect(landing).not.toContain("One employee · every channel");
-    expect(landing).not.toContain("Build your AI Voice Employee");
-    expect(trust).not.toContain("before the employee");
-    expect(footer).toContain("personal and business conversations");
-    expect(footer).not.toContain("One trained employee");
+    expect(about).toContain("front-desk or sales voice agent");
+    expect(compare).toContain("multichannel voice agent");
+    expect(privacy).toContain("AI voice agent platform");
+    expect(contactAgents).toContain("Wireline specialists");
+
+    const stalePublicPhrases = [
+      ["One", "employee", "· every channel"].join(" "),
+      ["Build your AI Voice", "Employee"].join(" "),
+      ["before the", "employee"].join(" "),
+      ["One trained", "employee"].join(" "),
+      ["AI", "employee"].join(" "),
+      ["trained", "employee"].join(" "),
+      ["multichannel", "employee"].join(" "),
+      ["front-desk or sales", "employee"].join(" "),
+      ["Wireline", "employees"].join(" "),
+      ["Employee", "lines"].join(" "),
+      ["every", "employee"].join(" "),
+    ];
+
+    for (const source of [landing, trust, footer, about, compare, privacy, contactAgents]) {
+      for (const phrase of stalePublicPhrases) {
+        expect(source).not.toContain(phrase);
+      }
+    }
   });
 
 
