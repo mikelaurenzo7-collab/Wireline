@@ -122,10 +122,21 @@ describe("auth OAuth browser binding contract", () => {
     expect(binding).toContain("guardOAuthExchangeBrowserBinding");
     expect(binding).toContain("gt(schema.oauthPendingCodes.expiresAt, new Date())");
     expect(binding).toContain("wrong-cookie request must never consume");
+    expect(binding).toContain("enforceOAuthRateLimit");
+    expect(binding).toContain('import("../middleware/rate-limit-middleware")');
+
+    const rateLimiter = read("src/middleware/rate-limit-middleware.ts");
+    expect(rateLimiter).toContain("res.locals.oauthRateLimitChecked");
+    expect(rateLimiter).toContain("if (refusedForNoDistributedLimiter(res)) return");
+    expect(rateLimiter).toContain('resource: "auth_oauth"');
+    expect(rateLimiter).toContain('failClosedOnError: process.env.NODE_ENV === "production"');
 
     const callbacks = read("src/routes/auth-oauth-routes.ts");
     expect(callbacks.match(/verifyAndClaimOAuthState\(state as string \| undefined\)/g)).toHaveLength(
       3,
+    );
+    expect(callbacks).toContain(
+      'router.post("/api/auth/oauth/exchange", oauthRateLimiter',
     );
 
     const completion = read("src/pages/OAuthComplete.tsx");
