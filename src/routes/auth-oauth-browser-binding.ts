@@ -9,6 +9,7 @@ import {
   readOAuthBridgeStateCookie,
 } from "../lib/oauth-bridge-cookie";
 import { generateOAuthState, verifyOAuthState } from "../lib/oauth-helpers";
+import { createYahooOidcNonce } from "../lib/yahoo-openid";
 
 type SignInOAuthProvider = "google" | "microsoft" | "yahoo";
 
@@ -71,12 +72,18 @@ export function isStoredBridgeStateHashMatch(
 /**
  * Creates a signed provider-specific state value bound to the browser's
  * HttpOnly OAuth bridge cookie. The raw cookie value never leaves Wireline.
+ * Yahoo's required OpenID nonce is carried in the signed state so the callback
+ * can verify the ID token against the exact authorization session.
  */
 export function createBoundOAuthSignInState(
   provider: SignInOAuthProvider,
   bridgeState: string,
+  oidcNonce?: string,
 ): string {
-  return generateOAuthState({ userId: bindingMarker(provider, bridgeState) });
+  return generateOAuthState({
+    userId: bindingMarker(provider, bridgeState),
+    pkceVerifier: oidcNonce,
+  });
 }
 
 /**
@@ -251,9 +258,11 @@ router.use((req: Request, res: Response, next: NextFunction) => {
 
       try {
         const authorizationUrl = new URL(payload.url);
+        const oidcNonce = provider === "yahoo" ? createYahooOidcNonce() : undefined;
+        if (oidcNonce) authorizationUrl.searchParams.set("nonce", oidcNonce);
         authorizationUrl.searchParams.set(
           "state",
-          createBoundOAuthSignInState(provider, bridgeState),
+          createBoundOAuthSignInState(provider, bridgeState, oidcNonce),
         );
         return originalJson({ ...payload, url: authorizationUrl.toString() });
       } catch {
