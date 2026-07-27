@@ -18,8 +18,27 @@ export interface WorkerOptions extends Omit<base.WorkerOptions, "typeFilter"> {
 
 type QueueDb = Parameters<typeof base.enqueue>[0];
 
+/**
+ * Campaign launch owns a state rollback when its first dial job cannot be queued,
+ * so that one producer intentionally receives the structured failure result.
+ * Every other durable producer must fail loudly: resolving `{ ok: false }` lets
+ * callers that only `await enqueue(...)` acknowledge work that was never stored.
+ */
+const CALLER_MANAGED_ENQUEUE_FAILURE_TYPES = new Set<JobType>(["campaign_dial"]);
+
+export function enforceDurableEnqueueResult(
+  opts: Pick<EnqueueOptions, "type">,
+  result: base.EnqueueResult,
+): base.EnqueueResult {
+  if (!result.ok && !CALLER_MANAGED_ENQUEUE_FAILURE_TYPES.has(opts.type)) {
+    throw new Error(result.error || `Failed to enqueue ${opts.type} job`);
+  }
+  return result;
+}
+
 export async function enqueue(db: QueueDb, opts: EnqueueOptions): Promise<base.EnqueueResult> {
-  return base.enqueue(db, opts as base.EnqueueOptions);
+  const result = await base.enqueue(db, opts as base.EnqueueOptions);
+  return enforceDurableEnqueueResult(opts, result);
 }
 
 // Drizzle returns camelCase rows that don't structurally match the legacy snake_case JobRow shape
