@@ -12,11 +12,11 @@ interface SectionHeaderProps {
   divider?: boolean;
   /** Marketing retains the same Inter hierarchy at a larger scale. */
   tone?: "marketing" | "instrument";
-  /** Page titles use display serif; nested empties use UI sans to avoid double-serif stacks. */
+  /** Page titles use display treatment; nested empties use UI sans to avoid competing headline stacks. */
   titleTone?: "display" | "ui";
 }
 
-/** Shared Stitch-style section hierarchy for product and marketing surfaces. */
+/** Shared section hierarchy for product and marketing surfaces. */
 export function SectionHeader({
   eyebrow,
   title,
@@ -30,16 +30,17 @@ export function SectionHeader({
   const marketing = tone === "marketing";
 
   return (
-    <div className={cn("flex flex-col", className)}>
+    <div className={cn("flex min-w-0 flex-col", className)}>
       {eyebrow && (
         <p className={cn(marketing ? "wl-stitch-eyebrow" : WL_APP_CLASSES.proEyebrow, "mb-1")}>
           {eyebrow}
         </p>
       )}
-      <div className="flex items-baseline justify-between gap-4">
-        <div className="min-w-0">
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-5">
+        <div className="min-w-0 flex-1">
           <h3
             className={cn(
+              "max-w-full break-words text-balance",
               marketing
                 ? "wl-stitch-headline text-[var(--wireline-typography-h3-size)]"
                 : titleTone === "ui"
@@ -50,12 +51,16 @@ export function SectionHeader({
             {title}
           </h3>
           {description && (
-            <p className="mt-1.5 max-w-prose text-[var(--wireline-typography-caption-size)] leading-relaxed text-muted">
+            <p className="mt-1.5 max-w-prose break-words text-pretty text-[var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
               {description}
             </p>
           )}
         </div>
-        {actions && <div className="shrink-0 self-start pt-0.5">{actions}</div>}
+        {actions && (
+          <div className="w-full min-w-0 shrink-0 [&>*]:w-full sm:w-auto sm:[&>*]:w-auto">
+            {actions}
+          </div>
+        )}
       </div>
       {divider && <div className="mt-3 wl-divider" aria-hidden="true" />}
     </div>
