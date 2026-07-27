@@ -3,6 +3,10 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 export type Theme = "light" | "dark" | "system";
 
 const STORAGE_KEY = "wireline-theme";
+const THEME_COLORS = {
+  dark: "#0A0A0E",
+  light: "#F6F5FA",
+} as const;
 
 interface ThemeContextValue {
   theme: Theme;
@@ -34,11 +38,19 @@ function resolveTheme(theme: Theme, systemDark: boolean): "light" | "dark" {
   return theme;
 }
 
+function updateMetaContent(name: string, content: string): void {
+  const meta = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
+  if (meta) meta.content = content;
+}
+
 function applyResolvedTheme(resolved: "light" | "dark"): void {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   root.classList.toggle("light", resolved === "light");
   root.style.colorScheme = resolved;
+  updateMetaContent("color-scheme", resolved);
+  updateMetaContent("theme-color", THEME_COLORS[resolved]);
+  updateMetaContent("msapplication-TileColor", THEME_COLORS[resolved]);
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {

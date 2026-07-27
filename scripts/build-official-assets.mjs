@@ -1,25 +1,22 @@
 /**
- * Build official Wireline marketing / app-store / social / ad assets
- * from the latest visual-qa + marketing-kit captures.
+ * Build official Wireline marketing, app-store, social, and ad assets from
+ * production or an explicitly supplied E2E_BASE_URL.
  *
  *   node scripts/build-official-assets.mjs
  *
  * Outputs: official-assets/
  *   web/ app-store/ social/ ads/ reels/ copy/
- * Also mirrors a zip to ~/Downloads.
  */
 import { chromium } from "@playwright/test";
 import { readFileSync, existsSync } from "node:fs";
 import { mkdir, rm, writeFile, copyFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { homedir } from "node:os";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outRoot = path.join(repoRoot, "official-assets");
 const visualQa = path.join(repoRoot, "visual-qa");
 const marketingKit = path.join(repoRoot, "marketing-kit");
-const downloadsDir = path.join(homedir(), "Downloads");
 
 function loadEnv(filePath) {
   try {
@@ -28,16 +25,24 @@ function loadEnv(filePath) {
       if (!line || line.startsWith("#")) continue;
       const i = line.indexOf("=");
       if (i < 0) continue;
-      const k = line.slice(0, i).trim();
-      let v = line.slice(i + 1).trim();
-      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
-      if (!(k in process.env)) process.env[k] = v;
+      const key = line.slice(0, i).trim();
+      let value = line.slice(i + 1).trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+      if (!(key in process.env)) process.env[key] = value;
     }
-  } catch {}
+  } catch {
+    // Optional local file.
+  }
 }
+
 loadEnv(path.join(repoRoot, ".env.visual-qa"));
 
-const baseURL = process.env.E2E_BASE_URL || "https://trywireline.com";
+const baseUrl = new URL(process.env.E2E_BASE_URL || "https://trywireline.com");
 const email =
   process.env.DEMO_EMAIL ||
   process.env.DOGFOOD_EMAIL ||
@@ -51,31 +56,61 @@ const password =
   process.env.E2E_USER_PASSWORD ||
   "";
 
+function appUrl(route) {
+  return new URL(route, baseUrl).toString();
+}
+
 function parseSetCookie(header) {
-  const [pair, ...attrs] = header.split(";").map((s) => s.trim());
+  const [pair, ...attrs] = header.split(";").map((part) => part.trim());
   const eq = pair.indexOf("=");
-  const cookie = { name: pair.slice(0, eq), value: pair.slice(eq + 1), path: "/", expires: Math.floor(Date.now() / 1000) + 7200 };
-  for (const a of attrs) {
-    const [k, v] = a.split("=");
-    if (k.toLowerCase() === "max-age" && v) cookie.expires = Math.floor(Date.now() / 1000) + Number(v);
+  if (eq <= 0) return null;
+
+  const cookie = {
+    name: pair.slice(0, eq),
+    value: pair.slice(eq + 1),
+    expires: Math.floor(Date.now() / 1000) + 7200,
+  };
+
+  for (const attr of attrs) {
+    const [key, value] = attr.split("=");
+    if (key.toLowerCase() === "max-age" && value) {
+      cookie.expires = Math.floor(Date.now() / 1000) + Number(value);
+    }
   }
   return cookie;
 }
 
+function responseSetCookies(headers) {
+  if (typeof headers.getSetCookie === "function") return headers.getSetCookie();
+  const combined = headers.get("set-cookie");
+  return combined ? [combined] : [];
+}
+
 async function signIn() {
-  const res = await fetch(`${baseURL}/api/auth/signin`, {
+  if (!email || !password) {
+    throw new Error(
+      "Set DEMO_EMAIL and DEMO_PASSWORD, or one of the documented E2E credential aliases.",
+    );
+  }
+
+  const res = await fetch(appUrl("/api/auth/signin"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-  const data = await res.json();
-  const cookie = res.headers.getSetCookie().map(parseSetCookie).find((c) => c.name === "wireline_session");
-  if (!data.user || !cookie) throw new Error("signin failed");
+  const data = await res.json().catch(() => ({}));
+  const cookie = responseSetCookies(res.headers)
+    .map(parseSetCookie)
+    .find((candidate) => candidate?.name === "wireline_session");
+
+  if (!res.ok || !data.user || !cookie) {
+    throw new Error(`Asset capture sign-in failed with HTTP ${res.status}.`);
+  }
   return cookie;
 }
 
-async function ensureDir(p) {
-  await mkdir(p, { recursive: true });
+async function ensureDir(dirPath) {
+  await mkdir(dirPath, { recursive: true });
 }
 
 async function copyIfExists(src, dest) {
@@ -87,98 +122,140 @@ async function copyIfExists(src, dest) {
 
 async function captureSized(page, route, file, size, fullPage = false) {
   await page.setViewportSize(size);
-  await page.goto(`${baseURL}${route}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await page.goto(appUrl(route), { waitUntil: "domcontentloaded", timeout: 60_000 });
   await page.waitForTimeout(1800);
-  for (const sel of ['button:has-text("Skip")', 'button:has-text("Got it")', '[aria-label="Close"]', 'button:has-text("Not now")', 'button:has-text("Dismiss")']) {
-    const el = page.locator(sel).first();
-    if (await el.isVisible().catch(() => false)) await el.click().catch(() => {});
+
+  for (const selector of [
+    'button:has-text("Skip")',
+    'button:has-text("Got it")',
+    '[aria-label="Close"]',
+    'button:has-text("Not now")',
+    'button:has-text("Dismiss")',
+  ]) {
+    const control = page.locator(selector).first();
+    if (await control.isVisible().catch(() => false)) {
+      await control.click().catch(() => {});
+    }
   }
+
   await page.waitForTimeout(500);
   await ensureDir(path.dirname(file));
   await page.screenshot({ path: file, fullPage, animations: "disabled" });
 }
 
-async function main() {
-  console.log("Building official assets…");
-  await rm(outRoot, { recursive: true, force: true });
-  await ensureDir(outRoot);
-
-  const cookie = await signIn();
-  const browser = await chromium.launch({ headless: true });
-  const ctx = await browser.newContext({
-    reducedMotion: "reduce",
-    deviceScaleFactor: 2,
-  });
-  await ctx.addCookies([
-    {
-      name: cookie.name,
-      value: cookie.value,
-      domain: "trywireline.com",
-      path: "/",
-      httpOnly: true,
-      secure: true,
-      sameSite: "Lax",
-      expires: cookie.expires,
-    },
-  ]);
-  await ctx.addInitScript(() => {
-    localStorage.setItem("wireline_cookie_consent", "acknowledged");
-    localStorage.setItem("wireline_tour_seen", "true");
-    localStorage.setItem("wireline_onboarding_completed", "true");
-  });
-  const page = await ctx.newPage();
-
-  // --- Web hero / OG / landing ---
+async function captureProductAssets(page) {
   const web = path.join(outRoot, "web");
-  await captureSized(page, "/", path.join(web, "og-1200x630.png"), { width: 1200, height: 630 });
-  await captureSized(page, "/", path.join(web, "hero-1920x1080.png"), { width: 1920, height: 1080 });
-  await captureSized(page, "/pricing", path.join(web, "pricing-1920x1080.png"), { width: 1920, height: 1080 });
-  await captureSized(page, "/showcase", path.join(web, "showcase-1920x1080.png"), { width: 1920, height: 1080 });
-  await captureSized(page, "/compare", path.join(web, "compare-1920x1080.png"), { width: 1920, height: 1080 });
-  await captureSized(page, "/for/sales", path.join(web, "vertical-sales-1920x1080.png"), { width: 1920, height: 1080 });
+  await captureSized(page, "/", path.join(web, "og-1200x630.png"), {
+    width: 1200,
+    height: 630,
+  });
+  await captureSized(page, "/", path.join(web, "hero-1920x1080.png"), {
+    width: 1920,
+    height: 1080,
+  });
+  await captureSized(page, "/pricing", path.join(web, "pricing-1920x1080.png"), {
+    width: 1920,
+    height: 1080,
+  });
+  await captureSized(page, "/showcase", path.join(web, "showcase-1920x1080.png"), {
+    width: 1920,
+    height: 1080,
+  });
+  await captureSized(page, "/compare", path.join(web, "compare-1920x1080.png"), {
+    width: 1920,
+    height: 1080,
+  });
+  await captureSized(page, "/for/sales", path.join(web, "vertical-sales-1920x1080.png"), {
+    width: 1920,
+    height: 1080,
+  });
   console.log("✓ web");
 
-  // --- App Store / Play Store ---
   const store = path.join(outRoot, "app-store");
-  // iPhone 6.7" ~1290x2796 @3x marketing stills (capture at logical then note)
-  await captureSized(page, "/overview", path.join(store, "iphone-6.7-01-overview.png"), { width: 430, height: 932 });
-  await captureSized(page, "/studio", path.join(store, "iphone-6.7-02-studio.png"), { width: 430, height: 932 });
-  await captureSized(page, "/phone", path.join(store, "iphone-6.7-03-phone.png"), { width: 430, height: 932 });
-  await captureSized(page, "/insights", path.join(store, "iphone-6.7-04-insights.png"), { width: 430, height: 932 });
-  await captureSized(page, "/approvals", path.join(store, "iphone-6.7-05-approvals.png"), { width: 430, height: 932 });
-  await captureSized(page, "/connections", path.join(store, "iphone-6.7-06-connections.png"), { width: 430, height: 932 });
-  // iPad 12.9"
-  await captureSized(page, "/overview", path.join(store, "ipad-12.9-01-overview.png"), { width: 1024, height: 1366 });
-  await captureSized(page, "/studio", path.join(store, "ipad-12.9-02-studio.png"), { width: 1024, height: 1366 });
-  await captureSized(page, "/phone", path.join(store, "ipad-12.9-03-phone.png"), { width: 1024, height: 1366 });
-  // Android phone
-  await captureSized(page, "/overview", path.join(store, "android-phone-01-overview.png"), { width: 412, height: 915 });
-  await captureSized(page, "/studio", path.join(store, "android-phone-02-studio.png"), { width: 412, height: 915 });
-  await captureSized(page, "/phone", path.join(store, "android-phone-03-phone.png"), { width: 412, height: 915 });
+  for (const [route, name] of [
+    ["/overview", "iphone-6.7-01-overview.png"],
+    ["/studio", "iphone-6.7-02-studio.png"],
+    ["/phone", "iphone-6.7-03-phone.png"],
+    ["/insights", "iphone-6.7-04-insights.png"],
+    ["/approvals", "iphone-6.7-05-approvals.png"],
+    ["/connections", "iphone-6.7-06-connections.png"],
+  ]) {
+    await captureSized(page, route, path.join(store, name), { width: 430, height: 932 });
+  }
+  for (const [route, name] of [
+    ["/overview", "ipad-12.9-01-overview.png"],
+    ["/studio", "ipad-12.9-02-studio.png"],
+    ["/phone", "ipad-12.9-03-phone.png"],
+  ]) {
+    await captureSized(page, route, path.join(store, name), { width: 1024, height: 1366 });
+  }
+  for (const [route, name] of [
+    ["/overview", "android-phone-01-overview.png"],
+    ["/studio", "android-phone-02-studio.png"],
+    ["/phone", "android-phone-03-phone.png"],
+  ]) {
+    await captureSized(page, route, path.join(store, name), { width: 412, height: 915 });
+  }
   console.log("✓ app-store");
 
-  // --- Social ---
   const social = path.join(outRoot, "social");
-  await captureSized(page, "/", path.join(social, "instagram-feed-1080.png"), { width: 1080, height: 1080 });
-  await captureSized(page, "/pricing", path.join(social, "instagram-feed-pricing-1080.png"), { width: 1080, height: 1080 });
-  await captureSized(page, "/overview", path.join(social, "linkedin-1200x627.png"), { width: 1200, height: 627 });
-  await captureSized(page, "/studio", path.join(social, "linkedin-studio-1200x627.png"), { width: 1200, height: 627 });
-  await captureSized(page, "/", path.join(social, "twitter-x-1600x900.png"), { width: 1600, height: 900 });
-  await captureSized(page, "/showcase", path.join(social, "facebook-1200x630.png"), { width: 1200, height: 630 });
+  await captureSized(page, "/", path.join(social, "instagram-feed-1080.png"), {
+    width: 1080,
+    height: 1080,
+  });
+  await captureSized(page, "/pricing", path.join(social, "instagram-feed-pricing-1080.png"), {
+    width: 1080,
+    height: 1080,
+  });
+  await captureSized(page, "/overview", path.join(social, "linkedin-1200x627.png"), {
+    width: 1200,
+    height: 627,
+  });
+  await captureSized(page, "/studio", path.join(social, "linkedin-studio-1200x627.png"), {
+    width: 1200,
+    height: 627,
+  });
+  await captureSized(page, "/", path.join(social, "twitter-x-1600x900.png"), {
+    width: 1600,
+    height: 900,
+  });
+  await captureSized(page, "/showcase", path.join(social, "facebook-1200x630.png"), {
+    width: 1200,
+    height: 630,
+  });
   console.log("✓ social");
 
-  // --- Ads ---
   const ads = path.join(outRoot, "ads");
-  await captureSized(page, "/", path.join(ads, "meta-feed-1080.png"), { width: 1080, height: 1080 });
-  await captureSized(page, "/pricing", path.join(ads, "meta-feed-pricing-1080.png"), { width: 1080, height: 1080 });
-  await captureSized(page, "/overview", path.join(ads, "meta-story-1080x1920.png"), { width: 1080, height: 1920 });
-  await captureSized(page, "/studio", path.join(ads, "meta-story-studio-1080x1920.png"), { width: 1080, height: 1920 });
-  await captureSized(page, "/", path.join(ads, "google-landscape-1200x628.png"), { width: 1200, height: 628 });
-  await captureSized(page, "/for/sales", path.join(ads, "google-square-1200.png"), { width: 1200, height: 1200 });
-  await captureSized(page, "/phone", path.join(ads, "linkedin-ad-1200x627.png"), { width: 1200, height: 627 });
+  await captureSized(page, "/", path.join(ads, "meta-feed-1080.png"), {
+    width: 1080,
+    height: 1080,
+  });
+  await captureSized(page, "/pricing", path.join(ads, "meta-feed-pricing-1080.png"), {
+    width: 1080,
+    height: 1080,
+  });
+  await captureSized(page, "/overview", path.join(ads, "meta-story-1080x1920.png"), {
+    width: 1080,
+    height: 1920,
+  });
+  await captureSized(page, "/studio", path.join(ads, "meta-story-studio-1080x1920.png"), {
+    width: 1080,
+    height: 1920,
+  });
+  await captureSized(page, "/", path.join(ads, "google-landscape-1200x628.png"), {
+    width: 1200,
+    height: 628,
+  });
+  await captureSized(page, "/for/sales", path.join(ads, "google-square-1200.png"), {
+    width: 1200,
+    height: 1200,
+  });
+  await captureSized(page, "/phone", path.join(ads, "linkedin-ad-1200x627.png"), {
+    width: 1200,
+    height: 627,
+  });
   console.log("✓ ads");
 
-  // --- Reels / Stories stills (9:16) ---
   const reels = path.join(outRoot, "reels");
   const reelRoutes = [
     { id: "01-home", route: "/" },
@@ -190,14 +267,16 @@ async function main() {
     { id: "07-showcase", route: "/showcase" },
     { id: "08-sales", route: "/for/sales" },
   ];
-  for (const r of reelRoutes) {
-    await captureSized(page, r.route, path.join(reels, `still-${r.id}.png`), { width: 1080, height: 1920 });
+  for (const item of reelRoutes) {
+    await captureSized(page, item.route, path.join(reels, `still-${item.id}.png`), {
+      width: 1080,
+      height: 1920,
+    });
   }
   console.log("✓ reels stills");
+}
 
-  await browser.close();
-
-  // Pull best screenshots from visual-qa / marketing-kit if present
+async function copyExistingProductMedia() {
   const gallery = path.join(outRoot, "product-gallery");
   await ensureDir(gallery);
   const galleryMap = [
@@ -219,72 +298,112 @@ async function main() {
     ["marketing-kit/screenshots/desktop/overview.png", "kit-overview.png"],
     ["marketing-kit/screenshots/reel/overview.png", "kit-reel-overview.png"],
   ];
-  for (const [rel, name] of galleryMap) {
-    await copyIfExists(path.join(repoRoot, rel), path.join(gallery, name));
+  for (const [relativePath, name] of galleryMap) {
+    await copyIfExists(path.join(repoRoot, relativePath), path.join(gallery, name));
   }
 
-  // Copy videos from marketing-kit if any
   const videoOut = path.join(outRoot, "videos");
   await ensureDir(videoOut);
   const kitVideos = path.join(marketingKit, "videos");
-  if (existsSync(kitVideos)) {
-    for (const f of await readdir(kitVideos)) {
-      if (f.endsWith(".webm") || f.endsWith(".mp4")) {
-        await copyFile(path.join(kitVideos, f), path.join(videoOut, f));
-      }
+  if (!existsSync(kitVideos)) return;
+
+  for (const file of await readdir(kitVideos)) {
+    if (file.endsWith(".webm") || file.endsWith(".mp4")) {
+      await copyFile(path.join(kitVideos, file), path.join(videoOut, file));
     }
   }
+}
 
+async function writeCopyPack() {
   const copyMd = `# Wireline official asset pack
 
-Generated ${new Date().toISOString()} from production (${baseURL}) as ${email}.
+Generated ${new Date().toISOString()} from ${baseUrl.origin} as ${email}.
 
 ## Folders
 
 | Folder | Use |
 |--------|-----|
 | \`web/\` | Website OG, hero, pricing, showcase, compare |
-| \`app-store/\` | App Store / Play Store screenshots (iPhone, iPad, Android) |
-| \`social/\` | Instagram, LinkedIn, X/Twitter, Facebook |
-| \`ads/\` | Meta feed/story, Google Display, LinkedIn ads |
-| \`reels/\` | 9:16 stills for Reels / TikTok / Stories |
-| \`videos/\` | Screen-recorded webm reels (import to CapCut/Premiere) |
-| \`product-gallery/\` | Best product UI stills from visual QA |
+| \`app-store/\` | App Store and Play Store screenshots for iPhone, iPad, and Android |
+| \`social/\` | Instagram, LinkedIn, X, and Facebook |
+| \`ads/\` | Meta feed and story, Google Display, and LinkedIn ads |
+| \`reels/\` | 9:16 stills for Reels, TikTok, and Stories |
+| \`videos/\` | Screen recordings ready for editing |
+| \`product-gallery/\` | Selected product UI stills from visual QA |
 
 ## Suggested captions
 
 ### LinkedIn
-Wire your agent. Outbound, inbound, or hybrid — one trained line, one visible outcome.
-Start free → trywireline.com
+Wire your agent. Choose outbound, inbound, or hybrid. One trained agent. One visible outcome.
+Start free at trywireline.com.
 
-### Instagram / Reels hook (15s)
-"Your phone operation shouldn't live in five tabs."
-Cut: Home → Overview → Studio → Phone → Pricing
+### Instagram and Reels hook
+"Your phone operation should not live in five tabs."
+Cut: Home, Overview, Studio, Phone, Pricing
 CTA: Link in bio
 
 ### Meta ad primary text
-Create and train a phone agent for free. Live work draws from Runtime Balance.
-Free Builder · Starter · Growth · Scale · Business — clear rates, no surprise math.
+Create and train an AI voice agent for free. Live work draws from prepaid Runtime Balance.
+Free Builder, Starter, Starter Plus, Pro, and Business. Clear rates. No surprise math.
 
 ### App Store subtitle
-AI phone agents for sales & support
+AI voice agents for sales and support
 
 ### App Store promo text
-Wireline trains outbound and inbound agents that book meetings, log CRM, and keep a clean outcome ledger.
+Wireline trains outbound and inbound agents that book meetings, update your systems, and keep a clean outcome record.
 
 ## Notes
 - Prefer \`product-gallery/desktop-*\` for SaaS website screenshots.
 - Prefer \`app-store/iphone-*\` for mobile store listings.
-- Convert \`videos/*.webm\` to H.264 MP4 in CapCut for Instagram/TikTok upload.
+- Convert \`videos/*.webm\` to H.264 MP4 before social upload.
 `;
+
   await writeFile(path.join(outRoot, "README.md"), copyMd, "utf8");
   await ensureDir(path.join(outRoot, "copy"));
   await writeFile(path.join(outRoot, "copy", "captions.md"), copyMd, "utf8");
-
-  console.log(`Done → ${outRoot}`);
 }
 
-main().catch((e) => {
-  console.error(e);
+async function main() {
+  console.log(`Building official assets from ${baseUrl.origin}`);
+  await rm(outRoot, { recursive: true, force: true });
+  await ensureDir(outRoot);
+
+  const cookie = await signIn();
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({
+      reducedMotion: "reduce",
+      deviceScaleFactor: 2,
+    });
+    await context.addCookies([
+      {
+        name: cookie.name,
+        value: cookie.value,
+        url: baseUrl.origin,
+        httpOnly: true,
+        secure: baseUrl.protocol === "https:",
+        sameSite: "Lax",
+        expires: cookie.expires,
+      },
+    ]);
+    await context.addInitScript(() => {
+      localStorage.setItem("wireline_cookie_consent", "acknowledged");
+      localStorage.setItem("wireline_tour_seen", "true");
+      localStorage.setItem("wireline_onboarding_completed", "true");
+    });
+
+    const page = await context.newPage();
+    await captureProductAssets(page);
+  } finally {
+    await browser.close();
+  }
+
+  await copyExistingProductMedia();
+  await writeCopyPack();
+  console.log(`Done: ${outRoot}`);
+}
+
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });
