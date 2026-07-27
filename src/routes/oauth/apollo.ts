@@ -57,7 +57,10 @@ router.get(
     const { code, state, error, error_description } = req.query;
     if (error) {
       log.warn("Apollo OAuth error from provider", { error, error_description });
-      return res.status(400).send(`Apollo OAuth error: ${error_description}`);
+      return res
+        .status(400)
+        .type("text/plain")
+        .send("Apollo authorization was not completed. Please restart the connection.");
     }
     const vs = await verifyAndClaimOAuthState(state as string | undefined);
     if (!vs.ok) {
