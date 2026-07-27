@@ -1,7 +1,7 @@
 {
-  "name": "Wireline - AI Voice Agents",
+  "name": "Wireline | AI Voice Agents",
   "short_name": "Wireline",
-  "description": "Build one AI voice agent—or a coordinated team—for personal tasks and business conversations, with follow-through across voice, SMS, and email.",
+  "description": "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.",
   "id": "/",
   "start_url": "/studio",
   "scope": "/",
@@ -38,7 +38,7 @@
     {
       "name": "Studio",
       "short_name": "Studio",
-      "description": "Open the chat-first workroom",
+      "description": "Open the agent workroom",
       "url": "/studio"
     },
     {
@@ -48,8 +48,8 @@
       "url": "/agents"
     },
     {
-      "name": "Training",
-      "short_name": "Training",
+      "name": "Knowledge",
+      "short_name": "Knowledge",
       "description": "Add facts, sources, rules, and tone",
       "url": "/knowledge"
     }
