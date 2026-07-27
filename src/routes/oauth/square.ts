@@ -59,7 +59,11 @@ router.get("/api/ecommerce/oauth/callback", async (req: express.Request, res: ex
   const { code, state, error: oauthError } = req.query as Record<string, string | undefined>;
 
   if (oauthError) {
-    return res.status(400).send(`Square authorization denied: ${oauthError}`);
+    log.warn("Square OAuth error from provider", { oauthError });
+    return res
+      .status(400)
+      .type("text/plain")
+      .send("Square authorization was not completed. Please restart the connection.");
   }
   if (!state) {
     return res.status(400).send("Missing OAuth state. Please restart the connect flow.");
