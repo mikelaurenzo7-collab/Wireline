@@ -3,8 +3,8 @@
   "schema_version": 1,
   "app_info": {
     "display_name": "Wireline",
-    "subtitle": "Build and inspect AI employees",
-    "description": "Wireline lets a connected user create, refine, review, and privately simulate unlaunched AI employee drafts from ChatGPT, then inspect privacy-minimized aggregate workspace status across calling, texting, and email. The app keeps phone numbers, real calls, messaging, integrations, billing, and launch inside Wireline so every external action remains separately configured and confirmed.",
+    "subtitle": "Build and inspect AI voice agents",
+    "description": "Wireline lets a connected user create, refine, review, and privately simulate unlaunched AI voice agent drafts from ChatGPT, then inspect privacy-minimized aggregate workspace status across calling, texting, and email. The app keeps phone numbers, real calls, messaging, integrations, billing, and launch inside Wireline so every external action remains separately configured and confirmed.",
     "category": "BUSINESS",
     "logo_url": "https://trywireline.com/wireline-chatgpt-app-icon.svg",
     "website_url": "https://trywireline.com",
