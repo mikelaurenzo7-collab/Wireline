@@ -99,8 +99,17 @@ describe("product voice cohesion", () => {
     expect(roleDefinitions).toContain('label: "Lead Agent"');
     expect(roleDefinitions).toContain('archetype: "All-Purpose Voice Agent"');
     expect(activationChecklist).toContain("Your voice agent is live");
+
+    const staleRolePhrases = [
+      ["Best", "Employee"].join(" "),
+      ["All-Purpose", "AI", "Employee"].join(" "),
+      ["AI", "employee"].join(" "),
+      ["best", "employee"].join(" "),
+    ];
     for (const source of [productCopy, roleDefinitions, roleTemplates, activationChecklist]) {
-      expect(source).not.toMatch(/Best Employee|All-Purpose AI Employee|AI employee|best employee/);
+      for (const phrase of staleRolePhrases) {
+        expect(source).not.toContain(phrase);
+      }
     }
   });
 
