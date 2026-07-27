@@ -10,7 +10,6 @@ const TARGETS = ["production", "preview", "development"];
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const EXTRA_KEYS = [
-  "STRIPE_VOICE_OVERAGE_METER_EVENT_NAME",
   "VITE_STRIPE_PUBLIC_KEY",
   "STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID",
 ];
@@ -55,14 +54,7 @@ for (const [key, value] of Object.entries(canon)) {
   }
 }
 
-const meter = snapshot.STRIPE_VOICE_OVERAGE_METER_EVENT_NAME;
-if (!TARGETS.every((t) => meter?.[t] === "voice_minutes_overage")) {
-  mismatches.push({
-    key: "STRIPE_VOICE_OVERAGE_METER_EVENT_NAME",
-    issue: "not voice_minutes_overage on all targets",
-    snapshot: meter,
-  });
-}
+/* Voice overflow is prepaid Runtime Balance only — no Stripe metered overage event. */
 
 const publishable = snapshot.VITE_STRIPE_PUBLIC_KEY;
 const pkOk = TARGETS.every((t) => publishable?.[t]?.startsWith("pk_live_"));

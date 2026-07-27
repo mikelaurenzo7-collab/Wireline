@@ -208,6 +208,6 @@ These messages must stay aligned across:
 ## Still required before live rollout
 
 1. Re-run production checkout, webhook, portal, and billing-status verification after the next Vercel deployment reaches READY.
-2. Confirm metered overage event emission uses `voice_minutes_overage` with `stripe_customer_id` and `value` payload keys before enabling overage burn in production.
+2. Confirm prepaid Runtime Balance top-ups and included-minute burn remain the only overflow path (no Stripe metered postpaid overage).
 3. Keep Enterprise contact-sales until contract, committed-usage operations, and implementation controls are ready.
 4. Enforce custom-auth breached-password screening before public launch.

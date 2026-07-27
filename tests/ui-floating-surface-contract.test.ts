@@ -44,6 +44,25 @@ describe("Wireline floating surface design contract", () => {
     }
   });
 
+  it("keeps custom product dialogs at the same 44px close-target floor", () => {
+    const postCreate = read("src/components/onboarding/PostCreateActivationWizard.tsx");
+    const trialGate = read("src/components/TrialGateModal.tsx");
+    const blueprintCss = read("src/styles/phone-agent-blueprint.css");
+
+    expect(postCreate).toContain("grid size-11 shrink-0 place-items-center");
+    expect(postCreate).not.toContain("grid size-9 shrink-0 place-items-center");
+    expect(trialGate).toContain("h-11 w-11");
+    expect(trialGate).not.toContain("after:hidden sm:h-9 sm:w-9");
+    expect(blueprintCss).toMatch(/\.studio-blueprint-close\s*\{[^}]*width:\s*44px;/);
+    expect(blueprintCss).toMatch(/\.studio-blueprint-close\s*\{[^}]*height:\s*44px;/);
+  });
+
+  it("does not force the Studio blueprint into the shared inset-modal mobile geometry", () => {
+    const modalCss = read("src/styles/modal-hierarchy.css");
+    const mobileBlock = modalCss.slice(modalCss.indexOf("@media (max-width: 639px)"));
+    expect(mobileBlock).not.toContain(".studio-blueprint-dialog");
+  });
+
   it("normalizes custom popup titles so page-scale typography cannot leak into dialogs", () => {
     const modalCss = read("src/styles/modal-hierarchy.css");
 

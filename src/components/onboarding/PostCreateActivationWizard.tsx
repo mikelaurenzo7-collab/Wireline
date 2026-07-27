@@ -287,7 +287,7 @@ export default function PostCreateActivationWizard({
             type="button"
             onClick={dismiss}
             disabled={provisioning}
-            className="grid size-9 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+            className="grid size-11 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
             aria-label="Close setup guide"
           >
             <X size={16} aria-hidden="true" />

@@ -12,9 +12,12 @@ describe("voice-pricing-display", () => {
     expect(rates[0]?.rateUsd).toBe(voiceRateForPlan("starter"));
   });
 
-  it("estimates minutes from Conversation Balance", () => {
-    expect(estimateVoiceMinutesFromBalance(50, 0.18)).toBe(277);
-    expect(estimateVoiceMinutesFromBalance(10, 0.18)).toBe(55);
-    expect(estimateVoiceMinutesFromBalance(0, 0.18)).toBe(0);
+  it("estimates minutes from Runtime Balance at the catalog Starter rate", () => {
+    const rate = voiceRateForPlan("starter");
+    expect(rate).toBe(0.22);
+    expect(estimateVoiceMinutesFromBalance(50, rate)).toBe(227);
+    expect(estimateVoiceMinutesFromBalance(10, rate)).toBe(45);
+    expect(estimateVoiceMinutesFromBalance(0, rate)).toBe(0);
+    expect(estimateVoiceMinutesFromBalance(50)).toBe(227);
   });
 });
