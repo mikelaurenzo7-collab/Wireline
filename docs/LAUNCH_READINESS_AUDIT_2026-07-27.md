@@ -56,7 +56,8 @@ Static assets (usable for Meta/LinkedIn/X upload; not committed to git per `CODE
 
 HeyGen sessions (open in HeyGen to download when complete):
 
-- Portrait social: https://app.heygen.com/video-agent/0bfcca47221b4484a51fff39d9c7ad8b
+- Portrait social (**ready**): https://app.heygen.com/videos/1ebbee6b293f40a798e369c8ceebc985
+- Portrait session: https://app.heygen.com/video-agent/0bfcca47221b4484a51fff39d9c7ad8b
 - Landscape: https://app.heygen.com/video-agent/6cbcb77395fa4bb888140131c64b7609
 
 Copy spine remains: **Build free. Go live from $19/mo.** / **Build your AI Voice Agent** — see `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`.
