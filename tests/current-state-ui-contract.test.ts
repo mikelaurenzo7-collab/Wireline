@@ -121,7 +121,8 @@ describe("current-state UI contract", () => {
     expect(hero).toContain("col-span-2 sm:col-span-1");
 
     expect(auth).toContain('pathname === "/signup" || pathname === "/get-started"');
-    expect(auth).toContain("STRIPE_PLANS.map");
+    expect(auth).toContain("STRIPE_PLANS.find");
+    expect(auth).toContain("plan.price_usd_annual");
     expect(auth).toContain("plan.price_usd_monthly");
     expect(auth).not.toContain('starter: "Starter · $9/month"');
     expect(auth).toContain(': "starter";');

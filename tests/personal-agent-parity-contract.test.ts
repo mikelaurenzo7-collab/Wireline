@@ -141,9 +141,9 @@ describe("personal agent parity — presentation and runtime", () => {
 
   it("softens personal posture copy away from business-employee wording", () => {
     expect(PRODUCT_POSTURE.personal).toMatchObject({
-      badge: "Personal agent",
-      createCta: "Build personal agent",
-      emptyTitle: "Your personal agent.",
+      badge: "Personal voice agent",
+      createCta: "Build personal voice agent",
+      emptyTitle: "Your personal voice agent.",
       emptyBody: "Your calls. Your texts. Your email. Your outcomes.",
     });
   });
@@ -161,7 +161,7 @@ describe("founder hybrid pricing — Starter Plus pair capacity", () => {
     expect(supportsFounderAgentPair("team")).toBe(true);
     expect(supportsFounderAgentPair("starter")).toBe(false);
     const catalog = read("src/lib/plan-catalog.ts");
-    expect(catalog).toContain("2 live agents — personal Concierge + business AI employee");
+    expect(catalog).toContain("2 live agents — personal Concierge + business voice agent");
     expect(read("src/pages/Pricing.tsx")).toContain("Founder hybrid");
     expect(read("src/pages/OverviewPage.tsx")).toContain("Complete your founder pair");
   });

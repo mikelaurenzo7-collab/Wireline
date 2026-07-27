@@ -176,6 +176,7 @@ export const authService = {
     fullName?: string,
     signupAttribution?: {
       preferredPlanId?: string | null;
+      preferredBillingInterval?: "month" | "year" | null;
       signupWedge?: string | null;
       utmSource?: string | null;
       utmMedium?: string | null;

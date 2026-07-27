@@ -485,7 +485,7 @@ function CustomAgentCard({ onCreate }: { onCreate: () => void }) {
       <div className="space-y-1">
         <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">Custom Agent</h3>
         <p className="text-[var(--wireline-typography-caption-size)] text-foreground/70 leading-relaxed max-w-[12.5rem]">
-          Start from a blank employee in Studio and set the job, greeting, and voice yourself.
+          Start from a blank voice agent in Studio and set the job, greeting, and voice yourself.
         </p>
       </div>
       <ShadButton

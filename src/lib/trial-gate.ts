@@ -22,6 +22,7 @@ export const TRIAL_MAX_OUTBOUND = 25;
 
 export type SignupAttribution = {
   preferredPlanId?: string | null;
+  preferredBillingInterval?: "month" | "year" | null;
   signupWedge?: string | null;
   utmSource?: string | null;
   utmMedium?: string | null;
@@ -72,6 +73,7 @@ export async function startTrialForUser(
         trialEndsAt: null,
         trialOutboundCount: 0,
         signupPlanInterest: attribution.preferredPlanId || null,
+        signupBillingInterval: attribution.preferredBillingInterval || null,
         signupWedge: attribution.signupWedge || null,
         acquisitionSource: attribution.utmSource || null,
         acquisitionMedium: attribution.utmMedium || null,
@@ -112,6 +114,7 @@ export async function saveSignupAttribution(
 ): Promise<void> {
   if (
     !attribution.preferredPlanId &&
+    !attribution.preferredBillingInterval &&
     !attribution.signupWedge &&
     !attribution.utmSource &&
     !attribution.utmMedium &&
@@ -122,6 +125,7 @@ export async function saveSignupAttribution(
 
   const attributionValues = {
     signupPlanInterest: attribution.preferredPlanId || null,
+    signupBillingInterval: attribution.preferredBillingInterval || null,
     signupWedge: attribution.signupWedge || null,
     acquisitionSource: attribution.utmSource || null,
     acquisitionMedium: attribution.utmMedium || null,

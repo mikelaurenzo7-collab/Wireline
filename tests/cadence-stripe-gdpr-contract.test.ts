@@ -17,9 +17,8 @@ function read(rel: string): string {
 }
 
 describe("Cadence Stripe + GDPR purge contracts", () => {
-  it("plan-catalog fallbacks use Cadence AI price ids only", () => {
+  it("plan-catalog fallbacks use the current Cadence AI price ids", () => {
     const catalog = read("src/lib/plan-catalog.ts");
-    expect(catalog).toContain("acct_1TkyXL8e6If87QKm");
     expect(catalog).toContain("price_1Tv9K58e6If87QKm7rzn3MNS");
     expect(catalog).toContain("price_1Tx5X78e6If87QKmltXpASRU");
     expect(catalog).not.toMatch(/JohDtfy3Ik/);

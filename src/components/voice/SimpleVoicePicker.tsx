@@ -180,7 +180,7 @@ export default function SimpleVoicePicker({
 
       {!loading && !hasManagedPhoneVoice ? (
         <StatusNotice tone="warning" title="Choose a managed voice">
-          This employee has a legacy voice setting. Select one of the included voices above before
+          This voice agent has a legacy voice setting. Select one of the included voices above before
           placing the next live call.
         </StatusNotice>
       ) : null}

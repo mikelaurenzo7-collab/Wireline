@@ -29,6 +29,13 @@ function runLiveVapiSchemaAuditIfRequested() {
   const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
   if (environment !== "preview" || !commitMessage.includes("[launch-deep-audit]")) return;
 
+  if (!process.env.VAPI_PRIVATE_KEY || !process.env.VAPI_WEBHOOK_SECRET) {
+    console.log(
+      "Skipping the optional live Vapi schema audit because preview-safe credentials are not configured.",
+    );
+    return;
+  }
+
   console.log("Running one-shot non-billable Vapi payload schema audit.");
   run("node", ["scripts/check-vapi-payload-contract-live.mjs"]);
 }

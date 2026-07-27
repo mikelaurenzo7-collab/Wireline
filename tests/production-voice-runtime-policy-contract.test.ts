@@ -20,7 +20,7 @@ describe("production voice runtime policy", () => {
     expect(catalog).toContain("production PSTN voice engine");
     expect(catalog).toContain("Wireline Preview");
     expect(catalog).not.toContain("low-latency realtime speech (xAI Grok)");
-    expect(preview).toContain("preview-only audio samples");
+    expect(preview).toContain("Preview-only audio samples");
     expect(preview).toContain("never participates in live call routing");
   });
 

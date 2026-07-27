@@ -119,7 +119,7 @@ describe("launch readiness fine-tune 2026-07-27", () => {
   it("aligns broad public/onboarding copy to AI voice agent", () => {
     expect(read("src/lib/email-service.ts")).toContain("first AI voice agent");
     expect(read("src/lib/email-service.ts")).not.toContain("first AI employee");
-    expect(read("src/pages/Compare.tsx")).toContain("owner-ready AI Voice Agent");
+    expect(read("src/pages/Compare.tsx")).toContain("owner-ready AI voice agent");
     expect(read("src/pages/ClientAppsPage.tsx")).toContain("simulate an AI voice agent");
     expect(read("src/components/PrivacyPolicyPage.tsx")).toContain("AI voice agent platform");
     expect(read("src/components/PrivacyPolicyPage.tsx")).toContain("your AI voice agents");

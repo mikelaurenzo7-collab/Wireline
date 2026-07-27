@@ -11,9 +11,9 @@ describe("phone settings attach routing", () => {
     expect(phone).toContain("attachAgent");
     expect(phone).toContain('method: "PATCH"');
     expect(phone).toContain("`/api/phone-numbers/${activeNumber.id}`");
-    expect(phone).toContain('aria-label="Attach AI employee to this number"');
+    expect(phone).toContain('aria-label="Attach voice agent to this number"');
     expect(phone).not.toContain("Attach in Studio");
-    expect(phone).toContain("Select AI employee");
-    expect(phone).toContain("Create AI employee");
+    expect(phone).toContain("Select voice agent");
+    expect(phone).toContain("Create voice agent");
   });
 });

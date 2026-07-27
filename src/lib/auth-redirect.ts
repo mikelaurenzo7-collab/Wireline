@@ -27,6 +27,19 @@ export function persistWorkspaceMode(mode: WorkspaceMode) {
 function isSafeInternalPath(value: string | null): value is string {
   if (!value) return false;
   if (!value.startsWith("/") || value.startsWith("//")) return false;
+  if (value.includes("\\")) return false;
+  for (let index = 0; index < value.length; index += 1) {
+    const codeUnit = value.charCodeAt(index);
+    if (codeUnit <= 0x1f || codeUnit === 0x7f) return false;
+  }
+
+  try {
+    const resolved = new URL(value, "https://wireline.invalid");
+    if (resolved.origin !== "https://wireline.invalid") return false;
+  } catch {
+    return false;
+  }
+
   return !/^\/auth\b|^\/signin\b|^\/login\b|^\/signup\b|^\/get-started\b|^\/reset\b/.test(value);
 }
 

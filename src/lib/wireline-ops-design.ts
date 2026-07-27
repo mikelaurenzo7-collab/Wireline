@@ -348,7 +348,7 @@ export const OPS_HELP = {
   stat: (live: number, demos: number) =>
     `${live} live line${live === 1 ? "" : "s"} -+ ${demos} demo${demos === 1 ? "" : "s"}`,
   quickLinks: [
-    { label: "Studio", to: "/studio", hint: "Open the AI employee roster" },
+    { label: "Studio", to: "/studio", hint: "Open the voice-agent roster" },
     { label: "Connections", to: "/connections", hint: "Numbers, email, and integrations" },
     { label: "Training", to: "/studio?section=setup", hint: "Job, greeting, facts, and voice" },
     { label: "System status", to: "/status", hint: "Public uptime feed" },
@@ -600,9 +600,9 @@ export const OPS_INSIGHTS_EMPTY = {
     ],
   },
   leaderboard: {
-    title: "No ranked employees",
+    title: "No ranked voice agents",
     actions: [
-      { label: "Create AI employee", to: "/studio", primary: true },
+      { label: "Create voice agent", to: "/studio", primary: true },
       { label: "Call history", to: "/phone?tab=logs" },
     ],
   },

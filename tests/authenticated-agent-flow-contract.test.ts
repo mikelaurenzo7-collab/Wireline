@@ -14,8 +14,13 @@ describe("authenticated agent flow", () => {
     const appShell = read("src/components/layout/AppShell.tsx");
     const workspaceShell = read("src/components/WorkspaceShell.tsx");
 
-    // Workspace mode drives signup intent into the current 5-tier commercial model.
-    expect(authPortal).toContain("const SIGNUP_PLAN_LABELS");
+    // Workspace mode drives signup intent through the canonical catalog-backed
+    // billing-label helper, including the visitor's selected annual term.
+    expect(authPortal).toContain("function signupPlanLabel(");
+    expect(authPortal).toContain("STRIPE_PLANS.find");
+    expect(authPortal).toContain("plan.price_usd_annual");
+    expect(authPortal).toContain("plan.price_usd_monthly");
+    expect(authPortal).not.toContain("const SIGNUP_PLAN_LABELS");
     expect(authPortal).toContain('nextMode === "personal"');
     expect(authPortal).toContain('import WirelineMark from "./brand/WirelineMark"');
     // The auth funnel stays minimal (PR #738): product promise, not a decorative loop grid.

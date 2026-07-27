@@ -197,6 +197,7 @@ export function parseSignupIntent(search: string): SignupIntent | null {
 export function hasSignupIntent(intent: SignupIntent | null | undefined): intent is SignupIntent {
   return !!(
     intent?.preferredPlanId ||
+    intent?.preferredBillingInterval ||
     intent?.signupWedge ||
     intent?.utmSource ||
     intent?.utmMedium ||

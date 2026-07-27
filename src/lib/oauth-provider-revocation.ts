@@ -315,7 +315,7 @@ export async function revokeAllOAuthGrantsForUser(
     .from(schema.calendarAccounts)
     .where(eq(schema.calendarAccounts.userId, userId));
 
-  const bundles: TokenBundle[] = [
+  const rawBundles = [
     ...crm.map((row) => ({
       provider: row.provider,
       accessToken: row.accessToken,
@@ -339,6 +339,16 @@ export async function revokeAllOAuthGrantsForUser(
     })),
   ];
 
+  const bundles: TokenBundle[] = [];
+  for (const bundle of rawBundles) {
+    if (!bundle.provider) {
+      summary.skipped += 1;
+      summary.errors.push("unknown: OAuth grant is missing its provider");
+      continue;
+    }
+    bundles.push({ ...bundle, provider: bundle.provider });
+  }
+
   for (const bundle of bundles) {
     summary.attempted += 1;
     const ok = await revokeProviderGrant(bundle);
@@ -354,10 +364,15 @@ export async function revokeAllOAuthGrantsForUser(
 
 /** Revoke a single mailbox/calendar-style account row before local delete. */
 export async function revokeMailboxAccountTokens(account: {
-  provider: string;
+  provider: string | null;
   accessToken: string | null;
   refreshToken: string | null;
 }): Promise<boolean> {
+  if (!account.provider) {
+    log.warn("oauth mailbox revoke skipped because provider is missing");
+    return false;
+  }
+
   return revokeProviderGrant({
     provider: account.provider,
     accessToken: account.accessToken,

@@ -67,10 +67,13 @@ async function handleMsGraphCallback(
   req: express.Request,
   res: express.Response,
 ) {
-  const { code, state, error, error_description } = req.query;
+  const { code, state, error } = req.query;
   if (error) {
-    log.warn("Microsoft Graph OAuth error from provider", { provider, error, error_description });
-    return res.status(400).send(`Microsoft OAuth error: ${error_description || error}`);
+    log.warn("Microsoft Graph OAuth authorization was not completed", { provider });
+    return res
+      .status(400)
+      .type("text/plain")
+      .send("Microsoft authorization was not completed. Please restart the connection.");
   }
   const vs = await verifyAndClaimOAuthState(state as string | undefined);
   if (!vs.ok) {
@@ -157,8 +160,11 @@ router.get(
   buildMsGraphUrlRoute("microsoft_teams"),
 );
 
-router.get("/api/oauth/microsoft_teams/callback", (req: express.Request, res: express.Response) =>
-  handleMsGraphCallback("microsoft_teams", req, res),
+router.get(
+  "/api/oauth/microsoft_teams/callback",
+  oauthRateLimiter,
+  (req: express.Request, res: express.Response) =>
+    handleMsGraphCallback("microsoft_teams", req, res),
 );
 
 router.post(
@@ -225,8 +231,11 @@ router.get(
   buildMsGraphUrlRoute("microsoft_excel"),
 );
 
-router.get("/api/oauth/microsoft_excel/callback", (req: express.Request, res: express.Response) =>
-  handleMsGraphCallback("microsoft_excel", req, res),
+router.get(
+  "/api/oauth/microsoft_excel/callback",
+  oauthRateLimiter,
+  (req: express.Request, res: express.Response) =>
+    handleMsGraphCallback("microsoft_excel", req, res),
 );
 
 router.post(

@@ -60,10 +60,13 @@ router.get(
   "/api/oauth/x/callback",
   oauthRateLimiter,
   async (req: express.Request, res: express.Response) => {
-    const { code, state, error, error_description } = req.query;
+    const { code, state, error } = req.query;
     if (error) {
-      log.warn("X OAuth error from provider", { error, error_description });
-      return res.status(400).send(`X OAuth error: ${error_description || error}`);
+      log.warn("X OAuth authorization was not completed");
+      return res
+        .status(400)
+        .type("text/plain")
+        .send("X authorization was not completed. Please restart the connection.");
     }
 
     const vs = await verifyAndClaimOAuthState(state as string | undefined);

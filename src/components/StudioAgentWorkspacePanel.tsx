@@ -51,7 +51,7 @@ export default function StudioAgentWorkspacePanel({
   const defaultGreeting = useMemo(
     () =>
       isBusinessAgent
-        ? `Hello, this is ${agentName || "your AI employee"}. How can I help?`
+        ? `Hello, this is ${agentName || "your voice agent"}. How can I help?`
         : `Hi, this is ${agentName || "your personal agent"}. How can I help?`,
     [agentName, isBusinessAgent],
   );

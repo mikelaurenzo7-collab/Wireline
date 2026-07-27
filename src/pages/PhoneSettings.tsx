@@ -126,16 +126,16 @@ export default function PhoneSettings() {
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(body?.error || "Could not attach AI employee.");
+        throw new Error(body?.error || "Could not attach voice agent.");
       }
       setNumbers((prev) =>
         prev.map((number) =>
           number.id === activeNumber.id ? { ...number, agent_id: agentId } : number,
         ),
       );
-      setMessage(agentId ? "AI employee attached to this line." : "Line unassigned.");
+      setMessage(agentId ? "Voice agent attached to this line." : "Line unassigned.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not attach AI employee.");
+      setError(err instanceof Error ? err.message : "Could not attach voice agent.");
     } finally {
       setAttaching(false);
     }
@@ -189,10 +189,10 @@ export default function PhoneSettings() {
           {attachedAgent ? (
             <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
               <p className="text-sm font-semibold text-foreground">{attachedAgent.name}</p>
-              <p className="mt-1 text-xs text-muted-foreground">Attached AI employee</p>
+              <p className="mt-1 text-xs text-muted-foreground">Attached voice agent</p>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-muted-foreground">No AI employee attached yet</p>
+            <p className="mt-4 text-sm text-muted-foreground">No voice agent attached yet</p>
           )}
           {activeNumber ? (
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -204,10 +204,10 @@ export default function PhoneSettings() {
                 }
               >
                 <SelectTrigger
-                  aria-label="Attach AI employee to this number"
+                  aria-label="Attach voice agent to this number"
                   className="h-auto min-w-[180px] rounded-md border border-input bg-muted px-2.5 py-2 text-sm"
                 >
-                  <SelectValue placeholder="Select AI employee" />
+                  <SelectValue placeholder="Select voice agent" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={PHONE_AGENT_UNSET}>Unassigned</SelectItem>
@@ -227,14 +227,14 @@ export default function PhoneSettings() {
               ) : null}
               {agents.length === 0 ? (
                 <Button asChild size="sm">
-                  <Link to="/studio?create=1">Create AI employee</Link>
+                  <Link to="/studio?create=1">Create voice agent</Link>
                 </Button>
               ) : null}
             </div>
           ) : (
             <div className="mt-4">
               <Button asChild size="sm" variant="outline">
-                <Link to="/studio?create=1">Create AI employee first</Link>
+                <Link to="/studio?create=1">Create voice agent first</Link>
               </Button>
             </div>
           )}

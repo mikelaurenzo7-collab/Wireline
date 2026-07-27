@@ -132,8 +132,8 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/AuthPortal.tsx",
     authPortal,
-    /SIGNUP_PLAN_LABELS/,
-    "account entry must display human plan labels",
+    /signupPlanLabel[\s\S]*price_usd_annual[\s\S]*price_usd_monthly/,
+    "account entry must display truthful plan labels for the selected billing interval",
   );
   mustExclude(
     "src/components/AuthPortal.tsx",

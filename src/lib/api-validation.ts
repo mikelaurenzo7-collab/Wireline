@@ -10,11 +10,13 @@ export * from "./api-validation-base";
 /** Founder catalog extension: preserve the complete shared validator and add Starter only. */
 export const signupSchema = baseSignupSchema.extend({
   preferredPlanId: z.enum(["personal", "starter", "team", "business", "enterprise"]).optional(),
+  preferredBillingInterval: z.enum(["month", "year"]).optional(),
 });
 
 export const signupIntentSchema = signupSchema
   .pick({
     preferredPlanId: true,
+    preferredBillingInterval: true,
     signupWedge: true,
     utmSource: true,
     utmMedium: true,
@@ -24,6 +26,7 @@ export const signupIntentSchema = signupSchema
     (value) =>
       Boolean(
         value.preferredPlanId ||
+          value.preferredBillingInterval ||
           value.signupWedge ||
           value.utmSource ||
           value.utmMedium ||

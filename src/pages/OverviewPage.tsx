@@ -572,11 +572,11 @@ export default function OverviewPage() {
   const founderPairHref =
     personalAgents.length === 0 ? "/studio?create=1" : "/studio?create=1&posture=business";
   const founderPairLabel =
-    personalAgents.length === 0 ? "Create personal agent" : "Create AI employee";
+    personalAgents.length === 0 ? "Create personal agent" : "Add business voice agent";
   const founderPairDetail =
     personalAgents.length === 0
       ? "Add a personal Concierge for screening, booking, and private briefings alongside your business coverage."
-      : "Add a business AI employee for customer calls, texts, and follow-up alongside your personal agent.";
+      : "Add a business voice agent for customer calls, texts, and follow-up alongside your personal agent.";
   const primaryAgent = agents[0];
   const hasLiveLine = agents.some((agent) => Boolean(agent.phone_number));
   const hasConversationHistory = recentCalls.length > 0;

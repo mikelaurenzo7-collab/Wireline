@@ -141,6 +141,15 @@ describe("product voice cohesion", () => {
     const compare = read("src/pages/Compare.tsx");
     const privacy = read("src/components/PrivacyPolicyPage.tsx");
     const contactAgents = read("src/data/contact-agents.ts");
+    const publicChangelog = read("src/components/PublicChangelog.tsx");
+    const phoneSettings = read("src/pages/PhoneSettings.tsx");
+    const phoneHistory = read("src/components/PhoneCallHistoryPanel.tsx");
+    const chatgptSubmission = read("chatgpt-app-submission.json");
+    const iosSignIn = read("ios/Wireline/Views/SignInView.swift");
+    const androidApp = read(
+      "android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt",
+    );
+    const stripeCatalog = read("scripts/lib/stripe-founder-catalog.mjs");
 
     expect(landing).toContain("One agent · every channel");
     expect(landing).toContain("Build your AI Voice Agent");
@@ -161,9 +170,27 @@ describe("product voice cohesion", () => {
       ["Wireline", "employees"].join(" "),
       ["Employee", "lines"].join(" "),
       ["every", "employee"].join(" "),
+      ["your", "employee"].join(" "),
+      ["an", "employee"].join(" "),
+      ["employee", "status"].join(" "),
     ];
 
-    for (const source of [landing, trust, footer, about, compare, privacy, contactAgents]) {
+    for (const source of [
+      landing,
+      trust,
+      footer,
+      about,
+      compare,
+      privacy,
+      contactAgents,
+      publicChangelog,
+      phoneSettings,
+      phoneHistory,
+      chatgptSubmission,
+      iosSignIn,
+      androidApp,
+      stripeCatalog,
+    ]) {
       for (const phrase of stalePublicPhrases) {
         expect(source).not.toContain(phrase);
       }

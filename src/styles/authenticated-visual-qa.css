@@ -94,13 +94,13 @@
   }
 }
 
-.wl-overview section[aria-label="Personal AI employees"] .grid > :nth-child(n + 7):not(:last-child),
-.wl-overview section[aria-label="Business AI employees"] .grid > :nth-child(n + 7):not(:last-child) {
+.wl-overview section[aria-label="Personal voice agents"] .grid > :nth-child(n + 7):not(:last-child),
+.wl-overview section[aria-label="Business voice agents"] .grid > :nth-child(n + 7):not(:last-child) {
   display: none;
 }
 
-.wl-overview section[aria-label="Personal AI employees"] .grid > a:not(:last-child),
-.wl-overview section[aria-label="Business AI employees"] .grid > a:not(:last-child) {
+.wl-overview section[aria-label="Personal voice agents"] .grid > a:not(:last-child),
+.wl-overview section[aria-label="Business voice agents"] .grid > a:not(:last-child) {
   border-color: var(--wireline-color-border-default) !important;
   background: color-mix(
     in srgb,

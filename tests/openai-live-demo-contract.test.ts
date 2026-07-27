@@ -33,7 +33,7 @@ describe("OpenAI/Vapi-only demo architecture", () => {
     const service = read("src/lib/voice/openai-live-agent-service.ts");
     const profiles = read("src/routes/grok-live-profile-routes.ts");
     expect(service).toContain('phoneDemoProvider: "vapi"');
-    expect(profiles).toContain("Vapi voice library");
+    expect(profiles).toContain("Vapi-supported streaming voice-library workflow");
     expect(profiles).not.toContain("grokVoiceId");
   });
 

@@ -92,8 +92,11 @@ router.get(
   async (req: express.Request, res: express.Response) => {
     const { code, state, shop, error } = req.query;
     if (error) {
-      log.warn("Shopify OAuth error from provider", { error });
-      return res.status(400).send(`Shopify OAuth error: ${error}`);
+      log.warn("Shopify OAuth authorization was not completed");
+      return res
+        .status(400)
+        .type("text/plain")
+        .send("Shopify authorization was not completed. Please restart the connection.");
     }
 
     // Verify the HMAC signature BEFORE trusting any other query value —

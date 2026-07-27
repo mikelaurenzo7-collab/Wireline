@@ -400,10 +400,10 @@ export default function CompanyIdentityPack() {
               Company identity pack
             </p>
             <h2 id="company-identity-title" className="mt-2 text-xl font-semibold text-foreground">
-              Brand the employee, not just the workspace.
+              Brand the voice agent, not just the workspace.
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-              Prepare one verified company identity for the employee's dedicated number, SMS sender,
+              Prepare one verified company identity for the voice agent's dedicated number, SMS sender,
               and email sender. Provider approval and recipient-device display remain external
               states.
             </p>

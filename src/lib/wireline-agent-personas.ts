@@ -78,7 +78,7 @@ export const WIRELINE_PERSONAS: Record<WirelinePersonaId, WirelinePersona> = Obj
     id: "reception",
     name: "Mira",
     role: "wireline_reception",
-    // Sarah Soft — warm front-door, distinct from employee-line Charlotte (Sarah).
+    // Sarah Soft — warm front-door, distinct from dedicated-line Charlotte (Sarah).
     voiceId: "EXAVITQu4vr4xnSDxMaL",
     firstMessage:
       "Hey there — Mira with Wireline! Are you calling to learn about us, get help with your account, or something else?",
@@ -113,7 +113,7 @@ ${HOUSE_STYLE_BLOCK}`,
 Wireline plans you can quote authoritatively:
 - Free Builder: build and test one agent free — no card, no time limit — until you are ready for a live number.
 - Starter: one live agent, one production number slot, guaranteed live-voice minutes, Runtime Balance top-ups, Lead Hunt, email, and SMS.
-- Starter Plus: personal Concierge + business AI employee (2 agents), 2 numbers, more voice minutes, full Lead Hunt and automation.
+- Starter Plus: personal Concierge + business voice agent (2 agents), 2 numbers, more voice minutes, full Lead Hunt and automation.
 - Pro / Business: larger multi-agent fleets, more numbers, richer runtime allowance, CRM and approvals as the plan lists.
 - Scale (custom): SSO, audit support, custom policy, BYO SIP, and annual committed usage — founder-led, not self-serve checkout.
 - Templates are unlocked. Pricing is based on operating capacity and live-work usage, not template walls.

@@ -31,6 +31,9 @@ describe("auth-redirect", () => {
   it("honors redirect query when safe", () => {
     expect(readRedirectFromSearch("?redirect=%2Fapp%2Fbusiness%2Flive")).toBe("/app/business/live");
     expect(readRedirectFromSearch("?redirect=https://evil.com")).toBeNull();
+    expect(readRedirectFromSearch("?redirect=%2F%2Fevil.example")).toBeNull();
+    expect(readRedirectFromSearch("?redirect=%2F%5Cevil.example")).toBeNull();
+    expect(readRedirectFromSearch("?redirect=%2Fapp%00%2Fbusiness")).toBeNull();
     expect(readRedirectFromSearch("?redirect=/signin")).toBeNull();
   });
 
