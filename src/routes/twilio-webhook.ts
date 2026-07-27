@@ -5,6 +5,7 @@ import * as schema from "../db/schema";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
+import { clearDncFailsafe, recordDncFailsafe } from "../lib/dnc-failsafe";
 import { reportError } from "../lib/error-reporter";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { claimTwilioUsageAlert } from "../lib/twilio-usage-alert-idempotency";
@@ -96,6 +97,11 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
               ),
             ),
           );
+
+        // A prior Postgres outage may have written the STOP only to the shared
+        // emergency ledger. Do not confirm resubscribe until that block clears.
+        const failsafeCleared = await clearDncFailsafe(userId, customerNumber);
+        if (!failsafeCleared) throw new Error("DNC_FAILSAFE_CLEAR_FAILED");
       }
 
       await drizzle.insert(schema.consentLog).values({
@@ -117,26 +123,37 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
               : "unchanged",
       });
     } catch (error) {
+      let failsafeStored = false;
+      if (optOutType === "STOP") {
+        // Advanced Opt-Out protects future messages at Twilio, but Wireline's
+        // own DNC gate protects voice. Preserve that voice block independently
+        // when the canonical Postgres row cannot be written.
+        failsafeStored = await recordDncFailsafe(userId, customerNumber);
+      }
+
       log.error("Twilio opt-out persistence failed", {
         userId,
         optOutType: optOutType || "LEGACY_START",
+        failsafeStored,
         error: getErrorMessage(error),
       });
-      // STOP: Twilio Advanced Opt-Out already suppressed the number at the
-      // carrier level, but the DNC row that gates outbound VOICE never landed
-      // — page ops instead of dropping the failure on the floor.
+      // STOP: Twilio Advanced Opt-Out already suppressed the number for
+      // messaging. The Redis failsafe keeps outbound voice blocked until the
+      // canonical DNC row is repaired. If both stores fail, return 503 so any
+      // configured Twilio 5xx retry policy can redeliver the event.
       if (optOutType === "STOP") {
         reportError(error instanceof Error ? error : new Error(getErrorMessage(error)), {
           route: "/api/twilio-webhook/sms",
           flow: "twilio_advanced_opt_out",
           tenant: userId,
+          failsafeStored,
         });
       }
       res.setHeader("Content-Type", "text/xml");
-      // Never confirm a resubscribe whose delete failed — the DNC rows are
-      // still blocking outbound and "Welcome back" would be false.
+      // Never confirm a resubscribe whose delete or failsafe clear failed — the
+      // DNC controls are still blocking outbound and "Welcome back" would be false.
       return res
-        .status(200)
+        .status(optOutType === "STOP" && !failsafeStored ? 503 : 200)
         .send(
           legacyOptIn
             ? `<?xml version="1.0" encoding="UTF-8"?><Response><Message>We couldn't process your resubscribe request just now. Please reply START again in a few minutes.</Message></Response>`

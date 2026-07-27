@@ -32,10 +32,10 @@ const SECTIONS = [
     icon: Lock,
     title: "Encryption — everywhere",
     items: [
-      "TLS 1.3 enforced on every public endpoint. HSTS preload-eligible.",
-      "Passwords hashed with scrypt (N=16384, r=8, p=1) + per-user salt. Never stored in plaintext, never logged.",
-      "Password-reset + email-verification tokens stored as SHA-256 hashes; plaintext exists only inside the email link.",
-      "Session JWTs signed HS256 with a 256-bit rotated secret, delivered in an httpOnly SameSite=Lax cookie (2h TTL). Mutating API calls are Origin-checked; cross-site form posts cannot ride the session.",
+      "HTTPS is enforced on public endpoints. HSTS is configured with includeSubDomains and preload.",
+      "Passwords are hashed with Node.js scrypt and a random per-user salt. They are never stored in plaintext.",
+      "Password-reset + email-verification tokens are stored as SHA-256 hashes; plaintext exists only inside the email link.",
+      "Session JWTs are signed HS256 with a server-held secret and delivered in an httpOnly SameSite=Lax cookie (2h TTL). Mutating API calls are Origin-checked; cross-site form posts cannot ride the session.",
     ],
   },
   {
@@ -52,26 +52,26 @@ const SECTIONS = [
     icon: KeyRound,
     title: "Webhook signature verification",
     items: [
-      "Every inbound webhook — voice, messaging, and billing — is verified with HMAC + timingSafeEqual.",
-      "Failed signatures return 401 and log the IP. Replay attacks return 401 (timestamp tolerance enforced).",
-      "Outbound webhooks (when added) sign with the same primitives. No shared secrets in URLs.",
+      "Inbound webhook paths use provider-appropriate signatures or timing-safe shared-secret verification.",
+      "Invalid signatures are rejected; timestamped HMAC paths enforce a five-minute replay window.",
+      "Outbound webhooks are signed before delivery. Shared secrets are not placed in URLs.",
     ],
   },
   {
     icon: Eye,
     title: "What we do — and don't — store",
     items: [
-      "Call transcripts: stored encrypted at rest, retention configurable per tenant (default 90 days).",
-      "Audio recordings: stored only when the tenant explicitly opts in. Default OFF.",
-      "Credit card numbers: never stored, never logged, never even read by our servers. PCI scope reduced via Stripe Elements.",
-      "PHI (in HIPAA mode): never logged. Probing/debugging endpoints are PHI-aware and redact before display.",
+      "Call transcripts are stored in the managed database with configurable retention per tenant (default 90 days).",
+      "Audio recordings are stored only when the tenant explicitly opts in. Default OFF.",
+      "Credit card numbers are never stored, logged, or read by Wireline servers. PCI scope is reduced through Stripe Checkout.",
+      "HIPAA-style runtime controls minimize PHI exposure in logs and restrict sensitive exports; PHI workflows require the Enterprise BAA path.",
     ],
   },
   {
     icon: HeartPulse,
     title: "HIPAA — controls implemented",
     items: [
-      "Per-agent compliance_mode = 'hipaa' switches the runtime into PHI-aware behavior (no verification of identity in chat, no PHI in logs, default-deny on data export).",
+      "Per-agent compliance_mode = 'hipaa' switches the runtime into PHI-aware behavior and tighter data-handling defaults.",
       "BAA available on Enterprise onboarding only; Pro can use HIPAA-style guardrails, but PHI workflows require the Enterprise BAA path.",
       "Audit: SOC 2 Type II certification is on the 2026 Q4 roadmap. Until then, controls are implemented but not externally attested — we'd rather be honest about that than badge it.",
     ],
@@ -80,7 +80,7 @@ const SECTIONS = [
     icon: CreditCard,
     title: "PCI DSS — out of scope",
     items: [
-      "Wireline never touches card data. Payments are processed via Stripe with PCI-DSS Level 1 scope reduction (Stripe Elements + Checkout).",
+      "Wireline never touches card data. Payments are processed through Stripe Checkout with PCI scope reduction.",
       "We hold tokenized customer references only.",
     ],
   },
@@ -88,7 +88,7 @@ const SECTIONS = [
     icon: Globe2,
     title: "GDPR + CCPA",
     items: [
-      "Right-to-erasure cascade-deletes every row tied to a user (agents, calls, knowledge, audit log).",
+      "Right-to-erasure uses a server-owned deletion workflow for user-owned product data.",
       "Data Processing Addendum available on request.",
       "Data residency: today, US-East. EU residency on the 2026 roadmap.",
     ],
@@ -97,10 +97,10 @@ const SECTIONS = [
     icon: ServerCog,
     title: "Operational security",
     items: [
-      "Rate limiting on every public endpoint (signup, login, OAuth callbacks, webhooks).",
-      "Idempotent database migrations — every schema change uses ADD COLUMN IF NOT EXISTS / CREATE TABLE IF NOT EXISTS.",
-      "Public health probe at /status — uptime, per-tier model availability, cached 60 s. No private model names leaked.",
-      "Every LLM call records (provider, model, tokens, cost, latency) into an immutable audit log.",
+      "High-risk authentication and public API paths use rate limiting; signed webhook paths fail closed when verification is unavailable.",
+      "Database migrations are versioned, reviewed, and applied through the deployment pipeline.",
+      "Public health probe at /status reports service posture without exposing private provider credentials.",
+      "Runtime usage and reliability events record provider, model, token, cost, and latency data where the provider returns it.",
     ],
   },
   {
@@ -108,8 +108,8 @@ const SECTIONS = [
     title: "Database posture",
     items: [
       "Postgres on Supabase (US-East). Tenant isolation uses SET LOCAL ROLE wireline_server with per-request app.current_user_id RLS policies on tenant tables.",
-      "Foreign keys CASCADE delete from user → all downstream rows in one transaction.",
-      "Nightly snapshots; point-in-time recovery within 24 h. Tested quarterly.",
+      "Foreign-key and server-owned deletion paths remove user-owned downstream data.",
+      "Backup and point-in-time recovery availability follow the active Supabase plan; recovery drills remain an operational responsibility.",
     ],
   },
   {
@@ -128,9 +128,9 @@ const TRUST_PACK_SECTIONS = [
     icon: ShieldCheck,
     title: "Tenant isolation",
     items: [
-      "Every read and write is scoped to the authenticated account via server-side tenant context — not client-side filters.",
+      "Authenticated product reads and writes are scoped through server-owned tenant context rather than client-supplied filters alone.",
       "Provider credentials, OAuth tokens, and billing authority never ship to browsers or mobile clients.",
-      "Cross-tenant access attempts are rejected at the API boundary and logged for review.",
+      "Cross-tenant access is rejected by route ownership checks and database isolation controls.",
     ],
   },
   {
@@ -157,7 +157,7 @@ const TRUST_PACK_SECTIONS = [
     items: [
       "Outbound calls require consent checks before dial — marketing calls respect do-not-call posture.",
       "Tenant DNC lists are enforced before expensive PSTN actions.",
-      "Marketing and campaign outbound stay blocked until Wireline finishes federal DNC setup for the platform. Studio non-marketing dials still use your tenant DNC list and TCPA consent checks.",
+      "Marketing and campaign outbound fail closed and stay blocked until Wireline finishes federal DNC setup for the platform. Studio non-marketing dials still use your tenant DNC list and TCPA consent checks.",
     ],
   },
   {
@@ -173,8 +173,8 @@ const TRUST_PACK_SECTIONS = [
     icon: Eye,
     title: "Account deletion & data rights",
     items: [
-      "Self-serve account deletion cascades user-owned rows (agents, calls, knowledge, audit events) in one server workflow.",
-      "GDPR/CCPA erasure requests follow the same cascade — email security@trywireline.com for DPA copies.",
+      "Self-serve account deletion runs a server-owned workflow over user-owned product data.",
+      "GDPR/CCPA erasure requests follow the same workflow — email security@trywireline.com for DPA copies.",
       "Transcript and recording retention honor per-tenant settings; recording defaults to off.",
     ],
   },
@@ -192,8 +192,8 @@ const TRUST_PACK_SECTIONS = [
 
 const SECURITY_SUMMARY = [
   ["Runtime", "Encrypted transport, webhook verification, fallback voice, public probes."],
-  ["Data", "Tenant-scoped access, encrypted transcripts, opt-in recordings, deletion."],
-  ["Compliance", "TCPA/DNC controls, HIPAA guardrails, SOC 2 roadmap without fake badges."],
+  ["Data", "Tenant-scoped access, opt-in recordings, retention, deletion."],
+  ["Compliance", "TCPA/DNC controls, HIPAA-style guardrails, no unearned badges."],
   ["Billing", "Stripe card handling, prepaid Runtime Balance, spend controls."],
 ] as const;
 

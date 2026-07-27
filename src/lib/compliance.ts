@@ -7,6 +7,7 @@
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, inArray } from "drizzle-orm";
+import { isDncFailsafeBlocked } from "./dnc-failsafe";
 
 // Normalize a phone number to digits only. This is the canonical form new DNC
 // rows are written in; keep it the single normalizer for every write site.
@@ -42,6 +43,10 @@ export function dncPhoneCandidates(raw: string): string[] {
  * Check whether a phone number is on the DNC list for a given user.
  * Returns true if the call should be blocked. Matches every stored variant so
  * an SMS "STOP" opt-out (saved "+"-prefixed) still suppresses outbound calls.
+ *
+ * The Redis failsafe covers the narrow disaster window where Twilio has accepted
+ * a STOP but Postgres could not persist the corresponding voice-suppression row.
+ * Production fails closed if that shared compliance ledger cannot be checked.
  */
 export async function isDncBlocked(userId: string, phone: string): Promise<boolean> {
   const candidates = dncPhoneCandidates(phone);
@@ -51,5 +56,6 @@ export async function isDncBlocked(userId: string, phone: string): Promise<boole
     .from(schema.dncList)
     .where(and(eq(schema.dncList.userId, userId), inArray(schema.dncList.phone, candidates)))
     .limit(1);
-  return !!data;
+  if (data) return true;
+  return isDncFailsafeBlocked(userId, phone);
 }

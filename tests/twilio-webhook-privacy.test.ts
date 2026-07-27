@@ -69,4 +69,18 @@ describe("Twilio webhook privacy hardening", () => {
     expect(route).toContain("body_length: body.length");
     expect(route).toContain("message_sid_suffix: opaqueIdSuffixForLog(messageSid)");
   });
+
+  it("preserves an SMS STOP as a voice DNC block when Postgres is unavailable", () => {
+    const route = read("src/routes/twilio-webhook.ts");
+    const compliance = read("src/lib/compliance.ts");
+    const failsafe = read("src/lib/dnc-failsafe.ts");
+
+    expect(route).toContain("recordDncFailsafe(userId, customerNumber)");
+    expect(route).toContain('status(optOutType === "STOP" && !failsafeStored ? 503 : 200)');
+    expect(route).toContain("clearDncFailsafe(userId, customerNumber)");
+    expect(compliance).toContain("return isDncFailsafeBlocked(userId, phone)");
+    expect(failsafe).toContain('createHash("sha256")');
+    expect(failsafe).toContain('throw new Error("DNC_FAILSAFE_UNAVAILABLE")');
+    expect(failsafe).not.toContain("KEY_TTL_SECONDS");
+  });
 });

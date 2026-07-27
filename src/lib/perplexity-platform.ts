@@ -38,6 +38,9 @@ const AGENT_MODEL = process.env.PERPLEXITY_AGENT_MODEL?.trim() || "";
 const EMBEDDINGS_URL = process.env.PERPLEXITY_EMBEDDINGS_API_URL?.trim() || "";
 const EMBEDDINGS_MODEL = process.env.PERPLEXITY_EMBEDDINGS_MODEL?.trim() || "";
 
+// LIVE_RESEARCH_TIMEOUT_MS limits one public-research vendor request. The 8_000
+// millisecond default is NOT a call-duration or billing cap; active PSTN calls
+// follow the independent completion-grace and Runtime Balance policy.
 const DEFAULT_TIMEOUT_MS = Number(process.env.LIVE_RESEARCH_TIMEOUT_MS || 8_000);
 const MAX_SEARCH_RESULTS = 8;
 const MAX_QUERY_CHARS = 600;
