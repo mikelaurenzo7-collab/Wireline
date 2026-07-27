@@ -36,7 +36,9 @@ describe("E2E cleanliness contracts", () => {
     expect(portal).toContain('router.post(\n  "/api/billing/portal"');
     expect(portal).toContain("stripe.billingPortal.configurations.create");
     expect(portal).toContain("stripe.billingPortal.sessions.create");
-    expect(portal).toContain("MANAGED_PORTAL_IDEMPOTENCY_KEY");
+    expect(portal).toContain(
+      "wireline-managed-customer-portal-${FOUNDER_CATALOG_VERSION}-${fingerprint}",
+    );
     expect(portal).toContain("FOUNDER_CATALOG_VERSION");
     expect(portal).toContain("return_url: `${appUrl.url}/settings/billing`");
     expect(billingRoutes).not.toContain('router.post(\n  "/billing/portal"');
