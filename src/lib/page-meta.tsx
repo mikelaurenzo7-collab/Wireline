@@ -9,12 +9,12 @@ interface PageMetaProps {
   structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
-const BRAND_SUFFIX = " - Wireline";
+const BRAND_SUFFIX = " | Wireline";
 const SITE_URL = "https://trywireline.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
-const DEFAULT_TITLE = "Wireline - AI Voice Agents for Personal & Business";
+const DEFAULT_TITLE = "Wireline | AI voice agents that get work done";
 const DEFAULT_DESCRIPTION =
-  "Build one AI voice agent—or a coordinated team—for personal tasks and business conversations, with follow-through across voice, SMS, and email.";
+  "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.";
 
 function setMeta(attr: "name" | "property", key: string, content: string | null) {
   const selector = `meta[${attr}="${key}"]`;
@@ -76,7 +76,7 @@ export function PageMeta({
     : DEFAULT_TITLE;
   const resolvedDescription = description || DEFAULT_DESCRIPTION;
   const canonicalUrl = path ? `${SITE_URL}${path}` : undefined;
-  // Social scrapers require an absolute og:image — absolutize any relative path.
+  // Social scrapers require an absolute og:image, so absolutize relative paths.
   const ogImage = image
     ? /^https?:\/\//i.test(image)
       ? image
