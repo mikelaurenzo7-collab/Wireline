@@ -12,7 +12,7 @@ export const CONTACT_AGENT_TINTS = {
  * Single source of truth for public showcase phone lines.
  *
  * Layout:
- *   - 2 Wireline employees (Sarah, Liam) — real CS/sales lines with owner
+ *   - 2 Wireline specialists (Sarah, Liam) — real CS/sales lines with owner
  *     escalation tools. Used in /help + /support, NOT on the landing page.
  *   - 7 vertical / skill demos — role-play showcases with NO owner escalation.
  *     Jordan + Jake are the two primary landing-page demos (inbound CS +
@@ -20,10 +20,10 @@ export const CONTACT_AGENT_TINTS = {
  *
  * Used in:
  *   1. Landing page — LANDING_PUBLIC_DEMO_AGENTS only (demo lines)
- *   2. In-app /help route — employees + full demo catalog
+ *   2. In-app /help route — specialists + full demo catalog
  *   3. /api/admin/sync-vapi-knowledge — PATCHes each Vapi assistant prompt
  *
- * Employee lines can escalate via `escalate_to_human`. Demo lines cannot.
+ * Specialist lines can escalate via `escalate_to_human`. Demo lines cannot.
  *
  * Voice design: every agent uses a curated Vapi managed voice (V2 roster)
  * so prospects hear a varied, role-authentic team — not the same voice on
@@ -59,8 +59,8 @@ export type ContactAgent = {
 };
 
 /**
- * The 2 Wireline employees. All on (630) numbers for company
- * uniformity. Each is a FULL GENERALIST — every employee can handle
+ * The 2 Wireline specialists. All on (630) numbers for company
+ * uniformity. Each is a FULL GENERALIST — every specialist can handle
  * every kind of Wireline call: support, pricing, billing, technical,
  * onboarding, success. They can also sign a caller up for a Wireline
  * account on the spot. No call ever needs to be "transferred to the
@@ -74,7 +74,7 @@ const ALL_ENCOMPASSING_SCOPE =
   "CRM sync), onboarding, and customer success. Can email a sign-up link, email " +
   "a payment/checkout link, AND create a Wireline account for the caller right " +
   "on the call if they want to sign up by phone. Never says 'let me transfer you " +
-  "to the right department' — every employee can do it all.";
+  "to the right department' — each specialist can do it all.";
 
 const ALL_ENCOMPASSING_HANDLES =
   "general, how-to, account, pricing, plans, demo, billing, invoice, refund, " +
@@ -226,7 +226,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
   },
 ];
 
-/** Real employee line for /support and Account Holder-facing help — not landing CTAs. */
+/** Real specialist line for /support and Account Holder-facing help — not landing CTAs. */
 export const WIRELINE_FEATURED_TEAM_AGENT = WIRELINE_CONTACT_AGENTS[0]!;
 
 /** Primary public demos on the landing page — no owner escalation. */
@@ -235,7 +235,7 @@ export const LANDING_PUBLIC_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
   WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jake")!,
 ];
 
-/** All public lines — employees + demos. Used for catalog invariants. */
+/** All public lines — specialists + demos. Used for catalog invariants. */
 export const ALL_SHOWCASE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
   ...WIRELINE_CONTACT_AGENTS,
   ...WIRELINE_DEMO_AGENTS,
