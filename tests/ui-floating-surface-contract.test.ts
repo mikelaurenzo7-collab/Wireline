@@ -67,6 +67,17 @@ describe("Wireline floating surface design contract", () => {
     expect(select).toContain("max-w-[calc(100vw-1.5rem)]");
   });
 
+  it("portals tooltips so workspace overflow cannot clip contextual help", () => {
+    const tooltip = read("src/components/ui/shadcn/Tooltip.tsx");
+
+    expect(tooltip).toContain("TooltipPrimitive.Portal");
+    expect(tooltip).toContain("<TooltipPortal>");
+    expect(tooltip).toContain("collisionPadding={12}");
+    expect(tooltip).toContain("max-w-[min(18rem,calc(100vw-1.5rem))]");
+    expect(tooltip).toContain("text-left");
+    expect(tooltip).toContain("wireline-elevation-md");
+  });
+
   it("keeps shared section headings and actions from competing on narrow screens", () => {
     const sectionHeader = read("src/components/ui/SectionHeader.tsx");
 
