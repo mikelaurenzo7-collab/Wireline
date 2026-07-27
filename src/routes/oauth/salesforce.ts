@@ -58,7 +58,10 @@ router.get(
     const { code, state, error, error_description } = req.query;
     if (error) {
       log.warn("Salesforce OAuth error from provider", { error, error_description });
-      return res.status(400).send(`Salesforce OAuth error: ${error_description}`);
+      return res
+        .status(400)
+        .type("text/plain")
+        .send("Salesforce authorization was not completed. Please restart the connection.");
     }
 
     const vs = await verifyAndClaimOAuthState(state as string | undefined);
