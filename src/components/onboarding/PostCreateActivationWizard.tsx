@@ -438,12 +438,12 @@ export default function PostCreateActivationWizard({
                   <p className="mt-2 text-xs text-muted-foreground">
                     {payload.phoneProvisioned
                       ? "Your line is connected from Fast Start."
-                      : "This number is connected to this AI employee."}
+                      : "This number is connected to this voice agent."}
                   </p>
                 </div>
               ) : (
                 <div className="rounded-xl border border-dashed border-border px-4 py-4 text-sm text-muted-foreground">
-                  No live line yet. Connect one to receive real calls on this AI employee.
+                  No live line yet. Connect one to receive real calls on this voice agent.
                 </div>
               )}
 
