@@ -26,7 +26,7 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 
 const sheetVariants = cva(
-  "fixed z-50 gap-4 overflow-y-auto overscroll-contain bg-background p-6 shadow-[var(--wireline-elevation-lg)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out",
+  "fixed z-50 gap-5 overflow-y-auto overscroll-contain bg-background p-5 shadow-[var(--wireline-elevation-lg)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out sm:p-6",
   {
     variants: {
       side: {
@@ -72,7 +72,7 @@ const SheetContent = React.forwardRef<
       )}
       {children}
       <SheetPrimitive.Close className="absolute right-2 top-2 grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none">
-        <X className="h-4 w-4" />
+        <X className="h-[18px] w-[18px]" aria-hidden="true" />
         <span className="sr-only">Close</span>
       </SheetPrimitive.Close>
     </SheetPrimitive.Content>
@@ -83,7 +83,7 @@ SheetContent.displayName = SheetPrimitive.Content.displayName;
 const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     data-slot="sheet-header"
-    className={cn("flex min-w-0 flex-col space-y-1.5 text-left", className)}
+    className={cn("flex min-w-0 flex-col space-y-2 text-left", className)}
     {...props}
   />
 );
@@ -106,7 +106,7 @@ const SheetTitle = React.forwardRef<
     ref={ref}
     data-slot="sheet-title"
     className={cn(
-      "break-words pr-8 text-left font-[var(--wireline-font-family-display)] text-[1.125rem] font-semibold leading-tight tracking-[-.02em] text-foreground",
+      "break-words pr-14 text-left font-[var(--wireline-font-family-display)] text-xl font-semibold leading-[1.15] tracking-[-.025em] text-foreground",
       className,
     )}
     {...props}
@@ -121,7 +121,7 @@ const SheetDescription = React.forwardRef<
   <SheetPrimitive.Description
     ref={ref}
     data-slot="sheet-description"
-    className={cn("max-w-prose break-words text-left text-sm leading-6 text-muted-foreground", className)}
+    className={cn("max-w-prose break-words text-left text-[15px] leading-6 text-muted-foreground", className)}
     {...props}
   />
 ));
