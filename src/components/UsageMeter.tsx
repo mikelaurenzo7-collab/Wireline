@@ -105,7 +105,7 @@ export default function UsageMeter({
       <div
         className="usage-meter flex items-center gap-2 py-1.5 px-3.5 rounded-full wl-panel-elevated border border-white/8 wl-micro-badge font-mono shadow-sm hover:shadow-brand/10 hover:border-brand/30 transition-all duration-300 cursor-help"
         data-usage-state={usageState}
-        title={compactTitle}
+        title={loadError ? `${compactTitle} (${loadError})` : compactTitle}
       >
         <span className="w-2 h-2 rounded-full animate-pulse wl-accent-dot" data-circular />
         <span className="text-foreground/55 font-semibold tracking-wider">VOICE</span>
@@ -124,6 +124,11 @@ export default function UsageMeter({
       className="usage-meter rounded-md wl-panel-elevated card-interactive-premium p-5 space-y-4"
       data-usage-state={usageState}
     >
+      {loadError ? (
+        <p className="wl-label text-[var(--wireline-color-status-warning)]" role="status">
+          {loadError} Showing last known usage.
+        </p>
+      ) : null}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-md flex items-center justify-center shadow-lg wl-accent-icon-box">

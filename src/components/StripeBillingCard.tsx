@@ -251,6 +251,25 @@ export default function StripeBillingCard() {
     );
   }
 
+  if (error && !stripeConfigured) {
+    return (
+      <div className="wl-paper rounded-md border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] p-8 md:p-10 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 border border-[var(--wireline-color-feedback-error-border)] bg-[color:color-mix(in_srgb,var(--wireline-color-status-error)_14%,transparent)]">
+            <AlertTriangle className="w-5 h-5 text-[var(--wireline-color-status-error)]" />
+          </div>
+          <h3 className="wl-display-mark text-2xl text-foreground">Billing unavailable</h3>
+        </div>
+        <p className="max-w-2xl text-[var(--wireline-typography-caption-size)] text-foreground/75 leading-relaxed">
+          {error}
+        </p>
+        <ShadButton type="button" variant="outline" size="sm" onClick={() => void refresh()}>
+          Retry
+        </ShadButton>
+      </div>
+    );
+  }
+
   if (!stripeConfigured) {
     return (
       <div className="wl-paper rounded-md border border-[var(--wireline-color-feedback-warning-border)] bg-[var(--wireline-color-feedback-warning-surface)] p-8 md:p-10 space-y-4">

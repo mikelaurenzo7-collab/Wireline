@@ -109,21 +109,23 @@ export default function PostCreateActivationWizard({
     [payload.agentId],
   );
 
-  const refreshPhone = useCallback(async () => {
+  const refreshPhone = useCallback(async (): Promise<boolean> => {
     setLoadingPhone(true);
     try {
       const response = await authFetch("/api/phone-numbers");
       if (!response.ok) {
         setWireError("Couldn't refresh phone lines. Retry before provisioning another number.");
-        return;
+        return false;
       }
       const body = await response.json();
       const numbers = Array.isArray(body?.numbers) ? body.numbers : [];
       const match = numbers.find((row: { agent_id?: string }) => row.agent_id === payload.agentId);
       setPhoneNumber(match?.phone_number ?? null);
       setWireError(null);
+      return true;
     } catch {
       setWireError("Couldn't refresh phone lines. Retry before provisioning another number.");
+      return false;
     } finally {
       setLoadingPhone(false);
     }
@@ -179,8 +181,8 @@ export default function PostCreateActivationWizard({
         event: "wire_started",
         agentId: payload.agentId,
       });
-      await refreshPhone();
-      setStep("test");
+      const refreshed = await refreshPhone();
+      if (refreshed) setStep("test");
     } catch {
       setWireError("Could not provision a number.");
     } finally {

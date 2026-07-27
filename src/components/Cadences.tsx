@@ -116,6 +116,7 @@ export default function Cadences() {
   const [runs, setRuns] = useState<CadenceRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState<string | null>(null);
+  const [runsWarning, setRunsWarning] = useState<string | null>(null);
   const [showBuilder, setShowBuilder] = useState(false);
   const [draftName, setDraftName] = useState("");
   const [draftDescription, setDraftDescription] = useState("");
@@ -125,6 +126,7 @@ export default function Cadences() {
   const load = useCallback(async () => {
     setLoading(true);
     setLoadErr(null);
+    setRunsWarning(null);
     try {
       const [cR, rR] = await Promise.all([
         authFetch("/api/cadences"),
@@ -140,7 +142,7 @@ export default function Cadences() {
         setRuns(d.runs || []);
       } else {
         setRuns([]);
-        setLoadErr("Sequences loaded, but recent runs could not be refreshed.");
+        setRunsWarning("Sequences loaded, but recent runs could not be refreshed.");
       }
     } catch (e) {
       logFetchError("Failed to load cadences", e);
@@ -274,6 +276,11 @@ export default function Cadences() {
 
   return (
     <div className="h-full space-y-4 overflow-y-auto px-4 pb-4 pt-4 sm:px-6">
+      {runsWarning ? (
+        <p className="text-sm text-[var(--wireline-color-status-warning)]" role="status">
+          {runsWarning}
+        </p>
+      ) : null}
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="wl-label text-brand mb-1">Outbound · Sequences</p>

@@ -32,8 +32,11 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
     const usage = read("src/components/UsageMeter.tsx");
     const billing = read("src/components/StripeBillingCard.tsx");
     expect(usage).toContain("Voice usage unavailable right now.");
+    expect(usage).toContain("Showing last known usage.");
     expect(billing).toContain("if (!statusRaw.ok || !plansRaw.ok)");
     expect(billing).toContain("Billing details could not be loaded");
+    expect(billing).toContain("if (error && !stripeConfigured)");
+    expect(billing).toContain("Billing unavailable");
   });
 
   it("traps focus in CookieConsent and avoids fake no-line after phone refresh failure", () => {
@@ -44,5 +47,16 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
     expect(wizard).toContain(
       "Couldn't refresh phone lines. Retry before provisioning another number.",
     );
+    expect(wizard).toContain("const refreshed = await refreshPhone()");
+    expect(wizard).toContain('if (refreshed) setStep("test")');
+  });
+
+  it("keeps Call Logs and Cadences usable when secondary fetches fail", () => {
+    const logs = read("src/components/CallLogsClaude.tsx");
+    const cadences = read("src/components/Cadences.tsx");
+    expect(logs).toContain('{activeTab === "floor" ? (');
+    expect(logs).not.toContain('{!error && activeTab === "floor"');
+    expect(cadences).toContain("setRunsWarning(");
+    expect(cadences).toContain("{runsWarning ? (");
   });
 });

@@ -359,12 +359,12 @@ export default function CallLogsClaude() {
         {error ? (
           <div
             role="alert"
-            className="rounded-[10px] border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] px-4 py-3 text-[13px] text-[var(--wireline-color-status-error)]"
+            className="mb-4 rounded-[10px] border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] px-4 py-3 text-[13px] text-[var(--wireline-color-status-error)]"
           >
             {error}
           </div>
         ) : null}
-        {!error && activeTab === "floor" ? (
+        {activeTab === "floor" ? (
           <>
             <LiveFloorPresence signals={presenceSignals} agentNameForId={agentNameForId} />
             <FloorTab
@@ -378,11 +378,9 @@ export default function CallLogsClaude() {
             />
           </>
         ) : null}
-        {!error && activeTab === "intel" ? <IntelTab items={intel} loading={loading} /> : null}
-        {!error && activeTab === "triage" ? (
-          <TriageTab items={escalations} loading={loading} />
-        ) : null}
-        {!error && activeTab === "analytics" ? <AnalyticsTab /> : null}
+        {activeTab === "intel" ? <IntelTab items={intel} loading={loading} /> : null}
+        {activeTab === "triage" ? <TriageTab items={escalations} loading={loading} /> : null}
+        {activeTab === "analytics" ? <AnalyticsTab /> : null}
       </div>
       <OutboundDialDialog open={showOutboundDial} onClose={() => setShowOutboundDial(false)} />
     </div>
