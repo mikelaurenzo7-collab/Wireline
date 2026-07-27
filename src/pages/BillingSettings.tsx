@@ -188,7 +188,7 @@ export default function BillingSettings() {
                   {paidPlan ? (
                     <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
                       <span>
-                        {plan.max_agents} live AI employee{plan.max_agents === 1 ? "" : "s"}
+                        {plan.max_agents} live voice agent{plan.max_agents === 1 ? "" : "s"}
                       </span>
                       <span>
                         {plan.included_phone_numbers} number
@@ -198,7 +198,7 @@ export default function BillingSettings() {
                     </div>
                   ) : (
                     <p className="mt-3 max-w-[60ch] text-sm leading-6 text-muted-foreground">
-                      1 draft AI employee. Choose a paid plan for a live number and paid provider
+                      1 draft voice agent. Choose a paid plan for a live number and paid provider
                       actions.
                     </p>
                   )}
