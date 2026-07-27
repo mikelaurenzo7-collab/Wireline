@@ -59,7 +59,11 @@ router.get(
   async (req: express.Request, res: express.Response) => {
     const { code, state, error: oauthError } = req.query;
     if (oauthError) {
-      return res.status(400).send(`Slack OAuth error: ${oauthError}`);
+      log.warn("Slack OAuth error from provider", { oauthError });
+      return res
+        .status(400)
+        .type("text/plain")
+        .send("Slack authorization was not completed. Please restart the connection.");
     }
     const vs = await verifyAndClaimOAuthState(state as string | undefined);
     if (!vs.ok) {
