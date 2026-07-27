@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -10,6 +11,8 @@ import { generateOAuthState, verifyOAuthState } from "../src/lib/oauth-helpers";
 import {
   createBoundOAuthSignInState,
   isBoundOAuthSignInState,
+  isOAuthBridgeCode,
+  isStoredBridgeStateHashMatch,
   rewriteOAuthCompletionLocation,
 } from "../src/routes/auth-oauth-browser-binding";
 
@@ -17,10 +20,11 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 const originalStateSecret = process.env.OAUTH_STATE_SECRET;
 const originalBridgeSecret = process.env.OAUTH_BRIDGE_SECRET;
+const testBridgeSecret = "wireline-test-oauth-bridge-secret-at-least-32-bytes";
 
 beforeAll(() => {
   process.env.OAUTH_STATE_SECRET = "wireline-test-oauth-state-secret-at-least-32-bytes";
-  process.env.OAUTH_BRIDGE_SECRET = "wireline-test-oauth-bridge-secret-at-least-32-bytes";
+  process.env.OAUTH_BRIDGE_SECRET = testBridgeSecret;
 });
 
 afterAll(() => {
@@ -60,6 +64,25 @@ describe("auth OAuth browser binding contract", () => {
     expect(state).not.toContain(bridgeState);
   });
 
+  it("accepts only the exact one-time bridge code shape", () => {
+    const validCode = "A".repeat(43);
+    expect(isOAuthBridgeCode(validCode)).toBe(true);
+    expect(isOAuthBridgeCode("A".repeat(42))).toBe(false);
+    expect(isOAuthBridgeCode("A".repeat(44))).toBe(false);
+    expect(isOAuthBridgeCode(`${"A".repeat(42)}!`)).toBe(false);
+    expect(isOAuthBridgeCode(null)).toBe(false);
+  });
+
+  it("matches stored bridge hashes without exposing the raw cookie", () => {
+    const bridgeState = "browser-session-a";
+    const storedHash = createHmac("sha256", testBridgeSecret)
+      .update(bridgeState, "utf8")
+      .digest("hex");
+    expect(isStoredBridgeStateHashMatch(storedHash, bridgeState)).toBe(true);
+    expect(isStoredBridgeStateHashMatch(storedHash, "browser-session-b")).toBe(false);
+    expect(isStoredBridgeStateHashMatch(null, bridgeState)).toBe(false);
+  });
+
   it("moves internal completion secrets from query strings into fragments", () => {
     const rewritten = new URL(
       rewriteOAuthCompletionLocation(
@@ -95,6 +118,10 @@ describe("auth OAuth browser binding contract", () => {
     expect(binding).not.toContain("verifyAndClaimOAuthState(state)");
     expect(binding).toContain("protectOAuthCompletionRedirect(res)");
     expect(binding).toContain("clearOAuthBridgeStateCookie(res)");
+    expect(binding).toContain('res.set("Cache-Control", "no-store, max-age=0")');
+    expect(binding).toContain("guardOAuthExchangeBrowserBinding");
+    expect(binding).toContain("gt(schema.oauthPendingCodes.expiresAt, new Date())");
+    expect(binding).toContain("wrong-cookie request must never consume");
 
     const callbacks = read("src/routes/auth-oauth-routes.ts");
     expect(callbacks.match(/verifyAndClaimOAuthState\(state as string \| undefined\)/g)).toHaveLength(
