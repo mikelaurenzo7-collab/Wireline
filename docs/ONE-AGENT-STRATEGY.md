@@ -15,7 +15,7 @@ The product can still start from one capable default agent. The important nuance
 | --- | --- |
 | Broad public marketing | AI Voice Agents |
 | Personal workspace | personal voice agent |
-| Business workspace | AI voice employee / AI employee when context is explicit |
+| Business workspace | business voice agent when context is explicit |
 | Technical code/contracts | agent |
 | Multi-role growth | coordinated AI voice agents, roster, specialists |
 | CTA | Build your AI Voice Agent |
@@ -24,7 +24,7 @@ The product can still start from one capable default agent. The important nuance
 
 - Personal plans are first-class and should not feel like an awkward business employee metaphor.
 - "One agent" is a useful onboarding posture, but "only one agent" is not the product promise.
-- Business customers can still understand the value of an AI employee once the workspace, plan, or role context is explicit.
+- Business customers still get explicit role ownership through business voice-agent language once the workspace, plan, or role context is explicit.
 - AI voice agents better matches the real runtime: voice-first, cross-channel follow-through, trained behavior, included paid-plan numbers, and outcome logging.
 
 ## Launch Copy

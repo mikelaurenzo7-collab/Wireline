@@ -121,17 +121,17 @@ describe("authenticated mobile cleanup", () => {
     const activationWizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
 
     expect(shell).toContain("<WiredEyebrow>{language.plural}</WiredEyebrow>");
-    expect(callLogs).toContain('label: "Employees"');
+    expect(callLogs).toContain('label: "Agents"');
     expect(callLogs).toContain('<Zap className="size-4"');
     expect(callLogs).not.toContain("⚡");
     expect(callLogs).not.toContain("Create first agent");
-    expect(campaigns).toContain('placeholder="Assign AI employee"');
+    expect(campaigns).toContain('placeholder="Assign voice agent"');
     expect(campaigns).toContain('aria-label="Campaign name"');
     expect(campaigns).toContain('aria-label="Sales playbook"');
     expect(callbacks).not.toContain("description=");
-    expect(billing).toContain('"employee" : "employees"');
-    expect(billingSettings).toContain("live AI employee");
-    expect(trialBanner).toContain("keep your AI employees live");
-    expect(activationWizard).toContain("connected to this AI employee");
+    expect(billing).toContain('"voice agent" : "voice agents"');
+    expect(billingSettings).toContain("live voice agent");
+    expect(trialBanner).toContain("keep your AI voice agents live");
+    expect(activationWizard).toContain("connected to this voice agent");
   });
 });

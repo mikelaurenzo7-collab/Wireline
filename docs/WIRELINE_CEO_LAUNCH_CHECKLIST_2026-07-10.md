@@ -15,7 +15,7 @@ Support with:
 
 > Build free. Go live from $19/mo.
 
-Business workspace copy may use "AI employee" when the audience is explicitly business. Broad public surfaces should use "AI Voice Agent" so personal plans and multi-agent growth stay clear.
+Business workspace copy should use "business voice agent" when the audience is explicitly business. Broad public surfaces should use "AI Voice Agent" so personal plans and multi-agent growth stay clear.
 
 ## Go / No-Go
 

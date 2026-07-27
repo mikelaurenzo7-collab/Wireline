@@ -548,7 +548,7 @@ function PlanPicker({
                     <Icon className="w-6 h-6 wl-accent-text" />
                   </div>
                   <span className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
-                    {plan.max_agents} {plan.max_agents === 1 ? "employee" : "employees"}
+                    {plan.max_agents} {plan.max_agents === 1 ? "voice agent" : "voice agents"}
                   </span>
                 </div>
                 <div>
@@ -684,7 +684,7 @@ function ActiveSubCard({
                         : ""
                   }
                 >
-                  {agentCount} / {sub.max_agents} {sub.max_agents === 1 ? "employee" : "employees"}{" "}
+                  {agentCount} / {sub.max_agents} {sub.max_agents === 1 ? "voice agent" : "voice agents"}{" "}
                   in use
                 </span>
               ) : (
@@ -692,7 +692,7 @@ function ActiveSubCard({
               )}
               {sub.max_agents && sub.max_agents > 1 && agentCount >= sub.max_agents - 1 ? (
                 <span className="block mt-1 normal-case tracking-normal text-[var(--wireline-color-status-warning)]">
-                  Near capacity — add an employee from Manage subscription or upgrade your plan.
+                  Near capacity — add a voice agent from Manage subscription or upgrade your plan.
                 </span>
               ) : null}
               {renews && (

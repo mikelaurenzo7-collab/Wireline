@@ -14,7 +14,7 @@ const PAGE_CHROME_MODES = ["standard", "narrow", "operate", "studio"] as const;
 
 const NAV_GROUPS = ["Workspace", "Agents", "Operate"] as const;
 
-const MOBILE_PRIMARY_LABELS = ["Overview", "AI Employee", "Inbox", "Calls", "More"] as const;
+const MOBILE_PRIMARY_LABELS = ["Overview", "Agent Studio", "Inbox", "Calls", "More"] as const;
 
 const MOBILE_MORE_LABELS = [
   "Connections",

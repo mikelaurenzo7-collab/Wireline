@@ -9,7 +9,7 @@ and customer intent:
 
 - **Personal workspace** — the customer creates a **personal agent** for their
   own calls, appointments, follow-up, and personal tasks.
-- **Business workspace** — the customer creates an **AI employee** for a
+- **Business workspace** — the customer creates a **business voice agent** for a
   customer-facing job shared with a team.
 
 The signup question is “How will you use Wireline?”, not a claim that every
@@ -21,10 +21,10 @@ permanent silos; the creation flow can still switch posture deliberately.
 | Surface                                       | Canonical language                                       |
 | --------------------------------------------- | -------------------------------------------------------- |
 | Personal signup/setup                         | `personal agent`, `agent`                                |
-| Business signup/setup                         | `AI employee`, `employee`                                |
-| Broad business marketing                      | `AI employee`                                            |
+| Business signup/setup                         | `business voice agent`, `voice agent`                    |
+| Broad business marketing                      | `AI voice agent`, `business voice agent`                 |
 | Personal marketing                            | `personal agent` or plain-language task copy             |
-| Navigation                                    | `Agent` in Personal; `AI Employee` in Business           |
+| Navigation                                    | `Agent` in Personal; `Voice Agent` in Business           |
 | Technical APIs, routes, DB, events, MCP tools | `agent`                                                  |
 | Internal identifiers                          | Keep `agentId`, `agents`, `/api/agents`, `agent_created` |
 
@@ -43,15 +43,15 @@ The customer-facing noun is resolved by `CUSTOMER_AGENT_LANGUAGE` in
 
 ### Business
 
-- “Build your first AI employee.”
-- “What job should this AI employee own?”
+- “Build your first business voice agent.”
+- “What job should this voice agent own?”
 - “Start with one customer-facing job.”
-- CTA: “Create AI employee”
+- CTA: “Create business voice agent”
 
 ## Avoid
 
 - Bare “employee” before the customer chooses Personal or Business.
-- “Business agent” in customer-facing creation copy.
+- Bare “business agent” without the voice-agent context in customer-facing creation copy.
 - “AI Voice Employee” as a separate product category; voice is one channel.
 - Renaming technical `agent` fields or tool names.
 - Treating Personal and Business as pricing tiers; they are workspace/use-case

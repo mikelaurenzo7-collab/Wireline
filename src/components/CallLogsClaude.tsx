@@ -185,7 +185,7 @@ export default function CallLogsClaude() {
   const agentNameForId = useCallback(
     (agentId: string) => {
       const match = calls.find((call) => call.agent_id === agentId);
-      return match?.agent_name || "AI employee";
+      return match?.agent_name || "AI voice agent";
     },
     [calls],
   );
@@ -281,7 +281,7 @@ export default function CallLogsClaude() {
   const kpis = [
     { label: "Today", value: today.length, accent: "default" as const },
     { label: "Pending", value: intel.length, accent: "default" as const },
-    { label: "Employees", value: fleet, accent: "default" as const },
+    { label: "Agents", value: fleet, accent: "default" as const },
     { label: "Escalations", value: escalations.length, accent: "warning" as const },
   ];
 
@@ -411,7 +411,7 @@ function FloorTab({
         action={
           <div className="mt-5 flex flex-col items-center justify-center gap-2 sm:flex-row">
             <Button asChild size="sm">
-              <Link to="/studio?create=1">Create AI employee</Link>
+              <Link to="/studio?create=1">Create AI voice agent</Link>
             </Button>
             <Button type="button" variant="secondary" size="sm" onClick={onOutboundCall}>
               Place outbound call
@@ -449,7 +449,7 @@ function FloorTab({
               seed={call.agent_name || call.agent_id || "agent"}
               size={40}
               speaking={isLive(call)}
-              title={call.agent_name ? `${call.agent_name} on call` : "AI employee on call"}
+              title={call.agent_name ? `${call.agent_name} on call` : "AI voice agent on call"}
               className="shrink-0"
             />
             <div className="min-w-0 flex-1">

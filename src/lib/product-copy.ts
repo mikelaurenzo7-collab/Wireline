@@ -18,7 +18,7 @@ export const BRAND_SYSTEM = {
     "Treat specialists as optional expansion, not setup homework.",
     "Show logged proof after every call, text, email, handoff, campaign, and follow-up.",
     "Never name the customer-facing role after the platform; Wireline is the platform and the customer owns the agent.",
-    "On broad public surfaces, prefer AI Voice Agent; use personal agent or AI employee only when the audience context is explicit.",
+    "On broad and default product surfaces, prefer AI Voice Agent; use personal voice agent or business voice agent when the audience context is explicit.",
   ],
 } as const;
 
@@ -42,16 +42,16 @@ export const CUSTOMER_AGENT_LANGUAGE = {
     nameLabel: "Agent name",
   },
   business: {
-    singular: "AI voice employee",
-    indefiniteSingular: "an AI voice employee",
-    plural: "AI voice employees",
-    navLabel: "AI Voice Employee",
-    navShort: "Employee",
-    createCta: "Create AI voice employee",
-    setupLabel: "AI voice employee in about a minute",
-    setupPrompt: "What job should this AI voice employee own?",
+    singular: "business voice agent",
+    indefiniteSingular: "a business voice agent",
+    plural: "business voice agents",
+    navLabel: "Voice Agent",
+    navShort: "Agent",
+    createCta: "Create business voice agent",
+    setupLabel: "Business voice agent in about a minute",
+    setupPrompt: "What job should this voice agent own?",
     setupDescription: "Start with one customer-facing job.",
-    nameLabel: "Employee name",
+    nameLabel: "Agent name",
   },
 } as const satisfies Record<
   CustomerAgentPosture,
@@ -174,7 +174,7 @@ export const CLIENT_SURFACE_POSTURE = {
 } as const;
 
 export const BUSINESS_MARKETING_VOICE = {
-  eyebrow: "AI voice employees · business conversations",
+  eyebrow: "AI voice agents · business conversations",
   proof: ["Calls customers", "Texts follow-ups", "Sends email", "Logs outcomes"],
   differentiator:
     "Wireline keeps profit-focused conversations moving across voice, SMS, and email.",
@@ -211,10 +211,10 @@ export const PRODUCT_POSTURE = {
     emptyBody: "Your calls. Your texts. Your email. Your outcomes.",
   },
   business: {
-    badge: "AI voice employee",
+    badge: "Business voice agent",
     badgeShort: "Business",
-    createCta: "Build AI voice employee",
-    emptyTitle: "Your AI voice employee.",
+    createCta: "Build business voice agent",
+    emptyTitle: "Your business voice agent.",
     emptyBody: "Calls, texts, and email handled. Outcomes logged.",
   },
 } as const;

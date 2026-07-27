@@ -121,7 +121,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Switching AI employees should not carry over an expanded list from a
+    // Switching voice agents should not carry over an expanded list from a
     // different (possibly much longer) knowledge base.
     setShowAllKnowledge(false);
   }, [agentId]);
@@ -152,7 +152,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
 
   async function ingest(files: FileList | File[]) {
     if (!agentId) {
-      setError("Choose an AI employee before adding knowledge.");
+      setError("Choose an AI voice agent before adding knowledge.");
       return;
     }
     const list = Array.from(files).slice(0, 5);
