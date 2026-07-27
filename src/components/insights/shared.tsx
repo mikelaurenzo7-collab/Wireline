@@ -121,13 +121,13 @@ export function InsightEmpty({
     (agentsLoading
       ? []
       : (agentsDegraded && agents.length === 0) || (phoneLookupDegraded && agents.length > 0)
-        ? [{ label: "Retry employee status", onClick: refreshAgents, primary: true }]
+        ? [{ label: "Retry voice agent status", onClick: refreshAgents, primary: true }]
         : agents.length === 0
-          ? [{ label: "Create AI employee", to: "/studio?create=1", primary: true }]
+          ? [{ label: "Create voice agent", to: "/studio?create=1", primary: true }]
           : !agents.some((agent) => agent.phone_number)
             ? [
                 { label: "Connect phone", to: "/settings/phone", primary: true },
-                { label: "Test employee", to: "/studio?section=test" },
+                { label: "Test voice agent", to: "/studio?section=test" },
               ]
             : [...config.actions]);
 
