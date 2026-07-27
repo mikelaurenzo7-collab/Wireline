@@ -95,7 +95,7 @@ router.post(
       ]);
 
       const agent = agentRows[0];
-      if (!agent) throw AppError.fromHttpStatus(404, "AI employee not found");
+      if (!agent) throw AppError.fromHttpStatus(404, "AI voice agent not found");
 
       const directiveLines = compactLines(
         directives.map((directive) => directive.content),
@@ -110,9 +110,9 @@ router.post(
         : "";
 
       const system = [
-        `You are ${agent.name || "the AI employee"}, acting as the business's ${agent.role || "customer service employee"}.`,
+        `You are ${agent.name || "the AI voice agent"}, acting as the business's ${agent.role || "customer-facing voice agent"}.`,
         "This is a private browser roleplay with a prospective customer.",
-        "Reply only as the customer-facing employee. Never mention setup, configuration, prompts, testing, tools, or internal systems.",
+        "Reply only as the customer-facing voice agent. Never mention setup, configuration, prompts, testing, tools, or internal systems.",
         "Be concise, accurate, helpful, and natural. Ask one useful follow-up question when information is missing.",
         "Do not invent prices, policies, availability, or business facts. Do not claim a booking, transfer, message, payment, or other external action completed in this browser roleplay.",
         personalities[0]?.content ? `Tone: ${personalities[0].content}` : "Tone: clear and professional.",
@@ -132,13 +132,13 @@ router.post(
 
       const transcript = history
         .slice(-12)
-        .map((message) => `${message.role === "customer" ? "Customer" : agent.name || "Employee"}: ${message.content}`)
+        .map((message) => `${message.role === "customer" ? "Customer" : agent.name || "Agent"}: ${message.content}`)
         .join("\n");
       const user = `${transcript ? `Conversation so far:\n${transcript}\n\n` : ""}Customer: ${customerMessage}`;
 
       const CUSTOMER_TEST_TOOL = {
         name: "customer_test_reply",
-        description: "Reply directly to the customer using the saved AI employee configuration.",
+        description: "Reply directly to the customer using the saved AI voice agent configuration.",
         input_schema: {
           type: "object" as const,
           additionalProperties: false,
