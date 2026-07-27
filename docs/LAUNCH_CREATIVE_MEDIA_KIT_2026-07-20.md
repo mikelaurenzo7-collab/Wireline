@@ -87,7 +87,9 @@ These files were generated for immediate promotional use and live in the cloud-a
 - `wireline-launch-campaign-2026-07-27/social/wireline-social-ai-voice-agents.png`
 - `wireline-launch-campaign-2026-07-27/social/wireline-social-missed-call.png`
 - `wireline-launch-campaign-2026-07-27/ads/wireline-ad-build-free-live-19.png`
+- `wireline-launch-campaign-2026-07-27/ads/wireline-ad-one-agent-every-channel.png`
 - `wireline-launch-campaign-2026-07-27/stories/wireline-story-voice-agent.png`
+- `wireline-launch-campaign-2026-07-27/READY_TO_PASTE_ADS.md` (Meta/LinkedIn/Search/organic copy)
 
 HeyGen:
 

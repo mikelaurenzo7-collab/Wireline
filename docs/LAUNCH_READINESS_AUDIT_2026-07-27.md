@@ -50,12 +50,14 @@ Static assets (usable for Meta/LinkedIn/X upload; not committed to git per `CODE
 - `/opt/cursor/artifacts/wireline-launch-campaign-2026-07-27/social/wireline-social-ai-voice-agents.png` (1:1)
 - `/opt/cursor/artifacts/wireline-launch-campaign-2026-07-27/social/wireline-social-missed-call.png` (1:1)
 - `/opt/cursor/artifacts/wireline-launch-campaign-2026-07-27/ads/wireline-ad-build-free-live-19.png` (16:9)
+- `/opt/cursor/artifacts/wireline-launch-campaign-2026-07-27/ads/wireline-ad-one-agent-every-channel.png` (16:9)
 - `/opt/cursor/artifacts/wireline-launch-campaign-2026-07-27/stories/wireline-story-voice-agent.png` (9:16)
+- `/opt/cursor/artifacts/wireline-launch-campaign-2026-07-27/READY_TO_PASTE_ADS.md`
 
 HeyGen sessions (open in HeyGen to download when complete):
 
-- Landscape: https://app.heygen.com/video-agent/99c98ddc91b84633a6005c8081e870e0 (first attempt failed; retry queued separately if present)
 - Portrait social: https://app.heygen.com/video-agent/0bfcca47221b4484a51fff39d9c7ad8b
+- Landscape: https://app.heygen.com/video-agent/6cbcb77395fa4bb888140131c64b7609
 
 Copy spine remains: **Build free. Go live from $19/mo.** / **Build your AI Voice Agent** — see `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`.
 
