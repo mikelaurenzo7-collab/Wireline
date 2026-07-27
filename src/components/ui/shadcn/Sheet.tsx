@@ -71,7 +71,7 @@ const SheetContent = React.forwardRef<
         />
       )}
       {children}
-      <SheetPrimitive.Close className="absolute right-3 top-3 grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none">
+      <SheetPrimitive.Close className="absolute right-2 top-2 grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </SheetPrimitive.Close>
@@ -106,7 +106,7 @@ const SheetTitle = React.forwardRef<
     ref={ref}
     data-slot="sheet-title"
     className={cn(
-      "break-words text-left font-[var(--wireline-font-family-display)] text-[1.125rem] font-semibold leading-tight tracking-[-.02em] text-foreground",
+      "break-words pr-8 text-left font-[var(--wireline-font-family-display)] text-[1.125rem] font-semibold leading-tight tracking-[-.02em] text-foreground",
       className,
     )}
     {...props}
