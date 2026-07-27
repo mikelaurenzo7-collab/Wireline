@@ -22,6 +22,45 @@ describe("signup intent contract", () => {
     expect(parseSignupIntent("?plan=scale")?.preferredPlanId).toBe("enterprise");
   });
 
+  it("preserves an annual pricing choice through signup and server attribution", () => {
+    expect(parseSignupIntent("?plan=starter&interval=year")).toMatchObject({
+      preferredPlanId: "starter",
+      preferredBillingInterval: "year",
+    });
+    expect(parseSignupIntent("?interval=year")).toMatchObject({
+      preferredBillingInterval: "year",
+    });
+    expect(parseSignupIntent("?plan=starter&interval=weekly")?.preferredBillingInterval).toBe(
+      undefined,
+    );
+
+    const portal = read("src/components/AuthPortal.tsx");
+    expect(portal).toContain("plan.price_usd_annual");
+    expect(portal).toContain(
+      "preferredBillingInterval: attribution.preferredBillingInterval",
+    );
+    expect(portal).toContain(
+      "billing_interval: attribution?.preferredBillingInterval ?? null",
+    );
+
+    const validation = read("src/lib/api-validation.ts");
+    expect(validation).toContain(
+      'preferredBillingInterval: z.enum(["month", "year"]).optional()',
+    );
+
+    const trialGate = read("src/lib/trial-gate.ts");
+    expect(trialGate).toContain(
+      "signupBillingInterval: attribution.preferredBillingInterval || null",
+    );
+
+    const schema = read("src/db/schema.ts");
+    expect(schema).toContain('signupBillingInterval: text("signup_billing_interval")');
+
+    const migration = read("drizzle/migrations/0118_add_signup_billing_interval.sql");
+    expect(migration).toContain("signup_billing_interval");
+    expect(migration).toContain("IN ('month', 'year')");
+  });
+
   it("normalizes stale stored signup intent before it affects onboarding or attribution", () => {
     expect(
       sanitizeSignupIntent({

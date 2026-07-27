@@ -100,19 +100,25 @@ function cleanThrownMessage(e: unknown): string | null {
   return trimmed;
 }
 
-const SIGNUP_PLAN_LABELS = Object.fromEntries(
-  STRIPE_PLANS.map((plan) => [
-    plan.id,
-    plan.price_usd_monthly === 0
-      ? plan.name.replace(/^Wireline /, "")
-      : `${plan.name.replace(/^Wireline /, "")} · $${plan.price_usd_monthly}/month`,
-  ]),
-) as Record<SignupPlanId, string>;
+function signupPlanLabel(
+  planId: SignupPlanId,
+  interval: SignupIntent["preferredBillingInterval"],
+): string {
+  const plan = STRIPE_PLANS.find((candidate) => candidate.id === planId);
+  if (!plan) return planId;
+  const name = plan.name.replace(/^Wireline /, "");
+  if (plan.price_usd_monthly === 0) return name;
+  return interval === "year"
+    ? `${name} · ${plan.price_usd_annual}/year`
+    : `${name} · ${plan.price_usd_monthly}/month`;
+}
 
 function signupIntentLabel(intent: SignupIntent | null): string | null {
   if (!intent?.preferredPlanId && !intent?.signupWedge) return null;
   const parts: string[] = [];
-  if (intent.preferredPlanId) parts.push(SIGNUP_PLAN_LABELS[intent.preferredPlanId]);
+  if (intent.preferredPlanId) {
+    parts.push(signupPlanLabel(intent.preferredPlanId, intent.preferredBillingInterval));
+  }
   if (intent.signupWedge) parts.push(intent.signupWedge.replace(/-/g, " "));
   return parts.join(" · ");
 }
@@ -538,6 +544,7 @@ export default function AuthPortal() {
             metadata: {
               scope: "public_signup_form",
               plan_id: attribution?.preferredPlanId ?? null,
+              billing_interval: attribution?.preferredBillingInterval ?? null,
               wedge: attribution?.signupWedge ?? null,
             },
           });
@@ -552,6 +559,7 @@ export default function AuthPortal() {
             ...(attribution
               ? {
                   preferredPlanId: attribution.preferredPlanId,
+                  preferredBillingInterval: attribution.preferredBillingInterval,
                   signupWedge: attribution.signupWedge,
                   utmSource: attribution.utmSource,
                   utmMedium: attribution.utmMedium,
@@ -587,6 +595,7 @@ export default function AuthPortal() {
             accountId: data.user.id,
             metadata: {
               plan_id: attribution?.preferredPlanId ?? null,
+              billing_interval: attribution?.preferredBillingInterval ?? null,
               wedge: attribution?.signupWedge ?? null,
             },
           });

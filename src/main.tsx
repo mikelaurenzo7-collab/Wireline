@@ -31,6 +31,7 @@ if (typeof window !== "undefined") {
         utm_source: signupIntent.utmSource ?? null,
         utm_medium: signupIntent.utmMedium ?? null,
         utm_campaign: signupIntent.utmCampaign ?? null,
+        billing_interval: signupIntent.preferredBillingInterval ?? null,
         scope: "bootstrap",
       },
     });

@@ -140,6 +140,7 @@ router.post(
         password,
         fullName,
         preferredPlanId,
+        preferredBillingInterval,
         signupWedge,
         utmSource,
         utmMedium,
@@ -162,6 +163,7 @@ router.post(
           if (existing) return { kind: "taken" as const };
           const result = await authService.signUp(email, password, fullName, {
             preferredPlanId,
+            preferredBillingInterval,
             signupWedge,
             utmSource,
             utmMedium,
@@ -186,6 +188,7 @@ router.post(
         userId: result.user.id,
         metadata: {
           plan_id: preferredPlanId ?? null,
+          billing_interval: preferredBillingInterval ?? null,
           wedge: signupWedge ?? null,
           source: "email_password",
         },

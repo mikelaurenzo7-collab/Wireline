@@ -180,6 +180,7 @@ export const settings = pgTable("wireline_settings", {
   brandLogoUrl: text("brand_logo_url"),
   primaryColor: text("primary_color"),
   signupPlanInterest: text("signup_plan_interest"),
+  signupBillingInterval: text("signup_billing_interval"),
   signupWedge: text("signup_wedge"),
   acquisitionSource: text("acquisition_source"),
   acquisitionMedium: text("acquisition_medium"),
