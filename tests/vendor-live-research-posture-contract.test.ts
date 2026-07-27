@@ -19,6 +19,7 @@ describe("vendor live-research and voice posture", () => {
     expect(research).toContain("perplexity_agent");
     expect(research).toContain("researchPerplexity");
     expect(research).not.toMatch(/tavily|serper|bing/i);
+    expect(flags).toContain("perplexityRuntimeAvailable");
     expect(flags).toContain("liveResearch: gemini || perplexity");
     expect(tools).toContain("gemini_ground");
     expect(tools).toMatch(/Perplexity when configured/i);
@@ -27,12 +28,15 @@ describe("vendor live-research and voice posture", () => {
   it("keeps production Perplexity credentials inert on previews unless a dedicated preview key exists", () => {
     const boundary = read("scripts/check-deployment-boundaries.mjs");
     const perplexity = read("src/lib/perplexity-platform.ts");
+    const flags = read("src/lib/platform-integration-flags.ts");
 
     expect(boundary).toContain("reviewedPreviewCredentialKeys");
     expect(boundary).toContain('"PERPLEXITY_API_KEY"');
     expect(boundary).toContain('"PERPLEXITY_PREVIEW_API_KEY"');
     expect(perplexity).toContain('process.env.VERCEL_ENV === "preview"');
     expect(perplexity).toContain("PERPLEXITY_PREVIEW_API_KEY");
+    expect(flags).toContain('process.env.VERCEL_ENV === "preview"');
+    expect(flags).toContain("PERPLEXITY_PREVIEW_API_KEY");
   });
 
   it("keeps live web research under the agent capability toggle", () => {
