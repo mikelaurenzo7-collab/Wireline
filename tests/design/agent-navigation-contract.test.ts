@@ -30,10 +30,10 @@ describe("agent navigation contract", () => {
   const billingPage = read("src/pages/BillingSettings.tsx");
   const teamPage = read("src/pages/TeamSettings.tsx");
 
-  it("uses a plain-language employee IA with secondary tools out of the primary rail", () => {
+  it("uses a plain-language agent IA with secondary tools out of the primary rail", () => {
     const navigation = read("src/constants/navigation.ts");
     expect(navigation).toMatch(/href: "\/overview"[\s\S]*label: "Overview"/);
-    expect(navigation).toMatch(/href: "\/studio"[\s\S]*label: "AI Employee"/);
+    expect(navigation).toMatch(/href: "\/studio"[\s\S]*label: "Agent Studio"/);
     expect(navigation).toMatch(/href: "\/connections"[\s\S]*label: "Connections"/);
     expect(navigation).toMatch(/href: "\/inbox", label: "Inbox"/);
     expect(navigation).toMatch(/href: "\/phone", label: "Calls"/);
@@ -49,7 +49,7 @@ describe("agent navigation contract", () => {
     expect(navigation).toContain('current === "/apps"');
     expect(navigation).toContain('current === "/templates"');
     expect(workspaceShell).toContain("desktopNavParentHref(pathname)");
-    expect(workspaceShell).toMatch(/aria-label="AI employees"/);
+    expect(workspaceShell).toContain("aria-label={language.plural}");
     expect(workspaceShell).toMatch(/\/studio\?create=1/);
     expect(workspaceShell).toMatch(/to="\/settings"[\s\S]*aria-label="Account settings"/);
     expect(appRoutes).toContain('path="/agents"');
@@ -104,7 +104,7 @@ describe("agent navigation contract", () => {
     expect(productCopy).toMatch(/What services do you offer/);
     expect(productCopy).toMatch(/I want to book an appointment/);
     expect(studioWorkroom).toMatch(/allowOutbound/);
-    expect(studioTestRoute).toMatch(/Reply only as the customer-facing employee/);
+    expect(studioTestRoute).toMatch(/Reply only as the customer-facing voice agent/);
     expect(studioTestRoute).toMatch(
       /Never mention setup, configuration, prompts, testing, tools, or internal systems/,
     );
