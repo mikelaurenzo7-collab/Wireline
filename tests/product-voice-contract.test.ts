@@ -6,6 +6,7 @@ import {
   AGENT_NUMBER_PROMISE,
   BRAND_SYSTEM,
   customerAgentLanguage,
+  formatAgentRoleLabel,
   MARKETING_VOICE,
   OUTBOUND_WEDGE,
 } from "../src/lib/product-copy";
@@ -88,6 +89,19 @@ describe("product voice cohesion", () => {
       plural: "business voice agents",
       createCta: "Create business voice agent",
     });
+    expect(formatAgentRoleLabel("ceo")).toBe("Lead Agent");
+
+    const productCopy = read("src/lib/product-copy.ts");
+    const roleDefinitions = read("src/lib/agent-role-definitions.ts");
+    const roleTemplates = read("src/lib/agent-constants.ts");
+    const activationChecklist = read("src/components/ActivationChecklist.tsx");
+
+    expect(roleDefinitions).toContain('label: "Lead Agent"');
+    expect(roleDefinitions).toContain('archetype: "All-Purpose Voice Agent"');
+    expect(activationChecklist).toContain("Your voice agent is live");
+    for (const source of [productCopy, roleDefinitions, roleTemplates, activationChecklist]) {
+      expect(source).not.toMatch(/Best Employee|All-Purpose AI Employee|AI employee|best employee/);
+    }
   });
 
   it("keeps the canonical operating loop across public buying surfaces", () => {
