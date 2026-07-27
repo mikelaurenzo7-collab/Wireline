@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 export const statusNoticeVariants = cva(
-  "flex items-start gap-3 rounded-[var(--wireline-radius-lg)] border px-4 py-3 text-sm text-[var(--wireline-color-text-primary)]",
+  "rounded-[var(--wireline-radius-lg)] border px-4 py-3 text-left text-sm text-[var(--wireline-color-text-primary)]",
   {
     variants: {
       tone: {
@@ -75,14 +75,25 @@ const StatusNotice = React.forwardRef<HTMLDivElement, StatusNoticeProps>(
         className={cn(statusNoticeVariants({ tone: resolvedTone }), className)}
         {...props}
       >
-        {icon ?? defaultIcon(resolvedTone)}
-        <div className="min-w-0 flex-1">
-          {title ? <p className="font-semibold text-foreground">{title}</p> : null}
-          <div className={title ? "mt-1 text-muted-foreground" : "text-muted-foreground"}>
-            {children}
+        <div className="flex min-w-0 items-start gap-3">
+          {icon ?? defaultIcon(resolvedTone)}
+          <div className="min-w-0 flex-1 break-words">
+            {title ? <p className="font-semibold leading-5 text-foreground">{title}</p> : null}
+            <div
+              className={cn(
+                "max-w-prose break-words leading-5 text-muted-foreground",
+                title && "mt-1",
+              )}
+            >
+              {children}
+            </div>
           </div>
         </div>
-        {action ? <div className="shrink-0">{action}</div> : null}
+        {action ? (
+          <div className="mt-3 w-full min-w-0 pl-7 [&>*]:w-full sm:ml-7 sm:w-auto sm:pl-0 sm:[&>*]:w-auto">
+            {action}
+          </div>
+        ) : null}
       </div>
     );
   },
