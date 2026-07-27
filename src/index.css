@@ -99,6 +99,7 @@
 @import "./styles/responsive.css";
 @import "./styles/ruthless-mobile-cleanup.css";
 @import "./styles/agent-tabs-compact.css";
+@import "./styles/modal-hierarchy.css";
 
 body {
   background: var(--wireline-color-canvas-default);
