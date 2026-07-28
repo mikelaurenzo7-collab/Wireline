@@ -27,4 +27,13 @@ describe("live tool result truthfulness", () => {
     });
     expect(output.result).toContain("follow-up task was not confirmed");
   });
+
+  it("does not claim an unavailable lookup was durably noted", () => {
+    const output = enforceAgentToolResultTruth("lookup_phone_number", {
+      toolCallId: "tool-1",
+      result: "I wasn't able to verify that number right now, but I've noted it down.",
+    });
+    expect(output.result).toContain("phone lookup was not confirmed");
+    expect(output.result).toContain("offer a safe manual follow-up");
+  });
 });
