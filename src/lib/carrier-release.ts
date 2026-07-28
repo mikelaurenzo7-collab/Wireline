@@ -79,28 +79,45 @@ export async function releaseCarrierAllocations(
     const vapiNumberId = input.carrierId;
     if (!vapiNumberId) return { ok: false, error: "Vapi number id is missing." };
 
-    let provider: string | null = null;
     if (!adapters.twilioAvailable) {
+      let provider: string | null;
       try {
         provider = (await adapters.inspectVapiProvider(vapiNumberId))?.trim().toLowerCase() || null;
       } catch (error) {
-        if (!isCarrierAlreadyReleasedError(error)) {
-          errors.push(`Vapi provider inspection: ${releaseErrorMessage(error)}`);
-        }
+        if (isCarrierAlreadyReleasedError(error)) return { ok: true };
+        return {
+          ok: false,
+          error: `Vapi provider inspection: ${releaseErrorMessage(error)}`,
+        };
       }
-    }
 
-    await attemptRelease("Vapi release", () => adapters.releaseVapi(vapiNumberId), errors);
+      // A successful inspection with no matching provider means the Vapi object
+      // is already gone. Treat that terminal state like a provider 404.
+      if (!provider) return { ok: true };
 
-    if (adapters.twilioAvailable) {
+      // Keep the Vapi object intact when Twilio cleanup cannot run. Its provider
+      // metadata is the evidence a later retry needs to finish both allocations.
+      if (provider === "twilio") {
+        return {
+          ok: false,
+          error:
+            "Twilio cleanup could not run because the Vapi number is Twilio-managed and the Twilio client is unavailable.",
+        };
+      }
+      if (provider !== "vapi") {
+        return {
+          ok: false,
+          error: `Vapi provider "${provider}" is not recognized; carrier cleanup was not attempted.`,
+        };
+      }
+
+      await attemptRelease("Vapi release", () => adapters.releaseVapi(vapiNumberId), errors);
+    } else {
+      await attemptRelease("Vapi release", () => adapters.releaseVapi(vapiNumberId), errors);
       await attemptRelease(
         "Twilio E.164 release",
         () => adapters.releaseTwilioByE164(input.phoneNumber),
         errors,
-      );
-    } else if (provider !== "vapi") {
-      errors.push(
-        "Twilio cleanup could not be verified because the Twilio client is unavailable and the Vapi number is not confirmed as Vapi-managed.",
       );
     }
   } else if (input.kind === "twilio_sid") {
