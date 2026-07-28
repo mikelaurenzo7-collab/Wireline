@@ -32,8 +32,12 @@ describe("current Vapi assistant payload contract", () => {
         name: "book_appointment",
         parameters: {
           type: "object",
-          properties: { start: { type: "string" } },
-          required: ["start"],
+          properties: {
+            start: { type: "string" },
+            date: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
+            time: { type: "string", pattern: "^(?:[01]\\d|2[0-3]):[0-5]\\d$" },
+            timezone: { type: "string" },
+          },
         },
       },
       messages: [
@@ -46,6 +50,8 @@ describe("current Vapi assistant payload contract", () => {
         { type: "request-failed", content: "I couldn't complete that action just now." },
       ],
     });
+    const required = (tools[0].function.parameters as { required: string[] }).required;
+    expect(required).toEqual(expect.arrayContaining(["start", "date", "time", "timezone"]));
     expect(tools[0].function.description).toContain("Book a time.");
     expect(tools[0].function.description).toContain("check_calendar_availability");
     expect(tools[0].function.description).toContain("result explicitly confirms success");
