@@ -183,7 +183,8 @@ async function finishToolExecution(
  * Deduplicate retried Vapi side-effect calls by call ID + toolCallId + tool name.
  * Read-only tools bypass the ledger. A concurrent duplicate receives an honest
  * in-progress result; a completed duplicate receives the original result without
- * repeating the external action.
+ * repeating the external action. If the ledger itself is unavailable, external
+ * writes fail closed rather than risking an untraceable duplicate.
  */
 export async function runIdempotentAgentToolCall(
   name: string,
@@ -199,12 +200,16 @@ export async function runIdempotentAgentToolCall(
   try {
     claim = await claimToolExecution(name, context, key);
   } catch (error) {
-    context.log.warn("Live tool idempotency claim failed; continuing with direct execution", {
+    context.log.error("Live tool idempotency claim failed; blocking external write", {
       tool: name,
       toolCallId: context.toolCallId,
       error: error instanceof Error ? error.message : String(error),
     });
-    return execute();
+    return {
+      toolCallId: context.toolCallId,
+      result:
+        "I couldn't safely verify whether that action was already processed, so I did not run it again. Be transparent with the caller and offer a manual follow-up.",
+    };
   }
 
   if (claim.kind === "cached") {
