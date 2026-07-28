@@ -31,18 +31,18 @@ describe("repository and documentation organization", () => {
     expect(checker).toContain("links outside the repository");
   });
 
-  it("keeps only narrow tool, compatibility, and surface Markdown exceptions outside docs", () => {
+  it("keeps only narrow tool and surface Markdown exceptions outside docs", () => {
     const docs = read("docs/README.md");
     const checker = read("scripts/check-docs-index.mjs");
 
     expect(docs).toContain("Repository-local Markdown exceptions");
     expect(docs).toContain("[AGENTS.md](../AGENTS.md)");
     expect(docs).toContain("[CLAUDE.md](../CLAUDE.md)");
-    expect(docs).toContain("[DATABASE_SETUP.md](../DATABASE_SETUP.md)");
-    expect(docs).toContain("[DEPLOY.md](../DEPLOY.md)");
     expect(docs).toContain("[apps/browser-extension/README.md](../apps/browser-extension/README.md)");
     expect(docs).toContain("[android/README.md](../android/README.md)");
     expect(docs).toContain("[ios/README.md](../ios/README.md)");
+    expect(docs).not.toContain("DATABASE_SETUP.md");
+    expect(docs).not.toContain("DEPLOY.md");
     expect(docs).not.toContain("SETUP_CHECKLIST.md");
     expect(docs).not.toContain("WIDGET_EXTENSION_PLAN.md");
     expect(docs).not.toContain("EVERYDAY_SHORTCUTS_PLAN.md");
@@ -52,29 +52,33 @@ describe("repository and documentation organization", () => {
     expect(checker).toContain("tracked Markdown without an approved home");
   });
 
-  it("consolidates stale runbooks into canonical docs while retaining narrow compatibility paths", () => {
+  it("consolidates stale runbooks into canonical docs and surface readmes", () => {
     const docs = read("docs/README.md");
-    const databasePointer = read("DATABASE_SETUP.md");
-    const deployPointer = read("DEPLOY.md");
+    const databaseRunbook = read("docs/DATABASE_OPERATIONS.md");
+    const deploymentRunbook = read("docs/DEPLOYMENT_RUNBOOK.md");
     const android = read("android/README.md");
     const ios = read("ios/README.md");
 
-    expect(exists("DATABASE_SETUP.md")).toBe(true);
-    expect(exists("DEPLOY.md")).toBe(true);
-    expect(databasePointer).toContain("docs/DATABASE_OPERATIONS.md");
-    expect(databasePointer).toContain("wireline_server");
-    expect(deployPointer).toContain("docs/DEPLOYMENT_RUNBOOK.md");
-    expect(deployPointer).toContain("Only `revaluate/wireline` may be linked");
+    expect(exists("DATABASE_SETUP.md")).toBe(false);
+    expect(exists("DEPLOY.md")).toBe(false);
+    expect(databaseRunbook).toContain("wireline_server");
+    expect(deploymentRunbook).toContain("Only `revaluate/wireline` may be linked");
     expect(exists("android/SETUP_CHECKLIST.md")).toBe(false);
     expect(exists("ios/SETUP_CHECKLIST.md")).toBe(false);
     expect(exists("ios/APP_STORE_CARPLAY_READINESS.md")).toBe(false);
     expect(exists("ios/EVERYDAY_SHORTCUTS_PLAN.md")).toBe(false);
     expect(exists("ios/WIDGET_EXTENSION_PLAN.md")).toBe(false);
     expect(exists("docs/IOS_APP_STORE_CARPLAY_READINESS.md")).toBe(true);
+    expect(docs).toContain("[DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md)");
+    expect(docs).toContain("[DEPLOYMENT_RUNBOOK.md](./DEPLOYMENT_RUNBOOK.md)");
     expect(docs).toContain(
       "[IOS_APP_STORE_CARPLAY_READINESS.md](./IOS_APP_STORE_CARPLAY_READINESS.md)",
     );
+    expect(android).toContain("August 31, 2026");
+    expect(android).toContain("API 36");
     expect(android).toContain("## Release checklist");
+    expect(ios).toContain("Xcode 26 or newer");
+    expect(ios).toContain("iOS 26 SDK");
     expect(ios).toContain("## Widgets");
     expect(ios).toContain("## Release checklist");
   });
