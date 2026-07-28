@@ -110,15 +110,16 @@ async function persistConsentControl(input: {
       : input.control === "start"
         ? "sms_opt_in"
         : "sms_help";
-  const deliveryIdentity =
-    input.messageSid ||
-    `${input.userId}:${normalizeDncPhone(input.customerNumber)}:${input.control}:${input.bodyKeyword}`;
+  const normalizedCustomerNumber = normalizeDncPhone(input.customerNumber);
+  const stateIdentity = `${input.userId}:${normalizedCustomerNumber}`;
 
   return drizzle.transaction(async (tx: typeof drizzle) => {
-    // The consent ledger has no delivery-ID uniqueness constraint. Serialize
-    // duplicate Twilio deliveries before checking metadata so concurrent retries
-    // cannot append two audit events or repeat a control mutation.
-    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`twilio-consent:${deliveryIdentity}`}))`);
+    // Serialize every consent mutation for the same tenant and consumer. Locking
+    // by MessageSid only deduplicates one delivery; it does not prevent distinct
+    // START and STOP webhooks from committing out of order for the same number.
+    await tx.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtext(${`twilio-consent-state:${stateIdentity}`}))`,
+    );
 
     if (input.messageSid) {
       const [existing] = await tx
@@ -139,7 +140,7 @@ async function persistConsentControl(input: {
         .insert(schema.dncList)
         .values({
           userId: input.userId,
-          phone: normalizeDncPhone(input.customerNumber),
+          phone: normalizedCustomerNumber,
           phoneRaw: input.phoneRaw,
           reason: "opt-out",
           source: input.legacy ? "sms_opt_out" : "twilio_advanced_opt_out",
