@@ -4,10 +4,21 @@ export type VapiFunctionDefinition = {
   parameters?: Record<string, unknown>;
 };
 
-export type VapiToolMessage = {
-  type: "request-start";
-  content: string;
-};
+export type VapiToolMessage =
+  | {
+      type: "request-start";
+      content: string;
+      blocking?: boolean;
+    }
+  | {
+      type: "request-response-delayed";
+      content: string;
+      timingMilliseconds: number;
+    }
+  | {
+      type: "request-failed";
+      content: string;
+    };
 
 export type VapiFunctionTool = {
   type: "function";
@@ -63,6 +74,7 @@ const DESTINATION_CONFIRMATION_TOOLS = new Set([
 
 const MATERIAL_WRITE_TOOLS = new Set([
   "book_appointment",
+  "schedule_callback",
   "create_account",
   "crm_create_opportunity",
   "crm_create_contact",
@@ -82,6 +94,48 @@ const MATERIAL_WRITE_TOOLS = new Set([
   "trigger_enterprise_webhook",
 ]);
 
+const TOOL_PREREQUISITE_GUIDANCE: Readonly<Record<string, string>> = {
+  send_email:
+    "Confirm the recipient address and what the caller wants sent. Never guess an address.",
+  send_text_message:
+    "Use only a caller-approved number and channel. Confirm the destination and requested content.",
+  book_appointment:
+    "Call check_calendar_availability first, then confirm the exact date, time, timezone, attendee name, and service.",
+  schedule_callback:
+    "Confirm the exact callback date, time, timezone, and purpose immediately before scheduling.",
+  add_to_dnc:
+    "Execute immediately when the caller opts out. Do not make them repeat the request or attempt to persuade them to stay subscribed.",
+  create_account:
+    "Confirm the caller's full name and email address, and explain that a secure password-setup email will follow.",
+  send_signup_link: "Confirm the caller's email address before sending the signup link.",
+  send_payment_link:
+    "Confirm the recipient and selected plan or payment purpose before sending the secure link.",
+  send_contract:
+    "Confirm the recipient name, email, and intended agreement. Never infer a template or binding commitment.",
+  shopify_start_return:
+    "Look up the order first, confirm the exact order and return reason, and explain that this opens a request rather than issuing a refund.",
+  shopify_cancel_order:
+    "Look up the order first and confirm the exact order is eligible and the caller explicitly wants it cancelled.",
+  shopify_update_address:
+    "Look up the order first, confirm it has not shipped, and read the complete new address back before saving.",
+  shopify_create_draft_order:
+    "Verify the product or variant, quantity, price, and customer email before creating the draft order.",
+  square_create_payment_link:
+    "Confirm the item or service and exact amount before generating the payment link.",
+  square_send_invoice:
+    "Confirm the customer, line items, amount, and delivery address before sending the invoice.",
+  post_x_tweet:
+    "Publish only after the Account Holder explicitly requests it and confirms the final public text.",
+  reply_to_x_tweet: "Confirm the target post and final public reply before publishing.",
+  repost_x_tweet: "Repost only after an explicit request for that exact post.",
+  send_x_dm: "Confirm the recipient and final private message before sending.",
+  crm_create_opportunity:
+    "Confirm the contact, opportunity name, stage, and any amount before creating the deal.",
+  crm_update_deal_stage: "Confirm the exact deal and intended stage before changing pipeline state.",
+  route_to_business_unit:
+    "Confirm the caller's need and destination, then preserve the reason and relevant context for the receiving team.",
+};
+
 export function vapiToolRequestStartMessage(name: string): string | undefined {
   const exact = TOOL_START_MESSAGES[name];
   if (exact) return exact;
@@ -91,23 +145,41 @@ export function vapiToolRequestStartMessage(name: string): string | undefined {
   return undefined;
 }
 
+export function vapiToolMessages(name: string): VapiToolMessage[] | undefined {
+  const requestStart = vapiToolRequestStartMessage(name);
+  if (!requestStart) return undefined;
+  return [
+    { type: "request-start", content: requestStart },
+    {
+      type: "request-response-delayed",
+      content: "I'm still working on that.",
+      timingMilliseconds: 2_500,
+    },
+    {
+      type: "request-failed",
+      content: "I couldn't complete that action just now.",
+    },
+  ];
+}
+
 export function vapiToolExecutionGuidance(name: string): string | undefined {
-  if (DESTINATION_CONFIRMATION_TOOLS.has(name)) {
-    return "Confirm the destination aloud immediately before calling this tool. Use only caller-approved content. After the result, say the action completed only when the result explicitly confirms success; otherwise state the failure honestly and offer a safe alternative.";
-  }
-  if (MATERIAL_WRITE_TOOLS.has(name)) {
-    return "Immediately before calling this tool, confirm the critical identity, item, amount, date, destination, or requested change with the caller. Never claim completion until the tool result explicitly confirms success.";
-  }
-  if (name === "add_to_dnc") {
-    return "Execute immediately on an opt-out request. Confirm removal only when the result explicitly says the suppression was recorded.";
-  }
-  return undefined;
+  const specific = TOOL_PREREQUISITE_GUIDANCE[name];
+  const completionRule =
+    DESTINATION_CONFIRMATION_TOOLS.has(name) || MATERIAL_WRITE_TOOLS.has(name) || name === "add_to_dnc"
+      ? "After the result, say the action completed only when the result explicitly confirms success. If it fails, times out, or remains uncertain, state that plainly and offer a safe follow-up; never invent queueing or completion."
+      : "";
+  const genericConfirmation =
+    MATERIAL_WRITE_TOOLS.has(name) && !specific
+      ? "Immediately before calling this tool, confirm the critical identity, item, amount, date, destination, or requested change with the caller."
+      : "";
+  const guidance = [specific, genericConfirmation, completionRule].filter(Boolean).join(" ");
+  return guidance || undefined;
 }
 
 function augmentedDescription(name: string, description: string): string {
   const guidance = vapiToolExecutionGuidance(name);
   if (!guidance) return description;
-  return `${description}${description ? " " : ""}${guidance}`.slice(0, 1_000);
+  return `${description}${description ? " " : ""}${guidance}`.slice(0, 1_400);
 }
 
 /** Convert Wireline's role-filtered function definitions to Vapi's current tool DTO. */
@@ -129,7 +201,7 @@ export function toVapiFunctionTools(definitions: readonly object[]): VapiFunctio
       raw.parameters && typeof raw.parameters === "object" && !Array.isArray(raw.parameters)
         ? (raw.parameters as Record<string, unknown>)
         : undefined;
-    const requestStart = vapiToolRequestStartMessage(name);
+    const messages = vapiToolMessages(name);
 
     tools.push({
       type: "function",
@@ -138,11 +210,7 @@ export function toVapiFunctionTools(definitions: readonly object[]): VapiFunctio
         ...(description ? { description } : {}),
         ...(parameters ? { parameters } : {}),
       },
-      ...(requestStart
-        ? {
-            messages: [{ type: "request-start", content: requestStart }],
-          }
-        : {}),
+      ...(messages ? { messages } : {}),
     });
   }
 
