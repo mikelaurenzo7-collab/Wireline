@@ -92,15 +92,17 @@ run("npx", [
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
   "tests/auth-journey-hardening-contract.test.ts",
-  // OAuth state, bridge-code binding, provider identity, and one-check
-  // throttling protect account-session integrity, so every contract runs in
-  // each preview and production-equivalent build.
+  // OAuth state, bridge-code binding, provider identity, key rotation, and
+  // one-check throttling protect account-session integrity in every build.
   "tests/auth-oauth-browser-binding-contract.test.ts",
   "tests/oauth-rate-limit-middleware.test.ts",
   "tests/oauth-provider-identity-integrity-contract.test.ts",
   "tests/yahoo-openid-security.test.ts",
-  // Missing or malformed spend controls are provider-cost integrity failures.
+  "tests/yahoo-jwks-rotation.test.ts",
+  // Missing or malformed spend controls and partial signup bootstrap are
+  // provider-cost and entitlement-integrity failures.
   "tests/spend-guard-integrity-contract.test.ts",
+  "tests/signup-bootstrap-integrity-contract.test.ts",
   "tests/marketing-metadata-contract.test.ts",
   "tests/static-metadata-contract.test.ts",
   "tests/wireline-product-docs.test.ts",
