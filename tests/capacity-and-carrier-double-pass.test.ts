@@ -35,11 +35,20 @@ describe("agent capacity integrity", () => {
       maxAgents: 0,
       extraAgents: 1,
     });
+    const inactive = resolveAgentEntitlement({
+      isOwner: false,
+      subscriptionStatus: "  PAST_DUE  ",
+      planId: "enterprise",
+      maxAgents: 50,
+      extraAgents: 25,
+    });
 
     expect(entitlement.subscriptionStatus).toBe("active");
     expect(entitlement.planAgents).toBe(2);
     expect(entitlement.purchasedExtras).toBe(1);
     expect(entitlement.effectiveCap).toBe(3);
+    expect(inactive.subscriptionStatus).toBe("past_due");
+    expect(inactive.effectiveCap).toBe(1);
   });
 
   it("honors an explicit platform grant only for active or trialing workspaces", () => {
@@ -97,7 +106,10 @@ describe("carrier teardown integration", () => {
     const source = read("src/lib/account-deletion.ts");
     const releaseCall = source.indexOf("releaseTenantNumber(userId, phoneNumber)");
     const failureBranch = source.indexOf("if (res.ok)", releaseCall);
-    const orphanInsert = source.indexOf("INSERT INTO public.wireline_orphan_carrier_resources", failureBranch);
+    const orphanInsert = source.indexOf(
+      "INSERT INTO public.wireline_orphan_carrier_resources",
+      failureBranch,
+    );
 
     expect(releaseCall).toBeGreaterThan(-1);
     expect(failureBranch).toBeGreaterThan(releaseCall);
