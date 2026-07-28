@@ -68,11 +68,18 @@ describe("AI cost-protection contract", () => {
     expect(read("src/routes/openai-realtime-routes.ts")).toContain("simulationMinuteQuota");
   });
 
-  it("deep completion-grace debt routes inbound to a bounded take-a-message assistant", () => {
+  it("deep completion-grace debt routes inbound to a durable bounded take-a-message assistant", () => {
     const webhook = read("src/routes/vapi-v2.ts");
     expect(webhook).toContain("INBOUND_TAKE_MESSAGE_GRACE_USD");
     expect(webhook).toContain("getVoiceWalletSnapshot");
-    const takeMessage = webhook.slice(webhook.indexOf("INBOUND_TAKE_MESSAGE_GRACE_USD"));
-    expect(takeMessage.slice(0, 2000)).toContain("maxDurationSeconds");
+    expect(webhook).toContain("buildDurableTakeMessageAssistant(webhookAgentId, agentVoiceName)");
+
+    const helperStart = webhook.indexOf("function buildDurableTakeMessageAssistant");
+    const routeStart = webhook.indexOf('router.post("/api/vapi-webhook"');
+    const helper = webhook.slice(helperStart, routeStart);
+    expect(helper).toContain("maxDurationSeconds: 300");
+    expect(helper).toContain('name: "create_followup_task"');
+    expect(helper).toContain("Promise follow-up only if the result explicitly confirms creation");
+    expect(helper).not.toContain("book_appointment");
   });
 });
