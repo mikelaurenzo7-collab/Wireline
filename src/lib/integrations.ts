@@ -13,6 +13,8 @@ import {
   normalizeIanaTimeZone,
 } from "./calendar-time";
 
+const MAX_CALENDAR_PAGES = 20;
+
 /**
  * Unified interface for Calendar and Mail integrations.
  */
@@ -398,15 +400,33 @@ export class IntegrationService {
   ): Promise<string[]> {
     const auth = await this.getGoogleClient(account);
     const calendar = google.calendar({ version: "v3", auth });
-    const res = await calendar.events.list({
-      calendarId: "primary",
-      timeMin: start.toISOString(),
-      timeMax: end.toISOString(),
-      timeZone: normalizeIanaTimeZone(timeZone),
-      singleEvents: true,
-      orderBy: "startTime",
-    });
-    return (res.data.items || [])
+    const events: any[] = [];
+    let pageToken: string | undefined;
+    let exhausted = false;
+
+    for (let page = 0; page < MAX_CALENDAR_PAGES; page += 1) {
+      const res = await calendar.events.list({
+        calendarId: "primary",
+        timeMin: start.toISOString(),
+        timeMax: end.toISOString(),
+        timeZone: normalizeIanaTimeZone(timeZone),
+        singleEvents: true,
+        orderBy: "startTime",
+        maxResults: 2_500,
+        ...(pageToken ? { pageToken } : {}),
+      });
+      events.push(...(res.data.items || []));
+      pageToken = res.data.nextPageToken || undefined;
+      if (!pageToken) {
+        exhausted = true;
+        break;
+      }
+    }
+    if (!exhausted) {
+      throw new Error("Google calendar pagination exceeded the safety limit");
+    }
+
+    return events
       .map((event: any) => {
         if (event.start?.date && !event.start?.dateTime) {
           return `All day: ${event.summary || "Busy"}`;
@@ -492,25 +512,47 @@ export class IntegrationService {
       $select: "subject,start,end,isAllDay",
       $orderby: "start/dateTime",
     });
-    const url = `https://graph.microsoft.com/v1.0/me/calendarView?${query.toString()}`;
-    const res = await fetchWithTimeout(
-      url,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Prefer: 'outlook.timezone="UTC"',
+    let nextUrl: string | null = `https://graph.microsoft.com/v1.0/me/calendarView?${query.toString()}`;
+    const events: any[] = [];
+    let exhausted = false;
+
+    for (let page = 0; page < MAX_CALENDAR_PAGES && nextUrl; page += 1) {
+      const parsed = new URL(nextUrl);
+      if (
+        parsed.protocol !== "https:" ||
+        parsed.hostname !== "graph.microsoft.com" ||
+        !parsed.pathname.startsWith("/v1.0/")
+      ) {
+        throw new Error("Microsoft calendar returned an unsafe continuation URL");
+      }
+      const res = await fetchWithTimeout(
+        parsed.toString(),
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Prefer: 'outlook.timezone="UTC"',
+          },
         },
-      },
-      15_000,
-    );
-    // Fail CLOSED: a non-2xx (401/429/503/timeout) must not be read as "no busy slots",
-    // or a booked calendar would be reported free during a live booking call (double-booking).
-    // Throwing here reaches checkAvailability's catch -> "Failed to check calendar availability."
-    if (!res.ok) {
-      throw new Error(`Microsoft calendar list failed: ${res.status}`);
+        15_000,
+      );
+      // Fail CLOSED: a non-2xx (401/429/503/timeout) must not be read as "no busy slots",
+      // or a booked calendar would be reported free during a live booking call (double-booking).
+      if (!res.ok) {
+        throw new Error(`Microsoft calendar list failed: ${res.status}`);
+      }
+      const data = (await res.json()) as any;
+      events.push(...(Array.isArray(data.value) ? data.value : []));
+      nextUrl = typeof data["@odata.nextLink"] === "string" ? data["@odata.nextLink"] : null;
+      if (!nextUrl) {
+        exhausted = true;
+        break;
+      }
     }
-    const data = (await res.json()) as any;
-    return (data.value || [])
+    if (!exhausted) {
+      throw new Error("Microsoft calendar pagination exceeded the safety limit");
+    }
+
+    return events
       .map((event: any) => {
         if (event.isAllDay) return `All day: ${event.subject || "Busy"}`;
         const rawStart = event.start?.dateTime;
@@ -543,6 +585,12 @@ export class IntegrationService {
       },
       15_000,
     );
+    if (!res.ok) {
+      log.warn("Microsoft calendar event creation failed", {
+        userId: this.userId,
+        status: res.status,
+      });
+    }
     return res.ok;
   }
 
