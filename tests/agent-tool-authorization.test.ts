@@ -5,26 +5,10 @@ import { describe, expect, it } from "vitest";
 import {
   CANONICAL_AGENT_TOOL_NAMES,
   isSystemRuntimeTool,
+  NO_TENANT_INTEGRATIONS,
   resolveAuthorizedAgentTools,
   sanitizePersistedAgentToolSelection,
 } from "../src/lib/agent-tool-authorization";
-import type { TenantIntegrationConnections } from "../src/lib/tenant-integration-connections";
-
-const DISCONNECTED: TenantIntegrationConnections = {
-  shopify: false,
-  square: false,
-  slack: false,
-  x: false,
-  microsoft_teams: false,
-  microsoft_excel: false,
-  salesforce: false,
-  hubspot: false,
-  zoom: false,
-  google_calendar: false,
-  microsoft_calendar: false,
-  google_mail: false,
-  microsoft_mail: false,
-};
 
 describe("agent tool execution authorization", () => {
   it("preserves known selections while dropping stale legacy values", () => {
@@ -60,7 +44,7 @@ describe("agent tool execution authorization", () => {
         "shopify_cancel_order",
       ],
       { twilioMessaging: false, twilioLookup: false },
-      DISCONNECTED,
+      NO_TENANT_INTEGRATIONS,
     );
 
     expect(active).toEqual(["send_email"]);
@@ -68,7 +52,11 @@ describe("agent tool execution authorization", () => {
 
   it("keeps explicit empty selections empty instead of expanding the catalog", () => {
     expect(
-      resolveAuthorizedAgentTools([], { twilioMessaging: true, twilioLookup: true }, DISCONNECTED),
+      resolveAuthorizedAgentTools(
+        [],
+        { twilioMessaging: true, twilioLookup: true },
+        NO_TENANT_INTEGRATIONS,
+      ),
     ).toEqual([]);
   });
 
@@ -78,6 +66,20 @@ describe("agent tool execution authorization", () => {
     expect(isSystemRuntimeTool("send_email")).toBe(false);
     expect(isSystemRuntimeTool("book_appointment")).toBe(false);
     expect(isSystemRuntimeTool("create_fleet_task")).toBe(false);
+  });
+
+  it("keeps compliance exceptions independent of integration health after identity verification", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "src/lib/agent-tool-authorization.ts"),
+      "utf8",
+    );
+    const identityCheck = source.indexOf("if (!agentRow) return false");
+    const systemException = source.indexOf("if (isSystemRuntimeTool(name)) return true");
+    const integrationLookup = source.indexOf("loadTenantIntegrationConnections(userId)");
+    expect(identityCheck).toBeGreaterThan(-1);
+    expect(systemException).toBeGreaterThan(identityCheck);
+    expect(integrationLookup).toBeGreaterThan(systemException);
+    expect(source).toContain("return NO_TENANT_INTEGRATIONS");
   });
 
   it("keeps the authorization catalog tied to the canonical tool registry", () => {
