@@ -126,7 +126,9 @@ function callIdFromContext(context: ToolCallContext): string {
   const messageCallId = (context.message.call as { id?: unknown } | undefined)?.id;
   const payloadCallId = (context.payload.call as { id?: unknown } | undefined)?.id;
   const callId = messageCallId || payloadCallId;
-  return typeof callId === "string" && callId.trim() ? callId.trim() : "no-call";
+  return typeof callId === "string" && callId.trim()
+    ? callId.trim()
+    : `tool:${context.toolCallId}`;
 }
 
 function snapshotKey(context: ToolCallContext, agentId: string, userId: string): string {
