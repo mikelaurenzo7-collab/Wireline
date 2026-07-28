@@ -1,54 +1,147 @@
 #!/usr/bin/env node
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
-const docsIndex = readFileSync("docs/README.md", "utf8");
-const required = [
-  "../README.md",
-  "../CODEBASE_HEALTH.md",
-  "../ARCHITECTURE.md",
-  "./CLIENT_SURFACES.md",
-  "./CHATGPT_APP.md",
-  "./business-usage-pricing-decision.md",
-  "./EXCLUDED_SURFACES_AUDIT_2026-07-06.md",
-  "./WIRELINE_LEVEL_UP_MASTER_PLAN.md",
-  "./PRODUCT_SHOWCASE_MATRIX.md",
-  "./TRUST_CONVERSION_PACK.md",
-  "./LAUNCH_READINESS_AND_MARGIN.md",
-];
+const root = process.cwd();
+const canonicalIndexPath = "docs/README.md";
+const auditIndexPath = "docs/AUDIT_INDEX.md";
+const indexPaths = [canonicalIndexPath, auditIndexPath];
 const problems = [];
-for (const link of required) {
-  if (!docsIndex.includes(link)) problems.push(`docs/README.md must link ${link}.`);
+
+const requiredCanonicalLinks = [
+  "README.md",
+  "CONTRIBUTING.md",
+  "CODEBASE_HEALTH.md",
+  "ARCHITECTURE.md",
+  "docs/CUSTOMER_TERMINOLOGY.md",
+  "docs/CLIENT_SURFACES.md",
+  "docs/CHATGPT_APP.md",
+  "docs/business-usage-pricing-decision.md",
+  "docs/BILLING_RUNBOOK.md",
+  "docs/PRODUCT_SHOWCASE_MATRIX.md",
+  "docs/TRUST_CONVERSION_PACK.md",
+  "docs/LAUNCH_READINESS_AND_MARGIN.md",
+  "docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md",
+  "docs/WIRELINE_2026_ROADMAP.md",
+];
+
+function repoPath(absolutePath) {
+  return path.relative(root, absolutePath).replace(/\\/g, "/");
 }
 
-const activeMarkers = ["Status: **Active", "Status: Active", "**Active** —", "source-of-truth"];
-function walk(dir) {
-  const entries = [];
-  for (const item of readdirSync(dir)) {
-    const full = path.join(dir, item);
-    const stat = statSync(full);
-    if (stat.isDirectory()) entries.push(...walk(full));
-    else if (item.endsWith(".md")) entries.push(full);
+function normalizeTarget(sourcePath, rawTarget) {
+  const trimmed = rawTarget.trim().replace(/^<|>$/g, "");
+  if (
+    !trimmed ||
+    trimmed.startsWith("#") ||
+    /^(?:https?:|mailto:|tel:|data:)/i.test(trimmed)
+  ) {
+    return null;
   }
-  return entries;
+
+  // Local documentation links in the indexes do not use Markdown titles. If a
+  // future link needs one, use angle brackets around a path containing spaces.
+  const target = trimmed.split("#", 1)[0].split("?", 1)[0];
+  if (!target.toLowerCase().endsWith(".md")) return null;
+
+  const absolute = path.resolve(path.dirname(path.resolve(root, sourcePath)), target);
+  const relative = repoPath(absolute);
+  if (relative === ".." || relative.startsWith("../")) {
+    problems.push(`${sourcePath} links outside the repository: ${rawTarget}`);
+    return null;
+  }
+  return relative;
 }
 
-for (const file of walk("docs")) {
-  const rel = file.replace(/\\/g, "/");
-  const text = readFileSync(file, "utf8");
-  const header = text.slice(0, 800);
-  const claimsActive = activeMarkers.some((marker) => header.includes(marker));
-  if (claimsActive && rel !== "docs/README.md") {
-    const indexLink = `./${path.relative("docs", rel).replace(/\\/g, "/")}`;
-    if (!docsIndex.includes(indexLink)) {
-      problems.push(`${rel} has active/canonical language but is not linked from docs/README.md.`);
+function collectMarkdownLinks(sourcePath) {
+  const source = readFileSync(path.resolve(root, sourcePath), "utf8");
+  const links = [];
+  const seen = new Set();
+  const markdownLink = /\[[^\]]*\]\(([^)]+)\)/g;
+  let match;
+
+  while ((match = markdownLink.exec(source))) {
+    const target = normalizeTarget(sourcePath, match[1]);
+    if (!target) continue;
+    if (seen.has(target)) {
+      problems.push(`${sourcePath} links ${target} more than once.`);
+      continue;
+    }
+    seen.add(target);
+    links.push(target);
+  }
+
+  return new Set(links);
+}
+
+function walkMarkdown(dir) {
+  const files = [];
+  for (const item of readdirSync(path.resolve(root, dir))) {
+    const relative = path.join(dir, item);
+    const absolute = path.resolve(root, relative);
+    const stat = statSync(absolute);
+    if (stat.isDirectory()) files.push(...walkMarkdown(relative));
+    else if (item.toLowerCase().endsWith(".md")) files.push(relative.replace(/\\/g, "/"));
+  }
+  return files;
+}
+
+for (const indexPath of indexPaths) {
+  if (!existsSync(path.resolve(root, indexPath))) {
+    problems.push(`Missing documentation index: ${indexPath}`);
+  }
+}
+
+if (problems.length === 0) {
+  const canonicalLinks = collectMarkdownLinks(canonicalIndexPath);
+  const auditLinks = collectMarkdownLinks(auditIndexPath);
+
+  for (const target of canonicalLinks) {
+    if (auditLinks.has(target)) {
+      problems.push(`${target} is linked from both documentation indexes.`);
+    }
+  }
+
+  for (const target of new Set([...canonicalLinks, ...auditLinks])) {
+    const absolute = path.resolve(root, target);
+    if (!existsSync(absolute)) {
+      problems.push(`Indexed Markdown target does not exist: ${target}`);
+    } else if (!statSync(absolute).isFile()) {
+      problems.push(`Indexed Markdown target is not a file: ${target}`);
+    }
+  }
+
+  for (const required of requiredCanonicalLinks) {
+    if (!canonicalLinks.has(required)) {
+      problems.push(`${canonicalIndexPath} must link ${required}.`);
+    }
+  }
+
+  if (!canonicalLinks.has(auditIndexPath)) {
+    problems.push(`${canonicalIndexPath} must link ${auditIndexPath}.`);
+  }
+
+  const auditIndex = readFileSync(path.resolve(root, auditIndexPath), "utf8");
+  if (!auditIndex.slice(0, 800).includes("Historical evidence index")) {
+    problems.push(`${auditIndexPath} must identify itself as a historical evidence index.`);
+  }
+
+  const indexedDocs = new Set([...canonicalLinks, ...auditLinks]);
+  for (const file of walkMarkdown("docs")) {
+    if (indexPaths.includes(file)) continue;
+    if (!indexedDocs.has(file)) {
+      problems.push(
+        `${file} is not indexed. Link durable/current material from ${canonicalIndexPath}; ` +
+          `link dated audit evidence from ${auditIndexPath}.`,
+      );
     }
   }
 }
 
 if (problems.length) {
-  console.error("docs index check failed:");
+  console.error("Documentation index check failed:\n");
   for (const problem of problems) console.error(`- ${problem}`);
   process.exit(1);
 }
-console.log("docs index ok");
+
+console.log("Documentation indexes are complete, unique, and link-valid.");
