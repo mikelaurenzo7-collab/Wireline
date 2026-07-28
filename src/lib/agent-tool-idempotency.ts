@@ -4,7 +4,6 @@ import type { ToolCallContext, ToolCallResult } from "../routes/vapi/types";
 
 const TOOL_EVENT_TYPE = "voice.tool_call";
 const TOOL_RESOURCE_TYPE = "vapi_tool_call";
-const PROCESSING_STALE_AFTER_MS = 30_000;
 
 const SIDE_EFFECT_TOOL_NAMES = new Set([
   "create_followup_task",
@@ -77,9 +76,19 @@ function metadataRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
-function processingIsFresh(metadata: Record<string, unknown>): boolean {
-  const startedAt = Date.parse(String(metadata.startedAt || ""));
-  return Number.isFinite(startedAt) && Date.now() - startedAt < PROCESSING_STALE_AFTER_MS;
+function resultForExistingExecution(metadata: Record<string, unknown>): ClaimResult {
+  const status = String(metadata.status || "");
+  if (status === "completed" && typeof metadata.result === "string") {
+    return { kind: "cached", result: metadata.result };
+  }
+  if (status === "failed") {
+    const previous =
+      typeof metadata.result === "string" && metadata.result.trim()
+        ? metadata.result
+        : "The previous attempt did not complete successfully. Do not repeat it automatically. Reconfirm the caller's details before starting a new action.";
+    return { kind: "cached", result: previous };
+  }
+  return { kind: "processing" };
 }
 
 async function claimToolExecution(
@@ -107,30 +116,13 @@ async function claimToolExecution(
       .orderBy(desc(schema.auditLog.createdAt))
       .limit(1);
 
-    if (existing) {
-      const metadata = metadataRecord(existing.metadata);
-      if (metadata.status === "completed" && typeof metadata.result === "string") {
-        return { kind: "cached", result: metadata.result };
-      }
-      if (metadata.status === "processing" && processingIsFresh(metadata)) {
-        return { kind: "processing" };
-      }
-
-      await tx
-        .update(schema.auditLog)
-        .set({
-          action: `agent_tool.${name}`,
-          severity: "info",
-          metadata: {
-            status: "processing",
-            startedAt: new Date().toISOString(),
-            toolCallId: context.toolCallId,
-            callId: callId(context),
-          },
-        })
-        .where(eq(schema.auditLog.id, existing.id));
-      return { kind: "claimed", auditId: existing.id };
-    }
+    // A Vapi toolCallId is an immutable delivery identity. Once claimed, the
+    // exact same ID is never executed again, even if its completion record is
+    // incomplete. This prevents duplicate sends/bookings/cancellations when an
+    // external provider succeeds but the final audit update or HTTP response is
+    // lost. The model may start a new action only after reconfirming details,
+    // which produces a new toolCallId and a separately auditable decision.
+    if (existing) return resultForExistingExecution(metadataRecord(existing.metadata));
 
     const [created] = await tx
       .insert(schema.auditLog)
@@ -172,7 +164,12 @@ async function finishToolExecution(
         callId: callId(context),
         ...(result ? { result: result.slice(0, 1_200) } : {}),
         ...(error
-          ? { error: error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500) }
+          ? {
+              error:
+                error instanceof Error
+                  ? error.message.slice(0, 500)
+                  : String(error).slice(0, 500),
+            }
           : {}),
       },
     })
@@ -219,7 +216,7 @@ export async function runIdempotentAgentToolCall(
     return {
       toolCallId: context.toolCallId,
       result:
-        "That action is already in progress. Do not run it again. Let the caller know you are still working on it.",
+        "That action was already started. Do not run it again or claim a new success. Tell the caller the outcome is still being verified and offer a manual follow-up.",
     };
   }
 
@@ -234,7 +231,15 @@ export async function runIdempotentAgentToolCall(
     );
     return result;
   } catch (error) {
-    await finishToolExecution(context, claim.auditId, "failed", undefined, error).catch(() => undefined);
+    const failureResult =
+      "The action did not complete successfully. Do not claim success or repeat the same action automatically. Reconfirm the caller's details before trying a new action.";
+    await finishToolExecution(
+      context,
+      claim.auditId,
+      "failed",
+      failureResult,
+      error,
+    ).catch(() => undefined);
     throw error;
   }
 }
