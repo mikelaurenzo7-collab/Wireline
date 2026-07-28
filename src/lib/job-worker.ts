@@ -18,6 +18,7 @@ import {
   type ScheduledReportJobPayload,
 } from "./scheduled-report-service";
 import { handleProactiveLeadEnrichmentJob } from "./proactive-lead-enrichment-job";
+import { retryPendingOrphanCarrierResources } from "./orphan-carrier-retry";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { startWorker, type JobRow } from "./job-queue";
@@ -203,6 +204,16 @@ export async function handleJob(job: JobRow): Promise<void> {
   }
   if (job.type === "scheduled_report") {
     await handleScheduledReport(job);
+    return;
+  }
+  // Extend the existing daily integrity janitor rather than creating another
+  // cron/job type. The base handler removes orphan supervisor subscriptions;
+  // this second phase retries durable carrier handoffs. Any remaining provider
+  // error throws so the queue applies its normal backoff and dead-letter policy.
+  if (job.type === "sweep_orphan_supervisor_subs") {
+    await handleBaseJob(job as never);
+    const orphanCarriers = await retryPendingOrphanCarrierResources();
+    await persistJobResult(job.id, { orphan_carriers: orphanCarriers });
     return;
   }
   // Intercept the legacy handler before it can run unscoped phone-only history
