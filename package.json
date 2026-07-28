@@ -33,7 +33,6 @@
     "test:e2e": "playwright test",
     "test:coverage": "vitest run --exclude 'tests/e2e/**' --coverage",
     "design:check": "node scripts/check-wireline-clear-system.mjs && node scripts/check-command-palette-contract.mjs",
-    "active-surface:check": "npm run design:check",
     "assets": "node scripts/render-image-assets.mjs",
     "check-prod-env": "node scripts/check-prod-env.mjs",
     "vendor:readiness": "node scripts/check-vendor-readiness.mjs",
