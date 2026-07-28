@@ -17,9 +17,10 @@ describe("round-5 fine-tune verified fixes", () => {
     expect(includedPhoneSlotsForPlan("team", 1)).toBe(3);
   });
 
-  it("honors admin maxAgents when higher than catalog + extras", () => {
+  it("honors admin maxAgents when higher than catalog + extras on an active workspace", () => {
     const entitlement = resolveAgentEntitlement({
       isOwner: false,
+      subscriptionStatus: "active",
       planId: "starter",
       extraAgents: 0,
       maxAgents: 4,

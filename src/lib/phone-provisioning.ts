@@ -14,12 +14,14 @@
 
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import { getTwilioClient } from "./twilio-service";
 import { STRIPE_PLANS, planById, type StripePlanId } from "./plan-catalog";
 import { includedPhoneSlotsForPlan } from "./phone-line-entitlements";
 import { runCompanyIdentityMutation } from "./company-identity-mutation";
+import { releaseCarrierAllocations, type CarrierReleaseKind } from "./carrier-release";
+import { recordPendingOrphanCarrierResource } from "./orphan-carrier-ledger";
 import {
   ensureTenantTelecomDefaults,
   findAgentPhoneLine,
@@ -28,6 +30,7 @@ import {
 } from "./agent-phone-lines";
 import {
   importTwilioNumberToVapi,
+  listVapiNumbers,
   provisionVapiNumber,
   releaseVapiNumber,
   vapiAccountHeadroom,
@@ -57,6 +60,12 @@ export interface ProvisionResult {
   phoneNumber?: string;
   vapiNumberId?: string;
   reused?: boolean;
+  error?: string;
+}
+
+interface CarrierCleanupResult {
+  released: boolean;
+  queued: boolean;
   error?: string;
 }
 
@@ -153,15 +162,112 @@ async function purchaseTwilioLocalNumber(
   }
 }
 
-async function removeTwilioNumberByE164(phoneNumber: string): Promise<void> {
-  const client = getTwilioClient();
-  if (!client) return;
+async function removeTwilioNumberByE164Strict(
+  phoneNumber: string,
+  client: ReturnType<typeof getTwilioClient> = getTwilioClient(),
+): Promise<void> {
+  if (!client) throw new Error("Twilio client is unavailable — carrier release cannot be verified.");
   const rows = await client.incomingPhoneNumbers.list({ phoneNumber, limit: 1 });
-  if (rows[0]?.sid) {
-    await client
-      .incomingPhoneNumbers(rows[0].sid)
-      .remove()
-      .catch(() => undefined);
+  if (rows[0]?.sid) await client.incomingPhoneNumbers(rows[0].sid).remove();
+}
+
+function carrierReleaseKind(carrierId: string | null | undefined): CarrierReleaseKind {
+  if (carrierId && isVapiPhoneNumberId(carrierId)) return "vapi";
+  if (carrierId && isTwilioPhoneNumberSid(carrierId)) return "twilio_sid";
+  return "e164";
+}
+
+function carrierReleaseAdapters(client: ReturnType<typeof getTwilioClient>) {
+  return {
+    twilioAvailable: Boolean(client),
+    inspectVapiProvider: async (vapiNumberId: string) => {
+      const numbers = await listVapiNumbers();
+      return numbers.find((number) => number.id === vapiNumberId)?.provider ?? null;
+    },
+    releaseVapi: releaseVapiNumber,
+    releaseTwilioBySid: async (twilioSid: string) => {
+      if (!client) throw new Error("Twilio client is unavailable.");
+      await client.incomingPhoneNumbers(twilioSid).remove();
+    },
+    releaseTwilioByE164: async (phoneNumber: string) => {
+      await removeTwilioNumberByE164Strict(phoneNumber, client);
+    },
+  };
+}
+
+/**
+ * Strictly compensate a carrier allocation, or persist enough information for
+ * the daily orphan janitor to finish. A Vapi import may time out after creating
+ * a resource, so an unknown Vapi id is rediscovered by E.164 before teardown.
+ */
+async function releaseCarrierOrRecord(args: {
+  userId: string;
+  phoneNumber: string;
+  carrierId?: string | null;
+  contextError: unknown;
+}): Promise<CarrierCleanupResult> {
+  const client = getTwilioClient();
+  let effectiveCarrierId = args.carrierId ?? null;
+  const errors: string[] = [];
+
+  if (!effectiveCarrierId) {
+    try {
+      const numbers = await listVapiNumbers();
+      effectiveCarrierId = numbers.find((number) => number.number === args.phoneNumber)?.id ?? null;
+    } catch (discoveryError) {
+      errors.push(`Vapi E.164 discovery: ${getErrorMessage(discoveryError)}`);
+    }
+  }
+
+  const release = await releaseCarrierAllocations(
+    {
+      kind: carrierReleaseKind(effectiveCarrierId),
+      phoneNumber: args.phoneNumber,
+      carrierId: effectiveCarrierId,
+    },
+    carrierReleaseAdapters(client),
+  );
+  if (!release.ok && release.error) errors.push(release.error);
+
+  if (errors.length === 0) {
+    log.info("Carrier compensation completed", {
+      userId: args.userId,
+      phoneNumber: args.phoneNumber,
+      carrierId: effectiveCarrierId,
+      cause: getErrorMessage(args.contextError),
+    });
+    return { released: true, queued: false };
+  }
+
+  const error = `${getErrorMessage(args.contextError)} | ${errors.join(" | ")}`.slice(0, 2000);
+  try {
+    await recordPendingOrphanCarrierResource({
+      userId: args.userId,
+      phoneNumber: args.phoneNumber,
+      carrierId: effectiveCarrierId,
+      error,
+    });
+    log.error("Carrier compensation queued in durable orphan ledger", {
+      userId: args.userId,
+      phoneNumber: args.phoneNumber,
+      carrierId: effectiveCarrierId,
+      error,
+    });
+    return { released: false, queued: true, error };
+  } catch (ledgerError) {
+    const ledgerMessage = getErrorMessage(ledgerError);
+    log.error("Carrier compensation and durable handoff both failed", {
+      userId: args.userId,
+      phoneNumber: args.phoneNumber,
+      carrierId: effectiveCarrierId,
+      error,
+      ledgerError: ledgerMessage,
+    });
+    return {
+      released: false,
+      queued: false,
+      error: `${error} | orphan ledger: ${ledgerMessage}`.slice(0, 2000),
+    };
   }
 }
 
@@ -169,25 +275,13 @@ async function compensateProvisionedNumber(args: {
   userId: string;
   phoneNumber: string;
   vapiNumberId: string;
-  removeTwilio: boolean;
   persistenceError: unknown;
-}): Promise<void> {
-  await releaseVapiNumber(args.vapiNumberId).catch((releaseError) => {
-    log.error("Failed to release Vapi number after persistence failure", {
-      userId: args.userId,
-      phoneNumber: args.phoneNumber,
-      vapiNumberId: args.vapiNumberId,
-      error: getErrorMessage(releaseError),
-    });
-  });
-  if (args.removeTwilio) {
-    await removeTwilioNumberByE164(args.phoneNumber);
-  }
-  log.error("Provider number released after local persistence failure", {
+}): Promise<CarrierCleanupResult> {
+  return releaseCarrierOrRecord({
     userId: args.userId,
     phoneNumber: args.phoneNumber,
-    vapiNumberId: args.vapiNumberId,
-    error: getErrorMessage(args.persistenceError),
+    carrierId: args.vapiNumberId,
+    contextError: args.persistenceError,
   });
 }
 
@@ -251,9 +345,9 @@ export async function provisionTenantNumber(
 
     const twilioPurchased = await purchaseTwilioLocalNumber(userId, opts.areaCode);
     if (twilioPurchased) {
-      // If the Vapi import throws (timeout, 5xx), release the just-purchased
-      // Twilio number — otherwise it orphans as a silent ~$1.15/mo billing
-      // leak that neither the DB nor Vapi knows about.
+      // A Vapi import can time out after the provider accepted it. Compensation
+      // therefore rediscovers a partial Vapi row by E.164 and releases both
+      // providers, or records a durable janitor work item before returning.
       let imported;
       try {
         imported = await importTwilioNumberToVapi({
@@ -262,17 +356,36 @@ export async function provisionTenantNumber(
           smsEnabled: false,
         });
       } catch (importErr) {
-        await removeTwilioNumberByE164(twilioPurchased.phoneNumber);
-        log.error("Vapi import failed after Twilio purchase — number released", {
+        const cleanup = await releaseCarrierOrRecord({
           userId,
           phoneNumber: twilioPurchased.phoneNumber,
-          error: getErrorMessage(importErr),
+          contextError: importErr,
         });
-        return { ok: false, error: "Voice import failed — number released. Try again." };
+        return {
+          ok: false,
+          error: cleanup.released
+            ? "Voice import failed; the carrier allocation was released. Try again."
+            : cleanup.queued
+              ? "Voice import failed; carrier cleanup was queued safely. Try again shortly."
+              : "Voice import failed and cleanup could not be recorded. Support has been alerted.",
+        };
       }
       if (!imported.id || !imported.number) {
-        await removeTwilioNumberByE164(twilioPurchased.phoneNumber);
-        return { ok: false, error: "Vapi import succeeded but returned no number id." };
+        const responseError = new Error("Vapi import returned no number id or E.164 value.");
+        const cleanup = await releaseCarrierOrRecord({
+          userId,
+          phoneNumber: twilioPurchased.phoneNumber,
+          carrierId: imported.id || null,
+          contextError: responseError,
+        });
+        return {
+          ok: false,
+          error: cleanup.released
+            ? "Voice import returned incomplete data; the carrier allocation was released."
+            : cleanup.queued
+              ? "Voice import returned incomplete data; carrier cleanup was queued safely."
+              : "Voice import returned incomplete data and cleanup could not be recorded.",
+        };
       }
       vapiNumberId = imported.id;
       phoneNumber = imported.number;
@@ -319,11 +432,10 @@ export async function provisionTenantNumber(
         });
       });
     } catch (persistenceError) {
-      await compensateProvisionedNumber({
+      const cleanup = await compensateProvisionedNumber({
         userId,
         phoneNumber,
         vapiNumberId,
-        removeTwilio: Boolean(twilioPurchased),
         persistenceError,
       });
       if (
@@ -332,12 +444,18 @@ export async function provisionTenantNumber(
       ) {
         return {
           ok: false,
-          error: `${plan.name} includes ${phoneSlots} dedicated line${phoneSlots === 1 ? "" : "s"}; upgrade or add an Extra Agent for more.`,
+          error: cleanup.queued
+            ? `${plan.name} capacity was reached; carrier cleanup was queued safely.`
+            : `${plan.name} includes ${phoneSlots} dedicated line${phoneSlots === 1 ? "" : "s"}; upgrade or add an Extra Agent for more.`,
         };
       }
       return {
         ok: false,
-        error: "Number provisioning could not be saved; the provider allocation was released.",
+        error: cleanup.released
+          ? "Number provisioning could not be saved; the provider allocation was released."
+          : cleanup.queued
+            ? "Number provisioning could not be saved; carrier cleanup was queued safely."
+            : "Number provisioning could not be saved and cleanup could not be recorded.",
       };
     }
 
@@ -379,31 +497,67 @@ export async function releaseTenantNumber(
     .limit(1);
   if (!row) return { ok: false, error: "Number not found for this tenant." };
 
-  try {
-    const carrierId = row.vapiNumberId;
-    if (carrierId && isVapiPhoneNumberId(carrierId)) {
-      await releaseVapiNumber(carrierId).catch((err) => {
-        log.warn("Vapi release returned error (likely already released)", {
-          vapiNumberId: carrierId,
-          error: getErrorMessage(err),
-        });
-      });
-    } else if (client && carrierId && isTwilioPhoneNumberSid(carrierId)) {
-      await client
-        .incomingPhoneNumbers(carrierId)
-        .remove()
-        .catch((err) => {
-          log.warn("Twilio release by SID failed", {
-            twilioSid: carrierId,
-            error: getErrorMessage(err),
-          });
-        });
-    } else if (client) {
-      await removeTwilioNumberByE164(phoneNumber);
-    }
+  const carrierId = row.vapiNumberId;
+  const release = await releaseCarrierAllocations(
+    {
+      kind: carrierReleaseKind(carrierId),
+      phoneNumber,
+      carrierId,
+    },
+    carrierReleaseAdapters(client),
+  );
 
+  if (!release.ok) {
+    log.warn("Carrier number release failed — preserving local ownership row", {
+      userId,
+      phoneNumber,
+      carrierId,
+      error: release.error,
+    });
+    return release;
+  }
+
+  try {
     await runCompanyIdentityMutation(userId, "phone_number_changed", async (tx) => {
       await tx.delete(schema.phoneNumbers).where(eq(schema.phoneNumbers.id, row.id));
+
+      const [[settingsRow], remainingLines] = await Promise.all([
+        tx
+          .select({
+            vapiPhoneNumberId: schema.settings.vapiPhoneNumberId,
+            twilioSmsFromNumber: schema.settings.twilioSmsFromNumber,
+          })
+          .from(schema.settings)
+          .where(eq(schema.settings.userId, userId))
+          .limit(1),
+        tx
+          .select({
+            phoneNumber: schema.phoneNumbers.phoneNumber,
+            vapiNumberId: schema.phoneNumbers.vapiNumberId,
+          })
+          .from(schema.phoneNumbers)
+          .where(eq(schema.phoneNumbers.userId, userId))
+          .orderBy(desc(schema.phoneNumbers.createdAt), desc(schema.phoneNumbers.id))
+          .limit(100),
+      ]);
+
+      if (settingsRow) {
+        const patch: Partial<typeof schema.settings.$inferInsert> = {};
+        if (carrierId && settingsRow.vapiPhoneNumberId === carrierId) {
+          patch.vapiPhoneNumberId =
+            remainingLines.find(
+              (line: { phoneNumber: string; vapiNumberId: string | null }) =>
+                isVapiPhoneNumberId(line.vapiNumberId),
+            )?.vapiNumberId ?? null;
+        }
+        if (settingsRow.twilioSmsFromNumber === phoneNumber) {
+          patch.twilioSmsFromNumber = remainingLines[0]?.phoneNumber ?? null;
+        }
+        if (Object.keys(patch).length > 0) {
+          patch.updatedAt = new Date();
+          await tx.update(schema.settings).set(patch).where(eq(schema.settings.userId, userId));
+        }
+      }
     });
     return { ok: true };
   } catch (err) {

@@ -67,9 +67,11 @@ function latestInvoiceId(subscription: Stripe.Subscription): string | null {
  * Atomic owner for POST /api/billing/extra-agents.
  *
  * This router is mounted before the broad billing router. The legacy GET remains
- * there, while writes settle here under a tenant advisory lock. Stripe is the
- * authoritative quantity whenever configured; Postgres is updated only after a
- * verified Stripe result, so a declined immediate invoice cannot grant capacity.
+ * there, while writes settle here under the same tenant capacity lock used by
+ * every agent-creation surface. Stripe is authoritative whenever configured;
+ * Postgres is updated only after a verified result, so a declined immediate
+ * invoice cannot grant capacity and a concurrent downgrade cannot race a final
+ * agent insert through the old allowance.
  */
 router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   const target = Number(req.body?.count);
@@ -79,9 +81,7 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
 
   try {
     const outcome = await drizzle.transaction(async (tx): Promise<RouteOutcome> => {
-      await tx.execute(
-        sql`SELECT pg_advisory_xact_lock(hashtext(${`billing-extra-agents:${req.user.id}`}))`,
-      );
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
 
       const [row] = await tx
         .select({

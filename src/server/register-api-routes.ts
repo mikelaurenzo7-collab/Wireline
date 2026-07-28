@@ -30,6 +30,7 @@ import companyIdentitySettingsGuardRouter from "../routes/company-identity-setti
 import settingsPhoneGuardRouter from "../routes/settings-phone-guard-routes";
 import settingsRouter from "../routes/settings-routes";
 import postCallOutputRouter from "../routes/post-call-output-routes";
+import phoneNumberReleaseRouter from "../routes/phone-number-release-routes";
 import carrierRouter from "../routes/carrier-routes";
 import companyIdentityRouter from "../routes/company-identity-routes";
 import teamRouter from "../routes/team-routes";
@@ -105,6 +106,10 @@ export function registerApiRoutes(app: Express): void {
   app.use(accountExportGuardRouter);
   app.use(settingsRouter);
   app.use(postCallOutputRouter);
+  // Terminal carrier DELETE owner: release Vapi/Twilio before the canonical row
+  // is removed. The broad carrier router remains authoritative for all reads,
+  // binds, provisioning, pool operations, and metadata updates.
+  app.use(phoneNumberReleaseRouter);
   app.use(carrierRouter);
   app.use(companyIdentityRouter);
   app.use(teamRouter);

@@ -200,7 +200,8 @@ describe("company identity pack", () => {
     expect(carrier).toContain("desc(schema.phoneNumbers.id)");
     expect(provisioning).toContain('runCompanyIdentityMutation(userId, "phone_number_changed"');
     expect(provisioning).toContain("compensateProvisionedNumber");
-    expect(provisioning).toContain("Provider number released after local persistence failure");
+    expect(provisioning).toContain("Carrier compensation completed");
+    expect(provisioning).toContain("Carrier compensation queued in durable orphan ledger");
     expect(provisioning).toContain(
       "Number provisioning could not be saved; the provider allocation was released.",
     );
