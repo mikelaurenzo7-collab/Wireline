@@ -14,16 +14,15 @@ export const MAX_VAPI_PARALLEL_TOOL_CALLS = 3;
 export const MAX_VAPI_TOOL_RESULT_CHARS = 1_200;
 
 /**
- * Vapi requires tool results to be single-line strings. Remove Wireline's
- * optional machine-only data suffix, collapse whitespace, and enforce the
- * next-turn prompt budget. This keeps webhook responses parseable while
- * retaining the semantic ordering of knowledge, CRM, order, and availability
- * results.
+ * Remove Wireline's optional machine-only data suffix and enforce the next-turn
+ * prompt budget. Preserve meaningful line breaks: knowledge, CRM, order, and
+ * availability results are easier for the model to reason over when their
+ * structure is retained. Vapi accepts string results and does not require them
+ * to be flattened into a single line.
  */
 export function truncateVapiToolResult(result: string, max = MAX_VAPI_TOOL_RESULT_CHARS): string {
   const text = String(result || "")
     .replace(/\s*\[data:\s*[\s\S]*?\]\s*$/i, "")
-    .replace(/\s+/g, " ")
     .trim();
   if (text.length <= max) return text;
   return `${text.slice(0, max)}…`;
