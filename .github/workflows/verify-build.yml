@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: verify-build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Client and server bundle
@@ -21,14 +25,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      # package-lock is retained for local installs but has historical root-entry
-      # drift. Install from package.json until its full regeneration lands.
-      - run: npm install
-      - run: npm run active-surface:check
+      - run: npm ci
+      - run: npm run design:check
       - run: npm run tsconfig:excludes:check
       - run: node apps/browser-extension/scripts/build.mjs --check
       - run: node apps/browser-extension/scripts/build.mjs
       - run: npm run build
-      - run: node -e "process.env.VERCEL='1'; require('./dist/server.cjs'); console.log('server bundle imports')"
-        env:
-          DATABASE_POOL_URL: postgresql://wireline:wireline@127.0.0.1:5432/wireline
+      - run: npm run smoke:server

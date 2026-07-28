@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: accessibility-contract-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   static-a11y-contract:
     name: Static accessibility contract
@@ -21,5 +25,5 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm install
+      - run: npm ci
       - run: node scripts/check-accessibility-contract.mjs

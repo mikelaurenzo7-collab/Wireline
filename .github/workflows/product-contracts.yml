@@ -26,10 +26,8 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      # package-lock is retained for local installs but has historical root-entry
-      # drift. Install from package.json until full regeneration lands.
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run product contracts
         run: npm run verify:contracts
