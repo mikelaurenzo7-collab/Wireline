@@ -146,6 +146,20 @@ describe("carrier teardown integration", () => {
     expect(orphanInsert).toBeGreaterThan(failureBranch);
   });
 
+  it("protects reassigned numbers and keeps the retry queue fair", () => {
+    const retry = read("src/lib/orphan-carrier-retry.ts");
+    const ownerCheck = retry.indexOf("hasCurrentCanonicalOwner(row.phone_number)");
+    const rediscovery = retry.indexOf("number.number === row.phone_number");
+    const providerRelease = retry.indexOf("releaseCarrierAllocations(");
+
+    expect(ownerCheck).toBeGreaterThan(-1);
+    expect(rediscovery).toBeGreaterThan(ownerCheck);
+    expect(providerRelease).toBeGreaterThan(rediscovery);
+    expect(retry).toContain("FROM public.wireline_phone_numbers");
+    expect(retry).toContain("Cleanup skipped: phone number has a current canonical owner.");
+    expect(retry).toContain("created_at = now()");
+  });
+
   it("consumes pending ledger rows through the existing daily integrity janitor", () => {
     const worker = read("src/lib/job-worker.ts");
     const retry = read("src/lib/orphan-carrier-retry.ts");
