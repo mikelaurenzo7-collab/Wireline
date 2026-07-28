@@ -47,6 +47,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [design-system-responsive-roadmap.md](./design-system-responsive-roadmap.md) | Responsive, spacing, and component-containment rules. |
 | [AGENT_CUSTOMIZATION_ARCHITECTURE.md](./AGENT_CUSTOMIZATION_ARCHITECTURE.md) | Agent customization client/domain boundary. |
 | [security/auth-password-controls.md](./security/auth-password-controls.md) | Custom scrypt and HIBP password-control posture. |
+| [soc2-policies.md](./soc2-policies.md) | SOC 2 control-policy map and evidence ownership. |
 | [AUTHZ_MATRIX.md](./AUTHZ_MATRIX.md) | Generated authorization-coverage artifact. |
 
 ## Operating and release runbooks
