@@ -38,8 +38,8 @@ describe("repository and documentation organization", () => {
     expect(docs).toContain("Repository-local Markdown exceptions");
     expect(docs).toContain("[AGENTS.md](../AGENTS.md)");
     expect(docs).toContain("[CLAUDE.md](../CLAUDE.md)");
+    expect(docs).toContain("[DATABASE_SETUP.md](../DATABASE_SETUP.md)");
     expect(docs).toContain("[DEPLOY.md](../DEPLOY.md)");
-    expect(docs).not.toContain("DATABASE_SETUP.md");
     expect(docs).toContain("[apps/browser-extension/README.md](../apps/browser-extension/README.md)");
     expect(docs).toContain("[android/README.md](../android/README.md)");
     expect(docs).toContain("[ios/README.md](../ios/README.md)");
@@ -52,18 +52,23 @@ describe("repository and documentation organization", () => {
     expect(checker).toContain("tracked Markdown without an approved home");
   });
 
-  it("consolidates stale runbooks while retaining one narrow deployment compatibility path", () => {
+  it("consolidates full runbooks while retaining bounded compatibility pointers", () => {
     const docs = read("docs/README.md");
     const databaseRunbook = read("docs/DATABASE_OPERATIONS.md");
     const deploymentRunbook = read("docs/DEPLOYMENT_RUNBOOK.md");
+    const databasePointer = read("DATABASE_SETUP.md");
     const deployPointer = read("DEPLOY.md");
     const android = read("android/README.md");
     const ios = read("ios/README.md");
 
-    expect(exists("DATABASE_SETUP.md")).toBe(false);
+    expect(exists("DATABASE_SETUP.md")).toBe(true);
     expect(exists("DEPLOY.md")).toBe(true);
     expect(databaseRunbook).toContain("wireline_server");
     expect(deploymentRunbook).toContain("Only the canonical `revaluate/wireline` project may own");
+    expect(databasePointer).toContain("docs/DATABASE_OPERATIONS.md");
+    expect(databasePointer).toContain("wireline_server");
+    expect(databasePointer).not.toContain("POSTGRES_URL=");
+    expect(databasePointer).not.toContain("auth.uid() IS NOT NULL");
     expect(deployPointer).toContain("docs/DEPLOYMENT_RUNBOOK.md");
     expect(deployPointer).toContain("Only `revaluate/wireline` may be linked");
     expect(deployPointer).not.toContain("OWNER_PHONE");
