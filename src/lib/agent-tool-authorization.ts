@@ -11,6 +11,7 @@ import {
 import {
   filterToolsByTenantConnections,
   loadTenantIntegrationConnections,
+  type TenantIntegrationConnections,
 } from "./tenant-integration-connections";
 import type { ToolCallContext } from "../routes/vapi/types";
 
@@ -31,6 +32,11 @@ const SYSTEM_RUNTIME_TOOL_NAMES = new Set<AgentToolName>([
 ]);
 
 export type PersistedAgentToolSelection = readonly AgentToolName[] | null;
+export type AgentToolFeatureFlags = {
+  aiTier?: string | null;
+  twilioMessaging?: boolean;
+  twilioLookup?: boolean;
+};
 
 /**
  * Resolve a persisted JSON selection without ever expanding malformed data.
@@ -58,6 +64,32 @@ export function sanitizePersistedAgentToolSelection(
 
 export function isSystemRuntimeTool(name: string): name is AgentToolName {
   return isAgentToolName(name) && SYSTEM_RUNTIME_TOOL_NAMES.has(name);
+}
+
+/**
+ * Pure permission resolver shared by runtime authorization and focused tests.
+ * It never adds tools beyond the persisted active set (except intentional
+ * legacy-null compatibility), and connected-provider requirements are applied
+ * after tenant feature flags.
+ */
+export function resolveAuthorizedAgentTools(
+  persisted: PersistedAgentToolSelection,
+  flags: AgentToolFeatureFlags,
+  connections: TenantIntegrationConnections,
+): AgentToolName[] {
+  let active = applyPlanToolUnlocks(
+    persisted === null ? getDefaultAgentTools() : persisted,
+    flags.aiTier,
+  );
+
+  if (!flags.twilioMessaging) {
+    active = active.filter((tool) => tool !== "send_text_message");
+  }
+  if (!flags.twilioLookup) {
+    active = active.filter((tool) => tool !== "lookup_phone_number");
+  }
+
+  return filterToolsByTenantConnections(active, connections);
 }
 
 /**
@@ -106,19 +138,17 @@ export async function isAgentToolExecutionAuthorized(
 
   const settingsRow = settingsRows[0];
   const persisted = sanitizePersistedAgentToolSelection(agentRow.enabledTools);
-  let active = applyPlanToolUnlocks(
-    persisted === null ? getDefaultAgentTools() : persisted,
-    settingsRow?.aiTier,
+  const active = resolveAuthorizedAgentTools(
+    persisted,
+    {
+      aiTier: settingsRow?.aiTier,
+      twilioMessaging: Boolean(settingsRow?.twilioMessagingEnabled),
+      twilioLookup: Boolean(settingsRow?.twilioLookupEnabled),
+    },
+    connections,
   );
 
-  if (!settingsRow?.twilioMessagingEnabled) {
-    active = active.filter((tool) => tool !== "send_text_message");
-  }
-  if (!settingsRow?.twilioLookupEnabled) {
-    active = active.filter((tool) => tool !== "lookup_phone_number");
-  }
-
-  return filterToolsByTenantConnections(active, connections).includes(name);
+  return active.includes(name);
 }
 
 /** Canonical names exported for drift-focused regression contracts. */
