@@ -119,8 +119,13 @@ describe("carrier teardown integration", () => {
   it("consumes pending ledger rows through the existing daily integrity janitor", () => {
     const worker = read("src/lib/job-worker.ts");
     const retry = read("src/lib/orphan-carrier-retry.ts");
+    const tenantIsolatedIntercept = worker.indexOf('job.type === "proactive_lead_enrichment"');
+    const janitorIntercept = worker.indexOf('job.type === "sweep_orphan_supervisor_subs"');
+    const finalBaseDispatch = worker.lastIndexOf("await handleBaseJob(job as never)");
 
-    expect(worker).toContain('job.type === "sweep_orphan_supervisor_subs"');
+    expect(tenantIsolatedIntercept).toBeGreaterThan(-1);
+    expect(janitorIntercept).toBeGreaterThan(tenantIsolatedIntercept);
+    expect(finalBaseDispatch).toBeGreaterThan(janitorIntercept);
     expect(worker).toContain("retryPendingOrphanCarrierResources()");
     expect(retry).toContain("WHERE status = 'pending'");
     expect(retry).toContain("SET status = 'resolved', resolved_at = now(), last_error = NULL");
