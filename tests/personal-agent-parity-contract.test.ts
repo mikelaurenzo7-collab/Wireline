@@ -42,7 +42,7 @@ describe("personal agent parity — create defaults", () => {
     expect(personality).not.toContain("from Revenue Desk");
   });
 
-  it("strips business-only tools from personal create and keeps device actions opt-in", () => {
+  it("seeds role-focused tools while keeping the full catalog selectable", () => {
     const personalTools = resolveCreateEnabledTools("personal_assistant", false);
     const businessTools = resolveCreateEnabledTools("sales", true);
     const deviceActions = ["navigate_to", "add_reminder", "play_music"] as const;
@@ -55,11 +55,15 @@ describe("personal agent parity — create defaults", () => {
       expect(personalTools).not.toContain(tool);
       expect(businessTools).not.toContain(tool);
     }
-    for (const tool of getDefaultAgentTools()) {
-      if (!deviceActions.includes(tool as (typeof deviceActions)[number])) {
-        expect(businessTools).toContain(tool);
-      }
-    }
+
+    expect(businessTools.length).toBeLessThan(getDefaultAgentTools().length);
+    expect(businessTools).toContain("send_email");
+    expect(businessTools).toContain("book_appointment");
+    expect(businessTools).toContain("crm_create_opportunity");
+    expect(businessTools).toContain("send_contract");
+    expect(businessTools).not.toContain("shopify_cancel_order");
+    expect(businessTools).not.toContain("post_x_tweet");
+
     expect(personalTools).toContain("book_appointment");
     expect(personalTools).toContain("send_text_message");
     expect(personalTools).not.toContain("crm_log_call");
