@@ -6,15 +6,20 @@ import { type ActionItem, type ActionResult } from "./action-types";
 import { getErrorMessage } from "./server-utils";
 import { IntegrationService } from "./integrations";
 import { CRMService } from "./crm-service";
-import { sendContract } from "./docusign-service";
 import { searchLeads } from "./apollo-service";
 import { sendTenantMessage } from "./twilio-service";
 import { postAgentNotification, getDefaultChannel } from "./slack-service";
-import { resolveAgentTools } from "./agent-capabilities";
-import { sendMetaConversion } from "./meta-service";
+import { type AgentToolName } from "./agent-capabilities";
+import {
+  NO_TENANT_INTEGRATIONS,
+  resolveAuthorizedAgentTools,
+  sanitizePersistedAgentToolSelection,
+} from "./agent-tool-authorization";
+import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
 import { superviseClientCommunication } from "./ai-supervisor";
 import { touchNavCounts } from "./nav-counts-invalidate";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
+import { addMinutesToIso, localDateTimeToUtcIso, normalizeIanaTimeZone } from "./calendar-time";
 
 /**
  * Roles whose auto SMS is treated as non-marketing (service / ops).
@@ -29,6 +34,18 @@ const NON_MARKETING_SMS_ROLES = new Set([
   "personal_assistant",
   "ecommerce",
 ]);
+
+/** Action-engine names are not identical to live catalog names. */
+const ACTION_TOOL_REQUIREMENTS: Readonly<Record<string, AgentToolName>> = {
+  send_email: "send_email",
+  send_text_message: "send_text_message",
+  schedule_calendar: "book_appointment",
+  update_crm_lead: "update_lead_status",
+  create_internal_task: "create_followup_task",
+  send_contract: "send_contract",
+  prospect_leads: "enrich_lead",
+  notify_slack: "send_slack_notification",
+};
 
 /** Match twilio-service cleanPhone so gate/lead lookup use the same destination. */
 function cleanOutboundSmsPhone(raw: string | null | undefined): string {
@@ -50,6 +67,7 @@ export async function executeAction(
 ): Promise<ActionResult> {
   try {
     let autonomy: string = autonomyOverride || "draft";
+    let actionAgentTimeZone: string | null = null;
 
     if (!autonomyOverride) {
       const [settings] = await drizzle
@@ -79,34 +97,59 @@ export async function executeAction(
       autonomy,
     });
 
-    // Per-agent tool gating — if the action targets a specific agent and
-    // that agent's enabled_tools array excludes this action type, refuse
-    // the action regardless of autonomy mode. Account Holders control this from
-    // AssistantSettings → agent detail → Channels. When enabled_tools is null
-    // (the default), fall back to role-based defaults (resolveAgentTools).
+    // Per-agent execution authorization uses the same canonical selection,
+    // provider-state, feature-flag, and platform-resource policy as live calls.
     if (action.agentId) {
       const [agentRow] = await drizzle
         .select({
-          role: schema.agents.role,
           enabledTools: schema.agents.enabledTools,
+          timeZone: schema.agents.timezone,
+          aiTier: schema.settings.aiTier,
+          twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
+          twilioLookupEnabled: schema.settings.twilioLookupEnabled,
         })
         .from(schema.agents)
+        .leftJoin(schema.settings, eq(schema.settings.userId, schema.agents.userId))
         .where(and(eq(schema.agents.id, action.agentId), eq(schema.agents.userId, userId)))
         .limit(1);
 
-      if (agentRow) {
-        const allowedTools = resolveAgentTools(agentRow.role ?? undefined, agentRow.enabledTools);
-        if (!allowedTools.includes(action.type as any)) {
-          log.warn("Action blocked — agent not authorized for tool", {
-            userId,
-            agentId: action.agentId,
-            type: action.type,
-          });
-          return {
-            success: false,
-            error: `This agent is not authorized to use "${action.type}". Enable it in Agents → Channels.`,
-          };
-        }
+      if (!agentRow) {
+        return { success: false, error: "The requested agent does not belong to this account." };
+      }
+      actionAgentTimeZone = agentRow.timeZone || "UTC";
+
+      const requiredTool = ACTION_TOOL_REQUIREMENTS[action.type];
+      if (!requiredTool) {
+        return { success: false, error: `Unsupported action type: ${action.type}` };
+      }
+      const connections = await loadTenantIntegrationConnections(userId).catch((error: unknown) => {
+        log.warn("Action integration lookup failed; disabling connected actions", {
+          userId,
+          agentId: action.agentId,
+          error: getErrorMessage(error),
+        });
+        return NO_TENANT_INTEGRATIONS;
+      });
+      const allowedTools = resolveAuthorizedAgentTools(
+        sanitizePersistedAgentToolSelection(agentRow.enabledTools),
+        {
+          aiTier: agentRow.aiTier,
+          twilioMessaging: Boolean(agentRow.twilioMessagingEnabled),
+          twilioLookup: Boolean(agentRow.twilioLookupEnabled),
+        },
+        connections,
+      );
+      if (!allowedTools.includes(requiredTool)) {
+        log.warn("Action blocked — agent tool or connection is unavailable", {
+          userId,
+          agentId: action.agentId,
+          actionType: action.type,
+          requiredTool,
+        });
+        return {
+          success: false,
+          error: `This agent is not authorized or connected for "${requiredTool}". Review the agent's active tools and Connections.`,
+        };
       }
     }
 
@@ -150,29 +193,27 @@ export async function executeAction(
         case "send_text_message":
           return await handleSendTextMessage(userId, action, context);
         case "schedule_calendar": {
-          // Simple parsing for the payload
-          const startTime = new Date(`${action.payload.date} ${action.payload.time}`).toISOString();
-          const endTime = new Date(new Date(startTime).getTime() + 60 * 60 * 1000).toISOString();
+          const rawTimeZone = action.payload.timezone || actionAgentTimeZone;
+          if (!rawTimeZone) {
+            return {
+              success: false,
+              error: "An exact IANA timezone is required before scheduling a calendar event.",
+            };
+          }
+          const timeZone = normalizeIanaTimeZone(rawTimeZone);
+          const startTime = localDateTimeToUtcIso({
+            date: action.payload.date,
+            time: action.payload.time,
+            timeZone,
+          });
+          const endTime = addMinutesToIso(startTime, 60);
           const calOk = await service.bookAppointment({
             title: action.payload.event_name || "Meeting",
-            description: action.reasoning || "Scheduled via AI Agent",
+            description: `${action.reasoning || "Scheduled via AI Agent"}\n\nConfirmed timezone: ${timeZone}.`,
             startTime,
             endTime,
             agentId: action.agentId,
           });
-          // Fire Meta CAPI "Schedule" conversion when configured. Lets
-          // marketers attribute booked meetings back to the Meta ad that
-          // sourced the lead. Non-blocking — if CAPI isn't set up, the
-          // call returns { ok: false } without throwing.
-          if (calOk) {
-            void sendMetaConversion({
-              eventName: "Schedule",
-              eventId: `schedule:${context.sourceId}:${startTime}`,
-              email: action.payload.customer_email,
-              phone: action.payload.customer_number,
-              sourceUrl: `https://trywireline.com/calls/${context.sourceId}`,
-            }).catch(() => {});
-          }
           return { success: calOk };
         }
         case "update_crm_lead":
@@ -180,7 +221,11 @@ export async function executeAction(
         case "create_internal_task":
           return await handleCreateInternalTask(userId, action, context);
         case "send_contract":
-          return await handleSendContract(userId, action, context);
+          return {
+            success: false,
+            error:
+              "Automated contract sending is disabled until a tenant-owned DocuSign account and template registry are connected.",
+          };
         case "prospect_leads":
           return await handleProspectLeads(userId, action, context);
         case "notify_slack":
@@ -205,7 +250,7 @@ export async function executeAction(
       case "create_internal_task":
         return await handleCreateInternalTask(userId, action, context);
       case "send_contract":
-        return await queueSideEffectAction(userId, action, context, "send_contract", "docusign");
+        return await queueSideEffectAction(userId, action, context, "send_contract", "manual");
       case "prospect_leads":
         return await queueSideEffectAction(userId, action, context, "prospect_leads", "apollo");
       case "notify_slack":
@@ -455,14 +500,6 @@ async function queueSideEffectAction(
   return { success: true, queued: true };
 }
 
-async function handleSendContract(
-  userId: string,
-  action: ActionItem,
-  _context: { sourceId: string; sourceType: string },
-): Promise<ActionResult> {
-  const response = await sendContract(action.payload as Parameters<typeof sendContract>[0]);
-  return { success: !!response };
-}
 async function handleProspectLeads(
   userId: string,
   action: ActionItem,
