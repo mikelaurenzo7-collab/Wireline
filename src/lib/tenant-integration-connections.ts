@@ -12,6 +12,8 @@ const CRM_TOOL_NAMES = new Set<AgentToolName>([
   "crm_search_contacts",
   "crm_log_call",
   "crm_create_opportunity",
+  "crm_create_contact",
+  "crm_update_deal_stage",
 ]);
 
 /**
@@ -38,6 +40,7 @@ export interface TenantIntegrationConnections {
   x: boolean;
   microsoft_teams: boolean;
   microsoft_excel: boolean;
+  google_sheets: boolean;
   salesforce: boolean;
   hubspot: boolean;
   zoom: boolean;
@@ -90,6 +93,7 @@ export async function loadTenantIntegrationConnections(
     x: providers.has("x"),
     microsoft_teams: providers.has("microsoft_teams"),
     microsoft_excel: providers.has("microsoft_excel"),
+    google_sheets: providers.has("google_sheets"),
     salesforce: providers.has("salesforce"),
     hubspot: providers.has("hubspot"),
     zoom: providers.has("zoom"),
@@ -113,6 +117,7 @@ export function filterToolsByTenantConnections(
     if (X_ENGAGEMENT_SET.has(name)) return conn.x;
     if (name === "send_teams_message") return conn.microsoft_teams;
     if (name === "log_to_excel") return conn.microsoft_excel;
+    if (name === "log_to_google_sheets") return conn.google_sheets;
     if (name === "generate_zoom_link") return conn.zoom;
     if (name === "check_calendar_availability" || name === "book_appointment") {
       return conn.google_calendar || conn.microsoft_calendar;
