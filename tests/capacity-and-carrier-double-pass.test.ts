@@ -194,3 +194,27 @@ describe("carrier teardown integration", () => {
     expect(broadMount).toBeGreaterThan(strictMount);
   });
 });
+
+
+describe("runtime artifact settlement integrity", () => {
+  it("checkpoints paid provider results inside the refundable reservation", () => {
+    const worker = read("src/lib/job-worker.ts");
+    const postStart = worker.indexOf("async function handlePostCallArtifact");
+    const scheduledStart = worker.indexOf("async function handleScheduledReport");
+    const postBlock = worker.slice(postStart, scheduledStart);
+    const scheduledBlock = worker.slice(scheduledStart, worker.indexOf("/** Global durable-job dispatcher"));
+
+    expect(postBlock).toContain("await withRuntimeReservation(job, userId, format, async () => {");
+    expect(postBlock.indexOf("generateAndStorePostCallArtifact")).toBeLessThan(
+      postBlock.indexOf("await persistJobResult"),
+    );
+    const scheduledReservation = scheduledBlock.slice(
+      scheduledBlock.indexOf("await withRuntimeReservation("),
+    );
+    expect(scheduledReservation).toContain("async () => {");
+    expect(scheduledReservation.indexOf("generateScheduledOperatingReport")).toBeLessThan(
+      scheduledReservation.indexOf("await persistJobResult"),
+    );
+    expect(worker).toContain("completion-checkpoint failures can be refunded");
+  });
+});

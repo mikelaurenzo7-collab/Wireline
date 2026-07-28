@@ -121,8 +121,9 @@ async function withRuntimeReservation<T>(
     }
     return result;
   } catch (error) {
-    // A unique reference is used for every attempt, so an unsuccessful attempt
-    // can be refunded without giving a later retry a free reservation.
+    // A unique reference is used for every attempt, so generation failures and
+    // completion-checkpoint failures can be refunded without giving a later
+    // retry a free reservation.
     if (!reservation.alreadyReserved) {
       await refundRuntimeUsage({
         userId,
@@ -154,18 +155,21 @@ async function handlePostCallArtifact(job: JobRow): Promise<void> {
 
   const format = validateFormat(payload.format);
   const destination = validateDestination(payload.destination);
-  const artifact = await withRuntimeReservation(job, userId, format, () =>
-    generateAndStorePostCallArtifact({ ...payload, format, destination }),
-  );
-
-  await persistJobResult(job.id, {
-    provider: artifact.provider,
-    external_id: artifact.externalId,
-    external_url: artifact.externalUrl,
-    file_name: artifact.fileName,
-    mime_type: artifact.mimeType,
-    size_bytes: artifact.sizeBytes,
-    openai_response_id: artifact.openaiResponseId,
+  await withRuntimeReservation(job, userId, format, async () => {
+    const artifact = await generateAndStorePostCallArtifact({ ...payload, format, destination });
+    // The durable checkpoint belongs to the paid operation. If it cannot be
+    // written after provider success, refund this attempt before the queue
+    // retries instead of charging for a result Wireline cannot safely resume.
+    await persistJobResult(job.id, {
+      provider: artifact.provider,
+      external_id: artifact.externalId,
+      external_url: artifact.externalUrl,
+      file_name: artifact.fileName,
+      mime_type: artifact.mimeType,
+      size_bytes: artifact.sizeBytes,
+      openai_response_id: artifact.openaiResponseId,
+    });
+    return artifact;
   });
 }
 
@@ -186,14 +190,17 @@ async function handleScheduledReport(job: JobRow): Promise<void> {
     return;
   }
 
-  const result = await withRuntimeReservation(
+  await withRuntimeReservation(
     job,
     userId,
     format,
-    () => generateScheduledOperatingReport({ ...payload, format, destination }),
+    async () => {
+      const result = await generateScheduledOperatingReport({ ...payload, format, destination });
+      await persistJobResult(job.id, result as unknown as Record<string, unknown>);
+      return result;
+    },
     (value) => Boolean((value as { skipped?: boolean }).skipped),
   );
-  await persistJobResult(job.id, result as unknown as Record<string, unknown>);
 }
 
 /** Global durable-job dispatcher including launch reporting extensions. */

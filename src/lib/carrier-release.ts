@@ -84,16 +84,30 @@ export async function releaseCarrierAllocations(
       try {
         provider = (await adapters.inspectVapiProvider(vapiNumberId))?.trim().toLowerCase() || null;
       } catch (error) {
-        if (isCarrierAlreadyReleasedError(error)) return { ok: true };
+        if (isCarrierAlreadyReleasedError(error)) {
+          return {
+            ok: false,
+            error:
+              "Vapi number is already absent, but underlying Twilio cleanup cannot be confirmed while the Twilio client is unavailable.",
+          };
+        }
         return {
           ok: false,
           error: `Vapi provider inspection: ${releaseErrorMessage(error)}`,
         };
       }
 
-      // A successful inspection with no matching provider means the Vapi object
-      // is already gone. Treat that terminal state like a provider 404.
-      if (!provider) return { ok: true };
+      // A missing Vapi object is not enough proof of complete teardown: an
+      // earlier partial attempt may already have removed Vapi while leaving the
+      // underlying Twilio rental intact. Keep the canonical row/ledger pending
+      // until Twilio is available for the final E.164 check.
+      if (!provider) {
+        return {
+          ok: false,
+          error:
+            "Vapi number is already absent, but underlying Twilio cleanup cannot be confirmed while the Twilio client is unavailable.",
+        };
+      }
 
       // Keep the Vapi object intact when Twilio cleanup cannot run. Its provider
       // metadata is the evidence a later retry needs to finish both allocations.
