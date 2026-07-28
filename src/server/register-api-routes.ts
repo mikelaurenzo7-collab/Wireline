@@ -14,6 +14,7 @@ import aiStatusRouter from "../routes/ai-status-routes";
 import openaiRealtimeRouter from "../routes/openai-realtime-routes";
 import grokVoiceRouter from "../routes/grok-voice-routes";
 import billingRouter from "../routes/billing-routes";
+import extraAgentBillingAtomicRouter from "../routes/extra-agent-billing-atomic-routes";
 import { stripeRuntimeAllowanceRetryPreflight } from "../middleware/stripe-runtime-allowance-retry";
 import billingPortalReadinessRouter from "../routes/billing-portal-readiness-routes";
 import launchBillingCheckoutRouter from "../routes/launch-billing-checkout-routes";
@@ -125,6 +126,9 @@ export function registerApiRoutes(app: Express): void {
   // the same raw-body Stripe path before the legacy billing router and only
   // acknowledges after the idempotent Runtime Allowance reversal succeeds.
   app.use("/api/stripe-webhook", stripeRuntimeAllowanceRetryPreflight);
+  // Atomic write owner for purchased agent capacity. GET continues through the
+  // broad billing router; POST settles and verifies Stripe before Postgres.
+  app.use("/api/billing/extra-agents", extraAgentBillingAtomicRouter);
   app.use("/api", billingRouter);
   app.use(emailRouter);
   // Dashboard data plane: /api/dashboard/*, /api/calls, /api/appointments,
