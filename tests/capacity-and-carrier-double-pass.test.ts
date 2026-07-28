@@ -115,4 +115,16 @@ describe("carrier teardown integration", () => {
     expect(failureBranch).toBeGreaterThan(releaseCall);
     expect(orphanInsert).toBeGreaterThan(failureBranch);
   });
+
+  it("consumes pending ledger rows through the existing daily integrity janitor", () => {
+    const worker = read("src/lib/job-worker.ts");
+    const retry = read("src/lib/orphan-carrier-retry.ts");
+
+    expect(worker).toContain('job.type === "sweep_orphan_supervisor_subs"');
+    expect(worker).toContain("retryPendingOrphanCarrierResources()");
+    expect(retry).toContain("WHERE status = 'pending'");
+    expect(retry).toContain("SET status = 'resolved', resolved_at = now(), last_error = NULL");
+    expect(retry).toContain("SET last_error = ${error}");
+    expect(retry).toContain("throw new Error(");
+  });
 });
