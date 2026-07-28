@@ -545,8 +545,10 @@ export async function releaseTenantNumber(
         const patch: Partial<typeof schema.settings.$inferInsert> = {};
         if (carrierId && settingsRow.vapiPhoneNumberId === carrierId) {
           patch.vapiPhoneNumberId =
-            remainingLines.find((line) => isVapiPhoneNumberId(line.vapiNumberId))?.vapiNumberId ??
-            null;
+            remainingLines.find(
+              (line: { phoneNumber: string; vapiNumberId: string | null }) =>
+                isVapiPhoneNumberId(line.vapiNumberId),
+            )?.vapiNumberId ?? null;
         }
         if (settingsRow.twilioSmsFromNumber === phoneNumber) {
           patch.twilioSmsFromNumber = remainingLines[0]?.phoneNumber ?? null;
