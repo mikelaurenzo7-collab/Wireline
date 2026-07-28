@@ -17,13 +17,8 @@ function context(drizzle: unknown): ToolCallContext {
   };
 }
 
-function cachedTransaction(result: string) {
-  const limit = vi.fn().mockResolvedValue([
-    {
-      id: 1n,
-      metadata: { status: "completed", result },
-    },
-  ]);
+function existingTransaction(metadata: Record<string, unknown>) {
+  const limit = vi.fn().mockResolvedValue([{ id: 1n, metadata }]);
   const orderBy = vi.fn(() => ({ limit }));
   const where = vi.fn(() => ({ orderBy }));
   const from = vi.fn(() => ({ where }));
@@ -58,8 +53,49 @@ describe("live agent tool idempotency", () => {
     const execute = vi.fn().mockResolvedValue({ toolCallId: "tool-1", result: "Duplicate send" });
 
     await expect(
-      runIdempotentAgentToolCall("send_email", context(cachedTransaction("Email sent.")), execute),
+      runIdempotentAgentToolCall(
+        "send_email",
+        context(existingTransaction({ status: "completed", result: "Email sent." })),
+        execute,
+      ),
     ).resolves.toEqual({ toolCallId: "tool-1", result: "Email sent." });
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it("never re-executes an already-started tool-call id", async () => {
+    const execute = vi.fn().mockResolvedValue({ toolCallId: "tool-1", result: "Duplicate send" });
+
+    const result = await runIdempotentAgentToolCall(
+      "send_email",
+      context(
+        existingTransaction({
+          status: "processing",
+          startedAt: "2020-01-01T00:00:00.000Z",
+        }),
+      ),
+      execute,
+    );
+
+    expect(result.result).toContain("already started");
+    expect(result.result).toContain("Do not run it again");
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it("caches failed tool-call ids instead of silently retrying a side effect", async () => {
+    const execute = vi.fn().mockResolvedValue({ toolCallId: "tool-1", result: "Duplicate send" });
+
+    const result = await runIdempotentAgentToolCall(
+      "send_email",
+      context(
+        existingTransaction({
+          status: "failed",
+          result: "The email was not sent. Reconfirm the address before trying again.",
+        }),
+      ),
+      execute,
+    );
+
+    expect(result.result).toBe("The email was not sent. Reconfirm the address before trying again.");
     expect(execute).not.toHaveBeenCalled();
   });
 
