@@ -7,6 +7,11 @@ import { decryptSecret, encryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 import { createMeeting as createZoomMeeting } from "./zoom-service";
 import { fetchIcloudInbox, sendIcloudMail } from "./icloud-mail";
+import {
+  formatIsoInTimeZone,
+  localDateWindowToUtc,
+  normalizeIanaTimeZone,
+} from "./calendar-time";
 
 /**
  * Unified interface for Calendar and Mail integrations.
@@ -17,29 +22,30 @@ export class IntegrationService {
   /**
    * Calendar: Check availability across all connected accounts.
    */
-  async checkAvailability(date: string): Promise<string> {
+  async checkAvailability(input: { date: unknown; timeZone: unknown }): Promise<string> {
     try {
       const accounts = await this.getAccounts("calendar");
       if (accounts.length === 0) return "No calendar accounts connected.";
 
+      const { startTime, endTime, timeZone } = localDateWindowToUtc(input);
+      const startOfDay = new Date(startTime);
+      const endOfDay = new Date(endTime);
       const busySlots: string[] = [];
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
 
       for (const account of accounts) {
         if (account.provider === "google") {
-          const slots = await this.getGoogleBusySlots(account, startOfDay, endOfDay);
+          const slots = await this.getGoogleBusySlots(account, startOfDay, endOfDay, timeZone);
           busySlots.push(...slots);
         } else if (account.provider === "microsoft") {
-          const slots = await this.getMicrosoftBusySlots(account, startOfDay, endOfDay);
+          const slots = await this.getMicrosoftBusySlots(account, startOfDay, endOfDay, timeZone);
           busySlots.push(...slots);
         }
       }
 
-      if (busySlots.length === 0) return "The whole day is currently free.";
-      return `Busy slots found:\n${busySlots.join("\n")}`;
+      if (busySlots.length === 0) {
+        return `The whole day is currently free in ${timeZone}.`;
+      }
+      return `Busy slots in ${timeZone}:\n${busySlots.join("\n")}`;
     } catch (err) {
       log.error("Calendar availability check failed", {
         userId: this.userId,
@@ -384,19 +390,33 @@ export class IntegrationService {
     return oauth2Client;
   }
 
-  private async getGoogleBusySlots(account: any, start: Date, end: Date): Promise<string[]> {
+  private async getGoogleBusySlots(
+    account: any,
+    start: Date,
+    end: Date,
+    timeZone: string,
+  ): Promise<string[]> {
     const auth = await this.getGoogleClient(account);
     const calendar = google.calendar({ version: "v3", auth });
     const res = await calendar.events.list({
       calendarId: "primary",
       timeMin: start.toISOString(),
       timeMax: end.toISOString(),
+      timeZone: normalizeIanaTimeZone(timeZone),
       singleEvents: true,
+      orderBy: "startTime",
     });
-    return (res.data.items || []).map(
-      (e: any) =>
-        `${new Date(e.start?.dateTime || "").toLocaleTimeString()} - ${new Date(e.end?.dateTime || "").toLocaleTimeString()}: ${e.summary || "Busy"}`,
-    );
+    return (res.data.items || [])
+      .map((event: any) => {
+        if (event.start?.date && !event.start?.dateTime) {
+          return `All day: ${event.summary || "Busy"}`;
+        }
+        const startIso = event.start?.dateTime;
+        const endIso = event.end?.dateTime;
+        if (!startIso || !endIso) return null;
+        return `${formatIsoInTimeZone(startIso, timeZone)} to ${formatIsoInTimeZone(endIso, timeZone)}: ${event.summary || "Busy"}`;
+      })
+      .filter((slot: string | null): slot is string => Boolean(slot));
   }
 
   private async createGoogleEvent(account: any, params: any): Promise<boolean> {
@@ -459,12 +479,28 @@ export class IntegrationService {
     return true;
   }
 
-  private async getMicrosoftBusySlots(account: any, start: Date, end: Date): Promise<string[]> {
+  private async getMicrosoftBusySlots(
+    account: any,
+    start: Date,
+    end: Date,
+    timeZone: string,
+  ): Promise<string[]> {
     const token = await this.getMicrosoftToken(account);
-    const url = `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${start.toISOString()}&endDateTime=${end.toISOString()}`;
+    const query = new URLSearchParams({
+      startDateTime: start.toISOString(),
+      endDateTime: end.toISOString(),
+      $select: "subject,start,end,isAllDay",
+      $orderby: "start/dateTime",
+    });
+    const url = `https://graph.microsoft.com/v1.0/me/calendarView?${query.toString()}`;
     const res = await fetchWithTimeout(
       url,
-      { headers: { Authorization: `Bearer ${token}` } },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Prefer: 'outlook.timezone="UTC"',
+        },
+      },
       15_000,
     );
     // Fail CLOSED: a non-2xx (401/429/503/timeout) must not be read as "no busy slots",
@@ -474,10 +510,17 @@ export class IntegrationService {
       throw new Error(`Microsoft calendar list failed: ${res.status}`);
     }
     const data = (await res.json()) as any;
-    return (data.value || []).map(
-      (e: any) =>
-        `${new Date(e.start.dateTime + "Z").toLocaleTimeString()} - ${new Date(e.end.dateTime + "Z").toLocaleTimeString()}: ${e.subject || "Busy"}`,
-    );
+    return (data.value || [])
+      .map((event: any) => {
+        if (event.isAllDay) return `All day: ${event.subject || "Busy"}`;
+        const rawStart = event.start?.dateTime;
+        const rawEnd = event.end?.dateTime;
+        if (!rawStart || !rawEnd) return null;
+        const startIso = /(?:Z|[+-]\d{2}:\d{2})$/i.test(rawStart) ? rawStart : `${rawStart}Z`;
+        const endIso = /(?:Z|[+-]\d{2}:\d{2})$/i.test(rawEnd) ? rawEnd : `${rawEnd}Z`;
+        return `${formatIsoInTimeZone(startIso, timeZone)} to ${formatIsoInTimeZone(endIso, timeZone)}: ${event.subject || "Busy"}`;
+      })
+      .filter((slot: string | null): slot is string => Boolean(slot));
   }
 
   private async createMicrosoftEvent(account: any, params: any): Promise<boolean> {
@@ -490,8 +533,8 @@ export class IntegrationService {
         body: JSON.stringify({
           subject: params.title,
           body: { contentType: "HTML", content: params.description },
-          start: { dateTime: params.startTime, timeZone: "UTC" },
-          end: { dateTime: params.endTime, timeZone: "UTC" },
+          start: { dateTime: String(params.startTime).replace(/Z$/i, ""), timeZone: "UTC" },
+          end: { dateTime: String(params.endTime).replace(/Z$/i, ""), timeZone: "UTC" },
           attendees: params.attendees?.map((email: string) => ({
             emailAddress: { address: email },
             type: "required",
