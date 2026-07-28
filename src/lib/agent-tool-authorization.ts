@@ -31,6 +31,22 @@ const SYSTEM_RUNTIME_TOOL_NAMES = new Set<AgentToolName>([
   "create_followup_task",
 ]);
 
+export const NO_TENANT_INTEGRATIONS: TenantIntegrationConnections = {
+  shopify: false,
+  square: false,
+  slack: false,
+  x: false,
+  microsoft_teams: false,
+  microsoft_excel: false,
+  salesforce: false,
+  hubspot: false,
+  zoom: false,
+  google_calendar: false,
+  microsoft_calendar: false,
+  google_mail: false,
+  microsoft_mail: false,
+};
+
 export type PersistedAgentToolSelection = readonly AgentToolName[] | null;
 export type AgentToolFeatureFlags = {
   aiTier?: string | null;
@@ -108,15 +124,23 @@ export async function isAgentToolExecutionAuthorized(
   if (!isAgentToolName(name) || !context.agent?.id || !context.agent?.user_id) return false;
 
   const userId = context.agent.user_id;
-  const [agentRows, settingsRows, connections] = await Promise.all([
-    context.drizzle
-      .select({
-        role: schema.agents.role,
-        enabledTools: schema.agents.enabledTools,
-      })
-      .from(schema.agents)
-      .where(and(eq(schema.agents.id, context.agent.id), eq(schema.agents.userId, userId)))
-      .limit(1),
+  const [agentRow] = await context.drizzle
+    .select({
+      role: schema.agents.role,
+      enabledTools: schema.agents.enabledTools,
+    })
+    .from(schema.agents)
+    .where(and(eq(schema.agents.id, context.agent.id), eq(schema.agents.userId, userId)))
+    .limit(1);
+
+  if (!agentRow) return false;
+
+  // Compliance and durable fallback bypass the Account Holder's active-set
+  // choice and all unrelated integration reads, but never the verified
+  // agent/tenant binding above.
+  if (isSystemRuntimeTool(name)) return true;
+
+  const [settingsRows, connections] = await Promise.all([
     context.drizzle
       .select({
         aiTier: schema.settings.aiTier,
@@ -125,16 +149,22 @@ export async function isAgentToolExecutionAuthorized(
       })
       .from(schema.settings)
       .where(eq(schema.settings.userId, userId))
-      .limit(1),
-    loadTenantIntegrationConnections(userId),
+      .limit(1)
+      .catch((error: unknown) => {
+        context.log.warn("Agent tool feature-flag lookup failed; disabling gated tools", {
+          agentId: context.agent.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return [];
+      }),
+    loadTenantIntegrationConnections(userId).catch((error: unknown) => {
+      context.log.warn("Agent integration lookup failed; disabling connected tools", {
+        agentId: context.agent.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return NO_TENANT_INTEGRATIONS;
+    }),
   ]);
-
-  const agentRow = agentRows[0];
-  if (!agentRow) return false;
-
-  // Compliance and durable fallback bypass the Account Holder's active-set
-  // choice, but never the verified agent/tenant binding above.
-  if (isSystemRuntimeTool(name)) return true;
 
   const settingsRow = settingsRows[0];
   const persisted = sanitizePersistedAgentToolSelection(agentRow.enabledTools);
