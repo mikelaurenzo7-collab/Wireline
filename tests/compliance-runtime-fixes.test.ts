@@ -71,9 +71,11 @@ describe("compliance & runtime fix contracts", () => {
 
   it("SMS opt-out handlers write the canonical digits-only DNC key", () => {
     expect(read("src/routes/twilio-webhook-base.ts")).toContain("phone: normalizeDncPhone(from)");
-    expect(read("src/routes/twilio-webhook.ts")).toContain(
-      "phone: normalizeDncPhone(customerNumber)",
+    const consentRoute = read("src/routes/twilio-webhook.ts");
+    expect(consentRoute).toContain(
+      "const normalizedCustomerNumber = normalizeDncPhone(input.customerNumber)",
     );
+    expect(consentRoute).toContain("phone: normalizedCustomerNumber");
   });
 
   it("the Vapi tool-call timeout is caught OUTSIDE the timeout wrapper", () => {

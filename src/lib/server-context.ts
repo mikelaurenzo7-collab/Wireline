@@ -216,7 +216,12 @@ async function scopeClientToTenant(userId: string) {
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export const db = drizzleDb(pool, { schema });
-export const drizzle = db;
+/**
+ * Application query surface. Hide the root-only `$client` implementation detail
+ * so `typeof drizzle` remains structurally compatible with Drizzle transaction
+ * executors. Code that genuinely needs the raw database instance can import `db`.
+ */
+export const drizzle: Omit<typeof db, "$client"> = db;
 
 export const auditLogger = new AuditLogger(drizzle);
 export const { requirePermission, requireRole } = createRbacMiddleware({ drizzle, auditLogger });

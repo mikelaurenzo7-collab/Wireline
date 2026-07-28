@@ -27,6 +27,8 @@ type AccountDeletionTarget = {
  * - wireline_stripe_events (global Stripe idempotency ledger)
  * - wireline_mcp_oauth_clients (platform OAuth client registry)
  * - wireline_demo_call_events (public showcase telemetry)
+ * - wireline_orphan_carrier_resources (platform cleanup ledger that must
+ *   outlive the deleted tenant until carrier teardown completes)
  */
 export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_audit_log", userColumns: ["user_id"] },
@@ -194,9 +196,10 @@ function isStripeAlreadyGone(err: unknown): boolean {
  * Stripe cancellation is treated as blocking: on a real Stripe error (not an
  * already-canceled subscription) this THROWS so the job retries rather than
  * purging the ids and orphaning a live, still-billing subscription. Number
- * release is best-effort — a carrier hiccup is a recoverable cost, not a reason
- * to indefinitely block a GDPR deletion — so those failures are collected and
- * logged, never thrown.
+ * release remains best-effort for GDPR latency, but a failed release must be
+ * durably handed to the platform orphan ledger before the tenant rows vanish.
+ * If that handoff fails, the purge is deferred instead of losing the only
+ * carrier ownership identifiers.
  */
 export async function releaseExternalResourcesForPurge(
   userId: string,
@@ -273,16 +276,20 @@ async function releaseExternalResourcesOutsideTenantContext(
     }
   }
 
-  // 2. Release provisioned numbers at the carrier (Vapi/Twilio) and drop the DB
-  //    row. Best-effort: collect failures rather than blocking the purge.
+  // 2. Release provisioned numbers at the carrier (Vapi/Twilio). A carrier
+  //    failure does not block GDPR erasure by itself, but the platform must
+  //    durably retain the ownership/provider identifiers before hard-delete.
   const numbers = await db
-    .select({ phoneNumber: schema.phoneNumbers.phoneNumber })
+    .select({
+      phoneNumber: schema.phoneNumbers.phoneNumber,
+      vapiNumberId: schema.phoneNumbers.vapiNumberId,
+    })
     .from(schema.phoneNumbers)
     .where(eq(schema.phoneNumbers.userId, userId));
 
   if (numbers.length) {
     const { releaseTenantNumber } = await import("./phone-provisioning");
-    for (const { phoneNumber } of numbers) {
+    for (const { phoneNumber, vapiNumberId } of numbers) {
       const res = await releaseTenantNumber(userId, phoneNumber).catch((err) => ({
         ok: false as const,
         error: getErrorMessage(err),
@@ -290,12 +297,45 @@ async function releaseExternalResourcesOutsideTenantContext(
       if (res.ok) {
         numbersReleased++;
       } else {
-        numberErrors.push(`${phoneNumber}: ${res.error ?? "unknown"}`);
-        log.warn("purge number release failed — carrier may retain the number", {
+        const errorText = res.error ?? "unknown";
+        numberErrors.push(`${phoneNumber}: ${errorText}`);
+        log.warn("purge number release failed — handing off to orphan ledger", {
           userId,
           phoneNumber,
-          error: res.error,
+          error: errorText,
         });
+
+        try {
+          await db.execute(sql`
+            INSERT INTO public.wireline_orphan_carrier_resources (
+              former_user_id,
+              phone_number,
+              vapi_number_id,
+              last_error,
+              status
+            )
+            VALUES (
+              ${userId}::uuid,
+              ${phoneNumber},
+              ${vapiNumberId ?? null},
+              ${errorText},
+              'pending'
+            )
+            ON CONFLICT (former_user_id, phone_number) WHERE status = 'pending'
+            DO UPDATE SET
+              vapi_number_id = EXCLUDED.vapi_number_id,
+              last_error = EXCLUDED.last_error,
+              created_at = now(),
+              resolved_at = NULL
+          `);
+        } catch (ledgerErr) {
+          log.error("orphan carrier handoff failed — deferring account purge", {
+            userId,
+            phoneNumber,
+            error: getErrorMessage(ledgerErr),
+          });
+          throw ledgerErr;
+        }
       }
     }
   }
