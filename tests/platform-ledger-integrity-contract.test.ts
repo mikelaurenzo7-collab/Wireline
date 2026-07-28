@@ -47,6 +47,13 @@ describe("platform ledger migration delivery", () => {
     );
     expect(deletion).toContain("orphan carrier handoff failed — deferring account purge");
     expect(deletion).toContain("throw ledgerErr");
+
+    // Pin the untouched deletion engine and grace-window exports. This prevents
+    // a future focused edit from accidentally truncating the lower half of the
+    // module while preserving the new carrier handoff.
+    expect(deletion).toContain("async function purgeAccountOutsideTenantContext");
+    expect(deletion).toContain("ACCOUNT_DELETION_GRACE_DAYS = 30");
+    expect(deletion).toContain("export function computeScheduledPurgeAt");
   });
 
   it("enforces Twilio consent MessageSid idempotency in Postgres", () => {
