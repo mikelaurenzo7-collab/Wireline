@@ -20,11 +20,11 @@ describe("Extra Agent Stripe SDK settlement contract", () => {
     expect(source).not.toContain("stripe.invoices.list({");
 
     const providerVerification = source.lastIndexOf("stripe.subscriptions.retrieve(subscriptionId)");
-    const entitlementWrite = source.indexOf(
-      "set({ extraAgents: quantity, maxAgents, updatedAt: new Date() })",
+    const entitlementCommit = source.lastIndexOf(
+      "return persistQuantity(target, currentDbQuantity !== target, currentStripeQuantity)",
     );
     expect(providerVerification).toBeGreaterThan(-1);
-    expect(entitlementWrite).toBeGreaterThan(-1);
-    expect(providerVerification).toBeLessThan(entitlementWrite);
+    expect(entitlementCommit).toBeGreaterThan(-1);
+    expect(providerVerification).toBeLessThan(entitlementCommit);
   });
 });
