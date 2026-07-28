@@ -7,6 +7,7 @@ import {
   CalendarTimeError,
   formatTimeRangeInZone,
   localDateTimeToUtcIso,
+  localDateWindowToUtc,
   normalizeIanaTimeZone,
 } from "../../lib/calendar-time";
 import { dispatchWebhook } from "../../lib/webhook-helpers";
@@ -51,6 +52,9 @@ export async function handleCalendarToolCall(
     try {
       const { date, timezone } = args || {};
       const timeZone = await resolveCalendarTimeZone(context, timezone);
+      // Validate locally before IntegrationService catches provider errors so a
+      // malformed or DST-invalid request produces a caller-correctable result.
+      localDateWindowToUtc({ date, timeZone });
       const service = new IntegrationService(agent.user_id);
       const result = await service.checkAvailability({ date, timeZone });
       return { toolCallId, result };
