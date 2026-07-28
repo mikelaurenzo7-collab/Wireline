@@ -14,7 +14,7 @@
 
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import { getTwilioClient } from "./twilio-service";
 import { STRIPE_PLANS, planById, type StripePlanId } from "./plan-catalog";
@@ -520,6 +520,42 @@ export async function releaseTenantNumber(
   try {
     await runCompanyIdentityMutation(userId, "phone_number_changed", async (tx) => {
       await tx.delete(schema.phoneNumbers).where(eq(schema.phoneNumbers.id, row.id));
+
+      const [[settingsRow], remainingLines] = await Promise.all([
+        tx
+          .select({
+            vapiPhoneNumberId: schema.settings.vapiPhoneNumberId,
+            twilioSmsFromNumber: schema.settings.twilioSmsFromNumber,
+          })
+          .from(schema.settings)
+          .where(eq(schema.settings.userId, userId))
+          .limit(1),
+        tx
+          .select({
+            phoneNumber: schema.phoneNumbers.phoneNumber,
+            vapiNumberId: schema.phoneNumbers.vapiNumberId,
+          })
+          .from(schema.phoneNumbers)
+          .where(eq(schema.phoneNumbers.userId, userId))
+          .orderBy(desc(schema.phoneNumbers.createdAt), desc(schema.phoneNumbers.id))
+          .limit(100),
+      ]);
+
+      if (settingsRow) {
+        const patch: Partial<typeof schema.settings.$inferInsert> = {};
+        if (carrierId && settingsRow.vapiPhoneNumberId === carrierId) {
+          patch.vapiPhoneNumberId =
+            remainingLines.find((line) => isVapiPhoneNumberId(line.vapiNumberId))?.vapiNumberId ??
+            null;
+        }
+        if (settingsRow.twilioSmsFromNumber === phoneNumber) {
+          patch.twilioSmsFromNumber = remainingLines[0]?.phoneNumber ?? null;
+        }
+        if (Object.keys(patch).length > 0) {
+          patch.updatedAt = new Date();
+          await tx.update(schema.settings).set(patch).where(eq(schema.settings.userId, userId));
+        }
+      }
     });
     return { ok: true };
   } catch (err) {
