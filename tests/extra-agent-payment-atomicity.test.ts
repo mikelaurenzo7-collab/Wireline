@@ -115,7 +115,12 @@ function subscription(
 
 describe("extra-agent Stripe settlement helpers", () => {
   it("recognizes current, metadata-tagged, fallback, and legacy lookup-key items", () => {
-    expect(isExtraAgentSubscriptionItem(item({ id: "si_1", priceId: "price_current" }), "price_current")).toBe(true);
+    expect(
+      isExtraAgentSubscriptionItem(
+        item({ id: "si_1", priceId: "price_current" }),
+        "price_current",
+      ),
+    ).toBe(true);
     expect(
       isExtraAgentSubscriptionItem(
         item({
@@ -128,11 +133,20 @@ describe("extra-agent Stripe settlement helpers", () => {
     ).toBe(true);
     expect(
       isExtraAgentSubscriptionItem(
-        item({ id: "si_3", priceId: "price_retired", lookupKey: "extra_agent_monthly_founder_2026_07_v3" }),
+        item({
+          id: "si_3",
+          priceId: "price_retired",
+          lookupKey: "extra_agent_monthly_founder_2026_07_v3",
+        }),
         "price_current",
       ),
     ).toBe(true);
-    expect(isExtraAgentSubscriptionItem(item({ id: "si_4", priceId: "price_other" }), "price_current")).toBe(false);
+    expect(
+      isExtraAgentSubscriptionItem(
+        item({ id: "si_4", priceId: "price_other" }),
+        "price_current",
+      ),
+    ).toBe(false);
   });
 
   it("detects duplicate add-on lines and sums licensed quantity", () => {
@@ -197,7 +211,9 @@ describe("extra-agent Stripe settlement helpers", () => {
   });
 
   it("detects pending updates and Stripe collection failures", () => {
-    expect(hasPendingSubscriptionUpdate(subscription([], { pendingUpdate: { expires_at: 123 } }))).toBe(true);
+    expect(
+      hasPendingSubscriptionUpdate(subscription([], { pendingUpdate: { expires_at: 123 } })),
+    ).toBe(true);
     expect(isStripePaymentRequiredError({ statusCode: 402, type: "StripeCardError" })).toBe(true);
     expect(isStripePaymentRequiredError({ code: "card_declined" })).toBe(true);
     expect(isStripePaymentRequiredError(new Error("network unavailable"))).toBe(false);
@@ -208,15 +224,15 @@ describe("extra-agent atomic route contract", () => {
   it("settles Stripe before Postgres and shadows the legacy write route", () => {
     const route = read("src/routes/extra-agent-billing-atomic-routes.ts");
     const registry = read("src/server/register-api-routes.ts");
+    const atomicMount = 'app.use("/api/billing/extra-agents", extraAgentBillingAtomicRouter)';
+    const broadBillingMount = 'app.use("/api", billingRouter)';
 
     expect(route).toContain("pg_advisory_xact_lock");
     expect(route).toContain('payment_behavior: "error_if_incomplete"');
     expect(route).toContain("stripe.subscriptions.retrieve(subscriptionId)");
     expect(route).toContain("verifiedQuantity !== target");
     expect(route).toContain("set({ extraAgents: quantity, maxAgents, updatedAt: new Date() })");
-    expect(registry).toContain('app.use("/api/billing/extra-agents", extraAgentBillingAtomicRouter)');
-    expect(registry.indexOf("extraAgentBillingAtomicRouter")).toBeLessThan(
-      registry.indexOf('app.use("/api", billingRouter)'),
-    );
+    expect(registry).toContain(atomicMount);
+    expect(registry.indexOf(atomicMount)).toBeLessThan(registry.indexOf(broadBillingMount));
   });
 });
