@@ -206,6 +206,12 @@ export async function handleJob(job: JobRow): Promise<void> {
     await handleScheduledReport(job);
     return;
   }
+  // Intercept the legacy handler before it can run unscoped phone-only history
+  // reads. The replacement asserts job/payload ownership and enters tenant RLS.
+  if (job.type === "proactive_lead_enrichment") {
+    await handleProactiveLeadEnrichmentJob(job);
+    return;
+  }
   // Extend the existing daily integrity janitor rather than creating another
   // cron/job type. The base handler removes orphan supervisor subscriptions;
   // this second phase retries durable carrier handoffs. Any remaining provider
@@ -214,12 +220,6 @@ export async function handleJob(job: JobRow): Promise<void> {
     await handleBaseJob(job as never);
     const orphanCarriers = await retryPendingOrphanCarrierResources();
     await persistJobResult(job.id, { orphan_carriers: orphanCarriers });
-    return;
-  }
-  // Intercept the legacy handler before it can run unscoped phone-only history
-  // reads. The replacement asserts job/payload ownership and enters tenant RLS.
-  if (job.type === "proactive_lead_enrichment") {
-    await handleProactiveLeadEnrichmentJob(job);
     return;
   }
   await handleBaseJob(job as never);
