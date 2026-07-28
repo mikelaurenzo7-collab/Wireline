@@ -106,7 +106,7 @@ describe("carrier release integrity", () => {
     expect(deps.releaseVapi).not.toHaveBeenCalled();
   });
 
-  it("treats an absent Vapi object as a terminal already-released state", async () => {
+  it("keeps an absent Vapi object pending until hidden Twilio cleanup can be checked", async () => {
     const deps = adapters({
       twilioAvailable: false,
       inspectVapiProvider: vi.fn().mockResolvedValue(null),
@@ -116,11 +116,12 @@ describe("carrier release integrity", () => {
       deps,
     );
 
-    expect(result).toEqual({ ok: true });
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("underlying Twilio cleanup cannot be confirmed");
     expect(deps.releaseVapi).not.toHaveBeenCalled();
   });
 
-  it("treats an inspection 404 as a terminal already-released state", async () => {
+  it("keeps an inspection 404 pending until hidden Twilio cleanup can be checked", async () => {
     const deps = adapters({
       twilioAvailable: false,
       inspectVapiProvider: vi.fn().mockRejectedValue({ statusCode: 404 }),
@@ -130,8 +131,33 @@ describe("carrier release integrity", () => {
       deps,
     );
 
-    expect(result).toEqual({ ok: true });
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("underlying Twilio cleanup cannot be confirmed");
     expect(deps.releaseVapi).not.toHaveBeenCalled();
+  });
+
+  it("does not lose a hidden Twilio rental after a partial first attempt", async () => {
+    const first = adapters({
+      releaseTwilioByE164: vi.fn().mockRejectedValue(new Error("Twilio timeout")),
+    });
+    const initial = await releaseCarrierAllocations(
+      { kind: "vapi", carrierId: "vapi-number-id", phoneNumber: "+13125550100" },
+      first,
+    );
+    expect(initial.ok).toBe(false);
+    expect(first.releaseVapi).toHaveBeenCalledOnce();
+
+    const retry = adapters({
+      twilioAvailable: false,
+      inspectVapiProvider: vi.fn().mockResolvedValue(null),
+    });
+    const retried = await releaseCarrierAllocations(
+      { kind: "vapi", carrierId: "vapi-number-id", phoneNumber: "+13125550100" },
+      retry,
+    );
+    expect(retried.ok).toBe(false);
+    expect(retried.error).toContain("underlying Twilio cleanup cannot be confirmed");
+    expect(retry.releaseVapi).not.toHaveBeenCalled();
   });
 
   it("keeps provider metadata intact after a transient inspection failure", async () => {
