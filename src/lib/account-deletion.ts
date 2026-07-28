@@ -380,48 +380,62 @@ export async function purgeAccount(
   // (or fail outright on deliberately-ungranted tables like
   // wireline_oauth_pending_codes) while still reporting a completed purge.
   // Running outside tenant context restores the cron-path behavior (worker
-  // claims jobs with no tenantStore) and lets the owner connection perform the
-  // cross-tenant GDPR operation.
-  return tenantStore.exit(async () => {
-    const { db, log } = deps;
-    const tablesTouched: string[] = [];
-    let authRemoved = false;
+  // role, explicit ownership predicates below) on every invocation path.
+  return tenantStore.exit(() => purgeAccountOutsideTenantContext(userId, deps));
+}
 
-    try {
-      await db.transaction(async (tx) => {
-        for (const target of ACCOUNT_DELETION_TARGETS) {
-          if (!(await tableExists(tx, target.table))) continue;
+async function purgeAccountOutsideTenantContext(
+  userId: string,
+  deps: PurgeAccountDeps,
+): Promise<PurgeAccountResult> {
+  const { db, log } = deps;
+  const tablesTouched: string[] = [];
 
-          const directClauses = (target.userColumns ?? []).map(
-            (column) => sql`${sql.identifier(column)} = ${userId}::uuid`,
-          );
-          const organizationClauses = (target.organizationColumns ?? []).map(
+  try {
+    return await db.transaction(async (tx) => {
+      for (const target of ACCOUNT_DELETION_TARGETS) {
+        if (!(await tableExists(tx, target.table))) {
+          log.warn("account purge skipped missing table", { table: target.table, userId });
+          continue;
+        }
+
+        const predicates = [
+          ...(target.userColumns || []).map((column) => sql`${sql.raw(column)} = ${userId}`),
+          ...(target.organizationColumns || []).map(
             (column) =>
-              sql`${sql.identifier(column)} IN (
-                SELECT id FROM wireline_organizations WHERE owner_id = ${userId}::uuid
+              sql`${sql.raw(column)} IN (
+                SELECT id FROM wireline_organizations WHERE owner_id = ${userId}
               )`,
-          );
-          const clauses = [...directClauses, ...organizationClauses];
-          if (!clauses.length) continue;
+          ),
+        ];
 
-          const where = sql.join(clauses, sql` OR `);
-          await tx.execute(
-            sql`DELETE FROM ${sql.identifier(target.table)} WHERE ${where}`,
-          );
-          tablesTouched.push(target.table);
+        if (predicates.length === 0) {
+          log.error("account purge target has no ownership predicate", {
+            table: target.table,
+            userId,
+          });
+          throw new Error(`Unsafe account purge target: ${target.table}`);
         }
 
-        if (await tableExists(tx, "wireline_users")) {
-          await tx.execute(sql`DELETE FROM wireline_users WHERE id = ${userId}::uuid`);
-          authRemoved = true;
-        }
-      });
+        await tx.execute(
+          sql`DELETE FROM ${sql.raw(target.table)} WHERE ${sql.join(predicates, sql` OR `)}`,
+        );
+        tablesTouched.push(target.table);
+      }
 
-      return { ok: true, tablesTouched, authRemoved };
-    } catch (err) {
-      const error = getErrorMessage(err);
-      log.error("account purge failed", { userId, error, tablesTouched });
-      return { ok: false, tablesTouched, authRemoved, error };
-    }
-  });
+      await tx.execute(sql`DELETE FROM wireline_users WHERE id = ${userId}`);
+      return { ok: true, tablesTouched, authRemoved: true };
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    log.error("account purge transaction failed", { error: message, userId });
+    return { ok: false, tablesTouched, authRemoved: false, error: message };
+  }
+}
+
+/** Shared 30-day reversible grace window. */
+export const ACCOUNT_DELETION_GRACE_DAYS = 30;
+
+export function computeScheduledPurgeAt(requestedAt: Date): Date {
+  return new Date(requestedAt.getTime() + ACCOUNT_DELETION_GRACE_DAYS * 24 * 60 * 60 * 1000);
 }
