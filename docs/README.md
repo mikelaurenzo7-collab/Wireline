@@ -65,6 +65,8 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 
 | Document | Role |
 | --- | --- |
+| [DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md) | Shared Postgres, migration, RLS, privilege, and rollback operations. |
+| [DEPLOYMENT_RUNBOOK.md](./DEPLOYMENT_RUNBOOK.md) | Exact-head preview, production promotion, environment, migration, and rollback workflow. |
 | [FOUNDER_LAUNCH_COMMAND_CENTER.md](./FOUNDER_LAUNCH_COMMAND_CENTER.md) | Founder go/no-go, runtime, GTM, KPI, support, and rollback command center. |
 | [LAUNCH_GURU_PLAYBOOK_2026-07-20.md](./LAUNCH_GURU_PLAYBOOK_2026-07-20.md) | Current launch sequence and operating playbook. |
 | [LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md](./LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md) | Creative doctrine, asset inventory, and channel placement. |
@@ -107,7 +109,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 ## Verification
 
 - `npm run source-control:check` validates ignored/tracked drift, forbidden local artifacts, and case-collision safety.
-- `npm run docs:check` validates required canonical links, local Markdown targets, duplicate index entries, and complete `docs/` indexing.
+- `npm run docs:check` validates required canonical links, local Markdown targets, duplicate index entries, complete `docs/` indexing, and tracked Markdown classification.
 - `npm run verify` runs repository checks, design/routes/OpenAPI/token/Stripe checks, a production build, and server smoke.
 - `npm run verify:full` adds TypeScript, ESLint, authorization, CSP, runtime-policy, security-audit, test, and browser-extension gates.
 - `GET /api/health` is the deployed health probe.
