@@ -66,7 +66,7 @@ describe("platform ledger migration delivery", () => {
     expect(migration).toContain("WHERE NULLIF");
   });
 
-  it("keeps Drizzle transaction executors compatible with application query types", () => {
+  it("keeps Drizzle transaction executors compatible without dropping server exports", () => {
     const idempotency = read("src/lib/action-execution-idempotency.ts");
     const serverContext = read("src/lib/server-context.ts");
 
@@ -74,5 +74,7 @@ describe("platform ledger migration delivery", () => {
     expect(idempotency).not.toContain("async (tx: typeof drizzle)");
     expect(serverContext).toContain('export const drizzle: Omit<typeof db, "$client"> = db;');
     expect(serverContext).toContain("Code that genuinely needs the raw database instance can import `db`");
+    expect(serverContext).toContain("export const { requirePermission, requireRole }");
+    expect(serverContext).toContain("export const quotaTracker = new QuotaTracker");
   });
 });
