@@ -91,7 +91,7 @@ describe("carrier release integrity", () => {
     expect(deps.releaseTwilioByE164).not.toHaveBeenCalled();
   });
 
-  it("fails closed when a Twilio-backed Vapi number cannot reach Twilio", async () => {
+  it("preserves a Twilio-backed Vapi object until Twilio cleanup can run", async () => {
     const deps = adapters({
       twilioAvailable: false,
       inspectVapiProvider: vi.fn().mockResolvedValue("twilio"),
@@ -102,10 +102,11 @@ describe("carrier release integrity", () => {
     );
 
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("Twilio cleanup could not be verified");
+    expect(result.error).toContain("Twilio-managed");
+    expect(deps.releaseVapi).not.toHaveBeenCalled();
   });
 
-  it("fails closed when provider ownership is ambiguous without Twilio", async () => {
+  it("treats an absent Vapi object as a terminal already-released state", async () => {
     const deps = adapters({
       twilioAvailable: false,
       inspectVapiProvider: vi.fn().mockResolvedValue(null),
@@ -115,8 +116,37 @@ describe("carrier release integrity", () => {
       deps,
     );
 
+    expect(result).toEqual({ ok: true });
+    expect(deps.releaseVapi).not.toHaveBeenCalled();
+  });
+
+  it("treats an inspection 404 as a terminal already-released state", async () => {
+    const deps = adapters({
+      twilioAvailable: false,
+      inspectVapiProvider: vi.fn().mockRejectedValue({ statusCode: 404 }),
+    });
+    const result = await releaseCarrierAllocations(
+      { kind: "vapi", carrierId: "vapi-number-id", phoneNumber: "+13125550100" },
+      deps,
+    );
+
+    expect(result).toEqual({ ok: true });
+    expect(deps.releaseVapi).not.toHaveBeenCalled();
+  });
+
+  it("keeps provider metadata intact after a transient inspection failure", async () => {
+    const deps = adapters({
+      twilioAvailable: false,
+      inspectVapiProvider: vi.fn().mockRejectedValue(new Error("Vapi 503")),
+    });
+    const result = await releaseCarrierAllocations(
+      { kind: "vapi", carrierId: "vapi-number-id", phoneNumber: "+13125550100" },
+      deps,
+    );
+
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("not confirmed as Vapi-managed");
+    expect(result.error).toContain("Vapi provider inspection");
+    expect(deps.releaseVapi).not.toHaveBeenCalled();
   });
 
   it("releases legacy Twilio SID rows directly", async () => {
