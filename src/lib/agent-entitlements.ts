@@ -16,6 +16,12 @@ export interface AgentEntitlement {
   unlimited: boolean;
 }
 
+const PAID_CAPACITY_STATUSES = new Set(["active", "trialing"]);
+
+function normalizedSubscriptionStatus(status: string | null | undefined): string {
+  return status?.trim().toLowerCase() || "pending_activation";
+}
+
 export function resolveAgentEntitlement(input: AgentEntitlementInput): AgentEntitlement {
   if (input.isOwner) {
     return {
@@ -27,19 +33,34 @@ export function resolveAgentEntitlement(input: AgentEntitlementInput): AgentEnti
     };
   }
 
-  // Look up plan limits from the plan catalog. No subscription defaults to Personal (1 agent).
-  // settings.maxAgents is synced to plan+extras on Stripe sync and may be raised by
-  // platform admin — honor the higher of catalog math vs the stored cap.
-  const plan = planById(input.planId);
-  const planAgents = plan ? plan.max_agents : 1;
-  const purchasedExtras = Math.max(0, input.extraAgents ?? 0);
+  const subscriptionStatus = normalizedSubscriptionStatus(input.subscriptionStatus);
+  const freeDraftCap = planById("personal")?.max_agents ?? 1;
+
+  // Create and Train remain available without a paid subscription, but only at
+  // the Free Builder cap. Legacy settings.maxAgents defaults and stale paid-plan
+  // mirrors must not survive cancellation, failed payment, or activation loss.
+  if (!PAID_CAPACITY_STATUSES.has(subscriptionStatus)) {
+    return {
+      subscriptionStatus,
+      planAgents: freeDraftCap,
+      purchasedExtras: 0,
+      effectiveCap: freeDraftCap,
+      unlimited: false,
+    };
+  }
+
+  // Active/trialing workspaces receive their catalog allowance, purchased
+  // extras, and any deliberate platform grant stored above that catalog total.
+  const plan = planById(input.planId) || planById("personal");
+  const planAgents = plan?.max_agents ?? freeDraftCap;
+  const purchasedExtras = Math.max(0, Math.floor(input.extraAgents ?? 0));
   const catalogCap = planAgents + purchasedExtras;
   const storedCap =
     typeof input.maxAgents === "number" && Number.isFinite(input.maxAgents)
       ? Math.max(0, Math.floor(input.maxAgents))
       : 0;
   return {
-    subscriptionStatus: input.subscriptionStatus || "pending_activation",
+    subscriptionStatus,
     planAgents,
     purchasedExtras,
     effectiveCap: Math.max(catalogCap, storedCap),
