@@ -127,4 +127,18 @@ describe("carrier teardown integration", () => {
     expect(retry).toContain("SET last_error = ${error}");
     expect(retry).toContain("throw new Error(");
   });
+
+  it("routes user-initiated deletion through strict carrier teardown before the legacy writer", () => {
+    const releaseRoute = read("src/routes/phone-number-release-routes.ts");
+    const registration = read("src/server/register-api-routes.ts");
+    const strictMount = registration.indexOf("app.use(phoneNumberReleaseRouter)");
+    const broadMount = registration.indexOf("app.use(carrierRouter)");
+
+    expect(releaseRoute).toContain('router.delete(\n  "/api/phone-numbers/:id"');
+    expect(releaseRoute).toContain("releaseTenantNumber(req.user.id, owned.phoneNumber)");
+    expect(releaseRoute).toContain("CARRIER_RELEASE_FAILED");
+    expect(releaseRoute).not.toContain("delete(schema.phoneNumbers)");
+    expect(strictMount).toBeGreaterThan(-1);
+    expect(broadMount).toBeGreaterThan(strictMount);
+  });
 });
