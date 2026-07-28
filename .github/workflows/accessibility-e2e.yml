@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: accessibility-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   accessibility:
     name: Playwright axe WCAG gate
@@ -21,7 +25,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm install
+      - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test tests/e2e/accessibility.spec.ts --project=chromium
       - uses: actions/upload-artifact@v7
