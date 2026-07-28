@@ -1,243 +1,164 @@
-# Deploy Guide
+# Wireline Deployment Guide
 
-## TL;DR — to deploy a change
+This guide covers the production boundary, Vercel project policy, environment scoping, migrations, and post-deployment verification. Product/provider inventories belong in their code or dedicated runbooks, not here.
 
-```bash
-git add -A
-git commit -m "your message"
-git push   # → triggers automatic Vercel preview build
+## Standard release flow
+
+1. Create a focused branch.
+2. Push the branch and review the Vercel preview attached to the pull request.
+3. Run the narrowest relevant checks while iterating and `npm run verify:full` before merge for auth, billing, data, provider, runtime, or shared-contract changes.
+4. Confirm the exact PR head is `READY`, review the diff, and resolve review threads.
+5. Squash merge to `main` with the expected head SHA.
+6. Follow the exact merge commit through the production deployment.
+7. Verify migrations, aliases, health, critical route behavior, and runtime errors.
+
+A branch push creates a preview. A merge to `main` creates the production deployment when the Vercel Production Branch is `main`.
+
+## Canonical Vercel project
+
+**Only `revaluate/wireline` may be linked to this GitHub repository.** It owns `trywireline.com`, the production aliases, and the production environment inventory.
+
+A second linked project historically named `workspace` caused duplicate deployments and a red **Vercel – workspace** status even when the canonical project was healthy. Do not copy production secrets into a duplicate project to silence that status. Unlink or retire the duplicate project instead.
+
+Current production aliases are managed by the canonical project. Verify the aliases on the exact deployment rather than maintaining a duplicate list in source documentation.
+
+## Runtime and tooling pins
+
+Wireline is pinned to Node.js 22 across `.nvmrc`, `package.json`, and Vercel configuration.
+
+Dependabot must not automatically open major upgrades for TypeScript, Vite, `@vitejs/plugin-react`, or `@types/node`. TypeScript 7.0.2 previously failed Vercel's **local user-provided** TypeScript function step after the application build had passed. Vite 8 is a separate Rolldown migration. Upgrade these majors only through a dedicated PR that proves preview and production compatibility.
+
+## Vercel build boundary
+
+`package.json` must keep:
+
+```json
+"build:vercel": "node scripts/vercel-build.mjs"
 ```
 
-That's it for branch / PR previews. Vercel auto-deploys every push to a
-preview URL; you'll see the URL in the PR's check run.
+The wrapper owns deployment-boundary checks, the focused release gate, migration policy, build, server import smoke, and MCP bundle generation.
 
-To promote a preview to production:
+### Preview migrations
 
-1. **Push to `main`** — set **Production Branch** to `main` in
-   [Vercel → wireline → Settings → Git](https://vercel.com/revaluate/wireline/settings/git)
-   so every merge auto-assigns `target: production` to trywireline.com.
-2. If production is still on a feature branch (e.g. `cursor/elevate-business-concept-d625`),
-   previews from `main` and PRs will **not** update trywireline.com until you
-   change that setting or promote manually.
-3. Manual promote (any READY deployment from `main`):
+Preview deployments must not migrate the shared production database. `scripts/vercel-build.mjs` runs migrations only when:
 
-   ```bash
-   export VERCEL_TOKEN="<token>"
-   node scripts/promote-vercel-production.mjs
-   ```
+- `VERCEL_ENV=production`; or
+- `WIRELINE_RUN_MIGRATIONS=true` is explicitly set for a reviewed migration exercise.
 
-   Or: `vercel deploy --prod --yes` from the repo root.
+Do not replace the wrapper with `npm run db:migrate && npm run build`.
 
-Both production aliases (`trywireline.com`, `wireline-chi.vercel.app`,
-`wireline-revaluate.vercel.app`) update together when a deployment is promoted.
+### Production migrations
 
-### Canonical Vercel project
+Production deployment logs must show successful migration replay before the deployment is accepted. Migrations must be numbered, journaled, idempotent, and aligned with `src/db/schema.ts` where applicable. Follow `DATABASE_SETUP.md`; never use `db:push` against shared or production infrastructure.
 
-**Only `revaluate/wireline` may be linked to this GitHub repo.** That project owns
-trywireline.com and the production secrets inventory. A second linked project
-(historically named `workspace`) will also receive every `main`/PR push, fail
-`scripts/check-deployment-boundaries.mjs` when Production env is empty, and
-paint a red **Vercel – workspace** status on the commit even when `wireline` is
-green. If that happens: unlink the duplicate under Vercel → project → Settings →
-Git (or delete the project). Do not copy production secrets into a second
-project to silence the check.
+## Environment-variable policy
 
-### Node.js runtime
+Environment values live in the canonical Vercel project.
 
-The repo is pinned to **Node 22** across `.nvmrc`, `package.json` (`engines.node: "22.x"`), and `vercel.json` (`build.env.NODE_VERSION: "22"`). Keep Vercel -> wireline -> Settings -> General on **Node.js 22.x** before promoting production builds.
+| Scope | Policy |
+| --- | --- |
+| Production | Live credentials and production provider configuration only. |
+| Preview | Dedicated sandbox credentials or intentionally unset. Never reuse a live value merely to make a preview green. |
+| Development | Local or sandbox values only. |
 
-If Vercel reports an install/runtime mismatch, fix the project dashboard setting rather than widening `package.json` engines. The strict pin is intentional so previews, CI, and production use the same runtime family.
+`.env.example` defines names and documentation, not deployable values.
 
-### Tooling majors (TypeScript / Vite)
+Core production variables include:
 
-Dependabot must not open major bumps for `typescript`, `vite`, `@vitejs/plugin-react`,
-or `@types/node` (see `.github/dependabot.yml`). Vercel’s post-`build:vercel`
-function step uses the **local user-provided** TypeScript from `node_modules`;
-TypeScript 7.0.2 failed there with `Cannot read properties of undefined (reading
-'readFile')` even after a green app build + smoke. Vite 8 is a separate Rolldown
-migration. Keep `typescript` on 6.x, `vite` on 6.x, and `@types/node` on 22.x
-until an intentional upgrade PR proves Vercel + CI green.
+| Variable | Purpose |
+| --- | --- |
+| `APP_URL` | Canonical application and callback base URL. |
+| `CORS_ORIGINS` | Explicit cross-origin allowlist. |
+| `DATABASE_POOL_URL` | Preferred Supabase transaction-pooler connection. |
+| `POSTGRES_URL` | Compatibility database connection fallback. |
+| `INTERNAL_JWT_SECRET` | Canonical Wireline session-signing secret. |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Distributed rate limits and durable short-lived controls. |
+| `OPENAI_API_KEY` | Primary managed structured runtime and OpenAI Realtime surfaces. |
+| `GEMINI_API_KEY` | First structured-runtime fallback. |
+| `AI_GATEWAY_API_KEY` | Governed continuity through Vercel AI Gateway. |
+| `VAPI_PRIVATE_KEY`, `VAPI_WEBHOOK_SECRET` | Managed call orchestration and signed webhook boundary. |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` | Twilio account identity and webhook verification. |
+| `TWILIO_API_KEY`, `TWILIO_API_SECRET` | Preferred scoped Twilio REST credentials. |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Billing and webhook verification. |
 
-### Release gate and preview migration policy
+`XAI_API_KEY` is optional experiment-only infrastructure. Direct structured use also requires the explicit Wireline feature flag.
 
-Wireline merges must be held until the release gate is actionable. A deploy is
-not release-ready when GitHub Actions reports a startup failure before jobs
-materialize, has a blank workflow name, or exposes no job logs/steps; that state
-is an infrastructure/App integration blocker, not a trustworthy application
-build signal. In that case:
+### Session-secret discipline
 
-1. Do **not** merge reliability, billing, auth, data, or migration-affecting PRs
-   on the assumption that the missing logs are harmless.
-2. Confirm the Vercel preview is `READY` and inspect runtime logs for the
-   affected environment.
-3. Confirm CodeQL/security checks that do materialize are green.
-4. Leave the PR open with the exact blocker and retry only after GitHub Actions
-   produces named jobs with readable logs, or after the infrastructure blocker
-   is explicitly accepted by the owner.
+Keep `INTERNAL_JWT_SECRET` as the canonical name. A legacy alias must not carry a conflicting value. Rotating the secret invalidates existing sessions and must be treated as an intentional authentication change.
 
-Vercel previews must never apply migrations to a shared production database.
-The explicit `build:vercel` command intentionally routes through `scripts/vercel-build.mjs`.
-That wrapper runs `npm run db:migrate` only when `VERCEL_ENV=production` or
-`WIRELINE_RUN_MIGRATIONS=true`; all preview builds should log that migrations
-were skipped before running the normal production build. Keep this wrapper wired
-in `package.json` and do not replace it with `npm run db:migrate && npm run build`.
+### No environment mirrors in source control
 
----
+Do not commit Vercel exports, `.env` files, screenshots containing credentials, copied provider payloads, or credential documents. Rotate any credential that has been pasted into a document, chat attachment, issue, pull request, log, or shared drive.
 
-## Environment variables
+## Provider configuration ownership
 
-All env vars live in Vercel project settings:
-https://vercel.com/revaluate/wireline/settings/environment-variables
+Do not maintain live agent phone numbers, founder contact information, or provider object IDs in this guide.
 
-| Scope           | What it covers                               |
-| --------------- | -------------------------------------------- |
-| **Production**  | The 3 prod aliases above                     |
-| **Preview**     | Every branch PR — auto-deployed preview URLs |
-| **Development** | Local `vercel dev` runs (rarely used here)   |
+| Concern | Source of truth |
+| --- | --- |
+| Public/demo agent roster | `src/data/contact-agents.ts` and the provider dashboard |
+| OAuth callback paths | route source plus `npm run oauth:redirects` |
+| Stripe catalog | `src/lib/plan-catalog.ts`, catalog scripts, and `docs/BILLING_RUNBOOK.md` |
+| Voice runtime | `ARCHITECTURE.md`, `docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md` |
+| Vapi webhook alignment | Vapi scripts and signed runtime contracts |
+| Twilio numbers and messaging | server-owned Twilio routes and the Twilio console |
 
-When adding a new var, set it only in the targets where that value is
-safe. Production secrets belong in **Production**; Preview/Development
-must use dedicated sandbox credentials or stay unset. Do not widen a
-production value across all targets unless `.env.example`, this guide,
-and `scripts/check-deployment-boundaries.mjs` explicitly allow it.
+When a provider credential or webhook secret rotates, update every corresponding provider-side configuration in the same reviewed change.
 
-### Var inventory (key ones)
+## Release evidence
 
-| Var                                                 | Why it exists                                                                                                       |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `APP_URL`                                           | Base URL for OAuth callbacks, Stripe webhooks, Vapi assistant config                                                |
-| `CORS_ORIGINS`                                      | Allowed origins for cross-origin API requests                                                                       |
-| `POSTGRES_URL`                                      | Supabase Postgres connection                                                                                        |
-| `INTERNAL_JWT_SECRET`                               | Wireline session JWT signing. Canonical name; `SUPABASE_JWT_SECRET` is only a legacy alias.                         |
-| `VAPI_PRIVATE_KEY`                                  | Server-side Vapi API calls                                                                                          |
-| `VITE_VAPI_PUBLIC_KEY`                              | In-browser Vapi widget                                                                                              |
-| `VAPI_WEBHOOK_SECRET`                               | Auth on `/api/vapi-webhook` and `/api/escalate`                                                                     |
-| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN`          | Account identity and webhook signature validation. Keep `TWILIO_AUTH_TOKEN` for webhook auth even when REST uses API keys. |
-| `TWILIO_API_KEY` / `TWILIO_API_SECRET`              | Preferred scoped REST credential for outbound Twilio API calls.                                                     |
-| `OWNER_PHONE` / `OWNER_EMAIL` / `PLATFORM_SMS_FROM` | Escalation routing (where agent escalations go). Set `OWNER_EMAIL=mikelaurenzo7@gmail.com` for the founder account. |
-| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`       | Billing                                                                                                             |
-| `OPENAI_API_KEY`                                    | Primary managed structured runtime (direct OpenAI Responses API, GPT-5.6 Terra) and OpenAI Realtime live-voice demos |
-| `GEMINI_API_KEY`                                    | First automatic structured fallback and grounded-search fallback                                                    |
-| `AI_GATEWAY_API_KEY`                                | Governed continuity route through Vercel AI Gateway                                                                 |
-| `XAI_API_KEY`                                       | Optional xAI experiments only; structured fallback also requires `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=true`      |
+For each production merge, record or verify:
 
-### Internal JWT secret cleanup
+- exact merge SHA;
+- Vercel production deployment ID and `READY` state;
+- `trywireline.com` alias assignment with no alias error;
+- focused gate results;
+- migration success;
+- production client/server/MCP bundles;
+- `GET /api/health` returning HTTP 200;
+- critical auth/provider starts returning expected status without exposing state, cookies, or tokens;
+- post-deployment runtime-error scan;
+- relevant database integrity counts and constraints.
 
-Keep exactly one canonical session-signing secret in Vercel: `INTERNAL_JWT_SECRET`.
-If `SUPABASE_JWT_SECRET` also exists, delete it only after confirming it is either
-identical to `INTERNAL_JWT_SECRET` or after intentionally rotating sessions. If both
-names are set to different values, production startup/checks fail because one part
-of the app could sign tokens that another part rejects.
-
-### Database migrations
-
-Run `npm run db:migrate` before promoting schema-dependent releases, then run
-`npm run db:health`. For signup-attribution releases, confirm
-`0017_add_signup_intent.sql` has applied; the health check fails when those
-attribution columns are missing.
-
----
-
-## Vapi agents
-
-Phone numbers live in the Vapi dashboard
-(https://dashboard.vapi.ai -> Phone Numbers). The code source of truth is
-`src/data/contact-agents.ts`; update this section whenever that roster changes.
-
-**2 Wireline employee lines (support + sales, owner escalation enabled):**
-
-- Sarah - Wireline Specialist - (630) 642-5661
-- Liam - Wireline Specialist - (630) 581-1834
-
-Both employee agents have the `escalate_to_human` tool wired to
-`https://trywireline.com/api/escalate` with the shared webhook secret.
-
-**7 public demo lines (role-play showcases, no owner escalation):**
-
-- Jordan - Inbound Customer Service Demo - (630) 642-5927
-- Ria - Demo Concierge - (564) 238-9455
-- Marcus - Medical Practice Demo - (617) 313-4469
-- Diana - Law Firm Demo - (572) 726-9365
-- Aisha - Real Estate Demo - (973) 363-8874
-- Elena - Insurance Demo - (904) 460-1596
-- Jake - Outbound Sales Demo - (469) 257-1581
-
-Jordan and Jake are the primary landing-page demo calls. All demo agents
-role-play their job and pitch Wireline when asked; demo lines cannot page the
-owner.
-
-If you rotate `VAPI_WEBHOOK_SECRET`, you ALSO need to update the
-`server.secret` on each customer-service agent's `escalate_to_human`
-tool in Vapi (do it via the dashboard or PATCH each assistant).
-
----
-
-## Domain & DNS
-
-- `trywireline.com` — primary domain, owned by you, set up in Vercel
-- `wireline-chi.vercel.app` — legacy alias, kept live for old links
-- `wireline-revaluate.vercel.app` — Vercel team default, kept for fallback
-
-All three point at the same active production deployment.
-
----
+GitHub Actions startup failures caused by the repository/account billing limit are infrastructure evidence, not application test results. Do not represent a missing job as a passing check. Use the complete local/Vercel gate and document the infrastructure limitation explicitly.
 
 ## Troubleshooting
 
-**Vapi calls hang up with "public webhook signature" error**
-→ `VAPI_WEBHOOK_SECRET` in Vercel doesn't match the `server.secret`
-on the phone number / tool config in Vapi. Rotate both sides.
+### Preview runs migrations
 
-**OAuth redirect mismatch (Google / Microsoft)**
-→ Google Cloud Console: add `https://trywireline.com` to JavaScript
-origins AND `https://trywireline.com/api/oauth/google/callback`
-to redirect URIs. Same pattern for Microsoft (Azure AD).
+Stop the release. Confirm `build:vercel` still points to `scripts/vercel-build.mjs`, Preview does not set `WIRELINE_RUN_MIGRATIONS=true`, and the deployment reports `VERCEL_ENV=preview`.
 
-**OAuth returns to `/auth/oauth-complete` with "Failed to start session"**
-→ The provider login succeeded, but the short-lived session bridge table
-is missing or unavailable. Run the latest database migrations; the app
-also attempts to create `wireline_oauth_pending_codes` automatically on
-the next callback if the production database role has DDL permission.
+### Production deployment is healthy but the commit has an extra red Vercel status
 
-**Stripe webhook fails**
-→ Stripe Dashboard → Webhooks → confirm endpoint URL is
-`https://trywireline.com/api/stripe-webhook`.
+Check whether a duplicate Vercel project is linked. The canonical project is `revaluate/wireline`; the historical duplicate produced **Vercel – workspace** failures.
 
-**GitHub Actions shows a blank workflow name, zero jobs, or missing logs**
-→ Treat it as a release-gate infrastructure blocker. Re-run after checking
-GitHub Actions/App installation health, repository Actions settings, and any
-third-party status checks. Do not merge blocked PRs until named jobs and logs
-are available, unless the owner explicitly accepts the infrastructure risk.
+### Vercel function compilation fails after an apparently green application build
 
-**Vercel preview tries to run database migrations**
-→ Stop the merge. `package.json` must keep `"build:vercel":
-"node scripts/vercel-build.mjs"` and preview environments must leave
-`WIRELINE_RUN_MIGRATIONS` unset or `false`. Only production builds or explicit
-migration test runs may set it to `true`.
+Confirm Node.js 22 and the pinned TypeScript/Vite major families. TypeScript 7.0.2 is not approved for this repository.
 
-**Preview build fails author-email check**
-→ Already mitigated. If it returns: set
-`git config user.email "<your GitHub noreply email>"`
-in this repo.
+### OAuth redirect mismatch
 
----
-
-## CLI cheatsheet
+Run:
 
 ```bash
-# Trigger a manual deploy (skips git, uploads local files)
-vercel deploy --prod --yes --force
-
-# Check what's deployed where
-vercel ls
-
-# Inspect a specific deployment
-vercel inspect <deployment-url>
-
-# Promote any deployment to production
-vercel alias set <deployment-url> trywireline.com
-vercel alias set <deployment-url> wireline-chi.vercel.app
-
-# Pull production env vars to a local file
-vercel env pull .env.local --environment=production
+npm run oauth:redirects
 ```
+
+Compare the generated canonical callbacks with the provider dashboard. Sign-in OAuth and mailbox/integration OAuth are separate flows and may use different scopes or callback routes.
+
+### OAuth provider login succeeds but Wireline session exchange fails
+
+Verify the latest migrations, distributed OAuth rate-limit configuration, bridge-cookie policy, pending-code table integrity, and runtime errors. Do not log or paste the state, bridge cookie, provider token, or one-time code.
+
+### Stripe webhook failures
+
+Verify the production endpoint, signature secret, enabled-event set, and event-id idempotency store. Use the Stripe webhook check/alignment scripts rather than editing events ad hoc.
+
+### Vapi or Twilio webhook failures
+
+Confirm the server-side secret and provider-side secret match, the public callback URL is current, and request signature validation is not bypassed. Keep Twilio REST credentials separate from the auth token required for webhook verification.
+
+## Manual promotion
+
+Normal production promotion is a reviewed merge to `main`. Manual promotion is an exception for an already reviewed, `READY` deployment and must preserve the exact verified commit. Do not deploy an unreviewed local working tree with `vercel deploy --prod`.
