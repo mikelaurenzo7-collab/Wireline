@@ -65,4 +65,10 @@ describe("platform ledger migration delivery", () => {
     expect(migration).toContain("metadata ->> 'twilio_message_sid'");
     expect(migration).toContain("WHERE NULLIF");
   });
+
+  it("lets Drizzle infer the transaction callback instead of requiring the root client", () => {
+    const idempotency = read("src/lib/action-execution-idempotency.ts");
+    expect(idempotency).toContain("drizzle.transaction(async (tx) =>");
+    expect(idempotency).not.toContain("async (tx: typeof drizzle)");
+  });
 });
