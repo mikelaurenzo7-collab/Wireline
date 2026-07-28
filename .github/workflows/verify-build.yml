@@ -26,7 +26,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run active-surface:check
+      - run: npm run design:check
       - run: npm run tsconfig:excludes:check
       - run: node apps/browser-extension/scripts/build.mjs --check
       - run: node apps/browser-extension/scripts/build.mjs
