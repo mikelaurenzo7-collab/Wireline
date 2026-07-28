@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
@@ -25,6 +26,31 @@ const requiredCanonicalLinks = [
   "docs/WIRELINE_2026_ROADMAP.md",
 ];
 
+const rootMarkdown = new Set([
+  "README.md",
+  "CONTRIBUTING.md",
+  "CODEBASE_HEALTH.md",
+  "ARCHITECTURE.md",
+]);
+
+const standaloneMarkdown = new Set([
+  "apps/browser-extension/README.md",
+  "android/README.md",
+  "ios/README.md",
+  // This remains outside docs because a design contract reads the exact path.
+  "references/design-system-navigation-plan.md",
+]);
+
+function gitLines(args) {
+  return execFileSync("git", args, {
+    encoding: "utf8",
+    maxBuffer: 32 * 1024 * 1024,
+  })
+    .split("\n")
+    .filter(Boolean)
+    .map((value) => value.replace(/\\/g, "/"));
+}
+
 function repoPath(absolutePath) {
   return path.relative(root, absolutePath).replace(/\\/g, "/");
 }
@@ -39,8 +65,8 @@ function normalizeTarget(sourcePath, rawTarget) {
     return null;
   }
 
-  // Local documentation links in the indexes do not use Markdown titles. If a
-  // future link needs one, use angle brackets around a path containing spaces.
+  // Index links intentionally omit Markdown link titles. Angle brackets remain
+  // supported for a future local path containing spaces.
   const target = trimmed.split("#", 1)[0].split("?", 1)[0];
   if (!target.toLowerCase().endsWith(".md")) return null;
 
@@ -136,6 +162,22 @@ if (problems.length === 0) {
       );
     }
   }
+
+  const trackedMarkdown = gitLines(["ls-files", "*.md", "**/*.md"]);
+  for (const file of trackedMarkdown) {
+    if (
+      file.startsWith("docs/") ||
+      file.startsWith(".github/") ||
+      rootMarkdown.has(file) ||
+      standaloneMarkdown.has(file)
+    ) {
+      continue;
+    }
+    problems.push(
+      `${file} is tracked Markdown without an approved home. Move durable policy to docs/, ` +
+        `use a surface README, or explicitly classify the exceptional path in ${canonicalIndexPath}.`,
+    );
+  }
 }
 
 if (problems.length) {
@@ -144,4 +186,4 @@ if (problems.length) {
   process.exit(1);
 }
 
-console.log("Documentation indexes are complete, unique, and link-valid.");
+console.log("Documentation indexes and tracked Markdown organization are complete and link-valid.");
