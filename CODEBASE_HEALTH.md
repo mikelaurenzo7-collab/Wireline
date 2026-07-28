@@ -86,6 +86,8 @@ Wireline Letterpress on the Aurora palette is the only active design system.
 
 Every durable Markdown file under `docs/` must be linked from exactly one documentation index. Dated evidence does not become canonical policy by default. Durable conclusions must be promoted into code or the appropriate canonical document.
 
+A Markdown file may remain outside `docs/` only when a tool, source-owning surface, legacy link, or regression contract requires its exact path. Every exception must be linked exactly once from `docs/README.md`, remain a bounded entry point or compatibility pointer, defer full policy to a canonical document, and contain no credentials, environment values, mutable provider inventories, or copied production data.
+
 ## Verification
 
 - `npm run check-prod-env` validates required production environment shape.
