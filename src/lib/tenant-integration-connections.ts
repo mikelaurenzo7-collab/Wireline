@@ -7,12 +7,28 @@ import {
   type PlatformIntegrationFlags,
 } from "./platform-integration-flags";
 import { X_ENGAGEMENT_TOOL_NAMES } from "./x-service";
-import { xAdsConfigured } from "./x-ads-service";
 
 const CRM_TOOL_NAMES = new Set<AgentToolName>([
   "crm_search_contacts",
   "crm_log_call",
   "crm_create_opportunity",
+]);
+
+/**
+ * These services currently use Wireline-owned platform credentials and do not
+ * have a tenant account/template/pixel ownership registry. They must not be
+ * exposed to arbitrary live tenant agents: X Ads would disclose Wireline's
+ * campaign data, DocuSign would send from Wireline's account, and Meta lead
+ * events would pollute Wireline's conversion destination.
+ *
+ * The underlying server services remain available to deliberate internal
+ * workflows. Re-enable live use only after the resource is bound to userId.
+ */
+export const UNSCOPED_PLATFORM_LIVE_TOOL_NAMES = new Set<AgentToolName>([
+  "list_x_ad_campaigns",
+  "get_x_ad_campaign_stats",
+  "send_contract",
+  "meta_submit_lead",
 ]);
 
 export interface TenantIntegrationConnections {
@@ -90,13 +106,11 @@ export function filterToolsByTenantConnections(
   platform: PlatformIntegrationFlags = loadPlatformIntegrationFlags(),
 ): AgentToolName[] {
   return toolNames.filter((name) => {
+    if (UNSCOPED_PLATFORM_LIVE_TOOL_NAMES.has(name)) return false;
     if (SHOPIFY_SET.has(name)) return conn.shopify;
     if (SQUARE_SET.has(name)) return conn.square;
     if (name === "send_slack_notification") return conn.slack;
     if (X_ENGAGEMENT_SET.has(name)) return conn.x;
-    if (name === "list_x_ad_campaigns" || name === "get_x_ad_campaign_stats") {
-      return xAdsConfigured();
-    }
     if (name === "send_teams_message") return conn.microsoft_teams;
     if (name === "log_to_excel") return conn.microsoft_excel;
     if (name === "generate_zoom_link") return conn.zoom;
@@ -105,7 +119,6 @@ export function filterToolsByTenantConnections(
     }
     if (CRM_TOOL_NAMES.has(name)) return conn.salesforce || conn.hubspot;
     if (name === "enrich_lead") return platform.apollo;
-    if (name === "send_contract") return platform.docusign;
     if (name === "gemini_ground") return platform.liveResearch;
     return true;
   });
