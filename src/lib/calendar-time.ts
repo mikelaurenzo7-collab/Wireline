@@ -31,9 +31,14 @@ const TIME_RE = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/;
 
 export function normalizeIanaTimeZone(value: unknown, fallback = "UTC"): string {
   const candidate = typeof value === "string" && value.trim() ? value.trim() : fallback;
+  if (candidate !== "UTC" && !candidate.includes("/")) {
+    throw new CalendarTimeError(
+      `Timezone "${candidate}" is ambiguous. Use a full IANA timezone such as America/Chicago.`,
+      "INVALID_TIMEZONE",
+    );
+  }
   try {
-    new Intl.DateTimeFormat("en-US", { timeZone: candidate }).format(new Date(0));
-    return candidate;
+    return new Intl.DateTimeFormat("en-US", { timeZone: candidate }).resolvedOptions().timeZone;
   } catch {
     throw new CalendarTimeError(
       `Unsupported timezone "${candidate}". Use an IANA timezone such as America/Chicago.`,
@@ -149,7 +154,7 @@ export function localDateTimeToUtcIso(input: {
   }
   if (matches.size > 1) {
     throw new CalendarTimeError(
-      "That local time occurs twice because of a daylight-saving transition. Confirm a time with an explicit UTC offset.",
+      "That local time occurs twice because of a daylight-saving transition. Confirm a different, unambiguous time.",
       "AMBIGUOUS_LOCAL_TIME",
     );
   }
