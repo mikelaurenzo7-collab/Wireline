@@ -10,6 +10,7 @@ vi.mock("../src/lib/ai-structured", () => ({
 
 import {
   ClientCommunicationBlockedError,
+  clientFacingAgentName,
   superviseClientCommunication,
 } from "../src/lib/ai-supervisor";
 
@@ -74,5 +75,33 @@ describe("live-call communication supervision", () => {
       }),
     ).rejects.toThrow("valid confirmed email address");
     expect(runStructuredMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps internal identifiers out of reviewer context and fallback subjects", async () => {
+    expect(clientFacingAgentName("agent-0123456789abcdef")).toBe("Wireline");
+    expect(clientFacingAgentName("11111111-1111-1111-1111-111111111111")).toBe("Wireline");
+    expect(clientFacingAgentName("Avery")).toBe("Avery");
+
+    runStructuredMock.mockResolvedValue({
+      approved: true,
+      subject: "",
+      body: "Here is the link you requested.",
+      rationale: "Approved.",
+    });
+
+    await expect(
+      superviseClientCommunication({
+        channel: "email",
+        agentName: "agent-0123456789abcdef",
+        source: "voice_tool",
+        purpose: "live call follow-up",
+        recipient: "caller@example.com",
+        body: "Here is the link you requested.",
+      }),
+    ).resolves.toMatchObject({ subject: "Follow-up from Wireline" });
+
+    expect(runStructuredMock).toHaveBeenCalledWith(
+      expect.objectContaining({ user: expect.stringContaining("Agent: Wireline") }),
+    );
   });
 });
