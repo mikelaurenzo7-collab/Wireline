@@ -233,8 +233,9 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
     } catch (error) {
       let failsafeStored = false;
       if (control === "stop") {
-        // Preserve the consumer's STOP even if the Postgres transaction fails.
-        // The shared ledger is part of the outbound voice/message DNC gate.
+        // Preserve the consumer's STOP for outbound voice if the Postgres
+        // transaction fails. Advanced Opt-Out independently suppresses carrier
+        // messaging; legacy STOP is never confirmed until Postgres commits.
         failsafeStored = await recordDncFailsafe(userId, customerNumber);
       }
 
@@ -257,9 +258,8 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
 
       res.setHeader("Content-Type", "text/xml");
       if (control === "stop") {
-        return res
-          .status(failsafeStored ? 200 : 503)
-          .send(legacy ? (failsafeStored ? optOutConfirmationTwiml() : optOutRetryTwiml()) : emptyTwiml());
+        if (legacy) return res.status(200).send(optOutRetryTwiml());
+        return res.status(failsafeStored ? 200 : 503).send(emptyTwiml());
       }
       if (control === "start") {
         return res.status(200).send(legacy ? optInRetryTwiml() : emptyTwiml());
