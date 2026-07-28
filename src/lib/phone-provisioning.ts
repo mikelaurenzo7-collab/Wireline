@@ -20,6 +20,7 @@ import { getTwilioClient } from "./twilio-service";
 import { STRIPE_PLANS, planById, type StripePlanId } from "./plan-catalog";
 import { includedPhoneSlotsForPlan } from "./phone-line-entitlements";
 import { runCompanyIdentityMutation } from "./company-identity-mutation";
+import { releaseCarrierAllocations } from "./carrier-release";
 import {
   ensureTenantTelecomDefaults,
   findAgentPhoneLine,
@@ -28,6 +29,7 @@ import {
 } from "./agent-phone-lines";
 import {
   importTwilioNumberToVapi,
+  listVapiNumbers,
   provisionVapiNumber,
   releaseVapiNumber,
   vapiAccountHeadroom,
@@ -153,16 +155,19 @@ async function purchaseTwilioLocalNumber(
   }
 }
 
+async function removeTwilioNumberByE164Strict(
+  phoneNumber: string,
+  client: ReturnType<typeof getTwilioClient> = getTwilioClient(),
+): Promise<void> {
+  if (!client) throw new Error("Twilio client is unavailable — carrier release cannot be verified.");
+  const rows = await client.incomingPhoneNumbers.list({ phoneNumber, limit: 1 });
+  if (rows[0]?.sid) await client.incomingPhoneNumbers(rows[0].sid).remove();
+}
+
 async function removeTwilioNumberByE164(phoneNumber: string): Promise<void> {
   const client = getTwilioClient();
   if (!client) return;
-  const rows = await client.incomingPhoneNumbers.list({ phoneNumber, limit: 1 });
-  if (rows[0]?.sid) {
-    await client
-      .incomingPhoneNumbers(rows[0].sid)
-      .remove()
-      .catch(() => undefined);
-  }
+  await removeTwilioNumberByE164Strict(phoneNumber, client).catch(() => undefined);
 }
 
 async function compensateProvisionedNumber(args: {
@@ -379,29 +384,46 @@ export async function releaseTenantNumber(
     .limit(1);
   if (!row) return { ok: false, error: "Number not found for this tenant." };
 
-  try {
-    const carrierId = row.vapiNumberId;
-    if (carrierId && isVapiPhoneNumberId(carrierId)) {
-      await releaseVapiNumber(carrierId).catch((err) => {
-        log.warn("Vapi release returned error (likely already released)", {
-          vapiNumberId: carrierId,
-          error: getErrorMessage(err),
-        });
-      });
-    } else if (client && carrierId && isTwilioPhoneNumberSid(carrierId)) {
-      await client
-        .incomingPhoneNumbers(carrierId)
-        .remove()
-        .catch((err) => {
-          log.warn("Twilio release by SID failed", {
-            twilioSid: carrierId,
-            error: getErrorMessage(err),
-          });
-        });
-    } else if (client) {
-      await removeTwilioNumberByE164(phoneNumber);
-    }
+  const carrierId = row.vapiNumberId;
+  const release = await releaseCarrierAllocations(
+    {
+      kind:
+        carrierId && isVapiPhoneNumberId(carrierId)
+          ? "vapi"
+          : carrierId && isTwilioPhoneNumberSid(carrierId)
+            ? "twilio_sid"
+            : "e164",
+      phoneNumber,
+      carrierId,
+    },
+    {
+      twilioAvailable: Boolean(client),
+      inspectVapiProvider: async (vapiNumberId) => {
+        const numbers = await listVapiNumbers();
+        return numbers.find((number) => number.id === vapiNumberId)?.provider ?? null;
+      },
+      releaseVapi: releaseVapiNumber,
+      releaseTwilioBySid: async (twilioSid) => {
+        if (!client) throw new Error("Twilio client is unavailable.");
+        await client.incomingPhoneNumbers(twilioSid).remove();
+      },
+      releaseTwilioByE164: async (number) => {
+        await removeTwilioNumberByE164Strict(number, client);
+      },
+    },
+  );
 
+  if (!release.ok) {
+    log.warn("Carrier number release failed — preserving local ownership row", {
+      userId,
+      phoneNumber,
+      carrierId,
+      error: release.error,
+    });
+    return release;
+  }
+
+  try {
     await runCompanyIdentityMutation(userId, "phone_number_changed", async (tx) => {
       await tx.delete(schema.phoneNumbers).where(eq(schema.phoneNumbers.id, row.id));
     });
