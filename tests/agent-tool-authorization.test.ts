@@ -61,6 +61,21 @@ describe("agent tool execution authorization", () => {
     expect(active).toEqual(["send_email"]);
   });
 
+  it("allows tenant-bound Google Sheets and CRM writes only with the required connections", () => {
+    const connected = {
+      ...NO_TENANT_INTEGRATIONS,
+      google_sheets: true,
+      hubspot: true,
+    };
+    expect(
+      resolveAuthorizedAgentTools(
+        ["log_to_google_sheets", "crm_create_contact", "crm_update_deal_stage"],
+        { twilioMessaging: false, twilioLookup: false },
+        connected,
+      ),
+    ).toEqual(["log_to_google_sheets", "crm_create_contact", "crm_update_deal_stage"]);
+  });
+
   it("keeps platform-owned accounts out even when every connection and platform flag is present", () => {
     const allConnected = Object.fromEntries(
       Object.keys(NO_TENANT_INTEGRATIONS).map((key) => [key, true]),
@@ -131,6 +146,8 @@ describe("agent tool execution authorization", () => {
     expect(source).toContain("const existing = inFlightAuthorizationSnapshots.get(key)");
     expect(source).toContain(".leftJoin(schema.settings");
     expect(source).toContain("inFlightAuthorizationSnapshots.delete(key)");
+    expect(source).toContain("`tool:${context.toolCallId}`");
+    expect(source).not.toContain('return "no-call"');
   });
 
   it("keeps the authorization catalog tied to the canonical tool registry", () => {
