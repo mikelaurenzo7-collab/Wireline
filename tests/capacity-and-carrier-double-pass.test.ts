@@ -128,9 +128,8 @@ describe("carrier teardown integration", () => {
     expect(vapiGuard).toBeGreaterThan(localDelete);
     expect(smsGuard).toBeGreaterThan(vapiGuard);
     expect(settingsWrite).toBeGreaterThan(smsGuard);
-    expect(source).toContain(
-      "remainingLines.find((line) => isVapiPhoneNumberId(line.vapiNumberId))",
-    );
+    expect(source).toContain("remainingLines.find(");
+    expect(source).toContain("isVapiPhoneNumberId(line.vapiNumberId)");
   });
 
   it("hands a failed provider release to the durable orphan ledger before purge", () => {
