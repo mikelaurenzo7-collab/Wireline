@@ -1,0 +1,109 @@
+# Wireline Database Operations
+
+Status: **Canonical production runbook**
+
+Wireline uses Supabase-hosted PostgreSQL through Drizzle and the transaction pooler. The connected database is shared production infrastructure, not a disposable development database.
+
+## Non-negotiable rules
+
+- Run `npm run db:health` before any schema or migration work.
+- Never use `drizzle-kit push` against a shared Wireline database. Wireline intentionally exposes no `db:push` package script.
+- Migrations are append-only. Do not edit a migration that may have run outside a disposable local database.
+- Preview deployments do not run migrations. Production runs the committed migration journal through `scripts/vercel-build.mjs` unless explicitly disabled for a non-live duplicate project.
+- Apply urgent production migrations only after the exact branch head is green, and commit the same migration in the repository before merge.
+- Backfill existing rows before adding constraints that assume the backfill.
+- Use idempotent DDL when a migration may be replayed safely.
+
+## Connection selection
+
+The server resolves its database connection through `src/lib/database-connection.ts`. `POSTGRES_URL` is the canonical Supabase connection variable; `DATABASE_POOL_URL` may be used only when it passes the same validation and environment-boundary checks.
+
+Serverless connections use the Supabase transaction pooler. `src/lib/server-context.ts` keeps the pool deliberately small and opens one outer transaction per tenant-scoped checkout so the role and tenant GUC survive transaction-mode pooling.
+
+Never commit connection strings, database passwords, exports, local dumps, or environment mirrors.
+
+## Tenant isolation
+
+Wireline does not use Supabase Auth or `auth.uid()` for application tenant isolation.
+
+For authenticated tenant work, `tenantStore` scopes the checkout and the server runs:
+
+```sql
+BEGIN;
+SET LOCAL ROLE wireline_server;
+SELECT set_config('app.current_user_id', '<user uuid>', true);
+```
+
+RLS policies read `app.current_user_id`. The role and GUC are transaction-local and disappear before the connection returns to the pool.
+
+Consequences:
+
+1. Every tenant table needs the required privileges for `wireline_server` plus an RLS policy keyed to the tenant identity.
+2. Every tenant-scoped route or service must execute inside `tenantStore.run(userId, ...)` before issuing database work.
+3. System paths such as sign-in, provider callbacks, and verified webhooks must remain explicitly reviewed because they can run without tenant context.
+4. A new table is not launch-ready until grants, RLS, account deletion, audit coverage, and authorization behavior are all addressed.
+
+## Schema-change workflow
+
+1. **Inspect current state**
+
+   ```bash
+   npm run db:health
+   ```
+
+2. **Change the Drizzle schema and generate or author an append-only migration**
+
+   ```bash
+   npm run db:generate
+   ```
+
+   Review generated SQL before committing it. Generated output is not automatically correct for backfills, constraint ordering, RLS, grants, or production data.
+
+3. **Add integrity coverage**
+
+   Contract-test the migration text when the invariant must never regress. Add behavioral tests when a service or route owns runtime behavior.
+
+4. **Validate the exact branch head**
+
+   Run the relevant focused tests and `npm run verify:full`. Require the exact-head Vercel preview to be READY. Preview logs must state that database migrations were skipped.
+
+5. **Apply through a controlled path**
+
+   - Normal path: squash merge and let the canonical production Vercel deployment run `npm run db:migrate`.
+   - Urgent/pre-merge verification path: apply the committed migration through the authenticated Supabase migration tool only after the exact head is green, then run non-destructive transactional probes.
+
+6. **Verify production**
+
+   Re-run `npm run db:health`, inspect the affected object directly, verify row/backfill counts, and check production runtime errors.
+
+## Constraint and trigger standards
+
+Use database enforcement when partial application state would create an entitlement, billing, compliance, or provider-cost risk.
+
+- Prefer foreign keys, unique constraints, check constraints, and deferred constraint triggers over application comments.
+- Use `DEFERRABLE INITIALLY DEFERRED` when a valid transaction must create several related rows before commit.
+- A `SECURITY DEFINER` function must set a safe `search_path` and revoke `PUBLIC` execution.
+- Trigger functions should fail with a specific SQLSTATE and an actionable message.
+- Probe both failure and success paths transactionally; verify no test residue remains.
+
+## RLS and privilege verification
+
+After DDL changes, inspect the live policy and privilege state rather than assuming migration text executed as intended.
+
+At minimum verify:
+
+- RLS enabled where tenant or sensitive data exists;
+- expected policies reference the correct tenant column and GUC;
+- `wireline_server` has only the privileges the application requires;
+- `anon` and `authenticated` cannot reach owner-only token, webhook-idempotency, or bridge tables;
+- internal trigger functions are not executable by `PUBLIC`;
+- account deletion covers the new table.
+
+Supabase advisor output is evidence, not the only source of truth. Confirm the underlying `pg_policies`, privilege, trigger, constraint, and table definitions when an advisor result is stale or ambiguous.
+
+## Recovery and rollback
+
+- Prefer forward-fix migrations. Dropping columns, destructive rewrites, and irreversible backfills require an explicit backup and rollback plan.
+- A code rollback does not automatically reverse a schema migration. Maintain backward compatibility across the deployment boundary when possible.
+- If a new constraint blocks valid production behavior, disable or forward-fix the specific constraint only after preserving the data-integrity intent.
+- Never copy production data into logs, pull requests, issue comments, or local fixtures while diagnosing a migration.
