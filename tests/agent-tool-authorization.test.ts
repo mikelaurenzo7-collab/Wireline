@@ -46,6 +46,9 @@ describe("agent tool execution authorization", () => {
         "book_appointment",
         "send_slack_notification",
         "shopify_cancel_order",
+        "log_to_google_sheets",
+        "crm_create_contact",
+        "crm_update_deal_stage",
         "list_x_ad_campaigns",
         "get_x_ad_campaign_stats",
         "send_contract",
@@ -109,13 +112,25 @@ describe("agent tool execution authorization", () => {
       resolve(process.cwd(), "src/lib/agent-tool-authorization.ts"),
       "utf8",
     );
-    const identityCheck = source.indexOf("if (!agentRow) return false");
-    const systemException = source.indexOf("if (isSystemRuntimeTool(name)) return true");
-    const integrationLookup = source.indexOf("loadTenantIntegrationConnections(userId)");
-    expect(identityCheck).toBeGreaterThan(-1);
-    expect(systemException).toBeGreaterThan(identityCheck);
-    expect(integrationLookup).toBeGreaterThan(systemException);
+    const runtime = source.slice(source.indexOf("export async function isAgentToolExecutionAuthorized"));
+    const systemException = runtime.indexOf("if (isSystemRuntimeTool(name))");
+    const identityLookup = runtime.indexOf("hasVerifiedAgentIdentity");
+    const fullSnapshot = runtime.indexOf("loadAuthorizationSnapshot");
+    expect(systemException).toBeGreaterThan(-1);
+    expect(identityLookup).toBeGreaterThan(systemException);
+    expect(fullSnapshot).toBeGreaterThan(identityLookup);
     expect(source).toContain("return NO_TENANT_INTEGRATIONS");
+  });
+
+  it("shares one in-flight authorization snapshot across a concurrent tool batch", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "src/lib/agent-tool-authorization.ts"),
+      "utf8",
+    );
+    expect(source).toContain("inFlightAuthorizationSnapshots");
+    expect(source).toContain("const existing = inFlightAuthorizationSnapshots.get(key)");
+    expect(source).toContain(".leftJoin(schema.settings");
+    expect(source).toContain("inFlightAuthorizationSnapshots.delete(key)");
   });
 
   it("keeps the authorization catalog tied to the canonical tool registry", () => {
