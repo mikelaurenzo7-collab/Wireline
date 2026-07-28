@@ -26,21 +26,6 @@ const requiredCanonicalLinks = [
   "docs/WIRELINE_2026_ROADMAP.md",
 ];
 
-const rootMarkdown = new Set([
-  "README.md",
-  "CONTRIBUTING.md",
-  "CODEBASE_HEALTH.md",
-  "ARCHITECTURE.md",
-]);
-
-const standaloneMarkdown = new Set([
-  "apps/browser-extension/README.md",
-  "android/README.md",
-  "ios/README.md",
-  // This remains outside docs because a design contract reads the exact path.
-  "references/design-system-navigation-plan.md",
-]);
-
 function gitLines(args) {
   return execFileSync("git", args, {
     encoding: "utf8",
@@ -168,14 +153,13 @@ if (problems.length === 0) {
     if (
       file.startsWith("docs/") ||
       file.startsWith(".github/") ||
-      rootMarkdown.has(file) ||
-      standaloneMarkdown.has(file)
+      canonicalLinks.has(file)
     ) {
       continue;
     }
     problems.push(
       `${file} is tracked Markdown without an approved home. Move durable policy to docs/, ` +
-        `use a surface README, or explicitly classify the exceptional path in ${canonicalIndexPath}.`,
+        `use a surface README, or link the exceptional path exactly once from ${canonicalIndexPath}.`,
     );
   }
 }
