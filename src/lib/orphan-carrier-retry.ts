@@ -31,6 +31,16 @@ async function releaseTwilioNumberByE164(
   if (rows[0]?.sid) await client.incomingPhoneNumbers(rows[0].sid).remove();
 }
 
+async function hasCurrentCanonicalOwner(phoneNumber: string): Promise<boolean> {
+  const result = await drizzle.execute(sql`
+    SELECT user_id
+    FROM public.wireline_phone_numbers
+    WHERE phone_number = ${phoneNumber}
+    LIMIT 1
+  `);
+  return rowsFromResult(result).length > 0;
+}
+
 export interface OrphanCarrierRetrySummary {
   attempted: number;
   resolved: number;
@@ -57,6 +67,24 @@ export async function retryPendingOrphanCarrierResources(
   const summary: OrphanCarrierRetrySummary = { attempted: rows.length, resolved: 0, failed: 0 };
 
   for (const row of rows) {
+    // A number can be reassigned after the former tenant is purged. Never
+    // rediscover or release a carrier object that now backs a canonical row.
+    if (await hasCurrentCanonicalOwner(row.phone_number)) {
+      const note = "Cleanup skipped: phone number has a current canonical owner.";
+      await drizzle.execute(sql`
+        UPDATE public.wireline_orphan_carrier_resources
+        SET status = 'resolved', resolved_at = now(), last_error = ${note}
+        WHERE id = ${row.id}::uuid AND status = 'pending'
+      `);
+      summary.resolved += 1;
+      log.warn("Orphan carrier retry skipped a reassigned number", {
+        orphanId: row.id,
+        formerUserId: row.former_user_id,
+        phoneNumber: row.phone_number,
+      });
+      continue;
+    }
+
     const client = getTwilioClient();
     let carrierId = row.vapi_number_id;
     const errors: string[] = [];
@@ -115,10 +143,13 @@ export async function retryPendingOrphanCarrierResources(
     }
 
     const error = errors.join(" | ").slice(0, 2000);
+    // Rotate a failed item to the tail of the FIFO so a permanently failing
+    // allocation cannot monopolize the bounded daily batch.
     await drizzle.execute(sql`
       UPDATE public.wireline_orphan_carrier_resources
       SET last_error = ${error},
-          vapi_number_id = COALESCE(vapi_number_id, ${carrierId})
+          vapi_number_id = COALESCE(vapi_number_id, ${carrierId}),
+          created_at = now()
       WHERE id = ${row.id}::uuid AND status = 'pending'
     `);
     summary.failed += 1;
