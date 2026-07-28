@@ -91,7 +91,7 @@ describe("agent capacity integrity", () => {
 describe("carrier teardown integration", () => {
   it("preserves the canonical phone row until strict provider teardown succeeds", () => {
     const source = read("src/lib/phone-provisioning.ts");
-    const releaseCall = source.indexOf("const release = await releaseCarrierAllocations(");
+    const releaseCall = source.lastIndexOf("const release = await releaseCarrierAllocations(");
     const failureGuard = source.indexOf("if (!release.ok)", releaseCall);
     const localDelete = source.indexOf("tx.delete(schema.phoneNumbers)", releaseCall);
 
@@ -100,6 +100,37 @@ describe("carrier teardown integration", () => {
     expect(localDelete).toBeGreaterThan(failureGuard);
     expect(source).toContain("releaseTwilioByE164");
     expect(source).toContain("Carrier number release failed — preserving local ownership row");
+  });
+
+  it("makes provisioning compensation strict, truthful, and durable", () => {
+    const source = read("src/lib/phone-provisioning.ts");
+    const ledger = read("src/lib/orphan-carrier-ledger.ts");
+    const retry = read("src/lib/orphan-carrier-retry.ts");
+
+    expect(source).toContain("releaseCarrierOrRecord");
+    expect(source).toContain("recordPendingOrphanCarrierResource");
+    expect(source).toContain("Carrier compensation queued in durable orphan ledger");
+    expect(source).not.toContain("catch(() => undefined)");
+    expect(ledger).toContain("INSERT INTO public.wireline_orphan_carrier_resources");
+    expect(ledger).toContain("ON CONFLICT (former_user_id, phone_number) WHERE status = 'pending'");
+    expect(retry).toContain("number.number === row.phone_number");
+    expect(retry).toContain("vapi_number_id = COALESCE(vapi_number_id, ${carrierId})");
+  });
+
+  it("reconciles only telecom defaults that referenced the released line", () => {
+    const source = read("src/lib/phone-provisioning.ts");
+    const localDelete = source.lastIndexOf("tx.delete(schema.phoneNumbers)");
+    const vapiGuard = source.indexOf("settingsRow.vapiPhoneNumberId === carrierId", localDelete);
+    const smsGuard = source.indexOf("settingsRow.twilioSmsFromNumber === phoneNumber", localDelete);
+    const settingsWrite = source.indexOf("tx.update(schema.settings).set(patch)", localDelete);
+
+    expect(localDelete).toBeGreaterThan(-1);
+    expect(vapiGuard).toBeGreaterThan(localDelete);
+    expect(smsGuard).toBeGreaterThan(vapiGuard);
+    expect(settingsWrite).toBeGreaterThan(smsGuard);
+    expect(source).toContain(
+      "remainingLines.find((line) => isVapiPhoneNumberId(line.vapiNumberId))",
+    );
   });
 
   it("hands a failed provider release to the durable orphan ledger before purge", () => {
