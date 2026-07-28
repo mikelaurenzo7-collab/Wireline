@@ -2,39 +2,43 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildVapiServerConfig } from "../src/lib/vapi-server-config";
-import { toVapiFunctionTools, vapiToolRequestStartMessage } from "../src/lib/vapi-tool-format";
+import {
+  toVapiFunctionTools,
+  vapiToolExecutionGuidance,
+  vapiToolRequestStartMessage,
+} from "../src/lib/vapi-tool-format";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("current Vapi assistant payload contract", () => {
   it("wraps tenant functions in Vapi's model.tools DTO", () => {
-    expect(
-      toVapiFunctionTools([
-        {
-          name: "book_appointment",
-          description: "Book a time.",
-          parameters: {
-            type: "object",
-            properties: { start: { type: "string" } },
-            required: ["start"],
-          },
-        },
-      ]),
-    ).toEqual([
+    const tools = toVapiFunctionTools([
       {
-        type: "function",
-        function: {
-          name: "book_appointment",
-          description: "Book a time.",
-          parameters: {
-            type: "object",
-            properties: { start: { type: "string" } },
-            required: ["start"],
-          },
+        name: "book_appointment",
+        description: "Book a time.",
+        parameters: {
+          type: "object",
+          properties: { start: { type: "string" } },
+          required: ["start"],
         },
-        messages: [{ type: "request-start", content: "Let me book that." }],
       },
     ]);
+
+    expect(tools).toHaveLength(1);
+    expect(tools[0]).toMatchObject({
+      type: "function",
+      function: {
+        name: "book_appointment",
+        parameters: {
+          type: "object",
+          properties: { start: { type: "string" } },
+          required: ["start"],
+        },
+      },
+      messages: [{ type: "request-start", content: "Let me book that." }],
+    });
+    expect(tools[0].function.description).toContain("Book a time.");
+    expect(tools[0].function.description).toContain("confirm the critical identity");
     expect(toVapiFunctionTools([{ description: "missing name" }])).toEqual([]);
   });
 
@@ -44,6 +48,14 @@ describe("current Vapi assistant payload contract", () => {
       "Let me take care of that.",
     );
     expect(vapiToolRequestStartMessage("create_followup_task")).toBeUndefined();
+  });
+
+  it("requires truthful confirmation around sensitive live actions", () => {
+    expect(vapiToolExecutionGuidance("send_email")).toContain("Confirm the destination aloud");
+    expect(vapiToolExecutionGuidance("shopify_cancel_order")).toContain(
+      "Never claim completion",
+    );
+    expect(vapiToolExecutionGuidance("search_knowledge_base")).toBeUndefined();
   });
 
   it("prefers a Vapi Custom Credential and retains the supported migration fallback", () => {
