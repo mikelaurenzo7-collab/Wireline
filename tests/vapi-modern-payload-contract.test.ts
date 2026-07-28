@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildVapiServerConfig } from "../src/lib/vapi-server-config";
-import { toVapiFunctionTools } from "../src/lib/vapi-tool-format";
+import { toVapiFunctionTools, vapiToolRequestStartMessage } from "../src/lib/vapi-tool-format";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -32,9 +32,18 @@ describe("current Vapi assistant payload contract", () => {
             required: ["start"],
           },
         },
+        messages: [{ type: "request-start", content: "Let me book that." }],
       },
     ]);
     expect(toVapiFunctionTools([{ description: "missing name" }])).toEqual([]);
+  });
+
+  it("acknowledges slow live tools without claiming success", () => {
+    expect(vapiToolRequestStartMessage("send_email")).toBe("Let me prepare that email.");
+    expect(vapiToolRequestStartMessage("shopify_lookup_order")).toBe(
+      "Let me take care of that.",
+    );
+    expect(vapiToolRequestStartMessage("create_followup_task")).toBeUndefined();
   });
 
   it("prefers a Vapi Custom Credential and retains the supported migration fallback", () => {
