@@ -3,6 +3,8 @@
  * Shared dispatch for agent tool handlers — used by Vapi webhooks and
  * Director-approved integration jobs.
  */
+import { randomUUID } from "node:crypto";
+
 import { drizzle, log } from "./server-context";
 import { handleCalendarToolCall } from "../routes/vapi/tool-handlers-calendar";
 import { handleCoreToolCall } from "../routes/vapi/tool-handlers-core";
@@ -13,6 +15,7 @@ import { handleShopifyToolCall } from "../routes/vapi/tool-handlers-shopify";
 import { handleSquareToolCall } from "../routes/vapi/tool-handlers-square";
 import { handleWorkflowToolCall } from "../routes/vapi/tool-handlers-workflow";
 import { handleDeviceToolCall } from "../routes/vapi/tool-handlers-device";
+import { isAgentToolExecutionAuthorized } from "./agent-tool-authorization";
 import { runIdempotentAgentToolCall } from "./agent-tool-idempotency";
 import { enforceAgentToolResultTruth } from "./agent-tool-result-truth";
 import type { ToolCallContext, ToolCallResult } from "../routes/vapi/types";
@@ -51,6 +54,31 @@ export async function dispatchAgentToolCall(
   args: any,
   context: ToolCallContext,
 ): Promise<ToolCallResult> {
+  let authorized = false;
+  try {
+    authorized = await isAgentToolExecutionAuthorized(fn, context);
+  } catch (error) {
+    context.log.error("Agent tool authorization failed closed", {
+      tool: fn,
+      agentId: context.agent?.id,
+      toolCallId: context.toolCallId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  if (!authorized) {
+    context.log.warn("Blocked inactive or disconnected agent tool", {
+      tool: fn,
+      agentId: context.agent?.id,
+      toolCallId: context.toolCallId,
+    });
+    return {
+      toolCallId: context.toolCallId,
+      result:
+        "That action is not enabled for this agent or its required connection is unavailable. Do not claim it ran. Offer an enabled alternative or create a follow-up task.",
+    };
+  }
+
   return runIdempotentAgentToolCall(fn, context, () =>
     dispatchToFirstAvailableHandler(fn, args, context),
   );
@@ -63,7 +91,7 @@ export function buildDirectorToolContext(input: {
   toolCallId?: string;
 }): ToolCallContext {
   return {
-    toolCallId: input.toolCallId || `director-${Date.now()}`,
+    toolCallId: input.toolCallId || `director-${randomUUID()}`,
     payload: {},
     message: {},
     agent: {
