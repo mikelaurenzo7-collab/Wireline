@@ -38,6 +38,7 @@ export const NO_TENANT_INTEGRATIONS: TenantIntegrationConnections = {
   x: false,
   microsoft_teams: false,
   microsoft_excel: false,
+  google_sheets: false,
   salesforce: false,
   hubspot: false,
   zoom: false,
@@ -53,6 +54,19 @@ export type AgentToolFeatureFlags = {
   twilioMessaging?: boolean;
   twilioLookup?: boolean;
 };
+
+type AgentAuthorizationSnapshot = {
+  enabledTools: unknown;
+  flags: AgentToolFeatureFlags;
+  connections: TenantIntegrationConnections;
+};
+
+/**
+ * Concurrent tool calls from one Vapi batch share one fresh authorization
+ * snapshot. Entries exist only while the read is in flight, so a later webhook
+ * turn or integration revocation performs a new lookup.
+ */
+const inFlightAuthorizationSnapshots = new Map<string, Promise<AgentAuthorizationSnapshot | null>>();
 
 /**
  * Resolve a persisted JSON selection without ever expanding malformed data.
@@ -108,77 +122,112 @@ export function resolveAuthorizedAgentTools(
   return filterToolsByTenantConnections(active, connections);
 }
 
+function callIdFromContext(context: ToolCallContext): string {
+  const messageCallId = (context.message.call as { id?: unknown } | undefined)?.id;
+  const payloadCallId = (context.payload.call as { id?: unknown } | undefined)?.id;
+  const callId = messageCallId || payloadCallId;
+  return typeof callId === "string" && callId.trim() ? callId.trim() : "no-call";
+}
+
+function snapshotKey(context: ToolCallContext, agentId: string, userId: string): string {
+  return `${userId}:${agentId}:${callIdFromContext(context)}`;
+}
+
+async function loadAuthorizationSnapshot(
+  context: ToolCallContext,
+  agentId: string,
+  userId: string,
+): Promise<AgentAuthorizationSnapshot | null> {
+  const key = snapshotKey(context, agentId, userId);
+  const existing = inFlightAuthorizationSnapshots.get(key);
+  if (existing) return existing;
+
+  const snapshotPromise = Promise.all([
+    context.drizzle
+      .select({
+        enabledTools: schema.agents.enabledTools,
+        aiTier: schema.settings.aiTier,
+        twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
+        twilioLookupEnabled: schema.settings.twilioLookupEnabled,
+      })
+      .from(schema.agents)
+      .leftJoin(schema.settings, eq(schema.settings.userId, schema.agents.userId))
+      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+      .limit(1),
+    loadTenantIntegrationConnections(userId).catch((error: unknown) => {
+      context.log.warn("Agent integration lookup failed; disabling connected tools", {
+        agentId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return NO_TENANT_INTEGRATIONS;
+    }),
+  ]).then(([rows, connections]) => {
+    const row = rows[0];
+    if (!row) return null;
+    return {
+      enabledTools: row.enabledTools,
+      flags: {
+        aiTier: row.aiTier,
+        twilioMessaging: Boolean(row.twilioMessagingEnabled),
+        twilioLookup: Boolean(row.twilioLookupEnabled),
+      },
+      connections,
+    };
+  });
+
+  inFlightAuthorizationSnapshots.set(key, snapshotPromise);
+  const cleanup = () => {
+    if (inFlightAuthorizationSnapshots.get(key) === snapshotPromise) {
+      inFlightAuthorizationSnapshots.delete(key);
+    }
+  };
+  void snapshotPromise.then(cleanup, cleanup);
+  return snapshotPromise;
+}
+
+async function hasVerifiedAgentIdentity(
+  context: ToolCallContext,
+  agentId: string,
+  userId: string,
+): Promise<boolean> {
+  const rows = await context.drizzle
+    .select({ id: schema.agents.id })
+    .from(schema.agents)
+    .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+    .limit(1);
+  return Boolean(rows[0]);
+}
+
 /**
  * Authorize a submitted live tool against the same per-agent selection,
  * connection state, and tenant feature flags used to build the assistant's
  * model tool list. Prompt omission is UX; this check is the execution boundary.
  *
  * Connection state is loaded fresh here rather than read from the short-lived
- * assistant-schema cache. Revoking an integration must stop new writes
- * immediately, not after a cache TTL.
+ * assistant-schema cache. Revoking an integration stops the next webhook turn,
+ * while concurrent calls in the current tool batch share the same in-flight
+ * snapshot to stay within the database pool.
  */
 export async function isAgentToolExecutionAuthorized(
   name: string,
   context: ToolCallContext,
 ): Promise<boolean> {
-  if (!isAgentToolName(name) || !context.agent?.id || !context.agent?.user_id) return false;
-
-  const userId = context.agent.user_id;
-  const [agentRow] = await context.drizzle
-    .select({
-      role: schema.agents.role,
-      enabledTools: schema.agents.enabledTools,
-    })
-    .from(schema.agents)
-    .where(and(eq(schema.agents.id, context.agent.id), eq(schema.agents.userId, userId)))
-    .limit(1);
-
-  if (!agentRow) return false;
+  const agentId = context.agent?.id;
+  const userId = context.agent?.user_id;
+  if (!isAgentToolName(name) || !agentId || !userId) return false;
 
   // Compliance and durable fallback bypass the Account Holder's active-set
   // choice and all unrelated integration reads, but never the verified
-  // agent/tenant binding above.
-  if (isSystemRuntimeTool(name)) return true;
+  // agent/tenant binding.
+  if (isSystemRuntimeTool(name)) {
+    return hasVerifiedAgentIdentity(context, agentId, userId);
+  }
 
-  const [settingsRows, connections] = await Promise.all([
-    context.drizzle
-      .select({
-        aiTier: schema.settings.aiTier,
-        twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
-        twilioLookupEnabled: schema.settings.twilioLookupEnabled,
-      })
-      .from(schema.settings)
-      .where(eq(schema.settings.userId, userId))
-      .limit(1)
-      .catch((error: unknown) => {
-        context.log.warn("Agent tool feature-flag lookup failed; disabling gated tools", {
-          agentId: context.agent.id,
-          error: error instanceof Error ? error.message : String(error),
-        });
-        return [];
-      }),
-    loadTenantIntegrationConnections(userId).catch((error: unknown) => {
-      context.log.warn("Agent integration lookup failed; disabling connected tools", {
-        agentId: context.agent.id,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return NO_TENANT_INTEGRATIONS;
-    }),
-  ]);
+  const snapshot = await loadAuthorizationSnapshot(context, agentId, userId);
+  if (!snapshot) return false;
 
-  const settingsRow = settingsRows[0];
-  const persisted = sanitizePersistedAgentToolSelection(agentRow.enabledTools);
-  const active = resolveAuthorizedAgentTools(
-    persisted,
-    {
-      aiTier: settingsRow?.aiTier,
-      twilioMessaging: Boolean(settingsRow?.twilioMessagingEnabled),
-      twilioLookup: Boolean(settingsRow?.twilioLookupEnabled),
-    },
-    connections,
-  );
-
-  return active.includes(name);
+  const persisted = sanitizePersistedAgentToolSelection(snapshot.enabledTools);
+  return resolveAuthorizedAgentTools(persisted, snapshot.flags, snapshot.connections).includes(name);
 }
 
 /** Canonical names exported for drift-focused regression contracts. */
