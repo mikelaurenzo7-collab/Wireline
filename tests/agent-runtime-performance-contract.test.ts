@@ -30,6 +30,7 @@ describe("agent runtime performance and action integrity", () => {
     expect(dispatch).toContain("runIdempotentAgentToolCall");
     expect(dispatch).toContain("enforceAgentToolResultTruth");
     expect(idempotency).toContain("pg_advisory_xact_lock");
+    expect(idempotency).toContain("transaction(async (tx: any)");
     expect(idempotency).toContain("exact same ID is never executed again");
     expect(idempotency).toContain('"escalate_to_human"');
     expect(idempotency).toContain("output.destination");
