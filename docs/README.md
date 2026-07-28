@@ -4,7 +4,7 @@ This index is the authority map for Wireline documentation. It distinguishes dur
 
 The customer-facing product loop is **Create -> Train -> Run**. Operationally, Wire sits between Train and Run for numbers, integrations, routing, approvals, billing, and launch controls: **Create -> Train -> Wire -> Run**.
 
-Broad public copy uses **AI voice agents** for personal and business conversations. Personal workspaces create personal agents. Business workspaces may use AI employee language only when the business context is explicit. Technical contracts retain `agent`.
+Broad public copy uses **AI voice agents** for personal and business conversations. Personal workspaces create personal agents. Business workspaces may create AI employees when the business context is explicit. Technical contracts retain `agent`.
 
 ## Active product surface
 
@@ -25,8 +25,10 @@ Broad public copy uses **AI voice agents** for personal and business conversatio
 - Public pages explain; authenticated pages execute.
 - Create stays short; Training owns detailed setup.
 - Wire owns numbers, integrations, routing, approvals, billing, and launch controls.
+- Every included agent should include one included number before extra line capacity is sold.
 - Studio is the workroom; Overview is the command center.
 - Outbound, inbound, and hybrid are first-class modes.
+- Specific outbound business roles may be described as AI sales agents when the role is explicit.
 - Use `CUSTOMER_TERMINOLOGY.md` for customer-facing naming.
 - Customer-facing presenter surfaces do not expose vendor names.
 - Wireline Command remains explicit-user-action only.
