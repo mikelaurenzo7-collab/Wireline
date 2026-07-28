@@ -13,6 +13,8 @@ if (workflowFiles.length === 0) {
 }
 
 const failures = [];
+const mutableNpmInstallPattern = /^\s*(?:-\s*)?run:\s*npm install(?:\s|$)/m;
+
 for (const name of workflowFiles) {
   const path = resolve(workflowsDir, name);
   try {
@@ -21,6 +23,13 @@ for (const name of workflowFiles) {
     // normal verification ladder a syntax gate before GitHub can silently omit
     // a malformed workflow from pull-request checks.
     await prettier.format(source, { filepath: path, parser: "yaml" });
+
+    if (mutableNpmInstallPattern.test(source)) {
+      failures.push({
+        name,
+        message: "workflow dependency installs must use npm ci with the committed lockfile",
+      });
+    }
   } catch (error) {
     failures.push({
       name,
@@ -30,7 +39,7 @@ for (const name of workflowFiles) {
 }
 
 if (failures.length > 0) {
-  console.error("GitHub Actions workflow syntax check failed:");
+  console.error("GitHub Actions workflow validation failed:");
   for (const failure of failures) {
     console.error(`- ${failure.name}: ${failure.message}`);
   }
