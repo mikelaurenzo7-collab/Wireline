@@ -30,12 +30,13 @@ function existingTransaction(metadata: Record<string, unknown>) {
 }
 
 describe("live agent tool idempotency", () => {
-  it("classifies external writes while leaving reads unledgered", () => {
+  it("classifies external writes while leaving reads and legal opt-outs unledgered", () => {
     expect(isIdempotentAgentTool("send_email")).toBe(true);
     expect(isIdempotentAgentTool("book_appointment")).toBe(true);
     expect(isIdempotentAgentTool("shopify_cancel_order")).toBe(true);
     expect(isIdempotentAgentTool("search_knowledge_base")).toBe(false);
     expect(isIdempotentAgentTool("check_calendar_availability")).toBe(false);
+    expect(isIdempotentAgentTool("add_to_dnc")).toBe(false);
   });
 
   it("bypasses the ledger for read-only tools", async () => {
@@ -45,6 +46,21 @@ describe("live agent tool idempotency", () => {
     await expect(
       runIdempotentAgentToolCall("search_knowledge_base", context(drizzle), execute),
     ).resolves.toEqual({ toolCallId: "tool-1", result: "Found it." });
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(drizzle.transaction).not.toHaveBeenCalled();
+  });
+
+  it("keeps DNC opt-outs independent of the auxiliary audit ledger", async () => {
+    const execute = vi.fn().mockResolvedValue({
+      toolCallId: "tool-1",
+      result: "+14155551234 is now on the Do Not Call list.",
+    });
+    const drizzle = { transaction: vi.fn().mockRejectedValue(new Error("audit unavailable")) };
+
+    await expect(runIdempotentAgentToolCall("add_to_dnc", context(drizzle), execute)).resolves.toEqual({
+      toolCallId: "tool-1",
+      result: "+14155551234 is now on the Do Not Call list.",
+    });
     expect(execute).toHaveBeenCalledTimes(1);
     expect(drizzle.transaction).not.toHaveBeenCalled();
   });
