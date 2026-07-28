@@ -34,7 +34,7 @@ Android follows Wireline Letterpress while remaining Material-native:
 
 ## Build and environment
 
-Open `android/` in Android Studio and let Gradle sync. The project compiles against and targets API 36.
+Open `android/` in Android Studio and let Gradle sync. The project compiles against and targets API 36. Starting August 31, 2026, new apps and app updates submitted to Google Play must target Android 16 (API 36) or higher.
 
 Before a real-device build:
 
