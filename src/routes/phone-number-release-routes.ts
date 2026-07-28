@@ -11,6 +11,19 @@ import { phoneNumberRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
+const MAX_POSTGRES_BIGINT = 9_223_372_036_854_775_807n;
+
+function parsePhoneNumberRowId(value: unknown): bigint {
+  const rawId = String(value || "").trim();
+  if (!/^\d{1,19}$/.test(rawId)) {
+    throw AppError.fromHttpStatus(400, "Invalid phone-number id");
+  }
+  const parsed = BigInt(rawId);
+  if (parsed > MAX_POSTGRES_BIGINT) {
+    throw AppError.fromHttpStatus(400, "Invalid phone-number id");
+  }
+  return parsed;
+}
 
 /**
  * Terminal owner for DELETE /api/phone-numbers/:id.
@@ -26,17 +39,13 @@ router.delete(
   phoneNumberRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const rawId = String(req.params.id || "").trim();
-      if (!/^\d+$/.test(rawId)) {
-        throw AppError.fromHttpStatus(400, "Invalid phone-number id");
-      }
-
+      const phoneNumberId = parsePhoneNumberRowId(req.params.id);
       const [owned] = await drizzle
         .select({ phoneNumber: schema.phoneNumbers.phoneNumber })
         .from(schema.phoneNumbers)
         .where(
           and(
-            eq(schema.phoneNumbers.id, BigInt(rawId)),
+            eq(schema.phoneNumbers.id, phoneNumberId),
             eq(schema.phoneNumbers.userId, req.user.id),
           ),
         )
