@@ -13,7 +13,7 @@ function context(drizzle: unknown): ToolCallContext {
     agent: { id: "agent-1", user_id: "11111111-1111-1111-1111-111111111111" },
     webhookAgentId: "agent-1",
     drizzle,
-    log: { warn: vi.fn() },
+    log: { warn: vi.fn(), error: vi.fn() },
   };
 }
 
@@ -63,16 +63,15 @@ describe("live agent tool idempotency", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
-  it("fails open to direct execution if the ledger is temporarily unavailable", async () => {
+  it("fails closed if the ledger cannot safely claim an external write", async () => {
     const execute = vi.fn().mockResolvedValue({ toolCallId: "tool-1", result: "Email sent." });
     const drizzle = {
       transaction: vi.fn().mockRejectedValue(new Error("database unavailable")),
     };
 
-    await expect(runIdempotentAgentToolCall("send_email", context(drizzle), execute)).resolves.toEqual({
-      toolCallId: "tool-1",
-      result: "Email sent.",
-    });
-    expect(execute).toHaveBeenCalledTimes(1);
+    const result = await runIdempotentAgentToolCall("send_email", context(drizzle), execute);
+    expect(result.toolCallId).toBe("tool-1");
+    expect(result.result).toContain("did not run it again");
+    expect(execute).not.toHaveBeenCalled();
   });
 });
