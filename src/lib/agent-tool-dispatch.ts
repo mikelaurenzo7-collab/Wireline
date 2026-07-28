@@ -14,6 +14,7 @@ import { handleSquareToolCall } from "../routes/vapi/tool-handlers-square";
 import { handleWorkflowToolCall } from "../routes/vapi/tool-handlers-workflow";
 import { handleDeviceToolCall } from "../routes/vapi/tool-handlers-device";
 import { runIdempotentAgentToolCall } from "./agent-tool-idempotency";
+import { enforceAgentToolResultTruth } from "./agent-tool-result-truth";
 import type { ToolCallContext, ToolCallResult } from "../routes/vapi/types";
 
 async function dispatchToFirstAvailableHandler(
@@ -35,7 +36,7 @@ async function dispatchToFirstAvailableHandler(
 
   for (const handler of handlers) {
     const result = await handler(fn, args, context);
-    if (result) return result;
+    if (result) return enforceAgentToolResultTruth(fn, result);
   }
 
   return {
