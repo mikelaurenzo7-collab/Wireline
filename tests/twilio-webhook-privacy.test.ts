@@ -103,6 +103,20 @@ describe("Twilio webhook privacy hardening", () => {
     expect(route).toContain("matchesCarrierKeyword(bodyKeyword, LEGACY_OPT_OUT_KEYWORDS)");
   });
 
+  it("serializes START and STOP state changes for the same tenant and phone", () => {
+    const route = read("src/routes/twilio-webhook.ts");
+    const stateIdentity = route.indexOf(
+      "const stateIdentity = `${input.userId}:${normalizedCustomerNumber}`",
+    );
+    const advisoryLock = route.indexOf("twilio-consent-state:${stateIdentity}", stateIdentity);
+    const sidDeduplication = route.indexOf("if (input.messageSid)", advisoryLock);
+
+    expect(stateIdentity).toBeGreaterThan(-1);
+    expect(advisoryLock).toBeGreaterThan(stateIdentity);
+    expect(sidDeduplication).toBeGreaterThan(advisoryLock);
+    expect(route).not.toContain("twilio-consent:${deliveryIdentity}");
+  });
+
   it("never confirms a legacy STOP unless canonical persistence commits", () => {
     const route = read("src/routes/twilio-webhook.ts");
 
