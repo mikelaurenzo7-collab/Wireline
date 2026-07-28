@@ -87,7 +87,6 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
         .select({
           planId: schema.subscriptions.plan,
           stripeSubscriptionId: schema.subscriptions.stripeSubscriptionId,
-          stripeStatus: schema.subscriptions.status,
           currentExtraAgents: schema.settings.extraAgents,
           storedMaxAgents: schema.settings.maxAgents,
         })
@@ -101,10 +100,14 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
       if (!plan) throw AppError.fromHttpStatus(400, "Plan not found");
 
       const currentDbQuantity = Math.max(0, Number(row.currentExtraAgents ?? 0));
-      const persistQuantity = async (quantity: number, reconciled: boolean): Promise<RouteOutcome> => {
+      const persistQuantity = async (
+        quantity: number,
+        reconciled: boolean,
+        previousAuthoritativeQuantity = currentDbQuantity,
+      ): Promise<RouteOutcome> => {
         const maxAgents = reconciledStoredAgentCap({
           planMaxAgents: plan.max_agents,
-          currentExtraAgents: currentDbQuantity,
+          currentExtraAgents: previousAuthoritativeQuantity,
           targetExtraAgents: quantity,
           storedMaxAgents: row.storedMaxAgents,
         });
@@ -162,25 +165,21 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
         };
       }
 
-      const activeForIncrease =
+      const activeForPaidCapacity =
         subscription.status === "active" || subscription.status === "trialing";
-      if (target > currentDbQuantity && !activeForIncrease) {
+      if (target > 0 && !activeForPaidCapacity) {
         return {
           status: 402,
           body: {
             code: "SUBSCRIPTION_REQUIRED",
-            error: "Restore an active subscription before purchasing additional agents.",
+            error: "Restore an active subscription before retaining or purchasing extra agents.",
           },
         };
       }
 
       const priceIdEnv = plan.extraAgentPriceIdEnv;
       const configuredPriceId = priceIdEnv ? process.env[priceIdEnv] : undefined;
-      const matchingItems = configuredPriceId
-        ? extraAgentItems(subscription, configuredPriceId)
-        : subscription.items.data.filter(
-            (item) => item.price.metadata?.wireline_addon_id === "extra_agent",
-          );
+      const matchingItems = extraAgentItems(subscription, configuredPriceId || "none");
       if (matchingItems.length > 1) {
         log.error("Multiple Extra Agent subscription items require manual reconciliation", {
           userId: req.user.id,
@@ -201,9 +200,8 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
       const currentStripeQuantity = extraAgentQuantity(matchingItems);
       const isIncrease = target > currentStripeQuantity;
 
-      if (isIncrease && !activeForIncrease) return paymentRequiredOutcome();
       if (target === currentStripeQuantity) {
-        return persistQuantity(target, currentDbQuantity !== target);
+        return persistQuantity(target, currentDbQuantity !== target, currentStripeQuantity);
       }
 
       let createPriceId: string | null = null;
@@ -320,7 +318,7 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
         };
       }
 
-      return persistQuantity(target, currentDbQuantity !== target);
+      return persistQuantity(target, currentDbQuantity !== target, currentStripeQuantity);
     });
 
     if (outcome.audit) {
