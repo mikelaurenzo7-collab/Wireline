@@ -62,7 +62,7 @@ describe("repository and documentation organization", () => {
     expect(exists("DATABASE_SETUP.md")).toBe(false);
     expect(exists("DEPLOY.md")).toBe(false);
     expect(databaseRunbook).toContain("wireline_server");
-    expect(deploymentRunbook).toContain("Only `revaluate/wireline` may be linked");
+    expect(deploymentRunbook).toContain("Only the canonical `revaluate/wireline` project may own");
     expect(exists("android/SETUP_CHECKLIST.md")).toBe(false);
     expect(exists("ios/SETUP_CHECKLIST.md")).toBe(false);
     expect(exists("ios/APP_STORE_CARPLAY_READINESS.md")).toBe(false);
