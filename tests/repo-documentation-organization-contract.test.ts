@@ -28,6 +28,16 @@ describe("repository and documentation organization", () => {
     expect(checker).toContain('walkMarkdown("docs")');
   });
 
+  it("classifies every tracked markdown file outside docs", () => {
+    const checker = read("scripts/check-docs-index.mjs");
+
+    expect(checker).toContain('gitLines(["ls-files", "*.md", "**/*.md"])');
+    expect(checker).toContain("rootMarkdown");
+    expect(checker).toContain("standaloneMarkdown");
+    expect(checker).toContain('file.startsWith(".github/")');
+    expect(checker).toContain("tracked Markdown without an approved home");
+  });
+
   it("rejects tracked-ignore drift and case-colliding paths", () => {
     const checker = read("scripts/check-source-control-hygiene.mjs");
     const ignore = read(".gitignore");
