@@ -14,11 +14,47 @@ import { AuditLogger } from "./audit-logger";
 import { createRbacMiddleware } from "../middleware/require-role";
 import { QuotaTracker, type PlanTier } from "./tenant-quotas";
 
+/**
+ * Vapi's create-call API does not expose an idempotency key. The outbound
+ * client historically reused the same RequestInit object across automatic
+ * network/5xx retries, which can dial twice when Vapi accepted the first POST
+ * but the response was lost. A WeakSet gives every concrete create request one
+ * transmission. A deliberate model-fallback request uses a distinct object and
+ * remains allowed after a concrete validation response.
+ */
+const transmittedVapiCreateRequests = new WeakSet<object>();
+
+function claimNonIdempotentRequest(url: string, init: RequestInit): void {
+  if (!init || typeof init !== "object") return;
+  const method = String(init.method || "GET").toUpperCase();
+  if (method !== "POST") return;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return;
+  }
+  const isVapiCreate =
+    parsed.protocol === "https:" &&
+    parsed.hostname === "api.vapi.ai" &&
+    (parsed.pathname === "/call" || parsed.pathname === "/call/phone");
+  if (!isVapiCreate) return;
+
+  if (transmittedVapiCreateRequests.has(init)) {
+    throw new Error(
+      "Duplicate-safe boundary blocked an ambiguous retry of Vapi call creation. Verify call status before dialing again.",
+    );
+  }
+  transmittedVapiCreateRequests.add(init);
+}
+
 export async function fetchWithTimeout(
   url: string,
   init: RequestInit = {},
   timeoutMs = 15_000,
 ): Promise<Response> {
+  claimNonIdempotentRequest(url, init);
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
