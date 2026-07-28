@@ -1,77 +1,57 @@
 # AGENTS.md
 
-## Cursor Cloud specific instructions
+## Cursor Cloud instructions
 
-This section captures durable, non-obvious context for running the Wireline dev
-environment in Cursor Cloud. Standard commands live in `README.md`,
-`package.json` scripts, `ARCHITECTURE.md`, and `DATABASE_SETUP.md` — refer to
-those rather than duplicating them here.
+This file contains only tool-specific, non-obvious context for running Wireline in Cursor Cloud. Product, architecture, repository, database, and deployment doctrine live in `README.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`, `docs/DATABASE_OPERATIONS.md`, and `docs/DEPLOYMENT_RUNBOOK.md`.
 
 ### Services
 
-There is a single dev service: one Node process (`npm run dev` → `tsx server.ts`)
-that runs Express + the API on port `3000` and embeds Vite (HMR) in middleware
-mode on the same port. Open `http://localhost:3000`. The browser extension
-(`apps/browser-extension`) and native apps (`ios/`, `android/`) are separate
-surfaces and are not needed for core web/API development.
+There is one core development service: `npm run dev` starts a Node process (`tsx server.ts`) that runs Express and embeds Vite HMR on port `3000`. Open `http://localhost:3000`.
+
+The browser extension and native apps are separate client surfaces. They are not required for core web/API development unless the change owns those surfaces.
 
 ### Environment variables
 
-- Core secrets needed for the authenticated product loop (signup + create agent):
-  `POSTGRES_URL`, `INTERNAL_JWT_SECRET`, and at least one AI key
-  (`OPENAI_API_KEY` (primary) / `GEMINI_API_KEY` / `AI_GATEWAY_API_KEY`;
-  `XAI_API_KEY` is experiment-only). These are provided as Cursor secrets and are present
-  in the process environment.
-- The full set of 150+ integration vars (Stripe, Vapi, Twilio, OAuth, Resend,
-  etc. — see `.env.example` for the canonical list) lives in the Vercel
-  project. Live credentials and production provider configuration are scoped to
-  Production only. Preview/Development values must be purpose-built sandboxes and
-  explicitly reviewed in `scripts/check-deployment-boundaries.mjs`; never widen a
-  production value across Vercel targets. Pull development-only values into a local
-  `.env` with:
-  `npx vercel env pull .env --environment=development --yes --token="$VERCEL_TOKEN"`
-  This is only needed for exercising those specific integrations — the server
-  boots and the core signup/agent flow works without them.
-- Precedence gotcha: `server.ts` loads `dotenv/config`, which does NOT override
-  variables already set in the process environment. So Cursor-injected secrets
-  (e.g. `POSTGRES_URL`, `INTERNAL_JWT_SECRET`) win over any value in `.env`.
-- The dev server never throws on missing env (`src/lib/startup.ts`); unconfigured
-  features return actionable `503` JSON at request time instead of crashing.
-- **Federal DNC scrub (outbound):** the key is intentionally absent pending business
-  registration and EIN. Before marketing outbound, set `FEDERAL_DNC_API_URL` +
-  `FEDERAL_DNC_API_KEY` (real DNCScrub `loginId`, not a Vercel token). Unconfigured
-  vendor **blocks** marketing/campaign dials fail-closed; non-marketing Studio dials
-  still use tenant DNC + TCPA.
+- Core authenticated development requires `POSTGRES_URL`, `INTERNAL_JWT_SECRET`, and at least one configured structured-AI route. `.env.example` is the canonical inventory.
+- Live provider credentials and production provider configuration are Production-only in Vercel. Preview and Development values must be dedicated sandboxes or unset.
+- Pull only Development-scoped variables into a local ignored file when the task requires them:
 
-### Database (important, non-obvious)
+  ```bash
+  npx vercel env pull .env --environment=development --yes --token="$VERCEL_TOKEN"
+  ```
 
-- The database is a shared, already-provisioned Supabase Postgres — treat it as
-  live/shared data. It is already migrated (do NOT run `db:push`/`db:migrate`
-  blindly against it). Verify state read-only with `npm run db:health`.
-- Schema is largely managed out-of-band via Supabase (MCP/manual). The Drizzle
-  migration journal (`drizzle.__drizzle_migrations`) is NOT authoritative — it
-  only records a subset of migrations even though the physical schema is ahead.
-- Tenant isolation uses `SET LOCAL ROLE wireline_server` + the
-  `app.current_user_id` GUC (not Supabase Auth / `auth.uid()`); see
-  `src/lib/server-context.ts` and `DATABASE_SETUP.md`.
-- Migration `drizzle/migrations/0082_phone_voice_routing.sql` correctly targets
-  `wireline_agents`, and the current shared database already has
-  `phone_voice_id` + `phone_voice_provider`. Do not apply manual ALTER statements
-  unless a read-only schema check proves those columns are missing.
+- `dotenv/config` does not override variables already present in the process environment. Cursor-injected secrets therefore take precedence over `.env`.
+- The server starts in a degraded state when optional environment values are absent. Unconfigured features return actionable errors at request time.
+- Federal DNC configuration is intentionally absent until business registration is complete. Marketing/campaign outbound fails closed while it is unavailable.
 
-### Verifying the environment
+### Shared database
 
-- Run lint/typecheck (`npm run lint`, `npm run lint:eslint`), tests
-  (`npm run test:run`), build (`npm run build`), and server smoke
-  (`npm run smoke:server`) sequentially for a complete local verification pass.
-- GitHub Actions may fail to start or return no jobs when the repository/account
-  Actions spending limit is exhausted. Treat that as billing infrastructure,
-  not a code failure; use the command-level results plus the Vercel build status.
-- Resource note: `npm run lint` (full `tsc`) is memory-heavy. Avoid running it
-  concurrently with `build` + `test` + the dev server — under memory pressure the
-  typecheck/eslint processes can be OOM-killed (they exit with no output). Run the
-  heavy checks sequentially if you see silent failures.
-- Hello-world check: sign up at `/signup`, then create an agent via the Studio
-  "New agent" flow (`/studio?create=1`). A new user's free plan caps at 1 agent,
-  so `POST /api/agents` returns a `402` capacity error once one exists — that is
-  expected business logic, not a failure.
+The connected Supabase Postgres database is shared infrastructure. Treat it as production data.
+
+- Run `npm run db:health` before database work.
+- Do not use `db:push` or run migrations blindly.
+- Commit append-only migrations and follow `docs/DATABASE_OPERATIONS.md`.
+- Tenant isolation uses `SET LOCAL ROLE wireline_server` plus the transaction-local `app.current_user_id` GUC. It does not use Supabase Auth or `auth.uid()`.
+- Verify live schema and migration state read-only before applying manual DDL. Any urgent out-of-band application must have the same committed migration and an exact-head green preview.
+
+### Verification
+
+Run heavy checks sequentially; full TypeScript, tests, builds, and a dev server can exceed the available memory when run together.
+
+```bash
+npm run source-control:check
+npm run docs:check
+npm run lint
+npm run lint:server
+npm run lint:audit-modules
+npm run lint:eslint
+npm run test:run
+npm run build
+npm run smoke:server
+```
+
+Use `npm run verify:full` before merge for release-impacting work. GitHub Actions may fail to start because of the repository account billing limit; use the exact-head Vercel gate, CodeRabbit, command-level results, and production verification without ignoring any named job that actually ran and found a defect.
+
+### Product smoke
+
+A useful core smoke is sign-up followed by agent creation at `/studio?create=1`. Capacity responses are plan behavior, not necessarily application failures; validate them against `src/lib/plan-catalog.ts` and the current account state.
