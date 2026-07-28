@@ -8,7 +8,13 @@ import {
   resolveCreateEnabledTools,
   resolveCreatePersonality,
 } from "../src/lib/agent-create-defaults";
-import { BUSINESS_TOOL_NAMES, getDefaultAgentTools } from "../src/lib/agent-capabilities";
+import {
+  applyPlanToolUnlocks,
+  BUSINESS_TOOL_NAMES,
+  getDefaultAgentTools,
+  getRoleToolSet,
+  resolveAgentTools,
+} from "../src/lib/agent-capabilities";
 import { PRODUCT_POSTURE } from "../src/lib/product-copy";
 import { composeSetupPersonality } from "../src/lib/compose-setup-personality";
 
@@ -70,6 +76,20 @@ describe("personal agent parity — create defaults", () => {
     expect(personalTools).not.toContain("search_leads");
     expect(personalTools).not.toContain("send_slack_notification");
     expect(personalTools).not.toContain("send_teams_message");
+  });
+
+  it("keeps explicit selections authoritative through plan entitlement", () => {
+    const selected = ["send_email", "book_appointment"] as const;
+    expect(applyPlanToolUnlocks(selected, "enterprise")).toEqual(selected);
+    expect(resolveAgentTools("sales", selected)).toEqual(selected);
+
+    const personalRole = getRoleToolSet("personal_assistant");
+    expect(personalRole).not.toContain("send_slack_notification");
+    expect(personalRole).not.toContain("send_teams_message");
+    expect(personalRole).not.toContain("send_contract");
+
+    // Legacy agents without enabled_tools retain the entire catalog.
+    expect(resolveAgentTools("sales", null)).toEqual(getDefaultAgentTools());
   });
 
   it("marks Personal & Lifestyle templates as non-business", () => {
