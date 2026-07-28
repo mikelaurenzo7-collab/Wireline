@@ -46,7 +46,10 @@ describe("code review hardening contracts", () => {
     expect(twilio).toContain('eq(schema.dncList.source, "twilio_advanced_opt_out")');
     expect(twilio).toContain('eq(schema.dncList.source, "sms_opt_out")');
     expect(twilio).toContain('eq(schema.dncList.reason, "opt-out")');
-    expect(twilio).toContain("legacyOptIn ? optInConfirmationTwiml() : emptyTwiml()");
+    expect(twilio).toContain("if (!legacy) return res.status(200).send(emptyTwiml());");
+    expect(twilio).toContain(
+      '.send(control === "stop" ? optOutConfirmationTwiml() : optInConfirmationTwiml());',
+    );
   });
 
   it("purges every credential and tenant-data surface found in the live schema audit", () => {
