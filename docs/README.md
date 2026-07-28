@@ -67,6 +67,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | --- | --- |
 | [DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md) | Shared Postgres, migration, RLS, privilege, and rollback operations. |
 | [DEPLOYMENT_RUNBOOK.md](./DEPLOYMENT_RUNBOOK.md) | Exact-head preview, production promotion, environment, migration, and rollback workflow. |
+| [IOS_APP_STORE_CARPLAY_READINESS.md](./IOS_APP_STORE_CARPLAY_READINESS.md) | iOS signing, App Review, native capability, physical-device, and entitlement-gated CarPlay release checks. |
 | [FOUNDER_LAUNCH_COMMAND_CENTER.md](./FOUNDER_LAUNCH_COMMAND_CENTER.md) | Founder go/no-go, runtime, GTM, KPI, support, and rollback command center. |
 | [LAUNCH_GURU_PLAYBOOK_2026-07-20.md](./LAUNCH_GURU_PLAYBOOK_2026-07-20.md) | Current launch sequence and operating playbook. |
 | [LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md](./LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md) | Creative doctrine, asset inventory, and channel placement. |
@@ -108,28 +109,21 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 
 ### Repository-local Markdown exceptions
 
-These files stay outside `docs/` because a development tool, compatibility path, or client surface discovers them at their exact repository location. This table is the sole approval source used by `npm run docs:check`; each file must remain narrow and defer durable cross-cutting doctrine to the canonical documents above.
+These files stay outside `docs/` because a development tool or source-owning surface discovers them at an exact repository location. This table is the sole approval source used by `npm run docs:check`; each file must remain narrow and defer cross-cutting doctrine to the canonical documents above.
 
 | Document | Why it remains local |
 | --- | --- |
 | [AGENTS.md](../AGENTS.md) | Cursor Cloud discovery instructions at the required root path. |
 | [CLAUDE.md](../CLAUDE.md) | Claude Code discovery instructions at the required root path. |
-| [DATABASE_SETUP.md](../DATABASE_SETUP.md) | Legacy compatibility pointer to the canonical database runbook. |
-| [DEPLOY.md](../DEPLOY.md) | Legacy compatibility pointer to the canonical deployment runbook. |
-| [apps/browser-extension/README.md](../apps/browser-extension/README.md) | Browser-extension surface entry point beside its source. |
-| [android/README.md](../android/README.md) | Android surface entry point beside its source. |
-| [android/SETUP_CHECKLIST.md](../android/SETUP_CHECKLIST.md) | Android build, signing, consent, and release checklist. |
-| [ios/README.md](../ios/README.md) | iOS surface entry point beside its source. |
-| [ios/SETUP_CHECKLIST.md](../ios/SETUP_CHECKLIST.md) | iOS build, signing, capability, and release checklist. |
-| [ios/APP_STORE_CARPLAY_READINESS.md](../ios/APP_STORE_CARPLAY_READINESS.md) | App Store and entitlement-gated CarPlay release checklist. |
-| [ios/EVERYDAY_SHORTCUTS_PLAN.md](../ios/EVERYDAY_SHORTCUTS_PLAN.md) | Siri and App Shortcuts implementation plan beside the native client. |
-| [ios/WIDGET_EXTENSION_PLAN.md](../ios/WIDGET_EXTENSION_PLAN.md) | Widget extension implementation plan beside the native client. |
+| [apps/browser-extension/README.md](../apps/browser-extension/README.md) | Browser-extension entry point beside its source and build script. |
+| [android/README.md](../android/README.md) | Android build, signing, push, Telecom, consent, and release entry point beside its source. |
+| [ios/README.md](../ios/README.md) | iOS architecture, build, widgets, intents, and release entry point beside its source. |
 | [references/design-system-navigation-plan.md](../references/design-system-navigation-plan.md) | Exact path consumed by the design-system regression contract. |
 
 ## Verification
 
 - `npm run source-control:check` validates ignored/tracked drift, forbidden local artifacts, and case-collision safety.
-- `npm run docs:check` validates required canonical links, local Markdown targets, duplicate index entries, complete `docs/` indexing, and tracked Markdown classification.
+- `npm run docs:check` validates required canonical links, every local Markdown target, duplicate index entries, complete `docs/` indexing, and tracked Markdown classification.
 - `npm run verify` runs repository checks, design/routes/OpenAPI/token/Stripe checks, a production build, and server smoke.
 - `npm run verify:full` adds TypeScript, ESLint, authorization, CSP, runtime-policy, security-audit, test, and browser-extension gates.
 - `GET /api/health` is the deployed health probe.
