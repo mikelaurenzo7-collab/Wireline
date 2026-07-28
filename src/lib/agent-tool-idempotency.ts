@@ -98,7 +98,7 @@ async function claimToolExecution(
   context: ToolCallContext,
   key: string,
 ): Promise<ClaimResult> {
-  return context.drizzle.transaction(async (tx: any) => {
+  return context.drizzle.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${key}))`);
 
     const [existing] = await tx
