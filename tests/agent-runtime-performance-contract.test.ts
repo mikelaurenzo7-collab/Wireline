@@ -6,11 +6,14 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("agent runtime performance and action integrity", () => {
   const factory = read("src/lib/vapi-assistant-factory-v2.ts");
+  const route = read("src/routes/vapi-v2.ts");
+  const workflow = read("src/routes/vapi/tool-handlers-workflow.ts");
   const dispatch = read("src/lib/agent-tool-dispatch.ts");
   const idempotency = read("src/lib/agent-tool-idempotency.ts");
   const truth = read("src/lib/agent-tool-result-truth.ts");
   const toolFormat = read("src/lib/vapi-tool-format.ts");
   const toolResults = read("src/lib/vapi-tool-results.ts");
+  const capabilities = read("src/lib/agent-capabilities.ts");
   const createDefaults = read("src/lib/agent-create-defaults.ts");
   const dncMigration = read("drizzle/migrations/0109_dnc_user_phone_uniqueness.sql");
 
@@ -28,6 +31,8 @@ describe("agent runtime performance and action integrity", () => {
     expect(dispatch).toContain("enforceAgentToolResultTruth");
     expect(idempotency).toContain("pg_advisory_xact_lock");
     expect(idempotency).toContain("exact same ID is never executed again");
+    expect(idempotency).toContain('"escalate_to_human"');
+    expect(idempotency).toContain("output.destination");
     expect(truth).toContain("create a real follow-up task");
     expect(truth).toContain("was not confirmed");
   });
@@ -39,12 +44,26 @@ describe("agent runtime performance and action integrity", () => {
     expect(toolFormat).toContain("result explicitly confirms success");
     expect(toolResults).toContain("VAPI_TOOL_TIMEOUT_MS = 8_000");
     expect(toolResults).toContain("MAX_VAPI_PARALLEL_TOOL_CALLS = 3");
+    expect(route).toContain("may still be processing");
+    expect(route).toContain("Do not repeat it or claim success or failure");
   });
 
-  it("starts new agents focused without removing the full configurable catalog", () => {
+  it("makes degraded message-taking durable and callbacks exact", () => {
+    expect(route).toContain("buildDurableTakeMessageAssistant");
+    expect(route).toContain('name: "create_followup_task"');
+    expect(route).not.toContain("make sure the team gets back to you");
+    expect(workflow).toContain("if (!dueAt)");
+    expect(workflow).not.toContain("Date.now() + 24 * 60 * 60 * 1000");
+    expect(workflow).toContain("do not promise a response time");
+  });
+
+  it("starts new agents focused and preserves explicit selections at runtime", () => {
     expect(createDefaults).toContain("getRoleToolSet(runtimeRole(role, isBusinessAgent))");
     expect(createDefaults).not.toContain("getDefaultAgentTools()");
     expect(createDefaults).toContain("BUSINESS_TOOL_NAMES.has(tool)");
+    expect(capabilities).toContain("return [...tools]");
+    expect(capabilities).toContain("explicit enabled_tools array is the");
+    expect(capabilities).not.toContain("UNIVERSAL_BONUS_TOOLS");
   });
 
   it("makes DNC writes conflict-safe without depending on the auxiliary ledger", () => {
