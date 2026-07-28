@@ -5,8 +5,26 @@ import { describe, expect, it } from "vitest";
 import {
   CANONICAL_AGENT_TOOL_NAMES,
   isSystemRuntimeTool,
+  resolveAuthorizedAgentTools,
   sanitizePersistedAgentToolSelection,
 } from "../src/lib/agent-tool-authorization";
+import type { TenantIntegrationConnections } from "../src/lib/tenant-integration-connections";
+
+const DISCONNECTED: TenantIntegrationConnections = {
+  shopify: false,
+  square: false,
+  slack: false,
+  x: false,
+  microsoft_teams: false,
+  microsoft_excel: false,
+  salesforce: false,
+  hubspot: false,
+  zoom: false,
+  google_calendar: false,
+  microsoft_calendar: false,
+  google_mail: false,
+  microsoft_mail: false,
+};
 
 describe("agent tool execution authorization", () => {
   it("preserves known selections while dropping stale legacy values", () => {
@@ -31,11 +49,35 @@ describe("agent tool execution authorization", () => {
     expect(sanitizePersistedAgentToolSelection([42, false, {}])).toEqual([]);
   });
 
+  it("never activates disconnected or feature-disabled tools", () => {
+    const active = resolveAuthorizedAgentTools(
+      [
+        "send_email",
+        "send_text_message",
+        "lookup_phone_number",
+        "book_appointment",
+        "send_slack_notification",
+        "shopify_cancel_order",
+      ],
+      { twilioMessaging: false, twilioLookup: false },
+      DISCONNECTED,
+    );
+
+    expect(active).toEqual(["send_email"]);
+  });
+
+  it("keeps explicit empty selections empty instead of expanding the catalog", () => {
+    expect(
+      resolveAuthorizedAgentTools([], { twilioMessaging: true, twilioLookup: true }, DISCONNECTED),
+    ).toEqual([]);
+  });
+
   it("keeps only compliance and durable fallback tools system-callable", () => {
     expect(isSystemRuntimeTool("add_to_dnc")).toBe(true);
     expect(isSystemRuntimeTool("create_followup_task")).toBe(true);
     expect(isSystemRuntimeTool("send_email")).toBe(false);
     expect(isSystemRuntimeTool("book_appointment")).toBe(false);
+    expect(isSystemRuntimeTool("create_fleet_task")).toBe(false);
   });
 
   it("keeps the authorization catalog tied to the canonical tool registry", () => {
@@ -54,5 +96,19 @@ describe("agent tool execution authorization", () => {
     expect(authorization).toBeGreaterThan(-1);
     expect(idempotency).toBeGreaterThan(authorization);
     expect(source).toContain("Blocked inactive or disconnected agent tool");
+  });
+
+  it("journals the verified legacy-token cleanup", () => {
+    const migration = readFileSync(
+      resolve(process.cwd(), "drizzle/migrations/0110_remove_legacy_agent_tool_token.sql"),
+      "utf8",
+    );
+    const journal = readFileSync(
+      resolve(process.cwd(), "drizzle/migrations/meta/_journal.json"),
+      "utf8",
+    );
+    expect(migration).toContain("create_fleet_task");
+    expect(migration).toContain("WITH ORDINALITY");
+    expect(journal).toContain('"tag": "0110_remove_legacy_agent_tool_token"');
   });
 });
