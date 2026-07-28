@@ -92,8 +92,8 @@ run("npx", [
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
   "tests/auth-journey-hardening-contract.test.ts",
-  // OAuth state, bridge-code binding, provider identity, key rotation, and
-  // one-check throttling protect account-session integrity in every build.
+  // Provider-host binding, browser-bound bridge state, verified identity, key
+  // rotation, and one-check throttling protect account-session integrity.
   "tests/auth-oauth-browser-binding-contract.test.ts",
   "tests/oauth-rate-limit-middleware.test.ts",
   "tests/oauth-provider-identity-integrity-contract.test.ts",
