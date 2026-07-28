@@ -9,6 +9,7 @@ import {
   resolveAuthorizedAgentTools,
   sanitizePersistedAgentToolSelection,
 } from "../src/lib/agent-tool-authorization";
+import { UNSCOPED_PLATFORM_LIVE_TOOL_NAMES } from "../src/lib/tenant-integration-connections";
 
 describe("agent tool execution authorization", () => {
   it("preserves known selections while dropping stale legacy values", () => {
@@ -33,7 +34,7 @@ describe("agent tool execution authorization", () => {
     expect(sanitizePersistedAgentToolSelection([42, false, {}])).toEqual([]);
   });
 
-  it("never activates disconnected or feature-disabled tools", () => {
+  it("never activates disconnected, feature-disabled, or unscoped platform tools", () => {
     const active = resolveAuthorizedAgentTools(
       [
         "send_email",
@@ -42,12 +43,27 @@ describe("agent tool execution authorization", () => {
         "book_appointment",
         "send_slack_notification",
         "shopify_cancel_order",
+        "list_x_ad_campaigns",
+        "get_x_ad_campaign_stats",
+        "send_contract",
+        "meta_submit_lead",
       ],
       { twilioMessaging: false, twilioLookup: false },
       NO_TENANT_INTEGRATIONS,
     );
 
     expect(active).toEqual(["send_email"]);
+  });
+
+  it("keeps platform-owned accounts out of arbitrary live tenant execution", () => {
+    expect([...UNSCOPED_PLATFORM_LIVE_TOOL_NAMES].sort()).toEqual(
+      [
+        "get_x_ad_campaign_stats",
+        "list_x_ad_campaigns",
+        "meta_submit_lead",
+        "send_contract",
+      ].sort(),
+    );
   });
 
   it("keeps explicit empty selections empty instead of expanding the catalog", () => {
@@ -100,17 +116,25 @@ describe("agent tool execution authorization", () => {
     expect(source).toContain("Blocked inactive or disconnected agent tool");
   });
 
-  it("journals the verified legacy-token cleanup", () => {
-    const migration = readFileSync(
+  it("journals both verified live-tool data cleanups", () => {
+    const legacyMigration = readFileSync(
       resolve(process.cwd(), "drizzle/migrations/0110_remove_legacy_agent_tool_token.sql"),
+      "utf8",
+    );
+    const platformMigration = readFileSync(
+      resolve(process.cwd(), "drizzle/migrations/0111_remove_unscoped_platform_live_tools.sql"),
       "utf8",
     );
     const journal = readFileSync(
       resolve(process.cwd(), "drizzle/migrations/meta/_journal.json"),
       "utf8",
     );
-    expect(migration).toContain("create_fleet_task");
-    expect(migration).toContain("WITH ORDINALITY");
+    expect(legacyMigration).toContain("create_fleet_task");
+    expect(legacyMigration).toContain("WITH ORDINALITY");
+    expect(platformMigration).toContain("list_x_ad_campaigns");
+    expect(platformMigration).toContain("send_contract");
+    expect(platformMigration).toContain("meta_submit_lead");
     expect(journal).toContain('"tag": "0110_remove_legacy_agent_tool_token"');
+    expect(journal).toContain('"tag": "0111_remove_unscoped_platform_live_tools"');
   });
 });
