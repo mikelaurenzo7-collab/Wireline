@@ -19,6 +19,8 @@ import {
 import { buildVapiAssistant } from "../lib/vapi-assistant-factory-v2";
 import { normalizeVapiToolCalls } from "../lib/vapi-tool-call-utils";
 import { SENTIMENT_ANGRY_SIGNALS, SENTIMENT_POSITIVE_SIGNALS } from "../lib/vapi-helpers";
+import { buildVapiServerConfig } from "../lib/vapi-server-config";
+import { toVapiFunctionTools } from "../lib/vapi-tool-format";
 import { evaluateVapiWebhookAuth } from "../lib/vapi-webhook-auth";
 import { handleEndOfCallReport } from "../lib/vapi-handlers";
 import { shouldQueueWebhook } from "../lib/vapi-webhook-queue";
@@ -60,6 +62,53 @@ function evaluateHandoffTriggers(transcriptText: string, confidence: number) {
     hasTriggerWord,
     lowConfidence,
     reason: lowConfidence ? "Low Confidence (< 75%)" : "Keyword Trigger",
+  };
+}
+
+function buildDurableTakeMessageAssistant(agentId: string, agentName?: string) {
+  const appUrl = process.env.APP_URL?.trim().replace(/\/+$/, "");
+  const server = appUrl
+    ? buildVapiServerConfig(`${appUrl}/api/vapi-webhook?agentId=${encodeURIComponent(agentId)}`)
+    : undefined;
+  const canPersist = Boolean(server);
+  const tools = canPersist
+    ? toVapiFunctionTools([
+        {
+          name: "create_followup_task",
+          description:
+            "Persist the caller's complete message for a human. Use only after collecting and reading back their name, callback number, reason for calling, and urgency. Promise follow-up only if the result explicitly confirms the task was created.",
+          parameters: {
+            type: "object",
+            properties: {
+              description: {
+                type: "string",
+                description:
+                  "Complete caller message including name, callback number, reason, urgency, and any requested timing.",
+              },
+              priority: {
+                type: "string",
+                enum: ["low", "medium", "high"],
+                description: "Use high only for genuinely urgent or time-sensitive messages.",
+              },
+            },
+            required: ["description", "priority"],
+          },
+        },
+      ])
+    : [];
+
+  return {
+    firstMessage: `Hi, you've reached ${agentName || "our office"}. I can take a message for the team.`,
+    maxDurationSeconds: 300,
+    model: {
+      provider: "openai" as const,
+      model: VAPI_OPENAI_FALLBACK_MODEL,
+      systemPrompt: canPersist
+        ? "You are a courteous, concise message-taking assistant. Collect the caller's name, callback number, reason for calling, and urgency. Read the details back once. Then use create_followup_task. Say the message was recorded and promise follow-up only if the tool explicitly confirms creation. If the tool fails, times out, or remains uncertain, say the message was not confirmed and offer the business's other contact channel. Do not answer business questions, quote prices, or book appointments."
+        : "You are a courteous, concise message-taking assistant, but message persistence is unavailable. Explain that you cannot safely record or promise delivery of a message right now, suggest the caller use the business's other contact channel, and end politely. Do not collect sensitive details, answer business questions, quote prices, book appointments, or promise follow-up.",
+      tools,
+    },
+    ...(server ? { server, serverMessages: ["tool-calls", "end-of-call-report"] } : {}),
   };
 }
 
@@ -217,16 +266,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
             completionGraceDueUsd: wallet.completion_grace_due_usd,
           });
           return res.json({
-            assistant: {
-              firstMessage: `Hi, you've reached ${agentVoiceName || "our office"}. I can take a message and make sure the team gets back to you.`,
-              maxDurationSeconds: 300,
-              model: {
-                provider: "openai",
-                model: VAPI_OPENAI_FALLBACK_MODEL,
-                systemPrompt:
-                  "You are a courteous message-taking assistant. Collect the caller's name, number, and reason for calling, confirm the details back, promise a prompt follow-up, and end the call politely. Do not answer business questions, quote prices, or book appointments.",
-              },
-            },
+            assistant: buildDurableTakeMessageAssistant(webhookAgentId, agentVoiceName),
           });
         }
         return res.json({
@@ -264,8 +304,9 @@ router.post("/api/vapi-webhook", async (req, res) => {
       const toolCallRows = await runVapiToolCallsWithConcurrency(toolCalls, (toolCall) =>
         // The .catch MUST wrap withVapiToolTimeout(...) — the timeout rejects
         // from the wrapper, not the inner dispatch. Catching only the inner
-        // promise lets a >5s tool reject the whole batch (HTTP 500, all tool
-        // results lost mid-call).
+        // promise lets a >8s tool reject the whole batch (HTTP 500, all tool
+        // results lost mid-call). The underlying provider promise may continue,
+        // so timeout language must forbid an automatic retry.
         withVapiToolTimeout(
           (async () =>
             dispatchToolCall(toolCall.function?.name || "", toolCall.function?.arguments || {}, {
@@ -282,8 +323,8 @@ router.post("/api/vapi-webhook", async (req, res) => {
           toolCallId: toolCall.id,
           result:
             (err as Error)?.message === "VAPI_TOOL_TIMEOUT"
-              ? "That is taking longer than expected. Apologize briefly and offer to follow up by email or text."
-              : "Something went wrong running that action. Continue the conversation and try another approach.",
+              ? "That action is taking longer than expected and may still be processing. Do not repeat it or claim success or failure. Tell the caller the outcome cannot yet be confirmed and offer to create a durable follow-up task."
+              : "The action did not complete successfully. Do not claim success or repeat it automatically. Tell the caller what could not be confirmed and offer a durable follow-up task or safe alternative.",
         })),
       );
       const results = finalizeVapiToolBatch(toolCalls, toolCallRows);
