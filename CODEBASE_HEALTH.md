@@ -1,18 +1,18 @@
 # Codebase Health
 
-This file is Wireline's repo-health contract. It defines what belongs in source control, what must be deleted or ignored, and which documents are canonical.
+This file is Wireline's durable repository-health contract. It defines what belongs in source control, what must be deleted or ignored, and how canonical policy differs from dated audit evidence.
 
 ## Current north star
 
-Wireline is a dark, precise agent operating layer for calls, texts, follow-up, browser context, email, integrations, and optional video presenters. The product model is **Create -> Train -> Wire -> Run**.
+Wireline is a precise agent operating layer for calls, texts, follow-up, browser context, email, integrations, and optional video presenters. The product model is **Create -> Train -> Wire -> Run**.
 
-- **Create** is short intake only: name, role, voice, personality, and starting brief.
-- **Train** owns deep configuration: documents, sources, behavior, voice, policies, evaluation, memory, and escalation rules.
+- **Create** is short intake: name, role, voice, personality, and starting brief.
+- **Training** owns documents, sources, behavior, voice, policies, evaluation, memory, and escalation rules.
 - **Wire** owns numbers, integrations, routing, connected tools, approvals, billing, and launch controls.
 - **Run / Studio** is chat-first execution for calls, texts, follow-up, approvals, handoff, and review.
-- **Video presenter** is an optional business-agent visual layer. Vendor names stay out of customer-facing copy; the Wireline face remains the fallback.
+- **Video presenter** is an optional business-agent layer. Vendor names stay out of customer-facing copy; the Wireline face remains the fallback.
 
-Historic dashboard, manager, command-center, chat, operations, and temporary Studio paths must redirect into the active product model or be explicitly retired.
+Historic dashboard, manager, command-center, chat, operations, and temporary Studio paths must redirect into the active product model or be explicitly retired. Dark and light themes must express one Wireline Letterpress system rather than separate products.
 
 ## Active product boundary
 
@@ -21,133 +21,82 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 | Routing | `src/App.tsx`, `src/routes/AppRoutes.tsx` |
 | Overview | `src/pages/OverviewPage.tsx` |
 | Create | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx` |
-| Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/ReportingPreferences.tsx`, `src/components/training/RecentCallArtifactRequests.tsx` |
+| Training | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/` |
 | Wire | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` |
 | Run / Studio | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` |
 | Shell | `src/components/WorkspaceShell.tsx`, `src/components/layout/AppShell.tsx` |
 | Design | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |
 | Billing | `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts`, `docs/business-usage-pricing-decision.md` |
-| Voice | `src/lib/ai-models.ts`, `src/lib/voice/`, `docs/GROK_LIVE_VOICE.md` |
+| Voice | `src/lib/ai-models.ts`, `src/lib/voice/`, `docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md` |
 | Video presenter | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`, `src/routes/video-presenter-routes.ts` |
 | Browser extension | `apps/browser-extension/` |
-| ChatGPT App | `docs/CHATGPT_APP.md`, ChatGPT MCP route/tool code |
+| Native clients | `ios/`, `android/` |
+| ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `docs/CHATGPT_APP.md` |
 
 ## Source-control rules
 
-### Must stay out of the repo
+### Must stay out of the repository
 
-- `.grok/artifacts/`, `.grok/tmp/`, local agent-session output, generated review summaries, generated execution plans, and local design-agent artifacts.
-- Visual QA output, screenshots, Playwright reports, coverage reports, build output, generated browser-extension packages, local patches, reject files, temporary scripts, and worktree scratchpads.
-- Secrets, exported environment mirrors, customer data, transcripts, raw provider payloads, local test databases, and personal machine paths.
+- Local agent-session output, generated review summaries, execution plans, screenshots, visual-QA captures, Playwright reports, coverage, build output, browser packages, temporary scripts, patches, and worktree scratchpads.
+- Secrets, exported environment mirrors, customer data, transcripts, raw provider payloads, local databases, and personal machine paths.
+- Generated marketing kits, official-asset bundles, archive exports, and provider/catalog mirrors.
 
 ### Must be deleted when found
 
-- Thin `*-v2` wrappers or one-line re-export files that exist only to bridge a migration.
-- Duplicate docs whose durable content is already represented by `README.md`, `CODEBASE_HEALTH.md`, `ARCHITECTURE.md`, or `docs/README.md`.
-- Generated design reviews, AI review files, temporary execution summaries, or branch-local artifacts.
-- Retired redirect-only routes after the new active surface is stable and no external client depends on the old URL.
-- Old redesign palettes, standalone CSS experiments, mesh/nebula primitives, decorative off-palette colors, or unowned visual contracts.
+- Thin `*-v2` wrappers or one-line re-export files that only bridge a completed migration.
+- Duplicate docs whose durable content already exists in `README.md`, `CONTRIBUTING.md`, `CODEBASE_HEALTH.md`, `ARCHITECTURE.md`, or a canonical document.
+- Generated design reviews, AI-review files, temporary execution summaries, and branch-local artifacts.
+- Retired redirect-only routes after the replacement is stable and no external client depends on the old URL.
+- Old palettes, standalone CSS experiments, mesh/nebula primitives, decorative off-palette colors, and unowned visual contracts.
 
 ### Preserve unless explicitly audited
 
-- Drizzle migrations, historical security notes, billing decisions, authz evidence, public launch runbooks, and product-contract tests.
-- Historical docs with audit value, as long as `docs/README.md` marks them historical or links them under the correct section.
+- Drizzle migrations, historical security evidence, billing decision records, authorization evidence, public launch runbooks, and product-contract tests.
+- Historical docs with audit value when `docs/AUDIT_INDEX.md` explains their role and supersession.
 
 ## Design-system discipline
 
-Wireline Letterpress — Aurora palette — is the only active design system.
+Wireline Letterpress on the Aurora palette is the only active design system.
 
-- Electric violet is action.
-- Ink is structure.
-- A cool, near-black obsidian canvas is calm in dark mode; a cool near-white canvas carries the same story in light mode.
-- Silver is the wire accent, not a broad decorative palette.
-- Inter Tight carries display; Inter carries body; IBM Plex Mono carries labels/metadata.
-- Touch targets stay at least 44px. Focus rings stay visible. Accessible names must survive visual polish.
-- Do not reintroduce the retired forest-green/copper Letterpress palette, Instrument Serif / DM Sans / Space Mono as primary product fonts, signal blue, dark Studio experiments, mesh/nebula primitives, or ad-hoc token aliases.
+- Electric violet is action; ink is structure; silver is the restrained wire accent.
+- Dark mode uses a cool obsidian canvas. Light mode uses a cool near-white canvas with the same hierarchy and tokens.
+- Inter Tight carries display, Inter carries body, and IBM Plex Mono carries labels and metadata.
+- Touch targets stay at least 44px. Focus rings stay visible. Accessible names survive visual polish.
+- Do not reintroduce the retired forest-green/copper palette, signal blue, dark-only Studio experiments, mesh/nebula primitives, or ad-hoc token aliases.
 
 ## Product-language discipline
 
-Use customer-facing language consistently:
-
-- Prefer: `Agents`, `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, `Runtime Balance`, `presenter`, `face`, `live video add-on`.
-- Avoid reviving generic `assistant`, `dashboard`, `operator`, `manager`, `control center`, or vendor names unless the term is internal code, provider configuration, or an external API name.
+- Broad public language: `AI voice agents` for personal and business conversations.
+- Personal context: `personal agents`.
+- Explicit business-role context: `AI employees`, `AI sales agents`, or another specific role when truthful.
+- Technical contracts: `agent`.
+- Product nouns: `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, `Runtime Balance`, `included number`, `presenter`, and `live video add-on`.
+- Avoid generic `assistant`, `dashboard`, `operator`, `manager`, `control center`, and customer-facing vendor names unless the external API name is the subject.
 
 ## Documentation taxonomy
 
 | Document | Role |
 | --- | --- |
-| `README.md` | Entry point, repo map, verification commands, hygiene contract. |
-| `CODEBASE_HEALTH.md` | Cleanup rules, source-control boundaries, deletion policy. |
-| `ARCHITECTURE.md` | Runtime architecture, data-flow boundaries, security invariants. |
-| `docs/README.md` | Documentation index and canonical/historical status map. |
-| `docs/EXCLUDED_SURFACES_AUDIT_2026-07-06.md` | Active rebuild/delete triage for excluded and unmounted product surfaces. |
-| `docs/PRODUCT_SHOWCASE_MATRIX.md` | Active whole-product showcase matrix and feature-status discipline. |
-| `docs/WIRELINE_LEVEL_UP_MASTER_PLAN.md` | Active phased level-up plan for repo, product, trust, cost, and surfaces. |
-| `docs/TRUST_CONVERSION_PACK.md` | Active customer trust, compliance, and proof posture. |
-| `docs/LAUNCH_READINESS_AND_MARGIN.md` | Active launch readiness and account-level margin cockpit plan. |
-| `docs/business-usage-pricing-decision.md` | Billing catalog and Stripe product model. |
-| `docs/CLIENT_SURFACES.md` | Web, browser, native, and ChatGPT ownership boundaries. |
-| `docs/CHATGPT_APP.md` | ChatGPT App contract and release verification. |
+| `README.md` | Repository entry point, product map, setup, and verification. |
+| `CONTRIBUTING.md` | Branch, review, migration, validation, and release workflow. |
+| `CODEBASE_HEALTH.md` | Cleanup rules, source-control boundaries, and deletion policy. |
+| `ARCHITECTURE.md` | Runtime architecture, data-flow boundaries, and security invariants. |
+| `docs/README.md` | Canonical product/system docs, runbooks, and active plans. |
+| `docs/AUDIT_INDEX.md` | Dated audit evidence and superseded decision records. |
+
+Every durable Markdown file under `docs/` must be linked from exactly one documentation index. Dated evidence does not become canonical policy by default. Durable conclusions must be promoted into code or the appropriate canonical document.
+
+A Markdown file may remain outside `docs/` only when a tool, source-owning surface, legacy link, or regression contract requires its exact path. Every exception must be linked exactly once from `docs/README.md`, remain a bounded entry point or compatibility pointer, defer full policy to a canonical document, and contain no credentials, environment values, mutable provider inventories, or copied production data.
 
 ## Verification
 
-Run the narrowest sufficient check while developing, then the full gate before merge.
+- `npm run check-prod-env` validates required production environment shape.
+- `npm run source-control:check` rejects generated/local tracked files, tracked-ignore drift, and case-colliding paths.
+- `npm run docs:check` validates required links, link targets, duplicate index membership, and complete `docs/` indexing.
+- `npm run verify` runs repository, design, route, docs, OpenAPI, token, Stripe, build, and server-smoke checks.
+- `npm run verify:full` adds TypeScript, ESLint, authorization, bootstrap, CSP, runtime-policy, API-error, security-audit, test, and browser-extension gates.
+- Vercel exact-head validation and post-deploy runtime-error review remain required for release-impacting changes.
 
-- `npm run check-prod-env` — required/recommended production environment shape, including deploy-safe Postgres URL host validation.
-- `npm run verify` — design check, source-control hygiene, route registry, docs index, OpenAPI, design-token parity, Stripe catalog contract, production build, and bundled-server import smoke.
-- `npm run verify:full` — type check, a second audit-modules-scoped type check, server lint, ESLint, design/source-control/route/docs/openapi/token checks, Stripe catalog contract, authz, bootstrap, tsconfig-exclude hygiene, CSP, runtime policy, API error shape, `npm audit`, tests, build, smoke, and the browser-extension packaging check.
-- `npm run verify:contracts` — product voice, metadata, event taxonomy, and static contracts.
-- `node apps/browser-extension/scripts/build.mjs --check` — browser extension packaging and policy checks.
-- `GET /api/health` — deployed health probe.
-- Review Vercel runtime errors after each deployment.
+## Audit history
 
-## Recent health actions
-
-### 2026-07-10 repo-wide ops cleanup
-
-- Cross-checked GitHub, Stripe, Supabase, and Vercel before changing source.
-- Hardened database URL selection and production env checks against single-label database hosts such as `base`, which Vercel runtime logs had surfaced as `getaddrinfo ENOTFOUND base` during a signup attempt.
-- Added regression coverage for valid pooler selection, malformed pooler fallback, and invalid production database host rejection.
-- Refreshed README verification guidance so environment shape checks are explicit before deploy.
-- Revalidated Supabase: project `ogenlhodmwvyacvnrsnj` is active healthy; RLS is enabled on listed app tables; the remaining security advisor is Supabase Auth leaked-password protection, which is not the active custom-auth control; unused-index lints remain evidence-gated, not automatic deletion targets.
-- Revalidated Stripe: the active catalog includes Personal, Team, Business, Enterprise, Runtime Balance, and Live Video products; zero-dollar `Retired catalog anchor` prices are not referenced by source and remain an ops cleanup candidate before broad public checkout.
-- Revalidated Vercel: latest `wireline` production deployment is READY; runtime errors were clear over the last 30 minutes at the time of this pass.
-
-- Audited authenticated route and chrome surfaces; removed stale redirect-only client routes for pulse/fleet/ops/training/chat/actions/nexus/wires and deleted unmounted legacy shell components while preserving only defensive `/agents`, `/call-logs`, and `/logs` redirects.
-
-### 2026-07-09 launch-readiness pass
-
-- Rewrote the launch-readiness record as self-contained (it previously pointed at a personal `Downloads` pack). Retired 2026-07-25 once its contents were fully reflected in code and the active docs.
-- Deleted stale `references/` design-migration planning files (kept `design-system-navigation-plan.md`, which a contract test reads) and the empty `.stitch/` placeholder.
-- Hardened Vercel secret handling: sync scripts write `encrypted` (never `plain`), secret reads go through `scripts/lib/vercel-env-values.mjs` per-variable decryption, and `DATABASE_POOL_URL` joined the env examples and checks.
-- Added `npm run stripe:webhook:check` / `stripe:webhook:align` so the production Stripe webhook's `enabled_events` cannot drift from the handlers in `src/routes/billing-routes.ts`.
-
-### 2026-07-06 level-up guardrails
-
-- Promoted source-control hygiene, route registry invariants, docs index integrity, and design-token parity into the normal verification path.
-- Added `docs/PRODUCT_SHOWCASE_MATRIX.md` so all Wireline features are showcased while retaining live/beta/planned/historical status discipline.
-- Added `docs/WIRELINE_LEVEL_UP_MASTER_PLAN.md` as the phased execution plan for truth/deletion, wedge launch, reliability/margin, multi-surface excellence, and expansion.
-- Removed the stale browser `wireline_token` bearer fallback so web auth stays httpOnly-cookie based while native remains explicit Bearer auth.
-
-### 2026-07-05 Aurora rebrand
-
-- Replaced the Letterpress forest-green/copper palette with the Aurora violet/silver/obsidian palette across `design-tokens/wireline.tokens.json` and every generated surface (web, browser extension, iOS, Android), the optional light theme, static legal pages, the ChatGPT MCP widget, app/OS icon marks, the OG share image, and the design contract + tests that pin exact hex values.
-- Flipped the design-vision "no purple" rule: Aurora violet is now canon, and the retired forest-green/copper palette is what must not return.
-
-### 2026-07-04 repo-health pass
-
-- Added `.grok/artifacts/` and `.grok/tmp/` to `.gitignore`.
-- Refreshed `README.md`, `CODEBASE_HEALTH.md`, `ARCHITECTURE.md`, and `docs/README.md` around the active Create -> Train -> Wire -> Run model.
-- Recorded this health pass in a dated audit doc, retired 2026-07-25 after its findings landed; this file is the durable source of truth.
-- Removed tracked Grok/generated review artifacts discovered in `.grok/artifacts/`.
-- Marked generated/local AI artifacts as non-durable source-control material.
-
-### Prior Wireline Letterpress standardization
-
-- Replaced the old design contract with `scripts/check-wireline-clear-system.mjs`.
-- Moved source tokens, generated CSS, generated TypeScript, browser extension tokens, native Android tokens, iOS tokens, icons, legal pages, and app manifests to Wireline Letterpress.
-- Deleted dead Studio right-rail and nebula visual primitives.
-- Deleted stale standalone redesign landing artifacts that preserved the wrong dark/blue palette.
-- Added Wireline Command browser-extension command actions and product-doc contracts.
-- Added account deletion controls and guarded mobile-browser settings access.
-- Continued aggressive split plan for large monolithic files while preserving audit-value migrations.
+Dated health passes and launch reviews are preserved in `docs/AUDIT_INDEX.md`. This policy file should not grow into a chronological changelog; Git history and the audit index own that evidence.

@@ -1,41 +1,40 @@
 # Wireline
 
-Wireline is the operating layer for **AI voice agents for personal and business conversations** - calls, texts, follow-up, browser context, email, and integrations. Start with one trained agent or build a coordinated roster that can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
+Wireline is the operating layer for **AI voice agents for personal and business conversations**: calls, texts, follow-up, browser context, email, and integrations. Start with one trained agent or build a coordinated roster that can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
 
-The current product doctrine is simple. The customer-facing product loop is **Create -> Train -> Run**; operationally, Wire sits between Train and Run:
+The customer-facing loop is **Create -> Train -> Run**. Operationally, Wire sits between Training and Run:
 
 1. **Create** a focused AI voice agent quickly.
-2. **Train** it deeply with facts, sources, policies, voice, tone, tools, and workflows.
+2. **Train** it with facts, sources, policies, voice, tone, tools, and workflows.
 3. **Wire** it to an included number, integrations, routing, approvals, and billing controls.
-4. **Run** it in Studio, where calls, texts, follow-up, approvals, handoffs, and review happen.
+4. **Run** it in Studio for calls, texts, follow-up, approvals, handoffs, and review.
 
-## Key capabilities
+## Product surface
 
-- **AI voice agents**: Customizable voice, SMS, email, and follow-up agents for personal tasks, appointments, lead revival, promotions, recovery, inbound conversion, and support overflow.
-- **Included numbers**: Every included agent gets an included number so the role can call out, receive callbacks, and become a reachable operating asset.
-- **Create -> Train -> Wire -> Run**: Short intake, first-class Training, deliberate wiring, and a chat-first Studio workroom.
-- **Voice**: Production calls through approved telephony and voice providers, with authenticated realtime test paths for low-latency validation.
-- **Video presenters**: Optional live visual presenter layer for business agents; customer surfaces keep vendor names hidden and preserve a Wireline face fallback.
-- **Wireline Command**: Manifest V3 side-panel/sidebar command surface for Chrome, Edge, Opera, and Firefox. It brings active-page context into Studio only by explicit user action.
-- **Native mobile**: iOS and Android as thin, high-quality control surfaces for calls, approvals, notifications, widgets, and daily review.
-- **ChatGPT App**: OAuth-connected, account-bound MCP tools for private drafting, refinement, simulation, and account-aware workflows.
-- **Infrastructure**: Postgres + Drizzle, server-owned data access, RLS tenant isolation, Stripe billing, authz checks, CSP checks, rate limiting, and verification gates.
+- **Web/API - live:** canonical Create, Training, Wire, Studio, billing, provider, and account runtime.
+- **Wireline Command - early access:** explicit-action Manifest V3 browser handoff for page context, calls, texts, follow-up, and tasks.
+- **ChatGPT App - early access:** OAuth-connected, account-bound MCP tools for private drafting, refinement, simulation, and account-aware workflows.
+- **iOS - planned:** native calls, Siri, widgets, CallKit, push, and urgent owner controls; TestFlight and App Store release remain gated.
+- **Android - internal beta:** native calls, notifications, widgets, Telecom, FCM, and urgent owner controls; Play release remains gated.
+- **Video presenters - planned/beta add-on:** optional consent-gated visual layer for business agents with Wireline-owned copy and fallback behavior.
 
-## Tech
+Every included agent has an **included number** so the role can call out, receive callbacks, and become a reachable operating asset.
 
-- **Web / API**: React 19, Vite, Express, TypeScript, Tailwind, Drizzle ORM, Supabase Postgres, Vercel-capable server bundle.
-- **Design**: The Wireline Letterpress design system — Letterpress tokens, brand colors, generated platform tokens, and `src/styles/design-system.css` as the visual source of truth.
-- **Browser**: Manifest V3 command surface with Chromium and Firefox manifest overlays.
-- **Managed runtime**: direct OpenAI Responses API primary (GPT-5.6 Terra default), Gemini as the first automatic fallback, and the Vercel AI Gateway as the governed multi-model continuity route. xAI is opt-in experiment-only (`src/lib/ai-client.ts`, `src/lib/ai-models.ts`).
-- **Voice / realtime**: Twilio + Vapi own production PSTN calls (OpenAI GPT-4o managed call model with Gemini fallback); OpenAI Realtime powers Studio, ChatGPT, and guest live-voice demos, and no realtime test surface ever takes over customer PSTN calls (`src/lib/voice/`, `docs/GROK_LIVE_VOICE.md`).
-- **Video**: HeyGen/LiveAvatar SDK-backed presenter infrastructure wrapped behind Wireline-owned copy and consent states.
-- **Mobile**: Native Kotlin/Compose and SwiftUI.
+## Technology and ownership
+
+- **Web/API:** React 19, Vite, Express, TypeScript, Tailwind, Drizzle ORM, Supabase Postgres, and a Vercel-capable server bundle.
+- **Design:** the **Wireline Letterpress design system**, generated from shared Aurora tokens for web, browser, iOS, and Android.
+- **Managed reasoning:** centralized OpenAI-first policy with governed fallbacks in `src/lib/ai-models.ts`; provider names and model versions are not duplicated across repository overview docs.
+- **Voice/PSTN:** Twilio and Vapi own production calling; OpenAI Realtime owns authenticated Studio, ChatGPT, and guest demo paths. Realtime test surfaces never take over customer PSTN calls.
+- **Browser:** explicit-user-action context handoff only. No broad host permissions, silent browsing, token storage, or background page harvesting.
+- **Native:** SwiftUI/XcodeGen for iOS and Kotlin/Compose for Android. Clients remain thin adapters over server-owned policy.
+- **Security:** server-owned authorization, provider credentials, billing, webhooks, tenant-scoped data access, CSP checks, rate limits, and verification gates.
 
 ## Getting started
 
 ```bash
 npm install
-npm run dev          # Starts Vite + Express on http://localhost:3000
+npm run dev          # Vite + Express on http://localhost:3000
 ```
 
 ### Wireline Command
@@ -45,45 +44,47 @@ node apps/browser-extension/scripts/build.mjs --check
 node apps/browser-extension/scripts/build.mjs
 ```
 
-Load the generated target package from `apps/browser-extension/dist/chromium` or `apps/browser-extension/dist/firefox` for local browser testing. See `apps/browser-extension/README.md`.
+Load `apps/browser-extension/dist/chromium` or `apps/browser-extension/dist/firefox` for local testing. See `apps/browser-extension/README.md`.
 
-## Verification before changes land
+## Verification
 
 ```bash
 npm run check-prod-env
-npm run verify       # design + source-control + routes + docs + openapi + token parity + Stripe + build + smoke
-npm run verify:full  # type check + audit-modules type check + server lint + eslint + everything in verify + authz + CSP + runtime-policy + api-error + security audit + tests + browser-extension
+npm run source-control:check
+npm run docs:check
+npm run verify
+npm run verify:full
 npm run verify:contracts
 node apps/browser-extension/scripts/build.mjs --check
 node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com
 ```
 
-Use `npm run verify` for focused implementation branches and `npm run verify:full` before merge, release, or anything touching auth, billing, CSP, routes, data access, provider integrations, shared runtime contracts, or production environment shape.
+Use `npm run verify` for focused implementation branches. Use `npm run verify:full` before merge/release or any change touching auth, billing, CSP, routes, data access, provider integrations, shared runtime contracts, migrations, or production environment shape.
 
 ## Repository map
 
-| Area | Source of truth |
+| Concern | Source of truth |
 | --- | --- |
-| Repo health | `CODEBASE_HEALTH.md`, `docs/EXCLUDED_SURFACES_AUDIT_2026-07-06.md` |
-| Architecture | `ARCHITECTURE.md`, `src/server/register-api-routes.ts`, `src/routes/AppRoutes.tsx` |
-| Product docs | `docs/README.md`, `docs/CLIENT_SURFACES.md`, `docs/CHATGPT_APP.md`, `docs/PRODUCT_SHOWCASE_MATRIX.md`, `docs/WIRELINE_LEVEL_UP_MASTER_PLAN.md` |
-| Release boundaries | `docs/CLIENT_SURFACES.md` for tier ownership/checks/non-goals/security/rollback; `docs/PRODUCT_SHOWCASE_MATRIX.md` for commercial status; `docs/WIRELINE_LEVEL_UP_MASTER_PLAN.md` for execution sequencing |
-| Pricing and billing | `docs/business-usage-pricing-decision.md`, `docs/P0_BILLING_OPS_NOTE.md`, `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts` |
-| Design system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |
-| Voice and models | `src/lib/ai-models.ts`, `src/lib/voice/`, `src/routes/grok-voice-routes.ts`, `docs/GROK_LIVE_VOICE.md` |
-| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`, `src/routes/video-presenter-routes.ts`; release as a consent-gated planned/beta add-on only |
-| Browser extension | `apps/browser-extension/`; beta release tier; explicit-user-action browser context only |
-| Native apps | `ios/`, `android/`; beta release tiers for urgent owner control |
-| ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `docs/CHATGPT_APP.md`; beta release tier that cannot provision numbers, dial, or launch agents |
+| Contribution workflow | [CONTRIBUTING.md](./CONTRIBUTING.md) |
+| Repository health | [CODEBASE_HEALTH.md](./CODEBASE_HEALTH.md) |
+| Architecture | [ARCHITECTURE.md](./ARCHITECTURE.md) |
+| Documentation map | [docs/README.md](./docs/README.md) |
+| Audit evidence | [docs/AUDIT_INDEX.md](./docs/AUDIT_INDEX.md) |
+| Client/release boundaries | [docs/CLIENT_SURFACES.md](./docs/CLIENT_SURFACES.md) |
+| Pricing and billing | `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts`, [docs/business-usage-pricing-decision.md](./docs/business-usage-pricing-decision.md) |
+| Design system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css` |
+| Voice and model policy | `src/lib/ai-models.ts`, `src/lib/voice/`, [docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) |
+| Browser extension | `apps/browser-extension/` |
+| Native clients | `ios/`, `android/` |
+| ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, [docs/CHATGPT_APP.md](./docs/CHATGPT_APP.md) |
 | Tests and checks | `tests/`, `scripts/check-*.mjs`, `scripts/generate-authz-matrix.ts` |
 
-## Repository hygiene contract
+## Repository hygiene
 
-- Do not commit generated visual QA output, screenshots, local agent artifacts, `.grok/artifacts`, temporary patches, coverage, Playwright output, or build output.
-- Do not add new canonical docs without linking them from `docs/README.md` or explicitly marking them historical. The standard verification gate now checks this.
+- Do not commit generated screenshots, visual-QA output, local agent artifacts, exported environments, provider payloads, temporary patches, coverage, Playwright output, build output, or asset bundles.
+- Link every durable `docs/**/*.md` file from exactly one documentation index.
 - Do not create parallel design systems, duplicate source-of-truth files, or temporary `*-v2` migration wrappers.
-- Keep provider credentials, user data, billing, webhook validation, and tenant-scoped reads server-owned.
-- Keep browser extension behavior explicit-user-action only: no broad host permissions, no silent browsing, no token storage, no page harvesting.
+- Keep credentials, user data, billing, webhook validation, authorization, and tenant-scoped reads server-owned.
 
 ## License
 

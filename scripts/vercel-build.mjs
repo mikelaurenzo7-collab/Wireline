@@ -70,6 +70,8 @@ function configurePreviewEnvironment() {
 }
 
 run("node", ["scripts/check-deployment-boundaries.mjs"]);
+run("node", ["scripts/check-source-control-hygiene.mjs"]);
+run("node", ["scripts/check-docs-index.mjs"]);
 run("node", ["scripts/check-wireline-clear-system.mjs"]);
 run("node", ["scripts/check-native-release-horizon.mjs"]);
 run("node", ["scripts/check-password-screening-disclosure.mjs"]);
@@ -103,6 +105,7 @@ run("npx", [
   // provider-cost and entitlement-integrity failures.
   "tests/spend-guard-integrity-contract.test.ts",
   "tests/signup-bootstrap-integrity-contract.test.ts",
+  "tests/repo-documentation-organization-contract.test.ts",
   "tests/marketing-metadata-contract.test.ts",
   "tests/static-metadata-contract.test.ts",
   "tests/wireline-product-docs.test.ts",
