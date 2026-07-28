@@ -19,6 +19,7 @@ const SIDE_EFFECT_TOOL_NAMES = new Set([
   "leave_voicemail",
   "schedule_callback",
   "capture_customer_profile",
+  "escalate_to_human",
   "send_slack_notification",
   "post_x_tweet",
   "reply_to_x_tweet",
@@ -69,7 +70,7 @@ function resourceId(name: string, context: ToolCallContext): string {
 
 type ClaimResult =
   | { kind: "claimed"; auditId: bigint }
-  | { kind: "cached"; result: string }
+  | { kind: "cached"; output: ToolCallResult }
   | { kind: "processing" };
 
 function metadataRecord(value: unknown): Record<string, unknown> {
@@ -78,17 +79,43 @@ function metadataRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
+function cachedToolOutput(metadata: Record<string, unknown>): ToolCallResult | null {
+  const stored = metadata.output;
+  if (stored && typeof stored === "object" && !Array.isArray(stored)) {
+    const row = stored as Record<string, unknown>;
+    if (typeof row.toolCallId === "string" && typeof row.result === "string") {
+      const destination =
+        row.destination && typeof row.destination === "object" && !Array.isArray(row.destination)
+          ? (row.destination as ToolCallResult["destination"])
+          : undefined;
+      return {
+        toolCallId: row.toolCallId,
+        result: row.result,
+        ...(destination ? { destination } : {}),
+      };
+    }
+  }
+
+  // Backward compatibility for rows created before complete outputs were cached.
+  if (typeof metadata.result === "string") {
+    return { toolCallId: String(metadata.toolCallId || "cached"), result: metadata.result };
+  }
+  return null;
+}
+
 function resultForExistingExecution(metadata: Record<string, unknown>): ClaimResult {
   const status = String(metadata.status || "");
-  if (status === "completed" && typeof metadata.result === "string") {
-    return { kind: "cached", result: metadata.result };
+  if (status === "completed") {
+    const output = cachedToolOutput(metadata);
+    if (output) return { kind: "cached", output };
   }
   if (status === "failed") {
-    const previous =
-      typeof metadata.result === "string" && metadata.result.trim()
-        ? metadata.result
-        : "The previous attempt did not complete successfully. Do not repeat it automatically. Reconfirm the caller's details before starting a new action.";
-    return { kind: "cached", result: previous };
+    const output = cachedToolOutput(metadata) || {
+      toolCallId: String(metadata.toolCallId || "cached"),
+      result:
+        "The previous attempt did not complete successfully. Do not repeat it automatically. Reconfirm the caller's details before starting a new action.",
+    };
+    return { kind: "cached", output };
   }
   return { kind: "processing" };
 }
@@ -122,8 +149,8 @@ async function claimToolExecution(
     // exact same ID is never executed again, even if its completion record is
     // incomplete. This prevents duplicate sends/bookings/cancellations when an
     // external provider succeeds but the final audit update or HTTP response is
-    // lost. The model may start a new action only after reconfirming details,
-    // which produces a new toolCallId and a separately auditable decision.
+    // lost. Cache the complete result so retries preserve live transfer
+    // destinations as well as spoken text.
     if (existing) return resultForExistingExecution(metadataRecord(existing.metadata));
 
     const [created] = await tx
@@ -152,7 +179,7 @@ async function finishToolExecution(
   context: ToolCallContext,
   auditId: bigint,
   status: "completed" | "failed",
-  result?: string,
+  output: ToolCallResult,
   error?: unknown,
 ): Promise<void> {
   await context.drizzle
@@ -164,7 +191,11 @@ async function finishToolExecution(
         completedAt: new Date().toISOString(),
         toolCallId: context.toolCallId,
         callId: callId(context),
-        ...(result ? { result: result.slice(0, 1_200) } : {}),
+        output: {
+          toolCallId: output.toolCallId,
+          result: output.result.slice(0, 1_200),
+          ...(output.destination ? { destination: output.destination } : {}),
+        },
         ...(error
           ? {
               error:
@@ -181,9 +212,9 @@ async function finishToolExecution(
 /**
  * Deduplicate retried Vapi side-effect calls by call ID + toolCallId + tool name.
  * Read-only tools bypass the ledger. A concurrent duplicate receives an honest
- * in-progress result; a completed duplicate receives the original result without
- * repeating the external action. If the ledger itself is unavailable, external
- * writes fail closed rather than risking an untraceable duplicate.
+ * in-progress result; a completed duplicate receives the complete original
+ * result without repeating the external action. If the ledger itself is
+ * unavailable, external writes fail closed rather than risking duplication.
  */
 export async function runIdempotentAgentToolCall(
   name: string,
@@ -207,41 +238,40 @@ export async function runIdempotentAgentToolCall(
     return {
       toolCallId: context.toolCallId,
       result:
-        "I couldn't safely verify whether that action was already processed, so I did not run it again. Be transparent with the caller and offer a manual follow-up.",
+        "I couldn't safely verify whether that action was already processed, so I did not run it again. Be transparent with the caller and offer a durable follow-up task.",
     };
   }
 
   if (claim.kind === "cached") {
-    return { toolCallId: context.toolCallId, result: claim.result };
+    return { ...claim.output, toolCallId: context.toolCallId };
   }
   if (claim.kind === "processing") {
     return {
       toolCallId: context.toolCallId,
       result:
-        "That action was already started. Do not run it again or claim a new success. Tell the caller the outcome is still being verified and offer a manual follow-up.",
+        "That action was already started and may still be processing. Do not run it again or claim a new success. Tell the caller the outcome is still being verified and offer a durable follow-up task.",
     };
   }
 
   try {
-    const result = await execute();
-    await finishToolExecution(context, claim.auditId, "completed", result.result).catch((error) =>
+    const output = await execute();
+    await finishToolExecution(context, claim.auditId, "completed", output).catch((error) =>
       context.log.warn("Live tool completion ledger update failed", {
         tool: name,
         toolCallId: context.toolCallId,
         error: error instanceof Error ? error.message : String(error),
       }),
     );
-    return result;
+    return output;
   } catch (error) {
-    const failureResult =
-      "The action did not complete successfully. Do not claim success or repeat the same action automatically. Reconfirm the caller's details before trying a new action.";
-    await finishToolExecution(
-      context,
-      claim.auditId,
-      "failed",
-      failureResult,
-      error,
-    ).catch(() => undefined);
+    const failureOutput: ToolCallResult = {
+      toolCallId: context.toolCallId,
+      result:
+        "The action did not complete successfully. Do not claim success or repeat the same action automatically. Reconfirm the caller's details before starting a new action.",
+    };
+    await finishToolExecution(context, claim.auditId, "failed", failureOutput, error).catch(
+      () => undefined,
+    );
     throw error;
   }
 }
