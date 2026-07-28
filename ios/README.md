@@ -109,7 +109,7 @@ Do not reintroduce retired palettes, generic dashboard language, or non-native c
 
 ## Build and signing
 
-The repository commits `ios/project.yml` rather than a generated `.pbxproj`.
+App Store Connect uploads require Xcode 26 or newer and the iOS 26 SDK or later. The repository commits `ios/project.yml` rather than a generated `.pbxproj`.
 
 ```bash
 brew install xcodegen        # one-time
