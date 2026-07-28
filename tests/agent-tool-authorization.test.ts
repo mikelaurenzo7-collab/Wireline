@@ -9,7 +9,10 @@ import {
   resolveAuthorizedAgentTools,
   sanitizePersistedAgentToolSelection,
 } from "../src/lib/agent-tool-authorization";
-import { UNSCOPED_PLATFORM_LIVE_TOOL_NAMES } from "../src/lib/tenant-integration-connections";
+import {
+  filterToolsByTenantConnections,
+  UNSCOPED_PLATFORM_LIVE_TOOL_NAMES,
+} from "../src/lib/tenant-integration-connections";
 
 describe("agent tool execution authorization", () => {
   it("preserves known selections while dropping stale legacy values", () => {
@@ -55,7 +58,24 @@ describe("agent tool execution authorization", () => {
     expect(active).toEqual(["send_email"]);
   });
 
-  it("keeps platform-owned accounts out of arbitrary live tenant execution", () => {
+  it("keeps platform-owned accounts out even when every connection and platform flag is present", () => {
+    const allConnected = Object.fromEntries(
+      Object.keys(NO_TENANT_INTEGRATIONS).map((key) => [key, true]),
+    ) as typeof NO_TENANT_INTEGRATIONS;
+    const filtered = filterToolsByTenantConnections(
+      [
+        "list_x_ad_campaigns",
+        "get_x_ad_campaign_stats",
+        "send_contract",
+        "meta_submit_lead",
+      ],
+      allConnected,
+      { apollo: true, docusign: true, gemini: true, perplexity: true, liveResearch: true },
+    );
+    expect(filtered).toEqual([]);
+  });
+
+  it("keeps the platform-owned deny set explicit and reviewable", () => {
     expect([...UNSCOPED_PLATFORM_LIVE_TOOL_NAMES].sort()).toEqual(
       [
         "get_x_ad_campaign_stats",
