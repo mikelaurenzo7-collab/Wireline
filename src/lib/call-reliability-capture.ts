@@ -24,16 +24,23 @@ export function isAbnormalHangup(endedReason: string | null | undefined): boolea
   return /error|timeout|failed|pipeline|machine|voicemail|busy|no-answer|unreachable/.test(lower);
 }
 
-const TOOL_FAILURE_SNIPPETS = [
-  "Something went wrong running that action",
-  "That is taking longer than expected",
-  "That action isn't available on this line",
+const TOOL_FAILURE_PATTERNS = [
+  /\bsomething went wrong running that action\b/i,
+  /\btaking longer than expected\b/i,
+  /\bmay still be processing\b/i,
+  /\bisn['’]t available on this line\b/i,
+  /\bwas not confirmed\b/i,
+  /\bdid not complete successfully\b/i,
+  /\bcouldn['’]t safely verify whether that action was already processed\b/i,
+  /\bwas not scheduled because\b/i,
+  /\bmessage was not confirmed\b/i,
+  /\baction was already started\b/i,
 ] as const;
 
-/** True when a speakable tool result indicates the handler failed or timed out. */
+/** True when a speakable tool result indicates failure, timeout, or uncertain completion. */
 export function isToolCallFailureResult(result: string): boolean {
   const text = result.trim();
-  return TOOL_FAILURE_SNIPPETS.some((snippet) => text.includes(snippet));
+  return TOOL_FAILURE_PATTERNS.some((pattern) => pattern.test(text));
 }
 
 export async function recordInboundWebhookHealth(opts: {

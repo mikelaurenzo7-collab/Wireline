@@ -5,16 +5,25 @@ export const VAPI_TOOL_UNAVAILABLE_RESULT =
 export type VapiToolResult = { toolCallId: string; result: string };
 
 /** Wall-clock cap for a single live-call tool (keeps Vapi from waiting on slow IO). */
-export const VAPI_TOOL_TIMEOUT_MS = 5_000;
+export const VAPI_TOOL_TIMEOUT_MS = 8_000;
 
 /** Max concurrent tool handlers per Vapi tool-calls webhook (audit #4). */
 export const MAX_VAPI_PARALLEL_TOOL_CALLS = 3;
 
-/** Cap speakable tool results returned to Vapi (audit #4 — smaller LLM context). */
+/** Cap tool results returned to Vapi (audit #4 — bounded next-turn context). */
 export const MAX_VAPI_TOOL_RESULT_CHARS = 1_200;
 
+/**
+ * Remove Wireline's optional machine-only data suffix and enforce the next-turn
+ * prompt budget. Preserve meaningful line breaks: knowledge, CRM, order, and
+ * availability results are easier for the model to reason over when their
+ * structure is retained. Vapi accepts string results and does not require them
+ * to be flattened into a single line.
+ */
 export function truncateVapiToolResult(result: string, max = MAX_VAPI_TOOL_RESULT_CHARS): string {
-  let text = result.replace(/\s*\[data:\s*[\s\S]*?\]\s*$/i, "").trim();
+  const text = String(result || "")
+    .replace(/\s*\[data:\s*[\s\S]*?\]\s*$/i, "")
+    .trim();
   if (text.length <= max) return text;
   return `${text.slice(0, max)}…`;
 }

@@ -13,9 +13,11 @@ import { handleShopifyToolCall } from "../routes/vapi/tool-handlers-shopify";
 import { handleSquareToolCall } from "../routes/vapi/tool-handlers-square";
 import { handleWorkflowToolCall } from "../routes/vapi/tool-handlers-workflow";
 import { handleDeviceToolCall } from "../routes/vapi/tool-handlers-device";
+import { runIdempotentAgentToolCall } from "./agent-tool-idempotency";
+import { enforceAgentToolResultTruth } from "./agent-tool-result-truth";
 import type { ToolCallContext, ToolCallResult } from "../routes/vapi/types";
 
-export async function dispatchAgentToolCall(
+async function dispatchToFirstAvailableHandler(
   fn: string,
   args: any,
   context: ToolCallContext,
@@ -34,7 +36,7 @@ export async function dispatchAgentToolCall(
 
   for (const handler of handlers) {
     const result = await handler(fn, args, context);
-    if (result) return result;
+    if (result) return enforceAgentToolResultTruth(fn, result);
   }
 
   return {
@@ -42,6 +44,16 @@ export async function dispatchAgentToolCall(
     result:
       "That action isn't available right now. Try another approach or connect the integration.",
   };
+}
+
+export async function dispatchAgentToolCall(
+  fn: string,
+  args: any,
+  context: ToolCallContext,
+): Promise<ToolCallResult> {
+  return runIdempotentAgentToolCall(fn, context, () =>
+    dispatchToFirstAvailableHandler(fn, args, context),
+  );
 }
 
 export function buildDirectorToolContext(input: {

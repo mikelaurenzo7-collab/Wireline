@@ -102,10 +102,14 @@ export async function handleWorkflowToolCall(
     try {
       const { callback_datetime, notes } = args || {};
       const { parseCallbackDatetime } = await import("../../lib/callback-engine");
-      const parsed = parseCallbackDatetime(callback_datetime);
-      // Unparseable model output → next-day attempt, with the caller-facing
-      // promise phrased to match ("within the next day", not a fake time).
-      const dueAt = parsed || new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const dueAt = parseCallbackDatetime(callback_datetime);
+      if (!dueAt) {
+        return {
+          toolCallId,
+          result:
+            "The callback was not scheduled because the requested date and time could not be verified. Ask the caller for an exact date, time, and timezone before trying again.",
+        };
+      }
 
       const callerNumber = sanitizePhone(
         (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
@@ -177,14 +181,12 @@ export async function handleWorkflowToolCall(
         return {
           toolCallId,
           result:
-            "Callback request noted — I couldn't confirm the best number on this line, so please share the number to reach you and I'll lock it in.",
+            "The callback request was saved for human review, but no destination number was available and no automatic callback was scheduled. Ask the caller for the best number before confirming a scheduled callback.",
         };
       }
       return {
         toolCallId,
-        result: parsed
-          ? `Callback scheduled — you'll receive a call back around ${callback_datetime}.`
-          : "Callback scheduled — you'll receive a call back within the next day.",
+        result: `Callback scheduled for ${callback_datetime}.`,
       };
     } catch {
       return {
@@ -226,7 +228,7 @@ export async function handleWorkflowToolCall(
 
       // Look up this agent's escalation routing config to decide:
       //   - Warm-transfer the live caller? (handoff_enabled + phone)
-      //   - Or just queue async alerts (default)?
+      //   - Or just send an async alert (default)?
       // One DB read; failures degrade gracefully to the async path.
       let warmTransferPhone: string | null = null;
       if (agent?.id) {
@@ -244,8 +246,10 @@ export async function handleWorkflowToolCall(
           // calls to 555-…"); it backs up escalationPhone so the field the
           // planner writes actually influences live transfers instead of being
           // stored and never read.
-          const destination = row?.phone?.trim() || row?.transferPhone?.trim() || "";
-          if (row?.enabled && destination.length >= 7) {
+          const destination = sanitizePhone(
+            row?.phone?.trim() || row?.transferPhone?.trim() || "",
+          );
+          if (row?.enabled && destination.replace(/\D/g, "").length >= 10) {
             warmTransferPhone = destination;
           }
         } catch (lookupErr: any) {
@@ -273,12 +277,8 @@ export async function handleWorkflowToolCall(
       }
 
       if (warmTransferPhone) {
-        // Vapi tool-result schema supports a `destination` field
-        // per result. When present, Vapi speaks `result` then
-        // transfers the call to the destination number. Vapi
-        // honours the `message` as the announcement BEFORE the
-        // transfer happens (the caller hears it, the human picks
-        // up to a context-set call).
+        // Vapi tool-result schema supports a `destination` field per result.
+        // When present, Vapi speaks `result` then transfers the call.
         if (callId && agent?.user_id) {
           void recordEscalationOutcome({
             vapiCallId: callId,
@@ -307,7 +307,7 @@ export async function handleWorkflowToolCall(
       return {
         toolCallId,
         result:
-          "Escalation signal sent to human supervisors. Apologize warmly and let the caller know a human will reach out shortly.",
+          "Human supervisors were alerted. Tell the caller the team has been notified, but do not promise a response time or guarantee that someone is immediately available.",
       };
     } catch {
       if (callId && agent?.user_id) {
@@ -350,7 +350,7 @@ export async function handleWorkflowToolCall(
         if (pastCalls.length > 0) {
           const summaries = pastCalls
             .map((c: any) => `- ${c.createdAt?.toISOString()}: [${c.intentLabel}] ${c.summary}`)
-            .join("\\n");
+            .join("\n");
           return {
             toolCallId,
             result: `Past 3 interactions:\n${summaries}`,

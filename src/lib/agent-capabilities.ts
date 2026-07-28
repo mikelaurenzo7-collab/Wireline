@@ -765,9 +765,9 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "log_to_google_sheets",
   ],
   // Personal assistants — represent an individual person, not a business.
-  // Focused on scheduling, message-taking, callbacks, and general
-  // communication. Deliberately excludes e-commerce, CRM pipeline, and
-  // lead-scoring tools that don't apply to personal use.
+  // Focused on scheduling, message-taking, callbacks, and general communication.
+  // Workplace alerts, commerce, CRM pipeline, and lead scoring stay opt-in and
+  // do not enter the live model context merely because the tenant connected them.
   personal_assistant: [
     "view_recent_interactions",
     "escalate_to_human",
@@ -781,55 +781,23 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "leave_voicemail",
     "schedule_callback",
     "capture_customer_profile",
-    "send_slack_notification",
-    "send_teams_message",
     "generate_zoom_link",
     "gemini_ground",
   ],
 };
 
 /**
- * Premium integration / data tools previously gated behind paid plans.
- * Now granted to EVERY tier — plans differ only on agent count, included
- * voice minutes, and overage rate (see plan-catalog.ts), not on which
- * integrations the agent can call. Trial / Personal / Starter tenants
- * get the same toolbox as Enterprise so they can evaluate the full
- * product and so an upgrade never feels like "unlocking" basic
- * capability — only more headroom.
- *
- * The actual ability to USE each tool still depends on the tenant
- * having connected the underlying integration (loaded via
- * loadTenantIntegrationConnections in vapi-helpers); that gate stays
- * because we can't call Slack without an OAuth token regardless of
- * plan. This list is purely about the AGENT'S permission to attempt
- * the call.
+ * Plan entitlement controls whether a tenant may select a capability; it must
+ * never activate tools that the Account Holder excluded from a specific agent.
+ * Every tier can choose eligible connected integrations, while the supplied
+ * list remains authoritative for the live runtime. The aiTier parameter remains
+ * for call-site stability and future entitlement policy.
  */
-const UNIVERSAL_BONUS_TOOLS: readonly AgentToolName[] = [
-  "enrich_lead",
-  "gemini_ground",
-  "send_contract",
-  "log_to_excel",
-  "log_to_google_sheets",
-  "send_slack_notification",
-  "send_teams_message",
-];
-
 export function applyPlanToolUnlocks(
   tools: readonly AgentToolName[],
-  // aiTier kept for signature stability; ignored on purpose. Every tier
-  // gets every integration tool. Removing the param would force a churn
-  // through every call site for no behavioral benefit.
   _aiTier?: string | null,
 ): AgentToolName[] {
-  const seen = new Set<AgentToolName>(tools);
-  const out = [...tools];
-  for (const name of UNIVERSAL_BONUS_TOOLS) {
-    if (!seen.has(name)) {
-      seen.add(name);
-      out.push(name);
-    }
-  }
-  return out;
+  return [...tools];
 }
 
 const AGENT_TOOL_SET = new Set<string>(AGENT_TOOL_NAME_VALUES);
@@ -859,16 +827,15 @@ export function getRoleToolSet(role?: string): AgentToolName[] {
   return [...toolSet];
 }
 
-/** Full integration toolbox every purchased agent ships with by default. */
+/** Full integration toolbox available when an agent has no explicit selection. */
 export function getDefaultAgentTools(): AgentToolName[] {
-  return applyPlanToolUnlocks([...AGENT_TOOL_NAME_VALUES]);
+  return [...AGENT_TOOL_NAME_VALUES];
 }
 
 /**
- * Resolve which tools an agent may use. When the Account Holder has not narrowed
- * enabled_tools, every agent gets the full product catalog — plans differ on
- * headroom (agent count, minutes), not which integrations exist in chat/voice.
- * Role-based subsets remain available via getRoleToolSet for explicit UI resets.
+ * Resolve which tools an agent may use. An explicit enabled_tools array is the
+ * authoritative active set. Legacy agents without a saved selection retain the
+ * full catalog so this policy change does not silently remove existing behavior.
  */
 export function resolveAgentTools(_role?: string, enabledTools?: unknown): AgentToolName[] {
   const normalized = normalizeEnabledTools(enabledTools);

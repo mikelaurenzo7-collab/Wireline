@@ -42,6 +42,20 @@ export const VAPI_START_SPEAKING_PLAN = {
   },
 };
 
+/**
+ * Explicit interruption and recovery behavior for live calls. Flux owns end-of-turn
+ * detection; this plan governs what happens while the assistant is already talking.
+ * Two transcribed words prevent one-word backchannels and background noise from
+ * cutting the agent off, while the short backoff lets a genuine interruption take
+ * control without an awkward pause.
+ */
+export const VAPI_STOP_SPEAKING_PLAN = {
+  numWords: 2,
+  voiceSeconds: 0.2,
+  backoffSeconds: 0.8,
+  acknowledgementPhrases: ["okay", "right", "uh-huh", "yeah", "mm-hmm", "got it"],
+} as const;
+
 export const VAPI_TRANSCRIBER_FALLBACK_PLAN = {
   transcribers: [
     {

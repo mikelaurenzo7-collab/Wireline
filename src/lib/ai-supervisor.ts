@@ -8,10 +8,17 @@ export type ClientCommunicationReview = {
   rationale: string;
 };
 
+export class ClientCommunicationBlockedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ClientCommunicationBlockedError";
+  }
+}
+
 const reviewTool: StructuredToolSchema = {
   name: "review_client_communication",
   description:
-    "Review and, only when necessary, revise a client-facing message. Preserve facts, avoid promises not supported by the supplied context, and keep the message concise.",
+    "Review and, when necessary, revise a client-facing message. Preserve facts, avoid unsupported promises, and return send-ready copy whenever a safe repair is possible.",
   input_schema: {
     type: "object",
     properties: {
@@ -25,6 +32,24 @@ const reviewTool: StructuredToolSchema = {
   },
 };
 
+function validateRecipient(channel: "email" | "sms" | "whatsapp", recipient?: string | null): void {
+  const value = String(recipient || "").trim();
+  if (channel === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+    throw new ClientCommunicationBlockedError(
+      "A valid confirmed email address is required before sending.",
+    );
+  }
+}
+
+/** Never expose UUIDs, database keys, or internal agent IDs in customer copy. */
+export function clientFacingAgentName(value?: string | null): string {
+  const candidate = String(value || "").trim();
+  if (!candidate) return "Wireline";
+  if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(candidate)) return "Wireline";
+  if (/^(?:agent|director|tool)-[a-z0-9_-]{6,}$/i.test(candidate)) return "Wireline";
+  return candidate.slice(0, 80);
+}
+
 export async function superviseClientCommunication(input: {
   channel: "email" | "sms" | "whatsapp";
   agentName?: string | null;
@@ -35,21 +60,39 @@ export async function superviseClientCommunication(input: {
   body?: string | null;
   context?: string | null;
 }): Promise<ClientCommunicationReview> {
+  validateRecipient(input.channel, input.recipient);
+
   const originalBody = String(input.body || "").slice(0, 12000);
   const originalSubject = String(input.subject || "").slice(0, 500);
-  if (!originalBody.trim())
-    return {
-      approved: false,
-      subject: originalSubject,
-      body: originalBody,
-      rationale: "No message body was provided.",
-    };
-  return runStructured<ClientCommunicationReview>({
+  if (!originalBody.trim()) {
+    throw new ClientCommunicationBlockedError("No message body was provided.");
+  }
+
+  const senderName = clientFacingAgentName(input.agentName);
+  const reviewed = await runStructured<ClientCommunicationReview>({
     system:
-      "You are Wireline's outbound communications safety and quality reviewer. Preserve the sender's intent and verified facts. Remove unsupported commitments, sensitive data, pressure, or unsafe claims. Return approved=true when the original is suitable; approved=false only when it needs revision or should not be sent.",
-    user: `Channel: ${input.channel}\nAgent: ${input.agentName || "Wireline agent"}\nSource: ${input.source}\nPurpose: ${input.purpose}\nRecipient: ${input.recipient || "Unknown"}\nContext: ${input.context || "None"}\nSubject: ${originalSubject}\nBody:\n${originalBody}`,
+      "You are Wireline's outbound communications safety and quality reviewer. Preserve the sender's intent and verified facts. Remove unsupported commitments, sensitive data, pressure, or unsafe claims. Return approved=true whenever the SUBJECT AND BODY YOU RETURN are safe and ready to send, including when you revised the original. Return approved=false only when the communication must be blocked because it cannot be safely repaired without inventing facts, authority, consent, or commitments.",
+    user: `Channel: ${input.channel}\nAgent: ${senderName}\nSource: ${input.source}\nPurpose: ${input.purpose}\nRecipient: ${input.recipient || "Unknown"}\nContext: ${input.context || "None"}\nSubject: ${originalSubject}\nBody:\n${originalBody}`,
     tool: reviewTool,
     complexity: "simple",
     maxTokens: 1200,
   });
+
+  const finalBody = String(reviewed.body || "").trim();
+  const finalSubject =
+    String(reviewed.subject || originalSubject).trim() ||
+    (input.channel === "email" ? `Follow-up from ${senderName}` : "");
+
+  if (!reviewed.approved || !finalBody) {
+    throw new ClientCommunicationBlockedError(
+      reviewed.rationale?.trim() || "The communication was not safe to send.",
+    );
+  }
+
+  return {
+    approved: true,
+    subject: finalSubject,
+    body: finalBody,
+    rationale: reviewed.rationale || "Approved for delivery.",
+  };
 }

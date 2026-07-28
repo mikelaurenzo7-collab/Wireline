@@ -8,7 +8,13 @@ import {
   resolveCreateEnabledTools,
   resolveCreatePersonality,
 } from "../src/lib/agent-create-defaults";
-import { BUSINESS_TOOL_NAMES, getDefaultAgentTools } from "../src/lib/agent-capabilities";
+import {
+  applyPlanToolUnlocks,
+  BUSINESS_TOOL_NAMES,
+  getDefaultAgentTools,
+  getRoleToolSet,
+  resolveAgentTools,
+} from "../src/lib/agent-capabilities";
 import { PRODUCT_POSTURE } from "../src/lib/product-copy";
 import { composeSetupPersonality } from "../src/lib/compose-setup-personality";
 
@@ -42,7 +48,7 @@ describe("personal agent parity — create defaults", () => {
     expect(personality).not.toContain("from Revenue Desk");
   });
 
-  it("strips business-only tools from personal create and keeps device actions opt-in", () => {
+  it("seeds role-focused tools while keeping the full catalog selectable", () => {
     const personalTools = resolveCreateEnabledTools("personal_assistant", false);
     const businessTools = resolveCreateEnabledTools("sales", true);
     const deviceActions = ["navigate_to", "add_reminder", "play_music"] as const;
@@ -55,17 +61,35 @@ describe("personal agent parity — create defaults", () => {
       expect(personalTools).not.toContain(tool);
       expect(businessTools).not.toContain(tool);
     }
-    for (const tool of getDefaultAgentTools()) {
-      if (!deviceActions.includes(tool as (typeof deviceActions)[number])) {
-        expect(businessTools).toContain(tool);
-      }
-    }
+
+    expect(businessTools.length).toBeLessThan(getDefaultAgentTools().length);
+    expect(businessTools).toContain("send_email");
+    expect(businessTools).toContain("book_appointment");
+    expect(businessTools).toContain("crm_create_opportunity");
+    expect(businessTools).toContain("send_contract");
+    expect(businessTools).not.toContain("shopify_cancel_order");
+    expect(businessTools).not.toContain("post_x_tweet");
+
     expect(personalTools).toContain("book_appointment");
     expect(personalTools).toContain("send_text_message");
     expect(personalTools).not.toContain("crm_log_call");
     expect(personalTools).not.toContain("search_leads");
     expect(personalTools).not.toContain("send_slack_notification");
     expect(personalTools).not.toContain("send_teams_message");
+  });
+
+  it("keeps explicit selections authoritative through plan entitlement", () => {
+    const selected = ["send_email", "book_appointment"] as const;
+    expect(applyPlanToolUnlocks(selected, "enterprise")).toEqual(selected);
+    expect(resolveAgentTools("sales", selected)).toEqual(selected);
+
+    const personalRole = getRoleToolSet("personal_assistant");
+    expect(personalRole).not.toContain("send_slack_notification");
+    expect(personalRole).not.toContain("send_teams_message");
+    expect(personalRole).not.toContain("send_contract");
+
+    // Legacy agents without enabled_tools retain the entire catalog.
+    expect(resolveAgentTools("sales", null)).toEqual(getDefaultAgentTools());
   });
 
   it("marks Personal & Lifestyle templates as non-business", () => {

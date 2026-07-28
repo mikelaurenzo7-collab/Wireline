@@ -35,6 +35,23 @@ describe("managed Vapi runtime policy", () => {
     expect(draftService).toMatch(/voiceProvider: "vapi"/);
   });
 
+  it("bounds inbound context and preserves runtime guardrails", () => {
+    expect(factory).toContain("MAX_RUNTIME_DIRECTIVES");
+    expect(factory).toContain("MAX_RUNTIME_KNOWLEDGE");
+    expect(factory).toContain("truncateRuntimeSnippet");
+    expect(factory).toContain("clampRuntimePromptPreservingTail");
+    expect(factory).toMatch(/\.slice\(0, 12\)/);
+    expect(factory).not.toMatch(/\.limit\(40\)|\.limit\(80\)/);
+  });
+
+  it("makes after-hours follow-up durable and truthful", () => {
+    expect(factory).toContain("Use create_followup_task before closing");
+    expect(factory).toContain("Promise follow-up only if that tool explicitly confirms");
+    expect(factory).toContain("Promise a relay only if that tool explicitly confirms");
+    expect(factory).toContain("I can take a message for the team");
+    expect(factory).not.toContain("make sure the right person follows up");
+  });
+
   it("keeps external voice and avatar experiments out of active authenticated pages", () => {
     expect(studio).toMatch(/Phone voice/);
     expect(studio).toMatch(/SimpleVoicePicker/);
