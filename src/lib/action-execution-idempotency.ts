@@ -99,7 +99,11 @@ async function claimExecution(input: {
   phase: ActionPhase;
   resourceId: string;
 }): Promise<ClaimResult> {
-  return drizzle.transaction(async (tx: typeof drizzle) => {
+  // Let Drizzle infer the transaction type. A transaction intentionally lacks
+  // the root database's `$client`; annotating it as `typeof drizzle` makes a
+  // valid callback fail strict TypeScript even though every operation below is
+  // available on both the database and transaction query builders.
+  return drizzle.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${input.resourceId}))`);
 
     const [existing] = await tx
