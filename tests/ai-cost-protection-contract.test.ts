@@ -25,7 +25,6 @@ describe("AI cost-protection contract", () => {
     const occurrences = source.match(/withAudit\("workspace"\)/g) || [];
     expect(occurrences.length).toBeGreaterThanOrEqual(3);
     expect(source.match(/enforceSpendCap/g)!.length).toBeGreaterThanOrEqual(4); // import + 3 mounts
-    // The PDF route specifically carries the Claude rate limiter now.
     const pdfRoute = source.slice(source.indexOf('"/api/agents/:id/workspace/files"'));
     expect(pdfRoute.slice(0, 600)).toContain("claudeRateLimiter");
   });
@@ -33,31 +32,21 @@ describe("AI cost-protection contract", () => {
   it("signup seeds a real default AI spend budget inside the signup transaction", () => {
     const trialGate = read("src/lib/trial-gate.ts");
     expect(trialGate).toContain("ensureDefaultAiSpendBudget");
-    // Must pass the tx executor — seeding on the module drizzle would hit the
-    // spend_budgets → users FK against the still-uncommitted user row and
-    // silently drop the seed for every password signup.
     expect(trialGate).toContain("ensureDefaultAiSpendBudget(userId, null, tx)");
     const snapshot = read("src/lib/workspace-usage-snapshot.ts");
     expect(snapshot).toMatch(/executor:\s*any\s*=\s*drizzle/);
-    // Both the read and the write go through the passed executor (the tx),
-    // not the module-level drizzle.
     expect(snapshot).toMatch(/await executor\s*\.insert\(schema\.spendBudgets\)/);
     expect(snapshot).toMatch(/await executor\s*\.select/);
   });
 
   it("only the auto-seeded free cap is auto-raised; hand-set caps are never overwritten", () => {
     const snapshot = read("src/lib/workspace-usage-snapshot.ts");
-    // A budget above the free default is a deliberate Account-Holder choice and
-    // must not be silently raised on a plan change, even if it equals a paid
-    // tier default.
     expect(snapshot).toContain("isAutoSeededFreeCap");
     expect(snapshot).toMatch(/current <= freeDefault/);
   });
 
   it("realtime simulation sessions carry a daily minute quota", () => {
     const quotas = read("src/lib/tenant-quotas.ts");
-    // Dimension registered, and every tier declares a positive default
-    // (5 declarations in PLAN_DEFAULTS + interface + ALL_DIMENSIONS entry).
     const declarations = quotas.match(/simulation_minutes_daily: \d+/g) || [];
     expect(declarations.length).toBe(5);
     for (const declaration of declarations) {
@@ -79,7 +68,8 @@ describe("AI cost-protection contract", () => {
     const helper = webhook.slice(helperStart, routeStart);
     expect(helper).toContain("maxDurationSeconds: 300");
     expect(helper).toContain('name: "create_followup_task"');
-    expect(helper).toContain("Promise follow-up only if the result explicitly confirms creation");
+    expect(helper).toContain("Promise follow-up only if the result explicitly confirms the task was created");
+    expect(helper).toContain("promise follow-up only if the tool explicitly confirms creation");
     expect(helper).not.toContain("book_appointment");
   });
 });
