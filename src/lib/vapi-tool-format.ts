@@ -100,7 +100,7 @@ const TOOL_PREREQUISITE_GUIDANCE: Readonly<Record<string, string>> = {
   send_text_message:
     "Use only a caller-approved number and channel. Confirm the destination and requested content.",
   book_appointment:
-    "Call check_calendar_availability first, then confirm the exact date, time, timezone, attendee name, and service.",
+    "Call check_calendar_availability first, then confirm the exact date, time, IANA timezone, attendee name, and service.",
   schedule_callback:
     "Confirm the exact callback date, time, timezone, and purpose immediately before scheduling.",
   add_to_dnc:
@@ -182,6 +182,54 @@ function augmentedDescription(name: string, description: string): string {
   return `${description}${description ? " " : ""}${guidance}`.slice(0, 1_400);
 }
 
+function calendarSafeParameters(
+  name: string,
+  parameters: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  if (!parameters || (name !== "check_calendar_availability" && name !== "book_appointment")) {
+    return parameters;
+  }
+
+  const existingProperties =
+    parameters.properties &&
+    typeof parameters.properties === "object" &&
+    !Array.isArray(parameters.properties)
+      ? (parameters.properties as Record<string, unknown>)
+      : {};
+  const existingRequired = Array.isArray(parameters.required)
+    ? parameters.required.filter((item): item is string => typeof item === "string")
+    : [];
+
+  const properties: Record<string, unknown> = {
+    ...existingProperties,
+    date: {
+      type: "string",
+      pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+      description:
+        "Exact local calendar date in YYYY-MM-DD format. Resolve relative phrases using the current date before calling the tool.",
+    },
+    timezone: {
+      type: "string",
+      description:
+        "Confirmed IANA timezone such as America/Chicago, America/New_York, Europe/London, or Asia/Tokyo. Never use an abbreviation alone.",
+    },
+  };
+  if (name === "book_appointment") {
+    properties.time = {
+      type: "string",
+      pattern: "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+      description: "Exact local appointment time in 24-hour HH:mm format.",
+    };
+  }
+
+  return {
+    ...parameters,
+    type: "object",
+    properties,
+    required: [...new Set([...existingRequired, "date", "timezone", ...(name === "book_appointment" ? ["time"] : [])])],
+  };
+}
+
 /** Convert Wireline's role-filtered function definitions to Vapi's current tool DTO. */
 export function toVapiFunctionTools(definitions: readonly object[]): VapiFunctionTool[] {
   const tools: VapiFunctionTool[] = [];
@@ -197,10 +245,11 @@ export function toVapiFunctionTools(definitions: readonly object[]): VapiFunctio
 
     const rawDescription = typeof raw.description === "string" ? raw.description.trim() : "";
     const description = augmentedDescription(name, rawDescription);
-    const parameters =
+    const rawParameters =
       raw.parameters && typeof raw.parameters === "object" && !Array.isArray(raw.parameters)
         ? (raw.parameters as Record<string, unknown>)
         : undefined;
+    const parameters = calendarSafeParameters(name, rawParameters);
     const messages = vapiToolMessages(name);
 
     tools.push({

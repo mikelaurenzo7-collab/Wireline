@@ -1,20 +1,27 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
-import { drizzle, log } from "./server-context";
+import { and, eq } from "drizzle-orm";
+
 import * as schema from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { runIdempotentActionExecution } from "./action-execution-idempotency";
+import {
+  NO_TENANT_INTEGRATIONS,
+  resolveAuthorizedAgentTools,
+  sanitizePersistedAgentToolSelection,
+} from "./agent-tool-authorization";
+import { type AgentToolName } from "./agent-capabilities";
 import { type ActionItem, type ActionResult } from "./action-types";
-import { getErrorMessage } from "./server-utils";
-import { IntegrationService } from "./integrations";
+import { addMinutesToIso, localDateTimeToUtcIso, normalizeIanaTimeZone } from "./calendar-time";
 import { CRMService } from "./crm-service";
-import { sendContract } from "./docusign-service";
-import { searchLeads } from "./apollo-service";
-import { sendTenantMessage } from "./twilio-service";
-import { postAgentNotification, getDefaultChannel } from "./slack-service";
-import { resolveAgentTools } from "./agent-capabilities";
-import { sendMetaConversion } from "./meta-service";
-import { superviseClientCommunication } from "./ai-supervisor";
+import { IntegrationService } from "./integrations";
 import { touchNavCounts } from "./nav-counts-invalidate";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
+import { searchLeads } from "./apollo-service";
+import { getErrorMessage } from "./server-utils";
+import { drizzle, log } from "./server-context";
+import { postAgentNotification, getDefaultChannel } from "./slack-service";
+import { superviseClientCommunication } from "./ai-supervisor";
+import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
+import { sendTenantMessage } from "./twilio-service";
 
 /**
  * Roles whose auto SMS is treated as non-marketing (service / ops).
@@ -30,12 +37,162 @@ const NON_MARKETING_SMS_ROLES = new Set([
   "ecommerce",
 ]);
 
+/** Action-engine names are not identical to live catalog names. */
+const ACTION_TOOL_REQUIREMENTS: Readonly<Record<string, AgentToolName>> = {
+  send_email: "send_email",
+  send_text_message: "send_text_message",
+  schedule_calendar: "book_appointment",
+  update_crm_lead: "crm_log_call",
+  create_internal_task: "create_followup_task",
+  send_contract: "send_contract",
+  prospect_leads: "enrich_lead",
+  notify_slack: "send_slack_notification",
+};
+
+type ResolvedActionPolicy = {
+  action: ActionItem;
+  autonomy: "auto" | "draft";
+  agentTimeZone: string | null;
+};
+
 /** Match twilio-service cleanPhone so gate/lead lookup use the same destination. */
 function cleanOutboundSmsPhone(raw: string | null | undefined): string {
   const input = String(raw || "").replace(/^whatsapp:/i, "");
   const cleaned = input.replace(/[^0-9+]/g, "");
   if (!cleaned) return "";
   return cleaned.startsWith("+") ? `+${cleaned.slice(1).replace(/\+/g, "")}` : cleaned;
+}
+
+async function recoverSourceAgentId(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string; sourceType: string },
+): Promise<string | null> {
+  if (action.agentId) return action.agentId;
+  if (context.sourceType !== "phone_call" || !context.sourceId) return null;
+
+  const [call] = await drizzle
+    .select({ agentId: schema.callLogs.agentId })
+    .from(schema.callLogs)
+    .where(
+      and(
+        eq(schema.callLogs.userId, userId),
+        eq(schema.callLogs.vapiCallId, context.sourceId),
+      ),
+    )
+    .limit(1);
+  return call?.agentId || null;
+}
+
+async function resolveActionPolicy(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string; sourceType: string },
+  autonomyOverride?: "auto" | "draft",
+): Promise<ResolvedActionPolicy | ActionResult> {
+  const recoveredAgentId = await recoverSourceAgentId(userId, action, context).catch((error) => {
+    log.warn("Action source-agent recovery failed", {
+      userId,
+      sourceId: context.sourceId,
+      sourceType: context.sourceType,
+      error: getErrorMessage(error),
+    });
+    return null;
+  });
+  const scopedAction = recoveredAgentId ? { ...action, agentId: recoveredAgentId } : action;
+
+  if (scopedAction.agentId) {
+    const [agentRow] = await drizzle
+      .select({
+        enabledTools: schema.agents.enabledTools,
+        timeZone: schema.agents.timezone,
+        autonomyLevel: schema.agents.autonomyLevel,
+        tenantAutonomyLevel: schema.settings.autonomyLevel,
+        aiTier: schema.settings.aiTier,
+        twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
+        twilioLookupEnabled: schema.settings.twilioLookupEnabled,
+      })
+      .from(schema.agents)
+      .leftJoin(schema.settings, eq(schema.settings.userId, schema.agents.userId))
+      .where(and(eq(schema.agents.id, scopedAction.agentId), eq(schema.agents.userId, userId)))
+      .limit(1);
+
+    if (!agentRow) {
+      return { success: false, error: "The requested agent does not belong to this account." };
+    }
+
+    const requiredTool = ACTION_TOOL_REQUIREMENTS[scopedAction.type];
+    if (!requiredTool) {
+      return { success: false, error: `Unsupported action type: ${scopedAction.type}` };
+    }
+
+    const connections = await loadTenantIntegrationConnections(userId).catch((error: unknown) => {
+      log.warn("Action integration lookup failed; disabling connected actions", {
+        userId,
+        agentId: scopedAction.agentId,
+        error: getErrorMessage(error),
+      });
+      return NO_TENANT_INTEGRATIONS;
+    });
+    const allowedTools = resolveAuthorizedAgentTools(
+      sanitizePersistedAgentToolSelection(agentRow.enabledTools),
+      {
+        aiTier: agentRow.aiTier,
+        twilioMessaging: Boolean(agentRow.twilioMessagingEnabled),
+        twilioLookup: Boolean(agentRow.twilioLookupEnabled),
+      },
+      connections,
+    );
+    if (!allowedTools.includes(requiredTool)) {
+      log.warn("Action blocked — agent tool or connection is unavailable", {
+        userId,
+        agentId: scopedAction.agentId,
+        actionType: scopedAction.type,
+        requiredTool,
+      });
+      return {
+        success: false,
+        error: `This agent is not authorized or connected for "${requiredTool}". Review the agent's active tools and Connections.`,
+      };
+    }
+
+    const inheritedAutonomy = agentRow.tenantAutonomyLevel === "auto" ? "auto" : "draft";
+    const autonomy =
+      autonomyOverride ||
+      (agentRow.autonomyLevel && agentRow.autonomyLevel !== "inherit"
+        ? agentRow.autonomyLevel === "auto"
+          ? "auto"
+          : "draft"
+        : inheritedAutonomy);
+
+    return {
+      action: scopedAction,
+      autonomy,
+      agentTimeZone: agentRow.timeZone || "UTC",
+    };
+  }
+
+  const [settings] = await drizzle
+    .select({ autonomyLevel: schema.settings.autonomyLevel })
+    .from(schema.settings)
+    .where(eq(schema.settings.userId, userId))
+    .limit(1);
+  let autonomy = autonomyOverride || (settings?.autonomyLevel === "auto" ? "auto" : "draft");
+
+  // Background extraction must never perform tenant-wide side effects when the
+  // originating agent cannot be resolved. Explicit Account Holder approval may
+  // still execute a tenant-scoped task through autonomyOverride="auto".
+  if (!autonomyOverride && autonomy === "auto") {
+    autonomy = "draft";
+    log.warn("Unscoped autonomous action downgraded to draft", {
+      userId,
+      actionType: scopedAction.type,
+      sourceId: context.sourceId,
+      sourceType: context.sourceType,
+    });
+  }
+
+  return { action: scopedAction, autonomy, agentTimeZone: null };
 }
 
 /**
@@ -49,170 +206,28 @@ export async function executeAction(
   autonomyOverride?: "auto" | "draft",
 ): Promise<ActionResult> {
   try {
-    let autonomy: string = autonomyOverride || "draft";
+    const policy = await resolveActionPolicy(userId, action, context, autonomyOverride);
+    if (!("action" in policy)) return policy;
 
-    if (!autonomyOverride) {
-      const [settings] = await drizzle
-        .select({ autonomyLevel: schema.settings.autonomyLevel })
-        .from(schema.settings)
-        .where(eq(schema.settings.userId, userId))
-        .limit(1);
-
-      // Per-agent autonomy overrides tenant setting when not "inherit"
-      autonomy = settings?.autonomyLevel || "draft";
-      if (action.agentId) {
-        const [agent] = await drizzle
-          .select({ autonomyLevel: schema.agents.autonomyLevel })
-          .from(schema.agents)
-          .where(and(eq(schema.agents.id, action.agentId), eq(schema.agents.userId, userId)))
-          .limit(1);
-
-        if (agent?.autonomyLevel && agent.autonomyLevel !== "inherit") {
-          autonomy = agent.autonomyLevel;
-        }
-      }
-    }
-    log.info("Executing autonomous action", {
+    log.info("Executing action", {
       userId,
-      type: action.type,
-      priority: action.priority,
-      autonomy,
+      type: policy.action.type,
+      priority: policy.action.priority,
+      autonomy: policy.autonomy,
+      agentId: policy.action.agentId || null,
     });
 
-    // Per-agent tool gating — if the action targets a specific agent and
-    // that agent's enabled_tools array excludes this action type, refuse
-    // the action regardless of autonomy mode. Account Holders control this from
-    // AssistantSettings → agent detail → Channels. When enabled_tools is null
-    // (the default), fall back to role-based defaults (resolveAgentTools).
-    if (action.agentId) {
-      const [agentRow] = await drizzle
-        .select({
-          role: schema.agents.role,
-          enabledTools: schema.agents.enabledTools,
-        })
-        .from(schema.agents)
-        .where(and(eq(schema.agents.id, action.agentId), eq(schema.agents.userId, userId)))
-        .limit(1);
-
-      if (agentRow) {
-        const allowedTools = resolveAgentTools(agentRow.role ?? undefined, agentRow.enabledTools);
-        if (!allowedTools.includes(action.type as any)) {
-          log.warn("Action blocked — agent not authorized for tool", {
-            userId,
-            agentId: action.agentId,
-            type: action.type,
-          });
-          return {
-            success: false,
-            error: `This agent is not authorized to use "${action.type}". Enable it in Agents → Channels.`,
-          };
-        }
-      }
-    }
-
-    if (autonomy === "auto") {
-      const service = new IntegrationService(userId);
-      switch (action.type) {
-        case "send_email": {
-          const reviewed = await superviseClientCommunication({
-            channel: "email",
-            agentName: action.agentId,
-            source: "action_engine",
-            purpose: action.reasoning || "autonomous follow-up",
-            recipient: action.payload.to,
-            subject: action.payload.subject,
-            body: action.payload.body,
-            context: `Autonomy mode: ${autonomy}. Source type: ${context.sourceType}.`,
-          });
-          if (!reviewed.approved) {
-            return await handleSendEmail(
-              userId,
-              {
-                ...action,
-                payload: {
-                  ...action.payload,
-                  subject: reviewed.subject || action.payload.subject,
-                  body: reviewed.body,
-                },
-                reasoning:
-                  `${action.reasoning || ""}\nSupervisor note: ${reviewed.rationale}`.trim(),
-              },
-              context,
-            );
-          }
-          const emailOk = await service.sendEmail({
-            to: action.payload.to,
-            subject: reviewed.subject || action.payload.subject,
-            body: reviewed.body,
-          });
-          return { success: emailOk };
-        }
-        case "send_text_message":
-          return await handleSendTextMessage(userId, action, context);
-        case "schedule_calendar": {
-          // Simple parsing for the payload
-          const startTime = new Date(`${action.payload.date} ${action.payload.time}`).toISOString();
-          const endTime = new Date(new Date(startTime).getTime() + 60 * 60 * 1000).toISOString();
-          const calOk = await service.bookAppointment({
-            title: action.payload.event_name || "Meeting",
-            description: action.reasoning || "Scheduled via AI Agent",
-            startTime,
-            endTime,
-            agentId: action.agentId,
-          });
-          // Fire Meta CAPI "Schedule" conversion when configured. Lets
-          // marketers attribute booked meetings back to the Meta ad that
-          // sourced the lead. Non-blocking — if CAPI isn't set up, the
-          // call returns { ok: false } without throwing.
-          if (calOk) {
-            void sendMetaConversion({
-              eventName: "Schedule",
-              eventId: `schedule:${context.sourceId}:${startTime}`,
-              email: action.payload.customer_email,
-              phone: action.payload.customer_number,
-              sourceUrl: `https://trywireline.com/calls/${context.sourceId}`,
-            }).catch(() => {});
-          }
-          return { success: calOk };
-        }
-        case "update_crm_lead":
-          return await executeCrmAction(userId, action);
-        case "create_internal_task":
-          return await handleCreateInternalTask(userId, action, context);
-        case "send_contract":
-          return await handleSendContract(userId, action, context);
-        case "prospect_leads":
-          return await handleProspectLeads(userId, action, context);
-        case "notify_slack":
-          return await handleNotifySlack(userId, action);
-      }
-    }
-
-    // Default: draft/manual handling — mirror the send_email/schedule_calendar
-    // pattern. We queue every action type into `wireline_follow_up_tasks` (or
-    // `wireline_outbound_leads` for prospect runs) for Account Holder approval
-    // instead of touching DocuSign / Apollo directly. Account Holders flip
-    // autonomy_level to "auto" to bypass this gate.
-    switch (action.type) {
-      case "send_email":
-        return await handleSendEmail(userId, action, context);
-      case "send_text_message":
-        return await handleDraftSendTextMessage(userId, action, context);
-      case "schedule_calendar":
-        return await handleScheduleCalendar(userId, action, context);
-      case "update_crm_lead":
-        return await queueCrmAction(userId, action, context);
-      case "create_internal_task":
-        return await handleCreateInternalTask(userId, action, context);
-      case "send_contract":
-        return await queueSideEffectAction(userId, action, context, "send_contract", "docusign");
-      case "prospect_leads":
-        return await queueSideEffectAction(userId, action, context, "prospect_leads", "apollo");
-      case "notify_slack":
-        return await queueSideEffectAction(userId, action, context, "notify_slack", "slack");
-      default:
-        return { success: false, error: `Unsupported action type: ${action.type}` };
-    }
+    return runIdempotentActionExecution({
+      userId,
+      action: policy.action,
+      sourceId: context.sourceId,
+      sourceType: context.sourceType,
+      phase: policy.autonomy,
+      execute: () =>
+        policy.autonomy === "auto"
+          ? executeAutonomousAction(userId, policy.action, context, policy.agentTimeZone)
+          : queueDraftAction(userId, policy.action, context),
+    });
   } catch (error) {
     log.error("Action execution failed", {
       userId,
@@ -220,6 +235,119 @@ export async function executeAction(
       error: getErrorMessage(error),
     });
     return { success: false, error: getErrorMessage(error) };
+  }
+}
+
+async function executeAutonomousAction(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string; sourceType: string },
+  agentTimeZone: string | null,
+): Promise<ActionResult> {
+  const service = new IntegrationService(userId);
+  switch (action.type) {
+    case "send_email": {
+      const reviewed = await superviseClientCommunication({
+        channel: "email",
+        agentName: action.agentId,
+        source: "action_engine",
+        purpose: action.reasoning || "autonomous follow-up",
+        recipient: action.payload.to,
+        subject: action.payload.subject,
+        body: action.payload.body,
+        context: `Autonomy mode: auto. Source type: ${context.sourceType}.`,
+      });
+      if (!reviewed.approved) {
+        return handleSendEmail(
+          userId,
+          {
+            ...action,
+            payload: {
+              ...action.payload,
+              subject: reviewed.subject || action.payload.subject,
+              body: reviewed.body,
+            },
+            reasoning: `${action.reasoning || ""}\nSupervisor note: ${reviewed.rationale}`.trim(),
+          },
+          context,
+        );
+      }
+      const emailOk = await service.sendEmail({
+        to: action.payload.to,
+        subject: reviewed.subject || action.payload.subject,
+        body: reviewed.body,
+      });
+      return { success: emailOk };
+    }
+    case "send_text_message":
+      return handleSendTextMessage(userId, action, context);
+    case "schedule_calendar": {
+      const rawTimeZone = action.payload.timezone || agentTimeZone;
+      if (!rawTimeZone) {
+        return {
+          success: false,
+          error: "An exact IANA timezone is required before scheduling a calendar event.",
+        };
+      }
+      const timeZone = normalizeIanaTimeZone(rawTimeZone);
+      const startTime = localDateTimeToUtcIso({
+        date: action.payload.date,
+        time: action.payload.time,
+        timeZone,
+      });
+      const endTime = addMinutesToIso(startTime, 60);
+      const calOk = await service.bookAppointment({
+        title: action.payload.event_name || "Meeting",
+        description: `${action.reasoning || "Scheduled via AI Agent"}\n\nConfirmed timezone: ${timeZone}.`,
+        startTime,
+        endTime,
+        agentId: action.agentId,
+      });
+      return { success: calOk };
+    }
+    case "update_crm_lead":
+      return executeCrmAction(userId, action);
+    case "create_internal_task":
+      return handleCreateInternalTask(userId, action, context);
+    case "send_contract":
+      return {
+        success: false,
+        error:
+          "Automated contract sending is disabled until a tenant-owned DocuSign account and template registry are connected.",
+      };
+    case "prospect_leads":
+      return handleProspectLeads(userId, action, context);
+    case "notify_slack":
+      return handleNotifySlack(userId, action);
+    default:
+      return { success: false, error: `Unsupported action type: ${action.type}` };
+  }
+}
+
+async function queueDraftAction(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string; sourceType: string },
+): Promise<ActionResult> {
+  switch (action.type) {
+    case "send_email":
+      return handleSendEmail(userId, action, context);
+    case "send_text_message":
+      return handleDraftSendTextMessage(userId, action, context);
+    case "schedule_calendar":
+      return handleScheduleCalendar(userId, action, context);
+    case "update_crm_lead":
+      return queueCrmAction(userId, action, context);
+    case "create_internal_task":
+      return handleCreateInternalTask(userId, action, context);
+    case "send_contract":
+      return queueSideEffectAction(userId, action, context, "send_contract", "manual");
+    case "prospect_leads":
+      return queueSideEffectAction(userId, action, context, "prospect_leads", "apollo");
+    case "notify_slack":
+      return queueSideEffectAction(userId, action, context, "notify_slack", "slack");
+    default:
+      return { success: false, error: `Unsupported action type: ${action.type}` };
   }
 }
 
@@ -244,6 +372,7 @@ async function handleSendEmail(
   await touchNavCounts(userId);
   return { success: true, queued: true };
 }
+
 async function handleSendTextMessage(
   userId: string,
   action: ActionItem,
@@ -310,6 +439,7 @@ async function handleSendTextMessage(
   });
   return sent.ok ? { success: true } : { success: false, error: sent.reason || "SMS send failed" };
 }
+
 async function handleDraftSendTextMessage(
   userId: string,
   action: ActionItem,
@@ -330,6 +460,7 @@ async function handleDraftSendTextMessage(
   await touchNavCounts(userId);
   return { success: true, queued: true };
 }
+
 async function handleScheduleCalendar(
   userId: string,
   action: ActionItem,
@@ -409,6 +540,7 @@ async function executeCrmAction(userId: string, action: ActionItem): Promise<Act
   const updated = await crm.updateLead(action.payload as Parameters<CRMService["updateLead"]>[0]);
   return { success: updated };
 }
+
 async function handleCreateInternalTask(
   userId: string,
   action: ActionItem,
@@ -428,6 +560,7 @@ async function handleCreateInternalTask(
   await touchNavCounts(userId);
   return { success: true };
 }
+
 async function queueSideEffectAction(
   userId: string,
   action: ActionItem,
@@ -455,14 +588,6 @@ async function queueSideEffectAction(
   return { success: true, queued: true };
 }
 
-async function handleSendContract(
-  userId: string,
-  action: ActionItem,
-  _context: { sourceId: string; sourceType: string },
-): Promise<ActionResult> {
-  const response = await sendContract(action.payload as Parameters<typeof sendContract>[0]);
-  return { success: !!response };
-}
 async function handleProspectLeads(
   userId: string,
   action: ActionItem,
@@ -471,6 +596,7 @@ async function handleProspectLeads(
   const leads = await searchLeads(action.payload as Parameters<typeof searchLeads>[0], userId);
   return { success: Array.isArray(leads) };
 }
+
 async function handleNotifySlack(userId: string, action: ActionItem): Promise<ActionResult> {
   const channel = await getDefaultChannel(userId);
   if (!channel) return { success: false, error: "No Slack channel is configured." };

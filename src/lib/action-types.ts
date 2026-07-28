@@ -9,9 +9,6 @@ export const ActionTypeSchema = z.enum([
   "send_contract",
   "prospect_leads",
   "notify_slack",
-  "create_payment_link",
-  "send_invoice",
-  "check_inventory",
 ]);
 
 export type ActionType = z.infer<typeof ActionTypeSchema>;

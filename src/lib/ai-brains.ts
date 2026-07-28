@@ -1,19 +1,3 @@
-/**
- * Post-call and coaching brains for the job worker and workspace routes.
- *
- * These functions originally lived in the retired claude-brain barrel; the
- * runtime migration rebuilt the live call path but dropped the job-queue
- * brains, leaving job-worker importing a module that no longer existed. This
- * module restores them on the managed runtime (runStructured/runCompletion),
- * which kept the same structured-tool API.
- *
- * Knowledge ingestion (knowledgeFromUrl / knowledgeFromDocument) depended on
- * provider-specific web-fetch and PDF document blocks the managed runtime
- * does not expose yet, so those two fail fast with a typed, user-safe error
- * instead of a module crash. Rebuild them on the new runtime before wiring
- * any UI to them.
- */
-
 import { log } from "./server-context";
 import { isRuntimeAvailable } from "./ai-client";
 import { runStructured, runCompletion, type StructuredToolSchema } from "./ai-structured";
@@ -118,7 +102,7 @@ const POST_CALL_ANALYSIS_TOOL: StructuredToolSchema = {
 const BUSINESS_ACTIONS_TOOL: StructuredToolSchema = {
   name: "extract_business_actions",
   description:
-    "Extract deep, structured business actions from a call transcript for autonomous execution (email, SMS, calendar, CRM, and internal follow-up).",
+    "Extract only concrete business actions promised or explicitly requested in the call. Do not invent dates, recipients, destinations, or permissions.",
   input_schema: {
     type: "object",
     properties: {
@@ -140,12 +124,12 @@ const BUSINESS_ACTIONS_TOOL: StructuredToolSchema = {
             priority: { type: "string", enum: ["high", "medium", "low"] },
             reasoning: {
               type: "string",
-              description: "Why this action is necessary based on the transcript.",
+              description: "Why this action is necessary based on explicit transcript evidence.",
             },
             payload: {
               type: "object",
               description:
-                "Structured data for the action. For send_email: {to, subject, body}. For send_text_message: {to, body, channel}. For schedule_calendar: {event_name, date, time, attendees}. For update_crm_lead: {customer_number, status, notes}.",
+                "Structured data for the action. send_email: {to, subject, body}. send_text_message: {to, body, channel}. schedule_calendar: {event_name, date, time, timezone, attendees}, where date is YYYY-MM-DD, time is 24-hour HH:mm, and timezone is a confirmed IANA zone such as America/Chicago. Never emit schedule_calendar when any of date, time, or timezone is unresolved; create an internal follow-up instead. update_crm_lead: {customer_number, status, notes}.",
             },
           },
           required: ["type", "priority", "payload", "reasoning"],
@@ -221,10 +205,6 @@ const QA_SCORE_TOOL: StructuredToolSchema = {
   },
 };
 
-/* ────────────────────────────────────────────────────────────────────────
- *  Single-pass post-call analysis.
- * ──────────────────────────────────────────────────────────────────── */
-
 export interface PostCallInput {
   agentName: string;
   archetype: string;
@@ -288,10 +268,6 @@ ${input.transcript || "(none)"}
     complexity: "complex",
   });
 }
-
-/* ────────────────────────────────────────────────────────────────────────
- *  Call QA scoring.
- * ──────────────────────────────────────────────────────────────────── */
 
 export interface QaScoreInput {
   direction: "inbound" | "outbound";
@@ -360,10 +336,6 @@ Score each dimension 0–20 and provide a concise, actionable coaching note.`;
   });
 }
 
-/* ────────────────────────────────────────────────────────────────────────
- *  Business-action extraction and lesson synthesis.
- * ──────────────────────────────────────────────────────────────────── */
-
 export interface ExtractedBusinessAction {
   type:
     | "send_email"
@@ -383,7 +355,7 @@ export async function extractActions(params: {
 }): Promise<ExtractedBusinessAction[]> {
   const result = await runStructured<{ actions: ExtractedBusinessAction[] }>({
     system:
-      "You are the Wireline Action Engine. Extract follow-up actions promised or implied in the call.",
+      "You are the Wireline Action Engine. Extract only actions explicitly promised or requested. For calendar actions, emit schedule_calendar only when exact YYYY-MM-DD date, 24-hour HH:mm time, and a full IANA timezone are all supported by the call. Otherwise create an internal follow-up task. Never infer a recipient, destination, authorization, or material commitment.",
     user: `Transcript: ${params.transcript}\nSummary: ${params.summary}\nCustomer: ${params.customerNumber || "Unknown"}`,
     tool: BUSINESS_ACTIONS_TOOL,
     cacheSystem: true,
@@ -406,10 +378,6 @@ export async function synthesizeLesson(params: {
   });
   return text.trim();
 }
-
-/* ────────────────────────────────────────────────────────────────────────
- *  Knowledge ingestion — pending a managed-runtime rebuild.
- * ──────────────────────────────────────────────────────────────────── */
 
 export interface KnowledgeFromUrlInput {
   url: string;
