@@ -106,6 +106,26 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 - Generated review output, screenshots, local agent artifacts, exported environments, branch summaries, and temporary plans do not belong in source control.
 - When evidence produces a durable decision, promote that decision into code or a canonical document.
 
+### Repository-local Markdown exceptions
+
+These files stay outside `docs/` because a development tool, compatibility path, or client surface discovers them at their exact repository location. This table is the sole approval source used by `npm run docs:check`; each file must remain narrow and defer durable cross-cutting doctrine to the canonical documents above.
+
+| Document | Why it remains local |
+| --- | --- |
+| [AGENTS.md](../AGENTS.md) | Cursor Cloud discovery instructions at the required root path. |
+| [CLAUDE.md](../CLAUDE.md) | Claude Code discovery instructions at the required root path. |
+| [DATABASE_SETUP.md](../DATABASE_SETUP.md) | Legacy compatibility pointer to the canonical database runbook. |
+| [DEPLOY.md](../DEPLOY.md) | Legacy compatibility pointer to the canonical deployment runbook. |
+| [apps/browser-extension/README.md](../apps/browser-extension/README.md) | Browser-extension surface entry point beside its source. |
+| [android/README.md](../android/README.md) | Android surface entry point beside its source. |
+| [android/SETUP_CHECKLIST.md](../android/SETUP_CHECKLIST.md) | Android build, signing, consent, and release checklist. |
+| [ios/README.md](../ios/README.md) | iOS surface entry point beside its source. |
+| [ios/SETUP_CHECKLIST.md](../ios/SETUP_CHECKLIST.md) | iOS build, signing, capability, and release checklist. |
+| [ios/APP_STORE_CARPLAY_READINESS.md](../ios/APP_STORE_CARPLAY_READINESS.md) | App Store and entitlement-gated CarPlay release checklist. |
+| [ios/EVERYDAY_SHORTCUTS_PLAN.md](../ios/EVERYDAY_SHORTCUTS_PLAN.md) | Siri and App Shortcuts implementation plan beside the native client. |
+| [ios/WIDGET_EXTENSION_PLAN.md](../ios/WIDGET_EXTENSION_PLAN.md) | Widget extension implementation plan beside the native client. |
+| [references/design-system-navigation-plan.md](../references/design-system-navigation-plan.md) | Exact path consumed by the design-system regression contract. |
+
 ## Verification
 
 - `npm run source-control:check` validates ignored/tracked drift, forbidden local artifacts, and case-collision safety.
