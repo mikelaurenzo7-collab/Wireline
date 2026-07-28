@@ -69,6 +69,7 @@ describe("platform ledger migration delivery", () => {
   it("keeps Drizzle transaction executors compatible without dropping server exports", () => {
     const idempotency = read("src/lib/action-execution-idempotency.ts");
     const serverContext = read("src/lib/server-context.ts");
+    const actionEngine = read("src/lib/action-engine.ts");
 
     expect(idempotency).toContain("drizzle.transaction(async (tx) =>");
     expect(idempotency).not.toContain("async (tx: typeof drizzle)");
@@ -76,5 +77,8 @@ describe("platform ledger migration delivery", () => {
     expect(serverContext).toContain("Code that genuinely needs the raw database instance can import `db`");
     expect(serverContext).toContain("export const { requirePermission, requireRole }");
     expect(serverContext).toContain("export const quotaTracker = new QuotaTracker");
+    expect(actionEngine).not.toContain(
+      "eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations",
+    );
   });
 });
