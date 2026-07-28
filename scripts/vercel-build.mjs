@@ -113,6 +113,9 @@ run("npx", [
   "tests/managed-vapi-runtime-contract.test.ts",
   "tests/vapi-modern-payload-contract.test.ts",
   "tests/twilio-webhook-privacy.test.ts",
+  // GDPR carrier cleanup and compliance ledgers are cost and deletion-integrity
+  // boundaries; keep their migration/runtime contracts in every build.
+  "tests/platform-ledger-integrity-contract.test.ts",
   // Durable persistence failures are financial/runtime integrity failures, so
   // this contract belongs in every preview and production-equivalent build.
   "tests/durable-enqueue-contract.test.ts",
