@@ -41,7 +41,7 @@ function repoPath(absolutePath) {
 }
 
 function normalizeTarget(sourcePath, rawTarget) {
-  const trimmed = rawTarget.trim().replace(/^<|>$/g, "");
+  const trimmed = rawTarget.trim();
   if (
     !trimmed ||
     trimmed.startsWith("#") ||
@@ -50,9 +50,12 @@ function normalizeTarget(sourcePath, rawTarget) {
     return null;
   }
 
-  // Index links intentionally omit Markdown link titles. Angle brackets remain
-  // supported for a future local path containing spaces.
-  const target = trimmed.split("#", 1)[0].split("?", 1)[0];
+  // Markdown permits an angle-bracket path containing spaces, or an unquoted
+  // first token followed by an optional link title.
+  const token = trimmed.startsWith("<")
+    ? trimmed.slice(1, trimmed.indexOf(">") === -1 ? undefined : trimmed.indexOf(">"))
+    : trimmed.split(/\s+/, 1)[0];
+  const target = token.split("#", 1)[0].split("?", 1)[0];
   if (!target.toLowerCase().endsWith(".md")) return null;
 
   const absolute = path.resolve(path.dirname(path.resolve(root, sourcePath)), target);
@@ -64,7 +67,7 @@ function normalizeTarget(sourcePath, rawTarget) {
   return relative;
 }
 
-function collectMarkdownLinks(sourcePath) {
+function parseMarkdownLinks(sourcePath, rejectDuplicates = false) {
   const source = readFileSync(path.resolve(root, sourcePath), "utf8");
   const links = [];
   const seen = new Set();
@@ -75,7 +78,7 @@ function collectMarkdownLinks(sourcePath) {
     const target = normalizeTarget(sourcePath, match[1]);
     if (!target) continue;
     if (seen.has(target)) {
-      problems.push(`${sourcePath} links ${target} more than once.`);
+      if (rejectDuplicates) problems.push(`${sourcePath} links ${target} more than once.`);
       continue;
     }
     seen.add(target);
@@ -83,6 +86,15 @@ function collectMarkdownLinks(sourcePath) {
   }
 
   return new Set(links);
+}
+
+function assertTargetExists(sourcePath, target) {
+  const absolute = path.resolve(root, target);
+  if (!existsSync(absolute)) {
+    problems.push(`${sourcePath} links missing Markdown target: ${target}`);
+  } else if (!statSync(absolute).isFile()) {
+    problems.push(`${sourcePath} links a non-file Markdown target: ${target}`);
+  }
 }
 
 function walkMarkdown(dir) {
@@ -104,21 +116,21 @@ for (const indexPath of indexPaths) {
 }
 
 if (problems.length === 0) {
-  const canonicalLinks = collectMarkdownLinks(canonicalIndexPath);
-  const auditLinks = collectMarkdownLinks(auditIndexPath);
+  const canonicalLinks = parseMarkdownLinks(canonicalIndexPath, true);
+  const auditLinks = parseMarkdownLinks(auditIndexPath, true);
+  const trackedMarkdown = gitLines(["ls-files", "*.md", "**/*.md"]);
+
+  // Validate local Markdown links across the entire tracked documentation surface,
+  // not only the two indexes. This makes file moves and deletions fail loudly.
+  for (const sourcePath of trackedMarkdown) {
+    for (const target of parseMarkdownLinks(sourcePath)) {
+      assertTargetExists(sourcePath, target);
+    }
+  }
 
   for (const target of canonicalLinks) {
     if (auditLinks.has(target)) {
       problems.push(`${target} is linked from both documentation indexes.`);
-    }
-  }
-
-  for (const target of new Set([...canonicalLinks, ...auditLinks])) {
-    const absolute = path.resolve(root, target);
-    if (!existsSync(absolute)) {
-      problems.push(`Indexed Markdown target does not exist: ${target}`);
-    } else if (!statSync(absolute).isFile()) {
-      problems.push(`Indexed Markdown target is not a file: ${target}`);
     }
   }
 
@@ -148,7 +160,6 @@ if (problems.length === 0) {
     }
   }
 
-  const trackedMarkdown = gitLines(["ls-files", "*.md", "**/*.md"]);
   for (const file of trackedMarkdown) {
     if (
       file.startsWith("docs/") ||
@@ -170,4 +181,4 @@ if (problems.length) {
   process.exit(1);
 }
 
-console.log("Documentation indexes and tracked Markdown organization are complete and link-valid.");
+console.log("Documentation indexes, local links, and tracked Markdown organization are complete.");
