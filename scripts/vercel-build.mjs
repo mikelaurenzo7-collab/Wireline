@@ -106,6 +106,7 @@ run("npx", [
   "tests/marketing-metadata-contract.test.ts",
   "tests/static-metadata-contract.test.ts",
   "tests/wireline-product-docs.test.ts",
+  "tests/repository-documentation-hygiene-contract.test.ts",
   "tests/mailbox-and-daily-brief-hardening-contract.test.ts",
   "tests/managed-vapi-runtime-contract.test.ts",
   "tests/vapi-modern-payload-contract.test.ts",
