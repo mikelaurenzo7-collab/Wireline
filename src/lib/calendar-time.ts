@@ -106,6 +106,10 @@ function partsForInstant(instantMs: number, timeZone: string): ZonedParts {
   };
 }
 
+function dateKey(parts: LocalDateParts): number {
+  return parts.year * 10_000 + parts.month * 100 + parts.day;
+}
+
 function offsetAt(instantMs: number, timeZone: string): number {
   const parts = partsForInstant(instantMs, timeZone);
   return (
@@ -172,6 +176,40 @@ export function addDaysToIsoDate(value: unknown, days: number): string {
   ].join("-");
 }
 
+/**
+ * Return the first real UTC instant whose local calendar date equals `date`.
+ * This differs from converting local 00:00: several active IANA zones advance
+ * at midnight, so 00:00 does not exist even though the calendar day begins at
+ * 01:00. A bounded binary search over zoned dates handles those transitions,
+ * 23/25-hour days, and historical skipped dates without server-timezone input.
+ */
+function firstInstantOfLocalDate(dateValue: unknown, timeZoneValue: unknown): string {
+  const date = parseIsoLocalDate(dateValue);
+  const timeZone = normalizeIanaTimeZone(timeZoneValue);
+  const targetKey = dateKey(date);
+  const approximateUtc = Date.UTC(date.year, date.month - 1, date.day, 12, 0, 0);
+  let low = Math.floor((approximateUtc - 72 * 60 * 60 * 1_000) / 1_000);
+  let high = Math.ceil((approximateUtc + 72 * 60 * 60 * 1_000) / 1_000);
+
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+    if (dateKey(partsForInstant(mid * 1_000, timeZone)) < targetKey) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+
+  const instant = low * 1_000;
+  if (dateKey(partsForInstant(instant, timeZone)) !== targetKey) {
+    throw new CalendarTimeError(
+      `The date ${String(dateValue)} does not occur in ${timeZone}. Confirm a different date.`,
+      "INVALID_DATE",
+    );
+  }
+  return new Date(instant).toISOString();
+}
+
 export function localDateWindowToUtc(input: { date: unknown; timeZone: unknown }): {
   startTime: string;
   endTime: string;
@@ -180,12 +218,8 @@ export function localDateWindowToUtc(input: { date: unknown; timeZone: unknown }
   const timeZone = normalizeIanaTimeZone(input.timeZone);
   const date = addDaysToIsoDate(input.date, 0);
   return {
-    startTime: localDateTimeToUtcIso({ date, time: "00:00", timeZone }),
-    endTime: localDateTimeToUtcIso({
-      date: addDaysToIsoDate(date, 1),
-      time: "00:00",
-      timeZone,
-    }),
+    startTime: firstInstantOfLocalDate(date, timeZone),
+    endTime: firstInstantOfLocalDate(addDaysToIsoDate(date, 1), timeZone),
     timeZone,
   };
 }
