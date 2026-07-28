@@ -29,8 +29,20 @@ import { AuditActivityPanel } from "./admin/AuditActivityPanel";
 import ComplianceChecklist from "./admin/ComplianceChecklist";
 import { isLegacyAdminTabRedirect } from "../lib/admin-access";
 
-type ConfirmState = { open: boolean; title: string; message: string; onConfirm: () => void };
-const CLOSED_CONFIRM: ConfirmState = { open: false, title: "", message: "", onConfirm: () => {} };
+type ConfirmState = {
+  open: boolean;
+  title: string;
+  message: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+};
+const CLOSED_CONFIRM: ConfirmState = {
+  open: false,
+  title: "",
+  message: "",
+  confirmLabel: "Confirm",
+  onConfirm: () => {},
+};
 const ADMIN_TAB_SHORT_LABELS: Record<string, string> = {
   accounts: "Acct",
   branding: "Brand",
@@ -354,20 +366,28 @@ export default function AdminSettings() {
   const deletePhoneNumber = (id: number | string) => {
     setConfirmState({
       open: true,
-      title: "Remove number",
+      title: "Permanently release number",
       message:
-        "Remove this phone number from your agents? The number stays in your Wireline voice network, but it will stop routing calls to agents.",
+        "This permanently releases the number from Wireline and its carrier. Calls and texts stop immediately, and the number may not be recoverable. This cannot be undone.",
+      confirmLabel: "Release number",
       onConfirm: async () => {
         setIsDeletingNumber(id);
         try {
           const resp = await authFetch(`/api/phone-numbers/${id}`, { method: "DELETE" });
-          if (resp.ok) {
-            setPhoneNumbers((prev) => prev.filter((n) => n.id !== id));
+          if (!resp.ok) {
+            const body = (await safeJson(resp)) as { error?: string; message?: string } | null;
+            throw new Error(
+              body?.error || body?.message || `Carrier number could not be released (${resp.status}).`,
+            );
           }
+          setPhoneNumbers((prev) => prev.filter((n) => n.id !== id));
           setConfirmState(CLOSED_CONFIRM);
         } catch (e) {
           clientLog.error("admin-settings:delete-number", e);
-          toastError("Delete failed", "Could not remove this carrier number. Please try again.");
+          toastError(
+            "Release failed",
+            e instanceof Error ? e.message : "Could not release this carrier number. Please try again.",
+          );
         } finally {
           setIsDeletingNumber(null);
         }
@@ -578,6 +598,7 @@ export default function AdminSettings() {
         open={confirmState.open}
         title={confirmState.title}
         message={confirmState.message}
+        confirmLabel={confirmState.confirmLabel}
         danger
         loading={isDeletingNumber !== null}
         onConfirm={confirmState.onConfirm}
