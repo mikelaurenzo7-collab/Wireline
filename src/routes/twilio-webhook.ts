@@ -1,26 +1,56 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
+import { matchesCarrierKeyword } from "../lib/carrier-keywords";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
 import { clearDncFailsafe, recordDncFailsafe } from "../lib/dnc-failsafe";
 import { reportError } from "../lib/error-reporter";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { claimTwilioUsageAlert } from "../lib/twilio-usage-alert-idempotency";
+import {
+  opaqueIdSuffixForLog,
+  phoneSuffixForLog,
+} from "../lib/twilio-webhook-privacy";
 import { sanitizePhone } from "../lib/vapi-helpers";
 import baseRouter from "./twilio-webhook-base";
 
 const router = Router();
+const LEGACY_OPT_OUT_KEYWORDS = new Set([
+  "stop",
+  "stopall",
+  "unsubscribe",
+  "cancel",
+  "end",
+  "quit",
+  "optout",
+  "opt-out",
+  "opt out",
+]);
 const LEGACY_OPT_IN_KEYWORDS = new Set(["start", "unstop", "yes", "optin", "opt-in", "opt in"]);
+
+type ConsentControl = "stop" | "start" | "help";
 
 function emptyTwiml(): string {
   return `<?xml version="1.0" encoding="UTF-8"?><Response/>`;
 }
 
+function optOutConfirmationTwiml(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>You have been unsubscribed. You will not receive any more messages from this number. Reply START to opt back in.</Message></Response>`;
+}
+
 function optInConfirmationTwiml(): string {
   return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>You have been resubscribed. Welcome back.</Message></Response>`;
+}
+
+function optOutRetryTwiml(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>We couldn't process your unsubscribe request just now. Please reply STOP again in a few minutes.</Message></Response>`;
+}
+
+function optInRetryTwiml(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>We couldn't process your resubscribe request just now. Please reply START again in a few minutes.</Message></Response>`;
 }
 
 async function tenantForSender(toValue: string): Promise<string | null> {
@@ -47,121 +77,201 @@ async function tenantForSender(toValue: string): Promise<string | null> {
   return settings?.userId || null;
 }
 
+function resolveConsentControl(optOutType: string, bodyKeyword: string): {
+  control: ConsentControl | null;
+  legacy: boolean;
+} {
+  if (optOutType === "STOP") return { control: "stop", legacy: false };
+  if (optOutType === "START") return { control: "start", legacy: false };
+  if (optOutType === "HELP") return { control: "help", legacy: false };
+  if (optOutType) return { control: null, legacy: false };
+  if (matchesCarrierKeyword(bodyKeyword, LEGACY_OPT_OUT_KEYWORDS)) {
+    return { control: "stop", legacy: true };
+  }
+  if (matchesCarrierKeyword(bodyKeyword, LEGACY_OPT_IN_KEYWORDS)) {
+    return { control: "start", legacy: true };
+  }
+  return { control: null, legacy: false };
+}
+
+async function persistConsentControl(input: {
+  userId: string;
+  customerNumber: string;
+  phoneRaw: string;
+  messageSid: string;
+  optOutType: string;
+  bodyKeyword: string;
+  control: ConsentControl;
+  legacy: boolean;
+}): Promise<"applied" | "duplicate"> {
+  const event =
+    input.control === "stop"
+      ? "sms_opt_out"
+      : input.control === "start"
+        ? "sms_opt_in"
+        : "sms_help";
+  const deliveryIdentity =
+    input.messageSid ||
+    `${input.userId}:${normalizeDncPhone(input.customerNumber)}:${input.control}:${input.bodyKeyword}`;
+
+  return drizzle.transaction(async (tx: typeof drizzle) => {
+    // The consent ledger has no delivery-ID uniqueness constraint. Serialize
+    // duplicate Twilio deliveries before checking metadata so concurrent retries
+    // cannot append two audit events or repeat a control mutation.
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`twilio-consent:${deliveryIdentity}`}))`);
+
+    if (input.messageSid) {
+      const [existing] = await tx
+        .select({ id: schema.consentLog.id })
+        .from(schema.consentLog)
+        .where(
+          and(
+            eq(schema.consentLog.userId, input.userId),
+            sql`${schema.consentLog.metadata} ->> 'twilio_message_sid' = ${input.messageSid}`,
+          ),
+        )
+        .limit(1);
+      if (existing) return "duplicate";
+    }
+
+    if (input.control === "stop") {
+      await tx
+        .insert(schema.dncList)
+        .values({
+          userId: input.userId,
+          phone: normalizeDncPhone(input.customerNumber),
+          phoneRaw: input.phoneRaw,
+          reason: "opt-out",
+          source: input.legacy ? "sms_opt_out" : "twilio_advanced_opt_out",
+        })
+        .onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] });
+    } else if (input.control === "start") {
+      // A customer SMS opt-in can reverse only an SMS-created suppression.
+      // Manual, federal, voice, legal, complaint, and workspace DNC entries
+      // remain intact until an authorized account holder removes them.
+      await tx
+        .delete(schema.dncList)
+        .where(
+          and(
+            eq(schema.dncList.userId, input.userId),
+            inArray(schema.dncList.phone, dncPhoneCandidates(input.customerNumber)),
+            eq(schema.dncList.reason, "opt-out"),
+            or(
+              eq(schema.dncList.source, "twilio_advanced_opt_out"),
+              eq(schema.dncList.source, "sms_opt_out"),
+            ),
+          ),
+        );
+    }
+
+    await tx.insert(schema.consentLog).values({
+      userId: input.userId,
+      customerNumber: input.customerNumber,
+      event,
+      rule: input.legacy
+        ? input.control === "stop"
+          ? "legacy_stop_keyword"
+          : "legacy_start_keyword"
+        : "twilio_advanced_opt_out",
+      ruleVersion: "v1",
+      state:
+        input.control === "stop"
+          ? "opted_out"
+          : input.control === "start"
+            ? "opted_in"
+            : "unchanged",
+      metadata: {
+        twilio_message_sid: input.messageSid || null,
+        opt_out_type: input.optOutType || null,
+        keyword: input.bodyKeyword || null,
+      },
+    });
+
+    return "applied";
+  });
+}
+
 /**
- * Twilio Advanced Opt-Out has already sent the confirmation response when
- * OptOutType is present. We also intercept legacy START-style replies here so
- * they can only reverse an SMS-created suppression. The older base route used
- * to delete every matching DNC row, including manual/legal records.
+ * Twilio Advanced Opt-Out has already sent its own carrier confirmation when
+ * OptOutType is present. Legacy STOP/START replies are intercepted here too so
+ * every DNC mutation and consent event commits atomically through one path.
  */
 router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next: NextFunction) => {
   const optOutType = String(req.body?.OptOutType || "").toUpperCase();
   const bodyKeyword = String(req.body?.Body || "")
     .trim()
     .toLowerCase();
-  const legacyOptIn = !optOutType && LEGACY_OPT_IN_KEYWORDS.has(bodyKeyword);
-  if (!optOutType && !legacyOptIn) return next();
+  const { control, legacy } = resolveConsentControl(optOutType, bodyKeyword);
+  if (!control) return next();
   if (!evaluateTwilioWebhookAuth(req).ok) return res.status(403).send(emptyTwiml());
 
   const userId = await tenantForSender(String(req.body?.To || ""));
-  const customerNumber = sanitizePhone(String(req.body?.From || "").replace(/^whatsapp:/i, ""));
+  const phoneRaw = String(req.body?.From || "");
+  const customerNumber = sanitizePhone(phoneRaw.replace(/^whatsapp:/i, ""));
+  const messageSid = String(req.body?.MessageSid || req.body?.SmsSid || "").trim();
   if (!userId || !customerNumber) return res.status(200).send(emptyTwiml());
 
   return tenantStore.run(userId, async () => {
     try {
-      if (optOutType === "STOP") {
-        await drizzle
-          .insert(schema.dncList)
-          .values({
-            userId,
-            // Canonical digits-only key so the outbound-call gate matches.
-            phone: normalizeDncPhone(customerNumber),
-            phoneRaw: String(req.body?.From || ""),
-            reason: "opt-out",
-            source: "twilio_advanced_opt_out",
-          })
-          .onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] });
-      } else if (optOutType === "START" || legacyOptIn) {
-        // A customer SMS opt-in can reverse only an SMS-created suppression.
-        // Manual, federal, voice, legal, complaint, and workspace DNC entries
-        // remain intact until an authorized account holder removes them.
-        await drizzle
-          .delete(schema.dncList)
-          .where(
-            and(
-              eq(schema.dncList.userId, userId),
-              inArray(schema.dncList.phone, dncPhoneCandidates(customerNumber)),
-              eq(schema.dncList.reason, "opt-out"),
-              or(
-                eq(schema.dncList.source, "twilio_advanced_opt_out"),
-                eq(schema.dncList.source, "sms_opt_out"),
-              ),
-            ),
-          );
+      await persistConsentControl({
+        userId,
+        customerNumber,
+        phoneRaw,
+        messageSid,
+        optOutType,
+        bodyKeyword,
+        control,
+        legacy,
+      });
 
-        // A prior Postgres outage may have written the STOP only to the shared
-        // emergency ledger. Do not confirm resubscribe until that block clears.
+      if (control === "start") {
+        // Commit the canonical delete + consent event first. A stale emergency
+        // marker remains authoritative until it can be cleared successfully.
         const failsafeCleared = await clearDncFailsafe(userId, customerNumber);
         if (!failsafeCleared) throw new Error("DNC_FAILSAFE_CLEAR_FAILED");
       }
-
-      await drizzle.insert(schema.consentLog).values({
-        userId,
-        customerNumber,
-        event:
-          optOutType === "STOP"
-            ? "sms_opt_out"
-            : optOutType === "START" || legacyOptIn
-              ? "sms_opt_in"
-              : "sms_help",
-        rule: legacyOptIn ? "legacy_start_keyword" : "twilio_advanced_opt_out",
-        ruleVersion: "v1",
-        state:
-          optOutType === "STOP"
-            ? "opted_out"
-            : optOutType === "START" || legacyOptIn
-              ? "opted_in"
-              : "unchanged",
-      });
     } catch (error) {
       let failsafeStored = false;
-      if (optOutType === "STOP") {
-        // Advanced Opt-Out protects future messages at Twilio, but Wireline's
-        // own DNC gate protects voice. Preserve that voice block independently
-        // when the canonical Postgres row cannot be written.
+      if (control === "stop") {
+        // Preserve the consumer's STOP for outbound voice if the Postgres
+        // transaction fails. Advanced Opt-Out independently suppresses carrier
+        // messaging; legacy STOP is never confirmed until Postgres commits.
         failsafeStored = await recordDncFailsafe(userId, customerNumber);
       }
 
-      log.error("Twilio opt-out persistence failed", {
-        userId,
-        optOutType: optOutType || "LEGACY_START",
+      log.error("Twilio consent-control persistence failed", {
+        tenant_suffix: opaqueIdSuffixForLog(userId),
+        customer_suffix: phoneSuffixForLog(customerNumber),
+        control,
+        advanced: !legacy,
         failsafeStored,
         error: getErrorMessage(error),
       });
-      // STOP: Twilio Advanced Opt-Out already suppressed the number for
-      // messaging. The Redis failsafe keeps outbound voice blocked until the
-      // canonical DNC row is repaired. If both stores fail, return 503 so any
-      // configured Twilio 5xx retry policy can redeliver the event.
-      if (optOutType === "STOP") {
+      if (control === "stop") {
         reportError(error instanceof Error ? error : new Error(getErrorMessage(error)), {
           route: "/api/twilio-webhook/sms",
-          flow: "twilio_advanced_opt_out",
-          tenant: userId,
+          flow: legacy ? "legacy_sms_opt_out" : "twilio_advanced_opt_out",
+          tenant: opaqueIdSuffixForLog(userId),
           failsafeStored,
         });
       }
+
       res.setHeader("Content-Type", "text/xml");
-      // Never confirm a resubscribe whose delete or failsafe clear failed — the
-      // DNC controls are still blocking outbound and "Welcome back" would be false.
-      return res
-        .status(optOutType === "STOP" && !failsafeStored ? 503 : 200)
-        .send(
-          legacyOptIn
-            ? `<?xml version="1.0" encoding="UTF-8"?><Response><Message>We couldn't process your resubscribe request just now. Please reply START again in a few minutes.</Message></Response>`
-            : emptyTwiml(),
-        );
+      if (control === "stop") {
+        if (legacy) return res.status(200).send(optOutRetryTwiml());
+        return res.status(failsafeStored ? 200 : 503).send(emptyTwiml());
+      }
+      if (control === "start") {
+        return res.status(200).send(legacy ? optInRetryTwiml() : emptyTwiml());
+      }
+      return res.status(200).send(emptyTwiml());
     }
+
     res.setHeader("Content-Type", "text/xml");
-    return res.status(200).send(legacyOptIn ? optInConfirmationTwiml() : emptyTwiml());
+    if (!legacy) return res.status(200).send(emptyTwiml());
+    return res
+      .status(200)
+      .send(control === "stop" ? optOutConfirmationTwiml() : optInConfirmationTwiml());
   });
 });
 
