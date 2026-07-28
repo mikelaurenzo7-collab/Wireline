@@ -76,7 +76,7 @@ describe("Twilio webhook privacy hardening", () => {
     const failsafe = read("src/lib/dnc-failsafe.ts");
 
     expect(route).toContain("recordDncFailsafe(userId, customerNumber)");
-    expect(route).toContain(".status(failsafeStored ? 200 : 503)");
+    expect(route).toContain("return res.status(failsafeStored ? 200 : 503).send(emptyTwiml())");
     expect(route).toContain("clearDncFailsafe(userId, customerNumber)");
     expect(compliance).toContain("return isDncFailsafeBlocked(userId, phone)");
     expect(failsafe).toContain('createHash("sha256")');
@@ -101,6 +101,16 @@ describe("Twilio webhook privacy hardening", () => {
     expect(route).toContain("twilio_message_sid");
     expect(route).toContain("LEGACY_OPT_OUT_KEYWORDS");
     expect(route).toContain("matchesCarrierKeyword(bodyKeyword, LEGACY_OPT_OUT_KEYWORDS)");
+  });
+
+  it("never confirms a legacy STOP unless canonical persistence commits", () => {
+    const route = read("src/routes/twilio-webhook.ts");
+
+    expect(route).toContain('if (legacy) return res.status(200).send(optOutRetryTwiml())');
+    expect(route).not.toContain("failsafeStored ? optOutConfirmationTwiml()");
+    expect(route).toContain(
+      'control === "stop" ? optOutConfirmationTwiml() : optInConfirmationTwiml()',
+    );
   });
 
   it("commits START before clearing the emergency suppression marker", () => {
