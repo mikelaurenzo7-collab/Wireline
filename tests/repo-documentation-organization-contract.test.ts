@@ -28,13 +28,18 @@ describe("repository and documentation organization", () => {
     expect(checker).toContain('walkMarkdown("docs")');
   });
 
-  it("classifies every tracked markdown file outside docs", () => {
+  it("uses docs README as the single classification source outside docs", () => {
+    const docs = read("docs/README.md");
     const checker = read("scripts/check-docs-index.mjs");
 
+    expect(docs).toContain("Repository-local Markdown exceptions");
+    expect(docs).toContain("[AGENTS.md](../AGENTS.md)");
+    expect(docs).toContain("[android/SETUP_CHECKLIST.md](../android/SETUP_CHECKLIST.md)");
+    expect(docs).toContain("[ios/WIDGET_EXTENSION_PLAN.md](../ios/WIDGET_EXTENSION_PLAN.md)");
     expect(checker).toContain('gitLines(["ls-files", "*.md", "**/*.md"])');
-    expect(checker).toContain("rootMarkdown");
-    expect(checker).toContain("standaloneMarkdown");
+    expect(checker).toContain("canonicalLinks.has(file)");
     expect(checker).toContain('file.startsWith(".github/")');
+    expect(checker).not.toContain("standaloneMarkdown");
     expect(checker).toContain("tracked Markdown without an approved home");
   });
 
