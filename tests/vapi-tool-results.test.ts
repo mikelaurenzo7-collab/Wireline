@@ -2,13 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   finalizeVapiToolBatch,
   truncateVapiToolResult,
+  VAPI_TOOL_TIMEOUT_MS,
   VAPI_TOOL_UNAVAILABLE_RESULT,
 } from "../src/lib/vapi-tool-results";
 
 describe("Vapi live tool results", () => {
-  it("collapses multiline results into a single speakable line", () => {
+  it("preserves meaningful structure for the model's next reasoning turn", () => {
     expect(truncateVapiToolResult("Found records:\nAlice\nBob\tReady")).toBe(
-      "Found records: Alice Bob Ready",
+      "Found records:\nAlice\nBob\tReady",
     );
   });
 
@@ -18,15 +19,19 @@ describe("Vapi live tool results", () => {
     );
   });
 
-  it("returns exactly one parse-safe result for every requested tool call", () => {
+  it("returns exactly one bounded result for every requested tool call", () => {
     expect(
       finalizeVapiToolBatch(
         [{ id: "one" }, { id: "two" }],
         [{ toolCallId: "one", result: "Line one\nLine two" }],
       ),
     ).toEqual([
-      { toolCallId: "one", result: "Line one Line two" },
+      { toolCallId: "one", result: "Line one\nLine two" },
       { toolCallId: "two", result: VAPI_TOOL_UNAVAILABLE_RESULT },
     ]);
+  });
+
+  it("allows slow connected tools a bounded response window", () => {
+    expect(VAPI_TOOL_TIMEOUT_MS).toBe(8_000);
   });
 });
