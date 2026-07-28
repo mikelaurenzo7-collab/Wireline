@@ -21,6 +21,17 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts` | **Early access** account-bound MCP/OAuth surface. |
 | Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx` | **Planned/beta add-on** with consent, fallback, pricing, and support gates. |
 
+## Product interface rules
+
+- Public pages explain. Authenticated pages execute.
+- Create stays short; Training owns detailed setup.
+- Wire owns numbers, integrations, routing, connected tools, approvals, billing, and live launch controls.
+- Studio is the workroom; Overview is the calm command center.
+- Use labels, tabs, icons, state, and clear next actions instead of explanatory paragraphs on active work surfaces.
+- Phone / Call History and Analytics may explain history, coaching, exports, and insights.
+- Inbound and hybrid are first-class selectable modes, not fallback copy.
+- Wireline Command remains explicit-user-action only.
+
 ## Canonical repository and system documents
 
 | Document | Role |
