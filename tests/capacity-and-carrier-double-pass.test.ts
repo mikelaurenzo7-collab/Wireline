@@ -172,6 +172,9 @@ describe("carrier teardown integration", () => {
     expect(releaseRoute).toContain('router.delete(\n  "/api/phone-numbers/:id"');
     expect(releaseRoute).toContain("releaseTenantNumber(req.user.id, owned.phoneNumber)");
     expect(releaseRoute).toContain("CARRIER_RELEASE_FAILED");
+    expect(releaseRoute).toContain("MAX_POSTGRES_BIGINT");
+    expect(releaseRoute).toContain("/^\\d{1,19}$/");
+    expect(releaseRoute).toContain("parsed > MAX_POSTGRES_BIGINT");
     expect(releaseRoute).not.toContain("delete(schema.phoneNumbers)");
     expect(strictMount).toBeGreaterThan(-1);
     expect(broadMount).toBeGreaterThan(strictMount);
