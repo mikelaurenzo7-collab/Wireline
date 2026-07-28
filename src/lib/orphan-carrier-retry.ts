@@ -3,7 +3,6 @@ import { sql } from "drizzle-orm";
 import { isTwilioPhoneNumberSid, isVapiPhoneNumberId } from "./agent-phone-lines";
 import { releaseCarrierAllocations } from "./carrier-release";
 import { drizzle, log } from "./server-context";
-import { getErrorMessage } from "./server-utils";
 import { getTwilioClient } from "./twilio-service";
 import { listVapiNumbers, releaseVapiNumber } from "./vapi-phone-numbers";
 
@@ -120,8 +119,4 @@ export async function retryPendingOrphanCarrierResources(
   }
 
   return summary;
-}
-
-export function orphanCarrierRetryError(error: unknown): string {
-  return getErrorMessage(error);
 }
