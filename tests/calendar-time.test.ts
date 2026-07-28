@@ -41,6 +41,18 @@ describe("calendar time conversion", () => {
     expect(Date.parse(fall.endTime) - Date.parse(fall.startTime)).toBe(25 * 60 * 60 * 1000);
   });
 
+  it("starts a calendar day at the first real instant when midnight is skipped", () => {
+    const havana = localDateWindowToUtc({
+      date: "2026-03-08",
+      timeZone: "America/Havana",
+    });
+    expect(havana.startTime).toBe("2026-03-08T05:00:00.000Z");
+    expect(formatIsoInTimeZone(havana.startTime, "America/Havana")).toContain("1:00 AM");
+    expect(Date.parse(havana.endTime) - Date.parse(havana.startTime)).toBe(
+      23 * 60 * 60 * 1000,
+    );
+  });
+
   it("rejects nonexistent and ambiguous DST wall-clock times", () => {
     expect(() =>
       localDateTimeToUtcIso({
