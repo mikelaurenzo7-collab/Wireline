@@ -78,6 +78,13 @@
       "when": 1785195000000,
       "tag": "0107_backfill_spend_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785199500000,
+      "tag": "0108_require_user_bootstrap",
+      "breakpoints": true
     }
   ]
 }

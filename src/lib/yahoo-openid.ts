@@ -88,8 +88,11 @@ function parseCacheMaxAge(value: string | null): number | null {
   return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null;
 }
 
-async function fetchYahooJwks(fetchImpl: typeof fetch): Promise<YahooJwks> {
-  if (fetchImpl === fetch && cachedJwks && cachedJwks.expiresAt > Date.now()) {
+async function fetchYahooJwks(
+  fetchImpl: typeof fetch,
+  forceRefresh = false,
+): Promise<YahooJwks> {
+  if (!forceRefresh && fetchImpl === fetch && cachedJwks && cachedJwks.expiresAt > Date.now()) {
     return cachedJwks.value;
   }
 
@@ -138,6 +141,15 @@ function verifyAlgorithm(alg: string): AlgorithmIdentifier | EcdsaParams {
   throw new Error("Yahoo ID token uses an unsupported signing algorithm.");
 }
 
+function findSigningKey(jwks: YahooJwks, kid: string, alg: string): YahooJwk | undefined {
+  return jwks.keys.find(
+    (candidate) =>
+      candidate.kid === kid &&
+      (!candidate.alg || candidate.alg === alg) &&
+      (!candidate.use || candidate.use === "sig"),
+  );
+}
+
 async function verifySignature(
   signingInput: string,
   signatureSegment: string,
@@ -150,13 +162,14 @@ async function verifySignature(
     throw new Error("Yahoo ID token header is invalid.");
   }
 
-  const jwks = await fetchYahooJwks(fetchImpl);
-  const jwk = jwks.keys.find(
-    (candidate) =>
-      candidate.kid === kid &&
-      (!candidate.alg || candidate.alg === alg) &&
-      (!candidate.use || candidate.use === "sig"),
-  );
+  let jwks = await fetchYahooJwks(fetchImpl);
+  let jwk = findSigningKey(jwks, kid, alg);
+  if (!jwk) {
+    // Yahoo may rotate signing keys before the cached JWKS expires. Refresh
+    // exactly once for an unknown kid, then continue to fail closed.
+    jwks = await fetchYahooJwks(fetchImpl, true);
+    jwk = findSigningKey(jwks, kid, alg);
+  }
   if (!jwk) throw new Error("Yahoo ID token signing key was not found.");
 
   const key = await webcrypto.subtle.importKey("jwk", jwk, importAlgorithm(alg), false, ["verify"]);
@@ -259,6 +272,11 @@ export async function verifyYahooIdToken(
   const [headerSegment, payloadSegment, signatureSegment] = parts;
   const header = decodeJsonSegment<YahooJwtHeader>(headerSegment, "header");
   const claims = decodeJsonSegment<YahooJwtClaims>(payloadSegment, "payload");
-  await verifySignature(`${headerSegment}.${payloadSegment}`, signatureSegment, header, options.fetchImpl ?? fetch);
+  await verifySignature(
+    `${headerSegment}.${payloadSegment}`,
+    signatureSegment,
+    header,
+    options.fetchImpl ?? fetch,
+  );
   return validateClaims(claims, options);
 }
