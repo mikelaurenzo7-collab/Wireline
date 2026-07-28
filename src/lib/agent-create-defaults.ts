@@ -1,15 +1,11 @@
 /**
  * Shared create-path defaults so Fast Start, templates, and mobile all seed
- * personal agents with the same personality depth and tool posture as the
- * polished Personal & Lifestyle templates.
+ * agents with a focused live-runtime tool posture. Every capability remains
+ * selectable in Studio; creation activates only the tools relevant to the
+ * agent's role so the voice model has fewer ambiguous actions to choose from.
  */
 import { ROLE_PERSONALITY_TEMPLATES } from "./agent-constants";
-import {
-  BUSINESS_TOOL_NAMES,
-  getDefaultAgentTools,
-  getRoleToolSet,
-  type AgentToolName,
-} from "./agent-capabilities";
+import { BUSINESS_TOOL_NAMES, getRoleToolSet, type AgentToolName } from "./agent-capabilities";
 import { composeAgentPersonality, TEMPLATE_OVERLAYS } from "./template-overlays";
 
 /** Default Fast Start role when the Account Holder chooses personal posture. */
@@ -28,10 +24,15 @@ const CREATE_PATH_DEVICE_ACTIONS = new Set<AgentToolName>([
   "play_music",
 ]);
 
+function runtimeRole(role: string, isBusinessAgent: boolean): string {
+  if (!isBusinessAgent && (role === "ceo" || role === "custom")) {
+    return PERSONAL_FAST_START_ROLE;
+  }
+  return role;
+}
+
 export function resolveCreateEnabledTools(role: string, isBusinessAgent: boolean): AgentToolName[] {
-  const candidateTools = isBusinessAgent
-    ? getDefaultAgentTools()
-    : getRoleToolSet(role === "ceo" || role === "custom" ? PERSONAL_FAST_START_ROLE : role);
+  const candidateTools = getRoleToolSet(runtimeRole(role, isBusinessAgent));
 
   return candidateTools.filter(
     (tool) =>
