@@ -116,6 +116,7 @@ These files stay outside `docs/` because a development tool, compatibility path,
 | [AGENTS.md](../AGENTS.md) | Cursor Cloud discovery instructions at the required root path. |
 | [CLAUDE.md](../CLAUDE.md) | Claude Code discovery instructions at the required root path. |
 | [DATABASE_SETUP.md](../DATABASE_SETUP.md) | Legacy compatibility pointer to the canonical database operations runbook. |
+| [DEPLOY.md](../DEPLOY.md) | Legacy compatibility pointer to the canonical deployment runbook. |
 | [apps/browser-extension/README.md](../apps/browser-extension/README.md) | Browser-extension entry point beside its source and build script. |
 | [android/README.md](../android/README.md) | Android build, signing, push, Telecom, consent, and release entry point beside its source. |
 | [ios/README.md](../ios/README.md) | iOS architecture, build, widgets, intents, and release entry point beside its source. |
