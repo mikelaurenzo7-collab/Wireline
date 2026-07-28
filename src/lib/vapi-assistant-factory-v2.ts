@@ -2,7 +2,13 @@
 import { desc, eq } from "drizzle-orm";
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
-import { buildRoleToolDefsForTenant } from "./vapi-helpers";
+import {
+  buildRoleToolDefsForTenant,
+  clampRuntimePromptPreservingTail,
+  MAX_RUNTIME_DIRECTIVES,
+  MAX_RUNTIME_KNOWLEDGE,
+  truncateRuntimeSnippet,
+} from "./vapi-helpers";
 import { toVapiFunctionTools } from "./vapi-tool-format";
 import { buildVapiServerConfig } from "./vapi-server-config";
 import {
@@ -37,18 +43,13 @@ export interface AssistantRequestPayload {
   userSettings: any;
 }
 
-const promptItem = (prefix: string, values: Array<{ content?: string | null }>) =>
-  values
-    .map((value) => value.content?.trim())
+const promptItem = (prefix: string, values: Array<{ content?: string | null }>) => {
+  const lines = values
+    .map((value) => truncateRuntimeSnippet(value.content || ""))
     .filter(Boolean)
-    .map((value) => `- ${value}`)
-    .join("\n")
-    ? `\n## ${prefix}\n${values
-        .map((value) => value.content?.trim())
-        .filter(Boolean)
-        .map((value) => `- ${value}`)
-        .join("\n")}\n`
-    : "";
+    .map((value) => `- ${value}`);
+  return lines.length ? `\n## ${prefix}\n${lines.join("\n")}\n` : "";
+};
 
 const LIVE_CALL_EXECUTION_PROTOCOL = `
 ## LIVE CALL DECISION STANDARD
@@ -57,9 +58,9 @@ const LIVE_CALL_EXECUTION_PROTOCOL = `
 - Use the narrowest relevant tool as soon as you have the required information. Independent lookups may run together; dependent actions must run in order.
 - While a tool is running, do not generate duplicate filler after the tool's automatic acknowledgement.
 - Say an email, message, booking, cancellation, account change, payment link, contract, CRM update, or other action completed ONLY when the tool result explicitly confirms success.
-- If a tool fails, times out, is unavailable, or cannot safely verify idempotency, state that plainly. Never imply it was sent, queued, booked, changed, or completed. Offer a safe retry, another channel, or human follow-up.
+- If a tool fails, times out, is unavailable, or cannot safely verify idempotency, state that plainly. Never imply it was sent, queued, booked, changed, or completed. Offer a safe retry, another channel, or a confirmed follow-up task.
 - Keep most turns to one to three natural sentences and one question. Let the caller interrupt, then address the new intent instead of finishing the old script.
-- Before closing, recap confirmed actions and unresolved follow-up in one concise sentence.
+- Before closing, recap confirmed actions and unresolved items in one concise sentence.
 `;
 
 export async function buildVapiAssistant({
@@ -77,13 +78,13 @@ export async function buildVapiAssistant({
       .from(schema.directives)
       .where(eq(schema.directives.agentId, agentId))
       .orderBy(desc(schema.directives.priority))
-      .limit(40),
+      .limit(MAX_RUNTIME_DIRECTIVES),
     drizzle
       .select({ content: schema.knowledge.content })
       .from(schema.knowledge)
       .where(eq(schema.knowledge.agentId, agentId))
       .orderBy(desc(schema.knowledge.createdAt))
-      .limit(80),
+      .limit(MAX_RUNTIME_KNOWLEDGE),
     drizzle
       .select({ content: schema.personality.content })
       .from(schema.personality)
@@ -112,17 +113,26 @@ export async function buildVapiAssistant({
     role: configured.role || undefined,
     isOutbound,
   });
-  const personality = personalityRows[0]?.content?.trim();
+  const personality = truncateRuntimeSnippet(personalityRows[0]?.content || "", 1_200);
   const flow = Array.isArray(configured.flowConfig)
     ? (configured.flowConfig as Array<{
         name?: string;
         instructions?: string;
         transitionCondition?: string;
         isEndNode?: boolean;
-      }>)
+      }>).slice(0, 12)
     : [];
   const flowBlock = flow.length
-    ? `\n## CALL FLOW\n${flow.map((step, index) => `${index + 1}. ${step.name || "Stage"}: ${step.instructions || ""}${step.transitionCondition ? ` (advance when ${step.transitionCondition})` : ""}${step.isEndNode ? " (end call after completion)" : ""}`).join("\n")}\n`
+    ? `\n## CALL FLOW\n${flow
+        .map(
+          (step, index) =>
+            `${index + 1}. ${truncateRuntimeSnippet(step.name || "Stage", 80)}: ${truncateRuntimeSnippet(step.instructions || "", 360)}${
+              step.transitionCondition
+                ? ` (advance when ${truncateRuntimeSnippet(step.transitionCondition, 180)})`
+                : ""
+            }${step.isEndNode ? " (end call after completion)" : ""}`,
+        )
+        .join("\n")}\n`
     : "";
   const isBusinessAgent = configured.isBusinessAgent !== false;
   const identityBlock = isBusinessAgent
@@ -175,22 +185,23 @@ export async function buildVapiAssistant({
   };
   const runtime = buildAgentRuntimeContext(basePrompt, runtimeProfile);
   // Inbound callers are already on the line when the business is closed, so
-  // out-of-hours never refuses the call — it switches the agent into
-  // message-taking mode and opens with the Account Holder's after-hours line.
+  // out-of-hours never refuses the call — it switches the agent into durable
+  // message-taking mode rather than promising an unrecorded human follow-up.
   const afterHours = !isOutbound && !runtime.inHours;
   const systemPrompt = afterHours
     ? isBusinessAgent
-      ? `${runtime.prompt}\n\n## AFTER-HOURS MODE\nThe business is currently closed. Let the caller know, take a complete message (name, number, reason for calling), promise a follow-up during business hours, and do NOT commit to appointments, prices, or actions that require the business to be open.`
-      : `${runtime.prompt}\n\n## QUIET-HOURS MODE\nYour principal is not available right now. Let the caller know, take a complete message (name, number, reason for calling), promise a relay, and do NOT commit to appointments or personal details you are not cleared to share.`
+      ? `${runtime.prompt}\n\n## AFTER-HOURS MODE\nThe business is currently closed. Let the caller know and collect a complete message: name, number, reason for calling, and urgency. Use create_followup_task before closing. Promise follow-up only if that tool explicitly confirms the task was created; otherwise say the message could not be recorded and offer another contact channel. Do NOT commit to appointments, prices, or actions that require the business to be open.`
+      : `${runtime.prompt}\n\n## QUIET-HOURS MODE\nYour principal is not available right now. Let the caller know and collect a complete message: name, number, reason for calling, and urgency. Use create_followup_task before closing. Promise a relay only if that tool explicitly confirms the task was created; otherwise say the message could not be recorded and offer another contact channel. Do NOT commit to appointments or personal details you are not cleared to share.`
     : runtime.prompt;
-  const finalSystemPrompt = isGrokModelId(modelSelection.model)
+  const augmentedSystemPrompt = isGrokModelId(modelSelection.model)
     ? `${systemPrompt}\n\n${buildGrokStrengthsPromptSection()}`
     : systemPrompt;
+  const finalSystemPrompt = clampRuntimePromptPreservingTail(augmentedSystemPrompt);
   const afterHoursGreeting = afterHours
     ? runtime.outOfHoursMessage ||
       (isBusinessAgent
-        ? `Hi, you've reached ${configured.name}. We're currently closed, but I can take a message and make sure the right person follows up.`
-        : `Hi, you've reached ${configured.name}. They're not available right now, but I can take a message and make sure they get it.`)
+        ? `Hi, you've reached ${configured.name}. We're currently closed, but I can take a message for the team.`
+        : `Hi, you've reached ${configured.name}. They're not available right now, but I can take a message for them.`)
     : null;
   const functionTools = toVapiFunctionTools(
     await buildRoleToolDefsForTenant(
@@ -246,12 +257,8 @@ export async function buildVapiAssistant({
     stopSpeakingPlan: VAPI_STOP_SPEAKING_PLAN,
     // Vapi's silenceTimeoutSeconds ENDS the call after that much continuous
     // caller silence (documented minimum 10, default 30) — it is not a
-    // turn-taking nudge window. The latency profile's 2-3s value was
-    // semantically wrong here: clamped to Vapi's minimum it hung up on
-    // callers who went quiet for ~10 seconds ("let me find my card…").
-    // Send it only when the column carries an explicit, valid end-call
-    // timeout; otherwise omit and take Vapi's 30s default, matching the
-    // outbound path. Turn-taking pacing is startSpeakingPlan's job.
+    // turn-taking nudge window. Send it only when the column carries an
+    // explicit, valid end-call timeout; otherwise use Vapi's default.
     ...(typeof configured.silenceTimeoutSeconds === "number" &&
     configured.silenceTimeoutSeconds >= 10
       ? { silenceTimeoutSeconds: configured.silenceTimeoutSeconds }
