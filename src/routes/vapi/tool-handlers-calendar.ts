@@ -1,9 +1,44 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Vapi webhook/tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
+import { and, eq } from "drizzle-orm";
+
+import * as schema from "../../db/schema";
+import {
+  addMinutesToIso,
+  CalendarTimeError,
+  formatTimeRangeInZone,
+  localDateTimeToUtcIso,
+  normalizeIanaTimeZone,
+} from "../../lib/calendar-time";
 import { dispatchWebhook } from "../../lib/webhook-helpers";
 import { IntegrationService } from "../../lib/integrations";
 import { postAgentNotification as slackPostAgentNotification } from "../../lib/slack-service";
 
 import type { ToolCallContext, ToolCallResult } from "./types";
+
+async function resolveCalendarTimeZone(
+  context: ToolCallContext,
+  requestedTimeZone: unknown,
+): Promise<string> {
+  const [row] = await context.drizzle
+    .select({ timeZone: schema.agents.timezone })
+    .from(schema.agents)
+    .where(
+      and(
+        eq(schema.agents.id, context.agent.id),
+        eq(schema.agents.userId, context.agent.user_id),
+      ),
+    )
+    .limit(1);
+  return normalizeIanaTimeZone(requestedTimeZone, row?.timeZone || "UTC");
+}
+
+function calendarInputFailure(toolCallId: string, error: unknown): ToolCallResult | null {
+  if (!(error instanceof CalendarTimeError)) return null;
+  return {
+    toolCallId,
+    result: `${error.message} Ask the caller to confirm the exact date, time, and timezone before trying again.`,
+  };
+}
 
 export async function handleCalendarToolCall(
   fn: string,
@@ -14,11 +49,14 @@ export async function handleCalendarToolCall(
 
   if (fn === "check_calendar_availability") {
     try {
-      const { date } = args || {};
-      const service = new IntegrationService(agent?.user_id);
-      const result = await service.checkAvailability(date);
+      const { date, timezone } = args || {};
+      const timeZone = await resolveCalendarTimeZone(context, timezone);
+      const service = new IntegrationService(agent.user_id);
+      const result = await service.checkAvailability({ date, timeZone });
       return { toolCallId, result };
-    } catch {
+    } catch (error) {
+      const inputFailure = calendarInputFailure(toolCallId, error);
+      if (inputFailure) return inputFailure;
       return {
         toolCallId,
         result:
@@ -29,39 +67,48 @@ export async function handleCalendarToolCall(
 
   if (fn === "book_appointment") {
     try {
-      const { date, time, customer_name, service_type } = args || {};
-      const service = new IntegrationService(agent?.user_id);
+      const { date, time, timezone, customer_name, service_type } = args || {};
+      if (
+        typeof customer_name !== "string" ||
+        !customer_name.trim() ||
+        typeof service_type !== "string" ||
+        !service_type.trim()
+      ) {
+        return {
+          toolCallId,
+          result:
+            "The appointment was not booked because the caller name or service is missing. Confirm both before trying again.",
+        };
+      }
 
-      // Simple date/time parsing for now.
-      const startTime = new Date(`${date} ${time}`).toISOString();
-      const endTime = new Date(new Date(startTime).getTime() + 60 * 60 * 1000).toISOString();
-      const title = `${service_type} for ${customer_name}`;
+      const timeZone = await resolveCalendarTimeZone(context, timezone);
+      const startTime = localDateTimeToUtcIso({ date, time, timeZone });
+      const endTime = addMinutesToIso(startTime, 60);
+      const displayTime = formatTimeRangeInZone(startTime, endTime, timeZone);
+      const title = `${service_type.trim()} for ${customer_name.trim()}`;
+      const service = new IntegrationService(agent.user_id);
 
       const success = await service.bookAppointment({
         title,
-        description: `Booked via Wireline AI Agent`,
+        description: `Booked via Wireline AI Agent. Confirmed timezone: ${timeZone}.`,
         startTime,
         endTime,
-        agentId: agent?.id,
+        agentId: agent.id,
       });
-      if (success && agent?.user_id) {
+      if (success) {
         void dispatchWebhook(agent.user_id, "appointment.booked", {
           agent_id: agent.id,
           title,
           start_time: startTime,
           end_time: endTime,
-          customer_name,
-          service_type,
+          timezone: timeZone,
+          customer_name: customer_name.trim(),
+          service_type: service_type.trim(),
         });
         void slackPostAgentNotification(
           agent.user_id,
-          "Appointment booked: " +
-            title +
-            "\n" +
-            new Date(startTime).toLocaleString() +
-            " → " +
-            new Date(endTime).toLocaleString(),
-          { agentName: agentVoiceName, caller: customer_name, outcome: "booked" },
+          `Appointment booked: ${title}\n${displayTime}`,
+          { agentName: agentVoiceName, caller: customer_name.trim(), outcome: "booked" },
         );
         // Account Holder SMS alert — positive event. Fires only when the
         // Account Holder opted in (twilio_manager_alerts_enabled = true
@@ -72,10 +119,10 @@ export async function handleCalendarToolCall(
           const notif = new NotificationService(agent.user_id);
           void notif.sendWinAlert({
             title: "Meeting booked",
-            message: `${customer_name} · ${service_type} · ${new Date(startTime).toLocaleString()}`,
+            message: `${customer_name.trim()} · ${service_type.trim()} · ${displayTime}`,
             callId: (message.call as { id?: string } | undefined)?.id,
             agentName: agentVoiceName,
-            caller: customer_name,
+            caller: customer_name.trim(),
             outcome: "booked",
           });
         } catch {
@@ -85,10 +132,12 @@ export async function handleCalendarToolCall(
       return {
         toolCallId,
         result: success
-          ? "Appointment booked."
+          ? `Appointment booked for ${displayTime}.`
           : "I wasn't able to lock that in right now. Let me take your info and have someone confirm the appointment.",
       };
-    } catch {
+    } catch (error) {
+      const inputFailure = calendarInputFailure(toolCallId, error);
+      if (inputFailure) return inputFailure;
       return {
         toolCallId,
         result:
