@@ -81,6 +81,7 @@ describe("live-call communication supervision", () => {
     expect(clientFacingAgentName("agent-0123456789abcdef")).toBe("Wireline");
     expect(clientFacingAgentName("11111111-1111-1111-1111-111111111111")).toBe("Wireline");
     expect(clientFacingAgentName("Avery")).toBe("Avery");
+    expect(clientFacingAgentName("A".repeat(120))).toHaveLength(80);
 
     runStructuredMock.mockResolvedValue({
       approved: true,
