@@ -224,17 +224,54 @@ export const db = drizzleDb(pool, { schema });
 export const drizzle: Omit<typeof db, "$client"> = db;
 
 export const auditLogger = new AuditLogger(drizzle);
-export const requireRole = createRbacMiddleware(drizzle);
-export const quotaTracker = new QuotaTracker(drizzle);
+export const { requirePermission, requireRole } = createRbacMiddleware({ drizzle, auditLogger });
 
-export async function resolvePlanTier(userId: string): Promise<PlanTier> {
-  const [row] = await drizzle
-    .select({ plan: schema.subscriptions.plan })
-    .from(schema.subscriptions)
-    .where(eq(schema.subscriptions.userId, userId))
-    .limit(1);
-  const plan = String(row?.plan || "starter").toLowerCase();
-  if (plan === "business") return "business";
-  if (plan === "enterprise") return "enterprise";
-  return "starter";
-}
+export const quotaTracker = new QuotaTracker({
+  drizzle,
+  getPlanForUser: async (userId: string): Promise<PlanTier> => {
+    // Plan lives in wireline_subscriptions.plan (set by syncSubscriptionFromStripe).
+    // wireline_settings.subscriptionStatus only stores active/past_due/canceled —
+    // it is NOT a plan name. Reading status here would collapse every tier
+    // into "starter" (the prior bug). Join subscriptions for the plan id and
+    // gate on a paying Stripe status before granting paid-tier quotas.
+    try {
+      const rows = await drizzle
+        .select({
+          plan: schema.subscriptions.plan,
+          stripeStatus: schema.subscriptions.status,
+        })
+        .from(schema.subscriptions)
+        .where(eq(schema.subscriptions.userId, userId))
+        .limit(1);
+      const sub = rows[0];
+      const stripeActive = sub?.stripeStatus === "active" || sub?.stripeStatus === "trialing";
+      if (!stripeActive) return "free";
+
+      switch (sub?.plan) {
+        case "enterprise":
+        case "scale":
+        case "custom":
+          return "enterprise";
+        case "business":
+        case "pro":
+        case "business-growth":
+          return "business";
+        case "team":
+        case "shared":
+          return "team";
+        case "starter":
+        case "business-starter":
+        case "business-lite":
+        case "lite":
+        case "personal-plus":
+          return "personal";
+        case "personal":
+          return "free";
+        default:
+          return "free";
+      }
+    } catch {
+      return "free";
+    }
+  },
+});
