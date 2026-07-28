@@ -66,6 +66,7 @@ describe("repository and documentation organization", () => {
     expect(databaseRunbook).toContain("wireline_server");
     expect(deploymentRunbook).toContain("Only the canonical `revaluate/wireline` project may own");
     expect(databasePointer).toContain("docs/DATABASE_OPERATIONS.md");
+    expect(databasePointer).toContain("Never use `db:push`");
     expect(databasePointer).toContain("wireline_server");
     expect(databasePointer).not.toContain("POSTGRES_URL=");
     expect(databasePointer).not.toContain("auth.uid() IS NOT NULL");
