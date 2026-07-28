@@ -30,10 +30,11 @@ function existingTransaction(metadata: Record<string, unknown>) {
 }
 
 describe("live agent tool idempotency", () => {
-  it("classifies external writes while leaving reads and legal opt-outs unledgered", () => {
+  it("classifies external writes and transfers while leaving reads and legal opt-outs unledgered", () => {
     expect(isIdempotentAgentTool("send_email")).toBe(true);
     expect(isIdempotentAgentTool("book_appointment")).toBe(true);
     expect(isIdempotentAgentTool("shopify_cancel_order")).toBe(true);
+    expect(isIdempotentAgentTool("escalate_to_human")).toBe(true);
     expect(isIdempotentAgentTool("search_knowledge_base")).toBe(false);
     expect(isIdempotentAgentTool("check_calendar_availability")).toBe(false);
     expect(isIdempotentAgentTool("add_to_dnc")).toBe(false);
@@ -75,6 +76,28 @@ describe("live agent tool idempotency", () => {
         execute,
       ),
     ).resolves.toEqual({ toolCallId: "tool-1", result: "Email sent." });
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it("preserves a cached transfer destination without resending the alert", async () => {
+    const execute = vi.fn().mockResolvedValue({ toolCallId: "tool-1", result: "Duplicate transfer" });
+    const output = {
+      toolCallId: "tool-1",
+      result: "Transferring you now — please hold.",
+      destination: {
+        type: "number" as const,
+        number: "+14155551234",
+        message: "Please hold while I connect you.",
+      },
+    };
+
+    await expect(
+      runIdempotentAgentToolCall(
+        "escalate_to_human",
+        context(existingTransaction({ status: "completed", output })),
+        execute,
+      ),
+    ).resolves.toEqual(output);
     expect(execute).not.toHaveBeenCalled();
   });
 
