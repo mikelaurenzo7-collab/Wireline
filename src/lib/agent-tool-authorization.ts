@@ -3,10 +3,15 @@ import { and, eq } from "drizzle-orm";
 import * as schema from "../db/schema";
 import {
   AGENT_TOOL_NAME_VALUES,
+  applyPlanToolUnlocks,
+  getDefaultAgentTools,
   isAgentToolName,
   type AgentToolName,
 } from "./agent-capabilities";
-import { buildRoleToolDefsForTenant } from "./vapi-helpers";
+import {
+  filterToolsByTenantConnections,
+  loadTenantIntegrationConnections,
+} from "./tenant-integration-connections";
 import type { ToolCallContext } from "../routes/vapi/types";
 
 /**
@@ -16,9 +21,14 @@ import type { ToolCallContext } from "../routes/vapi/types";
  * - add_to_dnc must remain available for an immediate legal opt-out.
  * - create_followup_task powers the bounded after-hours / insolvency fallback.
  *
- * Neither entry grants access to an external customer system or money movement.
+ * They bypass the saved selection only after the agent/tenant identity is
+ * verified. Neither entry grants access to an external customer system or
+ * money movement.
  */
-const SYSTEM_RUNTIME_TOOL_NAMES = new Set<string>(["add_to_dnc", "create_followup_task"]);
+const SYSTEM_RUNTIME_TOOL_NAMES = new Set<AgentToolName>([
+  "add_to_dnc",
+  "create_followup_task",
+]);
 
 export type PersistedAgentToolSelection = readonly AgentToolName[] | null;
 
@@ -46,66 +56,69 @@ export function sanitizePersistedAgentToolSelection(
   return tools;
 }
 
-export function isSystemRuntimeTool(name: string): boolean {
-  return SYSTEM_RUNTIME_TOOL_NAMES.has(name);
-}
-
-function definitionName(definition: object): string | null {
-  const name = (definition as { name?: unknown }).name;
-  return typeof name === "string" && name.trim() ? name.trim() : null;
+export function isSystemRuntimeTool(name: string): name is AgentToolName {
+  return isAgentToolName(name) && SYSTEM_RUNTIME_TOOL_NAMES.has(name);
 }
 
 /**
  * Authorize a submitted live tool against the same per-agent selection,
  * connection state, and tenant feature flags used to build the assistant's
  * model tool list. Prompt omission is UX; this check is the execution boundary.
+ *
+ * Connection state is loaded fresh here rather than read from the short-lived
+ * assistant-schema cache. Revoking an integration must stop new writes
+ * immediately, not after a cache TTL.
  */
 export async function isAgentToolExecutionAuthorized(
   name: string,
   context: ToolCallContext,
 ): Promise<boolean> {
-  if (isSystemRuntimeTool(name)) return true;
-  if (!context.agent?.id || !context.agent?.user_id) return false;
+  if (!isAgentToolName(name) || !context.agent?.id || !context.agent?.user_id) return false;
 
-  const [agentRow] = await context.drizzle
-    .select({
-      role: schema.agents.role,
-      enabledTools: schema.agents.enabledTools,
-    })
-    .from(schema.agents)
-    .where(
-      and(
-        eq(schema.agents.id, context.agent.id),
-        eq(schema.agents.userId, context.agent.user_id),
-      ),
-    )
-    .limit(1);
+  const userId = context.agent.user_id;
+  const [agentRows, settingsRows, connections] = await Promise.all([
+    context.drizzle
+      .select({
+        role: schema.agents.role,
+        enabledTools: schema.agents.enabledTools,
+      })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, context.agent.id), eq(schema.agents.userId, userId)))
+      .limit(1),
+    context.drizzle
+      .select({
+        aiTier: schema.settings.aiTier,
+        twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
+        twilioLookupEnabled: schema.settings.twilioLookupEnabled,
+      })
+      .from(schema.settings)
+      .where(eq(schema.settings.userId, userId))
+      .limit(1),
+    loadTenantIntegrationConnections(userId),
+  ]);
 
+  const agentRow = agentRows[0];
   if (!agentRow) return false;
 
-  const [settingsRow] = await context.drizzle
-    .select({
-      aiTier: schema.settings.aiTier,
-      twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
-      twilioLookupEnabled: schema.settings.twilioLookupEnabled,
-    })
-    .from(schema.settings)
-    .where(eq(schema.settings.userId, context.agent.user_id))
-    .limit(1);
+  // Compliance and durable fallback bypass the Account Holder's active-set
+  // choice, but never the verified agent/tenant binding above.
+  if (isSystemRuntimeTool(name)) return true;
 
+  const settingsRow = settingsRows[0];
   const persisted = sanitizePersistedAgentToolSelection(agentRow.enabledTools);
-  const definitions = await buildRoleToolDefsForTenant(
-    agentRow.role || "customer_service",
-    persisted,
-    context.agent.user_id,
+  let active = applyPlanToolUnlocks(
+    persisted === null ? getDefaultAgentTools() : persisted,
     settingsRow?.aiTier,
-    {
-      twilioMessaging: Boolean(settingsRow?.twilioMessagingEnabled),
-      twilioLookup: Boolean(settingsRow?.twilioLookupEnabled),
-    },
   );
 
-  return definitions.some((definition) => definitionName(definition) === name);
+  if (!settingsRow?.twilioMessagingEnabled) {
+    active = active.filter((tool) => tool !== "send_text_message");
+  }
+  if (!settingsRow?.twilioLookupEnabled) {
+    active = active.filter((tool) => tool !== "lookup_phone_number");
+  }
+
+  return filterToolsByTenantConnections(active, connections).includes(name);
 }
 
 /** Canonical names exported for drift-focused regression contracts. */
