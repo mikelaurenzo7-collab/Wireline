@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { isTwilioPhoneNumberSid, isVapiPhoneNumberId } from "./agent-phone-lines";
 import { releaseCarrierAllocations } from "./carrier-release";
 import { drizzle, log } from "./server-context";
+import { getErrorMessage } from "./server-utils";
 import { getTwilioClient } from "./twilio-service";
 import { listVapiNumbers, releaseVapiNumber } from "./vapi-phone-numbers";
 
@@ -57,7 +58,21 @@ export async function retryPendingOrphanCarrierResources(
 
   for (const row of rows) {
     const client = getTwilioClient();
-    const carrierId = row.vapi_number_id;
+    let carrierId = row.vapi_number_id;
+    const errors: string[] = [];
+
+    // A Vapi import can time out after provider acceptance and before the caller
+    // receives the new UUID. Rediscover that partial resource by E.164 so the
+    // janitor removes both the Vapi object and underlying Twilio rental.
+    if (!carrierId) {
+      try {
+        const numbers = await listVapiNumbers();
+        carrierId = numbers.find((number) => number.number === row.phone_number)?.id ?? null;
+      } catch (error) {
+        errors.push(`Vapi E.164 discovery: ${getErrorMessage(error)}`);
+      }
+    }
+
     const release = await releaseCarrierAllocations(
       {
         kind:
@@ -86,21 +101,24 @@ export async function retryPendingOrphanCarrierResources(
         },
       },
     );
+    if (!release.ok && release.error) errors.push(release.error);
 
-    if (release.ok) {
+    if (errors.length === 0) {
       await drizzle.execute(sql`
         UPDATE public.wireline_orphan_carrier_resources
-        SET status = 'resolved', resolved_at = now(), last_error = NULL
+        SET status = 'resolved', resolved_at = now(), last_error = NULL,
+            vapi_number_id = COALESCE(vapi_number_id, ${carrierId})
         WHERE id = ${row.id}::uuid AND status = 'pending'
       `);
       summary.resolved += 1;
       continue;
     }
 
-    const error = String(release.error || "Carrier release could not be verified").slice(0, 2000);
+    const error = errors.join(" | ").slice(0, 2000);
     await drizzle.execute(sql`
       UPDATE public.wireline_orphan_carrier_resources
-      SET last_error = ${error}
+      SET last_error = ${error},
+          vapi_number_id = COALESCE(vapi_number_id, ${carrierId})
       WHERE id = ${row.id}::uuid AND status = 'pending'
     `);
     summary.failed += 1;
@@ -108,6 +126,7 @@ export async function retryPendingOrphanCarrierResources(
       orphanId: row.id,
       formerUserId: row.former_user_id,
       phoneNumber: row.phone_number,
+      carrierId,
       error,
     });
   }
