@@ -13,6 +13,7 @@ import {
   VAPI_MAX_INBOUND_CALL_SECONDS,
   VAPI_MAX_OUTBOUND_CALL_SECONDS,
   VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
+  VAPI_STOP_SPEAKING_PLAN,
 } from "./voice-agent-profile";
 import {
   buildAgentRuntimeContext,
@@ -48,6 +49,18 @@ const promptItem = (prefix: string, values: Array<{ content?: string | null }>) 
         .map((value) => `- ${value}`)
         .join("\n")}\n`
     : "";
+
+const LIVE_CALL_EXECUTION_PROTOCOL = `
+## LIVE CALL DECISION STANDARD
+- Identify the caller's actual goal before acting. If the request, destination, identity, amount, item, or timing is ambiguous, ask one focused clarification question.
+- Do not ask for information the caller already supplied. Repeat back email addresses, phone numbers, dates, amounts, appointment details, and material changes immediately before the relevant write action.
+- Use the narrowest relevant tool as soon as you have the required information. Independent lookups may run together; dependent actions must run in order.
+- While a tool is running, do not generate duplicate filler after the tool's automatic acknowledgement.
+- Say an email, message, booking, cancellation, account change, payment link, contract, CRM update, or other action completed ONLY when the tool result explicitly confirms success.
+- If a tool fails, times out, is unavailable, or cannot safely verify idempotency, state that plainly. Never imply it was sent, queued, booked, changed, or completed. Offer a safe retry, another channel, or human follow-up.
+- Keep most turns to one to three natural sentences and one question. Let the caller interrupt, then address the new intent instead of finishing the old script.
+- Before closing, recap confirmed actions and unresolved follow-up in one concise sentence.
+`;
 
 export async function buildVapiAssistant({
   message,
@@ -125,6 +138,7 @@ export async function buildVapiAssistant({
         "Default to privacy: do not volunteer address, family, health, finances, or schedule details unless required for the immediate task.",
       ].join("\n");
   const callSpecificContext = [
+    LIVE_CALL_EXECUTION_PROTOCOL,
     personality ? `\n## TONE\n${personality}\n` : "",
     promptItem("OPERATING RULES", directives),
     promptItem("APPROVED TRAINING", knowledge),
@@ -229,6 +243,7 @@ export async function buildVapiAssistant({
     startSpeakingPlan: isOutbound
       ? resolveOutboundStartSpeakingPlan(speech)
       : speech.startSpeakingPlan,
+    stopSpeakingPlan: VAPI_STOP_SPEAKING_PLAN,
     // Vapi's silenceTimeoutSeconds ENDS the call after that much continuous
     // caller silence (documented minimum 10, default 30) — it is not a
     // turn-taking nudge window. The latency profile's 2-3s value was
