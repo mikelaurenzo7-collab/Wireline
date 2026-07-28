@@ -27,6 +27,8 @@ type AccountDeletionTarget = {
  * - wireline_stripe_events (global Stripe idempotency ledger)
  * - wireline_mcp_oauth_clients (platform OAuth client registry)
  * - wireline_demo_call_events (public showcase telemetry)
+ * - wireline_orphan_carrier_resources (platform cleanup ledger that must
+ *   outlive the deleted tenant until carrier teardown completes)
  */
 export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_audit_log", userColumns: ["user_id"] },
@@ -194,9 +196,10 @@ function isStripeAlreadyGone(err: unknown): boolean {
  * Stripe cancellation is treated as blocking: on a real Stripe error (not an
  * already-canceled subscription) this THROWS so the job retries rather than
  * purging the ids and orphaning a live, still-billing subscription. Number
- * release is best-effort — a carrier hiccup is a recoverable cost, not a reason
- * to indefinitely block a GDPR deletion — so those failures are collected and
- * logged, never thrown.
+ * release remains best-effort for GDPR latency, but a failed release must be
+ * durably handed to the platform orphan ledger before the tenant rows vanish.
+ * If that handoff fails, the purge is deferred instead of losing the only
+ * carrier ownership identifiers.
  */
 export async function releaseExternalResourcesForPurge(
   userId: string,
@@ -273,16 +276,20 @@ async function releaseExternalResourcesOutsideTenantContext(
     }
   }
 
-  // 2. Release provisioned numbers at the carrier (Vapi/Twilio) and drop the DB
-  //    row. Best-effort: collect failures rather than blocking the purge.
+  // 2. Release provisioned numbers at the carrier (Vapi/Twilio). A carrier
+  //    failure does not block GDPR erasure by itself, but the platform must
+  //    durably retain the ownership/provider identifiers before hard-delete.
   const numbers = await db
-    .select({ phoneNumber: schema.phoneNumbers.phoneNumber })
+    .select({
+      phoneNumber: schema.phoneNumbers.phoneNumber,
+      vapiNumberId: schema.phoneNumbers.vapiNumberId,
+    })
     .from(schema.phoneNumbers)
     .where(eq(schema.phoneNumbers.userId, userId));
 
   if (numbers.length) {
     const { releaseTenantNumber } = await import("./phone-provisioning");
-    for (const { phoneNumber } of numbers) {
+    for (const { phoneNumber, vapiNumberId } of numbers) {
       const res = await releaseTenantNumber(userId, phoneNumber).catch((err) => ({
         ok: false as const,
         error: getErrorMessage(err),
@@ -290,12 +297,45 @@ async function releaseExternalResourcesOutsideTenantContext(
       if (res.ok) {
         numbersReleased++;
       } else {
-        numberErrors.push(`${phoneNumber}: ${res.error ?? "unknown"}`);
-        log.warn("purge number release failed — carrier may retain the number", {
+        const errorText = res.error ?? "unknown";
+        numberErrors.push(`${phoneNumber}: ${errorText}`);
+        log.warn("purge number release failed — handing off to orphan ledger", {
           userId,
           phoneNumber,
-          error: res.error,
+          error: errorText,
         });
+
+        try {
+          await db.execute(sql`
+            INSERT INTO public.wireline_orphan_carrier_resources (
+              former_user_id,
+              phone_number,
+              vapi_number_id,
+              last_error,
+              status
+            )
+            VALUES (
+              ${userId}::uuid,
+              ${phoneNumber},
+              ${vapiNumberId ?? null},
+              ${errorText},
+              'pending'
+            )
+            ON CONFLICT (former_user_id, phone_number) WHERE status = 'pending'
+            DO UPDATE SET
+              vapi_number_id = EXCLUDED.vapi_number_id,
+              last_error = EXCLUDED.last_error,
+              created_at = now(),
+              resolved_at = NULL
+          `);
+        } catch (ledgerErr) {
+          log.error("orphan carrier handoff failed — deferring account purge", {
+            userId,
+            phoneNumber,
+            error: getErrorMessage(ledgerErr),
+          });
+          throw ledgerErr;
+        }
       }
     }
   }
@@ -340,62 +380,48 @@ export async function purgeAccount(
   // (or fail outright on deliberately-ungranted tables like
   // wireline_oauth_pending_codes) while still reporting a completed purge.
   // Running outside tenant context restores the cron-path behavior (worker
-  // role, explicit ownership predicates below) on every invocation path.
-  return tenantStore.exit(() => purgeAccountOutsideTenantContext(userId, deps));
-}
+  // claims jobs with no tenantStore) and lets the owner connection perform the
+  // cross-tenant GDPR operation.
+  return tenantStore.exit(async () => {
+    const { db, log } = deps;
+    const tablesTouched: string[] = [];
+    let authRemoved = false;
 
-async function purgeAccountOutsideTenantContext(
-  userId: string,
-  deps: PurgeAccountDeps,
-): Promise<PurgeAccountResult> {
-  const { db, log } = deps;
-  const tablesTouched: string[] = [];
+    try {
+      await db.transaction(async (tx) => {
+        for (const target of ACCOUNT_DELETION_TARGETS) {
+          if (!(await tableExists(tx, target.table))) continue;
 
-  try {
-    return await db.transaction(async (tx) => {
-      for (const target of ACCOUNT_DELETION_TARGETS) {
-        if (!(await tableExists(tx, target.table))) {
-          log.warn("account purge skipped missing table", { table: target.table, userId });
-          continue;
-        }
-
-        const predicates = [
-          ...(target.userColumns || []).map((column) => sql`${sql.raw(column)} = ${userId}`),
-          ...(target.organizationColumns || []).map(
+          const directClauses = (target.userColumns ?? []).map(
+            (column) => sql`${sql.identifier(column)} = ${userId}::uuid`,
+          );
+          const organizationClauses = (target.organizationColumns ?? []).map(
             (column) =>
-              sql`${sql.raw(column)} IN (
-                SELECT id FROM wireline_organizations WHERE owner_id = ${userId}
+              sql`${sql.identifier(column)} IN (
+                SELECT id FROM wireline_organizations WHERE owner_id = ${userId}::uuid
               )`,
-          ),
-        ];
+          );
+          const clauses = [...directClauses, ...organizationClauses];
+          if (!clauses.length) continue;
 
-        if (predicates.length === 0) {
-          log.error("account purge target has no ownership predicate", {
-            table: target.table,
-            userId,
-          });
-          throw new Error(`Unsafe account purge target: ${target.table}`);
+          const where = sql.join(clauses, sql` OR `);
+          await tx.execute(
+            sql`DELETE FROM ${sql.identifier(target.table)} WHERE ${where}`,
+          );
+          tablesTouched.push(target.table);
         }
 
-        await tx.execute(
-          sql`DELETE FROM ${sql.raw(target.table)} WHERE ${sql.join(predicates, sql` OR `)}`,
-        );
-        tablesTouched.push(target.table);
-      }
+        if (await tableExists(tx, "wireline_users")) {
+          await tx.execute(sql`DELETE FROM wireline_users WHERE id = ${userId}::uuid`);
+          authRemoved = true;
+        }
+      });
 
-      await tx.execute(sql`DELETE FROM wireline_users WHERE id = ${userId}`);
-      return { ok: true, tablesTouched, authRemoved: true };
-    });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    log.error("account purge transaction failed", { error: message, userId });
-    return { ok: false, tablesTouched, authRemoved: false, error: message };
-  }
-}
-
-/** Shared 30-day reversible grace window. */
-export const ACCOUNT_DELETION_GRACE_DAYS = 30;
-
-export function computeScheduledPurgeAt(requestedAt: Date): Date {
-  return new Date(requestedAt.getTime() + ACCOUNT_DELETION_GRACE_DAYS * 24 * 60 * 60 * 1000);
+      return { ok: true, tablesTouched, authRemoved };
+    } catch (err) {
+      const error = getErrorMessage(err);
+      log.error("account purge failed", { userId, error, tablesTouched });
+      return { ok: false, tablesTouched, authRemoved, error };
+    }
+  });
 }
