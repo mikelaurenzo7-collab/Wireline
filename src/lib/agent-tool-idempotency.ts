@@ -9,7 +9,9 @@ const SIDE_EFFECT_TOOL_NAMES = new Set([
   "create_followup_task",
   "send_email",
   "send_text_message",
-  "add_to_dnc",
+  // add_to_dnc is deliberately excluded. Its own unique-conflict-safe insert
+  // is already idempotent, and a legal opt-out must not depend on the auxiliary
+  // audit ledger being healthy.
   "book_appointment",
   "update_lead_status",
   "log_payment_promise",
