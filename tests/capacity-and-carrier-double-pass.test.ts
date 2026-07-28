@@ -208,9 +208,12 @@ describe("runtime artifact settlement integrity", () => {
     expect(postBlock.indexOf("generateAndStorePostCallArtifact")).toBeLessThan(
       postBlock.indexOf("await persistJobResult"),
     );
-    expect(scheduledBlock).toContain("async () => {");
-    expect(scheduledBlock.indexOf("generateScheduledOperatingReport")).toBeLessThan(
-      scheduledBlock.indexOf("await persistJobResult"),
+    const scheduledReservation = scheduledBlock.slice(
+      scheduledBlock.indexOf("await withRuntimeReservation("),
+    );
+    expect(scheduledReservation).toContain("async () => {");
+    expect(scheduledReservation.indexOf("generateScheduledOperatingReport")).toBeLessThan(
+      scheduledReservation.indexOf("await persistJobResult"),
     );
     expect(worker).toContain("completion-checkpoint failures can be refunded");
   });
