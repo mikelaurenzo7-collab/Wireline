@@ -106,6 +106,41 @@
       "when": 1785214200000,
       "tag": "0111_remove_unscoped_platform_live_tools",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1785268000000,
+      "tag": "0112_stripe_event_claim_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1785268060000,
+      "tag": "0113_settings_subscription_status_pending_default",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1785268120000,
+      "tag": "0114_fix_rls_wireline_server_recap_and_handoffs",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1785268180000,
+      "tag": "0115_mcp_tables_wireline_server_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1785268240000,
+      "tag": "0116_orphan_carrier_resources",
+      "breakpoints": true
     }
   ]
 }
