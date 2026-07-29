@@ -82,7 +82,9 @@ describe("sales trust copy contract", () => {
     );
     if (!verified || !checked) throw new Error("Market comparison verification date is missing.");
     expect(verified[1]).toBe(checked[1]);
-    const ageMs = Date.now() - Date.parse(`${verified[1]}T00:00:00Z`);
+    const verifiedAt = Date.parse(`${verified[1]} 00:00:00 UTC`);
+    expect(Number.isFinite(verifiedAt)).toBe(true);
+    const ageMs = Date.now() - verifiedAt;
     expect(ageMs).toBeGreaterThanOrEqual(-86_400_000);
     expect(ageMs).toBeLessThanOrEqual(45 * 86_400_000);
     expect(compare).toContain("https://www.goodcall.com/pricing");
