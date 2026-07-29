@@ -76,9 +76,9 @@ describe("sales trust copy contract", () => {
   it("keeps the market comparison dated, sourced, and explicit about unlike products", () => {
     const compare = read("src/pages/Compare.tsx");
 
-    const verified = compare.match(/Verified ([A-Z][a-z]+ \\d{1,2}, 20\\d{2})/);
+    const verified = compare.match(/Verified ([A-Z][a-z]+ \d{1,2}, 20\d{2})/);
     const checked = compare.match(
-      /Public prices were checked on the linked official pages on ([A-Z][a-z]+ \\d{1,2}, 20\\d{2})/,
+      /Public prices were checked on the linked official pages on ([A-Z][a-z]+ \d{1,2}, 20\d{2})/,
     );
     if (!verified || !checked) throw new Error("Market comparison verification date is missing.");
     expect(verified[1]).toBe(checked[1]);
