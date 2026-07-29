@@ -154,21 +154,12 @@ export async function enqueue(db: DrizzleDB, opts: EnqueueOptions): Promise<Enqu
 
 /**
  * Attempt to atomically claim one due pending or retryable-failed job.
- * The RPC (`wireline_claim_job`) does:
- *   UPDATE wireline_jobs SET status='running', started_at=now(),
- *          attempts=attempts+1, updated_at=now()
- *   WHERE id = (
- *     SELECT id FROM wireline_jobs
- *     WHERE status IN ('pending', 'failed') AND run_at <= now()
- *     ORDER BY run_at ASC
- *     LIMIT 1
- *     FOR UPDATE SKIP LOCKED
- *   )
- *   RETURNING *
+ * Inside one database transaction, the worker selects the oldest eligible
+ * row with `FOR UPDATE SKIP LOCKED`, then marks it running and increments
+ * its attempt count before commit. Pending jobs and failed jobs whose
+ * backoff has elapsed are both eligible.
  *
  * Returns the claimed due job row, or null when the queue is idle.
- * Falls back to a non-atomic select+update on older deployments where
- * the RPC doesn't exist yet — safe for single-worker setups.
  */
 export async function claimJob(db: DrizzleDB, typeFilter?: JobType[]): Promise<any | null> {
   return await db.transaction(async (tx) => {
