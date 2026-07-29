@@ -129,7 +129,7 @@ describe("email observability privacy", () => {
 
     const bounded = getErrorMessage("x".repeat(3_000));
     expect(bounded).toHaveLength(2_012);
-    expect(bounded).toEndWith("…[truncated]");
+    expect(bounded.endsWith("…[truncated]")).toBe(true);
   });
 
   it("sanitizes provider error bodies before they are returned or logged", () => {
