@@ -5,7 +5,6 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
-
 function matchingCallEnd(source: string, openIndex: number): number {
   let depth = 0;
   let mode: "code" | "line" | "block" | "single" | "double" | "template" = "code";
@@ -38,7 +37,7 @@ function matchingCallEnd(source: string, openIndex: number): number {
       if (
         (mode === "single" && char === "'") ||
         (mode === "double" && char === '"') ||
-        (mode === "template" && char === "\`")
+        (mode === "template" && char === "`")
       ) {
         mode = "code";
       }
@@ -63,7 +62,7 @@ function matchingCallEnd(source: string, openIndex: number): number {
       mode = "double";
       continue;
     }
-    if (char === "\`") {
+    if (char === "`") {
       mode = "template";
       continue;
     }
