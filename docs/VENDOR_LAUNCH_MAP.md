@@ -3,7 +3,7 @@
 Status: **Active canonical vendor, funding, and configuration inventory**.
 Executable probe: `npm run vendor:readiness`.
 
-## Current launch snapshot — 2026-07-20
+## Current launch snapshot — 2026-07-28
 
 The production deployment and Supabase database are reachable. The managed
 runtime is OpenAI-first (structured, GPT-5.6 Terra), Vapi-orchestrated (PSTN),
@@ -11,7 +11,7 @@ and Twilio for carrier/SMS, with Gemini as the first structured continuity
 fallback and the Vercel AI Gateway as the governed last route. xAI remains
 optional experiment-only.
 
-A production-scoped vendor + inventory pass on `2026-07-20` verified:
+The July 28 pass re-verified Vercel, Supabase, Stripe, runtime policy, and current source. The provider inventory below also carries forward the most recent explicit Twilio, Vapi, Resend, and model-account probes; rerun `npm run vendor:readiness` immediately before GA:
 
 - OpenAI, Gemini, Vercel AI Gateway, and xAI credentials are accepted.
 - Since 2026-07-25, OpenAI is the managed structured primary and the live-demo
@@ -36,21 +36,32 @@ A production-scoped vendor + inventory pass on `2026-07-20` verified:
 - Federal DNC: production runtime reports `compliance_ready` (Sensitive URL/KEY present). Development's
   encrypted key is a misplaced Vercel token (`vcp_…`) and does **not** authenticate DNCScrub — fix
   development and run one live scrub probe before scaling marketing outbound.
-- Stripe is on **Cadence AI** (`acct_1TkyXL8e6If87QKm`): charges/payouts enabled, available USD
-  balance **`$0.00`**, founder catalog 14/14 prices, webhook events aligned to
-  `src/routes/billing-routes.ts`. The prior −$207 figure was the retired Wireline Stripe account.
+- Stripe processing, the Founder catalog (14/14 prices), Stripe Tax, and the
+  `trywireline.com` webhook are reachable and aligned. **Customer billing is still blocked**:
+  the public account identity is Cadence AI, website/support details are not fully aligned to Wireline,
+  and there is no active default customer portal configuration. Do not open paid self-serve checkout
+  until those controls are corrected and the controlled checkout matrix passes.
 - Twilio has no ONLINE WhatsApp sender (private beta).
 
 Launch remains blocked until the following are cleared:
 
-1. **Prove Federal DNCScrub with a live JSON scrub** (and fix the development `vcp_…` key). Marketing
-   outbound fails closed when the vendor is unconfigured; presence ≠ verified vendor auth.
-2. **Restore full GitHub Actions execution.** PR workflow runs still end in `startup_failure`
-   before any job is created. Vercel build checks compensate but are not a full CI matrix.
-3. **Rotate the exposed Vercel personal token** that was pasted into chat; revoke after
-   redeploy. Twilio Auth Token rotation remains recommended (API key pair is already live).
-4. **Complete the controlled live launch matrix.** Account probes do not prove end-to-end
-   call transfer, `gemini_ground` tool execution, SMS STOP/HELP, email delivery, or Stripe webhooks.
+1. **Correct Stripe's customer-facing identity and portal.** Set the public business name,
+   statement descriptor/prefix, website, support URL, logo, and colors to Wireline. Activate a
+   default portal with payment-method updates, invoice history, and cancellation.
+2. **Complete one controlled Stripe lifecycle.** Prove checkout → webhook → entitlement → portal →
+   cancellation/refund on a real test customer before inviting paid self-serve users.
+3. **Restore full GitHub Actions execution.** PR workflow runs still end in `startup_failure`
+   before any job is created. Vercel exact-head builds compensate but are not the full CI matrix.
+4. **Rotate the exposed Vercel personal token** that was pasted into chat; revoke it after
+   redeploying any values changed with that credential.
+5. **Prove Federal DNCScrub with a live JSON scrub** before scaled marketing outbound (and replace
+   the development `vcp_…` placeholder). Presence does not prove vendor authentication.
+6. **Complete the controlled live channel matrix.** Account probes do not prove call transfer,
+   `gemini_ground`, SMS STOP/HELP, real transactional email delivery, or provider redelivery.
+7. **Complete fresh visual QA.** Connect Opera and run the repository's exact-viewport interaction
+   harness only after explicit Playwright approval; inspect current screenshots before merge.
+8. **Resolve optional launch-surface access.** Reauthenticate Ads Manager before spend/measurement
+   certification, and connect/configure Sentry if it is intended to be a required alerting surface.
 
 WhatsApp is not a core-launch blocker, but it remains **private beta** until an
 approved ONLINE Twilio sender, Meta business/WABA approval, callback
@@ -115,8 +126,8 @@ compatibility fallback until it is rotated.
 | ------------------- | ----------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------- |
 | Vercel              | Hosting, functions, cron            | project/build path healthy                | Rotate exposed token; keep payment method and spend alerts active             |
 | Vercel AI Gateway   | Governed final AI route             | credential/model catalog ready            | Set per-key budget, alerts, and reserve before scale                           |
-| Supabase            | Postgres data plane                 | connected project healthy                 | Run DB health and migrations; retain password-screening controls              |
-| Stripe              | Customer billing                    | **ready (Cadence AI, $0 available)**      | Keep buffer before paid invites; webhook aligned 2026-07-20                   |
+| Supabase            | Postgres data plane                 | ACTIVE_HEALTHY; RLS/grants reviewed         | Keep migrations and custom-auth password controls healthy                    |
+| Stripe              | Customer billing                    | **blocked: Cadence AI identity; no default portal** | Rebrand in Dashboard; activate portal; run checkout lifecycle |
 | xAI                 | Optional experiment only                | credential ready; not launch-default      | Fund only if explicitly opting into structured fallback; alert if enabled |
 | OpenAI              | Primary structured + Realtime + Vapi call model | credential ready                  | Maintain budget, payment method, alerts, and scoped keys                       |
 | Gemini              | Direct AI continuity                | credential ready                          | Retain quota/billing fallback                                                  |
@@ -126,7 +137,7 @@ compatibility fallback until it is rotated.
 | Resend              | Transactional email                 | key accepted; trywireline.com verified    | Test real verification/reset delivery and maintain plan                       |
 | Upstash             | Distributed rate limits             | credentials ready                         | Maintain production database and billing                                      |
 | Federal DNC vendor  | Marketing scrub                     | URL/key configured                        | Confirm live lookup semantics and maintain scrub credits                       |
-| Sentry              | Error alerts                        | not certified by vendor probe             | Verify backend/browser event receipt and alert routing                         |
+| Sentry              | Error alerts                        | not connected/certified in this audit       | Add SDK/project/DSN and prove browser+backend receipt, or keep it non-required |
 | LiveAvatar / HeyGen | Video add-on                        | not core launch                           | Fund only after consent, pricing, and demand gates pass                        |
 | Apollo              | Enrichment                          | optional                                  | Add capped budget only when Lead Hunt is sold                                  |
 | Perplexity          | Live public research (PSTN tool)    | optional; Gemini grounded already covers  | Set `PERPLEXITY_API_KEY` (+ `PERPLEXITY_MODEL=sonar`) for fresher answers        |
@@ -178,8 +189,8 @@ Then complete the controlled launch matrix:
 1. One inbound and one outbound phone call with transfer/tool execution.
 2. One outbound and one inbound SMS, including STOP/HELP handling.
 3. One verification email and one password-reset email to a non-owner mailbox.
-4. One Stripe checkout, webhook activation, portal open, and cancellation in a
-   controlled live customer account after the negative balance is resolved.
+4. Rebrand the Stripe account, activate the default portal, then prove one live
+   checkout, webhook activation, entitlement, portal open, cancellation, and refund.
 5. WhatsApp only after sender/template approval; test both in-window free-form
    and out-of-window approved-template delivery.
 
