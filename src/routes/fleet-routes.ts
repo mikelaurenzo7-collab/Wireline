@@ -78,9 +78,7 @@ router.get(
         .where(eq(schema.signalPresence.userId, userId));
       res.write(`data: ${JSON.stringify({ type: "presence", signals })}\n\n`);
     } catch (error: any) {
-      log.error("Failed to push initial snap to presence stream", {
-        error: error.message,
-      });
+      log.error("Failed to push initial snap to presence stream", { error: error.message });
     }
 
     // Vercel serverless cannot hold long-lived SSE (no LISTEN/NOTIFY + maxDuration).
@@ -149,11 +147,7 @@ router.get(
       const sortedTasks = (tasks || []).sort((a: any, b: any) => {
         if (a.status === "completed" && b.status !== "completed") return 1;
         if (a.status !== "completed" && b.status === "completed") return -1;
-        const priorityWeight: Record<string, number> = {
-          high: 3,
-          medium: 2,
-          low: 1,
-        };
+        const priorityWeight: Record<string, number> = { high: 3, medium: 2, low: 1 };
         const weightA = priorityWeight[a.priority?.toLowerCase() || ""] || 0;
         const weightB = priorityWeight[b.priority?.toLowerCase() || ""] || 0;
         if (weightA !== weightB) return weightB - weightA;
@@ -230,17 +224,17 @@ router.patch(
       if (status !== undefined) {
         const normalizedStatus = status === "done" ? "completed" : status;
         if (!FLEET_TASK_STATUSES.includes(normalizedStatus)) {
-          return res.status(400).json({
-            error: `status must be one of: ${FLEET_TASK_STATUSES.join(", ")}`,
-          });
+          return res
+            .status(400)
+            .json({ error: `status must be one of: ${FLEET_TASK_STATUSES.join(", ")}` });
         }
         updateData.status = normalizedStatus;
       }
       if (priority !== undefined) {
         if (!FLEET_TASK_PRIORITIES.includes(priority)) {
-          return res.status(400).json({
-            error: `priority must be one of: ${FLEET_TASK_PRIORITIES.join(", ")}`,
-          });
+          return res
+            .status(400)
+            .json({ error: `priority must be one of: ${FLEET_TASK_PRIORITIES.join(", ")}` });
         }
         updateData.priority = priority;
       }
@@ -315,10 +309,7 @@ router.post(
       if (result.success) {
         await drizzle
           .update(schema.followUpTasks)
-          .set({
-            status: "completed",
-            resolutionNotes: "Approved and executed by Account Holder",
-          })
+          .set({ status: "completed", resolutionNotes: "Approved and executed by Account Holder" })
           .where(eq(schema.followUpTasks.id, taskId));
         touchNavCounts(userId);
 
@@ -368,8 +359,7 @@ router.get(
     try {
       const [logs, tasks, lessons, emails] = await drizzle.transaction((tx) =>
         Promise.all([
-          tx
-            .select({
+          tx.select({
               id: schema.callLogs.id,
               customerNumber: schema.callLogs.customerNumber,
               leadScore: schema.callLogs.leadScore,
@@ -381,8 +371,7 @@ router.get(
             .where(eq(schema.callLogs.userId, req.user.id))
             .orderBy(desc(schema.callLogs.createdAt))
             .limit(5),
-          tx
-            .select({
+          tx.select({
               id: schema.followUpTasks.id,
               description: schema.followUpTasks.description,
               status: schema.followUpTasks.status,
@@ -393,8 +382,7 @@ router.get(
             .where(eq(schema.followUpTasks.userId, req.user.id))
             .orderBy(desc(schema.followUpTasks.createdAt))
             .limit(5),
-          tx
-            .select({
+          tx.select({
               id: schema.agentLessons.id,
               lesson: schema.agentLessons.lesson,
               createdAt: schema.agentLessons.createdAt,
@@ -403,8 +391,7 @@ router.get(
             .where(eq(schema.agentLessons.userId, req.user.id))
             .orderBy(desc(schema.agentLessons.createdAt))
             .limit(5),
-          tx
-            .select({
+          tx.select({
               id: schema.emailThreads.id,
               customerEmail: schema.emailThreads.customerEmail,
               leadScore: schema.emailThreads.leadScore,
@@ -415,7 +402,7 @@ router.get(
             .where(eq(schema.emailThreads.userId, req.user.id))
             .orderBy(desc(schema.emailThreads.createdAt))
             .limit(5),
-        ]),
+        ])
       );
 
       const activity = compileActivityFeed({
@@ -438,11 +425,10 @@ router.get(
 
 router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const [hotLeads, complianceTasks, pendingTasks, knowledgeGaps, escalations] =
-      await drizzle.transaction((tx) =>
-        Promise.all([
-          tx
-            .select({
+    const [hotLeads, complianceTasks, pendingTasks, knowledgeGaps, escalations] = await drizzle.transaction((tx) =>
+      Promise.all(
+        [
+          tx.select({
               id: schema.callLogs.id,
               agentId: schema.callLogs.agentId,
               customerNumber: schema.callLogs.customerNumber,
@@ -461,8 +447,7 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
             )
             .orderBy(desc(schema.callLogs.leadScore))
             .limit(30),
-          tx
-            .select()
+          tx.select()
             .from(schema.followUpTasks)
             .where(
               and(
@@ -473,8 +458,7 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
             )
             .orderBy(desc(schema.followUpTasks.createdAt))
             .limit(20),
-          tx
-            .select()
+          tx.select()
             .from(schema.followUpTasks)
             .where(
               and(
@@ -485,8 +469,7 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
             )
             .orderBy(desc(schema.followUpTasks.createdAt))
             .limit(30),
-          tx
-            .select({
+          tx.select({
               id: schema.agentLessons.id,
               agentId: schema.agentLessons.agentId,
               lesson: schema.agentLessons.lesson,
@@ -501,8 +484,7 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
             )
             .orderBy(desc(schema.agentLessons.createdAt))
             .limit(30),
-          tx
-            .select({
+          tx.select({
               id: schema.callLogs.id,
               agentId: schema.callLogs.agentId,
               customerNumber: schema.callLogs.customerNumber,
@@ -519,8 +501,9 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
             )
             .orderBy(desc(schema.callLogs.createdAt))
             .limit(20),
-        ]),
-      );
+        ],
+      )
+    );
 
     // UI reads snake_case (customer_number, lead_score, created_at). Drizzle
     // hands us camelCase. Normalize at the boundary so the triage card stops
@@ -540,9 +523,7 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
       },
     });
   } catch (e: any) {
-    log.error("Triage fetch failed", {
-      error: e instanceof Error ? e.message : String(e),
-    });
+    log.error("Triage fetch failed", { error: e instanceof Error ? e.message : String(e) });
     throw AppError.fromHttpStatus(500, "Failed to fetch triage inbox");
   }
 });
