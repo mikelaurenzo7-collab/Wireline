@@ -16,12 +16,14 @@ function DangerZone() {
   const [working, setWorking] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [renewalStopNeedsAttention, setRenewalStopNeedsAttention] = useState(false);
 
   async function requestDeletion() {
     if (confirmation !== "DELETE" || working) return;
     setWorking(true);
     setMessage(null);
     setError(null);
+    setRenewalStopNeedsAttention(false);
     try {
       const response = await authFetch("/api/account/delete", {
         method: "POST",
@@ -33,6 +35,8 @@ function DangerZone() {
         scheduled_purge_at?: string;
         already_pending?: boolean;
         grace_days?: number;
+        renewal_stopped?: boolean;
+        billing_period_end?: string | null;
       } | null;
       if (!response.ok) {
         throw new Error(data?.error || `Couldn't queue deletion (${response.status}).`);
@@ -40,10 +44,15 @@ function DangerZone() {
       const when = data?.scheduled_purge_at
         ? new Date(data.scheduled_purge_at).toLocaleDateString()
         : "about 30 days";
+      const renewalNeedsAttention = data?.renewal_stopped === false;
+      setRenewalStopNeedsAttention(renewalNeedsAttention);
+      const renewalDetail = renewalNeedsAttention
+        ? " We could not confirm that subscription renewal stopped. Contact support@trywireline.com now so we can resolve billing without delaying deletion."
+        : " Future subscription renewal is stopped. Paid access may remain available through the current billing period.";
       setMessage(
         data?.already_pending
-          ? `Deletion is already scheduled for ${when}. Billing continues until then; contact support to cancel.`
-          : `Deletion queued. Data purge is scheduled for ${when}. Billing continues until purge; contact support to cancel before then.`,
+          ? `Deletion is already scheduled for ${when}.${renewalDetail}`
+          : `Deletion scheduled for ${when}.${renewalDetail}`,
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't queue the deletion. Try again in a moment.");
@@ -60,8 +69,9 @@ function DangerZone() {
             Delete account
           </p>
           <p className="mt-2 max-w-[48ch] text-sm leading-6 text-muted-foreground">
-            Schedules permanent deletion after a 30-day grace period. Billing continues until
-            purge. Type DELETE to confirm.
+            Stops future subscription renewal and schedules permanent deletion after a 30-day grace
+            period. Paid access may remain through the current billing period. Type DELETE to
+            confirm.
           </p>
         </div>
         <Trash2 className="hidden size-5 shrink-0 text-[var(--wireline-color-status-error)] sm:block" />
@@ -83,11 +93,19 @@ function DangerZone() {
           className="border-[var(--wireline-color-feedback-error-border)] text-[var(--wireline-color-status-error)] hover:bg-[var(--wireline-color-feedback-error-surface)]"
         >
           <Trash2 size={14} aria-hidden="true" />
-          {working ? "Queuing…" : "Delete account"}
+          {working ? "Scheduling…" : "Delete account"}
         </Button>
       </div>
       {message ? (
-        <StatusNotice tone="success" className="mt-4" title="Deletion queued">
+        <StatusNotice
+          tone={renewalStopNeedsAttention ? "warning" : "success"}
+          className="mt-4"
+          title={
+            renewalStopNeedsAttention
+              ? "Deletion scheduled — billing action needed"
+              : "Deletion scheduled"
+          }
+        >
           {message}
         </StatusNotice>
       ) : null}
