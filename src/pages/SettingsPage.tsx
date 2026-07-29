@@ -17,6 +17,8 @@ function DangerZone() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [renewalStopNeedsAttention, setRenewalStopNeedsAttention] = useState(false);
+  const [deletionScheduled, setDeletionScheduled] = useState(false);
+  const [cancelWorking, setCancelWorking] = useState(false);
 
   async function requestDeletion() {
     if (confirmation !== "DELETE" || working) return;
@@ -46,6 +48,7 @@ function DangerZone() {
         : "about 30 days";
       const renewalNeedsAttention = data?.renewal_stopped === false;
       setRenewalStopNeedsAttention(renewalNeedsAttention);
+      setDeletionScheduled(true);
       const renewalDetail = renewalNeedsAttention
         ? " We could not confirm that subscription renewal stopped. Contact support@trywireline.com now so we can resolve billing without delaying deletion."
         : " Future subscription renewal is stopped. Paid access may remain available through the current billing period.";
@@ -58,6 +61,35 @@ function DangerZone() {
       setError(err instanceof Error ? err.message : "Couldn't queue the deletion. Try again in a moment.");
     } finally {
       setWorking(false);
+    }
+  }
+
+  async function cancelDeletion() {
+    if (!deletionScheduled || cancelWorking) return;
+    setCancelWorking(true);
+    setError(null);
+    try {
+      const response = await authFetch("/api/account/cancel-deletion", { method: "POST" });
+      const data = (await response.json().catch(() => null)) as {
+        error?: string;
+        renewal_resumed?: boolean;
+      } | null;
+      if (!response.ok) {
+        throw new Error(data?.error || `Couldn't cancel deletion (${response.status}).`);
+      }
+      setDeletionScheduled(false);
+      setConfirmation("");
+      const renewalNeedsAttention = data?.renewal_resumed === false;
+      setRenewalStopNeedsAttention(renewalNeedsAttention);
+      setMessage(
+        renewalNeedsAttention
+          ? "Deletion canceled. We could not confirm that subscription renewal resumed; review Billing before the current period ends."
+          : "Deletion canceled. Your account remains active and subscription renewal is restored when applicable.",
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't cancel deletion. Try again in a moment.");
+    } finally {
+      setCancelWorking(false);
     }
   }
 
@@ -102,12 +134,28 @@ function DangerZone() {
           className="mt-4"
           title={
             renewalStopNeedsAttention
-              ? "Deletion scheduled — billing action needed"
-              : "Deletion scheduled"
+              ? deletionScheduled
+                ? "Deletion scheduled — billing action needed"
+                : "Deletion canceled — billing review needed"
+              : deletionScheduled
+                ? "Deletion scheduled"
+                : "Deletion canceled"
           }
         >
           {message}
         </StatusNotice>
+      ) : null}
+      {deletionScheduled ? (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={cancelWorking}
+          onClick={cancelDeletion}
+          className="mt-3"
+        >
+          {cancelWorking ? "Keeping account…" : "Keep my account"}
+        </Button>
       ) : null}
       {error ? (
         <StatusNotice tone="destructive" className="mt-4" title="Deletion unavailable">
