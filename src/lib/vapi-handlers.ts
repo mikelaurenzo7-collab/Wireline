@@ -106,7 +106,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         durationSeconds: duration,
         cost: callCostUsd == null ? null : String(callCostUsd),
         summary: analysis?.summary || "No summary provided.",
-        transcript: transcript || "",
+        transcript,
         recordingUrl: recordingUrl,
         endedReason,
         toolCallsTotal: stagedReliability?.toolCallsTotal ?? 0,
@@ -140,7 +140,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
               durationSeconds: duration,
               cost: callCostUsd == null ? null : String(callCostUsd),
               summary: analysis?.summary || "No summary provided.",
-              transcript: transcript || "",
+              transcript,
               recordingUrl: recordingUrl,
               endedReason,
               toolCallsTotal: stagedReliability?.toolCallsTotal ?? 0,
@@ -200,7 +200,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   }
 
   if (!insertedFresh) {
-    // A duplicate Vapi retry is acknowledged only after the optional transcript
+    // A duplicate Vapi retry is acknowledged only after optional evidence
     // backfill above. All downstream side effects (usage, customer webhooks,
     // compliance ledger, enrichment, notifications) are intentionally skipped
     // so retries cannot double-meter, double-alert, or duplicate audit rows.
@@ -457,7 +457,6 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     //   - found            → disclosure_played, with the matched line as evidence
     //   - transcript, none → disclosure_not_detected (a real compliance signal)
     //   - no transcript    → disclosure_played, delivery "unverifiable"
-    const transcript = transcript || "";
     const disclosure = detectRecordingDisclosure(transcript);
     const hasTranscript = transcript.trim().length > 0;
 
@@ -544,7 +543,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   if (!enrichment && transcript) {
     try {
       const geminiResult = await geminiPostCallAnalysis({
-        transcript: transcript,
+        transcript,
         summary: analysis?.summary || "",
       });
 
