@@ -1116,6 +1116,7 @@ router.get(
 router.post(
   "/billing/extra-agents",
   authenticateUser,
+  enforceLaunchHardGate,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const raw = req.body?.count;
@@ -1201,6 +1202,9 @@ router.post(
                 await stripe.subscriptionItems.update(existing.id, {
                   quantity: target,
                   proration_behavior: prorationBehavior,
+                  ...(isIncrease
+                    ? ({ payment_behavior: "error_if_incomplete" } as const)
+                    : {}),
                 });
               }
             } else if (target > 0) {
@@ -1209,32 +1213,26 @@ router.post(
                 price: priceId,
                 quantity: target,
                 proration_behavior: prorationBehavior,
+                payment_behavior: "error_if_incomplete",
               });
-            }
-
-            // Fail closed on an increase Stripe could not collect: without this
-            // an unpayable card still walks away with the capacity.
-            if (isIncrease) {
-              const invoices = await stripe.invoices.list({
-                subscription: subscriptionId,
-                limit: 1,
-              });
-              const latest = invoices.data[0];
-              if (latest && latest.status !== "paid" && latest.status !== "draft") {
-                log.warn("Extra-agent increase left an uncollected invoice", {
-                  userId: req.user!.id,
-                  invoiceId: latest.id,
-                  status: latest.status,
-                });
-                return res.status(402).json({
-                  code: "PAYMENT_REQUIRED",
-                  error:
-                    "We couldn't collect payment for the additional agents. Update your payment method and try again.",
-                });
-              }
             }
           } catch (e) {
             if (e instanceof AppError) throw e;
+            const stripeStatus =
+              e && typeof e === "object" && "statusCode" in e
+                ? (e as { statusCode?: unknown }).statusCode
+                : null;
+            if (stripeStatus === 402) {
+              log.warn("Extra-agent increase declined before entitlement change", {
+                planId: plan.id,
+                target,
+              });
+              return res.status(402).json({
+                code: "PAYMENT_REQUIRED",
+                error:
+                  "We couldn't collect payment for the additional agents. Update your payment method and try again.",
+              });
+            }
             log.error("Stripe subscription item adjust failed", {
               error: getErrorMessage(e),
               userId: req.user!.id,
