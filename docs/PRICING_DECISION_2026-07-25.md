@@ -2,7 +2,10 @@
 
 Status: **Active — decided and executed 2026-07-25.** This document records
 the deep pricing audit, the analysis, and the decision for the founder
-catalog now live. Execution followed the checklist below: v6 prices minted in
+catalog now live. A 2026-07-29 launch-hardening review then reserved Stripe
+Billing and future Stripe Tax transaction fees in every margin check and
+trimmed Pro from 250 to 245 included minutes to preserve the 30% annual
+full-utilization floor. Execution followed the checklist below: v6 prices minted in
 Stripe alongside v5, the code/catalog sweep landed with the two-floor policy,
 Vercel plan price-id env vars were updated to the v6 ids, and the v5
 recurring prices were archived once the deploy served v6. Supersedes the *conclusions* (not the method) of
@@ -89,7 +92,7 @@ untouched; the $0.14 COGS-drift alarm stays.
 | Free Builder | `personal` | $0 | 1 draft | 0 | 0 | $0 |
 | Starter | `starter` | **$19 / $190** | 1 | 1 | **60** | **$1** |
 | Starter Plus | `team` | **$39 / $390** | 2 | 2 | **120** | **$3** |
-| Pro | `business` | **$79 / $790** | 5 | 5 | **250** | **$6** |
+| Pro | `business` | **$79 / $790** | 5 | 5 | **245** | **$6** |
 | Business | `enterprise` | **$159 / $1,590** | 15 | 15 | **450** | **$12** |
 
 Unchanged on purpose: prepaid-only overflow (no automatic overages), Runtime
@@ -106,7 +109,7 @@ asymmetry).
 ### Why these numbers
 
 - **Effective rate flattens at ~$0.32/min** — $19/60 = $0.317, $39/120 =
-  $0.325, $79/250 = $0.316, $159/450 = $0.353 (top premium carried by 15
+  $0.325, $79/245 = $0.322, $159/450 = $0.353 (top premium carried by 15
   numbers/agents). The inversion is gone; every tier's headline is a better
   deal than v5's best tier.
 - **~2× ladder** ($19→$39→$79→$159): each step roughly doubles capacity and
@@ -118,21 +121,27 @@ asymmetry).
 - **2-agent tier keeps the founder hybrid pair** (personal Concierge +
   business employee) as the differentiated mid-step.
 
-### Floor verification (annual = binding; voice $0.128/min, number $1.15/mo, Stripe 2.9% + $0.30)
+### Floor verification (annual = binding; voice $0.128/min, number $1.15/mo)
+
+Stripe reserve per successful charge: Payments 2.9% + $0.30, Billing 0.7%,
+and a conservative future Tax transaction reserve of 0.5%. The live account
+has no tax registrations yet; reserving the fee now prevents registration
+from silently breaking catalog economics later.
 
 Hard floor — 100% utilization, annual revenue/mo vs reserved COGS/mo:
 
 | Plan | Rev/mo | Voice | Numbers | Allow. | Stripe | Margin |
 | ---- | ------ | ----- | ------- | ------ | ------ | ------ |
-| Starter $190 | 15.83 | 7.68 | 1.15 | 1.00 | 0.48 | **34.9%** |
-| Starter Plus $390 | 32.50 | 15.36 | 2.30 | 3.00 | 0.97 | **33.5%** |
-| Pro $790 | 65.83 | 32.00 | 5.75 | 6.00 | 1.93 | **30.6%** |
-| Business $1,590 | 132.50 | 57.60 | 17.25 | 12.00 | 3.87 | **31.5%** |
+| Starter $190 | 15.83 | 7.68 | 1.15 | 1.00 | 0.67 | **33.7%** |
+| Starter Plus $390 | 32.50 | 15.36 | 2.30 | 3.00 | 1.36 | **32.3%** |
+| Pro $790 | 65.83 | 31.36 | 5.75 | 6.00 | 2.72 | **30.4%** |
+| Business $1,590 | 132.50 | 57.60 | 17.25 | 12.00 | 5.46 | **30.3%** |
 
-All ≥30% at absolute worst case. Monthly-interval full-use margins run
-41–44%. Planning floor at 70% utilization (monthly): 55–58% on every tier —
-comfortably above 45%. Blended at realistic usage, contribution stays in the
-50s; the fixed stack is covered by roughly five Starter Plus subscribers.
+All ≥30% at absolute worst case after the complete commercial-fee reserve.
+Monthly-interval full-use margins run 41–43%. Planning-floor margins at 70%
+utilization run 54–56% monthly and 46–50% annual, so every tier clears 45% on
+both intervals. Blended at realistic usage, contribution stays in the 50s;
+the fixed stack is covered by roughly five Starter Plus subscribers.
 
 ## Execution checklist (next pass — order matters)
 
