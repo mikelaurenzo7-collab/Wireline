@@ -48,18 +48,18 @@ export interface VerticalConfig {
 export const WEDGES: Record<VerticalKey, VerticalConfig> = {
   "home-services": {
     slug: "home-services",
-    metaTitle: "Wireline for Home Services | AI Receptionist that Books Every Call",
+    metaTitle: "Wireline for Home Services | AI Receptionist for Calls and Follow-Up",
     metaDescription:
       "AI voice + email agent for HVAC, plumbing, electrical, and roofing teams. Answer after-hours calls, book jobs, and follow up through Runtime Balance.",
     eyebrow: "For Home Services Pros",
-    headline: "Stop missing $500 after-hours calls.",
+    headline: "Turn after-hours calls into scheduled work.",
     subhead:
-      "Picks up every call and books before the caller hangs up. Emergency dispatches. Quote requests. Follow ups.",
+      "Answers configured lines, qualifies urgency, offers available times, and sends the next-step confirmation.",
     pains: [
       {
         icon: Clock,
         title: "24/7 emergency intake",
-        body: "Burst pipes don't wait for office hours. Your agent answers, qualifies the urgency, dispatches you, and texts the caller a confirmation in under 90 seconds.",
+        body: "Burst pipes don't wait for office hours. Your agent can answer, qualify the urgency, alert the on-call person, and text the caller a confirmation.",
       },
       {
         icon: Calendar,
@@ -73,18 +73,18 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         icon: Shield,
-        title: "TCPA-clean every call",
-        body: "Compliance ledger logs every disclosure and opt out. No more wondering if you are allowed to call that number. The system enforces it.",
+        title: "Consent and DNC guardrails",
+        body: "Configured disclosures, opt-outs, calling windows, attempt caps, and DNC checks are logged and enforced for outbound work.",
       },
     ],
     scriptPreview: `"Hey, this is Sarah from [Your Company]. Sounds like you have water coming through the ceiling. Let me get you on the schedule right now. Are you home in the next 90 minutes or would after 5 work better?"`,
     statValue: "24 / 7",
     statLabel:
-      "Always answers. Including the 6pm pipe burst that books a $500 emergency job your competitor missed.",
+      "Built for the after-hours calls, urgent requests, and quote follow-ups your team chooses to route.",
     primaryCta: { label: "Create home services agent", href: signupHrefForWedge("home-services") },
     secondaryCta: { label: "Call customer-service demo", href: "tel:+16306425927" },
     trustLine:
-      "Built on enterprise grade carrier infrastructure. White labeled. Customers hear your business name, not ours.",
+      "Uses your configured company identity. Final caller-ID display depends on carrier, network, device, and completed identity review.",
     faqs: [
       {
         q: "Will customers know they're talking to an AI?",
@@ -92,7 +92,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "What happens if the agent doesn't know the answer?",
-        a: "The agent says it does not have that detail handy and offers to either text or email the customer once it is looked up, or transfer to you live. Configure the escalation number per shift in Settings. No guessing. No hallucinations. Refuses gracefully when uncertain.",
+        a: "The agent says it does not have that detail handy and offers to either text or email the customer once it is looked up, or transfer to you live. Configure the escalation number per shift in Settings. It is designed to decline uncertain details, follow your escalation rules, and leave a reviewable record.",
       },
       {
         q: "Can it actually dispatch me on an emergency?",
@@ -100,30 +100,30 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How much does it cost vs. an answering service?",
-        a: "Most after hours answering services charge one to two dollars per minute or two to four hundred dollars per month per business. Wireline plans start at $19/mo with guaranteed voice minutes included, plus Runtime Balance for anything beyond that. The agent actually books jobs instead of just taking messages.",
+        a: "Wireline plans start at $19/month with included voice minutes and prepaid Runtime Balance for usage beyond the plan allowance. Compare the full workflow, connected tools, and follow-up—not only the per-minute rate—against any answering service you use today.",
       },
     ],
   },
 
   medical: {
     slug: "medical",
-    metaTitle: "Wireline for Medical Practices | AI Patient Intake on Every Call",
+    metaTitle: "Wireline for Medical Practices | AI Intake and Scheduling",
     metaDescription:
       "AI voice + email agent for dental, med spa, chiropractic, and primary care practices. Book appointments and manage intake. Call the medical demo.",
     eyebrow: "For Medical Practices",
     headline: "Patients on hold become patients on the schedule.",
     subhead:
-      "An AI front desk that answers every call. Qualifies the visit type. Books the next available slot. Sends the patient an SMS confirmation. While your staff focuses on the room.",
+      "An AI front desk for configured intake, scheduling, and confirmations while your staff focuses on patient care.",
     pains: [
       {
         icon: Phone,
         title: "No more dropped calls",
-        body: "Hold times kill conversion. Your AI picks up on the first ring, every time, even at 11pm when a parent's looking for an urgent care slot tomorrow.",
+        body: "Route overflow or after-hours calls to an agent that gathers the visit reason, follows your urgency rules, and offers configured next steps.",
       },
       {
         icon: Calendar,
-        title: "Books to your EHR-friendly calendar",
-        body: "Reads your Google/Outlook calendar, respects buffer time between appointments, and confirms by SMS so no-shows drop.",
+        title: "Books to your connected calendar",
+        body: "Reads connected Google or Outlook availability, respects configured buffers, and can send an SMS confirmation.",
       },
       {
         icon: MailCheck,
@@ -133,25 +133,25 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: Shield,
         title: "Compliance-aware (not certified)",
-        body: "Healthcare-style flow with TCPA logging and opt-out enforcement. HIPAA BAA available on Enterprise (~30-day onboarding). No PHI in transcripts by default.",
+        body: "Healthcare-sensitive intake controls include consent logging, opt-out enforcement, recording off by default, and configurable retention. Do not use Wireline for PHI unless a signed BAA and approved configuration are confirmed in writing.",
       },
     ],
     scriptPreview: `"Thanks for calling Dr. Chen's office. I can help schedule your visit. Was this for a cleaning, a specific concern, or something else? Got it. Our next opening for that is Thursday at 2:15 or Friday at 9. Which works?"`,
     statValue: "First ring",
     statLabel:
-      "Patients on hold drop calls. Wireline picks up before the first ring. Every call. Every hour.",
+      "Route the calls your team cannot answer so configured intake and scheduling can continue after hours.",
     primaryCta: { label: "Call medical demo", href: "tel:+16173134469" },
     secondaryCta: { label: "Create medical agent", href: signupHrefForWedge("medical") },
     trustLine:
-      "Built on enterprise voice infrastructure. White labeled. Patients hear your practice name. Use Enterprise onboarding for workflows that require a signed BAA.",
+      "Uses your configured practice identity, subject to carrier display support. Do not use Wireline for PHI unless a signed BAA and approved configuration are confirmed in writing.",
     faqs: [
       {
         q: "Is Wireline HIPAA-compliant?",
-        a: "Wireline runs healthcare style intake flows today. TCPA disclosure logging. Opt out enforcement. And no PHI in transcripts by default. Use Enterprise onboarding for workflows that require a signed BAA — we won't claim HIPAA certification before it's in place.",
+        a: "No. Wireline offers healthcare-sensitive guardrails, but does not claim HIPAA compliance or certification. Do not use it for PHI unless Wireline confirms a signed BAA and approved configuration in writing.",
       },
       {
         q: "Can it actually book to my existing schedule?",
-        a: "Yes. Connect Google Calendar or Outlook in Settings. The agent reads real availability. Respects buffer time you set. Books the patient. And sends an SMS confirmation. Reschedules and cancellations flow back to the calendar automatically.",
+        a: "Connect Google Calendar or Outlook in Settings. The agent can read available times, respect configured buffers, book supported events, and send confirmations. Rescheduling behavior depends on the connected calendar and workflow you approve.",
       },
       {
         q: "What about insurance verification?",
@@ -166,39 +166,39 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   legal: {
     slug: "legal",
-    metaTitle: "Wireline for Law Firms | AI Intake That Captures Every New Matter",
+    metaTitle: "Wireline for Law Firms | AI Intake and Consult Routing",
     metaDescription:
       "AI voice + email intake for law firms. Capture new matters, qualify urgency, schedule consults, and route conflict checks. Call the legal demo.",
     eyebrow: "For Law Firms",
-    headline: "Every new client call captured. Every consult booked.",
+    headline: "Give every routed intake a clear next step.",
     subhead:
-      "An AI intake specialist that runs your front-desk script verbatim — captures the matter, flags the conflict check, books the consult, and emails the file to your paralegal in real time.",
+      "An AI intake specialist that follows your approved script, captures the matter, flags conflict-review data, and routes the record to your team.",
     pains: [
       {
         icon: Phone,
-        title: "Catches every new-matter call",
-        body: "Missed calls = missed retainers. Your agent answers 24/7, captures the matter type (PI, family, criminal, business), and books the consult before the caller shops your competition.",
+        title: "Structured new-matter intake",
+        body: "Route overflow or after-hours calls to an agent that captures matter type, urgency, contact details, and the next approved intake step.",
       },
       {
         icon: MailCheck,
-        title: "Privileged-language by default",
-        body: "Opens every call with 'This call may be confidential under attorney-client privilege.' Logs the disclosure to your compliance ledger. Trained on intake scripts that don't accidentally form legal advice.",
+        title: "Firm-approved intake language",
+        body: "Uses the disclaimer and intake language your firm approves. Wireline does not determine whether privilege exists and is configured not to provide legal advice.",
       },
       {
         icon: Calendar,
         title: "Conflict-check workflow",
-        body: "Captures the prospective client + the opposing party name; pings your paralegal in Slack to run conflicts before the consult lands on your calendar.",
+        body: "Captures prospective-client and opposing-party names, then routes the record for staff conflict review before any workflow you mark as requiring clearance.",
       },
       {
         icon: DollarSign,
-        title: "$3K-$5K retainers recovered",
-        body: "Plaintiff PI firms typically pay $400+ per booked consult on Google Ads. Wireline turns the calls those ads source into booked consults — without the receptionist headcount.",
+        title: "Protect valuable intake demand",
+        body: "Turn paid and organic call demand into structured, reviewable intake while your team keeps control of qualification and engagement decisions.",
       },
     ],
-    scriptPreview: `"Thank you for calling Henderson Law. This call may be confidential under attorney client privilege. To get you the right attorney quickly, can you briefly describe what brings you in today?"`,
-    statValue: "Conflict-checked",
+    scriptPreview: `"Thank you for calling Henderson Law. I can collect some initial information for the firm's review. This intake does not provide legal advice or create an attorney-client relationship. Can you briefly describe what brings you in today?"`,
+    statValue: "Review-ready",
     statLabel:
-      "Captures the prospective client + the opposing party name; pings your paralegal in Slack before the consult lands on the attorney's calendar.",
+      "Captures the prospective client, opposing party, and matter type, then routes the record to your designated reviewer.",
     primaryCta: { label: "Call legal demo", href: "tel:+15727269365" },
     secondaryCta: { label: "Create legal intake agent", href: signupHrefForWedge("legal") },
     trustLine:
@@ -210,11 +210,11 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How does it handle conflict checks?",
-        a: "The agent captures the prospective client name, opposing party name, and matter type during intake. On submission it pings your paralegal in Slack (or your conflict-check tool) with the data. Consult is only added to the attorney calendar after the paralegal clears it.",
+        a: "The agent captures the prospective client name, opposing party name, and matter type. It can route that record through connected Slack or your approved handoff path. Your firm remains responsible for running and clearing conflicts before engagement or scheduling when required.",
       },
       {
         q: "What about attorney-client privilege?",
-        a: 'Every call opens with the privilege disclosure ("this call may be confidential under attorney-client privilege"). The disclosure is logged with timestamp + state + caller phone for the audit trail. Transcripts are encrypted at rest and accessible only to the firm\'s authorized users.',
+        a: 'Wireline cannot determine whether attorney-client privilege applies. Your firm supplies the approved disclaimer, recording policy, retention settings, and staff access rules; configured disclosures are logged for review.',
       },
       {
         q: "Can it qualify by case type before booking?",
@@ -225,13 +225,13 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   "real-estate": {
     slug: "real-estate",
-    metaTitle: "Wireline for Real Estate | AI Lead Qualifier on Every Listing Call",
+    metaTitle: "Wireline for Real Estate | AI Listing-Call Qualification",
     metaDescription:
       "AI voice + email agent for real estate teams. Qualify buyers, book showings, revive cold leads, and sync CRM notes.",
     eyebrow: "For Real Estate",
-    headline: "Every lead worked. Every showing booked.",
+    headline: "Work more listing calls without losing control.",
     subhead:
-      "An AI agent that picks up every listing inquiry. Qualifies pre approval status. Books the showing. And follows up on cold leads. So your top producing agents only see qualified prospects.",
+      "An AI agent that handles routed listing inquiries, gathers qualification details, offers approved showing times, and keeps follow-up visible.",
     pains: [
       {
         icon: Phone,
@@ -241,7 +241,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: Calendar,
         title: "Showing scheduler",
-        body: "Books showings around the listing agent's real calendar. Adds buffer time. Confirms by SMS. Reschedules without a human in the loop when the buyer cancels.",
+        body: "Books showings around the listing agent's real calendar. Adds buffer time. Confirms by SMS. Can update supported calendar events when the connected workflow and your rules allow it.",
       },
       {
         icon: Sparkles,
@@ -251,7 +251,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: DollarSign,
         title: "CRM-native pipeline",
-        body: "Pushes every qualified lead into HubSpot or Salesforce with the call summary, sentiment score, and next-step task. No data re-entry.",
+        body: "Can push qualified leads into connected HubSpot or Salesforce records with the call summary and approved next-step task.",
       },
     ],
     scriptPreview: `"Hi. You called about the listing at 1247 Maple. Great property. Quick question. Are you working with a buyers agent already, or are we starting fresh? And ballpark, where do you need to be on price?"`,
@@ -288,13 +288,13 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Personal AI phone agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow-ups. Starts at $19/mo, with Runtime Balance covering anything beyond your included minutes.",
     eyebrow: "For everyone who hates the phone",
-    headline: "Never make an awkward call again.",
+    headline: "Hand off the calls you keep avoiding.",
     subhead:
       "Your personal AI calls the debt collector, books the dentist, disputes the cable bill, and handles the conversation you've been avoiding for weeks.",
     pains: [
       {
         icon: Clock,
-        title: "Debt negotiation calls",
+        title: "Authorized billing and collections calls",
         body: "Past-due collector keeps calling? Tell your agent the amount, the offer you can afford, and your approved script. The agent dials, stays within those bounds, asks for terms in writing, and reports back without promising a specific outcome.",
       },
       {
@@ -310,7 +310,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: Shield,
         title: "Phone anxiety, social avoidance, neurodivergence",
-        body: "Phone calls are uniquely hard for a lot of people — autistic adults, ADHD'ers, people with social anxiety, hearing-impaired users. Wireline is the accessibility tool that doesn't pretend to be one. The agent does the call; you keep your day.",
+        body: "Phone calls can be especially difficult for autistic and ADHD adults, people with social anxiety, and people with hearing disabilities. Wireline can handle an authorized call and return a readable summary; it is not an emergency or certified accessibility service.",
       },
     ],
     scriptPreview:
@@ -318,10 +318,10 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Yours",
     statLabel:
       "Your AI, calling on your behalf. You text it what you need; it dials, talks, and reports back. You stay off the call.",
-    primaryCta: { label: "Wire personal agent", href: signupHrefForWedge("personal") },
+    primaryCta: { label: "Create personal agent", href: signupHrefForWedge("personal") },
     secondaryCta: { label: "Call our demo line", href: "tel:+15642389455" },
     trustLine:
-      "Your agent only does what you authorize. Every call is recorded and transcribed in your workspace, and you can take over or hang up at any time.",
+      "Your agent follows the brief and limits you provide. Call outcomes are logged; recording is optional and off by default. You can stop active work or change the instructions at any time.",
     faqs: [
       {
         q: "Is it actually legal for an AI to make calls on my behalf?",
@@ -333,11 +333,11 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "What about voicemail / hold music / phone trees? Doesn't that break it?",
-        a: 'Your agent handles all of it. Navigates IVR menus by saying "agent" or pressing the right digits. Waits on hold as long as it takes — no complaints, no clock-watching. Leaves voicemails using your script. Re-dials missed calls. This is exactly what AI is good at — the boring, infinite-patience parts of a phone call.',
+        a: 'Your agent can navigate common IVR menus, wait on hold within configured call limits, leave an approved voicemail, and retry when your workflow allows. Some providers require identity checks or block automated callers, so outcomes vary.',
       },
       {
         q: "How is this different from just having a friend or family member call for me?",
-        a: "It's available 24/7, never gets tired or annoyed, and records and summarizes calls where lawful so you can review exactly what happened — and nobody in your life needs to know you avoid these calls.",
+        a: "It is ready when you choose to launch it, follows the same brief consistently, and returns a written outcome. Recording is optional and should be enabled only where lawful.",
       },
       {
         q: "What can't it do?",
@@ -352,14 +352,14 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "AI voice + email agent for insurance agencies. Capture quote intake, FNOL details, renewal follow-up, and producer-ready notes.",
     eyebrow: "For Insurance Agencies",
-    headline: "Every quote request answered. Every renewal followed up.",
+    headline: "Keep quote intake and renewal follow-up moving.",
     subhead:
       "An AI agent that picks up the new-quote call at 8pm, captures the right details for an accurate bind, and chases the unrenewed policy three times before it lapses.",
     pains: [
       {
         icon: Phone,
         title: "Quote intake without the wait",
-        body: "Caller wants an auto quote at 7:30pm? Agent qualifies vehicle, driver count, current carrier, expiration date — emails you a fully-filled intake by morning so you can bind first thing.",
+        body: "Caller wants an auto quote after hours? The agent gathers the fields you approve and routes a structured intake for a licensed producer to review.",
       },
       {
         icon: Clock,
@@ -374,7 +374,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: Shield,
         title: "Carrier-line compliance hedges",
-        body: "Never quotes binding coverage rates ('I'll have your agent confirm the bind') or makes coverage promises. TCPA-clean every outbound call. State-specific disclosure scripts.",
+        body: "Configured rules keep the agent from quoting binding coverage or making coverage promises. Outbound work still requires your approved consent basis, calling windows, DNC policy, and state-specific script.",
       },
     ],
     scriptPreview: `"Hi, this is Alex with [Your Agency] — I see you requested an auto quote. I'd love to get you accurate numbers fast. Can you tell me the year, make, and model of your primary vehicle, and how many drivers we'll be covering?"`,
@@ -388,7 +388,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will it actually bind a policy?",
-        a: "No — binding requires a licensed agent. Wireline gathers the quote intake, runs the underwriting pre-qual questions, and hands the bind-ready package to your producer. Saves 12-18 minutes per quote on data entry.",
+        a: "No. Binding requires a licensed agent. Wireline gathers the approved quote-intake fields and routes the record to your producer for review and any coverage decision.",
       },
       {
         q: "Can it handle commercial lines, not just personal?",
@@ -400,7 +400,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How does it compare to a 24/7 answering service?",
-        a: "Most answering services charge $400-1,200/month plus per-call fees and just take messages. Wireline agents qualify the lead, book the renewal review, and email you a producer-ready intake, with guaranteed voice minutes on every plan and Runtime Balance covering anything beyond that.",
+        a: "Compare Wireline on the complete intake and follow-up workflow, not only the per-call price. Paid plans include voice minutes, and prepaid Runtime Balance covers supported usage beyond the plan allowance.",
       },
     ],
   },
@@ -413,17 +413,17 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     eyebrow: "For Restaurants",
     headline: "The phone rings during dinner rush. The agent picks up.",
     subhead:
-      "An AI host that answers the reservation call when your floor team is buried, captures takeout orders accurately, and saves you the no-shows by SMS-confirming every booking 2 hours before.",
+      "An AI host for routed reservation calls, structured takeout requests, and configurable SMS confirmations while the floor team is busy.",
     pains: [
       {
         icon: Calendar,
         title: "Reservation taking without the hostess",
-        body: "Party size, name, time, special requests (anniversary, allergies, high chair). Books to Resy/OpenTable/Tock or your sheet. SMS confirms 2 hours before — drop the no-show rate from 18% to under 6%.",
+        body: "Captures party size, name, time, and special requests, then books through a connected calendar or approved reservation workflow. Confirmation timing is configurable.",
       },
       {
         icon: PhoneIncoming,
         title: "Takeout orders done right",
-        body: "Reads back every item. Confirms substitutions. Captures pickup time. Texts the order to your KDS or prints to your kitchen. Caller's allergy questions go to a structured field your line cook actually sees.",
+        body: "Reads back each item, confirms substitutions, captures pickup time, and routes a structured order summary. Allergy questions are flagged for staff confirmation rather than answered speculatively.",
       },
       {
         icon: Clock,
@@ -439,7 +439,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     scriptPreview: `"Hi, thanks for calling [Your Restaurant]! Were you hoping to make a reservation, place an order to pick up, or ask about a private event? I can take care of all three."`,
     statValue: "Saturday 7pm",
     statLabel:
-      "The hour your phone rings off the hook + your hostess can't get to it. Agent fields every call — books the booking, takes the takeout, sends you the events lead.",
+      "Built for the rush-hour calls your host cannot reach: reservations, structured takeout requests, and event inquiries.",
     primaryCta: { label: "Create restaurant agent", href: signupHrefForWedge("restaurants") },
     secondaryCta: { label: "Call demo concierge", href: "tel:+15642389455" },
     trustLine:
@@ -459,7 +459,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How is this different from Yelp / Google booking widgets?",
-        a: "Those only capture web bookings. 70-80% of restaurant reservation traffic is still phone calls — especially for parties of 4+ and private events. Wireline answers the phone calls your widget can't catch.",
+        a: "Booking widgets cover web demand. Wireline adds a configurable voice path for callers, larger-party questions, and private-event inquiries your web form may not resolve.",
       },
     ],
   },
@@ -496,9 +496,9 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
     ],
     scriptPreview: `"Hi, this is Casey calling from [Your Company]. I saw you downloaded our [resource] last week — got 2 minutes to see if what we do is even a fit before I book any of your team's time?"`,
-    statValue: "< 60s",
+    statValue: "Fast follow-up",
     statLabel:
-      "Target speed-to-lead on inbound form and demo requests. Governed queues handle warm follow-up with consent, caps, and full audit trail.",
+      "Governed queues can respond quickly to inbound requests and approved warm leads while preserving consent, caps, and an audit trail.",
     primaryCta: { label: "Create sales voice agent", href: signupHrefForWedge("sales") },
     secondaryCta: { label: "Call outbound sales demo", href: "tel:+14692571581" },
     trustLine:
