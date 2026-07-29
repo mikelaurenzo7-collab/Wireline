@@ -97,10 +97,7 @@ async function reverseRuntimeAllowanceForCharge(
     if (!subscriptionId) return;
 
     const [row] = await drizzle
-      .select({
-        userId: schema.subscriptions.userId,
-        plan: schema.subscriptions.plan,
-      })
+      .select({ userId: schema.subscriptions.userId, plan: schema.subscriptions.plan })
       .from(schema.subscriptions)
       .where(eq(schema.subscriptions.stripeSubscriptionId, subscriptionId))
       .limit(1);
@@ -186,11 +183,9 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
   const idempotencyKey = event.id;
   let claimed = false;
   try {
-    await drizzle.insert(schema.stripeEvents).values({
-      eventId: idempotencyKey,
-      eventType: event.type,
-      status: "processing",
-    });
+    await drizzle
+      .insert(schema.stripeEvents)
+      .values({ eventId: idempotencyKey, eventType: event.type, status: "processing" });
 
     claimed = true;
   } catch (err: any) {
@@ -202,10 +197,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
       // event, which for a credit top-up means the customer paid and their
       // balance never moved. Release the stale claim and make Stripe redeliver.
       const [prior] = await drizzle
-        .select({
-          status: schema.stripeEvents.status,
-          at: schema.stripeEvents.processedAt,
-        })
+        .select({ status: schema.stripeEvents.status, at: schema.stripeEvents.processedAt })
         .from(schema.stripeEvents)
         .where(eq(schema.stripeEvents.eventId, idempotencyKey))
         .limit(1);
@@ -405,10 +397,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                       providerEventId: event.id,
                       providerObjectId: refund.id,
                       customerReason: "Runtime Balance refund",
-                      metadata: {
-                        payment_intent_id: piId,
-                        charge_id: charge.id,
-                      },
+                      metadata: { payment_intent_id: piId, charge_id: charge.id },
                     },
                   );
                 }
@@ -554,10 +543,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                   userId: row.userId,
                   customerId,
                   amountCents: typeof inv.amount_due === "number" ? inv.amount_due : undefined,
-                  metadata: {
-                    invoice_id: inv.id,
-                    attempt_count: inv.attempt_count,
-                  },
+                  metadata: { invoice_id: inv.id, attempt_count: inv.attempt_count },
                 })
                 .catch((err) =>
                   log.warn("billing audit log failed", {
@@ -606,9 +592,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
           }
         } catch (err) {
           if (err instanceof AppError) throw err;
-          log.error("invoice.payment_failed handler error", {
-            error: getErrorMessage(err),
-          });
+          log.error("invoice.payment_failed handler error", { error: getErrorMessage(err) });
         }
         break;
       }
@@ -1041,11 +1025,7 @@ router.post(
         customerId = customer.id;
         await drizzle
           .insert(schema.subscriptions)
-          .values({
-            userId: req.user.id,
-            stripeCustomerId: customerId,
-            updatedAt: new Date(),
-          })
+          .values({ userId: req.user.id, stripeCustomerId: customerId, updatedAt: new Date() })
           .onConflictDoUpdate({
             target: schema.subscriptions.userId,
             set: { stripeCustomerId: customerId, updatedAt: new Date() },
@@ -1054,9 +1034,9 @@ router.post(
 
       const appUrl = resolveCanonicalAppUrl();
       if ("error" in appUrl) {
-        return res.status(503).json({
-          error: "Billing is unavailable: APP_URL is not configured.",
-        });
+        return res
+          .status(503)
+          .json({ error: "Billing is unavailable: APP_URL is not configured." });
       }
       const base = appUrl.url;
       const addonMeta = {
@@ -1080,9 +1060,7 @@ router.post(
 
       res.json({ url: session.url });
     } catch (e: any) {
-      log.error("Live video checkout creation failed", {
-        error: getErrorMessage(e),
-      });
+      log.error("Live video checkout creation failed", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Live video checkout failed");
     }
   },
@@ -1129,9 +1107,7 @@ router.get(
       });
     } catch (err) {
       if (err instanceof AppError) throw err;
-      log.error("/billing/extra-agents GET failed", {
-        error: getErrorMessage(err),
-      });
+      log.error("/billing/extra-agents GET failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to load extra-agent state");
     }
   },
@@ -1188,9 +1164,7 @@ router.post(
       // to match. If not configured (dev), just persist the DB column.
       if (stripeAvailable()) {
         const [subRow] = await drizzle
-          .select({
-            stripe_subscription_id: schema.subscriptions.stripeSubscriptionId,
-          })
+          .select({ stripe_subscription_id: schema.subscriptions.stripeSubscriptionId })
           .from(schema.subscriptions)
           .where(eq(schema.subscriptions.userId, req.user!.id))
           .limit(1);
@@ -1285,11 +1259,7 @@ router.post(
       void auditLogger
         .logBilling("subscription_updated", {
           userId: req.user!.id,
-          metadata: {
-            reason: "extra_agents_changed",
-            target,
-            plan_id: plan.id,
-          },
+          metadata: { reason: "extra_agents_changed", target, plan_id: plan.id },
         })
         .catch((err) =>
           log.warn("billing audit log failed", {
@@ -1305,9 +1275,7 @@ router.post(
       });
     } catch (err) {
       if (err instanceof AppError) throw err;
-      log.error("/billing/extra-agents POST failed", {
-        error: getErrorMessage(err),
-      });
+      log.error("/billing/extra-agents POST failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to update extra agents");
     }
   },
