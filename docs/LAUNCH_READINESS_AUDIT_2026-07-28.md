@@ -95,7 +95,7 @@ The live Founder catalog matches code:
 | Pro | $79 | $790 | **245 min** |
 | Business | $159 | $1,590 | 450 min |
 | Extra agent + 50 minutes + one number | $15 | — |
-| Live Video add-on | $19 | — |
+| Live Video add-on | $19 | 60 reserved session min/month · 10 min/session · no automatic overage |
 | Runtime Balance | $10 / $25 / $50 / $100 | one-time |
 
 The code models $0.128 variable voice cost per minute, $1.15 per phone number per month, Payments at 2.9% + $0.30, Billing at 0.7%, and a conservative future Tax transaction reserve of 0.5%. Catalog checks preserve at least a 45% expected contribution-margin target and a 30% full-utilization floor on both monthly and annual intervals. Annual full-use margins are 33.7%, 32.3%, 30.4%, and 30.3% from Starter through Business.
@@ -130,7 +130,9 @@ Vercel Agent Runs has no Wireline project records because Wireline agents run th
 
 ## Video, presenters, and media
 
-Live video is correctly a gated add-on, not an implied core capability. The provider abstraction supports LiveAvatar/HeyGen, requires paid-plan entitlement, workspace enablement, catalog readiness, and explicit consent, and falls back to voice. No production tenant has configured or consented to a presenter, so the add-on must remain planned/beta.
+Live video is a gated add-on, not an implied core capability. The provider abstraction supports LiveAvatar/HeyGen, requires paid-plan entitlement, workspace enablement, catalog readiness, and explicit consent, and falls back to voice. The deeper economics pass found that repeated 10-minute session mints were not bounded by a monthly allowance. Runtime now serializes each mint through a tenant/month advisory lock, reserves 10 minutes before issuing a provider token, releases the reservation when minting fails, and pauses at 60 reserved session minutes per month with no automatic overage.
+
+At $19/month, 60 minutes at the conservative $0.12/min provider-cost reserve plus Payments, Billing, future Tax, and fixed transaction fees preserves an estimated 56.4% full-use contribution margin. Stripe catalog metadata now states the 60/10/no-overage policy and remains `launch_paused`; the production catalog gate must stay false until the curated presenter set and a controlled checkout-to-cancellation proof pass. No production tenant has configured or consented to a presenter, so the add-on remains planned/beta.
 
 Runway is available for asynchronous generated media, not a real-time presenter. Existing Descript projects include Wireline launch and promotional edits. No Wireline-specific Runway asset inventory was found. Magnific media/voice features require a premium plan. No new media was generated because that would not prove the live-presenter path.
 
