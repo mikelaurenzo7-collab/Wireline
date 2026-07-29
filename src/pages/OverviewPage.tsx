@@ -193,7 +193,9 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
             <Button asChild className="w-full justify-center sm:w-auto">
               <Link
                 to={
-                  posture === "personal" ? "/studio?create=1" : "/studio?create=1&posture=business"
+                  posture === "personal"
+                    ? "/studio?create=1&posture=personal"
+                    : "/studio?create=1&posture=business"
                 }
               >
                 {language.createCta}
@@ -570,7 +572,9 @@ export default function OverviewPage() {
     ((personalAgents.length === 0 && businessAgents.length > 0) ||
       (businessAgents.length === 0 && personalAgents.length > 0));
   const founderPairHref =
-    personalAgents.length === 0 ? "/studio?create=1" : "/studio?create=1&posture=business";
+    personalAgents.length === 0
+      ? "/studio?create=1&posture=personal"
+      : "/studio?create=1&posture=business";
   const founderPairLabel =
     personalAgents.length === 0 ? "Create personal agent" : "Add business voice agent";
   const founderPairDetail =
@@ -580,12 +584,16 @@ export default function OverviewPage() {
   const primaryAgent = agents[0];
   const hasLiveLine = agents.some((agent) => Boolean(agent.phone_number));
   const hasConversationHistory = recentCalls.length > 0;
+  const emptyStudioHref =
+    accountType === "personal"
+      ? "/studio?create=1&posture=personal"
+      : "/studio?create=1&posture=business";
   const primaryStudioHref = primaryAgent
     ? `/studio?agent=${encodeURIComponent(primaryAgent.id)}&section=setup`
-    : "/studio?create=1";
+    : emptyStudioHref;
   const primaryTestHref = primaryAgent
     ? `/studio?agent=${encodeURIComponent(primaryAgent.id)}&section=test`
-    : "/studio?create=1";
+    : emptyStudioHref;
 
   return (
     <WorkspaceShell contentClassName="pt-7 pb-10 lg:pt-8">
@@ -770,7 +778,7 @@ export default function OverviewPage() {
                     }
                     action={
                       <Button asChild size="sm">
-                        <Link to="/studio?create=1">{language.createCta}</Link>
+                        <Link to={emptyStudioHref}>{language.createCta}</Link>
                       </Button>
                     }
                   />
