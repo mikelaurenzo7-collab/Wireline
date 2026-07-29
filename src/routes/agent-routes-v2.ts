@@ -437,7 +437,7 @@ router.get(
             ),
           )
           .orderBy(desc(schema.knowledge.createdAt)),
-      ])
+      ]),
     );
     const record = agentRows[0];
     const identity = record
