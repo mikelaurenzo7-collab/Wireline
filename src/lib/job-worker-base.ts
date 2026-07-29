@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- job and webhook payloads are stored as Postgres jsonb. */
 import { log, quotaTracker, auditLogger, drizzle } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, lt, sql } from "drizzle-orm";
+import { eq, and, sql, lt } from "drizzle-orm";
 import * as claudeBrain from "./ai-brains";
 import * as geminiBrain from "./gemini-brain";
 import { getErrorMessage } from "./server-utils";
@@ -11,7 +11,10 @@ import { ActionItemSchema } from "./action-types";
 import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import { CRMService } from "./crm-service";
-import { apolloPlatformConfigured, searchLeads as apolloSearch } from "./apollo-service";
+import {
+  apolloPlatformConfigured,
+  searchLeads as apolloSearch,
+} from "./apollo-service";
 import { purgeAccount, releaseExternalResourcesForPurge } from "./account-deletion";
 
 type SupportedCrmType = "salesforce" | "hubspot";
@@ -88,9 +91,7 @@ async function syncCallActivityToCrm(input: {
           leadScore: input.leadScore,
         })
         .catch((e) =>
-          log.warn("Post-call lead score CRM sync failed", {
-            error: getErrorMessage(e),
-          }),
+          log.warn("Post-call lead score CRM sync failed", { error: getErrorMessage(e) }),
         );
     }
 
@@ -133,10 +134,7 @@ export async function handleJob(job: JobRow): Promise<void> {
 
     // Check user tier for model selection
     const [settings] = await drizzle
-      .select({
-        aiTier: schema.settings.aiTier,
-        crmType: schema.settings.crmType,
-      })
+      .select({ aiTier: schema.settings.aiTier, crmType: schema.settings.crmType })
       .from(schema.settings)
       .where(eq(schema.settings.userId, p.userId))
       .limit(1);
@@ -207,9 +205,7 @@ export async function handleJob(job: JobRow): Promise<void> {
         records,
         requestMeta: { vapi_call_id: p.callId, agent_id: p.agentId },
       }).catch((e: unknown) =>
-        log.warn("post_call audit persist failed", {
-          error: getErrorMessage(e),
-        }),
+        log.warn("post_call audit persist failed", { error: getErrorMessage(e) }),
       );
     } else {
       const tokenCount = Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
@@ -314,11 +310,7 @@ export async function handleJob(job: JobRow): Promise<void> {
         transcript: p.transcript,
         customerNumber: p.customerNumber,
       },
-    }).catch((e) =>
-      log.error("Failed to enqueue V2A extraction", {
-        error: getErrorMessage(e),
-      }),
-    );
+    }).catch((e) => log.error("Failed to enqueue V2A extraction", { error: getErrorMessage(e) }));
   }
 
   if (job.type === "v2a_action_extraction") {
@@ -363,10 +355,7 @@ export async function handleJob(job: JobRow): Promise<void> {
 
     const parsed = ActionItemSchema.safeParse(p.action);
     if (!parsed.success) {
-      log.error("Invalid action payload", {
-        userId: p.userId,
-        error: parsed.error,
-      });
+      log.error("Invalid action payload", { userId: p.userId, error: parsed.error });
       return;
     }
 
@@ -408,10 +397,7 @@ export async function handleJob(job: JobRow): Promise<void> {
         .onConflictDoNothing({
           target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
         });
-      log.info("Adaptive optimization: new lesson synthesized", {
-        agentId: p.agentId,
-        lesson,
-      });
+      log.info("Adaptive optimization: new lesson synthesized", { agentId: p.agentId, lesson });
     }
   }
 
@@ -453,7 +439,6 @@ export async function handleJob(job: JobRow): Promise<void> {
           ),
         )
         .returning({ id: schema.passwordResetTokens.id });
-
       log.info("purge_old_data job completed", {
         jobId: job.id,
         user_id: p.user_id,
@@ -524,10 +509,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     // wireline_subscriptions/wireline_phone_numbers we lose the ids forever.
     // A hard Stripe failure throws here so the job retries instead of purging
     // a still-billing subscription; number-release failures are logged only.
-    const release = await releaseExternalResourcesForPurge(p.user_id, {
-      db: drizzle,
-      log,
-    });
+    const release = await releaseExternalResourcesForPurge(p.user_id, { db: drizzle, log });
     log.info("purge_deleted_account external release", {
       jobId: job.id,
       user_id: p.user_id,
@@ -694,10 +676,7 @@ export async function handleJob(job: JobRow): Promise<void> {
   if (job.type === "campaign_dial") {
     const p = job.payload as { userId: string; campaignId?: string };
     if (!p.userId || !p.campaignId) {
-      log.error("campaign_dial job missing campaignId", {
-        jobId: job.id,
-        payload: p,
-      });
+      log.error("campaign_dial job missing campaignId", { jobId: job.id, payload: p });
       throw new Error("campaign_dial job requires userId and campaignId");
     }
     const { CampaignDialerService } = await import("../services/campaign-dialer");
@@ -720,9 +699,7 @@ export async function handleJob(job: JobRow): Promise<void> {
   if (job.type === "auto_qa_score") {
     const p = job.payload as { callLogId: number | string; userId: string };
     if (!claudeBrain.isBrainAvailable()) {
-      log.warn("auto_qa_score skipped — claude unavailable", {
-        callLogId: p.callLogId,
-      });
+      log.warn("auto_qa_score skipped — claude unavailable", { callLogId: p.callLogId });
       return;
     }
 
@@ -732,9 +709,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     try {
       callLogIdBig = BigInt(p.callLogId as any);
     } catch {
-      log.warn("auto_qa_score skipped — unparseable callLogId", {
-        callLogId: p.callLogId,
-      });
+      log.warn("auto_qa_score skipped — unparseable callLogId", { callLogId: p.callLogId });
       return;
     }
 
@@ -756,9 +731,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       .limit(1);
 
     if (!call || !call.transcript) {
-      log.info("auto_qa_score skipped — no call or transcript", {
-        callLogId: p.callLogId,
-      });
+      log.info("auto_qa_score skipped — no call or transcript", { callLogId: p.callLogId });
       return;
     }
 
@@ -766,9 +739,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     // end-of-call-report and the job ran twice), skip the second pass to
     // save a Claude API call per duplicate.
     if (call.qaScore != null) {
-      log.info("auto_qa_score skipped — already scored", {
-        callLogId: p.callLogId,
-      });
+      log.info("auto_qa_score skipped — already scored", { callLogId: p.callLogId });
       return;
     }
 
@@ -813,21 +784,13 @@ export async function handleJob(job: JobRow): Promise<void> {
         await enqueue(drizzle, {
           userId: p.userId,
           type: "adaptive_optimization",
-          payload: {
-            agentId: call.agentId,
-            callId: String(call.id),
-            score,
-            breakdown,
-          },
+          payload: { agentId: call.agentId, callId: String(call.id), score, breakdown },
         });
       }
 
       log.info("auto_qa_score completed", { callLogId: p.callLogId, score });
     } catch (err: any) {
-      log.error("auto_qa_score failed", {
-        callLogId: p.callLogId,
-        error: err?.message,
-      });
+      log.error("auto_qa_score failed", { callLogId: p.callLogId, error: err?.message });
     }
   }
 
@@ -883,21 +846,12 @@ export async function handleJob(job: JobRow): Promise<void> {
         checkoutUrl: `${appUrl}/pricing`,
       });
       if (!result.ok) {
-        log.warn("trial_ending_soon_email send failed", {
-          userId: p.userId,
-          error: result.error,
-        });
+        log.warn("trial_ending_soon_email send failed", { userId: p.userId, error: result.error });
       } else {
-        log.info("trial_ending_soon_email sent", {
-          userId: p.userId,
-          daysLeft: p.daysLeft,
-        });
+        log.info("trial_ending_soon_email sent", { userId: p.userId, daysLeft: p.daysLeft });
       }
     } catch (err: any) {
-      log.error("trial_ending_soon_email job failed", {
-        userId: p.userId,
-        error: err?.message,
-      });
+      log.error("trial_ending_soon_email job failed", { userId: p.userId, error: err?.message });
       throw err;
     }
   }
