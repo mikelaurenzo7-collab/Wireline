@@ -106,12 +106,16 @@ export const FOUNDER_PRODUCTS = [
   {
     key: "live_video",
     name: "Wireline Live Video",
-    description: "Photoreal presenter streaming add-on for business agents.",
+    description:
+      "Photoreal presenter streaming add-on for business agents: 60 reserved Live Video session minutes monthly, reserved in 10-minute sessions, with no automatic overage.",
     defaultPriceKey: "live_video_monthly",
     metadata: {
       wireline_product: "live_video_addon",
       wireline_billing_model: "addon_subscription",
-      wireline_catalog_state: "launch_active",
+      wireline_catalog_state: "launch_paused",
+      included_live_video_minutes: "60",
+      session_reservation_minutes: "10",
+      overage_policy: "none_pause_at_limit",
     },
   },
   {
@@ -235,6 +239,9 @@ export const FOUNDER_PRICES = [
     metadata: {
       wireline_product: "live_video_addon",
       wireline_price_type: "live_video_addon",
+      included_live_video_minutes: "60",
+      session_reservation_minutes: "10",
+      overage_policy: "none_pause_at_limit",
     },
   },
   // Keep in lockstep with src/lib/conversation-balance.ts presets ($10 minimum).
