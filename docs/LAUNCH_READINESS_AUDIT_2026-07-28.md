@@ -16,14 +16,14 @@ All verified code wins are implemented on the audit branch. No speculative redes
 
 ## Exact-head release evidence
 
-The last recorded full launch audit completed on code-equivalent commit `e9a80fc35a65e3ee66c60b473574d7f484e1785c` (`dpl_FwpDjvJtR3y1815idmSrdy7F4HXD`). The final email-observability privacy hardening is tagged to rerun the full gate; this section must be refreshed with that deployment before merge.
+The full launch audit completed on code-bearing commit `10b832e2bcf10fe965f01ef96447c57c7ec57746` (`dpl_BZZkWUGuUyndrcLkAcaq83K4PG5v`, `READY`). This evidence-only documentation update does not change the audited runtime.
 
 | Gate | Result |
 | --- | --- |
-| Vercel preview | `READY` (`dpl_5VpzNVyQajeZ1n1EsWvos6HrGpYc`) at `ed1954c31952b6854c4c01adbb95d626de001e4b` |
-| Unit/contract suite | Curated gate: 35 files / 231 tests; full non-E2E suite: 257 files / 1,366 tests; all passed |
+| Vercel preview | `READY` (`dpl_BZZkWUGuUyndrcLkAcaq83K4PG5v`) at `10b832e2bcf10fe965f01ef96447c57c7ec57746` |
+| Unit/contract suite | Curated gate: 36 files / 233 tests; full non-E2E suite: 258 files / 1,368 tests; all passed |
 | Static analysis | Client TypeScript, server TypeScript, audit-module TypeScript, and ESLint passed |
-| Frontend build | Vite 6.4.3; 3,074 modules transformed in 9.23s |
+| Frontend build | Vite 6.4.3; 3,074 modules transformed in 9.02s |
 | Server build | 2.4 MB server bundle; import-safe no-database smoke passed |
 | ChatGPT/MCP build | 2.0 MB bundle |
 | Public health | `GET /api/health` returned 200 |
