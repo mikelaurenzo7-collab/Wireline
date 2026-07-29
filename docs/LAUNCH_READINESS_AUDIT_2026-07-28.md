@@ -138,8 +138,9 @@ This audit did **not** reuse old screenshots or claim visual completion. Fresh s
 3. Enable Opera AI connection and explicitly approve Playwright for the exact cross-viewport matrix; inspect and fix every current screenshot before merge.
 4. Restore GitHub Actions execution or explicitly accept Vercel exact-head build as the temporary release gate.
 5. Complete one real Federal DNC scrub before scaled marketing outbound.
-6. Connect/configure Sentry if it is intended to be a launch dependency; otherwise keep Vercel/runtime logging as the documented observability boundary.
-7. Rotate the Vercel personal token that was pasted into chat.
+6. Rotate the Vercel personal token that was pasted into chat.
+
+External Sentry is not a launch dependency. Wireline's documented launch observability boundary is structured Vercel/runtime logging plus the bounded browser-report endpoint. Adopt external Sentry later only if its project and alerting are explicitly chosen and receipt-tested.
 
 ## Merge rule
 
