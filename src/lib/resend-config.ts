@@ -80,14 +80,28 @@ export function getResendTransportDiagnostics(): ResendTransportDiagnostics {
   };
 }
 
+/**
+ * Provider errors are both user-facing and logged. Bound them, flatten control
+ * characters, and remove any mailbox Resend echoes back in an error response.
+ */
+function sanitizeResendErrorDetail(value: string): string {
+  return value
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,63}\b/gi, "[redacted-email]")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 300);
+}
+
 /** Parse Resend error JSON into a short Account Holder-facing string. */
 export function formatResendApiError(status: number, body: string): string {
-  let detail = body.slice(0, 300);
+  let detail = sanitizeResendErrorDetail(body);
   try {
-    const parsed = JSON.parse(body) as { message?: string; name?: string };
-    if (parsed.message) detail = parsed.message;
+    const parsed = JSON.parse(body) as { message?: unknown };
+    if (typeof parsed.message === "string") {
+      detail = sanitizeResendErrorDetail(parsed.message);
+    }
   } catch {
-    /* keep raw slice */
+    /* keep sanitized raw slice */
   }
 
   if (
