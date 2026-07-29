@@ -123,13 +123,16 @@ async function stripeStatus() {
   const portalConfigurations = Array.isArray(portalResult.body?.data)
     ? portalResult.body.data
     : [];
-  const defaultPortal = portalConfigurations.find(
-    (configuration) => configuration?.active === true && configuration?.is_default === true,
+  const portalConfiguration = portalConfigurations.find(
+    (configuration) =>
+      configuration?.active === true &&
+      (configuration?.is_default === true ||
+        configuration?.metadata?.wireline_managed === "true"),
   );
-  const portalFeatures = defaultPortal?.features ?? {};
+  const portalFeatures = portalConfiguration?.features ?? {};
   const portalReady = Boolean(
     portalResult.ok &&
-      defaultPortal &&
+      portalConfiguration &&
       portalFeatures.payment_method_update?.enabled === true &&
       portalFeatures.invoice_history?.enabled === true &&
       portalFeatures.subscription_cancel?.enabled === true,
@@ -198,7 +201,7 @@ async function stripeStatus() {
       ready: brandReady,
     },
     customer_portal: {
-      default_present: Boolean(defaultPortal),
+      managed_or_default_present: Boolean(portalConfiguration),
       payment_method_update: portalFeatures.payment_method_update?.enabled === true,
       invoice_history: portalFeatures.invoice_history?.enabled === true,
       subscription_cancel: portalFeatures.subscription_cancel?.enabled === true,
