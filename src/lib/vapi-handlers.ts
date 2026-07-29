@@ -34,11 +34,22 @@ import {
 import { takeStagedReliabilityMetrics } from "./call-reliability-capture";
 import { notifyCallRecap } from "./mobile-push";
 import { emitServerProductEventOnce } from "./product-event-server";
+import {
+  resolveVapiCallCostUsd,
+  resolveVapiCallDurationSeconds,
+  resolveVapiRecordingUrl,
+  resolveVapiTranscript,
+} from "./vapi-report-normalization";
 
 export interface CallReportPayload {
   message: {
     call: any;
     analysis: any;
+    artifact?: unknown;
+    cost?: number | string;
+    costs?: unknown[];
+    startedAt?: string;
+    endedAt?: string;
     transcript?: string;
     recordingUrl?: string;
     stereoRecordingUrl?: string;
@@ -55,15 +66,10 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   const { call, analysis } = message;
   const webhookAgentId = agent.id;
   const userId = agent.user_id;
-
-  let duration = 0;
-  if (call?.endedAt && call?.startedAt) {
-    duration = Math.floor(
-      (new Date(call.endedAt).getTime() - new Date(call.startedAt).getTime()) / 1000,
-    );
-  } else if (typeof message.durationSeconds === "number" && message.durationSeconds > 0) {
-    duration = Math.floor(message.durationSeconds);
-  }
+  const duration = resolveVapiCallDurationSeconds(message, call);
+  const callCostUsd = resolveVapiCallCostUsd(message, call);
+  const transcript = resolveVapiTranscript(message);
+  const recordingUrl = resolveVapiRecordingUrl(message);
   const endedReason =
     typeof message.endedReason === "string"
       ? message.endedReason
@@ -98,10 +104,10 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
         customerNumber: call?.customer?.number || "",
         durationSeconds: duration,
-        cost: String(call?.cost || 0.0),
+        cost: callCostUsd == null ? null : String(callCostUsd),
         summary: analysis?.summary || "No summary provided.",
-        transcript: message.transcript || "",
-        recordingUrl: message.recordingUrl || message.stereoRecordingUrl || null,
+        transcript: transcript || "",
+        recordingUrl: recordingUrl,
         endedReason,
         toolCallsTotal: stagedReliability?.toolCallsTotal ?? 0,
         toolCallsFailed: stagedReliability?.toolCallsFailed ?? 0,
@@ -132,10 +138,10 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
             .update(schema.callLogs)
             .set({
               durationSeconds: duration,
-              cost: String(call?.cost || 0.0),
+              cost: callCostUsd == null ? null : String(callCostUsd),
               summary: analysis?.summary || "No summary provided.",
-              transcript: message.transcript || "",
-              recordingUrl: message.recordingUrl || message.stereoRecordingUrl || null,
+              transcript: transcript || "",
+              recordingUrl: recordingUrl,
               endedReason,
               toolCallsTotal: stagedReliability?.toolCallsTotal ?? 0,
               toolCallsFailed: stagedReliability?.toolCallsFailed ?? 0,
@@ -159,15 +165,31 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
             });
           }
         } else {
-          if (message.transcript?.trim()) {
+          if (transcript.trim()) {
             await drizzle
               .update(schema.callLogs)
-              .set({ transcript: message.transcript })
+              .set({ transcript })
               .where(
                 sql`${schema.callLogs.vapiCallId} = ${vapiCallId} AND (${schema.callLogs.transcript} IS NULL OR ${schema.callLogs.transcript} = '')`,
               );
           }
-          log.info("Duplicate end-of-call-report ignored after retry-safe transcript patch", {
+          if (recordingUrl) {
+            await drizzle
+              .update(schema.callLogs)
+              .set({ recordingUrl })
+              .where(
+                sql`${schema.callLogs.vapiCallId} = ${vapiCallId} AND (${schema.callLogs.recordingUrl} IS NULL OR ${schema.callLogs.recordingUrl} = '')`,
+              );
+          }
+          if (callCostUsd != null) {
+            await drizzle
+              .update(schema.callLogs)
+              .set({ cost: String(callCostUsd) })
+              .where(
+                sql`${schema.callLogs.vapiCallId} = ${vapiCallId} AND ${schema.callLogs.cost} IS NULL`,
+              );
+          }
+          log.info("Duplicate end-of-call-report ignored after retry-safe evidence patch", {
             callId: vapiCallId,
           });
         }
@@ -236,7 +258,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
         durationSeconds: duration,
         summary: analysis?.summary || null,
-        transcript: message.transcript || null,
+        transcript: transcript || null,
         sentiment: null,
         intentLabel: null,
         endedReason,
@@ -260,7 +282,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   let enrichment: WirelineCallCompletedOutcome["enrichment"] = null;
 
   // 2. AI Enrichment (Claude Opus or Gemini Flash when hard-capped / Claude offline)
-  if (message.transcript) {
+  if (transcript) {
     try {
       const [agentDetail] = await drizzle
         .select({
@@ -278,7 +300,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       const cap = await claudeBrain.withAuditCapture(async () => {
         if (useGeminiFlash) {
           return geminiPostCallAnalysis({
-            transcript: message.transcript || "",
+            transcript: transcript || "",
             summary: analysis?.summary || "",
           });
         }
@@ -289,7 +311,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
           customerNumber: call?.customer?.number,
           durationSeconds: duration,
           summary: analysis?.summary || "",
-          transcript: message.transcript || "",
+          transcript: transcript || "",
         });
       });
       const result = cap.result;
@@ -435,7 +457,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     //   - found            → disclosure_played, with the matched line as evidence
     //   - transcript, none → disclosure_not_detected (a real compliance signal)
     //   - no transcript    → disclosure_played, delivery "unverifiable"
-    const transcript = message.transcript || "";
+    const transcript = transcript || "";
     const disclosure = detectRecordingDisclosure(transcript);
     const hasTranscript = transcript.trim().length > 0;
 
@@ -490,7 +512,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       });
     }
 
-    const optOut = detectOptOut(message.transcript || "");
+    const optOut = detectOptOut(transcript || "");
     if (optOut.found) {
       const optOutRow = buildConsentLedgerRow({
         user_id: userId,
@@ -519,10 +541,10 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   }
 
   // 5. Gemini Fallback
-  if (!enrichment && message.transcript) {
+  if (!enrichment && transcript) {
     try {
       const geminiResult = await geminiPostCallAnalysis({
-        transcript: message.transcript,
+        transcript: transcript,
         summary: analysis?.summary || "",
       });
 
