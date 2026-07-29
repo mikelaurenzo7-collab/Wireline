@@ -12,6 +12,7 @@ import {
   isStripePaymentRequiredError,
   reconciledStoredAgentCap,
 } from "../lib/extra-agent-billing";
+import { isLaunchHardBlocked, launchBlockResponse } from "../lib/launch-readiness";
 import { FOUNDER_CATALOG_VERSION, planById } from "../lib/plan-catalog";
 import { getErrorMessage } from "../lib/server-utils";
 import { auditLogger, drizzle, log } from "../lib/server-context";
@@ -100,6 +101,16 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
       if (!plan) throw AppError.fromHttpStatus(400, "Plan not found");
 
       const currentDbQuantity = Math.max(0, Number(row.currentExtraAgents ?? 0));
+      // Launch blockers must stop new paid capacity, but never trap a customer
+      // in an existing quantity. Reductions and no-op reconciliation remain
+      // available so a readiness incident cannot prevent a downgrade.
+      if (target > currentDbQuantity && isLaunchHardBlocked()) {
+        return {
+          status: 503,
+          body: launchBlockResponse(),
+        };
+      }
+
       const persistQuantity = async (
         quantity: number,
         reconciled: boolean,
