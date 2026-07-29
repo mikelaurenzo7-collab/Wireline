@@ -149,30 +149,33 @@ export async function enqueue(db: DrizzleDB, opts: EnqueueOptions): Promise<Enqu
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Consumer — claim one pending job (atomic)
+// Consumer — claim one due job (atomic)
 // ─────────────────────────────────────────────────────────────────
 
 /**
- * Attempt to atomically claim one pending job via RPC.
+ * Attempt to atomically claim one due pending or retryable-failed job.
  * The RPC (`wireline_claim_job`) does:
  *   UPDATE wireline_jobs SET status='running', started_at=now(),
  *          attempts=attempts+1, updated_at=now()
  *   WHERE id = (
  *     SELECT id FROM wireline_jobs
- *     WHERE status='pending' AND run_at <= now()
+ *     WHERE status IN ('pending', 'failed') AND run_at <= now()
  *     ORDER BY run_at ASC
  *     LIMIT 1
  *     FOR UPDATE SKIP LOCKED
  *   )
  *   RETURNING *
  *
- * Returns the claimed job row, or null when the queue is idle.
+ * Returns the claimed due job row, or null when the queue is idle.
  * Falls back to a non-atomic select+update on older deployments where
  * the RPC doesn't exist yet — safe for single-worker setups.
  */
 export async function claimJob(db: DrizzleDB, typeFilter?: JobType[]): Promise<any | null> {
   return await db.transaction(async (tx) => {
-    const whereClauses = [eq(schema.jobs.status, "pending"), lte(schema.jobs.runAt, new Date())];
+    const whereClauses = [
+      inArray(schema.jobs.status, ["pending", "failed"]),
+      lte(schema.jobs.runAt, new Date()),
+    ];
     if (typeFilter?.length) {
       whereClauses.push(inArray(schema.jobs.type, typeFilter));
     }
@@ -203,7 +206,7 @@ export async function claimJob(db: DrizzleDB, typeFilter?: JobType[]): Promise<a
   }, writeTransactionConfig());
 }
 
-/** Atomically claim one pending job owned by a specific tenant (serverless kick). */
+/** Atomically claim one due pending or retryable-failed job owned by a tenant. */
 export async function claimJobById(
   db: DrizzleDB,
   jobId: string,
@@ -217,7 +220,7 @@ export async function claimJobById(
         and(
           eq(schema.jobs.id, jobId),
           eq(schema.jobs.userId, userId),
-          eq(schema.jobs.status, "pending"),
+          inArray(schema.jobs.status, ["pending", "failed"]),
           lte(schema.jobs.runAt, new Date()),
         ),
       )
