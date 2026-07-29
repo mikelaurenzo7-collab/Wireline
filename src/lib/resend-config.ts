@@ -90,7 +90,10 @@ export function formatResendApiError(status: number, body: string): string {
     /* keep raw slice */
   }
 
-  if (status === 403 || /domain|verify|not verified/i.test(detail)) {
+  if (
+    status === 403 ||
+    /sending domain|domain (?:is )?not verified|verify (?:the |your )?domain/i.test(detail)
+  ) {
     const from = resolveResendFromAddress();
     const domain = extractFromDomain(from);
     return (
