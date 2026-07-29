@@ -47,7 +47,7 @@ export const FOUNDER_PRODUCTS = [
     key: "business",
     name: "Wireline Pro",
     description:
-      "Multi-agent operating plan for growing businesses: up to 5 live AI communications agents and on-demand numbers, 250 pooled voice minutes monthly, Lead Hunt workflows, shared inbox, routing, approvals, connected email and SMS automation, and prepaid overflow.",
+      "Multi-agent operating plan for growing businesses: up to 5 live AI communications agents and on-demand numbers, 245 pooled voice minutes monthly, Lead Hunt workflows, shared inbox, routing, approvals, connected email and SMS automation, and prepaid overflow.",
     defaultPriceKey: "business_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "business",
@@ -56,7 +56,7 @@ export const FOUNDER_PRODUCTS = [
       wireline_catalog_state: "launch_active",
       included_agents: "5",
       included_numbers: "5",
-      included_voice_minutes: "250",
+      included_voice_minutes: "245",
       overage_policy: "prepaid_balance_only",
       wireline_templates: "unlocked",
     },
@@ -178,7 +178,7 @@ export const FOUNDER_PRICES = [
     unitAmount: 7900,
     recurring: { interval: "month", usage_type: "licensed" },
     envTarget: "STRIPE_TEAM_PRICE_ID",
-    metadata: { wireline_plan_id: "business", included_voice_minutes: "250" },
+    metadata: { wireline_plan_id: "business", included_voice_minutes: "245" },
   },
   {
     key: "business_annual_founder_2026_07_v6",
@@ -188,7 +188,7 @@ export const FOUNDER_PRICES = [
     unitAmount: 79000,
     recurring: { interval: "year", usage_type: "licensed" },
     envTarget: "STRIPE_TEAM_ANNUAL_PRICE_ID",
-    metadata: { wireline_plan_id: "business", included_voice_minutes: "250" },
+    metadata: { wireline_plan_id: "business", included_voice_minutes: "245" },
   },
   {
     key: "enterprise_monthly_founder_2026_07_v6",
