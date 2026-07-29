@@ -784,7 +784,7 @@ router.get(
               )
               .orderBy(desc(schema.callLogs.createdAt))
               .limit(4),
-          ])
+          ]),
         );
 
       res.json({
