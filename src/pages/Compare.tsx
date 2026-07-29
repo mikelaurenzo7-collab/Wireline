@@ -169,7 +169,7 @@ export default function Compare() {
       <section className="wl-public-section">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="wl-stitch-eyebrow">Market reference · Verified July 19, 2026</p>
+            <p className="wl-stitch-eyebrow">Market reference · Verified July 29, 2026</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
               Compare the buying model, not only the headline price.
             </h2>
@@ -256,7 +256,7 @@ export default function Compare() {
           </div>
 
           <p className="mt-4 max-w-4xl text-xs leading-5 text-muted-foreground">
-            Public prices were checked on the linked official pages on July 19, 2026 and may change.
+            Public prices were checked on the linked official pages on July 29, 2026 and may change.
             Taxes, carrier fees, optional add-ons, annual discounts, implementation services, and
             usage patterns can change the effective total. This is a buying-model reference,{" "}
             {"not a claim that unlike products are feature-for-feature equivalents."}
