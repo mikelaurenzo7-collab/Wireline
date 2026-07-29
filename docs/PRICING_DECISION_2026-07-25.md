@@ -97,7 +97,8 @@ untouched; the $0.14 COGS-drift alarm stays.
 
 Unchanged on purpose: prepaid-only overflow (no automatic overages), Runtime
 Balance denominations ($10/$25/$50/$100), extra-agent add-on ($15 → +1 agent,
-+50 min, +1 number — clears both floors as-is), Live Video add-on ($19),
++50 min, +1 number — clears both floors as-is), Live Video add-on ($19 →
+60 reserved session minutes/month, reserved in 10-minute sessions, no automatic overage),
 Free Builder as the trial (build/train/simulate free, pay to go live), public
 plan names and canonical plan ids (zero alias/schema churn).
 
