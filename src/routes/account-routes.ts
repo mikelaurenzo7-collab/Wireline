@@ -9,7 +9,7 @@ import {
   getAccountById,
   getPrimaryAccount,
 } from "../lib/account-service";
-import { computeScheduledPurgeAt } from "../lib/account-deletion";
+import { ACCOUNT_DELETION_GRACE_DAYS, computeScheduledPurgeAt } from "../lib/account-deletion";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { stopRenewalForDeletion } from "../lib/account-deletion-billing";
@@ -49,6 +49,31 @@ router.get("/api/accounts/:id", authenticateUser, async (req: Request, res: Resp
   if (!account) return res.status(404).json({ code: "NOT_FOUND", error: "Account not found" });
   res.json({ account });
 });
+
+router.get(
+  "/api/account/deletion-status",
+  authenticateUser,
+  async (req: Request, res: Response) => {
+    const userId = authenticatedUserId(req);
+    const [pending] = await drizzle
+      .select({
+        scheduledPurgeAt: schema.deletionQueue.scheduledPurgeAt,
+      })
+      .from(schema.deletionQueue)
+      .where(
+        and(eq(schema.deletionQueue.userId, userId), eq(schema.deletionQueue.status, "pending")),
+      )
+      .limit(1);
+
+    res.json({
+      pending: Boolean(pending),
+      status: pending ? "pending" : "none",
+      scheduled_purge_at: pending?.scheduledPurgeAt ?? null,
+      grace_days: ACCOUNT_DELETION_GRACE_DAYS,
+      cancel_endpoint: pending ? "/api/account/cancel-deletion" : null,
+    });
+  },
+);
 
 router.post(
   "/api/account/delete",
