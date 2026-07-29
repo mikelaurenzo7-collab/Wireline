@@ -63,7 +63,7 @@ router.get(
             .select({ label: schema.signalPresence.label })
             .from(schema.signalPresence)
             .where(eq(schema.signalPresence.userId, userId)),
-        ])
+        ]),
       );
 
       const triageCount = Number(triageResult.count);
@@ -270,7 +270,7 @@ router.get(
               ),
             )
             .limit(500),
-        ])
+        ]),
       );
 
       const totalAppointments = Number(apptCountResult[0]?.count ?? 0);
