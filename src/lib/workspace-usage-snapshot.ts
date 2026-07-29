@@ -119,11 +119,11 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
  * Seed the plan-default AI spend budget. Called at signup (free tier) and
  * from Stripe sync on every subscription change.
  *
- * Upgrade rule: only a budget at (or below) the free-tier default is treated
- * as auto-seeded and raised to a higher tier default — a signup-seeded $0.50
- * free cap must not survive into a paid plan. ANY budget above the free
- * default is left untouched, so a hand-set spend cap (even one that happens to
- * equal a paid-tier default) is never silently overwritten.
+ * Safety rule: the account holder may lower this guard, but cannot raise it
+ * above the provider-cost envelope funded by the active plan. The exact
+ * auto-seeded free default is raised after an upgrade; oversized limits are
+ * clamped after a downgrade; and hard-cap enforcement is repaired if an older
+ * row was disabled.
  *
  * `executor` lets a caller pass an open transaction so the seed participates
  * in the same tx as the user insert — without it, seeding during signup runs
@@ -141,36 +141,48 @@ export async function ensureDefaultAiSpendBudget(
   const freeDefault = defaultAiSpendBudgetUsdForTier("free");
 
   const [existing] = await executor
-    .select({ monthlyLimitUsd: schema.spendBudgets.monthlyLimitUsd })
+    .select({
+      monthlyLimitUsd: schema.spendBudgets.monthlyLimitUsd,
+      hardCap: schema.spendBudgets.hardCap,
+      enabled: schema.spendBudgets.enabled,
+      warnThresholdPct: schema.spendBudgets.warnThresholdPct,
+    })
     .from(schema.spendBudgets)
     .where(eq(schema.spendBudgets.userId, userId))
     .limit(1);
 
-  if (existing && Number(existing.monthlyLimitUsd) > 0) {
-    const current = Number(existing.monthlyLimitUsd);
-    // Only the auto-seeded free-tier cap is eligible for an automatic raise.
-    // A hand-set cap (anything above the free default) is the Account Holder's
-    // explicit choice and must never be overwritten.
-    const isAutoSeededFreeCap = current <= freeDefault + 0.005;
-    if (!isAutoSeededFreeCap || limit <= current) return;
-  }
+  const current = Number(existing?.monthlyLimitUsd);
+  const hasUsableCurrent = Number.isFinite(current) && current > 0;
+  const isAutoSeededFreeCap =
+    hasUsableCurrent && Math.abs(current - freeDefault) <= 0.005 && limit > current;
+  const nextLimit = isAutoSeededFreeCap
+    ? limit
+    : hasUsableCurrent
+      ? Math.min(current, limit)
+      : limit;
+  const alreadySafe =
+    existing &&
+    Math.abs(current - nextLimit) <= 0.005 &&
+    existing.hardCap === true &&
+    existing.enabled === true;
+  if (alreadySafe) return;
 
   await executor
     .insert(schema.spendBudgets)
     .values({
       userId,
-      monthlyLimitUsd: limit.toString(),
+      monthlyLimitUsd: nextLimit.toString(),
       hardCap: true,
-      warnThresholdPct: 80,
+      warnThresholdPct: existing?.warnThresholdPct ?? 80,
       enabled: true,
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
       target: schema.spendBudgets.userId,
       set: {
-        monthlyLimitUsd: limit.toString(),
+        monthlyLimitUsd: nextLimit.toString(),
         hardCap: true,
-        warnThresholdPct: 80,
+        warnThresholdPct: existing?.warnThresholdPct ?? 80,
         enabled: true,
         updatedAt: new Date(),
       },
