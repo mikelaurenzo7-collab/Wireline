@@ -324,16 +324,17 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user.id;
-      const [[agentRow], [callLogRow], [settingsRow], [prefsRow], [phoneRow]] = await Promise.all([
-        drizzle
+      const [[agentRow], [callLogRow], [settingsRow], [prefsRow], [phoneRow]] = await drizzle.transaction((tx) =>
+        Promise.all([
+        tx
           .select({ count: sql<number>`count(*)` })
           .from(agents)
           .where(eq(agents.userId, userId)),
-        drizzle
+        tx
           .select({ count: sql<number>`count(*)` })
           .from(callLogs)
           .where(eq(callLogs.userId, userId)),
-        drizzle
+        tx
           .select({
             subscriptionStatus: settings.subscriptionStatus,
             vapiPhoneNumberId: settings.vapiPhoneNumberId,
@@ -341,16 +342,17 @@ router.get(
           .from(settings)
           .where(eq(settings.userId, userId))
           .limit(1),
-        drizzle
+        tx
           .select({ onboardingCompleted: userPreferences.onboardingCompleted })
           .from(userPreferences)
           .where(eq(userPreferences.userId, userId))
           .limit(1),
-        drizzle
+        tx
           .select({ count: sql<number>`count(*)` })
           .from(schema.phoneNumbers)
           .where(eq(schema.phoneNumbers.userId, userId)),
-      ]);
+      ])
+      );
 
       const platformVoiceReady = Boolean(process.env.VAPI_PRIVATE_KEY?.trim());
       const tenantHasNumber =
