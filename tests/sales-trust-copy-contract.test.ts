@@ -76,7 +76,15 @@ describe("sales trust copy contract", () => {
   it("keeps the market comparison dated, sourced, and explicit about unlike products", () => {
     const compare = read("src/pages/Compare.tsx");
 
-    expect(compare).toContain("Verified July 19, 2026");
+    const verified = compare.match(/Verified ([A-Z][a-z]+ \\d{1,2}, 20\\d{2})/);
+    const checked = compare.match(
+      /Public prices were checked on the linked official pages on ([A-Z][a-z]+ \\d{1,2}, 20\\d{2})/,
+    );
+    if (!verified || !checked) throw new Error("Market comparison verification date is missing.");
+    expect(verified[1]).toBe(checked[1]);
+    const ageMs = Date.now() - Date.parse(`${verified[1]}T00:00:00Z`);
+    expect(ageMs).toBeGreaterThanOrEqual(-86_400_000);
+    expect(ageMs).toBeLessThanOrEqual(45 * 86_400_000);
     expect(compare).toContain("https://www.goodcall.com/pricing");
     expect(compare).toContain("https://smith.ai/pricing/ai-receptionist");
     expect(compare).toContain("https://www.bland.ai/pricing");
