@@ -720,7 +720,8 @@ router.get(
       const [callRows, emailRows, textRows, bookingRows, openTaskRows, recentCalls] =
         await drizzle.transaction((tx) =>
           Promise.all([
-            tx.select({ n: sql<number>`count(*)::int` })
+            tx
+              .select({ n: sql<number>`count(*)::int` })
               .from(schema.callLogs)
               .where(
                 and(
@@ -729,7 +730,8 @@ router.get(
                   gte(schema.callLogs.createdAt, since),
                 ),
               ),
-            tx.select({ n: sql<number>`count(*)::int` })
+            tx
+              .select({ n: sql<number>`count(*)::int` })
               .from(schema.emailThreads)
               .where(
                 and(
@@ -738,7 +740,8 @@ router.get(
                   gte(schema.emailThreads.createdAt, since),
                 ),
               ),
-            tx.select({ n: sql<number>`count(*)::int` })
+            tx
+              .select({ n: sql<number>`count(*)::int` })
               .from(schema.smsThreads)
               .where(
                 and(
@@ -747,7 +750,8 @@ router.get(
                   gte(schema.smsThreads.createdAt, since),
                 ),
               ),
-            tx.select({ n: sql<number>`count(*)::int` })
+            tx
+              .select({ n: sql<number>`count(*)::int` })
               .from(schema.appointments)
               .where(
                 and(
@@ -756,7 +760,8 @@ router.get(
                   gte(schema.appointments.createdAt, since),
                 ),
               ),
-            tx.select({ n: sql<number>`count(*)::int` })
+            tx
+              .select({ n: sql<number>`count(*)::int` })
               .from(schema.followUpTasks)
               .where(
                 and(
@@ -765,7 +770,8 @@ router.get(
                   eq(schema.followUpTasks.status, "pending"),
                 ),
               ),
-            tx.select({
+            tx
+              .select({
                 summary: schema.callLogs.summary,
                 sentiment: schema.callLogs.sentiment,
                 intent: schema.callLogs.intentLabel,
