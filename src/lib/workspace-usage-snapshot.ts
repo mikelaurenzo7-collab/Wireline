@@ -120,10 +120,10 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
  * from Stripe sync on every subscription change.
  *
  * Safety rule: the account holder may lower this guard, but cannot raise it
- * above the provider-cost envelope funded by the active plan. The exact
- * auto-seeded free default is raised after an upgrade; oversized limits are
- * clamped after a downgrade; and hard-cap enforcement is repaired if an older
- * row was disabled.
+ * above the provider-cost envelope funded by the active plan. A provenance
+ * flag lets Wireline move its own default after an upgrade or downgrade while
+ * preserving every customer-selected limit, including an explicit $0.50 cap.
+ * Hard-cap enforcement is repaired if an older row was disabled.
  *
  * `executor` lets a caller pass an open transaction so the seed participates
  * in the same tx as the user insert — without it, seeding during signup runs
@@ -138,13 +138,12 @@ export async function ensureDefaultAiSpendBudget(
 ): Promise<void> {
   const tier = subscriptionPlanToTier(planId);
   const limit = defaultAiSpendBudgetUsdForTier(tier);
-  const freeDefault = defaultAiSpendBudgetUsdForTier("free");
-
   const [existing] = await executor
     .select({
       monthlyLimitUsd: schema.spendBudgets.monthlyLimitUsd,
       hardCap: schema.spendBudgets.hardCap,
       enabled: schema.spendBudgets.enabled,
+      managedDefault: schema.spendBudgets.managedDefault,
       warnThresholdPct: schema.spendBudgets.warnThresholdPct,
     })
     .from(schema.spendBudgets)
@@ -153,18 +152,20 @@ export async function ensureDefaultAiSpendBudget(
 
   const current = Number(existing?.monthlyLimitUsd);
   const hasUsableCurrent = Number.isFinite(current) && current > 0;
-  const isAutoSeededFreeCap =
-    hasUsableCurrent && Math.abs(current - freeDefault) <= 0.005 && limit > current;
-  const nextLimit = isAutoSeededFreeCap
-    ? limit
-    : hasUsableCurrent
-      ? Math.min(current, limit)
-      : limit;
+  const managedDefault = existing ? existing.managedDefault === true : true;
+  const nextLimit = existing
+    ? managedDefault
+      ? limit
+      : hasUsableCurrent
+        ? Math.min(current, limit)
+        : limit
+    : limit;
   const alreadySafe =
     existing &&
     Math.abs(current - nextLimit) <= 0.005 &&
     existing.hardCap === true &&
-    existing.enabled === true;
+    existing.enabled === true &&
+    existing.managedDefault === managedDefault;
   if (alreadySafe) return;
 
   await executor
@@ -175,6 +176,7 @@ export async function ensureDefaultAiSpendBudget(
       hardCap: true,
       warnThresholdPct: existing?.warnThresholdPct ?? 80,
       enabled: true,
+      managedDefault,
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
@@ -184,6 +186,7 @@ export async function ensureDefaultAiSpendBudget(
         hardCap: true,
         warnThresholdPct: existing?.warnThresholdPct ?? 80,
         enabled: true,
+        managedDefault,
         updatedAt: new Date(),
       },
     });
