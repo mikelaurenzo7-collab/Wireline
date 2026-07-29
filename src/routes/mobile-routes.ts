@@ -377,7 +377,8 @@ router.get(
       }
       const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
         Promise.all([
-          tx.select({
+          tx
+            .select({
               name: schema.agents.name,
               role: schema.agents.role,
               archetype: schema.agents.archetype,
@@ -392,7 +393,8 @@ router.get(
             .from(schema.agents)
             .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
             .limit(1),
-          tx.select({ content: schema.personality.content })
+          tx
+            .select({ content: schema.personality.content })
             .from(schema.personality)
             .where(
               and(
@@ -401,7 +403,8 @@ router.get(
               ),
             )
             .limit(1),
-          tx.select()
+          tx
+            .select()
             .from(schema.directives)
             .where(
               and(
@@ -410,7 +413,8 @@ router.get(
               ),
             )
             .orderBy(desc(schema.directives.priority)),
-          tx.select()
+          tx
+            .select()
             .from(schema.knowledge)
             .where(
               and(
