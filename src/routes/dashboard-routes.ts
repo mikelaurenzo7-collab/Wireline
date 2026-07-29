@@ -15,10 +15,7 @@ import {
   setCachedDashboard,
   invalidateDashboard,
 } from "../lib/dashboard-cache";
-import {
-  getCachedNavCounts,
-  setCachedNavCounts,
-} from "../lib/nav-counts-cache";
+import { getCachedNavCounts, setCachedNavCounts } from "../lib/nav-counts-cache";
 
 const router = Router();
 
@@ -57,10 +54,7 @@ router.get(
               .select({ count: sql`count(*)` })
               .from(schema.emailThreads)
               .where(
-                and(
-                  eq(schema.emailThreads.userId, userId),
-                  eq(schema.emailThreads.read, false),
-                ),
+                and(eq(schema.emailThreads.userId, userId), eq(schema.emailThreads.read, false)),
               ),
             tx
               .select({ count: sql`count(*)` })
@@ -83,8 +77,7 @@ router.get(
       const outboundCount = Number(outboundResult.count);
 
       const distressedCount = (liveSignals || []).filter(
-        (s: { label: string | null }) =>
-          typeof s.label === "string" && s.label.startsWith("⚠"),
+        (s: { label: string | null }) => typeof s.label === "string" && s.label.startsWith("⚠"),
       ).length;
 
       const counts = {
@@ -107,77 +100,73 @@ router.get(
 );
 
 // 1.5 CALL LOG RETRIEVAL ENDPOINT
-router.get(
-  "/api/calls",
-  authenticateUser,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const limitRaw = parseInt(req.query.limit as string);
-      const offsetRaw = parseInt(req.query.offset as string);
-      const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 50 : limitRaw), 200);
-      const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
+router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const limitRaw = parseInt(req.query.limit as string);
+    const offsetRaw = parseInt(req.query.offset as string);
+    const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 50 : limitRaw), 200);
+    const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
 
-      const [countResult] = await drizzle
-        .select({ count: sql`count(*)` })
-        .from(schema.callLogs)
-        .where(eq(schema.callLogs.userId, req.user.id));
+    const [countResult] = await drizzle
+      .select({ count: sql`count(*)` })
+      .from(schema.callLogs)
+      .where(eq(schema.callLogs.userId, req.user.id));
 
-      const count = Number(countResult.count);
+    const count = Number(countResult.count);
 
-      // Optimized query: LEFT JOIN with agents to get agent name in a single query
-      // instead of N+1 pattern. The frontend can now display agent name without
-      // a separate lookup. This eliminates the need to fetch all agents separately
-      // and match them client-side.
-      const calls = await drizzle
-        .select({
-          id: schema.callLogs.id,
-          userId: schema.callLogs.userId,
-          vapiCallId: schema.callLogs.vapiCallId,
-          agentId: schema.callLogs.agentId,
-          direction: schema.callLogs.direction,
-          customerNumber: schema.callLogs.customerNumber,
-          durationSeconds: schema.callLogs.durationSeconds,
-          cost: schema.callLogs.cost,
-          summary: schema.callLogs.summary,
-          transcript: schema.callLogs.transcript,
-          recordingUrl: schema.callLogs.recordingUrl,
-          leadScore: schema.callLogs.leadScore,
-          intentLabel: schema.callLogs.intentLabel,
-          sentiment: schema.callLogs.sentiment,
-          coachingNote: schema.callLogs.coachingNote,
-          qaScore: schema.callLogs.qaScore,
-          qaBreakdown: schema.callLogs.qaBreakdown,
-          outcomeTag: schema.callLogs.outcomeTag,
-          pipelineError: schema.callLogs.pipelineError,
-          campaignSource: schema.callLogs.campaignSource,
-          demo: schema.callLogs.demo,
-          createdAt: schema.callLogs.createdAt,
-          // Include agent name from the JOIN
-          agentName: schema.agents.name,
-        })
-        .from(schema.callLogs)
-        .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
-        .where(eq(schema.callLogs.userId, req.user.id))
-        .orderBy(desc(schema.callLogs.createdAt))
-        .limit(limit)
-        .offset(offset);
+    // Optimized query: LEFT JOIN with agents to get agent name in a single query
+    // instead of N+1 pattern. The frontend can now display agent name without
+    // a separate lookup. This eliminates the need to fetch all agents separately
+    // and match them client-side.
+    const calls = await drizzle
+      .select({
+        id: schema.callLogs.id,
+        userId: schema.callLogs.userId,
+        vapiCallId: schema.callLogs.vapiCallId,
+        agentId: schema.callLogs.agentId,
+        direction: schema.callLogs.direction,
+        customerNumber: schema.callLogs.customerNumber,
+        durationSeconds: schema.callLogs.durationSeconds,
+        cost: schema.callLogs.cost,
+        summary: schema.callLogs.summary,
+        transcript: schema.callLogs.transcript,
+        recordingUrl: schema.callLogs.recordingUrl,
+        leadScore: schema.callLogs.leadScore,
+        intentLabel: schema.callLogs.intentLabel,
+        sentiment: schema.callLogs.sentiment,
+        coachingNote: schema.callLogs.coachingNote,
+        qaScore: schema.callLogs.qaScore,
+        qaBreakdown: schema.callLogs.qaBreakdown,
+        outcomeTag: schema.callLogs.outcomeTag,
+        pipelineError: schema.callLogs.pipelineError,
+        campaignSource: schema.callLogs.campaignSource,
+        demo: schema.callLogs.demo,
+        createdAt: schema.callLogs.createdAt,
+        // Include agent name from the JOIN
+        agentName: schema.agents.name,
+      })
+      .from(schema.callLogs)
+      .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
+      .where(eq(schema.callLogs.userId, req.user.id))
+      .orderBy(desc(schema.callLogs.createdAt))
+      .limit(limit)
+      .offset(offset);
 
-      // UI reads snake_case (call.customer_number, call.lead_score, etc.).
-      // Drizzle returns camelCase. Normalize at the boundary so the call
-      // detail panel actually populates lead score, intent label, transcript
-      // metadata, recording URL — everything beyond the few fields that
-      // happened to match by coincidence (id, summary, transcript, direction).
-      res.json({
-        calls: mapObjectToSnake(calls || []),
-        hasMore: offset + limit < count,
-        total: count || 0,
-      });
-    } catch (error: any) {
-      log.error("Failed to fetch calls", { error: getErrorMessage(error) });
-      throw AppError.fromHttpStatus(500, "Failed to fetch calls");
-    }
-  },
-);
+    // UI reads snake_case (call.customer_number, call.lead_score, etc.).
+    // Drizzle returns camelCase. Normalize at the boundary so the call
+    // detail panel actually populates lead score, intent label, transcript
+    // metadata, recording URL — everything beyond the few fields that
+    // happened to match by coincidence (id, summary, transcript, direction).
+    res.json({
+      calls: mapObjectToSnake(calls || []),
+      hasMore: offset + limit < count,
+      total: count || 0,
+    });
+  } catch (error: any) {
+    log.error("Failed to fetch calls", { error: getErrorMessage(error) });
+    throw AppError.fromHttpStatus(500, "Failed to fetch calls");
+  }
+});
 
 // ==========================================
 // 1.8 DASHBOARD STATS ENDPOINT
@@ -199,9 +188,7 @@ router.get(
 
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const fourteenDaysAgo = new Date(
-        now.getTime() - 14 * 24 * 60 * 60 * 1000,
-      );
+      const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
       const [
         apptCountResult,
@@ -260,10 +247,7 @@ router.get(
             })
             .from(schema.emailThreads)
             .where(
-              and(
-                eq(schema.emailThreads.userId, userId),
-                gte(schema.emailThreads.leadScore, 75),
-              ),
+              and(eq(schema.emailThreads.userId, userId), gte(schema.emailThreads.leadScore, 75)),
             )
             .orderBy(desc(schema.emailThreads.createdAt))
             .limit(5),
@@ -376,10 +360,7 @@ router.get(
           })
           .from(schema.callLogs)
           .where(
-            and(
-              eq(schema.callLogs.userId, userId),
-              gte(schema.callLogs.createdAt, thirtyDaysAgo),
-            ),
+            and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, thirtyDaysAgo)),
           ),
         drizzle
           .select({ status: schema.outboundLeads.status })
@@ -421,10 +402,7 @@ router.get(
     try {
       const limitRaw = parseInt(req.query.limit as string);
       const offsetRaw = parseInt(req.query.offset as string);
-      const limit = Math.min(
-        Math.max(1, isNaN(limitRaw) ? 200 : limitRaw),
-        1000,
-      );
+      const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 200 : limitRaw), 1000);
       const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
 
       const [countResult] = await drizzle
@@ -513,44 +491,22 @@ router.post(
   dashboardRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const {
-        customer_name,
-        service_type,
-        date,
-        time,
-        phone_number,
-        notes,
-        agent_id,
-        status,
-      } = req.body;
+      const { customer_name, service_type, date, time, phone_number, notes, agent_id, status } =
+        req.body;
       if (!customer_name?.trim() || !date?.trim() || !time?.trim()) {
-        throw AppError.fromHttpStatus(
-          400,
-          "customer_name, date, and time are required",
-        );
+        throw AppError.fromHttpStatus(400, "customer_name, date, and time are required");
       }
       if (typeof customer_name !== "string" || customer_name.length > 200) {
-        throw AppError.fromHttpStatus(
-          400,
-          "customer_name must be 200 characters or less",
-        );
+        throw AppError.fromHttpStatus(400, "customer_name must be 200 characters or less");
       }
       if (notes && (typeof notes !== "string" || notes.length > 2000)) {
-        throw AppError.fromHttpStatus(
-          400,
-          "notes must be 2000 characters or less",
-        );
+        throw AppError.fromHttpStatus(400, "notes must be 2000 characters or less");
       }
       if (agent_id) {
         const [agent] = await drizzle
           .select({ id: schema.agents.id })
           .from(schema.agents)
-          .where(
-            and(
-              eq(schema.agents.id, agent_id),
-              eq(schema.agents.userId, req.user.id),
-            ),
-          )
+          .where(and(eq(schema.agents.id, agent_id), eq(schema.agents.userId, req.user.id)))
           .limit(1);
         if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
       }
@@ -561,15 +517,10 @@ router.post(
           userId: req.user.id,
           customerName: customer_name.trim(),
           serviceType:
-            typeof service_type === "string"
-              ? service_type.trim() || "General"
-              : "General",
+            typeof service_type === "string" ? service_type.trim() || "General" : "General",
           date: date.trim(),
           time: time.trim(),
-          phoneNumber:
-            typeof phone_number === "string"
-              ? phone_number.trim() || null
-              : null,
+          phoneNumber: typeof phone_number === "string" ? phone_number.trim() || null : null,
           notes: typeof notes === "string" ? notes.trim() || null : null,
           agentId: agent_id || null,
           status: APPOINTMENT_STATUSES.includes(status) ? status : "Scheduled",
@@ -604,40 +555,23 @@ router.patch(
         "agent_id",
       ];
       const bodyUpdates: Record<string, any> = {};
-      for (const k of allowed)
-        if (req.body[k] !== undefined) bodyUpdates[k] = req.body[k];
+      for (const k of allowed) if (req.body[k] !== undefined) bodyUpdates[k] = req.body[k];
       if (Object.keys(bodyUpdates).length === 0)
         throw AppError.fromHttpStatus(400, "No valid fields to update");
 
-      if (
-        typeof bodyUpdates.customer_name === "string" &&
-        bodyUpdates.customer_name.length > 200
-      ) {
-        throw AppError.fromHttpStatus(
-          400,
-          "customer_name must be 200 characters or less",
-        );
+      if (typeof bodyUpdates.customer_name === "string" && bodyUpdates.customer_name.length > 200) {
+        throw AppError.fromHttpStatus(400, "customer_name must be 200 characters or less");
       }
-      if (
-        typeof bodyUpdates.notes === "string" &&
-        bodyUpdates.notes.length > 2000
-      ) {
-        throw AppError.fromHttpStatus(
-          400,
-          "notes must be 2000 characters or less",
-        );
+      if (typeof bodyUpdates.notes === "string" && bodyUpdates.notes.length > 2000) {
+        throw AppError.fromHttpStatus(400, "notes must be 2000 characters or less");
       }
       if (
         bodyUpdates.status !== undefined &&
-        !APPOINTMENT_STATUSES.includes(
-          bodyUpdates.status as (typeof APPOINTMENT_STATUSES)[number],
-        )
+        !APPOINTMENT_STATUSES.includes(bodyUpdates.status as (typeof APPOINTMENT_STATUSES)[number])
       ) {
-        return res
-          .status(400)
-          .json({
-            error: `status must be one of: ${APPOINTMENT_STATUSES.join(", ")}`,
-          });
+        return res.status(400).json({
+          error: `status must be one of: ${APPOINTMENT_STATUSES.join(", ")}`,
+        });
       }
 
       if (bodyUpdates.agent_id) {
@@ -658,15 +592,11 @@ router.patch(
       if (bodyUpdates.status !== undefined) updates.status = bodyUpdates.status;
       if (bodyUpdates.date !== undefined) updates.date = bodyUpdates.date;
       if (bodyUpdates.time !== undefined) updates.time = bodyUpdates.time;
-      if (bodyUpdates.customer_name !== undefined)
-        updates.customerName = bodyUpdates.customer_name;
-      if (bodyUpdates.service_type !== undefined)
-        updates.serviceType = bodyUpdates.service_type;
+      if (bodyUpdates.customer_name !== undefined) updates.customerName = bodyUpdates.customer_name;
+      if (bodyUpdates.service_type !== undefined) updates.serviceType = bodyUpdates.service_type;
       if (bodyUpdates.notes !== undefined) updates.notes = bodyUpdates.notes;
-      if (bodyUpdates.phone_number !== undefined)
-        updates.phoneNumber = bodyUpdates.phone_number;
-      if (bodyUpdates.agent_id !== undefined)
-        updates.agentId = bodyUpdates.agent_id;
+      if (bodyUpdates.phone_number !== undefined) updates.phoneNumber = bodyUpdates.phone_number;
+      if (bodyUpdates.agent_id !== undefined) updates.agentId = bodyUpdates.agent_id;
 
       const [data] = (await drizzle
         .update(schema.appointments)
@@ -732,8 +662,7 @@ function rowsToCsv(rows: Record<string, unknown>[], columns: string[]): string {
           // text (lead names arrive via the public intake API), and spreadsheet
           // apps execute cells starting with = + - @ or a tab/CR. Numbers and
           // dates can't carry formulas, so only string values are prefixed.
-          if (typeof val === "string" && /^[=+\-@\t\r]/.test(str))
-            str = `'${str}`;
+          if (typeof val === "string" && /^[=+\-@\t\r]/.test(str)) str = `'${str}`;
           return /[",\n\r]/.test(str) ? `"${str}"` : str;
         })
         .join(","),
@@ -771,13 +700,7 @@ router.get(
           .orderBy(desc(schema.callLogs.createdAt))
           .limit(DATA_EXPORT_MAX_ROWS);
       } else if (type === "leads") {
-        columns = [
-          "createdAt",
-          "phoneNumber",
-          "customerName",
-          "status",
-          "lastCalledAt",
-        ];
+        columns = ["createdAt", "phoneNumber", "customerName", "status", "lastCalledAt"];
         data = await drizzle
           .select()
           .from(schema.outboundLeads)
@@ -785,13 +708,7 @@ router.get(
           .orderBy(desc(schema.outboundLeads.createdAt))
           .limit(DATA_EXPORT_MAX_ROWS);
       } else if (type === "triage") {
-        columns = [
-          "createdAt",
-          "taskType",
-          "status",
-          "priority",
-          "description",
-        ];
+        columns = ["createdAt", "taskType", "status", "priority", "description"];
         data = await drizzle
           .select()
           .from(schema.followUpTasks)
@@ -799,14 +716,7 @@ router.get(
           .orderBy(desc(schema.followUpTasks.createdAt))
           .limit(DATA_EXPORT_MAX_ROWS);
       } else if (type === "appointments") {
-        columns = [
-          "date",
-          "time",
-          "customerName",
-          "serviceType",
-          "status",
-          "phoneNumber",
-        ];
+        columns = ["date", "time", "customerName", "serviceType", "status", "phoneNumber"];
         data = await drizzle
           .select()
           .from(schema.appointments)
@@ -819,10 +729,7 @@ router.get(
 
       const filename = `wireline-${type}-${new Date().toISOString().slice(0, 10)}.csv`;
       res.setHeader("Content-Type", "text/csv; charset=utf-8");
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="${filename}"`,
-      );
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 
       void auditLogger
         .logDataOperation("export", {
