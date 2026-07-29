@@ -51,6 +51,8 @@ describe("spend guard integrity", () => {
     expect(guard).toContain('status === "unavailable"');
     expect(guard).toContain('code: "SPEND_GUARD_UNAVAILABLE"');
     expect(guard).toContain('throw new Error("Spend budget is missing or invalid.")');
+    expect(guard).toContain('recovery_path: "/settings/billing"');
+    expect(guard).not.toContain("Increase or disable the cap");
 
     expect(route).toContain("ensurePersistedSpendBudget");
     expect(route).toContain("await ensureDefaultAiSpendBudget(userId, planId)");
