@@ -126,7 +126,7 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
         )
         .orderBy(desc(schema.callLogs.createdAt))
         .limit(3),
-    ])
+    ]),
   );
 
   const yTotal = yCalls?.length || 0;
