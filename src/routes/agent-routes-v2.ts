@@ -16,10 +16,7 @@ import {
   normalizeEnabledTools,
   type AgentToolName,
 } from "../lib/agent-capabilities";
-import {
-  resolveCreateEnabledTools,
-  resolveCreatePersonality,
-} from "../lib/agent-create-defaults";
+import { resolveCreateEnabledTools, resolveCreatePersonality } from "../lib/agent-create-defaults";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import { defaultPresenterPhoneVoicePayload } from "../lib/voice-catalog";
 import { AI_TOOLS } from "../lib/ai-tools";
@@ -86,16 +83,10 @@ function extractionReply(parsed: ExtractedConfig) {
 }
 
 function normalizeExtraction(value: unknown): ExtractedConfig {
-  const raw =
-    value && typeof value === "object"
-      ? (value as Record<string, unknown>)
-      : {};
+  const raw = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
   const directives = Array.isArray(raw.directives)
     ? raw.directives
-        .filter(
-          (item): item is Record<string, unknown> =>
-            !!item && typeof item === "object",
-        )
+        .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
         .map((item) => ({
           content: cleanText(item.content, 2000),
           priority: Math.max(1, Math.min(10, Number(item.priority) || 5)),
@@ -104,10 +95,7 @@ function normalizeExtraction(value: unknown): ExtractedConfig {
     : [];
   const knowledge = Array.isArray(raw.knowledge)
     ? raw.knowledge
-        .filter(
-          (item): item is Record<string, unknown> =>
-            !!item && typeof item === "object",
-        )
+        .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
         .map((item) => ({ content: cleanText(item.content, 4000) }))
         .filter((item) => !!item.content)
     : [];
@@ -118,11 +106,7 @@ function normalizeExtraction(value: unknown): ExtractedConfig {
   };
 }
 
-async function persistExtraction(
-  agentId: string,
-  userId: string,
-  extraction: ExtractedConfig,
-) {
+async function persistExtraction(agentId: string, userId: string, extraction: ExtractedConfig) {
   await drizzle.transaction(async (tx) => {
     if (extraction.directives.length) {
       await tx.insert(schema.directives).values(
@@ -135,15 +119,13 @@ async function persistExtraction(
       );
     }
     if (extraction.knowledge.length) {
-      await tx
-        .insert(schema.knowledge)
-        .values(
-          extraction.knowledge.map((item) => ({
-            content: item.content,
-            agentId,
-            userId,
-          })),
-        );
+      await tx.insert(schema.knowledge).values(
+        extraction.knowledge.map((item) => ({
+          content: item.content,
+          agentId,
+          userId,
+        })),
+      );
     }
     if (extraction.personality) {
       await tx
@@ -157,10 +139,7 @@ async function persistExtraction(
   });
 }
 
-async function extractTextAsset(
-  fileName: string,
-  text: string,
-): Promise<ExtractedConfig> {
+async function extractTextAsset(fileName: string, text: string): Promise<ExtractedConfig> {
   return normalizeExtraction(
     await runStructured<ExtractedConfig>({
       system:
@@ -178,9 +157,7 @@ function responseText(payload: Record<string, unknown>) {
   const chunks: string[] = [];
   for (const output of Array.isArray(payload.output) ? payload.output : []) {
     if (!output || typeof output !== "object") continue;
-    for (const part of Array.isArray(
-      (output as Record<string, unknown>).content,
-    )
+    for (const part of Array.isArray((output as Record<string, unknown>).content)
       ? ((output as Record<string, unknown>).content as unknown[])
       : []) {
       if (
@@ -194,16 +171,9 @@ function responseText(payload: Record<string, unknown>) {
   return chunks.join("\n");
 }
 
-async function extractImageAsset(
-  fileName: string,
-  dataUrl: string,
-): Promise<ExtractedConfig> {
+async function extractImageAsset(fileName: string, dataUrl: string): Promise<ExtractedConfig> {
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey)
-    throw AppError.fromHttpStatus(
-      503,
-      "Image intake requires an OpenAI runtime key.",
-    );
+  if (!apiKey) throw AppError.fromHttpStatus(503, "Image intake requires an OpenAI runtime key.");
   const schemaDefinition = {
     type: "object",
     additionalProperties: false,
@@ -266,53 +236,34 @@ async function extractImageAsset(
       max_output_tokens: 1200,
     }),
   });
-  if (!response.ok)
-    throw AppError.fromHttpStatus(
-      502,
-      `Image intake failed (${response.status}).`,
-    );
-  const output = responseText(
-    (await response.json()) as Record<string, unknown>,
-  );
+  if (!response.ok) throw AppError.fromHttpStatus(502, `Image intake failed (${response.status}).`);
+  const output = responseText((await response.json()) as Record<string, unknown>);
   try {
     return normalizeExtraction(JSON.parse(output));
   } catch {
-    throw AppError.fromHttpStatus(
-      502,
-      "Image intake returned an unreadable result.",
-    );
+    throw AppError.fromHttpStatus(502, "Image intake returned an unreadable result.");
   }
 }
 
-router.get(
-  "/api/agents",
-  authenticateUser,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      res.json({ agents: await listAgentsForUser(req.user.id) });
-    } catch (error) {
-      log.warn("Agent roster unavailable", {
-        error: getErrorMessage(error),
-        userId: req.user.id,
-      });
-      res
-        .status(503)
-        .json({
-          agents: [],
-          degraded: true,
-          error: "Agent roster is temporarily unavailable",
-        });
-    }
-  },
-);
+router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    res.json({ agents: await listAgentsForUser(req.user.id) });
+  } catch (error) {
+    log.warn("Agent roster unavailable", {
+      error: getErrorMessage(error),
+      userId: req.user.id,
+    });
+    res.status(503).json({
+      agents: [],
+      degraded: true,
+      error: "Agent roster is temporarily unavailable",
+    });
+  }
+});
 
-router.get(
-  "/api/agents/roles",
-  authenticateUser,
-  (_req: AuthenticatedRequest, res: Response) => {
-    res.json({ roles: listAgentRolesForApi() });
-  },
-);
+router.get("/api/agents/roles", authenticateUser, (_req: AuthenticatedRequest, res: Response) => {
+  res.json({ roles: listAgentRolesForApi() });
+});
 
 router.post(
   "/api/agents",
@@ -320,8 +271,7 @@ router.post(
   agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     const name = cleanText(req.body?.name, 100);
-    const rawRole =
-      cleanText(req.body?.role, 80) || AGENT_CREATE_DEFAULT_ROLE_ID;
+    const rawRole = cleanText(req.body?.role, 80) || AGENT_CREATE_DEFAULT_ROLE_ID;
     const roleError = validateAgentRoleForCreate(rawRole);
     if (roleError) throw new AppError(400, "UNKNOWN_AGENT_ROLE", roleError);
     const role = canonicalizeAgentRoleForCreate(rawRole);
@@ -334,8 +284,7 @@ router.post(
     // personality overlay; plain Fast Start creates keep the defaults.
     const channel = req.body?.channel === "email" ? "email" : "voice";
     const firstMessage =
-      cleanText(req.body?.firstMessage, 500) ||
-      `Hi, this is ${name}. How can I help?`;
+      cleanText(req.body?.firstMessage, 500) || `Hi, this is ${name}. How can I help?`;
     const templateId = cleanText(req.body?.templateId, 80);
     // Always seed a real personality. Fast Start used to leave personal agents
     // with a one-line tone from the client; Studio Set up then overwrote it with
@@ -349,15 +298,11 @@ router.post(
 
     const id = `agent-${randomUUID()}`;
     const enabledTools = resolveCreateEnabledTools(role, isBusinessAgent);
-    const videoPresenter = isBusinessAgent
-      ? businessAgentVideoPresenterDefaults()
-      : {};
+    const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
 
     await drizzle.transaction(async (tx) => {
       // Serialize capacity checks per tenant so concurrent creates cannot exceed plan caps.
-      await tx.execute(
-        sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`,
-      );
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
 
       const [{ count }] = await tx
         .select({ count: sql`count(*)` })
@@ -374,10 +319,7 @@ router.post(
           extraAgents: schema.settings.extraAgents,
         })
         .from(schema.settings)
-        .leftJoin(
-          schema.subscriptions,
-          eq(schema.subscriptions.userId, schema.settings.userId),
-        )
+        .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
         .where(eq(schema.settings.userId, req.user.id))
         .limit(1);
 
@@ -389,10 +331,7 @@ router.post(
         extraAgents: row?.extraAgents,
       });
 
-      if (
-        entitlement.effectiveCap !== null &&
-        existing >= entitlement.effectiveCap
-      ) {
+      if (entitlement.effectiveCap !== null && existing >= entitlement.effectiveCap) {
         throw AppError.fromHttpStatus(
           402,
           `Agent capacity limit reached. Your plan allows up to ${entitlement.effectiveCap} agents.`,
@@ -455,81 +394,74 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
-    const [agentRows, personalities, directives, knowledge] =
-      await drizzle.transaction((tx) =>
-        Promise.all([
-          tx
-            .select({
-              name: schema.agents.name,
-              role: schema.agents.role,
-              archetype: schema.agents.archetype,
-              flowConfig: schema.agents.flowConfig,
-              enabledTools: schema.agents.enabledTools,
-              llmProvider: schema.agents.llmProvider,
-              llmModel: schema.agents.llmModel,
-              llmTemperature: schema.agents.llmTemperature,
-              voiceId: schema.agents.voiceId,
-              voiceProvider: schema.agents.voiceProvider,
-              phoneVoiceId: schema.agents.phoneVoiceId,
-              phoneVoiceProvider: schema.agents.phoneVoiceProvider,
-              // business profile fields
-              businessHours: schema.agents.businessHours,
-              timezone: schema.agents.timezone,
-              complianceMode: schema.agents.complianceMode,
-              disallowedTopics: schema.agents.disallowedTopics,
-              escalationKeywords: schema.agents.escalationKeywords,
-              escalationPhone: schema.agents.escalationPhone,
-              escalationEmail: schema.agents.escalationEmail,
-              escalationHandoffEnabled: schema.agents.escalationHandoffEnabled,
-              businessVariables: schema.agents.businessVariables,
-              outOfHoursMessage: schema.agents.outOfHoursMessage,
-              kpiFocus: schema.agents.kpiFocus,
-              isBusinessAgent: schema.agents.isBusinessAgent,
-              videoPresenterProvider: schema.agents.videoPresenterProvider,
-              videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
-              videoPresenterConsentStatus:
-                schema.agents.videoPresenterConsentStatus,
-            })
-            .from(schema.agents)
-            .where(
-              and(
-                eq(schema.agents.id, req.params.id),
-                eq(schema.agents.userId, req.user.id),
-              ),
-            )
-            .limit(1),
-          tx
-            .select({ content: schema.personality.content })
-            .from(schema.personality)
-            .where(
-              and(
-                eq(schema.personality.agentId, req.params.id),
-                eq(schema.personality.userId, req.user.id),
-              ),
-            )
-            .limit(1),
-          tx
-            .select()
-            .from(schema.directives)
-            .where(
-              and(
-                eq(schema.directives.agentId, req.params.id),
-                eq(schema.directives.userId, req.user.id),
-              ),
-            )
-            .orderBy(desc(schema.directives.priority)),
-          tx
-            .select()
-            .from(schema.knowledge)
-            .where(
-              and(
-                eq(schema.knowledge.agentId, req.params.id),
-                eq(schema.knowledge.userId, req.user.id),
-              ),
-            )
-            .orderBy(desc(schema.knowledge.createdAt)),
-        ]),
-      );
+    const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
+      Promise.all([
+        tx
+          .select({
+            name: schema.agents.name,
+            role: schema.agents.role,
+            archetype: schema.agents.archetype,
+            flowConfig: schema.agents.flowConfig,
+            enabledTools: schema.agents.enabledTools,
+            llmProvider: schema.agents.llmProvider,
+            llmModel: schema.agents.llmModel,
+            llmTemperature: schema.agents.llmTemperature,
+            voiceId: schema.agents.voiceId,
+            voiceProvider: schema.agents.voiceProvider,
+            phoneVoiceId: schema.agents.phoneVoiceId,
+            phoneVoiceProvider: schema.agents.phoneVoiceProvider,
+            // business profile fields
+            businessHours: schema.agents.businessHours,
+            timezone: schema.agents.timezone,
+            complianceMode: schema.agents.complianceMode,
+            disallowedTopics: schema.agents.disallowedTopics,
+            escalationKeywords: schema.agents.escalationKeywords,
+            escalationPhone: schema.agents.escalationPhone,
+            escalationEmail: schema.agents.escalationEmail,
+            escalationHandoffEnabled: schema.agents.escalationHandoffEnabled,
+            businessVariables: schema.agents.businessVariables,
+            outOfHoursMessage: schema.agents.outOfHoursMessage,
+            kpiFocus: schema.agents.kpiFocus,
+            isBusinessAgent: schema.agents.isBusinessAgent,
+            videoPresenterProvider: schema.agents.videoPresenterProvider,
+            videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
+            videoPresenterConsentStatus: schema.agents.videoPresenterConsentStatus,
+          })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+          .limit(1),
+        tx
+          .select({ content: schema.personality.content })
+          .from(schema.personality)
+          .where(
+            and(
+              eq(schema.personality.agentId, req.params.id),
+              eq(schema.personality.userId, req.user.id),
+            ),
+          )
+          .limit(1),
+        tx
+          .select()
+          .from(schema.directives)
+          .where(
+            and(
+              eq(schema.directives.agentId, req.params.id),
+              eq(schema.directives.userId, req.user.id),
+            ),
+          )
+          .orderBy(desc(schema.directives.priority)),
+        tx
+          .select()
+          .from(schema.knowledge)
+          .where(
+            and(
+              eq(schema.knowledge.agentId, req.params.id),
+              eq(schema.knowledge.userId, req.user.id),
+            ),
+          )
+          .orderBy(desc(schema.knowledge.createdAt)),
+      ]),
+    );
     const record = agentRows[0];
     const identity = record
       ? resolveAgentVideoPresenter({
@@ -571,8 +503,7 @@ router.get(
             escalation_keywords: record.escalationKeywords || [],
             escalation_phone: record.escalationPhone || null,
             escalation_email: record.escalationEmail || null,
-            escalation_handoff_enabled:
-              record.escalationHandoffEnabled ?? false,
+            escalation_handoff_enabled: record.escalationHandoffEnabled ?? false,
             business_variables: record.businessVariables || null,
             out_of_hours_message: record.outOfHoursMessage || null,
             kpi_focus: record.kpiFocus || null,
@@ -602,14 +533,12 @@ router.post(
           set: { userId: req.user.id, content },
         });
     } else if (type === "directive") {
-      await drizzle
-        .insert(schema.directives)
-        .values({
-          agentId: req.params.id,
-          userId: req.user.id,
-          content,
-          priority: 5,
-        });
+      await drizzle.insert(schema.directives).values({
+        agentId: req.params.id,
+        userId: req.user.id,
+        content,
+        priority: 5,
+      });
     } else if (type === "knowledge") {
       await drizzle
         .insert(schema.knowledge)
@@ -618,12 +547,7 @@ router.post(
       await drizzle
         .update(schema.agents)
         .set({ flowConfig: req.body?.content })
-        .where(
-          and(
-            eq(schema.agents.id, req.params.id),
-            eq(schema.agents.userId, req.user.id),
-          ),
-        );
+        .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
     } else {
       throw AppError.fromHttpStatus(400, "Invalid configuration type");
     }
@@ -642,9 +566,7 @@ router.patch(
     const model = cleanText(req.body?.model, 160);
     const rawTemperature = req.body?.temperature;
     const temperature =
-      rawTemperature == null || rawTemperature === ""
-        ? null
-        : Number(rawTemperature);
+      rawTemperature == null || rawTemperature === "" ? null : Number(rawTemperature);
     if (
       temperature != null &&
       (!Number.isFinite(temperature) || temperature < 0 || temperature > 1)
@@ -665,12 +587,7 @@ router.patch(
         llmModel: model || null,
         llmTemperature: temperature == null ? null : String(temperature),
       })
-      .where(
-        and(
-          eq(schema.agents.id, req.params.id),
-          eq(schema.agents.userId, req.user.id),
-        ),
-      );
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
     res.json({
       success: true,
       runtime: {
@@ -695,38 +612,25 @@ router.patch(
         phoneVoiceProvider: schema.agents.phoneVoiceProvider,
       })
       .from(schema.agents)
-      .where(
-        and(
-          eq(schema.agents.id, req.params.id),
-          eq(schema.agents.userId, req.user.id),
-        ),
-      )
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
       .limit(1);
     const voiceId = cleanText(req.body?.voiceId, 160) || null;
     const providerRaw =
-      cleanText(req.body?.provider, 32).toLowerCase() ||
-      (voiceId ? "vapi" : null);
+      cleanText(req.body?.provider, 32).toLowerCase() || (voiceId ? "vapi" : null);
     const allowedProviders = new Set(["xai", "vapi", "presenter"]);
     if (providerRaw && !allowedProviders.has(providerRaw)) {
       throw AppError.fromHttpStatus(400, "Invalid voice provider.");
     }
     const provider = providerRaw;
     const phoneVoiceId = cleanText(req.body?.phoneVoiceId, 160) || null;
-    const phoneVoiceProviderRaw =
-      cleanText(req.body?.phoneVoiceProvider, 32).toLowerCase() || null;
+    const phoneVoiceProviderRaw = cleanText(req.body?.phoneVoiceProvider, 32).toLowerCase() || null;
     const phoneProviders = new Set(["vapi"]);
     if (phoneVoiceProviderRaw && !phoneProviders.has(phoneVoiceProviderRaw)) {
       throw AppError.fromHttpStatus(400, "Invalid phone voice provider.");
     }
     const body = req.body && typeof req.body === "object" ? req.body : {};
-    const hasPhoneVoiceId = Object.prototype.hasOwnProperty.call(
-      body,
-      "phoneVoiceId",
-    );
-    const hasPhoneVoiceProvider = Object.prototype.hasOwnProperty.call(
-      body,
-      "phoneVoiceProvider",
-    );
+    const hasPhoneVoiceId = Object.prototype.hasOwnProperty.call(body, "phoneVoiceId");
+    const hasPhoneVoiceProvider = Object.prototype.hasOwnProperty.call(body, "phoneVoiceProvider");
     const patch: {
       voiceId: string | null;
       voiceProvider: string | null;
@@ -739,8 +643,7 @@ router.patch(
       patch.phoneVoiceProvider = null;
     } else if (hasPhoneVoiceId || hasPhoneVoiceProvider) {
       if (hasPhoneVoiceId) patch.phoneVoiceId = phoneVoiceId;
-      if (hasPhoneVoiceProvider)
-        patch.phoneVoiceProvider = phoneVoiceProviderRaw;
+      if (hasPhoneVoiceProvider) patch.phoneVoiceProvider = phoneVoiceProviderRaw;
     } else if (!voiceState?.phoneVoiceId || !voiceState?.phoneVoiceProvider) {
       const defaults = defaultPresenterPhoneVoicePayload();
       patch.phoneVoiceId = defaults.phoneVoiceId;
@@ -749,12 +652,7 @@ router.patch(
     await drizzle
       .update(schema.agents)
       .set(patch)
-      .where(
-        and(
-          eq(schema.agents.id, req.params.id),
-          eq(schema.agents.userId, req.user.id),
-        ),
-      );
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
     res.json({
       success: true,
       voice: {
@@ -799,12 +697,7 @@ router.patch(
         kpiFocus: parsed.kpi_focus || null,
         isBusinessAgent: parsed.is_business_agent ?? false,
       })
-      .where(
-        and(
-          eq(schema.agents.id, req.params.id),
-          eq(schema.agents.userId, req.user.id),
-        ),
-      );
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
 
     res.json({
       success: true,
@@ -906,8 +799,7 @@ router.post(
     const message = cleanText(req.body?.message, 12000);
     if (!agentId || !message)
       throw AppError.fromHttpStatus(400, "agentId and message are required");
-    if (!(await owned(agentId, req.user.id)))
-      throw AppError.fromHttpStatus(404, "Agent not found");
+    if (!(await owned(agentId, req.user.id))) throw AppError.fromHttpStatus(404, "Agent not found");
     const parsed = normalizeExtraction(
       await runStructured<ExtractedConfig>({
         system:
@@ -946,20 +838,12 @@ router.post(
       !Array.isArray(raw) ||
       raw.some((tool) => typeof tool !== "string" || !isAgentToolName(tool))
     )
-      throw AppError.fromHttpStatus(
-        400,
-        "enabled_tools must contain known agent tools",
-      );
+      throw AppError.fromHttpStatus(400, "enabled_tools must contain known agent tools");
     const enabledTools = normalizeEnabledTools(raw as AgentToolName[]);
     await drizzle
       .update(schema.agents)
       .set({ enabledTools })
-      .where(
-        and(
-          eq(schema.agents.id, req.params.id),
-          eq(schema.agents.userId, req.user.id),
-        ),
-      );
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
     res.json({ success: true, enabledTools });
   },
 );
