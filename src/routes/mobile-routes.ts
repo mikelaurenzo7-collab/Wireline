@@ -100,10 +100,7 @@ router.get(
       // Three independent reads — run them concurrently.
       const [[profile], [row], [{ count }]] = await Promise.all([
         drizzle
-          .select({
-            fullName: schema.users.fullName,
-            email: schema.users.email,
-          })
+          .select({ fullName: schema.users.fullName, email: schema.users.email })
           .from(schema.users)
           .where(eq(schema.users.id, userId))
           .limit(1),
@@ -272,11 +269,7 @@ router.post(
         if (seededPersonality) {
           await tx
             .insert(schema.personality)
-            .values({
-              agentId: id,
-              userId: req.user.id,
-              content: seededPersonality,
-            })
+            .values({ agentId: id, userId: req.user.id, content: seededPersonality })
             .onConflictDoUpdate({
               target: schema.personality.agentId,
               set: { userId: req.user.id, content: seededPersonality },
@@ -302,9 +295,7 @@ router.post(
         isBusinessAgent,
       });
     } catch (err) {
-      log.error("POST /api/mobile/agents failed", {
-        error: getErrorMessage(err),
-      });
+      log.error("POST /api/mobile/agents failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to create agent.");
     }
   },
@@ -334,9 +325,7 @@ router.get(
         .orderBy(desc(schema.agents.createdAt));
       res.json({ agents: rows });
     } catch (err) {
-      log.error("GET /api/mobile/agents failed", {
-        error: getErrorMessage(err),
-      });
+      log.error("GET /api/mobile/agents failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to load agents.");
     }
   },
@@ -370,9 +359,7 @@ router.get(
       res.json({ agent });
     } catch (err) {
       if (err instanceof AppError) throw err;
-      log.error("GET /api/mobile/agents/:id failed", {
-        error: getErrorMessage(err),
-      });
+      log.error("GET /api/mobile/agents/:id failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to load agent.");
     }
   },
@@ -390,8 +377,7 @@ router.get(
       }
       const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
         Promise.all([
-          tx
-            .select({
+          tx.select({
               name: schema.agents.name,
               role: schema.agents.role,
               archetype: schema.agents.archetype,
@@ -406,8 +392,7 @@ router.get(
             .from(schema.agents)
             .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
             .limit(1),
-          tx
-            .select({ content: schema.personality.content })
+          tx.select({ content: schema.personality.content })
             .from(schema.personality)
             .where(
               and(
@@ -416,8 +401,7 @@ router.get(
               ),
             )
             .limit(1),
-          tx
-            .select()
+          tx.select()
             .from(schema.directives)
             .where(
               and(
@@ -426,8 +410,7 @@ router.get(
               ),
             )
             .orderBy(desc(schema.directives.priority)),
-          tx
-            .select()
+          tx.select()
             .from(schema.knowledge)
             .where(
               and(
@@ -436,7 +419,7 @@ router.get(
               ),
             )
             .orderBy(desc(schema.knowledge.createdAt)),
-        ]),
+        ])
       );
       const record = agentRows[0];
       const identity = record
@@ -461,9 +444,7 @@ router.get(
       });
     } catch (err) {
       if (err instanceof AppError) throw err;
-      log.error("GET /api/mobile/agents/:id/config failed", {
-        error: getErrorMessage(err),
-      });
+      log.error("GET /api/mobile/agents/:id/config failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to load agent setup.");
     }
   },
@@ -495,12 +476,9 @@ router.post(
             set: { userId: req.user.id, content },
           });
       } else if (type === "directive") {
-        await drizzle.insert(schema.directives).values({
-          agentId: req.params.id,
-          userId: req.user.id,
-          content,
-          priority: 5,
-        });
+        await drizzle
+          .insert(schema.directives)
+          .values({ agentId: req.params.id, userId: req.user.id, content, priority: 5 });
       } else if (type === "knowledge") {
         await drizzle.insert(schema.knowledge).values({
           agentId: req.params.id,
@@ -524,9 +502,7 @@ router.post(
   },
 );
 
-const mobileToolsSchema = z.object({
-  enabled_tools: z.array(z.string()).default([]),
-});
+const mobileToolsSchema = z.object({ enabled_tools: z.array(z.string()).default([]) });
 
 router.post(
   "/api/mobile/agents/:id/tools",
@@ -550,9 +526,7 @@ router.post(
       res.json({ success: true, enabledTools });
     } catch (err) {
       if (err instanceof AppError) throw err;
-      log.error("POST /api/mobile/agents/:id/tools failed", {
-        error: getErrorMessage(err),
-      });
+      log.error("POST /api/mobile/agents/:id/tools failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to update agent tools.");
     }
   },
@@ -607,9 +581,7 @@ router.post(
         });
       res.json({ success: true });
     } catch (err) {
-      log.error("POST /api/mobile/devices failed", {
-        error: getErrorMessage(err),
-      });
+      log.error("POST /api/mobile/devices failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to register device.");
     }
   },
@@ -632,9 +604,7 @@ router.delete(
         );
       res.json({ success: true });
     } catch (err) {
-      log.error("DELETE /api/mobile/devices failed", {
-        error: getErrorMessage(err),
-      });
+      log.error("DELETE /api/mobile/devices failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to unregister device.");
     }
   },
@@ -682,10 +652,7 @@ router.post(
         consentSource,
         consentLeadId,
       } = req.body;
-      const expressConsent = normalizedExpressConsent({
-        callPurpose,
-        hasExpressWrittenConsent,
-      });
+      const expressConsent = normalizedExpressConsent({ callPurpose, hasExpressWrittenConsent });
       const marketing = isMarketingCallPurpose(callPurpose);
 
       if (marketing && expressConsent && !consentSource && !consentLeadId) {
@@ -711,9 +678,7 @@ router.post(
           });
         }
         if (gate.reason === "blocked_internal_dnc") {
-          log.warn("Mobile outbound dial blocked by DNC list", {
-            customerNumber,
-          });
+          log.warn("Mobile outbound dial blocked by DNC list", { customerNumber });
           return res.status(403).json({
             code: "FORBIDDEN",
             error: "This number is on the Do Not Call list and cannot be dialed.",
@@ -782,10 +747,7 @@ router.post(
           userId: req.user.id,
           agentId,
           audience: "sales",
-          metadata: {
-            consent_source: consentSource,
-            consent_lead_id: consentLeadId ?? null,
-          },
+          metadata: { consent_source: consentSource, consent_lead_id: consentLeadId ?? null },
         });
       }
 
@@ -820,9 +782,7 @@ router.get(
         .limit(50);
       res.json({ calls: rows });
     } catch (err) {
-      log.error("GET /api/mobile/calls/active failed", {
-        error: getErrorMessage(err),
-      });
+      log.error("GET /api/mobile/calls/active failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to load active calls.");
     }
   },
@@ -864,9 +824,7 @@ router.get(
         needsAttention: rows.filter((r) => r.outcomeTag === "followup").length,
       });
     } catch (err) {
-      log.error("GET /api/mobile/calls/recent failed", {
-        error: getErrorMessage(err),
-      });
+      log.error("GET /api/mobile/calls/recent failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to load recent calls.");
     }
   },
@@ -896,9 +854,7 @@ router.put(
       }
       res.json({ success: true, handoff_phone: handoffPhone ?? null });
     } catch (err) {
-      log.error("PUT /api/mobile/settings failed", {
-        error: getErrorMessage(err),
-      });
+      log.error("PUT /api/mobile/settings failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to save settings.");
     }
   },
@@ -960,9 +916,7 @@ router.post(
       }
       res.json({ success: true });
     } catch (err) {
-      log.error("POST /api/mobile/calls/:callId/handoff failed", {
-        error: getErrorMessage(err),
-      });
+      log.error("POST /api/mobile/calls/:callId/handoff failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to take the call.");
     }
   },
@@ -1003,9 +957,7 @@ router.get(
       }
       res.json({ call: { ...call, id: String(call.id) } });
     } catch (err) {
-      log.error("GET /api/mobile/calls/:callId/detail failed", {
-        error: getErrorMessage(err),
-      });
+      log.error("GET /api/mobile/calls/:callId/detail failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to load call.");
     }
   },
@@ -1026,9 +978,7 @@ router.get(
       ]);
       res.json({ balance_usd: balanceUsd, ledger });
     } catch (err) {
-      log.error("GET /api/mobile/wallet failed", {
-        error: getErrorMessage(err),
-      });
+      log.error("GET /api/mobile/wallet failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to load wallet.");
     }
   },
