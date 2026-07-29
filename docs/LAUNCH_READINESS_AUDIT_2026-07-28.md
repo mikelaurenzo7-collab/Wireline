@@ -12,23 +12,23 @@ This is dated evidence, not product doctrine. Canonical policy remains in the co
 
 The deep pass verified that Wireline has a coherent product model, a guarded OpenAI-first runtime, a versioned Founder pricing catalog, tenant-isolated data, activation/spend controls, provider fallbacks, and an extensive launch-test suite. It also found one production billing-status failure caused by avoidable serverless pool fan-out, indefinite retention of expired recovery credentials, a false-green Stripe readiness check, email diagnostics that could expose recipient addresses or a verification bearer link, and a shared database-error formatter that retained Drizzle bound parameters.
 
-All verified code wins are implemented on the audit branch. Follow-up passes also found that the margin model omitted Stripe Billing and future Tax transaction fees, Vapi end-of-call persistence read several current report fields only from compatibility locations, pooled transaction state could strand a worker on a read-only backend, and failed-but-retryable durable jobs were never reclaimable. These defects are now corrected and permanently release-gated. No speculative redesign, vendor expansion, or destructive data cleanup was applied.
+All verified code wins are implemented on the audit branch. Follow-up passes also found that the margin model omitted Stripe Billing and future Tax transaction fees, Vapi end-of-call persistence read several current report fields only from compatibility locations, pooled transaction state could strand a worker on a read-only backend, failed-but-retryable durable jobs were never reclaimable, and a shadow Extra Agent write path could have reintroduced non-atomic entitlement handling if router order changed. These defects are now corrected and permanently release-gated. No speculative redesign, vendor expansion, or destructive data cleanup was applied.
 
 ## Exact-head release evidence
 
-The latest code-bearing audit completed on commit `0a01152521c3409dac38d031ed5d529d81a042bf` (`dpl_CJztwAscRPuNwLRxpUJMvV1X6DuD`, `READY`). This documentation-only refresh records evidence about that proven code head; the exact documentation head and its deployment are recorded on PR #943 to avoid a self-referential evidence loop.
+The latest code-bearing audit completed on commit `04737463712a1af3479fe53c63b207b317363aac` (`dpl_A2wNcyoG9tiEjFvHPaXakqqQfKSe`, `READY`). This documentation-only refresh records evidence about that proven code head; the exact documentation head and its deployment are recorded on PR #943 to avoid a self-referential evidence loop.
 
 | Gate | Result |
 | --- | --- |
-| Vercel preview | `READY` (`dpl_CJztwAscRPuNwLRxpUJMvV1X6DuD`) at `0a01152521c3409dac38d031ed5d529d81a042bf` |
+| Vercel preview | `READY` (`dpl_A2wNcyoG9tiEjFvHPaXakqqQfKSe`) at `04737463712a1af3479fe53c63b207b317363aac` |
 | Unit/contract suite | Curated gate: 41 files / 273 tests; full non-E2E suite: 261 files / 1,386 tests; all passed |
 | Static analysis | Client TypeScript, server TypeScript, audit-module TypeScript, and ESLint passed |
 | Frontend build | Vite 6.4.3; 3,074 modules transformed; production build passed |
 | Server build | 2.4 MB server bundle; import-safe no-database smoke passed |
 | ChatGPT/MCP build | 2.0 MB bundle |
-| Public health | `GET /api/health` returned 200 |
+| Production public health | `GET /api/health` returned 200 |
 | Protected readiness | `GET /api/health/launch-readiness` correctly required the monitor token |
-| Public routing | home, pricing, signup, signin, sitemap, robots, and not-found routes returned 200 |
+| Production public routing | home, pricing, signup, signin, sitemap, and robots returned 200; the exact preview remains Vercel-auth protected |
 | Browser security | CSP, HSTS, frame denial, content-type protection, strict referrer policy, permissions policy, COOP, and CORP present |
 | GitHub Actions | blocked before job startup by account limits; Vercel exact-head build is the current compensating gate |
 
@@ -82,6 +82,12 @@ The read-only vendor probe and generated launch-status record now verify all of 
 
 A regression contract pins these fail-closed gates.
 
+### Extra Agent purchase integrity
+
+The broad billing router retained a shadow `POST /billing/extra-agents` implementation even though the dedicated atomic router was mounted first. The shadow path mutated Stripe and then polled invoice state, so a future router-order change could have revived provider/local divergence and bypassed the launch-hard gate.
+
+The shadow writer is removed; the broad router now owns only the read surface. The sole write owner takes the tenant capacity advisory lock, treats Stripe quantity as authoritative, uses deterministic idempotency, immediately invoices increases with `payment_behavior: "error_if_incomplete"`, re-retrieves and verifies provider quantity, and persists Postgres capacity only after that proof. Declined collection returns 402 without entitlement. Launch blockers stop only quantity increases; reductions and no-op reconciliation remain available so customers are never trapped during an incident. Permanent contracts pin sole ownership, payment-failure handling, mutation/verification/persistence ordering, and downgrade availability.
+
 ### Complete Stripe commercial-fee reserve
 
 The shared margin model previously reserved Stripe Payments (2.9% + $0.30) but omitted Stripe Billing's 0.7% of subscription volume and the future Stripe Tax transaction fee. That made the Pro annual full-use margin appear above 30% when the complete commercial stack put 250 included minutes below the policy floor.
@@ -118,7 +124,7 @@ Supabase reports the project `ACTIVE_HEALTHY` on Postgres 17.6.1. All inspected 
 
 Observed production state:
 
-- Five consecutive post-recovery sweep cycles created both recurring job types and finished them on the first attempt; current pending/running/failed retry debt is zero, and the primary reports read-write with recovery off. The earlier 30-day sample had 5,750 finished jobs and five dead historical jobs (one intentionally disabled knowledge-URL job and four May purge jobs from before the purge RPC was present; the current RPC exists);
+- Twenty-six consecutive post-recovery sweep cycles created both recurring job types (52 jobs total) and finished them on the first attempt; current due, running, retryable-failed, and exhausted job debt is zero, and the primary reports read-write with recovery off. The earlier 30-day sample had 5,750 finished jobs and five dead historical jobs (one intentionally disabled knowledge-URL job and four May purge jobs from before the purge RPC was present; the current RPC exists);
 - 66 demo-marked call rows; 57 have duration, 52 have null cost, 14 have zero cost, and none has positive cost; 13 have transcripts and nine have recording references. Four older demo fixtures carry `pipeline_error = 'dialing'`, while STT/TTS error flags are zero. No row is live-customer call or empirical COGS proof;
 - 132/132 workspace spend budgets enabled with hard caps;
 - zero orphan carrier resources;
@@ -150,7 +156,7 @@ Runway is available for asynchronous generated media, not a real-time presenter.
 
 - Stripe, Vercel, Supabase, Runway, and Descript were reachable for read-only verification.
 - The Stripe catalog and webhook are coherent; brand and portal remain blocked.
-- Vercel production showed one older billing-status 500 consistent with pool checkout exhaustion, one older Resend 422 to a synthetic example address, and the four pooled read-only sweep failures described above. Recipient/bound-parameter logging is fixed and release-gated; the pooled backend recovered, five consecutive cycles completed, and no runtime errors have appeared since 17:50 UTC.
+- Vercel production showed one older billing-status 500 consistent with pool checkout exhaustion, one older Resend 422 to a synthetic example address, and the four pooled read-only sweep failures described above. Recipient/bound-parameter logging is fixed and release-gated; the pooled backend recovered, 26 consecutive cycles completed both recurring jobs on the first attempt, and no runtime errors have appeared since 17:50 UTC.
 - Wireline has a deliberate zero-dependency browser/server error reporter that routes structured failures into Vercel logs (`src/lib/sentry.ts` and `src/lib/sentry-events.ts`), but no external Sentry SDK or authenticated Sentry project was found. Do not claim Sentry alerting is certified.
 - Ads Manager is intentionally out of scope by founder direction; it was not accessed, no spend was changed, and it is not a launch gate.
 - Opera was not connected. The requested fresh screenshot inspection could not be performed.
