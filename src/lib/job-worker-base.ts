@@ -15,7 +15,10 @@ import {
   apolloPlatformConfigured,
   searchLeads as apolloSearch,
 } from "./apollo-service";
-import { purgeAccount, releaseExternalResourcesForPurge } from "./account-deletion";
+import {
+  purgeAccount,
+  releaseExternalResourcesForPurge,
+} from "./account-deletion";
 
 type SupportedCrmType = "salesforce" | "hubspot";
 
@@ -38,10 +41,14 @@ function buildCrmCallDescription(input: {
     input.agentName ? `Agent: ${input.agentName}` : null,
     `Direction: ${input.direction}`,
     input.customerNumber ? `Customer number: ${input.customerNumber}` : null,
-    typeof input.durationSeconds === "number" ? `Duration: ${input.durationSeconds}s` : null,
+    typeof input.durationSeconds === "number"
+      ? `Duration: ${input.durationSeconds}s`
+      : null,
     input.intentLabel ? `Intent: ${input.intentLabel}` : null,
     input.sentiment ? `Sentiment: ${input.sentiment}` : null,
-    typeof input.leadScore === "number" ? `Lead score: ${input.leadScore}` : null,
+    typeof input.leadScore === "number"
+      ? `Lead score: ${input.leadScore}`
+      : null,
     input.summary ? `Summary: ${truncateForCrm(input.summary)}` : null,
   ].filter(Boolean);
   return lines.join("\n");
@@ -60,11 +67,17 @@ async function syncCallActivityToCrm(input: {
   intentLabel?: string;
   sentiment?: string;
 }) {
-  if (!input.crmType || (input.crmType !== "salesforce" && input.crmType !== "hubspot")) return;
+  if (
+    !input.crmType ||
+    (input.crmType !== "salesforce" && input.crmType !== "hubspot")
+  )
+    return;
   if (!input.customerNumber) return;
 
   const crm = new CRMService(input.userId);
-  const subjectSuffix = input.intentLabel ? ` - ${truncateForCrm(input.intentLabel, 80)}` : "";
+  const subjectSuffix = input.intentLabel
+    ? ` - ${truncateForCrm(input.intentLabel, 80)}`
+    : "";
   const activityId = await crm.logCall({
     crmType: input.crmType as SupportedCrmType,
     subject: `Wireline ${input.direction} call${subjectSuffix}`,
@@ -91,7 +104,9 @@ async function syncCallActivityToCrm(input: {
           leadScore: input.leadScore,
         })
         .catch((e) =>
-          log.warn("Post-call lead score CRM sync failed", { error: getErrorMessage(e) }),
+          log.warn("Post-call lead score CRM sync failed", {
+            error: getErrorMessage(e),
+          }),
         );
     }
 
@@ -105,7 +120,10 @@ async function syncCallActivityToCrm(input: {
   });
 }
 
-async function persistJobResult(jobId: string, result: Record<string, unknown>): Promise<void> {
+async function persistJobResult(
+  jobId: string,
+  result: Record<string, unknown>,
+): Promise<void> {
   await drizzle
     .update(schema.jobs)
     .set({ result, updatedAt: new Date() })
@@ -134,7 +152,10 @@ export async function handleJob(job: JobRow): Promise<void> {
 
     // Check user tier for model selection
     const [settings] = await drizzle
-      .select({ aiTier: schema.settings.aiTier, crmType: schema.settings.crmType })
+      .select({
+        aiTier: schema.settings.aiTier,
+        crmType: schema.settings.crmType,
+      })
       .from(schema.settings)
       .where(eq(schema.settings.userId, p.userId))
       .limit(1);
@@ -205,17 +226,28 @@ export async function handleJob(job: JobRow): Promise<void> {
         records,
         requestMeta: { vapi_call_id: p.callId, agent_id: p.agentId },
       }).catch((e: unknown) =>
-        log.warn("post_call audit persist failed", { error: getErrorMessage(e) }),
+        log.warn("post_call audit persist failed", {
+          error: getErrorMessage(e),
+        }),
       );
     } else {
-      const tokenCount = Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
+      const tokenCount = Math.ceil(
+        ((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4,
+      );
       await quotaTracker
-        .checkAndIncrement(p.userId, "claude_tokens_daily", Math.max(1, tokenCount))
+        .checkAndIncrement(
+          p.userId,
+          "claude_tokens_daily",
+          Math.max(1, tokenCount),
+        )
         .catch((e: unknown) => {
-          log.warn("quota token increment failed — usage may be under-counted", {
-            user_id: p.userId,
-            error: getErrorMessage(e),
-          });
+          log.warn(
+            "quota token increment failed — usage may be under-counted",
+            {
+              user_id: p.userId,
+              error: getErrorMessage(e),
+            },
+          );
         });
     }
 
@@ -228,7 +260,9 @@ export async function handleJob(job: JobRow): Promise<void> {
       .where(eq(schema.callLogs.vapiCallId, p.callId))
       .limit(1);
     const direction =
-      logRow?.direction === "outbound" ? ("outbound" as const) : ("inbound" as const);
+      logRow?.direction === "outbound"
+        ? ("outbound" as const)
+        : ("inbound" as const);
     const enrichment = {
       lead_score: result.lead_score,
       intent_label: result.intent_label,
@@ -310,7 +344,11 @@ export async function handleJob(job: JobRow): Promise<void> {
         transcript: p.transcript,
         customerNumber: p.customerNumber,
       },
-    }).catch((e) => log.error("Failed to enqueue V2A extraction", { error: getErrorMessage(e) }));
+    }).catch((e) =>
+      log.error("Failed to enqueue V2A extraction", {
+        error: getErrorMessage(e),
+      }),
+    );
   }
 
   if (job.type === "v2a_action_extraction") {
@@ -355,7 +393,10 @@ export async function handleJob(job: JobRow): Promise<void> {
 
     const parsed = ActionItemSchema.safeParse(p.action);
     if (!parsed.success) {
-      log.error("Invalid action payload", { userId: p.userId, error: parsed.error });
+      log.error("Invalid action payload", {
+        userId: p.userId,
+        error: parsed.error,
+      });
       return;
     }
 
@@ -397,7 +438,10 @@ export async function handleJob(job: JobRow): Promise<void> {
         .onConflictDoNothing({
           target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
         });
-      log.info("Adaptive optimization: new lesson synthesized", { agentId: p.agentId, lesson });
+      log.info("Adaptive optimization: new lesson synthesized", {
+        agentId: p.agentId,
+        lesson,
+      });
     }
   }
 
@@ -407,7 +451,8 @@ export async function handleJob(job: JobRow): Promise<void> {
       log.warn("purge_old_data job missing user_id", { jobId: job.id });
       return;
     }
-    const retentionDays = typeof p.retention_days === "number" ? p.retention_days : 365;
+    const retentionDays =
+      typeof p.retention_days === "number" ? p.retention_days : 365;
     try {
       // Use parameterized query to prevent SQL injection
       const result = await drizzle.execute(
@@ -510,7 +555,10 @@ export async function handleJob(job: JobRow): Promise<void> {
     // wireline_subscriptions/wireline_phone_numbers we lose the ids forever.
     // A hard Stripe failure throws here so the job retries instead of purging
     // a still-billing subscription; number-release failures are logged only.
-    const release = await releaseExternalResourcesForPurge(p.user_id, { db: drizzle, log });
+    const release = await releaseExternalResourcesForPurge(p.user_id, {
+      db: drizzle,
+      log,
+    });
     log.info("purge_deleted_account external release", {
       jobId: job.id,
       user_id: p.user_id,
@@ -653,7 +701,9 @@ export async function handleJob(job: JobRow): Promise<void> {
       maxPages?: number;
     };
     if (!claudeBrain.isBrainAvailable()) {
-      throw new Error("Claude is not configured — cannot crawl URL for knowledge.");
+      throw new Error(
+        "Claude is not configured — cannot crawl URL for knowledge.",
+      );
     }
     const result = await claudeBrain.knowledgeFromUrl({
       url: p.url,
@@ -661,7 +711,10 @@ export async function handleJob(job: JobRow): Promise<void> {
       maxEntries: p.maxEntries ?? 12,
       maxPages: p.maxPages ?? 5,
     });
-    await persistJobResult(job.id, result as unknown as Record<string, unknown>);
+    await persistJobResult(
+      job.id,
+      result as unknown as Record<string, unknown>,
+    );
   }
 
   if (job.type === "vapi_webhook") {
@@ -677,10 +730,14 @@ export async function handleJob(job: JobRow): Promise<void> {
   if (job.type === "campaign_dial") {
     const p = job.payload as { userId: string; campaignId?: string };
     if (!p.userId || !p.campaignId) {
-      log.error("campaign_dial job missing campaignId", { jobId: job.id, payload: p });
+      log.error("campaign_dial job missing campaignId", {
+        jobId: job.id,
+        payload: p,
+      });
       throw new Error("campaign_dial job requires userId and campaignId");
     }
-    const { CampaignDialerService } = await import("../services/campaign-dialer");
+    const { CampaignDialerService } =
+      await import("../services/campaign-dialer");
     const dialer = new CampaignDialerService();
     await dialer.processCampaignById(p.userId, p.campaignId);
   }
@@ -694,13 +751,16 @@ export async function handleJob(job: JobRow): Promise<void> {
   if (job.type === "callback_tick") {
     const { tickDueCallbacks } = await import("./callback-engine");
     const summary = await tickDueCallbacks({ limit: 25 });
-    if (summary.processed > 0) log.info("callback_tick processed", { ...summary });
+    if (summary.processed > 0)
+      log.info("callback_tick processed", { ...summary });
   }
 
   if (job.type === "auto_qa_score") {
     const p = job.payload as { callLogId: number | string; userId: string };
     if (!claudeBrain.isBrainAvailable()) {
-      log.warn("auto_qa_score skipped — claude unavailable", { callLogId: p.callLogId });
+      log.warn("auto_qa_score skipped — claude unavailable", {
+        callLogId: p.callLogId,
+      });
       return;
     }
 
@@ -710,7 +770,9 @@ export async function handleJob(job: JobRow): Promise<void> {
     try {
       callLogIdBig = BigInt(p.callLogId as any);
     } catch {
-      log.warn("auto_qa_score skipped — unparseable callLogId", { callLogId: p.callLogId });
+      log.warn("auto_qa_score skipped — unparseable callLogId", {
+        callLogId: p.callLogId,
+      });
       return;
     }
 
@@ -732,7 +794,9 @@ export async function handleJob(job: JobRow): Promise<void> {
       .limit(1);
 
     if (!call || !call.transcript) {
-      log.info("auto_qa_score skipped — no call or transcript", { callLogId: p.callLogId });
+      log.info("auto_qa_score skipped — no call or transcript", {
+        callLogId: p.callLogId,
+      });
       return;
     }
 
@@ -740,7 +804,9 @@ export async function handleJob(job: JobRow): Promise<void> {
     // end-of-call-report and the job ran twice), skip the second pass to
     // save a Claude API call per duplicate.
     if (call.qaScore != null) {
-      log.info("auto_qa_score skipped — already scored", { callLogId: p.callLogId });
+      log.info("auto_qa_score skipped — already scored", {
+        callLogId: p.callLogId,
+      });
       return;
     }
 
@@ -764,7 +830,13 @@ export async function handleJob(job: JobRow): Promise<void> {
         sentiment: call.sentiment || "neutral",
         durationSeconds: call.durationSeconds || 0,
       });
-      const QA_DIMS = ["greeting", "discovery", "solution", "objection", "closing"] as const;
+      const QA_DIMS = [
+        "greeting",
+        "discovery",
+        "solution",
+        "objection",
+        "closing",
+      ] as const;
       const score = Math.min(
         100,
         Math.max(
@@ -785,13 +857,21 @@ export async function handleJob(job: JobRow): Promise<void> {
         await enqueue(drizzle, {
           userId: p.userId,
           type: "adaptive_optimization",
-          payload: { agentId: call.agentId, callId: String(call.id), score, breakdown },
+          payload: {
+            agentId: call.agentId,
+            callId: String(call.id),
+            score,
+            breakdown,
+          },
         });
       }
 
       log.info("auto_qa_score completed", { callLogId: p.callLogId, score });
     } catch (err: any) {
-      log.error("auto_qa_score failed", { callLogId: p.callLogId, error: err?.message });
+      log.error("auto_qa_score failed", {
+        callLogId: p.callLogId,
+        error: err?.message,
+      });
     }
   }
 
@@ -839,7 +919,10 @@ export async function handleJob(job: JobRow): Promise<void> {
         .where(eq(schema.users.id, p.userId))
         .limit(1);
       if (!userRow?.email) return;
-      const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+      const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(
+        /\/+$/,
+        "",
+      );
       const { sendTrialEndingSoonEmail } = await import("./email-service");
       const result = await sendTrialEndingSoonEmail({
         to: userRow.email,
@@ -847,12 +930,21 @@ export async function handleJob(job: JobRow): Promise<void> {
         checkoutUrl: `${appUrl}/pricing`,
       });
       if (!result.ok) {
-        log.warn("trial_ending_soon_email send failed", { userId: p.userId, error: result.error });
+        log.warn("trial_ending_soon_email send failed", {
+          userId: p.userId,
+          error: result.error,
+        });
       } else {
-        log.info("trial_ending_soon_email sent", { userId: p.userId, daysLeft: p.daysLeft });
+        log.info("trial_ending_soon_email sent", {
+          userId: p.userId,
+          daysLeft: p.daysLeft,
+        });
       }
     } catch (err: any) {
-      log.error("trial_ending_soon_email job failed", { userId: p.userId, error: err?.message });
+      log.error("trial_ending_soon_email job failed", {
+        userId: p.userId,
+        error: err?.message,
+      });
       throw err;
     }
   }
@@ -871,7 +963,8 @@ export async function handleJob(job: JobRow): Promise<void> {
       jobId: job.id,
       allHealthy: result.allHealthy,
       alertSent: result.alertSent,
-      unhealthy: result.lines.filter((l) => !l.numberOk || !l.assistantOk).length,
+      unhealthy: result.lines.filter((l) => !l.numberOk || !l.assistantOk)
+        .length,
     });
     if (!result.allHealthy && !result.alertSent) {
       // If alert failed to send, let the job retry
@@ -880,7 +973,8 @@ export async function handleJob(job: JobRow): Promise<void> {
   }
 
   if (job.type === "margin_at_risk_alert") {
-    const { countAtRiskTenants, listAtRiskTenants } = await import("./tenant-economics");
+    const { countAtRiskTenants, listAtRiskTenants } =
+      await import("./tenant-economics");
     const { sendEmail } = await import("./email-service");
     const count = await countAtRiskTenants();
     if (count === 0) return;
