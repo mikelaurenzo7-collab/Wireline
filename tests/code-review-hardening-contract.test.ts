@@ -106,7 +106,7 @@ describe("code review hardening contracts", () => {
   it("keeps duplicate end-of-call retries side-effect free after transcript backfill", () => {
     const handlers = read("src/lib/vapi-handlers.ts");
     expect(handlers).toContain(
-      "Duplicate end-of-call-report ignored after retry-safe transcript patch",
+      "Duplicate end-of-call-report ignored after retry-safe evidence patch",
     );
     expect(handlers).toContain(
       "All downstream side effects (usage, customer webhooks,\n    // compliance ledger, enrichment, notifications) are intentionally skipped",
