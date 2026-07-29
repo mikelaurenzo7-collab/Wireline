@@ -11,14 +11,8 @@ import { ActionItemSchema } from "./action-types";
 import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import { CRMService } from "./crm-service";
-import {
-  apolloPlatformConfigured,
-  searchLeads as apolloSearch,
-} from "./apollo-service";
-import {
-  purgeAccount,
-  releaseExternalResourcesForPurge,
-} from "./account-deletion";
+import { apolloPlatformConfigured, searchLeads as apolloSearch } from "./apollo-service";
+import { purgeAccount, releaseExternalResourcesForPurge } from "./account-deletion";
 
 type SupportedCrmType = "salesforce" | "hubspot";
 
@@ -41,14 +35,10 @@ function buildCrmCallDescription(input: {
     input.agentName ? `Agent: ${input.agentName}` : null,
     `Direction: ${input.direction}`,
     input.customerNumber ? `Customer number: ${input.customerNumber}` : null,
-    typeof input.durationSeconds === "number"
-      ? `Duration: ${input.durationSeconds}s`
-      : null,
+    typeof input.durationSeconds === "number" ? `Duration: ${input.durationSeconds}s` : null,
     input.intentLabel ? `Intent: ${input.intentLabel}` : null,
     input.sentiment ? `Sentiment: ${input.sentiment}` : null,
-    typeof input.leadScore === "number"
-      ? `Lead score: ${input.leadScore}`
-      : null,
+    typeof input.leadScore === "number" ? `Lead score: ${input.leadScore}` : null,
     input.summary ? `Summary: ${truncateForCrm(input.summary)}` : null,
   ].filter(Boolean);
   return lines.join("\n");
@@ -67,17 +57,11 @@ async function syncCallActivityToCrm(input: {
   intentLabel?: string;
   sentiment?: string;
 }) {
-  if (
-    !input.crmType ||
-    (input.crmType !== "salesforce" && input.crmType !== "hubspot")
-  )
-    return;
+  if (!input.crmType || (input.crmType !== "salesforce" && input.crmType !== "hubspot")) return;
   if (!input.customerNumber) return;
 
   const crm = new CRMService(input.userId);
-  const subjectSuffix = input.intentLabel
-    ? ` - ${truncateForCrm(input.intentLabel, 80)}`
-    : "";
+  const subjectSuffix = input.intentLabel ? ` - ${truncateForCrm(input.intentLabel, 80)}` : "";
   const activityId = await crm.logCall({
     crmType: input.crmType as SupportedCrmType,
     subject: `Wireline ${input.direction} call${subjectSuffix}`,
@@ -120,10 +104,7 @@ async function syncCallActivityToCrm(input: {
   });
 }
 
-async function persistJobResult(
-  jobId: string,
-  result: Record<string, unknown>,
-): Promise<void> {
+async function persistJobResult(jobId: string, result: Record<string, unknown>): Promise<void> {
   await drizzle
     .update(schema.jobs)
     .set({ result, updatedAt: new Date() })
@@ -231,23 +212,14 @@ export async function handleJob(job: JobRow): Promise<void> {
         }),
       );
     } else {
-      const tokenCount = Math.ceil(
-        ((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4,
-      );
+      const tokenCount = Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
       await quotaTracker
-        .checkAndIncrement(
-          p.userId,
-          "claude_tokens_daily",
-          Math.max(1, tokenCount),
-        )
+        .checkAndIncrement(p.userId, "claude_tokens_daily", Math.max(1, tokenCount))
         .catch((e: unknown) => {
-          log.warn(
-            "quota token increment failed — usage may be under-counted",
-            {
-              user_id: p.userId,
-              error: getErrorMessage(e),
-            },
-          );
+          log.warn("quota token increment failed — usage may be under-counted", {
+            user_id: p.userId,
+            error: getErrorMessage(e),
+          });
         });
     }
 
@@ -260,9 +232,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       .where(eq(schema.callLogs.vapiCallId, p.callId))
       .limit(1);
     const direction =
-      logRow?.direction === "outbound"
-        ? ("outbound" as const)
-        : ("inbound" as const);
+      logRow?.direction === "outbound" ? ("outbound" as const) : ("inbound" as const);
     const enrichment = {
       lead_score: result.lead_score,
       intent_label: result.intent_label,
@@ -451,8 +421,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       log.warn("purge_old_data job missing user_id", { jobId: job.id });
       return;
     }
-    const retentionDays =
-      typeof p.retention_days === "number" ? p.retention_days : 365;
+    const retentionDays = typeof p.retention_days === "number" ? p.retention_days : 365;
     try {
       // Use parameterized query to prevent SQL injection
       const result = await drizzle.execute(
@@ -701,9 +670,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       maxPages?: number;
     };
     if (!claudeBrain.isBrainAvailable()) {
-      throw new Error(
-        "Claude is not configured — cannot crawl URL for knowledge.",
-      );
+      throw new Error("Claude is not configured — cannot crawl URL for knowledge.");
     }
     const result = await claudeBrain.knowledgeFromUrl({
       url: p.url,
@@ -711,10 +678,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       maxEntries: p.maxEntries ?? 12,
       maxPages: p.maxPages ?? 5,
     });
-    await persistJobResult(
-      job.id,
-      result as unknown as Record<string, unknown>,
-    );
+    await persistJobResult(job.id, result as unknown as Record<string, unknown>);
   }
 
   if (job.type === "vapi_webhook") {
@@ -736,8 +700,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       });
       throw new Error("campaign_dial job requires userId and campaignId");
     }
-    const { CampaignDialerService } =
-      await import("../services/campaign-dialer");
+    const { CampaignDialerService } = await import("../services/campaign-dialer");
     const dialer = new CampaignDialerService();
     await dialer.processCampaignById(p.userId, p.campaignId);
   }
@@ -751,8 +714,7 @@ export async function handleJob(job: JobRow): Promise<void> {
   if (job.type === "callback_tick") {
     const { tickDueCallbacks } = await import("./callback-engine");
     const summary = await tickDueCallbacks({ limit: 25 });
-    if (summary.processed > 0)
-      log.info("callback_tick processed", { ...summary });
+    if (summary.processed > 0) log.info("callback_tick processed", { ...summary });
   }
 
   if (job.type === "auto_qa_score") {
@@ -830,13 +792,7 @@ export async function handleJob(job: JobRow): Promise<void> {
         sentiment: call.sentiment || "neutral",
         durationSeconds: call.durationSeconds || 0,
       });
-      const QA_DIMS = [
-        "greeting",
-        "discovery",
-        "solution",
-        "objection",
-        "closing",
-      ] as const;
+      const QA_DIMS = ["greeting", "discovery", "solution", "objection", "closing"] as const;
       const score = Math.min(
         100,
         Math.max(
@@ -919,10 +875,7 @@ export async function handleJob(job: JobRow): Promise<void> {
         .where(eq(schema.users.id, p.userId))
         .limit(1);
       if (!userRow?.email) return;
-      const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(
-        /\/+$/,
-        "",
-      );
+      const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
       const { sendTrialEndingSoonEmail } = await import("./email-service");
       const result = await sendTrialEndingSoonEmail({
         to: userRow.email,
@@ -963,8 +916,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       jobId: job.id,
       allHealthy: result.allHealthy,
       alertSent: result.alertSent,
-      unhealthy: result.lines.filter((l) => !l.numberOk || !l.assistantOk)
-        .length,
+      unhealthy: result.lines.filter((l) => !l.numberOk || !l.assistantOk).length,
     });
     if (!result.allHealthy && !result.alertSent) {
       // If alert failed to send, let the job retry
@@ -973,8 +925,7 @@ export async function handleJob(job: JobRow): Promise<void> {
   }
 
   if (job.type === "margin_at_risk_alert") {
-    const { countAtRiskTenants, listAtRiskTenants } =
-      await import("./tenant-economics");
+    const { countAtRiskTenants, listAtRiskTenants } = await import("./tenant-economics");
     const { sendEmail } = await import("./email-service");
     const count = await countAtRiskTenants();
     if (count === 0) return;
