@@ -12,18 +12,18 @@ This is dated evidence, not product doctrine. Canonical policy remains in the co
 
 The deep pass verified that Wireline has a coherent product model, a guarded OpenAI-first runtime, a versioned Founder pricing catalog, tenant-isolated data, activation/spend controls, provider fallbacks, and an extensive launch-test suite. It also found one production billing-status failure caused by avoidable serverless pool fan-out, indefinite retention of expired recovery credentials, a false-green Stripe readiness check, email diagnostics that could expose recipient addresses or a verification bearer link, and a shared database-error formatter that retained Drizzle bound parameters.
 
-All verified code wins are implemented on the audit branch. A follow-up 2026-07-29 pass also found that the margin model omitted Stripe Billing and future Tax transaction fees, while Vapi end-of-call persistence read several current report fields only from compatibility locations. Both defects are now corrected and permanently release-gated. No speculative redesign, vendor expansion, or destructive data cleanup was applied.
+All verified code wins are implemented on the audit branch. Follow-up passes also found that the margin model omitted Stripe Billing and future Tax transaction fees, Vapi end-of-call persistence read several current report fields only from compatibility locations, pooled transaction state could strand a worker on a read-only backend, and failed-but-retryable durable jobs were never reclaimable. These defects are now corrected and permanently release-gated. No speculative redesign, vendor expansion, or destructive data cleanup was applied.
 
 ## Exact-head release evidence
 
-The original full launch audit completed on code-bearing commit `81cbc2e4f1b968750e3ba392d45f60c1634185b0` (`dpl_HVneixtSVEAtDjazD3tCgwFsBkvZ`, `READY`). Later billing, Vapi, and documentation changes are covered by the branch's `[launch-deep-audit]` Vercel gate; the final exact-head deployment result is recorded on PR #943 so documenting it does not create an unaudited follow-up commit.
+The latest code-bearing audit completed on commit `0a01152521c3409dac38d031ed5d529d81a042bf` (`dpl_CJztwAscRPuNwLRxpUJMvV1X6DuD`, `READY`). This documentation-only refresh records evidence about that proven code head; the exact documentation head and its deployment are recorded on PR #943 to avoid a self-referential evidence loop.
 
 | Gate | Result |
 | --- | --- |
-| Vercel preview | `READY` (`dpl_HVneixtSVEAtDjazD3tCgwFsBkvZ`) at `81cbc2e4f1b968750e3ba392d45f60c1634185b0` |
-| Unit/contract suite | Curated gate: 36 files / 234 tests; full non-E2E suite: 258 files / 1,369 tests; all passed |
+| Vercel preview | `READY` (`dpl_CJztwAscRPuNwLRxpUJMvV1X6DuD`) at `0a01152521c3409dac38d031ed5d529d81a042bf` |
+| Unit/contract suite | Curated gate: 41 files / 273 tests; full non-E2E suite: 261 files / 1,386 tests; all passed |
 | Static analysis | Client TypeScript, server TypeScript, audit-module TypeScript, and ESLint passed |
-| Frontend build | Vite 6.4.3; 3,074 modules transformed in 9.05s |
+| Frontend build | Vite 6.4.3; 3,074 modules transformed; production build passed |
 | Server build | 2.4 MB server bundle; import-safe no-database smoke passed |
 | ChatGPT/MCP build | 2.0 MB bundle |
 | Public health | `GET /api/health` returned 200 |
@@ -45,6 +45,16 @@ The route now performs subscription, agent, phone, and entitlement reads sequent
 ### Tenant snapshot connection discipline
 
 The same causal pattern appeared in 15 additional pure-read batches that launched four to seven root tenant queries concurrently. Dashboard summaries, onboarding, insights, fleet/activity, agent workspaces, mobile setup, browser testing, Vapi assistant construction, outbound Vapi setup, OpenAI/xAI live-agent setup, and the daily brief now run each batch inside one tenant-scoped Drizzle transaction. Result tuple shapes and parallel-call semantics are preserved while node-postgres serializes the work on one scoped client. A release-gated contract scans every corrected file and prevents four-or-more root-query fan-out from returning.
+
+### Pooled transaction recovery and guards
+
+Production job sweeps at 17:30, 17:35, 17:40, and 17:45 UTC failed because one idle transaction-pool backend retained read-only state. The primary remained writable and outside recovery. The exact affected backend was isolated and recycled without broad termination or data mutation. Five consecutive sweep cycles at 17:50, 17:55, 18:01, 18:05, and 18:10 UTC then created both `cadence_tick` and `callback_tick` jobs; every job finished `done` on its first attempt, current retry debt is zero, and Vercel has reported no runtime errors since recovery.
+
+The branch now requests `SET TRANSACTION READ WRITE` before tenant-role setup, gives unscoped worker transactions explicit Drizzle `accessMode: "read write"`, probes the exact selected application connection without mutation, and documents targeted pooled-backend recovery using the [official Supabase resolution](https://supabase.com/docs/guides/troubleshooting/resolving-cannot-execute-update-in-a-read-only-transaction-on-transaction-pooler-connections-ef582c). A permanent database-connection contract pins both layers.
+
+### Durable retry execution
+
+Retryable jobs were moved to `failed` with a future `runAt`, but both claim paths selected only `pending`; those jobs could never retry. Both claim paths now admit `pending` and retryable `failed` rows while preserving `runAt <= now` backoff eligibility. A six-test durable-enqueue contract covers both claiming paths and the retry-state invariant.
 
 ### Recovery-token retention
 
@@ -108,7 +118,7 @@ Supabase reports the project `ACTIVE_HEALTHY` on Postgres 17.6.1. All inspected 
 
 Observed production state:
 
-- 5,750 jobs finished in the prior 30 days at the final database sample, with zero pending or stale jobs; five dead historical jobs remain (one intentionally disabled knowledge-URL job and four May purge jobs from before the purge RPC was present; the current RPC exists);
+- Five consecutive post-recovery sweep cycles created both recurring job types and finished them on the first attempt; current pending/running/failed retry debt is zero, and the primary reports read-write with recovery off. The earlier 30-day sample had 5,750 finished jobs and five dead historical jobs (one intentionally disabled knowledge-URL job and four May purge jobs from before the purge RPC was present; the current RPC exists);
 - 66 demo-marked call rows; 57 have duration, 52 have null cost, 14 have zero cost, and none has positive cost; 13 have transcripts and nine have recording references. Four older demo fixtures carry `pipeline_error = 'dialing'`, while STT/TTS error flags are zero. No row is live-customer call or empirical COGS proof;
 - 132/132 workspace spend budgets enabled with hard caps;
 - zero orphan carrier resources;
@@ -140,7 +150,7 @@ Runway is available for asynchronous generated media, not a real-time presenter.
 
 - Stripe, Vercel, Supabase, Runway, and Descript were reachable for read-only verification.
 - The Stripe catalog and webhook are coherent; brand and portal remain blocked.
-- Vercel production showed one billing-status 500 consistent with pool checkout exhaustion and one older Resend 422 to a synthetic example address. Those historical events exposed recipient and bound-parameter logging weaknesses; both are now fixed and release-gated on the audit branch.
+- Vercel production showed one older billing-status 500 consistent with pool checkout exhaustion, one older Resend 422 to a synthetic example address, and the four pooled read-only sweep failures described above. Recipient/bound-parameter logging is fixed and release-gated; the pooled backend recovered, five consecutive cycles completed, and no runtime errors have appeared since 17:50 UTC.
 - Wireline has a deliberate zero-dependency browser/server error reporter that routes structured failures into Vercel logs (`src/lib/sentry.ts` and `src/lib/sentry-events.ts`), but no external Sentry SDK or authenticated Sentry project was found. Do not claim Sentry alerting is certified.
 - Ads Manager is intentionally out of scope by founder direction; it was not accessed, no spend was changed, and it is not a launch gate.
 - Opera was not connected. The requested fresh screenshot inspection could not be performed.
@@ -155,16 +165,17 @@ The repository's production visual harness covers 35 public/marketing routes, 29
 
 A fresh semantic browser pass covered all 30 sitemap routes at 1363×936: titles, H1s, canonical/meta tags, image loading, input labels, duplicate ids, and horizontal overflow were clean; the status page settled from its transient check to operational. That pass also found and fixed the Trust canonical/landmark defects and moved signup's primary action above the desktop fold.
 
-This audit does **not** claim the requested screenshot matrix complete. Exact 1440×1100, 1280×900, 834×1112, and 390×844 public/authenticated screenshots, modal/tab states, and side-by-side visual comparisons remain blocked until Opera's **Allow AI connection** is enabled. Running the repository's Playwright harness still requires explicit approval under the selected Product Design browser policy.
+This audit does **not** claim the requested screenshot matrix complete. Exact 1440×1100, 1280×900, 834×1112, and 390×844 public/authenticated screenshots, modal/tab states, and side-by-side visual comparisons remain blocked until Opera's **Allow AI connection** is enabled. The selected Product Design browser policy keeps this pass Opera-only.
 
 ## Release blockers
 
 1. Rebrand the Stripe account to Wireline, align website/support/statement details and assets, and prove the managed portal bootstrap (or configure a compliant Dashboard default).
 2. Run one controlled live Starter checkout -> webhook -> entitlement -> portal -> cancel/refund proof.
-3. Enable Opera AI connection and explicitly approve Playwright for the exact cross-viewport matrix; inspect and fix every current screenshot before merge.
-4. Restore GitHub Actions execution or explicitly accept Vercel exact-head build as the temporary release gate.
+3. Enable Opera AI connection, run the exact Opera cross-viewport matrix, and inspect and fix every current screenshot before merge.
+4. Restore GitHub Actions execution or explicitly accept the exact-head Vercel full audit as the temporary release gate.
 5. Complete one real Federal DNC scrub before scaled marketing outbound.
-6. Rotate the Vercel personal token that was pasted into chat.
+6. Prove one controlled real transactional email delivery; the prior example-domain rejection is not customer-delivery evidence.
+7. Rotate the Vercel personal token that was pasted into chat.
 
 External Sentry is not a launch dependency. Wireline's documented launch observability boundary is structured Vercel/runtime logging plus the bounded browser-report endpoint. Adopt external Sentry later only if its project and alerting are explicitly chosen and receipt-tested.
 
