@@ -501,6 +501,33 @@ record(
   "Maintain the Resend plan; no prepaid balance is required.",
 );
 
+const liveVideoCatalogGate = process.env.WIRELINE_LIVE_VIDEO_CATALOG_READY === "true";
+const liveVideoProviderConfigured = present("LIVEAVATAR_API_KEY");
+const liveVideoPriceConfigured =
+  present("STRIPE_LIVE_VIDEO_ADDON_PRICE_ID") ||
+  present("STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID");
+const liveVideoReady =
+  liveVideoCatalogGate && liveVideoProviderConfigured && liveVideoPriceConfigured;
+record(
+  "live_video",
+  false,
+  liveVideoReady ? "ready" : "degraded",
+  liveVideoReady
+    ? "Live Video provider, $19 add-on price, and explicit catalog gate are configured; runtime reserves 10 minutes per session against a 60-minute monthly cap."
+    : "Live Video remains launch-paused; the optional provider, price, or explicit catalog gate is not fully enabled.",
+  liveVideoReady
+    ? "Maintain provider credits and alerts; no automatic overage is allowed."
+    : "Keep the catalog gate false until the curated presenter set and controlled paid lifecycle are verified.",
+  {
+    catalog_gate: liveVideoCatalogGate,
+    provider_configured: liveVideoProviderConfigured,
+    addon_price_configured: liveVideoPriceConfigured,
+    included_minutes_monthly: 60,
+    session_reservation_minutes: 10,
+    overage_policy: "none_pause_at_limit",
+  },
+);
+
 const federalDncConfigured = isFederalDncVendorConfigured();
 const federalDncKey = process.env.FEDERAL_DNC_API_KEY?.trim() || "";
 const federalDncLooksLikeVercelToken = /^vcp_/i.test(federalDncKey) || /^vercel_/i.test(federalDncKey);
