@@ -88,7 +88,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will customers know they're talking to an AI?",
-        a: 'Wireline agents are configured around your disclosure policy and jurisdiction rules. Most home services tenants run them as a named receptionist — for example "Sarah from Premier HVAC" — with your business name. When disclosure is required or enabled, it is logged automatically. TCPA compliance is logged either way.',
+        a: 'Wireline agents use the company identity, disclosure language, and jurisdiction rules you configure — for example "Sarah from Premier HVAC." Configured disclosure and consent events are logged for review; your team remains responsible for the policy and its legal sufficiency.',
       },
       {
         q: "What happens if the agent doesn't know the answer?",
@@ -96,7 +96,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Can it actually dispatch me on an emergency?",
-        a: "Yes. Configure on call rotations and the agent triages by urgency keyword. Water. Smoke. Sparks. No heat. Pages you via SMS or call. Schedules a same day arrival window on your connected Google or Outlook calendar. Texts the customer the ETA. Direct Jobber and ServiceTitan sync is on the roadmap.",
+        a: "Configure on-call routing and approved urgency rules such as water, smoke, sparks, or no heat. The workflow can alert staff and offer available Google or Outlook calendar windows; emergency dispatch, arrival promises, and direct field-service write-back stay with the tools and people you approve.",
       },
       {
         q: "How much does it cost vs. an answering service?",
@@ -137,7 +137,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
     ],
     scriptPreview: `"Thanks for calling Dr. Chen's office. I can help schedule your visit. Was this for a cleaning, a specific concern, or something else? Got it. Our next opening for that is Thursday at 2:15 or Friday at 9. Which works?"`,
-    statValue: "First ring",
+    statValue: "After hours",
     statLabel:
       "Route the calls your team cannot answer so configured intake and scheduling can continue after hours.",
     primaryCta: { label: "Call medical demo", href: "tel:+16173134469" },
@@ -155,7 +155,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "What about insurance verification?",
-        a: "The agent captures insurance carrier + member ID during intake and writes it to the appointment record. Live eligibility checks via Change Healthcare / Availity are on the roadmap for the Enterprise tier — for now, your front desk verifies before the visit using captured data.",
+        a: "The agent can capture the insurance fields you approve during intake and route them with the appointment record. It does not verify eligibility today; your staff must validate coverage in the systems you already use.",
       },
       {
         q: "Will patients accept an AI receptionist?",
@@ -255,13 +255,13 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
     ],
     scriptPreview: `"Hi. You called about the listing at 1247 Maple. Great property. Quick question. Are you working with a buyers agent already, or are we starting fresh? And ballpark, where do you need to be on price?"`,
-    statValue: "Same day",
+    statValue: "Calendar-aware",
     statLabel:
-      "Pre-qualified buyers get a same-day showing slot. Cold leads get nurtured via text until they're warm — your top agents only see the ready ones.",
+      "Qualified buyers can receive approved showing options from the connected calendar; follow-up cadence and staff handoff remain configurable.",
     primaryCta: { label: "Create real estate agent", href: signupHrefForWedge("real-estate") },
     secondaryCta: { label: "Call real estate demo", href: "tel:+19733638874" },
     trustLine:
-      "Connects to HubSpot, Salesforce, Google Calendar, Outlook. White-labeled — buyers hear your brokerage name.",
+      "Supports connected HubSpot, Salesforce, Google Calendar, and Outlook paths. Buyers hear the brokerage identity you configure, subject to carrier display behavior.",
     faqs: [
       {
         q: "Will it know my listings?",
@@ -269,15 +269,15 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Does it work for a single agent or full brokerage?",
-        a: "Both. Solo agents can start on Starter: one Wireline number, one active agent, and guaranteed voice minutes plus Runtime Balance for overflow. Brokerages use Starter Plus, Pro, or Business capacity to assign different numbers to different listing agents, with a brokerage-level fallback when the listing agent is in a showing.",
+        a: "Both. Solo agents can start with one active agent and the phone capacity included in their plan; larger teams can add capacity and configure brokerage-level routing. Runtime Balance covers supported usage beyond included plan allowances.",
       },
       {
         q: "How does it qualify the buyer?",
-        a: 'Configurable per-firm: pre-approval status, timeline ("buying in 30 days" vs "just browsing"), price band, working with another agent? Buyers who match your criteria get a same-day showing slot. Cold leads get nurtured via SMS until they\'re ready.',
+        a: 'Configure the qualification fields your firm approves: pre-approval status, timeline, price band, and whether the buyer is already represented. Matching callers can receive approved calendar options; follow-up by SMS runs only through the cadence and consent rules you enable.',
       },
       {
         q: "Can it follow up on the cold leads I haven't touched?",
-        a: "Yes. Upload your cold-lead CSV from your CRM, set a cadence (weekly, biweekly), and the agent calls them with vertical-specific re-engagement scripts. The lead's original criteria (price, neighborhood) get referenced in the call — feels personal, not robotic.",
+        a: "Import an approved lead list, choose a cadence, and supply the re-engagement script and consent basis. When source fields such as price or neighborhood are present, the workflow can use them as context; results and contactability vary.",
       },
     ],
   },
@@ -354,7 +354,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     eyebrow: "For Insurance Agencies",
     headline: "Keep quote intake and renewal follow-up moving.",
     subhead:
-      "An AI agent that picks up the new-quote call at 8pm, captures the right details for an accurate bind, and chases the unrenewed policy three times before it lapses.",
+      "An AI agent that handles routed after-hours quote intake, captures approved fields, and runs the renewal follow-up cadence your agency configures.",
     pains: [
       {
         icon: Phone,
@@ -369,7 +369,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: MailCheck,
         title: "Renewal follow-up campaigns",
-        body: "Policy lapse window starts 60 days out. Agent calls + emails on day 60, 30, 7. Books the renewal review. Catches the customer who would have walked to GEICO.",
+        body: "Choose the dates, channels, script, and stop conditions for approved renewal outreach. The agent records each attempt and can offer a review slot from the connected calendar.",
       },
       {
         icon: Shield,
@@ -378,13 +378,13 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
     ],
     scriptPreview: `"Hi, this is Alex with [Your Agency] — I see you requested an auto quote. I'd love to get you accurate numbers fast. Can you tell me the year, make, and model of your primary vehicle, and how many drivers we'll be covering?"`,
-    statValue: "60-day",
+    statValue: "Configurable",
     statLabel:
-      "Renewal cadence catches the customer who would have lapsed to a competitor — before they even shopped around.",
+      "Renewal timing, channels, retry limits, opt-outs, and staff handoff stay under the agency's control.",
     primaryCta: { label: "Create insurance agent", href: signupHrefForWedge("insurance") },
     secondaryCta: { label: "Call insurance demo", href: "tel:+19044601596" },
     trustLine:
-      "White-labeled — your insureds hear your agency name, not ours. Recordings + transcripts archived for audit compliance.",
+      "Callers hear the agency identity you configure, subject to carrier behavior. Transcripts follow tenant retention; recording is optional and off by default.",
     faqs: [
       {
         q: "Will it actually bind a policy?",
@@ -428,12 +428,12 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: Clock,
         title: "After-hours + Sunday-closed days",
-        body: "Closed Mondays? Agent takes the catering inquiry that would have gone to your competitor. Forwards the high-value leads to your manager's cell in real-time.",
+        body: "Closed Mondays? Route catering inquiries to a structured intake, then notify the manager through the handoff path you configure.",
       },
       {
         icon: MailCheck,
         title: "Private-events + catering pipeline",
-        body: "Captures party size, date, dietary needs, budget range, contact info. Emails your events manager with a structured RFQ. Books a tasting visit if the agent's qualifier scores it as high-value.",
+        body: "Captures party size, date, dietary needs, budget range, and contact details. It can route a structured RFQ and offer approved tasting windows when those actions are configured.",
       },
     ],
     scriptPreview: `"Hi, thanks for calling [Your Restaurant]! Were you hoping to make a reservation, place an order to pick up, or ask about a private event? I can take care of all three."`,
@@ -443,7 +443,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     primaryCta: { label: "Create restaurant agent", href: signupHrefForWedge("restaurants") },
     secondaryCta: { label: "Call demo concierge", href: "tel:+15642389455" },
     trustLine:
-      "Caller hears your restaurant's name + brand voice. We can clone your hostess's actual voice with consent — 60 seconds of sample audio.",
+      "Callers hear the restaurant identity and approved voice you configure. Custom voice options require explicit speaker consent and provider availability.",
     faqs: [
       {
         q: "Will it integrate with Resy / OpenTable / Tock?",
@@ -451,11 +451,11 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Can it handle dietary restrictions + allergens correctly?",
-        a: "Yes. Allergens are captured as a structured field (not free-text) and flagged at the top of the kitchen ticket. The agent will refuse to make medical claims about ingredients — it confirms 'I'll note shellfish allergy and our manager will confirm before serving.' Compliance-safe.",
+        a: "The workflow can capture allergens as a structured field and flag them for staff confirmation. The agent should not make medical or ingredient-safety promises; the restaurant remains responsible for review and the final response.",
       },
       {
         q: "What about private-event inquiries?",
-        a: 'Captures party size, date, food + bar preferences, budget range, and contact info. Auto-emails your events team with a structured RFQ. Optional: agent can offer a tasting visit if the inquiry scores above a "high-value" threshold you set.',
+        a: 'Captures party size, date, food and beverage preferences, budget range, and contact information. When email routing is configured, it can send a structured RFQ and offer approved tasting windows under the threshold rules you set.',
       },
       {
         q: "How is this different from Yelp / Google booking widgets?",
@@ -481,8 +481,8 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         icon: Clock,
-        title: "Speed-to-lead under 60 seconds",
-        body: "Inbound demo request hits your form at 10:47pm. Agent calls within seconds. Qualifies the lead, books the discovery call for your AE the next morning. Faster response beats next-day callbacks on high-intent leads.",
+        title: "Fast, governed speed-to-lead",
+        body: "An approved inbound request can enter a monitored queue immediately. The workflow calls within the timing, consent, and retry limits you configure, then qualifies and offers an approved next step.",
       },
       {
         icon: Calendar,
@@ -491,8 +491,8 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         icon: Shield,
-        title: "TCPA-clean outbound",
-        body: "Compliance ledger logs every disclosure, opt-out, and DNC honor. Workspace call windows and attempt caps are enforced before dial. Federal and internal DNC checks run on every outbound attempt.",
+        title: "Outbound compliance controls",
+        body: "The ledger records configured disclosures, opt-outs, and suppression decisions. Workspace calling windows and attempt caps are checked before dial; marketing outreach remains blocked if required platform DNC coverage is not ready.",
       },
     ],
     scriptPreview: `"Hi, this is Casey calling from [Your Company]. I saw you downloaded our [resource] last week — got 2 minutes to see if what we do is even a fit before I book any of your team's time?"`,
@@ -510,7 +510,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How does it handle gatekeepers?",
-        a: 'Like a trained SDR: asks for the right person by name, offers a brief reason, asks for voicemail if blocked. The agent has a "gatekeeper navigation" mode that politely re-approaches up to 3 times before logging the lead as "gatekeeper-blocked" for your team to manually push past.',
+        a: 'It can ask for the named contact, give the approved reason for calling, request voicemail, and follow the retry limit you configure. If blocked, it logs the outcome for a person to review rather than trying to evade the gatekeeper.',
       },
       {
         q: "What about CRM logging?",
@@ -518,7 +518,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How is this different from Apollo / Outreach AI features?",
-        a: "Those are email-first sequencers with AI assist. Wireline is voice-first: real human-sounding conversations at scale. The two complement each other — Apollo for the email side, Wireline for the dials. We integrate with both.",
+        a: "Those products center on sales sequencing and enrichment. Wireline centers on governed voice workflows, call outcomes, and connected follow-up. Use each only where its configured integration and your consent policy support the workflow.",
       },
     ],
   },
