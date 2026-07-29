@@ -6,7 +6,8 @@ import { z } from "zod";
 import * as schema from "../db/schema";
 import { AppError } from "../lib/api-error";
 import { validateBody } from "../lib/api-validation";
-import { drizzle } from "../lib/server-context";
+import { getErrorMessage } from "../lib/server-utils";
+import { drizzle, log } from "../lib/server-context";
 import {
   getLiveAvatarStatus,
   listPublicAvatars,
@@ -22,6 +23,10 @@ import {
   isLiveVideoProvider,
 } from "../lib/video-presenter/live-video-addon";
 import { resolveLiveVideoEntitlement } from "../lib/video-presenter/live-video-entitlements";
+import {
+  releaseLiveVideoSessionReservation,
+  reserveLiveVideoSessionMinutes,
+} from "../lib/video-presenter/live-video-usage";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
@@ -291,19 +296,46 @@ router.post(
       return;
     }
 
-    const { sessionToken, sandbox } = await mintLiveAvatarLiteSessionToken({
-      avatarId: presenter.avatarId,
-      maxSessionDurationSeconds: 600,
-    });
+    const reservation = await reserveLiveVideoSessionMinutes(req.user.id);
+    if (!reservation.reserved) {
+      throw new AppError(
+        429,
+        "LIVE_VIDEO_MONTHLY_LIMIT_REACHED",
+        `Monthly Live Video allowance reached. Your ${reservation.usage.includedMinutes} reserved session minutes reset at the start of the next UTC month.`,
+        { usage: reservation.usage },
+      );
+    }
+
+    let liveSession: Awaited<ReturnType<typeof mintLiveAvatarLiteSessionToken>>;
+    try {
+      liveSession = await mintLiveAvatarLiteSessionToken({
+        avatarId: presenter.avatarId,
+        maxSessionDurationSeconds: 600,
+      });
+    } catch (error) {
+      try {
+        await releaseLiveVideoSessionReservation(
+          req.user.id,
+          reservation.usage.periodKey,
+        );
+      } catch (releaseError) {
+        log.error("Live Video reservation release failed after provider mint error", {
+          periodKey: reservation.usage.periodKey,
+          error: getErrorMessage(releaseError),
+        });
+      }
+      throw error;
+    }
 
     res.json({
       configured: true,
       fallbackSeed: identity.seed,
       presenter,
+      usage: reservation.usage,
       live: {
         provider: "liveavatar",
-        sessionToken,
-        sandbox,
+        sessionToken: liveSession.sessionToken,
+        sandbox: liveSession.sandbox,
       },
     });
   },
