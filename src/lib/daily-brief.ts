@@ -38,8 +38,9 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
   const wStart = new Date();
   wStart.setDate(wStart.getDate() - 7);
 
-  const [yCalls, wCalls, appts, tasks, leads, wins, losses] = await Promise.all([
-    drizzle
+  const [yCalls, wCalls, appts, tasks, leads, wins, losses] = await drizzle.transaction((tx) =>
+    Promise.all([
+    tx
       .select({
         leadScore: schema.callLogs.leadScore,
         intentLabel: schema.callLogs.intentLabel,
@@ -56,7 +57,7 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
           lt(schema.callLogs.createdAt, yEnd),
         ),
       ),
-    drizzle
+    tx
       .select({
         leadScore: schema.callLogs.leadScore,
         durationSeconds: schema.callLogs.durationSeconds,
@@ -64,7 +65,7 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
       })
       .from(schema.callLogs)
       .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, wStart))),
-    drizzle
+    tx
       .select({ id: schema.appointments.id })
       .from(schema.appointments)
       .where(
@@ -74,7 +75,7 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
           lt(schema.appointments.createdAt, yEnd),
         ),
       ),
-    drizzle
+    tx
       .select({
         priority: schema.followUpTasks.priority,
         description: schema.followUpTasks.description,
@@ -85,13 +86,13 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
       )
       .orderBy(desc(schema.followUpTasks.createdAt))
       .limit(8),
-    drizzle
+    tx
       .select({ id: schema.outboundLeads.id })
       .from(schema.outboundLeads)
       .where(
         and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "Pending")),
       ),
-    drizzle
+    tx
       .select({
         customerNumber: schema.callLogs.customerNumber,
         leadScore: schema.callLogs.leadScore,
@@ -108,7 +109,7 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
       )
       .orderBy(desc(schema.callLogs.leadScore))
       .limit(3),
-    drizzle
+    tx
       .select({
         customerNumber: schema.callLogs.customerNumber,
         leadScore: schema.callLogs.leadScore,
@@ -125,7 +126,8 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
       )
       .orderBy(desc(schema.callLogs.createdAt))
       .limit(3),
-  ]);
+  ])
+  );
 
   const yTotal = yCalls?.length || 0;
   const yMinutes = Math.round(
