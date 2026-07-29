@@ -20,13 +20,25 @@
 // serverless, callers should also trigger a sweep from a
 // `POST /api/jobs/sweep` endpoint to compensate for cold-start gaps.
 
-import { drizzle } from "./server-context";
+import { drizzle, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, lte, gte, inArray } from "drizzle-orm";
 import { reportError } from "./error-reporter";
 import { getErrorMessage } from "./server-utils";
 
 type DrizzleDB = typeof drizzle;
+
+const WRITE_TRANSACTION_CONFIG = { accessMode: "read write" as const };
+
+/**
+ * Tenant-scoped checkouts already open an outer READ WRITE transaction in
+ * server-context. Unscoped workers and cron routes need Drizzle to declare the
+ * same access mode on their own transaction so a reused Supavisor backend
+ * cannot inherit a leaked session-level read-only default.
+ */
+function writeTransactionConfig(): typeof WRITE_TRANSACTION_CONFIG | undefined {
+  return tenantStore.getStore() ? undefined : WRITE_TRANSACTION_CONFIG;
+}
 
 // ─────────────────────────────────────────────────────────────────
 // Types
@@ -111,18 +123,24 @@ export interface EnqueueResult {
 export async function enqueue(db: DrizzleDB, opts: EnqueueOptions): Promise<EnqueueResult> {
   const runAt = opts.runAt ?? new Date();
   try {
-    const [data] = await db
-      .insert(schema.jobs)
-      .values({
-        userId: opts.userId,
-        type: opts.type,
-        payload: opts.payload,
-        status: "pending" as JobStatus,
-        attempts: 0,
-        maxAttempts: opts.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
-        runAt: runAt,
-      })
-      .returning({ id: schema.jobs.id });
+    const data = await db.transaction(
+      async (tx) => {
+        const [row] = await tx
+          .insert(schema.jobs)
+          .values({
+            userId: opts.userId,
+            type: opts.type,
+            payload: opts.payload,
+            status: "pending" as JobStatus,
+            attempts: 0,
+            maxAttempts: opts.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
+            runAt: runAt,
+          })
+          .returning({ id: schema.jobs.id });
+        return row;
+      },
+      writeTransactionConfig(),
+    );
 
     return { ok: true, jobId: data.id };
   } catch (error: any) {
@@ -182,7 +200,7 @@ export async function claimJob(db: DrizzleDB, typeFilter?: JobType[]): Promise<a
     const updated = updatedRows[0];
 
     return updated;
-  });
+  }, writeTransactionConfig());
 }
 
 /** Atomically claim one pending job owned by a specific tenant (serverless kick). */
@@ -219,7 +237,7 @@ export async function claimJobById(
       .where(eq(schema.jobs.id, job.id))
       .returning()) as Array<typeof job>;
     return updatedRows[0] ?? null;
-  });
+  }, writeTransactionConfig());
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -231,16 +249,21 @@ export async function completeJob(
   jobId: string,
   result?: JobPayload,
 ): Promise<void> {
-  await db
-    .update(schema.jobs)
-    .set({
-      status: "done" as JobStatus,
-      finishedAt: new Date(),
-      error: null,
-      ...(result !== undefined ? { result } : {}),
-      updatedAt: new Date(),
-    })
-    .where(eq(schema.jobs.id, jobId));
+  await db.transaction(
+    async (tx) => {
+      await tx
+        .update(schema.jobs)
+        .set({
+          status: "done" as JobStatus,
+          finishedAt: new Date(),
+          error: null,
+          ...(result !== undefined ? { result } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.jobs.id, jobId));
+    },
+    writeTransactionConfig(),
+  );
 }
 
 export async function failJob(
@@ -253,16 +276,21 @@ export async function failJob(
     ? null
     : new Date(Date.now() + backoffSeconds(job.attempts || 0) * 1000);
 
-  await db
-    .update(schema.jobs)
-    .set({
-      status: (exhausted ? "dead" : "failed") as JobStatus,
-      error: errorMessage.slice(0, 2000),
-      finishedAt: exhausted ? new Date() : null,
-      runAt: nextRunAt ?? new Date(),
-      updatedAt: new Date(),
-    })
-    .where(eq(schema.jobs.id, job.id));
+  await db.transaction(
+    async (tx) => {
+      await tx
+        .update(schema.jobs)
+        .set({
+          status: (exhausted ? "dead" : "failed") as JobStatus,
+          error: errorMessage.slice(0, 2000),
+          finishedAt: exhausted ? new Date() : null,
+          runAt: nextRunAt ?? new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.jobs.id, job.id));
+    },
+    writeTransactionConfig(),
+  );
 
   // Alert only on dead-letter (retries exhausted) — transient failures that
   // will be retried are noise. A dead job means real work (post-call
@@ -375,33 +403,40 @@ export async function recoverStaleJobs(
   staleAfterMs = 30 * 60 * 1000,
 ): Promise<number> {
   const cutoff = new Date(Date.now() - staleAfterMs);
-  const staleJobs = await db
-    .select({
-      id: schema.jobs.id,
-      attempts: schema.jobs.attempts,
-      maxAttempts: schema.jobs.maxAttempts,
-    })
-    .from(schema.jobs)
-    .where(and(eq(schema.jobs.status, "running" as JobStatus), lte(schema.jobs.startedAt, cutoff)));
+  return await db.transaction(
+    async (tx) => {
+      const staleJobs = await tx
+        .select({
+          id: schema.jobs.id,
+          attempts: schema.jobs.attempts,
+          maxAttempts: schema.jobs.maxAttempts,
+        })
+        .from(schema.jobs)
+        .where(
+          and(eq(schema.jobs.status, "running" as JobStatus), lte(schema.jobs.startedAt, cutoff)),
+        );
 
-  let recovered = 0;
-  for (const job of staleJobs) {
-    const exhausted = (job.attempts || 0) >= (job.maxAttempts || 5);
-    await db
-      .update(schema.jobs)
-      .set({
-        status: (exhausted ? "dead" : "pending") as JobStatus,
-        error: exhausted
-          ? "Marked dead: stuck in running state beyond timeout"
-          : "Reset from stale running state",
-        runAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.jobs.id, job.id));
-    recovered++;
-  }
+      let recovered = 0;
+      for (const job of staleJobs) {
+        const exhausted = (job.attempts || 0) >= (job.maxAttempts || 5);
+        await tx
+          .update(schema.jobs)
+          .set({
+            status: (exhausted ? "dead" : "pending") as JobStatus,
+            error: exhausted
+              ? "Marked dead: stuck in running state beyond timeout"
+              : "Reset from stale running state",
+            runAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.jobs.id, job.id));
+        recovered++;
+      }
 
-  return recovered;
+      return recovered;
+    },
+    writeTransactionConfig(),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────
