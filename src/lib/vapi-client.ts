@@ -351,7 +351,7 @@ export async function placeOutboundCall(opts: {
             .orderBy(desc(schema.followUpTasks.createdAt))
             .limit(1)
         : Promise.resolve([]),
-    ])
+    ]),
   );
 
   const agentConfig = agentRes[0];
