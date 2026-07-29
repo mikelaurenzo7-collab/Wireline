@@ -8,8 +8,9 @@
  * Or programmatically: await runDatabaseHealthCheck()
  */
 
-import { Pool } from "pg";
+import { Pool, type PoolClient } from "pg";
 import { log } from "./server-context";
+import { resolveDatabaseConnection } from "./database-connection";
 
 export interface HealthCheckResult {
   healthy: boolean;
@@ -45,22 +46,47 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
     },
   };
 
-  const dbUrl = process.env.POSTGRES_URL;
-
-  if (!dbUrl) {
+  let databaseConnection;
+  try {
+    databaseConnection = resolveDatabaseConnection();
+  } catch (error) {
     result.healthy = false;
-    result.issues.push("POSTGRES_URL environment variable not set");
+    result.issues.push(error instanceof Error ? error.message : String(error));
     return result;
   }
 
-  const pool = new Pool({ connectionString: dbUrl });
+  const pool = new Pool({ connectionString: databaseConnection.connectionString });
+  let client: PoolClient | null = null;
 
   try {
-    const client = await pool.connect();
+    client = await pool.connect();
 
-    // 1. Check connection and basic stats
+    // 1. Prove the exact application-selected connection can open a
+    // transaction that is explicitly writable. This is non-mutating, but it
+    // catches real replicas and protects the health result from a stale
+    // session-level read-only default on a reused transaction-pool backend.
+    await client.query("BEGIN");
+    await client.query("SET TRANSACTION READ WRITE");
+    const readiness = await client.query(
+      "SELECT current_setting('transaction_read_only') AS transaction_read_only, pg_is_in_recovery() AS in_recovery",
+    );
+    await client.query("ROLLBACK");
+    const transactionReadOnly = readiness.rows[0]?.transaction_read_only;
+    const inRecovery = readiness.rows[0]?.in_recovery === true;
+    if (transactionReadOnly !== "off" || inRecovery) {
+      result.healthy = false;
+      result.issues.push(
+        `Application database connection is not writable (transaction_read_only=${String(transactionReadOnly)}, in_recovery=${String(inRecovery)})`,
+      );
+    }
+
     const versionResult = await client.query("SELECT version()");
-    log.info("PostgreSQL version", { version: versionResult.rows[0]?.version });
+    log.info("PostgreSQL connection verified", {
+      version: versionResult.rows[0]?.version,
+      source: databaseConnection.source,
+      transactionReadOnly,
+      inRecovery,
+    });
 
     // 2. Check table count
     const tableCountResult = await client.query(`
@@ -312,9 +338,6 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
       );
     }
 
-    client.release();
-    await pool.end();
-
     // Final health determination
     if (result.issues.length > 0) {
       result.healthy = false;
@@ -337,6 +360,9 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
     );
     log.error("Database health check failed", { error });
     return result;
+  } finally {
+    client?.release();
+    await pool.end().catch(() => {});
   }
 }
 
