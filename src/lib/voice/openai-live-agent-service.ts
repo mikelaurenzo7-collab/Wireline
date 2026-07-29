@@ -54,8 +54,7 @@ const LIVE_DEMO_TOOLS: OpenAIRealtimeToolDefinition[] = [
       properties: {
         query: {
           type: "string",
-          description:
-            "The exact policy, product, service, price, or procedure question to verify.",
+          description: "The exact policy, product, service, price, or procedure question to verify.",
         },
       },
       required: ["query"],
@@ -111,9 +110,7 @@ function asRecord(value: unknown): Record<string, unknown> {
 }
 
 export function normalizeLiveVoiceProfile(value: unknown): WirelineLiveVoiceProfile | null {
-  const normalized = String(value || "")
-    .trim()
-    .toLowerCase();
+  const normalized = String(value || "").trim().toLowerCase();
   return (WIRELINE_LIVE_VOICE_PROFILES as readonly string[]).includes(normalized)
     ? (normalized as WirelineLiveVoiceProfile)
     : null;
@@ -170,8 +167,7 @@ function buildInstructions(
     .filter(Boolean)
     .join("\n");
   const tone =
-    trimLine(personality, 1_500) ||
-    (agent.personalityVibe ? `Tone: ${agent.personalityVibe}.` : "");
+    trimLine(personality, 1_500) || (agent.personalityVibe ? `Tone: ${agent.personalityVibe}.` : "");
   return [
     identity,
     customInstructions ? `\nCUSTOM ROLE INSTRUCTIONS:\n${customInstructions}` : "",
@@ -187,8 +183,7 @@ function buildInstructions(
 async function loadAgentRuntime(agentId: string, userId: string) {
   const [agents, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
     Promise.all([
-      tx
-        .select({
+      tx.select({
           id: schema.agents.id,
           userId: schema.agents.userId,
           name: schema.agents.name,
@@ -206,24 +201,21 @@ async function loadAgentRuntime(agentId: string, userId: string) {
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
         .limit(1),
-      tx
-        .select({ content: schema.personality.content })
+      tx.select({ content: schema.personality.content })
         .from(schema.personality)
         .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)))
         .limit(1),
-      tx
-        .select({ content: schema.directives.content })
+      tx.select({ content: schema.directives.content })
         .from(schema.directives)
         .where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId)))
         .orderBy(desc(schema.directives.priority))
         .limit(40),
-      tx
-        .select({ content: schema.knowledge.content })
+      tx.select({ content: schema.knowledge.content })
         .from(schema.knowledge)
         .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
         .orderBy(desc(schema.knowledge.createdAt))
         .limit(80),
-    ]),
+    ])
   );
   const agent = agents[0] as AgentRow | undefined;
   if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
@@ -368,7 +360,8 @@ export async function createOpenAILiveVoiceCall(input: {
       model: OPENAI_REALTIME_DEFAULT_MODEL,
       voice,
       greeting:
-        runtime.agent.firstMessage?.trim() || `Hi, this is ${runtime.agent.name}. How can I help?`,
+        runtime.agent.firstMessage?.trim() ||
+        `Hi, this is ${runtime.agent.name}. How can I help?`,
       wireline: {
         provider: "openai_realtime",
         agentId: runtime.agent.id,
@@ -390,12 +383,7 @@ export async function createOpenAILiveVoiceCall(input: {
 }
 
 function tokens(value: string): string[] {
-  return (
-    value
-      .toLowerCase()
-      .match(/[a-z0-9]{2,}/g)
-      ?.slice(0, 16) || []
-  );
+  return value.toLowerCase().match(/[a-z0-9]{2,}/g)?.slice(0, 16) || [];
 }
 
 export async function runOpenAILiveVoiceTool(input: {
@@ -416,10 +404,7 @@ export async function runOpenAILiveVoiceTool(input: {
   const normalizedQuery = query.toLowerCase();
   const queryTokens = tokens(query);
   const snippets: Snippet[] = [
-    ...directives.map((item) => ({
-      source: "rule" as const,
-      content: trimLine(item.content, 900),
-    })),
+    ...directives.map((item) => ({ source: "rule" as const, content: trimLine(item.content, 900) })),
     ...knowledge.map((item) => ({
       source: "knowledge" as const,
       content: trimLine(item.content, 900),
@@ -432,10 +417,7 @@ export async function runOpenAILiveVoiceTool(input: {
         (score, token) => score + (content.includes(token) ? 1 : 0),
         0,
       );
-      return {
-        item,
-        score: tokenScore + (content.includes(normalizedQuery) ? 8 : 0),
-      };
+      return { item, score: tokenScore + (content.includes(normalizedQuery) ? 8 : 0) };
     })
     .filter((row) => row.score > 0)
     .sort((a, b) => b.score - a.score)
@@ -464,10 +446,7 @@ export function getOpenAILiveVoiceStatus() {
 
 export async function getOpenAILiveVoiceProfile(userId: string, agentId: string) {
   const runtime = await loadAgentRuntime(agentId, userId);
-  const profile = resolveLiveVoiceProfile(
-    runtime.agent.role,
-    storedProfile(runtime.agent.businessVariables),
-  );
+  const profile = resolveLiveVoiceProfile(runtime.agent.role, storedProfile(runtime.agent.businessVariables));
   return {
     profile,
     profiles: WIRELINE_LIVE_VOICE_PROFILES,
