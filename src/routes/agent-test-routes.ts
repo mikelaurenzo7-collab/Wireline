@@ -48,8 +48,9 @@ router.post(
       const history = req.body.history as Array<{ role: "customer" | "employee"; content: string }>;
       if (!isRuntimeAvailable()) throw AppError.fromHttpStatus(503, "AI runtime not configured");
 
-      const [agentRows, personalities, directives, knowledge] = await Promise.all([
-        drizzle
+      const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
+        Promise.all([
+        tx
           .select({
             id: schema.agents.id,
             name: schema.agents.name,
@@ -66,7 +67,7 @@ router.post(
           .from(schema.agents)
           .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
           .limit(1),
-        drizzle
+        tx
           .select({ content: schema.personality.content })
           .from(schema.personality)
           .where(
@@ -76,7 +77,7 @@ router.post(
             ),
           )
           .limit(1),
-        drizzle
+        tx
           .select({ content: schema.directives.content })
           .from(schema.directives)
           .where(
@@ -84,7 +85,7 @@ router.post(
           )
           .orderBy(desc(schema.directives.priority))
           .limit(30),
-        drizzle
+        tx
           .select({ content: schema.knowledge.content })
           .from(schema.knowledge)
           .where(
@@ -92,7 +93,8 @@ router.post(
           )
           .orderBy(desc(schema.knowledge.createdAt))
           .limit(50),
-      ]);
+      ])
+      );
 
       const agent = agentRows[0];
       if (!agent) throw AppError.fromHttpStatus(404, "AI voice agent not found");
