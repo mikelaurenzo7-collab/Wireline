@@ -11,7 +11,10 @@ import { fleetRateLimit } from "../middleware/api-rate-limits";
 import { validateBody, updateFollowUpTaskSchema } from "../lib/api-validation";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
-import { parseFormData, FollowUpTaskCreateSchema } from "../lib/form-validators";
+import {
+  parseFormData,
+  FollowUpTaskCreateSchema,
+} from "../lib/form-validators";
 import { compileActivityFeed } from "../lib/fleet-activity";
 import { executeAction } from "../lib/action-engine";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
@@ -20,7 +23,13 @@ import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
-const FLEET_TASK_STATUSES = ["pending", "open", "in_progress", "completed", "cancelled"] as const;
+const FLEET_TASK_STATUSES = [
+  "pending",
+  "open",
+  "in_progress",
+  "completed",
+  "cancelled",
+] as const;
 const FLEET_TASK_PRIORITIES = ["low", "medium", "high"] as const;
 
 router.post(
@@ -78,7 +87,9 @@ router.get(
         .where(eq(schema.signalPresence.userId, userId));
       res.write(`data: ${JSON.stringify({ type: "presence", signals })}\n\n`);
     } catch (error: any) {
-      log.error("Failed to push initial snap to presence stream", { error: error.message });
+      log.error("Failed to push initial snap to presence stream", {
+        error: error.message,
+      });
     }
 
     // Vercel serverless cannot hold long-lived SSE (no LISTEN/NOTIFY + maxDuration).
@@ -100,20 +111,29 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const VALID_STATUSES = new Set(["pending", "in_progress", "completed", "cancelled"]);
+      const VALID_STATUSES = new Set([
+        "pending",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ]);
       const VALID_PRIORITIES = new Set(["high", "medium", "low"]);
       const statusFilter =
-        typeof req.query.status === "string" && VALID_STATUSES.has(req.query.status)
+        typeof req.query.status === "string" &&
+        VALID_STATUSES.has(req.query.status)
           ? req.query.status
           : null;
       const priorityFilter =
-        typeof req.query.priority === "string" && VALID_PRIORITIES.has(req.query.priority)
+        typeof req.query.priority === "string" &&
+        VALID_PRIORITIES.has(req.query.priority)
           ? req.query.priority
           : null;
 
       const whereClauses = [eq(schema.followUpTasks.userId, req.user.id)];
-      if (statusFilter) whereClauses.push(eq(schema.followUpTasks.status, statusFilter));
-      if (priorityFilter) whereClauses.push(eq(schema.followUpTasks.priority, priorityFilter));
+      if (statusFilter)
+        whereClauses.push(eq(schema.followUpTasks.status, statusFilter));
+      if (priorityFilter)
+        whereClauses.push(eq(schema.followUpTasks.priority, priorityFilter));
 
       const tasks = await drizzle
         .select({
@@ -140,20 +160,29 @@ router.get(
           },
         })
         .from(schema.followUpTasks)
-        .leftJoin(schema.agents, eq(schema.followUpTasks.agentId, schema.agents.id))
+        .leftJoin(
+          schema.agents,
+          eq(schema.followUpTasks.agentId, schema.agents.id),
+        )
         .where(and(...whereClauses))
         .limit(1000);
 
       const sortedTasks = (tasks || []).sort((a: any, b: any) => {
         if (a.status === "completed" && b.status !== "completed") return 1;
         if (a.status !== "completed" && b.status === "completed") return -1;
-        const priorityWeight: Record<string, number> = { high: 3, medium: 2, low: 1 };
+        const priorityWeight: Record<string, number> = {
+          high: 3,
+          medium: 2,
+          low: 1,
+        };
         const weightA = priorityWeight[a.priority?.toLowerCase() || ""] || 0;
         const weightB = priorityWeight[b.priority?.toLowerCase() || ""] || 0;
         if (weightA !== weightB) return weightB - weightA;
         if (a.dueDate && b.dueDate)
           return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-        return new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime();
+        return (
+          new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+        );
       });
 
       res.json({ tasks: sortedTasks });
@@ -218,15 +247,24 @@ router.patch(
   validateBody(updateFollowUpTaskSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { status, priority, due_date, agent_id, resolution_notes, description, payload } =
-        req.body;
+      const {
+        status,
+        priority,
+        due_date,
+        agent_id,
+        resolution_notes,
+        description,
+        payload,
+      } = req.body;
       const updateData: any = {};
       if (status !== undefined) {
         const normalizedStatus = status === "done" ? "completed" : status;
         if (!FLEET_TASK_STATUSES.includes(normalizedStatus)) {
           return res
             .status(400)
-            .json({ error: `status must be one of: ${FLEET_TASK_STATUSES.join(", ")}` });
+            .json({
+              error: `status must be one of: ${FLEET_TASK_STATUSES.join(", ")}`,
+            });
         }
         updateData.status = normalizedStatus;
       }
@@ -234,13 +272,16 @@ router.patch(
         if (!FLEET_TASK_PRIORITIES.includes(priority)) {
           return res
             .status(400)
-            .json({ error: `priority must be one of: ${FLEET_TASK_PRIORITIES.join(", ")}` });
+            .json({
+              error: `priority must be one of: ${FLEET_TASK_PRIORITIES.join(", ")}`,
+            });
         }
         updateData.priority = priority;
       }
       if (due_date !== undefined) updateData.dueDate = new Date(due_date);
       if (agent_id !== undefined) updateData.agentId = agent_id;
-      if (resolution_notes !== undefined) updateData.resolutionNotes = resolution_notes;
+      if (resolution_notes !== undefined)
+        updateData.resolutionNotes = resolution_notes;
       if (description !== undefined) updateData.description = description;
       if (payload !== undefined && payload && typeof payload === "object") {
         updateData.payload = payload;
@@ -275,7 +316,12 @@ router.post(
       const [task] = await drizzle
         .select()
         .from(schema.followUpTasks)
-        .where(and(eq(schema.followUpTasks.id, taskId), eq(schema.followUpTasks.userId, userId)))
+        .where(
+          and(
+            eq(schema.followUpTasks.id, taskId),
+            eq(schema.followUpTasks.userId, userId),
+          ),
+        )
         .limit(1);
 
       if (!task) {
@@ -309,7 +355,10 @@ router.post(
       if (result.success) {
         await drizzle
           .update(schema.followUpTasks)
-          .set({ status: "completed", resolutionNotes: "Approved and executed by Account Holder" })
+          .set({
+            status: "completed",
+            resolutionNotes: "Approved and executed by Account Holder",
+          })
           .where(eq(schema.followUpTasks.id, taskId));
         touchNavCounts(userId);
 
@@ -359,54 +408,54 @@ router.get(
     try {
       const [logs, tasks, lessons, emails] = await drizzle.transaction((tx) =>
         Promise.all([
-        tx
-          .select({
-            id: schema.callLogs.id,
-            customerNumber: schema.callLogs.customerNumber,
-            leadScore: schema.callLogs.leadScore,
-            intentLabel: schema.callLogs.intentLabel,
-            summary: schema.callLogs.summary,
-            createdAt: schema.callLogs.createdAt,
-          })
-          .from(schema.callLogs)
-          .where(eq(schema.callLogs.userId, req.user.id))
-          .orderBy(desc(schema.callLogs.createdAt))
-          .limit(5),
-        tx
-          .select({
-            id: schema.followUpTasks.id,
-            description: schema.followUpTasks.description,
-            status: schema.followUpTasks.status,
-            priority: schema.followUpTasks.priority,
-            createdAt: schema.followUpTasks.createdAt,
-          })
-          .from(schema.followUpTasks)
-          .where(eq(schema.followUpTasks.userId, req.user.id))
-          .orderBy(desc(schema.followUpTasks.createdAt))
-          .limit(5),
-        tx
-          .select({
-            id: schema.agentLessons.id,
-            lesson: schema.agentLessons.lesson,
-            createdAt: schema.agentLessons.createdAt,
-          })
-          .from(schema.agentLessons)
-          .where(eq(schema.agentLessons.userId, req.user.id))
-          .orderBy(desc(schema.agentLessons.createdAt))
-          .limit(5),
-        tx
-          .select({
-            id: schema.emailThreads.id,
-            customerEmail: schema.emailThreads.customerEmail,
-            leadScore: schema.emailThreads.leadScore,
-            intentLabel: schema.emailThreads.intentLabel,
-            createdAt: schema.emailThreads.createdAt,
-          })
-          .from(schema.emailThreads)
-          .where(eq(schema.emailThreads.userId, req.user.id))
-          .orderBy(desc(schema.emailThreads.createdAt))
-          .limit(5),
-      ])
+          tx
+            .select({
+              id: schema.callLogs.id,
+              customerNumber: schema.callLogs.customerNumber,
+              leadScore: schema.callLogs.leadScore,
+              intentLabel: schema.callLogs.intentLabel,
+              summary: schema.callLogs.summary,
+              createdAt: schema.callLogs.createdAt,
+            })
+            .from(schema.callLogs)
+            .where(eq(schema.callLogs.userId, req.user.id))
+            .orderBy(desc(schema.callLogs.createdAt))
+            .limit(5),
+          tx
+            .select({
+              id: schema.followUpTasks.id,
+              description: schema.followUpTasks.description,
+              status: schema.followUpTasks.status,
+              priority: schema.followUpTasks.priority,
+              createdAt: schema.followUpTasks.createdAt,
+            })
+            .from(schema.followUpTasks)
+            .where(eq(schema.followUpTasks.userId, req.user.id))
+            .orderBy(desc(schema.followUpTasks.createdAt))
+            .limit(5),
+          tx
+            .select({
+              id: schema.agentLessons.id,
+              lesson: schema.agentLessons.lesson,
+              createdAt: schema.agentLessons.createdAt,
+            })
+            .from(schema.agentLessons)
+            .where(eq(schema.agentLessons.userId, req.user.id))
+            .orderBy(desc(schema.agentLessons.createdAt))
+            .limit(5),
+          tx
+            .select({
+              id: schema.emailThreads.id,
+              customerEmail: schema.emailThreads.customerEmail,
+              leadScore: schema.emailThreads.leadScore,
+              intentLabel: schema.emailThreads.intentLabel,
+              createdAt: schema.emailThreads.createdAt,
+            })
+            .from(schema.emailThreads)
+            .where(eq(schema.emailThreads.userId, req.user.id))
+            .orderBy(desc(schema.emailThreads.createdAt))
+            .limit(5),
+        ]),
       );
 
       const activity = compileActivityFeed({
@@ -427,114 +476,127 @@ router.get(
 //  TRIAGE INBOX — "what needs my attention right now"
 // ──────────────────────────────────────────────────────────
 
-router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const [hotLeads, complianceTasks, pendingTasks, knowledgeGaps, escalations] = await drizzle.transaction((tx) =>
-      Promise.all(
-      [
-        tx
-          .select({
-            id: schema.callLogs.id,
-            agentId: schema.callLogs.agentId,
-            customerNumber: schema.callLogs.customerNumber,
-            leadScore: schema.callLogs.leadScore,
-            intentLabel: schema.callLogs.intentLabel,
-            summary: schema.callLogs.summary,
-            createdAt: schema.callLogs.createdAt,
-          })
-          .from(schema.callLogs)
-          .where(
-            and(
-              eq(schema.callLogs.userId, req.user.id),
-              gte(schema.callLogs.leadScore, 70),
-              gte(schema.callLogs.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)),
-            ),
-          )
-          .orderBy(desc(schema.callLogs.leadScore))
-          .limit(30),
-        tx
-          .select()
-          .from(schema.followUpTasks)
-          .where(
-            and(
-              eq(schema.followUpTasks.userId, req.user.id),
-              eq(schema.followUpTasks.taskType, "compliance_review"),
-              eq(schema.followUpTasks.status, "pending"),
-            ),
-          )
-          .orderBy(desc(schema.followUpTasks.createdAt))
-          .limit(20),
-        tx
-          .select()
-          .from(schema.followUpTasks)
-          .where(
-            and(
-              eq(schema.followUpTasks.userId, req.user.id),
-              eq(schema.followUpTasks.status, "pending"),
-              ne(schema.followUpTasks.taskType, "compliance_review"),
-            ),
-          )
-          .orderBy(desc(schema.followUpTasks.createdAt))
-          .limit(30),
-        tx
-          .select({
-            id: schema.agentLessons.id,
-            agentId: schema.agentLessons.agentId,
-            lesson: schema.agentLessons.lesson,
-            createdAt: schema.agentLessons.createdAt,
-          })
-          .from(schema.agentLessons)
-          .where(
-            and(
-              eq(schema.agentLessons.userId, req.user.id),
-              like(schema.agentLessons.lesson, "[KNOWLEDGE GAP]%"),
-            ),
-          )
-          .orderBy(desc(schema.agentLessons.createdAt))
-          .limit(30),
-        tx
-          .select({
-            id: schema.callLogs.id,
-            agentId: schema.callLogs.agentId,
-            customerNumber: schema.callLogs.customerNumber,
-            leadScore: schema.callLogs.leadScore,
-            summary: schema.callLogs.summary,
-            createdAt: schema.callLogs.createdAt,
-          })
-          .from(schema.callLogs)
-          .where(
-            and(
-              eq(schema.callLogs.userId, req.user.id),
-              eq(schema.callLogs.intentLabel, "escalation"),
-            ),
-          )
-          .orderBy(desc(schema.callLogs.createdAt))
-          .limit(20),
-      ],
-    )
-    );
+router.get(
+  "/api/triage",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const [
+        hotLeads,
+        complianceTasks,
+        pendingTasks,
+        knowledgeGaps,
+        escalations,
+      ] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx
+            .select({
+              id: schema.callLogs.id,
+              agentId: schema.callLogs.agentId,
+              customerNumber: schema.callLogs.customerNumber,
+              leadScore: schema.callLogs.leadScore,
+              intentLabel: schema.callLogs.intentLabel,
+              summary: schema.callLogs.summary,
+              createdAt: schema.callLogs.createdAt,
+            })
+            .from(schema.callLogs)
+            .where(
+              and(
+                eq(schema.callLogs.userId, req.user.id),
+                gte(schema.callLogs.leadScore, 70),
+                gte(
+                  schema.callLogs.createdAt,
+                  new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+                ),
+              ),
+            )
+            .orderBy(desc(schema.callLogs.leadScore))
+            .limit(30),
+          tx
+            .select()
+            .from(schema.followUpTasks)
+            .where(
+              and(
+                eq(schema.followUpTasks.userId, req.user.id),
+                eq(schema.followUpTasks.taskType, "compliance_review"),
+                eq(schema.followUpTasks.status, "pending"),
+              ),
+            )
+            .orderBy(desc(schema.followUpTasks.createdAt))
+            .limit(20),
+          tx
+            .select()
+            .from(schema.followUpTasks)
+            .where(
+              and(
+                eq(schema.followUpTasks.userId, req.user.id),
+                eq(schema.followUpTasks.status, "pending"),
+                ne(schema.followUpTasks.taskType, "compliance_review"),
+              ),
+            )
+            .orderBy(desc(schema.followUpTasks.createdAt))
+            .limit(30),
+          tx
+            .select({
+              id: schema.agentLessons.id,
+              agentId: schema.agentLessons.agentId,
+              lesson: schema.agentLessons.lesson,
+              createdAt: schema.agentLessons.createdAt,
+            })
+            .from(schema.agentLessons)
+            .where(
+              and(
+                eq(schema.agentLessons.userId, req.user.id),
+                like(schema.agentLessons.lesson, "[KNOWLEDGE GAP]%"),
+              ),
+            )
+            .orderBy(desc(schema.agentLessons.createdAt))
+            .limit(30),
+          tx
+            .select({
+              id: schema.callLogs.id,
+              agentId: schema.callLogs.agentId,
+              customerNumber: schema.callLogs.customerNumber,
+              leadScore: schema.callLogs.leadScore,
+              summary: schema.callLogs.summary,
+              createdAt: schema.callLogs.createdAt,
+            })
+            .from(schema.callLogs)
+            .where(
+              and(
+                eq(schema.callLogs.userId, req.user.id),
+                eq(schema.callLogs.intentLabel, "escalation"),
+              ),
+            )
+            .orderBy(desc(schema.callLogs.createdAt))
+            .limit(20),
+        ]),
+      );
 
-    // UI reads snake_case (customer_number, lead_score, created_at). Drizzle
-    // hands us camelCase. Normalize at the boundary so the triage card stops
-    // falling back to "Unknown caller" for every entry.
-    res.json({
-      hot_leads: mapObjectToSnake(hotLeads || []),
-      compliance: mapObjectToSnake(complianceTasks || []),
-      pending_tasks: mapObjectToSnake(pendingTasks || []),
-      knowledge_gaps: mapObjectToSnake(knowledgeGaps || []),
-      escalations: mapObjectToSnake(escalations || []),
-      counts: {
-        hot_leads: hotLeads?.length || 0,
-        compliance: complianceTasks?.length || 0,
-        pending_tasks: pendingTasks?.length || 0,
-        knowledge_gaps: knowledgeGaps?.length || 0,
-        escalations: escalations?.length || 0,
-      },
-    });
-  } catch (e: any) {
-    log.error("Triage fetch failed", { error: e instanceof Error ? e.message : String(e) });
-    throw AppError.fromHttpStatus(500, "Failed to fetch triage inbox");
-  }
-});
+      // UI reads snake_case (customer_number, lead_score, created_at). Drizzle
+      // hands us camelCase. Normalize at the boundary so the triage card stops
+      // falling back to "Unknown caller" for every entry.
+      res.json({
+        hot_leads: mapObjectToSnake(hotLeads || []),
+        compliance: mapObjectToSnake(complianceTasks || []),
+        pending_tasks: mapObjectToSnake(pendingTasks || []),
+        knowledge_gaps: mapObjectToSnake(knowledgeGaps || []),
+        escalations: mapObjectToSnake(escalations || []),
+        counts: {
+          hot_leads: hotLeads?.length || 0,
+          compliance: complianceTasks?.length || 0,
+          pending_tasks: pendingTasks?.length || 0,
+          knowledge_gaps: knowledgeGaps?.length || 0,
+          escalations: escalations?.length || 0,
+        },
+      });
+    } catch (e: any) {
+      log.error("Triage fetch failed", {
+        error: e instanceof Error ? e.message : String(e),
+      });
+      throw AppError.fromHttpStatus(500, "Failed to fetch triage inbox");
+    }
+  },
+);
 
 export default router;
