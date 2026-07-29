@@ -56,18 +56,42 @@ export function ContactPage() {
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setSubmitting(true);
     setError(null);
+
+    const normalizedEmail = email.trim();
+    const normalizedSubject = subject.trim();
+    const normalizedBody = body.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    if (normalizedSubject.length < 3) {
+      setError("Add a short subject so we can route your note.");
+      return;
+    }
+    if (normalizedBody.length < 10) {
+      setError("Add a little more detail so we can help.");
+      return;
+    }
+
+    setSubmitting(true);
     const contextLines = [
-      company ? `Company: ${company}` : null,
-      phone ? `Preferred callback: ${phone}` : null,
+      company.trim() ? `Company: ${company.trim()}` : null,
+      phone.trim() ? `Preferred callback: ${phone.trim()}` : null,
     ].filter(Boolean);
-    const composedBody = contextLines.length ? `${contextLines.join("\n")}\n\n${body}` : body;
+    const composedBody = contextLines.length
+      ? `${contextLines.join("\n")}\n\n${normalizedBody}`
+      : normalizedBody;
     try {
       const response = await fetch("/api/support/ticket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ issueType: inquiryType, email, subject, body: composedBody }),
+        body: JSON.stringify({
+          issueType: inquiryType,
+          email: normalizedEmail,
+          subject: normalizedSubject,
+          body: composedBody,
+        }),
       });
       if (!response.ok) {
         const failBody = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -96,7 +120,7 @@ export function ContactPage() {
           message,
         ) || message.includes("(5");
       if (isTransport) {
-        window.location.href = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[Wireline / ${inquiryType}] ${subject || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email}\n\n${composedBody}`)}`;
+        window.location.href = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[Wireline / ${inquiryType}] ${normalizedSubject}`)}&body=${encodeURIComponent(`From: ${normalizedEmail}\n\n${composedBody}`)}`;
         setError(
           "The message service did not respond, so your email client has opened with the note prepared.",
         );
@@ -182,7 +206,7 @@ export function ContactPage() {
             <Clock3 className="mt-1 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
             <span>
               Choose the topic and share the call type, team size, current phone setup, and timeline
-              if you know them. We respond within one business day.
+              if you know them. We aim to respond within one business day.
             </span>
           </p>
           {submitted ? (
@@ -190,11 +214,11 @@ export function ContactPage() {
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
               <h3 className="mt-4 text-xl font-semibold text-foreground">Message received</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                We will reply within one business day at {email}.
+                We aim to reply within one business day at {email}.
               </p>
             </div>
           ) : (
-            <form onSubmit={onSubmit} className="mt-7 space-y-5">
+            <form onSubmit={onSubmit} noValidate className="mt-7 space-y-5">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {INQUIRY_TYPES.map((item) => (
                   <button
