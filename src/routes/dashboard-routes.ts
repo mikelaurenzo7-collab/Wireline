@@ -40,7 +40,8 @@ router.get(
 
       const [[triageResult], [emailResult], [outboundResult], liveSignals] = await drizzle.transaction((tx) =>
         Promise.all([
-          tx.select({ count: sql`count(*)` })
+          tx
+            .select({ count: sql`count(*)` })
             .from(schema.followUpTasks)
             .where(
               and(
@@ -48,15 +49,18 @@ router.get(
                 eq(schema.followUpTasks.status, "pending"),
               ),
             ),
-          tx.select({ count: sql`count(*)` })
+          tx
+            .select({ count: sql`count(*)` })
             .from(schema.emailThreads)
             .where(and(eq(schema.emailThreads.userId, userId), eq(schema.emailThreads.read, false))),
-          tx.select({ count: sql`count(*)` })
+          tx
+            .select({ count: sql`count(*)` })
             .from(schema.outboundLeads)
             .where(
               and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "Queued")),
             ),
-          tx.select({ label: schema.signalPresence.label })
+          tx
+            .select({ label: schema.signalPresence.label })
             .from(schema.signalPresence)
             .where(eq(schema.signalPresence.userId, userId)),
         ])
@@ -190,13 +194,16 @@ router.get(
         prevLogsResult,
       ] = await drizzle.transaction((tx) =>
         Promise.all([
-          tx.select({ count: sql`count(*)` })
+          tx
+            .select({ count: sql`count(*)` })
             .from(schema.appointments)
             .where(eq(schema.appointments.userId, userId)),
-          tx.select({ count: sql`count(*)` })
+          tx
+            .select({ count: sql`count(*)` })
             .from(schema.outboundLeads)
             .where(eq(schema.outboundLeads.userId, userId)),
-          tx.select({
+          tx
+            .select({
               id: schema.callLogs.id,
               cost: schema.callLogs.cost,
               durationSeconds: schema.callLogs.durationSeconds,
@@ -213,7 +220,8 @@ router.get(
             .where(eq(schema.callLogs.userId, userId))
             .orderBy(desc(schema.callLogs.createdAt))
             .limit(200),
-          tx.select({
+          tx
+            .select({
               id: schema.agents.id,
               name: schema.agents.name,
               channel: schema.agents.channel,
@@ -222,7 +230,8 @@ router.get(
             .from(schema.agents)
             .where(eq(schema.agents.userId, userId))
             .limit(500),
-          tx.select({
+          tx
+            .select({
               id: schema.emailThreads.id,
               customerEmail: schema.emailThreads.customerEmail,
               leadScore: schema.emailThreads.leadScore,
@@ -236,7 +245,8 @@ router.get(
             )
             .orderBy(desc(schema.emailThreads.createdAt))
             .limit(5),
-          tx.select({ createdAt: schema.appointments.createdAt })
+          tx
+            .select({ createdAt: schema.appointments.createdAt })
             .from(schema.appointments)
             .where(
               and(
@@ -244,7 +254,8 @@ router.get(
                 gte(schema.appointments.createdAt, sevenDaysAgo),
               ),
             ),
-          tx.select({
+          tx
+            .select({
               id: schema.callLogs.id,
               cost: schema.callLogs.cost,
               leadScore: schema.callLogs.leadScore,
