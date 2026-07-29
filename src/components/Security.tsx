@@ -77,7 +77,7 @@ const SECTIONS = [
   },
   {
     icon: CreditCard,
-    title: "PCI DSS — out of scope",
+    title: "Card data stays with Stripe",
     items: [
       "Wireline never touches card data. Payments are processed through Stripe Checkout with PCI scope reduction.",
       "We hold tokenized customer references only.",
@@ -192,7 +192,7 @@ const TRUST_PACK_SECTIONS = [
 const SECURITY_SUMMARY = [
   ["Runtime", "Encrypted transport, webhook verification, fallback voice, public probes."],
   ["Data", "Tenant-scoped access, opt-in recordings, retention, deletion."],
-  ["Compliance", "TCPA/DNC controls, HIPAA-style guardrails, no unearned badges."],
+  ["Compliance", "TCPA/DNC controls, healthcare-sensitive guardrails, no unearned badges."],
   ["Billing", "Stripe card handling, prepaid Runtime Balance, spend controls."],
 ] as const;
 
