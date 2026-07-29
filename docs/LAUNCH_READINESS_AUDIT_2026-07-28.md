@@ -16,10 +16,12 @@ All verified code wins are implemented on the audit branch. No speculative redes
 
 ## Exact-head release evidence
 
+The current branch head deliberately triggers the full launch audit. This table is updated only after the deployment is terminal and its logs have been reviewed.
+
 | Gate | Result |
 | --- | --- |
-| Vercel preview | `READY` at the audited branch head |
-| Unit/contract suite | 33 files, 219 tests passed before the added Stripe gate contract |
+| Vercel preview | Final exact-head full gate rerun pending |
+| Unit/contract suite | Final full non-E2E suite rerun pending; earlier curated gate passed 33 files / 219 tests |
 | Frontend build | Vite 6.4.3; 3,074 modules transformed |
 | Server build | 2.4 MB server bundle; import-safe no-database smoke passed |
 | ChatGPT/MCP build | 2.0 MB bundle |
