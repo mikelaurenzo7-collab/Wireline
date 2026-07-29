@@ -117,7 +117,7 @@ Runway is available for asynchronous generated media, not a real-time presenter.
 - Stripe, Vercel, Supabase, Runway, and Descript were reachable for read-only verification.
 - The Stripe catalog and webhook are coherent; brand and portal remain blocked.
 - Vercel production showed one billing-status 500 consistent with pool checkout exhaustion and one older Resend 422 to a synthetic example address.
-- No Sentry SDK/configuration was found in the audited source, and no authenticated Sentry project access was available. Do not claim Sentry alerting is certified.
+- Wireline has a deliberate zero-dependency browser/server error reporter that routes structured failures into Vercel logs (`src/lib/sentry.ts` and `src/lib/sentry-events.ts`), but no external Sentry SDK or authenticated Sentry project was found. Do not claim Sentry alerting is certified.
 - Ads Manager is intentionally out of scope by founder direction; it was not accessed, no spend was changed, and it is not a launch gate.
 - Opera was not connected. The requested fresh screenshot inspection could not be performed.
 - The Federal DNC integration still requires one real vendor-authenticated scrub before scaled marketing outbound.
