@@ -357,8 +357,9 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const [logs, tasks, lessons, emails] = await Promise.all([
-        drizzle
+      const [logs, tasks, lessons, emails] = await drizzle.transaction((tx) =>
+        Promise.all([
+        tx
           .select({
             id: schema.callLogs.id,
             customerNumber: schema.callLogs.customerNumber,
@@ -371,7 +372,7 @@ router.get(
           .where(eq(schema.callLogs.userId, req.user.id))
           .orderBy(desc(schema.callLogs.createdAt))
           .limit(5),
-        drizzle
+        tx
           .select({
             id: schema.followUpTasks.id,
             description: schema.followUpTasks.description,
@@ -383,7 +384,7 @@ router.get(
           .where(eq(schema.followUpTasks.userId, req.user.id))
           .orderBy(desc(schema.followUpTasks.createdAt))
           .limit(5),
-        drizzle
+        tx
           .select({
             id: schema.agentLessons.id,
             lesson: schema.agentLessons.lesson,
@@ -393,7 +394,7 @@ router.get(
           .where(eq(schema.agentLessons.userId, req.user.id))
           .orderBy(desc(schema.agentLessons.createdAt))
           .limit(5),
-        drizzle
+        tx
           .select({
             id: schema.emailThreads.id,
             customerEmail: schema.emailThreads.customerEmail,
@@ -405,7 +406,8 @@ router.get(
           .where(eq(schema.emailThreads.userId, req.user.id))
           .orderBy(desc(schema.emailThreads.createdAt))
           .limit(5),
-      ]);
+      ])
+      );
 
       const activity = compileActivityFeed({
         logs: logs || [],
@@ -427,9 +429,10 @@ router.get(
 
 router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const [hotLeads, complianceTasks, pendingTasks, knowledgeGaps, escalations] = await Promise.all(
+    const [hotLeads, complianceTasks, pendingTasks, knowledgeGaps, escalations] = await drizzle.transaction((tx) =>
+      Promise.all(
       [
-        drizzle
+        tx
           .select({
             id: schema.callLogs.id,
             agentId: schema.callLogs.agentId,
@@ -449,7 +452,7 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
           )
           .orderBy(desc(schema.callLogs.leadScore))
           .limit(30),
-        drizzle
+        tx
           .select()
           .from(schema.followUpTasks)
           .where(
@@ -461,7 +464,7 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
           )
           .orderBy(desc(schema.followUpTasks.createdAt))
           .limit(20),
-        drizzle
+        tx
           .select()
           .from(schema.followUpTasks)
           .where(
@@ -473,7 +476,7 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
           )
           .orderBy(desc(schema.followUpTasks.createdAt))
           .limit(30),
-        drizzle
+        tx
           .select({
             id: schema.agentLessons.id,
             agentId: schema.agentLessons.agentId,
@@ -489,7 +492,7 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
           )
           .orderBy(desc(schema.agentLessons.createdAt))
           .limit(30),
-        drizzle
+        tx
           .select({
             id: schema.callLogs.id,
             agentId: schema.callLogs.agentId,
@@ -508,6 +511,7 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
           .orderBy(desc(schema.callLogs.createdAt))
           .limit(20),
       ],
+    )
     );
 
     // UI reads snake_case (customer_number, lead_score, created_at). Drizzle
