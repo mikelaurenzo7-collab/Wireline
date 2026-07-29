@@ -36,7 +36,7 @@ Business workspace copy should use "business voice agent" when the audience is e
 | Free Builder | $0 | 0 live minutes | Private builder / simulation only |
 | Starter | $19 | 60 | 1 |
 | Starter Plus | $39 | 120 | 2 |
-| Pro | $79 | 250 | 5 |
+| Pro | $79 | 245 | 5 |
 | Business | $159 | 450 | 15 |
 
 Extra agent add-on: $15/mo, +50 live voice minutes, +1 included number. Enterprise remains custom.
