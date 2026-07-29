@@ -285,12 +285,21 @@ function OAuthSignInButtons({
 
 const cn = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
 
-function AuthShell({ children }: { children: ReactNode }) {
+function AuthShell({
+  children,
+  compact = false,
+}: {
+  children: ReactNode;
+  compact?: boolean;
+}) {
   return (
     <div className="wl-stitch-auth-shell">
       <main
         id="main-content"
-        className="wl-auth-form-panel flex min-h-[100dvh] items-center justify-center px-4 py-8 sm:px-6 sm:py-12"
+        className={cn(
+          "wl-auth-form-panel flex min-h-[100dvh] items-center justify-center px-4 sm:px-6",
+          compact ? "py-6 sm:py-6" : "py-8 sm:py-12",
+        )}
       >
         <div className="w-full max-w-[520px]">
           <Link to="/" className="wl-auth-entry-mark" aria-label="Wireline home">
@@ -299,10 +308,20 @@ function AuthShell({ children }: { children: ReactNode }) {
             </span>
             <span>Wireline</span>
           </Link>
-          <div className="wl-stitch-auth-card rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+          <div
+            className={cn(
+              "wl-stitch-auth-card rounded-2xl border border-border bg-card shadow-sm",
+              compact ? "p-5 sm:p-6" : "p-6 sm:p-8",
+            )}
+          >
             {children}
           </div>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center text-sm text-muted-foreground">
+          <div
+            className={cn(
+              "flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center text-sm text-muted-foreground",
+              compact ? "mt-4 sm:mt-5" : "mt-6",
+            )}
+          >
             <Link to="/" className="hover:text-primary hover:underline">
               Back to home
             </Link>
@@ -349,7 +368,7 @@ function WorkspaceSelector({
     },
   ];
   return (
-    <div className="wl-auth-workspace-selector mb-6 grid gap-2 sm:grid-cols-2">
+    <div className="wl-auth-workspace-selector mb-4 grid gap-2 sm:mb-5 sm:grid-cols-2">
       {options.map((option) => (
         <button
           key={option.id}
@@ -625,8 +644,8 @@ export default function AuthPortal() {
         path={isSignUp ? "/signup" : "/signin"}
         noIndex
       />
-      <AuthShell>
-        <div className="wl-auth-heading mb-6 text-center">
+      <AuthShell compact={isSignUp}>
+        <div className={cn("wl-auth-heading text-center", isSignUp ? "mb-5" : "mb-6")}>
           <h1 className="text-xl font-semibold tracking-[-.02em]">{pageTitle}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{pageDescription}</p>
           {isSignUp && intentLabel ? (
@@ -722,7 +741,13 @@ export default function AuthPortal() {
               />
             )}
 
-            <form onSubmit={handleAuth} className="wl-auth-form mt-6 flex flex-col gap-5">
+            <form
+              onSubmit={handleAuth}
+              className={cn(
+                "wl-auth-form flex flex-col",
+                isSignUp ? "mt-5 gap-4" : "mt-6 gap-5",
+              )}
+            >
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-foreground" htmlFor="auth-email">
                   Email address
