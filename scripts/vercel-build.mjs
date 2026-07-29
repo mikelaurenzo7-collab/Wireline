@@ -122,6 +122,8 @@ run("npx", [
   "tests/managed-vapi-runtime-contract.test.ts",
   "tests/vapi-modern-payload-contract.test.ts",
   "tests/twilio-webhook-privacy.test.ts",
+  // Recipient addresses, bearer links, and provider error bodies must stay out of logs.
+  "tests/email-observability-privacy-contract.test.ts",
   // GDPR carrier cleanup and compliance ledgers are cost and deletion-integrity
   // boundaries; keep their migration/runtime contracts in every build.
   "tests/platform-ledger-integrity-contract.test.ts",
