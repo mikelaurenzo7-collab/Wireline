@@ -359,7 +359,8 @@ router.get(
     try {
       const [logs, tasks, lessons, emails] = await drizzle.transaction((tx) =>
         Promise.all([
-          tx.select({
+          tx
+            .select({
               id: schema.callLogs.id,
               customerNumber: schema.callLogs.customerNumber,
               leadScore: schema.callLogs.leadScore,
@@ -371,7 +372,8 @@ router.get(
             .where(eq(schema.callLogs.userId, req.user.id))
             .orderBy(desc(schema.callLogs.createdAt))
             .limit(5),
-          tx.select({
+          tx
+            .select({
               id: schema.followUpTasks.id,
               description: schema.followUpTasks.description,
               status: schema.followUpTasks.status,
@@ -382,7 +384,8 @@ router.get(
             .where(eq(schema.followUpTasks.userId, req.user.id))
             .orderBy(desc(schema.followUpTasks.createdAt))
             .limit(5),
-          tx.select({
+          tx
+            .select({
               id: schema.agentLessons.id,
               lesson: schema.agentLessons.lesson,
               createdAt: schema.agentLessons.createdAt,
@@ -391,7 +394,8 @@ router.get(
             .where(eq(schema.agentLessons.userId, req.user.id))
             .orderBy(desc(schema.agentLessons.createdAt))
             .limit(5),
-          tx.select({
+          tx
+            .select({
               id: schema.emailThreads.id,
               customerEmail: schema.emailThreads.customerEmail,
               leadScore: schema.emailThreads.leadScore,
@@ -428,7 +432,8 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
     const [hotLeads, complianceTasks, pendingTasks, knowledgeGaps, escalations] = await drizzle.transaction((tx) =>
       Promise.all(
         [
-          tx.select({
+          tx
+            .select({
               id: schema.callLogs.id,
               agentId: schema.callLogs.agentId,
               customerNumber: schema.callLogs.customerNumber,
@@ -447,7 +452,8 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
             )
             .orderBy(desc(schema.callLogs.leadScore))
             .limit(30),
-          tx.select()
+          tx
+            .select()
             .from(schema.followUpTasks)
             .where(
               and(
@@ -458,7 +464,8 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
             )
             .orderBy(desc(schema.followUpTasks.createdAt))
             .limit(20),
-          tx.select()
+          tx
+            .select()
             .from(schema.followUpTasks)
             .where(
               and(
@@ -469,7 +476,8 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
             )
             .orderBy(desc(schema.followUpTasks.createdAt))
             .limit(30),
-          tx.select({
+          tx
+            .select({
               id: schema.agentLessons.id,
               agentId: schema.agentLessons.agentId,
               lesson: schema.agentLessons.lesson,
@@ -484,7 +492,8 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
             )
             .orderBy(desc(schema.agentLessons.createdAt))
             .limit(30),
-          tx.select({
+          tx
+            .select({
               id: schema.callLogs.id,
               agentId: schema.callLogs.agentId,
               customerNumber: schema.callLogs.customerNumber,
