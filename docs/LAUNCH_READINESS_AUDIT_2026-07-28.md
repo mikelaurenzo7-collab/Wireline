@@ -16,13 +16,14 @@ All verified code wins are implemented on the audit branch. No speculative redes
 
 ## Exact-head release evidence
 
-The current branch head deliberately triggers the full launch audit. This table is updated only after the deployment is terminal and its logs have been reviewed.
+The full launch audit completed on code-equivalent commit `ed1954c31952b6854c4c01adbb95d626de001e4b`; the evidence-only follow-up commit is tagged to rerun the same exact-head gate.
 
 | Gate | Result |
 | --- | --- |
-| Vercel preview | Final exact-head full gate rerun pending |
-| Unit/contract suite | Final full non-E2E suite rerun pending; earlier curated gate passed 33 files / 219 tests |
-| Frontend build | Vite 6.4.3; 3,074 modules transformed |
+| Vercel preview | `READY` (`dpl_5VpzNVyQajeZ1n1EsWvos6HrGpYc`) at `ed1954c31952b6854c4c01adbb95d626de001e4b` |
+| Unit/contract suite | Curated gate: 35 files / 231 tests; full non-E2E suite: 257 files / 1,366 tests; all passed |
+| Static analysis | Client TypeScript, server TypeScript, audit-module TypeScript, and ESLint passed |
+| Frontend build | Vite 6.4.3; 3,074 modules transformed in 9.23s |
 | Server build | 2.4 MB server bundle; import-safe no-database smoke passed |
 | ChatGPT/MCP build | 2.0 MB bundle |
 | Public health | `GET /api/health` returned 200 |
