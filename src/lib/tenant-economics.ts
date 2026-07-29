@@ -5,10 +5,9 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import {
-  PAYMENT_PROCESSING_FIXED_USD,
-  PAYMENT_PROCESSING_RATE,
   PHONE_NUMBER_COST_MONTHLY_USD,
   VOICE_VARIABLE_COST_PER_MIN_USD,
+  estimatedStripeCommercialFeesUsd,
   planById,
   type BillingInterval,
   type StripePlan,
@@ -56,16 +55,16 @@ export function computePlanFullUtilizationMarginPct(
   const recurringRevenue =
     interval === "year" ? plan.price_usd_annual / 12 : plan.price_usd_monthly;
   if (!Number.isFinite(recurringRevenue) || recurringRevenue <= 0) return null;
-  const paymentCost =
+  const commercialFees =
     interval === "year"
-      ? (plan.price_usd_annual * PAYMENT_PROCESSING_RATE + PAYMENT_PROCESSING_FIXED_USD) / 12
-      : plan.price_usd_monthly * PAYMENT_PROCESSING_RATE + PAYMENT_PROCESSING_FIXED_USD;
+      ? estimatedStripeCommercialFeesUsd(plan.price_usd_annual) / 12
+      : estimatedStripeCommercialFeesUsd(plan.price_usd_monthly);
   const voiceCost = plan.voice_minutes_monthly * VOICE_VARIABLE_COST_PER_MIN_USD;
   const numberCost = plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD;
   // Treat every included Runtime Allowance dollar as fully consumed COGS. This
   // intentionally understates margin because most optional actions cost less
   // than their customer-facing reserve.
-  const totalCost = voiceCost + numberCost + plan.runtime_allowance_usd_monthly + paymentCost;
+  const totalCost = voiceCost + numberCost + plan.runtime_allowance_usd_monthly + commercialFees;
   return Math.round(((recurringRevenue - totalCost) / recurringRevenue) * 1000) / 10;
 }
 
