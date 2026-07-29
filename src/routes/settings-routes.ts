@@ -351,7 +351,7 @@ router.get(
             .select({ count: sql<number>`count(*)` })
             .from(schema.phoneNumbers)
             .where(eq(schema.phoneNumbers.userId, userId)),
-        ])
+        ]),
       );
 
       const platformVoiceReady = Boolean(process.env.VAPI_PRIVATE_KEY?.trim());
