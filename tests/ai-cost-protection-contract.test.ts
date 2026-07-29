@@ -39,12 +39,17 @@ describe("AI cost-protection contract", () => {
     expect(snapshot).toMatch(/await executor\s*\.select/);
   });
 
-  it("raises the exact free seed, clamps oversized limits, and repairs disabled caps", () => {
+  it("moves only managed defaults, preserves customer limits, and repairs disabled caps", () => {
     const snapshot = read("src/lib/workspace-usage-snapshot.ts");
     const routes = read("src/routes/spend-control-routes.ts");
     const entitlements = read("src/lib/plan-entitlements.ts");
     const validation = read("src/lib/api-validation-base.ts");
-    expect(snapshot).toContain("isAutoSeededFreeCap");
+    expect(snapshot).toContain("existing.managedDefault === true");
+    expect(snapshot).toContain("managedDefault\n      ? limit");
+    expect(routes).toContain("managedDefault: false");
+    expect(read("drizzle/migrations/0118_spend_budget_managed_default.sql")).toContain(
+      "managed_default boolean NOT NULL DEFAULT false",
+    );
     expect(snapshot).toContain("Math.min(current, limit)");
     expect(snapshot).toContain("existing.hardCap === true");
     expect(routes).toContain("limit > maximumLimitUsd");
