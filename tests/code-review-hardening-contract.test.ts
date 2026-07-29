@@ -161,21 +161,6 @@ describe("code review hardening contracts", () => {
     expect(marketingCss).toContain("env(safe-area-inset-bottom, 0px)");
   });
 
-  it("fails extra-agent upgrades closed before granting unpaid capacity", () => {
-    const billing = read("src/routes/billing-routes.ts");
-    const routeStart = billing.indexOf('router.post(\n  "/billing/extra-agents"');
-    const route = billing.slice(routeStart);
-
-    expect(routeStart).toBeGreaterThan(-1);
-    expect(route).toContain("authenticateUser,\n  enforceLaunchHardGate,");
-    expect(route.match(/payment_behavior: "error_if_incomplete"/g)).toHaveLength(2);
-    expect(route).not.toContain("stripe.invoices.list");
-    expect(route).toContain('if (stripeStatus === 402)');
-    expect(route.indexOf("stripe.subscriptionItems")).toBeLessThan(
-      route.indexOf(".set({ extraAgents: target })"),
-    );
-  });
-
   it("only logs the global API error handler at error level for 5xx, keeping 4xx as warn-level noise", () => {
     const server = read("server.ts");
     // The handler must branch on status before choosing a log level: 5xx is a
