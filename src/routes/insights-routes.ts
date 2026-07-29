@@ -149,18 +149,10 @@ router.get(
 
       const bucketMap = new Map<string, { c: number; s: number }>();
       for (const row of buckets) {
-        bucketMap.set(`${row.weekday}-${row.hour}`, {
-          c: row.count,
-          s: row.avgScore,
-        });
+        bucketMap.set(`${row.weekday}-${row.hour}`, { c: row.count, s: row.avgScore });
       }
 
-      const grid: {
-        hour: number;
-        weekday: number;
-        count: number;
-        avg_score: number;
-      }[] = [];
+      const grid: { hour: number; weekday: number; count: number; avg_score: number }[] = [];
       for (let w = 0; w < 7; w++) {
         for (let h = 0; h < 24; h++) {
           const b = bucketMap.get(`${w}-${h}`) || { c: 0, s: 0 };
@@ -200,8 +192,7 @@ router.get(
 
       const [agents, callStats, apptStats, aiCostStats] = await drizzle.transaction((tx) =>
         Promise.all([
-          tx
-            .select({
+          tx.select({
               id: schema.agents.id,
               name: schema.agents.name,
               archetype: schema.agents.archetype,
@@ -211,8 +202,7 @@ router.get(
             .from(schema.agents)
             .where(eq(schema.agents.userId, userId))
             .limit(500),
-          tx
-            .select({
+          tx.select({
               agentId: schema.callLogs.agentId,
               totalCalls: count(),
               qualified:
@@ -238,16 +228,14 @@ router.get(
             .from(schema.callLogs)
             .where(callWhere)
             .groupBy(schema.callLogs.agentId),
-          tx
-            .select({
+          tx.select({
               agentId: schema.appointments.agentId,
               bookings: count(),
             })
             .from(schema.appointments)
             .where(apptWhere)
             .groupBy(schema.appointments.agentId),
-          tx
-            .select({
+          tx.select({
               agentId:
                 sql<string>`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`.mapWith(
                   String,
@@ -266,7 +254,7 @@ router.get(
               ),
             )
             .groupBy(sql`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`),
-        ]),
+        ])
       );
 
       const callByAgent = new Map((callStats || []).map((r) => [r.agentId || "unknown", r]));
@@ -337,16 +325,12 @@ router.get(
         if (cached) return res.json({ ...cached, cached: true });
       }
       if (!insightsAi.isInsightsAiAvailable()) {
-        return res.status(503).json({
-          error: "AI runtime required for topic clustering.",
-          code: "AI_RUNTIME_OFFLINE",
-        });
+        return res
+          .status(503)
+          .json({ error: "AI runtime required for topic clustering.", code: "AI_RUNTIME_OFFLINE" });
       }
       const rows = await drizzle
-        .select({
-          summary: schema.callLogs.summary,
-          intentLabel: schema.callLogs.intentLabel,
-        })
+        .select({ summary: schema.callLogs.summary, intentLabel: schema.callLogs.intentLabel })
         .from(schema.callLogs)
         .where(eq(schema.callLogs.userId, req.user.id))
         .orderBy(desc(schema.callLogs.createdAt))
@@ -390,10 +374,9 @@ router.get(
         if (cached) return res.json({ ...cached, cached: true });
       }
       if (!insightsAi.isInsightsAiAvailable()) {
-        return res.status(503).json({
-          error: "AI runtime required for failure analysis.",
-          code: "AI_RUNTIME_OFFLINE",
-        });
+        return res
+          .status(503)
+          .json({ error: "AI runtime required for failure analysis.", code: "AI_RUNTIME_OFFLINE" });
       }
 
       const rows = await drizzle
