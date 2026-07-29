@@ -74,24 +74,21 @@ export async function buildVapiAssistant({
   const [agentRows, directives, knowledge, personalityRows] = await drizzle.transaction((tx) =>
     Promise.all([
       tx.select().from(schema.agents).where(eq(schema.agents.id, agentId)).limit(1),
-      tx
-        .select({ content: schema.directives.content })
+      tx.select({ content: schema.directives.content })
         .from(schema.directives)
         .where(eq(schema.directives.agentId, agentId))
         .orderBy(desc(schema.directives.priority))
         .limit(MAX_RUNTIME_DIRECTIVES),
-      tx
-        .select({ content: schema.knowledge.content })
+      tx.select({ content: schema.knowledge.content })
         .from(schema.knowledge)
         .where(eq(schema.knowledge.agentId, agentId))
         .orderBy(desc(schema.knowledge.createdAt))
         .limit(MAX_RUNTIME_KNOWLEDGE),
-      tx
-        .select({ content: schema.personality.content })
+      tx.select({ content: schema.personality.content })
         .from(schema.personality)
         .where(eq(schema.personality.agentId, agentId))
         .limit(1),
-    ]),
+    ])
   );
   const configured = agentRows[0];
   if (!configured) throw new Error("Agent not found for Vapi assistant request");
@@ -117,14 +114,12 @@ export async function buildVapiAssistant({
   });
   const personality = truncateRuntimeSnippet(personalityRows[0]?.content || "", 1_200);
   const flow = Array.isArray(configured.flowConfig)
-    ? (
-        configured.flowConfig as Array<{
-          name?: string;
-          instructions?: string;
-          transitionCondition?: string;
-          isEndNode?: boolean;
-        }>
-      ).slice(0, 12)
+    ? (configured.flowConfig as Array<{
+        name?: string;
+        instructions?: string;
+        transitionCondition?: string;
+        isEndNode?: boolean;
+      }>).slice(0, 12)
     : [];
   const flowBlock = flow.length
     ? `\n## CALL FLOW\n${flow
