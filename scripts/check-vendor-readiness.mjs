@@ -74,6 +74,16 @@ function validHttpsUrl(name) {
   }
 }
 
+function httpsOrigin(value) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.origin : null;
+  } catch {
+    return null;
+  }
+}
+
 function arrayAt(body, key) {
   return Array.isArray(body?.[key]) ? body[key] : Array.isArray(body) ? body : [];
 }
@@ -123,6 +133,9 @@ const [
   twilioWhatsappSenders,
   stripeAccount,
   stripeBalance,
+  stripePortalConfigurations,
+  stripeWebhookEndpoints,
+  stripeTaxSettings,
   resend,
 ] = await Promise.all([
   present("XAI_API_KEY")
@@ -190,6 +203,21 @@ const [
     : null,
   present("STRIPE_SECRET_KEY")
     ? readJson("https://api.stripe.com/v1/balance", {
+        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+      })
+    : null,
+  present("STRIPE_SECRET_KEY")
+    ? readJson("https://api.stripe.com/v1/billing_portal/configurations?active=true&limit=100", {
+        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+      })
+    : null,
+  present("STRIPE_SECRET_KEY")
+    ? readJson("https://api.stripe.com/v1/webhook_endpoints?limit=100", {
+        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+      })
+    : null,
+  present("STRIPE_SECRET_KEY")
+    ? readJson("https://api.stripe.com/v1/tax/settings", {
         headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
       })
     : null,
@@ -335,24 +363,126 @@ record(
 const stripeAvailable = Number(
   stripeBalance?.body?.available?.find?.((row) => row.currency === "usd")?.amount ?? 0,
 );
-const stripeReady = Boolean(
+const stripeCoreReady = Boolean(
   stripeAccount?.ok &&
     stripeAccount.body?.charges_enabled &&
     stripeAccount.body?.payouts_enabled &&
     stripeAvailable >= 0,
 );
+
+const stripePublicName = String(
+  stripeAccount?.body?.business_profile?.name ||
+    stripeAccount?.body?.settings?.dashboard?.display_name ||
+    "",
+).trim();
+const stripeStatementDescriptor = String(
+  stripeAccount?.body?.settings?.payments?.statement_descriptor || "",
+)
+  .trim()
+  .toUpperCase();
+const stripeWebsiteOrigin = httpsOrigin(stripeAccount?.body?.business_profile?.url);
+const stripeSupportOrigin = httpsOrigin(stripeAccount?.body?.business_profile?.support_url);
+const stripeBrandReady = Boolean(
+  /wireline/i.test(stripePublicName) &&
+    stripeStatementDescriptor.startsWith("WIRELINE") &&
+    stripeWebsiteOrigin === "https://trywireline.com" &&
+    stripeSupportOrigin === "https://trywireline.com",
+);
+
+const stripePortalConfigs = arrayAt(stripePortalConfigurations?.body, "data");
+const stripeDefaultPortal = stripePortalConfigs.find(
+  (configuration) => configuration?.active === true && configuration?.is_default === true,
+);
+const stripePortalFeatures = stripeDefaultPortal?.features ?? {};
+const stripePortalReady = Boolean(
+  stripePortalConfigurations?.ok &&
+    stripeDefaultPortal &&
+    stripePortalFeatures.payment_method_update?.enabled === true &&
+    stripePortalFeatures.invoice_history?.enabled === true &&
+    stripePortalFeatures.subscription_cancel?.enabled === true,
+);
+
+const expectedStripeWebhookEvents = [
+  "charge.dispute.created",
+  "charge.refunded",
+  "checkout.session.completed",
+  "customer.subscription.created",
+  "customer.subscription.deleted",
+  "customer.subscription.updated",
+  "invoice.payment_failed",
+  "invoice.payment_succeeded",
+];
+const stripeWebhookInventory = arrayAt(stripeWebhookEndpoints?.body, "data");
+const stripeWebhook = stripeWebhookInventory.find(
+  (endpoint) =>
+    endpoint?.status === "enabled" &&
+    String(endpoint?.url || "").replace(/\/+$/, "") ===
+      "https://trywireline.com/api/stripe-webhook",
+);
+const stripeEnabledWebhookEvents = Array.isArray(stripeWebhook?.enabled_events)
+  ? [...stripeWebhook.enabled_events].sort()
+  : [];
+const stripeMissingWebhookEvents = expectedStripeWebhookEvents.filter(
+  (event) => !stripeEnabledWebhookEvents.includes(event),
+);
+const stripeExtraWebhookEvents = stripeEnabledWebhookEvents.filter(
+  (event) => event !== "*" && !expectedStripeWebhookEvents.includes(event),
+);
+const stripeWebhookReady = Boolean(
+  stripeWebhook &&
+    stripeMissingWebhookEvents.length === 0 &&
+    stripeExtraWebhookEvents.length === 0,
+);
+const stripeTaxReady = Boolean(stripeTaxSettings?.ok && stripeTaxSettings.body?.status === "active");
+const stripeReady = Boolean(
+  stripeCoreReady && stripeBrandReady && stripePortalReady && stripeWebhookReady && stripeTaxReady,
+);
+
+const stripeFundingAction =
+  stripeAvailable < 0
+    ? "Resolve the negative Stripe balance and failed bank debits before launch."
+    : !stripeBrandReady
+      ? "Align the public business name, statement descriptor, website, support URL, logo, and colors to Wireline in Stripe."
+      : !stripePortalReady
+        ? "Activate a default Stripe customer portal with payment-method updates, invoice history, and cancellation."
+        : !stripeWebhookReady
+          ? "Align the enabled trywireline.com webhook endpoint to the eight server-handled events."
+          : !stripeTaxReady
+            ? "Activate and verify Stripe Tax settings before accepting paid self-serve checkout."
+            : "No prepaid funding required; keep payout bank, portal, tax, and webhook healthy.";
+
 record(
   "stripe",
   true,
   stripeReady ? "ready" : "blocked",
   stripeAccount?.ok
-    ? `Charges ${stripeAccount.body.charges_enabled ? "enabled" : "disabled"}; payouts ${
-        stripeAccount.body.payouts_enabled ? "enabled" : "disabled"
+    ? `Core account ${stripeCoreReady ? "ready" : "blocked"}; customer brand "${
+        stripePublicName || "unset"
+      }" ${stripeBrandReady ? "ready" : "blocked"}; default portal ${
+        stripePortalReady ? "ready" : "blocked"
+      }; webhook ${stripeWebhookReady ? "ready" : "blocked"}; tax ${
+        stripeTaxReady ? "ready" : "blocked"
       }; available USD balance ${(stripeAvailable / 100).toFixed(2)}.`
     : "Stripe key missing or rejected.",
-  stripeAvailable < 0
-    ? "Resolve the negative Stripe balance and failed bank debits before launch."
-    : "No prepaid funding required; keep payout bank and webhook healthy.",
+  stripeFundingAction,
+  {
+    core_account_ready: stripeCoreReady,
+    public_name: stripePublicName || null,
+    statement_descriptor_ready: stripeStatementDescriptor.startsWith("WIRELINE"),
+    website_origin: stripeWebsiteOrigin,
+    support_origin: stripeSupportOrigin,
+    brand_ready: stripeBrandReady,
+    default_portal_present: Boolean(stripeDefaultPortal),
+    portal_payment_method_update: stripePortalFeatures.payment_method_update?.enabled === true,
+    portal_invoice_history: stripePortalFeatures.invoice_history?.enabled === true,
+    portal_subscription_cancel: stripePortalFeatures.subscription_cancel?.enabled === true,
+    portal_ready: stripePortalReady,
+    webhook_ready: stripeWebhookReady,
+    webhook_missing_events: stripeMissingWebhookEvents,
+    webhook_extra_events: stripeExtraWebhookEvents,
+    tax_status: stripeTaxSettings?.body?.status ?? null,
+    tax_ready: stripeTaxReady,
+  },
 );
 
 const verifiedDomains = resend?.ok
