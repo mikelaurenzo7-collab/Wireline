@@ -13,7 +13,11 @@ import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser, authenticateEventStream } from "../middleware/auth";
 import { claudeRateLimiter, smsRateLimit } from "../middleware/api-rate-limits";
-import { validateBody, workspaceMessageSchema, pdfUploadSchema } from "../lib/api-validation";
+import {
+  validateBody,
+  workspaceMessageSchema,
+  pdfUploadSchema,
+} from "../lib/api-validation";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
@@ -63,7 +67,12 @@ router.get(
           enabledTools: schema.agents.enabledTools,
         })
         .from(schema.agents)
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+        .where(
+          and(
+            eq(schema.agents.id, agentId),
+            eq(schema.agents.userId, req.user.id),
+          ),
+        )
         .limit(1);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
@@ -87,7 +96,10 @@ router.get(
           id: agent.id,
           name: agent.name,
           role: agent.role,
-          enabledTools: resolveAgentTools(agent.role ?? undefined, agent.enabledTools),
+          enabledTools: resolveAgentTools(
+            agent.role ?? undefined,
+            agent.enabledTools,
+          ),
         },
         messages: messages.reverse().map((m) => ({
           id: String(m.id),
@@ -99,7 +111,9 @@ router.get(
       });
     } catch (e) {
       if (e instanceof AppError) throw e;
-      log.error("workspace messages fetch failed", { error: getErrorMessage(e) });
+      log.error("workspace messages fetch failed", {
+        error: getErrorMessage(e),
+      });
       throw AppError.fromHttpStatus(500, "Failed to load workspace messages");
     }
   },
@@ -142,7 +156,12 @@ router.post(
           enabledTools: schema.agents.enabledTools,
         })
         .from(schema.agents)
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+        .where(
+          and(
+            eq(schema.agents.id, agentId),
+            eq(schema.agents.userId, req.user.id),
+          ),
+        )
         .limit(1);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
@@ -153,7 +172,12 @@ router.post(
           intent: schema.callLogs.intentLabel,
         })
         .from(schema.callLogs)
-        .where(and(eq(schema.callLogs.agentId, agentId), eq(schema.callLogs.userId, req.user.id)))
+        .where(
+          and(
+            eq(schema.callLogs.agentId, agentId),
+            eq(schema.callLogs.userId, req.user.id),
+          ),
+        )
         .orderBy(desc(schema.callLogs.createdAt))
         .limit(5);
 
@@ -213,7 +237,10 @@ router.post(
           thinkingDurationMs = plan.thinkingDurationMs;
         } catch (e) {
           if (e instanceof AppError) throw e;
-          log.error("workspace planner failed", { error: getErrorMessage(e), agentId });
+          log.error("workspace planner failed", {
+            error: getErrorMessage(e),
+            agentId,
+          });
           reply =
             "Sorry — I'm having trouble responding right now. Your message is saved; try again in a moment.";
         }
@@ -227,7 +254,14 @@ router.post(
         reasoning: reasoning || null,
       });
 
-      res.json({ reply, changes, toolToggles, actions, reasoning, thinkingDurationMs });
+      res.json({
+        reply,
+        changes,
+        toolToggles,
+        actions,
+        reasoning,
+        thinkingDurationMs,
+      });
     } catch (e) {
       if (e instanceof AppError) throw e;
       log.error("workspace POST failed", { error: getErrorMessage(e) });
@@ -262,11 +296,17 @@ router.post(
           enabledTools: schema.agents.enabledTools,
         })
         .from(schema.agents)
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+        .where(
+          and(
+            eq(schema.agents.id, agentId),
+            eq(schema.agents.userId, req.user.id),
+          ),
+        )
         .limit(1);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
-      const { createSseStream, writeSseBootstrap } = await import("../lib/sse-stream");
+      const { createSseStream, writeSseBootstrap } =
+        await import("../lib/sse-stream");
       const sse = createSseStream(req, res);
       writeSseBootstrap(sse, { agentId, agentName: agent.name });
 
@@ -299,7 +339,8 @@ router.post(
         content: userMessage,
       });
 
-      const { STRUCTURED_RUNTIME_MODELS } = await import("../lib/structured-runtime-models");
+      const { STRUCTURED_RUNTIME_MODELS } =
+        await import("../lib/structured-runtime-models");
 
       const DIRECT_AGENT_TOOL_SCHEMA = {
         name: "direct_agent",
@@ -307,7 +348,10 @@ router.post(
         input_schema: {
           type: "object" as const,
           properties: {
-            reply: { type: "string", description: "Conversational reply (≤120 words)." },
+            reply: {
+              type: "string",
+              description: "Conversational reply (≤120 words).",
+            },
             config_changes: { type: "array", items: { type: "object" } },
             tool_toggles: { type: "array", items: { type: "object" } },
             actions: { type: "array", items: { type: "object" } },
@@ -321,41 +365,48 @@ router.post(
       const system = `You are ${name}, a Wireline AI ${role}. Reply in first person, warm and concise.`;
       const transcript = history
         .slice(-12)
-        .map((m) => `${m.role === "Account Holder" ? "Operator" : "You"}: ${m.content}`)
+        .map(
+          (m) =>
+            `${m.role === "Account Holder" ? "Operator" : "You"}: ${m.content}`,
+        )
         .join("\n");
       const user = `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Operator: ${userMessage}`;
 
       try {
-        const { result, thinking, thinkingDurationMs } = await runStructuredStream<{
-          reply?: string;
-          config_changes?: unknown;
-          changes?: unknown;
-          tool_toggles?: unknown;
-          toolToggles?: unknown;
-          actions?: unknown;
-        }>(
-          {
-            system,
-            user,
-            tool: DIRECT_AGENT_TOOL_SCHEMA,
-            model: STRUCTURED_RUNTIME_MODELS.STANDARD,
-            maxTokens: 1500,
-          },
-          {
-            onThinkingStart: () => sse.write("thinking_start", {}),
-            onThinkingChunk: (text) => sse.write("thinking_chunk", { text }),
-            onThinkingEnd: (fullText, durationMs) =>
-              sse.write("thinking_end", { thinking: fullText, durationMs }),
-            onResult: (r) => sse.write("reply", r),
-          },
-        );
+        const { result, thinking, thinkingDurationMs } =
+          await runStructuredStream<{
+            reply?: string;
+            config_changes?: unknown;
+            changes?: unknown;
+            tool_toggles?: unknown;
+            toolToggles?: unknown;
+            actions?: unknown;
+          }>(
+            {
+              system,
+              user,
+              tool: DIRECT_AGENT_TOOL_SCHEMA,
+              model: STRUCTURED_RUNTIME_MODELS.STANDARD,
+              maxTokens: 1500,
+            },
+            {
+              onThinkingStart: () => sse.write("thinking_start", {}),
+              onThinkingChunk: (text) => sse.write("thinking_chunk", { text }),
+              onThinkingEnd: (fullText, durationMs) =>
+                sse.write("thinking_end", { thinking: fullText, durationMs }),
+              onResult: (r) => sse.write("reply", r),
+            },
+          );
 
-        const reply = typeof result?.reply === "string" ? result.reply.trim() : "";
+        const reply =
+          typeof result?.reply === "string" ? result.reply.trim() : "";
         // Normalize to client-expected keys (changes/toolToggles/actions) so
         // StudioWorkroom onComplete can populate interactive proposals.
         // The structured tool uses config_changes / tool_toggles in raw LLM output.
-        const changes = (result as any)?.config_changes ?? (result as any)?.changes ?? [];
-        const toolToggles = (result as any)?.tool_toggles ?? (result as any)?.toolToggles ?? [];
+        const changes =
+          (result as any)?.config_changes ?? (result as any)?.changes ?? [];
+        const toolToggles =
+          (result as any)?.tool_toggles ?? (result as any)?.toolToggles ?? [];
         const actions = (result as any)?.actions ?? [];
 
         sse.write("reply", { reply, changes, toolToggles, actions });
@@ -378,13 +429,22 @@ router.post(
             reasoning: thinking || null,
           })
           .catch((err) =>
-            log.error("workspace stream persist failed", { error: getErrorMessage(err), agentId }),
+            log.error("workspace stream persist failed", {
+              error: getErrorMessage(err),
+              agentId,
+            }),
           );
       } catch (e) {
         if (e instanceof AppError) throw e;
-        log.error("workspace stream failed", { error: getErrorMessage(e), agentId });
+        log.error("workspace stream failed", {
+          error: getErrorMessage(e),
+          agentId,
+        });
         sse.write("error", {
-          message: publicAiStreamFailureMessage(e, "Failed to generate response"),
+          message: publicAiStreamFailureMessage(
+            e,
+            "Failed to generate response",
+          ),
         });
         sse.end();
       }
@@ -426,9 +486,16 @@ router.post(
       const { pdfBase64, fileName } = req.body;
       // Magic-number sanity check — bail on obvious non-PDFs.
       try {
-        const head = Buffer.from(pdfBase64.slice(0, 16), "base64").toString("utf8", 0, 5);
+        const head = Buffer.from(pdfBase64.slice(0, 16), "base64").toString(
+          "utf8",
+          0,
+          5,
+        );
         if (!head.startsWith("%PDF")) {
-          throw AppError.fromHttpStatus(400, "File does not look like a valid PDF.");
+          throw AppError.fromHttpStatus(
+            400,
+            "File does not look like a valid PDF.",
+          );
         }
       } catch {
         throw AppError.fromHttpStatus(400, "Malformed base64 payload.");
@@ -437,7 +504,12 @@ router.post(
       const [agent] = await drizzle
         .select({ id: schema.agents.id, name: schema.agents.name })
         .from(schema.agents)
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+        .where(
+          and(
+            eq(schema.agents.id, agentId),
+            eq(schema.agents.userId, req.user.id),
+          ),
+        )
         .limit(1);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
@@ -449,7 +521,8 @@ router.post(
       try {
         result = await knowledgeFromDocument({
           pdfBase64,
-          fileName: typeof fileName === "string" ? fileName.slice(0, 255) : undefined,
+          fileName:
+            typeof fileName === "string" ? fileName.slice(0, 255) : undefined,
           maxEntries: 12,
         });
       } catch (ingestError) {
@@ -462,7 +535,9 @@ router.post(
       // result.entries is an array of { content, tags? } per the
       // existing contract. Insert them into the agent's knowledge base
       // (deduped by content per the existing unique constraint).
-      const entries: Array<{ content: string }> = Array.isArray((result as any).entries)
+      const entries: Array<{ content: string }> = Array.isArray(
+        (result as any).entries,
+      )
         ? (result as any).entries
         : [];
       let inserted = 0;
@@ -475,7 +550,9 @@ router.post(
               userId: req.user.id,
               agentId,
               content: e.content,
-              source: fileName ? `Workspace upload: ${fileName}` : "Workspace upload",
+              source: fileName
+                ? `Workspace upload: ${fileName}`
+                : "Workspace upload",
             } as any)
             .onConflictDoNothing();
           inserted++;
@@ -515,7 +592,12 @@ router.delete(
       const [agent] = await drizzle
         .select({ id: schema.agents.id })
         .from(schema.agents)
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+        .where(
+          and(
+            eq(schema.agents.id, agentId),
+            eq(schema.agents.userId, req.user.id),
+          ),
+        )
         .limit(1);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
@@ -559,7 +641,11 @@ router.post(
       }
       if (spec.kind === "vibe") {
         value = String(value).toLowerCase();
-        if (!(WORKSPACE_VIBE_OPTIONS as readonly string[]).includes(value as string)) {
+        if (
+          !(WORKSPACE_VIBE_OPTIONS as readonly string[]).includes(
+            value as string,
+          )
+        ) {
           return res.status(400).json({
             code: "BAD_REQUEST",
             error: `Vibe must be one of: ${WORKSPACE_VIBE_OPTIONS.join(", ")}`,
@@ -567,7 +653,11 @@ router.post(
         }
       } else if (spec.kind === "ambient") {
         value = String(value).toLowerCase();
-        if (!(WORKSPACE_AMBIENT_OPTIONS as readonly string[]).includes(value as string)) {
+        if (
+          !(WORKSPACE_AMBIENT_OPTIONS as readonly string[]).includes(
+            value as string,
+          )
+        ) {
           return res.status(400).json({
             code: "BAD_REQUEST",
             error: `Ambient noise must be one of: ${WORKSPACE_AMBIENT_OPTIONS.join(", ")}`,
@@ -578,15 +668,28 @@ router.post(
         typeof value === "string" &&
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
       ) {
-        throw AppError.fromHttpStatus(400, "That doesn't look like a valid email.");
+        throw AppError.fromHttpStatus(
+          400,
+          "That doesn't look like a valid email.",
+        );
       } else if (
         spec.kind === "phone" &&
         typeof value === "string" &&
         !/^[+\d][\d\s()-]{5,19}$/.test(value)
       ) {
-        throw AppError.fromHttpStatus(400, "That doesn't look like a valid phone number.");
-      } else if (spec.kind === "url" && typeof value === "string" && !/^https?:\/\//.test(value)) {
-        throw AppError.fromHttpStatus(400, "That doesn't look like a valid URL.");
+        throw AppError.fromHttpStatus(
+          400,
+          "That doesn't look like a valid phone number.",
+        );
+      } else if (
+        spec.kind === "url" &&
+        typeof value === "string" &&
+        !/^https?:\/\//.test(value)
+      ) {
+        throw AppError.fromHttpStatus(
+          400,
+          "That doesn't look like a valid URL.",
+        );
       }
 
       const agent = await findOwnedAgentProfile(agentId, req.user.id);
@@ -595,7 +698,12 @@ router.post(
       await drizzle
         .update(schema.agents)
         .set({ [spec.column]: value })
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
+        .where(
+          and(
+            eq(schema.agents.id, agentId),
+            eq(schema.agents.userId, req.user.id),
+          ),
+        );
 
       log.info("workspace config change applied", { agentId, field });
       res.json({ success: true, field, label: spec.label, value });
@@ -618,13 +726,18 @@ router.post(
       const agentId = req.params.id;
       const tool = req.body?.tool;
       const enable = req.body?.enable;
-      if (!isAgentToolName(tool)) throw AppError.fromHttpStatus(400, "Unknown tool");
-      if (typeof enable !== "boolean") throw AppError.fromHttpStatus(400, "enable must be boolean");
+      if (!isAgentToolName(tool))
+        throw AppError.fromHttpStatus(400, "Unknown tool");
+      if (typeof enable !== "boolean")
+        throw AppError.fromHttpStatus(400, "enable must be boolean");
 
       const agent = await findOwnedAgentProfile(agentId, req.user.id);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
-      const current = resolveAgentTools(agent.role ?? undefined, agent.enabledTools);
+      const current = resolveAgentTools(
+        agent.role ?? undefined,
+        agent.enabledTools,
+      );
       const next = enable
         ? Array.from(new Set([...current, tool]))
         : current.filter((t) => t !== tool);
@@ -632,7 +745,12 @@ router.post(
       await drizzle
         .update(schema.agents)
         .set({ enabledTools: normalizeEnabledTools(next) })
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
+        .where(
+          and(
+            eq(schema.agents.id, agentId),
+            eq(schema.agents.userId, req.user.id),
+          ),
+        );
 
       log.info("workspace tool toggled", { agentId, tool, enable });
       res.json({ success: true, tool, enable, enabledTools: next });
@@ -663,7 +781,10 @@ router.post(
       const body = String(req.body?.body || "").trim();
 
       if (kind !== "send_email" && kind !== "send_text_message") {
-        throw AppError.fromHttpStatus(400, "Unsupported action for this endpoint");
+        throw AppError.fromHttpStatus(
+          400,
+          "Unsupported action for this endpoint",
+        );
       }
       if (!to) throw AppError.fromHttpStatus(400, "Recipient required");
       if (!body) throw AppError.fromHttpStatus(400, "Message body required");
@@ -672,7 +793,9 @@ router.post(
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       const payload =
-        kind === "send_email" ? { to, subject: subject || "Follow-up", body } : { to, body };
+        kind === "send_email"
+          ? { to, subject: subject || "Follow-up", body }
+          : { to, body };
 
       const result = await executeAction(
         req.user.id,
@@ -688,7 +811,10 @@ router.post(
       );
 
       if (!result.success) {
-        throw AppError.fromHttpStatus(400, String(result.error || "Action failed"));
+        throw AppError.fromHttpStatus(
+          400,
+          String(result.error || "Action failed"),
+        );
       }
       log.info("workspace action executed", { agentId, kind });
       res.json({ success: true, kind });
@@ -717,9 +843,15 @@ router.get(
 
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-      const [callRows, emailRows, textRows, bookingRows, openTaskRows, recentCalls] =
-        await drizzle.transaction((tx) =>
-          Promise.all([
+      const [
+        callRows,
+        emailRows,
+        textRows,
+        bookingRows,
+        openTaskRows,
+        recentCalls,
+      ] = await drizzle.transaction((tx) =>
+        Promise.all([
           tx
             .select({ n: sql<number>`count(*)::int` })
             .from(schema.callLogs)
@@ -780,12 +912,15 @@ router.get(
             })
             .from(schema.callLogs)
             .where(
-              and(eq(schema.callLogs.agentId, agentId), eq(schema.callLogs.userId, req.user.id)),
+              and(
+                eq(schema.callLogs.agentId, agentId),
+                eq(schema.callLogs.userId, req.user.id),
+              ),
             )
             .orderBy(desc(schema.callLogs.createdAt))
             .limit(4),
-        ])
-        );
+        ]),
+      );
 
       res.json({
         pulse: {
