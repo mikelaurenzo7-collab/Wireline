@@ -99,9 +99,7 @@ router.get(
       });
     } catch (e) {
       if (e instanceof AppError) throw e;
-      log.error("workspace messages fetch failed", {
-        error: getErrorMessage(e),
-      });
+      log.error("workspace messages fetch failed", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to load workspace messages");
     }
   },
@@ -215,10 +213,7 @@ router.post(
           thinkingDurationMs = plan.thinkingDurationMs;
         } catch (e) {
           if (e instanceof AppError) throw e;
-          log.error("workspace planner failed", {
-            error: getErrorMessage(e),
-            agentId,
-          });
+          log.error("workspace planner failed", { error: getErrorMessage(e), agentId });
           reply =
             "Sorry — I'm having trouble responding right now. Your message is saved; try again in a moment.";
         }
@@ -232,14 +227,7 @@ router.post(
         reasoning: reasoning || null,
       });
 
-      res.json({
-        reply,
-        changes,
-        toolToggles,
-        actions,
-        reasoning,
-        thinkingDurationMs,
-      });
+      res.json({ reply, changes, toolToggles, actions, reasoning, thinkingDurationMs });
     } catch (e) {
       if (e instanceof AppError) throw e;
       log.error("workspace POST failed", { error: getErrorMessage(e) });
@@ -319,10 +307,7 @@ router.post(
         input_schema: {
           type: "object" as const,
           properties: {
-            reply: {
-              type: "string",
-              description: "Conversational reply (≤120 words).",
-            },
+            reply: { type: "string", description: "Conversational reply (≤120 words)." },
             config_changes: { type: "array", items: { type: "object" } },
             tool_toggles: { type: "array", items: { type: "object" } },
             actions: { type: "array", items: { type: "object" } },
@@ -393,17 +378,11 @@ router.post(
             reasoning: thinking || null,
           })
           .catch((err) =>
-            log.error("workspace stream persist failed", {
-              error: getErrorMessage(err),
-              agentId,
-            }),
+            log.error("workspace stream persist failed", { error: getErrorMessage(err), agentId }),
           );
       } catch (e) {
         if (e instanceof AppError) throw e;
-        log.error("workspace stream failed", {
-          error: getErrorMessage(e),
-          agentId,
-        });
+        log.error("workspace stream failed", { error: getErrorMessage(e), agentId });
         sse.write("error", {
           message: publicAiStreamFailureMessage(e, "Failed to generate response"),
         });
@@ -741,8 +720,7 @@ router.get(
       const [callRows, emailRows, textRows, bookingRows, openTaskRows, recentCalls] =
         await drizzle.transaction((tx) =>
           Promise.all([
-            tx
-              .select({ n: sql<number>`count(*)::int` })
+            tx.select({ n: sql<number>`count(*)::int` })
               .from(schema.callLogs)
               .where(
                 and(
@@ -751,8 +729,7 @@ router.get(
                   gte(schema.callLogs.createdAt, since),
                 ),
               ),
-            tx
-              .select({ n: sql<number>`count(*)::int` })
+            tx.select({ n: sql<number>`count(*)::int` })
               .from(schema.emailThreads)
               .where(
                 and(
@@ -761,8 +738,7 @@ router.get(
                   gte(schema.emailThreads.createdAt, since),
                 ),
               ),
-            tx
-              .select({ n: sql<number>`count(*)::int` })
+            tx.select({ n: sql<number>`count(*)::int` })
               .from(schema.smsThreads)
               .where(
                 and(
@@ -771,8 +747,7 @@ router.get(
                   gte(schema.smsThreads.createdAt, since),
                 ),
               ),
-            tx
-              .select({ n: sql<number>`count(*)::int` })
+            tx.select({ n: sql<number>`count(*)::int` })
               .from(schema.appointments)
               .where(
                 and(
@@ -781,8 +756,7 @@ router.get(
                   gte(schema.appointments.createdAt, since),
                 ),
               ),
-            tx
-              .select({ n: sql<number>`count(*)::int` })
+            tx.select({ n: sql<number>`count(*)::int` })
               .from(schema.followUpTasks)
               .where(
                 and(
@@ -791,8 +765,7 @@ router.get(
                   eq(schema.followUpTasks.status, "pending"),
                 ),
               ),
-            tx
-              .select({
+            tx.select({
                 summary: schema.callLogs.summary,
                 sentiment: schema.callLogs.sentiment,
                 intent: schema.callLogs.intentLabel,
@@ -805,7 +778,7 @@ router.get(
               )
               .orderBy(desc(schema.callLogs.createdAt))
               .limit(4),
-          ]),
+          ])
         );
 
       res.json({
