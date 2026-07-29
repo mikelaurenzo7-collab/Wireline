@@ -28,9 +28,27 @@ describe("round-8 billing integrity", () => {
       "isIncrease && isStripePaymentRequiredError(error)",
     );
     expect(extraAgentBilling).toContain("return paymentRequiredOutcome()");
-    expect(extraAgentBilling.indexOf("stripe.subscriptionItems")).toBeLessThan(
-      extraAgentBilling.indexOf("return persistQuantity(target"),
+    const stripeMutation = extraAgentBilling.indexOf(
+      "await stripe.subscriptionItems.update(",
     );
+    const paymentFailureHandler = extraAgentBilling.indexOf(
+      "isIncrease && isStripePaymentRequiredError(error)",
+    );
+    const providerVerification = extraAgentBilling.indexOf(
+      "subscription = await stripe.subscriptions.retrieve(subscriptionId);",
+    );
+    const verifiedQuantity = extraAgentBilling.indexOf(
+      "const verifiedQuantity = extraAgentQuantity(verifiedItems)",
+    );
+    const finalPersistence = extraAgentBilling.lastIndexOf(
+      "return persistQuantity(target",
+    );
+
+    expect(stripeMutation).toBeGreaterThan(-1);
+    expect(paymentFailureHandler).toBeGreaterThan(stripeMutation);
+    expect(providerVerification).toBeGreaterThan(paymentFailureHandler);
+    expect(verifiedQuantity).toBeGreaterThan(providerVerification);
+    expect(finalPersistence).toBeGreaterThan(verifiedQuantity);
   });
 
   it("claims a Stripe webhook as processing and only marks processed on success", () => {
