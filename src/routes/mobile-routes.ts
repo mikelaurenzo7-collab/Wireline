@@ -24,7 +24,10 @@ import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
 import { validate } from "../middleware/input-validation";
 import { createRateLimiter } from "../middleware/api-rate-limits";
-import { resolveAgentEntitlement, agentCapHit } from "../lib/agent-entitlements";
+import {
+  resolveAgentEntitlement,
+  agentCapHit,
+} from "../lib/agent-entitlements";
 import { isOwnerEmail } from "../lib/auth-service";
 import { planById } from "../lib/plan-catalog";
 import { resolveAccountType } from "../lib/account-type";
@@ -48,7 +51,10 @@ import {
   normalizeEnabledTools,
   type AgentToolName,
 } from "../lib/agent-capabilities";
-import { resolveCreateEnabledTools, resolveCreatePersonality } from "../lib/agent-create-defaults";
+import {
+  resolveCreateEnabledTools,
+  resolveCreatePersonality,
+} from "../lib/agent-create-defaults";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import type { AuthenticatedRequest } from "../types/auth";
 import {
@@ -100,7 +106,10 @@ router.get(
       // Three independent reads — run them concurrently.
       const [[profile], [row], [{ count }]] = await Promise.all([
         drizzle
-          .select({ fullName: schema.users.fullName, email: schema.users.email })
+          .select({
+            fullName: schema.users.fullName,
+            email: schema.users.email,
+          })
           .from(schema.users)
           .where(eq(schema.users.id, userId))
           .limit(1),
@@ -114,7 +123,10 @@ router.get(
             handoffPhone: schema.settings.handoffPhone,
           })
           .from(schema.settings)
-          .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+          .leftJoin(
+            schema.subscriptions,
+            eq(schema.subscriptions.userId, schema.settings.userId),
+          )
           .where(eq(schema.settings.userId, userId))
           .limit(1),
         drizzle
@@ -136,7 +148,9 @@ router.get(
       const planId = row?.planId || "personal";
       const plan = planById(planId);
       const fallbackAccountMode = resolveAccountType(planId);
-      const accountMode = (await ensureDefaultAccount(userId, fallbackAccountMode)).type;
+      const accountMode = (
+        await ensureDefaultAccount(userId, fallbackAccountMode)
+      ).type;
 
       res.json({
         user: {
@@ -162,7 +176,8 @@ router.get(
         extra_agent: {
           price_usd: plan?.extra_agent_price_usd ?? null,
           configured:
-            !!plan?.extraAgentPriceIdEnv && !!process.env[plan.extraAgentPriceIdEnv as string],
+            !!plan?.extraAgentPriceIdEnv &&
+            !!process.env[plan.extraAgentPriceIdEnv as string],
         },
         settings: {
           // The Account Holder's callback number for "take this call" handoffs.
@@ -202,10 +217,13 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const name = cleanText(req.body?.name, 120);
-      const rawRole = cleanText(req.body?.role, 80) || AGENT_CREATE_DEFAULT_ROLE_ID;
+      const rawRole =
+        cleanText(req.body?.role, 80) || AGENT_CREATE_DEFAULT_ROLE_ID;
       const roleError = validateAgentRoleForCreate(rawRole);
       if (roleError) {
-        return res.status(400).json({ code: "UNKNOWN_AGENT_ROLE", error: roleError });
+        return res
+          .status(400)
+          .json({ code: "UNKNOWN_AGENT_ROLE", error: roleError });
       }
       const role = canonicalizeAgentRoleForCreate(rawRole);
       const isBusinessAgent = req.body?.is_business_agent === true;
@@ -217,13 +235,17 @@ router.post(
         isBusinessAgent,
         agentName: name,
       });
-      const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
+      const videoPresenter = isBusinessAgent
+        ? businessAgentVideoPresenterDefaults()
+        : {};
 
       // Count, entitlement, and insert must share one serialized transaction —
       // reading the count outside it let concurrent mobile creates all observe
       // the same pre-insert total and every one of them clear the cap.
       const created = await drizzle.transaction(async (tx) => {
-        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
+        await tx.execute(
+          sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`,
+        );
 
         const [{ count }] = await tx
           .select({ count: sql<number>`count(*)` })
@@ -239,7 +261,10 @@ router.post(
             planId: schema.subscriptions.plan,
           })
           .from(schema.settings)
-          .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+          .leftJoin(
+            schema.subscriptions,
+            eq(schema.subscriptions.userId, schema.settings.userId),
+          )
           .where(eq(schema.settings.userId, req.user.id))
           .limit(1);
         const entitlement = resolveAgentEntitlement({
@@ -269,7 +294,11 @@ router.post(
         if (seededPersonality) {
           await tx
             .insert(schema.personality)
-            .values({ agentId: id, userId: req.user.id, content: seededPersonality })
+            .values({
+              agentId: id,
+              userId: req.user.id,
+              content: seededPersonality,
+            })
             .onConflictDoUpdate({
               target: schema.personality.agentId,
               set: { userId: req.user.id, content: seededPersonality },
@@ -295,7 +324,9 @@ router.post(
         isBusinessAgent,
       });
     } catch (err) {
-      log.error("POST /api/mobile/agents failed", { error: getErrorMessage(err) });
+      log.error("POST /api/mobile/agents failed", {
+        error: getErrorMessage(err),
+      });
       throw AppError.fromHttpStatus(500, "Failed to create agent.");
     }
   },
@@ -325,7 +356,9 @@ router.get(
         .orderBy(desc(schema.agents.createdAt));
       res.json({ agents: rows });
     } catch (err) {
-      log.error("GET /api/mobile/agents failed", { error: getErrorMessage(err) });
+      log.error("GET /api/mobile/agents failed", {
+        error: getErrorMessage(err),
+      });
       throw AppError.fromHttpStatus(500, "Failed to load agents.");
     }
   },
@@ -353,13 +386,20 @@ router.get(
           createdAt: schema.agents.createdAt,
         })
         .from(schema.agents)
-        .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+        .where(
+          and(
+            eq(schema.agents.id, req.params.id),
+            eq(schema.agents.userId, req.user.id),
+          ),
+        )
         .limit(1);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
       res.json({ agent });
     } catch (err) {
       if (err instanceof AppError) throw err;
-      log.error("GET /api/mobile/agents/:id failed", { error: getErrorMessage(err) });
+      log.error("GET /api/mobile/agents/:id failed", {
+        error: getErrorMessage(err),
+      });
       throw AppError.fromHttpStatus(500, "Failed to load agent.");
     }
   },
@@ -375,56 +415,63 @@ router.get(
       if (!(await ownedAgent(req.params.id, req.user.id))) {
         throw AppError.fromHttpStatus(404, "Agent not found.");
       }
-      const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
-        Promise.all([
-        tx
-          .select({
-            name: schema.agents.name,
-            role: schema.agents.role,
-            archetype: schema.agents.archetype,
-            enabledTools: schema.agents.enabledTools,
-            voiceId: schema.agents.voiceId,
-            voiceProvider: schema.agents.voiceProvider,
-            isBusinessAgent: schema.agents.isBusinessAgent,
-            videoPresenterProvider: schema.agents.videoPresenterProvider,
-            videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
-            videoPresenterConsentStatus: schema.agents.videoPresenterConsentStatus,
-          })
-          .from(schema.agents)
-          .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
-          .limit(1),
-        tx
-          .select({ content: schema.personality.content })
-          .from(schema.personality)
-          .where(
-            and(
-              eq(schema.personality.agentId, req.params.id),
-              eq(schema.personality.userId, req.user.id),
-            ),
-          )
-          .limit(1),
-        tx
-          .select()
-          .from(schema.directives)
-          .where(
-            and(
-              eq(schema.directives.agentId, req.params.id),
-              eq(schema.directives.userId, req.user.id),
-            ),
-          )
-          .orderBy(desc(schema.directives.priority)),
-        tx
-          .select()
-          .from(schema.knowledge)
-          .where(
-            and(
-              eq(schema.knowledge.agentId, req.params.id),
-              eq(schema.knowledge.userId, req.user.id),
-            ),
-          )
-          .orderBy(desc(schema.knowledge.createdAt)),
-      ])
-      );
+      const [agentRows, personalities, directives, knowledge] =
+        await drizzle.transaction((tx) =>
+          Promise.all([
+            tx
+              .select({
+                name: schema.agents.name,
+                role: schema.agents.role,
+                archetype: schema.agents.archetype,
+                enabledTools: schema.agents.enabledTools,
+                voiceId: schema.agents.voiceId,
+                voiceProvider: schema.agents.voiceProvider,
+                isBusinessAgent: schema.agents.isBusinessAgent,
+                videoPresenterProvider: schema.agents.videoPresenterProvider,
+                videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
+                videoPresenterConsentStatus:
+                  schema.agents.videoPresenterConsentStatus,
+              })
+              .from(schema.agents)
+              .where(
+                and(
+                  eq(schema.agents.id, req.params.id),
+                  eq(schema.agents.userId, req.user.id),
+                ),
+              )
+              .limit(1),
+            tx
+              .select({ content: schema.personality.content })
+              .from(schema.personality)
+              .where(
+                and(
+                  eq(schema.personality.agentId, req.params.id),
+                  eq(schema.personality.userId, req.user.id),
+                ),
+              )
+              .limit(1),
+            tx
+              .select()
+              .from(schema.directives)
+              .where(
+                and(
+                  eq(schema.directives.agentId, req.params.id),
+                  eq(schema.directives.userId, req.user.id),
+                ),
+              )
+              .orderBy(desc(schema.directives.priority)),
+            tx
+              .select()
+              .from(schema.knowledge)
+              .where(
+                and(
+                  eq(schema.knowledge.agentId, req.params.id),
+                  eq(schema.knowledge.userId, req.user.id),
+                ),
+              )
+              .orderBy(desc(schema.knowledge.createdAt)),
+          ]),
+        );
       const record = agentRows[0];
       const identity = record
         ? resolveAgentVideoPresenter({
@@ -448,7 +495,9 @@ router.get(
       });
     } catch (err) {
       if (err instanceof AppError) throw err;
-      log.error("GET /api/mobile/agents/:id/config failed", { error: getErrorMessage(err) });
+      log.error("GET /api/mobile/agents/:id/config failed", {
+        error: getErrorMessage(err),
+      });
       throw AppError.fromHttpStatus(500, "Failed to load agent setup.");
     }
   },
@@ -469,7 +518,11 @@ router.post(
       if (!(await ownedAgent(req.params.id, req.user.id))) {
         throw AppError.fromHttpStatus(404, "Agent not found.");
       }
-      const type = req.body.type as "personality" | "directive" | "knowledge" | "flow";
+      const type = req.body.type as
+        | "personality"
+        | "directive"
+        | "knowledge"
+        | "flow";
       const content = cleanText(req.body.content, 12000);
       if (type === "personality") {
         await drizzle
@@ -482,7 +535,12 @@ router.post(
       } else if (type === "directive") {
         await drizzle
           .insert(schema.directives)
-          .values({ agentId: req.params.id, userId: req.user.id, content, priority: 5 });
+          .values({
+            agentId: req.params.id,
+            userId: req.user.id,
+            content,
+            priority: 5,
+          });
       } else if (type === "knowledge") {
         await drizzle.insert(schema.knowledge).values({
           agentId: req.params.id,
@@ -493,7 +551,12 @@ router.post(
         await drizzle
           .update(schema.agents)
           .set({ flowConfig: content })
-          .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
+          .where(
+            and(
+              eq(schema.agents.id, req.params.id),
+              eq(schema.agents.userId, req.user.id),
+            ),
+          );
       }
       res.json({ success: true });
     } catch (err) {
@@ -506,7 +569,9 @@ router.post(
   },
 );
 
-const mobileToolsSchema = z.object({ enabled_tools: z.array(z.string()).default([]) });
+const mobileToolsSchema = z.object({
+  enabled_tools: z.array(z.string()).default([]),
+});
 
 router.post(
   "/api/mobile/agents/:id/tools",
@@ -520,17 +585,27 @@ router.post(
       }
       const raw = req.body.enabled_tools as string[];
       if (raw.some((tool) => !isAgentToolName(tool))) {
-        throw AppError.fromHttpStatus(400, "enabled_tools must contain known agent tools");
+        throw AppError.fromHttpStatus(
+          400,
+          "enabled_tools must contain known agent tools",
+        );
       }
       const enabledTools = normalizeEnabledTools(raw as AgentToolName[]);
       await drizzle
         .update(schema.agents)
         .set({ enabledTools })
-        .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
+        .where(
+          and(
+            eq(schema.agents.id, req.params.id),
+            eq(schema.agents.userId, req.user.id),
+          ),
+        );
       res.json({ success: true, enabledTools });
     } catch (err) {
       if (err instanceof AppError) throw err;
-      log.error("POST /api/mobile/agents/:id/tools failed", { error: getErrorMessage(err) });
+      log.error("POST /api/mobile/agents/:id/tools failed", {
+        error: getErrorMessage(err),
+      });
       throw AppError.fromHttpStatus(500, "Failed to update agent tools.");
     }
   },
@@ -556,8 +631,14 @@ router.post(
   validate({ body: deviceSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { device_id, apns_voip_token, apns_alert_token, fcm_token, platform, app_version } =
-        req.body;
+      const {
+        device_id,
+        apns_voip_token,
+        apns_alert_token,
+        fcm_token,
+        platform,
+        app_version,
+      } = req.body;
       const now = new Date();
       await drizzle
         .insert(schema.mobileDevices)
@@ -585,7 +666,9 @@ router.post(
         });
       res.json({ success: true });
     } catch (err) {
-      log.error("POST /api/mobile/devices failed", { error: getErrorMessage(err) });
+      log.error("POST /api/mobile/devices failed", {
+        error: getErrorMessage(err),
+      });
       throw AppError.fromHttpStatus(500, "Failed to register device.");
     }
   },
@@ -608,7 +691,9 @@ router.delete(
         );
       res.json({ success: true });
     } catch (err) {
-      log.error("DELETE /api/mobile/devices failed", { error: getErrorMessage(err) });
+      log.error("DELETE /api/mobile/devices failed", {
+        error: getErrorMessage(err),
+      });
       throw AppError.fromHttpStatus(500, "Failed to unregister device.");
     }
   },
@@ -634,7 +719,9 @@ const mobileDialSchema = z.object({
   hasExpressWrittenConsent: z.boolean().optional().default(false),
   // Same audit fields as POST /api/outbound/dial — marketing + express consent
   // requires a source/lead artifact so native/Siri cannot attest without a trail.
-  consentSource: z.enum(["web_form", "lead_import", "crm", "manual_attestation"]).optional(),
+  consentSource: z
+    .enum(["web_form", "lead_import", "crm", "manual_attestation"])
+    .optional(),
   consentLeadId: z.string().max(200).optional(),
 });
 
@@ -656,7 +743,10 @@ router.post(
         consentSource,
         consentLeadId,
       } = req.body;
-      const expressConsent = normalizedExpressConsent({ callPurpose, hasExpressWrittenConsent });
+      const expressConsent = normalizedExpressConsent({
+        callPurpose,
+        hasExpressWrittenConsent,
+      });
       const marketing = isMarketingCallPurpose(callPurpose);
 
       if (marketing && expressConsent && !consentSource && !consentLeadId) {
@@ -678,14 +768,19 @@ router.post(
         if (gate.reason === "federal_dnc_unconfigured") {
           return res.status(503).json({
             code: gate.federalDncCode || "FEDERAL_DNC_UNCONFIGURED",
-            error: gate.federalDncMessage || "Federal DNC is not configured for marketing dials.",
+            error:
+              gate.federalDncMessage ||
+              "Federal DNC is not configured for marketing dials.",
           });
         }
         if (gate.reason === "blocked_internal_dnc") {
-          log.warn("Mobile outbound dial blocked by DNC list", { customerNumber });
+          log.warn("Mobile outbound dial blocked by DNC list", {
+            customerNumber,
+          });
           return res.status(403).json({
             code: "FORBIDDEN",
-            error: "This number is on the Do Not Call list and cannot be dialed.",
+            error:
+              "This number is on the Do Not Call list and cannot be dialed.",
             dncBlocked: true,
           });
         }
@@ -697,7 +792,8 @@ router.post(
           });
           return res.status(403).json({
             code: "FORBIDDEN",
-            error: tcpa?.disclosure_script || "Call blocked by TCPA consent rules.",
+            error:
+              tcpa?.disclosure_script || "Call blocked by TCPA consent rules.",
             tcpaBlocked: true,
             tcpa,
           });
@@ -723,7 +819,9 @@ router.post(
         context,
       });
       if (!result.ok) {
-        return res.status(result.status).json({ code: "ERROR", error: result.error });
+        return res
+          .status(result.status)
+          .json({ code: "ERROR", error: result.error });
       }
 
       await drizzle.insert(schema.outboundLeads).values({
@@ -751,7 +849,10 @@ router.post(
           userId: req.user.id,
           agentId,
           audience: "sales",
-          metadata: { consent_source: consentSource, consent_lead_id: consentLeadId ?? null },
+          metadata: {
+            consent_source: consentSource,
+            consent_lead_id: consentLeadId ?? null,
+          },
         });
       }
 
@@ -786,7 +887,9 @@ router.get(
         .limit(50);
       res.json({ calls: rows });
     } catch (err) {
-      log.error("GET /api/mobile/calls/active failed", { error: getErrorMessage(err) });
+      log.error("GET /api/mobile/calls/active failed", {
+        error: getErrorMessage(err),
+      });
       throw AppError.fromHttpStatus(500, "Failed to load active calls.");
     }
   },
@@ -803,7 +906,10 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const limitRaw = parseInt(String(req.query.limit ?? ""), 10);
-      const limit = Math.min(Math.max(1, Number.isNaN(limitRaw) ? 20 : limitRaw), 50);
+      const limit = Math.min(
+        Math.max(1, Number.isNaN(limitRaw) ? 20 : limitRaw),
+        50,
+      );
       const rows = await drizzle
         .select({
           id: schema.callLogs.id,
@@ -818,7 +924,12 @@ router.get(
           createdAt: schema.callLogs.createdAt,
         })
         .from(schema.callLogs)
-        .where(and(eq(schema.callLogs.userId, req.user.id), eq(schema.callLogs.demo, false)))
+        .where(
+          and(
+            eq(schema.callLogs.userId, req.user.id),
+            eq(schema.callLogs.demo, false),
+          ),
+        )
         .orderBy(desc(schema.callLogs.createdAt))
         .limit(limit);
 
@@ -828,13 +939,17 @@ router.get(
         needsAttention: rows.filter((r) => r.outcomeTag === "followup").length,
       });
     } catch (err) {
-      log.error("GET /api/mobile/calls/recent failed", { error: getErrorMessage(err) });
+      log.error("GET /api/mobile/calls/recent failed", {
+        error: getErrorMessage(err),
+      });
       throw AppError.fromHttpStatus(500, "Failed to load recent calls.");
     }
   },
 );
 
-const e164 = z.string().regex(/^\+?[1-9]\d{6,14}$/, "Expected E.164 (e.g. +15551234567)");
+const e164 = z
+  .string()
+  .regex(/^\+?[1-9]\d{6,14}$/, "Expected E.164 (e.g. +15551234567)");
 
 // ── PUT /api/mobile/settings — Account Holder's mobile-app preferences ───────────
 // Currently just the callback number used for "take this call" handoffs.
@@ -858,7 +973,9 @@ router.put(
       }
       res.json({ success: true, handoff_phone: handoffPhone ?? null });
     } catch (err) {
-      log.error("PUT /api/mobile/settings failed", { error: getErrorMessage(err) });
+      log.error("PUT /api/mobile/settings failed", {
+        error: getErrorMessage(err),
+      });
       throw AppError.fromHttpStatus(500, "Failed to save settings.");
     }
   },
@@ -889,12 +1006,15 @@ router.post(
         .limit(1);
 
       if (!presence) {
-        return res.status(404).json({ code: "NOT_FOUND", error: "That call isn't active." });
+        return res
+          .status(404)
+          .json({ code: "NOT_FOUND", error: "That call isn't active." });
       }
       if (!presence.controlUrl) {
         return res.status(409).json({
           code: "HANDOFF_UNAVAILABLE",
-          error: "This call can't be taken over yet — the carrier hasn't reported control info.",
+          error:
+            "This call can't be taken over yet — the carrier hasn't reported control info.",
         });
       }
 
@@ -910,17 +1030,22 @@ router.post(
       if (!destination) {
         return res.status(400).json({
           code: "NO_CALLBACK_NUMBER",
-          error: "Set a callback number first so we know where to send the call.",
+          error:
+            "Set a callback number first so we know where to send the call.",
         });
       }
 
       const result = await transferLiveCall(presence.controlUrl, destination);
       if (!result.ok) {
-        return res.status(result.status).json({ code: "ERROR", error: result.error });
+        return res
+          .status(result.status)
+          .json({ code: "ERROR", error: result.error });
       }
       res.json({ success: true });
     } catch (err) {
-      log.error("POST /api/mobile/calls/:callId/handoff failed", { error: getErrorMessage(err) });
+      log.error("POST /api/mobile/calls/:callId/handoff failed", {
+        error: getErrorMessage(err),
+      });
       throw AppError.fromHttpStatus(500, "Failed to take the call.");
     }
   },
@@ -936,7 +1061,9 @@ router.get(
       const { callId } = req.params;
       // callLogs.id is a bigint — reject non-numeric ids before the PG cast.
       if (!/^\d+$/.test(callId)) {
-        return res.status(404).json({ code: "NOT_FOUND", error: "Call not found." });
+        return res
+          .status(404)
+          .json({ code: "NOT_FOUND", error: "Call not found." });
       }
       const [call] = await drizzle
         .select({
@@ -954,14 +1081,23 @@ router.get(
           createdAt: schema.callLogs.createdAt,
         })
         .from(schema.callLogs)
-        .where(and(eq(schema.callLogs.id, BigInt(callId)), eq(schema.callLogs.userId, req.user.id)))
+        .where(
+          and(
+            eq(schema.callLogs.id, BigInt(callId)),
+            eq(schema.callLogs.userId, req.user.id),
+          ),
+        )
         .limit(1);
       if (!call) {
-        return res.status(404).json({ code: "NOT_FOUND", error: "Call not found." });
+        return res
+          .status(404)
+          .json({ code: "NOT_FOUND", error: "Call not found." });
       }
       res.json({ call: { ...call, id: String(call.id) } });
     } catch (err) {
-      log.error("GET /api/mobile/calls/:callId/detail failed", { error: getErrorMessage(err) });
+      log.error("GET /api/mobile/calls/:callId/detail failed", {
+        error: getErrorMessage(err),
+      });
       throw AppError.fromHttpStatus(500, "Failed to load call.");
     }
   },
@@ -982,7 +1118,9 @@ router.get(
       ]);
       res.json({ balance_usd: balanceUsd, ledger });
     } catch (err) {
-      log.error("GET /api/mobile/wallet failed", { error: getErrorMessage(err) });
+      log.error("GET /api/mobile/wallet failed", {
+        error: getErrorMessage(err),
+      });
       throw AppError.fromHttpStatus(500, "Failed to load wallet.");
     }
   },
