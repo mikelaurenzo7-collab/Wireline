@@ -69,20 +69,115 @@ async function stripeStatus() {
   if (!key) return { status: "unknown", reason: "STRIPE_SECRET_KEY not supplied" };
   const priceId = process.env.STRIPE_STARTER_9_ANNUAL_PRICE_ID?.trim();
   const headers = { Authorization: `Bearer ${key}` };
-  const [balanceResult, priceResult] = await Promise.all([
-    jsonFetch("https://api.stripe.com/v1/balance", { headers }),
-    priceId
-      ? jsonFetch(`https://api.stripe.com/v1/prices/${encodeURIComponent(priceId)}`, { headers })
-      : Promise.resolve({ ok: false, status: 0, body: null }),
-  ]);
+  const [balanceResult, priceResult, accountResult, portalResult, webhookResult, taxResult] =
+    await Promise.all([
+      jsonFetch("https://api.stripe.com/v1/balance", { headers }),
+      priceId
+        ? jsonFetch(`https://api.stripe.com/v1/prices/${encodeURIComponent(priceId)}`, {
+            headers,
+          })
+        : Promise.resolve({ ok: false, status: 0, body: null }),
+      jsonFetch("https://api.stripe.com/v1/account", { headers }),
+      jsonFetch(
+        "https://api.stripe.com/v1/billing_portal/configurations?active=true&limit=100",
+        { headers },
+      ),
+      jsonFetch("https://api.stripe.com/v1/webhook_endpoints?limit=100", { headers }),
+      jsonFetch("https://api.stripe.com/v1/tax/settings", { headers }),
+    ]);
+
   const available = Array.isArray(balanceResult.body?.available)
     ? balanceResult.body.available.find((item) => item.currency === "usd")?.amount
     : null;
   const pending = Array.isArray(balanceResult.body?.pending)
     ? balanceResult.body.pending.find((item) => item.currency === "usd")?.amount
     : null;
+
+  const publicName = String(
+    accountResult.body?.business_profile?.name ||
+      accountResult.body?.settings?.dashboard?.display_name ||
+      "",
+  ).trim();
+  const statementDescriptor = String(
+    accountResult.body?.settings?.payments?.statement_descriptor || "",
+  )
+    .trim()
+    .toUpperCase();
+  const origin = (value) => {
+    if (typeof value !== "string" || !value.trim()) return null;
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === "https:" ? parsed.origin : null;
+    } catch {
+      return null;
+    }
+  };
+  const websiteOrigin = origin(accountResult.body?.business_profile?.url);
+  const supportOrigin = origin(accountResult.body?.business_profile?.support_url);
+  const brandReady =
+    /wireline/i.test(publicName) &&
+    statementDescriptor.startsWith("WIRELINE") &&
+    websiteOrigin === "https://trywireline.com" &&
+    supportOrigin === "https://trywireline.com";
+
+  const portalConfigurations = Array.isArray(portalResult.body?.data)
+    ? portalResult.body.data
+    : [];
+  const defaultPortal = portalConfigurations.find(
+    (configuration) => configuration?.active === true && configuration?.is_default === true,
+  );
+  const portalFeatures = defaultPortal?.features ?? {};
+  const portalReady = Boolean(
+    portalResult.ok &&
+      defaultPortal &&
+      portalFeatures.payment_method_update?.enabled === true &&
+      portalFeatures.invoice_history?.enabled === true &&
+      portalFeatures.subscription_cancel?.enabled === true,
+  );
+
+  const expectedWebhookEvents = [
+    "charge.dispute.created",
+    "charge.refunded",
+    "checkout.session.completed",
+    "customer.subscription.created",
+    "customer.subscription.deleted",
+    "customer.subscription.updated",
+    "invoice.payment_failed",
+    "invoice.payment_succeeded",
+  ];
+  const webhookEndpoints = Array.isArray(webhookResult.body?.data)
+    ? webhookResult.body.data
+    : [];
+  const webhook = webhookEndpoints.find(
+    (endpoint) =>
+      endpoint?.status === "enabled" &&
+      String(endpoint?.url || "").replace(/\/+$/, "") ===
+        "https://trywireline.com/api/stripe-webhook",
+  );
+  const enabledWebhookEvents = Array.isArray(webhook?.enabled_events)
+    ? [...webhook.enabled_events].sort()
+    : [];
+  const missingWebhookEvents = expectedWebhookEvents.filter(
+    (event) => !enabledWebhookEvents.includes(event),
+  );
+  const extraWebhookEvents = enabledWebhookEvents.filter(
+    (event) => event !== "*" && !expectedWebhookEvents.includes(event),
+  );
+  const webhookReady = Boolean(
+    webhook && missingWebhookEvents.length === 0 && extraWebhookEvents.length === 0,
+  );
+  const taxReady = Boolean(taxResult.ok && taxResult.body?.status === "active");
+
   return {
-    status: balanceResult.ok && priceResult.ok ? "reachable" : "blocked",
+    status:
+      balanceResult.ok &&
+      priceResult.ok &&
+      accountResult.ok &&
+      portalResult.ok &&
+      webhookResult.ok &&
+      taxResult.ok
+        ? "reachable"
+        : "blocked",
     available_usd: typeof available === "number" ? available / 100 : null,
     pending_usd: typeof pending === "number" ? pending / 100 : null,
     starter_annual: {
@@ -94,6 +189,30 @@ async function stripeStatus() {
       active: priceResult.body?.active === true,
       livemode: priceResult.body?.livemode === true,
       lookup_key: priceResult.body?.lookup_key ?? null,
+    },
+    brand: {
+      public_name: publicName || null,
+      statement_descriptor_ready: statementDescriptor.startsWith("WIRELINE"),
+      website_origin: websiteOrigin,
+      support_origin: supportOrigin,
+      ready: brandReady,
+    },
+    customer_portal: {
+      default_present: Boolean(defaultPortal),
+      payment_method_update: portalFeatures.payment_method_update?.enabled === true,
+      invoice_history: portalFeatures.invoice_history?.enabled === true,
+      subscription_cancel: portalFeatures.subscription_cancel?.enabled === true,
+      ready: portalReady,
+    },
+    webhook: {
+      endpoint_present: Boolean(webhook),
+      missing_events: missingWebhookEvents,
+      extra_events: extraWebhookEvents,
+      ready: webhookReady,
+    },
+    tax: {
+      status: taxResult.body?.status ?? null,
+      ready: taxReady,
     },
   };
 }
@@ -269,6 +388,10 @@ if (
 ) {
   blockers.push("starter_annual_price_not_live_190");
 }
+if (stripe.brand?.ready !== true) blockers.push("stripe_brand_not_wireline");
+if (stripe.customer_portal?.ready !== true) blockers.push("stripe_customer_portal_not_ready");
+if (stripe.webhook?.ready !== true) blockers.push("stripe_webhook_not_aligned");
+if (stripe.tax?.ready !== true) blockers.push("stripe_tax_not_active");
 if (database.recap_agent_index_present !== true) blockers.push("recap_agent_index_missing");
 if (typeof twilio.prepaid_balance_usd !== "number" || twilio.prepaid_balance_usd < 150) {
   blockers.push("twilio_prepaid_balance_below_150");
