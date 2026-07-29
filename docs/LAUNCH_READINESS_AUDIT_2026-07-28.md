@@ -39,6 +39,10 @@ The largest browser payload remains the 364 kB AreaChart chunk (107 kB gzip). It
 
 The route now performs subscription, agent, phone, and entitlement reads sequentially. This preserves all-or-nothing response semantics and leaves pool capacity for concurrent requests. A contract test pins the ordering and bans reintroducing `Promise.all` inside the route.
 
+### Tenant snapshot connection discipline
+
+The same causal pattern appeared in 15 additional pure-read batches that launched four to seven root tenant queries concurrently. Dashboard summaries, onboarding, insights, fleet/activity, agent workspaces, mobile setup, browser testing, Vapi assistant construction, outbound Vapi setup, OpenAI/xAI live-agent setup, and the daily brief now run each batch inside one tenant-scoped Drizzle transaction. Result tuple shapes and parallel-call semantics are preserved while node-postgres serializes the work on one scoped client. A release-gated contract scans every corrected file and prevents four-or-more root-query fan-out from returning.
+
 ### Recovery-token retention
 
 The daily per-tenant `purge_old_data` job now removes expired email-verification and password-reset token rows after the existing tenant purge. Deletes are tenant-scoped and sequential, with bounded deletion counts in structured logs. A contract test pins expiry, tenant ownership, and no fan-out.
