@@ -56,12 +56,14 @@ describe("launch truth contract", () => {
   it("describes deletion billing and provider spend controls as implemented", () => {
     const settings = read("src/pages/SettingsPage.tsx");
     const accountRoutes = read("src/routes/account-routes.ts");
+    const deletionBilling = read("src/lib/account-deletion-billing.ts");
     const spendRoutes = read("src/routes/spend-control-routes.ts");
     const spendView = read("src/components/insights/AISpendView.tsx");
 
     expect(settings).not.toContain("Billing continues until purge");
-    expect(accountRoutes).toContain("cancel_at_period_end: true");
     expect(accountRoutes).toContain("renewal_stopped");
+    expect(deletionBilling).toContain("cancel_at_period_end: true");
+    expect(deletionBilling).toContain("cancel_at_period_end: false");
     expect(spendRoutes).toContain("maximum_limit_usd");
     expect(spendRoutes).toContain("hard_cap must remain enabled");
     expect(spendView).toContain("Always on");
