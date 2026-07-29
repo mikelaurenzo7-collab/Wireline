@@ -91,7 +91,7 @@ export async function buildVapiAssistant({
         .from(schema.personality)
         .where(eq(schema.personality.agentId, agentId))
         .limit(1),
-    ])
+    ]),
   );
   const configured = agentRows[0];
   if (!configured) throw new Error("Agent not found for Vapi assistant request");
