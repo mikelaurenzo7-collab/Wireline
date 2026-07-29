@@ -38,39 +38,29 @@ router.get(
         return;
       }
 
-      const [[triageResult], [emailResult], [outboundResult], liveSignals] =
-        await drizzle.transaction((tx) =>
-          Promise.all([
-            tx
-              .select({ count: sql`count(*)` })
-              .from(schema.followUpTasks)
-              .where(
-                and(
-                  eq(schema.followUpTasks.userId, userId),
-                  eq(schema.followUpTasks.status, "pending"),
-                ),
+      const [[triageResult], [emailResult], [outboundResult], liveSignals] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx.select({ count: sql`count(*)` })
+            .from(schema.followUpTasks)
+            .where(
+              and(
+                eq(schema.followUpTasks.userId, userId),
+                eq(schema.followUpTasks.status, "pending"),
               ),
-            tx
-              .select({ count: sql`count(*)` })
-              .from(schema.emailThreads)
-              .where(
-                and(eq(schema.emailThreads.userId, userId), eq(schema.emailThreads.read, false)),
-              ),
-            tx
-              .select({ count: sql`count(*)` })
-              .from(schema.outboundLeads)
-              .where(
-                and(
-                  eq(schema.outboundLeads.userId, userId),
-                  eq(schema.outboundLeads.status, "Queued"),
-                ),
-              ),
-            tx
-              .select({ label: schema.signalPresence.label })
-              .from(schema.signalPresence)
-              .where(eq(schema.signalPresence.userId, userId)),
-          ]),
-        );
+            ),
+          tx.select({ count: sql`count(*)` })
+            .from(schema.emailThreads)
+            .where(and(eq(schema.emailThreads.userId, userId), eq(schema.emailThreads.read, false))),
+          tx.select({ count: sql`count(*)` })
+            .from(schema.outboundLeads)
+            .where(
+              and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "Queued")),
+            ),
+          tx.select({ label: schema.signalPresence.label })
+            .from(schema.signalPresence)
+            .where(eq(schema.signalPresence.userId, userId)),
+        ])
+      );
 
       const triageCount = Number(triageResult.count);
       const emailCount = Number(emailResult.count);
@@ -200,16 +190,13 @@ router.get(
         prevLogsResult,
       ] = await drizzle.transaction((tx) =>
         Promise.all([
-          tx
-            .select({ count: sql`count(*)` })
+          tx.select({ count: sql`count(*)` })
             .from(schema.appointments)
             .where(eq(schema.appointments.userId, userId)),
-          tx
-            .select({ count: sql`count(*)` })
+          tx.select({ count: sql`count(*)` })
             .from(schema.outboundLeads)
             .where(eq(schema.outboundLeads.userId, userId)),
-          tx
-            .select({
+          tx.select({
               id: schema.callLogs.id,
               cost: schema.callLogs.cost,
               durationSeconds: schema.callLogs.durationSeconds,
@@ -226,8 +213,7 @@ router.get(
             .where(eq(schema.callLogs.userId, userId))
             .orderBy(desc(schema.callLogs.createdAt))
             .limit(200),
-          tx
-            .select({
+          tx.select({
               id: schema.agents.id,
               name: schema.agents.name,
               channel: schema.agents.channel,
@@ -236,8 +222,7 @@ router.get(
             .from(schema.agents)
             .where(eq(schema.agents.userId, userId))
             .limit(500),
-          tx
-            .select({
+          tx.select({
               id: schema.emailThreads.id,
               customerEmail: schema.emailThreads.customerEmail,
               leadScore: schema.emailThreads.leadScore,
@@ -251,8 +236,7 @@ router.get(
             )
             .orderBy(desc(schema.emailThreads.createdAt))
             .limit(5),
-          tx
-            .select({ createdAt: schema.appointments.createdAt })
+          tx.select({ createdAt: schema.appointments.createdAt })
             .from(schema.appointments)
             .where(
               and(
@@ -260,8 +244,7 @@ router.get(
                 gte(schema.appointments.createdAt, sevenDaysAgo),
               ),
             ),
-          tx
-            .select({
+          tx.select({
               id: schema.callLogs.id,
               cost: schema.callLogs.cost,
               leadScore: schema.callLogs.leadScore,
@@ -276,7 +259,7 @@ router.get(
               ),
             )
             .limit(500),
-        ]),
+        ])
       );
 
       const totalAppointments = Number(apptCountResult[0]?.count ?? 0);
@@ -306,9 +289,7 @@ router.get(
           intent_label: e.intentLabel,
           created_at: e.createdAt,
         })) as any,
-        recentAppts: recentApptsResult.map((a) => ({
-          created_at: a.createdAt,
-        })) as any,
+        recentAppts: recentApptsResult.map((a) => ({ created_at: a.createdAt })) as any,
       });
 
       const responseData = {
@@ -426,9 +407,7 @@ router.get(
         hasMore: offset + limit < count,
       });
     } catch (error: any) {
-      log.error("Failed to fetch appointments", {
-        error: getErrorMessage(error),
-      });
+      log.error("Failed to fetch appointments", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to fetch appointments");
     }
   },
@@ -530,9 +509,7 @@ router.post(
       invalidateDashboard(req.user.id);
       res.json({ appointment: data });
     } catch (error: any) {
-      log.error("Failed to create appointment", {
-        error: getErrorMessage(error),
-      });
+      log.error("Failed to create appointment", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to create appointment");
     }
   },
@@ -569,9 +546,9 @@ router.patch(
         bodyUpdates.status !== undefined &&
         !APPOINTMENT_STATUSES.includes(bodyUpdates.status as (typeof APPOINTMENT_STATUSES)[number])
       ) {
-        return res.status(400).json({
-          error: `status must be one of: ${APPOINTMENT_STATUSES.join(", ")}`,
-        });
+        return res
+          .status(400)
+          .json({ error: `status must be one of: ${APPOINTMENT_STATUSES.join(", ")}` });
       }
 
       if (bodyUpdates.agent_id) {
@@ -612,9 +589,7 @@ router.patch(
       invalidateDashboard(req.user.id);
       res.json({ appointment: data });
     } catch (error: any) {
-      log.error("Failed to update appointment", {
-        error: getErrorMessage(error),
-      });
+      log.error("Failed to update appointment", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to update appointment");
     }
   },
@@ -637,9 +612,7 @@ router.delete(
       invalidateDashboard(req.user.id);
       res.json({ success: true });
     } catch (error: any) {
-      log.error("Failed to delete appointment", {
-        error: getErrorMessage(error),
-      });
+      log.error("Failed to delete appointment", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to delete appointment");
     }
   },
