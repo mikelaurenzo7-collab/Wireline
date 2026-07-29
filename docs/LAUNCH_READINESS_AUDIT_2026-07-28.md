@@ -12,11 +12,11 @@ This is dated evidence, not product doctrine. Canonical policy remains in the co
 
 The deep pass verified that Wireline has a coherent product model, a guarded OpenAI-first runtime, a versioned Founder pricing catalog, tenant-isolated data, activation/spend controls, provider fallbacks, and an extensive launch-test suite. It also found one production billing-status failure caused by avoidable serverless pool fan-out, indefinite retention of expired recovery credentials, a false-green Stripe readiness check, email diagnostics that could expose recipient addresses or a verification bearer link, and a shared database-error formatter that retained Drizzle bound parameters.
 
-All verified code wins are implemented on the audit branch. No speculative redesign, vendor expansion, or destructive data cleanup was applied.
+All verified code wins are implemented on the audit branch. A follow-up 2026-07-29 pass also found that the margin model omitted Stripe Billing and future Tax transaction fees, while Vapi end-of-call persistence read several current report fields only from compatibility locations. Both defects are now corrected and permanently release-gated. No speculative redesign, vendor expansion, or destructive data cleanup was applied.
 
 ## Exact-head release evidence
 
-The full launch audit completed on code-bearing commit `81cbc2e4f1b968750e3ba392d45f60c1634185b0` (`dpl_HVneixtSVEAtDjazD3tCgwFsBkvZ`, `READY`). This evidence-only documentation update does not change the audited runtime.
+The original full launch audit completed on code-bearing commit `81cbc2e4f1b968750e3ba392d45f60c1634185b0` (`dpl_HVneixtSVEAtDjazD3tCgwFsBkvZ`, `READY`). Later billing, Vapi, and documentation changes are covered by the branch's `[launch-deep-audit]` Vercel gate; the final exact-head deployment result is recorded on PR #943 so documenting it does not create an unaudited follow-up commit.
 
 | Gate | Result |
 | --- | --- |
@@ -72,21 +72,33 @@ The read-only vendor probe and generated launch-status record now verify all of 
 
 A regression contract pins these fail-closed gates.
 
+### Complete Stripe commercial-fee reserve
+
+The shared margin model previously reserved Stripe Payments (2.9% + $0.30) but omitted Stripe Billing's 0.7% of subscription volume and the future Stripe Tax transaction fee. That made the Pro annual full-use margin appear above 30% when the complete commercial stack put 250 included minutes below the policy floor.
+
+One shared helper now reserves Payments, Billing, and a conservative 0.5% future Tax transaction fee for every catalog and tenant-economics calculation. Pro is tightened from 250 to **245 included minutes**; prices, plan ids, catalog version, add-ons, and prepaid-only overflow are unchanged. Code, tests, agent knowledge, operator docs, environment examples, and live Stripe product/price metadata are aligned. Vercel permanently runs the plan and capacity suites.
+
+### Vapi end-of-call evidence integrity
+
+Current Vapi reports can place cost and timestamps on the report message and transcript/recording data inside `artifact`; call API objects retain compatible cost/timestamp and cost-breakdown shapes. The handler previously preferred call-object timestamps, persisted only `call.cost`, and read only direct transcript/recording fields. Missing cost was coerced to zero, erasing the distinction between absent telemetry and a genuinely free call.
+
+A pure normalizer now resolves both current and compatibility shapes, preserves a real zero, refuses to undercount incomplete cost breakdowns, and stores missing cost as null. Insert, outbound-placeholder finalization, AI enrichment, digest, compliance, and retry-safe evidence backfill all consume the same normalized values. Focused tests are part of every Vercel deployment.
+
 ## Pricing, billing, and unit economics
 
 The live Founder catalog matches code:
 
-| Offer | Monthly | Annual |
-| --- | ---: | ---: |
-| Starter | $19 | $190 |
-| Starter Plus | $39 | $390 |
-| Pro | $79 | $790 |
-| Business | $159 | $1,590 |
+| Offer | Monthly | Annual | Included voice |
+| --- | ---: | ---: | ---: |
+| Starter | $19 | $190 | 60 min |
+| Starter Plus | $39 | $390 | 120 min |
+| Pro | $79 | $790 | **245 min** |
+| Business | $159 | $1,590 | 450 min |
 | Extra agent + 50 minutes + one number | $15 | — |
 | Live Video add-on | $19 | — |
 | Runtime Balance | $10 / $25 / $50 / $100 | one-time |
 
-The code models $0.128 variable voice cost per minute, $1.15 per phone number per month, and Stripe's 2.9% + $0.30 fee assumption. Catalog checks preserve at least a 45% expected contribution-margin target and a 30% full-utilization floor; annual plans are the tightest but remain above the floor.
+The code models $0.128 variable voice cost per minute, $1.15 per phone number per month, Payments at 2.9% + $0.30, Billing at 0.7%, and a conservative future Tax transaction reserve of 0.5%. Catalog checks preserve at least a 45% expected contribution-margin target and a 30% full-utilization floor on both monthly and annual intervals. Annual full-use margins are 33.7%, 32.3%, 30.4%, and 30.3% from Starter through Business.
 
 The catalog, tax posture, and webhook endpoint are healthy. The customer-facing Stripe account still presents as **Cadence AI**, its public/support URLs are not fully aligned to Wireline, and no active portal configuration exists in the live account yet. The application is designed to create an explicit, catalog-fingerprinted managed configuration on first portal use, but that bootstrap has not been exercised. There are no live Stripe subscriptions; database subscription rows are demo/manual records. Paid self-serve launch is therefore **blocked** until the account identity is corrected and one controlled checkout-to-cancellation matrix proves portal bootstrap.
 
@@ -97,7 +109,7 @@ Supabase reports the project `ACTIVE_HEALTHY` on Postgres 17.6.1. All inspected 
 Observed production state:
 
 - 5,750 jobs finished in the prior 30 days at the final database sample, with zero pending or stale jobs; five dead historical jobs remain (one intentionally disabled knowledge-URL job and four May purge jobs from before the purge RPC was present; the current RPC exists);
-- 66 demo-marked call rows; four older demo fixtures carry `pipeline_error = 'dialing'`, while STT/TTS error flags are zero. No row is live-customer call proof;
+- 66 demo-marked call rows; 57 have duration, 52 have null cost, 14 have zero cost, and none has positive cost; 13 have transcripts and nine have recording references. Four older demo fixtures carry `pipeline_error = 'dialing'`, while STT/TTS error flags are zero. No row is live-customer call or empirical COGS proof;
 - 132/132 workspace spend budgets enabled with hard caps;
 - zero orphan carrier resources;
 - one account deletion pending inside its grace window and not overdue;
@@ -139,7 +151,9 @@ Provider expansion was not justified. Existing boundaries are intentionally laye
 
 The repository's production visual harness covers 35 public/marketing routes, 29 authenticated routes/states/tabs/modals, and four desktop/mobile viewport profiles. It also checks interactions, overflow, console errors, and accessibility.
 
-This audit did **not** reuse old screenshots or claim visual completion. Fresh screenshots are blocked until Opera's **Allow AI connection** is enabled. Exact viewport execution also requires explicit approval to run the repository's Playwright harness because Opera's connector cannot resize or drive the full interaction matrix.
+A fresh semantic browser pass covered all 30 sitemap routes at 1363×936: titles, H1s, canonical/meta tags, image loading, input labels, duplicate ids, and horizontal overflow were clean; the status page settled from its transient check to operational. That pass also found and fixed the Trust canonical/landmark defects and moved signup's primary action above the desktop fold.
+
+This audit does **not** claim the requested screenshot matrix complete. Exact 1440×1100, 1280×900, 834×1112, and 390×844 public/authenticated screenshots, modal/tab states, and side-by-side visual comparisons remain blocked until Opera's **Allow AI connection** is enabled. Running the repository's Playwright harness still requires explicit approval under the selected Product Design browser policy.
 
 ## Release blockers
 
