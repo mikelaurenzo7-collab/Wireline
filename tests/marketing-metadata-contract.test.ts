@@ -30,6 +30,19 @@ describe("marketing metadata contract", () => {
     expect(staticHead).not.toMatch(/"@type"\s*:\s*"Offer"/);
   });
 
+  it("keeps Trust Center metadata distinct and one main landmark per page", () => {
+    const security = read("src/components/Security.tsx");
+    const trustPack = read("src/components/TrustPackPage.tsx");
+    const marketingChrome = read("src/components/marketing/MarketingChrome.tsx");
+    const sitemap = read("public/sitemap.xml");
+
+    expect(security).toContain('path={isTrustHub ? "/trust" : "/security"}');
+    expect(sitemap).toContain("<loc>https://trywireline.com/trust</loc>");
+    expect(marketingChrome.match(/<main\\b/g)).toHaveLength(1);
+    expect(trustPack).not.toMatch(/<main\\b/);
+    expect(trustPack).not.toContain("</main>");
+  });
+
   it("keeps public pricing and contact copy aligned to the active catalog", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const planCatalog = read("src/lib/plan-catalog.ts");
