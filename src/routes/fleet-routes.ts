@@ -11,10 +11,7 @@ import { fleetRateLimit } from "../middleware/api-rate-limits";
 import { validateBody, updateFollowUpTaskSchema } from "../lib/api-validation";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
-import {
-  parseFormData,
-  FollowUpTaskCreateSchema,
-} from "../lib/form-validators";
+import { parseFormData, FollowUpTaskCreateSchema } from "../lib/form-validators";
 import { compileActivityFeed } from "../lib/fleet-activity";
 import { executeAction } from "../lib/action-engine";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
@@ -23,13 +20,7 @@ import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
-const FLEET_TASK_STATUSES = [
-  "pending",
-  "open",
-  "in_progress",
-  "completed",
-  "cancelled",
-] as const;
+const FLEET_TASK_STATUSES = ["pending", "open", "in_progress", "completed", "cancelled"] as const;
 const FLEET_TASK_PRIORITIES = ["low", "medium", "high"] as const;
 
 router.post(
@@ -111,29 +102,20 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const VALID_STATUSES = new Set([
-        "pending",
-        "in_progress",
-        "completed",
-        "cancelled",
-      ]);
+      const VALID_STATUSES = new Set(["pending", "in_progress", "completed", "cancelled"]);
       const VALID_PRIORITIES = new Set(["high", "medium", "low"]);
       const statusFilter =
-        typeof req.query.status === "string" &&
-        VALID_STATUSES.has(req.query.status)
+        typeof req.query.status === "string" && VALID_STATUSES.has(req.query.status)
           ? req.query.status
           : null;
       const priorityFilter =
-        typeof req.query.priority === "string" &&
-        VALID_PRIORITIES.has(req.query.priority)
+        typeof req.query.priority === "string" && VALID_PRIORITIES.has(req.query.priority)
           ? req.query.priority
           : null;
 
       const whereClauses = [eq(schema.followUpTasks.userId, req.user.id)];
-      if (statusFilter)
-        whereClauses.push(eq(schema.followUpTasks.status, statusFilter));
-      if (priorityFilter)
-        whereClauses.push(eq(schema.followUpTasks.priority, priorityFilter));
+      if (statusFilter) whereClauses.push(eq(schema.followUpTasks.status, statusFilter));
+      if (priorityFilter) whereClauses.push(eq(schema.followUpTasks.priority, priorityFilter));
 
       const tasks = await drizzle
         .select({
@@ -160,10 +142,7 @@ router.get(
           },
         })
         .from(schema.followUpTasks)
-        .leftJoin(
-          schema.agents,
-          eq(schema.followUpTasks.agentId, schema.agents.id),
-        )
+        .leftJoin(schema.agents, eq(schema.followUpTasks.agentId, schema.agents.id))
         .where(and(...whereClauses))
         .limit(1000);
 
@@ -180,9 +159,7 @@ router.get(
         if (weightA !== weightB) return weightB - weightA;
         if (a.dueDate && b.dueDate)
           return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-        return (
-          new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
-        );
+        return new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime();
       });
 
       res.json({ tasks: sortedTasks });
@@ -247,41 +224,29 @@ router.patch(
   validateBody(updateFollowUpTaskSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const {
-        status,
-        priority,
-        due_date,
-        agent_id,
-        resolution_notes,
-        description,
-        payload,
-      } = req.body;
+      const { status, priority, due_date, agent_id, resolution_notes, description, payload } =
+        req.body;
       const updateData: any = {};
       if (status !== undefined) {
         const normalizedStatus = status === "done" ? "completed" : status;
         if (!FLEET_TASK_STATUSES.includes(normalizedStatus)) {
-          return res
-            .status(400)
-            .json({
-              error: `status must be one of: ${FLEET_TASK_STATUSES.join(", ")}`,
-            });
+          return res.status(400).json({
+            error: `status must be one of: ${FLEET_TASK_STATUSES.join(", ")}`,
+          });
         }
         updateData.status = normalizedStatus;
       }
       if (priority !== undefined) {
         if (!FLEET_TASK_PRIORITIES.includes(priority)) {
-          return res
-            .status(400)
-            .json({
-              error: `priority must be one of: ${FLEET_TASK_PRIORITIES.join(", ")}`,
-            });
+          return res.status(400).json({
+            error: `priority must be one of: ${FLEET_TASK_PRIORITIES.join(", ")}`,
+          });
         }
         updateData.priority = priority;
       }
       if (due_date !== undefined) updateData.dueDate = new Date(due_date);
       if (agent_id !== undefined) updateData.agentId = agent_id;
-      if (resolution_notes !== undefined)
-        updateData.resolutionNotes = resolution_notes;
+      if (resolution_notes !== undefined) updateData.resolutionNotes = resolution_notes;
       if (description !== undefined) updateData.description = description;
       if (payload !== undefined && payload && typeof payload === "object") {
         updateData.payload = payload;
@@ -316,12 +281,7 @@ router.post(
       const [task] = await drizzle
         .select()
         .from(schema.followUpTasks)
-        .where(
-          and(
-            eq(schema.followUpTasks.id, taskId),
-            eq(schema.followUpTasks.userId, userId),
-          ),
-        )
+        .where(and(eq(schema.followUpTasks.id, taskId), eq(schema.followUpTasks.userId, userId)))
         .limit(1);
 
       if (!task) {
@@ -476,18 +436,10 @@ router.get(
 //  TRIAGE INBOX — "what needs my attention right now"
 // ──────────────────────────────────────────────────────────
 
-router.get(
-  "/api/triage",
-  authenticateUser,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const [
-        hotLeads,
-        complianceTasks,
-        pendingTasks,
-        knowledgeGaps,
-        escalations,
-      ] = await drizzle.transaction((tx) =>
+router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const [hotLeads, complianceTasks, pendingTasks, knowledgeGaps, escalations] =
+      await drizzle.transaction((tx) =>
         Promise.all([
           tx
             .select({
@@ -504,10 +456,7 @@ router.get(
               and(
                 eq(schema.callLogs.userId, req.user.id),
                 gte(schema.callLogs.leadScore, 70),
-                gte(
-                  schema.callLogs.createdAt,
-                  new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-                ),
+                gte(schema.callLogs.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)),
               ),
             )
             .orderBy(desc(schema.callLogs.leadScore))
@@ -573,30 +522,29 @@ router.get(
         ]),
       );
 
-      // UI reads snake_case (customer_number, lead_score, created_at). Drizzle
-      // hands us camelCase. Normalize at the boundary so the triage card stops
-      // falling back to "Unknown caller" for every entry.
-      res.json({
-        hot_leads: mapObjectToSnake(hotLeads || []),
-        compliance: mapObjectToSnake(complianceTasks || []),
-        pending_tasks: mapObjectToSnake(pendingTasks || []),
-        knowledge_gaps: mapObjectToSnake(knowledgeGaps || []),
-        escalations: mapObjectToSnake(escalations || []),
-        counts: {
-          hot_leads: hotLeads?.length || 0,
-          compliance: complianceTasks?.length || 0,
-          pending_tasks: pendingTasks?.length || 0,
-          knowledge_gaps: knowledgeGaps?.length || 0,
-          escalations: escalations?.length || 0,
-        },
-      });
-    } catch (e: any) {
-      log.error("Triage fetch failed", {
-        error: e instanceof Error ? e.message : String(e),
-      });
-      throw AppError.fromHttpStatus(500, "Failed to fetch triage inbox");
-    }
-  },
-);
+    // UI reads snake_case (customer_number, lead_score, created_at). Drizzle
+    // hands us camelCase. Normalize at the boundary so the triage card stops
+    // falling back to "Unknown caller" for every entry.
+    res.json({
+      hot_leads: mapObjectToSnake(hotLeads || []),
+      compliance: mapObjectToSnake(complianceTasks || []),
+      pending_tasks: mapObjectToSnake(pendingTasks || []),
+      knowledge_gaps: mapObjectToSnake(knowledgeGaps || []),
+      escalations: mapObjectToSnake(escalations || []),
+      counts: {
+        hot_leads: hotLeads?.length || 0,
+        compliance: complianceTasks?.length || 0,
+        pending_tasks: pendingTasks?.length || 0,
+        knowledge_gaps: knowledgeGaps?.length || 0,
+        escalations: escalations?.length || 0,
+      },
+    });
+  } catch (e: any) {
+    log.error("Triage fetch failed", {
+      error: e instanceof Error ? e.message : String(e),
+    });
+    throw AppError.fromHttpStatus(500, "Failed to fetch triage inbox");
+  }
+});
 
 export default router;
