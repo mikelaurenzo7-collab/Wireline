@@ -73,13 +73,10 @@ export type CreateGrokVoiceSessionInput = {
   apiKeyPurpose?: "runtime" | "chatgpt_demo";
 };
 
-function getXaiApiKey(
-  purpose: CreateGrokVoiceSessionInput["apiKeyPurpose"] = "runtime",
-): string {
+function getXaiApiKey(purpose: CreateGrokVoiceSessionInput["apiKeyPurpose"] = "runtime"): string {
   const apiKey =
-    (purpose === "chatgpt_demo"
-      ? process.env.XAI_API_KEY_CHATKIT?.trim()
-      : "") || process.env.XAI_API_KEY?.trim();
+    (purpose === "chatgpt_demo" ? process.env.XAI_API_KEY_CHATKIT?.trim() : "") ||
+    process.env.XAI_API_KEY?.trim();
   if (!apiKey) {
     throw AppError.fromHttpStatus(
       503,
@@ -95,11 +92,7 @@ function trimLine(value: unknown, max = MAX_PROMPT_LINE_LENGTH): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
-function listBlock(
-  title: string,
-  values: Array<{ content?: string | null }>,
-  maxItems: number,
-) {
+function listBlock(title: string, values: Array<{ content?: string | null }>, maxItems: number) {
   const lines = values
     .map((item) => trimLine(item.content))
     .filter(Boolean)
@@ -138,10 +131,7 @@ function getConfiguredVoiceId(value: unknown): string | null {
   const root = asRecord(value);
   const nested = asRecord(root.voice);
   const candidate =
-    root.grokVoiceId ||
-    root.grok_voice_id ||
-    nested.grokVoiceId ||
-    nested.grok_voice_id;
+    root.grokVoiceId || root.grok_voice_id || nested.grokVoiceId || nested.grok_voice_id;
   if (typeof candidate !== "string") return null;
   const voiceId = candidate.trim();
   return /^[A-Za-z0-9_-]{3,160}$/.test(voiceId) ? voiceId : null;
@@ -195,17 +185,11 @@ function buildInstructions(
     (agent.personalityVibe ? `Tone: ${agent.personalityVibe}.` : "");
   return [
     identity,
-    customInstructions
-      ? `\nCUSTOM ROLE INSTRUCTIONS:\n${customInstructions}`
-      : "",
+    customInstructions ? `\nCUSTOM ROLE INSTRUCTIONS:\n${customInstructions}` : "",
     tone ? `\nTONE:\n${tone}` : "",
     compliance ? `\nGUARDRAILS:\n${compliance}` : "",
     listBlock("OPERATING RULES", directives, 24),
-    listBlock(
-      "INITIAL APPROVED KNOWLEDGE",
-      knowledge,
-      MAX_INITIAL_KNOWLEDGE_ITEMS,
-    ),
+    listBlock("INITIAL APPROVED KNOWLEDGE", knowledge, MAX_INITIAL_KNOWLEDGE_ITEMS),
     `\n${buildGrokStrengthsPromptSection()}`,
   ]
     .filter(Boolean)
@@ -228,67 +212,46 @@ function buildDraftInstructions(agentName?: string | null): string {
 }
 
 async function loadAgentRuntime(agentId: string, userId: string) {
-  const [agents, personalities, directives, knowledge] =
-    await drizzle.transaction((tx) =>
-      Promise.all([
-        tx
-          .select({
-            id: schema.agents.id,
-            userId: schema.agents.userId,
-            name: schema.agents.name,
-            role: schema.agents.role,
-            firstMessage: schema.agents.firstMessage,
-            personalityVibe: schema.agents.personalityVibe,
-            systemPromptOverride: schema.agents.systemPromptOverride,
-            complianceMode: schema.agents.complianceMode,
-            disallowedTopics: schema.agents.disallowedTopics,
-            escalationKeywords: schema.agents.escalationKeywords,
-            escalationPhone: schema.agents.escalationPhone,
-            escalationEmail: schema.agents.escalationEmail,
-            businessVariables: schema.agents.businessVariables,
-          })
-          .from(schema.agents)
-          .where(
-            and(
-              eq(schema.agents.id, agentId),
-              eq(schema.agents.userId, userId),
-            ),
-          )
-          .limit(1),
-        tx
-          .select({ content: schema.personality.content })
-          .from(schema.personality)
-          .where(
-            and(
-              eq(schema.personality.agentId, agentId),
-              eq(schema.personality.userId, userId),
-            ),
-          )
-          .limit(1),
-        tx
-          .select({ content: schema.directives.content })
-          .from(schema.directives)
-          .where(
-            and(
-              eq(schema.directives.agentId, agentId),
-              eq(schema.directives.userId, userId),
-            ),
-          )
-          .orderBy(desc(schema.directives.priority))
-          .limit(40),
-        tx
-          .select({ content: schema.knowledge.content })
-          .from(schema.knowledge)
-          .where(
-            and(
-              eq(schema.knowledge.agentId, agentId),
-              eq(schema.knowledge.userId, userId),
-            ),
-          )
-          .orderBy(desc(schema.knowledge.createdAt))
-          .limit(80),
-      ]),
-    );
+  const [agents, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
+    Promise.all([
+      tx
+        .select({
+          id: schema.agents.id,
+          userId: schema.agents.userId,
+          name: schema.agents.name,
+          role: schema.agents.role,
+          firstMessage: schema.agents.firstMessage,
+          personalityVibe: schema.agents.personalityVibe,
+          systemPromptOverride: schema.agents.systemPromptOverride,
+          complianceMode: schema.agents.complianceMode,
+          disallowedTopics: schema.agents.disallowedTopics,
+          escalationKeywords: schema.agents.escalationKeywords,
+          escalationPhone: schema.agents.escalationPhone,
+          escalationEmail: schema.agents.escalationEmail,
+          businessVariables: schema.agents.businessVariables,
+        })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+        .limit(1),
+      tx
+        .select({ content: schema.personality.content })
+        .from(schema.personality)
+        .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)))
+        .limit(1),
+      tx
+        .select({ content: schema.directives.content })
+        .from(schema.directives)
+        .where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId)))
+        .orderBy(desc(schema.directives.priority))
+        .limit(40),
+      tx
+        .select({ content: schema.knowledge.content })
+        .from(schema.knowledge)
+        .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
+        .orderBy(desc(schema.knowledge.createdAt))
+        .limit(80),
+    ]),
+  );
   const agent = agents[0] as AgentRow | undefined;
   if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
   return {
@@ -299,9 +262,7 @@ async function loadAgentRuntime(agentId: string, userId: string) {
   };
 }
 
-export async function createGrokVoiceClientSession(
-  input: CreateGrokVoiceSessionInput,
-) {
+export async function createGrokVoiceClientSession(input: CreateGrokVoiceSessionInput) {
   const purpose = input.apiKeyPurpose || "runtime";
   const apiKey = getXaiApiKey(purpose);
   const draftInstructions = input.instructions?.trim() || "";
@@ -309,9 +270,7 @@ export async function createGrokVoiceClientSession(
   // A ChatGPT draft agent is not necessarily a persisted row in the agents
   // table, so draft sessions never touch loadAgentRuntime's persisted-agent
   // lookup.
-  const runtime = isDraftSession
-    ? null
-    : await loadAgentRuntime(input.agentId, input.userId);
+  const runtime = isDraftSession ? null : await loadAgentRuntime(input.agentId, input.userId);
   const selectedVoice = runtime
     ? resolveVoiceSelection(runtime.agent)
     : {
@@ -323,12 +282,7 @@ export async function createGrokVoiceClientSession(
   const instructions = draftInstructions
     ? draftInstructions.slice(0, 16_000)
     : runtime
-      ? buildInstructions(
-          runtime.agent,
-          runtime.personality,
-          runtime.directives,
-          runtime.knowledge,
-        )
+      ? buildInstructions(runtime.agent, runtime.personality, runtime.directives, runtime.knowledge)
       : buildDraftInstructions(input.agentName);
   const session = {
     voice: selectedVoice.voice,
@@ -390,10 +344,7 @@ export async function createGrokVoiceClientSession(
         status: response.status,
         body: raw.slice(0, 300),
       });
-      throw AppError.fromHttpStatus(
-        502,
-        "Live voice session could not be started.",
-      );
+      throw AppError.fromHttpStatus(502, "Live voice session could not be started.");
     }
     log.info("xAI live voice session issued", {
       userId: input.userId,
@@ -459,12 +410,8 @@ export async function runGrokVoiceTool(input: {
       ? (input.arguments as Record<string, unknown>)
       : {};
   const query = trimLine(raw.query, 600);
-  if (!query)
-    throw AppError.fromHttpStatus(400, "A Training search query is required.");
-  const { directives, knowledge } = await loadAgentRuntime(
-    input.agentId,
-    input.userId,
-  );
+  if (!query) throw AppError.fromHttpStatus(400, "A Training search query is required.");
+  const { directives, knowledge } = await loadAgentRuntime(input.agentId, input.userId);
   const normalizedQuery = query.toLowerCase();
   const queryTokens = tokens(query);
   const snippets: Snippet[] = [
