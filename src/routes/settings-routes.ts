@@ -312,9 +312,7 @@ router.post(
       });
     } catch (error) {
       if (error instanceof AppError) throw error;
-      log.error("Failed to update preferences", {
-        error: getErrorMessage(error),
-      });
+      log.error("Failed to update preferences", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to update preferences");
     }
   },
@@ -326,38 +324,30 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user.id;
-      const [[agentRow], [callLogRow], [settingsRow], [prefsRow], [phoneRow]] =
-        await drizzle.transaction((tx) =>
-          Promise.all([
-            tx
-              .select({ count: sql<number>`count(*)` })
-              .from(agents)
-              .where(eq(agents.userId, userId)),
-            tx
-              .select({ count: sql<number>`count(*)` })
-              .from(callLogs)
-              .where(eq(callLogs.userId, userId)),
-            tx
-              .select({
-                subscriptionStatus: settings.subscriptionStatus,
-                vapiPhoneNumberId: settings.vapiPhoneNumberId,
-              })
-              .from(settings)
-              .where(eq(settings.userId, userId))
-              .limit(1),
-            tx
-              .select({
-                onboardingCompleted: userPreferences.onboardingCompleted,
-              })
-              .from(userPreferences)
-              .where(eq(userPreferences.userId, userId))
-              .limit(1),
-            tx
-              .select({ count: sql<number>`count(*)` })
-              .from(schema.phoneNumbers)
-              .where(eq(schema.phoneNumbers.userId, userId)),
-          ]),
-        );
+      const [[agentRow], [callLogRow], [settingsRow], [prefsRow], [phoneRow]] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx.select({ count: sql<number>`count(*)` })
+            .from(agents)
+            .where(eq(agents.userId, userId)),
+          tx.select({ count: sql<number>`count(*)` })
+            .from(callLogs)
+            .where(eq(callLogs.userId, userId)),
+          tx.select({
+              subscriptionStatus: settings.subscriptionStatus,
+              vapiPhoneNumberId: settings.vapiPhoneNumberId,
+            })
+            .from(settings)
+            .where(eq(settings.userId, userId))
+            .limit(1),
+          tx.select({ onboardingCompleted: userPreferences.onboardingCompleted })
+            .from(userPreferences)
+            .where(eq(userPreferences.userId, userId))
+            .limit(1),
+          tx.select({ count: sql<number>`count(*)` })
+            .from(schema.phoneNumbers)
+            .where(eq(schema.phoneNumbers.userId, userId)),
+        ])
+      );
 
       const platformVoiceReady = Boolean(process.env.VAPI_PRIVATE_KEY?.trim());
       const tenantHasNumber =
@@ -374,9 +364,7 @@ router.get(
       });
     } catch (error) {
       if (error instanceof AppError) throw error;
-      log.error("Failed to fetch onboarding progress", {
-        error: getErrorMessage(error),
-      });
+      log.error("Failed to fetch onboarding progress", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to fetch progress");
     }
   },
@@ -501,10 +489,7 @@ router.post(
         maxAttempts: 3,
       });
       if (!result.ok) {
-        log.error("Failed to enqueue purge_old_data job", {
-          user_id: uid,
-          error: result.error,
-        });
+        log.error("Failed to enqueue purge_old_data job", { user_id: uid, error: result.error });
         throw AppError.fromHttpStatus(500, "Failed to schedule purge job");
       }
       log.info("purge_old_data job enqueued on demand", {
@@ -512,11 +497,7 @@ router.post(
         retention_days: retentionDays,
         jobId: result.jobId,
       });
-      res.json({
-        success: true,
-        retention_days: retentionDays,
-        job_id: result.jobId,
-      });
+      res.json({ success: true, retention_days: retentionDays, job_id: result.jobId });
     } catch (err: any) {
       log.error("POST /api/account/purge-old-data failed", {
         error: getErrorMessage(err),
@@ -607,10 +588,7 @@ router.delete(
         billing_period_end: renewal.billingPeriodEnd,
       });
     } catch (err: any) {
-      log.error("account deletion enqueue failed", {
-        uid,
-        error: getErrorMessage(err),
-      });
+      log.error("account deletion enqueue failed", { uid, error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to schedule account deletion.");
     }
   },
