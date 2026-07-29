@@ -87,4 +87,25 @@ describe("double-pass launch honesty", () => {
     expect(agentRead).toBeLessThan(phoneRead);
     expect(phoneRead).toBeLessThan(entitlementRead);
   });
+
+  it("fails launch closed when Stripe brand or customer controls drift", () => {
+    const vendorProbe = read("scripts/check-vendor-readiness.mjs");
+    expect(vendorProbe).toContain("/v1/billing_portal/configurations?active=true&limit=100");
+    expect(vendorProbe).toContain("/v1/webhook_endpoints?limit=100");
+    expect(vendorProbe).toContain("/v1/tax/settings");
+    expect(vendorProbe).toContain("stripeBrandReady");
+    expect(vendorProbe).toContain("stripePortalReady");
+    expect(vendorProbe).toContain("stripeWebhookReady");
+    expect(vendorProbe).toContain("stripeTaxReady");
+    expect(vendorProbe).toContain(
+      "stripeCoreReady && stripeBrandReady && stripePortalReady && stripeWebhookReady && stripeTaxReady",
+    );
+
+    const launchStatus = read("scripts/generate-launch-status.mjs");
+    expect(launchStatus).toContain('blockers.push("stripe_brand_not_wireline")');
+    expect(launchStatus).toContain('blockers.push("stripe_customer_portal_not_ready")');
+    expect(launchStatus).toContain('blockers.push("stripe_webhook_not_aligned")');
+    expect(launchStatus).toContain('blockers.push("stripe_tax_not_active")');
+  });
+
 });
