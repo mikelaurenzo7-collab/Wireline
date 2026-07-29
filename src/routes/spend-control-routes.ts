@@ -117,6 +117,7 @@ router.put(
           hardCap,
           warnThresholdPct: warn,
           enabled,
+          managedDefault: false,
           updatedAt: new Date(),
         })
         .onConflictDoUpdate({
@@ -126,6 +127,7 @@ router.put(
             hardCap,
             warnThresholdPct: warn,
             enabled,
+            managedDefault: false,
             updatedAt: new Date(),
           },
         })
