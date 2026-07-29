@@ -104,6 +104,11 @@ run("npx", [
   // Missing or malformed spend controls and partial signup bootstrap are
   // provider-cost and entitlement-integrity failures.
   "tests/spend-guard-integrity-contract.test.ts",
+  // Public launch claims, customer-controlled spend provenance, and reversible
+  // subscription deletion are release boundaries, not optional regression tests.
+  "tests/launch-truth-contract.test.ts",
+  "tests/ai-cost-protection-contract.test.ts",
+  "tests/billing-proof-contract.test.ts",
   "tests/signup-bootstrap-integrity-contract.test.ts",
   "tests/repo-documentation-organization-contract.test.ts",
   "tests/marketing-metadata-contract.test.ts",
