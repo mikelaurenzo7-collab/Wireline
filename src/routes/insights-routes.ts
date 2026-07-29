@@ -36,10 +36,7 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const days = Math.min(
-        365,
-        Math.max(1, parseInt(String(req.query.days ?? "30"), 10) || 30),
-      );
+      const days = Math.min(365, Math.max(1, parseInt(String(req.query.days ?? "30"), 10) || 30));
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
       const userId = req.user.id;
@@ -131,20 +128,12 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const days = Math.min(
-        365,
-        Math.max(1, parseInt(String(req.query.days ?? "30"), 10) || 30),
-      );
+      const days = Math.min(365, Math.max(1, parseInt(String(req.query.days ?? "30"), 10) || 30));
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
       const buckets = await drizzle
         .select({
-          weekday:
-            sql<number>`extract(dow from ${schema.callLogs.createdAt})::int`.mapWith(
-              Number,
-            ),
-          hour: sql<number>`extract(hour from ${schema.callLogs.createdAt})::int`.mapWith(
-            Number,
-          ),
+          weekday: sql<number>`extract(dow from ${schema.callLogs.createdAt})::int`.mapWith(Number),
+          hour: sql<number>`extract(hour from ${schema.callLogs.createdAt})::int`.mapWith(Number),
           count: count(),
           avgScore:
             sql<number>`coalesce(round(avg(coalesce(${schema.callLogs.leadScore}, 0))), 0)::int`.mapWith(
@@ -152,12 +141,7 @@ router.get(
             ),
         })
         .from(schema.callLogs)
-        .where(
-          and(
-            eq(schema.callLogs.userId, req.user.id),
-            gte(schema.callLogs.createdAt, since),
-          ),
-        )
+        .where(and(eq(schema.callLogs.userId, req.user.id), gte(schema.callLogs.createdAt, since)))
         .groupBy(
           sql`extract(dow from ${schema.callLogs.createdAt})`,
           sql`extract(hour from ${schema.callLogs.createdAt})`,
@@ -201,10 +185,7 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const days = Math.min(
-        365,
-        Math.max(1, parseInt(String(req.query.days ?? "30"), 10) || 30),
-      );
+      const days = Math.min(365, Math.max(1, parseInt(String(req.query.days ?? "30"), 10) || 30));
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
       const userId = req.user.id;
@@ -217,83 +198,78 @@ router.get(
         gte(schema.appointments.createdAt, since),
       );
 
-      const [agents, callStats, apptStats, aiCostStats] =
-        await drizzle.transaction((tx) =>
-          Promise.all([
-            tx
-              .select({
-                id: schema.agents.id,
-                name: schema.agents.name,
-                archetype: schema.agents.archetype,
-                channel: schema.agents.channel,
-                role: schema.agents.role,
-              })
-              .from(schema.agents)
-              .where(eq(schema.agents.userId, userId))
-              .limit(500),
-            tx
-              .select({
-                agentId: schema.callLogs.agentId,
-                totalCalls: count(),
-                qualified:
-                  sql<number>`count(*) filter (where coalesce(${schema.callLogs.leadScore}, 0) >= 50)`.mapWith(
-                    Number,
-                  ),
-                highIntent:
-                  sql<number>`count(*) filter (where ${schema.callLogs.intentLabel} = 'high')`.mapWith(
-                    Number,
-                  ),
-                minutes:
-                  sql<number>`coalesce(round(sum(coalesce(${schema.callLogs.durationSeconds}, 0)) / 60.0), 0)::int`.mapWith(
-                    Number,
-                  ),
-                cost: sql<string>`coalesce(sum(coalesce(${schema.callLogs.cost}, 0)), 0)`.mapWith(
+      const [agents, callStats, apptStats, aiCostStats] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx
+            .select({
+              id: schema.agents.id,
+              name: schema.agents.name,
+              archetype: schema.agents.archetype,
+              channel: schema.agents.channel,
+              role: schema.agents.role,
+            })
+            .from(schema.agents)
+            .where(eq(schema.agents.userId, userId))
+            .limit(500),
+          tx
+            .select({
+              agentId: schema.callLogs.agentId,
+              totalCalls: count(),
+              qualified:
+                sql<number>`count(*) filter (where coalesce(${schema.callLogs.leadScore}, 0) >= 50)`.mapWith(
+                  Number,
+                ),
+              highIntent:
+                sql<number>`count(*) filter (where ${schema.callLogs.intentLabel} = 'high')`.mapWith(
+                  Number,
+                ),
+              minutes:
+                sql<number>`coalesce(round(sum(coalesce(${schema.callLogs.durationSeconds}, 0)) / 60.0), 0)::int`.mapWith(
+                  Number,
+                ),
+              cost: sql<string>`coalesce(sum(coalesce(${schema.callLogs.cost}, 0)), 0)`.mapWith(
+                String,
+              ),
+              avgScore:
+                sql<number>`coalesce(round(avg(coalesce(${schema.callLogs.leadScore}, 0))), 0)::int`.mapWith(
+                  Number,
+                ),
+            })
+            .from(schema.callLogs)
+            .where(callWhere)
+            .groupBy(schema.callLogs.agentId),
+          tx
+            .select({
+              agentId: schema.appointments.agentId,
+              bookings: count(),
+            })
+            .from(schema.appointments)
+            .where(apptWhere)
+            .groupBy(schema.appointments.agentId),
+          tx
+            .select({
+              agentId:
+                sql<string>`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`.mapWith(
                   String,
                 ),
-                avgScore:
-                  sql<number>`coalesce(round(avg(coalesce(${schema.callLogs.leadScore}, 0))), 0)::int`.mapWith(
-                    Number,
-                  ),
-              })
-              .from(schema.callLogs)
-              .where(callWhere)
-              .groupBy(schema.callLogs.agentId),
-            tx
-              .select({
-                agentId: schema.appointments.agentId,
-                bookings: count(),
-              })
-              .from(schema.appointments)
-              .where(apptWhere)
-              .groupBy(schema.appointments.agentId),
-            tx
-              .select({
-                agentId:
-                  sql<string>`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`.mapWith(
-                    String,
-                  ),
-                aiCost:
-                  sql<string>`coalesce(sum(coalesce((${schema.auditLog.metadata}->>'cost_usd')::numeric, 0)), 0)`.mapWith(
-                    String,
-                  ),
-              })
-              .from(schema.auditLog)
-              .where(
-                and(
-                  eq(schema.auditLog.userId, userId),
-                  eq(schema.auditLog.eventType, "ai.api_call"),
-                  gte(schema.auditLog.createdAt, since),
+              aiCost:
+                sql<string>`coalesce(sum(coalesce((${schema.auditLog.metadata}->>'cost_usd')::numeric, 0)), 0)`.mapWith(
+                  String,
                 ),
-              )
-              .groupBy(
-                sql`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`,
+            })
+            .from(schema.auditLog)
+            .where(
+              and(
+                eq(schema.auditLog.userId, userId),
+                eq(schema.auditLog.eventType, "ai.api_call"),
+                gte(schema.auditLog.createdAt, since),
               ),
-          ]),
-        );
-
-      const callByAgent = new Map(
-        (callStats || []).map((r) => [r.agentId || "unknown", r]),
+            )
+            .groupBy(sql`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`),
+        ]),
       );
+
+      const callByAgent = new Map((callStats || []).map((r) => [r.agentId || "unknown", r]));
       const apptsByAgent = new Map(
         (apptStats || []).map((r) => [r.agentId || "unknown", r.bookings ?? 0]),
       );
@@ -311,13 +287,9 @@ router.get(
           const cost = Number(Number(stats?.cost ?? 0).toFixed(2));
           const avgScore = stats?.avgScore ?? 0;
           const bookings = apptsByAgent.get(a.id) ?? 0;
-          const costPerQualified = qualifiedCount
-            ? Number((cost / qualifiedCount).toFixed(2))
-            : 0;
+          const costPerQualified = qualifiedCount ? Number((cost / qualifiedCount).toFixed(2)) : 0;
           const outcomes = qualifiedCount + bookings;
-          const costPerOutcome = outcomes
-            ? Number((cost / outcomes).toFixed(2))
-            : 0;
+          const costPerOutcome = outcomes ? Number((cost / outcomes).toFixed(2)) : 0;
           const aiCost = Number((aiCostByAgent.get(a.id) ?? 0).toFixed(4));
           const totalCost = Number((cost + aiCost).toFixed(4));
           return {
@@ -337,9 +309,7 @@ router.get(
             total_cost: totalCost,
             cost_per_qualified: costPerQualified,
             cost_per_outcome: costPerOutcome,
-            conversion_rate: total
-              ? Math.round((qualifiedCount / total) * 100)
-              : 0,
+            conversion_rate: total ? Math.round((qualifiedCount / total) * 100) : 0,
           };
         })
         .sort((a: any, b: any) => b.qualified - a.qualified);
@@ -367,12 +337,10 @@ router.get(
         if (cached) return res.json({ ...cached, cached: true });
       }
       if (!insightsAi.isInsightsAiAvailable()) {
-        return res
-          .status(503)
-          .json({
-            error: "AI runtime required for topic clustering.",
-            code: "AI_RUNTIME_OFFLINE",
-          });
+        return res.status(503).json({
+          error: "AI runtime required for topic clustering.",
+          code: "AI_RUNTIME_OFFLINE",
+        });
       }
       const rows = await drizzle
         .select({
@@ -422,12 +390,10 @@ router.get(
         if (cached) return res.json({ ...cached, cached: true });
       }
       if (!insightsAi.isInsightsAiAvailable()) {
-        return res
-          .status(503)
-          .json({
-            error: "AI runtime required for failure analysis.",
-            code: "AI_RUNTIME_OFFLINE",
-          });
+        return res.status(503).json({
+          error: "AI runtime required for failure analysis.",
+          code: "AI_RUNTIME_OFFLINE",
+        });
       }
 
       const rows = await drizzle
