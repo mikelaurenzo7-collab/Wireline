@@ -371,8 +371,9 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
-    const [agentRows, personalities, directives, knowledge] = await Promise.all([
-      drizzle
+    const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
+      Promise.all([
+      tx
         .select({
           name: schema.agents.name,
           role: schema.agents.role,
@@ -406,7 +407,7 @@ router.get(
         .from(schema.agents)
         .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
         .limit(1),
-      drizzle
+      tx
         .select({ content: schema.personality.content })
         .from(schema.personality)
         .where(
@@ -416,7 +417,7 @@ router.get(
           ),
         )
         .limit(1),
-      drizzle
+      tx
         .select()
         .from(schema.directives)
         .where(
@@ -426,7 +427,7 @@ router.get(
           ),
         )
         .orderBy(desc(schema.directives.priority)),
-      drizzle
+      tx
         .select()
         .from(schema.knowledge)
         .where(
@@ -436,7 +437,8 @@ router.get(
           ),
         )
         .orderBy(desc(schema.knowledge.createdAt)),
-    ]);
+    ])
+    );
     const record = agentRows[0];
     const identity = record
       ? resolveAgentVideoPresenter({
