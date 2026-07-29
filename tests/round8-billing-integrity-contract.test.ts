@@ -34,7 +34,7 @@ describe("round-8 billing integrity", () => {
     const paymentFailureHandler = extraAgentBilling.indexOf(
       "isIncrease && isStripePaymentRequiredError(error)",
     );
-    const providerVerification = extraAgentBilling.indexOf(
+    const providerVerification = extraAgentBilling.lastIndexOf(
       "subscription = await stripe.subscriptions.retrieve(subscriptionId);",
     );
     const verifiedQuantity = extraAgentBilling.indexOf(
