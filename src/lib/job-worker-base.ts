@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- job and webhook payloads are stored as Postgres jsonb. */
 import { log, quotaTracker, auditLogger, drizzle } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, lt, sql } from "drizzle-orm";
 import * as claudeBrain from "./ai-brains";
 import * as geminiBrain from "./gemini-brain";
 import { getErrorMessage } from "./server-utils";
@@ -413,10 +413,39 @@ export async function handleJob(job: JobRow): Promise<void> {
       const result = await drizzle.execute(
         sql`SELECT wireline_purge_old_data(${p.user_id}, ${retentionDays})`,
       );
+
+      // Recovery credentials are hashed and time-bounded, but retaining expired
+      // rows indefinitely still creates unnecessary security and privacy debt.
+      // The per-tenant retention job already runs regularly, so clean both token
+      // stores here after their expiry instead of waiting for account deletion.
+      // Keep these deletes sequential so one maintenance job never fans out
+      // tenant-scoped pool connections.
+      const expiredBefore = new Date();
+      const expiredEmailTokens = await drizzle
+        .delete(schema.emailVerificationTokens)
+        .where(
+          and(
+            eq(schema.emailVerificationTokens.userId, p.user_id),
+            lt(schema.emailVerificationTokens.expiresAt, expiredBefore),
+          ),
+        )
+        .returning({ id: schema.emailVerificationTokens.id });
+      const expiredPasswordTokens = await drizzle
+        .delete(schema.passwordResetTokens)
+        .where(
+          and(
+            eq(schema.passwordResetTokens.userId, p.user_id),
+            lt(schema.passwordResetTokens.expiresAt, expiredBefore),
+          ),
+        )
+        .returning({ id: schema.passwordResetTokens.id });
+
       log.info("purge_old_data job completed", {
         jobId: job.id,
         user_id: p.user_id,
         retention_days: retentionDays,
+        expired_email_tokens_deleted: expiredEmailTokens.length,
+        expired_password_tokens_deleted: expiredPasswordTokens.length,
         result,
       });
     } catch (error: any) {
