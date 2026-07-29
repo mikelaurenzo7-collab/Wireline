@@ -285,37 +285,38 @@ export async function placeOutboundCall(opts: {
     lessonsRes,
     outboundCallerHistoryRes,
     outboundCapturedProfileRes,
-  ] = await Promise.all([
-    drizzle.select().from(schema.agents).where(eq(schema.agents.id, agentId)).limit(1),
+  ] = await drizzle.transaction((tx) =>
+    Promise.all([
+    tx.select().from(schema.agents).where(eq(schema.agents.id, agentId)).limit(1),
     // Prompt size is the largest cost lever on voice calls (the system prompt
     // is re-sent every turn). Load only what the prompt will actually carry —
     // the highest-priority directives and most recent knowledge — instead of
     // 500 of each, mirroring the inbound factory's caps.
-    drizzle
+    tx
       .select()
       .from(schema.directives)
       .where(eq(schema.directives.agentId, agentId))
       .orderBy(desc(schema.directives.priority))
       .limit(MAX_RUNTIME_DIRECTIVES),
-    drizzle
+    tx
       .select()
       .from(schema.knowledge)
       .where(eq(schema.knowledge.agentId, agentId))
       .orderBy(desc(schema.knowledge.createdAt))
       .limit(MAX_RUNTIME_KNOWLEDGE),
-    drizzle
+    tx
       .select()
       .from(schema.personality)
       .where(eq(schema.personality.agentId, agentId))
       .limit(1),
-    drizzle
+    tx
       .select()
       .from(schema.agentLessons)
       .where(eq(schema.agentLessons.agentId, agentId))
       .orderBy(desc(schema.agentLessons.createdAt))
       .limit(MAX_RUNTIME_LESSONS),
     safeOutboundPhone
-      ? drizzle
+      ? tx
           .select({
             summary: schema.callLogs.summary,
             intentLabel: schema.callLogs.intentLabel,
@@ -334,7 +335,7 @@ export async function placeOutboundCall(opts: {
           .limit(3)
       : Promise.resolve([]),
     safeOutboundPhone
-      ? drizzle
+      ? tx
           .select({
             description: schema.followUpTasks.description,
             createdAt: schema.followUpTasks.createdAt,
@@ -350,7 +351,8 @@ export async function placeOutboundCall(opts: {
           .orderBy(desc(schema.followUpTasks.createdAt))
           .limit(1)
       : Promise.resolve([]),
-  ]);
+  ])
+  );
 
   const agentConfig = agentRes[0];
   if (!agentConfig) {
