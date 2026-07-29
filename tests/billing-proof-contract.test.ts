@@ -90,6 +90,8 @@ describe("billing proof contract", () => {
     expect(deletionBilling).toContain("cancel_at_period_end: true");
     expect(deletionBilling).toContain("cancel_at_period_end: false");
     expect(settings).toContain("Future subscription renewal is stopped");
+    expect(settings).toContain('authFetch("/api/account/cancel-deletion"');
+    expect(settings).toContain("Keep my account");
     expect(settings).not.toContain("Billing continues until purge");
   });
 
