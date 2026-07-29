@@ -369,7 +369,7 @@ export const agentManualEntrySchema = z.object({
 export const spendBudgetSchema = z.object({
   monthly_limit_usd: z.number().min(0).default(0),
   warn_threshold_pct: z.number().int().min(1).max(99).default(80),
-  hard_cap: z.boolean().default(false),
+  hard_cap: z.boolean().default(true),
   enabled: z.boolean().default(true),
 });
 

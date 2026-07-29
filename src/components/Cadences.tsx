@@ -70,7 +70,7 @@ const STARTER_TEMPLATES: { name: string; description: string; steps: Step[] }[] 
         type: "email",
         delayHours: 0,
         template:
-          "Hi {{name}},\n\nReaching out from Wireline — would love a quick conversation this week. Reply with a time that works?",
+          "Hi {{name}},\n\nI’m reaching out to see whether a quick conversation this week would be useful. Reply with a time that works for you?",
       },
       { type: "call", delayHours: 24 },
       {
@@ -588,7 +588,7 @@ export default function Cadences() {
                 variant="editorial"
                 disableAnimations
                 onClick={save}
-                disabled={saving}
+                disabled={saving || !draftName.trim() || draftSteps.length === 0}
                 className="touch-press hover:scale-[1.05] rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em]"
               >
                 {saving ? (

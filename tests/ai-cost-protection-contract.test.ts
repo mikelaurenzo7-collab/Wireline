@@ -39,10 +39,30 @@ describe("AI cost-protection contract", () => {
     expect(snapshot).toMatch(/await executor\s*\.select/);
   });
 
-  it("only the auto-seeded free cap is auto-raised; hand-set caps are never overwritten", () => {
+  it("moves only managed defaults, preserves customer limits, and repairs disabled caps", () => {
     const snapshot = read("src/lib/workspace-usage-snapshot.ts");
-    expect(snapshot).toContain("isAutoSeededFreeCap");
-    expect(snapshot).toMatch(/current <= freeDefault/);
+    const routes = read("src/routes/spend-control-routes.ts");
+    const entitlements = read("src/lib/plan-entitlements.ts");
+    const validation = read("src/lib/api-validation-base.ts");
+    const stripeHelpers = read("src/lib/stripe-helpers.ts");
+    expect(snapshot).toContain("existing.managedDefault === true");
+    expect(snapshot).toContain("managedDefault\n      ? limit");
+    expect(routes).toContain("managedDefault: false");
+    expect(read("drizzle/migrations/0118_spend_budget_managed_default.sql")).toContain(
+      "managed_default boolean NOT NULL DEFAULT false",
+    );
+    expect(snapshot).toContain("Math.min(current, limit)");
+    expect(snapshot).toContain("existing.hardCap === true");
+    expect(routes).toContain("limit > maximumLimitUsd");
+    expect(routes).toContain("The provider spend guard is always enabled with a hard cap.");
+    expect(entitlements).toContain('status === "active" || status === "trialing"');
+    expect(stripeHelpers).toMatch(
+      /stripeStatus === "active" \|\| stripeStatus === "trialing"[\s\S]*spendBudgetPlanId/,
+    );
+    expect(stripeHelpers).toContain(
+      "await ensureDefaultAiSpendBudget(userId, spendBudgetPlanId)",
+    );
+    expect(validation).toContain("hard_cap: z.boolean().default(true)");
   });
 
   it("realtime simulation sessions carry a daily minute quota", () => {

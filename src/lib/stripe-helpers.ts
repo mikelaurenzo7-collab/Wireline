@@ -255,7 +255,9 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
     });
 
   const { ensureDefaultAiSpendBudget } = await import("./workspace-usage-snapshot");
-  await ensureDefaultAiSpendBudget(userId, plan?.id ?? null);
+  const spendBudgetPlanId =
+    stripeStatus === "active" || stripeStatus === "trialing" ? (plan?.id ?? null) : null;
+  await ensureDefaultAiSpendBudget(userId, spendBudgetPlanId);
 
   invalidateDashboard(userId);
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { KeyRound, LogOut, Mail, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -16,12 +16,57 @@ function DangerZone() {
   const [working, setWorking] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [renewalStopNeedsAttention, setRenewalStopNeedsAttention] = useState(false);
+  const [deletionScheduled, setDeletionScheduled] = useState(false);
+  const [deletionStatusLoading, setDeletionStatusLoading] = useState(true);
+  const [cancelWorking, setCancelWorking] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      try {
+        const response = await authFetch("/api/account/deletion-status");
+        const data = (await response.json().catch(() => null)) as {
+          error?: string;
+          pending?: boolean;
+          scheduled_purge_at?: string | null;
+        } | null;
+        if (!response.ok) {
+          throw new Error(data?.error || `Couldn't load deletion status (${response.status}).`);
+        }
+        if (!active || !data?.pending) return;
+
+        const when = data.scheduled_purge_at
+          ? new Date(data.scheduled_purge_at).toLocaleDateString()
+          : "the end of the grace period";
+        setDeletionScheduled(true);
+        setMessage(
+          `Deletion is scheduled for ${when}. Use Keep my account below to reverse it before the grace period ends. Review Billing if an upcoming renewal still appears.`,
+        );
+      } catch (err) {
+        if (!active) return;
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Couldn't verify whether deletion is already scheduled.",
+        );
+      } finally {
+        if (active) setDeletionStatusLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function requestDeletion() {
     if (confirmation !== "DELETE" || working) return;
     setWorking(true);
     setMessage(null);
     setError(null);
+    setRenewalStopNeedsAttention(false);
     try {
       const response = await authFetch("/api/account/delete", {
         method: "POST",
@@ -33,6 +78,8 @@ function DangerZone() {
         scheduled_purge_at?: string;
         already_pending?: boolean;
         grace_days?: number;
+        renewal_stopped?: boolean;
+        billing_period_end?: string | null;
       } | null;
       if (!response.ok) {
         throw new Error(data?.error || `Couldn't queue deletion (${response.status}).`);
@@ -40,15 +87,50 @@ function DangerZone() {
       const when = data?.scheduled_purge_at
         ? new Date(data.scheduled_purge_at).toLocaleDateString()
         : "about 30 days";
+      const renewalNeedsAttention = data?.renewal_stopped === false;
+      setRenewalStopNeedsAttention(renewalNeedsAttention);
+      setDeletionScheduled(true);
+      const renewalDetail = renewalNeedsAttention
+        ? " We could not confirm that subscription renewal stopped. Contact support@trywireline.com now so we can resolve billing without delaying deletion."
+        : " Future subscription renewal is stopped. Paid access may remain available through the current billing period.";
       setMessage(
         data?.already_pending
-          ? `Deletion is already scheduled for ${when}. Billing continues until then; contact support to cancel.`
-          : `Deletion queued. Data purge is scheduled for ${when}. Billing continues until purge; contact support to cancel before then.`,
+          ? `Deletion is already scheduled for ${when}.${renewalDetail}`
+          : `Deletion scheduled for ${when}.${renewalDetail}`,
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't queue the deletion. Try again in a moment.");
     } finally {
       setWorking(false);
+    }
+  }
+
+  async function cancelDeletion() {
+    if (!deletionScheduled || cancelWorking) return;
+    setCancelWorking(true);
+    setError(null);
+    try {
+      const response = await authFetch("/api/account/cancel-deletion", { method: "POST" });
+      const data = (await response.json().catch(() => null)) as {
+        error?: string;
+        renewal_resumed?: boolean;
+      } | null;
+      if (!response.ok) {
+        throw new Error(data?.error || `Couldn't cancel deletion (${response.status}).`);
+      }
+      setDeletionScheduled(false);
+      setConfirmation("");
+      const renewalNeedsAttention = data?.renewal_resumed === false;
+      setRenewalStopNeedsAttention(renewalNeedsAttention);
+      setMessage(
+        renewalNeedsAttention
+          ? "Deletion canceled. We could not confirm that subscription renewal resumed; review Billing before the current period ends."
+          : "Deletion canceled. Your account remains active and subscription renewal is restored when applicable.",
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't cancel deletion. Try again in a moment.");
+    } finally {
+      setCancelWorking(false);
     }
   }
 
@@ -60,36 +142,67 @@ function DangerZone() {
             Delete account
           </p>
           <p className="mt-2 max-w-[48ch] text-sm leading-6 text-muted-foreground">
-            Schedules permanent deletion after a 30-day grace period. Billing continues until
-            purge. Type DELETE to confirm.
+            Stops future subscription renewal and schedules permanent deletion after a 30-day grace
+            period. Paid access may remain through the current billing period. Type DELETE to
+            confirm.
           </p>
         </div>
         <Trash2 className="hidden size-5 shrink-0 text-[var(--wireline-color-status-error)] sm:block" />
       </div>
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <input
-          aria-label="Type DELETE to confirm"
-          value={confirmation}
-          onChange={(event) => setConfirmation(event.target.value.toUpperCase())}
-          placeholder="DELETE"
-          className="h-11 rounded-xl border border-border bg-background px-4 text-sm font-medium tracking-[0.18em] text-foreground outline-none focus:border-[var(--wireline-color-status-error)] sm:w-44"
-        />
+      {deletionStatusLoading ? (
+        <p className="mt-5 text-sm text-muted-foreground" role="status">
+          Checking deletion status…
+        </p>
+      ) : !deletionScheduled ? (
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <input
+            aria-label="Type DELETE to confirm"
+            value={confirmation}
+            onChange={(event) => setConfirmation(event.target.value.toUpperCase())}
+            placeholder="DELETE"
+            className="h-11 rounded-xl border border-border bg-background px-4 text-sm font-medium tracking-[0.18em] text-foreground outline-none focus:border-[var(--wireline-color-status-error)] sm:w-44"
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={confirmation !== "DELETE" || working}
+            onClick={requestDeletion}
+            className="border-[var(--wireline-color-feedback-error-border)] text-[var(--wireline-color-status-error)] hover:bg-[var(--wireline-color-feedback-error-surface)]"
+          >
+            <Trash2 size={14} aria-hidden="true" />
+            {working ? "Scheduling…" : "Delete account"}
+          </Button>
+        </div>
+      ) : null}
+      {message ? (
+        <StatusNotice
+          tone={renewalStopNeedsAttention ? "warning" : "success"}
+          className="mt-4"
+          title={
+            renewalStopNeedsAttention
+              ? deletionScheduled
+                ? "Deletion scheduled — billing action needed"
+                : "Deletion canceled — billing review needed"
+              : deletionScheduled
+                ? "Deletion scheduled"
+                : "Deletion canceled"
+          }
+        >
+          {message}
+        </StatusNotice>
+      ) : null}
+      {deletionScheduled ? (
         <Button
           type="button"
           variant="secondary"
           size="sm"
-          disabled={confirmation !== "DELETE" || working}
-          onClick={requestDeletion}
-          className="border-[var(--wireline-color-feedback-error-border)] text-[var(--wireline-color-status-error)] hover:bg-[var(--wireline-color-feedback-error-surface)]"
+          disabled={cancelWorking}
+          onClick={cancelDeletion}
+          className="mt-3"
         >
-          <Trash2 size={14} aria-hidden="true" />
-          {working ? "Queuing…" : "Delete account"}
+          {cancelWorking ? "Keeping account…" : "Keep my account"}
         </Button>
-      </div>
-      {message ? (
-        <StatusNotice tone="success" className="mt-4" title="Deletion queued">
-          {message}
-        </StatusNotice>
       ) : null}
       {error ? (
         <StatusNotice tone="destructive" className="mt-4" title="Deletion unavailable">

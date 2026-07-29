@@ -3,11 +3,10 @@
  *
  * Discoverable from the TrustSignals strip + the homepage footer.
  * Documents — honestly — what Wireline ships in production today and
- * what's on the certification roadmap.
+ * what remains on the security-attestation roadmap.
  *
- * Hard rule: no fabrication. "SOC 2 Type II in progress" stays in
- * progress until the audit is real; "HIPAA compliant" stays "HIPAA
- * controls implemented" until BAA + audit are signed.
+ * Hard rule: no fabrication. Do not imply an attestation, certification,
+ * contractual safeguard, or delivery date until it is verified and signed.
  */
 import { motion } from "motion/react";
 import { Link, useLocation } from "react-router-dom";
@@ -64,21 +63,21 @@ const SECTIONS = [
       "Call transcripts are stored in the managed database with configurable retention per tenant (default 90 days).",
       "Audio recordings are stored only when the tenant explicitly opts in. Default OFF.",
       "Credit card numbers are never stored, logged, or read by Wireline servers. PCI scope is reduced through Stripe Checkout.",
-      "HIPAA-style runtime controls minimize PHI exposure in logs and restrict sensitive exports; PHI workflows require the Enterprise BAA path.",
+      "Healthcare-sensitive runtime controls can reduce sensitive content in logs and restrict some exports. Do not process PHI unless Wireline confirms a signed BAA and approved configuration in writing.",
     ],
   },
   {
     icon: HeartPulse,
-    title: "HIPAA — controls implemented",
+    title: "Healthcare-sensitive controls",
     items: [
-      "Per-agent compliance_mode = 'hipaa' switches the runtime into PHI-aware behavior and tighter data-handling defaults.",
-      "BAA available on Enterprise onboarding only; Pro can use HIPAA-style guardrails, but PHI workflows require the Enterprise BAA path.",
-      "Audit: SOC 2 Type II certification is on the 2026 Q4 roadmap. Until then, controls are implemented but not externally attested — we'd rather be honest about that than badge it.",
+      "Per-agent compliance_mode = 'hipaa' tightens runtime behavior and data-handling defaults. This setting is not a certification or compliance determination.",
+      "Do not send, store, or process PHI unless Wireline confirms both a signed BAA and an approved configuration in writing.",
+      "A SOC 2 Type II attestation is not currently available. Wireline does not display an unearned badge or imply that planning equals proof.",
     ],
   },
   {
     icon: CreditCard,
-    title: "PCI DSS — out of scope",
+    title: "Card data stays with Stripe",
     items: [
       "Wireline never touches card data. Payments are processed through Stripe Checkout with PCI scope reduction.",
       "We hold tokenized customer references only.",
@@ -89,8 +88,8 @@ const SECTIONS = [
     title: "GDPR + CCPA",
     items: [
       "Right-to-erasure uses a server-owned deletion workflow for user-owned product data.",
-      "Data Processing Addendum available on request.",
-      "Data residency: today, US-East. EU residency on the 2026 roadmap.",
+      "Contact security@trywireline.com for current privacy documentation and any contractual review.",
+      "Data residency is US-East today. Additional regions remain under evaluation and are not committed until confirmed in writing.",
     ],
   },
   {
@@ -116,8 +115,8 @@ const SECTIONS = [
     icon: BugPlay,
     title: "Responsible disclosure",
     items: [
-      "Found a vulnerability? Email security@trywireline.com with details and we'll respond within one business day.",
-      "We don't (yet) run a paid bug bounty, but contributors who report real issues will be credited and rewarded.",
+      "Found a vulnerability? Email security@trywireline.com with details; we aim to acknowledge reports within one business day.",
+      "Wireline does not currently run a paid bug bounty. Credit or compensation is never promised before written terms.",
       "Please do not test exploits against tenant data; use your own Free Builder account.",
     ],
   },
@@ -174,7 +173,7 @@ const TRUST_PACK_SECTIONS = [
     title: "Account deletion & data rights",
     items: [
       "Self-serve account deletion runs a server-owned workflow over user-owned product data.",
-      "GDPR/CCPA erasure requests follow the same workflow — email security@trywireline.com for DPA copies.",
+      "GDPR/CCPA erasure requests follow the same workflow. Contact security@trywireline.com for current privacy and security documentation.",
       "Transcript and recording retention honor per-tenant settings; recording defaults to off.",
     ],
   },
@@ -193,7 +192,7 @@ const TRUST_PACK_SECTIONS = [
 const SECURITY_SUMMARY = [
   ["Runtime", "Encrypted transport, webhook verification, fallback voice, public probes."],
   ["Data", "Tenant-scoped access, opt-in recordings, retention, deletion."],
-  ["Compliance", "TCPA/DNC controls, HIPAA-style guardrails, no unearned badges."],
+  ["Compliance", "TCPA/DNC controls, healthcare-sensitive guardrails, no unearned badges."],
   ["Billing", "Stripe card handling, prepaid Runtime Balance, spend controls."],
 ] as const;
 
@@ -243,8 +242,8 @@ export default function Security() {
               gap.
             </p>
             <p className="mt-4 inline-flex flex-wrap justify-center gap-x-3 gap-y-1 text-eyebrow !text-[0.625rem]">
-              <span className="whitespace-nowrap">Last updated · July 27, 2026</span>
-              <span className="whitespace-nowrap">Reviewed for launch · July 27, 2026</span>
+              <span className="whitespace-nowrap">Last updated · July 28, 2026</span>
+              <span className="whitespace-nowrap">Reviewed for launch · July 28, 2026</span>
             </p>
           </motion.div>
 
@@ -291,19 +290,18 @@ export default function Security() {
           </div>
 
           <div className="mt-12 border-t border-border pt-6 text-center">
-            <p className="text-eyebrow mb-2">On the roadmap</p>
+            <p className="text-eyebrow mb-2">Under active evaluation</p>
             <ul className="mx-auto max-w-2xl space-y-1 pl-5 text-left marketing-body">
-              <li>SOC 2 Type II certification — audit firm engaged, target 2026 Q4.</li>
-              <li>
-                Continuous RLS regression checks and GraphQL exposure cleanup for all tenant tables.
-              </li>
-              <li>EU data residency (Frankfurt / Dublin) — target 2026 Q4.</li>
-              <li>Hardware-key 2FA for Account Holder logins — target 2026 Q3.</li>
-              <li>
-                Paid bug bounty program — private invite launch target 2026 Q3, public program 2026
-                Q4.
-              </li>
+              <li>Independent SOC 2 readiness work and audit planning.</li>
+              <li>Continuous regression coverage for tenant isolation and public data exposure.</li>
+              <li>Additional data regions based on contractual demand and operational readiness.</li>
+              <li>Hardware-backed MFA and enterprise identity controls.</li>
+              <li>A structured vulnerability-disclosure or bounty program with written scope.</li>
             </ul>
+            <p className="mx-auto mt-3 max-w-2xl text-xs leading-5 text-muted-foreground">
+              Evaluation is not a delivery commitment. Contractual requirements apply only when
+              Wireline confirms them in writing.
+            </p>
           </div>
 
           <div className="mt-10 border-t border-border pt-6 text-center">

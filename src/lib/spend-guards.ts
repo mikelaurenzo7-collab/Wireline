@@ -204,7 +204,8 @@ export async function enforceSpendCap(req: AuthedRequest, res: Response, next: N
     return res.status(402).json({
       code: "SPEND_CAP_REACHED",
       error:
-        "Your monthly hard cap has been reached. Increase or disable the cap to start new live work.",
+        "Your provider spend guard has reached its plan-funded limit. New live work resumes next monthly period; review Billing if you need more capacity now.",
+      recovery_path: "/settings/billing",
       period: snap.period,
       month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
       monthly_limit_usd: snap.budget!.monthly_limit_usd,

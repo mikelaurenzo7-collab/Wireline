@@ -9,9 +9,10 @@ import {
   getAccountById,
   getPrimaryAccount,
 } from "../lib/account-service";
-import { computeScheduledPurgeAt } from "../lib/account-deletion";
+import { ACCOUNT_DELETION_GRACE_DAYS, computeScheduledPurgeAt } from "../lib/account-deletion";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
+import { stopRenewalForDeletion } from "../lib/account-deletion-billing";
 
 type AuthedRequest = Request & { user?: { id: string } };
 
@@ -49,6 +50,31 @@ router.get("/api/accounts/:id", authenticateUser, async (req: Request, res: Resp
   res.json({ account });
 });
 
+router.get(
+  "/api/account/deletion-status",
+  authenticateUser,
+  async (req: Request, res: Response) => {
+    const userId = authenticatedUserId(req);
+    const [pending] = await drizzle
+      .select({
+        scheduledPurgeAt: schema.deletionQueue.scheduledPurgeAt,
+      })
+      .from(schema.deletionQueue)
+      .where(
+        and(eq(schema.deletionQueue.userId, userId), eq(schema.deletionQueue.status, "pending")),
+      )
+      .limit(1);
+
+    res.json({
+      pending: Boolean(pending),
+      status: pending ? "pending" : "none",
+      scheduled_purge_at: pending?.scheduledPurgeAt ?? null,
+      grace_days: ACCOUNT_DELETION_GRACE_DAYS,
+      cancel_endpoint: pending ? "/api/account/cancel-deletion" : null,
+    });
+  },
+);
+
 router.post(
   "/api/account/delete",
   authenticateUser,
@@ -70,10 +96,13 @@ router.post(
       .limit(1);
 
     if (existing) {
+      const renewal = await stopRenewalForDeletion(userId);
       return res.json({
         ok: true,
         already_pending: true,
         scheduled_purge_at: existing.scheduledPurgeAt,
+        renewal_stopped: renewal.confirmed,
+        billing_period_end: renewal.billingPeriodEnd,
       });
     }
 
@@ -92,10 +121,18 @@ router.post(
         scheduledPurgeAt: schema.deletionQueue.scheduledPurgeAt,
       });
 
-    log.warn("account deletion requested", { userId, deletionRequestId: row?.id });
-    res
-      .status(202)
-      .json({ ok: true, scheduled_purge_at: row?.scheduledPurgeAt ?? scheduledPurgeAt });
+    const renewal = await stopRenewalForDeletion(userId);
+    log.warn("account deletion requested", {
+      userId,
+      deletionRequestId: row?.id,
+      renewalStopped: renewal.confirmed,
+    });
+    res.status(202).json({
+      ok: true,
+      scheduled_purge_at: row?.scheduledPurgeAt ?? scheduledPurgeAt,
+      renewal_stopped: renewal.confirmed,
+      billing_period_end: renewal.billingPeriodEnd,
+    });
   },
 );
 

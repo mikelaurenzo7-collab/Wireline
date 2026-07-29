@@ -1,7 +1,7 @@
 // ────────────────────────────────────────────────────────────────────────
 //  Performance goals — metric catalog + pure progress math.
 //
-//  A "goal" is a monthly Assistants target an Account Holder sets, e.g. "book 40
+//  A "goal" is a monthly voice-agent target an Account Holder sets, e.g. "book 40
 //  appointments this month". The /api/goals route pulls live activity for
 //  the current calendar month and this module turns (goal, actual) pairs
 //  into progress: percent complete, pace against an even daily run-rate, a
@@ -58,7 +58,7 @@ export const GOAL_METRICS: readonly GoalMetricDef[] = [
     id: "calls_handled",
     label: "Calls handled",
     unit: "calls",
-    description: "Total inbound and outbound calls your Assistants completes this month.",
+    description: "Total inbound and outbound calls your voice agents complete this month.",
     accent: BRAND.colors.primary,
   },
   {
@@ -79,7 +79,7 @@ export const GOAL_METRICS: readonly GoalMetricDef[] = [
     id: "voice_minutes",
     label: "Voice minutes",
     unit: "minutes",
-    description: "Total connected talk time across the Assistants this month.",
+    description: "Total connected talk time across your voice agents this month.",
     accent: BRAND.colors.onSurfaceMuted,
   },
 ];

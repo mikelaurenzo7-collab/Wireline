@@ -38,7 +38,21 @@ function openingGreeting(directives: AgentConfigResponse["directives"]) {
 function toneLabel(personality?: string | null) {
   const value = personality?.trim();
   if (!value) return "Clear and professional";
-  return value.split(/[.\n]/)[0]?.trim() || "Clear and professional";
+
+  const normalized = value.toLowerCase().replace(/[\s_-]+/g, " ");
+  const knownTone: Record<string, string> = {
+    business: "Clear and professional",
+    clear: "Clear and professional",
+    professional: "Clear and professional",
+    personal: "Warm and natural",
+    warm: "Warm and natural",
+    friendly: "Friendly and conversational",
+    concise: "Concise and direct",
+  };
+  if (knownTone[normalized]) return knownTone[normalized];
+
+  const sentence = value.split(/[.\n]/)[0]?.trim() || "Clear and professional";
+  return sentence.length > 80 ? `${sentence.slice(0, 77).trimEnd()}…` : sentence;
 }
 
 export default function StudioAgentReviewPanel({

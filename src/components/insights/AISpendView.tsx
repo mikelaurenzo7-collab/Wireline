@@ -19,7 +19,6 @@ import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty, SpendStat } from 
 import type { AuditSummary } from "../../types/api-insights";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
-import { Switch } from "../ui/shadcn/Switch";
 
 import { BRAND } from "../../constants/brand-colors";
 
@@ -27,6 +26,7 @@ type SpendStatus = {
   period?: string;
   month_to_date_usd?: number;
   monthly_limit_usd?: number;
+  maximum_limit_usd?: number;
   percent_used?: number;
   hard_cap?: boolean;
   enabled?: boolean;
@@ -37,6 +37,7 @@ type SpendStatus = {
 
 type SpendBudget = {
   monthly_limit_usd?: number | string;
+  maximum_limit_usd?: number;
   hard_cap?: boolean;
   warn_threshold_pct?: number;
   enabled?: boolean;
@@ -50,13 +51,9 @@ function SpendBudgetCard() {
   const [draft, setDraft] = useState<{
     monthly_limit_usd: string;
     warn_threshold_pct: number;
-    hard_cap: boolean;
-    enabled: boolean;
   }>({
     monthly_limit_usd: "",
     warn_threshold_pct: 80,
-    hard_cap: false,
-    enabled: true,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -83,8 +80,6 @@ function SpendBudgetCard() {
           ? String(budgetData.monthly_limit_usd)
           : "",
         warn_threshold_pct: budgetData?.warn_threshold_pct ?? 80,
-        hard_cap: !!budgetData?.hard_cap,
-        enabled: budgetData?.enabled !== false,
       });
     } finally {
       setLoading(false);
@@ -106,8 +101,8 @@ function SpendBudgetCard() {
         body: JSON.stringify({
           monthly_limit_usd: Number.isFinite(limit) ? limit : 0,
           warn_threshold_pct: draft.warn_threshold_pct,
-          hard_cap: draft.hard_cap,
-          enabled: draft.enabled,
+          hard_cap: true,
+          enabled: true,
         }),
       });
       const out = await readApiJson(r);
@@ -131,6 +126,7 @@ function SpendBudgetCard() {
 
   const limit = Number(status?.monthly_limit_usd || 0);
   const used = Number(status?.month_to_date_usd || 0);
+  const maximumLimit = Number(status?.maximum_limit_usd || limit || 0);
   const pct = limit > 0 ? Math.min(150, (used / limit) * 100) : 0;
   const warnPct = Number(status?.warn_threshold_pct || 80);
   const isOver = limit > 0 && used >= limit;
@@ -150,7 +146,9 @@ function SpendBudgetCard() {
             <Shield className="w-4 h-4 wl-accent-text" />
           </div>
           <div>
-            <div className="wl-insight-label tracking-[0.32em] wl-accent-text">Monthly Budget</div>
+            <div className="wl-insight-label tracking-[0.32em] wl-accent-text">
+              Provider spend guard
+            </div>
             <div className="text-sm text-foreground/70 mt-1 font-mono">{period}</div>
           </div>
         </div>
@@ -206,17 +204,22 @@ function SpendBudgetCard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
         <label className="space-y-1.5">
-          <span className="app-section-title">Monthly limit (USD)</span>
+          <span className="app-section-title">Monthly safety limit (USD)</span>
           <Input
             type="number"
-            min="0"
-            step="1"
+            min="0.01"
+            max={maximumLimit || undefined}
+            step="0.01"
             inputMode="decimal"
             value={draft.monthly_limit_usd}
             onChange={(e) => setDraft({ ...draft, monthly_limit_usd: e.target.value })}
             placeholder="e.g. 200"
             className="w-full h-11 px-4 rounded-md wl-panel border border-border outline-none text-foreground text-sm focus:border-brand/60 transition-all font-mono"
           />
+          <span className="block text-[11px] leading-5 text-muted-foreground">
+            Up to ${safeFixed(maximumLimit, 2)} for the active plan. You can lower this guard,
+            but it cannot exceed the provider-cost envelope funded by the plan.
+          </span>
         </label>
         <label className="space-y-1.5">
           <span className="app-section-title">Warn at (% of limit)</span>
@@ -235,14 +238,17 @@ function SpendBudgetCard() {
         </label>
       </div>
 
-      <label className="flex items-center justify-between gap-4 rounded-md border border-border px-4 py-3">
-        <div className="text-sm text-foreground">Hard cap outbound work</div>
-        <Switch
-          checked={draft.hard_cap}
-          onCheckedChange={(checked) => setDraft({ ...draft, hard_cap: checked })}
-          aria-label="Enable hard spend cap"
-        />
-      </label>
+      <div className="flex items-center justify-between gap-4 rounded-md border border-border px-4 py-3">
+        <div>
+          <div className="text-sm font-medium text-foreground">Hard cap enforced</div>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            New provider-funded work pauses at the limit. Completed in-flight work still settles.
+          </p>
+        </div>
+        <span className="rounded-full border border-brand/25 bg-brand/10 px-2.5 py-1 text-[11px] font-semibold text-brand">
+          Always on
+        </span>
+      </div>
 
       <div className="flex items-center justify-end gap-4 pt-1">
         <ShadButton
@@ -250,7 +256,11 @@ function SpendBudgetCard() {
           disableAnimations
           variant="editorial"
           onClick={save}
-          disabled={saving}
+          disabled={
+            saving ||
+            !(Number(draft.monthly_limit_usd) > 0) ||
+            (maximumLimit > 0 && Number(draft.monthly_limit_usd) > maximumLimit)
+          }
           className="h-11 px-5 rounded-md text-xs uppercase tracking-[0.25em] font-medium"
         >
           {saving ? (

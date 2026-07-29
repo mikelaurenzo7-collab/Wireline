@@ -76,6 +76,30 @@ describe("billing proof contract", () => {
     expect(billingCard).toContain("Cancels at period end");
   });
 
+  it("stops future renewal for both deletion APIs and resumes it after cancellation", () => {
+    const accountRoutes = read("src/routes/account-routes.ts");
+    const settingsRoutes = read("src/routes/settings-routes.ts");
+    const deletionBilling = read("src/lib/account-deletion-billing.ts");
+    const settings = read("src/pages/SettingsPage.tsx");
+
+    expect(accountRoutes).toContain("stopRenewalForDeletion");
+    expect(accountRoutes).toContain("renewal_stopped: renewal.confirmed");
+    expect(settingsRoutes).toContain("stopRenewalForDeletion");
+    expect(settingsRoutes).toContain("resumeRenewalAfterDeletionCancellation");
+    expect(settingsRoutes).toContain("renewal_resumed: renewal.confirmed");
+    expect(deletionBilling).toContain("cancel_at_period_end: true");
+    expect(deletionBilling).toContain("cancel_at_period_end: false");
+    expect(deletionBilling).toContain("stripe.subscriptions.list");
+    expect(deletionBilling).toContain("for await");
+    expect(deletionBilling).toContain("DELETION_RENEWAL_MARKER");
+    expect(deletionBilling).toContain('metadata: { [DELETION_RENEWAL_MARKER]: "" }');
+    expect(settings).toContain("Future subscription renewal is stopped");
+    expect(settings).toContain('authFetch("/api/account/deletion-status"');
+    expect(settings).toContain('authFetch("/api/account/cancel-deletion"');
+    expect(settings).toContain("Keep my account");
+    expect(settings).not.toContain("Billing continues until purge");
+  });
+
   it("keeps Conversation Balance top-up metadata and refund/dispute recovery wired", () => {
     const balanceRoutes = read("src/routes/conversation-balance-routes.ts");
     const billingRoutes = read("src/routes/billing-routes.ts");

@@ -13,6 +13,10 @@ import { isPlatformAdmin } from "../middleware/platform-admin";
 import { enqueue } from "../lib/job-queue";
 import { jobsRateLimit, userPreferencesRateLimit } from "../middleware/api-rate-limits";
 import { ACCOUNT_DELETION_GRACE_DAYS, computeScheduledPurgeAt } from "../lib/account-deletion";
+import {
+  resumeRenewalAfterDeletionCancellation,
+  stopRenewalForDeletion,
+} from "../lib/account-deletion-billing";
 import { validate } from "../middleware/validate";
 import { SettingsSchema } from "../../contracts/api-types";
 
@@ -563,6 +567,8 @@ router.delete(
         queueRow = inserted;
       }
 
+      const renewal = await stopRenewalForDeletion(uid);
+
       void auditLogger
         .logAccountDeletionRequested({
           userId: uid,
@@ -581,6 +587,8 @@ router.delete(
         scheduled_purge_at: queueRow.scheduledPurgeAt,
         grace_days: ACCOUNT_DELETION_GRACE_DAYS,
         cancel_endpoint: "/api/account/cancel-deletion",
+        renewal_stopped: renewal.confirmed,
+        billing_period_end: renewal.billingPeriodEnd,
       });
     } catch (err: any) {
       log.error("account deletion enqueue failed", { uid, error: getErrorMessage(err) });
@@ -622,6 +630,8 @@ router.post(
         .set({ status: "cancelled", cancelledAt: new Date() })
         .where(eq(deletionQueue.id, existing.id));
 
+      const renewal = await resumeRenewalAfterDeletionCancellation(uid);
+
       void auditLogger.logAccountDeletionCancelled({ userId: uid, ip: req.ip }).catch((err) =>
         log.warn("audit logAccountDeletionCancelled failed", {
           uid,
@@ -629,8 +639,13 @@ router.post(
         }),
       );
 
-      return res.json({ status: "cancelled" });
+      return res.json({
+        status: "cancelled",
+        renewal_resumed: renewal.confirmed,
+        billing_period_end: renewal.billingPeriodEnd,
+      });
     } catch (err: any) {
+      if (err instanceof AppError) throw err;
       log.error("cancel-deletion failed", { uid, error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to cancel deletion.");
     }

@@ -47,12 +47,29 @@ export function effectivePlanIdForEntitlements(
   return planId ?? null;
 }
 
+export function subscriptionStatusGrantsEntitlements(
+  status: string | null | undefined,
+): boolean {
+  return status === "active" || status === "trialing";
+}
+
 export async function getEffectiveSubscriptionPlanId(
   userId: string,
   email?: string | null,
 ): Promise<string | null> {
-  const planId = await getSubscriptionPlanId(userId);
-  return effectivePlanIdForEntitlements(planId, email);
+  if (isOwnerEmail(email)) return FOUNDER_EFFECTIVE_PLAN_ID;
+
+  const [subscription] = await drizzle
+    .select({
+      plan: schema.subscriptions.plan,
+      status: schema.subscriptions.status,
+    })
+    .from(schema.subscriptions)
+    .where(eq(schema.subscriptions.userId, userId))
+    .limit(1);
+
+  if (!subscriptionStatusGrantsEntitlements(subscription?.status)) return null;
+  return subscription?.plan ?? null;
 }
 
 const PLAN_ID_FOR_TIER: Partial<Record<PlanTier, StripePlanId>> = {

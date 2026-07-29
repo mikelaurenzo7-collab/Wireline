@@ -29,26 +29,28 @@
         </div>
         <h1>Data Deletion</h1>
       </div>
-      <p class="updated">Last updated: May 19, 2026</p>
+      <p class="updated">Last updated: July 28, 2026</p>
 
       <h2>Delete your account from the app</h2>
       <p>
-        The fastest path is to sign in and head to
-        <strong>Admin &gt; Account &gt; Delete Account</strong>. Confirm the deletion in the
-        modal and your account enters a 30-day soft-delete window. After that window,
-        every row tied to your user is purged from our database: call logs, recordings,
-        agent configurations, OAuth connections (Google, Microsoft, Yahoo, Apollo,
-        HubSpot, Salesforce, Slack, Zoom, Meta), email accounts, lead records, billing
-        history, audit trail. Hard delete is irreversible.
+        The fastest path is to sign in and open
+        <strong>Settings &gt; Account &gt; Delete account</strong>. Type DELETE to confirm.
+        Wireline immediately asks the billing provider to stop future subscription renewal, while
+        paid access may remain available through the current billing period. Your account then
+        enters a 30-day grace period. After that window, Wireline permanently purges tenant-owned
+        product data, including call history, optional recordings, agent configuration, connected
+        accounts, messages, lead records, and account-scoped audit events. Hard deletion is
+        irreversible. During the grace period, choose <strong>Keep my account</strong> in Settings
+        to cancel deletion. Wireline then asks the billing provider to restore renewal when
+        applicable and tells you if billing still needs review.
       </p>
 
       <h2>Don't have access to your account?</h2>
       <p>
         Email <strong>support@trywireline.com</strong> from the address tied to the account
-        with the subject line <em>"Data deletion request"</em>. We verify the request out
-        of band (text or call to a phone number on file) and then run the same deletion
-        job manually. We confirm by email when the purge completes; SLA is 7 business
-        days.
+        with the subject line <em>"Data deletion request"</em>. We verify the request
+        before starting the same 30-day grace-period workflow and will confirm the scheduled
+        deletion date.
       </p>
 
       <h2>What's deleted</h2>
@@ -65,17 +67,17 @@
 
       <h2>What's retained</h2>
       <p>
-        Anonymized, aggregated metrics (total calls per day across all tenants, no
-        identifiers) used for capacity planning. Tax records required by US law
-        (invoices, payment receipts) for the statutory retention window. Audit log
-        entries with your user ID redacted to a stable hash for legitimate security
-        investigation purposes.
+        Wireline may retain only information required for legal, fraud-prevention, security,
+        or financial-record obligations, and only for the applicable retention period. Payment
+        processors and financial institutions may retain transaction records under their own legal
+        obligations. Production backups age out on their normal retention schedule and are not
+        restored for ordinary product use after deletion.
       </p>
 
       <h2>Questions</h2>
       <p>
-        Reach us at <strong>support@trywireline.com</strong> with any data deletion question
-        and we'll respond within 2 business days.
+        Reach us at <strong>support@trywireline.com</strong> with any data deletion question.
+        We aim to respond within two business days.
       </p>
 
       <div class="footer">
