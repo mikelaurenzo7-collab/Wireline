@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { formatResendApiError } from "../src/lib/resend-config";
+import { getErrorMessage, sanitizeErrorMessage } from "../src/lib/server-utils";
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
@@ -100,6 +101,35 @@ describe("email observability privacy", () => {
       expect(call).not.toMatch(/(?:^|\n)\s*signupUrl,\s*(?:\n|$)/);
       expect(call).not.toContain("opts.title");
     }
+  });
+
+  it("redacts bound SQL params and direct identifiers from shared error messages", () => {
+    const userId = "385cc38e-3086-4c9a-a5b2-4d5925c88551";
+    const email = "private.person@example.com";
+    const secret = "never-log-this-value";
+
+    const queryError = getErrorMessage(
+      new Error(
+        `Failed query: select count(*) from "wireline_agents" where "user_id" = $1\nparams: ${userId},${email}`,
+      ),
+    );
+    expect(queryError).toContain("Failed query:");
+    expect(queryError).toContain("params: [redacted-params]");
+    expect(queryError).not.toContain(userId);
+    expect(queryError).not.toContain(email);
+
+    const providerError = sanitizeErrorMessage(
+      `Recipient ${email}; actor ${userId}; Authorization Bearer ${secret}; https://vendor.invalid/callback?token=${secret}`,
+    );
+    expect(providerError).toContain("[redacted-email]");
+    expect(providerError).toContain("[redacted-id]");
+    expect(providerError).toContain("Bearer [REDACTED]");
+    expect(providerError).toContain("token=[REDACTED]");
+    expect(providerError).not.toContain(secret);
+
+    const bounded = getErrorMessage("x".repeat(3_000));
+    expect(bounded).toHaveLength(2_012);
+    expect(bounded).toEndWith("…[truncated]");
   });
 
   it("sanitizes provider error bodies before they are returned or logged", () => {
