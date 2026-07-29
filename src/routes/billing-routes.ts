@@ -720,30 +720,35 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const [subRows, agentCounts, phoneCounts, entitlementSlots] = await Promise.all([
-        drizzle
-          .select({
-            plan: schema.subscriptions.plan,
-            status: schema.subscriptions.status,
-            currentPeriodEnd: schema.subscriptions.currentPeriodEnd,
-            cancelAtPeriodEnd: schema.subscriptions.cancelAtPeriodEnd,
-            stripeCustomerId: schema.subscriptions.stripeCustomerId,
-            stripeSubscriptionId: schema.subscriptions.stripeSubscriptionId,
-            updatedAt: schema.subscriptions.updatedAt,
-          })
-          .from(schema.subscriptions)
-          .where(eq(schema.subscriptions.userId, req.user.id))
-          .limit(1),
-        drizzle
-          .select({ val: count() })
-          .from(schema.agents)
-          .where(eq(schema.agents.userId, req.user.id)),
-        drizzle
-          .select({ val: count() })
-          .from(schema.phoneNumbers)
-          .where(eq(schema.phoneNumbers.userId, req.user.id)),
-        getIncludedPhoneLineSlots(req.user.id),
-      ]);
+      // Keep tenant reads sequential. Every root Drizzle query checks out its own
+      // tenant-scoped Pool client, and the serverless pool is intentionally capped
+      // at five connections. The previous Promise.all consumed four clients for a
+      // single request (getIncludedPhoneLineSlots performs two more reads), so two
+      // concurrent dashboard mounts could exhaust the pool and make this endpoint
+      // fail after its 5s checkout timeout. Sequential reads preserve honest
+      // all-or-nothing status semantics while leaving headroom for other requests.
+      const subRows = await drizzle
+        .select({
+          plan: schema.subscriptions.plan,
+          status: schema.subscriptions.status,
+          currentPeriodEnd: schema.subscriptions.currentPeriodEnd,
+          cancelAtPeriodEnd: schema.subscriptions.cancelAtPeriodEnd,
+          stripeCustomerId: schema.subscriptions.stripeCustomerId,
+          stripeSubscriptionId: schema.subscriptions.stripeSubscriptionId,
+          updatedAt: schema.subscriptions.updatedAt,
+        })
+        .from(schema.subscriptions)
+        .where(eq(schema.subscriptions.userId, req.user.id))
+        .limit(1);
+      const agentCounts = await drizzle
+        .select({ val: count() })
+        .from(schema.agents)
+        .where(eq(schema.agents.userId, req.user.id));
+      const phoneCounts = await drizzle
+        .select({ val: count() })
+        .from(schema.phoneNumbers)
+        .where(eq(schema.phoneNumbers.userId, req.user.id));
+      const entitlementSlots = await getIncludedPhoneLineSlots(req.user.id);
       const sub = subRows[0];
       const agentCount = Number(agentCounts[0]?.val || 0);
       const phoneLineCount = Number(phoneCounts[0]?.val || 0);
