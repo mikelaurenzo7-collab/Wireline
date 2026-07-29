@@ -10,7 +10,7 @@ import { BRAND } from "../constants/brand-colors";
 /* ──────────────────────────────────────────────────────────────────────────
    GoalsView — the Insights → Goals tab.
 
-   Account Holders set monthly Assistants targets (calls handled, appointments booked,
+   Account Holders set monthly voice-agent targets (calls handled, appointments booked,
    qualified leads, voice minutes) and watch live progress against an even
    daily run-rate. Reads /api/goals; the progress math lives in
    src/lib/goals.ts and is computed server-side on every fetch.
@@ -483,11 +483,11 @@ export default function GoalsView() {
           <p className="text-eyebrow text-brand mb-1">Monthly targets · {data.period_label}</p>
           <h2 className="font-display italic text-2xl md:text-3xl text-foreground leading-tight">
             {activeGoals === 0
-              ? "Set your first Assistants goal"
+              ? "Set your first agent goal"
               : `${onPace} of ${activeGoals} ${activeGoals === 1 ? "goal" : "goals"} on pace`}
           </h2>
           <p className="mt-1 text-caption max-w-md leading-relaxed">
-            Goals measure live Assistants activity against an even daily run-rate for the current
+            Goals measure live voice-agent activity against an even daily run-rate for the current
             calendar month.
           </p>
         </div>
