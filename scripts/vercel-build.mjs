@@ -117,6 +117,10 @@ run("npx", [
   // both intervals; do not let catalog metadata drift from entitlements.
   "src/lib/plan-catalog.test.ts",
   "tests/round6-margin-capacity-contract.test.ts",
+  // Live Video must remain launch-paused and economically bounded until its
+  // curated catalog and paid lifecycle are proven.
+  "src/lib/video-presenter/live-video-policy.test.ts",
+  "tests/live-video-economics-contract.test.ts",
   "tests/signup-bootstrap-integrity-contract.test.ts",
   "tests/repo-documentation-organization-contract.test.ts",
   "tests/marketing-metadata-contract.test.ts",
