@@ -50,7 +50,7 @@ describe("launch truth contract", () => {
   it("does not leak Wireline branding into a customer's sequence message", () => {
     const cadences = read("src/components/Cadences.tsx");
     expect(cadences).not.toContain("Reaching out from Wireline");
-    expect(cadences).toContain("disabled={!name.trim() || steps.length === 0}");
+    expect(cadences).toContain("disabled={saving || !draftName.trim() || draftSteps.length === 0}");
   });
 
   it("describes deletion billing and provider spend controls as implemented", () => {
