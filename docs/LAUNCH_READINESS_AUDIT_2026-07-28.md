@@ -10,13 +10,13 @@ This is dated evidence, not product doctrine. Canonical policy remains in the co
 
 ## Executive result
 
-The deep pass verified that Wireline has a coherent product model, a guarded OpenAI-first runtime, a versioned Founder pricing catalog, tenant-isolated data, activation/spend controls, provider fallbacks, and an extensive launch-test suite. It also found one production billing-status failure caused by avoidable serverless pool fan-out, indefinite retention of expired recovery credentials, and a false-green Stripe readiness check.
+The deep pass verified that Wireline has a coherent product model, a guarded OpenAI-first runtime, a versioned Founder pricing catalog, tenant-isolated data, activation/spend controls, provider fallbacks, and an extensive launch-test suite. It also found one production billing-status failure caused by avoidable serverless pool fan-out, indefinite retention of expired recovery credentials, a false-green Stripe readiness check, and email diagnostics that could expose recipient addresses or a verification bearer link.
 
 All verified code wins are implemented on the audit branch. No speculative redesign, vendor expansion, or destructive data cleanup was applied.
 
 ## Exact-head release evidence
 
-The full launch audit completed on code-equivalent commit `ed1954c31952b6854c4c01adbb95d626de001e4b`; the evidence-only follow-up commit is tagged to rerun the same exact-head gate.
+The last recorded full launch audit completed on code-equivalent commit `e9a80fc35a65e3ee66c60b473574d7f484e1785c` (`dpl_FwpDjvJtR3y1815idmSrdy7F4HXD`). The final email-observability privacy hardening is tagged to rerun the full gate; this section must be refreshed with that deployment before merge.
 
 | Gate | Result |
 | --- | --- |
@@ -49,6 +49,12 @@ The same causal pattern appeared in 15 additional pure-read batches that launche
 ### Recovery-token retention
 
 The daily per-tenant `purge_old_data` job now removes expired email-verification and password-reset token rows after the existing tenant purge. Deletes are tenant-scoped and sequential, with bounded deletion counts in structured logs. A contract test pins expiry, tenant ownership, and no fan-out.
+
+### Email observability privacy
+
+Transactional-email diagnostics previously logged full recipient addresses, and the missing-transport verification path logged the single-use verification URL itself. Provider error bodies could also echo a mailbox back into logs or user-facing errors.
+
+Email-service logs now retain only a redaction marker and recipient domain, never the local part. Verification, reset, signup, and escalation payload values are excluded from log calls, and Resend error details are bounded, flattened, and email-redacted before they are returned or logged. A release-gated contract parses every email-service log call and exercises both JSON and raw provider-error sanitization.
 
 ### Stripe launch truth
 
@@ -116,7 +122,7 @@ Runway is available for asynchronous generated media, not a real-time presenter.
 
 - Stripe, Vercel, Supabase, Runway, and Descript were reachable for read-only verification.
 - The Stripe catalog and webhook are coherent; brand and portal remain blocked.
-- Vercel production showed one billing-status 500 consistent with pool checkout exhaustion and one older Resend 422 to a synthetic example address.
+- Vercel production showed one billing-status 500 consistent with pool checkout exhaustion and one older Resend 422 to a synthetic example address; that mail failure also exposed the logging-privacy weakness now fixed and release-gated.
 - Wireline has a deliberate zero-dependency browser/server error reporter that routes structured failures into Vercel logs (`src/lib/sentry.ts` and `src/lib/sentry-events.ts`), but no external Sentry SDK or authenticated Sentry project was found. Do not claim Sentry alerting is certified.
 - Ads Manager is intentionally out of scope by founder direction; it was not accessed, no spend was changed, and it is not a launch gate.
 - Opera was not connected. The requested fresh screenshot inspection could not be performed.
