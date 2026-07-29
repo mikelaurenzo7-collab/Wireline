@@ -38,8 +38,8 @@ describe("marketing metadata contract", () => {
 
     expect(security).toContain('path={isTrustHub ? "/trust" : "/security"}');
     expect(sitemap).toContain("<loc>https://trywireline.com/trust</loc>");
-    expect(marketingChrome.match(/<main\\b/g)).toHaveLength(1);
-    expect(trustPack).not.toMatch(/<main\\b/);
+    expect(marketingChrome.match(/<main\b/g)).toHaveLength(1);
+    expect(trustPack).not.toMatch(/<main\b/);
     expect(trustPack).not.toContain("</main>");
   });
 
