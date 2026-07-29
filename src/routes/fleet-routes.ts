@@ -406,7 +406,7 @@ router.get(
             .where(eq(schema.emailThreads.userId, req.user.id))
             .orderBy(desc(schema.emailThreads.createdAt))
             .limit(5),
-        ])
+        ]),
       );
 
       const activity = compileActivityFeed({
@@ -511,7 +511,7 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
             .orderBy(desc(schema.callLogs.createdAt))
             .limit(20),
         ],
-      )
+      ),
     );
 
     // UI reads snake_case (customer_number, lead_score, created_at). Drizzle
