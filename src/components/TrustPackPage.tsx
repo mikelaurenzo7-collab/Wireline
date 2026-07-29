@@ -215,7 +215,7 @@ export default function TrustPackPage() {
         path={`/trust/${vertical}`}
       />
 
-      <main className="mx-auto max-w-5xl px-5 py-10 sm:px-6 sm:py-14">
+      <div className="mx-auto max-w-5xl px-5 py-10 sm:px-6 sm:py-14">
         <Link
           to="/trust"
           className="mb-8 -mx-2 inline-flex min-h-[44px] items-center gap-2 rounded-md px-2 py-2 text-caption font-medium text-muted transition-colors hover:bg-black/[0.03] hover:text-foreground"
@@ -319,7 +319,7 @@ export default function TrustPackPage() {
             </Link>
           </div>
         </section>
-      </main>
+      </div>
     </MarketingChrome>
   );
 }
