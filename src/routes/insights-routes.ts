@@ -258,7 +258,7 @@ router.get(
               ),
             )
             .groupBy(sql`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`),
-        ])
+        ]),
       );
 
       const callByAgent = new Map((callStats || []).map((r) => [r.agentId || "unknown", r]));
