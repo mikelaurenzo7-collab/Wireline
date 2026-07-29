@@ -3,16 +3,32 @@ import { Router, Response } from "express";
 import { AppError } from "../lib/api-error";
 import type { AuthenticatedRequest } from "../types/auth";
 import { drizzle, log, auditLogger } from "../lib/server-context";
-import { settings, userPreferences, agents, callLogs, deletionQueue } from "../db/schema";
+import {
+  settings,
+  userPreferences,
+  agents,
+  callLogs,
+  deletionQueue,
+} from "../db/schema";
 import * as schema from "../db/schema";
 import { eq, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import { getErrorMessage, mapObjectToCamel, mapObjectToSnake } from "../lib/server-utils";
+import {
+  getErrorMessage,
+  mapObjectToCamel,
+  mapObjectToSnake,
+} from "../lib/server-utils";
 import { isOwnerEmail } from "../lib/auth-service";
 import { isPlatformAdmin } from "../middleware/platform-admin";
 import { enqueue } from "../lib/job-queue";
-import { jobsRateLimit, userPreferencesRateLimit } from "../middleware/api-rate-limits";
-import { ACCOUNT_DELETION_GRACE_DAYS, computeScheduledPurgeAt } from "../lib/account-deletion";
+import {
+  jobsRateLimit,
+  userPreferencesRateLimit,
+} from "../middleware/api-rate-limits";
+import {
+  ACCOUNT_DELETION_GRACE_DAYS,
+  computeScheduledPurgeAt,
+} from "../lib/account-deletion";
 import {
   resumeRenewalAfterDeletionCancellation,
   stopRenewalForDeletion,
@@ -62,7 +78,11 @@ const CLIENT_WRITABLE_SETTINGS = new Set([
 ]);
 
 /** Platform-admin-only capacity fields — never via Stripe-bypass self-service. */
-const ADMIN_WRITABLE_SETTINGS = new Set(["subscriptionStatus", "maxAgents", "extraAgents"]);
+const ADMIN_WRITABLE_SETTINGS = new Set([
+  "subscriptionStatus",
+  "maxAgents",
+  "extraAgents",
+]);
 
 function pickWritableSettings(
   update: Record<string, unknown>,
@@ -78,40 +98,44 @@ function pickWritableSettings(
   return filtered;
 }
 
-router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const [data] = await drizzle
-      .select()
-      .from(settings)
-      .where(eq(settings.userId, req.user.id))
-      .limit(1);
+router.get(
+  "/api/settings",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const [data] = await drizzle
+        .select()
+        .from(settings)
+        .where(eq(settings.userId, req.user.id))
+        .limit(1);
 
-    // Strip sensitive credentials — return boolean presence flags instead.
-    // The raw key is never needed by the browser; only server-side code
-    // uses it (and reads from process.env.VAPI_PRIVATE_KEY, not this column).
-    const safe = data ? { ...data } : ({} as any);
-    if (isOwnerEmail(req.user.email)) {
-      safe.subscriptionStatus = "active";
-      safe.maxAgents = null;
-      safe.extraAgents = 0;
-      safe.founderUnlimitedAgents = true;
-    }
-    if ("vapiPrivateKey" in safe) {
-      // Managed Vapi: the runtime reads process.env.VAPI_PRIVATE_KEY, not the
-      // tenant column (which stays null for normal workspaces). Report platform
-      // voice readiness so clients do not think voice is unconfigured.
-      safe.has_vapi_key = Boolean(process.env.VAPI_PRIVATE_KEY?.trim());
-      delete safe.vapiPrivateKey;
-    }
+      // Strip sensitive credentials — return boolean presence flags instead.
+      // The raw key is never needed by the browser; only server-side code
+      // uses it (and reads from process.env.VAPI_PRIVATE_KEY, not this column).
+      const safe = data ? { ...data } : ({} as any);
+      if (isOwnerEmail(req.user.email)) {
+        safe.subscriptionStatus = "active";
+        safe.maxAgents = null;
+        safe.extraAgents = 0;
+        safe.founderUnlimitedAgents = true;
+      }
+      if ("vapiPrivateKey" in safe) {
+        // Managed Vapi: the runtime reads process.env.VAPI_PRIVATE_KEY, not the
+        // tenant column (which stays null for normal workspaces). Report platform
+        // voice readiness so clients do not think voice is unconfigured.
+        safe.has_vapi_key = Boolean(process.env.VAPI_PRIVATE_KEY?.trim());
+        delete safe.vapiPrivateKey;
+      }
 
-    const snakeSafe = mapObjectToSnake(safe);
-    res.json({ ...snakeSafe, settings: snakeSafe });
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    log.error("Failed to fetch settings", { error: getErrorMessage(error) });
-    throw AppError.fromHttpStatus(500, "Failed to load settings");
-  }
-});
+      const snakeSafe = mapObjectToSnake(safe);
+      res.json({ ...snakeSafe, settings: snakeSafe });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      log.error("Failed to fetch settings", { error: getErrorMessage(error) });
+      throw AppError.fromHttpStatus(500, "Failed to load settings");
+    }
+  },
+);
 
 /**
  * The tenant-wide telecom identity fields are client-writable, but every
@@ -132,9 +156,13 @@ async function assertTelecomIdentityOwned(
   update: Record<string, unknown>,
 ): Promise<void> {
   const vapiId =
-    typeof update.vapiPhoneNumberId === "string" ? update.vapiPhoneNumberId.trim() : "";
+    typeof update.vapiPhoneNumberId === "string"
+      ? update.vapiPhoneNumberId.trim()
+      : "";
   const smsFrom =
-    typeof update.twilioSmsFromNumber === "string" ? update.twilioSmsFromNumber.trim() : "";
+    typeof update.twilioSmsFromNumber === "string"
+      ? update.twilioSmsFromNumber.trim()
+      : "";
   // The WhatsApp sender is the same shape of shared-credential identity as the
   // SMS from-number and takes precedence in buildMessagePayload — and a
   // competitor's WhatsApp business number is public, so it is the enumerable
@@ -205,7 +233,9 @@ router.post(
             // Match signup (`startTrialForUser`): Free Builder tenants start
             // pending_activation. Never bootstrap a silent `trialing` row —
             // that status bypasses enforceLiveWorkActivation with no expiry.
-            subscriptionStatus: isOwnerEmail(req.user.email) ? "active" : "pending_activation",
+            subscriptionStatus: isOwnerEmail(req.user.email)
+              ? "active"
+              : "pending_activation",
             ...update,
           })
           .onConflictDoUpdate({
@@ -273,10 +303,12 @@ router.post(
       if (typeof body.persona === "string" || body.persona === null) {
         update.persona = body.persona;
       }
-      if (typeof body.tour_completed === "boolean") update.tourCompleted = body.tour_completed;
+      if (typeof body.tour_completed === "boolean")
+        update.tourCompleted = body.tour_completed;
       if (typeof body.onboarding_completed === "boolean")
         update.onboardingCompleted = body.onboarding_completed;
-      if (typeof body.help_enabled === "boolean") update.helpEnabled = body.help_enabled;
+      if (typeof body.help_enabled === "boolean")
+        update.helpEnabled = body.help_enabled;
       if (typeof body.keyboard_shortcuts_enabled === "boolean")
         update.keyboardShortcutsEnabled = body.keyboard_shortcuts_enabled;
       if (body.preferences && typeof body.preferences === "object") {
@@ -284,7 +316,10 @@ router.post(
       }
 
       if (Object.keys(update).length === 0) {
-        throw AppError.fromHttpStatus(400, "No valid preference fields supplied.");
+        throw AppError.fromHttpStatus(
+          400,
+          "No valid preference fields supplied.",
+        );
       }
 
       const [data] = (await drizzle
@@ -312,7 +347,9 @@ router.post(
       });
     } catch (error) {
       if (error instanceof AppError) throw error;
-      log.error("Failed to update preferences", { error: getErrorMessage(error) });
+      log.error("Failed to update preferences", {
+        error: getErrorMessage(error),
+      });
       throw AppError.fromHttpStatus(500, "Failed to update preferences");
     }
   },
@@ -324,39 +361,43 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user.id;
-      const [[agentRow], [callLogRow], [settingsRow], [prefsRow], [phoneRow]] = await drizzle.transaction((tx) =>
-        Promise.all([
-        tx
-          .select({ count: sql<number>`count(*)` })
-          .from(agents)
-          .where(eq(agents.userId, userId)),
-        tx
-          .select({ count: sql<number>`count(*)` })
-          .from(callLogs)
-          .where(eq(callLogs.userId, userId)),
-        tx
-          .select({
-            subscriptionStatus: settings.subscriptionStatus,
-            vapiPhoneNumberId: settings.vapiPhoneNumberId,
-          })
-          .from(settings)
-          .where(eq(settings.userId, userId))
-          .limit(1),
-        tx
-          .select({ onboardingCompleted: userPreferences.onboardingCompleted })
-          .from(userPreferences)
-          .where(eq(userPreferences.userId, userId))
-          .limit(1),
-        tx
-          .select({ count: sql<number>`count(*)` })
-          .from(schema.phoneNumbers)
-          .where(eq(schema.phoneNumbers.userId, userId)),
-      ])
-      );
+      const [[agentRow], [callLogRow], [settingsRow], [prefsRow], [phoneRow]] =
+        await drizzle.transaction((tx) =>
+          Promise.all([
+            tx
+              .select({ count: sql<number>`count(*)` })
+              .from(agents)
+              .where(eq(agents.userId, userId)),
+            tx
+              .select({ count: sql<number>`count(*)` })
+              .from(callLogs)
+              .where(eq(callLogs.userId, userId)),
+            tx
+              .select({
+                subscriptionStatus: settings.subscriptionStatus,
+                vapiPhoneNumberId: settings.vapiPhoneNumberId,
+              })
+              .from(settings)
+              .where(eq(settings.userId, userId))
+              .limit(1),
+            tx
+              .select({
+                onboardingCompleted: userPreferences.onboardingCompleted,
+              })
+              .from(userPreferences)
+              .where(eq(userPreferences.userId, userId))
+              .limit(1),
+            tx
+              .select({ count: sql<number>`count(*)` })
+              .from(schema.phoneNumbers)
+              .where(eq(schema.phoneNumbers.userId, userId)),
+          ]),
+        );
 
       const platformVoiceReady = Boolean(process.env.VAPI_PRIVATE_KEY?.trim());
       const tenantHasNumber =
-        Number(phoneRow?.count || 0) > 0 || Boolean(settingsRow?.vapiPhoneNumberId);
+        Number(phoneRow?.count || 0) > 0 ||
+        Boolean(settingsRow?.vapiPhoneNumberId);
 
       res.json({
         has_agents: Number(agentRow?.count || 0) > 0,
@@ -369,7 +410,9 @@ router.get(
       });
     } catch (error) {
       if (error instanceof AppError) throw error;
-      log.error("Failed to fetch onboarding progress", { error: getErrorMessage(error) });
+      log.error("Failed to fetch onboarding progress", {
+        error: getErrorMessage(error),
+      });
       throw AppError.fromHttpStatus(500, "Failed to fetch progress");
     }
   },
@@ -494,7 +537,10 @@ router.post(
         maxAttempts: 3,
       });
       if (!result.ok) {
-        log.error("Failed to enqueue purge_old_data job", { user_id: uid, error: result.error });
+        log.error("Failed to enqueue purge_old_data job", {
+          user_id: uid,
+          error: result.error,
+        });
         throw AppError.fromHttpStatus(500, "Failed to schedule purge job");
       }
       log.info("purge_old_data job enqueued on demand", {
@@ -502,7 +548,11 @@ router.post(
         retention_days: retentionDays,
         jobId: result.jobId,
       });
-      res.json({ success: true, retention_days: retentionDays, job_id: result.jobId });
+      res.json({
+        success: true,
+        retention_days: retentionDays,
+        job_id: result.jobId,
+      });
     } catch (err: any) {
       log.error("POST /api/account/purge-old-data failed", {
         error: getErrorMessage(err),
@@ -543,7 +593,9 @@ router.delete(
       const [existing] = await drizzle
         .select()
         .from(deletionQueue)
-        .where(sql`${deletionQueue.userId} = ${uid} AND ${deletionQueue.status} = 'pending'`)
+        .where(
+          sql`${deletionQueue.userId} = ${uid} AND ${deletionQueue.status} = 'pending'`,
+        )
         .limit(1);
 
       let queueRow: typeof deletionQueue.$inferSelect;
@@ -564,7 +616,10 @@ router.delete(
 
         if (!inserted) {
           log.error("account deletion: enqueue failed", { uid });
-          throw AppError.fromHttpStatus(500, "Failed to schedule account deletion.");
+          throw AppError.fromHttpStatus(
+            500,
+            "Failed to schedule account deletion.",
+          );
         }
         queueRow = inserted;
       }
@@ -593,8 +648,14 @@ router.delete(
         billing_period_end: renewal.billingPeriodEnd,
       });
     } catch (err: any) {
-      log.error("account deletion enqueue failed", { uid, error: getErrorMessage(err) });
-      throw AppError.fromHttpStatus(500, "Failed to schedule account deletion.");
+      log.error("account deletion enqueue failed", {
+        uid,
+        error: getErrorMessage(err),
+      });
+      throw AppError.fromHttpStatus(
+        500,
+        "Failed to schedule account deletion.",
+      );
     }
   },
 );
@@ -612,17 +673,26 @@ router.post(
       const [existing] = await drizzle
         .select()
         .from(deletionQueue)
-        .where(sql`${deletionQueue.userId} = ${uid} AND ${deletionQueue.status} = 'pending'`)
+        .where(
+          sql`${deletionQueue.userId} = ${uid} AND ${deletionQueue.status} = 'pending'`,
+        )
         .limit(1);
 
       if (!existing) {
-        throw AppError.fromHttpStatus(404, "No pending deletion request found.");
+        throw AppError.fromHttpStatus(
+          404,
+          "No pending deletion request found.",
+        );
       }
 
-      if (existing.scheduledPurgeAt && existing.scheduledPurgeAt.getTime() <= Date.now()) {
+      if (
+        existing.scheduledPurgeAt &&
+        existing.scheduledPurgeAt.getTime() <= Date.now()
+      ) {
         return res.status(410).json({
           code: "GONE",
-          error: "Grace period has expired. Deletion can no longer be cancelled.",
+          error:
+            "Grace period has expired. Deletion can no longer be cancelled.",
           scheduled_purge_at: existing.scheduledPurgeAt.toISOString(),
         });
       }
@@ -634,12 +704,14 @@ router.post(
 
       const renewal = await resumeRenewalAfterDeletionCancellation(uid);
 
-      void auditLogger.logAccountDeletionCancelled({ userId: uid, ip: req.ip }).catch((err) =>
-        log.warn("audit logAccountDeletionCancelled failed", {
-          uid,
-          error: getErrorMessage(err),
-        }),
-      );
+      void auditLogger
+        .logAccountDeletionCancelled({ userId: uid, ip: req.ip })
+        .catch((err) =>
+          log.warn("audit logAccountDeletionCancelled failed", {
+            uid,
+            error: getErrorMessage(err),
+          }),
+        );
 
       return res.json({
         status: "cancelled",
