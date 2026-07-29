@@ -8,6 +8,14 @@ export const VOICE_VARIABLE_COST_PER_MIN_USD = 0.128;
 export const PHONE_NUMBER_COST_MONTHLY_USD = 1.15;
 export const PAYMENT_PROCESSING_RATE = 0.029;
 export const PAYMENT_PROCESSING_FIXED_USD = 0.3;
+/** Stripe Billing fee on recurring subscription volume. */
+export const STRIPE_BILLING_RATE = 0.007;
+/**
+ * Conservative Stripe Tax transaction reserve. The live account has no tax
+ * registrations yet, but launch economics must remain safe when registrations
+ * are added rather than requiring an emergency repricing later.
+ */
+export const STRIPE_TAX_TRANSACTION_RATE = 0.005;
 
 export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v6";
 
@@ -197,7 +205,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_monthly: 79,
     price_usd_annual: 790,
     max_agents: 5,
-    voice_minutes_monthly: 250,
+    voice_minutes_monthly: 245,
     runtime_allowance_usd_monthly: 6,
     overage_per_min_usd: 0.22,
     included_phone_numbers: 5,
@@ -211,7 +219,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "Up to 5 live AI communications agents",
       "Up to 5 production-number slots, provisioned when needed",
-      "250 guaranteed live-voice minutes each month",
+      "245 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
       "$6 monthly flexible Runtime Allowance",
       "Lead Hunt campaigns, enrichment, niche research, routing, and approvals",
@@ -271,11 +279,25 @@ export const EXPECTED_INCLUDED_UTILIZATION = 0.7;
 export type BillingInterval = "month" | "year";
 
 /**
+ * Conservative Stripe commercial fees for one successful charge. Includes
+ * Payments processing, Stripe Billing, and the future Stripe Tax transaction
+ * reserve. Callers divide annual-charge fees by 12 when comparing monthly COGS.
+ */
+export function estimatedStripeCommercialFeesUsd(grossChargeUsd: number): number {
+  if (!Number.isFinite(grossChargeUsd) || grossChargeUsd <= 0) return 0;
+  return (
+    grossChargeUsd *
+      (PAYMENT_PROCESSING_RATE + STRIPE_BILLING_RATE + STRIPE_TAX_TRANSACTION_RATE) +
+    PAYMENT_PROCESSING_FIXED_USD
+  );
+}
+
+/**
  * Conservative contribution margin at full included utilization.
  *
  * This is intentionally stricter than observed-use margin: it reserves every
  * included voice minute, every number slot, the flexible runtime allowance,
- * and Stripe processing. Shared SaaS and founder time are not included.
+ * and Stripe commercial fees. Shared SaaS and founder time are not included.
  * Judged against HARD_CONTRIBUTION_MARGIN_FLOOR.
  */
 export function estimatedContributionMarginAtFullIncludedUsage(
@@ -286,15 +308,15 @@ export function estimatedContributionMarginAtFullIncludedUsage(
     interval === "year" ? plan.price_usd_annual / 12 : plan.price_usd_monthly;
   if (recurringRevenue <= 0) return 1;
 
-  const processingCost =
+  const commercialFees =
     interval === "year"
-      ? (plan.price_usd_annual * PAYMENT_PROCESSING_RATE + PAYMENT_PROCESSING_FIXED_USD) / 12
-      : plan.price_usd_monthly * PAYMENT_PROCESSING_RATE + PAYMENT_PROCESSING_FIXED_USD;
+      ? estimatedStripeCommercialFeesUsd(plan.price_usd_annual) / 12
+      : estimatedStripeCommercialFeesUsd(plan.price_usd_monthly);
   const reservedVariableCost =
     plan.voice_minutes_monthly * VOICE_VARIABLE_COST_PER_MIN_USD +
     plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD +
     plan.runtime_allowance_usd_monthly +
-    processingCost;
+    commercialFees;
 
   return (recurringRevenue - reservedVariableCost) / recurringRevenue;
 }
@@ -313,15 +335,15 @@ export function estimatedContributionMarginAtExpectedUsage(
     interval === "year" ? plan.price_usd_annual / 12 : plan.price_usd_monthly;
   if (recurringRevenue <= 0) return 1;
 
-  const processingCost =
+  const commercialFees =
     interval === "year"
-      ? (plan.price_usd_annual * PAYMENT_PROCESSING_RATE + PAYMENT_PROCESSING_FIXED_USD) / 12
-      : plan.price_usd_monthly * PAYMENT_PROCESSING_RATE + PAYMENT_PROCESSING_FIXED_USD;
+      ? estimatedStripeCommercialFeesUsd(plan.price_usd_annual) / 12
+      : estimatedStripeCommercialFeesUsd(plan.price_usd_monthly);
   const expectedVariableCost =
     plan.voice_minutes_monthly * EXPECTED_INCLUDED_UTILIZATION * VOICE_VARIABLE_COST_PER_MIN_USD +
     plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD +
     plan.runtime_allowance_usd_monthly * EXPECTED_INCLUDED_UTILIZATION +
-    processingCost;
+    commercialFees;
 
   return (recurringRevenue - expectedVariableCost) / recurringRevenue;
 }
