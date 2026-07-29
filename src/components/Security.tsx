@@ -205,9 +205,9 @@ export default function Security() {
       <PageMeta
         title={isTrustHub ? "Trust Center — Wireline" : "Security & Compliance — Wireline"}
         description="How Wireline handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and honest security proof."
-        // /trust and /security render identical content; consolidate both onto a
-        // single canonical so search engines don't see competing duplicates.
-        path="/security"
+        // /trust adds buyer-facing vendor, compliance, billing, and lifecycle
+        // evidence beyond /security, so each indexable route owns its canonical.
+        path={isTrustHub ? "/trust" : "/security"}
       />
       <MarketingChrome stickyCta={false} className="wl-security-page">
         <div className="wl-security-doc relative z-10 mx-auto max-w-3xl px-5 sm:px-6">
