@@ -292,27 +292,32 @@ export async function placeOutboundCall(opts: {
       // is re-sent every turn). Load only what the prompt will actually carry —
       // the highest-priority directives and most recent knowledge — instead of
       // 500 of each, mirroring the inbound factory's caps.
-      tx.select()
+      tx
+        .select()
         .from(schema.directives)
         .where(eq(schema.directives.agentId, agentId))
         .orderBy(desc(schema.directives.priority))
         .limit(MAX_RUNTIME_DIRECTIVES),
-      tx.select()
+      tx
+        .select()
         .from(schema.knowledge)
         .where(eq(schema.knowledge.agentId, agentId))
         .orderBy(desc(schema.knowledge.createdAt))
         .limit(MAX_RUNTIME_KNOWLEDGE),
-      tx.select()
+      tx
+        .select()
         .from(schema.personality)
         .where(eq(schema.personality.agentId, agentId))
         .limit(1),
-      tx.select()
+      tx
+        .select()
         .from(schema.agentLessons)
         .where(eq(schema.agentLessons.agentId, agentId))
         .orderBy(desc(schema.agentLessons.createdAt))
         .limit(MAX_RUNTIME_LESSONS),
       safeOutboundPhone
-        ? tx.select({
+        ? tx
+            .select({
               summary: schema.callLogs.summary,
               intentLabel: schema.callLogs.intentLabel,
               sentiment: schema.callLogs.sentiment,
@@ -330,7 +335,8 @@ export async function placeOutboundCall(opts: {
             .limit(3)
         : Promise.resolve([]),
       safeOutboundPhone
-        ? tx.select({
+        ? tx
+            .select({
               description: schema.followUpTasks.description,
               createdAt: schema.followUpTasks.createdAt,
             })
