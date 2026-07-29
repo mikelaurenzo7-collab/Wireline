@@ -38,8 +38,9 @@ router.get(
         return;
       }
 
-      const [[triageResult], [emailResult], [outboundResult], liveSignals] = await Promise.all([
-        drizzle
+      const [[triageResult], [emailResult], [outboundResult], liveSignals] = await drizzle.transaction((tx) =>
+        Promise.all([
+        tx
           .select({ count: sql`count(*)` })
           .from(schema.followUpTasks)
           .where(
@@ -48,21 +49,22 @@ router.get(
               eq(schema.followUpTasks.status, "pending"),
             ),
           ),
-        drizzle
+        tx
           .select({ count: sql`count(*)` })
           .from(schema.emailThreads)
           .where(and(eq(schema.emailThreads.userId, userId), eq(schema.emailThreads.read, false))),
-        drizzle
+        tx
           .select({ count: sql`count(*)` })
           .from(schema.outboundLeads)
           .where(
             and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "Queued")),
           ),
-        drizzle
+        tx
           .select({ label: schema.signalPresence.label })
           .from(schema.signalPresence)
           .where(eq(schema.signalPresence.userId, userId)),
-      ]);
+      ])
+      );
 
       const triageCount = Number(triageResult.count);
       const emailCount = Number(emailResult.count);
@@ -190,16 +192,17 @@ router.get(
         hotEmailsResult,
         recentApptsResult,
         prevLogsResult,
-      ] = await Promise.all([
-        drizzle
+      ] = await drizzle.transaction((tx) =>
+        Promise.all([
+        tx
           .select({ count: sql`count(*)` })
           .from(schema.appointments)
           .where(eq(schema.appointments.userId, userId)),
-        drizzle
+        tx
           .select({ count: sql`count(*)` })
           .from(schema.outboundLeads)
           .where(eq(schema.outboundLeads.userId, userId)),
-        drizzle
+        tx
           .select({
             id: schema.callLogs.id,
             cost: schema.callLogs.cost,
@@ -217,7 +220,7 @@ router.get(
           .where(eq(schema.callLogs.userId, userId))
           .orderBy(desc(schema.callLogs.createdAt))
           .limit(200),
-        drizzle
+        tx
           .select({
             id: schema.agents.id,
             name: schema.agents.name,
@@ -227,7 +230,7 @@ router.get(
           .from(schema.agents)
           .where(eq(schema.agents.userId, userId))
           .limit(500),
-        drizzle
+        tx
           .select({
             id: schema.emailThreads.id,
             customerEmail: schema.emailThreads.customerEmail,
@@ -242,7 +245,7 @@ router.get(
           )
           .orderBy(desc(schema.emailThreads.createdAt))
           .limit(5),
-        drizzle
+        tx
           .select({ createdAt: schema.appointments.createdAt })
           .from(schema.appointments)
           .where(
@@ -251,7 +254,7 @@ router.get(
               gte(schema.appointments.createdAt, sevenDaysAgo),
             ),
           ),
-        drizzle
+        tx
           .select({
             id: schema.callLogs.id,
             cost: schema.callLogs.cost,
@@ -267,7 +270,8 @@ router.get(
             ),
           )
           .limit(500),
-      ]);
+      ])
+      );
 
       const totalAppointments = Number(apptCountResult[0]?.count ?? 0);
       const totalLeads = Number(leadsCountResult[0]?.count ?? 0);
