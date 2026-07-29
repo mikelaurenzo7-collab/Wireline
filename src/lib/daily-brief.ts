@@ -40,7 +40,8 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
 
   const [yCalls, wCalls, appts, tasks, leads, wins, losses] = await drizzle.transaction((tx) =>
     Promise.all([
-      tx.select({
+      tx
+        .select({
           leadScore: schema.callLogs.leadScore,
           intentLabel: schema.callLogs.intentLabel,
           durationSeconds: schema.callLogs.durationSeconds,
@@ -56,14 +57,16 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
             lt(schema.callLogs.createdAt, yEnd),
           ),
         ),
-      tx.select({
+      tx
+        .select({
           leadScore: schema.callLogs.leadScore,
           durationSeconds: schema.callLogs.durationSeconds,
           cost: schema.callLogs.cost,
         })
         .from(schema.callLogs)
         .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, wStart))),
-      tx.select({ id: schema.appointments.id })
+      tx
+        .select({ id: schema.appointments.id })
         .from(schema.appointments)
         .where(
           and(
@@ -72,7 +75,8 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
             lt(schema.appointments.createdAt, yEnd),
           ),
         ),
-      tx.select({
+      tx
+        .select({
           priority: schema.followUpTasks.priority,
           description: schema.followUpTasks.description,
         })
@@ -82,12 +86,14 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
         )
         .orderBy(desc(schema.followUpTasks.createdAt))
         .limit(8),
-      tx.select({ id: schema.outboundLeads.id })
+      tx
+        .select({ id: schema.outboundLeads.id })
         .from(schema.outboundLeads)
         .where(
           and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "Pending")),
         ),
-      tx.select({
+      tx
+        .select({
           customerNumber: schema.callLogs.customerNumber,
           leadScore: schema.callLogs.leadScore,
           summary: schema.callLogs.summary,
@@ -103,7 +109,8 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
         )
         .orderBy(desc(schema.callLogs.leadScore))
         .limit(3),
-      tx.select({
+      tx
+        .select({
           customerNumber: schema.callLogs.customerNumber,
           leadScore: schema.callLogs.leadScore,
           summary: schema.callLogs.summary,
