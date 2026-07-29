@@ -89,7 +89,12 @@ describe("billing proof contract", () => {
     expect(settingsRoutes).toContain("renewal_resumed: renewal.confirmed");
     expect(deletionBilling).toContain("cancel_at_period_end: true");
     expect(deletionBilling).toContain("cancel_at_period_end: false");
+    expect(deletionBilling).toContain("stripe.subscriptions.list");
+    expect(deletionBilling).toContain("for await");
+    expect(deletionBilling).toContain("DELETION_RENEWAL_MARKER");
+    expect(deletionBilling).toContain('metadata: { [DELETION_RENEWAL_MARKER]: "" }');
     expect(settings).toContain("Future subscription renewal is stopped");
+    expect(settings).toContain('authFetch("/api/account/deletion-status"');
     expect(settings).toContain('authFetch("/api/account/cancel-deletion"');
     expect(settings).toContain("Keep my account");
     expect(settings).not.toContain("Billing continues until purge");
