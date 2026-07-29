@@ -192,7 +192,8 @@ router.get(
 
       const [agents, callStats, apptStats, aiCostStats] = await drizzle.transaction((tx) =>
         Promise.all([
-          tx.select({
+          tx
+            .select({
               id: schema.agents.id,
               name: schema.agents.name,
               archetype: schema.agents.archetype,
@@ -202,7 +203,8 @@ router.get(
             .from(schema.agents)
             .where(eq(schema.agents.userId, userId))
             .limit(500),
-          tx.select({
+          tx
+            .select({
               agentId: schema.callLogs.agentId,
               totalCalls: count(),
               qualified:
@@ -228,14 +230,16 @@ router.get(
             .from(schema.callLogs)
             .where(callWhere)
             .groupBy(schema.callLogs.agentId),
-          tx.select({
+          tx
+            .select({
               agentId: schema.appointments.agentId,
               bookings: count(),
             })
             .from(schema.appointments)
             .where(apptWhere)
             .groupBy(schema.appointments.agentId),
-          tx.select({
+          tx
+            .select({
               agentId:
                 sql<string>`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`.mapWith(
                   String,
