@@ -76,6 +76,17 @@ describe("billing proof contract", () => {
     expect(billingCard).toContain("Cancels at period end");
   });
 
+  it("stops future renewal when account deletion is scheduled", () => {
+    const accountRoutes = read("src/routes/account-routes.ts");
+    const settings = read("src/pages/SettingsPage.tsx");
+
+    expect(accountRoutes).toContain("stopRenewalForDeletion");
+    expect(accountRoutes).toContain("cancel_at_period_end: true");
+    expect(accountRoutes).toContain("renewal_stopped: renewal.renewalStopped");
+    expect(settings).toContain("Future subscription renewal is stopped");
+    expect(settings).not.toContain("Billing continues until purge");
+  });
+
   it("keeps Conversation Balance top-up metadata and refund/dispute recovery wired", () => {
     const balanceRoutes = read("src/routes/conversation-balance-routes.ts");
     const billingRoutes = read("src/routes/billing-routes.ts");
