@@ -49,7 +49,7 @@ The read-only vendor probe and generated launch-status record now verify all of 
 
 - charges and payouts enabled with non-negative available balance;
 - customer-facing Wireline name, statement descriptor, website, and support origin;
-- one active default customer portal with payment-method updates, invoice history, and subscription cancellation;
+- one active Wireline-managed or default customer portal with payment-method updates, invoice history, and subscription cancellation;
 - one enabled `https://trywireline.com/api/stripe-webhook` endpoint with exactly the eight server-handled events;
 - active Stripe Tax settings.
 
@@ -71,7 +71,7 @@ The live Founder catalog matches code:
 
 The code models $0.128 variable voice cost per minute, $1.15 per phone number per month, and Stripe's 2.9% + $0.30 fee assumption. Catalog checks preserve at least a 45% expected contribution-margin target and a 30% full-utilization floor; annual plans are the tightest but remain above the floor.
 
-The catalog, tax posture, and webhook endpoint are healthy. The customer-facing Stripe account still presents as **Cadence AI**, its public/support URLs are not fully aligned to Wireline, and no default customer portal configuration exists. There are no live Stripe subscriptions; database subscription rows are demo/manual records. Paid self-serve launch is therefore **blocked** until the Stripe Dashboard is corrected and one controlled checkout-to-cancellation matrix passes.
+The catalog, tax posture, and webhook endpoint are healthy. The customer-facing Stripe account still presents as **Cadence AI**, its public/support URLs are not fully aligned to Wireline, and no active portal configuration exists in the live account yet. The application is designed to create an explicit, catalog-fingerprinted managed configuration on first portal use, but that bootstrap has not been exercised. There are no live Stripe subscriptions; database subscription rows are demo/manual records. Paid self-serve launch is therefore **blocked** until the account identity is corrected and one controlled checkout-to-cancellation matrix proves portal bootstrap.
 
 ## Database and backend health
 
@@ -126,7 +126,7 @@ This audit did **not** reuse old screenshots or claim visual completion. Fresh s
 
 ## Release blockers
 
-1. Rebrand the Stripe account to Wireline, align website/support/statement details and assets, and activate the required default customer portal.
+1. Rebrand the Stripe account to Wireline, align website/support/statement details and assets, and prove the managed portal bootstrap (or configure a compliant Dashboard default).
 2. Run one controlled live Starter checkout -> webhook -> entitlement -> portal -> cancel/refund proof.
 3. Enable Opera AI connection and explicitly approve Playwright for the exact cross-viewport matrix; inspect and fix every current screenshot before merge.
 4. Restore GitHub Actions execution or explicitly accept Vercel exact-head build as the temporary release gate.
