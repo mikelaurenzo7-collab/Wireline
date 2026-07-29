@@ -140,7 +140,7 @@ compatibility fallback until it is rotated.
 | Upstash             | Distributed rate limits             | credentials ready                         | Maintain production database and billing                                      |
 | Federal DNC vendor  | Marketing scrub                     | URL/key configured                        | Confirm live lookup semantics and maintain scrub credits                       |
 | Sentry              | Error alerts                        | not connected/certified in this audit       | Add SDK/project/DSN and prove browser+backend receipt, or keep it non-required |
-| LiveAvatar / HeyGen | Video add-on                        | not core launch                           | Fund only after consent, pricing, and demand gates pass                        |
+| LiveAvatar / HeyGen | Video add-on                        | launch-paused; 60-min cap implemented     | Fund only after consent, catalog, paid-lifecycle, and demand gates pass         |
 | Apollo              | Enrichment                          | optional                                  | Add capped budget only when Lead Hunt is sold                                  |
 | Perplexity          | Live public research (PSTN tool)    | optional; Gemini grounded already covers  | Set `PERPLEXITY_API_KEY` (+ `PERPLEXITY_MODEL=sonar`) for fresher answers        |
 
@@ -163,7 +163,7 @@ Set provider-level budgets below Wireline account-level spend caps.
 | ChatGPT App / MCP                    | Account-bound drafting/simulation       | beta                | No unapproved live-call side effects                 |
 | Browser extension                    | Explicit page-context handoff           | beta                | Store review and privacy verification                |
 | iOS / Android                        | Urgent owner control                    | beta                | Signing, native QA, and store approval               |
-| Video presenter                      | LiveAvatar/HeyGen                       | planned/beta add-on | Separate consent and prepaid credits                 |
+| Video presenter                      | LiveAvatar/HeyGen                       | planned/beta add-on | 60 reserved min/month; 10 min/session; no overage    |
 | Figma / Canva / GitHub design export | Design schema/env only                  | planned             | Do not fund until active routes exist                |
 | Linear / Discord / Telegram          | No active integration                   | not implemented     | Do not market or fund                                |
 
