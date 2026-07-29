@@ -14,7 +14,7 @@ const DRIZZLE_PARAMS_RE = /(\r?\nparams:)[\s\S]*$/i;
 const EMAIL_IN_ERROR_RE = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
 const UUID_IN_ERROR_RE =
   /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi;
-const AUTH_IN_ERROR_RE = /\b(Bearer|Basic)\s+[A-Za-z0-9._~+\/-]+=*/gi;
+const AUTH_IN_ERROR_RE = /\b(Bearer|Basic)\s+[A-Za-z0-9._~+/-]+=*/gi;
 const SECRET_QUERY_VALUE_RE =
   /([?&](?:access_token|auth|authorization|code|credential|key|password|secret|signature|token)=)[^&#\s]+/gi;
 
