@@ -99,11 +99,7 @@ function normalizeExtraction(value: unknown): ExtractedConfig {
         .map((item) => ({ content: cleanText(item.content, 4000) }))
         .filter((item) => !!item.content)
     : [];
-  return {
-    directives,
-    knowledge,
-    personality: cleanText(raw.personality, 4000),
-  };
+  return { directives, knowledge, personality: cleanText(raw.personality, 4000) };
 }
 
 async function persistExtraction(agentId: string, userId: string, extraction: ExtractedConfig) {
@@ -119,13 +115,9 @@ async function persistExtraction(agentId: string, userId: string, extraction: Ex
       );
     }
     if (extraction.knowledge.length) {
-      await tx.insert(schema.knowledge).values(
-        extraction.knowledge.map((item) => ({
-          content: item.content,
-          agentId,
-          userId,
-        })),
-      );
+      await tx
+        .insert(schema.knowledge)
+        .values(extraction.knowledge.map((item) => ({ content: item.content, agentId, userId })));
     }
     if (extraction.personality) {
       await tx
@@ -183,10 +175,7 @@ async function extractImageAsset(fileName: string, dataUrl: string): Promise<Ext
         items: {
           type: "object",
           additionalProperties: false,
-          properties: {
-            content: { type: "string" },
-            priority: { type: "integer" },
-          },
+          properties: { content: { type: "string" }, priority: { type: "integer" } },
           required: ["content", "priority"],
         },
       },
@@ -205,10 +194,7 @@ async function extractImageAsset(fileName: string, dataUrl: string): Promise<Ext
   };
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: OPENAI_STRUCTURED_PRIMARY_MODEL,
       instructions:
@@ -249,15 +235,10 @@ router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, re
   try {
     res.json({ agents: await listAgentsForUser(req.user.id) });
   } catch (error) {
-    log.warn("Agent roster unavailable", {
-      error: getErrorMessage(error),
-      userId: req.user.id,
-    });
-    res.status(503).json({
-      agents: [],
-      degraded: true,
-      error: "Agent roster is temporarily unavailable",
-    });
+    log.warn("Agent roster unavailable", { error: getErrorMessage(error), userId: req.user.id });
+    res
+      .status(503)
+      .json({ agents: [], degraded: true, error: "Agent roster is temporarily unavailable" });
   }
 });
 
@@ -358,11 +339,7 @@ router.post(
       if (seededPersonality) {
         await tx
           .insert(schema.personality)
-          .values({
-            agentId: id,
-            userId: req.user.id,
-            content: seededPersonality,
-          })
+          .values({ agentId: id, userId: req.user.id, content: seededPersonality })
           .onConflictDoUpdate({
             target: schema.personality.agentId,
             set: { userId: req.user.id, content: seededPersonality },
@@ -396,8 +373,7 @@ router.get(
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
     const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
       Promise.all([
-        tx
-          .select({
+        tx.select({
             name: schema.agents.name,
             role: schema.agents.role,
             archetype: schema.agents.archetype,
@@ -430,8 +406,7 @@ router.get(
           .from(schema.agents)
           .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
           .limit(1),
-        tx
-          .select({ content: schema.personality.content })
+        tx.select({ content: schema.personality.content })
           .from(schema.personality)
           .where(
             and(
@@ -440,8 +415,7 @@ router.get(
             ),
           )
           .limit(1),
-        tx
-          .select()
+        tx.select()
           .from(schema.directives)
           .where(
             and(
@@ -450,8 +424,7 @@ router.get(
             ),
           )
           .orderBy(desc(schema.directives.priority)),
-        tx
-          .select()
+        tx.select()
           .from(schema.knowledge)
           .where(
             and(
@@ -460,7 +433,7 @@ router.get(
             ),
           )
           .orderBy(desc(schema.knowledge.createdAt)),
-      ]),
+      ])
     );
     const record = agentRows[0];
     const identity = record
@@ -533,12 +506,9 @@ router.post(
           set: { userId: req.user.id, content },
         });
     } else if (type === "directive") {
-      await drizzle.insert(schema.directives).values({
-        agentId: req.params.id,
-        userId: req.user.id,
-        content,
-        priority: 5,
-      });
+      await drizzle
+        .insert(schema.directives)
+        .values({ agentId: req.params.id, userId: req.user.id, content, priority: 5 });
     } else if (type === "knowledge") {
       await drizzle
         .insert(schema.knowledge)
@@ -590,11 +560,7 @@ router.patch(
       .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
     res.json({
       success: true,
-      runtime: {
-        provider: provider || null,
-        model: model || null,
-        temperature,
-      },
+      runtime: { provider: provider || null, model: model || null, temperature },
     });
   },
 );
