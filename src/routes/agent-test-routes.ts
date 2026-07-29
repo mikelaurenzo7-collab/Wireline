@@ -93,7 +93,7 @@ router.post(
             )
             .orderBy(desc(schema.knowledge.createdAt))
             .limit(50),
-        ])
+        ]),
       );
 
       const agent = agentRows[0];
