@@ -94,6 +94,8 @@ run("npx", [
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
   "tests/auth-journey-hardening-contract.test.ts",
+  // Recovery-token atomicity and expiry cleanup are account-security boundaries.
+  "tests/auth-token-atomicity-contract.test.ts",
   // Provider-host binding, browser-bound bridge state, verified identity, key
   // rotation, and one-check throttling protect account-session integrity.
   "tests/auth-oauth-browser-binding-contract.test.ts",
@@ -107,6 +109,8 @@ run("npx", [
   // Public launch claims, customer-controlled spend provenance, and reversible
   // subscription deletion are release boundaries, not optional regression tests.
   "tests/launch-truth-contract.test.ts",
+  // Launch status and billing-status pool headroom must stay fail-closed.
+  "tests/double-pass-launch-honesty-contract.test.ts",
   "tests/ai-cost-protection-contract.test.ts",
   "tests/billing-proof-contract.test.ts",
   "tests/signup-bootstrap-integrity-contract.test.ts",
