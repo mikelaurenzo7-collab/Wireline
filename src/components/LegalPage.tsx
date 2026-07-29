@@ -3,7 +3,7 @@ import { FileText, ArrowLeft } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingChrome from "./marketing/MarketingChrome";
 
-const LAST_UPDATED = "July 19, 2026";
+const LAST_UPDATED = "July 28, 2026";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared layout wrapper for legal pages
@@ -118,7 +118,7 @@ export function TermsOfService() {
     >
       <PageMeta
         title="Terms of Service"
-        description="Wireline's terms of service — acceptable use, billing, telemarketing compliance (TCPA), SMS opt-out disclosure, limitation of liability, and governing law (Delaware). Last updated July 19, 2026."
+        description="Wireline's terms of service — acceptable use, billing, telemarketing compliance (TCPA), SMS opt-out disclosure, limitation of liability, and governing law (Delaware). Last updated July 28, 2026."
         path="/terms"
       />
 
@@ -132,7 +132,7 @@ export function TermsOfService() {
 
       <Section title="2. Service Description">
         <p>
-          Wireline provides AI-powered voice and email agent infrastructure for businesses. The
+          Wireline provides AI-powered voice, SMS, and email agent infrastructure for personal and business use. The
           service includes agent configuration tools, call routing, email triage, outbound dialing
           campaigns, a DNC manager, and analytics.
         </p>
@@ -146,7 +146,7 @@ export function TermsOfService() {
             Send unsolicited commercial messages (spam) in violation of CAN-SPAM, CASL, or similar
             laws
           </li>
-          <li>Impersonate any person or organisation</li>
+          <li>Impersonate any person or organization</li>
           <li>
             Violate any telemarketing law including the TCPA (US), CASL (Canada), or applicable
             state law
@@ -204,9 +204,10 @@ export function TermsOfService() {
 
       <Section title="6. Billing and Subscriptions">
         <p>
-          Paid features are billed monthly via Stripe. Subscriptions renew automatically unless
-          cancelled before the renewal date. You may cancel at any time via the Billing section in
-          Settings; cancellation takes effect at the end of the current billing period.
+          Paid features are billed monthly or annually via Stripe, according to the interval selected
+          at checkout. Subscriptions renew automatically at that interval unless canceled before the
+          renewal date. You may cancel at any time via the Billing section in Settings; cancellation
+          takes effect at the end of the current billing period.
         </p>
         <p>
           <strong>30-day money-back guarantee.</strong> If Wireline isn't working for your business
