@@ -190,8 +190,9 @@ router.get(
         gte(schema.appointments.createdAt, since),
       );
 
-      const [agents, callStats, apptStats, aiCostStats] = await Promise.all([
-        drizzle
+      const [agents, callStats, apptStats, aiCostStats] = await drizzle.transaction((tx) =>
+        Promise.all([
+        tx
           .select({
             id: schema.agents.id,
             name: schema.agents.name,
@@ -202,7 +203,7 @@ router.get(
           .from(schema.agents)
           .where(eq(schema.agents.userId, userId))
           .limit(500),
-        drizzle
+        tx
           .select({
             agentId: schema.callLogs.agentId,
             totalCalls: count(),
@@ -229,7 +230,7 @@ router.get(
           .from(schema.callLogs)
           .where(callWhere)
           .groupBy(schema.callLogs.agentId),
-        drizzle
+        tx
           .select({
             agentId: schema.appointments.agentId,
             bookings: count(),
@@ -237,7 +238,7 @@ router.get(
           .from(schema.appointments)
           .where(apptWhere)
           .groupBy(schema.appointments.agentId),
-        drizzle
+        tx
           .select({
             agentId:
               sql<string>`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`.mapWith(
@@ -257,7 +258,8 @@ router.get(
             ),
           )
           .groupBy(sql`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`),
-      ]);
+      ])
+      );
 
       const callByAgent = new Map((callStats || []).map((r) => [r.agentId || "unknown", r]));
       const apptsByAgent = new Map(
