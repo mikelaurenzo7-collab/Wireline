@@ -62,10 +62,14 @@ describe("launch truth contract", () => {
 
     expect(settings).not.toContain("Billing continues until purge");
     expect(accountRoutes).toContain("renewal_stopped");
+    expect(accountRoutes).toContain('"/api/account/deletion-status"');
+    expect(settings).toContain('authFetch("/api/account/deletion-status"');
     expect(deletionBilling).toContain("cancel_at_period_end: true");
     expect(deletionBilling).toContain("cancel_at_period_end: false");
+    expect(deletionBilling).toContain("stripe.subscriptions.list");
+    expect(deletionBilling).toContain("DELETION_RENEWAL_MARKER");
     expect(spendRoutes).toContain("maximum_limit_usd");
-    expect(spendRoutes).toContain("hard_cap must remain enabled");
+    expect(spendRoutes).toContain("The provider spend guard is always enabled with a hard cap.");
     expect(spendView).toContain("Always on");
   });
 });
