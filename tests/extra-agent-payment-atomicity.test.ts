@@ -221,8 +221,9 @@ describe("extra-agent Stripe settlement helpers", () => {
 });
 
 describe("extra-agent atomic route contract", () => {
-  it("settles Stripe before Postgres and shadows the legacy write route", () => {
+  it("settles Stripe before Postgres and remains the sole write owner", () => {
     const route = read("src/routes/extra-agent-billing-atomic-routes.ts");
+    const broadBilling = read("src/routes/billing-routes.ts");
     const registry = read("src/server/register-api-routes.ts");
     const atomicMount = 'app.use("/api/billing/extra-agents", extraAgentBillingAtomicRouter)';
     const broadBillingMount = 'app.use("/api", billingRouter)';
@@ -232,6 +233,9 @@ describe("extra-agent atomic route contract", () => {
     expect(route).toContain("stripe.subscriptions.retrieve(subscriptionId)");
     expect(route).toContain("verifiedQuantity !== target");
     expect(route).toContain("set({ extraAgents: quantity, maxAgents, updatedAt: new Date() })");
+    expect(route).toContain("target > currentDbQuantity && isLaunchHardBlocked()");
+    expect(route).toContain("body: launchBlockResponse()");
+    expect(broadBilling).not.toContain('router.post(\n  "/billing/extra-agents"');
     expect(registry).toContain(atomicMount);
     expect(registry.indexOf(atomicMount)).toBeLessThan(registry.indexOf(broadBillingMount));
   });
