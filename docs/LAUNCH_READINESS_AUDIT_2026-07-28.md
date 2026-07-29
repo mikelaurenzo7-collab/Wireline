@@ -118,7 +118,7 @@ Runway is available for asynchronous generated media, not a real-time presenter.
 - The Stripe catalog and webhook are coherent; brand and portal remain blocked.
 - Vercel production showed one billing-status 500 consistent with pool checkout exhaustion and one older Resend 422 to a synthetic example address.
 - No Sentry SDK/configuration was found in the audited source, and no authenticated Sentry project access was available. Do not claim Sentry alerting is certified.
-- Ads Manager required reauthentication, so campaign, conversion, and feed correctness were not certified and no spend was changed.
+- Ads Manager is intentionally out of scope by founder direction; it was not accessed, no spend was changed, and it is not a launch gate.
 - Opera was not connected. The requested fresh screenshot inspection could not be performed.
 - The Federal DNC integration still requires one real vendor-authenticated scrub before scaled marketing outbound.
 - GitHub Actions currently fail before jobs start because of account limits.
@@ -138,9 +138,8 @@ This audit did **not** reuse old screenshots or claim visual completion. Fresh s
 3. Enable Opera AI connection and explicitly approve Playwright for the exact cross-viewport matrix; inspect and fix every current screenshot before merge.
 4. Restore GitHub Actions execution or explicitly accept Vercel exact-head build as the temporary release gate.
 5. Complete one real Federal DNC scrub before scaled marketing outbound.
-6. Reauthenticate Ads Manager before spending or certifying conversion measurement.
-7. Connect/configure Sentry if it is intended to be a launch dependency; otherwise keep Vercel/runtime logging as the documented observability boundary.
-8. Rotate the Vercel personal token that was pasted into chat.
+6. Connect/configure Sentry if it is intended to be a launch dependency; otherwise keep Vercel/runtime logging as the documented observability boundary.
+7. Rotate the Vercel personal token that was pasted into chat.
 
 ## Merge rule
 
