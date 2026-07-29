@@ -236,8 +236,8 @@ export default function StudioAgentWorkspacePanel({
                     className="text-sm font-semibold text-foreground"
                     htmlFor="setup-knowledge"
                   >
-                    {isBusinessAgent ? "Essential business facts" : "Essential personal facts"}
-                    <span className="ml-2 font-normal text-muted-foreground">Optional</span>
+                    {isBusinessAgent ? "Essential business facts" : "Essential personal facts"}{" "}
+                    <span className="font-normal text-muted-foreground">(optional)</span>
                   </label>
                   <Link
                     to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
