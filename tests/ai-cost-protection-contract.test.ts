@@ -42,11 +42,15 @@ describe("AI cost-protection contract", () => {
   it("raises the exact free seed, clamps oversized limits, and repairs disabled caps", () => {
     const snapshot = read("src/lib/workspace-usage-snapshot.ts");
     const routes = read("src/routes/spend-control-routes.ts");
+    const entitlements = read("src/lib/plan-entitlements.ts");
+    const validation = read("src/lib/api-validation-base.ts");
     expect(snapshot).toContain("isAutoSeededFreeCap");
     expect(snapshot).toContain("Math.min(current, limit)");
     expect(snapshot).toContain("existing.hardCap === true");
     expect(routes).toContain("limit > maximumLimitUsd");
     expect(routes).toContain("The provider spend guard is always enabled with a hard cap.");
+    expect(entitlements).toContain('status === "active" || status === "trialing"');
+    expect(validation).toContain("hard_cap: z.boolean().default(true)");
   });
 
   it("realtime simulation sessions carry a daily minute quota", () => {
