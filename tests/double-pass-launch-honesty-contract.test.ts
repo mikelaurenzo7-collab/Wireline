@@ -108,4 +108,37 @@ describe("double-pass launch honesty", () => {
     expect(launchStatus).toContain('blockers.push("stripe_tax_not_active")');
   });
 
+
+  it("keeps high-cardinality tenant snapshots on one scoped connection", () => {
+    const transactionBoundSnapshots = [
+      "src/lib/daily-brief.ts",
+      "src/routes/fleet-routes.ts",
+      "src/routes/insights-routes.ts",
+      "src/lib/vapi-assistant-factory-v2.ts",
+      "src/lib/vapi-client.ts",
+      "src/lib/voice/grok-voice-service.ts",
+      "src/routes/settings-routes.ts",
+      "src/routes/dashboard-routes.ts",
+      "src/lib/voice/openai-live-agent-service.ts",
+      "src/routes/agent-routes-v2.ts",
+      "src/routes/mobile-routes.ts",
+      "src/routes/agent-workspace-routes.ts",
+      "src/routes/agent-test-routes.ts",
+    ];
+
+    for (const path of transactionBoundSnapshots) {
+      const source = read(path);
+      expect(source, path).toContain("drizzle.transaction((tx)");
+
+      for (const match of source.matchAll(/Promise\.all\(/g)) {
+        const start = match.index ?? 0;
+        const end = source.indexOf("]);", start);
+        if (end < 0) continue;
+        const block = source.slice(start, end + 3);
+        const rootQueryFanout = block.match(/\bdrizzle\s*\./g)?.length ?? 0;
+        expect(rootQueryFanout, `${path} still fans out tenant pool clients`).toBeLessThan(4);
+      }
+    }
+  });
+
 });
