@@ -264,6 +264,7 @@ export const spendBudgets = pgTable("wireline_spend_budgets", {
   hardCap: boolean("hard_cap").default(false),
   warnThresholdPct: integer("warn_threshold_pct").default(80),
   enabled: boolean("enabled").default(true),
+  managedDefault: boolean("managed_default").notNull().default(false),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
