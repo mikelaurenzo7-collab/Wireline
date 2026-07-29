@@ -718,8 +718,9 @@ router.get(
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
       const [callRows, emailRows, textRows, bookingRows, openTaskRows, recentCalls] =
-        await Promise.all([
-          drizzle
+        await drizzle.transaction((tx) =>
+          Promise.all([
+          tx
             .select({ n: sql<number>`count(*)::int` })
             .from(schema.callLogs)
             .where(
@@ -729,7 +730,7 @@ router.get(
                 gte(schema.callLogs.createdAt, since),
               ),
             ),
-          drizzle
+          tx
             .select({ n: sql<number>`count(*)::int` })
             .from(schema.emailThreads)
             .where(
@@ -739,7 +740,7 @@ router.get(
                 gte(schema.emailThreads.createdAt, since),
               ),
             ),
-          drizzle
+          tx
             .select({ n: sql<number>`count(*)::int` })
             .from(schema.smsThreads)
             .where(
@@ -749,7 +750,7 @@ router.get(
                 gte(schema.smsThreads.createdAt, since),
               ),
             ),
-          drizzle
+          tx
             .select({ n: sql<number>`count(*)::int` })
             .from(schema.appointments)
             .where(
@@ -759,7 +760,7 @@ router.get(
                 gte(schema.appointments.createdAt, since),
               ),
             ),
-          drizzle
+          tx
             .select({ n: sql<number>`count(*)::int` })
             .from(schema.followUpTasks)
             .where(
@@ -769,7 +770,7 @@ router.get(
                 eq(schema.followUpTasks.status, "pending"),
               ),
             ),
-          drizzle
+          tx
             .select({
               summary: schema.callLogs.summary,
               sentiment: schema.callLogs.sentiment,
@@ -783,7 +784,8 @@ router.get(
             )
             .orderBy(desc(schema.callLogs.createdAt))
             .limit(4),
-        ]);
+        ])
+        );
 
       res.json({
         pulse: {
