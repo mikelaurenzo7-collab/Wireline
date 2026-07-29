@@ -16,7 +16,7 @@ live-infrastructure audits performed the same day.
 | Stripe catalog copy drift (55/120/285) synced to live account | #860 | Live product re-read |
 | E2E harness auto-resolves preinstalled Chromium; signin test hardened | #861 | 61/61 runnable e2e green in-sandbox |
 | Pricing decision v6 recorded | #862 | docs/PRICING_DECISION_2026-07-25.md |
-| **Founder catalog v6 executed**: $19/$39/$79/$159, 60/120/250/450 min, flat $0.22 top-up, uniform 2-months-free annual, two-floor margin policy; Stripe v6 prices live, v5 archived, Vercel env ids updated | #863 | Prod `/api/billing/plans` probe + live Stripe end-state (14 active prices, all v6) |
+| **Founder catalog v6 executed**: $19/$39/$79/$159, 60/120/245/450 min, flat $0.22 top-up, uniform 2-months-free annual, two-floor margin policy; Stripe v6 prices live, v5 archived, Vercel env ids updated | #863 | Prod `/api/billing/plans` probe + live Stripe end-state (14 active prices, all v6) |
 
 ## Verified healthy (evidence, not assumption)
 
