@@ -86,7 +86,7 @@ Supabase reports the project `ACTIVE_HEALTHY` on Postgres 17.6.1. All inspected 
 
 Observed production state:
 
-- 5,932 jobs completed in 30 days, 44 pending, one dead legacy knowledge-URL job, and no stale jobs;
+- 5,750 jobs finished in the prior 30 days at the final database sample, with zero pending or stale jobs; five dead historical jobs remain (one intentionally disabled knowledge-URL job and four May purge jobs from before the purge RPC was present; the current RPC exists);
 - three demo calls, with no real-call pipeline, STT, or TTS failures;
 - 132/132 workspace spend budgets enabled with hard caps;
 - zero orphan carrier resources;
