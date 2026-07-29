@@ -181,8 +181,9 @@ function buildInstructions(
 }
 
 async function loadAgentRuntime(agentId: string, userId: string) {
-  const [agents, personalities, directives, knowledge] = await Promise.all([
-    drizzle
+  const [agents, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
+    Promise.all([
+    tx
       .select({
         id: schema.agents.id,
         userId: schema.agents.userId,
@@ -201,24 +202,25 @@ async function loadAgentRuntime(agentId: string, userId: string) {
       .from(schema.agents)
       .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
       .limit(1),
-    drizzle
+    tx
       .select({ content: schema.personality.content })
       .from(schema.personality)
       .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)))
       .limit(1),
-    drizzle
+    tx
       .select({ content: schema.directives.content })
       .from(schema.directives)
       .where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId)))
       .orderBy(desc(schema.directives.priority))
       .limit(40),
-    drizzle
+    tx
       .select({ content: schema.knowledge.content })
       .from(schema.knowledge)
       .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
       .orderBy(desc(schema.knowledge.createdAt))
       .limit(80),
-  ]);
+  ])
+  );
   const agent = agents[0] as AgentRow | undefined;
   if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
   return {
