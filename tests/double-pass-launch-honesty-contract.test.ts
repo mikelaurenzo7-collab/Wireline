@@ -65,4 +65,26 @@ describe("double-pass launch honesty", () => {
     expect(source).toContain('throw AppError.fromHttpStatus(500, "Failed to mark SMS thread read")');
     expect(source).not.toContain("res.json({ ok: false })");
   });
+
+  it("keeps billing status within serverless database pool headroom", () => {
+    const source = read("src/routes/billing-routes.ts");
+    const start = source.indexOf('"/billing/status"');
+    const end = source.indexOf('"/admin/stripe-customer-audit"');
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+
+    const statusRoute = source.slice(start, end);
+    expect(statusRoute).toContain("Keep tenant reads sequential");
+    expect(statusRoute).not.toContain("await Promise.all([");
+
+    const subscriptionRead = statusRoute.indexOf("const subRows = await drizzle");
+    const agentRead = statusRoute.indexOf("const agentCounts = await drizzle");
+    const phoneRead = statusRoute.indexOf("const phoneCounts = await drizzle");
+    const entitlementRead = statusRoute.indexOf(
+      "const entitlementSlots = await getIncludedPhoneLineSlots",
+    );
+    expect(subscriptionRead).toBeLessThan(agentRead);
+    expect(agentRead).toBeLessThan(phoneRead);
+    expect(phoneRead).toBeLessThan(entitlementRead);
+  });
 });
