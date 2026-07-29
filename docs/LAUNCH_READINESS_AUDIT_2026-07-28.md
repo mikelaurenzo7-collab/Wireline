@@ -10,13 +10,13 @@ This is dated evidence, not product doctrine. Canonical policy remains in the co
 
 ## Executive result
 
-The deep pass verified that Wireline has a coherent product model, a guarded OpenAI-first runtime, a versioned Founder pricing catalog, tenant-isolated data, activation/spend controls, provider fallbacks, and an extensive launch-test suite. It also found one production billing-status failure caused by avoidable serverless pool fan-out, indefinite retention of expired recovery credentials, a false-green Stripe readiness check, and email diagnostics that could expose recipient addresses or a verification bearer link.
+The deep pass verified that Wireline has a coherent product model, a guarded OpenAI-first runtime, a versioned Founder pricing catalog, tenant-isolated data, activation/spend controls, provider fallbacks, and an extensive launch-test suite. It also found one production billing-status failure caused by avoidable serverless pool fan-out, indefinite retention of expired recovery credentials, a false-green Stripe readiness check, email diagnostics that could expose recipient addresses or a verification bearer link, and a shared database-error formatter that retained Drizzle bound parameters.
 
 All verified code wins are implemented on the audit branch. No speculative redesign, vendor expansion, or destructive data cleanup was applied.
 
 ## Exact-head release evidence
 
-The full launch audit completed on code-bearing commit `10b832e2bcf10fe965f01ef96447c57c7ec57746` (`dpl_BZZkWUGuUyndrcLkAcaq83K4PG5v`, `READY`). This evidence-only documentation update does not change the audited runtime.
+The last completed full launch audit is `10b832e2bcf10fe965f01ef96447c57c7ec57746` (`dpl_BZZkWUGuUyndrcLkAcaq83K4PG5v`, `READY`). The later shared-error privacy fix and regression contract are tagged by this commit to rerun the full gate; replace this paragraph and the table below with that exact-head deployment before merge.
 
 | Gate | Result |
 | --- | --- |
@@ -55,6 +55,10 @@ The daily per-tenant `purge_old_data` job now removes expired email-verification
 Transactional-email diagnostics previously logged full recipient addresses, and the missing-transport verification path logged the single-use verification URL itself. Provider error bodies could also echo a mailbox back into logs or user-facing errors.
 
 Email-service logs now retain only a redaction marker and recipient domain, never the local part. Verification, reset, signup, and escalation payload values are excluded from log calls, and Resend error details are bounded, flattened, and email-redacted before they are returned or logged. A release-gated contract parses every email-service log call and exercises both JSON and raw provider-error sanitization.
+
+### Shared error-log privacy
+
+A fresh production-log review found that the historical billing-status database failure also emitted Drizzle's bound `params:` value, including a tenant UUID. The shared error formatter now strips bound SQL parameters, email addresses, UUIDs, bearer credentials, signed query values, and overlong payloads before structured logging. The existing observability-privacy release contract now pins every redaction class and the 2,000-character bound.
 
 ### Stripe launch truth
 
@@ -122,7 +126,7 @@ Runway is available for asynchronous generated media, not a real-time presenter.
 
 - Stripe, Vercel, Supabase, Runway, and Descript were reachable for read-only verification.
 - The Stripe catalog and webhook are coherent; brand and portal remain blocked.
-- Vercel production showed one billing-status 500 consistent with pool checkout exhaustion and one older Resend 422 to a synthetic example address; that mail failure also exposed the logging-privacy weakness now fixed and release-gated.
+- Vercel production showed one billing-status 500 consistent with pool checkout exhaustion and one older Resend 422 to a synthetic example address. Those historical events exposed recipient and bound-parameter logging weaknesses; both are now fixed and release-gated on the audit branch.
 - Wireline has a deliberate zero-dependency browser/server error reporter that routes structured failures into Vercel logs (`src/lib/sentry.ts` and `src/lib/sentry-events.ts`), but no external Sentry SDK or authenticated Sentry project was found. Do not claim Sentry alerting is certified.
 - Ads Manager is intentionally out of scope by founder direction; it was not accessed, no spend was changed, and it is not a launch gate.
 - Opera was not connected. The requested fresh screenshot inspection could not be performed.
