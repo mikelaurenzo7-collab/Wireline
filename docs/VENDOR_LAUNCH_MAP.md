@@ -39,15 +39,15 @@ The July 28 pass re-verified Vercel, Supabase, Stripe, runtime policy, and curre
 - Stripe processing, the Founder catalog (14/14 prices), Stripe Tax, and the
   `trywireline.com` webhook are reachable and aligned. **Customer billing is still blocked**:
   the public account identity is Cadence AI, website/support details are not fully aligned to Wireline,
-  and there is no active default customer portal configuration. Do not open paid self-serve checkout
-  until those controls are corrected and the controlled checkout matrix passes.
+  and there is no active managed or default customer portal configuration yet. Wireline can create a
+  catalog-fingerprinted managed configuration on first use, but that path must be proven before paid self-serve checkout.
 - Twilio has no ONLINE WhatsApp sender (private beta).
 
 Launch remains blocked until the following are cleared:
 
 1. **Correct Stripe's customer-facing identity and portal.** Set the public business name,
    statement descriptor/prefix, website, support URL, logo, and colors to Wireline. Activate a
-   default portal with payment-method updates, invoice history, and cancellation.
+   compliant portal by exercising Wireline's managed bootstrap (or configuring a Dashboard default).
 2. **Complete one controlled Stripe lifecycle.** Prove checkout → webhook → entitlement → portal →
    cancellation/refund on a real test customer before inviting paid self-serve users.
 3. **Restore full GitHub Actions execution.** PR workflow runs still end in `startup_failure`
@@ -127,7 +127,7 @@ compatibility fallback until it is rotated.
 | Vercel              | Hosting, functions, cron            | project/build path healthy                | Rotate exposed token; keep payment method and spend alerts active             |
 | Vercel AI Gateway   | Governed final AI route             | credential/model catalog ready            | Set per-key budget, alerts, and reserve before scale                           |
 | Supabase            | Postgres data plane                 | ACTIVE_HEALTHY; RLS/grants reviewed         | Keep migrations and custom-auth password controls healthy                    |
-| Stripe              | Customer billing                    | **blocked: Cadence AI identity; no default portal** | Rebrand in Dashboard; activate portal; run checkout lifecycle |
+| Stripe              | Customer billing                    | **blocked: Cadence AI identity; portal bootstrap unproved** | Rebrand; prove managed portal; run checkout lifecycle |
 | xAI                 | Optional experiment only                | credential ready; not launch-default      | Fund only if explicitly opting into structured fallback; alert if enabled |
 | OpenAI              | Primary structured + Realtime + Vapi call model | credential ready                  | Maintain budget, payment method, alerts, and scoped keys                       |
 | Gemini              | Direct AI continuity                | credential ready                          | Retain quota/billing fallback                                                  |
@@ -189,8 +189,8 @@ Then complete the controlled launch matrix:
 1. One inbound and one outbound phone call with transfer/tool execution.
 2. One outbound and one inbound SMS, including STOP/HELP handling.
 3. One verification email and one password-reset email to a non-owner mailbox.
-4. Rebrand the Stripe account, activate the default portal, then prove one live
-   checkout, webhook activation, entitlement, portal open, cancellation, and refund.
+4. Rebrand the Stripe account, prove the managed portal bootstrap (or a compliant
+   Dashboard default), then prove checkout, webhook, entitlement, cancellation, and refund.
 5. WhatsApp only after sender/template approval; test both in-window free-form
    and out-of-window approved-template delivery.
 
