@@ -87,7 +87,7 @@ Supabase reports the project `ACTIVE_HEALTHY` on Postgres 17.6.1. All inspected 
 Observed production state:
 
 - 5,750 jobs finished in the prior 30 days at the final database sample, with zero pending or stale jobs; five dead historical jobs remain (one intentionally disabled knowledge-URL job and four May purge jobs from before the purge RPC was present; the current RPC exists);
-- three demo calls, with no real-call pipeline, STT, or TTS failures;
+- 66 demo-marked call rows; four older demo fixtures carry `pipeline_error = 'dialing'`, while STT/TTS error flags are zero. No row is live-customer call proof;
 - 132/132 workspace spend budgets enabled with hard caps;
 - zero orphan carrier resources;
 - one account deletion pending inside its grace window and not overdue;
