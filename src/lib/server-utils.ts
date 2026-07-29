@@ -4,14 +4,41 @@
 // must be deterministic and side-effect-free.
 
 /**
- * Safely extract a human-readable message from an unknown error value.
- * Avoids `[object Object]` strings when something other than an Error
- * is thrown (e.g. a plain string or a non-Error object from a third-party SDK).
+ * Production errors can contain Drizzle's bound params or provider payloads.
+ * Those values routinely include tenant UUIDs, email addresses, bearer tokens,
+ * and signed query values. Keep the useful failure shape while ensuring those
+ * identifiers never cross the structured-log boundary.
+ */
+const MAX_ERROR_MESSAGE_LENGTH = 2_000;
+const DRIZZLE_PARAMS_RE = /(\r?\nparams:)[\s\S]*$/i;
+const EMAIL_IN_ERROR_RE = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
+const UUID_IN_ERROR_RE =
+  /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi;
+const AUTH_IN_ERROR_RE = /\b(Bearer|Basic)\s+[A-Za-z0-9._~+\/-]+=*/gi;
+const SECRET_QUERY_VALUE_RE =
+  /([?&](?:access_token|auth|authorization|code|credential|key|password|secret|signature|token)=)[^&#\s]+/gi;
+
+export function sanitizeErrorMessage(message: string): string {
+  const sanitized = message
+    .replace(DRIZZLE_PARAMS_RE, "$1 [redacted-params]")
+    .replace(EMAIL_IN_ERROR_RE, "[redacted-email]")
+    .replace(UUID_IN_ERROR_RE, "[redacted-id]")
+    .replace(AUTH_IN_ERROR_RE, "$1 [REDACTED]")
+    .replace(SECRET_QUERY_VALUE_RE, "$1[REDACTED]");
+
+  if (sanitized.length <= MAX_ERROR_MESSAGE_LENGTH) return sanitized;
+  return `${sanitized.slice(0, MAX_ERROR_MESSAGE_LENGTH)}…[truncated]`;
+}
+
+/**
+ * Safely extract a bounded, log-safe human-readable message from an unknown
+ * error value. Avoids `[object Object]` strings when something other than an
+ * Error is thrown while preserving enough context to diagnose the failure.
  */
 export function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === "string") return error;
-  return String(error);
+  const message =
+    error instanceof Error ? error.message : typeof error === "string" ? error : String(error);
+  return sanitizeErrorMessage(message);
 }
 
 /**
