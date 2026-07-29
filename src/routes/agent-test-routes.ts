@@ -50,7 +50,8 @@ router.post(
 
       const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
         Promise.all([
-          tx.select({
+          tx
+            .select({
               id: schema.agents.id,
               name: schema.agents.name,
               role: schema.agents.role,
@@ -66,7 +67,8 @@ router.post(
             .from(schema.agents)
             .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
             .limit(1),
-          tx.select({ content: schema.personality.content })
+          tx
+            .select({ content: schema.personality.content })
             .from(schema.personality)
             .where(
               and(
@@ -75,14 +77,16 @@ router.post(
               ),
             )
             .limit(1),
-          tx.select({ content: schema.directives.content })
+          tx
+            .select({ content: schema.directives.content })
             .from(schema.directives)
             .where(
               and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, req.user.id)),
             )
             .orderBy(desc(schema.directives.priority))
             .limit(30),
-          tx.select({ content: schema.knowledge.content })
+          tx
+            .select({ content: schema.knowledge.content })
             .from(schema.knowledge)
             .where(
               and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, req.user.id)),
