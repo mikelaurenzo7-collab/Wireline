@@ -5,6 +5,83 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
+
+function matchingCallEnd(source: string, openIndex: number): number {
+  let depth = 0;
+  let mode: "code" | "line" | "block" | "single" | "double" | "template" = "code";
+  let escaped = false;
+
+  for (let index = openIndex; index < source.length; index += 1) {
+    const char = source[index];
+    const next = source[index + 1];
+
+    if (mode === "line") {
+      if (char === "\n") mode = "code";
+      continue;
+    }
+    if (mode === "block") {
+      if (char === "*" && next === "/") {
+        mode = "code";
+        index += 1;
+      }
+      continue;
+    }
+    if (mode !== "code") {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (char === "\\") {
+        escaped = true;
+        continue;
+      }
+      if (
+        (mode === "single" && char === "'") ||
+        (mode === "double" && char === '"') ||
+        (mode === "template" && char === "\`")
+      ) {
+        mode = "code";
+      }
+      continue;
+    }
+
+    if (char === "/" && next === "/") {
+      mode = "line";
+      index += 1;
+      continue;
+    }
+    if (char === "/" && next === "*") {
+      mode = "block";
+      index += 1;
+      continue;
+    }
+    if (char === "'") {
+      mode = "single";
+      continue;
+    }
+    if (char === '"') {
+      mode = "double";
+      continue;
+    }
+    if (char === "\`") {
+      mode = "template";
+      continue;
+    }
+    if (char === "(") depth += 1;
+    if (char === ")" && --depth === 0) return index;
+  }
+
+  throw new Error("Unbalanced call at source offset " + openIndex);
+}
+
+function promiseAllBlocks(source: string): string[] {
+  return [...source.matchAll(/Promise\.all\(/g)].map((match) => {
+    const start = match.index ?? 0;
+    const open = start + "Promise.all".length;
+    return source.slice(start, matchingCallEnd(source, open) + 1);
+  });
+}
+
 describe("double-pass launch honesty", () => {
   it("never 2xx unfinished Stripe webhook claims", () => {
     const source = read("src/routes/billing-routes.ts");
@@ -108,37 +185,33 @@ describe("double-pass launch honesty", () => {
     expect(launchStatus).toContain('blockers.push("stripe_tax_not_active")');
   });
 
-
   it("keeps high-cardinality tenant snapshots on one scoped connection", () => {
-    const transactionBoundSnapshots = [
-      "src/lib/daily-brief.ts",
-      "src/routes/fleet-routes.ts",
-      "src/routes/insights-routes.ts",
-      "src/lib/vapi-assistant-factory-v2.ts",
-      "src/lib/vapi-client.ts",
-      "src/lib/voice/grok-voice-service.ts",
-      "src/routes/settings-routes.ts",
-      "src/routes/dashboard-routes.ts",
-      "src/lib/voice/openai-live-agent-service.ts",
-      "src/routes/agent-routes-v2.ts",
-      "src/routes/mobile-routes.ts",
-      "src/routes/agent-workspace-routes.ts",
-      "src/routes/agent-test-routes.ts",
-    ];
+    const expectedTransactionBatches = new Map<string, number>([
+      ["src/lib/daily-brief.ts", 1],
+      ["src/routes/fleet-routes.ts", 2],
+      ["src/routes/insights-routes.ts", 1],
+      ["src/lib/vapi-assistant-factory-v2.ts", 1],
+      ["src/lib/vapi-client.ts", 1],
+      ["src/lib/voice/grok-voice-service.ts", 1],
+      ["src/routes/settings-routes.ts", 1],
+      ["src/routes/dashboard-routes.ts", 2],
+      ["src/lib/voice/openai-live-agent-service.ts", 1],
+      ["src/routes/agent-routes-v2.ts", 1],
+      ["src/routes/mobile-routes.ts", 1],
+      ["src/routes/agent-workspace-routes.ts", 1],
+      ["src/routes/agent-test-routes.ts", 1],
+    ]);
 
-    for (const path of transactionBoundSnapshots) {
+    for (const [path, expectedBatches] of expectedTransactionBatches) {
       const source = read(path);
-      expect(source, path).toContain("drizzle.transaction((tx)");
+      const transactionBatches =
+        source.match(/drizzle\.transaction\(\(tx\) =>/g)?.length ?? 0;
+      expect(transactionBatches, path).toBeGreaterThanOrEqual(expectedBatches);
 
-      for (const match of source.matchAll(/Promise\.all\(/g)) {
-        const start = match.index ?? 0;
-        const end = source.indexOf("]);", start);
-        if (end < 0) continue;
-        const block = source.slice(start, end + 3);
-        const rootQueryFanout = block.match(/\bdrizzle\s*\./g)?.length ?? 0;
-        expect(rootQueryFanout, `${path} still fans out tenant pool clients`).toBeLessThan(4);
+      for (const block of promiseAllBlocks(source)) {
+        const rootQueryFanout = block.match(/\bdrizzle(?=\s*\.)/g)?.length ?? 0;
+        expect(rootQueryFanout, path + " still fans out tenant pool clients").toBeLessThan(4);
       }
     }
   });
-
 });
