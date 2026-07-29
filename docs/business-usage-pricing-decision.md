@@ -27,7 +27,7 @@ Wireline sells operating capacity, not template access.
 | `personal` | Wireline Free Builder | $0 | 0 | $0 | 1 draft | 0 |
 | `starter` | Wireline Starter | $19 / $190 | 60 | $1/mo | 1 | 1 |
 | `team` | Wireline Starter Plus | $39 / $390 | 120 | $3/mo | 2 | 2 |
-| `business` | Wireline Pro | $79 / $790 | 250 | $6/mo | 5 | 5 |
+| `business` | Wireline Pro | $79 / $790 | 245 | $6/mo | 5 | 5 |
 | `enterprise` | Wireline Business | $159 / $1,590 | 450 | $12/mo | 15 | 15 |
 
 Runtime Balance top-ups cover extra voice at a flat **$0.22/min** across paid tiers; there are no
