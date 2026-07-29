@@ -12,8 +12,7 @@ import {
 import { computeScheduledPurgeAt } from "../lib/account-deletion";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { stripe, stripeAvailable, syncSubscriptionFromStripe } from "../lib/stripe-helpers";
-import { getErrorMessage } from "../lib/server-utils";
+import { stopRenewalForDeletion } from "../lib/account-deletion-billing";
 
 type AuthedRequest = Request & { user?: { id: string } };
 
@@ -32,97 +31,6 @@ function authenticatedUserId(req: Request): string {
   const userId = (req as AuthedRequest).user?.id;
   if (!userId) throw new Error("Authenticated account route invoked without a user.");
   return userId;
-}
-
-type RenewalStopResult = {
-  renewalStopped: boolean;
-  billingPeriodEnd: Date | null;
-};
-
-async function stopRenewalForDeletion(userId: string): Promise<RenewalStopResult> {
-  const [subscription] = await drizzle
-    .select({
-      stripeSubscriptionId: schema.subscriptions.stripeSubscriptionId,
-      status: schema.subscriptions.status,
-      cancelAtPeriodEnd: schema.subscriptions.cancelAtPeriodEnd,
-      currentPeriodEnd: schema.subscriptions.currentPeriodEnd,
-    })
-    .from(schema.subscriptions)
-    .where(eq(schema.subscriptions.userId, userId))
-    .limit(1);
-
-  const subscriptionId = subscription?.stripeSubscriptionId?.trim();
-  const terminalStatuses = new Set(["canceled", "incomplete_expired"]);
-  if (
-    !subscriptionId ||
-    subscription?.cancelAtPeriodEnd ||
-    terminalStatuses.has(subscription?.status || "")
-  ) {
-    return {
-      renewalStopped: true,
-      billingPeriodEnd: subscription?.currentPeriodEnd ?? null,
-    };
-  }
-
-  if (!stripeAvailable()) {
-    log.error("account deletion could not stop renewal because Stripe is unavailable", {
-      userId,
-      subscriptionId,
-    });
-    return {
-      renewalStopped: false,
-      billingPeriodEnd: subscription?.currentPeriodEnd ?? null,
-    };
-  }
-
-  try {
-    const updated = await stripe.subscriptions.update(subscriptionId, {
-      cancel_at_period_end: true,
-    });
-    try {
-      await syncSubscriptionFromStripe(updated);
-    } catch (syncError) {
-      log.warn("account deletion stopped renewal but local Stripe sync needs recovery", {
-        userId,
-        subscriptionId,
-        error: getErrorMessage(syncError),
-      });
-    }
-    return {
-      renewalStopped: updated.cancel_at_period_end || updated.status === "canceled",
-      billingPeriodEnd: subscription?.currentPeriodEnd ?? null,
-    };
-  } catch (error) {
-    const stripeError = error as {
-      code?: string;
-      statusCode?: number;
-      raw?: { code?: string };
-    };
-    if (
-      stripeError.statusCode === 404 ||
-      stripeError.code === "resource_missing" ||
-      stripeError.raw?.code === "resource_missing"
-    ) {
-      log.warn("account deletion found no live Stripe subscription to renew", {
-        userId,
-        subscriptionId,
-      });
-      return {
-        renewalStopped: true,
-        billingPeriodEnd: subscription?.currentPeriodEnd ?? null,
-      };
-    }
-
-    log.error("account deletion could not confirm renewal was stopped", {
-      userId,
-      subscriptionId,
-      error: getErrorMessage(error),
-    });
-    return {
-      renewalStopped: false,
-      billingPeriodEnd: subscription?.currentPeriodEnd ?? null,
-    };
-  }
 }
 
 router.get("/api/accounts", authenticateUser, async (req: Request, res: Response) => {
@@ -168,7 +76,7 @@ router.post(
         ok: true,
         already_pending: true,
         scheduled_purge_at: existing.scheduledPurgeAt,
-        renewal_stopped: renewal.renewalStopped,
+        renewal_stopped: renewal.confirmed,
         billing_period_end: renewal.billingPeriodEnd,
       });
     }
@@ -192,12 +100,12 @@ router.post(
     log.warn("account deletion requested", {
       userId,
       deletionRequestId: row?.id,
-      renewalStopped: renewal.renewalStopped,
+      renewalStopped: renewal.confirmed,
     });
     res.status(202).json({
       ok: true,
       scheduled_purge_at: row?.scheduledPurgeAt ?? scheduledPurgeAt,
-      renewal_stopped: renewal.renewalStopped,
+      renewal_stopped: renewal.confirmed,
       billing_period_end: renewal.billingPeriodEnd,
     });
   },
