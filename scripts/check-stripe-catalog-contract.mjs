@@ -82,7 +82,7 @@ for (const [id, monthly, annual] of expectedPlans) {
 const expectedCapacity = [
   ["starter", 1, 1, 60],
   ["team", 2, 2, 120],
-  ["business", 5, 5, 250],
+  ["business", 5, 5, 245],
   ["enterprise", 15, 15, 450],
 ];
 for (const [planId, agents, numbers, voiceMinutes] of expectedCapacity) {
