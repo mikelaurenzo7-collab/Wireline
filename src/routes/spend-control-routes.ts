@@ -8,6 +8,11 @@ import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
 import { getErrorMessage } from "../lib/server-utils";
+import {
+  defaultAiSpendBudgetUsdForTier,
+  getEffectiveSubscriptionPlanId,
+  subscriptionPlanToTier,
+} from "../lib/plan-entitlements";
 
 const router = express.Router();
 
@@ -27,25 +32,21 @@ async function readPersistedSpendBudget(userId: string): Promise<PersistedSpendB
  * provider work still fails closed independently; this read path restores the
  * plan default so the Account Holder can view and edit a real persisted guard.
  */
-async function ensurePersistedSpendBudget(userId: string): Promise<PersistedSpendBudget> {
-  const existing = await readPersistedSpendBudget(userId);
-  if (existing) return existing;
-
-  const [subscription] = await drizzle
-    .select({ plan: schema.subscriptions.plan })
-    .from(schema.subscriptions)
-    .where(eq(schema.subscriptions.userId, userId))
-    .limit(1);
+async function ensurePersistedSpendBudget(
+  userId: string,
+  email?: string | null,
+): Promise<{ budget: PersistedSpendBudget; maximumLimitUsd: number }> {
+  const planId = await getEffectiveSubscriptionPlanId(userId, email);
+  const maximumLimitUsd = defaultAiSpendBudgetUsdForTier(subscriptionPlanToTier(planId));
   const { ensureDefaultAiSpendBudget } = await import("../lib/workspace-usage-snapshot");
-  await ensureDefaultAiSpendBudget(userId, subscription?.plan ?? null);
+  await ensureDefaultAiSpendBudget(userId, planId);
   clearBudgetCache(userId);
 
-  const repaired = await readPersistedSpendBudget(userId);
-  if (!repaired) {
+  const budget = await readPersistedSpendBudget(userId);
+  if (!budget) {
     throw AppError.fromHttpStatus(503, "Spend guard is temporarily unavailable.");
   }
-  log.info("Repaired missing spend budget", { userId, plan: subscription?.plan ?? null });
-  return repaired;
+  return { budget, maximumLimitUsd };
 }
 
 /**
@@ -58,14 +59,18 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const data = await ensurePersistedSpendBudget(req.user.id);
+      const { budget, maximumLimitUsd } = await ensurePersistedSpendBudget(
+        req.user.id,
+        req.user.email,
+      );
       res.json({
         budget: {
-          monthly_limit_usd: data.monthlyLimitUsd,
-          hard_cap: data.hardCap,
-          warn_threshold_pct: data.warnThresholdPct,
-          enabled: data.enabled,
-          updated_at: data.updatedAt,
+          monthly_limit_usd: budget.monthlyLimitUsd,
+          maximum_limit_usd: maximumLimitUsd,
+          hard_cap: budget.hardCap,
+          warn_threshold_pct: budget.warnThresholdPct,
+          enabled: budget.enabled,
+          updated_at: budget.updatedAt,
         },
       });
     } catch (err) {
@@ -82,21 +87,25 @@ router.put(
   validateBody(spendBudgetSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const { maximumLimitUsd } = await ensurePersistedSpendBudget(req.user.id, req.user.email);
       const limit = Number(req.body.monthly_limit_usd ?? 0);
       const warn = Math.round(Number(req.body.warn_threshold_pct ?? 80));
-      const hardCap = req.body.hard_cap === true;
-      const enabled = req.body.enabled !== false;
+      const hardCap = true;
+      const enabled = true;
 
-      if (!Number.isFinite(limit) || limit < 0) {
-        throw AppError.fromHttpStatus(400, "monthly_limit_usd must be a non-negative number");
+      if (!Number.isFinite(limit) || !(limit > 0) || limit > maximumLimitUsd) {
+        throw AppError.fromHttpStatus(
+          400,
+          `monthly_limit_usd must be greater than zero and no more than ${maximumLimitUsd.toFixed(2)} for the active plan`,
+        );
       }
       if (!Number.isInteger(warn) || warn < 1 || warn > 99) {
         throw AppError.fromHttpStatus(400, "warn_threshold_pct must be 1–99");
       }
-      if (hardCap && !(limit > 0)) {
+      if (req.body.hard_cap === false || req.body.enabled === false) {
         throw AppError.fromHttpStatus(
           400,
-          "A hard cap requires a monthly_limit_usd greater than zero.",
+          "The provider spend guard is always enabled with a hard cap.",
         );
       }
 
@@ -123,7 +132,7 @@ router.put(
         .returning();
 
       clearBudgetCache(req.user.id);
-      res.json({ budget });
+      res.json({ budget, maximum_limit_usd: maximumLimitUsd });
     } catch (err) {
       if (err instanceof AppError) throw err;
       log.error("Failed to save spend budget", { error: getErrorMessage(err) });
@@ -137,7 +146,7 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      await ensurePersistedSpendBudget(req.user.id);
+      const { maximumLimitUsd } = await ensurePersistedSpendBudget(req.user.id, req.user.email);
       const snap = await getBudgetSnapshot(req.user.id, true);
       const alerts = await drizzle
         .select({
@@ -161,6 +170,7 @@ router.get(
         period: snap.period,
         month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
         monthly_limit_usd: limit,
+        maximum_limit_usd: maximumLimitUsd,
         percent_used: Number(percentUsed.toFixed(1)),
         hard_cap: snap.budget?.hard_cap ?? false,
         enabled: snap.budget?.enabled ?? true,
