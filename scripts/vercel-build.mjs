@@ -113,6 +113,10 @@ run("npx", [
   "tests/double-pass-launch-honesty-contract.test.ts",
   "tests/ai-cost-protection-contract.test.ts",
   "tests/billing-proof-contract.test.ts",
+  // Pricing capacity must reserve Payments, Billing, and future Tax fees on
+  // both intervals; do not let catalog metadata drift from entitlements.
+  "src/lib/plan-catalog.test.ts",
+  "tests/round6-margin-capacity-contract.test.ts",
   "tests/signup-bootstrap-integrity-contract.test.ts",
   "tests/repo-documentation-organization-contract.test.ts",
   "tests/marketing-metadata-contract.test.ts",
@@ -121,6 +125,9 @@ run("npx", [
   "tests/mailbox-and-daily-brief-hardening-contract.test.ts",
   "tests/managed-vapi-runtime-contract.test.ts",
   "tests/vapi-modern-payload-contract.test.ts",
+  // End-of-call cost, duration, transcript, and recording evidence must remain
+  // compatible with both current report and call-object payload shapes.
+  "src/lib/vapi-report-normalization.test.ts",
   "tests/twilio-webhook-privacy.test.ts",
   // Recipient addresses, bearer links, and provider error bodies must stay out of logs.
   "tests/email-observability-privacy-contract.test.ts",
