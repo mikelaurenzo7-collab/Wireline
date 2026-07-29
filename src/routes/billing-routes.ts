@@ -1067,20 +1067,12 @@ router.post(
 );
 
 /**
- * Per-agent overage purchase — GET reports current count + per-tier price,
- * POST adjusts the count up or down. Adjusts the Stripe subscription item
- * quantity in lockstep with the DB column.
+ * Read-only Extra Agent billing summary.
  *
- * Account Holder flow:
- *   1. Pricing page promises "add extra agents at $X/each"
- *   2. Admin → Billing surfaces the current count + price + add/remove buttons
- *   3. Posting here updates `extra_agents` column + Stripe subscription item
- *   4. Agent deploy gate reads (plan.max_agents + extra_agents) as the cap
- *
- * Required env setup (per tier): STRIPE_<TIER>_EXTRA_AGENT_PRICE_ID set
- * to a Price ID with recurring.usage_type = "licensed" and amount equal
- * to extra_agent_price_usd × 100 cents. Without it, the endpoint returns
- * a clear "extra-agent billing not configured for your tier" error.
+ * POST /api/billing/extra-agents is owned exclusively by
+ * extra-agent-billing-atomic-routes.ts, which settles and verifies Stripe
+ * before changing local capacity. Keeping this router read-only prevents
+ * registration-order changes from reviving a shadow financial write path.
  */
 router.get(
   "/billing/extra-agents",
@@ -1109,172 +1101,6 @@ router.get(
       if (err instanceof AppError) throw err;
       log.error("/billing/extra-agents GET failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to load extra-agent state");
-    }
-  },
-);
-
-router.post(
-  "/billing/extra-agents",
-  authenticateUser,
-  enforceLaunchHardGate,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const raw = req.body?.count;
-      const target = Number(raw);
-      if (!Number.isInteger(target) || target < 0 || target > 100) {
-        throw AppError.fromHttpStatus(400, "count must be an integer 0-100");
-      }
-
-      // Look up the tenant's current settings + subscription.
-      const [row] = await drizzle
-        .select({
-          plan_id: schema.subscriptions.plan,
-          extra_agents: schema.settings.extraAgents,
-        })
-        .from(schema.settings)
-        .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
-        .where(eq(schema.settings.userId, req.user!.id))
-        .limit(1);
-      const plan = planById(row?.plan_id || "personal");
-      if (!plan) throw AppError.fromHttpStatus(400, "Plan not found");
-      const currentExtraAgents = Math.max(0, Number(row?.extra_agents ?? 0));
-
-      const priceIdEnv = plan.extraAgentPriceIdEnv;
-      const configuredPriceId = priceIdEnv ? process.env[priceIdEnv] : undefined;
-      if (!priceIdEnv || !configuredPriceId) {
-        return res.status(503).json({
-          code: "SERVICE_UNAVAILABLE",
-          error: `Extra-agent billing not configured for the ${plan.name} tier. Owner needs to set ${priceIdEnv || "STRIPE_<TIER>_EXTRA_AGENT_PRICE_ID"} in environment variables and link it to a Stripe Price.`,
-        });
-      }
-      // Validate the env-configured price against the current founder catalog
-      // so a stale env var can never silently charge a retired price. Only
-      // enforced when Stripe is reachable — the local dev path below tolerates
-      // an unconfigured Stripe client.
-      const priceId = stripeAvailable()
-        ? await validateFounderCatalogPriceId(configuredPriceId)
-        : configuredPriceId;
-      if (!priceId) {
-        return res.status(503).json({
-          code: "SERVICE_UNAVAILABLE",
-          error: `Extra-agent price for ${plan.name} is not in the current founder catalog. Run stripe:setup and update ${priceIdEnv} in Vercel.`,
-        });
-      }
-
-      // If Stripe is configured, adjust the subscription item quantity
-      // to match. If not configured (dev), just persist the DB column.
-      if (stripeAvailable()) {
-        const [subRow] = await drizzle
-          .select({ stripe_subscription_id: schema.subscriptions.stripeSubscriptionId })
-          .from(schema.subscriptions)
-          .where(eq(schema.subscriptions.userId, req.user!.id))
-          .limit(1);
-        const subscriptionId = subRow?.stripe_subscription_id;
-        if (target > 0 && !subscriptionId) {
-          return res.status(400).json({
-            code: "BAD_REQUEST",
-            error:
-              "No active subscription found. Upgrade to a paid plan first to purchase extra agents.",
-          });
-        }
-        if (subscriptionId) {
-          try {
-            // Find existing extra-agent line item (if any).
-            const sub = await stripe.subscriptions.retrieve(subscriptionId);
-            const existing = sub.items.data.find((i) => i.price?.id === priceId);
-
-            // Raising the count grants included voice minutes the instant the
-            // settings column is written (includedVoiceMinutes adds
-            // extra_agent_voice_minutes_monthly per unit), but a bare quantity
-            // change only prorates onto the NEXT invoice. That gap was free
-            // capacity: buy 100 agents, burn the ~5,000 minutes it unlocks,
-            // then drop back to 0 for a proration credit — and because
-            // incremental overage is computed at record time, none of the
-            // consumed minutes is ever re-priced. Invoice the increase now, so
-            // capacity and collection happen together.
-            const isIncrease = target > currentExtraAgents;
-            const prorationBehavior = isIncrease ? "always_invoice" : "create_prorations";
-
-            if (existing) {
-              if (target === 0) {
-                await stripe.subscriptionItems.del(existing.id);
-              } else {
-                await stripe.subscriptionItems.update(existing.id, {
-                  quantity: target,
-                  proration_behavior: prorationBehavior,
-                  ...(isIncrease
-                    ? ({ payment_behavior: "error_if_incomplete" } as const)
-                    : {}),
-                });
-              }
-            } else if (target > 0) {
-              await stripe.subscriptionItems.create({
-                subscription: subscriptionId,
-                price: priceId,
-                quantity: target,
-                proration_behavior: prorationBehavior,
-                payment_behavior: "error_if_incomplete",
-              });
-            }
-          } catch (e) {
-            if (e instanceof AppError) throw e;
-            const stripeStatus =
-              e && typeof e === "object" && "statusCode" in e
-                ? (e as { statusCode?: unknown }).statusCode
-                : null;
-            if (stripeStatus === 402) {
-              log.warn("Extra-agent increase declined before entitlement change", {
-                planId: plan.id,
-                target,
-              });
-              return res.status(402).json({
-                code: "PAYMENT_REQUIRED",
-                error:
-                  "We couldn't collect payment for the additional agents. Update your payment method and try again.",
-              });
-            }
-            log.error("Stripe subscription item adjust failed", {
-              error: getErrorMessage(e),
-              userId: req.user!.id,
-            });
-            return res.status(502).json({
-              code: "BAD_GATEWAY",
-              error: "Couldn't update Stripe subscription. Try again or contact support.",
-            });
-          }
-        }
-      }
-
-      // Persist the DB column.
-      await drizzle
-        .update(schema.settings)
-        .set({ extraAgents: target })
-        .where(eq(schema.settings.userId, req.user!.id));
-
-      // Audit log so the change is queryable later. Uses
-      // subscription_updated as the closest existing event type since
-      // this is technically a subscription-item quantity change.
-      void auditLogger
-        .logBilling("subscription_updated", {
-          userId: req.user!.id,
-          metadata: { reason: "extra_agents_changed", target, plan_id: plan.id },
-        })
-        .catch((err) =>
-          log.warn("billing audit log failed", {
-            event: "subscription_updated",
-            error: getErrorMessage(err),
-          }),
-        );
-
-      res.json({
-        ok: true,
-        extra_agents: target,
-        agents_total: (plan.max_agents || 1) + target,
-      });
-    } catch (err) {
-      if (err instanceof AppError) throw err;
-      log.error("/billing/extra-agents POST failed", { error: getErrorMessage(err) });
-      throw AppError.fromHttpStatus(500, "Failed to update extra agents");
     }
   },
 );
