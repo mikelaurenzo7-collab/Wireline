@@ -53,7 +53,7 @@ export const WIRELINE_PLANS = [
     bestFor: "Revenue, support, and front desk teams.",
     includes: [
       "Up to 5 live agents and 5 production numbers, provisioned when needed",
-      "250 guaranteed live-voice minutes each month",
+      "245 guaranteed live-voice minutes each month",
       "$6 monthly flexible Runtime Allowance",
       "CRM sync, routing, approvals, and campaign workflows",
     ],
