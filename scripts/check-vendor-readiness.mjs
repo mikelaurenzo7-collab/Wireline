@@ -390,13 +390,16 @@ const stripeBrandReady = Boolean(
 );
 
 const stripePortalConfigs = arrayAt(stripePortalConfigurations?.body, "data");
-const stripeDefaultPortal = stripePortalConfigs.find(
-  (configuration) => configuration?.active === true && configuration?.is_default === true,
+const stripePortalConfiguration = stripePortalConfigs.find(
+  (configuration) =>
+    configuration?.active === true &&
+    (configuration?.is_default === true ||
+      configuration?.metadata?.wireline_managed === "true"),
 );
-const stripePortalFeatures = stripeDefaultPortal?.features ?? {};
+const stripePortalFeatures = stripePortalConfiguration?.features ?? {};
 const stripePortalReady = Boolean(
   stripePortalConfigurations?.ok &&
-    stripeDefaultPortal &&
+    stripePortalConfiguration &&
     stripePortalFeatures.payment_method_update?.enabled === true &&
     stripePortalFeatures.invoice_history?.enabled === true &&
     stripePortalFeatures.subscription_cancel?.enabled === true,
@@ -444,7 +447,7 @@ const stripeFundingAction =
     : !stripeBrandReady
       ? "Align the public business name, statement descriptor, website, support URL, logo, and colors to Wireline in Stripe."
       : !stripePortalReady
-        ? "Activate a default Stripe customer portal with payment-method updates, invoice history, and cancellation."
+        ? "Exercise Wireline portal bootstrap (or create a Dashboard default) and verify payment methods, invoices, and cancellation."
         : !stripeWebhookReady
           ? "Align the enabled trywireline.com webhook endpoint to the eight server-handled events."
           : !stripeTaxReady
@@ -458,7 +461,7 @@ record(
   stripeAccount?.ok
     ? `Core account ${stripeCoreReady ? "ready" : "blocked"}; customer brand "${
         stripePublicName || "unset"
-      }" ${stripeBrandReady ? "ready" : "blocked"}; default portal ${
+      }" ${stripeBrandReady ? "ready" : "blocked"}; managed/default portal ${
         stripePortalReady ? "ready" : "blocked"
       }; webhook ${stripeWebhookReady ? "ready" : "blocked"}; tax ${
         stripeTaxReady ? "ready" : "blocked"
@@ -472,7 +475,7 @@ record(
     website_origin: stripeWebsiteOrigin,
     support_origin: stripeSupportOrigin,
     brand_ready: stripeBrandReady,
-    default_portal_present: Boolean(stripeDefaultPortal),
+    managed_or_default_portal_present: Boolean(stripePortalConfiguration),
     portal_payment_method_update: stripePortalFeatures.payment_method_update?.enabled === true,
     portal_invoice_history: stripePortalFeatures.invoice_history?.enabled === true,
     portal_subscription_cancel: stripePortalFeatures.subscription_cancel?.enabled === true,
