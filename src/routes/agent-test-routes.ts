@@ -49,72 +49,61 @@ router.post(
         role: "customer" | "employee";
         content: string;
       }>;
-      if (!isRuntimeAvailable())
-        throw AppError.fromHttpStatus(503, "AI runtime not configured");
+      if (!isRuntimeAvailable()) throw AppError.fromHttpStatus(503, "AI runtime not configured");
 
-      const [agentRows, personalities, directives, knowledge] =
-        await drizzle.transaction((tx) =>
-          Promise.all([
-            tx
-              .select({
-                id: schema.agents.id,
-                name: schema.agents.name,
-                role: schema.agents.role,
-                archetype: schema.agents.archetype,
-                firstMessage: schema.agents.firstMessage,
-                businessHours: schema.agents.businessHours,
-                timezone: schema.agents.timezone,
-                businessVariables: schema.agents.businessVariables,
-                outOfHoursMessage: schema.agents.outOfHoursMessage,
-                escalationPhone: schema.agents.escalationPhone,
-                escalationEmail: schema.agents.escalationEmail,
-              })
-              .from(schema.agents)
-              .where(
-                and(
-                  eq(schema.agents.id, agentId),
-                  eq(schema.agents.userId, req.user.id),
-                ),
-              )
-              .limit(1),
-            tx
-              .select({ content: schema.personality.content })
-              .from(schema.personality)
-              .where(
-                and(
-                  eq(schema.personality.agentId, agentId),
-                  eq(schema.personality.userId, req.user.id),
-                ),
-              )
-              .limit(1),
-            tx
-              .select({ content: schema.directives.content })
-              .from(schema.directives)
-              .where(
-                and(
-                  eq(schema.directives.agentId, agentId),
-                  eq(schema.directives.userId, req.user.id),
-                ),
-              )
-              .orderBy(desc(schema.directives.priority))
-              .limit(30),
-            tx
-              .select({ content: schema.knowledge.content })
-              .from(schema.knowledge)
-              .where(
-                and(
-                  eq(schema.knowledge.agentId, agentId),
-                  eq(schema.knowledge.userId, req.user.id),
-                ),
-              )
-              .orderBy(desc(schema.knowledge.createdAt))
-              .limit(50),
-          ]),
-        );
+      const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx
+            .select({
+              id: schema.agents.id,
+              name: schema.agents.name,
+              role: schema.agents.role,
+              archetype: schema.agents.archetype,
+              firstMessage: schema.agents.firstMessage,
+              businessHours: schema.agents.businessHours,
+              timezone: schema.agents.timezone,
+              businessVariables: schema.agents.businessVariables,
+              outOfHoursMessage: schema.agents.outOfHoursMessage,
+              escalationPhone: schema.agents.escalationPhone,
+              escalationEmail: schema.agents.escalationEmail,
+            })
+            .from(schema.agents)
+            .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+            .limit(1),
+          tx
+            .select({ content: schema.personality.content })
+            .from(schema.personality)
+            .where(
+              and(
+                eq(schema.personality.agentId, agentId),
+                eq(schema.personality.userId, req.user.id),
+              ),
+            )
+            .limit(1),
+          tx
+            .select({ content: schema.directives.content })
+            .from(schema.directives)
+            .where(
+              and(
+                eq(schema.directives.agentId, agentId),
+                eq(schema.directives.userId, req.user.id),
+              ),
+            )
+            .orderBy(desc(schema.directives.priority))
+            .limit(30),
+          tx
+            .select({ content: schema.knowledge.content })
+            .from(schema.knowledge)
+            .where(
+              and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, req.user.id)),
+            )
+            .orderBy(desc(schema.knowledge.createdAt))
+            .limit(50),
+        ]),
+      );
 
       const agent = agentRows[0];
-      if (!agent)
-        throw AppError.fromHttpStatus(404, "AI voice agent not found");
+      if (!agent) throw AppError.fromHttpStatus(404, "AI voice agent not found");
 
       const directiveLines = compactLines(
         directives.map((directive) => directive.content),
@@ -138,20 +127,12 @@ router.post(
           ? `Tone: ${personalities[0].content}`
           : "Tone: clear and professional.",
         agent.firstMessage ? `Preferred opening: ${agent.firstMessage}` : "",
-        directiveLines.length
-          ? `Operating rules:\n- ${directiveLines.join("\n- ")}`
-          : "",
-        knowledgeLines.length
-          ? `Business facts:\n- ${knowledgeLines.join("\n- ")}`
-          : "",
+        directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
+        knowledgeLines.length ? `Business facts:\n- ${knowledgeLines.join("\n- ")}` : "",
         businessProfile ? `Business profile: ${businessProfile}` : "",
-        agent.businessHours
-          ? `Business hours: ${JSON.stringify(agent.businessHours)}`
-          : "",
+        agent.businessHours ? `Business hours: ${JSON.stringify(agent.businessHours)}` : "",
         agent.timezone ? `Timezone: ${agent.timezone}` : "",
-        agent.outOfHoursMessage
-          ? `After-hours response: ${agent.outOfHoursMessage}`
-          : "",
+        agent.outOfHoursMessage ? `After-hours response: ${agent.outOfHoursMessage}` : "",
         agent.escalationPhone || agent.escalationEmail
           ? `Human handoff contact: ${[agent.escalationPhone, agent.escalationEmail].filter(Boolean).join(" · ")}`
           : "",
@@ -170,8 +151,7 @@ router.post(
 
       const CUSTOMER_TEST_TOOL = {
         name: "customer_test_reply",
-        description:
-          "Reply directly to the customer using the saved AI voice agent configuration.",
+        description: "Reply directly to the customer using the saved AI voice agent configuration.",
         input_schema: {
           type: "object" as const,
           additionalProperties: false,
@@ -185,10 +165,8 @@ router.post(
         },
       };
 
-      const { STRUCTURED_RUNTIME_MODELS } =
-        await import("../lib/structured-runtime-models");
-      const { createSseStream, writeSseBootstrap } =
-        await import("../lib/sse-stream");
+      const { STRUCTURED_RUNTIME_MODELS } = await import("../lib/structured-runtime-models");
+      const { createSseStream, writeSseBootstrap } = await import("../lib/sse-stream");
       const sse = createSseStream(req, res);
       writeSseBootstrap(sse, {
         agentId,
@@ -197,28 +175,26 @@ router.post(
       });
 
       try {
-        const { result, thinking, thinkingDurationMs } =
-          await runStructuredStream<{
-            reply?: string;
-          }>(
-            {
-              system,
-              user,
-              tool: CUSTOMER_TEST_TOOL,
-              model: STRUCTURED_RUNTIME_MODELS.STANDARD,
-              maxTokens: 900,
-            },
-            {
-              onThinkingStart: () => sse.write("thinking_start", {}),
-              onThinkingChunk: (text) => sse.write("thinking_chunk", { text }),
-              onThinkingEnd: (fullText, durationMs) =>
-                sse.write("thinking_end", { thinking: fullText, durationMs }),
-              onResult: (result) => sse.write("reply", result),
-            },
-          );
+        const { result, thinking, thinkingDurationMs } = await runStructuredStream<{
+          reply?: string;
+        }>(
+          {
+            system,
+            user,
+            tool: CUSTOMER_TEST_TOOL,
+            model: STRUCTURED_RUNTIME_MODELS.STANDARD,
+            maxTokens: 900,
+          },
+          {
+            onThinkingStart: () => sse.write("thinking_start", {}),
+            onThinkingChunk: (text) => sse.write("thinking_chunk", { text }),
+            onThinkingEnd: (fullText, durationMs) =>
+              sse.write("thinking_end", { thinking: fullText, durationMs }),
+            onResult: (result) => sse.write("reply", result),
+          },
+        );
 
-        const reply =
-          typeof result?.reply === "string" ? result.reply.trim() : "";
+        const reply = typeof result?.reply === "string" ? result.reply.trim() : "";
         sse.write("reply", {
           reply,
           changes: [],
