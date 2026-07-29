@@ -76,13 +76,19 @@ describe("billing proof contract", () => {
     expect(billingCard).toContain("Cancels at period end");
   });
 
-  it("stops future renewal when account deletion is scheduled", () => {
+  it("stops future renewal for both deletion APIs and resumes it after cancellation", () => {
     const accountRoutes = read("src/routes/account-routes.ts");
+    const settingsRoutes = read("src/routes/settings-routes.ts");
+    const deletionBilling = read("src/lib/account-deletion-billing.ts");
     const settings = read("src/pages/SettingsPage.tsx");
 
     expect(accountRoutes).toContain("stopRenewalForDeletion");
-    expect(accountRoutes).toContain("cancel_at_period_end: true");
-    expect(accountRoutes).toContain("renewal_stopped: renewal.renewalStopped");
+    expect(accountRoutes).toContain("renewal_stopped: renewal.confirmed");
+    expect(settingsRoutes).toContain("stopRenewalForDeletion");
+    expect(settingsRoutes).toContain("resumeRenewalAfterDeletionCancellation");
+    expect(settingsRoutes).toContain("renewal_resumed: renewal.confirmed");
+    expect(deletionBilling).toContain("cancel_at_period_end: true");
+    expect(deletionBilling).toContain("cancel_at_period_end: false");
     expect(settings).toContain("Future subscription renewal is stopped");
     expect(settings).not.toContain("Billing continues until purge");
   });
