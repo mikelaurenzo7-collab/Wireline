@@ -60,9 +60,10 @@ Launch remains blocked until the following are cleared:
    `gemini_ground`, SMS STOP/HELP, real transactional email delivery, or provider redelivery.
 7. **Complete fresh visual QA.** Connect Opera and run the repository's exact-viewport interaction
    harness only after explicit Playwright approval; inspect current screenshots before merge.
-8. **Resolve the observability boundary.** Connect/configure Sentry if it is intended to be a
-   required alerting surface; otherwise document Vercel/runtime logging as the launch boundary.
-   Ads Manager is intentionally out of scope by founder direction and is not a launch gate.
+External Sentry is not a launch gate. Structured Vercel/runtime logs and the bounded
+`/api/health/report` browser reporter are the launch observability boundary; adopt Sentry later
+only after its SDK, project, alert policy, and browser/backend receipt are explicitly tested.
+Ads Manager is intentionally out of scope by founder direction.
 
 WhatsApp is not a core-launch blocker, but it remains **private beta** until an
 approved ONLINE Twilio sender, Meta business/WABA approval, callback
