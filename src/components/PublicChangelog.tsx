@@ -66,7 +66,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jun 4, 2026",
     tag: "security",
     title: "OAuth sign-in store sealed off from the data API",
-    body: "A security audit found the short-lived OAuth bridge table — which briefly holds a pre-minted session token mid-sign-in — was readable by any signed-in account through the database's auto-generated data API, even though our own code never exposed it. We enabled row-level security and revoked direct API access so the table is invisible outside the sign-in callback that owns it. The same pass tuned five row-level-security policies to evaluate once per query instead of once per row.",
+    body: "A security review closed direct data-API access to the short-lived OAuth bridge used during sign-in. Row-level security, explicit grants, and related tenant-policy checks now keep that flow inside the server-owned callback path.",
   },
   {
     date: "Jun 4, 2026",
@@ -102,7 +102,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jan 27, 2026",
     tag: "infra",
     title: "Public system status page",
-    body: "Live operational status of the voice runtime, fallback path, and reasoning layer at trywireline.com/status. Updates every 60 seconds via a 1-token probe of each LLM tier. External uptime monitors welcome.",
+    body: "Live operational status of the voice runtime, fallback path, and reasoning layer at trywireline.com/status. Uses small, bounded health checks for each managed reasoning tier. External uptime monitors are welcome.",
   },
   {
     date: "Jan 27, 2026",
@@ -168,9 +168,8 @@ export default function PublicChangelog() {
             </div>
             <h1 className="marketing-hero-title mb-3">Every change we've shipped.</h1>
             <p className="marketing-hero-lead">
-              Wireline ships almost daily. This page is hand-curated — when a release is worth
-              writing down, it lands here. Subscribe via the in-app Changelog drawer for real-time
-              updates after you sign up.
+              Wireline ships continuously. This page is hand-curated: when a customer-visible release is
+              worth documenting, it lands here with the behavior that actually shipped.
             </p>
           </motion.div>
 
@@ -210,14 +209,16 @@ export default function PublicChangelog() {
           </ol>
 
           <div className="mt-12 pt-6 border-t border-border">
-            <p className="text-eyebrow mb-2">Coming up</p>
+            <p className="text-eyebrow mb-2">Under active evaluation</p>
             <ul className="marketing-body space-y-1 list-disc pl-5">
-              <li>iOS app — listen-in + whisper-coach on the go. Target Q3 2026.</li>
-              <li>Recipe marketplace — community-contributed agent templates. Target Q4 2026.</li>
-              <li>
-                Annual Wireline Report — every Dec 31, your year in calls. First edition Jan 2027.
-              </li>
+              <li>Mobile controls for monitoring, coaching, and approvals on the go.</li>
+              <li>Reusable workflow recipes with clearer review and publishing controls.</li>
+              <li>Annual performance recaps built from each account's verified activity.</li>
             </ul>
+            <p className="mt-3 text-caption">
+              Roadmap items are not commitments; scope and timing may change as customer evidence
+              improves.
+            </p>
           </div>
         </div>
       </MarketingChrome>
