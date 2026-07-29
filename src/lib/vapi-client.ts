@@ -292,28 +292,27 @@ export async function placeOutboundCall(opts: {
       // is re-sent every turn). Load only what the prompt will actually carry —
       // the highest-priority directives and most recent knowledge — instead of
       // 500 of each, mirroring the inbound factory's caps.
-      tx
-        .select()
+      tx.select()
         .from(schema.directives)
         .where(eq(schema.directives.agentId, agentId))
         .orderBy(desc(schema.directives.priority))
         .limit(MAX_RUNTIME_DIRECTIVES),
-      tx
-        .select()
+      tx.select()
         .from(schema.knowledge)
         .where(eq(schema.knowledge.agentId, agentId))
         .orderBy(desc(schema.knowledge.createdAt))
         .limit(MAX_RUNTIME_KNOWLEDGE),
-      tx.select().from(schema.personality).where(eq(schema.personality.agentId, agentId)).limit(1),
-      tx
-        .select()
+      tx.select()
+        .from(schema.personality)
+        .where(eq(schema.personality.agentId, agentId))
+        .limit(1),
+      tx.select()
         .from(schema.agentLessons)
         .where(eq(schema.agentLessons.agentId, agentId))
         .orderBy(desc(schema.agentLessons.createdAt))
         .limit(MAX_RUNTIME_LESSONS),
       safeOutboundPhone
-        ? tx
-            .select({
+        ? tx.select({
               summary: schema.callLogs.summary,
               intentLabel: schema.callLogs.intentLabel,
               sentiment: schema.callLogs.sentiment,
@@ -331,8 +330,7 @@ export async function placeOutboundCall(opts: {
             .limit(3)
         : Promise.resolve([]),
       safeOutboundPhone
-        ? tx
-            .select({
+        ? tx.select({
               description: schema.followUpTasks.description,
               createdAt: schema.followUpTasks.createdAt,
             })
@@ -347,7 +345,7 @@ export async function placeOutboundCall(opts: {
             .orderBy(desc(schema.followUpTasks.createdAt))
             .limit(1)
         : Promise.resolve([]),
-    ]),
+    ])
   );
 
   const agentConfig = agentRes[0];
@@ -549,9 +547,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     analysisPlan: VAPI_ANALYSIS_PLAN,
     startSpeakingPlan: resolveOutboundStartSpeakingPlan(speechPipeline),
     transcriber: speechPipeline.transcriber,
-    ...(outboundServerUrl && {
-      server: buildVapiServerConfig(outboundServerUrl),
-    }),
+    ...(outboundServerUrl && { server: buildVapiServerConfig(outboundServerUrl) }),
     serverMessages: [
       "tool-calls",
       "status-update",
@@ -739,19 +735,11 @@ export async function transferLiveCall(
         status: response.status,
         body: body.slice(0, 200),
       });
-      return {
-        ok: false,
-        status: response.status,
-        error: "Transfer was rejected by the carrier.",
-      };
+      return { ok: false, status: response.status, error: "Transfer was rejected by the carrier." };
     }
     return { ok: true, status: 200 };
   } catch (err) {
     log.error("Vapi live transfer failed", { error: getErrorMessage(err) });
-    return {
-      ok: false,
-      status: 502,
-      error: "Could not reach the voice carrier.",
-    };
+    return { ok: false, status: 502, error: "Could not reach the voice carrier." };
   }
 }
