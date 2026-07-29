@@ -250,7 +250,7 @@ async function loadAgentRuntime(agentId: string, userId: string) {
         .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
         .orderBy(desc(schema.knowledge.createdAt))
         .limit(80),
-    ])
+    ]),
   );
   const agent = agents[0] as AgentRow | undefined;
   if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
