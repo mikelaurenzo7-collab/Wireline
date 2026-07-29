@@ -44,6 +44,7 @@ describe("AI cost-protection contract", () => {
     const routes = read("src/routes/spend-control-routes.ts");
     const entitlements = read("src/lib/plan-entitlements.ts");
     const validation = read("src/lib/api-validation-base.ts");
+    const stripeHelpers = read("src/lib/stripe-helpers.ts");
     expect(snapshot).toContain("existing.managedDefault === true");
     expect(snapshot).toContain("managedDefault\n      ? limit");
     expect(routes).toContain("managedDefault: false");
@@ -55,6 +56,12 @@ describe("AI cost-protection contract", () => {
     expect(routes).toContain("limit > maximumLimitUsd");
     expect(routes).toContain("The provider spend guard is always enabled with a hard cap.");
     expect(entitlements).toContain('status === "active" || status === "trialing"');
+    expect(stripeHelpers).toMatch(
+      /stripeStatus === "active" \|\| stripeStatus === "trialing"[\s\S]*spendBudgetPlanId/,
+    );
+    expect(stripeHelpers).toContain(
+      "await ensureDefaultAiSpendBudget(userId, spendBudgetPlanId)",
+    );
     expect(validation).toContain("hard_cap: z.boolean().default(true)");
   });
 
