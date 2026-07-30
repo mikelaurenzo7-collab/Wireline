@@ -31,8 +31,8 @@ describe("empty-state route hygiene", () => {
     expect(routes).toContain("AgentsToStudioRedirect");
     expect(routes).toContain("`/studio${location.search}${location.hash}`");
 
-    expect(sms).toContain('<Link to="/settings/phone">Open phone setup</Link>');
-    expect(sms).not.toContain('<a href="/settings/phone">Open phone setup</a>');
+    expect(sms).toContain('<Link to="/settings/phone">Review SMS setup</Link>');
+    expect(sms).not.toContain('<a href="/settings/phone">Review SMS setup</a>');
 
     expect(livePreview).toContain('to="/settings/billing"');
     expect(livePreview).not.toContain('href="/settings/billing"');

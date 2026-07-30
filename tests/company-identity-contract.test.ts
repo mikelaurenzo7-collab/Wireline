@@ -209,7 +209,9 @@ describe("company identity pack", () => {
 
   it("keeps the customer surface explicit, fail-closed, and touch accessible", () => {
     const surface = read("src/components/settings/CompanyIdentityPack.tsx");
-    const phoneSettings = read("src/pages/PhoneSettings.tsx");
+    // The company-identity surface renders inside the self-serve PhoneSetupPanel,
+    // which now owns the per-number remount key (PhoneSettings is a thin wrapper).
+    const phoneSetupPanel = read("src/components/PhoneSetupPanel.tsx");
     const normalizedSurface = surface.replace(/\s+/g, " ");
 
     expect(normalizedSurface).toContain("Brand the voice agent, not just the workspace.");
@@ -230,6 +232,6 @@ describe("company identity pack", () => {
     expect(surface).toContain("Request verification review");
     expect(surface).toContain("md:grid-cols-2 xl:grid-cols-3");
     expect(surface).toContain("flex flex-wrap items-start justify-between");
-    expect(phoneSettings).toContain('key={activeNumber?.id ?? "no-number"}');
+    expect(phoneSetupPanel).toContain('key={activeNumber?.id ?? "no-number"}');
   });
 });

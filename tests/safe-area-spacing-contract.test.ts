@@ -35,7 +35,7 @@ describe("safe-area spacing ownership", () => {
     expect(authPortal).toContain(
       "wl-auth-form-panel flex min-h-[100dvh] items-center justify-center px-4 sm:px-6",
     );
-    expect(authPortal).toContain('compact ? "py-6 sm:py-6" : "py-8 sm:py-12"');
+    expect(authPortal).toContain('compact ? "py-3 sm:py-4" : "py-8 sm:py-12"');
     expect(read("src/components/StudioWorkspaceV2.tsx")).toContain(
       "flex min-h-[55vh] flex-col bg-background px-4 py-8 sm:px-6",
     );

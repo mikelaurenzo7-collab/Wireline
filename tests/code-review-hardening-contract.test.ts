@@ -155,8 +155,8 @@ describe("code review hardening contracts", () => {
     expect(auth).toContain('aria-labelledby="auth-terms-label"');
     expect(auth).toContain('<span id="auth-terms-label">');
     expect(auth).toContain("<AuthShell compact={isSignUp}>");
-    expect(auth).toContain('compact ? "py-6 sm:py-6" : "py-8 sm:py-12"');
-    expect(auth).toContain('isSignUp ? "mt-5 gap-4" : "mt-6 gap-5"');
+    expect(auth).toContain('compact ? "py-3 sm:py-4" : "py-8 sm:py-12"');
+    expect(auth).toContain('isSignUp ? "mt-4 gap-3" : "mt-6 gap-5"');
     expect(marketingCss).toContain(".marketing-footer-above-sticky");
     expect(marketingCss).toContain("env(safe-area-inset-bottom, 0px)");
   });
