@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 347
-**Protected:** 286
-**Public (allowlisted):** 61
+**Routes scanned:** 349
+**Protected:** 287
+**Public (allowlisted):** 62
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -23,6 +23,7 @@
 | `POST /api/auth/forgot-password` | Signup/login/refresh (public by definition) |
 | `POST /api/auth/migrate-session` | Signup/login/refresh (public by definition) |
 | `POST /api/auth/reset-password` | Signup/login/refresh (public by definition) |
+| `GET /api/auth/session` | Signup/login/refresh (public by definition) |
 | `POST /api/auth/signin` | Signup/login/refresh (public by definition) |
 | `POST /api/auth/signout` | Signup/login/refresh (public by definition) |
 | `POST /api/auth/signup` | Signup/login/refresh (public by definition) |
@@ -80,6 +81,7 @@
 | File | Method | Path | Auth | RBAC | Public | Status |
 |------|--------|------|------|------|--------|--------|
 | account-routes.ts | POST | `/api/account/delete` | inline | — | — | Protected |
+| account-routes.ts | GET | `/api/account/deletion-status` | inline | — | — | Protected |
 | account-routes.ts | GET | `/api/accounts` | inline | — | — | Protected |
 | account-routes.ts | POST | `/api/accounts` | inline | — | — | Protected |
 | account-routes.ts | GET | `/api/accounts/:id` | inline | — | — | Protected |
@@ -130,7 +132,7 @@
 | auth-routes.ts | POST | `/api/auth/refresh` | inline | — | yes | Protected |
 | auth-routes.ts | POST | `/api/auth/resend-verification` | inline | — | yes | Protected |
 | auth-routes.ts | POST | `/api/auth/reset-password` | — | — | yes | Public (allowlisted) |
-| auth-routes.ts | GET | `/api/auth/session` | inline | — | yes | Protected |
+| auth-routes.ts | GET | `/api/auth/session` | — | — | yes | Public (allowlisted) |
 | auth-routes.ts | POST | `/api/auth/signin` | — | — | yes | Public (allowlisted) |
 | auth-routes.ts | POST | `/api/auth/signout` | — | — | yes | Public (allowlisted) |
 | auth-routes.ts | POST | `/api/auth/signup` | — | — | yes | Public (allowlisted) |
@@ -139,7 +141,6 @@
 | billing-portal-readiness-routes.ts | POST | `/api/billing/portal` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/admin/stripe-customer-audit` | inline | platform_admin | — | Protected |
 | billing-routes.ts | GET | `/api/billing/extra-agents` | inline | — | — | Protected |
-| billing-routes.ts | POST | `/api/billing/extra-agents` | inline | — | — | Protected |
 | billing-routes.ts | POST | `/api/billing/live-video-checkout` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/billing/plans` | — | — | yes | Public (allowlisted) |
 | billing-routes.ts | GET | `/api/billing/status` | inline | — | — | Protected |
@@ -213,6 +214,7 @@
 | email-unsubscribe-routes.ts | POST | `/api/email/unsubscribe` | — | — | yes | Public (allowlisted) |
 | email-unsubscribe-routes.ts | GET | `/api/email/unsubscribe` | — | — | yes | Public (allowlisted) |
 | escalation-routes.ts | POST | `/api/escalate` | — | — | yes | Public (allowlisted) |
+| extra-agent-billing-atomic-routes.ts | POST | `/api/billing/extra-agents` | inline | — | — | Protected |
 | fleet-routes.ts | GET | `/api/Assistants/activity` | inline | — | — | Protected |
 | fleet-routes.ts | GET | `/api/Assistants/presence` | inline | — | — | Protected |
 | fleet-routes.ts | GET | `/api/Assistants/presence/stream` | inline | — | — | Protected |
@@ -352,6 +354,7 @@
 | outbound-routes.ts | DELETE | `/api/outbound/:id` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/bulk` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
+| phone-number-release-routes.ts | DELETE | `/api/phone-numbers/:id` | inline | — | — | Protected |
 | pipeline-routes.ts | GET | `/api/insights/campaign-attribution` | inline | — | — | Protected |
 | pipeline-routes.ts | GET | `/api/pipeline` | inline | — | — | Protected |
 | pipeline-routes.ts | PATCH | `/api/pipeline/lead/:id` | inline | — | — | Protected |
