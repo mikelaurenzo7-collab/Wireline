@@ -15,8 +15,8 @@ type Props = {
 export default function MarketingStickyCta({
   href = "/signup",
   label = "Build your agent",
-  secondaryHref = "/showcase",
-  secondaryLabel = "Hear it live",
+  secondaryHref,
+  secondaryLabel,
   className,
 }: Props) {
   const [visible, setVisible] = useState(false);
@@ -40,6 +40,8 @@ export default function MarketingStickyCta({
 
   if (!visible) return null;
 
+  const showSecondary = Boolean(secondaryHref && secondaryLabel);
+
   return (
     <div
       className={cn(
@@ -47,17 +49,22 @@ export default function MarketingStickyCta({
         className,
       )}
     >
-      <div className="pointer-events-auto border-t border-border bg-card px-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] pt-3 shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.05)] sm:px-4">
-        <div className="mx-auto flex max-w-lg gap-2">
-          <Link
-            to={secondaryHref}
-            className="marketing-btn-secondary min-h-[48px] min-w-0 flex-1 px-3 text-sm font-semibold"
-          >
-            <span>{secondaryLabel}</span>
-          </Link>
+      <div className="pointer-events-auto border-t border-border bg-card/96 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-2 shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.08)] backdrop-blur-xl sm:px-4">
+        <div className={cn("mx-auto flex items-center gap-2", showSecondary ? "max-w-lg" : "max-w-sm")}>
+          {showSecondary ? (
+            <Link
+              to={secondaryHref!}
+              className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center px-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {secondaryLabel}
+            </Link>
+          ) : null}
           <Link
             to={href}
-            className="marketing-btn-primary min-h-[48px] min-w-0 flex-[1.25] gap-1.5 px-3 text-sm font-semibold"
+            className={cn(
+              "marketing-btn-primary min-h-11 min-w-0 gap-1.5 px-4 text-sm font-semibold",
+              showSecondary ? "flex-[1.35]" : "w-full justify-center",
+            )}
             onClick={() =>
               emitProductEvent({
                 event: "landing_primary_cta_clicked",
