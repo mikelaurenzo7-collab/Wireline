@@ -398,7 +398,12 @@ export const FollowUpTaskCreateSchema = z.object({
   source_id: z.string().max(200).optional().nullable(),
   target_channel: z.enum(FLEET_TASK_TARGET_CHANNELS).optional().nullable(),
   customer_info: z.string().max(500).optional().nullable(),
-  agent_id: z.string().uuid("Invalid agent ID").optional().nullable(),
+  // Agent ids are prefixed text keys (`agent-<uuid>`, `wireline-<persona>`),
+  // not bare UUIDs — `wireline_agents.id` is a text primary key. A `.uuid()`
+  // rule here rejected every real agent id, so the field could never be used.
+  // Ownership is still enforced by the `agent_id -> wireline_agents.id`
+  // foreign key plus tenant-scoped RLS on the insert.
+  agent_id: z.string().max(120, "Invalid agent ID").optional().nullable(),
   due_date: z.string().max(40).optional().nullable(),
 });
 export type FollowUpTaskCreate = z.infer<typeof FollowUpTaskCreateSchema>;

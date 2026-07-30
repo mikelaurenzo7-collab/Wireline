@@ -732,6 +732,11 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
+    // BigInt() throws a raw SyntaxError on anything non-numeric, which surfaced
+    // as a 500 for what is a malformed path parameter.
+    if (!/^\d+$/.test(req.params.rowId)) {
+      throw AppError.fromHttpStatus(400, "rowId must be a positive integer");
+    }
     const rowId = BigInt(req.params.rowId);
     if (req.params.type === "directive") {
       await drizzle

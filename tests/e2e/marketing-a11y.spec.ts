@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { MARKETING_VOICE } from "../../src/lib/product-copy";
+import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../src/lib/product-copy";
 
 test.setTimeout(150_000);
 
@@ -34,10 +34,12 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
   ).toBeVisible();
   await expect(page.getByText(MARKETING_VOICE.subline, { exact: true })).toBeVisible();
 
-  const brandSpine = page.getByLabel("Wire to Work to Win");
+  // Source the accessible name from MARKETING_VOICE (same as the hero markup)
+  // so a brand-spine copy change can never silently desync this E2E assertion.
+  const brandSpine = page.getByLabel(MARKETING_VOICE.spine.join(", "));
   await expect(brandSpine).toBeVisible();
   const brandWords = brandSpine.locator("span");
-  await expect(brandWords).toHaveCount(3);
+  await expect(brandWords).toHaveCount(MARKETING_VOICE.spine.length);
   const brandWordBoxes = await brandWords.evaluateAll((elements) =>
     elements.map((element) => {
       const rect = element.getBoundingClientRect();
@@ -51,7 +53,7 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
   expect(brandWordBoxes[0].left).toBeLessThan(brandWordBoxes[1].left);
   expect(brandWordBoxes[1].right).toBeLessThan(brandWordBoxes[2].right);
 
-  const proofList = page.getByRole("list", { name: "Wireline proof points" });
+  const proofList = page.getByRole("list", { name: "Wireline capabilities" });
   // Keep labels sourced from MARKETING_VOICE so copy renames don't desync E2E.
   for (const label of HERO_CHANNEL_PROOF) {
     await expect(proofList.getByRole("listitem").filter({ hasText: label })).toBeVisible();
@@ -65,9 +67,11 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
   const tablist = page.getByRole("tablist", { name: "Agent work lane" });
   await expect(tablist).toBeVisible();
 
-  const salesTab = page.getByRole("tab", { name: "Sales" });
-  const serviceTab = page.getByRole("tab", { name: "Service" });
-  const allPurposeTab = page.getByRole("tab", { name: "All-purpose" });
+  // Tab names come from AGENT_DIRECTION_MODES for the same reason as the proof
+  // labels: a copy rename must fail the contract tests, not desync this spec.
+  const salesTab = page.getByRole("tab", { name: AGENT_DIRECTION_MODES.outbound.label });
+  const serviceTab = page.getByRole("tab", { name: AGENT_DIRECTION_MODES.inbound.label });
+  const allPurposeTab = page.getByRole("tab", { name: AGENT_DIRECTION_MODES.hybrid.label });
 
   await expect(salesTab).toHaveAttribute("aria-selected", "true");
   await expect(salesTab).toHaveAttribute("aria-controls", "wire-agent-outbound-panel");

@@ -69,7 +69,10 @@ async function claimLegacyFailed(db: QueueDb, typeFilter?: JobType[]): Promise<a
       .where(eq(schema.jobs.id, job.id))
       .returning();
     return updated || null;
-  });
+    // Same explicit READ WRITE declaration the base queue uses: these claim and
+    // retry writes run from unscoped cron/worker contexts, where a reused
+    // Supavisor backend can otherwise leak a session-level read-only default.
+  }, base.writeTransactionConfig());
 }
 
 /** New work is claimed first; rows stranded by the former retry bug are reclaimed afterward. */
@@ -115,7 +118,7 @@ export async function claimJobById(
       .where(eq(schema.jobs.id, job.id))
       .returning();
     return updated || null;
-  });
+  }, base.writeTransactionConfig());
 }
 
 /**
@@ -150,16 +153,22 @@ export async function failJob(
     longRunning ? 5 * 60 : 0,
   );
 
-  await db
-    .update(schema.jobs)
-    .set({
-      status: "pending",
-      error: errorMessage.slice(0, 2000),
-      finishedAt: null,
-      runAt: new Date(Date.now() + retryDelaySeconds * 1000),
-      updatedAt: new Date(),
-    })
-    .where(eq(schema.jobs.id, job.id));
+  // Mirror base.failJob: declare READ WRITE so the retry reschedule cannot be
+  // rejected by a leaked session-level read-only default on a pooled backend.
+  // Losing this write would strand the row in `running` until the stale-job
+  // sweep 30 minutes later.
+  await db.transaction(async (tx) => {
+    await tx
+      .update(schema.jobs)
+      .set({
+        status: "pending",
+        error: errorMessage.slice(0, 2000),
+        finishedAt: null,
+        runAt: new Date(Date.now() + retryDelaySeconds * 1000),
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.jobs.id, job.id));
+  }, base.writeTransactionConfig());
 }
 
 export function startWorker(

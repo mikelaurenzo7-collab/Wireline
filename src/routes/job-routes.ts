@@ -514,9 +514,18 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
     }
     let recovered = 0;
     if (req._sweepMode === "cron" || !req._sweepMode) {
-      recovered = await recoverStaleJobs(drizzle);
-      if (recovered > 0) {
-        log.warn("Recovered stuck jobs", { recovered });
+      // Stale-job recovery is best effort. It is the first step of the tick, so
+      // letting it throw would also cancel webhook retry draining, the job
+      // drain loop, trial expiry, and the trial-ending emails below.
+      try {
+        recovered = await recoverStaleJobs(drizzle);
+        if (recovered > 0) {
+          log.warn("Recovered stuck jobs", { recovered });
+        }
+      } catch (recoverErr: unknown) {
+        log.error("Stale job recovery failed; continuing sweep", {
+          error: getErrorMessage(recoverErr),
+        });
       }
     }
 

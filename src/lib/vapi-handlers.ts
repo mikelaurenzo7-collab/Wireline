@@ -499,7 +499,14 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     // A two-party-state call that completed without a detectable disclosure
     // is a genuine compliance exposure ($500–$5,000/call). Surface it loudly
     // so the Account Holder can act, rather than burying it as a silent ledger row.
-    if (disclosureEvent !== "disclosure_played" && rule === "two_party") {
+    //
+    // A report with neither transcript nor measurable duration is a call that
+    // never carried a conversation (no answer, immediate hangup, failed dial).
+    // There is nothing to disclose into and nothing recorded, so alerting on it
+    // would bury the real exposures under every unanswered dial. The ledger row
+    // above still records `disclosure_unverifiable` either way.
+    const carriedConversation = hasTranscript || duration > 0;
+    if (disclosureEvent !== "disclosure_played" && rule === "two_party" && carriedConversation) {
       log.warn("TCPA: recording disclosure could not be verified on two-party-state call", {
         userId,
         callId: call?.id,

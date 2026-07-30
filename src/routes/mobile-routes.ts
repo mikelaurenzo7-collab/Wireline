@@ -97,31 +97,36 @@ router.get(
     try {
       const userId = req.user.id;
 
-      // Three independent reads — run them concurrently.
-      const [[profile], [row], [{ count }]] = await Promise.all([
-        drizzle
-          .select({ fullName: schema.users.fullName, email: schema.users.email })
-          .from(schema.users)
-          .where(eq(schema.users.id, userId))
-          .limit(1),
-        drizzle
-          .select({
-            planId: schema.subscriptions.plan,
-            subscriptionStatus: schema.settings.subscriptionStatus,
-            maxAgents: schema.settings.maxAgents,
-            extraAgents: schema.settings.extraAgents,
-            businessName: schema.settings.businessName,
-            handoffPhone: schema.settings.handoffPhone,
-          })
-          .from(schema.settings)
-          .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
-          .where(eq(schema.settings.userId, userId))
-          .limit(1),
-        drizzle
-          .select({ count: sql<number>`count(*)` })
-          .from(schema.agents)
-          .where(eq(schema.agents.userId, userId)),
-      ]);
+      // Three independent reads on one pooled client. Root Drizzle queries each
+      // check out their own tenant-scoped client from a five-connection
+      // serverless pool, so a bare Promise.all would let two concurrent mobile
+      // bootstraps exhaust it and fail on the 5s checkout timeout.
+      const [[profile], [row], [{ count }]] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx
+            .select({ fullName: schema.users.fullName, email: schema.users.email })
+            .from(schema.users)
+            .where(eq(schema.users.id, userId))
+            .limit(1),
+          tx
+            .select({
+              planId: schema.subscriptions.plan,
+              subscriptionStatus: schema.settings.subscriptionStatus,
+              maxAgents: schema.settings.maxAgents,
+              extraAgents: schema.settings.extraAgents,
+              businessName: schema.settings.businessName,
+              handoffPhone: schema.settings.handoffPhone,
+            })
+            .from(schema.settings)
+            .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+            .where(eq(schema.settings.userId, userId))
+            .limit(1),
+          tx
+            .select({ count: sql<number>`count(*)` })
+            .from(schema.agents)
+            .where(eq(schema.agents.userId, userId)),
+        ]),
+      );
       const agentCount = Number(count);
 
       const isOwner = isOwnerEmail(req.user.email);

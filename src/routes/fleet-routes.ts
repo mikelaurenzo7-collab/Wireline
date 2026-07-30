@@ -100,8 +100,10 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const VALID_STATUSES = new Set(["pending", "in_progress", "completed", "cancelled"]);
-      const VALID_PRIORITIES = new Set(["high", "medium", "low"]);
+      // Mirror the statuses PATCH can actually write. "open" was writable but
+      // not filterable, so a task moved to "open" fell out of every status view.
+      const VALID_STATUSES = new Set<string>(FLEET_TASK_STATUSES);
+      const VALID_PRIORITIES = new Set<string>(FLEET_TASK_PRIORITIES);
       const statusFilter =
         typeof req.query.status === "string" && VALID_STATUSES.has(req.query.status)
           ? req.query.status
@@ -238,12 +240,36 @@ router.patch(
         }
         updateData.priority = priority;
       }
-      if (due_date !== undefined) updateData.dueDate = new Date(due_date);
+      if (due_date !== undefined) {
+        // `due_date: null` is the documented way to clear a due date. Passing it
+        // straight to `new Date()` yielded the Unix epoch (a due date of
+        // 1970-01-01), and an unparseable string produced an Invalid Date that
+        // threw inside the driver as an opaque 500.
+        if (due_date === null || due_date === "") {
+          updateData.dueDate = null;
+        } else {
+          const parsedDueDate = new Date(due_date);
+          if (Number.isNaN(parsedDueDate.getTime())) {
+            return res
+              .status(400)
+              .json({ code: "BAD_REQUEST", error: "due_date must be a valid date" });
+          }
+          updateData.dueDate = parsedDueDate;
+        }
+      }
       if (agent_id !== undefined) updateData.agentId = agent_id;
       if (resolution_notes !== undefined) updateData.resolutionNotes = resolution_notes;
       if (description !== undefined) updateData.description = description;
       if (payload !== undefined && payload && typeof payload === "object") {
         updateData.payload = payload;
+      }
+
+      // Drizzle throws "No values to set" on an empty update, which surfaced as
+      // a 500 for what is really a malformed request.
+      if (Object.keys(updateData).length === 0) {
+        return res
+          .status(400)
+          .json({ code: "BAD_REQUEST", error: "No supported task fields to update" });
       }
 
       await drizzle
@@ -429,9 +455,9 @@ router.get(
 
 router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const [hotLeads, complianceTasks, pendingTasks, knowledgeGaps, escalations] = await drizzle.transaction((tx) =>
-      Promise.all(
-        [
+    const [hotLeads, complianceTasks, pendingTasks, knowledgeGaps, escalations] =
+      await drizzle.transaction((tx) =>
+        Promise.all([
           tx
             .select({
               id: schema.callLogs.id,
@@ -510,9 +536,8 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
             )
             .orderBy(desc(schema.callLogs.createdAt))
             .limit(20),
-        ],
-      ),
-    );
+        ]),
+      );
 
     // UI reads snake_case (customer_number, lead_score, created_at). Drizzle
     // hands us camelCase. Normalize at the boundary so the triage card stops

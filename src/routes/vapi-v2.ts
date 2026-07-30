@@ -7,6 +7,7 @@ import express from "express";
 import { and, eq } from "drizzle-orm";
 
 import { VAPI_OPENAI_FALLBACK_MODEL } from "../lib/ai-models";
+import { complianceFirstMessagePrefix } from "../lib/agent-runtime";
 import * as schema from "../db/schema";
 import { enqueue } from "../lib/job-queue";
 import { claimLeadEnrichmentSlot } from "../lib/enrichment-debounce";
@@ -65,7 +66,12 @@ function evaluateHandoffTriggers(transcriptText: string, confidence: number) {
   };
 }
 
-function buildDurableTakeMessageAssistant(agentId: string, agentName?: string) {
+function buildDurableTakeMessageAssistant(
+  agentId: string,
+  agentName?: string,
+  complianceMode?: string | null,
+  businessName?: string | null,
+) {
   const appUrl = process.env.APP_URL?.trim().replace(/\/+$/, "");
   const server = appUrl
     ? buildVapiServerConfig(`${appUrl}/api/vapi-webhook?agentId=${encodeURIComponent(agentId)}`)
@@ -97,9 +103,25 @@ function buildDurableTakeMessageAssistant(agentId: string, agentName?: string) {
       ])
     : [];
 
+  const recordingEnabled = complianceMode !== "hipaa";
+  // Same spoken opening disclosure the full inbound assistant emits. Without
+  // it this fallback records a two-party-state caller with nothing in the
+  // transcript to evidence the notice, which is both a real TCPA exposure and
+  // a guaranteed `disclosure_not_detected` compliance alert.
+  const disclosurePrefix = complianceFirstMessagePrefix(complianceMode, businessName || agentName, {
+    outboundAiCall: false,
+    recordingEnabled,
+  });
+
   return {
-    firstMessage: `Hi, you've reached ${agentName || "our office"}. I can take a message for the team.`,
+    firstMessage: `${disclosurePrefix}Hi, you've reached ${agentName || "our office"}. I can take a message for the team.`,
     maxDurationSeconds: 300,
+    // Vapi records by default. The full inbound and outbound assistants both
+    // disable recording for HIPAA-mode agents; this insolvency fallback answers
+    // the same tenant's line and must honor the same posture, or a HIPAA tenant
+    // would get a provider recording (and a persisted recording URL) purely
+    // because their balance ran low.
+    recordingEnabled,
     model: {
       provider: "openai" as const,
       model: VAPI_OPENAI_FALLBACK_MODEL,
@@ -210,11 +232,12 @@ router.post("/api/vapi-webhook", async (req, res) => {
     const agent = { id: webhookAgentId, user_id: routed.agentUserId };
 
     const [agentVoiceRow] = await drizzle
-      .select({ name: schema.agents.name })
+      .select({ name: schema.agents.name, complianceMode: schema.agents.complianceMode })
       .from(schema.agents)
       .where(eq(schema.agents.id, webhookAgentId))
       .limit(1);
     const agentVoiceName = agentVoiceRow?.name ?? undefined;
+    const agentComplianceMode = agentVoiceRow?.complianceMode ?? undefined;
 
     const [userSettings] = await drizzle
       .select({
@@ -224,6 +247,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
         voiceLlmModel: schema.settings.voiceLlmModel,
         twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
         twilioLookupEnabled: schema.settings.twilioLookupEnabled,
+        businessName: schema.settings.businessName,
       })
       .from(schema.settings)
       .where(eq(schema.settings.userId, agent.user_id))
@@ -266,7 +290,12 @@ router.post("/api/vapi-webhook", async (req, res) => {
             completionGraceDueUsd: wallet.completion_grace_due_usd,
           });
           return res.json({
-            assistant: buildDurableTakeMessageAssistant(webhookAgentId, agentVoiceName),
+            assistant: buildDurableTakeMessageAssistant(
+              webhookAgentId,
+              agentVoiceName,
+              agentComplianceMode,
+              userSettings?.businessName,
+            ),
           });
         }
         return res.json({

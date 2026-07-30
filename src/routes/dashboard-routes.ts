@@ -38,33 +38,39 @@ router.get(
         return;
       }
 
-      const [[triageResult], [emailResult], [outboundResult], liveSignals] = await drizzle.transaction((tx) =>
-        Promise.all([
-          tx
-            .select({ count: sql`count(*)` })
-            .from(schema.followUpTasks)
-            .where(
-              and(
-                eq(schema.followUpTasks.userId, userId),
-                eq(schema.followUpTasks.status, "pending"),
+      const [[triageResult], [emailResult], [outboundResult], liveSignals] =
+        await drizzle.transaction((tx) =>
+          Promise.all([
+            tx
+              .select({ count: sql`count(*)` })
+              .from(schema.followUpTasks)
+              .where(
+                and(
+                  eq(schema.followUpTasks.userId, userId),
+                  eq(schema.followUpTasks.status, "pending"),
+                ),
               ),
-            ),
-          tx
-            .select({ count: sql`count(*)` })
-            .from(schema.emailThreads)
-            .where(and(eq(schema.emailThreads.userId, userId), eq(schema.emailThreads.read, false))),
-          tx
-            .select({ count: sql`count(*)` })
-            .from(schema.outboundLeads)
-            .where(
-              and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "Queued")),
-            ),
-          tx
-            .select({ label: schema.signalPresence.label })
-            .from(schema.signalPresence)
-            .where(eq(schema.signalPresence.userId, userId)),
-        ]),
-      );
+            tx
+              .select({ count: sql`count(*)` })
+              .from(schema.emailThreads)
+              .where(
+                and(eq(schema.emailThreads.userId, userId), eq(schema.emailThreads.read, false)),
+              ),
+            tx
+              .select({ count: sql`count(*)` })
+              .from(schema.outboundLeads)
+              .where(
+                and(
+                  eq(schema.outboundLeads.userId, userId),
+                  eq(schema.outboundLeads.status, "Queued"),
+                ),
+              ),
+            tx
+              .select({ label: schema.signalPresence.label })
+              .from(schema.signalPresence)
+              .where(eq(schema.signalPresence.userId, userId)),
+          ]),
+        );
 
       const triageCount = Number(triageResult.count);
       const emailCount = Number(emailResult.count);
@@ -341,33 +347,42 @@ router.get(
       const userId = req.user.id;
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-      const [calls, leads, agents] = await Promise.all([
-        drizzle
-          .select({
-            duration_seconds: schema.callLogs.durationSeconds,
-            lead_score: schema.callLogs.leadScore,
-            intent_label: schema.callLogs.intentLabel,
-            cost: schema.callLogs.cost,
-            qa_score: schema.callLogs.qaScore,
-          })
-          .from(schema.callLogs)
-          .where(
-            and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, thirtyDaysAgo)),
-          ),
-        drizzle
-          .select({ status: schema.outboundLeads.status })
-          .from(schema.outboundLeads)
-          .where(
-            and(
-              eq(schema.outboundLeads.userId, userId),
-              gte(schema.outboundLeads.createdAt, thirtyDaysAgo),
+      // One pooled client for the whole fan-out. Every root Drizzle query
+      // checks out its own tenant-scoped client and the serverless pool is
+      // capped at five, so a bare Promise.all here would put two concurrent
+      // dashboard mounts over the cap and fail on the 5s checkout timeout.
+      const [calls, leads, agents] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx
+            .select({
+              duration_seconds: schema.callLogs.durationSeconds,
+              lead_score: schema.callLogs.leadScore,
+              intent_label: schema.callLogs.intentLabel,
+              cost: schema.callLogs.cost,
+              qa_score: schema.callLogs.qaScore,
+            })
+            .from(schema.callLogs)
+            .where(
+              and(
+                eq(schema.callLogs.userId, userId),
+                gte(schema.callLogs.createdAt, thirtyDaysAgo),
+              ),
             ),
-          ),
-        drizzle
-          .select({ id: schema.agents.id })
-          .from(schema.agents)
-          .where(eq(schema.agents.userId, userId)),
-      ]);
+          tx
+            .select({ status: schema.outboundLeads.status })
+            .from(schema.outboundLeads)
+            .where(
+              and(
+                eq(schema.outboundLeads.userId, userId),
+                gte(schema.outboundLeads.createdAt, thirtyDaysAgo),
+              ),
+            ),
+          tx
+            .select({ id: schema.agents.id })
+            .from(schema.agents)
+            .where(eq(schema.agents.userId, userId)),
+        ]),
+      );
 
       const result = computeDashboardBenchmarks({
         calls: calls as any,

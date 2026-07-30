@@ -96,45 +96,50 @@ router.get(
         gte(schema.outboundLeads.createdAt, since),
       );
 
-      const [callRows, apptRows, leadRows] = await Promise.all([
-        drizzle
-          .select({
-            totalCalls: count(),
-            connected:
-              sql<number>`count(*) filter (where coalesce(${schema.callLogs.durationSeconds}, 0) > 10)`.mapWith(
-                Number,
-              ),
-            qualified:
-              sql<number>`count(*) filter (where coalesce(${schema.callLogs.leadScore}, 0) >= 50)`.mapWith(
-                Number,
-              ),
-            highIntent:
-              sql<number>`count(*) filter (where ${schema.callLogs.intentLabel} = 'high')`.mapWith(
-                Number,
-              ),
-          })
-          .from(schema.callLogs)
-          .where(callWhere),
-        drizzle
-          .select({
-            bookings: count(),
-            completed:
-              sql<number>`count(*) filter (where ${schema.appointments.status} = 'Completed')`.mapWith(
-                Number,
-              ),
-          })
-          .from(schema.appointments)
-          .where(apptWhere),
-        drizzle
-          .select({
-            queuedLeads:
-              sql<number>`count(*) filter (where ${schema.outboundLeads.status} in ('Pending', 'Queued'))`.mapWith(
-                Number,
-              ),
-          })
-          .from(schema.outboundLeads)
-          .where(leadWhere),
-      ]);
+      // Single pooled client for the fan-out — see the agent-performance query
+      // below: root Drizzle queries each check out their own tenant-scoped
+      // client against a five-connection serverless pool.
+      const [callRows, apptRows, leadRows] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx
+            .select({
+              totalCalls: count(),
+              connected:
+                sql<number>`count(*) filter (where coalesce(${schema.callLogs.durationSeconds}, 0) > 10)`.mapWith(
+                  Number,
+                ),
+              qualified:
+                sql<number>`count(*) filter (where coalesce(${schema.callLogs.leadScore}, 0) >= 50)`.mapWith(
+                  Number,
+                ),
+              highIntent:
+                sql<number>`count(*) filter (where ${schema.callLogs.intentLabel} = 'high')`.mapWith(
+                  Number,
+                ),
+            })
+            .from(schema.callLogs)
+            .where(callWhere),
+          tx
+            .select({
+              bookings: count(),
+              completed:
+                sql<number>`count(*) filter (where ${schema.appointments.status} = 'Completed')`.mapWith(
+                  Number,
+                ),
+            })
+            .from(schema.appointments)
+            .where(apptWhere),
+          tx
+            .select({
+              queuedLeads:
+                sql<number>`count(*) filter (where ${schema.outboundLeads.status} in ('Pending', 'Queued'))`.mapWith(
+                  Number,
+                ),
+            })
+            .from(schema.outboundLeads)
+            .where(leadWhere),
+        ]),
+      );
 
       const callAgg = callRows[0];
       const apptAgg = apptRows[0];

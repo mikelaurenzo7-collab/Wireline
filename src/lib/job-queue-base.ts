@@ -36,7 +36,7 @@ const WRITE_TRANSACTION_CONFIG = { accessMode: "read write" as const };
  * same access mode on their own transaction so a reused Supavisor backend
  * cannot inherit a leaked session-level read-only default.
  */
-function writeTransactionConfig(): typeof WRITE_TRANSACTION_CONFIG | undefined {
+export function writeTransactionConfig(): typeof WRITE_TRANSACTION_CONFIG | undefined {
   return tenantStore.getStore() ? undefined : WRITE_TRANSACTION_CONFIG;
 }
 
@@ -123,24 +123,21 @@ export interface EnqueueResult {
 export async function enqueue(db: DrizzleDB, opts: EnqueueOptions): Promise<EnqueueResult> {
   const runAt = opts.runAt ?? new Date();
   try {
-    const data = await db.transaction(
-      async (tx) => {
-        const [row] = await tx
-          .insert(schema.jobs)
-          .values({
-            userId: opts.userId,
-            type: opts.type,
-            payload: opts.payload,
-            status: "pending" as JobStatus,
-            attempts: 0,
-            maxAttempts: opts.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
-            runAt: runAt,
-          })
-          .returning({ id: schema.jobs.id });
-        return row;
-      },
-      writeTransactionConfig(),
-    );
+    const data = await db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(schema.jobs)
+        .values({
+          userId: opts.userId,
+          type: opts.type,
+          payload: opts.payload,
+          status: "pending" as JobStatus,
+          attempts: 0,
+          maxAttempts: opts.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
+          runAt: runAt,
+        })
+        .returning({ id: schema.jobs.id });
+      return row;
+    }, writeTransactionConfig());
 
     return { ok: true, jobId: data.id };
   } catch (error: any) {
@@ -243,21 +240,18 @@ export async function completeJob(
   jobId: string,
   result?: JobPayload,
 ): Promise<void> {
-  await db.transaction(
-    async (tx) => {
-      await tx
-        .update(schema.jobs)
-        .set({
-          status: "done" as JobStatus,
-          finishedAt: new Date(),
-          error: null,
-          ...(result !== undefined ? { result } : {}),
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.jobs.id, jobId));
-    },
-    writeTransactionConfig(),
-  );
+  await db.transaction(async (tx) => {
+    await tx
+      .update(schema.jobs)
+      .set({
+        status: "done" as JobStatus,
+        finishedAt: new Date(),
+        error: null,
+        ...(result !== undefined ? { result } : {}),
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.jobs.id, jobId));
+  }, writeTransactionConfig());
 }
 
 export async function failJob(
@@ -270,21 +264,18 @@ export async function failJob(
     ? null
     : new Date(Date.now() + backoffSeconds(job.attempts || 0) * 1000);
 
-  await db.transaction(
-    async (tx) => {
-      await tx
-        .update(schema.jobs)
-        .set({
-          status: (exhausted ? "dead" : "failed") as JobStatus,
-          error: errorMessage.slice(0, 2000),
-          finishedAt: exhausted ? new Date() : null,
-          runAt: nextRunAt ?? new Date(),
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.jobs.id, job.id));
-    },
-    writeTransactionConfig(),
-  );
+  await db.transaction(async (tx) => {
+    await tx
+      .update(schema.jobs)
+      .set({
+        status: (exhausted ? "dead" : "failed") as JobStatus,
+        error: errorMessage.slice(0, 2000),
+        finishedAt: exhausted ? new Date() : null,
+        runAt: nextRunAt ?? new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.jobs.id, job.id));
+  }, writeTransactionConfig());
 
   // Alert only on dead-letter (retries exhausted) — transient failures that
   // will be retried are noise. A dead job means real work (post-call
@@ -387,50 +378,70 @@ export function startWorker(db: DrizzleDB, handler: any, opts: WorkerOptions = {
 }
 
 /**
+ * Upper bound on rows one recovery pass rewrites.
+ *
+ * The pass runs inside a single transaction, so an unbounded backlog would
+ * hold row locks (and a pinned pooler backend) for the whole loop and roll the
+ * entire pass back on any timeout — leaving `recovered` at 0 forever while the
+ * next sweep retried exactly the same failing work. Bounding the batch keeps
+ * every pass short and makes a large backlog drain across successive sweeps.
+ */
+const STALE_RECOVERY_BATCH = 200;
+
+/**
  * Recover jobs stuck in "running" state for longer than the timeout.
  * Jobs that were claimed but never completed (e.g., worker crash) are
  * reset to "pending" for retry, or marked "dead" if max attempts exceeded.
  * Should be called periodically (e.g., every 5 minutes from the sweep cron).
+ *
+ * Recovers at most `STALE_RECOVERY_BATCH` rows per call, oldest first.
  */
 export async function recoverStaleJobs(
   db: DrizzleDB,
   staleAfterMs = 30 * 60 * 1000,
 ): Promise<number> {
   const cutoff = new Date(Date.now() - staleAfterMs);
-  return await db.transaction(
-    async (tx) => {
-      const staleJobs = await tx
-        .select({
-          id: schema.jobs.id,
-          attempts: schema.jobs.attempts,
-          maxAttempts: schema.jobs.maxAttempts,
+  return await db.transaction(async (tx) => {
+    const staleJobs = await tx
+      .select({
+        id: schema.jobs.id,
+        attempts: schema.jobs.attempts,
+        maxAttempts: schema.jobs.maxAttempts,
+      })
+      .from(schema.jobs)
+      .where(
+        and(eq(schema.jobs.status, "running" as JobStatus), lte(schema.jobs.startedAt, cutoff)),
+      )
+      // Deterministic order keeps two overlapping sweeps from acquiring the
+      // same row locks in opposite orders and deadlocking.
+      .orderBy(schema.jobs.startedAt, schema.jobs.id)
+      .limit(STALE_RECOVERY_BATCH);
+
+    let recovered = 0;
+    for (const job of staleJobs) {
+      const exhausted = (job.attempts || 0) >= (job.maxAttempts || 5);
+      // Re-assert `status = 'running'` on the write. READ COMMITTED means a
+      // worker can commit `done` between the select above and this update, and
+      // an id-only predicate would resurrect that finished job as `pending` —
+      // re-running every side effect the handler already performed. Counting
+      // returned rows also keeps the sweep's tally honest.
+      const reset = await tx
+        .update(schema.jobs)
+        .set({
+          status: (exhausted ? "dead" : "pending") as JobStatus,
+          error: exhausted
+            ? "Marked dead: stuck in running state beyond timeout"
+            : "Reset from stale running state",
+          runAt: new Date(),
+          updatedAt: new Date(),
         })
-        .from(schema.jobs)
-        .where(
-          and(eq(schema.jobs.status, "running" as JobStatus), lte(schema.jobs.startedAt, cutoff)),
-        );
+        .where(and(eq(schema.jobs.id, job.id), eq(schema.jobs.status, "running" as JobStatus)))
+        .returning({ id: schema.jobs.id });
+      if (reset.length) recovered++;
+    }
 
-      let recovered = 0;
-      for (const job of staleJobs) {
-        const exhausted = (job.attempts || 0) >= (job.maxAttempts || 5);
-        await tx
-          .update(schema.jobs)
-          .set({
-            status: (exhausted ? "dead" : "pending") as JobStatus,
-            error: exhausted
-              ? "Marked dead: stuck in running state beyond timeout"
-              : "Reset from stale running state",
-            runAt: new Date(),
-            updatedAt: new Date(),
-          })
-          .where(eq(schema.jobs.id, job.id));
-        recovered++;
-      }
-
-      return recovered;
-    },
-    writeTransactionConfig(),
-  );
+    return recovered;
+  }, writeTransactionConfig());
 }
 
 // ─────────────────────────────────────────────────────────────────

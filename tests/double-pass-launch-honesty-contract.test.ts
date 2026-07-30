@@ -89,10 +89,20 @@ describe("double-pass launch honesty", () => {
     expect(source).toContain(
       'throw AppError.fromHttpStatus(503, "Prior delivery did not complete. Retry.")',
     );
-    // Must not ack unfinished processing as duplicate success.
-    expect(source).not.toMatch(
-      /priorStatus: prior\?\\.status \?\? "unknown",\s*\}\);\s*return res\.json\(\{ received: true, duplicate: true \}\)/,
-    );
+    // Must not ack an unknown prior claim state as duplicate success. The
+    // pattern is asserted against a synthetic regression first: an
+    // over-escaped guard here (e.g. `prior\\.status`) can never match real
+    // TypeScript, which would make the `not.toMatch` below vacuously true and
+    // leave this money-critical branch unguarded while CI stays green.
+    const acksUnknownPriorAsDuplicate =
+      /priorStatus: prior\?\.status \?\? "unknown",\s*\}\);\s*return res\.json\(\{ received: true, duplicate: true \}\)/;
+    const regressedSource = [
+      '        priorStatus: prior?.status ?? "unknown",',
+      "      });",
+      "      return res.json({ received: true, duplicate: true });",
+    ].join("\n");
+    expect(regressedSource).toMatch(acksUnknownPriorAsDuplicate);
+    expect(source).not.toMatch(acksUnknownPriorAsDuplicate);
   });
 
   it("does not swallow Runtime Allowance grant failures after subscription sync", () => {
@@ -100,9 +110,7 @@ describe("double-pass launch honesty", () => {
     expect(source).toContain(
       "await grantSubscriptionRuntimeAllowance(userId, periodReference, plan.id, interval);",
     );
-    expect(source).not.toMatch(
-      /grantSubscriptionRuntimeAllowance\([\s\S]*?\)\.catch\(/,
-    );
+    expect(source).not.toMatch(/grantSubscriptionRuntimeAllowance\([\s\S]*?\)\.catch\(/);
     expect(source).toContain("refusing overwrite");
   });
 
@@ -110,10 +118,10 @@ describe("double-pass launch honesty", () => {
     const tools = read("src/lib/vapi-tool-handlers.ts");
     const billing = read("src/routes/billing-routes.ts");
     const app = read("src/App.tsx");
-    expect(tools).toContain('`${appUrl}/pricing${planParam}`');
+    expect(tools).toContain("`${appUrl}/pricing${planParam}`");
     expect(tools).toContain("trywireline.com/pricing");
-    expect(tools).not.toContain('`${appUrl}/billing${planParam}`');
-    expect(billing).toContain('updateCardUrl: `${appUrl}/settings/billing`');
+    expect(tools).not.toContain("`${appUrl}/billing${planParam}`");
+    expect(billing).toContain("updateCardUrl: `${appUrl}/settings/billing`");
     expect(app).toContain('path="/billing"');
     expect(app).toContain('to="/settings/billing"');
   });
@@ -138,7 +146,9 @@ describe("double-pass launch honesty", () => {
   it("gates manual SMS replies and fails mark-read honestly", () => {
     const source = read("src/routes/sms-routes.ts");
     expect(source).toContain("evaluateOutboundDialGate");
-    expect(source).toContain('throw AppError.fromHttpStatus(500, "Failed to mark SMS thread read")');
+    expect(source).toContain(
+      'throw AppError.fromHttpStatus(500, "Failed to mark SMS thread read")',
+    );
     expect(source).not.toContain("res.json({ ok: false })");
   });
 
@@ -203,8 +213,7 @@ describe("double-pass launch honesty", () => {
 
     for (const [path, expectedBatches] of expectedTransactionBatches) {
       const source = read(path);
-      const transactionBatches =
-        source.match(/drizzle\.transaction\(\(tx\) =>/g)?.length ?? 0;
+      const transactionBatches = source.match(/drizzle\.transaction\(\(tx\) =>/g)?.length ?? 0;
       expect(transactionBatches, path).toBeGreaterThanOrEqual(expectedBatches);
 
       for (const block of promiseAllBlocks(source)) {
