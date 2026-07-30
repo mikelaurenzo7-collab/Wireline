@@ -24,6 +24,9 @@ describe("static marketing metadata", () => {
     const index = read("index.html");
 
     expect(index).toContain('<link rel="preconnect" href="https://plausible.io" crossorigin />');
+    // Prefer the 1.7 KB SVG favicon on modern browsers; keep the PNG as a
+    // fallback so the 100 KB PNG is no longer the default first-load tab icon.
+    expect(index).toContain('<link rel="icon" type="image/svg+xml" href="/favicon.svg" />');
     expect(index).toContain('<link rel="icon" type="image/png" href="/favicon.png" />');
     expect(index).toContain('<link rel="mask-icon" href="/favicon.svg" color="#6D28D9" />');
     expect(index).toContain(
@@ -39,7 +42,7 @@ describe("static marketing metadata", () => {
     const hero = read("src/components/marketing/MarketingHero.tsx");
     const landing = read("src/pages/LandingPage.tsx");
 
-    expect(hero).toContain('title === MARKETING_VOICE.headline');
+    expect(hero).toContain("title === MARKETING_VOICE.headline");
     expect(hero).toContain("const isHomeHero");
     expect(hero).toContain(
       'aria-label={isHomeHero && typeof title === "string" ? title : undefined}',
