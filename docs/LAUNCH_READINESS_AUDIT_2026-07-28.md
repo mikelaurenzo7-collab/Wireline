@@ -12,16 +12,16 @@ This is dated evidence, not product doctrine. Canonical policy remains in the co
 
 The deep pass verified that Wireline has a coherent product model, a guarded OpenAI-first runtime, a versioned Founder pricing catalog, tenant-isolated data, activation/spend controls, provider fallbacks, and an extensive launch-test suite. It also found one production billing-status failure caused by avoidable serverless pool fan-out, indefinite retention of expired recovery credentials, a false-green Stripe readiness check, email diagnostics that could expose recipient addresses or a verification bearer link, and a shared database-error formatter that retained Drizzle bound parameters.
 
-All verified code wins are implemented on the audit branch. Follow-up passes also found that the margin model omitted Stripe Billing and future Tax transaction fees, Vapi end-of-call persistence read several current report fields only from compatibility locations, pooled transaction state could strand a worker on a read-only backend, failed-but-retryable durable jobs were never reclaimable, a shadow Extra Agent write path could have reintroduced non-atomic entitlement handling if router order changed, DNCScrub blocked/unknown outcomes could be treated as callable, outbound AI identity and recording notices were not guaranteed in the actual first message, and transcript-free calls could be recorded as if disclosure delivery were proven. These defects are now corrected and permanently release-gated. No speculative redesign, vendor expansion, or destructive data cleanup was applied.
+All verified code wins are implemented on the audit branch. Follow-up passes also found that the margin model omitted Stripe Billing and future Tax transaction fees, Vapi end-of-call persistence read several current report fields only from compatibility locations, pooled transaction state could strand a worker on a read-only backend, failed-but-retryable durable jobs were never reclaimable, a shadow Extra Agent write path could have reintroduced non-atomic entitlement handling if router order changed, a stale local Extra Agent count could misclassify a provider-side downgrade as an increase during a launch incident, DNCScrub blocked/unknown outcomes could be treated as callable, outbound AI identity and recording notices were not guaranteed in the actual first message, and transcript-free calls could be recorded as if disclosure delivery were proven. These defects are now corrected and permanently release-gated. No speculative redesign, vendor expansion, or destructive data cleanup was applied.
 
 ## Exact-head release evidence
 
-The latest code-bearing audit completed on commit `e983101c4b263a2ece8175e3de4a41da795d3e1e` (`dpl_99cmdMooZRdvsMzy4fHfYriRiQBT`, `READY`). This documentation-only refresh records evidence about that proven code head; the exact documentation head and its deployment are recorded on PR #943 to avoid a self-referential evidence loop.
+The latest code-bearing audit completed on commit `2f28cfb5ee21a83342a812fcadfb0ddac362c583` (`dpl_Eb1n21nSYnCruKzBKLYzSQ1Qdrap`, `READY`). This documentation-only refresh records evidence about that proven code head; the exact documentation head and its deployment are recorded on PR #943 to avoid a self-referential evidence loop.
 
 | Gate | Result |
 | --- | --- |
-| Vercel preview | `READY` (`dpl_99cmdMooZRdvsMzy4fHfYriRiQBT`) at `e983101c4b263a2ece8175e3de4a41da795d3e1e` |
-| Unit/contract suite | Curated gate: 41 files / 273 tests; full non-E2E suite: 261 files / 1,391 tests; all passed |
+| Vercel preview | `READY` (`dpl_Eb1n21nSYnCruKzBKLYzSQ1Qdrap`) at `2f28cfb5ee21a83342a812fcadfb0ddac362c583` |
+| Unit/contract suite | Exact-head curated gate: 41 files / 273 tests passed; prior full non-E2E gate at `e983101`: 261 files / 1,391 tests passed |
 | Static analysis | Client TypeScript, server TypeScript, audit-module TypeScript, and ESLint passed |
 | Frontend build | Vite 6.4.3; 3,074 modules transformed; production build passed |
 | Server build | 2.4 MB server bundle; import-safe no-database smoke passed |
@@ -93,6 +93,8 @@ A regression contract pins these fail-closed gates.
 The broad billing router retained a shadow `POST /billing/extra-agents` implementation even though the dedicated atomic router was mounted first. The shadow path mutated Stripe and then polled invoice state, so a future router-order change could have revived provider/local divergence and bypassed the launch-hard gate.
 
 The shadow writer is removed; the broad router now owns only the read surface. The sole write owner takes the tenant capacity advisory lock, treats Stripe quantity as authoritative, uses deterministic idempotency, immediately invoices increases with `payment_behavior: "error_if_incomplete"`, re-retrieves and verifies provider quantity, and persists Postgres capacity only after that proof. Declined collection returns 402 without entitlement. Launch blockers stop only quantity increases; reductions and no-op reconciliation remain available so customers are never trapped during an incident. Permanent contracts pin sole ownership, payment-failure handling, mutation/verification/persistence ordering, and downgrade availability.
+
+A final provider-authority pass found the launch gate still compared the requested quantity with the local Postgres count before retrieving Stripe. If Postgres was stale low, a true provider-side reduction could be mislabeled as an increase and return 503. The gate now runs only after Stripe quantity is known and uses the same `isIncrease` decision that controls immediate invoicing. The exact-head contract rejects the former database-relative check and pins gate ordering after provider quantity calculation.
 
 ### Complete Stripe commercial-fee reserve
 
