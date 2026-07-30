@@ -44,6 +44,7 @@ describe("July 30 mobile clarity QA", () => {
     expect(appointments).toContain("isPastAppointment");
     expect(appointments).toContain('appointment.status === "Scheduled" ? "Past"');
     expect(appointments).toContain("leftPast ? 1 : -1");
+    expect(appointments).toContain("leftPast ? rightDay - leftDay : leftDay - rightDay");
   });
 
   it("keeps Fast Start setup labels short", () => {
