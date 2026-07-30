@@ -44,21 +44,24 @@ export function normalizeUsPhone10(phone: string): string | null {
   return null;
 }
 
-const DNCSCRUB_FEDERAL_RESULT_CODES = new Set(["D", "DNCL", "FED", "FEDERAL", "NDNC"]);
+const DNCSCRUB_CALLABLE_RESULT_CODES = new Set(["C", "E", "G", "H", "O", "W", "X", "Y"]);
 
-function isDncScrubFederalListed(resultCode: unknown): boolean {
-  if (typeof resultCode !== "string" || !resultCode.trim()) return false;
-  const normalized = resultCode.trim().toUpperCase();
-  if (DNCSCRUB_FEDERAL_RESULT_CODES.has(normalized)) return true;
-  return normalized.startsWith("D") && normalized.length <= 4;
+/**
+ * DNCScrub v5 returns one-letter disposition codes. Only the provider's
+ * documented callable outcomes may pass. D/P/B/I/M/L/F/V, blank responses,
+ * malformed payloads, and future unknown codes all fail closed.
+ */
+function isDncScrubBlocked(resultCode: unknown): boolean {
+  if (typeof resultCode !== "string" || !resultCode.trim()) return true;
+  return !DNCSCRUB_CALLABLE_RESULT_CODES.has(resultCode.trim().toUpperCase());
 }
 
 type DncScrubRow = { ResultCode?: string; resultCode?: string };
 
 function parseDncScrubListed(payload: unknown): boolean {
-  if (!Array.isArray(payload) || payload.length === 0) return false;
+  if (!Array.isArray(payload) || payload.length === 0) return true;
   const row = payload[0] as DncScrubRow;
-  return isDncScrubFederalListed(row.ResultCode ?? row.resultCode);
+  return isDncScrubBlocked(row.ResultCode ?? row.resultCode);
 }
 
 function buildDncScrubRequestUrl(apiUrl: string, phone10: string): string {

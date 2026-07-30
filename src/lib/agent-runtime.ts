@@ -227,22 +227,33 @@ export function complianceDisclosure(mode: ComplianceMode | string | null | unde
 }
 
 /**
- * Spoken AI-disclosure prefix for the agent's opening line. Only `tcpa` requires
- * an at-START-of-call disclosure — the FCC's Feb 8, 2024 ruling (FCC 24-17)
- * requires artificial/AI-voice calls to disclose the automated voice and identify
- * the responsible entity, and a system-prompt guardrail alone can't guarantee the
- * disclosure is actually the first thing spoken. Returns a short prefix for `tcpa`
- * (with the business name when available) and an empty string for every other mode.
- * Callers prepend this to the agent's firstMessage.
+ * Spoken opening disclosure. Outbound AI calls identify the automation and
+ * responsible entity regardless of a tenant-selected preset. Any call that
+ * Wireline records also receives a compact recording notice. The `tcpa`
+ * preset keeps its legacy AI disclosure behavior for inbound calls.
  */
 export function complianceFirstMessagePrefix(
   mode: ComplianceMode | string | null | undefined,
   businessName?: string | null,
+  options?: {
+    outboundAiCall?: boolean;
+    recordingEnabled?: boolean;
+  },
 ): string {
-  if (mode !== "tcpa") return "";
-  const name = (businessName ?? "").trim();
-  const onBehalf = name ? ` on behalf of ${name}` : "";
-  return `Just so you know, this call uses an automated AI assistant${onBehalf}. `;
+  const shouldDiscloseAi = mode === "tcpa" || options?.outboundAiCall === true;
+  const shouldDiscloseRecording = options?.recordingEnabled === true;
+  if (!shouldDiscloseAi && !shouldDiscloseRecording) return "";
+
+  const name = (businessName ?? "").trim().replace(/\s+/g, " ").slice(0, 120);
+  const sentences: string[] = [];
+  if (shouldDiscloseAi) {
+    const onBehalf = name ? ` on behalf of ${name}` : "";
+    sentences.push(`This call uses an automated AI assistant${onBehalf}.`);
+  }
+  if (shouldDiscloseRecording) {
+    sentences.push("This call may be recorded for quality and compliance.");
+  }
+  return `${sentences.join(" ")} `;
 }
 
 /**

@@ -222,11 +222,15 @@ export async function buildVapiAssistant({
     ? buildVapiServerConfig(`${appUrl}/api/vapi-webhook?agentId=${encodeURIComponent(agentId)}`)
     : undefined;
 
-  // TCPA (FCC 24-17) requires the AI/automated voice + responsible entity to be
-  // disclosed at the START of the call. The system-prompt guardrail can't guarantee
-  // that, so for `tcpa` mode we prepend a spoken disclosure to whatever opening the
-  // agent would otherwise use. Empty string for every other mode (no behavior change).
-  const disclosurePrefix = complianceFirstMessagePrefix(configured.complianceMode, configured.name);
+  // Spoken disclosure is part of the actual first message, not only a prompt
+  // instruction: every outbound AI call identifies the automation and responsible
+  // business, and every recorded call receives a recording notice.
+  const recordingEnabled = configured.complianceMode !== "hipaa";
+  const disclosurePrefix = complianceFirstMessagePrefix(
+    configured.complianceMode,
+    userSettings?.businessName || configured.name,
+    { outboundAiCall: isOutbound, recordingEnabled },
+  );
   return {
     name: configured.name,
     firstMessage:
@@ -269,7 +273,7 @@ export async function buildVapiAssistant({
     numWordsToInterruptAssistant: latency.numWordsToInterruptAssistant,
     backgroundDenoisingEnabled: false,
     backchannelingEnabled: true,
-    recordingEnabled: configured.complianceMode !== "hipaa",
+    recordingEnabled,
     serverMessages: [
       "end-of-call-report",
       "status-update",

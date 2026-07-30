@@ -456,12 +456,15 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     // disclosure language is present in the transcript:
     //   - found            → disclosure_played, with the matched line as evidence
     //   - transcript, none → disclosure_not_detected (a real compliance signal)
-    //   - no transcript    → disclosure_played, delivery "unverifiable"
+    //   - no transcript    → disclosure_unverifiable (never assert delivery)
     const disclosure = detectRecordingDisclosure(transcript);
     const hasTranscript = transcript.trim().length > 0;
 
-    const disclosureEvent =
-      disclosure.found || !hasTranscript ? "disclosure_played" : "disclosure_not_detected";
+    const disclosureEvent = disclosure.found
+      ? "disclosure_played"
+      : hasTranscript
+        ? "disclosure_not_detected"
+        : "disclosure_unverifiable";
     const delivery = disclosure.found
       ? "verified"
       : hasTranscript
@@ -496,18 +499,20 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     // A two-party-state call that completed without a detectable disclosure
     // is a genuine compliance exposure ($500–$5,000/call). Surface it loudly
     // so the Account Holder can act, rather than burying it as a silent ledger row.
-    if (disclosureEvent === "disclosure_not_detected" && rule === "two_party") {
-      log.warn("TCPA: recording disclosure not detected on two-party-state call", {
+    if (disclosureEvent !== "disclosure_played" && rule === "two_party") {
+      log.warn("TCPA: recording disclosure could not be verified on two-party-state call", {
         userId,
         callId: call?.id,
         state,
+        delivery,
       });
-      reportError(new Error("TCPA recording disclosure not detected on two-party call"), {
+      reportError(new Error("TCPA recording disclosure unverified on two-party call"), {
         userId,
         callId: call?.id,
         state,
         rule,
-        tags: { compliance: "tcpa_disclosure_missing" },
+        delivery,
+        tags: { compliance: "tcpa_disclosure_unverified" },
       });
     }
 

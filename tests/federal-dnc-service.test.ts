@@ -42,24 +42,24 @@ describe("federal-dnc-service", () => {
     expect(await isFederalDncListed("+15551234567")).toBe(true);
   });
 
-  it("uses dncscrub GET scrub with loginId and parses ResultCode D", async () => {
+  it("uses DNCScrub GET auth and fails closed outside documented callable codes", async () => {
     process.env.FEDERAL_DNC_API_URL = "https://www.dncscrub.com/app/main/rpc/scrub";
     process.env.FEDERAL_DNC_API_KEY = "scrub-login-id";
     process.env.FEDERAL_DNC_PROVIDER = "dncscrub";
 
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [{ Phone: "5551234567", ResultCode: "D" }],
-    });
+    const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
     expect(normalizeUsPhone10("+1 (555) 123-4567")).toBe("5551234567");
 
-    const listed = await lookupFederalDnc("+15551234567");
-    expect(listed.source).toBe("vendor");
-    expect(listed.listed).toBe(true);
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ Phone: "5551234567", ResultCode: "C" }],
+    });
+    const clear = await lookupFederalDnc("+15551234567");
+    expect(clear.source).toBe("vendor");
+    expect(clear.listed).toBe(false);
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toContain("phoneList=5551234567");
     expect(url).toContain("version=5");
@@ -68,12 +68,24 @@ describe("federal-dnc-service", () => {
     expect(init?.headers).toMatchObject({ loginId: "scrub-login-id" });
     expect(init?.headers).not.toHaveProperty("Authorization");
 
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => [{ Phone: "5551234567", ResultCode: "C" }],
-    });
-    const clear = await lookupFederalDnc("+15551234567");
-    expect(clear.listed).toBe(false);
+    for (const resultCode of ["E", "G", "H", "O", "W", "X", "Y"]) {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ Phone: "5551234567", ResultCode: resultCode }],
+      });
+      expect((await lookupFederalDnc("+15551234567")).listed).toBe(false);
+    }
+
+    for (const resultCode of ["D", "P", "B", "I", "M", "L", "F", "V", "", "UNKNOWN"]) {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ Phone: "5551234567", ResultCode: resultCode }],
+      });
+      expect((await lookupFederalDnc("+15551234567")).listed).toBe(true);
+    }
+
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => [] });
+    expect((await lookupFederalDnc("+15551234567")).listed).toBe(true);
   });
 
   it("treats misplaced Vercel tokens as unconfigured", () => {

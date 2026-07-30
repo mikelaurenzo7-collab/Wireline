@@ -30,7 +30,11 @@ import {
 import { toVapiFunctionTools } from "./vapi-tool-format";
 import { buildVapiServerConfig } from "./vapi-server-config";
 import { normalizeOutboundNumber } from "./dialer-compliance";
-import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";
+import {
+  buildAgentRuntimeContext,
+  complianceFirstMessagePrefix,
+  type AgentRuntimeProfile,
+} from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
 import { vapiVoiceVersion } from "./voice-catalog";
@@ -529,16 +533,23 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     },
   );
   const outboundTools = toVapiFunctionTools(outboundFunctions);
+  const recordingEnabled = agentConfig.complianceMode !== "hipaa";
+  const openingMessage =
+    agentConfig.firstMessage ||
+    buildOutboundFirstMessage(
+      outboundAgentRole,
+      agentConfig.name || "your representative",
+      customerName,
+    );
+  const disclosurePrefix = complianceFirstMessagePrefix(
+    agentConfig.complianceMode,
+    settings?.businessName || agentConfig.name,
+    { outboundAiCall: true, recordingEnabled },
+  );
 
   const assistantPayload: Record<string, unknown> = {
     name: agentConfig.name || "Wireline Outbound Agent",
-    firstMessage:
-      agentConfig.firstMessage ||
-      buildOutboundFirstMessage(
-        outboundAgentRole,
-        agentConfig.name || "your representative",
-        customerName,
-      ),
+    firstMessage: disclosurePrefix + openingMessage,
     backgroundSound: sanitizeAmbientNoise(agentConfig.ambientNoise),
     firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
     maxDurationSeconds: VAPI_MAX_OUTBOUND_CALL_SECONDS,
@@ -576,7 +587,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     // outbound call (manual, campaign, cadence, callback, intake auto-dial)
     // for agents whose owners selected HIPAA compliance, and persisted the
     // recording URL to call logs.
-    recordingEnabled: agentConfig.complianceMode !== "hipaa",
+    recordingEnabled,
     voice: (() => {
       // Outbound calls use the same managed Vapi voice roster as inbound calls.
       // Presenter/live-voice agents store a non-Vapi studio voice; their

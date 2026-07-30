@@ -564,6 +564,8 @@ export type ConsentLedgerEvent =
   // real compliance monitor: a business record that claims a disclosure the
   // transcript contradicts is worse than no record in TCPA litigation.
   | "disclosure_not_detected"
+  // No transcript/evidence was available, so delivery cannot be asserted either way.
+  | "disclosure_unverifiable"
   | "consent_granted"
   | "consent_revoked"
   | "opt_out_requested"
