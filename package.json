@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "npm run assets && vite build && esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/server.cjs --footer:js=\"module.exports.app = app;\"",
+    "build": "npm run assets && vite build && tsx scripts/prerender-marketing-meta.mts && esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/server.cjs --footer:js=\"module.exports.app = app;\"",
     "build:server": "esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/server.cjs --footer:js=\"module.exports.app = app;\"",
     "build:vercel": "node scripts/vercel-build.mjs",
     "start": "node dist/server.cjs",
