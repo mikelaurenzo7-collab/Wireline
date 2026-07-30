@@ -150,7 +150,7 @@ function mockApi(pathname) {
         customer_number: "+14155551011",
         direction: i % 2 ? "inbound" : "outbound",
         duration_seconds: 120 + i * 40,
-        summary: "Demo showcase call — qualified lead, booked follow-up",
+        summary: "Demo showcase call — qualified lead, booked follow up",
         sentiment: "positive",
         intent_label: "schedule_demo",
         qa_score: 82 + i,

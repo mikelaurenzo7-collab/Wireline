@@ -42,7 +42,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     eyebrow: "Sales and growth",
     title: "A sales agent that follows through.",
     lead: "Call warm lists, revive leads, promote offers, send the follow up, book the meeting, and log the outcome.",
-    bestFor: ["Lead response", "Quote follow-up", "Appointment setting"],
+    bestFor: ["Lead response", "Quote follow up", "Appointment setting"],
     cta: "Start with Starter",
     ctaPath: "/signup?plan=starter&mode=outbound",
   },

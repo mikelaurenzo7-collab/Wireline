@@ -112,7 +112,7 @@ export const OUTBOUND_WEDGE = {
     "Appointment setting",
     "Lead revival",
     "Offer promotion",
-    "Quote follow-up",
+    "Quote follow up",
     "Payment recovery",
     "Inbound conversion",
   ],
@@ -179,8 +179,7 @@ export const CLIENT_SURFACE_POSTURE = {
 export const BUSINESS_MARKETING_VOICE = {
   eyebrow: "Business voice agents",
   proof: ["Calls customers", "Texts follow ups", "Sends email", "Logs outcomes"],
-  differentiator:
-    "Wireline keeps valuable conversations moving across voice, SMS, and email.",
+  differentiator: "Wireline keeps valuable conversations moving across voice, SMS, and email.",
   beforeStrip: OUTBOUND_WEDGE.beforeStrip,
 } as const;
 

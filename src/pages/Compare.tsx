@@ -42,7 +42,7 @@ const DIFFERENCES = [
   {
     icon: CalendarCheck,
     title: "It books real time on your calendar.",
-    copy: "Availability checks, timezone-aware, no double-booking.",
+    copy: "Availability checks, timezone aware, no double booking.",
   },
   {
     icon: Workflow,
@@ -51,7 +51,7 @@ const DIFFERENCES = [
   },
   {
     icon: Globe,
-    title: "It handles after-hours coverage.",
+    title: "It handles after hours coverage.",
     copy: "24/7 without overtime, burnout, or missed calls.",
   },
   {
@@ -62,7 +62,7 @@ const DIFFERENCES = [
   {
     icon: Sparkles,
     title: "It improves with every call.",
-    copy: "Post-call review in Studio captures lessons. Automated retrain from every call is on the roadmap.",
+    copy: "Post call review in Studio captures lessons. Automated retrain from every call is on the roadmap.",
   },
 ] as const;
 
@@ -70,8 +70,8 @@ const MARKET_OPTIONS = [
   {
     name: "Wireline",
     price: "$0 to build · live from $19/mo",
-    usage: "60 included live-voice minutes, one number slot, and prepaid overflow on Starter",
-    fit: "Owners who want one trained voice agent across voice, SMS, email, follow-up, and outcomes",
+    usage: "60 included live voice minutes, one number slot, and prepaid overflow on Starter",
+    fit: "Owners who want one trained voice agent across voice, SMS, email, follow up, and outcomes",
     href: "/pricing",
     source: "Wireline pricing",
     internal: true,
@@ -80,7 +80,7 @@ const MARKET_OPTIONS = [
     name: "Goodcall",
     price: "$79/agent/mo",
     usage: "Unlimited minutes and tokens; 100 unique customers monthly on Starter",
-    fit: "Flat-rate AI phone answering where customer-count limits fit the call pattern",
+    fit: "Flat rate AI phone answering where customer count limits fit the call pattern",
     href: "https://www.goodcall.com/pricing",
     source: "Goodcall pricing",
     internal: false,
@@ -89,7 +89,7 @@ const MARKET_OPTIONS = [
     name: "Smith.ai",
     price: "$0 free · Pro from $150/mo",
     usage: "25 live calls on Free; 75 included live calls on the first paid Pro tier",
-    fit: "AI receptionist buyers who prefer per-call capacity and service-backed tiers",
+    fit: "AI receptionist buyers who prefer per call capacity and service backed tiers",
     href: "https://smith.ai/pricing/ai-receptionist",
     source: "Smith.ai pricing",
     internal: false,
@@ -106,8 +106,8 @@ const MARKET_OPTIONS = [
   {
     name: "Retell",
     price: "$0.07–$0.31/min",
-    usage: "Pay-as-you-go voice components; phone numbers and messaging have separate rates",
-    fit: "Developers optimizing model, voice, telephony, and add-on choices per deployment",
+    usage: "Pay as you go voice components; phone numbers and messaging have separate rates",
+    fit: "Developers optimizing model, voice, telephony, and add on choices per deployment",
     href: "https://www.retellai.com/pricing",
     source: "Retell pricing",
     internal: false,
@@ -119,7 +119,7 @@ const TABLE_ROWS = [
   ["Wait on hold", "Your agent waits and reports back"],
   ["Repeat the same details", "Your agent keeps the instructions"],
   ["Receive another task", "You get a clear next step"],
-  ["Miss after-hours calls", "Your agent picks up 24/7, no voicemail tag"],
+  ["Miss after hours calls", "Your agent picks up 24/7, no voicemail tag"],
   ["Train a new receptionist", "Your agent ships with your playbook on day one"],
   ["Log calls manually in a CRM", "Your agent writes the summary and syncs the record"],
   [
@@ -135,14 +135,14 @@ export default function Compare() {
     <MarketingPageFrame className="wl-compare-page" mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title="Why Wireline"
-        description="Compare Wireline's owner-ready AI voice agent with per-agent, per-call, and developer voice-infrastructure pricing."
+        description="Compare Wireline's owner ready AI voice agent with per agent, per call, and developer voice infrastructure pricing."
         path="/compare"
       />
 
       <MarketingHero
         eyebrow="Why Wireline"
         title="Wireline vs. other voice AI."
-        description="One trained voice agent across voice, SMS, and email—with prepaid overflow instead of surprise per-call bills."
+        description="One trained voice agent across voice, SMS, and email—with prepaid overflow instead of surprise per call bills."
         primaryAction={{ label: "Start free", to: "/signup?plan=personal" }}
         secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
         proof={COMPARE_HERO_PROOF}
@@ -257,9 +257,9 @@ export default function Compare() {
 
           <p className="mt-4 max-w-4xl text-xs leading-5 text-muted-foreground">
             Public prices were checked on the linked official pages on July 29, 2026 and may change.
-            Taxes, carrier fees, optional add-ons, annual discounts, implementation services, and
+            Taxes, carrier fees, optional extras, annual discounts, implementation services, and
             usage patterns can change the effective total. This is a buying-model reference,{" "}
-            {"not a claim that unlike products are feature-for-feature equivalents."}
+            {"not a claim that unlike products are feature for feature equivalents."}
           </p>
         </div>
       </section>

@@ -64,12 +64,12 @@ const STATIC_ROUTE_META: Record<string, { title: string; description: string }> 
   "/compare": {
     title: "Why Wireline",
     description:
-      "Compare Wireline's owner-ready AI voice agent with per-agent, per-call, and developer voice-infrastructure pricing.",
+      "Compare Wireline's owner ready AI voice agent with per agent, per call, and developer voice infrastructure pricing.",
   },
   "/solutions/sales": {
     title: "Every good lead gets a next step. | Wireline",
     description:
-      "Give a trained voice agent your offer, qualification rules, calendar, and follow-up. It calls, texts, and emails until the next step is booked or clearly logged.",
+      "Give a trained voice agent your offer, qualification rules, calendar, and follow up. It calls, texts, and emails until the next step is booked or clearly logged.",
   },
   "/solutions/support": {
     title: "A front desk that answers before demand goes cold. | Wireline",

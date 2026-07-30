@@ -59,7 +59,7 @@ describe("sales trust copy contract", () => {
   it("keeps sales wedge copy aligned with profit-recovery positioning", () => {
     const wedges = read("src/data/vertical-wedges.ts");
     expect(wedges).toContain("Profit Recovery Phone Agents");
-    expect(wedges).toContain("speed-to-lead");
+    expect(wedges).toContain("speed to lead");
     expect(wedges).toContain("Approved actions sync");
     expect(wedges).toContain('import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy"');
     expect(wedges).toContain("a: TRUST_DISCLOSURE_FAQ,");
@@ -91,7 +91,11 @@ describe("sales trust copy contract", () => {
     expect(compare).toContain("https://smith.ai/pricing/ai-receptionist");
     expect(compare).toContain("https://www.bland.ai/pricing");
     expect(compare).toContain("https://www.retellai.com/pricing");
-    expect(compare).toContain("not a claim that unlike products are feature-for-feature equivalents");
-    expect(compare).toContain('primaryAction={{ label: "Start free", to: "/signup?plan=personal" }}');
+    expect(compare).toContain(
+      "not a claim that unlike products are feature for feature equivalents",
+    );
+    expect(compare).toContain(
+      'primaryAction={{ label: "Start free", to: "/signup?plan=personal" }}',
+    );
   });
 });
