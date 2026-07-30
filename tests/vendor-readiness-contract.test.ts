@@ -19,6 +19,7 @@ describe("vendor readiness contract", () => {
       "twilio_whatsapp",
       "stripe",
       "resend",
+      "live_video",
       "federal_dnc",
     ]) {
       expect(probe).toContain(`"${id}"`);
@@ -45,6 +46,11 @@ describe("vendor readiness contract", () => {
     expect(probe).toContain("balance_non_negative: twilioFunded");
     expect(probe).toContain("voiceCapableNumbers.length > 0");
     expect(probe).toContain("No ONLINE Twilio WhatsApp sender found");
+    expect(probe).toContain("included_minutes_monthly: 60");
+    expect(probe).toContain('overage_policy: "none_pause_at_limit"');
+    const liveVideoRecordIdx = probe.indexOf('"live_video"');
+    expect(liveVideoRecordIdx).toBeGreaterThanOrEqual(0);
+    expect(probe.slice(liveVideoRecordIdx - 15, liveVideoRecordIdx + 280)).toContain("false");
     expect(probe).toContain("isFederalDncVendorConfigured");
     expect(probe).toContain("/^vcp_/i");
     // Federal DNC remains on the checklist but is not required for launch_ready.

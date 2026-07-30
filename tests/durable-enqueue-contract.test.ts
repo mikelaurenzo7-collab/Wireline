@@ -38,6 +38,24 @@ describe("durable enqueue failure contract", () => {
     expect(jobs).toContain("callback_tick enqueue failed");
   });
 
+  it("reclaims retryable failed jobs when their backoff expires", () => {
+    const queue = read("src/lib/job-queue-base.ts");
+    const claimJob = queue.slice(
+      queue.indexOf("export async function claimJob("),
+      queue.indexOf("/** Atomically claim one due pending or retryable-failed job"),
+    );
+    const claimJobById = queue.slice(
+      queue.indexOf("export async function claimJobById("),
+      queue.indexOf("// ─────────────────────────────────────────────────────────────────\n// Completion helpers"),
+    );
+
+    expect(queue).toContain('status: (exhausted ? "dead" : "failed") as JobStatus');
+    expect(claimJob).toContain('inArray(schema.jobs.status, ["pending", "failed"])');
+    expect(claimJobById).toContain('inArray(schema.jobs.status, ["pending", "failed"])');
+    expect(claimJob).toContain("lte(schema.jobs.runAt, new Date())");
+    expect(claimJobById).toContain("lte(schema.jobs.runAt, new Date())");
+  });
+
   it("remains part of the production-equivalent Vercel contract gate", () => {
     const build = read("scripts/vercel-build.mjs");
     expect(build).toContain('"tests/durable-enqueue-contract.test.ts"');

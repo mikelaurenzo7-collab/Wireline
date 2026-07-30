@@ -48,7 +48,7 @@ const PAID_TIERS = [
     ctaPath: "/signup?plan=starter",
     icon: Sparkles,
     featured: false,
-    badge: "Lowest-cost live plan",
+    badge: "Lowest cost live plan",
   },
   {
     plan: planById.team,
@@ -74,14 +74,14 @@ const PAID_TIERS = [
     ctaPath: "/signup?plan=business",
     icon: Users,
     featured: false,
-    badge: "Multi-agent",
+    badge: "Multi agent",
   },
   {
     plan: planById.enterprise,
     publicName: "Business",
     eyebrow: "For serious operators",
     tagline: "Full phone coverage for growing teams.",
-    detail: "Up to fifteen purpose-built agents with stronger governance and oversight.",
+    detail: "Up to fifteen purpose built agents with stronger governance and oversight.",
     ctaMonthly: "Start Business",
     ctaAnnual: "Start Business annually",
     ctaPath: "/signup?plan=enterprise",
@@ -95,7 +95,7 @@ const CHANNEL_RULES = [
   {
     icon: PhoneCall,
     title: "Voice + included number",
-    body: "A Wireline number on every paid plan. Extra minutes draw from prepaid balance—live calls never cut mid-conversation.",
+    body: "A Wireline number on every paid plan. Extra minutes draw from prepaid balance—live calls never cut mid conversation.",
   },
   {
     icon: MessageSquareText,
@@ -125,10 +125,10 @@ const FAQ = [
   ],
   [
     "Why are there two Starter plans?",
-    "Starter is the lowest-risk way to put one AI Voice Agent live. Starter Plus is the founder hybrid: personal Concierge plus a business voice agent, two number slots, more voice minutes, and the fuller Lead Hunt, inbox, email, SMS, and automation experience.",
+    "Starter is the lowest risk way to put one AI Voice Agent live. Starter Plus is the founder hybrid: personal Concierge plus a business voice agent, two number slots, more voice minutes, and the fuller Lead Hunt, inbox, email, SMS, and automation experience.",
   ],
   [
-    "Does every agent automatically create a phone-number cost?",
+    "Does every agent automatically create a phone number cost?",
     "No. Plans provide number slots, but Wireline provisions production numbers only when needed. Unused agent capacity does not create unnecessary carrier spend.",
   ],
   [
@@ -137,7 +137,7 @@ const FAQ = [
   ],
   [
     "Are live calls limited to a few seconds?",
-    "No. Calls run as long as the conversation needs. Included monthly minutes and prepaid Runtime Balance fund duration; there is no artificial short hard-cap for profitability. Separate mid-call web research tools use a short network timeout so callers are not left waiting in silence.",
+    "No. Calls run as long as the conversation needs. Included monthly minutes and prepaid Runtime Balance fund duration; there is no artificial short hard cap for profitability. Separate mid call web research tools use a short network timeout so callers are not left waiting in silence.",
   ],
   [
     "Why keep live usage prepaid?",
@@ -145,11 +145,11 @@ const FAQ = [
   ],
   [
     "Can I cancel or get a refund?",
-    "Yes. Every paid plan is month-to-month by default with no long-term contract, and you can cancel from Stripe at any time — access continues through the end of the current billing period. Reach out at support@trywireline.com within 30 days of your first paid invoice if a plan wasn't the right fit and we'll make it right.",
+    "Yes. Every paid plan is month to month by default with no long term contract, and you can cancel from Stripe at any time — access continues through the end of the current billing period. Reach out at support@trywireline.com within 30 days of your first paid invoice if a plan wasn't the right fit and we'll make it right.",
   ],
   [
     "What is the Scale plan?",
-    "Scale is a custom committed-usage agreement for organizations needing 25 or more agents, negotiated channel economics, SSO, custom integrations, security review, retention controls, implementation support, or SLAs. See the Scale card above.",
+    "Scale is a custom committed usage agreement for organizations needing 25 or more agents, negotiated channel economics, SSO, custom integrations, security review, retention controls, implementation support, or SLAs. See the Scale card above.",
   ],
 ] as const;
 
@@ -177,7 +177,7 @@ const assurances = [
   {
     icon: Radio,
     label: "Cancel anytime",
-    detail: "Month-to-month by default. Cancel in Stripe with no lock-in.",
+    detail: "Month to month by default. Cancel in Stripe with nothing locked in.",
   },
 ] as const;
 
@@ -225,7 +225,7 @@ export default function Pricing() {
         <MarketingHero
           eyebrow="Founder Early Access"
           title="Build free. Launch for $19. Scale when it pays."
-          description="Calls, texts, email, follow-up, and Lead Hunt—plus a number on every paid plan. Extra usage stays prepaid."
+          description="Calls, texts, email, follow up, and Lead Hunt—plus a number on every paid plan. Extra usage stays prepaid."
           primaryAction={{
             label: annual ? "Launch for $190/yr" : "Launch for $19/mo",
             to: annual ? "/signup?plan=starter&interval=year" : "/signup?plan=starter",
@@ -397,7 +397,7 @@ export default function Pricing() {
                         <ArrowRight className="h-4 w-4" aria-hidden="true" />
                       </Link>
                       <p className="mt-3 text-center text-xs text-muted-foreground">
-                        {featured ? "Cancel anytime · no long-term contract" : badge}
+                        {featured ? "Cancel anytime · no long term contract" : badge}
                       </p>
                     </article>
                   );

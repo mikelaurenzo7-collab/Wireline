@@ -38,94 +38,96 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
   const wStart = new Date();
   wStart.setDate(wStart.getDate() - 7);
 
-  const [yCalls, wCalls, appts, tasks, leads, wins, losses] = await Promise.all([
-    drizzle
-      .select({
-        leadScore: schema.callLogs.leadScore,
-        intentLabel: schema.callLogs.intentLabel,
-        durationSeconds: schema.callLogs.durationSeconds,
-        cost: schema.callLogs.cost,
-        summary: schema.callLogs.summary,
-        customerNumber: schema.callLogs.customerNumber,
-      })
-      .from(schema.callLogs)
-      .where(
-        and(
-          eq(schema.callLogs.userId, userId),
-          gte(schema.callLogs.createdAt, yStart),
-          lt(schema.callLogs.createdAt, yEnd),
+  const [yCalls, wCalls, appts, tasks, leads, wins, losses] = await drizzle.transaction((tx) =>
+    Promise.all([
+      tx
+        .select({
+          leadScore: schema.callLogs.leadScore,
+          intentLabel: schema.callLogs.intentLabel,
+          durationSeconds: schema.callLogs.durationSeconds,
+          cost: schema.callLogs.cost,
+          summary: schema.callLogs.summary,
+          customerNumber: schema.callLogs.customerNumber,
+        })
+        .from(schema.callLogs)
+        .where(
+          and(
+            eq(schema.callLogs.userId, userId),
+            gte(schema.callLogs.createdAt, yStart),
+            lt(schema.callLogs.createdAt, yEnd),
+          ),
         ),
-      ),
-    drizzle
-      .select({
-        leadScore: schema.callLogs.leadScore,
-        durationSeconds: schema.callLogs.durationSeconds,
-        cost: schema.callLogs.cost,
-      })
-      .from(schema.callLogs)
-      .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, wStart))),
-    drizzle
-      .select({ id: schema.appointments.id })
-      .from(schema.appointments)
-      .where(
-        and(
-          eq(schema.appointments.userId, userId),
-          gte(schema.appointments.createdAt, yStart),
-          lt(schema.appointments.createdAt, yEnd),
+      tx
+        .select({
+          leadScore: schema.callLogs.leadScore,
+          durationSeconds: schema.callLogs.durationSeconds,
+          cost: schema.callLogs.cost,
+        })
+        .from(schema.callLogs)
+        .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, wStart))),
+      tx
+        .select({ id: schema.appointments.id })
+        .from(schema.appointments)
+        .where(
+          and(
+            eq(schema.appointments.userId, userId),
+            gte(schema.appointments.createdAt, yStart),
+            lt(schema.appointments.createdAt, yEnd),
+          ),
         ),
-      ),
-    drizzle
-      .select({
-        priority: schema.followUpTasks.priority,
-        description: schema.followUpTasks.description,
-      })
-      .from(schema.followUpTasks)
-      .where(
-        and(eq(schema.followUpTasks.userId, userId), eq(schema.followUpTasks.status, "pending")),
-      )
-      .orderBy(desc(schema.followUpTasks.createdAt))
-      .limit(8),
-    drizzle
-      .select({ id: schema.outboundLeads.id })
-      .from(schema.outboundLeads)
-      .where(
-        and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "Pending")),
-      ),
-    drizzle
-      .select({
-        customerNumber: schema.callLogs.customerNumber,
-        leadScore: schema.callLogs.leadScore,
-        summary: schema.callLogs.summary,
-      })
-      .from(schema.callLogs)
-      .where(
-        and(
-          eq(schema.callLogs.userId, userId),
-          gte(schema.callLogs.createdAt, yStart),
-          lt(schema.callLogs.createdAt, yEnd),
-          gte(schema.callLogs.leadScore, 70),
+      tx
+        .select({
+          priority: schema.followUpTasks.priority,
+          description: schema.followUpTasks.description,
+        })
+        .from(schema.followUpTasks)
+        .where(
+          and(eq(schema.followUpTasks.userId, userId), eq(schema.followUpTasks.status, "pending")),
+        )
+        .orderBy(desc(schema.followUpTasks.createdAt))
+        .limit(8),
+      tx
+        .select({ id: schema.outboundLeads.id })
+        .from(schema.outboundLeads)
+        .where(
+          and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "Pending")),
         ),
-      )
-      .orderBy(desc(schema.callLogs.leadScore))
-      .limit(3),
-    drizzle
-      .select({
-        customerNumber: schema.callLogs.customerNumber,
-        leadScore: schema.callLogs.leadScore,
-        summary: schema.callLogs.summary,
-      })
-      .from(schema.callLogs)
-      .where(
-        and(
-          eq(schema.callLogs.userId, userId),
-          gte(schema.callLogs.createdAt, yStart),
-          lt(schema.callLogs.createdAt, yEnd),
-          lt(schema.callLogs.leadScore, 30),
-        ),
-      )
-      .orderBy(desc(schema.callLogs.createdAt))
-      .limit(3),
-  ]);
+      tx
+        .select({
+          customerNumber: schema.callLogs.customerNumber,
+          leadScore: schema.callLogs.leadScore,
+          summary: schema.callLogs.summary,
+        })
+        .from(schema.callLogs)
+        .where(
+          and(
+            eq(schema.callLogs.userId, userId),
+            gte(schema.callLogs.createdAt, yStart),
+            lt(schema.callLogs.createdAt, yEnd),
+            gte(schema.callLogs.leadScore, 70),
+          ),
+        )
+        .orderBy(desc(schema.callLogs.leadScore))
+        .limit(3),
+      tx
+        .select({
+          customerNumber: schema.callLogs.customerNumber,
+          leadScore: schema.callLogs.leadScore,
+          summary: schema.callLogs.summary,
+        })
+        .from(schema.callLogs)
+        .where(
+          and(
+            eq(schema.callLogs.userId, userId),
+            gte(schema.callLogs.createdAt, yStart),
+            lt(schema.callLogs.createdAt, yEnd),
+            lt(schema.callLogs.leadScore, 30),
+          ),
+        )
+        .orderBy(desc(schema.callLogs.createdAt))
+        .limit(3),
+    ]),
+  );
 
   const yTotal = yCalls?.length || 0;
   const yMinutes = Math.round(
@@ -198,7 +200,7 @@ export function renderDailyBriefEmail(
   const mood = brief.mood || "neutral";
   const highlights: string[] = brief.highlights || [];
   const concerns: string[] = brief.concerns || [];
-  const actions: string[] = brief.action_items || [];
+  const actions: string[] = (brief.action_items || []).map(actionItemText).filter(Boolean);
 
   const moodColor =
     mood === "positive"
@@ -213,7 +215,12 @@ export function renderDailyBriefEmail(
   };
   const link = opts.appUrl ? `${opts.appUrl.replace(/\/+$/, "")}/overview` : null;
 
-  const subject = `Wireline · ${escapeHtml(headline)} · ${opts.dateLabel}`;
+  // The subject is a plain-text MIME header, not markup: HTML-escaping it put
+  // literal `&#39;`/`&amp;` in the operator's inbox. Collapse newlines instead,
+  // which is the encoding that actually matters for a header.
+  const subject = `Wireline · ${String(headline)
+    .replace(/\s*[\r\n]+\s*/g, " ")
+    .trim()} · ${opts.dateLabel}`;
 
   const css = `
     body { margin:0; padding:0; background-color:#0a0a0a; color:#f4f4f5; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
@@ -350,6 +357,25 @@ export function renderDailyBriefEmail(
     lines.push(`Open Wireline: ${link}`);
   }
   return { subject, html, text: lines.join("\n") };
+}
+
+/**
+ * `brief.action_items` comes back from the structured runtime as
+ * `{ description, urgency }` objects (see insights-ai's composeDailyBrief
+ * schema), not strings. Interpolating them rendered every action row as
+ * "[object Object]" in both the HTML and plain-text bodies. Accept either
+ * shape so a provider that returns bare strings still renders.
+ */
+function actionItemText(item: unknown): string {
+  if (typeof item === "string") return item.trim();
+  if (item && typeof item === "object") {
+    const record = item as { description?: unknown; urgency?: unknown };
+    const description = typeof record.description === "string" ? record.description.trim() : "";
+    if (!description) return "";
+    const urgency = typeof record.urgency === "string" ? record.urgency.trim() : "";
+    return urgency ? `${description} (${urgency})` : description;
+  }
+  return "";
 }
 
 function escapeHtml(s: any): string {

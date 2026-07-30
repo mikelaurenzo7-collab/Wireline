@@ -342,10 +342,12 @@ export default function BillingSettings() {
             ) : (
               <>
                 <p className="mt-6 font-[var(--wireline-font-family-display)] text-3xl leading-none tracking-[-0.04em] text-foreground">
-                  No recurring invoice
+                  {paidPlan ? "Plan access is active" : "No recurring invoice"}
                 </p>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  No telephony or subscription charges until you choose a live plan above.
+                  {paidPlan
+                    ? "This workspace has paid-plan access without a Stripe subscription. No recurring invoice is scheduled."
+                    : "No telephony or subscription charges until you choose a live plan."}
                 </p>
               </>
             )}

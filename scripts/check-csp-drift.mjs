@@ -57,11 +57,32 @@ function hashSource(source) {
   return `'sha256-${createHash("sha256").update(source).digest("base64")}'`;
 }
 
+/**
+ * `<script type="application/ld+json">` (and other JSON data blocks) are never
+ * executed by the browser, so CSP `script-src` does not apply to them and they
+ * must not be hashed into the policy — doing so would force a CSP header
+ * rewrite on every JSON-LD copy edit while granting a real script-execution
+ * allowance to a data payload. Every other type (no type, `module`,
+ * `importmap`, `speculationrules`, …) is script-src governed and still
+ * requires an exact hash.
+ */
+const NON_EXECUTABLE_SCRIPT_TYPE_RE = /^\s*(?:application\/(?:ld\+)?json)\s*$/i;
+
+function isNonExecutableScriptTag(openTag) {
+  const type = openTag.match(/\btype\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i);
+  if (!type) return false;
+  return NON_EXECUTABLE_SCRIPT_TYPE_RE.test(type[2] ?? type[3] ?? type[4] ?? "");
+}
+
 function inlineBlocks(html, tagName) {
   const normalized = html.replace(/\r\n/g, "\n");
   const pattern =
-    tagName === "script" ? /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi : /<style[^>]*>([\s\S]*?)<\/style>/gi;
-  return [...normalized.matchAll(pattern)].map((match) => match[1]);
+    tagName === "script"
+      ? /<script(?![^>]*\bsrc=)([^>]*)>([\s\S]*?)<\/script>/gi
+      : /<style([^>]*)>([\s\S]*?)<\/style>/gi;
+  return [...normalized.matchAll(pattern)]
+    .filter((match) => tagName !== "script" || !isNonExecutableScriptTag(match[1]))
+    .map((match) => match[2]);
 }
 
 function assertStaticInlineSourcesAllowed(csp) {

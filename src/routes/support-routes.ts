@@ -140,7 +140,11 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
       return res.status(503).json({
         ok: false,
         sent: false,
-        error: "Couldn't deliver your message just now. Email support@trywireline.com or try again.",
+        // Same value normalize-api-error-response would backfill for a 503;
+        // stating it inline keeps the api-error ratchet at zero legacy shapes.
+        code: "SERVICE_UNAVAILABLE",
+        error:
+          "Couldn't deliver your message just now. Email support@trywireline.com or try again.",
       });
     }
 

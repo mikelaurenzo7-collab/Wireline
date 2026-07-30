@@ -30,6 +30,33 @@ describe("marketing metadata contract", () => {
     expect(staticHead).not.toMatch(/"@type"\s*:\s*"Offer"/);
   });
 
+  it("keeps Trust Center metadata distinct and one main landmark per page", () => {
+    const security = read("src/components/Security.tsx");
+    const trustPack = read("src/components/TrustPackPage.tsx");
+    const marketingChrome = read("src/components/marketing/MarketingChrome.tsx");
+    const sitemap = read("public/sitemap.xml");
+
+    expect(security).toContain('path={isTrustHub ? "/trust" : "/security"}');
+    expect(sitemap).toContain("<loc>https://trywireline.com/trust</loc>");
+    expect(marketingChrome.match(/<main\b/g)).toHaveLength(1);
+    expect(trustPack).not.toMatch(/<main\b/);
+    expect(trustPack).not.toContain("</main>");
+  });
+
+  it("keeps the public market reference tied to current first-party sources", () => {
+    const compare = read("src/pages/Compare.tsx");
+
+    expect(compare.match(/July 29, 2026/g)).toHaveLength(2);
+    for (const href of [
+      "https://www.goodcall.com/pricing",
+      "https://smith.ai/pricing/ai-receptionist",
+      "https://www.bland.ai/pricing",
+      "https://www.retellai.com/pricing",
+    ]) {
+      expect(compare).toContain(href);
+    }
+  });
+
   it("keeps public pricing and contact copy aligned to the active catalog", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const planCatalog = read("src/lib/plan-catalog.ts");

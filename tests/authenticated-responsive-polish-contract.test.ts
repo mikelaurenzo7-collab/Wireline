@@ -15,6 +15,24 @@ describe("authenticated responsive polish contract", () => {
     expect(css).toContain("@media (min-width: 1024px) and (max-height: 760px)");
   });
 
+  it("keeps the studio breadcrumb agent name on one readable line on phones", () => {
+    // On mobile the "Voice Agent /" prefix + right-side controls starved the
+    // agent name to ~8px, and a global heading rule (text-wrap: balance /
+    // white-space: normal) overrode the truncate so it wrapped and clipped.
+    const chrome = read("src/components/studio/StudioContextChrome.tsx");
+
+    // The title must force single-line truncation (beating the global rule) and
+    // be allowed to grow into the row.
+    expect(chrome).toContain("min-w-0 flex-1 truncate !whitespace-nowrap");
+    expect(chrome).toContain("sm:max-w-[18rem] sm:flex-none");
+    // The breadcrumb group grows so the title has room to expand.
+    expect(chrome).toContain('className="flex min-w-0 flex-1 items-center gap-2.5"');
+    // The redundant kicker + separator collapse on phones only when an agent is
+    // active, so the name owns the width; they stay for the no-agent state.
+    expect(chrome).toContain('activeAgent ? "hidden sm:inline-flex" : "inline-flex"');
+    expect(chrome).toContain('className="hidden text-muted-foreground/40 sm:inline"');
+  });
+
   it("keeps workspace controls token-correct in both appearances", () => {
     const css = read("src/styles/workspace-polish.css");
 

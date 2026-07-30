@@ -10,12 +10,77 @@ import * as insightsAi from "../lib/insights-ai";
 import { aiErr } from "../lib/ai-response-helpers";
 import { cachedInsight, setCachedInsight } from "../lib/insights-cache";
 import { enforceSpendCap, enforce24hSpendCap } from "../lib/spend-guards";
+import type { NextFunction, Request, RequestHandler, Response as ExpressResponse } from "express";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
 const DEFAULT_AGENT_ROLE = "customer_service";
+
+/**
+ * Apply a provider-spend guard only to the deep `?refresh=1` pass.
+ *
+ * The default failure-modes response is local aggregation over rows the route
+ * already reads — it reaches no provider and costs nothing. Running the spend
+ * guard on it meant a tenant at their AI cap got SPEND_CAP_REACHED for the one
+ * analysis that was specifically built to keep working when the deep pass
+ * cannot run.
+ */
+function deepAnalysisOnly(guard: RequestHandler): RequestHandler {
+  return (req: Request, res: ExpressResponse, next: NextFunction) => {
+    if (req.query.refresh !== "1") return next();
+    return guard(req, res, next);
+  };
+}
+
+type FailureModeSourceRow = {
+  summary: string | null;
+  transcript: string | null;
+  leadScore: number | null;
+  intentLabel: string | null;
+};
+
+function buildFastFailureModes(rows: FailureModeSourceRow[]) {
+  const counts = { noIntent: 0, lowIntent: 0, lowScore: 0 };
+  for (const row of rows) {
+    // Independent predicates, matching the route's SQL (`intent = 'none' OR
+    // intent = 'low' OR lead_score < 30`). An else-if chain filed each call
+    // under only its first match, so a low-intent call that also scored under 30
+    // never counted toward qualification — and that mode could disappear
+    // entirely wherever low scores and low intent travel together.
+    if (row.intentLabel === "none") counts.noIntent += 1;
+    if (row.intentLabel === "low") counts.lowIntent += 1;
+    if (row.leadScore != null && row.leadScore < 30) counts.lowScore += 1;
+  }
+  const severity = (count: number) => (count >= 8 ? "high" : count >= 3 ? "medium" : "low");
+  return [
+    {
+      failure_type: "No clear intent",
+      severity: severity(counts.noIntent),
+      fix_target: "Opening prompt",
+      count: counts.noIntent,
+      recommended_fix:
+        "Confirm the caller's goal earlier and offer a clear fallback when intent stays ambiguous.",
+    },
+    {
+      failure_type: "Low caller intent",
+      severity: severity(counts.lowIntent),
+      fix_target: "Conversation flow",
+      count: counts.lowIntent,
+      recommended_fix:
+        "Shorten the opening, confirm the caller's goal, and present one concrete next step.",
+    },
+    {
+      failure_type: "Low qualification score",
+      severity: severity(counts.lowScore),
+      fix_target: "Qualification",
+      count: counts.lowScore,
+      recommended_fix:
+        "Tighten qualification questions and make the success criteria explicit before handoff.",
+    },
+  ].filter((mode) => mode.count > 0);
+}
 
 import { computeDailyBrief } from "../lib/daily-brief";
 
@@ -53,45 +118,50 @@ router.get(
         gte(schema.outboundLeads.createdAt, since),
       );
 
-      const [callRows, apptRows, leadRows] = await Promise.all([
-        drizzle
-          .select({
-            totalCalls: count(),
-            connected:
-              sql<number>`count(*) filter (where coalesce(${schema.callLogs.durationSeconds}, 0) > 10)`.mapWith(
-                Number,
-              ),
-            qualified:
-              sql<number>`count(*) filter (where coalesce(${schema.callLogs.leadScore}, 0) >= 50)`.mapWith(
-                Number,
-              ),
-            highIntent:
-              sql<number>`count(*) filter (where ${schema.callLogs.intentLabel} = 'high')`.mapWith(
-                Number,
-              ),
-          })
-          .from(schema.callLogs)
-          .where(callWhere),
-        drizzle
-          .select({
-            bookings: count(),
-            completed:
-              sql<number>`count(*) filter (where ${schema.appointments.status} = 'Completed')`.mapWith(
-                Number,
-              ),
-          })
-          .from(schema.appointments)
-          .where(apptWhere),
-        drizzle
-          .select({
-            queuedLeads:
-              sql<number>`count(*) filter (where ${schema.outboundLeads.status} in ('Pending', 'Queued'))`.mapWith(
-                Number,
-              ),
-          })
-          .from(schema.outboundLeads)
-          .where(leadWhere),
-      ]);
+      // Single pooled client for the fan-out — see the agent-performance query
+      // below: root Drizzle queries each check out their own tenant-scoped
+      // client against a five-connection serverless pool.
+      const [callRows, apptRows, leadRows] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx
+            .select({
+              totalCalls: count(),
+              connected:
+                sql<number>`count(*) filter (where coalesce(${schema.callLogs.durationSeconds}, 0) > 10)`.mapWith(
+                  Number,
+                ),
+              qualified:
+                sql<number>`count(*) filter (where coalesce(${schema.callLogs.leadScore}, 0) >= 50)`.mapWith(
+                  Number,
+                ),
+              highIntent:
+                sql<number>`count(*) filter (where ${schema.callLogs.intentLabel} = 'high')`.mapWith(
+                  Number,
+                ),
+            })
+            .from(schema.callLogs)
+            .where(callWhere),
+          tx
+            .select({
+              bookings: count(),
+              completed:
+                sql<number>`count(*) filter (where ${schema.appointments.status} = 'Completed')`.mapWith(
+                  Number,
+                ),
+            })
+            .from(schema.appointments)
+            .where(apptWhere),
+          tx
+            .select({
+              queuedLeads:
+                sql<number>`count(*) filter (where ${schema.outboundLeads.status} in ('Pending', 'Queued'))`.mapWith(
+                  Number,
+                ),
+            })
+            .from(schema.outboundLeads)
+            .where(leadWhere),
+        ]),
+      );
 
       const callAgg = callRows[0];
       const apptAgg = apptRows[0];
@@ -190,74 +260,76 @@ router.get(
         gte(schema.appointments.createdAt, since),
       );
 
-      const [agents, callStats, apptStats, aiCostStats] = await Promise.all([
-        drizzle
-          .select({
-            id: schema.agents.id,
-            name: schema.agents.name,
-            archetype: schema.agents.archetype,
-            channel: schema.agents.channel,
-            role: schema.agents.role,
-          })
-          .from(schema.agents)
-          .where(eq(schema.agents.userId, userId))
-          .limit(500),
-        drizzle
-          .select({
-            agentId: schema.callLogs.agentId,
-            totalCalls: count(),
-            qualified:
-              sql<number>`count(*) filter (where coalesce(${schema.callLogs.leadScore}, 0) >= 50)`.mapWith(
-                Number,
-              ),
-            highIntent:
-              sql<number>`count(*) filter (where ${schema.callLogs.intentLabel} = 'high')`.mapWith(
-                Number,
-              ),
-            minutes:
-              sql<number>`coalesce(round(sum(coalesce(${schema.callLogs.durationSeconds}, 0)) / 60.0), 0)::int`.mapWith(
-                Number,
-              ),
-            cost: sql<string>`coalesce(sum(coalesce(${schema.callLogs.cost}, 0)), 0)`.mapWith(
-              String,
-            ),
-            avgScore:
-              sql<number>`coalesce(round(avg(coalesce(${schema.callLogs.leadScore}, 0))), 0)::int`.mapWith(
-                Number,
-              ),
-          })
-          .from(schema.callLogs)
-          .where(callWhere)
-          .groupBy(schema.callLogs.agentId),
-        drizzle
-          .select({
-            agentId: schema.appointments.agentId,
-            bookings: count(),
-          })
-          .from(schema.appointments)
-          .where(apptWhere)
-          .groupBy(schema.appointments.agentId),
-        drizzle
-          .select({
-            agentId:
-              sql<string>`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`.mapWith(
+      const [agents, callStats, apptStats, aiCostStats] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx
+            .select({
+              id: schema.agents.id,
+              name: schema.agents.name,
+              archetype: schema.agents.archetype,
+              channel: schema.agents.channel,
+              role: schema.agents.role,
+            })
+            .from(schema.agents)
+            .where(eq(schema.agents.userId, userId))
+            .limit(500),
+          tx
+            .select({
+              agentId: schema.callLogs.agentId,
+              totalCalls: count(),
+              qualified:
+                sql<number>`count(*) filter (where coalesce(${schema.callLogs.leadScore}, 0) >= 50)`.mapWith(
+                  Number,
+                ),
+              highIntent:
+                sql<number>`count(*) filter (where ${schema.callLogs.intentLabel} = 'high')`.mapWith(
+                  Number,
+                ),
+              minutes:
+                sql<number>`coalesce(round(sum(coalesce(${schema.callLogs.durationSeconds}, 0)) / 60.0), 0)::int`.mapWith(
+                  Number,
+                ),
+              cost: sql<string>`coalesce(sum(coalesce(${schema.callLogs.cost}, 0)), 0)`.mapWith(
                 String,
               ),
-            aiCost:
-              sql<string>`coalesce(sum(coalesce((${schema.auditLog.metadata}->>'cost_usd')::numeric, 0)), 0)`.mapWith(
-                String,
+              avgScore:
+                sql<number>`coalesce(round(avg(coalesce(${schema.callLogs.leadScore}, 0))), 0)::int`.mapWith(
+                  Number,
+                ),
+            })
+            .from(schema.callLogs)
+            .where(callWhere)
+            .groupBy(schema.callLogs.agentId),
+          tx
+            .select({
+              agentId: schema.appointments.agentId,
+              bookings: count(),
+            })
+            .from(schema.appointments)
+            .where(apptWhere)
+            .groupBy(schema.appointments.agentId),
+          tx
+            .select({
+              agentId:
+                sql<string>`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`.mapWith(
+                  String,
+                ),
+              aiCost:
+                sql<string>`coalesce(sum(coalesce((${schema.auditLog.metadata}->>'cost_usd')::numeric, 0)), 0)`.mapWith(
+                  String,
+                ),
+            })
+            .from(schema.auditLog)
+            .where(
+              and(
+                eq(schema.auditLog.userId, userId),
+                eq(schema.auditLog.eventType, "ai.api_call"),
+                gte(schema.auditLog.createdAt, since),
               ),
-          })
-          .from(schema.auditLog)
-          .where(
-            and(
-              eq(schema.auditLog.userId, userId),
-              eq(schema.auditLog.eventType, "ai.api_call"),
-              gte(schema.auditLog.createdAt, since),
-            ),
-          )
-          .groupBy(sql`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`),
-      ]);
+            )
+            .groupBy(sql`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`),
+        ]),
+      );
 
       const callByAgent = new Map((callStats || []).map((r) => [r.agentId || "unknown", r]));
       const apptsByAgent = new Map(
@@ -365,8 +437,8 @@ router.get(
   "/api/insights/failure-modes",
   authenticateUser,
   insightsAiRateLimit,
-  enforce24hSpendCap,
-  enforceSpendCap,
+  deepAnalysisOnly(enforce24hSpendCap),
+  deepAnalysisOnly(enforceSpendCap),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const force = req.query.refresh === "1";
@@ -375,12 +447,6 @@ router.get(
         const cached = cachedInsight(cacheKey);
         if (cached) return res.json({ ...cached, cached: true });
       }
-      if (!insightsAi.isInsightsAiAvailable()) {
-        return res
-          .status(503)
-          .json({ error: "AI runtime required for failure analysis.", code: "AI_RUNTIME_OFFLINE" });
-      }
-
       const rows = await drizzle
         .select({
           summary: schema.callLogs.summary,
@@ -408,6 +474,23 @@ router.get(
           message: "Not enough failed calls yet — system is performing well.",
         });
       }
+
+      if (!force) {
+        const result = { modes: buildFastFailureModes(rows), analysis_mode: "fast" as const };
+        setCachedInsight(cacheKey, result);
+        return res.json({ ...result, cached: false });
+      }
+
+      // Only the explicit `?refresh=1` deep pass needs a provider. Gating the
+      // whole route on AI availability made the instant path — which is pure
+      // local aggregation over rows already read — return 503 during any
+      // provider outage, which is exactly when it is most useful.
+      if (!insightsAi.isInsightsAiAvailable()) {
+        return res
+          .status(503)
+          .json({ error: "AI runtime required for failure analysis.", code: "AI_RUNTIME_OFFLINE" });
+      }
+
       const result = await insightsAi.clusterFailureModes({
         failedCalls: rows.map((r) => ({
           summary: r.summary,

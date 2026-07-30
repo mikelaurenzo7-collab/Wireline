@@ -173,6 +173,81 @@ describe("personal agent parity — presentation and runtime", () => {
   });
 });
 
+describe("founder dogfood posture integrity", () => {
+  it("seeds a mixed personal and business roster and repairs legacy all-personal founder data", () => {
+    const founderSeed = read("src/lib/founder-fleet-seed.ts");
+    const founderBootstrap = read("src/lib/founder-bootstrap.ts");
+
+    expect(founderSeed).toContain("isBusinessAgent: false");
+    expect(founderSeed).toContain(
+      'isBusinessAgent: template.isBusinessAgent ?? template.role !== "personal_assistant"',
+    );
+    // Role is a default for the managed seed templates only. Reseeding must not
+    // reclassify an agent the owner already placed: a user-created personal
+    // agent with a non-"personal_assistant" role was being flipped to business,
+    // which hides it from the posture-filtered personal workspace.
+    expect(founderSeed).not.toContain('isBusinessAgent: row.role !== "personal_assistant"');
+    const legacyBackfill = founderSeed.slice(
+      founderSeed.indexOf("const ownerAgents = await drizzle"),
+    );
+    expect(legacyBackfill).toContain("enabledTools: ALL_AGENT_TOOLS");
+    expect(legacyBackfill).not.toContain("isBusinessAgent");
+    expect(founderBootstrap).toContain("businessAgents > 0");
+    expect(founderBootstrap).toContain("personalAgents > 0");
+  });
+
+  it("keeps operator labels readable and preserves a single main landmark", () => {
+    const callOps = read("src/components/CallLogsClaude.tsx");
+    const workroom = read("src/components/StudioWorkroom.tsx");
+    const overview = read("src/pages/OverviewPage.tsx");
+    const workspaceShell = read("src/components/WorkspaceShell.tsx");
+
+    expect(callOps).toContain("humanizeTaxonomy");
+    expect(callOps).not.toContain('{call.intent_label || call.summary || "Follow up requested"}');
+    expect(workroom).not.toContain('<main className="flex h-full');
+    expect(workroom).toContain('aria-label={mode === "test"');
+    expect(overview).toContain('coreConnections.push("Phone")');
+    expect(overview).not.toContain('coreConnections.push("Phone + SMS")');
+    expect(workspaceShell).toContain("const postureAgents =");
+    expect(workspaceShell).toContain("{postureAgents.length}");
+  });
+
+  it("keeps audited founder empty states and integration controls truthful and distinguishable", () => {
+    const sms = read("src/components/SmsThreads.tsx");
+    const connections = read("src/components/CrmConnectionCard.tsx");
+    const billing = read("src/pages/BillingSettings.tsx");
+    const insights = read("src/routes/insights-routes.ts");
+
+    expect(sms).toContain("SMS conversations will appear here after messaging is connected");
+    expect(sms).toContain("Review SMS setup");
+    expect(sms).not.toContain("Wire a number, then text it from another phone");
+
+    expect(connections).toContain("aria-label={isConnecting");
+    expect(connections).toContain("Connect ${label}");
+    expect(connections).toContain("Disconnect ${label}");
+    expect(connections).toContain('aria-label="Configure Salesforce"');
+
+    expect(billing).toContain("Plan access is active");
+    expect(billing).toContain("paid-plan access without a Stripe subscription");
+
+    expect(insights).toContain("function buildFastFailureModes");
+    expect(insights).toContain('analysis_mode: "fast" as const');
+    // Scope to the failure-modes route. `if (!force)` appears in several
+    // insight routes, so a whole-file indexOf matched an unrelated earlier
+    // occurrence and the ordering assertion below could never fail.
+    const failureModesRoute = insights.slice(
+      insights.indexOf('"/api/insights/failure-modes"'),
+      insights.indexOf("await insightsAi.clusterFailureModes"),
+    );
+    expect(failureModesRoute).toContain("buildFastFailureModes(rows)");
+    // The instant path must come before the provider-availability gate: it is
+    // local aggregation and has to keep working through a provider outage.
+    expect(failureModesRoute.indexOf("buildFastFailureModes(rows)")).toBeLessThan(
+      failureModesRoute.indexOf("isInsightsAiAvailable"),
+    );
+  });
+});
+
 describe("founder hybrid pricing — Starter Plus pair capacity", () => {
   it("prices Starter Plus as the personal+business founder pair without breaking slot parity", async () => {
     const { planById, supportsFounderAgentPair } = await import("../src/lib/plan-catalog");

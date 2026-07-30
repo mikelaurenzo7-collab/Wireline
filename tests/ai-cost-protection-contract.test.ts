@@ -59,9 +59,7 @@ describe("AI cost-protection contract", () => {
     expect(stripeHelpers).toMatch(
       /stripeStatus === "active" \|\| stripeStatus === "trialing"[\s\S]*spendBudgetPlanId/,
     );
-    expect(stripeHelpers).toContain(
-      "await ensureDefaultAiSpendBudget(userId, spendBudgetPlanId)",
-    );
+    expect(stripeHelpers).toContain("await ensureDefaultAiSpendBudget(userId, spendBudgetPlanId)");
     expect(validation).toContain("hard_cap: z.boolean().default(true)");
   });
 
@@ -81,14 +79,26 @@ describe("AI cost-protection contract", () => {
     const webhook = read("src/routes/vapi-v2.ts");
     expect(webhook).toContain("INBOUND_TAKE_MESSAGE_GRACE_USD");
     expect(webhook).toContain("getVoiceWalletSnapshot");
-    expect(webhook).toContain("buildDurableTakeMessageAssistant(webhookAgentId, agentVoiceName)");
+    // The fallback answers the same tenant line as the full assistant, so it
+    // must receive that agent's compliance posture and business identity.
+    expect(webhook).toMatch(
+      /buildDurableTakeMessageAssistant\(\s*webhookAgentId,\s*agentVoiceName,\s*agentComplianceMode,\s*userSettings\?\.businessName,\s*\)/,
+    );
 
     const helperStart = webhook.indexOf("function buildDurableTakeMessageAssistant");
     const routeStart = webhook.indexOf('router.post("/api/vapi-webhook"');
     const helper = webhook.slice(helperStart, routeStart);
     expect(helper).toContain("maxDurationSeconds: 300");
+    // Vapi records by default: HIPAA agents must stay unrecorded here too, and
+    // any recorded call must open with the same spoken disclosure.
+    expect(helper).toContain('const recordingEnabled = complianceMode !== "hipaa";');
+    expect(helper).toContain("recordingEnabled,");
+    expect(helper).toContain("complianceFirstMessagePrefix(");
+    expect(helper).toContain("firstMessage: `${disclosurePrefix}");
     expect(helper).toContain('name: "create_followup_task"');
-    expect(helper).toContain("Promise follow-up only if the result explicitly confirms the task was created");
+    expect(helper).toContain(
+      "Promise follow-up only if the result explicitly confirms the task was created",
+    );
     expect(helper).toContain("promise follow-up only if the tool explicitly confirms creation");
     expect(helper).not.toContain("book_appointment");
   });

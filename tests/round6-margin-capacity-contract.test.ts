@@ -7,6 +7,7 @@ import {
   STRIPE_PLANS,
   estimatedContributionMarginAtExpectedUsage,
   estimatedContributionMarginAtFullIncludedUsage,
+  estimatedStripeCommercialFeesUsd,
   planById,
 } from "../src/lib/plan-catalog";
 import {
@@ -23,7 +24,7 @@ describe("catalog v6 capacity stays inside the two-floor margin guardrail", () =
   it("ships the v6 founder voice allowances", () => {
     expect(planById("starter")?.voice_minutes_monthly).toBe(60);
     expect(planById("team")?.voice_minutes_monthly).toBe(120);
-    expect(planById("business")?.voice_minutes_monthly).toBe(250);
+    expect(planById("business")?.voice_minutes_monthly).toBe(245);
     expect(planById("enterprise")?.voice_minutes_monthly).toBe(450);
   });
 
@@ -52,17 +53,17 @@ describe("catalog v6 capacity stays inside the two-floor margin guardrail", () =
     // for its cost basis to move.
     for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
       const revenue = plan.price_usd_annual / 12;
-      const processing = (plan.price_usd_annual * 0.029 + 0.3) / 12;
+      const commercialFees = estimatedStripeCommercialFeesUsd(plan.price_usd_annual) / 12;
       const fullCost =
         plan.voice_minutes_monthly * COGS_DRIFT_THRESHOLD_PER_MIN_USD +
         plan.included_phone_numbers * 1.15 +
         plan.runtime_allowance_usd_monthly +
-        processing;
+        commercialFees;
       const expectedCost =
         plan.voice_minutes_monthly * 0.7 * COGS_DRIFT_THRESHOLD_PER_MIN_USD +
         plan.included_phone_numbers * 1.15 +
         plan.runtime_allowance_usd_monthly * 0.7 +
-        processing;
+        commercialFees;
       expect(
         (revenue - expectedCost) / revenue,
         `${plan.id} expected at drift`,
@@ -92,7 +93,7 @@ describe("catalog v6 capacity stays inside the two-floor margin guardrail", () =
     for (const [planId, minutes] of [
       ["starter", 60],
       ["team", 120],
-      ["business", 250],
+      ["business", 245],
       ["enterprise", 450],
     ] as const) {
       expect(manifest).toContain(

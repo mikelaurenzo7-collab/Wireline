@@ -147,6 +147,13 @@ async function scopeClientToTenant(userId: string) {
   const client = await _origConnect();
   try {
     await client.query("BEGIN");
+    // Explicitly override any session-level read-only state inherited from a
+    // transaction-pool backend. Supavisor intentionally reuses backend
+    // sessions, so a maintenance client that leaks
+    // default_transaction_read_only=on can otherwise break unrelated writes.
+    // Transaction-local READ WRITE is safe for pooled connections and still
+    // fails closed when the database is genuinely a read-only replica.
+    await client.query("SET TRANSACTION READ WRITE");
     await client.query("SET LOCAL ROLE wireline_server");
     await client.query("SELECT set_config('app.current_user_id', $1, true)", [userId]);
   } catch (e) {

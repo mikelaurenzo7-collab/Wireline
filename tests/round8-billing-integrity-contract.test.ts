@@ -6,22 +6,49 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("round-8 billing integrity", () => {
   const billing = read("src/routes/billing-routes.ts");
+  const extraAgentBilling = read("src/routes/extra-agent-billing-atomic-routes.ts");
 
   it("invoices an extra-agent increase instead of granting capacity a cycle early", () => {
     // A bare quantity change prorates onto the NEXT invoice while
     // includedVoiceMinutes grants the minutes immediately — buy 100, burn the
     // ~5,000 minutes, drop to 0 for a credit, and none of the consumed minutes
     // is ever re-priced.
-    expect(billing).toContain("const isIncrease = target > currentExtraAgents");
-    expect(billing).toContain('isIncrease ? "always_invoice" : "create_prorations"');
-    expect(billing).toContain("proration_behavior: prorationBehavior");
+    expect(extraAgentBilling).toContain(
+      "const isIncrease = target > currentStripeQuantity",
+    );
+    expect(extraAgentBilling).toContain(
+      'proration_behavior: isIncrease ? "always_invoice" : "create_prorations"',
+    );
+    expect(extraAgentBilling).toContain('payment_behavior: "error_if_incomplete"');
   });
 
   it("fails closed when Stripe could not collect for the increase", () => {
-    expect(billing).toContain("PAYMENT_REQUIRED");
-    const guard = billing.slice(billing.indexOf("if (isIncrease) {"));
-    expect(guard).toContain("stripe.invoices.list");
-    expect(guard).toContain('latest.status !== "paid"');
+    expect(extraAgentBilling).toContain("PAYMENT_REQUIRED");
+    expect(extraAgentBilling).toContain(
+      "isIncrease && isStripePaymentRequiredError(error)",
+    );
+    expect(extraAgentBilling).toContain("return paymentRequiredOutcome()");
+    const stripeMutation = extraAgentBilling.indexOf(
+      "await stripe.subscriptionItems.update(",
+    );
+    const paymentFailureHandler = extraAgentBilling.indexOf(
+      "isIncrease && isStripePaymentRequiredError(error)",
+    );
+    const providerVerification = extraAgentBilling.lastIndexOf(
+      "subscription = await stripe.subscriptions.retrieve(subscriptionId);",
+    );
+    const verifiedQuantity = extraAgentBilling.indexOf(
+      "const verifiedQuantity = extraAgentQuantity(verifiedItems)",
+    );
+    const finalPersistence = extraAgentBilling.lastIndexOf(
+      "return persistQuantity(target",
+    );
+
+    expect(stripeMutation).toBeGreaterThan(-1);
+    expect(paymentFailureHandler).toBeGreaterThan(stripeMutation);
+    expect(providerVerification).toBeGreaterThan(paymentFailureHandler);
+    expect(verifiedQuantity).toBeGreaterThan(providerVerification);
+    expect(finalPersistence).toBeGreaterThan(verifiedQuantity);
   });
 
   it("claims a Stripe webhook as processing and only marks processed on success", () => {

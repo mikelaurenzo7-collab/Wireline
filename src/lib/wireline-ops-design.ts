@@ -73,7 +73,7 @@ export const OPS_CHANNEL_EMPTY = {
   floor: {
     title: "No active callers",
     actions: [
-      { label: "View call history", to: "/phone" },
+      { label: "View call history", to: "/phone?tab=logs" },
       { label: "Open Studio", to: "/studio", primary: true },
     ],
   },
@@ -168,7 +168,7 @@ export const OPS_CHANNEL_EMPTY = {
     title: "No scheduled callbacks",
     actions: [
       { label: "Open dispatch", to: "/phone?tab=outbound&view=dispatch", primary: true },
-      { label: "View call history", to: "/phone" },
+      { label: "View call history", to: "/phone?tab=logs" },
     ],
   },
   cadences: {
@@ -191,7 +191,7 @@ export const OPS_CHANNEL_EMPTY = {
     title: "No interactions yet",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
-      { label: "View call history", to: "/phone" },
+      { label: "View call history", to: "/phone?tab=logs" },
     ],
   },
 } as const;

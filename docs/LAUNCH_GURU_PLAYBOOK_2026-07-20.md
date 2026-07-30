@@ -32,7 +32,7 @@ Status: Active ops playbook; pricing and campaign copy refreshed to Founder Earl
 | Free Builder | $0 | $0 | Builder only | 0 | Create, train, simulate |
 | Starter | $19 | $190 | 1 | 60 | First live AI voice agent |
 | Starter Plus | $39 | $390 | 2 | 120 | Personal + business or two roles |
-| Pro | $79 | $790 | 5 | 250 | Growing team / higher volume |
+| Pro | $79 | $790 | 5 | 245 | Growing team / higher volume |
 | Business | $159 | $1,590 | 15 | 450 | Multi-role operations |
 | Enterprise | Custom | Custom | Custom | Custom | Compliance, scale, procurement |
 

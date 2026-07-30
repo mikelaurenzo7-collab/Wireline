@@ -9,6 +9,10 @@ import { eq } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import { drizzle } from "../server-context";
 import { canonicalPlanId, type StripePlanId } from "../plan-catalog";
+import {
+  LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY,
+  LIVE_VIDEO_SESSION_RESERVATION_MINUTES,
+} from "./live-video-policy";
 import { getLiveAvatarStatus } from "./liveavatar-service";
 
 const PAID_LIVE_VIDEO_PLANS = new Set<StripePlanId>([
@@ -30,6 +34,8 @@ export type LiveVideoEntitlement = {
   billingEntitled: boolean;
   liveVideoAddonEnabled: boolean;
   liveVideoCheckoutAvailable: boolean;
+  liveVideoMinutesIncluded: number;
+  liveVideoSessionMinutes: number;
   planId: StripePlanId | null;
   upgradeRequired: boolean;
   reason: string | null;
@@ -46,6 +52,10 @@ export async function resolveLiveVideoEntitlement(
   const platform = getLiveAvatarStatus();
   const platformConfigured = platform.configured;
   const catalogReady = isLiveVideoCatalogReady();
+  const liveVideoAllowance = {
+    liveVideoMinutesIncluded: LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY,
+    liveVideoSessionMinutes: LIVE_VIDEO_SESSION_RESERVATION_MINUTES,
+  } as const;
 
   if (options?.isOwner || billingBypassEnabled()) {
     return {
@@ -57,6 +67,7 @@ export async function resolveLiveVideoEntitlement(
         process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID ||
         process.env.STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID,
       ),
+      ...liveVideoAllowance,
       planId: "enterprise",
       upgradeRequired: false,
       reason: null,
@@ -96,7 +107,7 @@ export async function resolveLiveVideoEntitlement(
   } else if (!stripeActive || !settingsActive) {
     reason = "Activate your subscription before adding live video.";
   } else if (!workspaceFlag) {
-    reason = "Subscribe to the live video add-on ($19/mo) to stream a presenter.";
+    reason = `Subscribe to Live Video ($19/mo, ${LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY} reserved session minutes) to stream a presenter.`;
   }
 
   const checkoutAvailable =
@@ -112,6 +123,7 @@ export async function resolveLiveVideoEntitlement(
     billingEntitled,
     liveVideoAddonEnabled: workspaceFlag,
     liveVideoCheckoutAvailable: checkoutAvailable,
+    ...liveVideoAllowance,
     planId,
     upgradeRequired: addonOffered && !billingEntitled && !checkoutAvailable,
     reason,

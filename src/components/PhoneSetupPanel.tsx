@@ -1,0 +1,411 @@
+import { useEffect, useMemo, useState } from "react";
+import { Check, MapPin, Phone, Plus } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+
+import { Button } from "./atoms";
+import { StatusNotice } from "./molecules";
+import CompanyIdentityPack from "./settings/CompanyIdentityPack";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+import { useAgents } from "../contexts/AgentsContext";
+import { authFetch } from "../lib/api";
+import { WL_APP_CLASSES } from "../lib/wireline-design-system";
+
+type PhoneNumberRecord = {
+  id: string;
+  phone_number: string;
+  agent_id?: string | null;
+  campaign_label?: string | null;
+  created_at?: string | null;
+};
+
+type ProvisionResponse = {
+  ok?: boolean;
+  error?: string;
+  code?: string;
+  recovery_path?: string;
+  reused?: boolean;
+};
+
+const PHONE_AGENT_UNSET = "__unassigned__";
+
+function formatPhone(value?: string | null) {
+  if (!value) return "No number yet";
+  const digits = value.replace(/\D/g, "");
+  const domestic = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+  if (domestic.length !== 10) return value;
+  return `(${domestic.slice(0, 3)}) ${domestic.slice(3, 6)}-${domestic.slice(6)}`;
+}
+
+function formatProvisionedDate(value?: string | null) {
+  if (!value) return "Ready when activated";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Activated";
+  return `Activated ${date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })}`;
+}
+
+export default function PhoneSetupPanel() {
+  const { agents, loading: agentsLoading } = useAgents();
+  const location = useLocation();
+  const [numbers, setNumbers] = useState<PhoneNumberRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [working, setWorking] = useState(false);
+  const [attaching, setAttaching] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState("");
+  const [areaCode, setAreaCode] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [recoveryPath, setRecoveryPath] = useState<string | null>(null);
+  const activeNumber = numbers[0] || null;
+  const attachedAgent = useMemo(
+    () => agents.find((agent) => agent.id === activeNumber?.agent_id),
+    [activeNumber?.agent_id, agents],
+  );
+
+  useEffect(() => {
+    if (location.hash !== "#company-identity") return;
+    const id = window.setTimeout(() => {
+      document.getElementById("company-identity")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [location.hash, location.pathname]);
+
+  useEffect(() => {
+    const currentAgentId = activeNumber?.agent_id || "";
+    if (currentAgentId && agents.some((agent) => agent.id === currentAgentId)) {
+      setSelectedAgentId(currentAgentId);
+      return;
+    }
+    if (selectedAgentId && agents.some((agent) => agent.id === selectedAgentId)) return;
+    setSelectedAgentId(agents[0]?.id || "");
+  }, [activeNumber?.agent_id, agents, selectedAgentId]);
+
+  async function loadNumbers() {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await authFetch("/api/phone-numbers");
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body?.error || "Phone numbers unavailable.");
+      setNumbers(Array.isArray(body?.numbers) ? body.numbers : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Phone numbers unavailable.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadNumbers();
+  }, []);
+
+  async function provisionNumber() {
+    if (working || !selectedAgentId) return;
+    const requestedAreaCode = areaCode.replace(/\D/g, "").slice(0, 3);
+    // The carrier route requires exactly three digits. Submitting a partial one
+    // bounced back as a raw field-level validation error naming `area_code`.
+    if (requestedAreaCode && requestedAreaCode.length !== 3) {
+      setError("Enter a full 3-digit area code, or leave it blank for any local number.");
+      return;
+    }
+    setWorking(true);
+    setMessage(null);
+    setError(null);
+    setRecoveryPath(null);
+    try {
+      const response = await authFetch("/api/phone-numbers/provision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agent_id: selectedAgentId,
+          ...(requestedAreaCode ? { area_code: requestedAreaCode } : {}),
+        }),
+      });
+      const body = (await response.json().catch(() => ({}))) as ProvisionResponse;
+      if (!response.ok || body.ok === false) {
+        setRecoveryPath(
+          body.recovery_path ||
+            (body.code === "ACTIVATION_REQUIRED" || body.code === "SUBSCRIPTION_REQUIRED"
+              ? "/settings/billing"
+              : null),
+        );
+        throw new Error(body.error || "Could not activate a number.");
+      }
+      setMessage(
+        body.reused
+          ? "Your existing number is connected and ready for calls."
+          : "Your dedicated number is active and ready for calls.",
+      );
+      await loadNumbers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not activate a number.");
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function attachAgent(agentId: string | null) {
+    if (!activeNumber || attaching) return;
+    setAttaching(true);
+    setMessage(null);
+    setError(null);
+    setRecoveryPath(null);
+    try {
+      const response = await authFetch(`/api/phone-numbers/${activeNumber.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agentId }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body?.error || "Could not attach voice agent.");
+      setNumbers((previous) =>
+        previous.map((number) =>
+          number.id === activeNumber.id ? { ...number, agent_id: agentId } : number,
+        ),
+      );
+      setSelectedAgentId(agentId || "");
+      setMessage(agentId ? "Voice agent attached to this line." : "Line unassigned.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not attach voice agent.");
+    } finally {
+      setAttaching(false);
+    }
+  }
+
+  const normalizedAreaCode = areaCode.replace(/\D/g, "").slice(0, 3);
+  const lineMeta = activeNumber
+    ? `${attachedAgent?.name || "Unassigned"} · ${formatProvisionedDate(activeNumber.created_at)}`
+    : loading
+      ? "Loading carrier status"
+      : "Choose the agent and local area code before activating the line";
+
+  return (
+    <div className="space-y-5">
+      <section className="studio-card overflow-hidden p-0">
+        <div className="border-b border-border px-5 py-5 sm:px-6">
+          <p className={WL_APP_CLASSES.wiredEyebrow}>Calling setup</p>
+          <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-[-0.03em] text-foreground">
+            Set up the complete call experience before going live.
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Build and train the voice agent, choose a local number, connect your company identity,
+            then call the line yourself. A paid plan is only required when Wireline activates the
+            dedicated number and starts live provider usage.
+          </p>
+        </div>
+        <ol className="grid gap-px bg-border sm:grid-cols-3" aria-label="Calling setup steps">
+          {[
+            ["1", "Train the agent", "Set the greeting, voice, rules, knowledge, and handoffs."],
+            ["2", "Activate the line", "Choose the agent and preferred local area code."],
+            ["3", "Call and refine", "Call the number, review the result, and improve the agent."],
+          ].map(([number, title, description]) => (
+            <li key={number} className="bg-card px-5 py-4">
+              <span className="font-mono text-[10px] font-semibold text-primary">{number}</span>
+              <p className="mt-2 text-sm font-semibold text-foreground">{title}</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="rounded-2xl border border-primary/20 bg-primary p-5 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/65">
+              Your Wireline number
+            </p>
+            <h2 className="mt-4 truncate font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.2rem+2.5vw,2.5rem)] font-normal leading-none tracking-[-0.035em]">
+              {formatPhone(activeNumber?.phone_number)}
+            </h2>
+            <p className="mt-3 text-sm text-primary-foreground/78">{lineMeta}</p>
+          </div>
+          <span className="inline-flex min-h-[32px] shrink-0 items-center gap-1.5 rounded-lg border border-primary-foreground/20 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-primary-foreground/75">
+            <span className="size-1.5 rounded-full bg-primary-foreground/70" />
+            {activeNumber ? "Active" : "Setup"}
+          </span>
+        </div>
+
+        {!activeNumber ? (
+          <div className="mt-6 grid gap-3 rounded-xl border border-primary-foreground/15 bg-black/10 p-4 sm:grid-cols-[minmax(0,1fr)_160px_auto] sm:items-end">
+            <label className="block min-w-0">
+              <span className="mb-1.5 block text-xs font-semibold text-primary-foreground/80">
+                Voice agent
+              </span>
+              {agentsLoading ? (
+                <div
+                  className="flex h-11 items-center rounded-lg border border-primary-foreground/20 bg-black/15 px-3 text-sm text-primary-foreground/70"
+                  role="status"
+                >
+                  Loading agents…
+                </div>
+              ) : agents.length ? (
+                <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+                  <SelectTrigger
+                    aria-label="Choose the voice agent for this number"
+                    className="h-11 border-primary-foreground/20 bg-black/15 text-primary-foreground"
+                  >
+                    <SelectValue placeholder="Choose agent" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {agents.map((agent) => (
+                      <SelectItem key={agent.id} value={agent.id}>
+                        {agent.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Button asChild variant="secondary" className="w-full justify-center">
+                  <Link to="/studio?create=1">Create voice agent</Link>
+                </Button>
+              )}
+            </label>
+
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-semibold text-primary-foreground/80">
+                Preferred area code
+              </span>
+              <span className="relative block">
+                <MapPin
+                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary-foreground/55"
+                  aria-hidden="true"
+                />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  maxLength={3}
+                  value={normalizedAreaCode}
+                  onChange={(event) =>
+                    setAreaCode(event.target.value.replace(/\D/g, "").slice(0, 3))
+                  }
+                  placeholder="312"
+                  aria-label="Preferred phone number area code"
+                  className="h-11 w-full rounded-lg border border-primary-foreground/20 bg-black/15 pl-9 pr-3 text-sm text-primary-foreground outline-none placeholder:text-primary-foreground/40 focus:border-primary-foreground/50 focus:ring-2 focus:ring-primary-foreground/15"
+                />
+              </span>
+            </label>
+
+            <Button
+              type="button"
+              variant="secondary"
+              className="min-h-11 bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+              disabled={working || loading || agentsLoading || !selectedAgentId}
+              onClick={() => void provisionNumber()}
+            >
+              <Plus size={16} aria-hidden="true" />
+              {working ? "Activating…" : "Activate number"}
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-6 flex flex-col gap-3 rounded-xl border border-primary-foreground/15 bg-black/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-primary-foreground/12">
+                <Phone className="size-4" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold">Call this number now</p>
+                <p className="mt-1 text-xs leading-5 text-primary-foreground/70">
+                  Use any phone to test the live greeting, routing, knowledge, and handoff behavior.
+                </p>
+              </div>
+            </div>
+            <Button
+              asChild
+              variant="secondary"
+              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+            >
+              <a href={`tel:${activeNumber.phone_number}`}>Call the line</a>
+            </Button>
+          </div>
+        )}
+      </section>
+
+      <section className="studio-card p-5 sm:p-6">
+        <p className={WL_APP_CLASSES.wiredEyebrow}>Routing</p>
+        {attachedAgent ? (
+          <div className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-3">
+            <Check
+              className="mt-0.5 size-4 shrink-0 text-[var(--wireline-color-status-success)]"
+              aria-hidden="true"
+            />
+            <div>
+              <p className="text-sm font-semibold text-foreground">{attachedAgent.name}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Answers this number</p>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-muted-foreground">No voice agent attached yet</p>
+        )}
+        {activeNumber ? (
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Select
+              value={activeNumber.agent_id || PHONE_AGENT_UNSET}
+              disabled={attaching}
+              onValueChange={(value) =>
+                void attachAgent(value === PHONE_AGENT_UNSET ? null : value)
+              }
+            >
+              <SelectTrigger
+                aria-label="Attach voice agent to this number"
+                className="h-auto min-w-[180px] rounded-md border border-input bg-muted px-2.5 py-2 text-sm"
+              >
+                <SelectValue placeholder="Select voice agent" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={PHONE_AGENT_UNSET}>Unassigned</SelectItem>
+                {agents.map((agent) => (
+                  <SelectItem key={agent.id} value={agent.id}>
+                    {agent.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {attachedAgent ? (
+              <Button asChild size="sm" variant="outline">
+                <Link to={`/studio?agent=${encodeURIComponent(attachedAgent.id)}`}>
+                  Open Studio
+                </Link>
+              </Button>
+            ) : null}
+            {agents.length === 0 ? (
+              <Button asChild size="sm">
+                <Link to="/studio?create=1">Create voice agent</Link>
+              </Button>
+            ) : null}
+          </div>
+        ) : (
+          <p className="mt-4 text-xs leading-5 text-muted-foreground">
+            Routing will be connected automatically when the number is activated.
+          </p>
+        )}
+      </section>
+
+      <CompanyIdentityPack key={activeNumber?.id ?? "no-number"} />
+
+      {message ? (
+        <StatusNotice tone="success" title="Calling is ready">
+          {message}
+        </StatusNotice>
+      ) : null}
+      {error ? (
+        <StatusNotice tone="destructive" title="Calling setup needs attention">
+          <div className="space-y-3">
+            <p>{error}</p>
+            {recoveryPath ? (
+              <Button asChild size="sm" variant="outline">
+                <Link to={recoveryPath}>Choose a plan and continue setup</Link>
+              </Button>
+            ) : null}
+          </div>
+        </StatusNotice>
+      ) : null}
+    </div>
+  );
+}

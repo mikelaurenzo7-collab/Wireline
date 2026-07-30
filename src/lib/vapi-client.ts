@@ -30,7 +30,11 @@ import {
 import { toVapiFunctionTools } from "./vapi-tool-format";
 import { buildVapiServerConfig } from "./vapi-server-config";
 import { normalizeOutboundNumber } from "./dialer-compliance";
-import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";
+import {
+  buildAgentRuntimeContext,
+  complianceFirstMessagePrefix,
+  type AgentRuntimeProfile,
+} from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
 import { vapiVoiceVersion } from "./voice-catalog";
@@ -285,72 +289,74 @@ export async function placeOutboundCall(opts: {
     lessonsRes,
     outboundCallerHistoryRes,
     outboundCapturedProfileRes,
-  ] = await Promise.all([
-    drizzle.select().from(schema.agents).where(eq(schema.agents.id, agentId)).limit(1),
-    // Prompt size is the largest cost lever on voice calls (the system prompt
-    // is re-sent every turn). Load only what the prompt will actually carry —
-    // the highest-priority directives and most recent knowledge — instead of
-    // 500 of each, mirroring the inbound factory's caps.
-    drizzle
-      .select()
-      .from(schema.directives)
-      .where(eq(schema.directives.agentId, agentId))
-      .orderBy(desc(schema.directives.priority))
-      .limit(MAX_RUNTIME_DIRECTIVES),
-    drizzle
-      .select()
-      .from(schema.knowledge)
-      .where(eq(schema.knowledge.agentId, agentId))
-      .orderBy(desc(schema.knowledge.createdAt))
-      .limit(MAX_RUNTIME_KNOWLEDGE),
-    drizzle
-      .select()
-      .from(schema.personality)
-      .where(eq(schema.personality.agentId, agentId))
-      .limit(1),
-    drizzle
-      .select()
-      .from(schema.agentLessons)
-      .where(eq(schema.agentLessons.agentId, agentId))
-      .orderBy(desc(schema.agentLessons.createdAt))
-      .limit(MAX_RUNTIME_LESSONS),
-    safeOutboundPhone
-      ? drizzle
-          .select({
-            summary: schema.callLogs.summary,
-            intentLabel: schema.callLogs.intentLabel,
-            sentiment: schema.callLogs.sentiment,
-            createdAt: schema.callLogs.createdAt,
-            direction: schema.callLogs.direction,
-          })
-          .from(schema.callLogs)
-          .where(
-            and(
-              eq(schema.callLogs.customerNumber, safeOutboundPhone),
-              eq(schema.callLogs.agentId, agentId),
-            ),
-          )
-          .orderBy(desc(schema.callLogs.createdAt))
-          .limit(3)
-      : Promise.resolve([]),
-    safeOutboundPhone
-      ? drizzle
-          .select({
-            description: schema.followUpTasks.description,
-            createdAt: schema.followUpTasks.createdAt,
-          })
-          .from(schema.followUpTasks)
-          .where(
-            and(
-              eq(schema.followUpTasks.agentId, agentId),
-              eq(schema.followUpTasks.taskType, "customer_profile_captured"),
-              ilike(schema.followUpTasks.description, `%${safeOutboundPhone}%`),
-            ),
-          )
-          .orderBy(desc(schema.followUpTasks.createdAt))
-          .limit(1)
-      : Promise.resolve([]),
-  ]);
+  ] = await drizzle.transaction((tx) =>
+    Promise.all([
+      tx.select().from(schema.agents).where(eq(schema.agents.id, agentId)).limit(1),
+      // Prompt size is the largest cost lever on voice calls (the system prompt
+      // is re-sent every turn). Load only what the prompt will actually carry —
+      // the highest-priority directives and most recent knowledge — instead of
+      // 500 of each, mirroring the inbound factory's caps.
+      tx
+        .select()
+        .from(schema.directives)
+        .where(eq(schema.directives.agentId, agentId))
+        .orderBy(desc(schema.directives.priority))
+        .limit(MAX_RUNTIME_DIRECTIVES),
+      tx
+        .select()
+        .from(schema.knowledge)
+        .where(eq(schema.knowledge.agentId, agentId))
+        .orderBy(desc(schema.knowledge.createdAt))
+        .limit(MAX_RUNTIME_KNOWLEDGE),
+      tx
+        .select()
+        .from(schema.personality)
+        .where(eq(schema.personality.agentId, agentId))
+        .limit(1),
+      tx
+        .select()
+        .from(schema.agentLessons)
+        .where(eq(schema.agentLessons.agentId, agentId))
+        .orderBy(desc(schema.agentLessons.createdAt))
+        .limit(MAX_RUNTIME_LESSONS),
+      safeOutboundPhone
+        ? tx
+            .select({
+              summary: schema.callLogs.summary,
+              intentLabel: schema.callLogs.intentLabel,
+              sentiment: schema.callLogs.sentiment,
+              createdAt: schema.callLogs.createdAt,
+              direction: schema.callLogs.direction,
+            })
+            .from(schema.callLogs)
+            .where(
+              and(
+                eq(schema.callLogs.customerNumber, safeOutboundPhone),
+                eq(schema.callLogs.agentId, agentId),
+              ),
+            )
+            .orderBy(desc(schema.callLogs.createdAt))
+            .limit(3)
+        : Promise.resolve([]),
+      safeOutboundPhone
+        ? tx
+            .select({
+              description: schema.followUpTasks.description,
+              createdAt: schema.followUpTasks.createdAt,
+            })
+            .from(schema.followUpTasks)
+            .where(
+              and(
+                eq(schema.followUpTasks.agentId, agentId),
+                eq(schema.followUpTasks.taskType, "customer_profile_captured"),
+                ilike(schema.followUpTasks.description, `%${safeOutboundPhone}%`),
+              ),
+            )
+            .orderBy(desc(schema.followUpTasks.createdAt))
+            .limit(1)
+        : Promise.resolve([]),
+    ]),
+  );
 
   const agentConfig = agentRes[0];
   if (!agentConfig) {
@@ -527,16 +533,23 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     },
   );
   const outboundTools = toVapiFunctionTools(outboundFunctions);
+  const recordingEnabled = agentConfig.complianceMode !== "hipaa";
+  const openingMessage =
+    agentConfig.firstMessage ||
+    buildOutboundFirstMessage(
+      outboundAgentRole,
+      agentConfig.name || "your representative",
+      customerName,
+    );
+  const disclosurePrefix = complianceFirstMessagePrefix(
+    agentConfig.complianceMode,
+    settings?.businessName || agentConfig.name,
+    { outboundAiCall: true, recordingEnabled },
+  );
 
   const assistantPayload: Record<string, unknown> = {
     name: agentConfig.name || "Wireline Outbound Agent",
-    firstMessage:
-      agentConfig.firstMessage ||
-      buildOutboundFirstMessage(
-        outboundAgentRole,
-        agentConfig.name || "your representative",
-        customerName,
-      ),
+    firstMessage: disclosurePrefix + openingMessage,
     backgroundSound: sanitizeAmbientNoise(agentConfig.ambientNoise),
     firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
     maxDurationSeconds: VAPI_MAX_OUTBOUND_CALL_SECONDS,
@@ -574,7 +587,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     // outbound call (manual, campaign, cadence, callback, intake auto-dial)
     // for agents whose owners selected HIPAA compliance, and persisted the
     // recording URL to call logs.
-    recordingEnabled: agentConfig.complianceMode !== "hipaa",
+    recordingEnabled,
     voice: (() => {
       // Outbound calls use the same managed Vapi voice roster as inbound calls.
       // Presenter/live-voice agents store a non-Vapi studio voice; their

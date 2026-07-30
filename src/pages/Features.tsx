@@ -118,7 +118,7 @@ const USE_CASES = [
     body: "Sort, draft, and resolve email without losing context.",
   },
   {
-    title: "SMS follow-up",
+    title: "SMS follow up",
     icon: MessageSquareText,
     to: "/solutions/sales",
     body: "Keep momentum with consented text that finishes the job.",

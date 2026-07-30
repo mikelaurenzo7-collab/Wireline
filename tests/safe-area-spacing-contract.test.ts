@@ -31,9 +31,11 @@ describe("safe-area spacing ownership", () => {
     expect(read("src/pages/Features.tsx")).toContain('className="pt-16"');
     expect(read("src/pages/Pricing.tsx")).toContain('className="pt-16"');
     expect(read("src/pages/About.tsx")).toContain('mainClassName="!px-0 pb-0 pt-16"');
-    expect(read("src/components/AuthPortal.tsx")).toContain(
-      "wl-auth-form-panel flex min-h-[100dvh] items-center justify-center px-4 py-8 sm:px-6 sm:py-12",
+    const authPortal = read("src/components/AuthPortal.tsx");
+    expect(authPortal).toContain(
+      "wl-auth-form-panel flex min-h-[100dvh] items-center justify-center px-4 sm:px-6",
     );
+    expect(authPortal).toContain('compact ? "py-3 sm:py-4" : "py-8 sm:py-12"');
     expect(read("src/components/StudioWorkspaceV2.tsx")).toContain(
       "flex min-h-[55vh] flex-col bg-background px-4 py-8 sm:px-6",
     );

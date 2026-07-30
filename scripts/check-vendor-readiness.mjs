@@ -74,6 +74,16 @@ function validHttpsUrl(name) {
   }
 }
 
+function httpsOrigin(value) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.origin : null;
+  } catch {
+    return null;
+  }
+}
+
 function arrayAt(body, key) {
   return Array.isArray(body?.[key]) ? body[key] : Array.isArray(body) ? body : [];
 }
@@ -123,6 +133,9 @@ const [
   twilioWhatsappSenders,
   stripeAccount,
   stripeBalance,
+  stripePortalConfigurations,
+  stripeWebhookEndpoints,
+  stripeTaxSettings,
   resend,
 ] = await Promise.all([
   present("XAI_API_KEY")
@@ -190,6 +203,21 @@ const [
     : null,
   present("STRIPE_SECRET_KEY")
     ? readJson("https://api.stripe.com/v1/balance", {
+        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+      })
+    : null,
+  present("STRIPE_SECRET_KEY")
+    ? readJson("https://api.stripe.com/v1/billing_portal/configurations?active=true&limit=100", {
+        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+      })
+    : null,
+  present("STRIPE_SECRET_KEY")
+    ? readJson("https://api.stripe.com/v1/webhook_endpoints?limit=100", {
+        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+      })
+    : null,
+  present("STRIPE_SECRET_KEY")
+    ? readJson("https://api.stripe.com/v1/tax/settings", {
         headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
       })
     : null,
@@ -332,27 +360,144 @@ record(
   { sender_count: whatsappSenders.length, online_sender_count: onlineWhatsappSenders.length },
 );
 
-const stripeAvailable = Number(
-  stripeBalance?.body?.available?.find?.((row) => row.currency === "usd")?.amount ?? 0,
-);
-const stripeReady = Boolean(
+// An unread balance must not read as a verified $0.00. Defaulting the amount to
+// 0 satisfied the `>= 0` check below and printed "available USD balance 0.00"
+// as fact, so a Stripe outage or a key without balance scope passed the gate.
+const stripeBalanceAmount = stripeBalance?.ok
+  ? stripeBalance.body?.available?.find?.((row) => row.currency === "usd")?.amount
+  : undefined;
+const stripeBalanceRead = typeof stripeBalanceAmount === "number" && Number.isFinite(stripeBalanceAmount);
+const stripeAvailable = stripeBalanceRead ? Number(stripeBalanceAmount) : null;
+const stripeCoreReady = Boolean(
   stripeAccount?.ok &&
     stripeAccount.body?.charges_enabled &&
     stripeAccount.body?.payouts_enabled &&
+    stripeBalanceRead &&
     stripeAvailable >= 0,
 );
+
+const stripePublicName = String(
+  stripeAccount?.body?.business_profile?.name ||
+    stripeAccount?.body?.settings?.dashboard?.display_name ||
+    "",
+).trim();
+const stripeStatementDescriptor = String(
+  stripeAccount?.body?.settings?.payments?.statement_descriptor || "",
+)
+  .trim()
+  .toUpperCase();
+const stripeWebsiteOrigin = httpsOrigin(stripeAccount?.body?.business_profile?.url);
+const stripeSupportOrigin = httpsOrigin(stripeAccount?.body?.business_profile?.support_url);
+const stripeBrandReady = Boolean(
+  /wireline/i.test(stripePublicName) &&
+    stripeStatementDescriptor.startsWith("WIRELINE") &&
+    stripeWebsiteOrigin === "https://trywireline.com" &&
+    stripeSupportOrigin === "https://trywireline.com",
+);
+
+const stripePortalConfigs = arrayAt(stripePortalConfigurations?.body, "data");
+// Pick a configuration that actually carries the customer controls, preferring
+// the Wireline-managed one. Matching on active+default first and only then
+// checking features reported "blocked" whenever a bare Dashboard default
+// happened to sort ahead of the managed configuration the app really uses.
+const stripePortalHasCustomerControls = (configuration) =>
+  configuration?.features?.payment_method_update?.enabled === true &&
+  configuration?.features?.invoice_history?.enabled === true &&
+  configuration?.features?.subscription_cancel?.enabled === true;
+const stripePortalCandidates = stripePortalConfigs.filter(
+  (configuration) => configuration?.active === true && stripePortalHasCustomerControls(configuration),
+);
+const stripePortalConfiguration =
+  stripePortalCandidates.find(
+    (configuration) => configuration?.metadata?.wireline_managed === "true",
+  ) || stripePortalCandidates.find((configuration) => configuration?.is_default === true);
+const stripePortalFeatures = stripePortalConfiguration?.features ?? {};
+const stripePortalReady = Boolean(stripePortalConfigurations?.ok && stripePortalConfiguration);
+
+const expectedStripeWebhookEvents = [
+  "charge.dispute.created",
+  "charge.refunded",
+  "checkout.session.completed",
+  "customer.subscription.created",
+  "customer.subscription.deleted",
+  "customer.subscription.updated",
+  "invoice.payment_failed",
+  "invoice.payment_succeeded",
+];
+const stripeWebhookInventory = arrayAt(stripeWebhookEndpoints?.body, "data");
+const stripeWebhook = stripeWebhookInventory.find(
+  (endpoint) =>
+    endpoint?.status === "enabled" &&
+    String(endpoint?.url || "").replace(/\/+$/, "") ===
+      "https://trywireline.com/api/stripe-webhook",
+);
+const stripeEnabledWebhookEvents = Array.isArray(stripeWebhook?.enabled_events)
+  ? [...stripeWebhook.enabled_events].sort()
+  : [];
+const stripeMissingWebhookEvents = expectedStripeWebhookEvents.filter(
+  (event) => !stripeEnabledWebhookEvents.includes(event),
+);
+const stripeExtraWebhookEvents = stripeEnabledWebhookEvents.filter(
+  (event) => event !== "*" && !expectedStripeWebhookEvents.includes(event),
+);
+const stripeWebhookReady = Boolean(
+  stripeWebhook &&
+    stripeMissingWebhookEvents.length === 0 &&
+    stripeExtraWebhookEvents.length === 0,
+);
+const stripeTaxReady = Boolean(stripeTaxSettings?.ok && stripeTaxSettings.body?.status === "active");
+const stripeReady = Boolean(
+  stripeCoreReady && stripeBrandReady && stripePortalReady && stripeWebhookReady && stripeTaxReady,
+);
+
+const stripeFundingAction = !stripeBalanceRead
+  ? "Stripe balance could not be read; confirm the key has balance access before trusting the funding claim."
+  : stripeAvailable < 0
+    ? "Resolve the negative Stripe balance and failed bank debits before launch."
+    : !stripeBrandReady
+      ? "Align the public business name, statement descriptor, website, support URL, logo, and colors to Wireline in Stripe."
+      : !stripePortalReady
+        ? "Exercise Wireline portal bootstrap (or create a Dashboard default) and verify payment methods, invoices, and cancellation."
+        : !stripeWebhookReady
+          ? "Align the enabled trywireline.com webhook endpoint to the eight server-handled events."
+          : !stripeTaxReady
+            ? "Activate and verify Stripe Tax settings before accepting paid self-serve checkout."
+            : "No prepaid funding required; keep payout bank, portal, tax, and webhook healthy.";
+
 record(
   "stripe",
   true,
   stripeReady ? "ready" : "blocked",
   stripeAccount?.ok
-    ? `Charges ${stripeAccount.body.charges_enabled ? "enabled" : "disabled"}; payouts ${
-        stripeAccount.body.payouts_enabled ? "enabled" : "disabled"
-      }; available USD balance ${(stripeAvailable / 100).toFixed(2)}.`
+    ? `Core account ${stripeCoreReady ? "ready" : "blocked"}; customer brand "${
+        stripePublicName || "unset"
+      }" ${stripeBrandReady ? "ready" : "blocked"}; managed/default portal ${
+        stripePortalReady ? "ready" : "blocked"
+      }; webhook ${stripeWebhookReady ? "ready" : "blocked"}; tax ${
+        stripeTaxReady ? "ready" : "blocked"
+      }; available USD balance ${
+        stripeBalanceRead ? (stripeAvailable / 100).toFixed(2) : "unread"
+      }.`
     : "Stripe key missing or rejected.",
-  stripeAvailable < 0
-    ? "Resolve the negative Stripe balance and failed bank debits before launch."
-    : "No prepaid funding required; keep payout bank and webhook healthy.",
+  stripeFundingAction,
+  {
+    core_account_ready: stripeCoreReady,
+    public_name: stripePublicName || null,
+    statement_descriptor_ready: stripeStatementDescriptor.startsWith("WIRELINE"),
+    website_origin: stripeWebsiteOrigin,
+    support_origin: stripeSupportOrigin,
+    brand_ready: stripeBrandReady,
+    managed_or_default_portal_present: Boolean(stripePortalConfiguration),
+    portal_payment_method_update: stripePortalFeatures.payment_method_update?.enabled === true,
+    portal_invoice_history: stripePortalFeatures.invoice_history?.enabled === true,
+    portal_subscription_cancel: stripePortalFeatures.subscription_cancel?.enabled === true,
+    portal_ready: stripePortalReady,
+    webhook_ready: stripeWebhookReady,
+    webhook_missing_events: stripeMissingWebhookEvents,
+    webhook_extra_events: stripeExtraWebhookEvents,
+    tax_status: stripeTaxSettings?.body?.status ?? null,
+    tax_ready: stripeTaxReady,
+  },
 );
 
 const verifiedDomains = resend?.ok
@@ -366,6 +511,33 @@ record(
     ? `Verified sending domain(s): ${verifiedDomains.map((domain) => domain.name).join(", ")}.`
     : "Resend key/domain missing or unverified.",
   "Maintain the Resend plan; no prepaid balance is required.",
+);
+
+const liveVideoCatalogGate = process.env.WIRELINE_LIVE_VIDEO_CATALOG_READY === "true";
+const liveVideoProviderConfigured = present("LIVEAVATAR_API_KEY");
+const liveVideoPriceConfigured =
+  present("STRIPE_LIVE_VIDEO_ADDON_PRICE_ID") ||
+  present("STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID");
+const liveVideoReady =
+  liveVideoCatalogGate && liveVideoProviderConfigured && liveVideoPriceConfigured;
+record(
+  "live_video",
+  false,
+  liveVideoReady ? "ready" : "degraded",
+  liveVideoReady
+    ? "Live Video provider, $19 add-on price, and explicit catalog gate are configured; runtime reserves 10 minutes per session against a 60-minute monthly cap."
+    : "Live Video remains launch-paused; the optional provider, price, or explicit catalog gate is not fully enabled.",
+  liveVideoReady
+    ? "Maintain provider credits and alerts; no automatic overage is allowed."
+    : "Keep the catalog gate false until the curated presenter set and controlled paid lifecycle are verified.",
+  {
+    catalog_gate: liveVideoCatalogGate,
+    provider_configured: liveVideoProviderConfigured,
+    addon_price_configured: liveVideoPriceConfigured,
+    included_minutes_monthly: 60,
+    session_reservation_minutes: 10,
+    overage_policy: "none_pause_at_limit",
+  },
 );
 
 const federalDncConfigured = isFederalDncVendorConfigured();

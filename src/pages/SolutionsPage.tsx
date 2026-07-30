@@ -19,7 +19,7 @@ const SOLUTIONS = {
     eyebrow: "Sales conversations",
     title: "Every good lead gets a next step.",
     description:
-      "Give a trained voice agent your offer, qualification rules, calendar, and follow-up. It calls, texts, and emails until the next step is booked or clearly logged.",
+      "Give a trained voice agent your offer, qualification rules, calendar, and follow up. It calls, texts, and emails until the next step is booked or clearly logged.",
     icon: PhoneOutgoing,
     primary: { href: "/signup?wedge=sales", label: "Create a sales agent" },
     secondary: { href: "/showcase", label: "Hear a demo" },
@@ -37,11 +37,11 @@ const SOLUTIONS = {
         "Use your positioning, tone, qualification rules, and approved claims.",
       ],
       [
-        "Follow-up across channels",
+        "Follow up across channels",
         "Continue by SMS or email without restarting the conversation.",
       ],
       [
-        "Calendar-aware booking",
+        "Calendar aware booking",
         "Offer real availability and write the confirmed next step back to the record.",
       ],
     ],

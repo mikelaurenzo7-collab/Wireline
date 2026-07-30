@@ -31,13 +31,17 @@ export default function StudioContextChrome() {
       aria-label={`${language.singular} context`}
     >
       <div className="flex min-h-[56px] items-center justify-between gap-3 px-3 sm:px-5">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="shrink-0 font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.16em] text-primary">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <span
+            className={`shrink-0 font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.16em] text-primary ${
+              activeAgent ? "hidden sm:inline-flex" : "inline-flex"
+            }`}
+          >
             {language.navLabel}
           </span>
           {activeAgent ? (
             <>
-              <span aria-hidden="true" className="text-muted-foreground/40">
+              <span aria-hidden="true" className="hidden text-muted-foreground/40 sm:inline">
                 /
               </span>
               <span className="hidden shrink-0 sm:inline-flex">
@@ -49,7 +53,7 @@ export default function StudioContextChrome() {
                   variant="badge"
                 />
               </span>
-              <h1 className="max-w-[10rem] truncate text-sm font-semibold text-foreground sm:max-w-[18rem]">
+              <h1 className="min-w-0 flex-1 truncate !whitespace-nowrap text-sm font-semibold text-foreground sm:max-w-[18rem] sm:flex-none">
                 {activeAgent.name}
               </h1>
             </>

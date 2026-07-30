@@ -82,7 +82,7 @@ for (const [id, monthly, annual] of expectedPlans) {
 const expectedCapacity = [
   ["starter", 1, 1, 60],
   ["team", 2, 2, 120],
-  ["business", 5, 5, 250],
+  ["business", 5, 5, 245],
   ["enterprise", 15, 15, 450],
 ];
 for (const [planId, agents, numbers, voiceMinutes] of expectedCapacity) {
@@ -132,6 +132,27 @@ for (const [label, metadata] of [
   if (metadata?.included_voice_minutes !== "50" || metadata?.included_phone_numbers !== "1") {
     errors.push(`Extra-agent ${label} metadata must guarantee 50 minutes and one number slot.`);
   }
+}
+
+const liveVideoProduct = FOUNDER_PRODUCTS.find((product) => product.key === "live_video");
+const liveVideoPrice = FOUNDER_PRICES.find((price) => price.key === "live_video_monthly");
+for (const [label, metadata] of [
+  ["product", liveVideoProduct?.metadata],
+  ["price", liveVideoPrice?.metadata],
+]) {
+  const expectedMetadata = {
+    included_live_video_minutes: "60",
+    session_reservation_minutes: "10",
+    overage_policy: "none_pause_at_limit",
+  };
+  for (const [key, value] of Object.entries(expectedMetadata)) {
+    if (metadata?.[key] !== value) {
+      errors.push(`Live Video ${label} metadata drift for ${key}: expected ${value}.`);
+    }
+  }
+}
+if (liveVideoProduct?.metadata?.wireline_catalog_state !== "launch_paused") {
+  errors.push("Live Video must remain launch_paused until catalog and paid lifecycle proof pass.");
 }
 
 if (FOUNDER_PRODUCTS.length !== 8) {

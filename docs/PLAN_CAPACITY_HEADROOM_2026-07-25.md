@@ -1,8 +1,9 @@
 # Plan Capacity Headroom — 2026-07-25
 
-Status: **Active** — the arithmetic behind the founder catalog's included voice
-minutes. Re-run it before changing any plan price, included minute count,
-included number count, or Runtime Allowance.
+Status: **Active methodology; historical v5 result.** The current founder v6
+decision is recorded in `PRICING_DECISION_2026-07-25.md`. Re-run this model
+before changing any plan price, included minute count, included number count,
+Runtime Allowance, or commercial-fee assumption.
 
 ## The question
 
@@ -19,7 +20,10 @@ assumption:
 | `PHONE_NUMBER_COST_MONTHLY_USD`  | $1.15          |
 | `PAYMENT_PROCESSING_RATE`        | 2.9%           |
 | `PAYMENT_PROCESSING_FIXED_USD`   | $0.30          |
-| `LAUNCH_CONTRIBUTION_MARGIN_FLOOR`| 45%           |
+| `STRIPE_BILLING_RATE`             | 0.7%           |
+| `STRIPE_TAX_TRANSACTION_RATE`     | 0.5% reserve   |
+| `LAUNCH_CONTRIBUTION_MARGIN_FLOOR`| 45% at 70% use |
+| `HARD_CONTRIBUTION_MARGIN_FLOOR`  | 30% at full use|
 | `COGS_DRIFT_THRESHOLD_PER_MIN_USD`| $0.14 (alarm) |
 
 Contribution at full included utilization reserves *every* included minute,
@@ -36,9 +40,28 @@ Until this pass, `assertPlanMarginFloors()` only ever evaluated the monthly
 interval, so the launch-readiness gate was watching the slack side. It now
 checks both.
 
-## Result
+## Current v6 validation — 2026-07-29
 
-Maximum included minutes at the 45% floor, and what shipped:
+The launch-hardening pass added Stripe Billing and a conservative future Tax
+transaction reserve to the shared fee helper. Pro moved from 250 to **245**
+minutes so every paid tier still clears both floors on both billing intervals.
+No catalog-version bump is required because prices and checkout compatibility
+did not change.
+
+| Plan | Current minutes | Annual full-use | Annual expected-use |
+| ---- | --------------- | --------------- | ------------------- |
+| Starter | 60 | 33.7% | 50.1% |
+| Starter Plus | 120 | 32.3% | 49.2% |
+| Pro | **245** | **30.4%** | 47.4% |
+| Business | 450 | **30.3%** | 46.1% |
+
+The full-use figures include Payments, Billing, and Tax transaction reserves;
+expected-use applies the catalog's 70% minute and Runtime Allowance assumption.
+
+## Historical v5 result
+
+Maximum included minutes at the former 45% full-utilization floor, and what
+shipped before v6:
 
 | Plan                       | Max (monthly) | Max (annual) | Was | Now  | Annual margin | At $0.14 drift |
 | -------------------------- | ------------- | ------------ | --- | ---- | ------------- | -------------- |

@@ -367,8 +367,13 @@ router.post(
           reasoning: thinking,
           thinkingDurationMs,
         });
-        sse.end();
-        void drizzle
+        // Persist the agent turn before ending the response. The client already
+        // has the payload from the `done` event above, but a fire-and-forget
+        // insert after `sse.end()` races the serverless freeze that follows a
+        // completed response — the reply reached the user and then vanished
+        // from conversation history on the next load. A persist failure is
+        // still non-fatal: the turn was already delivered.
+        await drizzle
           .insert(schema.agentConversationMessages)
           .values({
             userId: req.user.id,
@@ -380,6 +385,7 @@ router.post(
           .catch((err) =>
             log.error("workspace stream persist failed", { error: getErrorMessage(err), agentId }),
           );
+        sse.end();
       } catch (e) {
         if (e instanceof AppError) throw e;
         log.error("workspace stream failed", { error: getErrorMessage(e), agentId });
@@ -424,14 +430,18 @@ router.post(
     try {
       const agentId = req.params.id;
       const { pdfBase64, fileName } = req.body;
-      // Magic-number sanity check — bail on obvious non-PDFs.
+      // Magic-number sanity check — bail on obvious non-PDFs. Decode inside the
+      // try, but assert outside it: throwing the "not a PDF" AppError from
+      // within its own catch turned every wrong-file-type upload into the
+      // misleading "Malformed base64 payload." message.
+      let head: string;
       try {
-        const head = Buffer.from(pdfBase64.slice(0, 16), "base64").toString("utf8", 0, 5);
-        if (!head.startsWith("%PDF")) {
-          throw AppError.fromHttpStatus(400, "File does not look like a valid PDF.");
-        }
+        head = Buffer.from(pdfBase64.slice(0, 16), "base64").toString("utf8", 0, 5);
       } catch {
         throw AppError.fromHttpStatus(400, "Malformed base64 payload.");
+      }
+      if (!head.startsWith("%PDF")) {
+        throw AppError.fromHttpStatus(400, "File does not look like a valid PDF.");
       }
 
       const [agent] = await drizzle
@@ -718,72 +728,74 @@ router.get(
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
       const [callRows, emailRows, textRows, bookingRows, openTaskRows, recentCalls] =
-        await Promise.all([
-          drizzle
-            .select({ n: sql<number>`count(*)::int` })
-            .from(schema.callLogs)
-            .where(
-              and(
-                eq(schema.callLogs.agentId, agentId),
-                eq(schema.callLogs.userId, req.user.id),
-                gte(schema.callLogs.createdAt, since),
+        await drizzle.transaction((tx) =>
+          Promise.all([
+            tx
+              .select({ n: sql<number>`count(*)::int` })
+              .from(schema.callLogs)
+              .where(
+                and(
+                  eq(schema.callLogs.agentId, agentId),
+                  eq(schema.callLogs.userId, req.user.id),
+                  gte(schema.callLogs.createdAt, since),
+                ),
               ),
-            ),
-          drizzle
-            .select({ n: sql<number>`count(*)::int` })
-            .from(schema.emailThreads)
-            .where(
-              and(
-                eq(schema.emailThreads.agentId, agentId),
-                eq(schema.emailThreads.userId, req.user.id),
-                gte(schema.emailThreads.createdAt, since),
+            tx
+              .select({ n: sql<number>`count(*)::int` })
+              .from(schema.emailThreads)
+              .where(
+                and(
+                  eq(schema.emailThreads.agentId, agentId),
+                  eq(schema.emailThreads.userId, req.user.id),
+                  gte(schema.emailThreads.createdAt, since),
+                ),
               ),
-            ),
-          drizzle
-            .select({ n: sql<number>`count(*)::int` })
-            .from(schema.smsThreads)
-            .where(
-              and(
-                eq(schema.smsThreads.agentId, agentId),
-                eq(schema.smsThreads.userId, req.user.id),
-                gte(schema.smsThreads.createdAt, since),
+            tx
+              .select({ n: sql<number>`count(*)::int` })
+              .from(schema.smsThreads)
+              .where(
+                and(
+                  eq(schema.smsThreads.agentId, agentId),
+                  eq(schema.smsThreads.userId, req.user.id),
+                  gte(schema.smsThreads.createdAt, since),
+                ),
               ),
-            ),
-          drizzle
-            .select({ n: sql<number>`count(*)::int` })
-            .from(schema.appointments)
-            .where(
-              and(
-                eq(schema.appointments.agentId, agentId),
-                eq(schema.appointments.userId, req.user.id),
-                gte(schema.appointments.createdAt, since),
+            tx
+              .select({ n: sql<number>`count(*)::int` })
+              .from(schema.appointments)
+              .where(
+                and(
+                  eq(schema.appointments.agentId, agentId),
+                  eq(schema.appointments.userId, req.user.id),
+                  gte(schema.appointments.createdAt, since),
+                ),
               ),
-            ),
-          drizzle
-            .select({ n: sql<number>`count(*)::int` })
-            .from(schema.followUpTasks)
-            .where(
-              and(
-                eq(schema.followUpTasks.agentId, agentId),
-                eq(schema.followUpTasks.userId, req.user.id),
-                eq(schema.followUpTasks.status, "pending"),
+            tx
+              .select({ n: sql<number>`count(*)::int` })
+              .from(schema.followUpTasks)
+              .where(
+                and(
+                  eq(schema.followUpTasks.agentId, agentId),
+                  eq(schema.followUpTasks.userId, req.user.id),
+                  eq(schema.followUpTasks.status, "pending"),
+                ),
               ),
-            ),
-          drizzle
-            .select({
-              summary: schema.callLogs.summary,
-              sentiment: schema.callLogs.sentiment,
-              intent: schema.callLogs.intentLabel,
-              outcome: schema.callLogs.outcomeTag,
-              createdAt: schema.callLogs.createdAt,
-            })
-            .from(schema.callLogs)
-            .where(
-              and(eq(schema.callLogs.agentId, agentId), eq(schema.callLogs.userId, req.user.id)),
-            )
-            .orderBy(desc(schema.callLogs.createdAt))
-            .limit(4),
-        ]);
+            tx
+              .select({
+                summary: schema.callLogs.summary,
+                sentiment: schema.callLogs.sentiment,
+                intent: schema.callLogs.intentLabel,
+                outcome: schema.callLogs.outcomeTag,
+                createdAt: schema.callLogs.createdAt,
+              })
+              .from(schema.callLogs)
+              .where(
+                and(eq(schema.callLogs.agentId, agentId), eq(schema.callLogs.userId, req.user.id)),
+              )
+              .orderBy(desc(schema.callLogs.createdAt))
+              .limit(4),
+          ]),
+        );
 
       res.json({
         pulse: {

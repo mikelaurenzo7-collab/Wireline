@@ -18,7 +18,9 @@ Wireline uses Supabase-hosted PostgreSQL through Drizzle and the transaction poo
 
 The server resolves its database connection through `src/lib/database-connection.ts`. `POSTGRES_URL` is the canonical Supabase connection variable; `DATABASE_POOL_URL` may be used only when it passes the same validation and environment-boundary checks.
 
-Serverless connections use the Supabase transaction pooler. `src/lib/server-context.ts` keeps the pool deliberately small and opens one outer transaction per tenant-scoped checkout so the role and tenant GUC survive transaction-mode pooling.
+Serverless connections use the Supabase transaction pooler. `src/lib/server-context.ts` keeps the pool deliberately small and opens one outer transaction per tenant-scoped checkout so the role and tenant GUC survive transaction-mode pooling. Tenant checkouts and unscoped queue mutations explicitly declare `SET TRANSACTION READ WRITE`; a real replica still fails closed, while a pooled backend cannot break writes by inheriting a leaked session-level read-only default.
+
+Never run `SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY` or `SET default_transaction_read_only = on` through a transaction-pool URL. Those settings can persist on a reused backend and make unrelated application writes fail intermittently. Use `BEGIN TRANSACTION READ ONLY` / `SET TRANSACTION READ ONLY` for transaction-scoped safety, or use the direct port-5432 connection for maintenance that genuinely needs session state. See Supabase's current incident guidance: https://supabase.com/docs/guides/troubleshooting/resolving-cannot-execute-update-in-a-read-only-transaction-on-transaction-pooler-connections-ef582c
 
 Never commit connection strings, database passwords, exports, local dumps, or environment mirrors.
 
@@ -30,6 +32,7 @@ For authenticated tenant work, `tenantStore` scopes the checkout and the server 
 
 ```sql
 BEGIN;
+SET TRANSACTION READ WRITE;
 SET LOCAL ROLE wireline_server;
 SELECT set_config('app.current_user_id', '<user uuid>', true);
 ```
@@ -100,6 +103,17 @@ At minimum verify:
 - account deletion covers the new table.
 
 Supabase advisor output is evidence, not the only source of truth. Confirm the underlying `pg_policies`, privilege, trigger, constraint, and table definitions when an advisor result is stale or ambiguous.
+
+## Read-only pool contamination recovery
+
+When writes fail with `cannot execute ... in a read-only transaction` but the primary reports `default_transaction_read_only=off` and `pg_is_in_recovery()=false`:
+
+1. Stop any maintenance client that used a session-level read-only setting.
+2. Inspect `pg_stat_statements` for `SET default_transaction_read_only TO 'on'` or session-level transaction characteristics.
+3. Resolve the exact idle Supavisor backend by role, application name, backend start, and state. Never terminate a broad role or every database connection.
+4. From a controlled direct admin connection, terminate only the confirmed contaminated idle backend.
+5. Verify the next scheduled write path succeeds and that its durable rows reach the expected final state.
+6. Keep the incident launch-blocking until both runtime logs and database state prove recovery.
 
 ## Recovery and rollback
 

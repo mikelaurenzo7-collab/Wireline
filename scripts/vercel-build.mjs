@@ -93,7 +93,13 @@ run("npx", [
   "tests/product-voice-contract.test.ts",
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
+  // Calling setup is a primary activation surface: keep its self-service entry,
+  // agent/area-code choice, recovery path, and routing behavior in every build.
+  "tests/phone-settings-attach-contract.test.ts",
+  "tests/phone-self-serve-setup-contract.test.ts",
   "tests/auth-journey-hardening-contract.test.ts",
+  // Recovery-token atomicity and expiry cleanup are account-security boundaries.
+  "tests/auth-token-atomicity-contract.test.ts",
   // Provider-host binding, browser-bound bridge state, verified identity, key
   // rotation, and one-check throttling protect account-session integrity.
   "tests/auth-oauth-browser-binding-contract.test.ts",
@@ -107,8 +113,18 @@ run("npx", [
   // Public launch claims, customer-controlled spend provenance, and reversible
   // subscription deletion are release boundaries, not optional regression tests.
   "tests/launch-truth-contract.test.ts",
+  // Launch status and billing-status pool headroom must stay fail-closed.
+  "tests/double-pass-launch-honesty-contract.test.ts",
   "tests/ai-cost-protection-contract.test.ts",
   "tests/billing-proof-contract.test.ts",
+  // Pricing capacity must reserve Payments, Billing, and future Tax fees on
+  // both intervals; do not let catalog metadata drift from entitlements.
+  "src/lib/plan-catalog.test.ts",
+  "tests/round6-margin-capacity-contract.test.ts",
+  // Live Video must remain launch-paused and economically bounded until its
+  // curated catalog and paid lifecycle are proven.
+  "src/lib/video-presenter/live-video-policy.test.ts",
+  "tests/live-video-economics-contract.test.ts",
   "tests/signup-bootstrap-integrity-contract.test.ts",
   "tests/repo-documentation-organization-contract.test.ts",
   "tests/marketing-metadata-contract.test.ts",
@@ -117,7 +133,12 @@ run("npx", [
   "tests/mailbox-and-daily-brief-hardening-contract.test.ts",
   "tests/managed-vapi-runtime-contract.test.ts",
   "tests/vapi-modern-payload-contract.test.ts",
+  // End-of-call cost, duration, transcript, and recording evidence must remain
+  // compatible with both current report and call-object payload shapes.
+  "src/lib/vapi-report-normalization.test.ts",
   "tests/twilio-webhook-privacy.test.ts",
+  // Recipient addresses, bearer links, and provider error bodies must stay out of logs.
+  "tests/email-observability-privacy-contract.test.ts",
   // GDPR carrier cleanup and compliance ledgers are cost and deletion-integrity
   // boundaries; keep their migration/runtime contracts in every build.
   "tests/platform-ledger-integrity-contract.test.ts",

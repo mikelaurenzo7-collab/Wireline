@@ -12,6 +12,7 @@ import {
   isStripePaymentRequiredError,
   reconciledStoredAgentCap,
 } from "../lib/extra-agent-billing";
+import { isLaunchHardBlocked, launchBlockResponse } from "../lib/launch-readiness";
 import { FOUNDER_CATALOG_VERSION, planById } from "../lib/plan-catalog";
 import { getErrorMessage } from "../lib/server-utils";
 import { auditLogger, drizzle, log } from "../lib/server-context";
@@ -199,6 +200,16 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
       const existing = matchingItems[0];
       const currentStripeQuantity = extraAgentQuantity(matchingItems);
       const isIncrease = target > currentStripeQuantity;
+
+      // Launch blockers stop only a Stripe-authoritative increase. Do not gate
+      // on `target > currentDbQuantity && isLaunchHardBlocked()`: a stale low
+      // local count must never trap a customer in a higher provider quantity.
+      if (isIncrease && isLaunchHardBlocked()) {
+        return {
+          status: 503,
+          body: launchBlockResponse(),
+        };
+      }
 
       if (target === currentStripeQuantity) {
         return persistQuantity(target, currentDbQuantity !== target, currentStripeQuantity);

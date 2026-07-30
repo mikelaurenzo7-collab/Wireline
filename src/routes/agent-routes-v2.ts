@@ -371,72 +371,74 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
-    const [agentRows, personalities, directives, knowledge] = await Promise.all([
-      drizzle
-        .select({
-          name: schema.agents.name,
-          role: schema.agents.role,
-          archetype: schema.agents.archetype,
-          flowConfig: schema.agents.flowConfig,
-          enabledTools: schema.agents.enabledTools,
-          llmProvider: schema.agents.llmProvider,
-          llmModel: schema.agents.llmModel,
-          llmTemperature: schema.agents.llmTemperature,
-          voiceId: schema.agents.voiceId,
-          voiceProvider: schema.agents.voiceProvider,
-          phoneVoiceId: schema.agents.phoneVoiceId,
-          phoneVoiceProvider: schema.agents.phoneVoiceProvider,
-          // business profile fields
-          businessHours: schema.agents.businessHours,
-          timezone: schema.agents.timezone,
-          complianceMode: schema.agents.complianceMode,
-          disallowedTopics: schema.agents.disallowedTopics,
-          escalationKeywords: schema.agents.escalationKeywords,
-          escalationPhone: schema.agents.escalationPhone,
-          escalationEmail: schema.agents.escalationEmail,
-          escalationHandoffEnabled: schema.agents.escalationHandoffEnabled,
-          businessVariables: schema.agents.businessVariables,
-          outOfHoursMessage: schema.agents.outOfHoursMessage,
-          kpiFocus: schema.agents.kpiFocus,
-          isBusinessAgent: schema.agents.isBusinessAgent,
-          videoPresenterProvider: schema.agents.videoPresenterProvider,
-          videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
-          videoPresenterConsentStatus: schema.agents.videoPresenterConsentStatus,
-        })
-        .from(schema.agents)
-        .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
-        .limit(1),
-      drizzle
-        .select({ content: schema.personality.content })
-        .from(schema.personality)
-        .where(
-          and(
-            eq(schema.personality.agentId, req.params.id),
-            eq(schema.personality.userId, req.user.id),
-          ),
-        )
-        .limit(1),
-      drizzle
-        .select()
-        .from(schema.directives)
-        .where(
-          and(
-            eq(schema.directives.agentId, req.params.id),
-            eq(schema.directives.userId, req.user.id),
-          ),
-        )
-        .orderBy(desc(schema.directives.priority)),
-      drizzle
-        .select()
-        .from(schema.knowledge)
-        .where(
-          and(
-            eq(schema.knowledge.agentId, req.params.id),
-            eq(schema.knowledge.userId, req.user.id),
-          ),
-        )
-        .orderBy(desc(schema.knowledge.createdAt)),
-    ]);
+    const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
+      Promise.all([
+        tx
+          .select({
+            name: schema.agents.name,
+            role: schema.agents.role,
+            archetype: schema.agents.archetype,
+            flowConfig: schema.agents.flowConfig,
+            enabledTools: schema.agents.enabledTools,
+            llmProvider: schema.agents.llmProvider,
+            llmModel: schema.agents.llmModel,
+            llmTemperature: schema.agents.llmTemperature,
+            voiceId: schema.agents.voiceId,
+            voiceProvider: schema.agents.voiceProvider,
+            phoneVoiceId: schema.agents.phoneVoiceId,
+            phoneVoiceProvider: schema.agents.phoneVoiceProvider,
+            // business profile fields
+            businessHours: schema.agents.businessHours,
+            timezone: schema.agents.timezone,
+            complianceMode: schema.agents.complianceMode,
+            disallowedTopics: schema.agents.disallowedTopics,
+            escalationKeywords: schema.agents.escalationKeywords,
+            escalationPhone: schema.agents.escalationPhone,
+            escalationEmail: schema.agents.escalationEmail,
+            escalationHandoffEnabled: schema.agents.escalationHandoffEnabled,
+            businessVariables: schema.agents.businessVariables,
+            outOfHoursMessage: schema.agents.outOfHoursMessage,
+            kpiFocus: schema.agents.kpiFocus,
+            isBusinessAgent: schema.agents.isBusinessAgent,
+            videoPresenterProvider: schema.agents.videoPresenterProvider,
+            videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
+            videoPresenterConsentStatus: schema.agents.videoPresenterConsentStatus,
+          })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+          .limit(1),
+        tx
+          .select({ content: schema.personality.content })
+          .from(schema.personality)
+          .where(
+            and(
+              eq(schema.personality.agentId, req.params.id),
+              eq(schema.personality.userId, req.user.id),
+            ),
+          )
+          .limit(1),
+        tx
+          .select()
+          .from(schema.directives)
+          .where(
+            and(
+              eq(schema.directives.agentId, req.params.id),
+              eq(schema.directives.userId, req.user.id),
+            ),
+          )
+          .orderBy(desc(schema.directives.priority)),
+        tx
+          .select()
+          .from(schema.knowledge)
+          .where(
+            and(
+              eq(schema.knowledge.agentId, req.params.id),
+              eq(schema.knowledge.userId, req.user.id),
+            ),
+          )
+          .orderBy(desc(schema.knowledge.createdAt)),
+      ]),
+    );
     const record = agentRows[0];
     const identity = record
       ? resolveAgentVideoPresenter({
@@ -730,6 +732,11 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
+    // BigInt() throws a raw SyntaxError on anything non-numeric, which surfaced
+    // as a 500 for what is a malformed path parameter.
+    if (!/^\d+$/.test(req.params.rowId)) {
+      throw AppError.fromHttpStatus(400, "rowId must be a positive integer");
+    }
     const rowId = BigInt(req.params.rowId);
     if (req.params.type === "directive") {
       await drizzle

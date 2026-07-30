@@ -6,14 +6,17 @@ const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
 describe("phone settings attach routing", () => {
-  it("attaches agents on /settings/phone via PATCH, not a dead Studio CTA", () => {
-    const phone = read("src/pages/PhoneSettings.tsx");
-    expect(phone).toContain("attachAgent");
-    expect(phone).toContain('method: "PATCH"');
-    expect(phone).toContain("`/api/phone-numbers/${activeNumber.id}`");
-    expect(phone).toContain('aria-label="Attach voice agent to this number"');
-    expect(phone).not.toContain("Attach in Studio");
-    expect(phone).toContain("Select voice agent");
-    expect(phone).toContain("Create voice agent");
+  it("attaches agents through the shared self-service calling setup", () => {
+    const settingsPage = read("src/pages/PhoneSettings.tsx");
+    const setup = read("src/components/PhoneSetupPanel.tsx");
+
+    expect(settingsPage).toContain("PhoneSetupPanel");
+    expect(setup).toContain("attachAgent");
+    expect(setup).toContain('method: "PATCH"');
+    expect(setup).toContain("`/api/phone-numbers/${activeNumber.id}`");
+    expect(setup).toContain('aria-label="Attach voice agent to this number"');
+    expect(setup).not.toContain("Attach in Studio");
+    expect(setup).toContain("Select voice agent");
+    expect(setup).toContain("Create voice agent");
   });
 });

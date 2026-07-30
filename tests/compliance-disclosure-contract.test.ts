@@ -58,7 +58,7 @@ describe("complianceDisclosure", () => {
       expect(prefix).toContain("automated AI assistant");
       expect(prefix).not.toContain("on behalf of");
     });
-    it("returns an empty prefix for every non-tcpa mode (no behavior change)", () => {
+    it("returns an empty prefix when no spoken disclosure reason applies", () => {
       for (const mode of [
         "none",
         "hipaa",
@@ -71,6 +71,32 @@ describe("complianceDisclosure", () => {
       ] as const) {
         expect(complianceFirstMessagePrefix(mode, "Acme")).toBe("");
       }
+    });
+
+    it("discloses AI and the responsible business on every outbound AI call", () => {
+      const prefix = complianceFirstMessagePrefix("none", "Acme Plumbing", {
+        outboundAiCall: true,
+      });
+      expect(prefix).toContain("automated AI assistant");
+      expect(prefix).toContain("on behalf of Acme Plumbing");
+    });
+
+    it("adds a recording notice whenever Wireline records the call", () => {
+      const prefix = complianceFirstMessagePrefix("none", "Acme Plumbing", {
+        recordingEnabled: true,
+      });
+      expect(prefix).toContain("may be recorded");
+      expect(prefix).not.toContain("automated AI assistant");
+    });
+
+    it("combines AI and recording disclosures without duplicating the greeting", () => {
+      const prefix = complianceFirstMessagePrefix("none", "Acme Plumbing", {
+        outboundAiCall: true,
+        recordingEnabled: true,
+      });
+      expect(prefix.match(/automated AI assistant/g)).toHaveLength(1);
+      expect(prefix.match(/may be recorded/g)).toHaveLength(1);
+      expect(prefix.endsWith(" ")).toBe(true);
     });
   });
 

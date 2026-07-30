@@ -3,10 +3,13 @@ import {
   EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID,
   HARD_CONTRIBUTION_MARGIN_FLOOR,
   LAUNCH_CONTRIBUTION_MARGIN_FLOOR,
+  STRIPE_BILLING_RATE,
   STRIPE_PLANS,
+  STRIPE_TAX_TRANSACTION_RATE,
   VOICE_VARIABLE_COST_PER_MIN_USD,
   estimatedContributionMarginAtExpectedUsage,
   estimatedContributionMarginAtFullIncludedUsage,
+  estimatedStripeCommercialFeesUsd,
   planById,
   planByPriceId,
   planByStripePrice,
@@ -71,13 +74,20 @@ describe("plan-catalog", () => {
     expect(planById("team")?.included_phone_numbers).toBe(2);
     expect(planById("team")?.price_usd_monthly).toBe(39);
     expect(planById("team")?.price_usd_annual).toBe(390);
-    expect(planById("business")?.voice_minutes_monthly).toBe(250);
+    expect(planById("business")?.voice_minutes_monthly).toBe(245);
     expect(planById("enterprise")?.voice_minutes_monthly).toBe(450);
     // Catalog v6: one flat top-up rate on every plan.
     expect(planById("starter")?.overage_per_min_usd).toBe(0.22);
     expect(planById("team")?.overage_per_min_usd).toBe(0.22);
     expect(planById("business")?.overage_per_min_usd).toBe(0.22);
     expect(planById("enterprise")?.overage_per_min_usd).toBe(0.22);
+  });
+
+  it("reserves Payments, Billing, and future Tax transaction fees", () => {
+    expect(STRIPE_BILLING_RATE).toBe(0.007);
+    expect(STRIPE_TAX_TRANSACTION_RATE).toBe(0.005);
+    expect(estimatedStripeCommercialFeesUsd(100)).toBeCloseTo(4.4, 8);
+    expect(estimatedStripeCommercialFeesUsd(0)).toBe(0);
   });
 
   it("keeps price leadership while protecting the two-floor margin policy", () => {

@@ -8,6 +8,7 @@ This index preserves dated audits, launch passes, QA records, and superseded dec
 
 | Evidence | Scope |
 | --- | --- |
+| [LAUNCH_READINESS_AUDIT_2026-07-28.md](./LAUNCH_READINESS_AUDIT_2026-07-28.md) | July 28 production, billing, runtime, data, vendor, agent, video, and visual-QA launch evidence. |
 | [LAUNCH_POLISH_AUDIT_2026-07-27.md](./LAUNCH_POLISH_AUDIT_2026-07-27.md) | July 27 launch-polish findings and implementation evidence. |
 | [LAUNCH_READINESS_FINETUNE_2026-07-27.md](./LAUNCH_READINESS_FINETUNE_2026-07-27.md) | July 27 multi-pass launch fine-tune and billing/runtime corrections. |
 | [LAUNCH_READINESS_AUDIT_2026-07-26_ROUND5.md](./LAUNCH_READINESS_AUDIT_2026-07-26_ROUND5.md) | Round-five July 26 readiness evidence and follow-up corrections. |

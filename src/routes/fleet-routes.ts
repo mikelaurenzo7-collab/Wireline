@@ -21,6 +21,22 @@ import type { AuthenticatedRequest } from "../types/auth";
 const router = Router();
 
 const FLEET_TASK_STATUSES = ["pending", "open", "in_progress", "completed", "cancelled"] as const;
+
+/**
+ * `wireline_follow_up_tasks.agent_id` has a foreign key to `wireline_agents.id`,
+ * but a foreign key only proves the agent exists — the constraint check is not
+ * subject to RLS, so it happily accepts another tenant's agent id. Confirm
+ * ownership explicitly before writing it onto a task, and turn a stale or
+ * foreign id into a 404 instead of a foreign-key 500.
+ */
+async function assertOwnedAgent(agentId: string, userId: string): Promise<void> {
+  const [agent] = await drizzle
+    .select({ id: schema.agents.id })
+    .from(schema.agents)
+    .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+    .limit(1);
+  if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
+}
 const FLEET_TASK_PRIORITIES = ["low", "medium", "high"] as const;
 
 router.post(
@@ -100,8 +116,10 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const VALID_STATUSES = new Set(["pending", "in_progress", "completed", "cancelled"]);
-      const VALID_PRIORITIES = new Set(["high", "medium", "low"]);
+      // Mirror the statuses PATCH can actually write. "open" was writable but
+      // not filterable, so a task moved to "open" fell out of every status view.
+      const VALID_STATUSES = new Set<string>(FLEET_TASK_STATUSES);
+      const VALID_PRIORITIES = new Set<string>(FLEET_TASK_PRIORITIES);
       const statusFilter =
         typeof req.query.status === "string" && VALID_STATUSES.has(req.query.status)
           ? req.query.status
@@ -190,6 +208,8 @@ router.post(
         due_date,
       } = validation.data!;
 
+      if (agent_id) await assertOwnedAgent(agent_id, req.user.id);
+
       await drizzle.insert(schema.followUpTasks).values({
         sourceType: source_type,
         sourceId: source_id,
@@ -206,6 +226,7 @@ router.post(
       touchNavCounts(req.user.id);
       res.json({ success: true });
     } catch (error: any) {
+      rethrowIfAppError(error);
       log.error("Failed to create Assistants task", { error: error.message });
       throw AppError.fromHttpStatus(500, "Failed to create Assistants task");
     }
@@ -238,12 +259,39 @@ router.patch(
         }
         updateData.priority = priority;
       }
-      if (due_date !== undefined) updateData.dueDate = new Date(due_date);
-      if (agent_id !== undefined) updateData.agentId = agent_id;
+      if (due_date !== undefined) {
+        // `due_date: null` is the documented way to clear a due date. Passing it
+        // straight to `new Date()` yielded the Unix epoch (a due date of
+        // 1970-01-01), and an unparseable string produced an Invalid Date that
+        // threw inside the driver as an opaque 500.
+        if (due_date === null || due_date === "") {
+          updateData.dueDate = null;
+        } else {
+          const parsedDueDate = new Date(due_date);
+          if (Number.isNaN(parsedDueDate.getTime())) {
+            return res
+              .status(400)
+              .json({ code: "BAD_REQUEST", error: "due_date must be a valid date" });
+          }
+          updateData.dueDate = parsedDueDate;
+        }
+      }
+      if (agent_id !== undefined) {
+        if (agent_id) await assertOwnedAgent(agent_id, req.user.id);
+        updateData.agentId = agent_id;
+      }
       if (resolution_notes !== undefined) updateData.resolutionNotes = resolution_notes;
       if (description !== undefined) updateData.description = description;
       if (payload !== undefined && payload && typeof payload === "object") {
         updateData.payload = payload;
+      }
+
+      // Drizzle throws "No values to set" on an empty update, which surfaced as
+      // a 500 for what is really a malformed request.
+      if (Object.keys(updateData).length === 0) {
+        return res
+          .status(400)
+          .json({ code: "BAD_REQUEST", error: "No supported task fields to update" });
       }
 
       await drizzle
@@ -258,6 +306,7 @@ router.patch(
       if (status !== undefined) touchNavCounts(req.user.id);
       res.json({ success: true });
     } catch (error: any) {
+      rethrowIfAppError(error);
       log.error("Failed to update Assistants task", { error: error.message });
       throw AppError.fromHttpStatus(500, "Failed to update Assistants task");
     }
@@ -357,55 +406,57 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const [logs, tasks, lessons, emails] = await Promise.all([
-        drizzle
-          .select({
-            id: schema.callLogs.id,
-            customerNumber: schema.callLogs.customerNumber,
-            leadScore: schema.callLogs.leadScore,
-            intentLabel: schema.callLogs.intentLabel,
-            summary: schema.callLogs.summary,
-            createdAt: schema.callLogs.createdAt,
-          })
-          .from(schema.callLogs)
-          .where(eq(schema.callLogs.userId, req.user.id))
-          .orderBy(desc(schema.callLogs.createdAt))
-          .limit(5),
-        drizzle
-          .select({
-            id: schema.followUpTasks.id,
-            description: schema.followUpTasks.description,
-            status: schema.followUpTasks.status,
-            priority: schema.followUpTasks.priority,
-            createdAt: schema.followUpTasks.createdAt,
-          })
-          .from(schema.followUpTasks)
-          .where(eq(schema.followUpTasks.userId, req.user.id))
-          .orderBy(desc(schema.followUpTasks.createdAt))
-          .limit(5),
-        drizzle
-          .select({
-            id: schema.agentLessons.id,
-            lesson: schema.agentLessons.lesson,
-            createdAt: schema.agentLessons.createdAt,
-          })
-          .from(schema.agentLessons)
-          .where(eq(schema.agentLessons.userId, req.user.id))
-          .orderBy(desc(schema.agentLessons.createdAt))
-          .limit(5),
-        drizzle
-          .select({
-            id: schema.emailThreads.id,
-            customerEmail: schema.emailThreads.customerEmail,
-            leadScore: schema.emailThreads.leadScore,
-            intentLabel: schema.emailThreads.intentLabel,
-            createdAt: schema.emailThreads.createdAt,
-          })
-          .from(schema.emailThreads)
-          .where(eq(schema.emailThreads.userId, req.user.id))
-          .orderBy(desc(schema.emailThreads.createdAt))
-          .limit(5),
-      ]);
+      const [logs, tasks, lessons, emails] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx
+            .select({
+              id: schema.callLogs.id,
+              customerNumber: schema.callLogs.customerNumber,
+              leadScore: schema.callLogs.leadScore,
+              intentLabel: schema.callLogs.intentLabel,
+              summary: schema.callLogs.summary,
+              createdAt: schema.callLogs.createdAt,
+            })
+            .from(schema.callLogs)
+            .where(eq(schema.callLogs.userId, req.user.id))
+            .orderBy(desc(schema.callLogs.createdAt))
+            .limit(5),
+          tx
+            .select({
+              id: schema.followUpTasks.id,
+              description: schema.followUpTasks.description,
+              status: schema.followUpTasks.status,
+              priority: schema.followUpTasks.priority,
+              createdAt: schema.followUpTasks.createdAt,
+            })
+            .from(schema.followUpTasks)
+            .where(eq(schema.followUpTasks.userId, req.user.id))
+            .orderBy(desc(schema.followUpTasks.createdAt))
+            .limit(5),
+          tx
+            .select({
+              id: schema.agentLessons.id,
+              lesson: schema.agentLessons.lesson,
+              createdAt: schema.agentLessons.createdAt,
+            })
+            .from(schema.agentLessons)
+            .where(eq(schema.agentLessons.userId, req.user.id))
+            .orderBy(desc(schema.agentLessons.createdAt))
+            .limit(5),
+          tx
+            .select({
+              id: schema.emailThreads.id,
+              customerEmail: schema.emailThreads.customerEmail,
+              leadScore: schema.emailThreads.leadScore,
+              intentLabel: schema.emailThreads.intentLabel,
+              createdAt: schema.emailThreads.createdAt,
+            })
+            .from(schema.emailThreads)
+            .where(eq(schema.emailThreads.userId, req.user.id))
+            .orderBy(desc(schema.emailThreads.createdAt))
+            .limit(5),
+        ]),
+      );
 
       const activity = compileActivityFeed({
         logs: logs || [],
@@ -427,88 +478,89 @@ router.get(
 
 router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const [hotLeads, complianceTasks, pendingTasks, knowledgeGaps, escalations] = await Promise.all(
-      [
-        drizzle
-          .select({
-            id: schema.callLogs.id,
-            agentId: schema.callLogs.agentId,
-            customerNumber: schema.callLogs.customerNumber,
-            leadScore: schema.callLogs.leadScore,
-            intentLabel: schema.callLogs.intentLabel,
-            summary: schema.callLogs.summary,
-            createdAt: schema.callLogs.createdAt,
-          })
-          .from(schema.callLogs)
-          .where(
-            and(
-              eq(schema.callLogs.userId, req.user.id),
-              gte(schema.callLogs.leadScore, 70),
-              gte(schema.callLogs.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)),
-            ),
-          )
-          .orderBy(desc(schema.callLogs.leadScore))
-          .limit(30),
-        drizzle
-          .select()
-          .from(schema.followUpTasks)
-          .where(
-            and(
-              eq(schema.followUpTasks.userId, req.user.id),
-              eq(schema.followUpTasks.taskType, "compliance_review"),
-              eq(schema.followUpTasks.status, "pending"),
-            ),
-          )
-          .orderBy(desc(schema.followUpTasks.createdAt))
-          .limit(20),
-        drizzle
-          .select()
-          .from(schema.followUpTasks)
-          .where(
-            and(
-              eq(schema.followUpTasks.userId, req.user.id),
-              eq(schema.followUpTasks.status, "pending"),
-              ne(schema.followUpTasks.taskType, "compliance_review"),
-            ),
-          )
-          .orderBy(desc(schema.followUpTasks.createdAt))
-          .limit(30),
-        drizzle
-          .select({
-            id: schema.agentLessons.id,
-            agentId: schema.agentLessons.agentId,
-            lesson: schema.agentLessons.lesson,
-            createdAt: schema.agentLessons.createdAt,
-          })
-          .from(schema.agentLessons)
-          .where(
-            and(
-              eq(schema.agentLessons.userId, req.user.id),
-              like(schema.agentLessons.lesson, "[KNOWLEDGE GAP]%"),
-            ),
-          )
-          .orderBy(desc(schema.agentLessons.createdAt))
-          .limit(30),
-        drizzle
-          .select({
-            id: schema.callLogs.id,
-            agentId: schema.callLogs.agentId,
-            customerNumber: schema.callLogs.customerNumber,
-            leadScore: schema.callLogs.leadScore,
-            summary: schema.callLogs.summary,
-            createdAt: schema.callLogs.createdAt,
-          })
-          .from(schema.callLogs)
-          .where(
-            and(
-              eq(schema.callLogs.userId, req.user.id),
-              eq(schema.callLogs.intentLabel, "escalation"),
-            ),
-          )
-          .orderBy(desc(schema.callLogs.createdAt))
-          .limit(20),
-      ],
-    );
+    const [hotLeads, complianceTasks, pendingTasks, knowledgeGaps, escalations] =
+      await drizzle.transaction((tx) =>
+        Promise.all([
+          tx
+            .select({
+              id: schema.callLogs.id,
+              agentId: schema.callLogs.agentId,
+              customerNumber: schema.callLogs.customerNumber,
+              leadScore: schema.callLogs.leadScore,
+              intentLabel: schema.callLogs.intentLabel,
+              summary: schema.callLogs.summary,
+              createdAt: schema.callLogs.createdAt,
+            })
+            .from(schema.callLogs)
+            .where(
+              and(
+                eq(schema.callLogs.userId, req.user.id),
+                gte(schema.callLogs.leadScore, 70),
+                gte(schema.callLogs.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)),
+              ),
+            )
+            .orderBy(desc(schema.callLogs.leadScore))
+            .limit(30),
+          tx
+            .select()
+            .from(schema.followUpTasks)
+            .where(
+              and(
+                eq(schema.followUpTasks.userId, req.user.id),
+                eq(schema.followUpTasks.taskType, "compliance_review"),
+                eq(schema.followUpTasks.status, "pending"),
+              ),
+            )
+            .orderBy(desc(schema.followUpTasks.createdAt))
+            .limit(20),
+          tx
+            .select()
+            .from(schema.followUpTasks)
+            .where(
+              and(
+                eq(schema.followUpTasks.userId, req.user.id),
+                eq(schema.followUpTasks.status, "pending"),
+                ne(schema.followUpTasks.taskType, "compliance_review"),
+              ),
+            )
+            .orderBy(desc(schema.followUpTasks.createdAt))
+            .limit(30),
+          tx
+            .select({
+              id: schema.agentLessons.id,
+              agentId: schema.agentLessons.agentId,
+              lesson: schema.agentLessons.lesson,
+              createdAt: schema.agentLessons.createdAt,
+            })
+            .from(schema.agentLessons)
+            .where(
+              and(
+                eq(schema.agentLessons.userId, req.user.id),
+                like(schema.agentLessons.lesson, "[KNOWLEDGE GAP]%"),
+              ),
+            )
+            .orderBy(desc(schema.agentLessons.createdAt))
+            .limit(30),
+          tx
+            .select({
+              id: schema.callLogs.id,
+              agentId: schema.callLogs.agentId,
+              customerNumber: schema.callLogs.customerNumber,
+              leadScore: schema.callLogs.leadScore,
+              summary: schema.callLogs.summary,
+              createdAt: schema.callLogs.createdAt,
+            })
+            .from(schema.callLogs)
+            .where(
+              and(
+                eq(schema.callLogs.userId, req.user.id),
+                eq(schema.callLogs.intentLabel, "escalation"),
+              ),
+            )
+            .orderBy(desc(schema.callLogs.createdAt))
+            .limit(20),
+        ]),
+      );
 
     // UI reads snake_case (customer_number, lead_score, created_at). Drizzle
     // hands us camelCase. Normalize at the boundary so the triage card stops

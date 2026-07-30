@@ -35,6 +35,24 @@ export interface SendResult {
   error?: string;
 }
 
+/**
+ * Keep recipient diagnostics useful without putting full addresses in logs.
+ * Domains help diagnose provider/configuration failures; local parts stay private.
+ */
+function emailLogContext(email: string): {
+  recipientRedacted: true;
+  recipientDomain?: string;
+} {
+  const normalized = email.trim().toLowerCase();
+  const at = normalized.lastIndexOf("@");
+  const recipientDomain =
+    at >= 0 && at < normalized.length - 1 ? normalized.slice(at + 1) : undefined;
+  return {
+    recipientRedacted: true,
+    ...(recipientDomain ? { recipientDomain } : {}),
+  };
+}
+
 interface PasswordResetEmailOpts {
   to: string;
   resetUrl: string;
@@ -78,7 +96,7 @@ async function sendViaResend(args: {
       const error = formatResendApiError(res.status, body);
       log.error("[email-service] Resend rejected send", {
         status: res.status,
-        to: args.to,
+        ...emailLogContext(args.to),
         from,
         error,
         transport: getResendTransportDiagnostics(),
@@ -91,7 +109,7 @@ async function sendViaResend(args: {
     }
     const parsed = body ? JSON.parse(body) : {};
     log.info("[email-service] Resend accepted send", {
-      to: args.to,
+      ...emailLogContext(args.to),
       from,
       resendId: parsed?.id,
     });
@@ -99,7 +117,7 @@ async function sendViaResend(args: {
   } catch (err) {
     const error = getErrorMessage(err);
     log.error("[email-service] Resend transport error", {
-      to: args.to,
+      ...emailLogContext(args.to),
       from,
       error,
       transport: getResendTransportDiagnostics(),
@@ -217,7 +235,7 @@ export async function sendPaymentLinkEmail(opts: {
 
   if (!process.env.RESEND_API_KEY?.trim()) {
     log.warn("send_payment_link called but RESEND_API_KEY is not set — failing loud.", {
-      to: opts.to,
+      ...emailLogContext(opts.to),
       ...redactPayUrlForLog(opts.payUrl),
     });
     return {
@@ -230,7 +248,7 @@ export async function sendPaymentLinkEmail(opts: {
   const sent = await sendViaResend({ to: opts.to, subject, html, text });
   if (!sent.ok) {
     log.error("send_payment_link Resend rejected send", {
-      to: opts.to,
+      ...emailLogContext(opts.to),
       error: sent.error,
       ...redactPayUrlForLog(opts.payUrl),
     });
@@ -277,13 +295,13 @@ export async function sendSignupLinkEmail(opts: {
     const sent = await sendViaResend({ to: opts.to, subject, html, text });
     if (sent.ok) {
       log.info("send_signup_link email accepted by Resend", {
-        to: opts.to,
+        ...emailLogContext(opts.to),
         resendId: sent.id,
         agentName: opts.agentName,
       });
     } else {
       log.error("send_signup_link Resend rejected send", {
-        to: opts.to,
+        ...emailLogContext(opts.to),
         error: sent.error,
         agentName: opts.agentName,
       });
@@ -304,8 +322,7 @@ export async function sendSignupLinkEmail(opts: {
   log.warn(
     "send_signup_link called but RESEND_API_KEY is not set — failing loud so the agent doesn't lie about delivery.",
     {
-      to: opts.to,
-      signupUrl,
+      ...emailLogContext(opts.to),
       agentName: opts.agentName,
     },
   );
@@ -365,8 +382,7 @@ export async function sendEmailVerification(opts: {
   // brand. Better to surface the transport failure so the user can
   // see "verification email transport down — try again in a few".
   log.warn("sendEmailVerification called but RESEND_API_KEY is not set — failing loud.", {
-    to: opts.to,
-    verifyUrl: opts.verifyUrl,
+    ...emailLogContext(opts.to),
   });
   return {
     ok: false,
@@ -420,7 +436,7 @@ export async function sendUrgentEscalationEmail(opts: {
   }
   log.warn(
     "[email-service] urgent escalation email skipped — RESEND_API_KEY missing. Configure to enable.",
-    { to: opts.to, title: opts.title },
+    { ...emailLogContext(opts.to) },
   );
   return {
     ok: false,
@@ -467,7 +483,7 @@ export async function sendPaymentFailedEmail(opts: {
     return await sendViaResend({ to: opts.to, subject, html, text });
   }
   log.warn("[email-service] payment failed email skipped — RESEND_API_KEY missing.", {
-    to: opts.to,
+    ...emailLogContext(opts.to),
   });
   return {
     ok: false,
@@ -487,7 +503,7 @@ export async function sendTrialEndingSoonEmail(opts: {
   // link + physical postal address. (Transactional mail above is exempt.)
   if (await isEmailSuppressed(opts.to)) {
     log.info("[email-service] trial-ending-soon email skipped — recipient unsubscribed.", {
-      to: opts.to,
+      ...emailLogContext(opts.to),
     });
     return { ok: false, provider: "no-transport", error: "Recipient has unsubscribed" };
   }
@@ -528,7 +544,7 @@ export async function sendTrialEndingSoonEmail(opts: {
     });
   }
   log.warn("[email-service] trial-ending-soon email skipped — RESEND_API_KEY missing.", {
-    to: opts.to,
+    ...emailLogContext(opts.to),
     daysLeft: opts.daysLeft,
   });
   return {

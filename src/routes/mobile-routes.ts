@@ -97,31 +97,36 @@ router.get(
     try {
       const userId = req.user.id;
 
-      // Three independent reads — run them concurrently.
-      const [[profile], [row], [{ count }]] = await Promise.all([
-        drizzle
-          .select({ fullName: schema.users.fullName, email: schema.users.email })
-          .from(schema.users)
-          .where(eq(schema.users.id, userId))
-          .limit(1),
-        drizzle
-          .select({
-            planId: schema.subscriptions.plan,
-            subscriptionStatus: schema.settings.subscriptionStatus,
-            maxAgents: schema.settings.maxAgents,
-            extraAgents: schema.settings.extraAgents,
-            businessName: schema.settings.businessName,
-            handoffPhone: schema.settings.handoffPhone,
-          })
-          .from(schema.settings)
-          .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
-          .where(eq(schema.settings.userId, userId))
-          .limit(1),
-        drizzle
-          .select({ count: sql<number>`count(*)` })
-          .from(schema.agents)
-          .where(eq(schema.agents.userId, userId)),
-      ]);
+      // Three independent reads on one pooled client. Root Drizzle queries each
+      // check out their own tenant-scoped client from a five-connection
+      // serverless pool, so a bare Promise.all would let two concurrent mobile
+      // bootstraps exhaust it and fail on the 5s checkout timeout.
+      const [[profile], [row], [{ count }]] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx
+            .select({ fullName: schema.users.fullName, email: schema.users.email })
+            .from(schema.users)
+            .where(eq(schema.users.id, userId))
+            .limit(1),
+          tx
+            .select({
+              planId: schema.subscriptions.plan,
+              subscriptionStatus: schema.settings.subscriptionStatus,
+              maxAgents: schema.settings.maxAgents,
+              extraAgents: schema.settings.extraAgents,
+              businessName: schema.settings.businessName,
+              handoffPhone: schema.settings.handoffPhone,
+            })
+            .from(schema.settings)
+            .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+            .where(eq(schema.settings.userId, userId))
+            .limit(1),
+          tx
+            .select({ count: sql<number>`count(*)` })
+            .from(schema.agents)
+            .where(eq(schema.agents.userId, userId)),
+        ]),
+      );
       const agentCount = Number(count);
 
       const isOwner = isOwnerEmail(req.user.email);
@@ -375,54 +380,56 @@ router.get(
       if (!(await ownedAgent(req.params.id, req.user.id))) {
         throw AppError.fromHttpStatus(404, "Agent not found.");
       }
-      const [agentRows, personalities, directives, knowledge] = await Promise.all([
-        drizzle
-          .select({
-            name: schema.agents.name,
-            role: schema.agents.role,
-            archetype: schema.agents.archetype,
-            enabledTools: schema.agents.enabledTools,
-            voiceId: schema.agents.voiceId,
-            voiceProvider: schema.agents.voiceProvider,
-            isBusinessAgent: schema.agents.isBusinessAgent,
-            videoPresenterProvider: schema.agents.videoPresenterProvider,
-            videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
-            videoPresenterConsentStatus: schema.agents.videoPresenterConsentStatus,
-          })
-          .from(schema.agents)
-          .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
-          .limit(1),
-        drizzle
-          .select({ content: schema.personality.content })
-          .from(schema.personality)
-          .where(
-            and(
-              eq(schema.personality.agentId, req.params.id),
-              eq(schema.personality.userId, req.user.id),
-            ),
-          )
-          .limit(1),
-        drizzle
-          .select()
-          .from(schema.directives)
-          .where(
-            and(
-              eq(schema.directives.agentId, req.params.id),
-              eq(schema.directives.userId, req.user.id),
-            ),
-          )
-          .orderBy(desc(schema.directives.priority)),
-        drizzle
-          .select()
-          .from(schema.knowledge)
-          .where(
-            and(
-              eq(schema.knowledge.agentId, req.params.id),
-              eq(schema.knowledge.userId, req.user.id),
-            ),
-          )
-          .orderBy(desc(schema.knowledge.createdAt)),
-      ]);
+      const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx
+            .select({
+              name: schema.agents.name,
+              role: schema.agents.role,
+              archetype: schema.agents.archetype,
+              enabledTools: schema.agents.enabledTools,
+              voiceId: schema.agents.voiceId,
+              voiceProvider: schema.agents.voiceProvider,
+              isBusinessAgent: schema.agents.isBusinessAgent,
+              videoPresenterProvider: schema.agents.videoPresenterProvider,
+              videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
+              videoPresenterConsentStatus: schema.agents.videoPresenterConsentStatus,
+            })
+            .from(schema.agents)
+            .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+            .limit(1),
+          tx
+            .select({ content: schema.personality.content })
+            .from(schema.personality)
+            .where(
+              and(
+                eq(schema.personality.agentId, req.params.id),
+                eq(schema.personality.userId, req.user.id),
+              ),
+            )
+            .limit(1),
+          tx
+            .select()
+            .from(schema.directives)
+            .where(
+              and(
+                eq(schema.directives.agentId, req.params.id),
+                eq(schema.directives.userId, req.user.id),
+              ),
+            )
+            .orderBy(desc(schema.directives.priority)),
+          tx
+            .select()
+            .from(schema.knowledge)
+            .where(
+              and(
+                eq(schema.knowledge.agentId, req.params.id),
+                eq(schema.knowledge.userId, req.user.id),
+              ),
+            )
+            .orderBy(desc(schema.knowledge.createdAt)),
+        ]),
+      );
       const record = agentRows[0];
       const identity = record
         ? resolveAgentVideoPresenter({

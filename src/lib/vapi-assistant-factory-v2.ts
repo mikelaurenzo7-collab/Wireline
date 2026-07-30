@@ -71,26 +71,28 @@ export async function buildVapiAssistant({
   const agentId = agent.id;
   const isOutbound =
     message.type === "outboundPhoneCall" || message.call?.type === "outboundPhoneCall";
-  const [agentRows, directives, knowledge, personalityRows] = await Promise.all([
-    drizzle.select().from(schema.agents).where(eq(schema.agents.id, agentId)).limit(1),
-    drizzle
-      .select({ content: schema.directives.content })
-      .from(schema.directives)
-      .where(eq(schema.directives.agentId, agentId))
-      .orderBy(desc(schema.directives.priority))
-      .limit(MAX_RUNTIME_DIRECTIVES),
-    drizzle
-      .select({ content: schema.knowledge.content })
-      .from(schema.knowledge)
-      .where(eq(schema.knowledge.agentId, agentId))
-      .orderBy(desc(schema.knowledge.createdAt))
-      .limit(MAX_RUNTIME_KNOWLEDGE),
-    drizzle
-      .select({ content: schema.personality.content })
-      .from(schema.personality)
-      .where(eq(schema.personality.agentId, agentId))
-      .limit(1),
-  ]);
+  const [agentRows, directives, knowledge, personalityRows] = await drizzle.transaction((tx) =>
+    Promise.all([
+      tx.select().from(schema.agents).where(eq(schema.agents.id, agentId)).limit(1),
+      tx
+        .select({ content: schema.directives.content })
+        .from(schema.directives)
+        .where(eq(schema.directives.agentId, agentId))
+        .orderBy(desc(schema.directives.priority))
+        .limit(MAX_RUNTIME_DIRECTIVES),
+      tx
+        .select({ content: schema.knowledge.content })
+        .from(schema.knowledge)
+        .where(eq(schema.knowledge.agentId, agentId))
+        .orderBy(desc(schema.knowledge.createdAt))
+        .limit(MAX_RUNTIME_KNOWLEDGE),
+      tx
+        .select({ content: schema.personality.content })
+        .from(schema.personality)
+        .where(eq(schema.personality.agentId, agentId))
+        .limit(1),
+    ]),
+  );
   const configured = agentRows[0];
   if (!configured) throw new Error("Agent not found for Vapi assistant request");
 
@@ -220,11 +222,15 @@ export async function buildVapiAssistant({
     ? buildVapiServerConfig(`${appUrl}/api/vapi-webhook?agentId=${encodeURIComponent(agentId)}`)
     : undefined;
 
-  // TCPA (FCC 24-17) requires the AI/automated voice + responsible entity to be
-  // disclosed at the START of the call. The system-prompt guardrail can't guarantee
-  // that, so for `tcpa` mode we prepend a spoken disclosure to whatever opening the
-  // agent would otherwise use. Empty string for every other mode (no behavior change).
-  const disclosurePrefix = complianceFirstMessagePrefix(configured.complianceMode, configured.name);
+  // Spoken disclosure is part of the actual first message, not only a prompt
+  // instruction: every outbound AI call identifies the automation and responsible
+  // business, and every recorded call receives a recording notice.
+  const recordingEnabled = configured.complianceMode !== "hipaa";
+  const disclosurePrefix = complianceFirstMessagePrefix(
+    configured.complianceMode,
+    userSettings?.businessName || configured.name,
+    { outboundAiCall: isOutbound, recordingEnabled },
+  );
   return {
     name: configured.name,
     firstMessage:
@@ -267,7 +273,7 @@ export async function buildVapiAssistant({
     numWordsToInterruptAssistant: latency.numWordsToInterruptAssistant,
     backgroundDenoisingEnabled: false,
     backchannelingEnabled: true,
-    recordingEnabled: configured.complianceMode !== "hipaa",
+    recordingEnabled,
     serverMessages: [
       "end-of-call-report",
       "status-update",

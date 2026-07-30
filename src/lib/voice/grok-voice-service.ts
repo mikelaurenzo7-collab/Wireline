@@ -212,44 +212,46 @@ function buildDraftInstructions(agentName?: string | null): string {
 }
 
 async function loadAgentRuntime(agentId: string, userId: string) {
-  const [agents, personalities, directives, knowledge] = await Promise.all([
-    drizzle
-      .select({
-        id: schema.agents.id,
-        userId: schema.agents.userId,
-        name: schema.agents.name,
-        role: schema.agents.role,
-        firstMessage: schema.agents.firstMessage,
-        personalityVibe: schema.agents.personalityVibe,
-        systemPromptOverride: schema.agents.systemPromptOverride,
-        complianceMode: schema.agents.complianceMode,
-        disallowedTopics: schema.agents.disallowedTopics,
-        escalationKeywords: schema.agents.escalationKeywords,
-        escalationPhone: schema.agents.escalationPhone,
-        escalationEmail: schema.agents.escalationEmail,
-        businessVariables: schema.agents.businessVariables,
-      })
-      .from(schema.agents)
-      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
-      .limit(1),
-    drizzle
-      .select({ content: schema.personality.content })
-      .from(schema.personality)
-      .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)))
-      .limit(1),
-    drizzle
-      .select({ content: schema.directives.content })
-      .from(schema.directives)
-      .where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId)))
-      .orderBy(desc(schema.directives.priority))
-      .limit(40),
-    drizzle
-      .select({ content: schema.knowledge.content })
-      .from(schema.knowledge)
-      .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
-      .orderBy(desc(schema.knowledge.createdAt))
-      .limit(80),
-  ]);
+  const [agents, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
+    Promise.all([
+      tx
+        .select({
+          id: schema.agents.id,
+          userId: schema.agents.userId,
+          name: schema.agents.name,
+          role: schema.agents.role,
+          firstMessage: schema.agents.firstMessage,
+          personalityVibe: schema.agents.personalityVibe,
+          systemPromptOverride: schema.agents.systemPromptOverride,
+          complianceMode: schema.agents.complianceMode,
+          disallowedTopics: schema.agents.disallowedTopics,
+          escalationKeywords: schema.agents.escalationKeywords,
+          escalationPhone: schema.agents.escalationPhone,
+          escalationEmail: schema.agents.escalationEmail,
+          businessVariables: schema.agents.businessVariables,
+        })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+        .limit(1),
+      tx
+        .select({ content: schema.personality.content })
+        .from(schema.personality)
+        .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)))
+        .limit(1),
+      tx
+        .select({ content: schema.directives.content })
+        .from(schema.directives)
+        .where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId)))
+        .orderBy(desc(schema.directives.priority))
+        .limit(40),
+      tx
+        .select({ content: schema.knowledge.content })
+        .from(schema.knowledge)
+        .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
+        .orderBy(desc(schema.knowledge.createdAt))
+        .limit(80),
+    ]),
+  );
   const agent = agents[0] as AgentRow | undefined;
   if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
   return {

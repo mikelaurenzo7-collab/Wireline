@@ -106,7 +106,7 @@ describe("code review hardening contracts", () => {
   it("keeps duplicate end-of-call retries side-effect free after transcript backfill", () => {
     const handlers = read("src/lib/vapi-handlers.ts");
     expect(handlers).toContain(
-      "Duplicate end-of-call-report ignored after retry-safe transcript patch",
+      "Duplicate end-of-call-report ignored after retry-safe evidence patch",
     );
     expect(handlers).toContain(
       "All downstream side effects (usage, customer webhooks,\n    // compliance ledger, enrichment, notifications) are intentionally skipped",
@@ -154,6 +154,9 @@ describe("code review hardening contracts", () => {
     expect(terms).toContain("30-day money-back guarantee");
     expect(auth).toContain('aria-labelledby="auth-terms-label"');
     expect(auth).toContain('<span id="auth-terms-label">');
+    expect(auth).toContain("<AuthShell compact={isSignUp}>");
+    expect(auth).toContain('compact ? "py-3 sm:py-4" : "py-8 sm:py-12"');
+    expect(auth).toContain('isSignUp ? "mt-4 gap-3" : "mt-6 gap-5"');
     expect(marketingCss).toContain(".marketing-footer-above-sticky");
     expect(marketingCss).toContain("env(safe-area-inset-bottom, 0px)");
   });

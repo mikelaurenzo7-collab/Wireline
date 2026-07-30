@@ -160,14 +160,21 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const language = customerAgentLanguage(accountType);
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
   const planLabel = accountType === "business" ? "Business workspace" : "Personal workspace";
-  const orderedAgents = resolvedId
-    ? [
-        ...agents.filter((agent) => agent.id === resolvedId),
-        ...agents.filter((agent) => agent.id !== resolvedId),
-      ]
-    : agents;
+  const matchesPosture = (agent: (typeof agents)[number]) =>
+    accountType === "business" ? Boolean(agent.is_business_agent) : !agent.is_business_agent;
+  // The agent the workspace is currently on always belongs in its own roster.
+  // Scoping the rail to the account posture otherwise dropped the open agent
+  // out of the list whenever its posture differed — the sidebar showed "no
+  // agents" (or someone else) on the very page that agent owns.
+  const activeAgent = resolvedId ? agents.find((agent) => agent.id === resolvedId) : undefined;
+  const postureAgents = agents.filter(
+    (agent) => matchesPosture(agent) || agent.id === activeAgent?.id,
+  );
+  const orderedAgents = activeAgent
+    ? [activeAgent, ...postureAgents.filter((agent) => agent.id !== activeAgent.id)]
+    : postureAgents;
   const visibleAgents = orderedAgents.slice(0, 3);
-  const hiddenAgentCount = Math.max(agents.length - visibleAgents.length, 0);
+  const hiddenAgentCount = Math.max(orderedAgents.length - visibleAgents.length, 0);
   const secondaryRouteParent = desktopNavParentHref(pathname);
 
   return (
@@ -216,7 +223,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
         })}
       </nav>
 
-      {agents.length ? (
+      {postureAgents.length ? (
         <div className="shrink-0 pt-3">
           <div className="flex items-center justify-between px-2.5 pb-2">
             <WiredEyebrow>{language.plural}</WiredEyebrow>
@@ -264,7 +271,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
               >
                 <span>All {language.plural}</span>
                 <span className="font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">
-                  {agents.length}
+                  {postureAgents.length}
                 </span>
               </Link>
             ) : null}

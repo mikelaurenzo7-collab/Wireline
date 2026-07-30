@@ -313,7 +313,10 @@ const StudioWorkroom = forwardRef<
   );
 
   return (
-    <main className="flex h-full min-h-0 flex-col bg-background">
+    <section
+      className="flex h-full min-h-0 flex-col bg-background"
+      aria-label={mode === "test" ? `${agentName} customer test` : `${agentName} workroom`}
+    >
       <header className="shrink-0 border-b border-border/60 bg-card/50 px-4 py-4 sm:px-6">
         <div className="mx-auto flex w-full max-w-3xl items-start justify-between gap-4">
           <div className="min-w-0">
@@ -483,7 +486,7 @@ const StudioWorkroom = forwardRef<
         onClose={() => setShowOutboundDial(false)}
         initialAgentId={agentId}
       />
-    </main>
+    </section>
   );
 });
 

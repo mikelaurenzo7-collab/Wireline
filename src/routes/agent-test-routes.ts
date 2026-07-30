@@ -48,51 +48,53 @@ router.post(
       const history = req.body.history as Array<{ role: "customer" | "employee"; content: string }>;
       if (!isRuntimeAvailable()) throw AppError.fromHttpStatus(503, "AI runtime not configured");
 
-      const [agentRows, personalities, directives, knowledge] = await Promise.all([
-        drizzle
-          .select({
-            id: schema.agents.id,
-            name: schema.agents.name,
-            role: schema.agents.role,
-            archetype: schema.agents.archetype,
-            firstMessage: schema.agents.firstMessage,
-            businessHours: schema.agents.businessHours,
-            timezone: schema.agents.timezone,
-            businessVariables: schema.agents.businessVariables,
-            outOfHoursMessage: schema.agents.outOfHoursMessage,
-            escalationPhone: schema.agents.escalationPhone,
-            escalationEmail: schema.agents.escalationEmail,
-          })
-          .from(schema.agents)
-          .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
-          .limit(1),
-        drizzle
-          .select({ content: schema.personality.content })
-          .from(schema.personality)
-          .where(
-            and(
-              eq(schema.personality.agentId, agentId),
-              eq(schema.personality.userId, req.user.id),
-            ),
-          )
-          .limit(1),
-        drizzle
-          .select({ content: schema.directives.content })
-          .from(schema.directives)
-          .where(
-            and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, req.user.id)),
-          )
-          .orderBy(desc(schema.directives.priority))
-          .limit(30),
-        drizzle
-          .select({ content: schema.knowledge.content })
-          .from(schema.knowledge)
-          .where(
-            and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, req.user.id)),
-          )
-          .orderBy(desc(schema.knowledge.createdAt))
-          .limit(50),
-      ]);
+      const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx
+            .select({
+              id: schema.agents.id,
+              name: schema.agents.name,
+              role: schema.agents.role,
+              archetype: schema.agents.archetype,
+              firstMessage: schema.agents.firstMessage,
+              businessHours: schema.agents.businessHours,
+              timezone: schema.agents.timezone,
+              businessVariables: schema.agents.businessVariables,
+              outOfHoursMessage: schema.agents.outOfHoursMessage,
+              escalationPhone: schema.agents.escalationPhone,
+              escalationEmail: schema.agents.escalationEmail,
+            })
+            .from(schema.agents)
+            .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+            .limit(1),
+          tx
+            .select({ content: schema.personality.content })
+            .from(schema.personality)
+            .where(
+              and(
+                eq(schema.personality.agentId, agentId),
+                eq(schema.personality.userId, req.user.id),
+              ),
+            )
+            .limit(1),
+          tx
+            .select({ content: schema.directives.content })
+            .from(schema.directives)
+            .where(
+              and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, req.user.id)),
+            )
+            .orderBy(desc(schema.directives.priority))
+            .limit(30),
+          tx
+            .select({ content: schema.knowledge.content })
+            .from(schema.knowledge)
+            .where(
+              and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, req.user.id)),
+            )
+            .orderBy(desc(schema.knowledge.createdAt))
+            .limit(50),
+        ]),
+      );
 
       const agent = agentRows[0];
       if (!agent) throw AppError.fromHttpStatus(404, "AI voice agent not found");

@@ -59,7 +59,7 @@ describe("sales trust copy contract", () => {
   it("keeps sales wedge copy aligned with profit-recovery positioning", () => {
     const wedges = read("src/data/vertical-wedges.ts");
     expect(wedges).toContain("Profit Recovery Phone Agents");
-    expect(wedges).toContain("speed-to-lead");
+    expect(wedges).toContain("speed to lead");
     expect(wedges).toContain("Approved actions sync");
     expect(wedges).toContain('import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy"');
     expect(wedges).toContain("a: TRUST_DISCLOSURE_FAQ,");
@@ -76,12 +76,26 @@ describe("sales trust copy contract", () => {
   it("keeps the market comparison dated, sourced, and explicit about unlike products", () => {
     const compare = read("src/pages/Compare.tsx");
 
-    expect(compare).toContain("Verified July 19, 2026");
+    const verified = compare.match(/Verified ([A-Z][a-z]+ \d{1,2}, 20\d{2})/);
+    const checked = compare.match(
+      /Public prices were checked on the linked official pages on ([A-Z][a-z]+ \d{1,2}, 20\d{2})/,
+    );
+    if (!verified || !checked) throw new Error("Market comparison verification date is missing.");
+    expect(verified[1]).toBe(checked[1]);
+    const verifiedAt = Date.parse(`${verified[1]} 00:00:00 UTC`);
+    expect(Number.isFinite(verifiedAt)).toBe(true);
+    const ageMs = Date.now() - verifiedAt;
+    expect(ageMs).toBeGreaterThanOrEqual(-86_400_000);
+    expect(ageMs).toBeLessThanOrEqual(45 * 86_400_000);
     expect(compare).toContain("https://www.goodcall.com/pricing");
     expect(compare).toContain("https://smith.ai/pricing/ai-receptionist");
     expect(compare).toContain("https://www.bland.ai/pricing");
     expect(compare).toContain("https://www.retellai.com/pricing");
-    expect(compare).toContain("not a claim that unlike products are feature-for-feature equivalents");
-    expect(compare).toContain('primaryAction={{ label: "Start free", to: "/signup?plan=personal" }}');
+    expect(compare).toContain(
+      "not a claim that unlike products are feature for feature equivalents",
+    );
+    expect(compare).toContain(
+      'primaryAction={{ label: "Start free", to: "/signup?plan=personal" }}',
+    );
   });
 });

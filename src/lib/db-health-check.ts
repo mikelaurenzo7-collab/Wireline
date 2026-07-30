@@ -8,8 +8,9 @@
  * Or programmatically: await runDatabaseHealthCheck()
  */
 
-import { Pool } from "pg";
+import { Pool, type PoolClient } from "pg";
 import { log } from "./server-context";
+import { resolveDatabaseConnection } from "./database-connection";
 
 export interface HealthCheckResult {
   healthy: boolean;
@@ -45,22 +46,67 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
     },
   };
 
-  const dbUrl = process.env.POSTGRES_URL;
-
-  if (!dbUrl) {
+  let databaseConnection;
+  try {
+    databaseConnection = resolveDatabaseConnection();
+  } catch (error) {
     result.healthy = false;
-    result.issues.push("POSTGRES_URL environment variable not set");
+    result.issues.push(error instanceof Error ? error.message : String(error));
     return result;
   }
 
-  const pool = new Pool({ connectionString: dbUrl });
+  const pool = new Pool({ connectionString: databaseConnection.connectionString });
+  let client: PoolClient | null = null;
 
   try {
-    const client = await pool.connect();
+    client = await pool.connect();
 
-    // 1. Check connection and basic stats
+    // 1. Prove the exact application-selected connection can open a
+    // transaction that is explicitly writable. This is non-mutating, but it
+    // catches real replicas and protects the health result from a stale
+    // session-level read-only default on a reused transaction-pool backend.
+    await client.query("BEGIN");
+    // Establish recovery state first. On a genuine hot standby `SET TRANSACTION
+    // READ WRITE` errors ("cannot set transaction read-write mode during
+    // recovery") and poisons the transaction, so attempting it first threw past
+    // the very diagnostic it exists to produce — and every statement after it —
+    // leaving a generic driver error in the report instead of "in_recovery".
+    const recovery = await client.query("SELECT pg_is_in_recovery() AS in_recovery");
+    const inRecovery = recovery.rows[0]?.in_recovery === true;
+
+    let writableUpgradeError: string | null = null;
+    let transactionReadOnly: string | null = null;
+    try {
+      await client.query("SET TRANSACTION READ WRITE");
+      // Read the mode *after* the upgrade: that is what proves this connection
+      // can carry a write, which is exactly what scopeClientToTenant does on
+      // every checkout. A leaked session-level read-only default is therefore
+      // recoverable and must not be reported as unhealthy on its own.
+      const readiness = await client.query(
+        "SELECT current_setting('transaction_read_only') AS transaction_read_only",
+      );
+      transactionReadOnly = readiness.rows[0]?.transaction_read_only ?? null;
+    } catch (error) {
+      writableUpgradeError = error instanceof Error ? error.message : String(error);
+    }
+    await client.query("ROLLBACK");
+
+    if (inRecovery || writableUpgradeError || transactionReadOnly !== "off") {
+      result.healthy = false;
+      result.issues.push(
+        `Application database connection is not writable (transaction_read_only=${String(transactionReadOnly)}, in_recovery=${String(inRecovery)}${
+          writableUpgradeError ? `, read_write_upgrade_failed=${writableUpgradeError}` : ""
+        })`,
+      );
+    }
+
     const versionResult = await client.query("SELECT version()");
-    log.info("PostgreSQL version", { version: versionResult.rows[0]?.version });
+    log.info("PostgreSQL connection verified", {
+      version: versionResult.rows[0]?.version,
+      source: databaseConnection.source,
+      transactionReadOnly,
+      inRecovery,
+    });
 
     // 2. Check table count
     const tableCountResult = await client.query(`
@@ -312,9 +358,6 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
       );
     }
 
-    client.release();
-    await pool.end();
-
     // Final health determination
     if (result.issues.length > 0) {
       result.healthy = false;
@@ -337,6 +380,9 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
     );
     log.error("Database health check failed", { error });
     return result;
+  } finally {
+    client?.release();
+    await pool.end().catch(() => {});
   }
 }
 

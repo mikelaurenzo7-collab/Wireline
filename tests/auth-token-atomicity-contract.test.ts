@@ -47,4 +47,26 @@ describe("account-recovery tokens are claimed atomically", () => {
     expect(userWrite).toBeGreaterThan(claim);
     expect(block).not.toContain(".select()\n      .from(schema.passwordResetTokens)");
   });
+
+  it("removes expired recovery credentials during recurring retention work", () => {
+    const worker = read("src/lib/job-worker-base.ts");
+    const block = functionBlock(
+      worker,
+      'if (job.type === "purge_old_data")',
+      'if (job.type === "purge_deleted_account")',
+    );
+
+    expect(block).toContain(".delete(schema.emailVerificationTokens)");
+    expect(block).toContain("eq(schema.emailVerificationTokens.userId, p.user_id)");
+    expect(block).toContain("lt(schema.emailVerificationTokens.expiresAt, expiredBefore)");
+    expect(block).toContain(".delete(schema.passwordResetTokens)");
+    expect(block).toContain("eq(schema.passwordResetTokens.userId, p.user_id)");
+    expect(block).toContain("lt(schema.passwordResetTokens.expiresAt, expiredBefore)");
+
+    // Maintenance uses one tenant-scoped pool client at a time.
+    expect(block.indexOf(".delete(schema.emailVerificationTokens)")).toBeLessThan(
+      block.indexOf(".delete(schema.passwordResetTokens)"),
+    );
+    expect(block).not.toContain("Promise.all");
+  });
 });

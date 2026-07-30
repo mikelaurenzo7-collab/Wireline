@@ -37,6 +37,7 @@ export interface AssistantAgentTemplate {
   emailSignature?: string;
   websiteUrl?: string;
   wirelinePersonaId?: WirelinePersonaId;
+  isBusinessAgent?: boolean;
 }
 
 /** Vertical + specialty agents beyond the 6 internal Wireline personas. */
@@ -144,6 +145,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     archetype: "Executive Assistant",
     firstMessage: "Hi, this is your agent. How can I help with your schedule today?",
     personalityVibe: "warm",
+    isBusinessAgent: false,
   },
 ];
 
@@ -379,6 +381,7 @@ async function upsertAgent(
     websiteUrl: template.websiteUrl,
     businessVariables,
     emailAutoRespond: template.channel === "email",
+    isBusinessAgent: template.isBusinessAgent ?? template.role !== "personal_assistant",
   };
 
   if (existing) {
@@ -454,6 +457,11 @@ export async function seedFounderAssistant(userId: string): Promise<FounderAssis
 
   for (const row of ownerAgents) {
     if (!report.agentIds.includes(row.id)) {
+      // Preserve the posture the owner already chose. Role is only a default for
+      // the managed seed templates above; reclassifying every existing agent from
+      // its role silently moved a user-created personal agent (role "scheduler",
+      // "sales", or anything custom) into the business workspace, where the
+      // posture-filtered surfaces then hid it from the workspace it belonged to.
       await drizzle
         .update(schema.agents)
         .set({ enabledTools: ALL_AGENT_TOOLS })

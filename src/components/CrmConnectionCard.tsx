@@ -483,6 +483,7 @@ export default function CrmConnectionCard() {
                             rel="noopener noreferrer"
                             className="p-1.5 rounded-md hover:bg-white/10 text-muted hover:text-foreground transition-colors"
                             title={`Open ${label}`}
+                            aria-label={`Open ${label}`}
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
@@ -492,6 +493,7 @@ export default function CrmConnectionCard() {
                             to="/connections/salesforce"
                             className="p-1.5 rounded-md hover:bg-white/10 text-muted hover:text-foreground transition-colors"
                             title="Configure"
+                            aria-label="Configure Salesforce"
                           >
                             <Settings className="w-3.5 h-3.5" />
                           </Link>
@@ -504,6 +506,7 @@ export default function CrmConnectionCard() {
                           onClick={disconnect(key)}
                           className="h-8 w-8 rounded-md text-muted hover:text-rose-500 hover:bg-rose-500/10"
                           title="Disconnect"
+                          aria-label={`Disconnect ${label}`}
                         >
                           <Unlink className="w-3.5 h-3.5" />
                         </ShadButton>
@@ -516,6 +519,7 @@ export default function CrmConnectionCard() {
                         disableAnimations
                         onClick={connect(key)}
                         disabled={isConnecting}
+                        aria-label={isConnecting ? `Connecting ${label}` : `Connect ${label}`}
                         className={cn(
                           "rounded-md wl-micro-meta font-medium",
                           CONNECTED_STYLES.connect,

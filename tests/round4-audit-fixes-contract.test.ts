@@ -57,11 +57,35 @@ describe("round-4 audit fix contracts", () => {
   });
 
   it("HIPAA agents never record on either call direction", () => {
-    expect(read("src/lib/vapi-client.ts")).toContain(
-      'recordingEnabled: agentConfig.complianceMode !== "hipaa"',
+    const client = read("src/lib/vapi-client.ts");
+    const factory = read("src/lib/vapi-assistant-factory-v2.ts");
+    expect(client).toContain(
+      'const recordingEnabled = agentConfig.complianceMode !== "hipaa";',
     );
-    expect(read("src/lib/vapi-assistant-factory-v2.ts")).toContain(
-      'recordingEnabled: configured.complianceMode !== "hipaa"',
+    expect(factory).toContain(
+      'const recordingEnabled = configured.complianceMode !== "hipaa";',
+    );
+    expect(client).toContain("    recordingEnabled,");
+    expect(factory).toContain("    recordingEnabled,");
+  });
+
+  it("actual Vapi openings carry outbound AI identity and recording disclosures", () => {
+    const client = read("src/lib/vapi-client.ts");
+    const factory = read("src/lib/vapi-assistant-factory-v2.ts");
+    expect(client).toContain("complianceFirstMessagePrefix(");
+    expect(client).toContain("settings?.businessName || agentConfig.name");
+    expect(client).toContain("outboundAiCall: true");
+    expect(client).toContain("firstMessage: disclosurePrefix + openingMessage");
+    expect(factory).toContain("userSettings?.businessName || configured.name");
+    expect(factory).toContain("outboundAiCall: isOutbound");
+  });
+
+  it("missing transcripts are logged as unverifiable, never as played", () => {
+    const handlers = read("src/lib/vapi-handlers.ts");
+    expect(handlers).toContain('? "disclosure_not_detected"');
+    expect(handlers).toContain(': "disclosure_unverifiable"');
+    expect(handlers).not.toContain(
+      'disclosure.found || !hasTranscript ? "disclosure_played"',
     );
   });
 

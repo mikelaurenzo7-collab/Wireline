@@ -38,31 +38,39 @@ router.get(
         return;
       }
 
-      const [[triageResult], [emailResult], [outboundResult], liveSignals] = await Promise.all([
-        drizzle
-          .select({ count: sql`count(*)` })
-          .from(schema.followUpTasks)
-          .where(
-            and(
-              eq(schema.followUpTasks.userId, userId),
-              eq(schema.followUpTasks.status, "pending"),
-            ),
-          ),
-        drizzle
-          .select({ count: sql`count(*)` })
-          .from(schema.emailThreads)
-          .where(and(eq(schema.emailThreads.userId, userId), eq(schema.emailThreads.read, false))),
-        drizzle
-          .select({ count: sql`count(*)` })
-          .from(schema.outboundLeads)
-          .where(
-            and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "Queued")),
-          ),
-        drizzle
-          .select({ label: schema.signalPresence.label })
-          .from(schema.signalPresence)
-          .where(eq(schema.signalPresence.userId, userId)),
-      ]);
+      const [[triageResult], [emailResult], [outboundResult], liveSignals] =
+        await drizzle.transaction((tx) =>
+          Promise.all([
+            tx
+              .select({ count: sql`count(*)` })
+              .from(schema.followUpTasks)
+              .where(
+                and(
+                  eq(schema.followUpTasks.userId, userId),
+                  eq(schema.followUpTasks.status, "pending"),
+                ),
+              ),
+            tx
+              .select({ count: sql`count(*)` })
+              .from(schema.emailThreads)
+              .where(
+                and(eq(schema.emailThreads.userId, userId), eq(schema.emailThreads.read, false)),
+              ),
+            tx
+              .select({ count: sql`count(*)` })
+              .from(schema.outboundLeads)
+              .where(
+                and(
+                  eq(schema.outboundLeads.userId, userId),
+                  eq(schema.outboundLeads.status, "Queued"),
+                ),
+              ),
+            tx
+              .select({ label: schema.signalPresence.label })
+              .from(schema.signalPresence)
+              .where(eq(schema.signalPresence.userId, userId)),
+          ]),
+        );
 
       const triageCount = Number(triageResult.count);
       const emailCount = Number(emailResult.count);
@@ -190,84 +198,86 @@ router.get(
         hotEmailsResult,
         recentApptsResult,
         prevLogsResult,
-      ] = await Promise.all([
-        drizzle
-          .select({ count: sql`count(*)` })
-          .from(schema.appointments)
-          .where(eq(schema.appointments.userId, userId)),
-        drizzle
-          .select({ count: sql`count(*)` })
-          .from(schema.outboundLeads)
-          .where(eq(schema.outboundLeads.userId, userId)),
-        drizzle
-          .select({
-            id: schema.callLogs.id,
-            cost: schema.callLogs.cost,
-            durationSeconds: schema.callLogs.durationSeconds,
-            direction: schema.callLogs.direction,
-            createdAt: schema.callLogs.createdAt,
-            leadScore: schema.callLogs.leadScore,
-            intentLabel: schema.callLogs.intentLabel,
-            summary: schema.callLogs.summary,
-            customerNumber: schema.callLogs.customerNumber,
-            sentiment: schema.callLogs.sentiment,
-            coachingNote: schema.callLogs.coachingNote,
-          })
-          .from(schema.callLogs)
-          .where(eq(schema.callLogs.userId, userId))
-          .orderBy(desc(schema.callLogs.createdAt))
-          .limit(200),
-        drizzle
-          .select({
-            id: schema.agents.id,
-            name: schema.agents.name,
-            channel: schema.agents.channel,
-            role: schema.agents.role,
-          })
-          .from(schema.agents)
-          .where(eq(schema.agents.userId, userId))
-          .limit(500),
-        drizzle
-          .select({
-            id: schema.emailThreads.id,
-            customerEmail: schema.emailThreads.customerEmail,
-            leadScore: schema.emailThreads.leadScore,
-            intentLabel: schema.emailThreads.intentLabel,
-            summary: schema.emailThreads.summary,
-            createdAt: schema.emailThreads.createdAt,
-          })
-          .from(schema.emailThreads)
-          .where(
-            and(eq(schema.emailThreads.userId, userId), gte(schema.emailThreads.leadScore, 75)),
-          )
-          .orderBy(desc(schema.emailThreads.createdAt))
-          .limit(5),
-        drizzle
-          .select({ createdAt: schema.appointments.createdAt })
-          .from(schema.appointments)
-          .where(
-            and(
-              eq(schema.appointments.userId, userId),
-              gte(schema.appointments.createdAt, sevenDaysAgo),
+      ] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx
+            .select({ count: sql`count(*)` })
+            .from(schema.appointments)
+            .where(eq(schema.appointments.userId, userId)),
+          tx
+            .select({ count: sql`count(*)` })
+            .from(schema.outboundLeads)
+            .where(eq(schema.outboundLeads.userId, userId)),
+          tx
+            .select({
+              id: schema.callLogs.id,
+              cost: schema.callLogs.cost,
+              durationSeconds: schema.callLogs.durationSeconds,
+              direction: schema.callLogs.direction,
+              createdAt: schema.callLogs.createdAt,
+              leadScore: schema.callLogs.leadScore,
+              intentLabel: schema.callLogs.intentLabel,
+              summary: schema.callLogs.summary,
+              customerNumber: schema.callLogs.customerNumber,
+              sentiment: schema.callLogs.sentiment,
+              coachingNote: schema.callLogs.coachingNote,
+            })
+            .from(schema.callLogs)
+            .where(eq(schema.callLogs.userId, userId))
+            .orderBy(desc(schema.callLogs.createdAt))
+            .limit(200),
+          tx
+            .select({
+              id: schema.agents.id,
+              name: schema.agents.name,
+              channel: schema.agents.channel,
+              role: schema.agents.role,
+            })
+            .from(schema.agents)
+            .where(eq(schema.agents.userId, userId))
+            .limit(500),
+          tx
+            .select({
+              id: schema.emailThreads.id,
+              customerEmail: schema.emailThreads.customerEmail,
+              leadScore: schema.emailThreads.leadScore,
+              intentLabel: schema.emailThreads.intentLabel,
+              summary: schema.emailThreads.summary,
+              createdAt: schema.emailThreads.createdAt,
+            })
+            .from(schema.emailThreads)
+            .where(
+              and(eq(schema.emailThreads.userId, userId), gte(schema.emailThreads.leadScore, 75)),
+            )
+            .orderBy(desc(schema.emailThreads.createdAt))
+            .limit(5),
+          tx
+            .select({ createdAt: schema.appointments.createdAt })
+            .from(schema.appointments)
+            .where(
+              and(
+                eq(schema.appointments.userId, userId),
+                gte(schema.appointments.createdAt, sevenDaysAgo),
+              ),
             ),
-          ),
-        drizzle
-          .select({
-            id: schema.callLogs.id,
-            cost: schema.callLogs.cost,
-            leadScore: schema.callLogs.leadScore,
-            createdAt: schema.callLogs.createdAt,
-          })
-          .from(schema.callLogs)
-          .where(
-            and(
-              eq(schema.callLogs.userId, userId),
-              gte(schema.callLogs.createdAt, fourteenDaysAgo),
-              lt(schema.callLogs.createdAt, sevenDaysAgo),
-            ),
-          )
-          .limit(500),
-      ]);
+          tx
+            .select({
+              id: schema.callLogs.id,
+              cost: schema.callLogs.cost,
+              leadScore: schema.callLogs.leadScore,
+              createdAt: schema.callLogs.createdAt,
+            })
+            .from(schema.callLogs)
+            .where(
+              and(
+                eq(schema.callLogs.userId, userId),
+                gte(schema.callLogs.createdAt, fourteenDaysAgo),
+                lt(schema.callLogs.createdAt, sevenDaysAgo),
+              ),
+            )
+            .limit(500),
+        ]),
+      );
 
       const totalAppointments = Number(apptCountResult[0]?.count ?? 0);
       const totalLeads = Number(leadsCountResult[0]?.count ?? 0);
@@ -337,33 +347,42 @@ router.get(
       const userId = req.user.id;
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-      const [calls, leads, agents] = await Promise.all([
-        drizzle
-          .select({
-            duration_seconds: schema.callLogs.durationSeconds,
-            lead_score: schema.callLogs.leadScore,
-            intent_label: schema.callLogs.intentLabel,
-            cost: schema.callLogs.cost,
-            qa_score: schema.callLogs.qaScore,
-          })
-          .from(schema.callLogs)
-          .where(
-            and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, thirtyDaysAgo)),
-          ),
-        drizzle
-          .select({ status: schema.outboundLeads.status })
-          .from(schema.outboundLeads)
-          .where(
-            and(
-              eq(schema.outboundLeads.userId, userId),
-              gte(schema.outboundLeads.createdAt, thirtyDaysAgo),
+      // One pooled client for the whole fan-out. Every root Drizzle query
+      // checks out its own tenant-scoped client and the serverless pool is
+      // capped at five, so a bare Promise.all here would put two concurrent
+      // dashboard mounts over the cap and fail on the 5s checkout timeout.
+      const [calls, leads, agents] = await drizzle.transaction((tx) =>
+        Promise.all([
+          tx
+            .select({
+              duration_seconds: schema.callLogs.durationSeconds,
+              lead_score: schema.callLogs.leadScore,
+              intent_label: schema.callLogs.intentLabel,
+              cost: schema.callLogs.cost,
+              qa_score: schema.callLogs.qaScore,
+            })
+            .from(schema.callLogs)
+            .where(
+              and(
+                eq(schema.callLogs.userId, userId),
+                gte(schema.callLogs.createdAt, thirtyDaysAgo),
+              ),
             ),
-          ),
-        drizzle
-          .select({ id: schema.agents.id })
-          .from(schema.agents)
-          .where(eq(schema.agents.userId, userId)),
-      ]);
+          tx
+            .select({ status: schema.outboundLeads.status })
+            .from(schema.outboundLeads)
+            .where(
+              and(
+                eq(schema.outboundLeads.userId, userId),
+                gte(schema.outboundLeads.createdAt, thirtyDaysAgo),
+              ),
+            ),
+          tx
+            .select({ id: schema.agents.id })
+            .from(schema.agents)
+            .where(eq(schema.agents.userId, userId)),
+        ]),
+      );
 
       const result = computeDashboardBenchmarks({
         calls: calls as any,
@@ -516,6 +535,10 @@ router.post(
       invalidateDashboard(req.user.id);
       res.json({ appointment: data });
     } catch (error: any) {
+      // Deliberate 400/404 validation errors are raised inside this try; without
+      // the rethrow they were rewritten as an opaque 500 and the caller lost the
+      // reason their request was rejected.
+      if (error instanceof AppError) throw error;
       log.error("Failed to create appointment", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to create appointment");
     }
@@ -596,6 +619,7 @@ router.patch(
       invalidateDashboard(req.user.id);
       res.json({ appointment: data });
     } catch (error: any) {
+      if (error instanceof AppError) throw error;
       log.error("Failed to update appointment", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to update appointment");
     }
@@ -619,6 +643,7 @@ router.delete(
       invalidateDashboard(req.user.id);
       res.json({ success: true });
     } catch (error: any) {
+      if (error instanceof AppError) throw error;
       log.error("Failed to delete appointment", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to delete appointment");
     }

@@ -1,0 +1,561 @@
+/*
+ * Wireline Prestige Polish
+ * --------------------------------------------------------------------------
+ * Terminal presentation layer for the existing Letterpress system. This file
+ * deliberately derives from semantic tokens: no parallel palette, no glass
+ * novelty, and no workflow changes. The goal is quieter hierarchy, more exact
+ * edges, and controlled depth across public, auth, and authenticated surfaces.
+ */
+
+/* Defined on :root, not .wl-ui-caps. Radix portals (dropdown menus, context
+   menus, dialogs) mount into document.body, outside the app shell, so scoping
+   these to the shell left `[role="menu"]` below resolving against undefined
+   custom properties: background and box-shadow dropped to their initial values
+   and every portalled menu rendered transparent with no elevation. Consumers
+   stay scoped; only the definitions move. */
+:root {
+  --wl-prestige-hairline: color-mix(
+    in srgb,
+    var(--wireline-color-text-primary) 7%,
+    var(--wireline-color-border-default)
+  );
+  --wl-prestige-edge: color-mix(
+    in srgb,
+    var(--wireline-color-text-primary) 11%,
+    var(--wireline-color-border-default)
+  );
+  --wl-prestige-surface: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wireline-color-surface-default) 96%, white 4%) 0%,
+    var(--wireline-color-surface-default) 100%
+  );
+  --wl-prestige-surface-raised: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wireline-color-surface-raised) 95%, white 5%) 0%,
+    color-mix(in srgb, var(--wireline-color-surface-default) 97%, black 3%) 100%
+  );
+  --wl-prestige-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 5%, transparent),
+    0 22px 54px -38px rgba(0, 0, 0, 0.82);
+  --wl-prestige-shadow-raised:
+    inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 7%, transparent),
+    0 30px 76px -46px rgba(0, 0, 0, 0.9);
+}
+
+body {
+  background-image:
+    radial-gradient(
+      circle at 50% -18rem,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 7%, transparent),
+      transparent 42rem
+    ),
+    linear-gradient(var(--wireline-color-canvas-default), var(--wireline-color-canvas-default));
+}
+
+/* Public presentation ------------------------------------------------------ */
+.marketing-surface {
+  background:
+    radial-gradient(
+      circle at 18% 0%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 4%, transparent),
+      transparent 32rem
+    ),
+    radial-gradient(
+      circle at 82% 6%,
+      color-mix(in srgb, var(--wireline-color-action-secondary-default) 3%, transparent),
+      transparent 30rem
+    ),
+    var(--wireline-color-canvas-default);
+}
+
+.marketing-surface > header {
+  border-color: var(--wl-prestige-hairline);
+  background: color-mix(in srgb, var(--wireline-color-canvas-default) 92%, transparent);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 3%, transparent),
+    0 16px 36px -30px rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px) saturate(115%);
+}
+
+.marketing-surface > header::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 18%, transparent) 24%,
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 22%, transparent) 50%,
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 18%, transparent) 76%,
+    transparent
+  );
+}
+
+.marketing-surface .marketing-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  background:
+    radial-gradient(
+      ellipse 62% 44% at 50% 12%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 8%, transparent),
+      transparent 72%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--wireline-color-canvas-warmer) 28%, transparent),
+      transparent 68%
+    );
+}
+
+.marketing-surface .marketing-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(
+      90deg,
+      transparent calc(50% - 0.5px),
+      color-mix(in srgb, var(--wireline-color-text-primary) 3.5%, transparent) 50%,
+      transparent calc(50% + 0.5px)
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--wireline-color-text-primary) 2.5%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 100% 100%, 100% 96px;
+  mask-image: linear-gradient(to bottom, black, transparent 88%);
+  opacity: 0.75;
+}
+
+.marketing-surface .marketing-hero__content > .inline-flex:first-child {
+  border-color: var(--wl-prestige-edge);
+  background: color-mix(in srgb, var(--wireline-color-surface-default) 88%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 5%, transparent),
+    0 14px 34px -30px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(14px);
+}
+
+.marketing-surface .marketing-hero__title {
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 10%, transparent);
+}
+
+.marketing-surface .marketing-hero__description {
+  color: color-mix(
+    in srgb,
+    var(--wireline-color-text-secondary) 94%,
+    var(--wireline-color-text-primary) 6%
+  );
+}
+
+.marketing-surface :where(.marketing-btn-primary, .marketing-btn-secondary) {
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  transition:
+    transform var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard),
+    border-color var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard),
+    background-color var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard),
+    box-shadow var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard);
+}
+
+.marketing-surface .marketing-btn-primary {
+  border-color: color-mix(in srgb, var(--wireline-color-action-primary-hover) 40%, transparent);
+  background: linear-gradient(
+    180deg,
+    var(--wireline-color-action-primary-hover),
+    var(--wireline-color-action-primary-default) 56%,
+    var(--wireline-color-action-primary-pressed)
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    0 12px 28px -18px color-mix(in srgb, var(--wireline-color-action-primary-default) 72%, transparent);
+}
+
+.marketing-surface .marketing-btn-secondary {
+  border-color: var(--wl-prestige-edge);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wireline-color-surface-raised) 82%, transparent),
+    color-mix(in srgb, var(--wireline-color-surface-default) 92%, transparent)
+  );
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 5%, transparent);
+}
+
+.marketing-surface :where(.marketing-btn-primary, .marketing-btn-secondary):hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.marketing-surface :where(.marketing-btn-primary, .marketing-btn-secondary):active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.marketing-surface .marketing-hero__content > ul > li {
+  border-color: var(--wl-prestige-hairline);
+  background: color-mix(in srgb, var(--wireline-color-surface-default) 82%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 3%, transparent);
+}
+
+.marketing-surface .marketing-hero__experience {
+  border-color: var(--wl-prestige-edge);
+  background: var(--wl-prestige-surface-raised);
+  box-shadow: var(--wl-prestige-shadow-raised);
+}
+
+.marketing-surface .wl-public-section {
+  border-color: var(--wl-prestige-hairline);
+}
+
+.marketing-surface :where(article.wl-paper, .wl-stitch-card) {
+  border-color: var(--wl-prestige-hairline);
+  background: var(--wl-prestige-surface);
+  box-shadow: var(--wl-prestige-shadow);
+}
+
+.marketing-surface article.wl-paper {
+  transition:
+    transform var(--wireline-motion-duration-standard) var(--wireline-motion-easing-emphasized),
+    border-color var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard),
+    box-shadow var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard);
+}
+
+.marketing-surface article.wl-paper:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 24%,
+    var(--wireline-color-border-default)
+  );
+  box-shadow: var(--wl-prestige-shadow-raised);
+}
+
+.marketing-surface article.wl-paper.ring-2 {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 56%,
+    var(--wireline-color-border-default)
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 8%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--wireline-color-action-primary-default) 15%, transparent),
+    0 34px 82px -48px color-mix(in srgb, var(--wireline-color-action-primary-default) 48%, black);
+}
+
+.marketing-surface .wl-featured-wire {
+  border: 1px solid var(--wl-prestige-edge);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 6%, transparent),
+    0 36px 86px -54px rgba(0, 0, 0, 0.9);
+}
+
+/* Authentication ---------------------------------------------------------- */
+.wl-stitch-auth-shell {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 9%, transparent),
+      transparent 32rem
+    ),
+    radial-gradient(
+      circle at 8% 100%,
+      color-mix(in srgb, var(--wireline-color-action-secondary-default) 4%, transparent),
+      transparent 28rem
+    ),
+    var(--wireline-color-canvas-default);
+}
+
+.wl-stitch-auth-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: linear-gradient(
+    90deg,
+    transparent calc(50% - 0.5px),
+    color-mix(in srgb, var(--wireline-color-text-primary) 3%, transparent) 50%,
+    transparent calc(50% + 0.5px)
+  );
+}
+
+.wl-auth-entry-mark {
+  color: var(--wireline-color-text-primary);
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 10%, transparent);
+}
+
+.wl-stitch-auth-card {
+  border-color: var(--wl-prestige-edge);
+  background: var(--wl-prestige-surface-raised);
+  box-shadow: var(--wl-prestige-shadow-raised);
+}
+
+.wl-auth-tabs {
+  border-radius: 0.875rem;
+  border: 1px solid var(--wl-prestige-hairline);
+  background: color-mix(in srgb, var(--wireline-color-surface-subtle) 82%, transparent);
+}
+
+.wl-stitch-oauth-btn,
+.wl-stitch-input,
+.wl-auth-workspace-selector button,
+.wl-auth-terms {
+  border-color: var(--wl-prestige-hairline);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 3.5%, transparent);
+}
+
+.wl-stitch-oauth-btn:hover:not(:disabled),
+.wl-auth-workspace-selector button:hover:not(:disabled) {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 28%,
+    var(--wireline-color-border-default)
+  );
+  background: color-mix(in srgb, var(--wireline-color-surface-raised) 76%, transparent);
+}
+
+.wl-stitch-input:focus {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 62%,
+    var(--wireline-color-border-default)
+  );
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--wireline-color-action-primary-default) 12%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 4%, transparent);
+}
+
+.wl-auth-form button[type="submit"] {
+  border: 1px solid color-mix(in srgb, var(--wireline-color-action-primary-hover) 40%, transparent);
+  background: linear-gradient(
+    180deg,
+    var(--wireline-color-action-primary-hover),
+    var(--wireline-color-action-primary-default) 58%,
+    var(--wireline-color-action-primary-pressed)
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 12px 28px -18px color-mix(in srgb, var(--wireline-color-action-primary-default) 62%, transparent);
+}
+
+/* Authenticated workspace ------------------------------------------------- */
+.wl-workspace-frame > aside {
+  position: relative;
+  border-color: var(--wl-prestige-hairline);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--wireline-color-surface-default) 96%, white 4%),
+      color-mix(in srgb, var(--wireline-color-surface-default) 98%, black 2%)
+    );
+  box-shadow: 18px 0 48px -42px rgba(0, 0, 0, 0.92);
+}
+
+.wl-workspace-frame > aside::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -1px;
+  bottom: 0;
+  width: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 20%, transparent),
+    var(--wl-prestige-hairline) 20%,
+    var(--wl-prestige-hairline) 82%,
+    transparent
+  );
+}
+
+.wl-workspace-frame > aside button[aria-label="Open command palette"] {
+  border-color: var(--wl-prestige-hairline);
+  background: color-mix(in srgb, var(--wireline-color-surface-subtle) 78%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 3%, transparent);
+}
+
+.wl-rail-link {
+  position: relative;
+  min-height: 2.5rem;
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+  transition:
+    color var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard),
+    border-color var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard),
+    background-color var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard),
+    transform var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard);
+}
+
+.wl-rail-link:hover {
+  transform: translateX(1px);
+  border-color: color-mix(in srgb, var(--wireline-color-text-primary) 5%, transparent);
+}
+
+.wl-rail-link[data-wireline-nav-active="true"] {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 20%,
+    var(--wireline-color-border-default)
+  );
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 12%, transparent),
+    color-mix(in srgb, var(--wireline-color-surface-raised) 38%, transparent)
+  );
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 4%, transparent);
+}
+
+.wl-rail-link[data-wireline-nav-active="true"]::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -0.3rem;
+  width: 2px;
+  height: 1.15rem;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  background: linear-gradient(
+    180deg,
+    var(--wireline-color-action-secondary-default),
+    var(--wireline-color-action-primary-default)
+  );
+  box-shadow: 0 0 10px color-mix(in srgb, var(--wireline-color-action-primary-default) 28%, transparent);
+}
+
+.wl-workspace-main {
+  background:
+    radial-gradient(
+      circle at 50% -10rem,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 3.5%, transparent),
+      transparent 34rem
+    );
+}
+
+.wl-workspace-main > .relative.mb-4.pb-3,
+.wl-workspace-main > .relative.lg\:mb-5 {
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.wl-workspace-main > .relative.mb-4.pb-3 > .absolute,
+.wl-workspace-main > .relative.lg\:mb-5 > .absolute {
+  border-color: var(--wl-prestige-hairline);
+}
+
+/* Skip surfaces that already carry an explicit background utility. This rule is
+   unlayered, so it outranks Tailwind's layered utilities regardless of order,
+   and it was flattening state-tinted cards — the failed-payment and past-due
+   billing cards lost their error/warning surface and read as ordinary cards. */
+.wl-workspace-content
+  :where(.studio-card, .wl-paper, .wl-paper-elevated, .wl-metric-tile):not([class*="bg-"]) {
+  border-color: var(--wl-prestige-hairline);
+  background: var(--wl-prestige-surface);
+  box-shadow: var(--wl-prestige-shadow);
+}
+
+.wl-workspace-content :where(.studio-card, .wl-paper, .wl-paper-elevated, .wl-metric-tile):hover {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-text-primary) 9%,
+    var(--wireline-color-border-default)
+  );
+}
+
+.wl-workspace-content :where(input, textarea, select):not([type="checkbox"]):not([type="radio"]) {
+  border-color: var(--wl-prestige-hairline);
+  background: color-mix(in srgb, var(--wireline-color-surface-recessed) 82%, transparent);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+.wl-workspace-content :where(input, textarea, select):focus-visible {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 58%,
+    var(--wireline-color-border-default)
+  );
+}
+
+/* `collapse`, not `separate`: in the separated borders model a border set on a
+   `<tr>` is never painted, which silently erased the row separators on
+   workspace tables that draw them that way (e.g. the campaign attribution
+   table's `border-t border-border` rows). */
+.wl-workspace-content table {
+  border-collapse: collapse;
+}
+
+.wl-workspace-content thead {
+  background: color-mix(in srgb, var(--wireline-color-surface-subtle) 72%, transparent);
+}
+
+.wl-workspace-content tbody tr {
+  transition: background-color var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard);
+}
+
+.wl-workspace-content tbody tr:hover {
+  background: color-mix(in srgb, var(--wireline-color-surface-raised) 34%, transparent);
+}
+
+/* Overlays ---------------------------------------------------------------- */
+[data-slot="dialog-content"],
+[data-slot="popover-content"],
+[role="menu"] {
+  border-color: var(--wl-prestige-edge);
+  background: var(--wl-prestige-surface-raised);
+  box-shadow: var(--wl-prestige-shadow-raised);
+}
+
+/* Light appearance keeps the same hierarchy without dark-mode shadow weight. */
+:root.light {
+  --wl-prestige-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    0 20px 48px -38px rgba(23, 20, 38, 0.24);
+  --wl-prestige-shadow-raised:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 28px 64px -42px rgba(23, 20, 38, 0.3);
+}
+
+@media (max-width: 1023px) {
+  .wl-workspace-shell > nav[aria-label="Workspace navigation"] {
+    border-color: var(--wl-prestige-edge);
+    background: color-mix(in srgb, var(--wireline-color-canvas-default) 92%, transparent);
+    box-shadow: 0 -18px 40px -34px rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(20px) saturate(115%);
+  }
+}
+
+@media (max-width: 639px) {
+  .marketing-surface .marketing-hero::before {
+    background-size: 100% 100%, 100% 72px;
+    opacity: 0.52;
+  }
+
+  .marketing-surface article.wl-paper:hover,
+  .wl-rail-link:hover {
+    transform: none;
+  }
+
+  .wl-stitch-auth-card {
+    box-shadow: var(--wl-prestige-shadow);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-surface article.wl-paper,
+  .marketing-surface :where(.marketing-btn-primary, .marketing-btn-secondary),
+  .wl-rail-link {
+    transition: none;
+  }
+
+  .marketing-surface article.wl-paper:hover,
+  .marketing-surface :where(.marketing-btn-primary, .marketing-btn-secondary):hover,
+  .wl-rail-link:hover {
+    transform: none;
+  }
+}

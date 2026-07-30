@@ -44,21 +44,24 @@ export function normalizeUsPhone10(phone: string): string | null {
   return null;
 }
 
-const DNCSCRUB_FEDERAL_RESULT_CODES = new Set(["D", "DNCL", "FED", "FEDERAL", "NDNC"]);
+const DNCSCRUB_CALLABLE_RESULT_CODES = new Set(["C", "E", "G", "H", "O", "W", "X", "Y"]);
 
-function isDncScrubFederalListed(resultCode: unknown): boolean {
-  if (typeof resultCode !== "string" || !resultCode.trim()) return false;
-  const normalized = resultCode.trim().toUpperCase();
-  if (DNCSCRUB_FEDERAL_RESULT_CODES.has(normalized)) return true;
-  return normalized.startsWith("D") && normalized.length <= 4;
+/**
+ * DNCScrub v5 returns one-letter disposition codes. Only the provider's
+ * documented callable outcomes may pass. D/P/B/I/M/L/F/V, blank responses,
+ * malformed payloads, and future unknown codes all fail closed.
+ */
+function isDncScrubBlocked(resultCode: unknown): boolean {
+  if (typeof resultCode !== "string" || !resultCode.trim()) return true;
+  return !DNCSCRUB_CALLABLE_RESULT_CODES.has(resultCode.trim().toUpperCase());
 }
 
 type DncScrubRow = { ResultCode?: string; resultCode?: string };
 
 function parseDncScrubListed(payload: unknown): boolean {
-  if (!Array.isArray(payload) || payload.length === 0) return false;
+  if (!Array.isArray(payload) || payload.length === 0) return true;
   const row = payload[0] as DncScrubRow;
-  return isDncScrubFederalListed(row.ResultCode ?? row.resultCode);
+  return isDncScrubBlocked(row.ResultCode ?? row.resultCode);
 }
 
 function buildDncScrubRequestUrl(apiUrl: string, phone10: string): string {
@@ -77,7 +80,11 @@ async function lookupFederalDncDncScrub(
 ): Promise<FederalDncLookupResult> {
   const phone10 = normalizeUsPhone10(phone);
   if (!phone10) {
-    log.warn("federal DNC dncscrub: invalid US phone for scrub", { phone });
+    // Never log the raw consumer number: this runs on every marketing dial and
+    // the structured log is not a compliance-safe place for subscriber PII.
+    log.warn("federal DNC dncscrub: invalid US phone for scrub", {
+      phoneDigits: phone.replace(/\D/g, "").length,
+    });
     return { listed: true, source: "error", checked_at };
   }
 
@@ -120,8 +127,17 @@ async function lookupFederalDncGenericPost(
     log.warn("federal DNC vendor returned non-OK", { status: response.status });
     return { listed: true, source: "error", checked_at };
   }
-  const data = (await response.json()) as { listed?: boolean };
-  return { listed: data.listed === true, source: "vendor", checked_at };
+  const data = (await response.json()) as { listed?: unknown };
+  // Fail closed on anything that is not an explicit boolean. `listed === true`
+  // silently treated a 200 with a renamed/missing field — a vendor schema
+  // change, an error envelope, a proxy's HTML page — as "not listed" and let
+  // the dial proceed to a registered number. The DNCScrub path already fails
+  // closed on unrecognized dispositions; this path must match.
+  if (typeof data?.listed !== "boolean") {
+    log.warn("federal DNC vendor returned an unrecognized payload — failing closed");
+    return { listed: true, source: "error", checked_at };
+  }
+  return { listed: data.listed, source: "vendor", checked_at };
 }
 
 export type FederalDncMarketingGate = {

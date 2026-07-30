@@ -231,7 +231,7 @@ describe("product voice cohesion", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     for (const phrase of [
       "Lead response",
-      "Quote follow-up",
+      "Quote follow up",
       "Appointment setting",
       "Front desk",
       "Lead qualifier",
