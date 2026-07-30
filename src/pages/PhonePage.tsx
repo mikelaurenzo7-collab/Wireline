@@ -1,5 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import WorkspaceShell from "../components/WorkspaceShell";
+import PhoneSetupPanel from "../components/PhoneSetupPanel";
 import PhoneCallHistoryPanel from "../components/PhoneCallHistoryPanel";
 import OutboundHub from "../components/outbound/OutboundHub";
 import AppointmentsPanel from "../components/AppointmentsPanel";
@@ -12,6 +13,7 @@ import {
 } from "../lib/page-sub-tabs";
 
 const PHONE_TABS = [
+  { id: "setup", label: "Setup" },
   { id: "logs", label: "History" },
   { id: "outbound", label: "Outbound" },
   {
@@ -32,7 +34,7 @@ export default function PhonePage() {
     {
       pathname: "/phone",
       tabs: [...PHONE_TABS],
-      defaultTab: "logs",
+      defaultTab: "setup",
       ariaLabel: "Phone sections",
       layoutIdPrefix: "phone-section",
     },
@@ -46,7 +48,7 @@ export default function PhonePage() {
   function setPrimaryTab(id: string) {
     setSearchParams(
       (prev) => {
-        if (id === "logs") prev.delete("tab");
+        if (id === "setup") prev.delete("tab");
         else prev.set("tab", id);
         if (id !== "outbound") prev.delete("view");
         return prev;
@@ -88,6 +90,11 @@ export default function PhonePage() {
           }
         />
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+          {primaryTab === "setup" && (
+            <div className="mx-auto w-full max-w-[1180px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+              <PhoneSetupPanel />
+            </div>
+          )}
           {primaryTab === "logs" && <PhoneCallHistoryPanel />}
           {primaryTab === "outbound" && (
             <OutboundHub activeView={outboundView} onViewChange={setOutboundView} />
