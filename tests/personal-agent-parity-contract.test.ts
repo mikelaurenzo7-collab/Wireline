@@ -207,6 +207,7 @@ describe("founder dogfood posture integrity", () => {
     const sms = read("src/components/SmsThreads.tsx");
     const connections = read("src/components/CrmConnectionCard.tsx");
     const billing = read("src/pages/BillingSettings.tsx");
+    const insights = read("src/routes/insights-routes.ts");
 
     expect(sms).toContain("SMS conversations will appear here after messaging is connected");
     expect(sms).toContain("Review SMS setup");
@@ -219,6 +220,12 @@ describe("founder dogfood posture integrity", () => {
 
     expect(billing).toContain("Plan access is active");
     expect(billing).toContain("paid-plan access without a Stripe subscription");
+
+    expect(insights).toContain("function buildFastFailureModes");
+    expect(insights).toContain('analysis_mode: "fast" as const');
+    expect(insights.indexOf("if (!force)")).toBeLessThan(
+      insights.indexOf("await insightsAi.clusterFailureModes"),
+    );
   });
 });
 
