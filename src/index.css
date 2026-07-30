@@ -101,6 +101,7 @@
 @import "./styles/agent-tabs-compact.css";
 @import "./styles/modal-hierarchy.css";
 @import "./styles/e2e-design-polish.css";
+@import "./styles/prestige-polish.css";
 
 body {
   background: var(--wireline-color-canvas-default);
