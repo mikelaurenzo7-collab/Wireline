@@ -241,7 +241,11 @@ body {
   background: var(--wl-page);
 }
 
-.wl-ui-caps > :not(.wl-workspace-shell) {
+/* The route wrapper becomes the viewport scroll container. Exclude .sr-only:
+   the route announcer mounts as a direct shell child (BrowserRouter renders no
+   DOM node), and stretching it to 100dvh/overflow:auto turns the live region
+   into a keyboard-inaccessible scrollable box (axe: scrollable-region-focusable). */
+.wl-ui-caps > :not(.wl-workspace-shell, .sr-only) {
   height: 100dvh;
   min-height: 0;
   overflow: auto;

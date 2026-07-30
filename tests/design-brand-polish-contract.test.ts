@@ -112,4 +112,22 @@ describe("E2E design and brand polish", () => {
     expect(landing).not.toContain("—");
     expect(landing).not.toContain("·");
   });
+
+  it("keeps the shell scroll-container rule from swallowing sr-only live regions", () => {
+    // foundation.css turns the shell's direct child into the viewport scroll
+    // container. The unlayered rule outranks the layered .sr-only utility, so
+    // without the exclusion the route announcer (a direct shell child in
+    // App.tsx) becomes a 1px-wide, 100dvh scrollable region with no keyboard
+    // access — an axe-serious scrollable-region-focusable violation on every
+    // authenticated route.
+    const foundation = read("src/styles/foundation.css");
+    expect(foundation).toContain(".wl-ui-caps > :not(.wl-workspace-shell, .sr-only) {");
+    expect(foundation).not.toMatch(/\.wl-ui-caps\s*>\s*:not\(\.wl-workspace-shell\)\s*\{/);
+
+    // The announcer stays a direct shell child; if it moves, re-audit the rule.
+    const app = read("src/App.tsx");
+    expect(app).toContain("<RouteChangeA11y />");
+    const announcer = read("src/components/RouteChangeA11y.tsx");
+    expect(announcer).toContain('className="sr-only"');
+  });
 });
