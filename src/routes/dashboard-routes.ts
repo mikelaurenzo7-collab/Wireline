@@ -535,6 +535,10 @@ router.post(
       invalidateDashboard(req.user.id);
       res.json({ appointment: data });
     } catch (error: any) {
+      // Deliberate 400/404 validation errors are raised inside this try; without
+      // the rethrow they were rewritten as an opaque 500 and the caller lost the
+      // reason their request was rejected.
+      if (error instanceof AppError) throw error;
       log.error("Failed to create appointment", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to create appointment");
     }
@@ -615,6 +619,7 @@ router.patch(
       invalidateDashboard(req.user.id);
       res.json({ appointment: data });
     } catch (error: any) {
+      if (error instanceof AppError) throw error;
       log.error("Failed to update appointment", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to update appointment");
     }
@@ -638,6 +643,7 @@ router.delete(
       invalidateDashboard(req.user.id);
       res.json({ success: true });
     } catch (error: any) {
+      if (error instanceof AppError) throw error;
       log.error("Failed to delete appointment", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to delete appointment");
     }

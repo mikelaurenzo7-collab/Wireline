@@ -425,12 +425,6 @@ router.get(
         const cached = cachedInsight(cacheKey);
         if (cached) return res.json({ ...cached, cached: true });
       }
-      if (!insightsAi.isInsightsAiAvailable()) {
-        return res
-          .status(503)
-          .json({ error: "AI runtime required for failure analysis.", code: "AI_RUNTIME_OFFLINE" });
-      }
-
       const rows = await drizzle
         .select({
           summary: schema.callLogs.summary,
@@ -463,6 +457,16 @@ router.get(
         const result = { modes: buildFastFailureModes(rows), analysis_mode: "fast" as const };
         setCachedInsight(cacheKey, result);
         return res.json({ ...result, cached: false });
+      }
+
+      // Only the explicit `?refresh=1` deep pass needs a provider. Gating the
+      // whole route on AI availability made the instant path — which is pure
+      // local aggregation over rows already read — return 503 during any
+      // provider outage, which is exactly when it is most useful.
+      if (!insightsAi.isInsightsAiAvailable()) {
+        return res
+          .status(503)
+          .json({ error: "AI runtime required for failure analysis.", code: "AI_RUNTIME_OFFLINE" });
       }
 
       const result = await insightsAi.clusterFailureModes({

@@ -66,17 +66,37 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
     // catches real replicas and protects the health result from a stale
     // session-level read-only default on a reused transaction-pool backend.
     await client.query("BEGIN");
-    await client.query("SET TRANSACTION READ WRITE");
-    const readiness = await client.query(
-      "SELECT current_setting('transaction_read_only') AS transaction_read_only, pg_is_in_recovery() AS in_recovery",
-    );
+    // Establish recovery state first. On a genuine hot standby `SET TRANSACTION
+    // READ WRITE` errors ("cannot set transaction read-write mode during
+    // recovery") and poisons the transaction, so attempting it first threw past
+    // the very diagnostic it exists to produce — and every statement after it —
+    // leaving a generic driver error in the report instead of "in_recovery".
+    const recovery = await client.query("SELECT pg_is_in_recovery() AS in_recovery");
+    const inRecovery = recovery.rows[0]?.in_recovery === true;
+
+    let writableUpgradeError: string | null = null;
+    let transactionReadOnly: string | null = null;
+    try {
+      await client.query("SET TRANSACTION READ WRITE");
+      // Read the mode *after* the upgrade: that is what proves this connection
+      // can carry a write, which is exactly what scopeClientToTenant does on
+      // every checkout. A leaked session-level read-only default is therefore
+      // recoverable and must not be reported as unhealthy on its own.
+      const readiness = await client.query(
+        "SELECT current_setting('transaction_read_only') AS transaction_read_only",
+      );
+      transactionReadOnly = readiness.rows[0]?.transaction_read_only ?? null;
+    } catch (error) {
+      writableUpgradeError = error instanceof Error ? error.message : String(error);
+    }
     await client.query("ROLLBACK");
-    const transactionReadOnly = readiness.rows[0]?.transaction_read_only;
-    const inRecovery = readiness.rows[0]?.in_recovery === true;
-    if (transactionReadOnly !== "off" || inRecovery) {
+
+    if (inRecovery || writableUpgradeError || transactionReadOnly !== "off") {
       result.healthy = false;
       result.issues.push(
-        `Application database connection is not writable (transaction_read_only=${String(transactionReadOnly)}, in_recovery=${String(inRecovery)})`,
+        `Application database connection is not writable (transaction_read_only=${String(transactionReadOnly)}, in_recovery=${String(inRecovery)}${
+          writableUpgradeError ? `, read_write_upgrade_failed=${writableUpgradeError}` : ""
+        })`,
       );
     }
 

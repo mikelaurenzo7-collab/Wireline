@@ -223,8 +223,18 @@ describe("founder dogfood posture integrity", () => {
 
     expect(insights).toContain("function buildFastFailureModes");
     expect(insights).toContain('analysis_mode: "fast" as const');
-    expect(insights.indexOf("if (!force)")).toBeLessThan(
+    // Scope to the failure-modes route. `if (!force)` appears in several
+    // insight routes, so a whole-file indexOf matched an unrelated earlier
+    // occurrence and the ordering assertion below could never fail.
+    const failureModesRoute = insights.slice(
+      insights.indexOf('"/api/insights/failure-modes"'),
       insights.indexOf("await insightsAi.clusterFailureModes"),
+    );
+    expect(failureModesRoute).toContain("buildFastFailureModes(rows)");
+    // The instant path must come before the provider-availability gate: it is
+    // local aggregation and has to keep working through a provider outage.
+    expect(failureModesRoute.indexOf("buildFastFailureModes(rows)")).toBeLessThan(
+      failureModesRoute.indexOf("isInsightsAiAvailable"),
     );
   });
 });
