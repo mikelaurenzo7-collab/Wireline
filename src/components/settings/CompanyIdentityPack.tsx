@@ -82,18 +82,17 @@ const CHANNEL_CONFIG = {
   voice: {
     icon: PhoneCall,
     title: "Calling identity",
-    description: "Verified display name, optional logo and call reason, with CNAM fallback.",
+    description: "Display name, logo, call reason, and CNAM fallback.",
   },
   sms: {
     icon: MessageSquareText,
     title: "SMS identity",
-    description:
-      "Business and campaign registration for compliant application-to-person messaging.",
+    description: "Business registration for compliant messaging.",
   },
   email: {
     icon: Mail,
     title: "Email identity",
-    description: "Company sender name and authenticated sending-domain preparation.",
+    description: "Sender name and authenticated domain.",
   },
 } as const;
 
@@ -253,7 +252,7 @@ function ChannelCard({
             className="text-[var(--wireline-color-status-success)]"
             aria-hidden="true"
           />
-          Identity profile is ready for review.
+          Ready for review.
         </p>
       )}
       <p className="mt-3 border-t border-border pt-3 text-[11px] leading-5 text-muted-foreground">
@@ -282,9 +281,7 @@ export default function CompanyIdentityPack() {
       setIdentity(body);
       setForm(formFromIdentity(body));
       if (body.review_state_invalidated) {
-        setMessage(
-          "A company identity field or dedicated number changed after the prior review request, so Wireline reset the stale provider state.",
-        );
+        setMessage("Identity changed, so Wireline reset its prior provider review.");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Company identity is unavailable.");
@@ -346,11 +343,7 @@ export default function CompanyIdentityPack() {
       const saved = body as IdentityResponse;
       setIdentity(saved);
       setForm(formFromIdentity(saved));
-      setMessage(
-        saved.profile_changed
-          ? "Company identity saved. Prior review states were reset because the verified profile changed."
-          : "Company identity saved. Existing review state was preserved.",
-      );
+      setMessage(saved.profile_changed ? "Identity saved. Prior review status was reset." : "Identity saved.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save company identity.");
     } finally {
@@ -376,7 +369,7 @@ export default function CompanyIdentityPack() {
       const reviewed = body as IdentityResponse;
       setIdentity(reviewed);
       setForm(formFromIdentity(reviewed));
-      setMessage(reviewed.message || "Verification review requested.");
+      setMessage(reviewed.message || "Review requested.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not request verification review.");
     } finally {
@@ -397,15 +390,14 @@ export default function CompanyIdentityPack() {
           </span>
           <div>
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
-              Company identity pack
+              Company identity
             </p>
             <h2 id="company-identity-title" className="mt-2 text-xl font-semibold text-foreground">
-              Brand the voice agent, not just the workspace.
+              Verify your company identity.
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-              Prepare one verified company identity for the voice agent's dedicated number, SMS sender,
-              and email sender. Provider approval and recipient-device display remain external
-              states.
+              Use one identity for calling, SMS, and email. Provider approval and final display stay
+              external.
             </p>
           </div>
         </div>
@@ -441,7 +433,7 @@ export default function CompanyIdentityPack() {
             <div className="flex items-start gap-3">
               <ShieldCheck size={18} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
               <div>
-                <h3 className="text-sm font-semibold text-foreground">Verified business profile</h3>
+                <h3 className="text-sm font-semibold text-foreground">Business profile</h3>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">{identity.guarantee}</p>
               </div>
             </div>
@@ -459,7 +451,7 @@ export default function CompanyIdentityPack() {
                 />
               </label>
               <label className="text-xs font-medium text-foreground">
-                Customer-facing brand name
+                Brand name
                 <input
                   value={form.brand_name}
                   onChange={(event) => updateField("brand_name", event.target.value)}
@@ -469,7 +461,7 @@ export default function CompanyIdentityPack() {
                 />
               </label>
               <label className="text-xs font-medium text-foreground">
-                Caller ID fallback name
+                Caller ID name
                 <input
                   value={form.caller_id_name}
                   onChange={(event) =>
@@ -480,11 +472,11 @@ export default function CompanyIdentityPack() {
                   placeholder="LAURENZO SVCS"
                 />
                 <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
-                  Maximum 15 characters for traditional CNAM fallback.
+                  Traditional CNAM allows 15 characters.
                 </span>
               </label>
               <label className="text-xs font-medium text-foreground">
-                Company website
+                Website
                 <input
                   type="url"
                   value={form.website}
@@ -505,7 +497,7 @@ export default function CompanyIdentityPack() {
                   autoComplete="email"
                 />
                 <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
-                  Email identity review requires this address to match the company website domain.
+                  Must match the website domain for email review.
                 </span>
               </label>
               <label className="text-xs font-medium text-foreground">
@@ -528,16 +520,13 @@ export default function CompanyIdentityPack() {
                   placeholder="Appointment confirmation"
                 />
                 <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
-                  Enhanced branded calling may show this on supported mobile networks after
-                  approval.
+                  Supported networks may show this after approval.
                 </span>
               </label>
             </div>
 
             <fieldset className="mt-5">
-              <legend className="text-xs font-semibold text-foreground">
-                Request identity for
-              </legend>
+              <legend className="text-xs font-semibold text-foreground">Channels</legend>
               <div className="mt-3 flex flex-wrap gap-2">
                 {CHANNELS.map((channel) => (
                   <label
@@ -582,25 +571,25 @@ export default function CompanyIdentityPack() {
                   : reviewRejected
                     ? "Update identity to resubmit"
                     : reviewAlreadyRequested
-                      ? "Review already requested"
-                      : "Request verification review"}
+                      ? "Review requested"
+                      : "Request review"}
               </Button>
             </div>
             {selectedChannelCount === 0 ? (
               <p className="mt-3 text-xs leading-5 text-destructive">
-                Select at least one identity channel before saving.
+                Select at least one channel before saving.
               </p>
             ) : isDirty ? (
               <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                Save these changes before requesting verification review.
+                Save changes before requesting review.
               </p>
             ) : reviewRejected ? (
               <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                Update the rejected identity details and save them before requesting another review.
+                Update and save the rejected details before resubmitting.
               </p>
             ) : !identity.review_eligible ? (
               <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                Complete every selected channel requirement before requesting verification review.
+                Complete every selected channel before requesting review.
               </p>
             ) : null}
           </div>
@@ -608,12 +597,12 @@ export default function CompanyIdentityPack() {
       ) : null}
 
       {message ? (
-        <StatusNotice tone="info" className="mt-5" title="Company identity updated">
+        <StatusNotice tone="info" className="mt-5" title="Identity updated">
           {message}
         </StatusNotice>
       ) : null}
       {error ? (
-        <StatusNotice tone="destructive" className="mt-5" title="Company identity unavailable">
+        <StatusNotice tone="destructive" className="mt-5" title="Identity unavailable">
           {error}
         </StatusNotice>
       ) : null}
