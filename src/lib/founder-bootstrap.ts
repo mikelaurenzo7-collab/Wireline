@@ -81,12 +81,22 @@ export async function bootstrapFounderAssistantIfEmpty(
         sql`SELECT pg_advisory_xact_lock(hashtext('founder-bootstrap'), hashtext(${userId}))`,
       );
 
-      const agentCount = await tx
-        .select({ n: sql<number>`count(*)::int` })
+      const agentCounts = await tx
+        .select({
+          n: sql<number>`count(*)::int`,
+          businessAgents: sql<number>`count(*) filter (where ${schema.agents.isBusinessAgent} is true)::int`,
+          personalAgents: sql<number>`count(*) filter (where coalesce(${schema.agents.isBusinessAgent}, false) is false)::int`,
+        })
         .from(schema.agents)
         .where(eq(schema.agents.userId, userId));
-      const count = agentCount[0]?.n ?? 0;
-      if (count >= EXPECTED_FOUNDER_FLEET_AGENT_COUNT) {
+      const count = agentCounts[0]?.n ?? 0;
+      const businessAgents = agentCounts[0]?.businessAgents ?? 0;
+      const personalAgents = agentCounts[0]?.personalAgents ?? 0;
+      if (
+        count >= EXPECTED_FOUNDER_FLEET_AGENT_COUNT &&
+        businessAgents > 0 &&
+        personalAgents > 0
+      ) {
         return { seeded: false, skipped: true, subscriptionEnsured: true };
       }
 

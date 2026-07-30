@@ -264,7 +264,7 @@ function OAuthSignInButtons({
   ];
 
   return (
-    <div className="wl-auth-oauth space-y-3">
+    <div className={cn("wl-auth-oauth", isSignUp ? "space-y-2" : "space-y-3")}>
       {providers.map((p) => (
         <button
           key={p.id}
@@ -298,7 +298,7 @@ function AuthShell({
         id="main-content"
         className={cn(
           "wl-auth-form-panel flex min-h-[100dvh] items-center justify-center px-4 sm:px-6",
-          compact ? "py-6 sm:py-6" : "py-8 sm:py-12",
+          compact ? "py-3 sm:py-4" : "py-8 sm:py-12",
         )}
       >
         <div className="w-full max-w-[520px]">
@@ -311,7 +311,7 @@ function AuthShell({
           <div
             className={cn(
               "wl-stitch-auth-card rounded-2xl border border-border bg-card shadow-sm",
-              compact ? "p-5 sm:p-6" : "p-6 sm:p-8",
+              compact ? "p-4 sm:p-5" : "p-6 sm:p-8",
             )}
           >
             {children}
@@ -319,7 +319,7 @@ function AuthShell({
           <div
             className={cn(
               "flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center text-sm text-muted-foreground",
-              compact ? "mt-4 sm:mt-5" : "mt-6",
+              compact ? "mt-3 sm:mt-4" : "mt-6",
             )}
           >
             <Link to="/" className="hover:text-primary hover:underline">
@@ -368,14 +368,14 @@ function WorkspaceSelector({
     },
   ];
   return (
-    <div className="wl-auth-workspace-selector mb-4 grid gap-2 sm:mb-5 sm:grid-cols-2">
+    <div className="wl-auth-workspace-selector mb-3 grid gap-2 sm:mb-4 sm:grid-cols-2">
       {options.map((option) => (
         <button
           key={option.id}
           type="button"
           onClick={() => setMode(option.id)}
           className={cn(
-            "flex items-start gap-3 rounded-xl border p-4 text-left transition",
+            "flex items-start gap-3 rounded-xl border p-3 text-left transition",
             mode === option.id
               ? "border-brand bg-brand/10"
               : "border-border bg-background hover:border-brand/40",
@@ -645,7 +645,7 @@ export default function AuthPortal() {
         noIndex
       />
       <AuthShell compact={isSignUp}>
-        <div className={cn("wl-auth-heading text-center", isSignUp ? "mb-5" : "mb-6")}>
+        <div className={cn("wl-auth-heading text-center", isSignUp ? "mb-4" : "mb-6")}>
           <h1 className="text-xl font-semibold tracking-[-.02em]">{pageTitle}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{pageDescription}</p>
           {isSignUp && intentLabel ? (
@@ -662,7 +662,7 @@ export default function AuthPortal() {
         <div>
           {!isReset && (
             <div
-              className="wl-auth-tabs mb-4 grid grid-cols-2 border-b border-ink/10 p-1"
+              className="wl-auth-tabs mb-3 grid grid-cols-2 border-b border-ink/10 p-1"
               role="tablist"
               aria-label="Account access"
             >
@@ -697,7 +697,7 @@ export default function AuthPortal() {
 
           <div className="pt-2">
             {isSignUp && (
-              <div className="wl-auth-terms mb-4 flex items-start gap-3 rounded-xl border border-border bg-muted/50 p-3 text-sm leading-relaxed text-foreground/75">
+              <div className="wl-auth-terms mb-3 flex items-start gap-3 rounded-xl border border-border bg-muted/50 p-2.5 text-sm leading-relaxed text-foreground/75">
                 <input
                   id="auth-terms"
                   type="checkbox"
@@ -745,7 +745,7 @@ export default function AuthPortal() {
               onSubmit={handleAuth}
               className={cn(
                 "wl-auth-form flex flex-col",
-                isSignUp ? "mt-5 gap-4" : "mt-6 gap-5",
+                isSignUp ? "mt-4 gap-3" : "mt-6 gap-5",
               )}
             >
               <div className="space-y-2">

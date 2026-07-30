@@ -82,6 +82,15 @@ function formatTime(value: string | null | undefined): string {
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
 }
 
+function humanizeTaxonomy(value: string | null | undefined, fallback: string): string {
+  const normalized = value?.trim();
+  if (!normalized || /^(unknown|other)$/i.test(normalized)) return fallback;
+  return normalized
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function isLive(call: Call): boolean {
   if (!call.created_at) return false;
   const ts = new Date(call.created_at).getTime();
@@ -513,7 +522,7 @@ function FloorTab({
                   }}
                   aria-hidden="true"
                 />
-                {isLive(call) ? "Live" : call.outcome_tag || "Done"}
+                {isLive(call) ? "Live" : humanizeTaxonomy(call.outcome_tag, "Done")}
               </div>
             </div>
             {isLive(call) ? <Wave /> : null}
@@ -584,7 +593,7 @@ function IntelTab({
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium text-[var(--wireline-color-text-primary)]">
-                {call.intent_label || call.summary || "Follow up requested"}
+                {humanizeTaxonomy(call.intent_label, call.summary || "Follow up requested")}
               </div>
               <div className="mt-0.5 truncate text-xs text-[var(--wireline-color-text-tertiary)]">
                 {call.agent_name || "AI voice agent"} · {formatTime(call.created_at)}
@@ -658,7 +667,7 @@ function TriageTab({
                   color: "var(--wireline-color-status-warning)",
                 }}
               >
-                {call.outcome_tag || "Voice"}
+                {humanizeTaxonomy(call.outcome_tag, "Voice")}
               </span>
               <span className="text-sm font-semibold text-[var(--wireline-color-text-primary)]">
                 {call.customer_number || "Unknown caller"}

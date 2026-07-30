@@ -173,6 +173,34 @@ describe("personal agent parity — presentation and runtime", () => {
   });
 });
 
+describe("founder dogfood posture integrity", () => {
+  it("seeds a mixed personal and business roster and repairs legacy all-personal founder data", () => {
+    const founderSeed = read("src/lib/founder-fleet-seed.ts");
+    const founderBootstrap = read("src/lib/founder-bootstrap.ts");
+
+    expect(founderSeed).toContain("isBusinessAgent: false");
+    expect(founderSeed).toContain(
+      'isBusinessAgent: template.isBusinessAgent ?? template.role !== "personal_assistant"',
+    );
+    expect(founderSeed).toContain('isBusinessAgent: row.role !== "personal_assistant"');
+    expect(founderBootstrap).toContain("businessAgents > 0");
+    expect(founderBootstrap).toContain("personalAgents > 0");
+  });
+
+  it("keeps operator labels readable and preserves a single main landmark", () => {
+    const callOps = read("src/components/CallLogsClaude.tsx");
+    const workroom = read("src/components/StudioWorkroom.tsx");
+    const overview = read("src/pages/OverviewPage.tsx");
+
+    expect(callOps).toContain("humanizeTaxonomy");
+    expect(callOps).not.toContain('{call.intent_label || call.summary || "Follow up requested"}');
+    expect(workroom).not.toContain('<main className="flex h-full');
+    expect(workroom).toContain('aria-label={mode === "test"');
+    expect(overview).toContain('coreConnections.push("Phone")');
+    expect(overview).not.toContain('coreConnections.push("Phone + SMS")');
+  });
+});
+
 describe("founder hybrid pricing — Starter Plus pair capacity", () => {
   it("prices Starter Plus as the personal+business founder pair without breaking slot parity", async () => {
     const { planById, supportsFounderAgentPair } = await import("../src/lib/plan-catalog");

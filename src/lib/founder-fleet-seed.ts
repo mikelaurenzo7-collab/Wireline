@@ -37,6 +37,7 @@ export interface AssistantAgentTemplate {
   emailSignature?: string;
   websiteUrl?: string;
   wirelinePersonaId?: WirelinePersonaId;
+  isBusinessAgent?: boolean;
 }
 
 /** Vertical + specialty agents beyond the 6 internal Wireline personas. */
@@ -144,6 +145,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     archetype: "Executive Assistant",
     firstMessage: "Hi, this is your agent. How can I help with your schedule today?",
     personalityVibe: "warm",
+    isBusinessAgent: false,
   },
 ];
 
@@ -379,6 +381,7 @@ async function upsertAgent(
     websiteUrl: template.websiteUrl,
     businessVariables,
     emailAutoRespond: template.channel === "email",
+    isBusinessAgent: template.isBusinessAgent ?? template.role !== "personal_assistant",
   };
 
   if (existing) {
@@ -448,7 +451,11 @@ export async function seedFounderAssistant(userId: string): Promise<FounderAssis
 
   // Ensure every existing owner agent also gets max tools (legacy rows)
   const ownerAgents = await drizzle
-    .select({ id: schema.agents.id, role: schema.agents.role })
+    .select({
+      id: schema.agents.id,
+      role: schema.agents.role,
+      isBusinessAgent: schema.agents.isBusinessAgent,
+    })
     .from(schema.agents)
     .where(eq(schema.agents.userId, userId));
 
@@ -456,7 +463,10 @@ export async function seedFounderAssistant(userId: string): Promise<FounderAssis
     if (!report.agentIds.includes(row.id)) {
       await drizzle
         .update(schema.agents)
-        .set({ enabledTools: ALL_AGENT_TOOLS })
+        .set({
+          enabledTools: ALL_AGENT_TOOLS,
+          isBusinessAgent: row.role !== "personal_assistant",
+        })
         .where(eq(schema.agents.id, row.id));
       await seedTrainingArtifacts(row.id, userId, row.role || "customer_service", report);
       report.agentIds.push(row.id);

@@ -540,7 +540,7 @@ export default function OverviewPage() {
             coreConnections.push("Calendar");
           }
         }
-        if (agents.some((agent) => agent.phone_number)) coreConnections.push("Phone + SMS");
+        if (agents.some((agent) => agent.phone_number)) coreConnections.push("Phone");
 
         const allConnections = [...new Set([...coreConnections, ...activeProviders])];
         setConnectionsCount(allConnections.length);
