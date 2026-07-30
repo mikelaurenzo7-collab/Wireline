@@ -39,7 +39,7 @@ export const CUSTOMER_AGENT_LANGUAGE = {
     navLabel: "Voice Agent",
     navShort: "Agent",
     createCta: "Create personal voice agent",
-    setupLabel: "Personal voice agent in about a minute",
+    setupLabel: "Personal agent in 1 minute",
     setupPrompt: "What should your personal voice agent handle?",
     setupDescription: "Start with one call, appointment, or personal task.",
     nameLabel: "Agent name",
@@ -51,7 +51,7 @@ export const CUSTOMER_AGENT_LANGUAGE = {
     navLabel: "Voice Agent",
     navShort: "Agent",
     createCta: "Create business voice agent",
-    setupLabel: "Business voice agent in about a minute",
+    setupLabel: "Business agent in 1 minute",
     setupPrompt: "What job should this voice agent own?",
     setupDescription: "Start with one customer-facing job.",
     nameLabel: "Agent name",
@@ -101,7 +101,7 @@ export const AGENT_DIRECTION_MODES = {
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Every paid AI voice agent includes a Wireline number at no extra line fee. It can call, take callbacks, send texts, and manage handoffs under your direction." as const;
+  "Every paid AI voice agent includes a Wireline number for calls, texts, callbacks, and handoffs." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
@@ -130,7 +130,7 @@ export const MARKETING_VOICE = {
   /** Public hero CTA broad enough for personal and business buyers. */
   primaryCta: "Build your voice agent",
   subline:
-    "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.",
+    "Build one for business or life. It calls, answers, texts, emails, books, and follows through. You stay in control.",
   channelProof: [
     "Calls and answers",
     "Text messages",
