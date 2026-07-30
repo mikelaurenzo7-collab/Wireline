@@ -102,9 +102,9 @@ export default function SimpleVoicePicker({
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h3 className="text-base font-semibold tracking-tight">Choose how live calls sound</h3>
+          <h3 className="text-base font-semibold tracking-tight">Choose a voice</h3>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Browser tests the words. Place a real call to verify the selected audio.
+            Test the response here, then call the line to verify audio.
           </p>
         </div>
         <button
@@ -145,7 +145,7 @@ export default function SimpleVoicePicker({
                 onClick={() => void selectVoice(voice)}
                 disabled={Boolean(savingVoiceId)}
                 aria-pressed={selected}
-                className={`flex min-h-16 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors disabled:cursor-wait disabled:opacity-70 ${
+                className={`flex min-h-14 items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors disabled:cursor-wait disabled:opacity-70 ${
                   selected
                     ? "border-primary/40 bg-primary/5"
                     : "border-border bg-background hover:bg-muted/60"
@@ -168,9 +168,9 @@ export default function SimpleVoicePicker({
                   <span className="block truncate text-sm font-semibold text-foreground">
                     {voice.name}
                   </span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground">
-                    {selected ? "Selected for live calls" : "Use for live calls"}
-                  </span>
+                  {selected ? (
+                    <span className="mt-0.5 block text-xs text-primary">Selected</span>
+                  ) : null}
                 </span>
               </button>
             );
