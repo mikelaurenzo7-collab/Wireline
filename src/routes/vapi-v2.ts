@@ -260,6 +260,10 @@ router.post("/api/vapi-webhook", async (req, res) => {
         return res.json({
           assistant: {
             firstMessage: "The automated service for this line is suspended.",
+            // Vapi records by default. This one-line notice carries no
+            // conversation worth keeping, and recording it would put a HIPAA
+            // agent's caller on a provider recording with no disclosure spoken.
+            recordingEnabled: false,
             model: {
               provider: "openai",
               model: VAPI_OPENAI_FALLBACK_MODEL,
@@ -313,6 +317,9 @@ router.post("/api/vapi-webhook", async (req, res) => {
         return res.json({
           assistant: {
             firstMessage: "I am having trouble connecting. Please try again.",
+            // Same reason as the suspended-line notice above: nothing to record,
+            // and no disclosure is spoken on this path.
+            recordingEnabled: false,
             model: {
               provider: "openai",
               model: VAPI_OPENAI_FALLBACK_MODEL,

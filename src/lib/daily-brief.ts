@@ -200,7 +200,7 @@ export function renderDailyBriefEmail(
   const mood = brief.mood || "neutral";
   const highlights: string[] = brief.highlights || [];
   const concerns: string[] = brief.concerns || [];
-  const actions: string[] = brief.action_items || [];
+  const actions: string[] = (brief.action_items || []).map(actionItemText).filter(Boolean);
 
   const moodColor =
     mood === "positive"
@@ -215,7 +215,12 @@ export function renderDailyBriefEmail(
   };
   const link = opts.appUrl ? `${opts.appUrl.replace(/\/+$/, "")}/overview` : null;
 
-  const subject = `Wireline · ${escapeHtml(headline)} · ${opts.dateLabel}`;
+  // The subject is a plain-text MIME header, not markup: HTML-escaping it put
+  // literal `&#39;`/`&amp;` in the operator's inbox. Collapse newlines instead,
+  // which is the encoding that actually matters for a header.
+  const subject = `Wireline · ${String(headline)
+    .replace(/\s*[\r\n]+\s*/g, " ")
+    .trim()} · ${opts.dateLabel}`;
 
   const css = `
     body { margin:0; padding:0; background-color:#0a0a0a; color:#f4f4f5; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
@@ -352,6 +357,25 @@ export function renderDailyBriefEmail(
     lines.push(`Open Wireline: ${link}`);
   }
   return { subject, html, text: lines.join("\n") };
+}
+
+/**
+ * `brief.action_items` comes back from the structured runtime as
+ * `{ description, urgency }` objects (see insights-ai's composeDailyBrief
+ * schema), not strings. Interpolating them rendered every action row as
+ * "[object Object]" in both the HTML and plain-text bodies. Accept either
+ * shape so a provider that returns bare strings still renders.
+ */
+function actionItemText(item: unknown): string {
+  if (typeof item === "string") return item.trim();
+  if (item && typeof item === "object") {
+    const record = item as { description?: unknown; urgency?: unknown };
+    const description = typeof record.description === "string" ? record.description.trim() : "";
+    if (!description) return "";
+    const urgency = typeof record.urgency === "string" ? record.urgency.trim() : "";
+    return urgency ? `${description} (${urgency})` : description;
+  }
+  return "";
 }
 
 function escapeHtml(s: any): string {

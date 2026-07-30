@@ -80,7 +80,11 @@ async function lookupFederalDncDncScrub(
 ): Promise<FederalDncLookupResult> {
   const phone10 = normalizeUsPhone10(phone);
   if (!phone10) {
-    log.warn("federal DNC dncscrub: invalid US phone for scrub", { phone });
+    // Never log the raw consumer number: this runs on every marketing dial and
+    // the structured log is not a compliance-safe place for subscriber PII.
+    log.warn("federal DNC dncscrub: invalid US phone for scrub", {
+      phoneDigits: phone.replace(/\D/g, "").length,
+    });
     return { listed: true, source: "error", checked_at };
   }
 
@@ -123,8 +127,17 @@ async function lookupFederalDncGenericPost(
     log.warn("federal DNC vendor returned non-OK", { status: response.status });
     return { listed: true, source: "error", checked_at };
   }
-  const data = (await response.json()) as { listed?: boolean };
-  return { listed: data.listed === true, source: "vendor", checked_at };
+  const data = (await response.json()) as { listed?: unknown };
+  // Fail closed on anything that is not an explicit boolean. `listed === true`
+  // silently treated a 200 with a renamed/missing field — a vendor schema
+  // change, an error envelope, a proxy's HTML page — as "not listed" and let
+  // the dial proceed to a registered number. The DNCScrub path already fails
+  // closed on unrecognized dispositions; this path must match.
+  if (typeof data?.listed !== "boolean") {
+    log.warn("federal DNC vendor returned an unrecognized payload — failing closed");
+    return { listed: true, source: "error", checked_at };
+  }
+  return { listed: data.listed, source: "vendor", checked_at };
 }
 
 export type FederalDncMarketingGate = {
