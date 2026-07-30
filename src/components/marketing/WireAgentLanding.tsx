@@ -41,7 +41,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
   outbound: {
     eyebrow: "Sales and growth",
     title: "A sales agent that follows through.",
-    lead: "Call warm lists, revive leads, promote offers, send the follow up, book the meeting, and log the outcome.",
+    lead: "Call leads, book meetings, follow up, and log the result.",
     bestFor: ["Lead response", "Quote follow up", "Appointment setting"],
     cta: "Start with Starter",
     ctaPath: "/signup?plan=starter&mode=outbound",
@@ -49,7 +49,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
   inbound: {
     eyebrow: "Front desk and support",
     title: "Answer every valuable call.",
-    lead: "Catch the call, qualify the need, schedule the next step, cover after hours, and continue by text or email from one record.",
+    lead: "Answer, qualify, schedule, and follow up from one record.",
     bestFor: ["Front desk", "Lead qualifier", "Support triage"],
     cta: "Start with Starter",
     ctaPath: "/signup?plan=starter&mode=inbound",
@@ -57,7 +57,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
   hybrid: {
     eyebrow: "All purpose agent",
     title: "One agent for the work between conversations.",
-    lead: "Keep sales, service, callbacks, scheduling, and CRM updates moving in one visible workflow.",
+    lead: "Keep sales, service, scheduling, and follow up moving.",
     bestFor: ["Sales desk", "Collections desk", "Appointment desk"],
     cta: "Start with Starter",
     ctaPath: "/signup?plan=starter&mode=hybrid",
@@ -65,10 +65,10 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
 };
 
 const LOOP_COPY = [
-  "Set the outcome, audience, limits, and rules.",
-  "Add voice, knowledge, objections, approvals, and handoff logic.",
-  "Choose a paid plan, claim the number, connect channels, and set spend controls.",
-  "Let it answer, sell, support, book, follow up, and log the result.",
+  "Set the outcome, audience, rules, and limits.",
+  "Add knowledge, objections, approvals, and handoffs.",
+  "Claim a number, connect channels, and set spend controls.",
+  "Answer, sell, support, book, follow up, and log the result.",
 ] as const;
 
 const REASSURANCES = [
@@ -210,7 +210,7 @@ export default function WireAgentLanding() {
                   Live browser demo
                 </div>
                 <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-muted-foreground">
-                  Ask out loud. Your microphone turns on only after you start. No signup required.
+                  Ask out loud. Your microphone turns on only when you start.
                 </p>
               </div>
               <div className="mt-6 rounded-[16px] border border-border bg-background/70 p-4 sm:p-5">
@@ -253,18 +253,18 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">One agent. Every channel.</p>
-              <h2 className="wl-display-2 mt-4">Train once. Work across every channel.</h2>
+              <h2 className="wl-display-2 mt-4">Train once. Work everywhere.</h2>
               <p className="mt-4 text-[16px] leading-[1.65] text-muted-foreground">
-                Calls start the conversation. Text and email keep it moving. One agent carries the
-                same knowledge, rules, approvals, and history across every channel.
+                One agent carries the same knowledge, rules, approvals, and history across calls,
+                texts, and email.
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                ["Voice", "Answers and places calls, qualifies, books, transfers, and recaps."],
-                ["Text messages", "Confirms, nurtures, reminds, and recovers under consent rules."],
-                ["Email", "Drafts, sends approved replies, follows up, and records the result."],
-                ["One record", "Keeps context, coaching, spend controls, and proof together."],
+                ["Voice", "Answers, calls, qualifies, books, transfers, and recaps."],
+                ["Text messages", "Confirms, nurtures, reminds, and recovers with consent."],
+                ["Email", "Replies, follows up, and records the result."],
+                ["One record", "Keeps context, controls, and proof together."],
               ].map(([title, body]) => (
                 <article key={title} className="wl-paper rounded-[16px] p-6 text-center">
                   <h3 className="wl-display-4">{title}</h3>
@@ -279,10 +279,9 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">How it works</p>
-              <h2 className="wl-display-2 mt-4">From brief to live agent in four clear steps.</h2>
+              <h2 className="wl-display-2 mt-4">From brief to live in four steps.</h2>
               <p className="mt-4 text-[16px] leading-[1.65] text-muted-foreground">
-                Build the agent, train it for the job, activate the right channels, and improve it
-                from a clean record behind every conversation.
+                Build, train, activate, and improve from every conversation.
               </p>
             </div>
             <div className="grid overflow-hidden rounded-[16px] border border-border bg-card sm:grid-cols-4 sm:divide-x sm:divide-border">
@@ -316,12 +315,8 @@ export default function WireAgentLanding() {
               <h2 className="wl-display-2 mx-auto mt-4 max-w-[18ch]">
                 Choose the outcome. Your agent handles the conversation.
               </h2>
-              <p className="mx-auto mt-4 max-w-[44rem] text-[16px] leading-[1.65] text-muted-foreground">
-                Start with sales, service, or all purpose follow through. Voice, text, email, and
-                proof stay in one system.
-              </p>
-              <p className="mx-auto mt-3 max-w-[46rem] text-sm leading-6 text-muted-foreground">
-                {AGENT_NUMBER_PROMISE}
+              <p className="mx-auto mt-4 max-w-[46rem] text-[16px] leading-[1.65] text-muted-foreground">
+                Sales, service, or all purpose. {AGENT_NUMBER_PROMISE}
               </p>
               <div
                 className="wl-segmented mx-auto mt-7 flex w-fit max-w-full"
@@ -406,8 +401,8 @@ export default function WireAgentLanding() {
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
               <h2 className="wl-display-2 mt-4">Build free. Go live from $19 a month.</h2>
               <p className="mt-4 text-[16px] leading-[1.65] text-muted-foreground">
-                Train privately on Free Builder. Every paid plan includes live voice, a Wireline
-                number, and SMS and email under visible usage controls.
+                Build privately for free. Paid plans add live voice, a Wireline number, SMS, and
+                email.
               </p>
             </div>
             <div className="mx-auto grid max-w-[1200px] gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -452,8 +447,8 @@ export default function WireAgentLanding() {
             </div>
             <div className="mt-8 text-center">
               <p className="mx-auto max-w-[50ch] text-sm leading-[1.65] text-muted-foreground">
-                Included minutes are used first. Extra voice, SMS, and enrichment draw from prepaid
-                Runtime Balance that you control. There is no surprise postpaid invoice.
+                Included usage comes first. Extra voice, SMS, and enrichment use prepaid Runtime
+                Balance. No surprise invoice.
               </p>
               <Link
                 to="/pricing"
@@ -481,8 +476,7 @@ export default function WireAgentLanding() {
                   Put your first voice agent to work.
                 </h2>
                 <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-[35rem] text-[16px] leading-[1.65]">
-                  Train free. Choose a paid plan when you are ready to claim the number, connect
-                  channels, and handle the first real conversation.
+                  Train free. Activate when you are ready for a number and live conversations.
                 </p>
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                   <Link
