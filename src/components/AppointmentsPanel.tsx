@@ -86,8 +86,10 @@ export default function AppointmentsPanel() {
         const leftPast = isPastAppointment(left);
         const rightPast = isPastAppointment(right);
         if (leftPast !== rightPast) return leftPast ? 1 : -1;
-        return (appointmentDay(left) ?? Number.MAX_SAFE_INTEGER) -
-          (appointmentDay(right) ?? Number.MAX_SAFE_INTEGER);
+
+        const leftDay = appointmentDay(left) ?? Number.MAX_SAFE_INTEGER;
+        const rightDay = appointmentDay(right) ?? Number.MAX_SAFE_INTEGER;
+        return leftPast ? rightDay - leftDay : leftDay - rightDay;
       }),
     [appointments],
   );
