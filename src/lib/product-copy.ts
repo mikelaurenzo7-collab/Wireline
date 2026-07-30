@@ -101,7 +101,7 @@ export const AGENT_DIRECTION_MODES = {
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Every paid AI voice agent includes a Wireline number for calls, texts, callbacks, and handoffs." as const;
+  "Every paid AI voice agent includes a Wireline number that can call, answer, send texts, handle callbacks, and route handoffs." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
@@ -130,7 +130,7 @@ export const MARKETING_VOICE = {
   /** Public hero CTA broad enough for personal and business buyers. */
   primaryCta: "Build your voice agent",
   subline:
-    "Build one for business or life. It calls, answers, texts, emails, books, and follows through. You stay in control.",
+    "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.",
   channelProof: [
     "Calls and answers",
     "Text messages",
