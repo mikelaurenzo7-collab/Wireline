@@ -11,7 +11,7 @@ export const badgeVariants = cva(
         default:
           "border-transparent bg-[var(--wireline-color-surface-subtle)] text-[var(--wireline-color-text-primary)]",
         success:
-          "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-action-primary-pressed)]",
+          "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]",
         warning:
           "border-[var(--wireline-color-feedback-warning-border)] bg-[var(--wireline-color-feedback-warning-surface)] text-[var(--wireline-color-status-warning)]",
         destructive:

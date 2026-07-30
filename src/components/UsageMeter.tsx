@@ -157,6 +157,7 @@ export default function UsageMeter({
       <div className="relative">
         <Progress
           value={pct}
+          aria-label={`Voice minutes: ${used.toLocaleString()} of ${included.toLocaleString()} used (${pct}%)`}
           className="h-2.5 bg-white/5 shadow-inner wl-accent-progress-glow"
           indicatorClassName={cn(
             "transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]",

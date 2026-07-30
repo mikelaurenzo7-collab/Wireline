@@ -179,7 +179,7 @@ export default function BrowserCallWidget({
           "relative z-10 h-12 select-none rounded-md border px-6 font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.12em] transition-transform duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:border-border disabled:bg-secondary disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none",
           callActive
             ? "border-[color:var(--wireline-status-error)] bg-[color:var(--wireline-status-error)] text-white shadow-[var(--wireline-elevation-sm)]"
-            : "border-[color:var(--wireline-color-action-primary-default)] bg-[color:var(--wireline-color-action-primary-default)] text-white shadow-[var(--wireline-elevation-sm)] hover:border-[color:var(--wireline-color-action-primary-pressed)] hover:bg-[color:var(--wireline-color-action-primary-pressed)] hover:text-white",
+            : "border-[color:var(--wireline-color-action-primary-default)] bg-[color:var(--wireline-color-action-primary-default)] text-[color:var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)] hover:border-[color:var(--wireline-color-action-primary-pressed)] hover:bg-[color:var(--wireline-color-action-primary-pressed)] hover:text-[color:var(--wireline-color-text-onAction)]",
         )}
       >
         {connecting ? (

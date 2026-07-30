@@ -26,7 +26,7 @@ describe("E2E design and brand polish", () => {
   it("keeps modal titles contained and body copy readable", () => {
     const dialog = read("src/components/atoms/Dialog.tsx");
     expect(dialog).toContain("text-xl font-semibold leading-[1.15]");
-    expect(dialog).toContain('text-[15px] leading-6');
+    expect(dialog).toContain("text-[15px] leading-6");
     expect(dialog).toContain("size-11");
     expect(dialog).toContain("max-h-[calc(100dvh-2rem)]");
     expect(dialog).toContain("overflow-y-auto overscroll-contain");
@@ -64,6 +64,42 @@ describe("E2E design and brand polish", () => {
     expect(sticky).toContain('secondaryLabel = "Hear it live"');
     expect(sticky).toContain("min-h-[48px]");
     expect(footer).toContain("min-h-10 items-center");
+  });
+
+  it("keeps status and CTA foregrounds on their accessible design tokens", () => {
+    // Regression guard for three WCAG AA papercuts found in launch dogfooding.
+    // These surfaces only render in prod (VAPI key set) or on authenticated
+    // routes, so the axe CI gate never scans them — a source contract does.
+
+    // 1. The flagship homepage "Start the live demo" primary CTA must use the
+    //    theme-aware onAction foreground like every other primary button, not a
+    //    hardcoded white that fails contrast on the violet action color in dark.
+    const demo = read("src/components/marketing/BrowserCallWidget.tsx");
+    expect(demo).toContain(
+      "bg-[color:var(--wireline-color-action-primary-default)] text-[color:var(--wireline-color-text-onAction)]",
+    );
+    expect(demo).toContain(
+      "hover:bg-[color:var(--wireline-color-action-primary-pressed)] hover:text-[color:var(--wireline-color-text-onAction)]",
+    );
+    expect(demo).not.toContain(
+      "bg-[color:var(--wireline-color-action-primary-default)] text-white",
+    );
+
+    // 2. The billing "Voice minutes" meter must expose an accessible name so
+    //    screen readers do not announce an unnamed progressbar.
+    const usage = read("src/components/UsageMeter.tsx");
+    expect(usage).toMatch(/<Progress[\s\S]*?aria-label=\{`Voice minutes:/);
+
+    // 3. The success badge must use the green success status token (matching the
+    //    warning/destructive/info variants), not the violet action-primary color
+    //    which is both off-palette and below AA on the success surface.
+    const badge = read("src/components/atoms/Badge.tsx");
+    expect(badge).toContain(
+      "bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]",
+    );
+    expect(badge).not.toContain(
+      "bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-action-primary-pressed)]",
+    );
   });
 
   it("keeps the landing journey punchy and outcome led", () => {
