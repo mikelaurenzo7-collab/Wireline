@@ -93,6 +93,10 @@ run("npx", [
   "tests/product-voice-contract.test.ts",
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
+  // Calling setup is a primary activation surface: keep its self-service entry,
+  // agent/area-code choice, recovery path, and routing behavior in every build.
+  "tests/phone-settings-attach-contract.test.ts",
+  "tests/phone-self-serve-setup-contract.test.ts",
   "tests/auth-journey-hardening-contract.test.ts",
   // Recovery-token atomicity and expiry cleanup are account-security boundaries.
   "tests/auth-token-atomicity-contract.test.ts",
