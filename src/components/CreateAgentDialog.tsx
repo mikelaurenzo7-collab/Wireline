@@ -164,8 +164,18 @@ export default function CreateAgentDialog({
     setName("");
     setBrief(initialBrief || defaultBrief(nextPosture));
     setError("");
-    const frame = requestAnimationFrame(() => briefRef.current?.focus());
-    return () => cancelAnimationFrame(frame);
+
+    // Autofocusing a textarea makes iOS scroll the internal modal before its
+    // first paint, hiding the heading and first option. Keep phone and touch
+    // layouts anchored at the top; retain keyboard-first focus on desktop.
+    const shouldAutofocus =
+      window.innerWidth >= 768 && window.matchMedia("(pointer: fine)").matches;
+    const frame = shouldAutofocus
+      ? requestAnimationFrame(() => briefRef.current?.focus())
+      : null;
+    return () => {
+      if (frame !== null) cancelAnimationFrame(frame);
+    };
   }, [business, initialBrief, open]);
 
   function close() {
@@ -363,9 +373,7 @@ export default function CreateAgentDialog({
           <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(2rem,4vw,2.5rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
             {language.setupPrompt}
           </h3>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {language.setupDescription} One sentence is enough.
-          </p>
+          <p className="mt-3 text-sm text-muted-foreground">{language.setupDescription}</p>
 
           <div className="mt-5 grid gap-2 sm:grid-cols-2" role="group" aria-label="Use case">
             {(
