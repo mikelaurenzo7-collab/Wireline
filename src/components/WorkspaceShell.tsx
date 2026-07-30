@@ -160,14 +160,18 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const language = customerAgentLanguage(accountType);
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
   const planLabel = accountType === "business" ? "Business workspace" : "Personal workspace";
+  const postureAgents =
+    accountType === "business"
+      ? agents.filter((agent) => agent.is_business_agent)
+      : agents.filter((agent) => !agent.is_business_agent);
   const orderedAgents = resolvedId
     ? [
-        ...agents.filter((agent) => agent.id === resolvedId),
-        ...agents.filter((agent) => agent.id !== resolvedId),
+        ...postureAgents.filter((agent) => agent.id === resolvedId),
+        ...postureAgents.filter((agent) => agent.id !== resolvedId),
       ]
-    : agents;
+    : postureAgents;
   const visibleAgents = orderedAgents.slice(0, 3);
-  const hiddenAgentCount = Math.max(agents.length - visibleAgents.length, 0);
+  const hiddenAgentCount = Math.max(postureAgents.length - visibleAgents.length, 0);
   const secondaryRouteParent = desktopNavParentHref(pathname);
 
   return (
@@ -216,7 +220,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
         })}
       </nav>
 
-      {agents.length ? (
+      {postureAgents.length ? (
         <div className="shrink-0 pt-3">
           <div className="flex items-center justify-between px-2.5 pb-2">
             <WiredEyebrow>{language.plural}</WiredEyebrow>
@@ -264,7 +268,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
               >
                 <span>All {language.plural}</span>
                 <span className="font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">
-                  {agents.length}
+                  {postureAgents.length}
                 </span>
               </Link>
             ) : null}

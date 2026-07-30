@@ -191,6 +191,7 @@ describe("founder dogfood posture integrity", () => {
     const callOps = read("src/components/CallLogsClaude.tsx");
     const workroom = read("src/components/StudioWorkroom.tsx");
     const overview = read("src/pages/OverviewPage.tsx");
+    const workspaceShell = read("src/components/WorkspaceShell.tsx");
 
     expect(callOps).toContain("humanizeTaxonomy");
     expect(callOps).not.toContain('{call.intent_label || call.summary || "Follow up requested"}');
@@ -198,6 +199,8 @@ describe("founder dogfood posture integrity", () => {
     expect(workroom).toContain('aria-label={mode === "test"');
     expect(overview).toContain('coreConnections.push("Phone")');
     expect(overview).not.toContain('coreConnections.push("Phone + SMS")');
+    expect(workspaceShell).toContain("const postureAgents =");
+    expect(workspaceShell).toContain("{postureAgents.length}");
   });
 });
 
