@@ -183,7 +183,7 @@ export default function PhoneSetupPanel() {
     ? `${attachedAgent?.name || "Unassigned"} · ${formatProvisionedDate(activeNumber.created_at)}`
     : loading
       ? "Loading carrier status"
-      : "Choose the agent and local area code before activating the line";
+      : "Choose an agent and area code";
 
   return (
     <div className="space-y-5">
@@ -191,19 +191,18 @@ export default function PhoneSetupPanel() {
         <div className="border-b border-border px-5 py-5 sm:px-6">
           <p className={WL_APP_CLASSES.wiredEyebrow}>Calling setup</p>
           <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-[-0.03em] text-foreground">
-            Set up the complete call experience before going live.
+            Set up calls before going live.
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Build and train the voice agent, choose a local number, connect your company identity,
-            then call the line yourself. A paid plan is only required when Wireline activates the
-            dedicated number and starts live provider usage.
+            Train the agent, activate a number, verify identity, then call it yourself. Billing
+            starts when the number is activated.
           </p>
         </div>
         <ol className="grid gap-px bg-border sm:grid-cols-3" aria-label="Calling setup steps">
           {[
-            ["1", "Train the agent", "Set the greeting, voice, rules, knowledge, and handoffs."],
-            ["2", "Activate the line", "Choose the agent and preferred local area code."],
-            ["3", "Call and refine", "Call the number, review the result, and improve the agent."],
+            ["1", "Train the agent", "Set the greeting, voice, rules, and handoffs."],
+            ["2", "Activate the line", "Choose an agent and area code."],
+            ["3", "Test and refine", "Call, review, and improve."],
           ].map(([number, title, description]) => (
             <li key={number} className="bg-card px-5 py-4">
               <span className="font-mono text-[10px] font-semibold text-primary">{number}</span>
@@ -269,7 +268,7 @@ export default function PhoneSetupPanel() {
 
             <label className="block">
               <span className="mb-1.5 block text-xs font-semibold text-primary-foreground/80">
-                Preferred area code
+                Area code
               </span>
               <span className="relative block">
                 <MapPin
@@ -312,7 +311,7 @@ export default function PhoneSetupPanel() {
               <div>
                 <p className="text-sm font-semibold">Call this number now</p>
                 <p className="mt-1 text-xs leading-5 text-primary-foreground/70">
-                  Use any phone to test the live greeting, routing, knowledge, and handoff behavior.
+                  Test the greeting, routing, knowledge, and handoffs.
                 </p>
               </div>
             </div>
@@ -341,7 +340,7 @@ export default function PhoneSetupPanel() {
             </div>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-muted-foreground">No voice agent attached yet</p>
+          <p className="mt-4 text-sm text-muted-foreground">No agent attached</p>
         )}
         {activeNumber ? (
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -382,7 +381,7 @@ export default function PhoneSetupPanel() {
           </div>
         ) : (
           <p className="mt-4 text-xs leading-5 text-muted-foreground">
-            Routing will be connected automatically when the number is activated.
+            Routing connects when the number is activated.
           </p>
         )}
       </section>
@@ -390,12 +389,12 @@ export default function PhoneSetupPanel() {
       <CompanyIdentityPack key={activeNumber?.id ?? "no-number"} />
 
       {message ? (
-        <StatusNotice tone="success" title="Calling is ready">
+        <StatusNotice tone="success" title="Calling ready">
           {message}
         </StatusNotice>
       ) : null}
       {error ? (
-        <StatusNotice tone="destructive" title="Calling setup needs attention">
+        <StatusNotice tone="destructive" title="Setup needs attention">
           <div className="space-y-3">
             <p>{error}</p>
             {recoveryPath ? (
