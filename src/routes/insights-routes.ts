@@ -17,6 +17,49 @@ const router = Router();
 
 const DEFAULT_AGENT_ROLE = "customer_service";
 
+type FailureModeSourceRow = {
+  summary: string | null;
+  transcript: string | null;
+  leadScore: number | null;
+  intentLabel: string | null;
+};
+
+function buildFastFailureModes(rows: FailureModeSourceRow[]) {
+  const counts = { noIntent: 0, lowIntent: 0, lowScore: 0 };
+  for (const row of rows) {
+    if (row.intentLabel === "none") counts.noIntent += 1;
+    else if (row.intentLabel === "low") counts.lowIntent += 1;
+    else if (row.leadScore != null && row.leadScore < 30) counts.lowScore += 1;
+  }
+  const severity = (count: number) => (count >= 8 ? "high" : count >= 3 ? "medium" : "low");
+  return [
+    {
+      failure_type: "No clear intent",
+      severity: severity(counts.noIntent),
+      fix_target: "Opening prompt",
+      count: counts.noIntent,
+      recommended_fix:
+        "Confirm the caller's goal earlier and offer a clear fallback when intent stays ambiguous.",
+    },
+    {
+      failure_type: "Low caller intent",
+      severity: severity(counts.lowIntent),
+      fix_target: "Conversation flow",
+      count: counts.lowIntent,
+      recommended_fix:
+        "Shorten the opening, confirm the caller's goal, and present one concrete next step.",
+    },
+    {
+      failure_type: "Low qualification score",
+      severity: severity(counts.lowScore),
+      fix_target: "Qualification",
+      count: counts.lowScore,
+      recommended_fix:
+        "Tighten qualification questions and make the success criteria explicit before handoff.",
+    },
+  ].filter((mode) => mode.count > 0);
+}
+
 import { computeDailyBrief } from "../lib/daily-brief";
 
 /**
@@ -410,6 +453,13 @@ router.get(
           message: "Not enough failed calls yet — system is performing well.",
         });
       }
+
+      if (!force) {
+        const result = { modes: buildFastFailureModes(rows), analysis_mode: "fast" as const };
+        setCachedInsight(cacheKey, result);
+        return res.json({ ...result, cached: false });
+      }
+
       const result = await insightsAi.clusterFailureModes({
         failedCalls: rows.map((r) => ({
           summary: r.summary,
