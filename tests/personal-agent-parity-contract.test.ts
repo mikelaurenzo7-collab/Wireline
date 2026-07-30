@@ -202,6 +202,24 @@ describe("founder dogfood posture integrity", () => {
     expect(workspaceShell).toContain("const postureAgents =");
     expect(workspaceShell).toContain("{postureAgents.length}");
   });
+
+  it("keeps audited founder empty states and integration controls truthful and distinguishable", () => {
+    const sms = read("src/components/SmsThreads.tsx");
+    const connections = read("src/components/CrmConnectionCard.tsx");
+    const billing = read("src/pages/BillingSettings.tsx");
+
+    expect(sms).toContain("SMS conversations will appear here after messaging is connected");
+    expect(sms).toContain("Review SMS setup");
+    expect(sms).not.toContain("Wire a number, then text it from another phone");
+
+    expect(connections).toContain("aria-label={isConnecting");
+    expect(connections).toContain("Connect ${label}");
+    expect(connections).toContain("Disconnect ${label}");
+    expect(connections).toContain('aria-label="Configure Salesforce"');
+
+    expect(billing).toContain("Plan access is active");
+    expect(billing).toContain("paid-plan access without a Stripe subscription");
+  });
 });
 
 describe("founder hybrid pricing — Starter Plus pair capacity", () => {
