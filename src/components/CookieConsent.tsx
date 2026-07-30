@@ -226,17 +226,8 @@ export default function CookieConsent() {
                     : "text-[var(--wireline-typography-caption-size)]",
                 )}
               >
-                {hasSession ? (
-                  <>
-                    Essential storage keeps Wireline working. Optional ad measurement stays off
-                    unless you allow it.{" "}
-                  </>
-                ) : (
-                  <>
-                    Essential storage and privacy-friendly product analytics help Wireline operate.
-                    Optional advertising measurement stays off unless you allow it.{" "}
-                  </>
-                )}
+                Essential storage keeps Wireline working. Optional ad measurement stays off unless
+                allowed.{" "}
                 <Link
                   to="/privacy"
                   className="text-brand hover:text-brand/80 underline"
