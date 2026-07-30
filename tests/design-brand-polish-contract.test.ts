@@ -105,8 +105,8 @@ describe("E2E design and brand polish", () => {
   it("keeps the landing journey punchy and outcome led", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain("One agent. Every channel.");
-    expect(landing).toContain("Train once. Work across every channel.");
-    expect(landing).toContain("From brief to live agent in four clear steps.");
+    expect(landing).toContain("Train once. Work everywhere.");
+    expect(landing).toContain("From brief to live in four steps.");
     expect(landing).toContain("Put your first voice agent to work.");
     expect(landing).toContain("Build free. Hear it live before you pay. Cancel anytime.");
     expect(landing).not.toContain("—");
