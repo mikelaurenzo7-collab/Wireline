@@ -32,7 +32,7 @@ type StudioAgentReviewPanelProps = {
 
 function openingGreeting(directives: AgentConfigResponse["directives"]) {
   const match = directives?.find((directive) => directive.content?.startsWith(GREETING_PREFIX));
-  return match?.content?.slice(GREETING_PREFIX.length).trim() || "Uses the standard greeting";
+  return match?.content?.slice(GREETING_PREFIX.length).trim() || "Standard greeting";
 }
 
 function toneLabel(personality?: string | null) {
@@ -50,9 +50,10 @@ function toneLabel(personality?: string | null) {
     concise: "Concise and direct",
   };
   if (knownTone[normalized]) return knownTone[normalized];
+  if (/helpful assistant.*phone agent/.test(normalized)) return "Clear and professional";
 
   const sentence = value.split(/[.\n]/)[0]?.trim() || "Clear and professional";
-  return sentence.length > 80 ? `${sentence.slice(0, 77).trimEnd()}…` : sentence;
+  return sentence.length > 64 ? `${sentence.slice(0, 61).trimEnd()}…` : sentence;
 }
 
 export default function StudioAgentReviewPanel({
@@ -106,7 +107,7 @@ export default function StudioAgentReviewPanel({
             Review
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Is {agentName} ready for customers?
+            Ready for customers?
           </h2>
         </header>
 
@@ -118,7 +119,7 @@ export default function StudioAgentReviewPanel({
 
         <section
           className="rounded-2xl border border-border bg-card p-5 sm:p-6"
-          aria-label="Launch summary"
+          aria-label={`${agentName} launch summary`}
         >
           {loading ? (
             <div className="grid gap-4 sm:grid-cols-2" aria-busy="true">
@@ -132,10 +133,10 @@ export default function StudioAgentReviewPanel({
           ) : (
             <dl className="grid gap-3 sm:grid-cols-2">
               {[
-                { label: "Customer-facing job", value: role },
+                { label: "Job", value: role },
                 { label: "Tone", value: toneLabel(config?.personality) },
-                { label: "Opening greeting", value: openingGreeting(config?.directives) },
-                { label: "Managed phone voice", value: voiceName },
+                { label: "Greeting", value: openingGreeting(config?.directives) },
+                { label: "Voice", value: voiceName },
               ].map((item) => (
                 <div key={item.label} className="rounded-xl border border-border bg-background p-4">
                   <dt className="text-xs font-semibold text-muted-foreground">{item.label}</dt>
@@ -148,15 +149,10 @@ export default function StudioAgentReviewPanel({
           )}
         </section>
 
-        <StatusNotice
-          tone={hasPhone ? "success" : "warning"}
-          title={
-            hasPhone ? "Live customer line connected" : "Browser-ready; live line not connected"
-          }
-        >
+        <StatusNotice tone={hasPhone ? "success" : "warning"} title={hasPhone ? "Line connected" : "No live line"}>
           {hasPhone
-            ? `${agentName} is live at ${phoneNumber}. Place one inbound test before sharing the number.`
-            : "Test in the browser, then connect a phone line when the greeting and handoff are ready."}
+            ? `${agentName} is live at ${phoneNumber}. Place one inbound test before sharing it.`
+            : "Test in the browser, then connect a line when the greeting and handoff are ready."}
         </StatusNotice>
 
         <section
@@ -197,13 +193,13 @@ export default function StudioAgentReviewPanel({
               to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
               className="font-medium text-primary hover:underline"
             >
-              Add business knowledge
+              Add knowledge
             </Link>
             <Link to="/connections" className="font-medium text-primary hover:underline">
-              Open Connections
+              Connections
             </Link>
             <Link to="/settings/customization" className="font-medium text-primary hover:underline">
-              Appearance & brand
+              Appearance
             </Link>
           </div>
         </section>
