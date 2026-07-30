@@ -30,9 +30,10 @@ describe("July 30 mobile clarity QA", () => {
 
   it("uses readable mobile labels instead of internal abbreviations", () => {
     const tabs = read("src/lib/page-sub-tabs.ts");
-    expect(tabs).toContain('shortLabel: "Campaign"');
-    expect(tabs).toContain('shortLabel: "Sequence"');
-    expect(tabs).toContain('shortLabel: "Callback"');
+    expect(tabs).toContain('shortLabel: "Bookings"');
+    expect(tabs).toContain('{ id: "campaigns", label: "Campaigns", icon: Megaphone }');
+    expect(tabs).toContain('{ id: "sequences", label: "Sequences", icon: Repeat }');
+    expect(tabs).toContain('{ id: "callbacks", label: "Callbacks", icon: CalendarClock }');
     expect(tabs).not.toContain('shortLabel: "Camps"');
     expect(tabs).not.toContain('shortLabel: "Seq"');
     expect(tabs).not.toContain('shortLabel: "Cbks"');
