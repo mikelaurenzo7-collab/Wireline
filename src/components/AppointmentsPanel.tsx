@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Clock3 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -20,6 +20,22 @@ type Appointment = {
 function scheduleLabel(appointment: Appointment): string {
   const parts = [appointment.date, appointment.time].filter(Boolean);
   return parts.length ? parts.join(" · ") : "Time to be confirmed";
+}
+
+function appointmentDay(appointment: Appointment): number | null {
+  if (!appointment.date) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(appointment.date);
+  if (!match) return null;
+  const value = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])).getTime();
+  return Number.isNaN(value) ? null : value;
+}
+
+function isPastAppointment(appointment: Appointment): boolean {
+  const day = appointmentDay(appointment);
+  if (day === null) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return day < today.getTime();
 }
 
 export default function AppointmentsPanel() {
@@ -64,6 +80,18 @@ export default function AppointmentsPanel() {
     };
   }, []);
 
+  const orderedAppointments = useMemo(
+    () =>
+      [...appointments].sort((left, right) => {
+        const leftPast = isPastAppointment(left);
+        const rightPast = isPastAppointment(right);
+        if (leftPast !== rightPast) return leftPast ? 1 : -1;
+        return (appointmentDay(left) ?? Number.MAX_SAFE_INTEGER) -
+          (appointmentDay(right) ?? Number.MAX_SAFE_INTEGER);
+      }),
+    [appointments],
+  );
+
   if (loading) {
     return (
       <div className="flex w-full flex-col gap-2 px-4 py-6 sm:px-6" aria-busy="true">
@@ -97,15 +125,15 @@ export default function AppointmentsPanel() {
           title={calendarConnected ? "No appointments yet" : "Connect a calendar"}
           description={
             calendarConnected
-              ? "When an employee books during a call, the appointment appears here."
-              : "Sync Google Workspace or Microsoft 365 so employees can book during live calls."
+              ? "Appointments booked during calls appear here."
+              : "Connect Google or Microsoft so agents can book during calls."
           }
           action={
             <Button asChild>
               {/* Calendar access is granted with the Google/Microsoft account
                   connected on /connections, so both states route there. */}
               <Link to="/connections">
-                {calendarConnected ? "Manage calendar" : "Connect a calendar"}
+                {calendarConnected ? "Manage calendar" : "Connect calendar"}
               </Link>
             </Button>
           }
@@ -117,33 +145,36 @@ export default function AppointmentsPanel() {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 px-4 py-6 sm:px-6">
       <ul className="flex flex-col gap-2">
-        {appointments.map((appointment) => (
-          <li key={appointment.id} className="wl-data-row wl-data-row--framed">
-            <span className="wl-data-row__leading rounded-lg bg-muted p-2">
-              <CalendarDays className="size-4 text-primary" aria-hidden />
-            </span>
-            <span className="wl-data-row__main">
-              <span className="wl-data-row__title">
-                {appointment.customer_name || "Customer"}
-                {appointment.service_type ? (
-                  <span className="ml-2 font-normal text-muted-foreground">
-                    {appointment.service_type}
-                  </span>
-                ) : null}
+        {orderedAppointments.map((appointment) => {
+          const past = isPastAppointment(appointment);
+          const status =
+            past && appointment.status === "Scheduled" ? "Past" : appointment.status || "Scheduled";
+          return (
+            <li key={appointment.id} className="wl-data-row wl-data-row--framed">
+              <span className="wl-data-row__leading rounded-lg bg-muted p-2">
+                <CalendarDays className="size-4 text-primary" aria-hidden />
               </span>
-              <span className="wl-data-row__detail inline-flex items-center gap-1.5">
-                <Clock3 className="size-3.5" aria-hidden />
-                {scheduleLabel(appointment)}
+              <span className="wl-data-row__main">
+                <span className="wl-data-row__title">
+                  {appointment.customer_name || "Customer"}
+                  {appointment.service_type ? (
+                    <span className="ml-2 font-normal text-muted-foreground">
+                      {appointment.service_type}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="wl-data-row__detail inline-flex items-center gap-1.5">
+                  <Clock3 className="size-3.5" aria-hidden />
+                  {scheduleLabel(appointment)}
+                </span>
               </span>
-            </span>
-            <span className="ml-auto flex shrink-0 items-center gap-2">
-              {appointment.demo ? <Badge variant="outline">Demo</Badge> : null}
-              <Badge variant={appointment.status === "Scheduled" ? "success" : "outline"}>
-                {appointment.status || "Scheduled"}
-              </Badge>
-            </span>
-          </li>
-        ))}
+              <span className="ml-auto flex shrink-0 items-center gap-2">
+                {appointment.demo ? <Badge variant="outline">Demo</Badge> : null}
+                <Badge variant={status === "Scheduled" ? "success" : "outline"}>{status}</Badge>
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
