@@ -57,7 +57,7 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
       {
         id: "appointments",
         label: "Appointments",
-        shortLabel: "Appts",
+        shortLabel: "Bookings",
         ariaLabel: "Appointments",
         icon: Calendar,
       },
@@ -183,27 +183,9 @@ export const INSIGHTS_VIEW_TABS: Record<string, AppPageSubTab> = {
 
 export const OUTBOUND_VIEW_TABS: AppPageSubTab[] = [
   { id: "dispatch", label: "Dispatch", icon: Zap },
-  {
-    id: "campaigns",
-    label: "Campaigns",
-    shortLabel: "Campaign",
-    ariaLabel: "Campaigns",
-    icon: Megaphone,
-  },
-  {
-    id: "sequences",
-    label: "Sequences",
-    shortLabel: "Sequence",
-    ariaLabel: "Sequences",
-    icon: Repeat,
-  },
-  {
-    id: "callbacks",
-    label: "Callbacks",
-    shortLabel: "Callback",
-    ariaLabel: "Callbacks",
-    icon: CalendarClock,
-  },
+  { id: "campaigns", label: "Campaigns", icon: Megaphone },
+  { id: "sequences", label: "Sequences", icon: Repeat },
+  { id: "callbacks", label: "Callbacks", icon: CalendarClock },
 ];
 
 export const APP_PAGE_SECONDARY_TAB_ROUTES: AppPageSecondaryTabRoute[] = [
