@@ -5,7 +5,7 @@
 .marketing-surface :where(.marketing-hero__title, .wl-public-section-heading, .wl-stitch-display),
 .wl-workspace-shell .wl-workspace-page :where(h1, h2),
 .wl-workspace-shell .wl-centered-header h1,
-# create-agent-title {
+#create-agent-title {
   text-transform: uppercase;
   letter-spacing: 0.025em;
   line-height: 1;
