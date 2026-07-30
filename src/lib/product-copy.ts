@@ -101,7 +101,7 @@ export const AGENT_DIRECTION_MODES = {
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Every paid AI voice agent includes a Wireline number that can call, answer, send texts, handle callbacks, and route handoffs." as const;
+  "Every paid AI voice agent includes a Wireline number at no extra line fee to call, answer, send texts, handle callbacks, and route handoffs." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
@@ -178,65 +178,44 @@ export const CLIENT_SURFACE_POSTURE = {
 
 export const BUSINESS_MARKETING_VOICE = {
   eyebrow: "Business voice agents",
-  proof: ["Calls customers", "Texts follow ups", "Sends email", "Logs outcomes"],
-  differentiator: "Wireline keeps valuable conversations moving across voice, SMS, and email.",
-  beforeStrip: OUTBOUND_WEDGE.beforeStrip,
-} as const;
-
-export const WORKSPACE_VOICE = {
-  createHeadline: "Build your next AI voice agent.",
-  runHeadline: "Your AI voice agent is live.",
-  emptyCue: "Brief it. Train it once. Connect calls, texts, and email.",
-  configurePrompts: ["Adjust the greeting", "Change the tone", "Add a business rule"],
-  testPrompts: [
-    "What services do you offer?",
-    "I want to book an appointment.",
-    "How much does it cost?",
-    "I need to speak with a person.",
-  ],
-} as const;
-
-export const PRODUCT_VERSATILITY = {
-  eyebrow: "AI voice agents for life and work",
-  tagline: "Start with one AI voice agent. Build a team when you need one.",
-  short:
-    "AI voice agents for calling, texting, email, sales, marketing, appointment setting, lead revival, support, scheduling, follow up, inbound conversion, recovery, and personal admin.",
-  hero: "One platform for the voice agents and conversations that keep life and work moving.",
+  headline: "AI voice agents that keep customer work moving.",
+  subline:
+    "Answer calls, follow up by text or email, book appointments, route handoffs, and log outcomes under your direction.",
+  primaryCta: "Build a business agent",
 } as const;
 
 export const PRODUCT_POSTURE = {
   personal: {
-    badge: "Personal voice agent",
-    badgeShort: "Personal",
-    createCta: "Build personal voice agent",
-    emptyTitle: "Your personal voice agent.",
+    eyebrow: "Personal voice agent",
+    headline: "Your calls, follow ups, and appointments handled.",
+    emptyTitle: "Create your personal voice agent",
     emptyBody: "Your calls. Your texts. Your email. Your outcomes.",
   },
   business: {
-    badge: "Business voice agent",
-    badgeShort: "Business",
-    createCta: "Build business voice agent",
-    emptyTitle: "Your business voice agent.",
-    emptyBody: "Calls, texts, and email handled. Outcomes logged.",
+    eyebrow: "Business voice agents",
+    headline: "Customer conversations handled from one workspace.",
+    emptyTitle: "Create your first business voice agent",
+    emptyBody: "Answer, sell, support, schedule, and follow up under your direction.",
   },
 } as const;
 
-export function formatAgentRoleLabel(role?: string | null): string {
-  if (role === "ceo") return "Lead Agent";
-  return (role || "agent").replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
+export const WORKSPACE_VOICE = {
+  headline: "Create, train, and run your voice agents.",
+  subline:
+    "Give each agent one clear job, test it before launch, then improve from real conversations.",
+} as const;
 
-/** Canonical trust posture for sales and regulated verticals. Policy driven, not stealth. */
-export const TRUST_DISCLOSURE_FAQ =
-  "Wireline agents follow your disclosure policy, consent rules, and conversation purpose. When disclosure is required or enabled, Wireline logs it automatically. The goal is quick, clear qualification and real opportunities that move forward." as const;
+export const PERSONAL_AGENT_PROMISE =
+  "A personal voice agent can make and answer calls, send texts, draft email, book appointments, and follow up under your direction." as const;
 
-export function rosterSummary(personalCount: number, businessCount: number): string {
-  const parts: string[] = [];
-  if (personalCount > 0) {
-    parts.push(`${personalCount} personal voice agent${personalCount === 1 ? "" : "s"}`);
-  }
-  if (businessCount > 0) {
-    parts.push(`${businessCount} business voice agent${businessCount === 1 ? "" : "s"}`);
-  }
-  return parts.length ? parts.join(" / ") : "No agents yet";
+export const BUSINESS_AGENT_PROMISE =
+  "A business voice agent can answer, sell, support, schedule, follow up, and escalate under your direction." as const;
+
+export function formatAgentRoleLabel(value?: string | null): string {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized) return "Voice Agent";
+  if (normalized === "ceo") return "Lead Agent";
+  return value!
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
