@@ -12,16 +12,16 @@ This is dated evidence, not product doctrine. Canonical policy remains in the co
 
 The deep pass verified that Wireline has a coherent product model, a guarded OpenAI-first runtime, a versioned Founder pricing catalog, tenant-isolated data, activation/spend controls, provider fallbacks, and an extensive launch-test suite. It also found one production billing-status failure caused by avoidable serverless pool fan-out, indefinite retention of expired recovery credentials, a false-green Stripe readiness check, email diagnostics that could expose recipient addresses or a verification bearer link, and a shared database-error formatter that retained Drizzle bound parameters.
 
-All verified code wins are implemented on the audit branch. Follow-up passes also found that the margin model omitted Stripe Billing and future Tax transaction fees, Vapi end-of-call persistence read several current report fields only from compatibility locations, pooled transaction state could strand a worker on a read-only backend, failed-but-retryable durable jobs were never reclaimable, and a shadow Extra Agent write path could have reintroduced non-atomic entitlement handling if router order changed. These defects are now corrected and permanently release-gated. No speculative redesign, vendor expansion, or destructive data cleanup was applied.
+All verified code wins are implemented on the audit branch. Follow-up passes also found that the margin model omitted Stripe Billing and future Tax transaction fees, Vapi end-of-call persistence read several current report fields only from compatibility locations, pooled transaction state could strand a worker on a read-only backend, failed-but-retryable durable jobs were never reclaimable, a shadow Extra Agent write path could have reintroduced non-atomic entitlement handling if router order changed, DNCScrub blocked/unknown outcomes could be treated as callable, outbound AI identity and recording notices were not guaranteed in the actual first message, and transcript-free calls could be recorded as if disclosure delivery were proven. These defects are now corrected and permanently release-gated. No speculative redesign, vendor expansion, or destructive data cleanup was applied.
 
 ## Exact-head release evidence
 
-The latest code-bearing audit completed on commit `04737463712a1af3479fe53c63b207b317363aac` (`dpl_A2wNcyoG9tiEjFvHPaXakqqQfKSe`, `READY`). This documentation-only refresh records evidence about that proven code head; the exact documentation head and its deployment are recorded on PR #943 to avoid a self-referential evidence loop.
+The latest code-bearing audit completed on commit `e983101c4b263a2ece8175e3de4a41da795d3e1e` (`dpl_99cmdMooZRdvsMzy4fHfYriRiQBT`, `READY`). This documentation-only refresh records evidence about that proven code head; the exact documentation head and its deployment are recorded on PR #943 to avoid a self-referential evidence loop.
 
 | Gate | Result |
 | --- | --- |
-| Vercel preview | `READY` (`dpl_A2wNcyoG9tiEjFvHPaXakqqQfKSe`) at `04737463712a1af3479fe53c63b207b317363aac` |
-| Unit/contract suite | Curated gate: 41 files / 273 tests; full non-E2E suite: 261 files / 1,386 tests; all passed |
+| Vercel preview | `READY` (`dpl_99cmdMooZRdvsMzy4fHfYriRiQBT`) at `e983101c4b263a2ece8175e3de4a41da795d3e1e` |
+| Unit/contract suite | Curated gate: 41 files / 273 tests; full non-E2E suite: 261 files / 1,391 tests; all passed |
 | Static analysis | Client TypeScript, server TypeScript, audit-module TypeScript, and ESLint passed |
 | Frontend build | Vite 6.4.3; 3,074 modules transformed; production build passed |
 | Server build | 2.4 MB server bundle; import-safe no-database smoke passed |
@@ -35,6 +35,12 @@ The latest code-bearing audit completed on commit `04737463712a1af3479fe53c63b20
 The largest browser payload remains the 364 kB AreaChart chunk (107 kB gzip). It is route-split and not a verified launch blocker. The main client is 267 kB (86 kB gzip); CSS is 430 kB (58 kB gzip).
 
 ## Verified fixes on this branch
+
+### Federal DNC and spoken-call evidence
+
+The DNCScrub adapter previously recognized only a guessed D-shaped subset as blocked and returned clear for empty, malformed, or unknown dispositions. The v5 integration now allowlists only the documented callable outcomes (C/E/G/H/O/W/X/Y); D/P/B/I/M/L/F/V, blank payloads, malformed responses, and future unknown codes fail closed. Unit coverage executes every documented disposition family plus empty and unknown responses.
+
+Vapi's actual `firstMessage` now prepends an outbound AI/responsible-business identification independently of a tenant-selected compliance preset and uses the workspace business name before the agent-name fallback. Every non-HIPAA call Wireline records receives a compact spoken recording notice; HIPAA recording remains disabled in both directions. End-of-call evidence now distinguishes `disclosure_played`, `disclosure_not_detected`, and `disclosure_unverifiable`; missing transcript evidence can no longer create a false played record. These controls reduce risk but are not legal certification; consent purpose, jurisdiction, and campaign operations still require counsel-approved policy and live proof.
 
 ### Billing-status pool headroom
 
