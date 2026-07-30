@@ -90,9 +90,9 @@ describe("email observability privacy", () => {
 
     expect(source).toContain("function emailLogContext");
     expect(source).toContain("recipientRedacted: true");
-    expect(source.match(/emailLogContext\((?:args|opts)\.to\)/g)?.length ?? 0).toBeGreaterThanOrEqual(
-      13,
-    );
+    expect(
+      source.match(/emailLogContext\((?:args|opts)\.to\)/g)?.length ?? 0,
+    ).toBeGreaterThanOrEqual(13);
     expect(calls.length).toBeGreaterThan(10);
 
     for (const call of calls) {
@@ -130,6 +130,34 @@ describe("email observability privacy", () => {
     const bounded = getErrorMessage("x".repeat(3_000));
     expect(bounded).toHaveLength(2_012);
     expect(bounded.endsWith("…[truncated]")).toBe(true);
+  });
+
+  it("stays linear on hostile error text instead of stalling the event loop", () => {
+    // Redaction runs on every error path over text this process does not
+    // control. Unbounded `+` quantifiers backtrack quadratically against a long
+    // run of address-shaped characters that never reaches an `@` — a 1 MB
+    // string took ~19 minutes on the unbounded pattern, which stalls the single
+    // Node event loop for every other request in the instance.
+    const hostile = "a.b.c".repeat(400_000); // 2 MB, no "@" anywhere
+    const started = Date.now();
+    const sanitized = sanitizeErrorMessage(hostile);
+    const elapsedMs = Date.now() - started;
+
+    expect(elapsedMs).toBeLessThan(1_000);
+    expect(sanitized).toHaveLength(2_012);
+    expect(sanitized.endsWith("…[truncated]")).toBe(true);
+
+    const hostileProviderBody = `${"x.y.z".repeat(400_000)} rejected`;
+    const providerStarted = Date.now();
+    const providerDetail = formatResendApiError(500, hostileProviderBody);
+    expect(Date.now() - providerStarted).toBeLessThan(1_000);
+    expect(providerDetail.length).toBeLessThanOrEqual(400);
+  });
+
+  it("still redacts addresses at the boundaries the bounded pattern allows", () => {
+    const local = "a".repeat(64);
+    expect(sanitizeErrorMessage(`from ${local}@example.com now`)).toContain("[redacted-email]");
+    expect(sanitizeErrorMessage("Jane.Doe+tag@sub.example.co.uk")).toBe("[redacted-email]");
   });
 
   it("sanitizes provider error bodies before they are returned or logged", () => {

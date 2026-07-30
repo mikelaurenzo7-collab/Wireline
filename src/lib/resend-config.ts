@@ -85,11 +85,18 @@ export function getResendTransportDiagnostics(): ResendTransportDiagnostics {
  * characters, and remove any mailbox Resend echoes back in an error response.
  */
 function sanitizeResendErrorDetail(value: string): string {
-  return value
-    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,63}\b/gi, "[redacted-email]")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 300);
+  return (
+    value
+      // Bound the scan before redacting: the provider body is arbitrary length
+      // and unbounded `+` runs backtrack quadratically against long
+      // address-shaped text that never reaches an `@`. Only the first 300
+      // characters survive anyway, so a generous window loses nothing.
+      .slice(0, 4_000)
+      .replace(/\b[A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{1,255}\.[A-Z]{2,63}\b/gi, "[redacted-email]")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 300)
+  );
 }
 
 /** Parse Resend error JSON into a short Account Holder-facing string. */
