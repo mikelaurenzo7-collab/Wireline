@@ -182,7 +182,16 @@ describe("founder dogfood posture integrity", () => {
     expect(founderSeed).toContain(
       'isBusinessAgent: template.isBusinessAgent ?? template.role !== "personal_assistant"',
     );
-    expect(founderSeed).toContain('isBusinessAgent: row.role !== "personal_assistant"');
+    // Role is a default for the managed seed templates only. Reseeding must not
+    // reclassify an agent the owner already placed: a user-created personal
+    // agent with a non-"personal_assistant" role was being flipped to business,
+    // which hides it from the posture-filtered personal workspace.
+    expect(founderSeed).not.toContain('isBusinessAgent: row.role !== "personal_assistant"');
+    const legacyBackfill = founderSeed.slice(
+      founderSeed.indexOf("const ownerAgents = await drizzle"),
+    );
+    expect(legacyBackfill).toContain("enabledTools: ALL_AGENT_TOOLS");
+    expect(legacyBackfill).not.toContain("isBusinessAgent");
     expect(founderBootstrap).toContain("businessAgents > 0");
     expect(founderBootstrap).toContain("personalAgents > 0");
   });

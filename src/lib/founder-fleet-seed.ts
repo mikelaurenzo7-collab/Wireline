@@ -451,22 +451,20 @@ export async function seedFounderAssistant(userId: string): Promise<FounderAssis
 
   // Ensure every existing owner agent also gets max tools (legacy rows)
   const ownerAgents = await drizzle
-    .select({
-      id: schema.agents.id,
-      role: schema.agents.role,
-      isBusinessAgent: schema.agents.isBusinessAgent,
-    })
+    .select({ id: schema.agents.id, role: schema.agents.role })
     .from(schema.agents)
     .where(eq(schema.agents.userId, userId));
 
   for (const row of ownerAgents) {
     if (!report.agentIds.includes(row.id)) {
+      // Preserve the posture the owner already chose. Role is only a default for
+      // the managed seed templates above; reclassifying every existing agent from
+      // its role silently moved a user-created personal agent (role "scheduler",
+      // "sales", or anything custom) into the business workspace, where the
+      // posture-filtered surfaces then hid it from the workspace it belonged to.
       await drizzle
         .update(schema.agents)
-        .set({
-          enabledTools: ALL_AGENT_TOOLS,
-          isBusinessAgent: row.role !== "personal_assistant",
-        })
+        .set({ enabledTools: ALL_AGENT_TOOLS })
         .where(eq(schema.agents.id, row.id));
       await seedTrainingArtifacts(row.id, userId, row.role || "customer_service", report);
       report.agentIds.push(row.id);

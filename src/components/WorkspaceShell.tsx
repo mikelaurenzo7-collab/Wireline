@@ -160,18 +160,21 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const language = customerAgentLanguage(accountType);
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
   const planLabel = accountType === "business" ? "Business workspace" : "Personal workspace";
-  const postureAgents =
-    accountType === "business"
-      ? agents.filter((agent) => agent.is_business_agent)
-      : agents.filter((agent) => !agent.is_business_agent);
-  const orderedAgents = resolvedId
-    ? [
-        ...postureAgents.filter((agent) => agent.id === resolvedId),
-        ...postureAgents.filter((agent) => agent.id !== resolvedId),
-      ]
+  const matchesPosture = (agent: (typeof agents)[number]) =>
+    accountType === "business" ? Boolean(agent.is_business_agent) : !agent.is_business_agent;
+  // The agent the workspace is currently on always belongs in its own roster.
+  // Scoping the rail to the account posture otherwise dropped the open agent
+  // out of the list whenever its posture differed — the sidebar showed "no
+  // agents" (or someone else) on the very page that agent owns.
+  const activeAgent = resolvedId ? agents.find((agent) => agent.id === resolvedId) : undefined;
+  const postureAgents = agents.filter(
+    (agent) => matchesPosture(agent) || agent.id === activeAgent?.id,
+  );
+  const orderedAgents = activeAgent
+    ? [activeAgent, ...postureAgents.filter((agent) => agent.id !== activeAgent.id)]
     : postureAgents;
   const visibleAgents = orderedAgents.slice(0, 3);
-  const hiddenAgentCount = Math.max(postureAgents.length - visibleAgents.length, 0);
+  const hiddenAgentCount = Math.max(orderedAgents.length - visibleAgents.length, 0);
   const secondaryRouteParent = desktopNavParentHref(pathname);
 
   return (

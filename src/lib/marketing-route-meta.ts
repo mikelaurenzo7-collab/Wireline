@@ -115,7 +115,7 @@ export function resolveRouteMeta(pathname: string): RouteMeta | null {
 }
 
 /** Minimal HTML-escaping for values placed into text content and attributes. */
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

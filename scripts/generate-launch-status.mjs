@@ -123,20 +123,22 @@ async function stripeStatus() {
   const portalConfigurations = Array.isArray(portalResult.body?.data)
     ? portalResult.body.data
     : [];
-  const portalConfiguration = portalConfigurations.find(
-    (configuration) =>
-      configuration?.active === true &&
-      (configuration?.is_default === true ||
-        configuration?.metadata?.wireline_managed === "true"),
+  // Same selection rule as check-vendor-readiness.mjs: require the customer
+  // controls first, then prefer the Wireline-managed configuration, so a bare
+  // Dashboard default cannot mask the one the application actually uses.
+  const portalHasCustomerControls = (configuration) =>
+    configuration?.features?.payment_method_update?.enabled === true &&
+    configuration?.features?.invoice_history?.enabled === true &&
+    configuration?.features?.subscription_cancel?.enabled === true;
+  const portalCandidates = portalConfigurations.filter(
+    (configuration) => configuration?.active === true && portalHasCustomerControls(configuration),
   );
+  const portalConfiguration =
+    portalCandidates.find(
+      (configuration) => configuration?.metadata?.wireline_managed === "true",
+    ) || portalCandidates.find((configuration) => configuration?.is_default === true);
   const portalFeatures = portalConfiguration?.features ?? {};
-  const portalReady = Boolean(
-    portalResult.ok &&
-      portalConfiguration &&
-      portalFeatures.payment_method_update?.enabled === true &&
-      portalFeatures.invoice_history?.enabled === true &&
-      portalFeatures.subscription_cancel?.enabled === true,
-  );
+  const portalReady = Boolean(portalResult.ok && portalConfiguration);
 
   const expectedWebhookEvents = [
     "charge.dispute.created",
@@ -391,6 +393,10 @@ if (
 ) {
   blockers.push("starter_annual_price_not_live_190");
 }
+// The probe already computes reachability; nothing consumed it, so an
+// unreadable balance or price (outage, rotated key, missing scope) produced a
+// "blocked" Stripe status and still left the launch gate green.
+if (stripe.status !== "reachable") blockers.push("stripe_not_reachable");
 if (stripe.brand?.ready !== true) blockers.push("stripe_brand_not_wireline");
 if (stripe.customer_portal?.ready !== true) blockers.push("stripe_customer_portal_not_ready");
 if (stripe.webhook?.ready !== true) blockers.push("stripe_webhook_not_aligned");

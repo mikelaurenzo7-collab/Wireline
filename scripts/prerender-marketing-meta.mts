@@ -19,6 +19,7 @@ import path from "node:path";
 import {
   HOME_TITLE,
   PRERENDERED_MARKETING_ROUTES,
+  escapeHtml,
   injectMarketingMeta,
   resolveRouteMeta,
 } from "../src/lib/marketing-route-meta";
@@ -50,8 +51,25 @@ for (const route of PRERENDERED_MARKETING_ROUTES) {
     process.exit(1);
   }
   const html = injectMarketingMeta(shell, meta);
-  if (html === shell) {
-    console.error(`prerender-marketing-meta: injection was a no-op for ${route}.`);
+  // A whole-file inequality check only catches a *total* no-op. If the shell's
+  // canonical or og:url tag drifted while the title still matched, the page
+  // would ship with another route's canonical — the exact duplicate-content
+  // problem this prerender exists to fix — and the build would stay green.
+  // Assert every substitution the route depends on actually landed.
+  // Compare against the same escaping injectMarketingMeta applies, so a title
+  // containing `&` or a quote cannot fail this guard spuriously.
+  const required: Array<[string, string]> = [
+    ["title", `<title>${escapeHtml(meta.title)}</title>`],
+    ["canonical", `<link rel="canonical" href="${escapeHtml(meta.canonical)}" />`],
+    ["og:url", `<meta property="og:url" content="${escapeHtml(meta.canonical)}" />`],
+  ];
+  const missing = required.filter(([, expected]) => !html.includes(expected));
+  if (html === shell || missing.length) {
+    console.error(
+      `prerender-marketing-meta: injection incomplete for ${route} — ${
+        html === shell ? "no-op" : `missing ${missing.map(([name]) => name).join(", ")}`
+      }. The static shell's head no longer matches what marketing-route-meta.ts replaces.`,
+    );
     process.exit(1);
   }
   const outDir = path.join(dist, ...route.split("/").filter(Boolean));

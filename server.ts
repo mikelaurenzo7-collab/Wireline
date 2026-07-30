@@ -18,6 +18,7 @@ import { getErrorMessage } from "./src/lib/server-utils";
 import { validateStartupEnv } from "./src/lib/startup";
 import { startMemoryCleanup } from "./src/lib/rate-limit";
 import { authenticateLiveOpsStream } from "./src/middleware/live-ops-stream";
+import { PRERENDERED_MARKETING_ROUTES } from "./src/lib/marketing-route-meta";
 import { registerApiRoutes } from "./src/server/register-api-routes";
 import { sseBroadcaster } from "./src/services/sse-broadcaster";
 import { initSupervisorWebSocketServer } from "./src/services/supervisor-websocket-service";
@@ -212,11 +213,30 @@ async function startServer() {
 
   const dist = path.join(process.cwd(), "dist");
   const indexHtml = path.join(dist, "index.html");
-  app.use(express.static(dist));
-  // Always read index.html from disk — caching it at startup breaks SPA routes after
+  // `redirect: false` matters since the marketing prerender step started writing
+  // per-route directories (dist/pricing/index.html, dist/for/<slug>/index.html).
+  // express.static answers a directory hit without a trailing slash with a 301
+  // to the slash form, so every prerendered route began redirecting — and the
+  // Location it sent (/pricing/) disagreed with the canonical tag the same build
+  // writes into that page (https://trywireline.com/pricing).
+  app.use(express.static(dist, { redirect: false }));
+
+  // Serve the prerendered shell for the routes the build actually emitted, so
+  // this entrypoint hands crawlers the same per-route head Vercel's static layer
+  // does. Keyed off the build's own route list rather than the request path, so
+  // no user input reaches the filesystem lookup.
+  const prerenderedShells = new Map(
+    PRERENDERED_MARKETING_ROUTES.map((route) => [
+      route,
+      path.join(dist, ...route.split("/").filter(Boolean), "index.html"),
+    ]),
+  );
+
+  // Always read the shell from disk — caching it at startup breaks SPA routes after
   // a rebuild when Playwright or local dev reuses the same Node process.
-  app.get("*", (_req, res) => {
-    res.type("html").sendFile(indexHtml);
+  app.get("*", (req, res) => {
+    const normalizedPath = req.path.replace(/\/+$/, "") || "/";
+    res.type("html").sendFile(prerenderedShells.get(normalizedPath) ?? indexHtml);
   });
 }
 

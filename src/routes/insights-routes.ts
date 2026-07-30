@@ -10,12 +10,29 @@ import * as insightsAi from "../lib/insights-ai";
 import { aiErr } from "../lib/ai-response-helpers";
 import { cachedInsight, setCachedInsight } from "../lib/insights-cache";
 import { enforceSpendCap, enforce24hSpendCap } from "../lib/spend-guards";
+import type { NextFunction, Request, RequestHandler, Response as ExpressResponse } from "express";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
 const DEFAULT_AGENT_ROLE = "customer_service";
+
+/**
+ * Apply a provider-spend guard only to the deep `?refresh=1` pass.
+ *
+ * The default failure-modes response is local aggregation over rows the route
+ * already reads — it reaches no provider and costs nothing. Running the spend
+ * guard on it meant a tenant at their AI cap got SPEND_CAP_REACHED for the one
+ * analysis that was specifically built to keep working when the deep pass
+ * cannot run.
+ */
+function deepAnalysisOnly(guard: RequestHandler): RequestHandler {
+  return (req: Request, res: ExpressResponse, next: NextFunction) => {
+    if (req.query.refresh !== "1") return next();
+    return guard(req, res, next);
+  };
+}
 
 type FailureModeSourceRow = {
   summary: string | null;
@@ -27,9 +44,14 @@ type FailureModeSourceRow = {
 function buildFastFailureModes(rows: FailureModeSourceRow[]) {
   const counts = { noIntent: 0, lowIntent: 0, lowScore: 0 };
   for (const row of rows) {
+    // Independent predicates, matching the route's SQL (`intent = 'none' OR
+    // intent = 'low' OR lead_score < 30`). An else-if chain filed each call
+    // under only its first match, so a low-intent call that also scored under 30
+    // never counted toward qualification — and that mode could disappear
+    // entirely wherever low scores and low intent travel together.
     if (row.intentLabel === "none") counts.noIntent += 1;
-    else if (row.intentLabel === "low") counts.lowIntent += 1;
-    else if (row.leadScore != null && row.leadScore < 30) counts.lowScore += 1;
+    if (row.intentLabel === "low") counts.lowIntent += 1;
+    if (row.leadScore != null && row.leadScore < 30) counts.lowScore += 1;
   }
   const severity = (count: number) => (count >= 8 ? "high" : count >= 3 ? "medium" : "low");
   return [
@@ -415,8 +437,8 @@ router.get(
   "/api/insights/failure-modes",
   authenticateUser,
   insightsAiRateLimit,
-  enforce24hSpendCap,
-  enforceSpendCap,
+  deepAnalysisOnly(enforce24hSpendCap),
+  deepAnalysisOnly(enforceSpendCap),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const force = req.query.refresh === "1";

@@ -5,13 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import CompanyIdentityPack from "./settings/CompanyIdentityPack";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/shadcn/Select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
@@ -54,7 +48,7 @@ function formatProvisionedDate(value?: string | null) {
 }
 
 export default function PhoneSetupPanel() {
-  const { agents } = useAgents();
+  const { agents, loading: agentsLoading } = useAgents();
   const location = useLocation();
   const [numbers, setNumbers] = useState<PhoneNumberRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,6 +107,13 @@ export default function PhoneSetupPanel() {
 
   async function provisionNumber() {
     if (working || !selectedAgentId) return;
+    const requestedAreaCode = areaCode.replace(/\D/g, "").slice(0, 3);
+    // The carrier route requires exactly three digits. Submitting a partial one
+    // bounced back as a raw field-level validation error naming `area_code`.
+    if (requestedAreaCode && requestedAreaCode.length !== 3) {
+      setError("Enter a full 3-digit area code, or leave it blank for any local number.");
+      return;
+    }
     setWorking(true);
     setMessage(null);
     setError(null);
@@ -123,7 +124,7 @@ export default function PhoneSetupPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           agent_id: selectedAgentId,
-          ...(areaCode ? { area_code: areaCode } : {}),
+          ...(requestedAreaCode ? { area_code: requestedAreaCode } : {}),
         }),
       });
       const body = (await response.json().catch(() => ({}))) as ProvisionResponse;
@@ -236,7 +237,14 @@ export default function PhoneSetupPanel() {
               <span className="mb-1.5 block text-xs font-semibold text-primary-foreground/80">
                 Voice agent
               </span>
-              {agents.length ? (
+              {agentsLoading ? (
+                <div
+                  className="flex h-11 items-center rounded-lg border border-primary-foreground/20 bg-black/15 px-3 text-sm text-primary-foreground/70"
+                  role="status"
+                >
+                  Loading agents…
+                </div>
+              ) : agents.length ? (
                 <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
                   <SelectTrigger
                     aria-label="Choose the voice agent for this number"
@@ -274,7 +282,9 @@ export default function PhoneSetupPanel() {
                   autoComplete="off"
                   maxLength={3}
                   value={normalizedAreaCode}
-                  onChange={(event) => setAreaCode(event.target.value.replace(/\D/g, "").slice(0, 3))}
+                  onChange={(event) =>
+                    setAreaCode(event.target.value.replace(/\D/g, "").slice(0, 3))
+                  }
                   placeholder="312"
                   aria-label="Preferred phone number area code"
                   className="h-11 w-full rounded-lg border border-primary-foreground/20 bg-black/15 pl-9 pr-3 text-sm text-primary-foreground outline-none placeholder:text-primary-foreground/40 focus:border-primary-foreground/50 focus:ring-2 focus:ring-primary-foreground/15"
@@ -286,7 +296,7 @@ export default function PhoneSetupPanel() {
               type="button"
               variant="secondary"
               className="min-h-11 bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-              disabled={working || loading || !selectedAgentId}
+              disabled={working || loading || agentsLoading || !selectedAgentId}
               onClick={() => void provisionNumber()}
             >
               <Plus size={16} aria-hidden="true" />
@@ -306,7 +316,11 @@ export default function PhoneSetupPanel() {
                 </p>
               </div>
             </div>
-            <Button asChild variant="secondary" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
+            <Button
+              asChild
+              variant="secondary"
+              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+            >
               <a href={`tel:${activeNumber.phone_number}`}>Call the line</a>
             </Button>
           </div>
@@ -317,7 +331,10 @@ export default function PhoneSetupPanel() {
         <p className={WL_APP_CLASSES.wiredEyebrow}>Routing</p>
         {attachedAgent ? (
           <div className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-3">
-            <Check className="mt-0.5 size-4 shrink-0 text-[var(--wireline-color-status-success)]" aria-hidden="true" />
+            <Check
+              className="mt-0.5 size-4 shrink-0 text-[var(--wireline-color-status-success)]"
+              aria-hidden="true"
+            />
             <div>
               <p className="text-sm font-semibold text-foreground">{attachedAgent.name}</p>
               <p className="mt-1 text-xs text-muted-foreground">Answers this number</p>
@@ -352,7 +369,9 @@ export default function PhoneSetupPanel() {
             </Select>
             {attachedAgent ? (
               <Button asChild size="sm" variant="outline">
-                <Link to={`/studio?agent=${encodeURIComponent(attachedAgent.id)}`}>Open Studio</Link>
+                <Link to={`/studio?agent=${encodeURIComponent(attachedAgent.id)}`}>
+                  Open Studio
+                </Link>
               </Button>
             ) : null}
             {agents.length === 0 ? (

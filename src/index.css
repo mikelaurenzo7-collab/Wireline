@@ -104,7 +104,10 @@
 @import "./styles/prestige-polish.css";
 
 body {
-  background: var(--wireline-color-canvas-default);
+  /* `background-color`, not the `background` shorthand: this rule sits after the
+     prestige-polish import, and the shorthand reset its ambient gradient to
+     `none`, so that presentation layer silently did nothing. */
+  background-color: var(--wireline-color-canvas-default);
   color: var(--wireline-color-text-primary);
   font-family:
     var(--wireline-font-family-body),

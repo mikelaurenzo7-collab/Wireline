@@ -7,7 +7,13 @@
  * edges, and controlled depth across public, auth, and authenticated surfaces.
  */
 
-.wl-ui-caps {
+/* Defined on :root, not .wl-ui-caps. Radix portals (dropdown menus, context
+   menus, dialogs) mount into document.body, outside the app shell, so scoping
+   these to the shell left `[role="menu"]` below resolving against undefined
+   custom properties: background and box-shadow dropped to their initial values
+   and every portalled menu rendered transparent with no elevation. Consumers
+   stay scoped; only the definitions move. */
+:root {
   --wl-prestige-hairline: color-mix(
     in srgb,
     var(--wireline-color-text-primary) 7%,
@@ -443,7 +449,12 @@ body {
   border-color: var(--wl-prestige-hairline);
 }
 
-.wl-workspace-content :where(.studio-card, .wl-paper, .wl-paper-elevated, .wl-metric-tile) {
+/* Skip surfaces that already carry an explicit background utility. This rule is
+   unlayered, so it outranks Tailwind's layered utilities regardless of order,
+   and it was flattening state-tinted cards — the failed-payment and past-due
+   billing cards lost their error/warning surface and read as ordinary cards. */
+.wl-workspace-content
+  :where(.studio-card, .wl-paper, .wl-paper-elevated, .wl-metric-tile):not([class*="bg-"]) {
   border-color: var(--wl-prestige-hairline);
   background: var(--wl-prestige-surface);
   box-shadow: var(--wl-prestige-shadow);
@@ -471,9 +482,12 @@ body {
   );
 }
 
+/* `collapse`, not `separate`: in the separated borders model a border set on a
+   `<tr>` is never painted, which silently erased the row separators on
+   workspace tables that draw them that way (e.g. the campaign attribution
+   table's `border-t border-border` rows). */
 .wl-workspace-content table {
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
 }
 
 .wl-workspace-content thead {
@@ -498,7 +512,7 @@ body {
 }
 
 /* Light appearance keeps the same hierarchy without dark-mode shadow weight. */
-:root.light .wl-ui-caps {
+:root.light {
   --wl-prestige-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
     0 20px 48px -38px rgba(23, 20, 38, 0.24);

@@ -360,13 +360,19 @@ record(
   { sender_count: whatsappSenders.length, online_sender_count: onlineWhatsappSenders.length },
 );
 
-const stripeAvailable = Number(
-  stripeBalance?.body?.available?.find?.((row) => row.currency === "usd")?.amount ?? 0,
-);
+// An unread balance must not read as a verified $0.00. Defaulting the amount to
+// 0 satisfied the `>= 0` check below and printed "available USD balance 0.00"
+// as fact, so a Stripe outage or a key without balance scope passed the gate.
+const stripeBalanceAmount = stripeBalance?.ok
+  ? stripeBalance.body?.available?.find?.((row) => row.currency === "usd")?.amount
+  : undefined;
+const stripeBalanceRead = typeof stripeBalanceAmount === "number" && Number.isFinite(stripeBalanceAmount);
+const stripeAvailable = stripeBalanceRead ? Number(stripeBalanceAmount) : null;
 const stripeCoreReady = Boolean(
   stripeAccount?.ok &&
     stripeAccount.body?.charges_enabled &&
     stripeAccount.body?.payouts_enabled &&
+    stripeBalanceRead &&
     stripeAvailable >= 0,
 );
 
@@ -390,20 +396,23 @@ const stripeBrandReady = Boolean(
 );
 
 const stripePortalConfigs = arrayAt(stripePortalConfigurations?.body, "data");
-const stripePortalConfiguration = stripePortalConfigs.find(
-  (configuration) =>
-    configuration?.active === true &&
-    (configuration?.is_default === true ||
-      configuration?.metadata?.wireline_managed === "true"),
+// Pick a configuration that actually carries the customer controls, preferring
+// the Wireline-managed one. Matching on active+default first and only then
+// checking features reported "blocked" whenever a bare Dashboard default
+// happened to sort ahead of the managed configuration the app really uses.
+const stripePortalHasCustomerControls = (configuration) =>
+  configuration?.features?.payment_method_update?.enabled === true &&
+  configuration?.features?.invoice_history?.enabled === true &&
+  configuration?.features?.subscription_cancel?.enabled === true;
+const stripePortalCandidates = stripePortalConfigs.filter(
+  (configuration) => configuration?.active === true && stripePortalHasCustomerControls(configuration),
 );
+const stripePortalConfiguration =
+  stripePortalCandidates.find(
+    (configuration) => configuration?.metadata?.wireline_managed === "true",
+  ) || stripePortalCandidates.find((configuration) => configuration?.is_default === true);
 const stripePortalFeatures = stripePortalConfiguration?.features ?? {};
-const stripePortalReady = Boolean(
-  stripePortalConfigurations?.ok &&
-    stripePortalConfiguration &&
-    stripePortalFeatures.payment_method_update?.enabled === true &&
-    stripePortalFeatures.invoice_history?.enabled === true &&
-    stripePortalFeatures.subscription_cancel?.enabled === true,
-);
+const stripePortalReady = Boolean(stripePortalConfigurations?.ok && stripePortalConfiguration);
 
 const expectedStripeWebhookEvents = [
   "charge.dispute.created",
@@ -441,8 +450,9 @@ const stripeReady = Boolean(
   stripeCoreReady && stripeBrandReady && stripePortalReady && stripeWebhookReady && stripeTaxReady,
 );
 
-const stripeFundingAction =
-  stripeAvailable < 0
+const stripeFundingAction = !stripeBalanceRead
+  ? "Stripe balance could not be read; confirm the key has balance access before trusting the funding claim."
+  : stripeAvailable < 0
     ? "Resolve the negative Stripe balance and failed bank debits before launch."
     : !stripeBrandReady
       ? "Align the public business name, statement descriptor, website, support URL, logo, and colors to Wireline in Stripe."
@@ -465,7 +475,9 @@ record(
         stripePortalReady ? "ready" : "blocked"
       }; webhook ${stripeWebhookReady ? "ready" : "blocked"}; tax ${
         stripeTaxReady ? "ready" : "blocked"
-      }; available USD balance ${(stripeAvailable / 100).toFixed(2)}.`
+      }; available USD balance ${
+        stripeBalanceRead ? (stripeAvailable / 100).toFixed(2) : "unread"
+      }.`
     : "Stripe key missing or rejected.",
   stripeFundingAction,
   {

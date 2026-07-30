@@ -21,6 +21,22 @@ import type { AuthenticatedRequest } from "../types/auth";
 const router = Router();
 
 const FLEET_TASK_STATUSES = ["pending", "open", "in_progress", "completed", "cancelled"] as const;
+
+/**
+ * `wireline_follow_up_tasks.agent_id` has a foreign key to `wireline_agents.id`,
+ * but a foreign key only proves the agent exists — the constraint check is not
+ * subject to RLS, so it happily accepts another tenant's agent id. Confirm
+ * ownership explicitly before writing it onto a task, and turn a stale or
+ * foreign id into a 404 instead of a foreign-key 500.
+ */
+async function assertOwnedAgent(agentId: string, userId: string): Promise<void> {
+  const [agent] = await drizzle
+    .select({ id: schema.agents.id })
+    .from(schema.agents)
+    .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+    .limit(1);
+  if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
+}
 const FLEET_TASK_PRIORITIES = ["low", "medium", "high"] as const;
 
 router.post(
@@ -192,6 +208,8 @@ router.post(
         due_date,
       } = validation.data!;
 
+      if (agent_id) await assertOwnedAgent(agent_id, req.user.id);
+
       await drizzle.insert(schema.followUpTasks).values({
         sourceType: source_type,
         sourceId: source_id,
@@ -208,6 +226,7 @@ router.post(
       touchNavCounts(req.user.id);
       res.json({ success: true });
     } catch (error: any) {
+      rethrowIfAppError(error);
       log.error("Failed to create Assistants task", { error: error.message });
       throw AppError.fromHttpStatus(500, "Failed to create Assistants task");
     }
@@ -257,7 +276,10 @@ router.patch(
           updateData.dueDate = parsedDueDate;
         }
       }
-      if (agent_id !== undefined) updateData.agentId = agent_id;
+      if (agent_id !== undefined) {
+        if (agent_id) await assertOwnedAgent(agent_id, req.user.id);
+        updateData.agentId = agent_id;
+      }
       if (resolution_notes !== undefined) updateData.resolutionNotes = resolution_notes;
       if (description !== undefined) updateData.description = description;
       if (payload !== undefined && payload && typeof payload === "object") {
@@ -284,6 +306,7 @@ router.patch(
       if (status !== undefined) touchNavCounts(req.user.id);
       res.json({ success: true });
     } catch (error: any) {
+      rethrowIfAppError(error);
       log.error("Failed to update Assistants task", { error: error.message });
       throw AppError.fromHttpStatus(500, "Failed to update Assistants task");
     }
