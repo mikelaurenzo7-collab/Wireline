@@ -1,0 +1,148 @@
+/* Screenshot-led visual QA: concise hierarchy, uppercase display language,
+ * and tighter mobile rhythm without hiding operationally necessary controls. */
+
+/* Display titles use one deliberate voice across public and authenticated UI. */
+.marketing-surface :where(.marketing-hero__title, .wl-public-section-heading, .wl-stitch-display),
+.wl-workspace-shell .wl-workspace-page :where(h1, h2),
+.wl-workspace-shell .wl-centered-header h1,
+# create-agent-title {
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  line-height: 1;
+  text-wrap: balance;
+}
+
+/* Keep the large overview greeting expressive but visibly tied to the system. */
+.wl-workspace-shell .wl-overview-greeting .wl-display-2 {
+  max-width: 16ch;
+  letter-spacing: 0.018em;
+  line-height: 0.94;
+}
+
+/* Page-level support copy is supporting information, never a second headline. */
+.wl-workspace-shell .wl-centered-header > p,
+.wl-workspace-shell .wl-workspace-page :where(h1, h2) + p,
+.marketing-surface .marketing-hero__description {
+  max-width: 44rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* Fast Start had four stacked introductions before the first choice. The title
+ * now owns orientation; the form opens directly on the useful decision. */
+form[aria-labelledby="create-agent-title"] #create-agent-description,
+form[aria-labelledby="create-agent-title"] > .min-h-0 > .wl-eyebrow,
+form[aria-labelledby="create-agent-title"] > .min-h-0 > h3,
+form[aria-labelledby="create-agent-title"] > .min-h-0 > h3 + p {
+  display: none;
+}
+
+form[aria-labelledby="create-agent-title"] > .min-h-0 {
+  padding-top: 1.1rem;
+}
+
+/* The consent choice should read as a compact utility, not a blocking modal. */
+.wl-cookie-card {
+  max-width: 24rem;
+  border-radius: 0.875rem;
+}
+
+.wl-cookie-card p {
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.wl-cookie-card button {
+  min-height: 2.25rem;
+}
+
+/* Dense operational surfaces should scan as instruments, not landing pages. */
+[data-wireline-route="/phone"] :where(.wl-metric-tile, .studio-card),
+[data-wireline-route="/knowledge"] :where(.wl-paper, .studio-card),
+[data-wireline-route="/connections"] :where(.wl-paper, .studio-card) {
+  box-shadow: none;
+}
+
+[data-wireline-route="/phone"] [aria-label="Call ops metrics"] .wl-metric-tile {
+  min-height: 0;
+}
+
+/* Keep the mobile dock visually quiet and immune to inherited type scaling. */
+nav[aria-label="Workspace navigation"] [data-wireline-nav-href] {
+  font-size: 0.6875rem;
+  line-height: 1;
+}
+
+nav[aria-label="Workspace navigation"] [data-wireline-nav-href] > span {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+@media (max-width: 639px) {
+  .marketing-surface .marketing-hero {
+    padding-block: 2.75rem 3.25rem;
+  }
+
+  .marketing-surface .marketing-hero__title {
+    max-width: 13ch;
+    font-size: clamp(2.25rem, 10.4vw, 3rem) !important;
+    letter-spacing: 0.018em;
+    line-height: 0.94;
+  }
+
+  .marketing-surface .marketing-hero__description {
+    max-width: 31ch;
+    margin-top: 1rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+
+  .wl-workspace-shell .wl-workspace-page :where(h1, h2),
+  .wl-workspace-shell .wl-centered-header h1 {
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+
+  .wl-workspace-shell .wl-centered-header > p,
+  #company-identity-title + p,
+  [data-wireline-route="/phone"] .studio-card > .border-b h2 + p,
+  [data-wireline-route="/phone"] [aria-label="Calling setup steps"] li p:last-child,
+  .wl-workspace-shell [aria-label="Demand readiness"] h2 + p {
+    display: none;
+  }
+
+  .wl-workspace-shell .wl-workspace-page {
+    gap: 1rem;
+  }
+
+  .wl-workspace-shell .wl-workspace-page :where(.wl-paper, .studio-card, .wl-panel-elevated) {
+    border-radius: 0.875rem;
+  }
+
+  form[aria-labelledby="create-agent-title"] {
+    max-height: calc(100dvh - 1rem);
+    border-radius: 1.125rem;
+  }
+
+  form[aria-labelledby="create-agent-title"] > div:first-child,
+  form[aria-labelledby="create-agent-title"] > .min-h-0,
+  form[aria-labelledby="create-agent-title"] > div:last-child {
+    padding-inline: 1rem;
+  }
+
+  form[aria-labelledby="create-agent-title"] > .min-h-0 {
+    padding-bottom: 1rem;
+  }
+
+  [data-wireline-route="/phone"] [aria-label="Call ops metrics"] .wl-metric-tile {
+    padding: 0.75rem;
+  }
+
+  [data-wireline-route="/phone"] [aria-label="Call ops metrics"] .wl-metric-tile__value {
+    font-size: 1.35rem;
+  }
+
+  .wl-cookie-card .wl-cookie-icon {
+    display: none;
+  }
+}
