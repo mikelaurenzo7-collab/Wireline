@@ -233,7 +233,14 @@ describe("extra-agent atomic route contract", () => {
     expect(route).toContain("stripe.subscriptions.retrieve(subscriptionId)");
     expect(route).toContain("verifiedQuantity !== target");
     expect(route).toContain("set({ extraAgents: quantity, maxAgents, updatedAt: new Date() })");
-    expect(route).toContain("target > currentDbQuantity && isLaunchHardBlocked()");
+    expect(route).toContain("const isIncrease = target > currentStripeQuantity");
+    expect(route).toContain("if (isIncrease && isLaunchHardBlocked())");
+    expect(route).not.toContain(
+      "if (target > currentDbQuantity && isLaunchHardBlocked())",
+    );
+    expect(route.indexOf("if (isIncrease && isLaunchHardBlocked())")).toBeGreaterThan(
+      route.indexOf("const isIncrease = target > currentStripeQuantity"),
+    );
     expect(route).toContain("body: launchBlockResponse()");
     expect(broadBilling).not.toContain('router.post(\n  "/billing/extra-agents"');
     expect(registry).toContain(atomicMount);
