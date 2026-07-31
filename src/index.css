@@ -33,6 +33,12 @@
   --color-surface: var(--wireline-color-surface-default);
   --color-warning: var(--wireline-color-status-warning);
 
+  /* shadcn-style semantic tokens — register here so Tailwind v4 actually
+     generates `bg-primary`, `text-primary-foreground`, `bg-card`,
+     `text-foreground`, `border-border`, etc. These were defined in `:root`
+     (foundation.css) but never reached @theme, so the utilities were
+     silently dropped — `wl-eyebrow text-primary-foreground` on the dark
+     pricing badge rendered with no color override and no green background. */
   --color-background: var(--wireline-color-canvas-default);
   --color-foreground: var(--wireline-color-text-primary);
   --color-card: var(--wireline-color-surface-default);
@@ -51,6 +57,15 @@
   --color-input: var(--wireline-color-border-default);
   --color-ring: var(--wireline-color-focus-default);
 
+  /* Redirect raw Tailwind rose/amber status utilities to the Wireline
+   * status tokens so every error/danger surface (DNC, usage overage,
+   * delete actions, status pills) and every warning surface (low credit,
+   * usage threshold) reads as the single canonical Wireline error/warning
+   * color — not Tailwind's generic rose/amber ramp. Opacity modifiers
+   * (rose-500/10, amber-500/8) still create lightness variation via
+   * color-mix, so backgrounds and borders keep their depth. This fixes
+   * 300+ raw rose/amber usages across 8+ components without touching a
+   * single component file. */
   --color-rose-300: var(--wireline-color-status-error);
   --color-rose-400: var(--wireline-color-status-error);
   --color-rose-500: var(--wireline-color-status-error);
@@ -90,6 +105,9 @@
 @import "./styles/pr948-responsive-merge.css";
 
 body {
+  /* `background-color`, not the `background` shorthand: this rule sits after the
+     prestige-polish import, and the shorthand reset its ambient gradient to
+     `none`, so that presentation layer silently did nothing. */
   background-color: var(--wireline-color-canvas-default);
   color: var(--wireline-color-text-primary);
   font-family:
