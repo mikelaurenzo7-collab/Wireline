@@ -190,7 +190,7 @@ export default function UsageMeter({
         <div className="flex items-start gap-2.5 p-3.5 rounded-md bg-amber-500/8 border border-amber-500/20">
           <Wallet className="w-4 h-4 mt-0.5 text-amber-500 shrink-0" />
           <div className="text-[length:var(--wireline-typography-overline-size)] leading-relaxed">
-            <span className="text-amber-500 font-semibold">
+            <span className="text-amber-500 font-semibold tabular-nums">
               {snap.overage_minutes.toLocaleString()} extra minute
               {snap.overage_minutes === 1 ? "" : "s"}
             </span>

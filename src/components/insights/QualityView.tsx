@@ -126,7 +126,6 @@ export default function QualityView({ days }: { days: number }) {
 
   return (
     <div className="space-y-4 pb-6">
-      {/* Action bar */}
       <div className="flex items-center justify-end">
         <Button
           type="button"
@@ -142,7 +141,6 @@ export default function QualityView({ days }: { days: number }) {
         </Button>
       </div>
 
-      {/* Hero stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Scored Calls", value: data.count, accent: QA_BRAND },
@@ -162,7 +160,6 @@ export default function QualityView({ days }: { days: number }) {
         ))}
       </div>
 
-      {/* Distribution + Radar */}
       <div className="grid md:grid-cols-2 gap-4">
         <div className="rounded-md wl-panel p-5">
           <h4 className="font-mono wl-label-muted mb-4 flex items-center gap-1.5">
@@ -177,8 +174,8 @@ export default function QualityView({ days }: { days: number }) {
                     initial={{ width: 0 }}
                     animate={{ width: `${(bucket.count / maxDist) * 100}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="h-full rounded-full wl-qa-bg"
-                    data-qa-color={bucket.color || QA_BRAND}
+                    className="h-full rounded-full"
+                    style={{ background: bucket.color || QA_BRAND }}
                   />
                 </div>
                 <span className="wl-micro-badge font-mono text-foreground w-6 text-right shrink-0">
@@ -215,7 +212,6 @@ export default function QualityView({ days }: { days: number }) {
         </div>
       </div>
 
-      {/* 7-day trend */}
       {data.trend && data.trend.length > 1 && (
         <div className="rounded-md wl-panel p-5">
           <h4 className="font-mono wl-label-muted mb-4 flex items-center gap-1.5">
@@ -248,7 +244,7 @@ export default function QualityView({ days }: { days: number }) {
                     background: "var(--card)",
                     border: "1px solid var(--border)",
                     borderRadius: 12,
-                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+                    boxShadow: "var(--wireline-elevation-card)",
                     fontSize: "12px",
                     padding: "8px 12px",
                   }}
@@ -273,7 +269,6 @@ export default function QualityView({ days }: { days: number }) {
         </div>
       )}
 
-      {/* Dimension detail table */}
       <div className="rounded-md wl-panel overflow-hidden">
         <div className="px-5 py-3 border-b border-border">
           <h4 className="font-mono wl-label-muted flex items-center gap-1.5">
@@ -305,8 +300,8 @@ export default function QualityView({ days }: { days: number }) {
                       initial={{ width: 0 }}
                       animate={{ width: `${pct}%` }}
                       transition={{ duration: 0.8 }}
-                      className="h-full rounded-full wl-qa-bg"
-                      data-qa-color={qaColor(pct)}
+                      className="h-full rounded-full"
+                      style={{ background: qaColor(pct) }}
                     />
                   </div>
                   <span className="wl-micro-badge font-mono text-foreground w-8 text-right">

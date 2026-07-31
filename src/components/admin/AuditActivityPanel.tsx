@@ -261,7 +261,7 @@ export function AuditActivityPanel() {
                         background: "var(--wireline-color-surface-default)",
                         border: "none",
                         borderRadius: 0,
-                        boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+                        boxShadow: "var(--wireline-elevation-card)",
                         fontSize: "var(--wireline-typography-overline-size)",
                       }}
                       formatter={(val: unknown) => [`$${Number(val ?? 0).toFixed(4)}`, "Cost"]}

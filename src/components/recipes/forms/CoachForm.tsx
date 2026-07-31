@@ -105,7 +105,7 @@ export function CoachForm({
           </ResultCard>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <ResultCard title="What's Working">
-              <ul className="list-disc list-inside wl-text-success/90 space-y-1">
+              <ul className="list-disc list-inside wl-text-success space-y-1">
                 {coaching.whats_working.map((s: string, i: number) => (
                   <li key={i}>{s}</li>
                 ))}

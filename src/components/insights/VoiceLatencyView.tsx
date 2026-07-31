@@ -21,7 +21,6 @@ export default function VoiceLatencyView({ days }: { days: number }) {
     setLoading(true);
     setErr(null);
 
-    // Fetch both action latency (existing) and voice observability (new)
     Promise.all([
       fetchInsight<AuditSummary>(`/api/audit/summary?days=${days}`).catch(() => null),
       fetchInsight<VoiceLatencyInsightsResponse>(`/api/insights/latency?days=${days}`).catch(
@@ -53,12 +52,10 @@ export default function VoiceLatencyView({ days }: { days: number }) {
     .sort((a, b) => b.avg_latency_ms - a.avg_latency_ms)
     .slice(0, 8);
 
-  // Compute voice observability summary from trends
   const voiceTrends = voiceData?.trends ?? [];
   const latestTrend = voiceTrends[voiceTrends.length - 1];
   const hasVoiceMetrics = voiceTrends.length > 0 && latestTrend?.avgTtftMs != null;
 
-  // Voice health indicators
   const ttftHealthy = latestTrend?.p95TtftMs == null || latestTrend.p95TtftMs <= 1200;
   const errorRateHealthy = latestTrend == null || latestTrend.errorRate <= 5;
 
@@ -76,7 +73,6 @@ export default function VoiceLatencyView({ days }: { days: number }) {
 
   return (
     <div className="space-y-4">
-      {/* Voice Observability Section */}
       {hasVoiceMetrics && (
         <div className="rounded-md wl-panel border border-border p-5">
           <div className="flex items-center gap-2 mb-4">
@@ -112,19 +108,19 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                   "rounded-md border p-4",
                   tile.healthy
                     ? "bg-brand/8 border-brand/20"
-                    : "bg-amber-50/50 border-amber-200/50",
+                    : "bg-[var(--wireline-color-feedback-warning-surface)] border-[var(--wireline-color-feedback-warning-border)]",
                 )}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <tile.icon
-                    className={cn("w-3 h-3", tile.healthy ? "text-brand" : "text-brand-deep")}
+                    className={cn("w-3 h-3", tile.healthy ? "text-brand" : "text-warning")}
                   />
                   <p className="font-mono wl-label text-muted">{tile.label}</p>
                 </div>
                 <p
                   className={cn(
                     "font-display italic text-2xl",
-                    tile.healthy ? "text-brand" : "text-brand-deep",
+                    tile.healthy ? "text-brand" : "text-warning",
                   )}
                 >
                   {tile.value}
@@ -133,7 +129,6 @@ export default function VoiceLatencyView({ days }: { days: number }) {
             ))}
           </div>
 
-          {/* Trend mini-chart */}
           {voiceTrends.length > 1 && (
             <div className="mt-4">
               <p className="wl-insight-label mb-3">{days}-day TTFT trend</p>
@@ -157,15 +152,16 @@ export default function VoiceLatencyView({ days }: { days: number }) {
           )}
 
           {!ttftHealthy && (
-            <div className="flex items-center gap-2 mt-4 p-3 rounded-md bg-amber-50 border border-amber-200">
+            <div className="flex items-center gap-2 mt-4 p-3 rounded-md bg-[var(--wireline-color-feedback-warning-surface)] border border-[var(--wireline-color-feedback-warning-border)]">
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-              <p className="text-xs text-amber-800">TTFT p95 &gt; 1.2s</p>
+              <p className="text-xs text-[var(--wireline-color-status-warning)]">
+                TTFT p95 &gt; 1.2s
+              </p>
             </div>
           )}
         </div>
       )}
 
-      {/* AI Action Latency Section */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { label: "p50 latency", value: `${latency.p50_ms}ms` },

@@ -41,7 +41,7 @@ export const WL_APP_CLASSES = {
   successReveal:
     "rounded-xl bg-secondary border border-border p-4 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
   statusActive: "bg-primary/10 text-primary border-primary/25",
-  statusOk: "bg-secondary text-foreground border-border",
+  statusOk: "wl-status-success wl-text-success",
   statusPending: "bg-muted text-muted-foreground border-border",
   statusDead: "bg-destructive/10 text-destructive border-destructive/30",
   statusSuccess: "wl-status-success transition-all duration-200",
