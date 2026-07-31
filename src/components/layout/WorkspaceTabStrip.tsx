@@ -62,6 +62,12 @@ export function WorkspaceTabStrip({
 }: WorkspaceTabStripProps) {
   const compact = density === "compact";
   const navRef = useRef<HTMLElement | null>(null);
+  // Deliberately a count, not `tabs` itself. Three callers build the array
+  // inline (`[...PHONE_TABS]`, `VALID_TABS.map(...)`, the approvals `.map(...)`),
+  // so its identity changes on every render — depending on it would re-run the
+  // effect below constantly and yank the strip back to the selected tab while
+  // someone was scrolling it. The effect reads the DOM, never `tabs`.
+  const tabCount = tabs.length;
 
   /*
    * Bring the selected tab into view when the strip is scrolled off.
@@ -87,7 +93,7 @@ export function WorkspaceTabStrip({
     } else if (activeRect.right > navRect.right - gutter) {
       nav.scrollLeft += activeRect.right - (navRect.right - gutter);
     }
-  }, [activeId, tabs]);
+  }, [activeId, tabCount]);
 
   return (
     <nav

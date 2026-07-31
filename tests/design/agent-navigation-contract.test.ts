@@ -13,9 +13,20 @@ function read(path: string) {
  * appear as a bare class token — matching it as a substring would also accept
  * `not-sr-only`, which un-hides the heading, and a variant like `sm:sr-only`
  * only hides it above that breakpoint.
+ *
+ * Reads string literals out of `className`, whether it is a plain attribute or a
+ * JSX expression such as `cn("sr-only", …)`, so a heading written the second way
+ * is judged on its classes rather than being reported as a visible one.
  */
 function hiddenHeadingClasses(openingTag: string) {
-  const classes = openingTag.match(/className="([^"]*)"/)?.[1] ?? "";
+  const attribute = openingTag.match(/className=(?:"([^"]*)"|\{([\s\S]*?)\}(?=[\s/>]|$))/);
+  const literal = attribute?.[1];
+  const expression = attribute?.[2];
+  const classes =
+    literal ??
+    (expression
+      ? Array.from(expression.matchAll(/["'`]([^"'`]*)["'`]/g), (m) => m[1]).join(" ")
+      : "");
   const tokens = classes.split(/\s+/).filter(Boolean);
   if (tokens.some((token) => token.endsWith("not-sr-only"))) return false;
   return tokens.includes("sr-only");
@@ -304,5 +315,13 @@ describe("agent navigation contract", () => {
     // A variant-only hide still leaves the heading visible at other widths.
     expect(hiddenHeadingClasses('<h1 className="sm:sr-only">Team</h1>')).toBe(false);
     expect(hiddenHeadingClasses("<h1>Team</h1>")).toBe(false);
+
+    // Judged on classes even when className is a JSX expression, so a heading
+    // written this way is not misreported as a visible one.
+    expect(hiddenHeadingClasses('<h1 className={cn("sr-only", extra)}>Team</h1>')).toBe(true);
+    expect(hiddenHeadingClasses('<h1 className={cn("sr-only", "sm:not-sr-only")}>T</h1>')).toBe(
+      false,
+    );
+    expect(hiddenHeadingClasses('<h1 className={cn("wl-display-3", extra)}>Team</h1>')).toBe(false);
   });
 });
