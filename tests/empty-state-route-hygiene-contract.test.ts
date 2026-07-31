@@ -9,6 +9,7 @@ describe("empty-state route hygiene", () => {
     const ops = read("src/lib/wireline-ops-design.ts");
     const overview = read("src/pages/OverviewPage.tsx");
     const shell = read("src/components/WorkspaceShell.tsx");
+    const readiness = read("src/lib/agent-readiness.ts");
     const routes = read("src/routes/AppRoutes.tsx");
     const sms = read("src/components/SmsThreads.tsx");
     const livePreview = read("src/components/AgentPresenceLivePreview.tsx");
@@ -24,8 +25,12 @@ describe("empty-state route hygiene", () => {
     expect(overview).toContain('primaryHref: "/settings/phone"');
     expect(overview).toContain('primaryLabel: "Connect phone"');
 
-    expect(shell).toContain('"Live"');
-    expect(shell).toContain('"Needs setup"');
+    // The sidebar still labels line readiness, but the wording moved to the
+    // shared helper when a third state ("unavailable") was added — OverviewPage
+    // had its own copy of the same two-state string and they had to agree.
+    expect(shell).toContain("agentReadinessLabel(");
+    expect(readiness).toContain('"Live"');
+    expect(readiness).toContain('"Needs setup"');
     expect(shell).not.toMatch(/phone_number \? "Active" : "Training"/);
 
     expect(routes).toContain("AgentsToStudioRedirect");

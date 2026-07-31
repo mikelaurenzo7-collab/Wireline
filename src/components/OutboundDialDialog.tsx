@@ -38,7 +38,7 @@ export default function OutboundDialDialog({
   initialNumber = "",
   initialContext = "",
 }: OutboundDialDialogProps) {
-  const { agents, loading, degraded } = useAgents();
+  const { agents, loading, degraded, phoneLookupDegraded } = useAgents();
   const { toast } = useToast();
   const voiceAgents = useMemo(
     () =>
@@ -175,11 +175,15 @@ export default function OutboundDialDialog({
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             Loading agents…
           </div>
-        ) : voiceAgents.length === 0 && degraded ? (
-          // "None with a phone line yet" is a claim about the roster. When the
-          // roster is what failed to load, it is not a claim we can make.
+        ) : voiceAgents.length === 0 && (degraded || phoneLookupDegraded) ? (
+          // "None with a phone line yet" is a claim about the roster and about
+          // which numbers are attached. When either lookup is what failed, it
+          // is not a claim we can make — `voiceAgents` is empty because we
+          // could not ask, not because the answer is none.
           <p className="px-6 py-8 text-sm text-muted-foreground" role="status">
-            Your agent list could not be loaded. Close this and try again in a moment.
+            {degraded
+              ? "Your agent list could not be loaded. Close this and try again in a moment."
+              : "We could not check which numbers are attached. Close this and try again in a moment."}
           </p>
         ) : voiceAgents.length === 0 ? (
           <p className="px-6 py-8 text-sm text-muted-foreground">

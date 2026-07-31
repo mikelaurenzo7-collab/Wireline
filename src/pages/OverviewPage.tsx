@@ -28,6 +28,7 @@ import { useAccount } from "../contexts/AccountContext";
 import { customerAgentLanguage, formatAgentRoleLabel } from "../lib/product-copy";
 import { workspaceFirstName } from "../lib/user-display";
 import { authFetch } from "../lib/api";
+import { agentReadinessLabel } from "../lib/agent-readiness";
 import { isoToLocalDateKey, localDateKey } from "../lib/date-display";
 import type { CallLog } from "../types/api";
 
@@ -46,10 +47,6 @@ function dayGreeting(date = new Date()) {
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
   return "Good evening";
-}
-
-function agentReadiness(agent: WorkspaceAgentSummary) {
-  return agent.phone_number ? "Live" : "Needs setup";
 }
 
 function metricRows(
@@ -359,8 +356,15 @@ function DemandReadinessCard({
   );
 }
 
-function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
+function CompactAgentRow({
+  agent,
+  phoneLookupDegraded,
+}: {
+  agent: WorkspaceAgentSummary;
+  phoneLookupDegraded: boolean;
+}) {
   const live = Boolean(agent.phone_number);
+  const readiness = agentReadinessLabel(agent, phoneLookupDegraded);
   const enc = encodeURIComponent(agent.id);
   const language = customerAgentLanguage(agent.is_business_agent ? "business" : "personal");
   return (
@@ -386,10 +390,10 @@ function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
       </span>
       <span
         className={`wl-chip wl-chip--${live ? "success" : "warning"} shrink-0`}
-        aria-label={`${language.singular} status: ${agentReadiness(agent)}`}
+        aria-label={`${language.singular} status: ${readiness}`}
       >
         <span className="wl-chip__dot" aria-hidden="true" />
-        {agentReadiness(agent)}
+        {readiness}
       </span>
       <ArrowRight
         className="size-3.5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100"
@@ -401,7 +405,15 @@ function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
 
 type AgentKind = "personal" | "business";
 
-function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgentSummary[] }) {
+function AgentSection({
+  kind,
+  agents,
+  phoneLookupDegraded,
+}: {
+  kind: AgentKind;
+  agents: WorkspaceAgentSummary[];
+  phoneLookupDegraded: boolean;
+}) {
   const language = customerAgentLanguage(kind);
   const heading = language.plural.replace(/^./, (letter) => letter.toUpperCase());
   if (agents.length === 0) return null;
@@ -418,7 +430,7 @@ function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgen
       </div>
       <div className="grid min-w-0 gap-2">
         {agents.map((agent) => (
-          <CompactAgentRow key={agent.id} agent={agent} />
+          <CompactAgentRow key={agent.id} agent={agent} phoneLookupDegraded={phoneLookupDegraded} />
         ))}
         <Link
           to={`/studio?create=1&posture=${kind}`}
@@ -447,7 +459,7 @@ function formatCallMeta(createdAt: string, durationSeconds?: number | null) {
 export default function OverviewPage() {
   const { user } = useAuth();
   const { accountType } = useAccount();
-  const { agents, loading, degraded, refresh } = useAgents();
+  const { agents, loading, degraded, phoneLookupDegraded, refresh } = useAgents();
   const language = customerAgentLanguage(accountType);
   const [showOutboundDial, setShowOutboundDial] = useState(false);
 
@@ -700,6 +712,14 @@ export default function OverviewPage() {
               </StatusNotice>
             ) : null}
 
+            {/* A failed number lookup silently relabelled every live agent
+                "Needs setup" with nothing on screen to explain it. */}
+            {!degraded && phoneLookupDegraded ? (
+              <StatusNotice tone="warning" title="Line status unavailable">
+                We could not check which numbers are attached. Your phone lines are unchanged.
+              </StatusNotice>
+            ) : null}
+
             {statsUnavailable && !loadingDashboard ? (
               <StatusNotice tone="warning" title="Live metrics unavailable">
                 We couldn&apos;t load your latest calls, appointments, and leads. Refresh to try
@@ -738,8 +758,16 @@ export default function OverviewPage() {
                   <AgentLoadingRows />
                 ) : hasAgents ? (
                   <div className="grid gap-5">
-                    <AgentSection kind="personal" agents={personalAgents} />
-                    <AgentSection kind="business" agents={businessAgents} />
+                    <AgentSection
+                      kind="personal"
+                      agents={personalAgents}
+                      phoneLookupDegraded={phoneLookupDegraded}
+                    />
+                    <AgentSection
+                      kind="business"
+                      agents={businessAgents}
+                      phoneLookupDegraded={phoneLookupDegraded}
+                    />
                     {missingFounderPairPosture ? (
                       <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
                         <p className="text-sm font-semibold text-foreground">

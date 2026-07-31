@@ -2,6 +2,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { agentLineStatus, agentReadinessLabel } from "../src/lib/agent-readiness";
+
 const SRC = resolve(process.cwd(), "src");
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -78,7 +80,7 @@ describe("agent roster: empty versus unreachable", () => {
     expect(recovery).toBeLessThan(emptyState);
 
     const dial = read("src/components/OutboundDialDialog.tsx");
-    const dialGuard = dial.indexOf("voiceAgents.length === 0 && degraded");
+    const dialGuard = dial.indexOf("voiceAgents.length === 0 && (degraded || phoneLookupDegraded)");
     // Asserted present before it is ordered: a missing anchor is indexOf -1,
     // which compares "less than" everything and passes a deleted guard.
     expect(dialGuard).toBeGreaterThan(-1);
@@ -102,5 +104,49 @@ describe("agent roster: empty versus unreachable", () => {
     expect(read("src/components/OutboundDialDialog.tsx")).toContain(
       "Create and activate one in Studio",
     );
+  });
+});
+
+describe("agent line readiness: attached, absent, or unknown", () => {
+  it("separates a missing line from an unanswerable question", () => {
+    const withLine = { phone_number: "+15555550123" };
+    const withoutLine = { phone_number: null };
+
+    expect(agentLineStatus(withLine, false)).toBe("live");
+    expect(agentLineStatus(withoutLine, false)).toBe("needs-setup");
+    // The lookup failing empties phone_number for every agent, so without this
+    // third state a live line reads exactly like an unconfigured one.
+    expect(agentLineStatus(withoutLine, true)).toBe("unavailable");
+    expect(agentLineStatus(undefined, true)).toBe("unavailable");
+
+    // A number already in hand is still trustworthy even if the lookup that
+    // produced it is now failing — don't downgrade what we know.
+    expect(agentLineStatus(withLine, true)).toBe("live");
+
+    expect(agentReadinessLabel(withLine, false)).toBe("Live");
+    expect(agentReadinessLabel(withoutLine, false)).toBe("Needs setup");
+    expect(agentReadinessLabel(withoutLine, true)).not.toBe("Needs setup");
+  });
+
+  it("keeps both label surfaces on the shared helper", () => {
+    // Both files carried their own `phone_number ? "Live" : "Needs setup"`,
+    // which is how the same wrong claim ended up in two places.
+    for (const file of ["src/pages/OverviewPage.tsx", "src/components/WorkspaceShell.tsx"]) {
+      const source = read(file);
+      expect(source).toContain("agentReadinessLabel(");
+      expect(source).not.toMatch(/phone_number\s*\?\s*"Live"\s*:\s*"Needs setup"/);
+    }
+  });
+
+  it("says on screen when the line lookup is what failed", () => {
+    // Silence was the actual defect here: unlike the roster case there was no
+    // notice at all, so the relabelling looked like a real status change.
+    const overview = read("src/pages/OverviewPage.tsx");
+    expect(overview).toContain("phoneLookupDegraded ? (");
+    expect(overview).toContain("Line status unavailable");
+    expect(overview).toContain("agentReadinessLabel(agent, phoneLookupDegraded)");
+
+    const dial = read("src/components/OutboundDialDialog.tsx");
+    expect(dial).toContain("(degraded || phoneLookupDegraded)");
   });
 });

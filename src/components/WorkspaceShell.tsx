@@ -10,6 +10,8 @@ import MobileNavMoreSheet from "./layout/MobileNavMoreSheet";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccount } from "../contexts/AccountContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
+import { useAgents } from "../contexts/AgentsContext";
+import { agentReadinessLabel } from "../lib/agent-readiness";
 import { customerAgentLanguage, formatAgentRoleLabel } from "../lib/product-copy";
 import { workspaceSidebarLabel } from "../lib/user-display";
 import {
@@ -49,10 +51,6 @@ function isNativeAppShell() {
 function userInitial(name?: string | null, email?: string | null) {
   const source = (name || email || "W").trim();
   return source.charAt(0).toUpperCase() || "W";
-}
-
-function readinessLabel(agent: { phone_number?: string | null } | undefined): string {
-  return agent?.phone_number ? "Live" : "Needs setup";
 }
 
 function contextualNavItem(item: ShellNavItem, posture: "personal" | "business"): ShellNavItem {
@@ -157,6 +155,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const { user } = useAuth();
   const { accountType } = useAccount();
   const { agents, resolvedId } = useStudioActiveAgentId();
+  const { phoneLookupDegraded } = useAgents();
   const language = customerAgentLanguage(accountType);
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
   const planLabel = accountType === "business" ? "Business workspace" : "Personal workspace";
@@ -271,7 +270,8 @@ function DesktopRail({ pathname }: { pathname: string }) {
                   <span className="min-w-0">
                     <span className="block truncate text-[12px] font-semibold">{agent.name}</span>
                     <span className="block truncate text-[10px] leading-tight text-[color:var(--wireline-color-text-secondary)]">
-                      {formatAgentRoleLabel(agent.role)} · {readinessLabel(agent)}
+                      {formatAgentRoleLabel(agent.role)} ·{" "}
+                      {agentReadinessLabel(agent, phoneLookupDegraded)}
                     </span>
                   </span>
                 </Link>
