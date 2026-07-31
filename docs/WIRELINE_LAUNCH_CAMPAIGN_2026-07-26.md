@@ -85,7 +85,7 @@ Generated with AI Voice Generator for marketing/reference use only. This is not 
 
 Audience: owners and operators who lose revenue to unanswered calls.
 
-- Primary text: "The next missed call can become a booked next step. Wireline lets you build an AI voice agent that answers, qualifies, texts the follow-up, and logs the outcome."
+- Primary text: "Every missed call is a customer trying the next name on the list. Wireline lets you build an AI voice agent that answers, qualifies, texts the follow-up, and logs the outcome - while you stay on the job."
 - Headline: "AI Voice Agents"
 - Description: "Build free. Go live from $19/mo."
 - CTA: Build your AI Voice Agent
@@ -146,7 +146,7 @@ CTA: Build your AI Voice Agent at trywireline.com.
 
 ### X / Short Post
 
-Missed calls should not become lost revenue.
+You cannot answer every call. Your agent can.
 
 Wireline helps you build AI voice agents for personal tasks and business conversations - voice, SMS, email, follow-up, and logged outcomes.
 
@@ -158,31 +158,68 @@ Hear the agent answer, qualify, follow up, and log the outcome. Wireline is AI v
 
 ## Video/Reel Briefs
 
+Reel doctrine, applied to every cut below:
+
+- Design for sound-off. Most reel views are muted, so the overlays must carry the whole story on their own; the voiceover rewards the minority who listen. Never put a fact in the VO that is not also on screen.
+- One idea per shot, real product screens only (use `npm run marketing:kit` captures), never mockups.
+- Cut rhythm: a new shot roughly every 2.5 seconds at 15s, every 4 seconds at 30s.
+- Every cut ends on the same card: CTA, price line, trywireline.com.
+
 ### 15-Second Reel - Missed Call
 
-1. Shot: Phone rings after hours. Text overlay: "Missed call?"
-2. Shot: Wireline agent profile. Overlay: "Train the rules."
-3. Shot: Live call outcome card. Overlay: "Answer, follow up, log."
-4. Shot: Pricing/CTA. Overlay: "Build free. Go live from $19/mo."
+The hinge of the whole cut is shot 2 into shot 3: "You cannot pick up. / Your agent can."
 
-Voiceover: Use the AI Voice Generator transcript or the shorter line: "Build an AI voice agent that answers, follows up, and logs the outcome. Wireline starts free and goes live from $19 a month."
+| Time | Shot | Overlay | Sound |
+| --- | --- | --- | --- |
+| 0.0-2.5 | Phone face-down on a workbench, screen lighting up | 6:47 PM. The phone rings. | Ring tone, room ambience |
+| 2.5-5.0 | Lock screen stacking missed calls | You cannot pick up. | Ring cuts to silence |
+| 5.0-8.0 | Wireline call card answering live (product screen) | Your agent can. | Agent voice, low in the mix |
+| 8.0-11.5 | Outcome card + SMS follow-up appearing | Answered. Booked. Logged. | Three soft UI ticks, one per word |
+| 11.5-15.0 | End card | Build free. Go live from $19/mo. - trywireline.com | Music resolves |
+
+Voiceover (34 words, ~14s at a relaxed pace):
+
+> "Six forty-seven. The phone rings, and you cannot pick up. Your Wireline agent can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at trywireline.com."
+
+Delivery: matter-of-fact through "pick up", then a beat of silence, then lean on "can". The contrast is the ad.
 
 ### 30-Second Product Walkthrough
 
-1. Create: Name the agent and select personal or business context.
-2. Train: Add facts, tone, escalation rules, and prohibited topics.
-3. Wire: Connect number, SMS/email, billing, and launch controls.
-4. Run: Review calls, texts, follow-up, approvals, and outcomes in Studio.
+Four verbs, four screens, no filler. Overlay each stage word as a full-frame chapter card for sound-off viewers.
 
-CTA card: Build your AI Voice Agent.
+| Time | Stage | Screen | Overlay |
+| --- | --- | --- | --- |
+| 0-6 | Create | Name the agent, pick personal or business | Create |
+| 6-13 | Train | Facts, tone, escalation rules, prohibited topics | Train it on your rules |
+| 13-19 | Wire | Number, SMS/email, billing, launch controls | Wire it to real channels |
+| 19-26 | Run | Calls, follow-ups, approvals, outcomes in Studio | Run it. Check its work. |
+| 26-30 | CTA card | Build your AI Voice Agent | Build free. Go live from $19/mo. |
+
+Voiceover (70 words, ~28s):
+
+> "This is Wireline. Create an agent for your personal line or your front desk. Train it on your facts, your tone, your rules, and what it must never say. Wire it to a real number, texts, and email. Then run it: every call answered, every follow-up sent, every outcome logged where you can check it. Build free. Test it privately. Go live from nineteen dollars a month."
+
+Delivery: crisp and even. Hit the four verbs - create, train, wire, run - a touch harder than everything around them.
 
 ### 60-Second Founder Explainer
 
-- Problem: owners and busy people do not need another inbox.
-- Insight: the phone call is still a high-intent moment.
-- Product: AI voice agents trained on your rules, connected across voice/SMS/email.
-- Trust: private simulation before live launch; paid plans include a Wireline number.
-- Offer: build free; go live from $19/mo.
+Founder on camera or voice over product footage. Warm, direct, zero hype.
+
+Voiceover (129 words, ~54s):
+
+> "I built Wireline because the phone call is still where real business happens, and it is still the easiest thing to miss. Every missed call is a customer deciding to try the next name on the list. So we made it simple to build an AI voice agent of your own. Train it on your facts and rules in plain language. Let it practice in private simulation. Only then does it touch a real number. From that moment it answers your calls, sends the follow-up text or email, and logs every outcome so you can check its work. Personal line or front desk. One agent, or a team when volume proves the need. Build free. Go live from nineteen dollars a month, with a Wireline number included on every paid plan."
+
+End card: Build your AI Voice Agent - trywireline.com.
+
+### Voiceover Delivery Guide
+
+For regeneration with the AI Voice Generator or any TTS provider:
+
+- Speak "trywireline.com" as "try wireline dot com"; speak prices as words ("nineteen dollars a month"), never digits.
+- Target 2.3-2.5 words per second; the scripts above are sized to leave air at the ends.
+- Short clauses are intentional - do not join them with connective tissue when re-recording.
+- Tone reference: a founder explaining their product to a friend, not an announcer selling it.
+- Regenerated audio remains marketing/reference use only; production phone-call voices go through the runtime policy, never through campaign assets.
 
 ## Creative Production Prompts
 
