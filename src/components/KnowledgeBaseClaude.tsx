@@ -314,7 +314,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
             return (
               <div
                 key={directive.id ?? `d-${index}`}
-                className="rounded-[10px] border border-[var(--wireline-color-border-subtle)] px-3.5 py-2.5"
+                className="rounded-[10px] border border-[var(--wireline-color-border-soft)] px-3.5 py-2.5"
               >
                 <p className="text-sm font-semibold text-[var(--wireline-color-text-primary)]">
                   <FileText
