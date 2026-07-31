@@ -1,6 +1,10 @@
-/* Letterpress typography scale.
- * Sentence-case Inter Tight for display/titles; Inter for controls and copy.
- * Uppercase is reserved for IBM Plex Mono micro-labels (eyebrows, overlines) only. */
+/* Letterpress typography scale — three cased tiers, one display family.
+ *   1. Eyebrow/kicker  — IBM Plex Mono, UPPERCASE, micro, wide tracking.
+ *   2. Title/Hero/Header — Inter Tight, UPPERCASE, large, tight tracking.
+ *   3. Subheader/description/copy — Inter, sentence case.
+ * Case does the ranking: titles and heros shout in caps; the supporting line
+ * beneath them stays sentence case. Applied via text-transform so the copy
+ * strings themselves never change. */
 
 .wl-ui-caps {
   --wl-caps-display-tracking: -0.035em;
@@ -55,7 +59,29 @@
   line-height: 0.96;
 }
 
-/* Mono micro-labels — the only uppercase in the system. */
+/* Title tier — page titles, section headers, and heros carry the display face
+ * in UPPERCASE. Descriptive sentence headings, subheaders, and body copy are
+ * deliberately left out so case alone separates the title from its support
+ * line. Caps get a hair more tracking than the tight lowercase display so the
+ * letterforms breathe. */
+.wl-page-title,
+.wl-app-page-title,
+.wl-section-title,
+.wl-pro-title,
+.wl-workspace-title,
+.wl-public-section-heading,
+.wl-stitch-display,
+.wl-display-1,
+.wl-display-2,
+.wl-display-3,
+.wl-display-mark,
+.marketing-hero__title,
+.wl-stitch-marketing-hero {
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+/* Mono micro-labels — the eyebrow tier. */
 .wl-overline,
 .wl-pro-eyebrow,
 .wl-micro-meta,
