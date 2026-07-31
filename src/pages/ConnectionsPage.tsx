@@ -35,7 +35,7 @@ export default function ConnectionsPage() {
         <Accordion type="single" collapsible data-wireline-integration-map>
           <AccordionItem
             value="integration-capabilities"
-            className="rounded-[14px] border border-[color-mix(in_srgb,var(--wireline-color-border-default)_88%,transparent)] bg-[color-mix(in_srgb,var(--wireline-color-surface-default)_88%,var(--wireline-color-canvas-default))]"
+            className="rounded-[var(--wireline-radius-lg)] border border-[color-mix(in_srgb,var(--wireline-color-border-default)_88%,transparent)] bg-[color-mix(in_srgb,var(--wireline-color-surface-default)_88%,var(--wireline-color-canvas-default))]"
           >
             <AccordionTrigger className="min-h-14 px-4 py-0 text-sm font-semibold text-foreground hover:no-underline data-[state=open]:border-b data-[state=open]:border-border">
               Integration capabilities

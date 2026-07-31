@@ -1,24 +1,6 @@
 /* Focused visual-QA hotfixes from the 400+ settled screenshot pass. */
 
 @media (max-width: 640px) {
-  /* Studio first-agent banner: keep one clear CTA on mobile instead of a link pile. */
-  [data-wireline-route="/studio"] [class*="bg-primary/5"][class*="border-primary/15"] {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding-block: 0.625rem;
-    line-height: 1.45;
-  }
-
-  [data-wireline-route="/studio"] [class*="bg-primary/5"][class*="border-primary/15"] a {
-    margin-left: 0 !important;
-    width: fit-content;
-  }
-
-  [data-wireline-route="/studio"] [class*="bg-primary/5"][class*="border-primary/15"] a:nth-of-type(n + 2) {
-    display: none;
-  }
-
   /* Settings detail rows: allow copy to wrap instead of hard-clipping. */
   [data-wireline-route^="/settings"] .wl-data-row__detail {
     white-space: normal;

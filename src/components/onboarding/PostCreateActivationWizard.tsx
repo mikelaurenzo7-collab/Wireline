@@ -561,7 +561,7 @@ export default function PostCreateActivationWizard({
 
           {step === "complete" ? (
             <section className="grid gap-4 text-center sm:text-left">
-              <div className="mx-auto grid size-12 place-items-center rounded-2xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-primary sm:mx-0">
+              <div className="mx-auto grid size-12 place-items-center rounded-2xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)] sm:mx-0">
                 <Sparkles size={22} aria-hidden="true" />
               </div>
               <div>

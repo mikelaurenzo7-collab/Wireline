@@ -51,8 +51,8 @@ export default function WirelineMark({
           >
             <stop offset="0" stopColor="#8B5CF6" />
             <stop offset="0.34" stopColor="#A78BFA" />
-            <stop offset="0.7" stopColor="#7C3AED" />
-            <stop offset="1" stopColor="#C084FC" />
+            <stop offset="0.7" stopColor="#8B5CF6" />
+            <stop offset="1" stopColor="#C4B5FD" />
           </linearGradient>
         </defs>
       )}

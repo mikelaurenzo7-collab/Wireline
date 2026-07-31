@@ -15,7 +15,7 @@ const READINESS_COPY: Record<
   live: {
     label: "Live",
     className:
-      "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-action-primary-pressed)]",
+      "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]",
     Icon: CheckCircle2,
   },
   beta: {

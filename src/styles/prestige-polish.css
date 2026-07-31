@@ -452,15 +452,20 @@ body {
 /* Skip surfaces that already carry an explicit background utility. This rule is
    unlayered, so it outranks Tailwind's layered utilities regardless of order,
    and it was flattening state-tinted cards — the failed-payment and past-due
-   billing cards lost their error/warning surface and read as ordinary cards. */
-.wl-workspace-content
+   billing cards lost their error/warning surface and read as ordinary cards.
+   The .wl-workspace-shell prefix matches authenticated-visual-qa.css's
+   specificity — without it, that earlier tier's box-shadow: none silently
+   discarded this terminal treatment on every workspace page. */
+.wl-workspace-shell .wl-workspace-content
   :where(.studio-card, .wl-paper, .wl-paper-elevated, .wl-metric-tile):not([class*="bg-"]) {
   border-color: var(--wl-prestige-hairline);
   background: var(--wl-prestige-surface);
   box-shadow: var(--wl-prestige-shadow);
 }
 
-.wl-workspace-content :where(.studio-card, .wl-paper, .wl-paper-elevated, .wl-metric-tile):hover {
+.wl-workspace-shell
+  .wl-workspace-content
+  :where(.studio-card, .wl-paper, .wl-paper-elevated, .wl-metric-tile):hover {
   border-color: color-mix(
     in srgb,
     var(--wireline-color-text-primary) 9%,

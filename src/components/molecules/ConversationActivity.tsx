@@ -10,13 +10,13 @@ export const conversationActivityVariants = cva(
     variants: {
       state: {
         pending:
-          "border-[var(--wireline-info-border)] bg-[var(--wireline-info-surface)] text-foreground",
+          "border-[var(--wireline-color-feedback-info-border)] bg-[var(--wireline-color-feedback-info-surface)] text-foreground",
         active:
-          "border-[var(--wireline-warning-border)] bg-[var(--wireline-warning-surface)] text-foreground",
+          "border-[var(--wireline-color-feedback-warning-border)] bg-[var(--wireline-color-feedback-warning-surface)] text-foreground",
         complete:
-          "border-[var(--wireline-success-border)] bg-[var(--wireline-success-surface)] text-foreground",
+          "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground",
         failed:
-          "border-[var(--wireline-error-border)] bg-[var(--wireline-error-surface)] text-foreground",
+          "border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] text-foreground",
       },
     },
     defaultVariants: { state: "pending" },
@@ -38,24 +38,29 @@ function defaultIcon(state: NonNullable<ConversationActivityProps["state"]>) {
     return (
       <CheckCircle2
         aria-hidden="true"
-        className="mt-0.5 size-4 shrink-0 text-[var(--wireline-success)]"
+        className="mt-0.5 size-4 shrink-0 text-[var(--wireline-color-status-success)]"
       />
     );
   if (state === "active")
     return (
       <Clock3
         aria-hidden="true"
-        className="mt-0.5 size-4 shrink-0 text-[var(--wireline-warning)]"
+        className="mt-0.5 size-4 shrink-0 text-[var(--wireline-color-status-warning)]"
       />
     );
   if (state === "failed")
     return (
       <CircleAlert
         aria-hidden="true"
-        className="mt-0.5 size-4 shrink-0 text-[var(--wireline-error)]"
+        className="mt-0.5 size-4 shrink-0 text-[var(--wireline-color-status-error)]"
       />
     );
-  return <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[var(--wireline-info)]" />;
+  return (
+    <Info
+      aria-hidden="true"
+      className="mt-0.5 size-4 shrink-0 text-[var(--wireline-color-status-info)]"
+    />
+  );
 }
 
 const ConversationActivity = React.forwardRef<HTMLDivElement, ConversationActivityProps>(

@@ -371,7 +371,7 @@ export default function AgentPresenceLivePreview({
               type="button"
               onClick={() => void enableLiveVideo()}
               disabled={enabling}
-              className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-action-primary-default)] px-3 text-xs font-semibold text-white transition-colors hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-action-primary-default)] px-3 text-xs font-semibold text-[var(--wireline-color-text-onAction)] transition-colors hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {enabling ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : null}
               Add live video
@@ -381,7 +381,7 @@ export default function AgentPresenceLivePreview({
               type="button"
               onClick={() => void startLiveVideoCheckout()}
               disabled={checkoutBusy}
-              className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-action-secondary-default)] bg-[var(--wireline-color-action-secondary-default)] px-3 text-xs font-semibold text-[var(--wireline-color-text-on-action)] transition-colors hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-action-secondary-default)] bg-[var(--wireline-color-action-secondary-default)] px-3 text-xs font-semibold text-[var(--wireline-color-text-onAction)] transition-colors hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {checkoutBusy ? (
                 <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />

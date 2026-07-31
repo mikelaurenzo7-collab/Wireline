@@ -42,8 +42,8 @@
 }
 
 .workspace-btn-primary:hover:not(:disabled) {
-  border-color: var(--wireline-accent-hover);
-  background: var(--wireline-accent-hover);
+  border-color: var(--wireline-color-action-primary-hover);
+  background: var(--wireline-color-action-primary-hover);
 }
 
 .workspace-btn-primary:active:not(:disabled),
@@ -71,7 +71,7 @@
 
 .workspace-btn-secondary:hover:not(:disabled) {
   border-color: var(--wireline-color-border-strong);
-  background: var(--wireline-color-surface-default-subtle);
+  background: var(--wireline-color-surface-container);
 }
 
 .wl-stat-strip {
@@ -110,7 +110,7 @@
 
 .wl-surface-ghost {
   border-radius: var(--radius-xl);
-  background: var(--wireline-color-surface-default-subtle);
+  background: var(--wireline-color-surface-subtle);
 }
 
 .wl-segmented {
@@ -118,7 +118,7 @@
   gap: 4px;
   border: 1px solid var(--wireline-color-border-default);
   border-radius: var(--radius-md);
-  background: var(--wireline-color-surface-default-subtle);
+  background: var(--wireline-color-surface-subtle);
   padding: 4px;
 }
 
@@ -168,7 +168,7 @@
 
 .wl-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(69, 30, 187, 0.22) transparent;
+  scrollbar-color: var(--wireline-color-glow-primary) transparent;
 }
 
 .wl-scroll::-webkit-scrollbar {
@@ -178,7 +178,7 @@
 
 .wl-scroll::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(69, 30, 187, 0.22);
+  background: var(--wireline-color-glow-primary);
 }
 
 @media (max-width: 639px) {

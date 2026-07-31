@@ -55,34 +55,16 @@ export default function LeaderboardView({ days }: { days: number }) {
   if (err) return <ErrCard error={err} onRetry={() => setReloadKey((k) => k + 1)} />;
   if (!data || !data.agents?.length) return <InsightEmpty configKey="leaderboard" icon={Trophy} />;
 
+  // Podium tones stay on the system ramp: violet action for first place,
+  // the silver wire for second, neutral for third. Card borders and glows
+  // come from .wl-leaderboard-card[data-rank] in letterpress-polish.css —
+  // border utilities here would lose to .wl-panel's unlayered shorthand.
   const RANK_STYLES: Array<{
-    gradient?: string;
-    ring: string;
-    glow: string;
     textClass: string;
-    iconBg: boolean;
   }> = [
-    {
-      gradient: "linear-gradient(135deg, var(--color-brand), var(--color-brand-deep))",
-      ring: "border-brand/40",
-      glow: "rgba(17, 17, 17, 0.18)",
-      textClass: "text-on-brand",
-      iconBg: true,
-    },
-    {
-      gradient: "linear-gradient(135deg, rgba(17, 17, 17, 0.14), rgba(17, 17, 17, 0.06))",
-      ring: "border-brand-2/30",
-      glow: "rgba(17, 17, 17, 0.12)",
-      textClass: "text-brand-2",
-      iconBg: false,
-    },
-    {
-      gradient: "linear-gradient(135deg, rgba(17, 17, 17, 0.10), rgba(17, 17, 17, 0.04))",
-      ring: "border-brand-3/25",
-      glow: "rgba(17, 17, 17, 0.08)",
-      textClass: "text-brand-3",
-      iconBg: false,
-    },
+    { textClass: "text-on-brand" },
+    { textClass: "text-[var(--wireline-color-action-secondary-default)]" },
+    { textClass: "text-[var(--wireline-color-status-neutral)]" },
   ];
 
   const agentRows: InsightsLeaderboardAgentRow[] = Array.isArray(data?.agents) ? data.agents : [];
@@ -90,12 +72,7 @@ export default function LeaderboardView({ days }: { days: number }) {
   return (
     <div className="space-y-3">
       {agentRows.map((a, i) => {
-        const rs = RANK_STYLES[i] ?? {
-          ring: "border-white/8",
-          glow: "transparent",
-          textClass: "text-muted",
-          iconBg: false,
-        };
+        const rs = RANK_STYLES[i] ?? { textClass: "text-muted" };
         return (
           <motion.div
             key={a.agent_id}
@@ -105,7 +82,6 @@ export default function LeaderboardView({ days }: { days: number }) {
             className={cn(
               "relative rounded-md wl-panel border p-5 flex items-center gap-5 overflow-hidden",
               i < 3 && "wl-leaderboard-card",
-              rs.ring,
             )}
             data-rank={i < 3 ? String(i) : undefined}
           >

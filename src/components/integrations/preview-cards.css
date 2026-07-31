@@ -2,6 +2,18 @@
 
 /* ── Shared tokens ───────────────────────────────────────────────────────── */
 
+/* The preview consoles are dark in BOTH themes (interior text is white at
+   fixed alphas), so the card pins its own Aurora dark chrome locally instead
+   of the theme-aware tokens — the same pattern as .wl-stitch-card-brand.
+   --panel-2 and --iris were referenced below without a definition, which left
+   every preview body transparent and the Excel header colorless. */
+.wl-integration-preview-card {
+  --panel-2: #201e29;
+  --iris: #a78bfa;
+  background: #141319;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .wl-preview-micro {
   font-size: 0.625rem;
   line-height: 1.25;
