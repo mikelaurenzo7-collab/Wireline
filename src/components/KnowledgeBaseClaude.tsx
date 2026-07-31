@@ -327,6 +327,10 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         ref={fileInputRef}
         type="file"
         multiple
+        // Visually hidden but still in the accessibility tree, so it needs a
+        // name of its own: axe reports an unlabelled control otherwise, and a
+        // screen reader announces only "file upload button".
+        aria-label="Upload knowledge files"
         className="sr-only"
         onChange={onFilePick}
         accept=".txt,.csv,.md,.markdown,image/png,image/jpeg,image/jpg,image/webp,image/gif"
@@ -373,8 +377,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
               className="h-[68px] animate-pulse rounded-[12px] bg-[var(--wireline-color-surface-subtle)]"
             />
           ))
-        ) : knowledge.length === 0 ? // way when empty so the page reads as: stats -> upload, not // Drop zone below already invites uploads — keep this row out of the
-        // stats -> empty pill -> identical upload pill.
+        ) : knowledge.length === 0 ? // stats -> empty pill -> identical upload pill. // way when empty so the page reads as: stats -> upload, not // Drop zone below already invites uploads — keep this row out of the
         null : (
           <>
             <div className="mb-1 flex items-center justify-between">

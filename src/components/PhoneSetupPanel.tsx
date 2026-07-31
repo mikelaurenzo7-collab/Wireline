@@ -239,7 +239,7 @@ export default function PhoneSetupPanel() {
               </span>
               {agentsLoading ? (
                 <div
-                  className="flex h-11 items-center rounded-lg border border-primary-foreground/20 bg-black/15 px-3 text-sm text-primary-foreground"
+                  className="flex h-11 items-center rounded-lg border border-primary-foreground/20 bg-black/5 px-3 text-sm text-primary-foreground"
                   role="status"
                 >
                   Loading agents…
@@ -248,7 +248,7 @@ export default function PhoneSetupPanel() {
                 <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
                   <SelectTrigger
                     aria-label="Choose the voice agent for this number"
-                    className="h-11 border-primary-foreground/20 bg-black/15 text-primary-foreground"
+                    className="h-11 border-primary-foreground/20 bg-black/5 text-primary-foreground"
                   >
                     <SelectValue placeholder="Choose agent" />
                   </SelectTrigger>
@@ -287,7 +287,7 @@ export default function PhoneSetupPanel() {
                   }
                   placeholder="312"
                   aria-label="Preferred phone number area code"
-                  className="h-11 w-full rounded-lg border border-primary-foreground/20 bg-black/15 pl-9 pr-3 text-sm text-primary-foreground outline-none placeholder:text-primary-foreground/40 focus:border-primary-foreground/50 focus:ring-2 focus:ring-primary-foreground/15"
+                  className="h-11 w-full rounded-lg border border-primary-foreground/20 bg-black/5 pl-9 pr-3 text-sm text-primary-foreground outline-none placeholder:text-primary-foreground/40 focus:border-primary-foreground/50 focus:ring-2 focus:ring-primary-foreground/15"
                 />
               </span>
             </label>
