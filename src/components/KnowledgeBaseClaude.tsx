@@ -40,7 +40,6 @@ type AssetBody = {
   dataUrl?: string;
 };
 
-const TEXT_HEX_DEEP = "var(--wireline-color-action-primary-pressed)";
 const SUCCESS_SURFACE = "var(--wireline-color-feedback-success-surface)";
 // Mirrors the directives cap below — keeps the list readable for customers
 // with hundreds of ingested documents instead of rendering every row.
@@ -373,8 +372,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
               className="h-[68px] animate-pulse rounded-[12px] bg-[var(--wireline-color-surface-subtle)]"
             />
           ))
-        ) : knowledge.length === 0 ? // stats -> empty pill -> identical upload pill. // way when empty so the page reads as: stats -> upload, not // Drop zone below already invites uploads — keep this row out of the
-        null : (
+        ) : knowledge.length === 0 ? null : ( // stats -> empty pill -> identical upload pill. // way when empty so the page reads as: stats -> upload, not // Drop zone below already invites uploads — keep this row out of the
           <>
             <div className="mb-1 flex items-center justify-between">
               <div className="wl-eyebrow">Ingested knowledge</div>
@@ -392,7 +390,10 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                   >
                     <div
                       className="grid size-9 shrink-0 place-items-center rounded-[var(--wireline-radius-md)] font-[var(--wireline-font-mono)] text-[11px] font-bold"
-                      style={{ background: SUCCESS_SURFACE, color: TEXT_HEX_DEEP }}
+                      style={{
+                        background: "var(--wireline-color-action-primary-container)",
+                        color: "var(--wireline-color-action-primary-default)",
+                      }}
                     >
                       {badge}
                     </div>

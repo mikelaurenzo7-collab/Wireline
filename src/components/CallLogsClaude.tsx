@@ -584,8 +584,8 @@ function IntelTab({
             <div
               className="grid size-9 shrink-0 place-items-center rounded-[var(--wireline-radius-md)] text-base"
               style={{
-                background: "var(--wireline-color-feedback-success-surface)",
-                color: "var(--wireline-color-action-primary-pressed)",
+                background: "var(--wireline-color-action-primary-container)",
+                color: "var(--wireline-color-action-primary-default)",
               }}
               aria-hidden="true"
             >
@@ -602,8 +602,8 @@ function IntelTab({
             <span
               className="font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em] rounded px-2 py-1"
               style={{
-                background: "var(--wireline-color-feedback-success-surface)",
-                color: "var(--wireline-color-action-primary-pressed)",
+                background: "var(--wireline-color-action-primary-container)",
+                color: "var(--wireline-color-action-primary-default)",
               }}
             >
               {call.lead_score && call.lead_score >= 85 ? "High" : "Med"}
