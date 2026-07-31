@@ -2,30 +2,39 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { agentCapHit, resolveAgentEntitlement } from "../src/lib/agent-entitlements";
+import {
+  agentCapHit,
+  agentCapMessage,
+  resolveAgentEntitlement,
+} from "../src/lib/agent-entitlements";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("agent capacity integrity", () => {
-  it.each([null, undefined, "pending_activation", "past_due", "canceled", "trial_expired", "unknown"])(
-    "collapses inactive status %s to the one-draft Free Builder cap",
-    (subscriptionStatus) => {
-      const entitlement = resolveAgentEntitlement({
-        isOwner: false,
-        subscriptionStatus,
-        planId: "enterprise",
-        maxAgents: 50,
-        extraAgents: 25,
-      });
+  it.each([
+    null,
+    undefined,
+    "pending_activation",
+    "past_due",
+    "canceled",
+    "trial_expired",
+    "unknown",
+  ])("collapses inactive status %s to the one-draft Free Builder cap", (subscriptionStatus) => {
+    const entitlement = resolveAgentEntitlement({
+      isOwner: false,
+      subscriptionStatus,
+      planId: "enterprise",
+      maxAgents: 50,
+      extraAgents: 25,
+    });
 
-      expect(entitlement.subscriptionStatus).toBe(subscriptionStatus || "pending_activation");
-      expect(entitlement.planAgents).toBe(1);
-      expect(entitlement.purchasedExtras).toBe(0);
-      expect(entitlement.effectiveCap).toBe(1);
-      expect(entitlement.unlimited).toBe(false);
-      expect(agentCapHit(1, entitlement)).toBe(true);
-    },
-  );
+    expect(entitlement.subscriptionStatus).toBe(subscriptionStatus || "pending_activation");
+    expect(entitlement.planAgents).toBe(1);
+    expect(entitlement.purchasedExtras).toBe(0);
+    expect(entitlement.effectiveCap).toBe(1);
+    expect(entitlement.unlimited).toBe(false);
+    expect(agentCapHit(1, entitlement)).toBe(true);
+  });
 
   it("normalizes status before deciding whether paid capacity is valid", () => {
     const entitlement = resolveAgentEntitlement({
@@ -85,6 +94,25 @@ describe("agent capacity integrity", () => {
     expect(read("src/routes/agent-routes-v2.ts")).toContain("hashtext(${req.user.id})");
     expect(read("src/routes/mobile-routes.ts")).toContain("hashtext(${req.user.id})");
     expect(read("src/lib/agent-draft-service.ts")).toContain("hashtext(${principal.userId})");
+  });
+
+  it("counts agents in the cap message the way the rest of the product does", () => {
+    // Every free workspace has a cap of 1, so the singular is the wording most
+    // people actually see — and it read "up to 1 agents" while the rest of the
+    // product pluralises counts.
+    expect(agentCapMessage(1)).toBe(
+      "Agent capacity limit reached. Your plan allows up to 1 agent.",
+    );
+    expect(agentCapMessage(0)).toContain("0 agents");
+    expect(agentCapMessage(2)).toContain("2 agents");
+    expect(agentCapMessage(25)).toContain("25 agents");
+
+    // Both surfaces raise this, so the sentence has to come from one place or
+    // the two copies drift — which is how the pluralisation bug survived.
+    for (const file of ["src/routes/agent-routes-v2.ts", "src/lib/agent-draft-service.ts"]) {
+      expect(read(file)).toContain("agentCapMessage(entitlement.effectiveCap)");
+      expect(read(file)).not.toContain("Your plan allows up to ${entitlement.effectiveCap} agents");
+    }
   });
 });
 
@@ -195,14 +223,16 @@ describe("carrier teardown integration", () => {
   });
 });
 
-
 describe("runtime artifact settlement integrity", () => {
   it("checkpoints paid provider results inside the refundable reservation", () => {
     const worker = read("src/lib/job-worker.ts");
     const postStart = worker.indexOf("async function handlePostCallArtifact");
     const scheduledStart = worker.indexOf("async function handleScheduledReport");
     const postBlock = worker.slice(postStart, scheduledStart);
-    const scheduledBlock = worker.slice(scheduledStart, worker.indexOf("/** Global durable-job dispatcher"));
+    const scheduledBlock = worker.slice(
+      scheduledStart,
+      worker.indexOf("/** Global durable-job dispatcher"),
+    );
 
     expect(postBlock).toContain("await withRuntimeReservation(job, userId, format, async () => {");
     expect(postBlock.indexOf("generateAndStorePostCallArtifact")).toBeLessThan(

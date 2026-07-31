@@ -71,3 +71,16 @@ export function resolveAgentEntitlement(input: AgentEntitlementInput): AgentEnti
 export function agentCapHit(agentCount: number, entitlement: AgentEntitlement): boolean {
   return entitlement.effectiveCap !== null && agentCount >= entitlement.effectiveCap;
 }
+
+/**
+ * Message shown when a workspace is already at its agent cap.
+ *
+ * Lives here rather than at each call site because the web route and the draft
+ * service both raise it, and the two copies had already drifted from the rest of
+ * the product: everywhere else counts are pluralised, but this sentence hardcoded
+ * "agents" and so read "up to 1 agents" — the free-plan cap, and therefore the
+ * wording most workspaces actually hit.
+ */
+export function agentCapMessage(cap: number): string {
+  return `Agent capacity limit reached. Your plan allows up to ${cap} agent${cap === 1 ? "" : "s"}.`;
+}

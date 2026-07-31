@@ -11,7 +11,7 @@ import {
   type AgentCustomizationProfile,
   isAgentCustomizationProfile,
 } from "./agent-customization";
-import { resolveAgentEntitlement } from "./agent-entitlements";
+import { agentCapMessage, resolveAgentEntitlement } from "./agent-entitlements";
 import { isOwnerEmail } from "./auth-service";
 import { drizzle, tenantStore } from "./server-context";
 import { emitServerProductEventOnce } from "./product-event-server";
@@ -134,10 +134,7 @@ async function assertAgentCapacity(
     extraAgents: setting?.extraAgents,
   });
   if (entitlement.effectiveCap !== null && existingCount >= entitlement.effectiveCap) {
-    throw AppError.fromHttpStatus(
-      402,
-      `Agent capacity limit reached. Your plan allows up to ${entitlement.effectiveCap} agents.`,
-    );
+    throw AppError.fromHttpStatus(402, agentCapMessage(entitlement.effectiveCap));
   }
 }
 

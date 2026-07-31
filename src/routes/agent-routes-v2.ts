@@ -27,7 +27,7 @@ import {
 } from "../lib/ai-models";
 import { AgentBusinessProfileSchema } from "../lib/form-validators";
 import { isOwnerEmail } from "../lib/auth-service";
-import { resolveAgentEntitlement } from "../lib/agent-entitlements";
+import { agentCapMessage, resolveAgentEntitlement } from "../lib/agent-entitlements";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { runStructured } from "../lib/ai-structured";
 import {
@@ -313,10 +313,7 @@ router.post(
       });
 
       if (entitlement.effectiveCap !== null && existing >= entitlement.effectiveCap) {
-        throw AppError.fromHttpStatus(
-          402,
-          `Agent capacity limit reached. Your plan allows up to ${entitlement.effectiveCap} agents.`,
-        );
+        throw AppError.fromHttpStatus(402, agentCapMessage(entitlement.effectiveCap));
       }
 
       await tx.insert(schema.agents).values({
