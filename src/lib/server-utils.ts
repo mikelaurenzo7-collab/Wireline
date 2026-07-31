@@ -68,6 +68,24 @@ export function jsonSafeId(id: bigint | number | string | null | undefined): str
 }
 
 /**
+ * Parse a bigint-keyed path parameter, returning null when it is not a plain
+ * positive integer.
+ *
+ * `BigInt("abc")` throws a raw SyntaxError. Handlers that call it inline catch
+ * that in their generic error branch and answer 500, so a malformed path
+ * parameter — a client mistake — reads as a server fault. Returning null lets
+ * the caller answer 400 without wrapping every id in its own try/catch.
+ */
+export function parseBigIntId(value: unknown): bigint | null {
+  if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
+  try {
+    return BigInt(value);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Deep-clone a value into a JSON-serializable shape (BigInt → string).
  * Use before writing objects into jsonb columns or structured logs.
  */

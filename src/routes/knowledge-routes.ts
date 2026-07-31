@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 import { Router, Response } from "express";
-import { AppError } from "../lib/api-error";
+import { AppError, rethrowIfAppError } from "../lib/api-error";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import { getErrorMessage } from "../lib/server-utils";
+import { getErrorMessage, parseBigIntId } from "../lib/server-utils";
 import * as rateLimiters from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { validateBody, addKnowledgeSchema, updateKnowledgeSchema } from "../lib/api-validation";
@@ -102,6 +102,10 @@ router.post(
 
       res.json({ success: true, knowledge: data });
     } catch (e: any) {
+      // Deliberate 400/404s are thrown inside the try block; without this they
+      // are caught here and reported as a 500, so a caller sees a server fault
+      // for what the handler already identified as a client error.
+      rethrowIfAppError(e);
       log.error("Failed to add knowledge", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to add knowledge");
     }
@@ -116,19 +120,27 @@ router.patch(
     try {
       const { content } = req.body;
 
+      const knowledgeId = parseBigIntId(req.params.id);
+      if (knowledgeId === null) {
+        throw AppError.fromHttpStatus(400, "Knowledge id must be a positive integer");
+      }
+
       const [data] = (await drizzle
         .update(schema.knowledge)
         .set({ content: content.trim() })
-        .where(
-          and(
-            eq(schema.knowledge.id, BigInt(req.params.id)),
-            eq(schema.knowledge.userId, req.user.id),
-          ),
-        )
+        .where(and(eq(schema.knowledge.id, knowledgeId), eq(schema.knowledge.userId, req.user.id)))
         .returning()) as any[];
+
+      // Without this the handler answered `success: true` with an undefined
+      // record for an id the caller does not own or that no longer exists.
+      if (!data) throw AppError.fromHttpStatus(404, "Knowledge not found");
 
       res.json({ success: true, knowledge: data });
     } catch (e: any) {
+      // Deliberate 400/404s are thrown inside the try block; without this they
+      // are caught here and reported as a 500, so a caller sees a server fault
+      // for what the handler already identified as a client error.
+      rethrowIfAppError(e);
       log.error("Failed to update knowledge", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to update knowledge");
     }
@@ -140,16 +152,24 @@ router.delete(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      await drizzle
+      const knowledgeId = parseBigIntId(req.params.id);
+      if (knowledgeId === null) {
+        throw AppError.fromHttpStatus(400, "Knowledge id must be a positive integer");
+      }
+
+      const deleted = (await drizzle
         .delete(schema.knowledge)
-        .where(
-          and(
-            eq(schema.knowledge.id, BigInt(req.params.id)),
-            eq(schema.knowledge.userId, req.user.id),
-          ),
-        );
+        .where(and(eq(schema.knowledge.id, knowledgeId), eq(schema.knowledge.userId, req.user.id)))
+        .returning()) as unknown[];
+
+      if (!deleted.length) throw AppError.fromHttpStatus(404, "Knowledge not found");
+
       res.json({ success: true });
     } catch (e: any) {
+      // Deliberate 400/404s are thrown inside the try block; without this they
+      // are caught here and reported as a 500, so a caller sees a server fault
+      // for what the handler already identified as a client error.
+      rethrowIfAppError(e);
       log.error("Failed to delete knowledge", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to delete knowledge");
     }

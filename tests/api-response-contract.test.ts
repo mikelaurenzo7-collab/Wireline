@@ -1,8 +1,9 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { FollowUpTaskCreateSchema, parseFormData } from "../src/lib/form-validators";
+import { parseBigIntId } from "../src/lib/server-utils";
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
@@ -57,6 +58,54 @@ describe("API response contract", () => {
     expect(openapi).toContain("email_verified");
     expect(openapi).toContain("signup_intent");
     expect(openapi).toContain("trial:");
+  });
+
+  it("parses bigint path parameters without throwing on malformed input", () => {
+    // `BigInt("abc")` throws a raw SyntaxError. Handlers calling it inline caught
+    // that in their generic branch and answered 500, so a malformed path
+    // parameter — a client mistake — read as a server fault.
+    expect(parseBigIntId("42")).toBe(42n);
+    expect(parseBigIntId("0")).toBe(0n);
+    expect(parseBigIntId("9007199254740993")).toBe(9007199254740993n);
+
+    for (const bad of [
+      "abc",
+      "",
+      " 12",
+      "12 ",
+      "1.5",
+      "-1",
+      "0x10",
+      "1e3",
+      "00000000-0000-0000-0000-000000000000",
+      undefined,
+      null,
+      12,
+      {},
+    ]) {
+      expect(parseBigIntId(bad), `expected ${String(bad)} to be rejected`).toBeNull();
+    }
+  });
+
+  it("guards every bigint route parameter rather than calling BigInt inline", () => {
+    // The guard existed in four places and was missing from the rest, so the
+    // same malformed-id 500 kept reappearing on whichever route was overlooked.
+    const routes = readdirSync(resolve(root, "src/routes")).filter((f) => f.endsWith(".ts"));
+    const unguarded: string[] = [];
+    for (const file of routes) {
+      const src = read(`src/routes/${file}`);
+      for (const match of src.matchAll(/BigInt\(req\.params\.(\w+)\)/g)) {
+        // Look only at the enclosing handler, not the whole file — a guard on an
+        // unrelated route above must not count as covering this call site.
+        const window = src.slice(Math.max(0, (match.index ?? 0) - 900), match.index);
+        const param = match[1];
+        const guarded =
+          new RegExp(`parseBigIntId\\(req\\.params\\.${param}\\)`).test(window) ||
+          new RegExp(`test\\(req\\.params\\.${param}\\)`).test(window);
+        if (!guarded) unguarded.push(`${file}: ${match[0]}`);
+      }
+    }
+    expect(unguarded).toEqual([]);
   });
 
   it("rejects an unparseable task due_date instead of failing inside the driver", () => {

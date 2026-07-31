@@ -7,6 +7,7 @@ import { withAudit } from "../middleware/audit-middleware";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { AppError } from "../lib/api-error";
+import { parseBigIntId } from "../lib/server-utils";
 import { runStructured } from "../lib/ai-structured";
 import { AI_TOOLS } from "../lib/ai-tools";
 import { computeQaStats, listUnscoredCallIds } from "../lib/qa-stats";
@@ -43,9 +44,7 @@ router.post("/score-batch", authenticateUser, limiter, withAudit("qa"), async (r
         })
         .from(schema.callLogs)
         .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
-        .where(
-          and(eq(schema.callLogs.id, callId), eq(schema.callLogs.userId, authReq.user.id)),
-        )
+        .where(and(eq(schema.callLogs.id, callId), eq(schema.callLogs.userId, authReq.user.id)))
         .limit(1);
       if (!call) continue;
 
@@ -94,6 +93,10 @@ router.post(
   limiter,
   withAudit("qa"),
   async (req: AuthenticatedRequest, res) => {
+    const callLogId = parseBigIntId(req.params.callId);
+    if (callLogId === null) {
+      throw AppError.fromHttpStatus(400, "callId must be a positive integer");
+    }
     const [call] = await drizzle
       .select({
         id: schema.callLogs.id,
@@ -106,12 +109,7 @@ router.post(
       })
       .from(schema.callLogs)
       .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
-      .where(
-        and(
-          eq(schema.callLogs.id, BigInt(req.params.callId)),
-          eq(schema.callLogs.userId, req.user.id),
-        ),
-      )
+      .where(and(eq(schema.callLogs.id, callLogId), eq(schema.callLogs.userId, req.user.id)))
       .limit(1);
     if (!call) throw AppError.fromHttpStatus(404, "Call not found");
     const breakdown = await runStructured<{

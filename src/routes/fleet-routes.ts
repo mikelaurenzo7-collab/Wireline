@@ -294,7 +294,13 @@ router.patch(
           .json({ code: "BAD_REQUEST", error: "No supported task fields to update" });
       }
 
-      await drizzle
+      // The where clause scopes the update to the caller, so a task belonging to
+      // someone else simply matches no rows — but reporting `success: true` for
+      // an update that changed nothing tells a client its edit was saved when it
+      // was not. A task deleted in another tab reads back as saved and then
+      // reverts on refresh. The sibling approve route below already answers 404
+      // for the same case.
+      const updated = (await drizzle
         .update(schema.followUpTasks)
         .set(updateData)
         .where(
@@ -302,7 +308,13 @@ router.patch(
             eq(schema.followUpTasks.id, req.params.id),
             eq(schema.followUpTasks.userId, req.user.id),
           ),
-        );
+        )
+        .returning()) as unknown[];
+
+      if (!updated.length) {
+        return res.status(404).json({ code: "NOT_FOUND", error: "Task not found" });
+      }
+
       if (status !== undefined) touchNavCounts(req.user.id);
       res.json({ success: true });
     } catch (error: any) {

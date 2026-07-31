@@ -15,7 +15,7 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, sql, gte } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import { getErrorMessage } from "../lib/server-utils";
+import { getErrorMessage, parseBigIntId } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -80,15 +80,14 @@ router.patch(
         .status(400)
         .json({ error: `pipelineStage must be one of ${PIPELINE_STAGES.join(", ")}` });
     }
+    const leadId = parseBigIntId(req.params.id);
+    if (leadId === null) {
+      throw AppError.fromHttpStatus(400, "Lead id must be a positive integer");
+    }
     const [row] = await drizzle
       .update(schema.outboundLeads)
       .set({ pipelineStage: targetStage })
-      .where(
-        and(
-          eq(schema.outboundLeads.id, BigInt(req.params.id)),
-          eq(schema.outboundLeads.userId, req.user.id),
-        ),
-      )
+      .where(and(eq(schema.outboundLeads.id, leadId), eq(schema.outboundLeads.userId, req.user.id)))
       .returning({
         id: schema.outboundLeads.id,
         pipelineStage: schema.outboundLeads.pipelineStage,
