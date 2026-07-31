@@ -40,7 +40,6 @@ type AssetBody = {
   dataUrl?: string;
 };
 
-const TEXT_HEX_DEEP = "var(--wireline-color-action-primary-pressed)";
 const SUCCESS_SURFACE = "var(--wireline-color-feedback-success-surface)";
 // Mirrors the directives cap below — keeps the list readable for customers
 // with hundreds of ingested documents instead of rendering every row.
@@ -278,7 +277,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
             return (
               <div
                 key={directive.id ?? `d-${index}`}
-                className="rounded-[10px] border border-[var(--wireline-color-border-subtle)] px-3.5 py-2.5"
+                className="rounded-[10px] border border-[var(--wireline-color-border-soft)] px-3.5 py-2.5"
               >
                 <p className="text-sm font-semibold text-[var(--wireline-color-text-primary)]">
                   <FileText
@@ -355,7 +354,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       {notice ? (
         <div
           role="status"
-          className="rounded-[10px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-2.5 text-[13px] text-[var(--wireline-color-action-primary-pressed)]"
+          className="rounded-[10px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-2.5 text-[13px] text-[var(--wireline-color-status-success)]"
         >
           {notice}
         </div>
@@ -373,9 +372,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
               className="h-[68px] animate-pulse rounded-[12px] bg-[var(--wireline-color-surface-subtle)]"
             />
           ))
-        ) : knowledge.length === 0 ? // way when empty so the page reads as: stats -> upload, not // Drop zone below already invites uploads — keep this row out of the
-        // stats -> empty pill -> identical upload pill.
-        null : (
+        ) : knowledge.length === 0 ? null : ( // stats -> empty pill -> identical upload pill. // way when empty so the page reads as: stats -> upload, not // Drop zone below already invites uploads — keep this row out of the
           <>
             <div className="mb-1 flex items-center justify-between">
               <div className="wl-eyebrow">Ingested knowledge</div>
@@ -392,8 +389,11 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                     className="flex items-center gap-3.5 rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-4 transition-colors hover:border-[var(--wireline-color-action-primary-default)]"
                   >
                     <div
-                      className="grid size-9 shrink-0 place-items-center rounded-[9px] font-[var(--wireline-font-mono)] text-[11px] font-bold"
-                      style={{ background: SUCCESS_SURFACE, color: TEXT_HEX_DEEP }}
+                      className="grid size-9 shrink-0 place-items-center rounded-[var(--wireline-radius-md)] font-[var(--wireline-font-mono)] text-[11px] font-bold"
+                      style={{
+                        background: "var(--wireline-color-action-primary-container)",
+                        color: "var(--wireline-color-action-primary-default)",
+                      }}
                     >
                       {badge}
                     </div>
@@ -406,7 +406,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                       </div>
                     </div>
                     <span
-                      className="rounded-[5px] px-2 py-1 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em]"
+                      className="rounded-[var(--wireline-radius-xs)] px-2 py-1 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em]"
                       style={{
                         background: SUCCESS_SURFACE,
                         color: "var(--wireline-color-status-success)",

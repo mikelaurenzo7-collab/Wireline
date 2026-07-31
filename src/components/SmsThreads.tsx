@@ -336,7 +336,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
               animate={{ opacity: 1, y: 0 }}
               className={cn(
                 WL_CHANNEL_CLASSES.threadRow,
-                "text-left transition-colors hover:bg-[var(--wireline-surface-subtle)]",
+                "text-left transition-colors hover:bg-[var(--wireline-color-surface-subtle)]",
                 activeId === thread.id && WL_CHANNEL_CLASSES.threadRowActive,
               )}
             >
@@ -440,7 +440,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                         aria-label={copied ? "Number copied" : "Copy customer number"}
                       >
                         {copied ? (
-                          <Check className="size-4 text-[var(--wireline-success)]" />
+                          <Check className="size-4 text-[var(--wireline-color-status-success)]" />
                         ) : (
                           <Copy className="size-4" />
                         )}

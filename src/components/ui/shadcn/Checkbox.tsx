@@ -23,7 +23,7 @@ const Checkbox = React.forwardRef<
     type="checkbox"
     ref={ref}
     className={cn(
-      "h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-[5px] border border-border bg-card align-middle transition-colors",
+      "h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-[var(--wireline-radius-xs)] border border-border bg-card align-middle transition-colors",
       "checked:border-primary checked:bg-primary",
       "checked:bg-[length:100%_100%] checked:bg-center checked:bg-no-repeat",
       "checked:bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 fill=%22none%22 stroke=%22white%22 stroke-width=%223%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%223 8.5 6.5 12 13 4.5%22/></svg>')]",

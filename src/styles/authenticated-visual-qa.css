@@ -5,7 +5,7 @@
 /* Keep authenticated cards crisp and quiet even though system-hardening loads
  * later in the CSS stack. Higher route specificity intentionally wins. */
 .wl-workspace-shell .wl-workspace-page :where(.wl-paper, .wl-paper-elevated, .studio-card, .wl-panel-elevated) {
-  border-radius: 14px;
+  border-radius: var(--wireline-radius-lg);
   border-color: color-mix(in srgb, var(--wireline-color-border-default) 88%, transparent);
   box-shadow: none;
 }
@@ -162,7 +162,7 @@
 }
 
 [data-wireline-route="/insights"] .scroll-viewport > .relative.rounded-xl {
-  border-radius: 14px;
+  border-radius: var(--wireline-radius-lg);
 }
 
 /* Phone: retain the instrument-grade console but reduce stacked chrome and

@@ -154,7 +154,7 @@
   bottom: 14px;
   z-index: 4;
   padding: 11px 13px;
-  border-radius: 14px;
+  border-radius: var(--wireline-radius-lg);
   background: color-mix(in srgb, var(--wireline-color-canvas-default) 38%, #000);
   border: 1px solid var(--wireline-color-border-default);
   backdrop-filter: blur(6px);

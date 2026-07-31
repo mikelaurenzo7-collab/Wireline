@@ -13,11 +13,21 @@ const android = readFileSync(
   "utf8",
 );
 
+// The token source is DTCG-shaped: leaves carry "$value", not the legacy
+// "value" key. Flattening on the wrong key silently yields zero leaves and
+// turns the whole parity sweep into a no-op, so match "$value" explicitly.
 const flatten = (obj, prefix = []) => Object.entries(obj).flatMap(([key, value]) => {
-  if (value && typeof value === "object" && "value" in value) return [[prefix.concat(key).join("."), String(value.value)]];
+  if (value && typeof value === "object" && "$value" in value) {
+    return [[prefix.concat(key).join("."), String(value.$value)]];
+  }
   if (value && typeof value === "object") return flatten(value, prefix.concat(key));
   return [];
 });
+
+const expandHex = (value) => {
+  const digits = value.slice(1);
+  return digits.length === 3 ? digits.split("").map((d) => d + d).join("") : digits;
+};
 
 const problems = [];
 if (!iosSharedColor.includes("public extension Color") || !iosSharedColor.includes("init(hex: UInt32")) {
@@ -28,16 +38,17 @@ if (!iosSharedBrand.includes("enum Brand") || !iosSharedBrand.includes("extensio
 }
 for (const [name, value] of flatten(canonical)) {
   if (!/^#(?:[0-9a-f]{3}){1,2}$/i.test(value)) continue;
-  const normalized = value.toLowerCase();
+  const hex = expandHex(value).toLowerCase();
+  // Each platform stores the same color in its native literal form.
   const surfaces = [
-    ["web generated TS", web],
-    ["browser extension CSS", css],
-    ["iOS shared tokens", iosShared],
-    ["iOS app tokens", iosApp],
-    ["Android tokens", android],
+    ["web generated TS", web, `#${hex}`],
+    ["browser extension CSS", css, `#${hex}`],
+    ["iOS shared tokens", iosShared, `0x${hex}`],
+    ["iOS app tokens", iosApp, `0x${hex}`],
+    ["Android tokens", android, `0xff${hex}`],
   ];
-  for (const [label, text] of surfaces) {
-    if (!text.toLowerCase().includes(normalized)) problems.push(`${label} is missing ${name} (${value}).`);
+  for (const [label, text, literal] of surfaces) {
+    if (!text.toLowerCase().includes(literal)) problems.push(`${label} is missing ${name} (${value}).`);
   }
 }
 

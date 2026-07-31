@@ -329,7 +329,7 @@ export default function StripeBillingCard() {
               variant="outline"
               onClick={() => void startLiveVideoCheckout()}
               disabled={liveVideoBusy}
-              className="inline-flex gap-2 px-5 py-2.5 rounded-md border-[color:var(--wireline-color-action-secondary-default)] text-[var(--wireline-color-text-on-action)] bg-[var(--wireline-color-action-secondary-default)] hover:opacity-95"
+              className="inline-flex gap-2 px-5 py-2.5 rounded-md border-[color:var(--wireline-color-action-secondary-default)] text-[var(--wireline-color-text-onAction)] bg-[var(--wireline-color-action-secondary-default)] hover:opacity-95"
             >
               {liveVideoBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               Subscribe · $19/mo
@@ -581,7 +581,7 @@ function PlanPicker({
                     {plan.name}
                   </h4>
                   <div className="mt-1.5 flex items-baseline gap-1">
-                    <span className="font-semibold tracking-[-.02em] text-4xl text-foreground">
+                    <span className="font-semibold tracking-[-.02em] text-4xl text-foreground tabular-nums">
                       ${price.toLocaleString()}
                     </span>
                     <span className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">

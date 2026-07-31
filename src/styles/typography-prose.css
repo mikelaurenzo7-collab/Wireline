@@ -103,6 +103,16 @@
   color: var(--wireline-color-text-secondary);
 }
 
+/* Referenced as a standalone modifier across insights and connection cards;
+   it only quiets the color — the base micro-meta scale is not implied.
+   Lives in @layer components so state utilities (hover:text-brand on the
+   area-code chips) still win over it. */
+@layer components {
+  .wl-micro-meta--muted {
+    color: var(--wireline-color-text-tertiary);
+  }
+}
+
 /* ============================================
    PROSE SYSTEM (Long-form content)
    Powered by @tailwindcss/typography + custom overrides
@@ -159,21 +169,26 @@
    prefers-color-scheme would paint near-black bold text onto black. */
 :root.light .prose,
 html.light .prose {
+  /* Body and quotes sit between the Paper text-primary and text-secondary
+     tokens on purpose: long-form reading wants more contrast than metadata
+     secondary but less weight than headings. Bullets are likewise a glyph
+     tint with no semantic token. Everything else maps to the Paper theme
+     tokens in theme-light.css so a palette change cannot strand prose. */
   --tw-prose-body: #383650;
-  --tw-prose-headings: #171426;
-  --tw-prose-links: #6d28d9;
-  --tw-prose-bold: #171426;
-  --tw-prose-counters: #5b5770;
+  --tw-prose-headings: var(--wireline-color-text-primary);
+  --tw-prose-links: var(--wireline-color-action-primary-default);
+  --tw-prose-bold: var(--wireline-color-text-primary);
+  --tw-prose-counters: var(--wireline-color-text-secondary);
   --tw-prose-bullets: #a19cb3;
-  --tw-prose-hr: #e1deea;
+  --tw-prose-hr: var(--wireline-color-border-default);
   --tw-prose-quotes: #383650;
-  --tw-prose-quote-borders: #6d28d9;
-  --tw-prose-code: #171426;
-  --tw-prose-pre-code: #171426;
-  --tw-prose-pre-bg: #f1eff7;
-  --tw-prose-th-borders: #cac4d9;
-  --tw-prose-td-borders: #e1deea;
-  --tw-prose-captions: #5b5770;
+  --tw-prose-quote-borders: var(--wireline-color-action-primary-default);
+  --tw-prose-code: var(--wireline-color-text-primary);
+  --tw-prose-pre-code: var(--wireline-color-text-primary);
+  --tw-prose-pre-bg: var(--wireline-color-surface-subtle);
+  --tw-prose-th-borders: var(--wireline-color-border-strong);
+  --tw-prose-td-borders: var(--wireline-color-border-default);
+  --tw-prose-captions: var(--wireline-color-text-secondary);
 }
 
 /* Custom prose modifiers */
@@ -185,7 +200,7 @@ html.light .prose {
 }
 
 .prose-luxury {
-  --tw-prose-pre-bg: var(--wireline-surface-container);
+  --tw-prose-pre-bg: var(--wireline-color-surface-container);
   font-feature-settings: "tnum";
 }
 
@@ -301,16 +316,10 @@ html.light .prose {
    now reach for these classes instead so radius, border, and surface stay
    consistent across every page. */
 .wl-card {
-  border-radius: 14px;
+  border-radius: var(--wireline-radius-lg);
   border: 1px solid var(--wireline-color-border-default);
   background: var(--wireline-color-surface-default);
   padding: 1.25rem;
-}
-.wl-card-lg {
-  border-radius: 14px;
-  border: 1px solid var(--wireline-color-border-default);
-  background: var(--wireline-color-surface-default);
-  padding: 1.5rem;
 }
 @media (min-width: 640px) {
   .wl-card {

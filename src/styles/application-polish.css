@@ -45,7 +45,6 @@
   margin-top: 0.5rem;
 }
 
-.wl-ui-caps .wl-setup-surface,
 .wl-ui-caps [data-slot="status-notice"] {
   box-shadow: none;
 }
@@ -117,21 +116,6 @@
   min-height: 0;
 }
 
-/* Connections are a control surface: title, state, and a clear toggle are enough. */
-[data-wireline-route="/connections"] .wl-stitch-tool-row {
-  align-items: center;
-  min-height: 3rem;
-  padding-block: 0.625rem;
-}
-
-[data-wireline-route="/connections"] .wl-stitch-tool-row small {
-  display: none;
-}
-
-[data-wireline-route="/connections"] .wl-stitch-tool-row strong {
-  font-size: var(--wireline-typography-caption-size);
-  line-height: 1.2;
-}
 
 [data-wireline-route="/connections"] aside .studio-card p {
   display: none;
@@ -210,11 +194,3 @@
   /* header area already styled inline for precision */
 }
 
-/* Sharper tool rows and integration lists */
-.wl-stitch-tool-row {
-  transition: background-color .08s ease;
-}
-
-.wl-stitch-tool-row:hover {
-  background-color: color-mix(in srgb, var(--wireline-color-action-primary-container) 6%, transparent);
-}

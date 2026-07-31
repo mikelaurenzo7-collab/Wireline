@@ -5,7 +5,6 @@ import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
-import { BRAND } from "../constants/brand-colors";
 
 /* ──────────────────────────────────────────────────────────────────────────
    GoalsView — the Insights → Goals tab.
@@ -52,11 +51,14 @@ interface GoalsData {
   goals: Goal[];
 }
 
+// CSS custom properties, not BRAND hex constants: the generated TS values are
+// the dark palette only, while these variables re-resolve under the Paper
+// (light) theme so the chip keeps AA contrast on white cards.
 const STATUS_META: Record<GoalStatus, { label: string; color: string }> = {
-  achieved: { label: "Achieved", color: BRAND.colors.primary },
-  ahead: { label: "Ahead of pace", color: BRAND.colors.primary },
-  on_track: { label: "On track", color: BRAND.colors.primary },
-  behind: { label: "Behind pace", color: BRAND.colors.onSurfaceMuted },
+  achieved: { label: "Achieved", color: "var(--wireline-color-action-primary-default)" },
+  ahead: { label: "Ahead of pace", color: "var(--wireline-color-action-primary-default)" },
+  on_track: { label: "On track", color: "var(--wireline-color-action-primary-default)" },
+  behind: { label: "Behind pace", color: "var(--wireline-color-text-secondary)" },
 };
 
 const num = (n: number) => n.toLocaleString();
@@ -78,7 +80,14 @@ function Ring({
   return (
     <div className="relative w-[132px] h-[132px] shrink-0">
       <svg viewBox="0 0 132 132" className="w-full h-full -rotate-90">
-        <circle cx="66" cy="66" r={R} fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="11" />
+        <circle
+          cx="66"
+          cy="66"
+          r={R}
+          fill="none"
+          stroke="var(--wireline-color-border-default)"
+          strokeWidth="11"
+        />
         <motion.circle
           cx="66"
           cy="66"
@@ -237,8 +246,12 @@ function GoalCard({
           {goal.label && <p className="wl-label-muted opacity-80 truncate mt-0.5">{goal.label}</p>}
         </div>
         <span
-          className="shrink-0 px-2 py-1 rounded-full wl-label font-medium wl-status-chip"
-          data-status-color={status.color}
+          className="shrink-0 px-2 py-1 rounded-full border wl-label font-medium"
+          style={{
+            color: status.color,
+            borderColor: `color-mix(in srgb, ${status.color} 30%, transparent)`,
+            background: `color-mix(in srgb, ${status.color} 10%, transparent)`,
+          }}
         >
           {status.label}
         </span>

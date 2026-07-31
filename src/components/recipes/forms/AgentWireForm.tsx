@@ -169,7 +169,7 @@ export function AgentWireForm({
           </ResultCard>
           {design.success_metrics && design.success_metrics.length > 0 && (
             <ResultCard title="Goals">
-              <ul className="list-disc list-inside wl-text-success/90 space-y-1">
+              <ul className="list-disc list-inside wl-text-success space-y-1">
                 {design.success_metrics.map((m: string, i: number) => (
                   <li key={i}>{m}</li>
                 ))}

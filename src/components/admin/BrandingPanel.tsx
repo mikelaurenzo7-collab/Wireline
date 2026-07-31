@@ -120,7 +120,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
                 <div className="h-2 w-2/3 rounded-full bg-ink/5" />
               </div>
               <div className="mt-6 flex justify-end">
-                <div className="px-3.5 py-2 rounded-full wl-label font-bold text-white wl-brand-bg">
+                <div className="px-3.5 py-2 rounded-full wl-label font-bold wl-brand-bg">
                   Action
                 </div>
               </div>

@@ -146,7 +146,7 @@ export function CallPlaybookForm({
 
           {playbook.success_criteria && (
             <ResultCard title="Success Criteria">
-              <p className="wl-text-success/90 text-sm">{playbook.success_criteria}</p>
+              <p className="wl-text-success text-sm">{playbook.success_criteria}</p>
             </ResultCard>
           )}
         </div>

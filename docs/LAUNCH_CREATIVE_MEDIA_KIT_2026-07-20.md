@@ -47,6 +47,8 @@ Business-context assets may use "AI employee" only when the placement is explici
 | `stories/wireline-story-voice-agent.png` | 9:16 | Build your AI Voice Agent |
 | `deck/wireline-founder-early-access.pdf` | 16:9 deck | Founder Early Access from $19/mo |
 | `audio/wireline-ai-voice-agent-30s.mp3` | audio | AI Voice Generator campaign VO |
+| `audio/wireline-missed-call-15s.mp3` | audio | 15s reel VO from the campaign pack ("Your agent can.") |
+| `audio/wireline-founder-60s.mp3` | audio | 60s founder explainer VO from the campaign pack |
 
 Legacy filenames containing `one-employee`, `employee`, `launch-9`, or `starter-9` are not publishable unless regenerated with the current copy above.
 
@@ -62,11 +64,11 @@ Prompt: A realistic premium SaaS workspace scene showing a laptop with a clean v
 
 ### HeyGen / HyperFrames Founder Video
 
-Prompt: Produce a 60-second founder-style launch video for Wireline. Tone: confident, warm, practical. Message: missed calls are high-intent moments; Wireline lets people and teams build AI voice agents for personal tasks and business conversations; start free, train privately, go live from $19/mo. End card: Build your AI Voice Agent at trywireline.com.
+Prompt: Produce a 60-second founder-style launch video for Wireline using the 60-second founder explainer voiceover from `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md` word for word. Tone: confident, warm, practical - a founder explaining their product to a friend, not an announcer. Visuals: real product footage of create, train, wire, and run. End card: Build your AI Voice Agent at trywireline.com.
 
 ### BlitzReels Short Cut
 
-Prompt: Cut a 15-second vertical ad around this sequence: missed call -> Wireline agent trained on rules -> call answered -> follow-up text sent -> outcome logged. Overlay copy: "Missed calls should not become lost revenue", "AI Voice Agents", "Build free. Go live from $19/mo."
+Prompt: Cut the 15-second vertical reel exactly as timecoded in `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`: ringing phone -> missed-call stack -> Wireline agent answering -> outcome card and follow-up text -> end card. Overlays in order: "6:47 PM. The phone rings.", "You cannot pick up.", "Your agent can.", "Answered. Booked. Logged.", "Build free. Go live from $19/mo." The cut must read complete with the sound off.
 
 ### Beautiful.ai Deck
 
@@ -88,5 +90,5 @@ This voiceover was generated for promotion/reference only. It is not approved as
 | LinkedIn organic | Founder post + 16:9 banner | Promote founder early access, not public WhatsApp |
 | X / Twitter | Short text + 1:1 missed-call image | Drive to signup/pricing with v6 UTM |
 | Meta / LinkedIn ads | 16:9 build-free-live-19 and 1:1 AI Voice Agents | Start only after phone and payment loops are verified |
-| Reels / Shorts | 9:16 missed-call sequence + AI Voice Generator VO | Caption for sound-off viewing |
+| Reels / Shorts | 9:16 missed-call sequence + 15s reel VO | Overlays must carry the story with sound off; captions on |
 | Sales deck | 6-slide deck | Use for warm founder outreach and early adopters |

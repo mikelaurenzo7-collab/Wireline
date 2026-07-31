@@ -64,7 +64,7 @@ export function Medallion({
           accent
             ? "medallion-accent-face"
             : "bg-gradient-to-br from-brand via-brand/85 to-brand-deep",
-          signature ? "shadow-sm shadow-brand/25" : "shadow-[0_1px_2px_rgba(30,27,46,0.08)]",
+          signature ? "shadow-sm shadow-brand/25" : "shadow-[var(--wireline-elevation-xs)]",
           showSweep && "medallion-glint",
           !signature && "medallion-instrument",
           sizeClasses,

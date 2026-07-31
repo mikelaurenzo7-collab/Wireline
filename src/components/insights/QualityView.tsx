@@ -177,8 +177,8 @@ export default function QualityView({ days }: { days: number }) {
                     initial={{ width: 0 }}
                     animate={{ width: `${(bucket.count / maxDist) * 100}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="h-full rounded-full wl-qa-bg"
-                    data-qa-color={bucket.color || QA_BRAND}
+                    className="h-full rounded-full"
+                    style={{ background: bucket.color || QA_BRAND }}
                   />
                 </div>
                 <span className="wl-micro-badge font-mono text-foreground w-6 text-right shrink-0">
@@ -248,7 +248,7 @@ export default function QualityView({ days }: { days: number }) {
                     background: "var(--card)",
                     border: "1px solid var(--border)",
                     borderRadius: 12,
-                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+                    boxShadow: "var(--wireline-elevation-card)",
                     fontSize: "12px",
                     padding: "8px 12px",
                   }}
@@ -305,8 +305,8 @@ export default function QualityView({ days }: { days: number }) {
                       initial={{ width: 0 }}
                       animate={{ width: `${pct}%` }}
                       transition={{ duration: 0.8 }}
-                      className="h-full rounded-full wl-qa-bg"
-                      data-qa-color={qaColor(pct)}
+                      className="h-full rounded-full"
+                      style={{ background: qaColor(pct) }}
                     />
                   </div>
                   <span className="wl-micro-badge font-mono text-foreground w-8 text-right">
