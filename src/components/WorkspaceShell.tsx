@@ -226,7 +226,13 @@ function DesktopRail({ pathname }: { pathname: string }) {
       {postureAgents.length ? (
         <div className="shrink-0 pt-3">
           <div className="flex items-center justify-between px-2.5 pb-2">
-            <WiredEyebrow>{language.plural}</WiredEyebrow>
+            {/* Short kicker on purpose. The rail leaves this row 145px once the
+                "New" link is placed, and the wired strands take 64px of that —
+                `language.plural` measures 222px, so it wrapped to three lines and
+                crushed the trailing strand. The rail's other visible labels are
+                already posture-agnostic (navLabel is "Voice Agent" for both
+                postures); the posture-aware name stays on the nav's aria-label. */}
+            <WiredEyebrow>Agents</WiredEyebrow>
             <Link
               to="/studio?create=1"
               aria-label={`New ${language.singular}`}

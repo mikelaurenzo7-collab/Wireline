@@ -210,4 +210,55 @@ describe("agent navigation contract", () => {
       /assistant|Assistant|Assistants|Pro —|500 min|Sarah Connor|Miles Dyson|Kyle Reese|John Connor/,
     );
   });
+
+  it("keeps the rail agents kicker on one line beside its New link", () => {
+    // Measured in the 236px rail: the kicker row leaves 145px once "New" is
+    // placed, and the wired eyebrow's two strands take 64px of that. The posture
+    // plurals measure 222px and 227px, so binding the kicker to `language.plural`
+    // wrapped it to three lines and flex-crushed the trailing strand from 28px to
+    // 16px. Only a short kicker keeps the "— LABEL —" form its siblings use.
+    const kicker = workspaceShell.match(/<WiredEyebrow>([^<]*)<\/WiredEyebrow>/g) ?? [];
+    expect(kicker.length).toBeGreaterThan(0);
+    for (const tag of kicker) {
+      expect(tag).not.toMatch(/language\.(plural|singular)/);
+    }
+    // The full posture-aware name still has to reach assistive tech, where it is
+    // read rather than laid out.
+    expect(workspaceShell).toContain("aria-label={language.plural}");
+  });
+
+  it("does not repeat a settings tab label as the page heading", () => {
+    // Driven off the tab table itself so a new tab cannot quietly skip the rule.
+    const tabHrefs = Array.from(settingsTabs.matchAll(/href: "(\/settings[^"]*)"/g)).map(
+      (m) => m[1],
+    );
+    const pageForHref: Record<string, string> = {
+      "/settings": "src/pages/SettingsPage.tsx",
+      "/settings/billing": "src/pages/BillingSettings.tsx",
+      "/settings/phone": "src/pages/PhoneSettings.tsx",
+      "/settings/team": "src/pages/TeamSettings.tsx",
+      "/settings/customization": "src/pages/CustomizationSettings.tsx",
+      "/settings/apps": "src/pages/ClientAppsPage.tsx",
+      "/settings/compliance": "src/pages/ComplianceCenterPage.tsx",
+    };
+    expect(Object.keys(pageForHref).sort()).toEqual([...tabHrefs].sort());
+
+    for (const href of tabHrefs) {
+      const page = read(pageForHref[href]);
+      // Only pages that actually render the strip are named by their tab.
+      // ClientAppsPage also serves standalone /apps, so it keeps a visible title.
+      if (!page.includes("<SettingsTabs />")) continue;
+
+      // The page keeps an h1 for the document outline, but never a visible one:
+      // the selected tab is already the on-screen page label.
+      expect(page).toMatch(/<WorkspacePageIntro[\s\S]*?titleHidden[\s\S]*?\/>/);
+      // Catches hand-rolled headings that bypass WorkspacePageIntro entirely —
+      // how a duplicate "Team" title survived an earlier sweep of this file set.
+      expect(page).not.toMatch(/<h1(?![^>]*sr-only)/);
+    }
+
+    // A hidden title must collapse completely rather than leave a blank band.
+    const frame = read("src/components/layout/WorkspacePageFrame.tsx");
+    expect(frame).toContain('<h1 className="sr-only">{title}</h1>');
+  });
 });

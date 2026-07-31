@@ -98,7 +98,10 @@ describe("authenticated responsive polish contract", () => {
 
     expect(studio).toContain('<h1 className="sr-only">{language.plural}</h1>');
     expect(studio).toContain("{activeAgent.name}");
-    expect(team).toContain(">\n            Team\n          </h1>");
+    // Team renders the Settings tab strip, so its tab is already the on-screen
+    // page label — the heading is kept for the outline the way Studio and Admin
+    // above keep theirs, rather than printing "Team" twice.
+    expect(team).toContain('<WorkspacePageIntro title="Team" titleHidden />');
     expect(admin).toContain('<h1 className="sr-only">Admin workspace</h1>');
   });
 });

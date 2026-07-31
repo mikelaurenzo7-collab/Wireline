@@ -1,13 +1,5 @@
 import { Link } from "react-router-dom";
-import {
-  ArrowRight,
-  Building2,
-  Mic2,
-  Phone,
-  PlugZap,
-  ShieldCheck,
-  Target,
-} from "lucide-react";
+import { ArrowRight, Building2, Mic2, Phone, PlugZap, ShieldCheck, Target } from "lucide-react";
 
 import AppearanceSettings from "../components/settings/AppearanceSettings";
 import SettingsTabs from "../components/settings/SettingsTabs";
@@ -59,7 +51,7 @@ export default function CustomizationSettings() {
     <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
-        <WorkspacePageIntro title="Appearance & brand" />
+        <WorkspacePageIntro title="Appearance & brand" titleHidden />
 
         <AppearanceSettings />
         <WorkspaceBrandingSettings />
