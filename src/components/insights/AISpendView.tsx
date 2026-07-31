@@ -172,7 +172,7 @@ function SpendBudgetCard() {
       {limit > 0 ? (
         <div className="space-y-2">
           <div className="flex items-baseline justify-between">
-            <div className="font-display italic text-3xl text-foreground leading-none">
+            <div className="font-display text-3xl text-foreground leading-none">
               ${safeFixed(used, 2)}{" "}
               <span className="text-foreground/70 text-xl">/ ${safeFixed(limit, 2)}</span>
             </div>
@@ -428,7 +428,7 @@ export default function AISpendView({ days }: { days: number }) {
                     <div key={a.action} className="space-y-1">
                       <div className="flex items-baseline justify-between gap-3">
                         <span className="text-sm text-foreground/85 truncate">{a.action}</span>
-                        <span className="font-display italic text-lg text-brand-display tabular-nums shrink-0">
+                        <span className="font-display text-lg text-brand-display tabular-nums shrink-0">
                           ${safeFixed(a.cost, 3)}
                         </span>
                       </div>
@@ -462,7 +462,7 @@ export default function AISpendView({ days }: { days: number }) {
                       <div className="text-sm font-mono text-foreground/90">{m.model}</div>
                       <div className="wl-insight-label mt-1">{m.calls} calls</div>
                     </div>
-                    <div className="font-display italic text-2xl text-brand-display">
+                    <div className="font-display text-2xl text-brand-display">
                       ${safeFixed(m.cost, 2)}
                     </div>
                   </div>

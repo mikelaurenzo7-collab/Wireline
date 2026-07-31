@@ -138,9 +138,7 @@ function GoalEditor({
         >
           <Target className="w-3.5 h-3.5" />
         </span>
-        <h3 className="font-display italic text-lg text-foreground leading-tight">
-          {metric.label}
-        </h3>
+        <h3 className="font-display text-lg text-foreground leading-tight">{metric.label}</h3>
       </div>
       <p className="text-caption leading-relaxed">{metric.description}</p>
 
@@ -234,7 +232,7 @@ function GoalCard({
       />
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="font-display italic text-lg text-foreground leading-tight truncate">
+          <h3 className="font-display text-lg text-foreground leading-tight truncate">
             {goal.metric_label}
           </h3>
           {goal.label && <p className="wl-label-muted opacity-80 truncate mt-0.5">{goal.label}</p>}
@@ -364,13 +362,11 @@ function EmptyMetricCard({
         >
           <Target className="w-3.5 h-3.5" />
         </span>
-        <h3 className="font-display italic text-lg text-foreground/80 leading-tight">
-          {metric.label}
-        </h3>
+        <h3 className="font-display text-lg text-foreground/80 leading-tight">{metric.label}</h3>
       </div>
       <p className="text-caption leading-relaxed">{metric.description}</p>
       <p className="text-[length:var(--wireline-typography-overline-size)] text-foreground/70 tabular-nums">
-        <span className="font-display italic text-xl text-foreground/75">{num(current)}</span>{" "}
+        <span className="font-display text-xl text-foreground/75">{num(current)}</span>{" "}
         {metric.unit} so far this month
       </p>
       <ShadButton
@@ -482,7 +478,7 @@ export default function GoalsView() {
       <div className="relative rounded-md wl-panel-elevated border border-border overflow-hidden p-6 md:p-7 flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
           <p className="text-eyebrow text-brand mb-1">Monthly targets · {data.period_label}</p>
-          <h2 className="font-display italic text-2xl md:text-3xl text-foreground leading-tight">
+          <h2 className="font-display text-2xl md:text-3xl text-foreground leading-tight">
             {activeGoals === 0
               ? "Set your first agent goal"
               : `${onPace} of ${activeGoals} ${activeGoals === 1 ? "goal" : "goals"} on pace`}

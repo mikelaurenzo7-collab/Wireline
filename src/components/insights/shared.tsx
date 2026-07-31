@@ -240,7 +240,7 @@ export function SpendStat({
           <p className={WL_OPS_CLASSES.insightLabel}>{label}</p>
           <Icon className="w-4 h-4 wl-accent-text" />
         </div>
-        <p className="font-display italic text-3xl text-foreground leading-none">{value}</p>
+        <p className="font-display text-3xl text-foreground leading-none">{value}</p>
       </div>
     </div>
   );

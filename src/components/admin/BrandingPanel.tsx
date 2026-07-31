@@ -31,9 +31,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
           </div>
           <div className="min-w-0">
             <p className="app-form-eyebrow text-primary">Appearance</p>
-            <h3 className="font-display italic text-lg text-foreground leading-tight">
-              Brand Identity
-            </h3>
+            <h3 className="font-display text-lg text-foreground leading-tight">Brand Identity</h3>
           </div>
         </div>
 

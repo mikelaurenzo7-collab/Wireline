@@ -66,7 +66,7 @@ export function ObjectionDrillForm({
           {result.scenarios.map((s: any, i: number) => (
             <div key={i} className="rounded-md wl-panel border border-white/10 p-5 space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="font-display italic text-xl">{s.title}</h4>
+                <h4 className="font-display text-xl">{s.title}</h4>
                 <span
                   className={cn(
                     "px-2.5 py-0.5 rounded-full wl-label",

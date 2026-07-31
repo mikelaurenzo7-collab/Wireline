@@ -168,8 +168,8 @@ export default function PublicChangelog() {
             </div>
             <h1 className="marketing-hero-title mb-3">Every change we've shipped.</h1>
             <p className="marketing-hero-lead">
-              Wireline ships continuously. This page is hand-curated: when a customer-visible release is
-              worth documenting, it lands here with the behavior that actually shipped.
+              Wireline ships continuously. This page is hand-curated: when a customer-visible
+              release is worth documenting, it lands here with the behavior that actually shipped.
             </p>
           </motion.div>
 
@@ -199,7 +199,7 @@ export default function PublicChangelog() {
                       {meta.label}
                     </span>
                   </div>
-                  <h2 className="font-display italic text-xl text-foreground leading-tight mb-1">
+                  <h2 className="font-display text-xl text-foreground leading-tight mb-1">
                     {entry.title}
                   </h2>
                   <p className="marketing-body">{entry.body}</p>

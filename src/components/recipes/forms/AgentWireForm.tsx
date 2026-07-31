@@ -131,7 +131,7 @@ export function AgentWireForm({
           )}
           <div className="rounded-md wl-panel-elevated border border-white/12 p-6 space-y-3">
             <div className="flex items-baseline justify-between">
-              <h3 className="font-display italic text-4xl text-brand-display leading-none">
+              <h3 className="font-display text-4xl text-brand-display leading-none">
                 {design.name}
               </h3>
               <span className="px-3 py-1 rounded-full wl-label bg-brand/15 text-brand border border-brand/30">

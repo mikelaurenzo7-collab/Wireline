@@ -71,10 +71,8 @@ export default function TopicsView() {
               />
               <div className="space-y-2">
                 <div className="flex items-baseline justify-between gap-3">
-                  <h4 className="font-display italic text-2xl text-foreground leading-tight">
-                    {t.name}
-                  </h4>
-                  <span className="font-display italic text-3xl text-brand-display tabular-nums">
+                  <h4 className="font-display text-2xl text-foreground leading-tight">{t.name}</h4>
+                  <span className="font-display text-3xl text-brand-display tabular-nums">
                     {t.count}
                   </span>
                 </div>
