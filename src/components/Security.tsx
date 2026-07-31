@@ -11,7 +11,6 @@
 import { motion } from "motion/react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  ArrowLeft,
   Lock,
   ShieldCheck,
   KeyRound,
@@ -211,13 +210,6 @@ export default function Security() {
       />
       <MarketingChrome stickyCta={false} className="wl-security-page">
         <div className="wl-security-doc relative z-10 mx-auto max-w-3xl px-5 sm:px-6">
-          <Link
-            to="/"
-            className="mb-8 -mx-2 inline-flex min-h-[44px] items-center gap-2 rounded-md px-2 py-2 text-caption font-medium text-muted transition-colors hover:bg-black/[0.03] hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Back home
-          </Link>
-
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -294,7 +286,9 @@ export default function Security() {
             <ul className="mx-auto max-w-2xl space-y-1 pl-5 text-left marketing-body">
               <li>Independent SOC 2 readiness work and audit planning.</li>
               <li>Continuous regression coverage for tenant isolation and public data exposure.</li>
-              <li>Additional data regions based on contractual demand and operational readiness.</li>
+              <li>
+                Additional data regions based on contractual demand and operational readiness.
+              </li>
               <li>Hardware-backed MFA and enterprise identity controls.</li>
               <li>A structured vulnerability-disclosure or bounty program with written scope.</li>
             </ul>

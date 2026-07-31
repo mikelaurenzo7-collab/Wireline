@@ -225,7 +225,7 @@ export default function Pricing() {
         <MarketingHero
           eyebrow="Founder Early Access"
           title="Build free. Launch for $19. Scale when it pays."
-          description="Calls, texts, email, follow up, and Lead Hunt—plus a number on every paid plan. Extra usage stays prepaid."
+          description="Calls, texts, email, follow up, and Lead Hunt — plus a number on every paid plan. Extra usage stays prepaid."
           primaryAction={{
             label: annual ? "Launch for $190/yr" : "Launch for $19/mo",
             to: annual ? "/signup?plan=starter&interval=year" : "/signup?plan=starter",
@@ -514,7 +514,7 @@ export default function Pricing() {
                 to="/signup?plan=personal"
                 className="marketing-btn-primary min-h-12 justify-center px-6 text-sm font-semibold"
               >
-                Build your AI Voice Agent <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                Build your voice agent <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </div>
           </div>
