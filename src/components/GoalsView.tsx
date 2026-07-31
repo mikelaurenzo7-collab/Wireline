@@ -244,8 +244,12 @@ function GoalCard({
           {goal.label && <p className="wl-label-muted opacity-80 truncate mt-0.5">{goal.label}</p>}
         </div>
         <span
-          className="shrink-0 px-2 py-1 rounded-full wl-label font-medium wl-status-chip"
-          data-status-color={status.color}
+          className="shrink-0 px-2 py-1 rounded-full border wl-label font-medium"
+          style={{
+            color: status.color,
+            borderColor: `color-mix(in srgb, ${status.color} 30%, transparent)`,
+            background: `color-mix(in srgb, ${status.color} 10%, transparent)`,
+          }}
         >
           {status.label}
         </span>

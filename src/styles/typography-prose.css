@@ -103,6 +103,12 @@
   color: var(--wireline-color-text-secondary);
 }
 
+/* Referenced as a standalone modifier across insights and connection cards;
+   it only quiets the color — the base micro-meta scale is not implied. */
+.wl-micro-meta--muted {
+  color: var(--wireline-color-text-tertiary);
+}
+
 /* ============================================
    PROSE SYSTEM (Long-form content)
    Powered by @tailwindcss/typography + custom overrides

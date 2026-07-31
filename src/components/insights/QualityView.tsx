@@ -177,8 +177,8 @@ export default function QualityView({ days }: { days: number }) {
                     initial={{ width: 0 }}
                     animate={{ width: `${(bucket.count / maxDist) * 100}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="h-full rounded-full wl-qa-bg"
-                    data-qa-color={bucket.color || QA_BRAND}
+                    className="h-full rounded-full"
+                    style={{ background: bucket.color || QA_BRAND }}
                   />
                 </div>
                 <span className="wl-micro-badge font-mono text-foreground w-6 text-right shrink-0">
