@@ -8,6 +8,30 @@ function read(path: string) {
   return readFileSync(resolve(root, path), "utf8");
 }
 
+/**
+ * True when an `<h1 …>` opening tag is hidden at every width. `sr-only` has to
+ * appear as a bare class token — matching it as a substring would also accept
+ * `not-sr-only`, which un-hides the heading, and a variant like `sm:sr-only`
+ * only hides it above that breakpoint.
+ *
+ * Reads string literals out of `className`, whether it is a plain attribute or a
+ * JSX expression such as `cn("sr-only", …)`, so a heading written the second way
+ * is judged on its classes rather than being reported as a visible one.
+ */
+function hiddenHeadingClasses(openingTag: string) {
+  const attribute = openingTag.match(/className=(?:"([^"]*)"|\{([\s\S]*?)\}(?=[\s/>]|$))/);
+  const literal = attribute?.[1];
+  const expression = attribute?.[2];
+  const classes =
+    literal ??
+    (expression
+      ? Array.from(expression.matchAll(/["'`]([^"'`]*)["'`]/g), (m) => m[1]).join(" ")
+      : "");
+  const tokens = classes.split(/\s+/).filter(Boolean);
+  if (tokens.some((token) => token.endsWith("not-sr-only"))) return false;
+  return tokens.includes("sr-only");
+}
+
 describe("agent navigation contract", () => {
   const workspaceShell = read("src/components/WorkspaceShell.tsx");
   const overviewPage = read("src/pages/OverviewPage.tsx");
@@ -186,6 +210,17 @@ describe("agent navigation contract", () => {
     expect(teamPage).toContain('className="shrink-0"');
   });
 
+  it("keeps long agent names inside the sidebar rail instead of clipping them", () => {
+    // A grid item's default `min-width: auto` will not shrink below max-content,
+    // so each rail row sized to its full name and role (203px) and overflowed the
+    // 189px nav, getting hard-clipped by the sidebar's overflow-hidden. The
+    // `truncate` on the labels cannot ellipsize until the track itself is bounded.
+    expect(workspaceShell).toContain("grid grid-cols-[minmax(0,1fr)] gap-1 pr-0.5");
+    expect(workspaceShell).not.toContain('<nav className="grid gap-1 pr-0.5"');
+    // The labels still have to opt into truncation for the bounded track to help.
+    expect(workspaceShell).toContain("block truncate text-[12px] font-semibold");
+  });
+
   it("uses navigation.ts as the shell source of truth with a 5-item mobile dock", () => {
     const navigation = read("src/constants/navigation.ts");
     expect(workspaceShell).toMatch(/from "\.\.\/constants\/navigation"/);
@@ -209,5 +244,84 @@ describe("agent navigation contract", () => {
     expect([connectionsPage, settingsPage, billingPage, teamPage].join("\n")).not.toMatch(
       /assistant|Assistant|Assistants|Pro —|500 min|Sarah Connor|Miles Dyson|Kyle Reese|John Connor/,
     );
+  });
+
+  it("keeps the rail agents kicker on one line beside its New link", () => {
+    // Measured in the 236px rail: the kicker row leaves 145px once "New" is
+    // placed, and the wired eyebrow's two strands take 64px of that. The posture
+    // plurals measure 222px and 227px, so binding the kicker to `language.plural`
+    // wrapped it to three lines and flex-crushed the trailing strand from 28px to
+    // 16px. Only a short kicker keeps the "— LABEL —" form its siblings use.
+    const kicker = workspaceShell.match(/<WiredEyebrow>([^<]*)<\/WiredEyebrow>/g) ?? [];
+    expect(kicker.length).toBeGreaterThan(0);
+    for (const tag of kicker) {
+      expect(tag).not.toMatch(/language\.(plural|singular)/);
+    }
+    // The full posture-aware name still has to reach assistive tech, where it is
+    // read rather than laid out.
+    expect(workspaceShell).toContain("aria-label={language.plural}");
+  });
+
+  it("does not repeat a settings tab label as the page heading", () => {
+    // Driven off the tab table itself so a new tab cannot quietly skip the rule.
+    const tabHrefs = Array.from(settingsTabs.matchAll(/href: "(\/settings[^"]*)"/g)).map(
+      (m) => m[1],
+    );
+    const pageForHref: Record<string, string> = {
+      "/settings": "src/pages/SettingsPage.tsx",
+      "/settings/billing": "src/pages/BillingSettings.tsx",
+      "/settings/phone": "src/pages/PhoneSettings.tsx",
+      "/settings/team": "src/pages/TeamSettings.tsx",
+      "/settings/customization": "src/pages/CustomizationSettings.tsx",
+      "/settings/apps": "src/pages/ClientAppsPage.tsx",
+      "/settings/compliance": "src/pages/ComplianceCenterPage.tsx",
+    };
+    expect(Object.keys(pageForHref).sort()).toEqual([...tabHrefs].sort());
+
+    for (const href of tabHrefs) {
+      const page = read(pageForHref[href]);
+      // Only pages that actually render the strip are named by their tab.
+      // ClientAppsPage also serves standalone /apps, so it keeps a visible title.
+      if (!page.includes("<SettingsTabs />")) continue;
+
+      // The page keeps an h1 for the document outline, but never a visible one:
+      // the selected tab is already the on-screen page label.
+      expect(page).toMatch(/<WorkspacePageIntro[\s\S]*?titleHidden[\s\S]*?\/>/);
+      // Catches hand-rolled headings that bypass WorkspacePageIntro entirely —
+      // how a duplicate "Team" title survived an earlier sweep of this file set.
+      for (const tag of page.match(/<h1[^>]*>/g) ?? []) {
+        expect(hiddenHeadingClasses(tag)).toBe(true);
+      }
+    }
+
+    // A hidden title must collapse completely rather than leave a blank band.
+    const frame = read("src/components/layout/WorkspacePageFrame.tsx");
+    expect(frame).toContain('<h1 className="sr-only">{title}</h1>');
+  });
+
+  it("rejects headings that re-expose themselves at a breakpoint", () => {
+    // Guards the check above. A substring test for "sr-only" silently accepts
+    // `not-sr-only`, because the banned utility contains the allowed one — so a
+    // heading could be hidden on phones and visible on desktop while still
+    // reading as compliant. Kept as an executable self-check so the rule cannot
+    // quietly stop discriminating.
+    expect(hiddenHeadingClasses('<h1 className="sr-only">Team</h1>')).toBe(true);
+    expect(hiddenHeadingClasses('<h1 className="sr-only mt-2">Team</h1>')).toBe(true);
+
+    expect(hiddenHeadingClasses('<h1 className="text-3xl">Team</h1>')).toBe(false);
+    expect(hiddenHeadingClasses('<h1 className="not-sr-only">Team</h1>')).toBe(false);
+    expect(hiddenHeadingClasses('<h1 className="sr-only sm:not-sr-only">Team</h1>')).toBe(false);
+    expect(hiddenHeadingClasses('<h1 className="sr-only lg:not-sr-only">Team</h1>')).toBe(false);
+    // A variant-only hide still leaves the heading visible at other widths.
+    expect(hiddenHeadingClasses('<h1 className="sm:sr-only">Team</h1>')).toBe(false);
+    expect(hiddenHeadingClasses("<h1>Team</h1>")).toBe(false);
+
+    // Judged on classes even when className is a JSX expression, so a heading
+    // written this way is not misreported as a visible one.
+    expect(hiddenHeadingClasses('<h1 className={cn("sr-only", extra)}>Team</h1>')).toBe(true);
+    expect(hiddenHeadingClasses('<h1 className={cn("sr-only", "sm:not-sr-only")}>T</h1>')).toBe(
+      false,
+    );
+    expect(hiddenHeadingClasses('<h1 className={cn("wl-display-3", extra)}>Team</h1>')).toBe(false);
   });
 });

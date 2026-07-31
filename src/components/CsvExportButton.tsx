@@ -53,7 +53,7 @@ export default function CsvExportButton({
 
   const styles = {
     default:
-      "rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-foreground/80 hover:text-brand hover:border-brand/40",
+      "rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-foreground/80 hover:text-brand hover:border-brand/40",
     ghost: "rounded-full wl-label-muted hover:text-brand h-auto px-3 py-1.5",
   };
 

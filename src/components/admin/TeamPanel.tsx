@@ -188,7 +188,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-[var(--wireline-typography-caption-size)] font-bold text-foreground truncate">
+                            <p className="text-[length:var(--wireline-typography-caption-size)] font-bold text-foreground truncate">
                               {m.email}
                             </p>
                             {m.user_id ? (
@@ -216,7 +216,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                               <roleInfo.icon className={cn("w-3 h-3", roleInfo.color)} />
                               <p
                                 className={cn(
-                                  "text-[var(--wireline-typography-overline-size)] uppercase tracking-wider font-bold",
+                                  "text-[length:var(--wireline-typography-overline-size)] uppercase tracking-wider font-bold",
                                   roleInfo.color,
                                 )}
                               >
@@ -308,7 +308,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                 <div className="flex items-center justify-between">
                   <span
                     className={cn(
-                      "text-[var(--wireline-typography-overline-size)] uppercase tracking-widest font-black",
+                      "text-[length:var(--wireline-typography-overline-size)] uppercase tracking-widest font-black",
                       p.color,
                     )}
                   >
@@ -330,10 +330,10 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
           <div className="flex gap-3 relative z-10">
             <KeyRound className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <div className="space-y-1.5">
-              <p className="text-[var(--wireline-typography-overline-size)] font-black text-rose-500 uppercase tracking-widest">
+              <p className="text-[length:var(--wireline-typography-overline-size)] font-black text-rose-500 uppercase tracking-widest">
                 Zero-Trust Security Notice
               </p>
-              <p className="text-[var(--wireline-typography-caption-size)] text-rose-600/80 leading-relaxed font-medium">
+              <p className="text-[length:var(--wireline-typography-caption-size)] text-rose-600/80 leading-relaxed font-medium">
                 Revoking access triggers an immediate <strong>Session Invalidation Protocol</strong>
                 . All active JWT tokens and websocket connections for the user will be instantly
                 terminated across the global edge network.

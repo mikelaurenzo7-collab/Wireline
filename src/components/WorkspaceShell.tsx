@@ -10,6 +10,8 @@ import MobileNavMoreSheet from "./layout/MobileNavMoreSheet";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccount } from "../contexts/AccountContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
+import { useAgents } from "../contexts/AgentsContext";
+import { agentReadinessLabel } from "../lib/agent-readiness";
 import { customerAgentLanguage, formatAgentRoleLabel } from "../lib/product-copy";
 import { workspaceSidebarLabel } from "../lib/user-display";
 import {
@@ -49,10 +51,6 @@ function isNativeAppShell() {
 function userInitial(name?: string | null, email?: string | null) {
   const source = (name || email || "W").trim();
   return source.charAt(0).toUpperCase() || "W";
-}
-
-function readinessLabel(agent: { phone_number?: string | null } | undefined): string {
-  return agent?.phone_number ? "Live" : "Needs setup";
 }
 
 function contextualNavItem(item: ShellNavItem, posture: "personal" | "business"): ShellNavItem {
@@ -157,6 +155,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const { user } = useAuth();
   const { accountType } = useAccount();
   const { agents, resolvedId } = useStudioActiveAgentId();
+  const { phoneLookupDegraded } = useAgents();
   const language = customerAgentLanguage(accountType);
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
   const planLabel = accountType === "business" ? "Business workspace" : "Personal workspace";
@@ -187,7 +186,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
         aria-label="Wireline"
         className="mb-1.5 flex items-center gap-2.5 px-1.5"
       >
-        <span className="grid size-7 place-items-center rounded-[var(--wireline-radius-sm)] bg-primary text-primary-foreground">
+        <span className="grid size-7 place-items-center rounded-[7px] bg-primary text-primary-foreground">
           <WirelineMark className="h-3.5 w-5" strokeWidth={10} />
         </span>
         <span className="font-[var(--wireline-font-family-display)] text-[19px] leading-none tracking-[-0.01em] text-foreground">
@@ -226,7 +225,13 @@ function DesktopRail({ pathname }: { pathname: string }) {
       {postureAgents.length ? (
         <div className="shrink-0 pt-3">
           <div className="flex items-center justify-between px-2.5 pb-2">
-            <WiredEyebrow>{language.plural}</WiredEyebrow>
+            {/* Short kicker on purpose. The rail leaves this row 145px once the
+                "New" link is placed, and the wired strands take 64px of that —
+                `language.plural` measures 222px, so it wrapped to three lines and
+                crushed the trailing strand. The rail's other visible labels are
+                already posture-agnostic (navLabel is "Voice Agent" for both
+                postures); the posture-aware name stays on the nav's aria-label. */}
+            <WiredEyebrow>Agents</WiredEyebrow>
             <Link
               to="/studio?create=1"
               aria-label={`New ${language.singular}`}
@@ -235,7 +240,14 @@ function DesktopRail({ pathname }: { pathname: string }) {
               New
             </Link>
           </div>
-          <nav className="grid gap-1 pr-0.5" aria-label={language.plural}>
+          {/*
+           * The column is pinned to minmax(0,1fr) because a grid item's default
+           * `min-width: auto` refuses to shrink below max-content: each row sized
+           * to its full name and role (203px) and overflowed this 189px rail,
+           * getting hard-clipped by the sidebar instead of ellipsizing. The
+           * `truncate` on the labels below only works once the track is bounded.
+           */}
+          <nav className="grid grid-cols-[minmax(0,1fr)] gap-1 pr-0.5" aria-label={language.plural}>
             {visibleAgents.map((agent) => {
               const active = isNavActive(pathname, "/studio") && resolvedId === agent.id;
               return (
@@ -258,7 +270,8 @@ function DesktopRail({ pathname }: { pathname: string }) {
                   <span className="min-w-0">
                     <span className="block truncate text-[12px] font-semibold">{agent.name}</span>
                     <span className="block truncate text-[10px] leading-tight text-[color:var(--wireline-color-text-secondary)]">
-                      {formatAgentRoleLabel(agent.role)} · {readinessLabel(agent)}
+                      {formatAgentRoleLabel(agent.role)} ·{" "}
+                      {agentReadinessLabel(agent, phoneLookupDegraded)}
                     </span>
                   </span>
                 </Link>

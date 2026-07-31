@@ -48,7 +48,7 @@ function formatProvisionedDate(value?: string | null) {
 }
 
 export default function PhoneSetupPanel() {
-  const { agents, loading: agentsLoading } = useAgents();
+  const { agents, loading: agentsLoading, degraded: agentsDegraded } = useAgents();
   const location = useLocation();
   const [numbers, setNumbers] = useState<PhoneNumberRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -215,9 +215,17 @@ export default function PhoneSetupPanel() {
       </section>
 
       <section className="rounded-2xl border border-primary/20 bg-primary p-5 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
-        <div className="flex items-start justify-between gap-4">
+        {/*
+         * The status chip sits above the number on phones rather than beside it.
+         * At 360px this card is 210px of content, and the chip plus its gap took
+         * 95px of that — leaving the number 113px and breaking a 28px display
+         * heading across three lines. That hit real numbers too, not just this
+         * placeholder: "(312) 555-0142" needs 117px on one line. Stacking gives
+         * the heading the full 208px; from `sm` up the original row is restored.
+         */}
+        <div className="flex flex-col-reverse items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/65">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">
               Your Wireline number
             </p>
             <h2 className="mt-4 truncate font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.2rem+2.5vw,2.5rem)] font-normal leading-none tracking-[-0.035em]">
@@ -239,7 +247,7 @@ export default function PhoneSetupPanel() {
               </span>
               {agentsLoading ? (
                 <div
-                  className="flex h-11 items-center rounded-lg border border-primary-foreground/20 bg-black/15 px-3 text-sm text-primary-foreground/70"
+                  className="flex h-11 items-center rounded-lg border border-primary-foreground/20 bg-black/5 px-3 text-sm text-primary-foreground"
                   role="status"
                 >
                   Loading agents…
@@ -248,7 +256,7 @@ export default function PhoneSetupPanel() {
                 <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
                   <SelectTrigger
                     aria-label="Choose the voice agent for this number"
-                    className="h-11 border-primary-foreground/20 bg-black/15 text-primary-foreground"
+                    className="h-11 border-primary-foreground/20 bg-black/5 text-primary-foreground"
                   >
                     <SelectValue placeholder="Choose agent" />
                   </SelectTrigger>
@@ -260,6 +268,15 @@ export default function PhoneSetupPanel() {
                     ))}
                   </SelectContent>
                 </Select>
+              ) : agentsDegraded ? (
+                // An unreachable roster is not an empty one — offering "create
+                // an agent" here invites a duplicate of an agent that exists.
+                <div
+                  className="flex h-11 items-center rounded-lg border border-primary-foreground/20 bg-black/5 px-3 text-sm text-primary-foreground"
+                  role="status"
+                >
+                  Agent list unavailable — reload to try again.
+                </div>
               ) : (
                 <Button asChild variant="secondary" className="w-full justify-center">
                   <Link to="/studio?create=1">Create voice agent</Link>
@@ -287,7 +304,7 @@ export default function PhoneSetupPanel() {
                   }
                   placeholder="312"
                   aria-label="Preferred phone number area code"
-                  className="h-11 w-full rounded-lg border border-primary-foreground/20 bg-black/15 pl-9 pr-3 text-sm text-primary-foreground outline-none placeholder:text-primary-foreground/40 focus:border-primary-foreground/50 focus:ring-2 focus:ring-primary-foreground/15"
+                  className="h-11 w-full rounded-lg border border-primary-foreground/20 bg-black/5 pl-9 pr-3 text-sm text-primary-foreground outline-none placeholder:text-primary-foreground/40 focus:border-primary-foreground/50 focus:ring-2 focus:ring-primary-foreground/15"
                 />
               </span>
             </label>
@@ -311,7 +328,7 @@ export default function PhoneSetupPanel() {
               </span>
               <div>
                 <p className="text-sm font-semibold">Call this number now</p>
-                <p className="mt-1 text-xs leading-5 text-primary-foreground/70">
+                <p className="mt-1 text-xs leading-5 text-primary-foreground/80">
                   Use any phone to test the live greeting, routing, knowledge, and handoff behavior.
                 </p>
               </div>
@@ -374,7 +391,7 @@ export default function PhoneSetupPanel() {
                 </Link>
               </Button>
             ) : null}
-            {agents.length === 0 ? (
+            {agents.length === 0 && !agentsDegraded ? (
               <Button asChild size="sm">
                 <Link to="/studio?create=1">Create voice agent</Link>
               </Button>

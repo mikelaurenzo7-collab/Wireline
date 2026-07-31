@@ -93,7 +93,7 @@ export default function ComplianceChecklist() {
             <ShieldCheck className="w-3.5 h-3.5 text-brand" />
             Compliance checklist
           </p>
-          <p className="text-[var(--wireline-typography-caption-size)] text-muted leading-relaxed max-w-xl">
+          <p className="text-[length:var(--wireline-typography-caption-size)] text-muted leading-relaxed max-w-xl">
             Account Holder-facing controls for regulated buyers. {doneCount}/{items.length} complete
             {dncCount != null ? ` · ${dncCount} DNC entries` : ""}.
           </p>
@@ -117,7 +117,7 @@ export default function ComplianceChecklist() {
           <li
             key={item.id}
             className={cn(
-              "flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-[var(--wireline-typography-caption-size)]",
+              "flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-[length:var(--wireline-typography-caption-size)]",
               item.done ? "border-brand/20 bg-brand/5" : "border-border bg-surface/40",
             )}
           >
@@ -136,7 +136,7 @@ export default function ComplianceChecklist() {
           </li>
         ))}
       </ul>
-      <p className="text-[var(--wireline-typography-overline-size)] text-muted">
+      <p className="text-[length:var(--wireline-typography-overline-size)] text-muted">
         Vertical trust packs:{" "}
         <Link to="/trust/medical" className="text-brand hover:underline">
           Healthcare

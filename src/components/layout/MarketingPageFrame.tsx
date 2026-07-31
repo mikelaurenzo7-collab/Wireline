@@ -74,7 +74,7 @@ export default function MarketingPageFrame({
                     href={`#${link.id}`}
                     aria-current={active ? "location" : undefined}
                     className={cn(
-                      "touch-press shrink-0 rounded-full border px-3 py-1.5 text-[var(--wireline-typography-caption-size)] font-medium transition-colors",
+                      "touch-press shrink-0 rounded-full border px-3 py-1.5 text-[length:var(--wireline-typography-caption-size)] font-medium transition-colors",
                       active
                         ? "border-primary/25 bg-primary/10 text-primary"
                         : "border-border bg-card text-muted-foreground hover:border-primary/25 hover:text-foreground",

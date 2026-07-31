@@ -96,6 +96,14 @@ export default function AgentStudioHome() {
     };
   }, [loading, handoffId, setParams, toast]);
 
+  // Re-checked whenever the search params change, not only on mount. Fast Start
+  // opens from `/studio?create=1`, so this page is already mounted when the
+  // dialog stashes its warning; a mount-only effect never ran again and the
+  // message — "…the starting brief didn't fully apply" — sat unread in session
+  // storage, leaving the one case the warning exists for completely silent.
+  // The post-create redirect swaps `create=1` for `agent=<id>`, which is the
+  // signal. `consumeCreateWarning` clears as it reads, so re-running is a no-op
+  // when there is nothing stashed.
   useEffect(() => {
     const warning = consumeCreateWarning();
     if (warning) {
@@ -106,6 +114,9 @@ export default function AgentStudioHome() {
         duration: 12_000,
       });
     }
+  }, [toast, params]);
+
+  useEffect(() => {
     const wizard = readPostCreateWizard();
     if (wizard) setPostCreateWizard(wizard);
   }, [toast]);

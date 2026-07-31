@@ -49,6 +49,13 @@ type WorkspacePageIntroProps = {
   action?: ReactNode;
   /** Start-aligned product header (default) or centered status/empty-state header. */
   align?: "center" | "start";
+  /**
+   * Drop the visible heading when an adjacent tab strip already names the
+   * section — repeating "Phone" under a selected "Phone" tab is noise. The
+   * heading stays in the accessibility tree so the page keeps a document
+   * outline and screen-reader users still get a page name.
+   */
+  titleHidden?: boolean;
 };
 
 /** Minimal page title for authenticated workspace surfaces. */
@@ -57,8 +64,16 @@ export function WorkspacePageIntro({
   description,
   action,
   align = "start",
+  titleHidden = false,
 }: WorkspacePageIntroProps) {
   const start = align === "start";
+
+  // Nothing left to show: render the accessible heading alone. `sr-only` is
+  // absolutely positioned, so it leaves the frame's flex flow entirely and
+  // contributes no gap — a wrapper here would leave a blank band instead.
+  if (titleHidden && !description && !action) {
+    return <h1 className="sr-only">{title}</h1>;
+  }
 
   return (
     <header
@@ -71,13 +86,19 @@ export function WorkspacePageIntro({
       )}
     >
       <div className={cn("min-w-0", start ? "flex-1" : "w-full")}>
-        <h1 className={cn("wl-display-3 break-words text-balance", !start && "text-center")}>
+        <h1
+          className={cn(
+            titleHidden ? "sr-only" : "wl-display-3 break-words text-balance",
+            !titleHidden && !start && "text-center",
+          )}
+        >
           {title}
         </h1>
         {description ? (
           <p
             className={cn(
-              "mt-2 max-w-prose text-pretty text-sm leading-relaxed text-muted-foreground",
+              "max-w-prose text-pretty text-sm leading-relaxed text-muted-foreground",
+              !titleHidden && "mt-2",
               !start && "mx-auto text-center",
             )}
           >
@@ -89,9 +110,7 @@ export function WorkspacePageIntro({
         <div
           className={cn(
             "shrink-0",
-            start
-              ? "w-full [&>*]:w-full md:w-auto md:[&>*]:w-auto"
-              : "w-full",
+            start ? "w-full [&>*]:w-full md:w-auto md:[&>*]:w-auto" : "w-full",
           )}
         >
           {action}

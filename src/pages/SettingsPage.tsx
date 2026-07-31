@@ -99,7 +99,9 @@ function DangerZone() {
           : `Deletion scheduled for ${when}.${renewalDetail}`,
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't queue the deletion. Try again in a moment.");
+      setError(
+        err instanceof Error ? err.message : "Couldn't queue the deletion. Try again in a moment.",
+      );
     } finally {
       setWorking(false);
     }
@@ -128,7 +130,9 @@ function DangerZone() {
           : "Deletion canceled. Your account remains active and subscription renewal is restored when applicable.",
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't cancel deletion. Try again in a moment.");
+      setError(
+        err instanceof Error ? err.message : "Couldn't cancel deletion. Try again in a moment.",
+      );
     } finally {
       setCancelWorking(false);
     }
@@ -289,7 +293,7 @@ export default function SettingsPage() {
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
-        <WorkspacePageIntro title="Account" />
+        <WorkspacePageIntro title="Account" titleHidden />
 
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
           <div className="mb-5">

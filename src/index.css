@@ -102,6 +102,7 @@
 @import "./styles/modal-hierarchy.css";
 @import "./styles/e2e-design-polish.css";
 @import "./styles/prestige-polish.css";
+@import "./styles/pr948-responsive-merge.css";
 
 body {
   /* `background-color`, not the `background` shorthand: this rule sits after the

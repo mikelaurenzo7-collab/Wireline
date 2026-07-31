@@ -106,7 +106,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     <h4 className="text-base font-bold text-foreground">
                       Autonomous Prospecting Protocol
                     </h4>
-                    <p className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)] leading-relaxed max-w-sm">
+                    <p className="text-[length:var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)] leading-relaxed max-w-sm">
                       Enable Wireline to autonomously search, qualify, and ingest leads based on
                       your specified Ideal Customer Profile (ICP).
                     </p>

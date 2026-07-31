@@ -13,6 +13,7 @@ import { customerAgentLanguage } from "../lib/product-copy";
 import StudioAgentReviewPanel from "./StudioAgentReviewPanel";
 import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
 import StudioWorkroom, { type StudioWorkroomHandle } from "./StudioWorkroom";
+import WorkspaceRecovery from "./WorkspaceRecovery";
 
 type WorkspaceSection = "setup" | "test" | "review";
 
@@ -111,7 +112,7 @@ function normalizeSection(value: string | null): WorkspaceSection {
 }
 
 export default function StudioWorkspaceV2() {
-  const { loading } = useAgents();
+  const { loading, degraded, refresh } = useAgents();
   const { accountType } = useAccount();
   const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
@@ -204,6 +205,10 @@ export default function StudioWorkspaceV2() {
   }, [active?.is_business_agent, setSection]);
 
   if (loading) return <StudioLoadingState />;
+  // Studio is where agents live, so this was the most emphatic version of the
+  // mistake: a roster that failed to load produced "Create your first voice
+  // agent" for a customer whose agents were merely unreachable.
+  if (agents.length === 0 && degraded) return <WorkspaceRecovery onRetry={refresh} />;
   if (agents.length === 0) return <StudioEmptyState posture={accountType} />;
 
   if (!active) {

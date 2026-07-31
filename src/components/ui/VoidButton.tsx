@@ -36,9 +36,9 @@ interface VoidButtonProps extends Omit<
 }
 
 const SIZE_CLASSES: Record<VoidSize, string> = {
-  sm: "px-4 py-2 text-[var(--wireline-typography-overline-size)] gap-1.5",
-  md: "px-6 py-3 text-[var(--wireline-typography-caption-size)] gap-2",
-  lg: "px-8 py-4 text-[var(--wireline-typography-caption-size)] gap-2.5",
+  sm: "px-4 py-2 text-[length:var(--wireline-typography-overline-size)] gap-1.5",
+  md: "px-6 py-3 text-[length:var(--wireline-typography-caption-size)] gap-2",
+  lg: "px-8 py-4 text-[length:var(--wireline-typography-caption-size)] gap-2.5",
 };
 
 /**

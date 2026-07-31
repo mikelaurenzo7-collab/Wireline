@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 import { Router, Response } from "express";
-import { AppError } from "../lib/api-error";
+import { AppError, rethrowIfAppError } from "../lib/api-error";
 import type { AuthenticatedRequest } from "../types/auth";
 
 import { log, drizzle } from "../lib/server-context";
@@ -151,8 +151,16 @@ router.patch(
         )
         .returning()) as any[];
 
+      // Without this the handler answered 200 with an empty body for a campaign
+      // the caller does not own or that no longer exists, so a client read the
+      // edit as saved.
+      if (!data) throw AppError.fromHttpStatus(404, "Campaign not found.");
+
       res.json({ campaign: mapObjectToSnake(data) });
     } catch (error: any) {
+      // The handler above throws its own 404 for an unknown campaign; without
+      // this that is caught here and reported as a server fault.
+      rethrowIfAppError(error);
       log.error("Failed to update campaign", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to update campaign");
     }
@@ -296,6 +304,9 @@ router.get(
         call_stats,
       });
     } catch (e: any) {
+      // The handler above throws its own 404 for an unknown campaign; without
+      // this that is caught here and reported as a server fault.
+      rethrowIfAppError(e);
       log.error("Campaign analytics failed", { error: e?.message });
       throw AppError.fromHttpStatus(500, "Failed to load analytics");
     }
@@ -482,6 +493,9 @@ router.post(
       touchNavCounts(req.user.id);
       res.json({ success: true, reset: failed.length });
     } catch (error: any) {
+      // The handler above throws its own 404 for an unknown campaign; without
+      // this that is caught here and reported as a server fault.
+      rethrowIfAppError(error);
       log.error("Retry failed leads error", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to retry leads.");
     }
@@ -523,6 +537,9 @@ router.post(
 
       res.json({ success: true });
     } catch (error: any) {
+      // The handler above throws its own 404 for an unknown campaign; without
+      // this that is caught here and reported as a server fault.
+      rethrowIfAppError(error);
       log.error("Campaign stop failed", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to stop campaign.");
     }

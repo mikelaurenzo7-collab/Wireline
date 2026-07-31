@@ -53,6 +53,14 @@ router.patch(
     try {
       const { agent_id } = req.body;
 
+      // `agent_id: null` is the documented way to unassign, so absence is what
+      // means "nothing to change" — not null. Passing undefined through to
+      // `.set()` left drizzle with no columns and it threw "No values to set",
+      // which surfaced as a 500 for what is really a malformed request.
+      if (agent_id === undefined) {
+        throw AppError.fromHttpStatus(400, "agent_id is required — pass null to unassign.");
+      }
+
       if (agent_id) {
         const [agent] = await drizzle
           .select({ id: schema.agents.id })
@@ -62,7 +70,7 @@ router.patch(
         if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
       }
 
-      await drizzle
+      const updated = (await drizzle
         .update(schema.emailAccounts)
         .set({ agentId: agent_id })
         .where(
@@ -70,7 +78,12 @@ router.patch(
             eq(schema.emailAccounts.id, req.params.id),
             eq(schema.emailAccounts.userId, req.user.id),
           ),
-        );
+        )
+        .returning()) as unknown[];
+
+      // Reporting success for an update that matched no rows told the caller the
+      // assignment was saved against a mailbox that is not theirs or is gone.
+      if (!updated.length) throw AppError.fromHttpStatus(404, "Email account not found");
 
       res.json({ success: true });
     } catch (error: any) {
@@ -197,7 +210,10 @@ router.delete(
         await revokeMailboxAccountTokens(account);
         // Google/Microsoft connect also upsert a calendar row for the same
         // mailbox — drop it with the inbox so reconnects start clean.
-        if (account.emailAddress && (account.provider === "google" || account.provider === "microsoft")) {
+        if (
+          account.emailAddress &&
+          (account.provider === "google" || account.provider === "microsoft")
+        ) {
           await drizzle
             .delete(schema.calendarAccounts)
             .where(

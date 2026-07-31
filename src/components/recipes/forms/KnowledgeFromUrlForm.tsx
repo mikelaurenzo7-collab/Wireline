@@ -208,7 +208,7 @@ export function KnowledgeFromUrlForm({
                   disableAnimations
                   onClick={() => setMaxPages(n)}
                   className={cn(
-                    "h-auto px-3 py-1.5 rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em]",
+                    "h-auto px-3 py-1.5 rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.25em]",
                     maxPages === n
                       ? "bg-brand/20 text-brand border border-brand/40"
                       : "wl-panel border border-white/10 text-muted hover:text-foreground",
@@ -321,7 +321,7 @@ export function KnowledgeFromUrlForm({
             disableAnimations
             onClick={apply}
             disabled={!agentId || applying || selected.size === 0}
-            className="w-full min-h-12 py-4 text-[var(--wireline-typography-caption-size)] tracking-[0.32em] uppercase"
+            className="w-full min-h-12 py-4 text-[length:var(--wireline-typography-caption-size)] tracking-[0.32em] uppercase"
           >
             {applying ? (
               <>

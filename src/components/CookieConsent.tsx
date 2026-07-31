@@ -222,8 +222,8 @@ export default function CookieConsent() {
                 className={cn(
                   "leading-relaxed text-foreground/80",
                   hasSession
-                    ? "text-[11px] sm:text-[var(--wireline-typography-caption-size)]"
-                    : "text-[var(--wireline-typography-caption-size)]",
+                    ? "text-[11px] sm:text-[length:var(--wireline-typography-caption-size)]"
+                    : "text-[length:var(--wireline-typography-caption-size)]",
                 )}
               >
                 {hasSession ? (
@@ -255,7 +255,7 @@ export default function CookieConsent() {
               </p>
 
               {privacySignalEnabled ? (
-                <p className="text-[var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
+                <p className="text-[length:var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
                   Your browser privacy signal is active, so advertising measurement remains off.
                 </p>
               ) : (

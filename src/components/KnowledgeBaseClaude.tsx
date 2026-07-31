@@ -2,6 +2,13 @@ import { type ChangeEvent, type DragEvent, useEffect, useRef, useState } from "r
 import { FileText, Loader2, UploadCloud } from "lucide-react";
 
 import { authFetch, safeJson } from "../lib/api";
+import {
+  KNOWLEDGE_ASSET_MAX_BYTES,
+  KNOWLEDGE_ASSET_MAX_FILES,
+  KNOWLEDGE_ASSET_MAX_LABEL,
+  knowledgeAssetFileCountNotice,
+  knowledgeAssetTooLargeMessage,
+} from "../lib/knowledge-asset-limits";
 import { emitProductEvent } from "../lib/product-event-client";
 import { MetricTile } from "./atoms";
 
@@ -40,6 +47,7 @@ type AssetBody = {
   dataUrl?: string;
 };
 
+const TEXT_HEX_DEEP = "var(--wireline-color-action-primary-pressed)";
 const SUCCESS_SURFACE = "var(--wireline-color-feedback-success-surface)";
 // Mirrors the directives cap below — keeps the list readable for customers
 // with hundreds of ingested documents instead of rendering every row.
@@ -101,6 +109,13 @@ function readAsDataUrl(file: File) {
 }
 
 async function readAsset(file: File): Promise<AssetBody> {
+  // Checked before the file is read, because nothing downstream reports this
+  // honestly: the API body limit answers a bare "request entity too large", and
+  // the drop zone used to advertise a ceiling more than ten times what the
+  // request could actually carry.
+  if (file.size > KNOWLEDGE_ASSET_MAX_BYTES) {
+    throw new Error(knowledgeAssetTooLargeMessage(file.name, file.size));
+  }
   const mimeType = (file.type || "text/plain").toLowerCase();
   if (/^image\/(png|jpe?g|webp|gif)$/.test(mimeType)) {
     return { fileName: file.name, mimeType, dataUrl: await readAsDataUrl(file) };
@@ -139,7 +154,14 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // Loading and ingesting need separate error slots. They shared one, and the
+  // refetch that follows a successful upload clears it on the way out — so an
+  // upload that partly failed had its message wiped by its own refresh before
+  // the user could read it. A failed load is the more fundamental problem, so
+  // it wins when somehow both are set.
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [ingestError, setIngestError] = useState<string | null>(null);
+  const error = loadError || ingestError;
   const [showAllKnowledge, setShowAllKnowledge] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -153,12 +175,12 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
     if (!agentId) {
       setConfig(null);
       setLoading(false);
-      setError(null);
+      setLoadError(null);
       return;
     }
     let cancelled = false;
     setLoading(true);
-    setError(null);
+    setLoadError(null);
     authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`)
       .then(async (response) => {
         if (!response.ok) {
@@ -173,7 +195,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       .catch((reason) => {
         if (!cancelled) {
           setConfig(null);
-          setError(reason instanceof Error ? reason.message : "Knowledge could not be loaded.");
+          setLoadError(reason instanceof Error ? reason.message : "Knowledge could not be loaded.");
         }
       })
       .finally(() => {
@@ -186,16 +208,21 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
 
   async function ingest(files: FileList | File[]) {
     if (!agentId) {
-      setError("Choose an AI voice agent before adding knowledge.");
+      setIngestError("Choose an AI voice agent before adding knowledge.");
       return;
     }
-    const list = Array.from(files).slice(0, 5);
+    const picked = Array.from(files);
+    const list = picked.slice(0, KNOWLEDGE_ASSET_MAX_FILES);
     if (!list.length || uploading) return;
     setUploading(true);
     setNotice(null);
-    setError(null);
+    setIngestError(null);
+
+    const summaries: string[] = [];
+    let ingested = 0;
+    let failure: string | null = null;
+
     try {
-      const summaries: string[] = [];
       for (const file of list) {
         const payload = await readAsset(file);
         const response = await authFetch(
@@ -208,6 +235,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         );
         const body = (await safeJson(response)) as { summary?: string; error?: string } | null;
         if (!response.ok) throw new Error(body?.error || `${file.name} could not be ingested.`);
+        ingested += 1;
         if (body?.summary) summaries.push(body.summary);
         emitProductEvent({
           event: "training_asset_added",
@@ -219,14 +247,23 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
           },
         });
       }
+    } catch (reason) {
+      failure = reason instanceof Error ? reason.message : "Knowledge could not be ingested.";
+    }
+
+    // A failure part-way through a batch used to discard the whole run: the
+    // files already ingested were left out of the notice and the list was never
+    // refetched, so the screen claimed nothing had been saved while the server
+    // held the opposite. Report whatever landed before reporting what did not.
+    if (ingested > 0) {
       setNotice(summaries.length ? summaries.join(" ") : "Knowledge ingested.");
       setVersion((value) => value + 1);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Knowledge could not be ingested.");
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
+    // Files past the per-batch cap were being dropped without a word.
+    const problems = [failure, knowledgeAssetFileCountNotice(picked.length)].filter(Boolean);
+    setIngestError(problems.length ? problems.join(" ") : null);
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   function onFilePick(event: ChangeEvent<HTMLInputElement>) {
@@ -277,7 +314,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
             return (
               <div
                 key={directive.id ?? `d-${index}`}
-                className="rounded-[10px] border border-[var(--wireline-color-border-soft)] px-3.5 py-2.5"
+                className="rounded-[10px] border border-[var(--wireline-color-border-subtle)] px-3.5 py-2.5"
               >
                 <p className="text-sm font-semibold text-[var(--wireline-color-text-primary)]">
                   <FileText
@@ -326,6 +363,10 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         ref={fileInputRef}
         type="file"
         multiple
+        // Visually hidden but still in the accessibility tree, so it needs a
+        // name of its own: axe reports an unlabelled control otherwise, and a
+        // screen reader announces only "file upload button".
+        aria-label="Upload knowledge files"
         className="sr-only"
         onChange={onFilePick}
         accept=".txt,.csv,.md,.markdown,image/png,image/jpeg,image/jpg,image/webp,image/gif"
@@ -354,7 +395,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       {notice ? (
         <div
           role="status"
-          className="rounded-[10px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-2.5 text-[13px] text-[var(--wireline-color-status-success)]"
+          className="rounded-[10px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-2.5 text-[13px] text-[var(--wireline-color-action-primary-pressed)]"
         >
           {notice}
         </div>
@@ -389,11 +430,8 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                     className="flex items-center gap-3.5 rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-4 transition-colors hover:border-[var(--wireline-color-action-primary-default)]"
                   >
                     <div
-                      className="grid size-9 shrink-0 place-items-center rounded-[var(--wireline-radius-md)] font-[var(--wireline-font-mono)] text-[11px] font-bold"
-                      style={{
-                        background: "var(--wireline-color-action-primary-container)",
-                        color: "var(--wireline-color-action-primary-default)",
-                      }}
+                      className="grid size-9 shrink-0 place-items-center rounded-[9px] font-[var(--wireline-font-mono)] text-[11px] font-bold"
+                      style={{ background: SUCCESS_SURFACE, color: TEXT_HEX_DEEP }}
                     >
                       {badge}
                     </div>
@@ -406,7 +444,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                       </div>
                     </div>
                     <span
-                      className="rounded-[var(--wireline-radius-xs)] px-2 py-1 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em]"
+                      className="rounded-[5px] px-2 py-1 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em]"
                       style={{
                         background: SUCCESS_SURFACE,
                         color: "var(--wireline-color-status-success)",
@@ -460,7 +498,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
           <div
             className={`text-xs text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "mt-0.5" : "mt-1"}`}
           >
-            TXT, MD, CSV, or images (PNG, JPG, WEBP, GIF) — max 50 MB
+            TXT, MD, CSV, or images (PNG, JPG, WEBP, GIF) — max {KNOWLEDGE_ASSET_MAX_LABEL} per file
           </div>
         </div>
         <div

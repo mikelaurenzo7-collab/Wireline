@@ -14,6 +14,7 @@
 
 import { Router, Response } from "express";
 import { AppError } from "../lib/api-error";
+import { parseBigIntId } from "../lib/server-utils";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -110,11 +111,15 @@ router.delete(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
+    const subscriptionId = parseBigIntId(req.params.id);
+    if (subscriptionId === null) {
+      throw AppError.fromHttpStatus(400, "Subscription id must be a positive integer");
+    }
     await drizzle
       .delete(schema.supervisorSubscriptions)
       .where(
         and(
-          eq(schema.supervisorSubscriptions.id, BigInt(req.params.id)),
+          eq(schema.supervisorSubscriptions.id, subscriptionId),
           eq(schema.supervisorSubscriptions.userId, req.user.id),
         ),
       );

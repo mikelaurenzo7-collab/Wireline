@@ -151,8 +151,6 @@ export default function StripeBillingCard() {
               ? (selected?.price_usd_annual ?? 0)
               : (selected?.price_usd_monthly ?? 0);
           if (typeof (window as any).fbq === "function") {
-            // Conversion value comes from the live plan catalog so tracking
-            // never drifts from the price actually charged.
             (window as any).fbq("track", "InitiateCheckout", {
               content_category: "Subscription",
               content_ids: [planId],
@@ -244,7 +242,7 @@ export default function StripeBillingCard() {
     return (
       <div className="wl-panel flex items-center gap-4 p-10">
         <Loader2 className="h-5 w-5 animate-spin text-primary" />
-        <span className="text-[var(--wireline-typography-body-size)] text-muted-foreground">
+        <span className="text-[length:var(--wireline-typography-body-size)] text-muted-foreground">
           Loading your plan and balance...
         </span>
       </div>
@@ -260,7 +258,7 @@ export default function StripeBillingCard() {
           </div>
           <h3 className="wl-display-mark text-2xl text-foreground">Billing unavailable</h3>
         </div>
-        <p className="max-w-2xl text-[var(--wireline-typography-caption-size)] text-foreground/75 leading-relaxed">
+        <p className="max-w-2xl text-[length:var(--wireline-typography-caption-size)] text-foreground/75 leading-relaxed">
           {error}
         </p>
         <ShadButton type="button" variant="outline" size="sm" onClick={() => void refresh()}>
@@ -279,7 +277,7 @@ export default function StripeBillingCard() {
           </div>
           <h3 className="wl-display-mark text-2xl text-foreground">Billing is finishing setup</h3>
         </div>
-        <p className="max-w-2xl text-[var(--wireline-typography-caption-size)] text-foreground/75 leading-relaxed">
+        <p className="max-w-2xl text-[length:var(--wireline-typography-caption-size)] text-foreground/75 leading-relaxed">
           Your account is active. The billing portal is being provisioned and will be live shortly.
           You can keep using Wireline. We'll email you the moment self-serve plan changes are
           available, or write to{" "}
@@ -315,11 +313,11 @@ export default function StripeBillingCard() {
           <h3 className="font-semibold tracking-[-.02em] text-xl text-foreground">
             Live video presence
           </h3>
-          <p className="max-w-2xl text-[var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
+          <p className="max-w-2xl text-[length:var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
             {liveVideoAddonPitch()} {liveVideoMeteringNote()}
           </p>
           {liveVideoAddon.liveVideoAddonEnabled || liveVideoAddon.billingEntitled ? (
-            <p className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-[var(--wireline-color-status-success)]">
+            <p className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-[var(--wireline-color-status-success)]">
               Active on this workspace
             </p>
           ) : liveVideoAddon.liveVideoCheckoutAvailable ? (
@@ -335,7 +333,7 @@ export default function StripeBillingCard() {
               Subscribe · $19/mo
             </ShadButton>
           ) : (
-            <p className="text-[var(--wireline-typography-caption-size)] text-muted-foreground">
+            <p className="text-[length:var(--wireline-typography-caption-size)] text-muted-foreground">
               Contact Wireline to enable live video on this workspace.
             </p>
           )}
@@ -348,7 +346,7 @@ export default function StripeBillingCard() {
           className="rounded-md border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] p-4 flex items-center gap-3"
         >
           <AlertTriangle className="w-4 h-4 text-[var(--wireline-color-status-error)] shrink-0" />
-          <p className="text-[var(--wireline-typography-overline-size)] text-[var(--wireline-color-status-error)]">
+          <p className="text-[length:var(--wireline-typography-overline-size)] text-[var(--wireline-color-status-error)]">
             {error}
           </p>
         </div>
@@ -359,7 +357,7 @@ export default function StripeBillingCard() {
             <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
               Manage plan
             </h3>
-            <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
+            <p className="text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
               Upgrade, downgrade, update payment method, or cancel through the secure Stripe
               customer portal. Changes apply to your next billing cycle unless noted otherwise.
             </p>
@@ -371,7 +369,7 @@ export default function StripeBillingCard() {
               variant="outline"
               onClick={openPortal}
               disabled={busy === "portal"}
-              className="inline-flex gap-2.5 px-6 py-3 rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand"
+              className="inline-flex gap-2.5 px-6 py-3 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand"
             >
               {busy === "portal" ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -380,7 +378,7 @@ export default function StripeBillingCard() {
               )}
               Open billing portal
             </ShadButton>
-            <span className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
+            <span className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
               <Shield className="w-3 h-3" />
               Upgrade · cancel · invoices
             </span>
@@ -396,7 +394,7 @@ export default function StripeBillingCard() {
           onSelectPlan={startCheckout}
         />
       )}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-[var(--wireline-typography-overline-size)] text-muted-foreground uppercase tracking-[0.2em]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-[length:var(--wireline-typography-overline-size)] text-muted-foreground uppercase tracking-[0.2em]">
         <div className="flex items-center gap-2">
           <Shield className="w-3 h-3" />
           Stripe · PCI DSS Level 1 · Cancel anytime
@@ -428,7 +426,7 @@ function CreditTopUpCard({
         <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
           Add {CONVERSATION_BALANCE_COPY.title}
         </h3>
-        <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
+        <p className="text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
           Top up when you need more. Scale up for steady use.
         </p>
       </div>
@@ -441,7 +439,7 @@ function CreditTopUpCard({
             variant="outline"
             onClick={() => onBuy(a)}
             disabled={busy !== null}
-            className="inline-flex gap-2 px-6 py-3 rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand"
+            className="inline-flex gap-2 px-6 py-3 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand"
           >
             {busy === a ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -451,7 +449,7 @@ function CreditTopUpCard({
             ${a}
           </ShadButton>
         ))}
-        <span className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
+        <span className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
           <Shield className="w-3 h-3" />
           Applied to live-work usage
         </span>
@@ -483,7 +481,7 @@ function PlanPicker({
             <h3 className="font-semibold tracking-[-.02em] text-3xl text-foreground">
               Choose operating capacity
             </h3>
-            <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
+            <p className="text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
               {PRODUCT_VERSATILITY.short} Build free, go live from $19/mo with guaranteed voice
               minutes, and move into shared capacity when you need routing, numbers, approvals, and
               team operations. Stripe-secured. Cancel anytime.
@@ -572,7 +570,7 @@ function PlanPicker({
                   <div className="w-12 h-12 rounded-md flex items-center justify-center wl-accent-surface">
                     <Icon className="w-6 h-6 wl-accent-text" />
                   </div>
-                  <span className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
+                  <span className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
                     {plan.max_agents} {plan.max_agents === 1 ? "voice agent" : "voice agents"}
                   </span>
                 </div>
@@ -584,7 +582,7 @@ function PlanPicker({
                     <span className="font-semibold tracking-[-.02em] text-4xl text-foreground tabular-nums">
                       ${price.toLocaleString()}
                     </span>
-                    <span className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
+                    <span className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
                       {priceSuffix}
                     </span>
                   </div>
@@ -636,7 +634,7 @@ function PlanPicker({
                   )}
                 </ShadButton>
                 {!canSubscribe && (
-                  <p className="text-[var(--wireline-typography-overline-size)] text-muted-foreground text-center leading-relaxed">
+                  <p className="text-[length:var(--wireline-typography-overline-size)] text-muted-foreground text-center leading-relaxed">
                     Stripe catalog still being consolidated for this tier
                   </p>
                 )}
@@ -698,7 +696,7 @@ function ActiveSubCard({
             <h3 className="wl-display-mark text-3xl md:text-4xl text-foreground">
               {sub.plan_name || sub.plan || "—"}
             </h3>
-            <p className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
+            <p className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
               {sub.max_agents ? (
                 <span
                   className={
@@ -735,7 +733,7 @@ function ActiveSubCard({
           variant="outline"
           onClick={onPortal}
           disabled={busy}
-          className="inline-flex gap-2.5 px-6 py-3.5 rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border wl-accent-cta"
+          className="inline-flex gap-2.5 px-6 py-3.5 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border wl-accent-cta"
         >
           {busy ? (
             <Loader2 className="w-4 h-4 animate-spin" />

@@ -28,10 +28,10 @@ export default function RoleplaySandbox({
             <MessageSquareText size={17} />
           </span>
           <div>
-            <p className="text-[var(--wireline-typography-caption-size)] font-semibold text-foreground">
+            <p className="text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground">
               Test realistic interruptions
             </p>
-            <p className="mt-1 text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
+            <p className="mt-1 text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
               Talk naturally, pause, change your mind, and interrupt the agent while it is speaking.
             </p>
           </div>
@@ -41,10 +41,10 @@ export default function RoleplaySandbox({
             <ShieldCheck size={17} />
           </span>
           <div>
-            <p className="text-[var(--wireline-typography-caption-size)] font-semibold text-foreground">
+            <p className="text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground">
               Safe test channel
             </p>
-            <p className="mt-1 text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
+            <p className="mt-1 text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
               Live testing may search approved Training context but cannot send, book, transfer, or
               change outside systems.
             </p>

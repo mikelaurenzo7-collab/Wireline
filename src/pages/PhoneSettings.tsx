@@ -8,8 +8,11 @@ export default function PhoneSettings() {
     <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
+        {/* The selected Settings tab already reads "Phone"; the heading stays
+            for assistive tech only so the page is not labelled twice on screen. */}
         <WorkspacePageIntro
           title="Phone"
+          titleHidden
           description="Configure the voice agent, local number, routing, and company identity from one setup path."
         />
         <PhoneSetupPanel />

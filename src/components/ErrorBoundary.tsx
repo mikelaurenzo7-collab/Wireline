@@ -122,7 +122,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 variant="editorial"
                 onClick={staleChunk ? this.reload : this.reset}
                 disableAnimations
-                className="!px-6 !py-3 !text-[var(--wireline-typography-overline-size)] !tracking-[0.3em]"
+                className="!px-6 !py-3 !text-[length:var(--wireline-typography-overline-size)] !tracking-[0.3em]"
               >
                 <RefreshCw className="h-3.5 w-3.5" /> {staleChunk ? "Reload" : "Try Again"}
               </ShadButton>
@@ -130,7 +130,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 variant="outline"
                 asChild
                 disableAnimations
-                className="!text-[var(--wireline-typography-overline-size)] !uppercase !tracking-[0.3em]"
+                className="!text-[length:var(--wireline-typography-overline-size)] !uppercase !tracking-[0.3em]"
               >
                 <a href={this.recoveryHref().href} className="flex items-center gap-2">
                   <Home className="h-3.5 w-3.5" /> {this.recoveryHref().label}
@@ -141,7 +141,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                   variant="outline"
                   onClick={this.reload}
                   disableAnimations
-                  className="!text-[var(--wireline-typography-overline-size)] !uppercase !tracking-[0.3em]"
+                  className="!text-[length:var(--wireline-typography-overline-size)] !uppercase !tracking-[0.3em]"
                 >
                   <RefreshCw className="h-3.5 w-3.5" /> Reload
                 </ShadButton>

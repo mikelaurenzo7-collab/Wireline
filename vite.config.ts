@@ -34,7 +34,9 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks(id) {
-            if (id.includes("node_modules/@vapi-ai")) return "vendor-vapi";
+            // @vapi-ai/web is now loaded through a route-level dynamic import.
+            // Let Rollup own that async chunk; forcing the old vendor name emits
+            // an empty artifact and obscures whether the lazy boundary works.
             if (id.includes("node_modules/motion") || id.includes("node_modules/framer-motion")) return "vendor-motion";
             if (id.includes("node_modules/lucide-react")) return "vendor-lucide";
             if (/node_modules\/(react|react-dom)\//.test(id)) return "vendor-react";

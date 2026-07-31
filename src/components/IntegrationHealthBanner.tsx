@@ -49,7 +49,7 @@ export default function IntegrationHealthBanner({ health, onOpenIntegrations }: 
       </div>
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.2em] text-amber-800 dark:text-amber-200/90">
+          <p className="text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.2em] text-amber-800 dark:text-amber-200/90">
             Reconnect mail or calendar
           </p>
           {onOpenIntegrations && (

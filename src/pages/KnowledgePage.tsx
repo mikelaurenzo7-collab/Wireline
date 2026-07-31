@@ -6,6 +6,7 @@ import { Button, EmptyState, NativeSelect } from "../components/atoms";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import WorkspaceShell from "../components/WorkspaceShell";
+import WorkspaceRecovery from "../components/WorkspaceRecovery";
 import KnowledgeBaseClaude from "../components/KnowledgeBaseClaude";
 import ReportingPreferences from "../components/training/ReportingPreferences";
 import RecentCallArtifactRequests from "../components/training/RecentCallArtifactRequests";
@@ -39,8 +40,8 @@ function EmptyKnowledge() {
         action={
           <div className="space-y-4">
             <p className="mx-auto max-w-[44ch] text-sm leading-relaxed text-muted-foreground">
-              Create the agent first, then add the business facts, policies, and answers it may
-              use with customers.
+              Create the agent first, then add the business facts, policies, and answers it may use
+              with customers.
             </p>
             <div className="flex flex-col items-stretch justify-center gap-2 sm:flex-row">
               <Button asChild>
@@ -63,7 +64,7 @@ function EmptyKnowledge() {
 export default function KnowledgePage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const { agents, loading } = useAgents();
+  const { agents, loading, degraded, refresh } = useAgents();
   const agentId = params.get("agent") || agents[0]?.id || "";
   const rawRequestedTab = params.get("tab");
   const requestedTab = rawRequestedTab as KnowledgeTabId | null;
@@ -97,7 +98,12 @@ export default function KnowledgePage() {
       {!loading && !agents.length ? (
         <WorkspacePageFrame mode="standard">
           <WorkspacePageIntro title="Knowledge" />
-          <EmptyKnowledge />
+          {/* An empty roster and an unreachable one are the same `agents.length`
+              but opposite facts. Without this check a failed load rendered
+              "Knowledge starts with an AI voice agent — create the agent
+              first", so a customer whose agents were merely unreachable was
+              told they had none and invited to build a duplicate. */}
+          {degraded ? <WorkspaceRecovery onRetry={refresh} /> : <EmptyKnowledge />}
         </WorkspacePageFrame>
       ) : (
         <WorkspacePageFrame mode="standard">

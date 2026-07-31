@@ -143,7 +143,7 @@ export default function SettingsTabSwitcher({
                     "touch-press relative shrink-0 inline-flex items-center gap-1.5 transition-colors uppercase font-semibold whitespace-nowrap rounded-none",
                     density === "compact"
                       ? "min-h-7 px-2 py-0.5 wl-label tracking-[0.08em]"
-                      : "min-h-9 px-3 py-1.5 text-[var(--wireline-typography-overline-size)] tracking-[0.12em]",
+                      : "min-h-9 px-3 py-1.5 text-[length:var(--wireline-typography-overline-size)] tracking-[0.12em]",
                     active ? "app-tab-active" : "text-muted hover:text-foreground hover:bg-black/4",
                   )}
                 >

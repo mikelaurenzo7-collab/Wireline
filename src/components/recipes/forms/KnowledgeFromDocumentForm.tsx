@@ -290,7 +290,7 @@ export function KnowledgeFromDocumentForm({
             disableAnimations
             onClick={apply}
             disabled={!agentId || applying || selected.size === 0}
-            className="w-full min-h-12 py-4 text-[var(--wireline-typography-caption-size)] tracking-[0.32em] uppercase"
+            className="w-full min-h-12 py-4 text-[length:var(--wireline-typography-caption-size)] tracking-[0.32em] uppercase"
           >
             {applying ? (
               <>

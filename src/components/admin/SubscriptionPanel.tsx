@@ -35,7 +35,7 @@ export function SubscriptionPanel({ onDeleteAccount }: SubscriptionPanelProps) {
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <p className="text-[var(--wireline-typography-overline-size)] font-medium text-rose-500 uppercase tracking-[0.2em]">
+                <p className="text-[length:var(--wireline-typography-overline-size)] font-medium text-rose-500 uppercase tracking-[0.2em]">
                   Delete account
                 </p>
                 <p className="text-xs text-muted/80">
@@ -57,7 +57,7 @@ export function SubscriptionPanel({ onDeleteAccount }: SubscriptionPanelProps) {
                 disabled={deletingAccount || deleteConfirmText !== "DELETE MY ACCOUNT"}
                 variant="outline"
                 disableAnimations
-                className="w-full h-9 rounded-md border border-rose-500/30 bg-rose-500/10 text-rose-500 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.2em] hover:bg-rose-500/20 disabled:opacity-40 flex items-center justify-center gap-2"
+                className="w-full h-9 rounded-md border border-rose-500/30 bg-rose-500/10 text-rose-500 text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.2em] hover:bg-rose-500/20 disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 {deletingAccount ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

@@ -172,7 +172,7 @@ export default function IntakeKeysManager() {
             setShowForm(!showForm);
             setCreateError(null);
           }}
-          className="!py-2.5 !px-5 !text-[var(--wireline-typography-overline-size)] !tracking-[0.3em] uppercase"
+          className="!py-2.5 !px-5 !text-[length:var(--wireline-typography-overline-size)] !tracking-[0.3em] uppercase"
         >
           {showForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
           {showForm ? "Cancel" : "New Key"}
@@ -407,7 +407,7 @@ export default function IntakeKeysManager() {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 flex-wrap text-[var(--wireline-typography-overline-size)] text-muted">
+                <div className="flex items-center gap-3 flex-wrap text-[length:var(--wireline-typography-overline-size)] text-muted">
                   <span className="font-mono">{k.key_prefix}…</span>
                   <span>{k.use_count || 0} uses</span>
                   {k.last_used_at && <span>last {formatDateTime(k.last_used_at)}</span>}
@@ -493,7 +493,7 @@ export default function IntakeKeysManager() {
       <details
         className={cn(
           WL_APP_CLASSES.settingsRow,
-          "text-[var(--wireline-typography-overline-size)] text-muted leading-relaxed overflow-x-auto bg-muted/5",
+          "text-[length:var(--wireline-typography-overline-size)] text-muted leading-relaxed overflow-x-auto bg-muted/5",
         )}
       >
         <summary className="cursor-pointer list-none font-sans text-xs font-semibold text-foreground marker:hidden [&::-webkit-details-marker]:hidden">

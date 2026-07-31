@@ -11,7 +11,7 @@ import {
   phoneNumberProvisionSchema,
 } from "../lib/api-validation";
 import { PhoneNumberCreateRequestSchema } from "../../contracts/api-types";
-import { getErrorMessage } from "../lib/server-utils";
+import { getErrorMessage, parseBigIntId } from "../lib/server-utils";
 import * as rateLimiters from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { ensureTenantTelecomDefaults } from "../lib/agent-phone-lines";
@@ -244,18 +244,28 @@ router.patch(
           .json({ error: "Nothing to update — pass agent_id or campaign_label." });
       }
 
-      await drizzle
+      const numberId = parseBigIntId(req.params.id);
+      if (numberId === null) {
+        throw AppError.fromHttpStatus(400, "Phone number id must be a positive integer");
+      }
+
+      const updated = (await drizzle
         .update(schema.phoneNumbers)
         .set(patch)
         .where(
-          and(
-            eq(schema.phoneNumbers.id, BigInt(req.params.id)),
-            eq(schema.phoneNumbers.userId, req.user.id),
-          ),
-        );
+          and(eq(schema.phoneNumbers.id, numberId), eq(schema.phoneNumbers.userId, req.user.id)),
+        )
+        .returning()) as unknown[];
+
+      // Reporting success for an update that matched no rows told the caller its
+      // change was saved when the number was never theirs or no longer exists.
+      if (!updated.length) throw AppError.fromHttpStatus(404, "Phone number not found");
 
       res.json({ success: true });
     } catch (error: any) {
+      // Deliberate 400/404s are thrown inside the try block; without this they
+      // are caught here and reported as a 500.
+      rethrowIfAppError(error);
       log.error("Failed to update phone number", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to update phone number");
     }
@@ -268,19 +278,24 @@ router.delete(
   rateLimiters.phoneNumberRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const numberId = parseBigIntId(req.params.id);
+      if (numberId === null) {
+        throw AppError.fromHttpStatus(400, "Phone number id must be a positive integer");
+      }
+
       await runCompanyIdentityMutation(req.user.id, "phone_number_changed", async (tx) => {
         await tx
           .delete(schema.phoneNumbers)
           .where(
-            and(
-              eq(schema.phoneNumbers.id, BigInt(req.params.id)),
-              eq(schema.phoneNumbers.userId, req.user.id),
-            ),
+            and(eq(schema.phoneNumbers.id, numberId), eq(schema.phoneNumbers.userId, req.user.id)),
           );
       });
 
       res.json({ success: true });
     } catch (error: any) {
+      // Deliberate 400/404s are thrown inside the try block; without this they
+      // are caught here and reported as a 500.
+      rethrowIfAppError(error);
       log.error("Failed to delete phone number", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to delete phone number.");
     }

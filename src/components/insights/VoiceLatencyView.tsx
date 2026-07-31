@@ -21,7 +21,6 @@ export default function VoiceLatencyView({ days }: { days: number }) {
     setLoading(true);
     setErr(null);
 
-    // Fetch both action latency (existing) and voice observability (new)
     Promise.all([
       fetchInsight<AuditSummary>(`/api/audit/summary?days=${days}`).catch(() => null),
       fetchInsight<VoiceLatencyInsightsResponse>(`/api/insights/latency?days=${days}`).catch(
@@ -53,12 +52,10 @@ export default function VoiceLatencyView({ days }: { days: number }) {
     .sort((a, b) => b.avg_latency_ms - a.avg_latency_ms)
     .slice(0, 8);
 
-  // Compute voice observability summary from trends
   const voiceTrends = voiceData?.trends ?? [];
   const latestTrend = voiceTrends[voiceTrends.length - 1];
   const hasVoiceMetrics = voiceTrends.length > 0 && latestTrend?.avgTtftMs != null;
 
-  // Voice health indicators
   const ttftHealthy = latestTrend?.p95TtftMs == null || latestTrend.p95TtftMs <= 1200;
   const errorRateHealthy = latestTrend == null || latestTrend.errorRate <= 5;
 
@@ -76,7 +73,6 @@ export default function VoiceLatencyView({ days }: { days: number }) {
 
   return (
     <div className="space-y-4">
-      {/* Voice Observability Section */}
       {hasVoiceMetrics && (
         <div className="rounded-md wl-panel border border-border p-5">
           <div className="flex items-center gap-2 mb-4">
@@ -133,7 +129,6 @@ export default function VoiceLatencyView({ days }: { days: number }) {
             ))}
           </div>
 
-          {/* Trend mini-chart */}
           {voiceTrends.length > 1 && (
             <div className="mt-4">
               <p className="wl-insight-label mb-3">{days}-day TTFT trend</p>
@@ -167,7 +162,6 @@ export default function VoiceLatencyView({ days }: { days: number }) {
         </div>
       )}
 
-      {/* AI Action Latency Section */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { label: "p50 latency", value: `${latency.p50_ms}ms` },
@@ -226,7 +220,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                   className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0"
                 >
                   <span className="text-sm text-foreground/85 truncate">{a.action}</span>
-                  <span className="font-mono text-[var(--wireline-typography-overline-size)] text-muted shrink-0">
+                  <span className="font-mono text-[length:var(--wireline-typography-overline-size)] text-muted shrink-0">
                     {a.avg_latency_ms}ms · {a.calls}×
                   </span>
                 </div>

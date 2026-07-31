@@ -127,7 +127,7 @@ export const WL_COMPOSER_CLASSES = {
   actionRow: "relative flex items-start gap-2 py-1 pl-4",
   actionRowFailed: "text-destructive",
   actionDetail:
-    "mt-1 rounded-md border border-border bg-muted/50 px-2 py-1.5 font-mono text-[var(--wireline-typography-overline-size)] leading-relaxed text-muted-foreground whitespace-pre-wrap break-words",
+    "mt-1 rounded-md border border-border bg-muted/50 px-2 py-1.5 font-mono text-[length:var(--wireline-typography-overline-size)] leading-relaxed text-muted-foreground whitespace-pre-wrap break-words",
 } as const;
 
 /** @deprecated use WL_COMPOSER_CLASSES */

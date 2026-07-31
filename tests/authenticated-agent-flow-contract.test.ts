@@ -204,6 +204,27 @@ describe("authenticated agent flow", () => {
     expect(deployModal).not.toMatch(/PREMIUM_VOICES|\/api\/voices\/|VoicePreviewButton/);
   });
 
+  it("surfaces the create warning even though Studio is already mounted", () => {
+    const studioHome = read("src/pages/AgentStudioHome.tsx");
+    const createDialog = read("src/components/CreateAgentDialog.tsx");
+
+    // Applying the first brief is best-effort, and on failure the dialog stashes
+    // a warning for Studio to raise. But Fast Start opens from
+    // `/studio?create=1`, so Studio is already mounted when that happens — a
+    // mount-only effect never ran again and the message sat unread in session
+    // storage, leaving the single case the warning exists for silent.
+    expect(createDialog).toContain("stashCreateWarning(");
+
+    // Only the effect that consumes the warning — the wizard effect below it
+    // legitimately keeps mount-only deps, and a wider window would read its
+    // dependency array instead of this one's.
+    const start = studioHome.indexOf("consumeCreateWarning()");
+    const consumeEffect = studioHome.slice(start, studioHome.indexOf("]);", start) + 3);
+    // The post-create redirect swaps `create=1` for `agent=<id>`, so the search
+    // params are the signal that the flow finished.
+    expect(consumeEffect).toMatch(/\}, \[toast, params\]\);$/);
+  });
+
   it("defers phone provisioning from Fast Start into the post-create wizard", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");

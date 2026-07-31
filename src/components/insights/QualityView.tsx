@@ -126,7 +126,6 @@ export default function QualityView({ days }: { days: number }) {
 
   return (
     <div className="space-y-4 pb-6">
-      {/* Action bar */}
       <div className="flex items-center justify-end">
         <Button
           type="button"
@@ -142,7 +141,6 @@ export default function QualityView({ days }: { days: number }) {
         </Button>
       </div>
 
-      {/* Hero stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Scored Calls", value: data.count, accent: QA_BRAND },
@@ -162,7 +160,6 @@ export default function QualityView({ days }: { days: number }) {
         ))}
       </div>
 
-      {/* Distribution + Radar */}
       <div className="grid md:grid-cols-2 gap-4">
         <div className="rounded-md wl-panel p-5">
           <h4 className="font-mono wl-label-muted mb-4 flex items-center gap-1.5">
@@ -215,7 +212,6 @@ export default function QualityView({ days }: { days: number }) {
         </div>
       </div>
 
-      {/* 7-day trend */}
       {data.trend && data.trend.length > 1 && (
         <div className="rounded-md wl-panel p-5">
           <h4 className="font-mono wl-label-muted mb-4 flex items-center gap-1.5">
@@ -273,7 +269,6 @@ export default function QualityView({ days }: { days: number }) {
         </div>
       )}
 
-      {/* Dimension detail table */}
       <div className="rounded-md wl-panel overflow-hidden">
         <div className="px-5 py-3 border-b border-border">
           <h4 className="font-mono wl-label-muted flex items-center gap-1.5">
@@ -295,7 +290,7 @@ export default function QualityView({ days }: { days: number }) {
             return (
               <div key={key} className="px-5 py-3.5 flex items-center gap-4">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[var(--wireline-typography-overline-size)] text-foreground font-medium">
+                  <p className="text-[length:var(--wireline-typography-overline-size)] text-foreground font-medium">
                     {label}
                   </p>
                 </div>

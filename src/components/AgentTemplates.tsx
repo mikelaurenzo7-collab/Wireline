@@ -390,7 +390,7 @@ function TemplateCard({
 
       <div className="relative z-10 p-4 flex flex-col gap-3 flex-1">
         <div className="flex items-start justify-between gap-2">
-          <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-[var(--wireline-color-action-primary-container)]">
+          <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-[var(--wireline-color-feedback-success-surface)]">
             <Icon
               aria-hidden="true"
               className="w-5 h-5 text-[var(--wireline-color-action-primary-default)]"
@@ -441,7 +441,7 @@ function TemplateCard({
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 4 }}
-              className="rounded-md p-3 border text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/80 leading-relaxed italic relative bg-[var(--wireline-color-surface-subtle)]"
+              className="rounded-md p-3 border text-[length:var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/80 leading-relaxed italic relative bg-[var(--wireline-color-surface-subtle)]"
             >
               <MessageCircle
                 aria-hidden="true"
@@ -460,7 +460,7 @@ function TemplateCard({
           variant="default"
           onClick={() => onDeploy(template)}
           disabled={deploying}
-          className="w-full !py-2 !text-[var(--wireline-typography-overline-size)] !tracking-[0.22em] flex items-center justify-center gap-2 shadow-sm"
+          className="w-full !py-2 !text-[length:var(--wireline-typography-overline-size)] !tracking-[0.22em] flex items-center justify-center gap-2 shadow-sm"
           aria-label={`${alreadyDeployed ? "Use again" : "Use"} ${template.name} template`}
         >
           {deploying ? <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin" /> : null}
@@ -484,7 +484,7 @@ function CustomAgentCard({ onCreate }: { onCreate: () => void }) {
       </div>
       <div className="space-y-1">
         <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">Custom Agent</h3>
-        <p className="text-[var(--wireline-typography-caption-size)] text-foreground/70 leading-relaxed max-w-[12.5rem]">
+        <p className="text-[length:var(--wireline-typography-caption-size)] text-foreground/70 leading-relaxed max-w-[12.5rem]">
           Start from a blank voice agent in Studio and set the job, greeting, and voice yourself.
         </p>
       </div>

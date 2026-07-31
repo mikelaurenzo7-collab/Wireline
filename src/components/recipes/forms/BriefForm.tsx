@@ -107,7 +107,7 @@ export function BriefForm({
             <ul className="space-y-3">
               {brief.objections_to_anticipate.map((o: any, i: number) => (
                 <li key={i} className="space-y-1">
-                  <div className="text-rose-500 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em]">
+                  <div className="text-rose-500 text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.25em]">
                     "{o.objection}"
                   </div>
                   <div className="text-foreground/85">→ {o.response}</div>

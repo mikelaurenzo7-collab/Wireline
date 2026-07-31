@@ -155,7 +155,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "relative mx-3 mt-1.5 mb-1 rounded-xl border border-border/80 bg-card/95 px-3.5 py-3 pr-12 text-[var(--wireline-typography-caption-size)] shadow-sm sm:mx-6 sm:flex sm:items-center sm:gap-3 sm:px-4 sm:py-3 sm:pr-12",
+        "relative mx-3 mt-1.5 mb-1 rounded-xl border border-border/80 bg-card/95 px-3.5 py-3 pr-12 text-[length:var(--wireline-typography-caption-size)] shadow-sm sm:mx-6 sm:flex sm:items-center sm:gap-3 sm:px-4 sm:py-3 sm:pr-12",
         className,
       )}
       role="status"
@@ -166,7 +166,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
         <p className="max-w-[62ch] text-xs leading-relaxed text-foreground/75">
           {ACTIVATION_NUDGE_COPY.body}
         </p>
-        <p className="mt-1 font-mono text-[var(--wireline-typography-caption-size)] tabular-nums text-[var(--wireline-color-text-secondary)]">
+        <p className="mt-1 font-mono text-[length:var(--wireline-typography-caption-size)] tabular-nums text-[var(--wireline-color-text-secondary)]">
           {phoneNumber}
         </p>
       </div>

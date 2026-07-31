@@ -26,7 +26,7 @@ export function ThreadSummaryForm({
     <FormShell>
       {!threadId && <ErrCard error="Open a thread to summarize it." />}
       {threadId && (
-        <p className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted">
+        <p className="text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted">
           Summarizing thread <span className="text-brand font-mono">{threadId.slice(0, 8)}…</span>
         </p>
       )}
@@ -47,7 +47,7 @@ export function ThreadSummaryForm({
             <ResultCard title="Sentiment">
               <span
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]",
+                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]",
                   s.sentiment === "positive" && "wl-status-success border wl-text-success",
                   s.sentiment === "delighted" && "wl-status-success border wl-text-success",
                   s.sentiment === "neutral" &&
@@ -64,7 +64,7 @@ export function ThreadSummaryForm({
             <ResultCard title="Urgency">
               <span
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]",
+                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]",
                   s.urgency === "low" &&
                     "bg-black/[0.06] text-foreground/50 border border-white/12",
                   s.urgency === "medium" && "bg-brand/15 text-brand border border-brand/30",

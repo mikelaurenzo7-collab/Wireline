@@ -27,7 +27,13 @@ import {
 } from "../lib/ai-models";
 import { AgentBusinessProfileSchema } from "../lib/form-validators";
 import { isOwnerEmail } from "../lib/auth-service";
-import { resolveAgentEntitlement } from "../lib/agent-entitlements";
+import { agentCapMessage, resolveAgentEntitlement } from "../lib/agent-entitlements";
+import {
+  KNOWLEDGE_IMAGE_MAX_DATA_URL_CHARS,
+  KNOWLEDGE_TEXT_EXTRACT_CHARS,
+  knowledgeAssetTooLargeMessage,
+  knowledgeTextTruncationNotice,
+} from "../lib/knowledge-asset-limits";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { runStructured } from "../lib/ai-structured";
 import {
@@ -313,10 +319,7 @@ router.post(
       });
 
       if (entitlement.effectiveCap !== null && existing >= entitlement.effectiveCap) {
-        throw AppError.fromHttpStatus(
-          402,
-          `Agent capacity limit reached. Your plan allows up to ${entitlement.effectiveCap} agents.`,
-        );
+        throw AppError.fromHttpStatus(402, agentCapMessage(entitlement.effectiveCap));
       }
 
       await tx.insert(schema.agents).values({
@@ -699,8 +702,24 @@ router.post(
     const payload = (req.body || {}) as AssetPayload;
     const fileName = cleanText(payload.fileName, 255) || "Untitled asset";
     const mimeType = cleanText(payload.mimeType, 120).toLowerCase();
-    const text = cleanText(payload.text, 28000);
-    const dataUrl = cleanText(payload.dataUrl, 5_600_000);
+    const rawDataUrl = typeof payload.dataUrl === "string" ? payload.dataUrl.trim() : "";
+
+    // A base64 payload cut mid-stream is not a smaller image, it is a corrupt
+    // one. Running it through the shared `cleanText` slice sent the vision model
+    // malformed bytes and still answered `success: true`, so anything past the
+    // ceiling has to be refused outright rather than quietly shortened.
+    if (rawDataUrl.length > KNOWLEDGE_IMAGE_MAX_DATA_URL_CHARS) {
+      throw AppError.fromHttpStatus(413, knowledgeAssetTooLargeMessage(fileName));
+    }
+    const dataUrl = rawDataUrl;
+
+    // Text is different: truncating it degrades the extraction rather than
+    // corrupting it, so the leading portion is still worth ingesting. What was
+    // missing is the disclosure — the original length is kept so the reply can
+    // say how much of the document was actually read.
+    const rawText = typeof payload.text === "string" ? payload.text.trim() : "";
+    const text = rawText.slice(0, KNOWLEDGE_TEXT_EXTRACT_CHARS);
+
     let extraction: ExtractedConfig;
     if (text) {
       extraction = await extractTextAsset(fileName, text);
@@ -716,12 +735,16 @@ router.post(
       );
     }
     await persistExtraction(req.params.id, req.user.id, extraction);
+    const truncation = knowledgeTextTruncationNotice(rawText.length);
     res.json({
       success: true,
-      summary: extractionReply(extraction),
+      summary: truncation
+        ? `${extractionReply(extraction)} ${truncation}`
+        : extractionReply(extraction),
       factsAdded: extraction.knowledge.length,
       rulesAdded: extraction.directives.length,
       toneUpdated: Boolean(extraction.personality),
+      truncated: Boolean(truncation),
     });
   },
 );

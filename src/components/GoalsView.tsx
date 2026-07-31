@@ -63,8 +63,6 @@ const STATUS_META: Record<GoalStatus, { label: string; color: string }> = {
 
 const num = (n: number) => n.toLocaleString();
 
-/* ── Progress ring ─────────────────────────────────────────────────────── */
-
 function Ring({
   fraction,
   accent,
@@ -108,8 +106,6 @@ function Ring({
     </div>
   );
 }
-
-/* ── Goal editor (create / edit) ───────────────────────────────────────── */
 
 function GoalEditor({
   metric,
@@ -192,7 +188,7 @@ function GoalEditor({
           disableAnimations
           onClick={() => valid && onSave(Math.round(parsed), label)}
           disabled={!valid || saving}
-          className="flex-1 min-h-11 rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.14em]"
+          className="flex-1 min-h-11 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.14em]"
         >
           {saving ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -207,7 +203,7 @@ function GoalEditor({
           disableAnimations
           onClick={onCancel}
           disabled={saving}
-          className="min-h-11 px-3 rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.14em]"
+          className="min-h-11 px-3 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.14em]"
         >
           Cancel
         </ShadButton>
@@ -215,8 +211,6 @@ function GoalEditor({
     </div>
   );
 }
-
-/* ── Goal card (progress) ──────────────────────────────────────────────── */
 
 function GoalCard({
   goal,
@@ -272,7 +266,7 @@ function GoalCard({
             <span className="text-sm text-muted tabular-nums">/ {num(goal.target)}</span>
           </div>
           <span className="wl-label-muted">{goal.unit}</span>
-          <div className="mt-1 text-[var(--wireline-typography-overline-size)] text-foreground/70 leading-relaxed">
+          <div className="mt-1 text-[length:var(--wireline-typography-overline-size)] text-foreground/70 leading-relaxed">
             {goal.status === "achieved" ? (
               <span className="text-brand font-medium">Target reached — nice work.</span>
             ) : (
@@ -352,8 +346,6 @@ function GoalCard({
   );
 }
 
-/* ── Empty metric card (set a goal) ────────────────────────────────────── */
-
 function EmptyMetricCard({
   metric,
   current,
@@ -377,7 +369,7 @@ function EmptyMetricCard({
         </h3>
       </div>
       <p className="text-caption leading-relaxed">{metric.description}</p>
-      <p className="text-[var(--wireline-typography-overline-size)] text-foreground/70 tabular-nums">
+      <p className="text-[length:var(--wireline-typography-overline-size)] text-foreground/70 tabular-nums">
         <span className="font-display italic text-xl text-foreground/75">{num(current)}</span>{" "}
         {metric.unit} so far this month
       </p>
@@ -386,7 +378,7 @@ function EmptyMetricCard({
         variant="outline"
         disableAnimations
         onClick={onCreate}
-        className="mt-auto min-h-11 w-full rounded-md text-brand text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.14em] hover:bg-brand/5"
+        className="mt-auto min-h-11 w-full rounded-md text-brand text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.14em] hover:bg-brand/5"
       >
         <Plus className="w-3.5 h-3.5" />
         Set a target
@@ -395,14 +387,11 @@ function EmptyMetricCard({
   );
 }
 
-/* ── Main view ─────────────────────────────────────────────────────────── */
-
 export default function GoalsView() {
   const { success, error: toastError } = useToast();
   const [data, setData] = useState<GoalsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  // Which metric is being edited, plus its existing goal id (null = new).
   const [editing, setEditing] = useState<{ metric: string; goalId: string | null } | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -490,7 +479,6 @@ export default function GoalsView() {
 
   return (
     <div className="space-y-4">
-      {/* Header strip */}
       <div className="relative rounded-md wl-panel-elevated border border-border overflow-hidden p-6 md:p-7 flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
           <p className="text-eyebrow text-brand mb-1">Monthly targets · {data.period_label}</p>
@@ -509,7 +497,6 @@ export default function GoalsView() {
         </div>
       </div>
 
-      {/* Metric grid — one card per metric */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
         <AnimatePresence mode="popLayout">
           {data.metrics.map((metric) => {

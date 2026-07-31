@@ -5,11 +5,14 @@ import { Link } from "react-router-dom";
 import { Badge, Button, Skeleton } from "../components/atoms";
 import UsageMeter from "../components/UsageMeter";
 import SettingsTabs from "../components/settings/SettingsTabs";
-import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
+import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
-import { CONVERSATION_BALANCE_COPY, CONVERSATION_BALANCE_PRESETS_USD } from "../lib/conversation-balance";
+import {
+  CONVERSATION_BALANCE_COPY,
+  CONVERSATION_BALANCE_PRESETS_USD,
+} from "../lib/conversation-balance";
 import { conversationBalanceMinuteEstimates } from "../lib/voice-pricing-display";
 import type { BillingStatusResponse } from "../types/api";
 
@@ -154,6 +157,10 @@ export default function BillingSettings() {
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
+        {/* The selected Settings tab already reads "Billing"; the heading stays
+            for assistive tech only so the page is not labelled twice on screen.
+            It also gives the page an h1 while the plan card is still loading. */}
+        <WorkspacePageIntro title="Billing" titleHidden />
 
         {loadError ? (
           <div
@@ -178,9 +185,11 @@ export default function BillingSettings() {
               ) : (
                 <>
                   <div className="mt-4 flex flex-wrap items-center gap-3">
-                    <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(1.85rem,1.45rem+1.8vw,2.65rem)] font-normal leading-none tracking-[-0.04em] text-foreground">
+                    {/* h2, not h1: this names the current plan inside the card,
+                        not the page. The page's h1 is "Billing" above. */}
+                    <h2 className="font-[var(--wireline-font-family-display)] text-[clamp(1.85rem,1.45rem+1.8vw,2.65rem)] font-normal leading-none tracking-[-0.04em] text-foreground">
                       {subscription?.plan_name || plan.name}
-                    </h1>
+                    </h2>
                     <Badge variant={planStatus === "active" ? "success" : "outline"}>
                       {planStatus}
                     </Badge>

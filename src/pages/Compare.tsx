@@ -304,7 +304,7 @@ export default function Compare() {
           </div>
           <Link
             to="/signup?plan=personal"
-            className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
+            className="marketing-btn-primary min-h-12 px-6 text-[length:var(--wireline-typography-body-size)] font-semibold"
           >
             Start free <ArrowRight className="h-4 w-4" />
           </Link>

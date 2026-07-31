@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 import { Badge, Button, Input, NativeSelect } from "../components/atoms";
 import { FormField, StatusNotice } from "../components/molecules";
-import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
+import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import { EmptyState } from "../components/ui/EmptyState";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -137,19 +137,16 @@ export default function TeamSettings() {
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
-
-        <div>
-          <h1 className="font-[var(--wireline-font-family-display)] text-3xl font-semibold tracking-[-.03em] text-foreground">
-            Team
-          </h1>
-        </div>
+        {/* The selected Settings tab already reads "Team"; the heading stays
+            for assistive tech only so the page is not labelled twice on screen. */}
+        <WorkspacePageIntro title="Team" titleHidden />
 
         {teamAccess === "restricted" ? (
           <StatusNotice tone="info" title="Solo workspace">
             Team invites are available on Team and Business plans.{" "}
             <Link
               to="/settings/billing"
-              className="font-semibold text-primary underline-offset-2 hover:underline"
+              className="font-semibold text-primary underline underline-offset-2"
             >
               Review billing
             </Link>{" "}

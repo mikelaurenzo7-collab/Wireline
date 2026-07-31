@@ -120,7 +120,12 @@ describe("authenticated mobile cleanup", () => {
     const trialBanner = read("src/components/layout/TrialBanner.tsx");
     const activationWizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
 
-    expect(shell).toContain("<WiredEyebrow>{language.plural}</WiredEyebrow>");
+    // The rail's agents section keeps the posture-aware plural where it has room
+    // to be read in full — the nav's accessible name. The visible kicker stays
+    // short because the rail row cannot fit the noun phrase (see the sidebar rail
+    // contract below), matching a rail whose other labels are posture-agnostic.
+    expect(shell).toContain("aria-label={language.plural}");
+    expect(shell).toContain("aria-label={`New ${language.singular}`}");
     expect(callLogs).toContain('label: "Agents"');
     expect(callLogs).toContain('<Zap className="size-4"');
     expect(callLogs).not.toContain("⚡");

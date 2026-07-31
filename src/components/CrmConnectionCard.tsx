@@ -449,7 +449,7 @@ export default function CrmConnectionCard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <div className="text-[var(--wireline-typography-overline-size)] font-semibold text-foreground">
+                      <div className="text-[length:var(--wireline-typography-overline-size)] font-semibold text-foreground">
                         {label}
                       </div>
                       {s.connected && <CheckCircle2 className={cn("w-3 h-3", styles.check)} />}

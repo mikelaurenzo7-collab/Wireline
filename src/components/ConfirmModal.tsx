@@ -89,7 +89,7 @@ export default function ConfirmModal({
               <ShadButton
                 variant="outline"
                 disableAnimations
-                className="flex-1 h-11 rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] touch-press hover:scale-[1.02]"
+                className="flex-1 h-11 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] touch-press hover:scale-[1.02]"
               >
                 {cancelLabel}
               </ShadButton>
@@ -106,7 +106,7 @@ export default function ConfirmModal({
                 variant={danger ? "destructive" : "editorial"}
                 disableAnimations
                 className={cn(
-                  "flex-1 h-11 rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] touch-press-deep hover:scale-[1.02]",
+                  "flex-1 h-11 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] touch-press-deep hover:scale-[1.02]",
                   !danger && "!py-0",
                 )}
               >

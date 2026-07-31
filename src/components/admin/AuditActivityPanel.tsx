@@ -316,7 +316,7 @@ export function AuditActivityPanel() {
                       <Cpu className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[var(--wireline-typography-overline-size)] font-medium text-[var(--wireline-color-text-primary)] truncate uppercase tracking-wider">
+                      <p className="text-[length:var(--wireline-typography-overline-size)] font-medium text-[var(--wireline-color-text-primary)] truncate uppercase tracking-wider">
                         {formatActionName(entry.action)}
                       </p>
                       <p className="wl-micro-meta--muted truncate">
