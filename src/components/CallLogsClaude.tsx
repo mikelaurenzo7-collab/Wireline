@@ -429,7 +429,7 @@ function FloorTab({
         fill
         titleTone="ui"
         title="No call history yet"
-        description="Live and outbound conversations will appear here with summaries, outcomes, follow-ups, and exports."
+        description="Calls appear here with summaries, outcomes, and follow-ups."
         density="compact"
         withHalo={false}
         action={

@@ -194,9 +194,8 @@ export default function PhoneSetupPanel() {
             Set up the complete call experience before going live.
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Build and train the voice agent, choose a local number, connect your company identity,
-            then call the line yourself. A paid plan is only required when Wireline activates the
-            dedicated number and starts live provider usage.
+            A paid plan is only required when Wireline activates the dedicated number and starts
+            live provider usage.
           </p>
         </div>
         <ol className="grid gap-px bg-border sm:grid-cols-3" aria-label="Calling setup steps">

@@ -184,8 +184,7 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
               : "Put one customer-facing job to work today."}
           </h2>
           <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
-            Give one {language.singular} a clear job, test it, then connect only the channels that
-            job needs.
+            Test it, then connect only the channels the job needs.
           </p>
           <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
             <Button asChild className="w-full justify-center sm:w-auto">

@@ -279,7 +279,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
         <EmptyState
           icon={<MessageSquare className="size-5" />}
           title={OPS_CHANNEL_EMPTY.sms.title}
-          description="SMS conversations will appear here after messaging is connected and your Wireline number receives its first text."
+          description="SMS conversations will appear here after messaging is connected."
           action={
             <Button asChild>
               <Link to="/settings/phone">Review SMS setup</Link>

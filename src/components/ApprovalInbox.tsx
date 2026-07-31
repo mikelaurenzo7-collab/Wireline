@@ -454,7 +454,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       ) : bucketItems.length === 0 ? (
         <ApprovalEmptyCard
           title={`${BUCKET_SHORT_LABELS[bucket]} clear`}
-          description="Nothing needs attention in this bucket right now. Evidence-backed items will appear here automatically."
+          description="Evidence-backed items will appear here automatically."
         />
       ) : (
         <div className="grid gap-3">
