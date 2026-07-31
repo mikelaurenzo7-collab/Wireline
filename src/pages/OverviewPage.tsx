@@ -694,7 +694,10 @@ export default function OverviewPage() {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <p className="wl-metric-tile__label">{item.label}</p>
-                          <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                          <Icon
+                            className="wl-metric-tile__icon size-4 shrink-0 text-primary"
+                            aria-hidden="true"
+                          />
                         </div>
                         <div className="wl-metric-tile__value">{item.value}</div>
                         <p className="wl-metric-tile__detail hidden sm:block">{item.detail}</p>

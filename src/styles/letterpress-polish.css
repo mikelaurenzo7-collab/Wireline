@@ -295,6 +295,37 @@
   margin-block: 0;
 }
 
+/*
+ * Two compact tiles sit side by side, so a 360px phone leaves each about 113px
+ * of content — and the longest label word, "CONVERSATIONS", needs ~106px of it
+ * on its own. Keeping the icon in flow left the label 85px, so the row
+ * overflowed and the tile's `overflow: hidden` sliced the icon in half (6px at
+ * 360px, 26px at 320px). The icon is aria-hidden ornament, so drop it where it
+ * cannot fit and hand the label the full width; the row measures clean again
+ * from ~412px up, so the icon returns well before any tablet width.
+ */
+@media (max-width: 26rem) {
+  .wl-metric-tile--compact .wl-metric-tile__icon {
+    display: none;
+  }
+}
+
+/*
+ * Only at the very bottom of the range does the label still exceed its tile
+ * once the icon is gone, and there the choice is a broken word or a word the
+ * tile silently cuts off. Deliberately NOT applied at 360px: the three-up
+ * Knowledge tiles are narrower still, and there a whole "KNOWLEDGE" that runs
+ * 7px under the tile edge reads better than "KNOWLED / GE". `anywhere` rather
+ * than `break-word` because only `anywhere` also lowers the label's min-content
+ * size, which is what lets it shrink as a flex item in the first place.
+ */
+@media (max-width: 22rem) {
+  .wl-metric-tile--compact .wl-metric-tile__label {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
 /* ----------------------------------------------------------------------------
  * 7. Empty state — a single, deliberate pattern for "no data" surfaces.
  *    Use the icon as a mono-weight glyph and keep the prose tight.

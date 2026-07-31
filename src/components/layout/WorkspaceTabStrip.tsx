@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 
 import { cn } from "../../lib/utils";
@@ -26,9 +27,7 @@ type WorkspaceTabStripProps = {
 function tabClassName(active: boolean, density: "default" | "compact") {
   return cn(
     "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-lg border font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/60",
-    density === "compact"
-      ? "min-h-10 px-3 text-[13px] sm:px-3.5"
-      : "min-h-[44px] px-4 text-sm",
+    density === "compact" ? "min-h-10 px-3 text-[13px] sm:px-3.5" : "min-h-[44px] px-4 text-sm",
     active
       ? "border-primary/35 bg-primary/15 text-primary shadow-none"
       : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -62,9 +61,37 @@ export function WorkspaceTabStrip({
   wrap = false,
 }: WorkspaceTabStripProps) {
   const compact = density === "compact";
+  const navRef = useRef<HTMLElement | null>(null);
+
+  /*
+   * Bring the selected tab into view when the strip is scrolled off.
+   * Landing directly on a late route (say /settings/compliance on a phone) left
+   * the strip parked at scrollLeft 0, so the selected tab sat ~460px outside a
+   * 298px viewport and nothing on screen named the page. Adjusts only this
+   * element's horizontal scroll, so the page's own scroll position is untouched.
+   */
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    if (nav.scrollWidth <= nav.clientWidth + 1) return;
+
+    const active = nav.querySelector<HTMLElement>('[data-active="true"]');
+    if (!active) return;
+
+    const navRect = nav.getBoundingClientRect();
+    const activeRect = active.getBoundingClientRect();
+    const gutter = 12;
+
+    if (activeRect.left < navRect.left + gutter) {
+      nav.scrollLeft -= navRect.left + gutter - activeRect.left;
+    } else if (activeRect.right > navRect.right - gutter) {
+      nav.scrollLeft += activeRect.right - (navRect.right - gutter);
+    }
+  }, [activeId, tabs]);
 
   return (
     <nav
+      ref={navRef}
       aria-label={ariaLabel}
       data-density={density}
       data-align={align}

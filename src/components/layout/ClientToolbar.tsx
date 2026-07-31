@@ -32,14 +32,27 @@ export default function ClientToolbar({ left, actions, className }: ClientToolba
     <Dialog open={open} onOpenChange={setOpen}>
       <div
         className={cn(
-          "mb-2 flex min-h-10 shrink-0 items-center justify-between gap-3 md:mb-3",
+          "mb-2 flex min-h-10 shrink-0 flex-wrap items-center justify-between gap-3 md:mb-3",
           className,
         )}
       >
-        {left && <div className="min-w-0 flex-1">{left}</div>}
+        {/*
+         * `flex-auto`, not `flex-1`. The actions block never shrinks, so with
+         * `flex-1` (basis 0) this slot's hypothetical size is 0, the line never
+         * counts as overflowing, and the label silently absorbs the whole
+         * squeeze — in a narrow column that crushed a 74px stat into 58px and
+         * wrapped it mid-phrase. Sizing from content instead lets the line
+         * genuinely overflow so the actions wrap to their own row. When
+         * everything fits, flex-grow still hands this slot all the free space,
+         * so the single-row layout is unchanged. `min-w-0` stays so genuinely
+         * long labels still shrink rather than blowing the row out.
+         */}
+        {left && <div className="min-w-0 flex-auto">{left}</div>}
         {actions ? (
           <>
-            <div className="hidden shrink-0 items-center justify-end gap-2 md:flex">{actions}</div>
+            <div className="hidden shrink-0 items-center justify-end gap-2 md:ml-auto md:flex">
+              {actions}
+            </div>
             <DialogTrigger asChild>
               <Button
                 type="button"

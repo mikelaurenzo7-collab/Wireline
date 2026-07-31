@@ -241,7 +241,14 @@ function DesktopRail({ pathname }: { pathname: string }) {
               New
             </Link>
           </div>
-          <nav className="grid gap-1 pr-0.5" aria-label={language.plural}>
+          {/*
+           * The column is pinned to minmax(0,1fr) because a grid item's default
+           * `min-width: auto` refuses to shrink below max-content: each row sized
+           * to its full name and role (203px) and overflowed this 189px rail,
+           * getting hard-clipped by the sidebar instead of ellipsizing. The
+           * `truncate` on the labels below only works once the track is bounded.
+           */}
+          <nav className="grid grid-cols-[minmax(0,1fr)] gap-1 pr-0.5" aria-label={language.plural}>
             {visibleAgents.map((agent) => {
               const active = isNavActive(pathname, "/studio") && resolvedId === agent.id;
               return (

@@ -8,6 +8,19 @@ function read(path: string) {
   return readFileSync(resolve(root, path), "utf8");
 }
 
+/**
+ * True when an `<h1 …>` opening tag is hidden at every width. `sr-only` has to
+ * appear as a bare class token — matching it as a substring would also accept
+ * `not-sr-only`, which un-hides the heading, and a variant like `sm:sr-only`
+ * only hides it above that breakpoint.
+ */
+function hiddenHeadingClasses(openingTag: string) {
+  const classes = openingTag.match(/className="([^"]*)"/)?.[1] ?? "";
+  const tokens = classes.split(/\s+/).filter(Boolean);
+  if (tokens.some((token) => token.endsWith("not-sr-only"))) return false;
+  return tokens.includes("sr-only");
+}
+
 describe("agent navigation contract", () => {
   const workspaceShell = read("src/components/WorkspaceShell.tsx");
   const overviewPage = read("src/pages/OverviewPage.tsx");
@@ -186,6 +199,17 @@ describe("agent navigation contract", () => {
     expect(teamPage).toContain('className="shrink-0"');
   });
 
+  it("keeps long agent names inside the sidebar rail instead of clipping them", () => {
+    // A grid item's default `min-width: auto` will not shrink below max-content,
+    // so each rail row sized to its full name and role (203px) and overflowed the
+    // 189px nav, getting hard-clipped by the sidebar's overflow-hidden. The
+    // `truncate` on the labels cannot ellipsize until the track itself is bounded.
+    expect(workspaceShell).toContain("grid grid-cols-[minmax(0,1fr)] gap-1 pr-0.5");
+    expect(workspaceShell).not.toContain('<nav className="grid gap-1 pr-0.5"');
+    // The labels still have to opt into truncation for the bounded track to help.
+    expect(workspaceShell).toContain("block truncate text-[12px] font-semibold");
+  });
+
   it("uses navigation.ts as the shell source of truth with a 5-item mobile dock", () => {
     const navigation = read("src/constants/navigation.ts");
     expect(workspaceShell).toMatch(/from "\.\.\/constants\/navigation"/);
@@ -254,11 +278,31 @@ describe("agent navigation contract", () => {
       expect(page).toMatch(/<WorkspacePageIntro[\s\S]*?titleHidden[\s\S]*?\/>/);
       // Catches hand-rolled headings that bypass WorkspacePageIntro entirely —
       // how a duplicate "Team" title survived an earlier sweep of this file set.
-      expect(page).not.toMatch(/<h1(?![^>]*sr-only)/);
+      for (const tag of page.match(/<h1[^>]*>/g) ?? []) {
+        expect(hiddenHeadingClasses(tag)).toBe(true);
+      }
     }
 
     // A hidden title must collapse completely rather than leave a blank band.
     const frame = read("src/components/layout/WorkspacePageFrame.tsx");
     expect(frame).toContain('<h1 className="sr-only">{title}</h1>');
+  });
+
+  it("rejects headings that re-expose themselves at a breakpoint", () => {
+    // Guards the check above. A substring test for "sr-only" silently accepts
+    // `not-sr-only`, because the banned utility contains the allowed one — so a
+    // heading could be hidden on phones and visible on desktop while still
+    // reading as compliant. Kept as an executable self-check so the rule cannot
+    // quietly stop discriminating.
+    expect(hiddenHeadingClasses('<h1 className="sr-only">Team</h1>')).toBe(true);
+    expect(hiddenHeadingClasses('<h1 className="sr-only mt-2">Team</h1>')).toBe(true);
+
+    expect(hiddenHeadingClasses('<h1 className="text-3xl">Team</h1>')).toBe(false);
+    expect(hiddenHeadingClasses('<h1 className="not-sr-only">Team</h1>')).toBe(false);
+    expect(hiddenHeadingClasses('<h1 className="sr-only sm:not-sr-only">Team</h1>')).toBe(false);
+    expect(hiddenHeadingClasses('<h1 className="sr-only lg:not-sr-only">Team</h1>')).toBe(false);
+    // A variant-only hide still leaves the heading visible at other widths.
+    expect(hiddenHeadingClasses('<h1 className="sm:sr-only">Team</h1>')).toBe(false);
+    expect(hiddenHeadingClasses("<h1>Team</h1>")).toBe(false);
   });
 });
