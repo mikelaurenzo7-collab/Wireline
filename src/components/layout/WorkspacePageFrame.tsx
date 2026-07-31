@@ -124,19 +124,37 @@ type WorkspaceOperateIntroProps = {
   title: string;
   tabs?: ReactNode;
   action?: ReactNode;
+  /**
+   * Drop the visible heading at `lg` and up, where the workspace sidebar already
+   * names the selected section — printing "Calls" under a selected "Calls" rail
+   * item labels the page twice. The heading stays `sr-only` (kept in the
+   * accessibility tree so the page retains a document outline) rather than
+   * removed, and it stays visible below `lg`, where the sidebar is hidden and
+   * this is the page's only on-screen name.
+   */
+  titleHidden?: boolean;
 };
 
 /** Thin operate-mode title bar (Phone, Insights). */
-export function WorkspaceOperateIntro({ title, tabs, action }: WorkspaceOperateIntroProps) {
+export function WorkspaceOperateIntro({
+  title,
+  tabs,
+  action,
+  titleHidden = false,
+}: WorkspaceOperateIntroProps) {
   return (
     <header className="wl-operate-surface shrink-0 border-b border-border/60 pb-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="wl-display-3 break-words text-balance">{title}</h1>
+          <h1 className={cn("wl-display-3 break-words text-balance", titleHidden && "lg:sr-only")}>
+            {title}
+          </h1>
         </div>
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>
-      {tabs ? <div className="mt-3">{tabs}</div> : null}
+      {/* When the heading collapses to sr-only at lg+, pull the tab strip up so
+          the operate bar doesn't keep a phantom gap where the title used to sit. */}
+      {tabs ? <div className={cn("mt-3", titleHidden && !action && "lg:mt-0")}>{tabs}</div> : null}
     </header>
   );
 }

@@ -7,11 +7,12 @@ import {
   TabletSmartphone,
   Terminal,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import { Badge, Button } from "../components/atoms";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
+import SettingsTabs from "../components/settings/SettingsTabs";
 import { CLIENT_SURFACE_POSTURE } from "../lib/product-copy";
 
 const clientSurfaces = [
@@ -78,10 +79,15 @@ const clientSurfaces = [
 ] as const;
 
 export default function ClientAppsPage() {
+  // Mounted at both /apps (standalone) and /settings/apps. Inside Settings the
+  // page must carry the settings tab strip and let the selected tab name it
+  // (sr-only h1) like every sibling settings page; standalone keeps its own h1.
+  const inSettings = useLocation().pathname.startsWith("/settings");
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame mode="standard">
-        <WorkspacePageIntro title="Apps" />
+        {inSettings ? <SettingsTabs /> : null}
+        <WorkspacePageIntro title="Apps" titleHidden={inSettings} />
         <p className="mb-5 max-w-2xl text-sm leading-6 text-muted-foreground">
           {CLIENT_SURFACE_POSTURE.summary}
         </p>
