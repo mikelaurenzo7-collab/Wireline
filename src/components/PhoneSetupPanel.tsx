@@ -48,7 +48,7 @@ function formatProvisionedDate(value?: string | null) {
 }
 
 export default function PhoneSetupPanel() {
-  const { agents, loading: agentsLoading } = useAgents();
+  const { agents, loading: agentsLoading, degraded: agentsDegraded } = useAgents();
   const location = useLocation();
   const [numbers, setNumbers] = useState<PhoneNumberRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -268,6 +268,15 @@ export default function PhoneSetupPanel() {
                     ))}
                   </SelectContent>
                 </Select>
+              ) : agentsDegraded ? (
+                // An unreachable roster is not an empty one — offering "create
+                // an agent" here invites a duplicate of an agent that exists.
+                <div
+                  className="flex h-11 items-center rounded-lg border border-primary-foreground/20 bg-black/5 px-3 text-sm text-primary-foreground"
+                  role="status"
+                >
+                  Agent list unavailable — reload to try again.
+                </div>
               ) : (
                 <Button asChild variant="secondary" className="w-full justify-center">
                   <Link to="/studio?create=1">Create voice agent</Link>
@@ -382,7 +391,7 @@ export default function PhoneSetupPanel() {
                 </Link>
               </Button>
             ) : null}
-            {agents.length === 0 ? (
+            {agents.length === 0 && !agentsDegraded ? (
               <Button asChild size="sm">
                 <Link to="/studio?create=1">Create voice agent</Link>
               </Button>

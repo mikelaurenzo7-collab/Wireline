@@ -18,6 +18,7 @@ import OutcomeLedger from "../components/OutcomeLedger";
 import { Button, EmptyState, Skeleton } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
+import WorkspaceRecovery from "../components/WorkspaceRecovery";
 import AgentFace from "../components/AgentFace";
 import OutboundDialDialog from "../components/OutboundDialDialog";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
@@ -246,19 +247,6 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
           })}
         </ol>
       </div>
-    </section>
-  );
-}
-
-function WorkspaceRecovery({ onRetry }: { onRetry: () => void }) {
-  return (
-    <section className="wl-paper wl-paper-elevated p-6 sm:p-8" aria-label="Workspace recovery">
-      <StatusNotice tone="warning" title="Your workspace is reconnecting">
-        We could not load your agent roster. Your agents and customer data are unchanged.
-      </StatusNotice>
-      <Button type="button" variant="secondary" className="mt-4" onClick={onRetry}>
-        Retry workspace
-      </Button>
     </section>
   );
 }
