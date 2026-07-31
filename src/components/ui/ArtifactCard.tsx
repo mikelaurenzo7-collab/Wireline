@@ -23,16 +23,7 @@ import { cn } from "../../lib/utils";
 import { safeSvgPreviewDataUrl } from "../../lib/sanitize-svg-preview";
 
 export type ArtifactType =
-  | "svg"
-  | "markdown"
-  | "pdf"
-  | "audio"
-  | "code"
-  | "csv"
-  | "json"
-  | "zip"
-  | "image"
-  | "unknown";
+  "svg" | "markdown" | "pdf" | "audio" | "code" | "csv" | "json" | "zip" | "image" | "unknown";
 
 export interface ArtifactCardProps {
   /** Display name for the file. */
@@ -161,7 +152,7 @@ export function ArtifactCard({
           <Icon className="w-4 h-4" />
         </span>
         <div className="flex-1 min-w-0">
-          <p className="text-[var(--wireline-typography-caption-size)] font-medium text-foreground truncate">
+          <p className="text-[length:var(--wireline-typography-caption-size)] font-medium text-foreground truncate">
             {name}
           </p>
           <p className="wl-micro-meta--muted">

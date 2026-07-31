@@ -362,7 +362,7 @@ export default function DncManager() {
                   placeholder="Search numbers…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="h-8 w-44 border border-border bg-transparent pl-8 pr-3 text-[var(--wireline-typography-overline-size)] text-foreground placeholder:text-foreground/55 focus:border-brand/40 focus:outline-none lg:w-64"
+                  className="h-8 w-44 border border-border bg-transparent pl-8 pr-3 text-[length:var(--wireline-typography-overline-size)] text-foreground placeholder:text-foreground/55 focus:border-brand/40 focus:outline-none lg:w-64"
                 />
               </div>
             </header>

@@ -53,7 +53,7 @@ const ConversationMessage = React.forwardRef<HTMLElement, ConversationMessagePro
         className={cn(conversationMessageVariants({ author: resolvedAuthor }), className)}
         {...props}
       >
-        <div className="mb-2 flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.08em] text-muted-foreground">
+        <div className="mb-2 flex items-center gap-1.5 text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.08em] text-muted-foreground">
           <span className="inline-flex size-4 items-center justify-center" aria-hidden="true">
             {defaultIcon(resolvedAuthor)}
           </span>
@@ -64,7 +64,7 @@ const ConversationMessage = React.forwardRef<HTMLElement, ConversationMessagePro
           {children}
         </div>
         {timestamp ? (
-          <p className="mt-2 text-[var(--wireline-typography-overline-size)] text-muted-foreground">
+          <p className="mt-2 text-[length:var(--wireline-typography-overline-size)] text-muted-foreground">
             {timestamp}
           </p>
         ) : null}

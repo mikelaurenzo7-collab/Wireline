@@ -19,10 +19,7 @@ import {
 } from "recharts";
 import { cn } from "../../lib/utils";
 import { VOICE_VARIABLE_COST_PER_MIN_USD } from "../../lib/plan-catalog";
-import type {
-  VoiceLatencyRecentCallRow,
-  VoiceReliabilityResponse,
-} from "../../types/api";
+import type { VoiceLatencyRecentCallRow, VoiceReliabilityResponse } from "../../types/api";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 
 function formatPct(value: number | null, fallback = "—"): string {
@@ -261,7 +258,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
                   className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0"
                 >
                   <span className="text-sm text-foreground/85 truncate">{reason}</span>
-                  <span className="font-mono text-[var(--wireline-typography-overline-size)] text-muted shrink-0">
+                  <span className="font-mono text-[length:var(--wireline-typography-overline-size)] text-muted shrink-0">
                     {count}
                   </span>
                 </div>
@@ -285,12 +282,12 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
                     <p className="text-sm text-foreground/85 truncate">
                       {call.outcomeTag || call.sentiment || "call"}
                     </p>
-                    <p className="text-[var(--wireline-typography-overline-size)] text-muted font-mono">
+                    <p className="text-[length:var(--wireline-typography-overline-size)] text-muted font-mono">
                       {call.ttftMs != null ? `${call.ttftMs}ms TTFT` : "no TTFT"}
                       {call.pipelineError ? ` · ${call.pipelineError}` : ""}
                     </p>
                   </div>
-                  <span className="font-mono text-[var(--wireline-typography-overline-size)] text-muted shrink-0">
+                  <span className="font-mono text-[length:var(--wireline-typography-overline-size)] text-muted shrink-0">
                     {call.durationSeconds ?? 0}s
                   </span>
                 </div>

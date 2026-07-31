@@ -53,7 +53,7 @@ export function SegmentStrip<T extends string = string>({
             onClick={() => onChange(opt.value)}
             data-testid={testIdPrefix ? `${testIdPrefix}-${opt.value}` : undefined}
             className={cn(
-              "app-segment-btn h-9 sm:h-7 px-3 rounded-full text-xs sm:text-[var(--wireline-typography-overline-size)] font-medium tracking-wide touch-press",
+              "app-segment-btn h-9 sm:h-7 px-3 rounded-full text-xs sm:text-[length:var(--wireline-typography-overline-size)] font-medium tracking-wide touch-press",
               fullWidth && "flex-1",
               variant === "filled" &&
                 (active

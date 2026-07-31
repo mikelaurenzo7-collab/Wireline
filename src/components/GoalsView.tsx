@@ -183,7 +183,7 @@ function GoalEditor({
           disableAnimations
           onClick={() => valid && onSave(Math.round(parsed), label)}
           disabled={!valid || saving}
-          className="flex-1 min-h-11 rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.14em]"
+          className="flex-1 min-h-11 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.14em]"
         >
           {saving ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -198,7 +198,7 @@ function GoalEditor({
           disableAnimations
           onClick={onCancel}
           disabled={saving}
-          className="min-h-11 px-3 rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.14em]"
+          className="min-h-11 px-3 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.14em]"
         >
           Cancel
         </ShadButton>
@@ -259,7 +259,7 @@ function GoalCard({
             <span className="text-sm text-muted tabular-nums">/ {num(goal.target)}</span>
           </div>
           <span className="wl-label-muted">{goal.unit}</span>
-          <div className="mt-1 text-[var(--wireline-typography-overline-size)] text-foreground/70 leading-relaxed">
+          <div className="mt-1 text-[length:var(--wireline-typography-overline-size)] text-foreground/70 leading-relaxed">
             {goal.status === "achieved" ? (
               <span className="text-brand font-medium">Target reached — nice work.</span>
             ) : (
@@ -364,7 +364,7 @@ function EmptyMetricCard({
         </h3>
       </div>
       <p className="text-caption leading-relaxed">{metric.description}</p>
-      <p className="text-[var(--wireline-typography-overline-size)] text-foreground/70 tabular-nums">
+      <p className="text-[length:var(--wireline-typography-overline-size)] text-foreground/70 tabular-nums">
         <span className="font-display italic text-xl text-foreground/75">{num(current)}</span>{" "}
         {metric.unit} so far this month
       </p>
@@ -373,7 +373,7 @@ function EmptyMetricCard({
         variant="outline"
         disableAnimations
         onClick={onCreate}
-        className="mt-auto min-h-11 w-full rounded-md text-brand text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.14em] hover:bg-brand/5"
+        className="mt-auto min-h-11 w-full rounded-md text-brand text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.14em] hover:bg-brand/5"
       >
         <Plus className="w-3.5 h-3.5" />
         Set a target

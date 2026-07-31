@@ -495,7 +495,7 @@ export default function TrialGateModal() {
                             </span>
                             <span className="wl-label-muted/70">{tier.suffix}</span>
                           </div>
-                          <p className="mb-3 text-[var(--wireline-typography-overline-size)] leading-relaxed text-foreground/65">
+                          <p className="mb-3 text-[length:var(--wireline-typography-overline-size)] leading-relaxed text-foreground/65">
                             {tier.pitch}
                           </p>
                           <div className="inline-flex items-center gap-1.5 text-brand wl-label">

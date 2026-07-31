@@ -92,12 +92,12 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
             <div className="flex items-center justify-between mb-1.5">
               <span className="wl-micro-meta">{item.label}</span>
               <div className="flex items-center gap-2 shrink-0 ml-3">
-                <span className="font-mono text-[var(--wireline-typography-overline-size)] text-brand">
+                <span className="font-mono text-[length:var(--wireline-typography-overline-size)] text-brand">
                   {item.user}
                   <span className="text-foreground/55 ml-0.5 wl-micro-meta">{item.unit}</span>
                 </span>
                 <span className="wl-micro-meta">vs</span>
-                <span className="font-mono text-[var(--wireline-typography-overline-size)] text-foreground/70">
+                <span className="font-mono text-[length:var(--wireline-typography-overline-size)] text-foreground/70">
                   {item.benchmark}
                   <span className="text-foreground/55 ml-0.5 wl-micro-meta">{item.unit}</span>
                 </span>
@@ -142,7 +142,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
             className="overflow-hidden"
           >
             <div
-              className={`mx-4 mb-3 px-3 py-2.5 rounded-md wl-panel border text-[var(--wireline-typography-overline-size)] text-foreground/70 leading-relaxed ${cfg.borderColor}`}
+              className={`mx-4 mb-3 px-3 py-2.5 rounded-md wl-panel border text-[length:var(--wireline-typography-overline-size)] text-foreground/70 leading-relaxed ${cfg.borderColor}`}
             >
               💡 {item.tip}
             </div>

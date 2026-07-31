@@ -63,7 +63,7 @@ export default class WidgetBoundary extends Component<Props, State> {
         <div className="space-y-0.5">
           <p className="wl-label text-destructive">Widget unavailable</p>
           {this.props.label && (
-            <p className="text-[var(--wireline-typography-caption-size)] text-foreground font-medium">
+            <p className="text-[length:var(--wireline-typography-caption-size)] text-foreground font-medium">
               {this.props.label}
             </p>
           )}

@@ -403,7 +403,7 @@ export default function PhoneAgentBlueprint({
         </p>
         {isReplacing && savedStageNames.length > 0 && (
           <p
-            className="mb-3 truncate border-t border-border pt-3 text-[var(--wireline-typography-overline-size)] font-medium leading-4 text-muted-foreground"
+            className="mb-3 truncate border-t border-border pt-3 text-[length:var(--wireline-typography-overline-size)] font-medium leading-4 text-muted-foreground"
             title={savedStageNames.join(" → ")}
           >
             {savedStageNames.join(" → ")}
@@ -421,11 +421,7 @@ export default function PhoneAgentBlueprint({
       </section>
 
       {isOpen && (
-        <div
-          className="studio-blueprint-backdrop"
-          role="presentation"
-          onMouseDown={closeDialog}
-        >
+        <div className="studio-blueprint-backdrop" role="presentation" onMouseDown={closeDialog}>
           <section
             ref={dialogRef}
             className="studio-blueprint-dialog"

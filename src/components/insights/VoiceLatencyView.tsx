@@ -224,7 +224,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                   className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0"
                 >
                   <span className="text-sm text-foreground/85 truncate">{a.action}</span>
-                  <span className="font-mono text-[var(--wireline-typography-overline-size)] text-muted shrink-0">
+                  <span className="font-mono text-[length:var(--wireline-typography-overline-size)] text-muted shrink-0">
                     {a.avg_latency_ms}ms · {a.calls}×
                   </span>
                 </div>

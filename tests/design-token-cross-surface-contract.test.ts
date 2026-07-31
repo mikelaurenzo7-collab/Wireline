@@ -1,9 +1,18 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
+
+function listSourceFiles(dir: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(resolve(root, dir), { withFileTypes: true })) {
+    const next = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) listSourceFiles(next, out);
+    else if (/\.(ts|tsx)$/.test(entry.name) && !entry.name.endsWith(".test.ts")) out.push(next);
+  }
+  return out;
+}
 
 const outputs = {
   extension: "apps/browser-extension/panel/tokens.generated.css",
@@ -58,6 +67,37 @@ describe("cross-surface design token generation", () => {
     expect(extensionStyles).toContain("var(--wireline-elevation-card)");
     expect(extensionStyles).toContain("--tertiary: var(--wireline-color-text-tertiary)");
     expect(extensionStyles).toContain(".handoff-form");
+  });
+
+  it("asks Tailwind for a font size, not a colour, when sizing from a typography token", () => {
+    // `text-[var(--wireline-typography-*-size)]` is ambiguous: Tailwind cannot
+    // tell a length from a colour inside a bare `var()`, and it resolves the
+    // shorthand to `color`. That produced `color: 11px` — invalid, so the
+    // property fell back to `inherit` — while the intended font size was never
+    // applied at all. With `!important` (EmptyState's compact primary action)
+    // it also beat `text-[var(--wireline-color-text-onAction)]`, leaving
+    // near-white label text on the brand purple at 2.48:1.
+    //
+    // `text-[length:var(--token)]` states the data type and compiles to
+    // `font-size`. Keep every typography-size utility in that form.
+    const offenders: string[] = [];
+    const sources = listSourceFiles("src");
+    for (const file of sources) {
+      const source = read(file);
+      for (const match of source.matchAll(
+        /(?<!length:)\btext-\[var\(--wireline-typography-[A-Za-z0-9]+-size\)\]/g,
+      )) {
+        offenders.push(`${file}: ${match[0]}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+
+    // The guard must be able to fail: the un-hinted form has to be detectable.
+    expect(
+      /(?<!length:)\btext-\[var\(--wireline-typography-[A-Za-z0-9]+-size\)\]/.test(
+        'className="text-[var(--wireline-typography-overline-size)]"',
+      ),
+    ).toBe(true);
   });
 
   it("exposes shared composer utilities for authenticated command surfaces", () => {

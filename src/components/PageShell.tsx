@@ -196,7 +196,7 @@ export default function PageShell({
                     else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
-                    "touch-press hover:scale-[1.02] relative shrink-0 inline-flex min-h-9 sm:min-h-10 h-auto items-center gap-1.5 px-3 py-1.5 transition-all text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.1em] font-medium rounded-none",
+                    "touch-press hover:scale-[1.02] relative shrink-0 inline-flex min-h-9 sm:min-h-10 h-auto items-center gap-1.5 px-3 py-1.5 transition-all text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.1em] font-medium rounded-none",
                     active ? "app-tab-active" : "text-muted hover:text-foreground hover:bg-black/4",
                   )}
                 >

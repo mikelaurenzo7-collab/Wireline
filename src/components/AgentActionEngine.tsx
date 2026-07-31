@@ -176,7 +176,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
           variant="outline"
           onClick={handleSave}
           disabled={isSaving}
-          className="h-10 px-6 rounded-full bg-primary/10 border-primary/30 text-primary text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] hover:bg-primary/15"
+          className="h-10 px-6 rounded-full bg-primary/10 border-primary/30 text-primary text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] hover:bg-primary/15"
         >
           {isSaving ? (
             <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />

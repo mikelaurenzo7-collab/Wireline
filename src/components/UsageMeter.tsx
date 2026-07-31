@@ -144,7 +144,7 @@ export default function UsageMeter({
           </div>
         </div>
         <div className="text-right">
-          <div className="text-[var(--wireline-typography-overline-size)] font-mono text-foreground/55">
+          <div className="text-[length:var(--wireline-typography-overline-size)] font-mono text-foreground/55">
             <span className="text-foreground tabular-nums text-base font-bold">
               {used.toLocaleString()}
             </span>
@@ -169,7 +169,7 @@ export default function UsageMeter({
       {isBlocked && (
         <div className="flex items-start gap-2.5 p-3.5 rounded-md shadow-lg bg-rose-500/8 border border-rose-500/25 shadow-rose-500/5">
           <AlertTriangle className="w-4 h-4 mt-0.5 text-rose-500 shrink-0" />
-          <div className="text-[var(--wireline-typography-overline-size)] leading-relaxed">
+          <div className="text-[length:var(--wireline-typography-overline-size)] leading-relaxed">
             <span className="text-rose-400 font-semibold wl-label mr-1.5 bg-rose-500/15 border border-rose-500/25 px-1.5 py-0.5 rounded-md">
               New calls paused
             </span>
@@ -189,7 +189,7 @@ export default function UsageMeter({
       {!isBlocked && hasExtraUsage && (
         <div className="flex items-start gap-2.5 p-3.5 rounded-md bg-amber-500/8 border border-amber-500/20">
           <Wallet className="w-4 h-4 mt-0.5 text-amber-500 shrink-0" />
-          <div className="text-[var(--wireline-typography-overline-size)] leading-relaxed">
+          <div className="text-[length:var(--wireline-typography-overline-size)] leading-relaxed">
             <span className="text-amber-500 font-semibold">
               {snap.overage_minutes.toLocaleString()} extra minute
               {snap.overage_minutes === 1 ? "" : "s"}
@@ -203,7 +203,7 @@ export default function UsageMeter({
       )}
 
       {isWarn && !isBlocked && (
-        <div className="flex items-center gap-2 p-2.5 rounded-md bg-amber-500/8 border border-amber-500/20 text-[var(--wireline-typography-overline-size)] text-amber-500 font-medium">
+        <div className="flex items-center gap-2 p-2.5 rounded-md bg-amber-500/8 border border-amber-500/20 text-[length:var(--wireline-typography-overline-size)] text-amber-500 font-medium">
           <TrendingUp className="w-3.5 h-3.5" />
           <span>
             Approaching your {included.toLocaleString()} included minutes. After that, new calls use{" "}
@@ -234,7 +234,7 @@ export default function UsageMeter({
           </span>
           {completionDue > 0 ? (
             <span className="text-right leading-tight">
-              <span className="tabular-nums font-bold text-[var(--wireline-typography-body-size)] text-rose-400">
+              <span className="tabular-nums font-bold text-[length:var(--wireline-typography-body-size)] text-rose-400">
                 ${completionDue.toFixed(2)} due
               </span>
               <span className="block wl-label text-foreground/55 font-medium">
@@ -245,7 +245,7 @@ export default function UsageMeter({
             <span className="text-right leading-tight">
               <span
                 className={cn(
-                  "tabular-nums font-bold text-[var(--wireline-typography-body-size)]",
+                  "tabular-nums font-bold text-[length:var(--wireline-typography-body-size)]",
                   lowCredit ? "text-amber-500" : "text-foreground",
                 )}
               >

@@ -335,7 +335,7 @@ export default function Cadences() {
                   onClick={() => loadTemplate(t)}
                   className="h-auto w-full justify-start text-left rounded-md border-border hover:border-brand/30 p-4 group touch-press hover:scale-[1.02]"
                 >
-                  <p className="text-[var(--wireline-typography-caption-size)] font-semibold text-foreground mb-1">
+                  <p className="text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground mb-1">
                     {t.name}
                   </p>
                   <p className="wl-micro-meta mb-3">{t.description}</p>
@@ -368,7 +368,7 @@ export default function Cadences() {
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h4 className="text-[var(--wireline-typography-caption-size)] font-semibold text-foreground">
+                  <h4 className="text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground">
                     {c.name}
                   </h4>
                   {c.active ? (
@@ -387,7 +387,7 @@ export default function Cadences() {
                   )}
                 </div>
                 {c.description && (
-                  <p className="text-[var(--wireline-typography-overline-size)] text-muted mb-2">
+                  <p className="text-[length:var(--wireline-typography-overline-size)] text-muted mb-2">
                     {c.description}
                   </p>
                 )}
@@ -473,7 +473,7 @@ export default function Cadences() {
                   value={draftName}
                   onChange={(e) => setDraftName(e.target.value)}
                   placeholder="e.g. Standard 3-touch"
-                  className="w-full px-3 py-2 rounded-md bg-black/[0.03] border border-input text-foreground text-[var(--wireline-typography-caption-size)] focus:outline-none focus:border-brand/50"
+                  className="w-full px-3 py-2 rounded-md bg-black/[0.03] border border-input text-foreground text-[length:var(--wireline-typography-caption-size)] focus:outline-none focus:border-brand/50"
                 />
               </div>
               <div>
@@ -482,7 +482,7 @@ export default function Cadences() {
                   value={draftDescription}
                   onChange={(e) => setDraftDescription(e.target.value)}
                   placeholder="One-line summary"
-                  className="w-full px-3 py-2 rounded-md bg-black/[0.03] border border-input text-foreground text-[var(--wireline-typography-caption-size)] focus:outline-none focus:border-brand/50"
+                  className="w-full px-3 py-2 rounded-md bg-black/[0.03] border border-input text-foreground text-[length:var(--wireline-typography-caption-size)] focus:outline-none focus:border-brand/50"
                 />
               </div>
             </div>
@@ -509,7 +509,7 @@ export default function Cadences() {
                       >
                         <SelectTrigger
                           aria-label="Step type"
-                          className="w-full pl-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[var(--wireline-typography-overline-size)] h-auto"
+                          className="w-full pl-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[length:var(--wireline-typography-overline-size)] h-auto"
                         >
                           <SelectValue />
                         </SelectTrigger>
@@ -528,7 +528,7 @@ export default function Cadences() {
                         min={0}
                         value={s.delayHours}
                         onChange={(e) => updateStep(i, { delayHours: Number(e.target.value) || 0 })}
-                        className="w-20 px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[var(--wireline-typography-overline-size)]"
+                        className="w-20 px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[length:var(--wireline-typography-overline-size)]"
                       />
                       <span className="wl-micro-meta">hours delay</span>
                     </div>
@@ -541,7 +541,7 @@ export default function Cadences() {
                             ? "Hi {{name}}, ..."
                             : "Subject + body — vars: {{name}}, {{email}}"
                         }
-                        className="px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[var(--wireline-typography-overline-size)]"
+                        className="px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[length:var(--wireline-typography-overline-size)]"
                       />
                     )}
                   </div>
@@ -579,7 +579,7 @@ export default function Cadences() {
                 size="sm"
                 disableAnimations
                 onClick={() => setShowBuilder(false)}
-                className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] text-muted"
+                className="text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] text-muted"
               >
                 Cancel
               </ShadButton>
@@ -589,7 +589,7 @@ export default function Cadences() {
                 disableAnimations
                 onClick={save}
                 disabled={saving || !draftName.trim() || draftSteps.length === 0}
-                className="touch-press hover:scale-[1.05] rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em]"
+                className="touch-press hover:scale-[1.05] rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.28em]"
               >
                 {saving ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

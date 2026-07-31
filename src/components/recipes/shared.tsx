@@ -124,7 +124,7 @@ export function RunButton({ onClick, loading, disabled, label = "Generate" }: an
       disableAnimations
       onClick={onClick}
       disabled={loading || disabled}
-      className="w-full min-h-12 py-4 text-[var(--wireline-typography-caption-size)] tracking-[0.32em] uppercase"
+      className="w-full min-h-12 py-4 text-[length:var(--wireline-typography-caption-size)] tracking-[0.32em] uppercase"
     >
       {loading ? (
         <>

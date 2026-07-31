@@ -131,7 +131,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-10 text-muted text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]">
+      <div className="flex items-center justify-center gap-2 py-10 text-muted text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]">
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
         Loading available numbers
       </div>
@@ -145,7 +145,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
           <h3 className="font-display italic text-2xl text-foreground leading-none">
             {title || "Pick a phone number"}
           </h3>
-          <p className="text-[var(--wireline-typography-overline-size)] text-muted/70 mt-1.5">
+          <p className="text-[length:var(--wireline-typography-overline-size)] text-muted/70 mt-1.5">
             Each agent gets its own number so callers can reach it directly.
           </p>
         </div>
@@ -234,7 +234,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
             </div>
           ) : (
             <div className="rounded-md wl-panel border border-border p-5 text-center">
-              <p className="text-[var(--wireline-typography-caption-size)] text-muted">
+              <p className="text-[length:var(--wireline-typography-caption-size)] text-muted">
                 No numbers in pool right now. Search by area code below to find one.
               </p>
             </div>
@@ -264,7 +264,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                 disableAnimations
                 onClick={searchByAreaCode}
                 disabled={searching || searchAreaCode.length !== 3}
-                className="shrink-0 h-10 rounded-full bg-gradient-to-r from-brand to-brand-deep px-5 text-on-brand text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] font-medium hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="shrink-0 h-10 rounded-full bg-gradient-to-r from-brand to-brand-deep px-5 text-on-brand text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] font-medium hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {searching ? (
                   <>
@@ -313,7 +313,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
             className="flex items-start gap-2 p-3 rounded-md bg-destructive/8 border border-destructive/25"
           >
             <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-            <p className="text-[var(--wireline-typography-overline-size)] text-destructive leading-relaxed">
+            <p className="text-[length:var(--wireline-typography-overline-size)] text-destructive leading-relaxed">
               {error}
             </p>
           </motion.div>

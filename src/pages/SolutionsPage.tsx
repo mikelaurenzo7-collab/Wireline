@@ -142,13 +142,13 @@ export default function SolutionsPage() {
         <ol className="mt-10 grid gap-4 lg:grid-cols-3">
           {page.sequence.map(([title, copy], index) => (
             <li key={title} className="wl-stitch-card relative p-6 text-center sm:p-7">
-              <span className="mx-auto grid h-9 w-9 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[var(--wireline-typography-caption-size)] font-semibold text-primary">
+              <span className="mx-auto grid h-9 w-9 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[length:var(--wireline-typography-caption-size)] font-semibold text-primary">
                 0{index + 1}
               </span>
               <h3 className="wl-section-title mx-auto mt-5 max-w-[16ch] text-[clamp(1.15rem,1rem+.45vw,1.35rem)]">
                 {title}
               </h3>
-              <p className="mx-auto mt-3 max-w-[34ch] text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
+              <p className="mx-auto mt-3 max-w-[34ch] text-[length:var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
                 {copy}
               </p>
             </li>
@@ -163,7 +163,7 @@ export default function SolutionsPage() {
             <h2 className="wl-stitch-display mt-3 text-balance">
               The capabilities that make the conversation operational.
             </h2>
-            <p className="mx-auto mt-4 max-w-lg text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-lg text-[length:var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
               Start focused. Add another channel or connected tool only when it improves the
               outcome.
             </p>
@@ -180,7 +180,7 @@ export default function SolutionsPage() {
                 >
                   <CapabilityIcon size={18} className="mx-auto text-primary" aria-hidden="true" />
                   <h3 className="wl-card-title mx-auto mt-4 max-w-[18ch]">{title}</h3>
-                  <p className="mx-auto mt-2 max-w-[34ch] text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
+                  <p className="mx-auto mt-2 max-w-[34ch] text-[length:var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
                     {copy}
                   </p>
                 </article>
@@ -203,7 +203,7 @@ export default function SolutionsPage() {
           </div>
           <Link
             to={page.primary.href}
-            className="marketing-btn-primary min-h-12 shrink-0 px-6 text-[var(--wireline-typography-caption-size)] font-semibold"
+            className="marketing-btn-primary min-h-12 shrink-0 px-6 text-[length:var(--wireline-typography-caption-size)] font-semibold"
           >
             Build this agent <ArrowRight size={15} aria-hidden="true" />
           </Link>

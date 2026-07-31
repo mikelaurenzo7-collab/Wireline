@@ -38,7 +38,7 @@ export function ClaudeRecipeButton({
 
   const buttonStyles = {
     default:
-      "rounded-full border-brand/30 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-brand hover:bg-brand/10 hover:border-brand/60",
+      "rounded-full border-brand/30 text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-brand hover:bg-brand/10 hover:border-brand/60",
     ghost: "rounded-full wl-label-muted hover:text-brand h-auto px-3 py-1.5",
     compact: "w-9 h-9 rounded-full border-brand/30 text-brand hover:bg-brand/10 after:hidden",
   };

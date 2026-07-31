@@ -176,7 +176,7 @@ export default function BrowserCallWidget({
         aria-busy={connecting}
         aria-label={buttonText}
         className={cn(
-          "relative z-10 h-12 select-none rounded-md border px-6 font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.12em] transition-transform duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:border-border disabled:bg-secondary disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none",
+          "relative z-10 h-12 select-none rounded-md border px-6 font-mono text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.12em] transition-transform duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:border-border disabled:bg-secondary disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none",
           callActive
             ? "border-[color:var(--wireline-status-error)] bg-[color:var(--wireline-status-error)] text-white shadow-[var(--wireline-elevation-sm)]"
             : "border-[color:var(--wireline-color-action-primary-default)] bg-[color:var(--wireline-color-action-primary-default)] text-[color:var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)] hover:border-[color:var(--wireline-color-action-primary-pressed)] hover:bg-[color:var(--wireline-color-action-primary-pressed)] hover:text-[color:var(--wireline-color-text-onAction)]",
@@ -232,7 +232,7 @@ export default function BrowserCallWidget({
               );
             })}
           </div>
-          <span className="font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-wider text-muted-foreground">
+          <span className="font-mono text-[length:var(--wireline-typography-overline-size)] uppercase tracking-wider text-muted-foreground">
             {speakerActive ? "Agent speaking" : "Listening"}
           </span>
         </div>
@@ -240,7 +240,7 @@ export default function BrowserCallWidget({
 
       {error && (
         <div
-          className="flex items-center gap-2 rounded-md border border-border bg-secondary px-3 py-1 text-[var(--wireline-typography-overline-size)] font-medium uppercase tracking-wider text-muted-foreground"
+          className="flex items-center gap-2 rounded-md border border-border bg-secondary px-3 py-1 text-[length:var(--wireline-typography-overline-size)] font-medium uppercase tracking-wider text-muted-foreground"
           role="alert"
         >
           <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />

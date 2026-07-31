@@ -217,7 +217,7 @@ export default function PhoneSetupPanel() {
       <section className="rounded-2xl border border-primary/20 bg-primary p-5 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/65">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">
               Your Wireline number
             </p>
             <h2 className="mt-4 truncate font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.2rem+2.5vw,2.5rem)] font-normal leading-none tracking-[-0.035em]">
@@ -239,7 +239,7 @@ export default function PhoneSetupPanel() {
               </span>
               {agentsLoading ? (
                 <div
-                  className="flex h-11 items-center rounded-lg border border-primary-foreground/20 bg-black/15 px-3 text-sm text-primary-foreground/70"
+                  className="flex h-11 items-center rounded-lg border border-primary-foreground/20 bg-black/15 px-3 text-sm text-primary-foreground"
                   role="status"
                 >
                   Loading agents…
@@ -311,7 +311,7 @@ export default function PhoneSetupPanel() {
               </span>
               <div>
                 <p className="text-sm font-semibold">Call this number now</p>
-                <p className="mt-1 text-xs leading-5 text-primary-foreground/70">
+                <p className="mt-1 text-xs leading-5 text-primary-foreground/80">
                   Use any phone to test the live greeting, routing, knowledge, and handoff behavior.
                 </p>
               </div>

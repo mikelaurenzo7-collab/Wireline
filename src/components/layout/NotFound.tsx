@@ -191,7 +191,7 @@ function NotFoundCard({
       </div>
       <div className="text-left flex-1 min-w-0">
         <p className="wl-eyebrow wl-eyebrow--no-rule !text-[0.625rem]">{hint}</p>
-        <p className="text-[var(--wireline-typography-caption-size)] text-foreground font-medium">
+        <p className="text-[length:var(--wireline-typography-caption-size)] text-foreground font-medium">
           {label}
         </p>
       </div>

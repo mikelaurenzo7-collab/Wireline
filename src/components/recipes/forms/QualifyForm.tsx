@@ -36,7 +36,7 @@ export function QualifyForm({
         </Field>
       )}
       {callId && (
-        <p className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted">
+        <p className="text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted">
           Qualifying call{" "}
           <span className="text-brand font-mono">{callId.toString().slice(0, 8)}…</span> from log
         </p>
@@ -62,7 +62,7 @@ export function QualifyForm({
               <div className="app-section-title mb-2">Label</div>
               <div
                 className={cn(
-                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]",
+                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]",
                   q.qualification_label === "hot" &&
                     "bg-rose-500/15 border border-rose-500/40 text-rose-500",
                   q.qualification_label === "warm" &&

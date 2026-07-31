@@ -38,7 +38,7 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
 
   return (
     <FormShell>
-      <p className="text-[var(--wireline-typography-overline-size)] text-foreground/65 leading-relaxed">
+      <p className="text-[length:var(--wireline-typography-overline-size)] text-foreground/65 leading-relaxed">
         Wireline AI runs up to 5 web searches to identify who's calling and where they work. Use the
         Account Holder context to narrow the search — names + companies on a phone are usually too
         generic alone.

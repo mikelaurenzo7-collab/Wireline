@@ -50,7 +50,7 @@ export default function IntegrationCapabilityPanel({
   return (
     <div className={cn("space-y-3", compact && "space-y-2")} data-accent={accentColor}>
       {!compact && (
-        <p className="text-[var(--wireline-typography-overline-size)] text-foreground/90 leading-relaxed text-pretty border-l-2 pl-2.5 wl-accent-border-l">
+        <p className="text-[length:var(--wireline-typography-overline-size)] text-foreground/90 leading-relaxed text-pretty border-l-2 pl-2.5 wl-accent-border-l">
           {playbook.headline}
         </p>
       )}
@@ -180,7 +180,7 @@ export default function IntegrationCapabilityPanel({
                         className="mt-0.5 rounded border-white/20 text-brand focus:ring-brand/40"
                       />
                       <span className="min-w-0 flex-1">
-                        <span className="block text-[var(--wireline-typography-overline-size)] text-foreground font-medium">
+                        <span className="block text-[length:var(--wireline-typography-overline-size)] text-foreground font-medium">
                           {tool.label}
                         </span>
                         <span className="block wl-micro-meta leading-snug">{tool.description}</span>

@@ -68,7 +68,7 @@ export function LiveTaskPipeline({ steps, className, variant = "default" }: Live
               <div className="min-w-0 flex-1 pt-0.5">
                 <p
                   className={cn(
-                    "text-[var(--wireline-typography-overline-size)] leading-tight",
+                    "text-[length:var(--wireline-typography-overline-size)] leading-tight",
                     step.status === "active" && "font-semibold text-foreground",
                     step.status === "done" && "text-foreground/50",
                     step.status === "pending" && "text-muted/50",
@@ -116,7 +116,7 @@ export function LiveTaskPipeline({ steps, className, variant = "default" }: Live
             {/* Label */}
             <span
               className={cn(
-                "text-[var(--wireline-typography-overline-size)] leading-tight",
+                "text-[length:var(--wireline-typography-overline-size)] leading-tight",
                 step.status === "done" && "text-foreground/55",
                 step.status === "active" && "text-foreground font-medium",
                 step.status === "pending" && "text-muted/50",

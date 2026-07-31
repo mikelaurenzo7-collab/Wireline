@@ -33,7 +33,7 @@ export function CoachForm({
         </Field>
       )}
       {callId && (
-        <p className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted">
+        <p className="text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted">
           Coaching call{" "}
           <span className="text-brand font-mono">{callId.toString().slice(0, 8)}…</span>
         </p>
@@ -60,7 +60,7 @@ export function CoachForm({
             <ResultCard title="Sentiment">
               <span
                 className={cn(
-                  "inline-flex px-3 py-1 rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]",
+                  "inline-flex px-3 py-1 rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]",
                   coaching.sentiment === "delighted" && "wl-status-success border wl-text-success",
                   coaching.sentiment === "positive" && "wl-status-success border wl-text-success",
                   coaching.sentiment === "neutral" &&
@@ -75,14 +75,14 @@ export function CoachForm({
               </span>
             </ResultCard>
             <ResultCard title="Engagement">
-              <span className="inline-flex px-3 py-1 rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">
+              <span className="inline-flex px-3 py-1 rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">
                 {coaching.engagement}
               </span>
             </ResultCard>
             <ResultCard title="Escalation Risk">
               <span
                 className={cn(
-                  "inline-flex px-3 py-1 rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]",
+                  "inline-flex px-3 py-1 rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]",
                   coaching.escalation_risk === "imminent" &&
                     "bg-rose-500/30 text-rose-500 border border-rose-500/50 animate-pulse",
                   coaching.escalation_risk === "high" &&

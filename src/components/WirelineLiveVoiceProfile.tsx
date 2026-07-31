@@ -71,10 +71,10 @@ export default function WirelineLiveVoiceProfile({ agentId }: { agentId: string 
         </span>
         <div>
           <p className="wl-stitch-label">Wireline voice</p>
-          <h3 className="mt-1 font-display text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.02em] text-foreground">
+          <h3 className="mt-1 font-display text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.02em] text-foreground">
             Pick the live voice character
           </h3>
-          <p className="mt-1 max-w-2xl text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
+          <p className="mt-1 max-w-2xl text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
             Role-tuned profiles create distinctive, context-aware voices for live browser and mobile
             conversations. Phone routing keeps its current production voice until Direct SIP is
             deliberately provisioned.
@@ -94,10 +94,10 @@ export default function WirelineLiveVoiceProfile({ agentId }: { agentId: string 
               className={`relative rounded-lg border p-3 text-left transition disabled:cursor-wait disabled:opacity-65 ${active ? "border-primary bg-secondary shadow-sm" : "border-border bg-card hover:border-primary/45 hover:bg-secondary"}`}
             >
               {active ? <Check size={14} className="absolute right-3 top-3 text-primary" /> : null}
-              <strong className="block pr-5 text-[var(--wireline-typography-caption-size)] font-semibold text-foreground">
+              <strong className="block pr-5 text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground">
                 {profile.label}
               </strong>
-              <span className="mt-1 block text-[var(--wireline-typography-overline-size)] leading-4 text-muted-foreground">
+              <span className="mt-1 block text-[length:var(--wireline-typography-overline-size)] leading-4 text-muted-foreground">
                 {profile.description}
               </span>
             </button>
@@ -105,7 +105,7 @@ export default function WirelineLiveVoiceProfile({ agentId }: { agentId: string 
         })}
       </div>
       {saving ? (
-        <p className="mt-3 inline-flex items-center gap-2 font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[.06em] text-muted-foreground">
+        <p className="mt-3 inline-flex items-center gap-2 font-mono text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[.06em] text-muted-foreground">
           <Loader2 size={13} className="animate-spin" /> Saving live voice
         </p>
       ) : null}

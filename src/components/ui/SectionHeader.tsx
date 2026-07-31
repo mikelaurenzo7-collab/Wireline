@@ -42,7 +42,7 @@ export function SectionHeader({
             className={cn(
               "max-w-full break-words text-balance",
               marketing
-                ? "wl-stitch-headline text-[var(--wireline-typography-h3-size)]"
+                ? "wl-stitch-headline text-[length:var(--wireline-typography-h3-size)]"
                 : titleTone === "ui"
                   ? "text-base font-semibold tracking-tight text-foreground"
                   : WL_APP_CLASSES.proTitle,
@@ -51,7 +51,7 @@ export function SectionHeader({
             {title}
           </h3>
           {description && (
-            <p className="mt-1.5 max-w-prose break-words text-pretty text-[var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
+            <p className="mt-1.5 max-w-prose break-words text-pretty text-[length:var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
               {description}
             </p>
           )}

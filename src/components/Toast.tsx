@@ -71,7 +71,7 @@ function ToastItem({ toast }: { toast: Toast }) {
           <Icon aria-hidden="true" className="w-3.5 h-3.5 wl-toast-icon" strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0 pr-2">
-          <p className="text-[var(--wireline-typography-caption-size)] font-semibold text-foreground leading-snug truncate">
+          <p className="text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground leading-snug truncate">
             {toast.title}
           </p>
           {toast.message && (

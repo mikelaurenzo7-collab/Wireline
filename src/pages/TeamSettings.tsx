@@ -149,7 +149,7 @@ export default function TeamSettings() {
             Team invites are available on Team and Business plans.{" "}
             <Link
               to="/settings/billing"
-              className="font-semibold text-primary underline-offset-2 hover:underline"
+              className="font-semibold text-primary underline underline-offset-2"
             >
               Review billing
             </Link>{" "}

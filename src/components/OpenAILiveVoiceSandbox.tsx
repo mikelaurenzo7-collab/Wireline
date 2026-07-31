@@ -414,10 +414,10 @@ export default function OpenAILiveVoiceSandbox({
           </div>
           <div className="min-w-0">
             <p className="wl-stitch-label">Live voice</p>
-            <h3 className="mt-1 font-display text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.02em] text-foreground">
+            <h3 className="mt-1 font-display text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.02em] text-foreground">
               Speak with {agentName}
             </h3>
-            <p className="mt-1 max-w-2xl text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
+            <p className="mt-1 max-w-2xl text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
               A private browser test using this agent's rules, facts, and voice profile.
             </p>
           </div>
@@ -464,7 +464,7 @@ export default function OpenAILiveVoiceSandbox({
           ))
         ) : (
           <div className="grid min-h-[96px] place-items-center text-center">
-            <p className="max-w-md text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
+            <p className="max-w-md text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
               Start a test, ask a real question, and interrupt naturally. This safe channel can
               search approved Training facts but cannot perform external actions.
             </p>

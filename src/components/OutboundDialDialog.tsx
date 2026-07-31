@@ -178,7 +178,7 @@ export default function OutboundDialDialog({
         ) : voiceAgents.length === 0 ? (
           <p className="px-6 py-8 text-sm text-muted-foreground">
             No voice agents with a phone line yet.{" "}
-            <Link to="/studio?create=1" className="text-brand underline-offset-2 hover:underline">
+            <Link to="/studio?create=1" className="text-brand underline underline-offset-2">
               Create and activate one in Studio
             </Link>
             .

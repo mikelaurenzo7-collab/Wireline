@@ -43,12 +43,12 @@ function AccountCard({
             {account.label ?? (account.type === "personal" ? "Personal" : "Business")}
           </span>
           {account.isPrimary && (
-            <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-md border border-[var(--wireline-color-action-primary-default)]/20 bg-[var(--wireline-color-action-primary-container)] px-2 py-0.5 text-[var(--wireline-typography-overline-size)] font-medium uppercase tracking-wider text-[var(--wireline-color-action-primary-default)]">
+            <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-md border border-[var(--wireline-color-action-primary-default)]/20 bg-[var(--wireline-color-action-primary-container)] px-2 py-0.5 text-[length:var(--wireline-typography-overline-size)] font-medium uppercase tracking-wider text-[var(--wireline-color-action-primary-default)]">
               Primary
             </span>
           )}
           {isActive && (
-            <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-[var(--wireline-color-action-primary-default)]/20 bg-[var(--wireline-color-action-primary-container)] px-2 py-0.5 text-[var(--wireline-typography-overline-size)] font-medium uppercase tracking-wider text-[var(--wireline-color-action-primary-default)]">
+            <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-[var(--wireline-color-action-primary-default)]/20 bg-[var(--wireline-color-action-primary-container)] px-2 py-0.5 text-[length:var(--wireline-typography-overline-size)] font-medium uppercase tracking-wider text-[var(--wireline-color-action-primary-default)]">
               <Check className="h-2.5 w-2.5 shrink-0" /> Active
             </span>
           )}
