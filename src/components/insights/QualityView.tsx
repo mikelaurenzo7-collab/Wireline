@@ -305,8 +305,8 @@ export default function QualityView({ days }: { days: number }) {
                       initial={{ width: 0 }}
                       animate={{ width: `${pct}%` }}
                       transition={{ duration: 0.8 }}
-                      className="h-full rounded-full wl-qa-bg"
-                      data-qa-color={qaColor(pct)}
+                      className="h-full rounded-full"
+                      style={{ background: qaColor(pct) }}
                     />
                   </div>
                   <span className="wl-micro-badge font-mono text-foreground w-8 text-right">

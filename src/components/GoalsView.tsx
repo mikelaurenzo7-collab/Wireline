@@ -5,7 +5,6 @@ import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
-import { BRAND } from "../constants/brand-colors";
 
 /* ──────────────────────────────────────────────────────────────────────────
    GoalsView — the Insights → Goals tab.
@@ -52,11 +51,14 @@ interface GoalsData {
   goals: Goal[];
 }
 
+// CSS custom properties, not BRAND hex constants: the generated TS values are
+// the dark palette only, while these variables re-resolve under the Paper
+// (light) theme so the chip keeps AA contrast on white cards.
 const STATUS_META: Record<GoalStatus, { label: string; color: string }> = {
-  achieved: { label: "Achieved", color: BRAND.colors.primary },
-  ahead: { label: "Ahead of pace", color: BRAND.colors.primary },
-  on_track: { label: "On track", color: BRAND.colors.primary },
-  behind: { label: "Behind pace", color: BRAND.colors.onSurfaceMuted },
+  achieved: { label: "Achieved", color: "var(--wireline-color-action-primary-default)" },
+  ahead: { label: "Ahead of pace", color: "var(--wireline-color-action-primary-default)" },
+  on_track: { label: "On track", color: "var(--wireline-color-action-primary-default)" },
+  behind: { label: "Behind pace", color: "var(--wireline-color-text-secondary)" },
 };
 
 const num = (n: number) => n.toLocaleString();

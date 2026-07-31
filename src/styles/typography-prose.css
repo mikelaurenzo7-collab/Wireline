@@ -104,9 +104,13 @@
 }
 
 /* Referenced as a standalone modifier across insights and connection cards;
-   it only quiets the color — the base micro-meta scale is not implied. */
-.wl-micro-meta--muted {
-  color: var(--wireline-color-text-tertiary);
+   it only quiets the color — the base micro-meta scale is not implied.
+   Lives in @layer components so state utilities (hover:text-brand on the
+   area-code chips) still win over it. */
+@layer components {
+  .wl-micro-meta--muted {
+    color: var(--wireline-color-text-tertiary);
+  }
 }
 
 /* ============================================

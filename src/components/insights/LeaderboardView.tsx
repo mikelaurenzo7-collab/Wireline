@@ -56,23 +56,15 @@ export default function LeaderboardView({ days }: { days: number }) {
   if (!data || !data.agents?.length) return <InsightEmpty configKey="leaderboard" icon={Trophy} />;
 
   // Podium tones stay on the system ramp: violet action for first place,
-  // the silver wire for second, neutral for third.
+  // the silver wire for second, neutral for third. Card borders and glows
+  // come from .wl-leaderboard-card[data-rank] in letterpress-polish.css —
+  // border utilities here would lose to .wl-panel's unlayered shorthand.
   const RANK_STYLES: Array<{
-    ring: string;
     textClass: string;
   }> = [
-    {
-      ring: "border-brand/40",
-      textClass: "text-on-brand",
-    },
-    {
-      ring: "border-[color-mix(in_srgb,var(--wireline-color-action-secondary-default)_30%,transparent)]",
-      textClass: "text-[var(--wireline-color-action-secondary-default)]",
-    },
-    {
-      ring: "border-[color-mix(in_srgb,var(--wireline-color-status-neutral)_25%,transparent)]",
-      textClass: "text-[var(--wireline-color-status-neutral)]",
-    },
+    { textClass: "text-on-brand" },
+    { textClass: "text-[var(--wireline-color-action-secondary-default)]" },
+    { textClass: "text-[var(--wireline-color-status-neutral)]" },
   ];
 
   const agentRows: InsightsLeaderboardAgentRow[] = Array.isArray(data?.agents) ? data.agents : [];
@@ -80,10 +72,7 @@ export default function LeaderboardView({ days }: { days: number }) {
   return (
     <div className="space-y-3">
       {agentRows.map((a, i) => {
-        const rs = RANK_STYLES[i] ?? {
-          ring: "border-white/8",
-          textClass: "text-muted",
-        };
+        const rs = RANK_STYLES[i] ?? { textClass: "text-muted" };
         return (
           <motion.div
             key={a.agent_id}
@@ -93,7 +82,6 @@ export default function LeaderboardView({ days }: { days: number }) {
             className={cn(
               "relative rounded-md wl-panel border p-5 flex items-center gap-5 overflow-hidden",
               i < 3 && "wl-leaderboard-card",
-              rs.ring,
             )}
             data-rank={i < 3 ? String(i) : undefined}
           >

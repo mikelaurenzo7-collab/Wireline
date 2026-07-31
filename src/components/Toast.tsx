@@ -12,23 +12,14 @@ type ToastStackStyle = CSSProperties & {
   "--toast-mobile-bottom": string;
 };
 
+// Container surface and border come from `.toast-item[data-toast]` in
+// letterpress-polish.css — border utilities here would lose to .wl-panel's
+// unlayered shorthand. META only picks the glyph and its box tint.
 const META = {
-  success: {
-    icon: CheckCircle2,
-    border: "border-[color-mix(in_srgb,var(--wireline-color-status-success)_35%,transparent)]",
-    bg: "wl-status-success",
-  },
-  error: {
-    icon: XCircle,
-    border: "border-[var(--wireline-color-feedback-error-border)]",
-    bg: "bg-[var(--wireline-color-feedback-error-surface)]",
-  },
-  warning: {
-    icon: AlertTriangle,
-    border: "border-brand/35",
-    bg: "bg-brand/10",
-  },
-  info: { icon: Info, border: "border-brand/30", bg: "bg-brand/10" },
+  success: { icon: CheckCircle2, bg: "wl-status-success" },
+  error: { icon: XCircle, bg: "bg-[var(--wireline-color-feedback-error-surface)]" },
+  warning: { icon: AlertTriangle, bg: "bg-[var(--wireline-color-feedback-warning-surface)]" },
+  info: { icon: Info, bg: "bg-[var(--wireline-color-feedback-info-surface)]" },
 };
 
 function ToastItem({ toast }: { toast: Toast }) {
@@ -53,10 +44,7 @@ function ToastItem({ toast }: { toast: Toast }) {
       transition={
         reduceMotion ? { duration: 0.01 } : { type: "spring", stiffness: 380, damping: 32 }
       }
-      className={cn(
-        "toast-item relative w-full sm:w-80 max-w-full sm:max-w-[92vw] rounded-md wl-panel elev-2 border overflow-hidden toast-enter",
-        m.border,
-      )}
+      className="toast-item relative w-full sm:w-80 max-w-full sm:max-w-[92vw] rounded-md wl-panel elev-2 border overflow-hidden toast-enter"
       data-toast={toast.type}
     >
       <div className="absolute left-0 inset-y-0 w-0.5 rounded-full wl-toast-accent" />

@@ -180,8 +180,8 @@ function SpendBudgetCard() {
           </div>
           <div className="relative h-3 rounded-full bg-black/10 overflow-hidden">
             <div
-              className="absolute inset-y-0 w-px bg-black/30 wl-threshold-marker"
-              data-threshold-left={`${warnPct}%`}
+              className="absolute inset-y-0 w-px wl-threshold-marker"
+              style={{ left: `${warnPct}%` }}
               title={`Warn threshold ${warnPct}%`}
             />
             <motion.div
@@ -217,8 +217,8 @@ function SpendBudgetCard() {
             className="w-full h-11 px-4 rounded-md wl-panel border border-border outline-none text-foreground text-sm focus:border-brand/60 transition-all font-mono"
           />
           <span className="block text-[11px] leading-5 text-muted-foreground">
-            Up to ${safeFixed(maximumLimit, 2)} for the active plan. You can lower this guard,
-            but it cannot exceed the provider-cost envelope funded by the plan.
+            Up to ${safeFixed(maximumLimit, 2)} for the active plan. You can lower this guard, but
+            it cannot exceed the provider-cost envelope funded by the plan.
           </span>
         </label>
         <label className="space-y-1.5">
