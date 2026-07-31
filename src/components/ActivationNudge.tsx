@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { Phone, X } from "lucide-react";
 import { authFetch } from "../lib/api";
+import { formatPhone } from "../lib/safe-number";
 import { fetchAssistantSetupProgress } from "../lib/fleet-setup-progress";
 import {
   fetchActivationStatusFull,
@@ -167,7 +168,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
           {ACTIVATION_NUDGE_COPY.body}
         </p>
         <p className="mt-1 font-mono text-[length:var(--wireline-typography-caption-size)] tabular-nums text-[var(--wireline-color-text-secondary)]">
-          {phoneNumber}
+          {formatPhone(phoneNumber)}
         </p>
       </div>
       <a

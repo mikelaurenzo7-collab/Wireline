@@ -296,6 +296,13 @@
   margin-block: 0;
 }
 
+/* Reserve two lines for the compact label so a tile whose label wraps
+ * ("Customer conversations today") keeps its value on the same baseline as the
+ * single-line tiles beside it, instead of stair-stepping the KPI row. */
+.wl-metric-tile--compact .wl-metric-tile__label {
+  min-height: 2lh;
+}
+
 /* Two compact tiles sit side by side, so a 360px phone leaves each about 113px
  * of content. The icon is aria-hidden ornament; drop it where it cannot fit and
  * give the metric label the full tile width rather than letting the row push

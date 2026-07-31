@@ -53,7 +53,10 @@ export default function AppChromeSubTabs({
       />
       {secondary && secondary.tabs.length > 0 && (
         <>
-          <span aria-hidden="true" className="hidden h-5 w-px shrink-0 bg-black/10 sm:block" />
+          <span
+            aria-hidden="true"
+            className="hidden h-5 w-px shrink-0 bg-[color:var(--wireline-color-border-default)] sm:block"
+          />
           <ClientSubTabs
             tabs={secondary.tabs}
             activeId={secondary.activeId}

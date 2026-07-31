@@ -396,7 +396,8 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         : (triage?.counts?.[key] ?? triage?.[key]?.length ?? 0);
     return {
       id: key,
-      label: `${BUCKET_SHORT_LABELS[key]} (${count})`,
+      label: `${BUCKET_LABELS[key]} (${count})`,
+      shortLabel: `${BUCKET_SHORT_LABELS[key]} (${count})`,
     };
   });
 
