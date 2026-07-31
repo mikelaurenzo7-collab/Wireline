@@ -112,7 +112,7 @@ function InboxLoadingState({ frameClass }: { frameClass: string }) {
       aria-busy="true"
       aria-live="polite"
     >
-      <div className="w-full max-w-md space-y-3 rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-[var(--wireline-shadow-sm)]">
+      <div className="w-full max-w-md space-y-3 rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-[var(--wireline-elevation-sm)]">
         <Skeleton shape="text" className="h-4 w-28" />
         <Skeleton shape="text" className="h-7 w-3/4" />
         <Skeleton shape="text" className="h-4 w-full" />

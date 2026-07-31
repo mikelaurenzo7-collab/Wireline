@@ -55,33 +55,23 @@ export default function LeaderboardView({ days }: { days: number }) {
   if (err) return <ErrCard error={err} onRetry={() => setReloadKey((k) => k + 1)} />;
   if (!data || !data.agents?.length) return <InsightEmpty configKey="leaderboard" icon={Trophy} />;
 
+  // Podium tones stay on the system ramp: violet action for first place,
+  // the silver wire for second, neutral for third.
   const RANK_STYLES: Array<{
-    gradient?: string;
     ring: string;
-    glow: string;
     textClass: string;
-    iconBg: boolean;
   }> = [
     {
-      gradient: "linear-gradient(135deg, var(--color-brand), var(--color-brand-deep))",
       ring: "border-brand/40",
-      glow: "rgba(17, 17, 17, 0.18)",
       textClass: "text-on-brand",
-      iconBg: true,
     },
     {
-      gradient: "linear-gradient(135deg, rgba(17, 17, 17, 0.14), rgba(17, 17, 17, 0.06))",
-      ring: "border-brand-2/30",
-      glow: "rgba(17, 17, 17, 0.12)",
-      textClass: "text-brand-2",
-      iconBg: false,
+      ring: "border-[color-mix(in_srgb,var(--wireline-color-action-secondary-default)_30%,transparent)]",
+      textClass: "text-[var(--wireline-color-action-secondary-default)]",
     },
     {
-      gradient: "linear-gradient(135deg, rgba(17, 17, 17, 0.10), rgba(17, 17, 17, 0.04))",
-      ring: "border-brand-3/25",
-      glow: "rgba(17, 17, 17, 0.08)",
-      textClass: "text-brand-3",
-      iconBg: false,
+      ring: "border-[color-mix(in_srgb,var(--wireline-color-status-neutral)_25%,transparent)]",
+      textClass: "text-[var(--wireline-color-status-neutral)]",
     },
   ];
 
@@ -92,9 +82,7 @@ export default function LeaderboardView({ days }: { days: number }) {
       {agentRows.map((a, i) => {
         const rs = RANK_STYLES[i] ?? {
           ring: "border-white/8",
-          glow: "transparent",
           textClass: "text-muted",
-          iconBg: false,
         };
         return (
           <motion.div

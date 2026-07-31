@@ -371,7 +371,7 @@ export default function PageShell({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 360, damping: 32 }}
-              className="fixed bottom-0 left-0 right-0 z-[201] wl-panel-elevated border-t border-border md:hidden select-none pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-24px_48px_-20px_rgba(17,17,17,0.18),0_1px_0_rgba(255,255,255,0.75)_inset]"
+              className="fixed bottom-0 left-0 right-0 z-[201] wl-panel-elevated border-t border-border md:hidden select-none pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-24px_48px_-20px_rgba(0,0,0,0.55),var(--wireline-elevation-inset)]"
               drag="y"
               dragConstraints={{ top: 0 }}
               dragElastic={{ top: 0, bottom: 0.35 }}

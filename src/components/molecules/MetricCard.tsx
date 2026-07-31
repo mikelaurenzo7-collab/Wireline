@@ -10,9 +10,12 @@ export const metricCardVariants = cva(
     variants: {
       tone: {
         default: "border-border bg-card",
-        positive: "border-[var(--wireline-success-border)] bg-[var(--wireline-success-surface)]",
-        warning: "border-[var(--wireline-warning-border)] bg-[var(--wireline-warning-surface)]",
-        danger: "border-[var(--wireline-error-border)] bg-[var(--wireline-error-surface)]",
+        positive:
+          "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)]",
+        warning:
+          "border-[var(--wireline-color-feedback-warning-border)] bg-[var(--wireline-color-feedback-warning-surface)]",
+        danger:
+          "border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)]",
       },
     },
     defaultVariants: {
@@ -45,9 +48,9 @@ export function MetricCard({
   const TrendIcon = trend === "up" ? ArrowUpRight : trend === "down" ? ArrowDownRight : Minus;
   const trendClass =
     trend === "up"
-      ? "text-[var(--wireline-success)]"
+      ? "text-[var(--wireline-color-status-success)]"
       : trend === "down"
-        ? "text-[var(--wireline-error)]"
+        ? "text-[var(--wireline-color-status-error)]"
         : "text-muted-foreground";
 
   return (

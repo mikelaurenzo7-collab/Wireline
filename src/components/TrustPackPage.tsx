@@ -2,14 +2,7 @@
  * Vertical trust packs — review-ready evidence and boundaries for regulated buyers.
  */
 import { Link, useParams } from "react-router-dom";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  FileCheck2,
-  ShieldAlert,
-  ShieldCheck,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, FileCheck2, ShieldAlert, ShieldCheck } from "lucide-react";
 import MarketingChrome from "./marketing/MarketingChrome";
 import { PageMeta } from "../lib/page-meta";
 
@@ -266,7 +259,7 @@ export default function TrustPackPage() {
           aria-labelledby="boundary"
         >
           <div className="flex items-start gap-3">
-            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" aria-hidden="true" />
+            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
             <div>
               <h2 id="boundary" className="text-sm font-semibold text-foreground">
                 Important boundary

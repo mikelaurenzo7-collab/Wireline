@@ -16,7 +16,7 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: var(--wireline-radius-lg);
   border: 1px solid var(--wireline-color-border-default);
   background:
     radial-gradient(
@@ -106,7 +106,7 @@
   align-items: center;
   gap: 0.5rem 0.75rem;
   border-radius: 10px;
-  border: 1px solid var(--wireline-color-border-subtle);
+  border: 1px solid var(--wireline-color-border-soft);
   background: color-mix(in srgb, var(--wireline-color-surface-subtle) 88%, transparent);
   padding: 0.55rem 0.75rem;
   font-size: 11px;
@@ -124,7 +124,7 @@
   align-items: center;
   gap: 0.35rem;
   border-radius: 999px;
-  border: 1px solid var(--wireline-color-border-subtle);
+  border: 1px solid var(--wireline-color-border-soft);
   background: var(--wireline-color-surface-default);
   padding: 0.15rem 0.5rem;
   font-family: var(--wireline-font-mono);

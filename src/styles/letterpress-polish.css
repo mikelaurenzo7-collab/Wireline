@@ -226,6 +226,142 @@
   );
 }
 
+/* Freeform status tones — the surface/text halves of the chip tones, for
+   call sites that bring their own shape (toasts, list rows, table cells,
+   trend deltas). These names were referenced across the app without a
+   definition, so every success state rendered untinted. */
+.wl-status-success {
+  background: var(--wireline-color-feedback-success-surface);
+  border-color: var(--wireline-color-feedback-success-border);
+}
+
+.wl-text-success {
+  color: var(--wireline-color-status-success);
+}
+
+/* Accent helper family — the action-violet color halves used by billing,
+   usage, insights, and page shells. Call sites bring their own geometry;
+   these carry only the accent so it always tracks the action token. They
+   were referenced app-wide without a definition, so accent icon boxes,
+   halos, dots, and progress fills rendered colorless. */
+.wl-accent-text {
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wl-accent-dot {
+  background: var(--wireline-color-action-primary-default);
+}
+
+.wl-accent-surface,
+.wl-accent-icon-box,
+.wl-accent-icon-chip,
+.wl-accent-metric-chip {
+  background: var(--wireline-color-action-primary-container);
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wl-accent-metric-chip--subtle {
+  background: var(--wireline-color-surface-subtle);
+  color: var(--wireline-color-text-secondary);
+}
+
+.wl-accent-halo {
+  background: var(--wireline-color-glow-primary);
+}
+
+.wl-accent-bar-fade {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--wireline-color-action-primary-default),
+    transparent
+  );
+}
+
+.wl-accent-hover-bar {
+  background: var(--wireline-color-action-primary-default);
+}
+
+.wl-accent-border-l {
+  border-left-color: var(--wireline-color-action-primary-default);
+}
+
+.wl-accent-progress {
+  background: var(--wireline-color-action-primary-default);
+}
+
+.wl-accent-progress-glow {
+  box-shadow:
+    var(--wireline-elevation-inset),
+    0 0 20px -6px var(--wireline-color-action-primary-default);
+}
+
+.wl-accent-tag {
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wl-accent-cta,
+.wl-accent-subscribe {
+  border-color: color-mix(in srgb, var(--wireline-color-action-primary-default) 45%, transparent);
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wl-brand-text {
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wl-brand-bg,
+.wl-brand-icon-solid {
+  background: var(--wireline-color-action-primary-default);
+  color: var(--wireline-color-text-onAction);
+}
+
+/* Insights leaderboard podium — violet action for first, silver wire for
+   second, neutral for third. Referenced by data-rank without a definition,
+   so the top-three avatars (including the rank-one trophy) drew no surface. */
+.wl-leaderboard-avatar[data-rank="0"] {
+  background: linear-gradient(
+    135deg,
+    var(--wireline-color-action-primary-pressed),
+    var(--wireline-color-action-primary-default)
+  );
+  color: var(--wireline-color-text-onAction);
+}
+
+.wl-leaderboard-avatar[data-rank="1"] {
+  background: linear-gradient(
+    135deg,
+    var(--wireline-color-action-secondary-containerStrong),
+    var(--wireline-color-action-secondary-container)
+  );
+  color: var(--wireline-color-action-secondary-default);
+}
+
+.wl-leaderboard-avatar[data-rank="2"] {
+  background: linear-gradient(
+    135deg,
+    var(--wireline-color-surface-strong),
+    var(--wireline-color-surface-container)
+  );
+  color: var(--wireline-color-status-neutral);
+}
+
+.wl-leaderboard-card[data-rank="0"] {
+  box-shadow:
+    var(--wireline-elevation-card),
+    0 0 24px -10px var(--wireline-color-glow-primary);
+}
+
+.wl-leaderboard-card[data-rank="1"] {
+  box-shadow:
+    var(--wireline-elevation-card),
+    0 0 24px -12px var(--wireline-color-glow-wire);
+}
+
+.wl-leaderboard-card[data-rank="2"] {
+  box-shadow: var(--wireline-elevation-card);
+}
+
 /* ----------------------------------------------------------------------------
  * 6. Metric tile — refined Overview / Insights tile with a top wireline
  *    glow and a generous baseline.

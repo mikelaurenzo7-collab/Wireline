@@ -76,47 +76,6 @@
   outline-offset: 2px;
 }
 
-.wl-stitch-sidebar-link {
-  min-height: 2.625rem;
-  font-size: 0.8125rem;
-  color: color-mix(
-    in srgb,
-    var(--wireline-color-text-secondary) 88%,
-    var(--wireline-color-text-primary)
-  );
-}
-
-.wl-stitch-sidebar-link:hover {
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-container) 5%,
-    var(--wireline-color-surface-default)
-  );
-  color: var(--wireline-color-text-primary);
-}
-
-.wl-stitch-sidebar-link[aria-current="page"] {
-  position: relative;
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-container) 55%,
-    var(--wireline-color-surface-default)
-  );
-  color: var(--wireline-color-action-primary-default);
-  font-weight: 600;
-}
-
-.wl-stitch-sidebar-link[aria-current="page"]::before {
-  display: block;
-  position: absolute;
-  left: -0.75rem;
-  width: 0.1875rem;
-  height: 1.25rem;
-  border-radius: 999px;
-  background: var(--wireline-color-action-primary-default);
-  content: "";
-}
-
 .wl-workspace-header {
   background: color-mix(in srgb, var(--wireline-color-canvas-default) 86%, transparent);
   backdrop-filter: blur(18px);
@@ -143,11 +102,11 @@
   box-shadow: var(--wireline-elevation-sm);
 }
 
-.wl-workspace-content :is(.studio-card, .wl-setup-surface) :is(h2, h3) {
+.wl-workspace-content .studio-card :is(h2, h3) {
   text-wrap: balance;
 }
 
-.wl-workspace-content :is(.studio-card, .wl-setup-surface) p {
+.wl-workspace-content .studio-card p {
   text-wrap: pretty;
 }
 
@@ -164,32 +123,6 @@
   color: var(--wireline-color-text-secondary);
   font-size: 0.9375rem;
   line-height: 1.6;
-}
-
-.wl-setup-surface {
-  display: grid;
-  gap: 1.25rem;
-  border: 1px solid var(--wireline-color-border-default);
-  border-radius: var(--radius-xl);
-  background: var(--wireline-color-surface-default);
-  padding: clamp(1.25rem, 1rem + 1vw, 2rem);
-}
-
-.wl-setup-surface__eyebrow {
-  font-family: var(--wireline-font-mono);
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--wireline-color-action-primary-default);
-}
-
-.wl-setup-surface__title {
-  font-family: var(--wireline-font-display);
-  font-size: clamp(1.375rem, 1.15rem + 0.75vw, 1.9rem);
-  font-weight: 400;
-  letter-spacing: -0.025em;
-  line-height: 1.1;
 }
 
 /* Knowledge previously forced four independently scrolling columns into the desktop viewport. */
@@ -212,93 +145,6 @@
 
 /* .marketing-hero background — wireline-signature.css. */
 
-.marketing-operating-model {
-  overflow: hidden;
-  border: 1px solid
-    color-mix(
-      in srgb,
-      var(--wireline-color-action-primary-container) 20%,
-      var(--wireline-color-border-default)
-    );
-  border-radius: calc(var(--radius-xl) + 2px);
-  background: var(--wireline-color-surface-default);
-  box-shadow:
-    0 24px 50px -38px
-      color-mix(in srgb, var(--wireline-color-action-primary-container) 52%, transparent),
-    var(--wireline-shadow-sm);
-}
-
-.marketing-operating-model__header {
-  display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  border-bottom: 1px solid var(--wireline-color-border-default);
-  padding: 1.25rem;
-}
-
-.marketing-operating-model__body {
-  display: grid;
-  gap: 0;
-  padding: 0.5rem 1.25rem;
-}
-
-.marketing-operating-model__row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 1rem;
-  border-bottom: 1px solid var(--wireline-color-border-default);
-  padding: 0.9rem 0;
-  font-size: 0.8125rem;
-}
-
-.marketing-operating-model__row span {
-  color: var(--wireline-color-text-secondary);
-}
-
-.marketing-operating-model__row strong {
-  color: var(--wireline-color-text-primary);
-  font-weight: 600;
-}
-
-.marketing-operating-model__outcome {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  margin: 0 1.25rem 1.25rem;
-  border: 1px solid
-    color-mix(
-      in srgb,
-      var(--wireline-color-action-primary-container) 16%,
-      var(--wireline-color-border-default)
-    );
-  border-radius: var(--radius-lg);
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-container) 7%,
-    var(--wireline-color-surface-default)
-  );
-  padding: 1rem;
-  color: var(--wireline-color-action-primary-default);
-}
-
-.marketing-operating-model__outcome p:last-child {
-  color: var(--wireline-color-text-primary);
-}
-
-.marketing-channel-card {
-  box-shadow: var(--wireline-elevation-sm);
-}
-
-.marketing-channel-card:hover {
-  border-color: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-container) 35%,
-    var(--wireline-color-border-default)
-  );
-}
-
 @media (min-width: 1280px) {
   [data-wireline-route="/knowledge"] .wl-workspace-content-inner > .flex > .xl\:grid {
     grid-template-columns: minmax(220px, 0.9fr) minmax(220px, 0.9fr) minmax(250px, 1fr) minmax(
@@ -312,10 +158,6 @@
     position: sticky;
     top: 1rem;
     align-self: start;
-  }
-
-  .marketing-operating-model {
-    transform: translateY(2px);
   }
 }
 
@@ -348,53 +190,6 @@
 @media (min-width: 1280px) {
   .wl-workspace-content {
     padding-right: 0.25rem;
-  }
-}
-
-/* Studio Agent Canvas — staggered card entrance (Claude Design spatial canvas).
-   Honors prefers-reduced-motion by collapsing to a static fade-in. */
-@keyframes wlCanvasFadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.wl-canvas-card {
-  animation: wlCanvasFadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Copper wire cap — authenticated Studio signature (quieter than marketing). */
-.wl-canvas-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 1.25rem;
-  right: 1.25rem;
-  height: 2px;
-  border-radius: 999px;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    var(--wireline-color-action-secondary-default),
-    color-mix(in srgb, var(--wireline-color-action-primary-default) 65%, transparent) 58%,
-    transparent
-  );
-}
-
-/* Studio cards use wl-paper cap from letterpress — suppress duplicate canvas cap. */
-.wl-canvas-card.wl-canvas-card--letterpress::before {
-  display: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .wl-canvas-card {
-    animation: none;
   }
 }
 

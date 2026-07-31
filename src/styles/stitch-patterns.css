@@ -1,9 +1,7 @@
-/* Wireline shared component patterns — legacy stitch namespace, live semantic token layer. */
-.wl-stitch-gradient-radial,
-.wl-stitch-gradient-card {
-  background: var(--wireline-page);
-  background-image: none;
-}
+/* Wireline shared component patterns — legacy stitch namespace, live semantic token layer.
+   Only classes referenced by live markup belong here; retired stitch prototypes
+   (pricing cards, rosters, bento grids, data tables, sidebars) were removed once
+   their surfaces migrated to the Letterpress primitives. */
 
 .wl-stitch-label,
 .wl-stitch-eyebrow {
@@ -44,10 +42,6 @@
 }
 
 .wl-stitch-card,
-.wl-stitch-agent-card,
-.wl-stitch-pricing-card,
-.wl-stitch-knowledge-panel,
-.wl-stitch-connection-card,
 .wl-stitch-auth-card {
   border: 1px solid var(--wireline-color-border-default);
   border-radius: var(--radius-xl);
@@ -87,66 +81,20 @@
 
 /* Motion is opt-in. Static information should remain still. */
 .wl-stitch-card-hover,
-.wl-card-action,
-.wl-stitch-agent-card.wl-card-action,
-.wl-stitch-pricing-card.wl-card-action,
-.wl-stitch-knowledge-panel.wl-card-action,
-.wl-stitch-connection-card.wl-card-action {
+.wl-card-action {
   transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out, background-color 0.2s ease-out, transform 0.2s ease-out;
 }
 
 .wl-stitch-card-hover:hover,
-.wl-card-action:hover,
-.wl-stitch-agent-card.wl-card-action:hover,
-.wl-stitch-pricing-card.wl-card-action:hover,
-.wl-stitch-knowledge-panel.wl-card-action:hover,
-.wl-stitch-connection-card.wl-card-action:hover {
+.wl-card-action:hover {
   border-color: color-mix(in srgb, var(--accent) 50%, var(--wireline-color-border-default));
   box-shadow: var(--wireline-elevation-md);
   transform: translateY(-1px);
 }
 
 .wl-stitch-card-hover:active,
-.wl-card-action:active,
-.wl-stitch-agent-card.wl-card-action:active,
-.wl-stitch-pricing-card.wl-card-action:active,
-.wl-stitch-knowledge-panel.wl-card-action:active,
-.wl-stitch-connection-card.wl-card-action:active {
+.wl-card-action:active {
   transform: translateY(0);
-}
-
-.wl-stitch-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--wireline-color-border-default));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--primary) 8%, var(--wireline-color-surface-default));
-  padding: 4px 10px;
-  font-family: var(--wireline-font-mono);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--primary);
-}
-
-.wl-stitch-status-dot {
-  display: inline-flex;
-  width: 8px;
-  height: 8px;
-}
-
-.wl-stitch-status-dot::before {
-  display: none;
-}
-
-.wl-stitch-status-dot::after {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--primary);
 }
 
 .wl-stitch-nav-header {
@@ -214,258 +162,6 @@
 
 .wl-stitch-input::placeholder {
   color: color-mix(in srgb, var(--wireline-color-text-secondary) 60%, transparent);
-}
-
-.wl-stitch-sidebar {
-  border-right: 1px solid var(--wireline-color-border-default);
-  background: var(--wireline-color-surface-default);
-}
-
-.wl-stitch-sidebar-link {
-  display: flex;
-  align-items: center;
-  border-radius: var(--radius-md);
-  font-family: var(--wireline-font-family-body);
-  font-size: var(--wireline-typography-body-size);
-  font-weight: 500;
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--wireline-color-text-secondary);
-  transition: background-color 0.2s ease-out, color 0.2s ease-out;
-}
-
-.wl-stitch-sidebar-link:hover {
-  background: var(--wireline-color-surface-subtle);
-  color: var(--wireline-color-text-primary);
-}
-
-.wl-stitch-sidebar-link[aria-current="page"] {
-  background: var(--accent);
-  color: var(--accent-foreground);
-  box-shadow: none;
-}
-
-.wl-stitch-sidebar-link[aria-current="page"]::before {
-  display: none;
-}
-
-.wl-stitch-stat-box {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  border: 1px solid var(--wireline-color-border-default);
-  border-radius: var(--radius-xl);
-  background: var(--wireline-color-surface-default);
-  padding: 14px 16px;
-  box-shadow: var(--wireline-elevation-sm);
-}
-
-.wl-stitch-stat-box strong {
-  font-family: var(--wireline-font-display);
-  font-size: var(--wireline-typography-h3-size);
-  font-weight: 400;
-  letter-spacing: -0.03em;
-  color: var(--wireline-color-text-primary);
-}
-
-.wl-stitch-bento {
-  display: grid;
-  gap: 16px;
-}
-
-.wl-stitch-bento-span-2 {
-  grid-column: span 1;
-}
-
-@media (min-width: 768px) {
-  .wl-stitch-bento {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .wl-stitch-bento-span-2 {
-    grid-column: span 2;
-  }
-}
-
-.wl-stitch-pricing-card {
-  display: flex;
-  min-height: 100%;
-  flex-direction: column;
-  padding: 24px;
-}
-
-.wl-stitch-pricing-card--featured {
-  position: relative;
-  border: 2px solid var(--accent);
-}
-
-.wl-stitch-pricing-badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  border-bottom-left-radius: var(--radius-md);
-  border-top-right-radius: var(--radius-sm);
-  background: var(--accent);
-  padding: 4px 12px;
-  font-family: var(--wireline-font-mono);
-  font-size: var(--wireline-typography-overline-size);
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #fff;
-}
-
-.wl-stitch-interval-toggle {
-  display: inline-flex;
-  border: 1px solid var(--wireline-color-border-default);
-  border-radius: var(--radius-md);
-  background: var(--wireline-color-surface-default);
-  padding: 4px;
-}
-
-.wl-stitch-interval-toggle button {
-  min-height: 40px;
-  border-radius: var(--radius-sm);
-  padding: 8px 16px;
-}
-
-.wl-stitch-interval-toggle button[aria-pressed="true"] {
-  background: var(--accent);
-  color: #fff;
-}
-
-.wl-stitch-data-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-  font-size: var(--wireline-typography-body-size);
-}
-
-.wl-stitch-data-table thead tr,
-.wl-stitch-data-table tbody tr {
-  border-bottom: 1px solid var(--wireline-color-border-default);
-}
-
-.wl-stitch-data-table th {
-  padding: 16px 20px;
-  font-family: var(--wireline-font-mono);
-  font-size: var(--wireline-typography-overline-size);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--wireline-color-text-secondary);
-}
-
-.wl-stitch-data-table td {
-  padding: 16px 20px;
-  color: var(--wireline-color-text-primary);
-}
-
-.wl-stitch-data-table tbody tr:hover {
-  background: var(--wireline-color-surface-subtle);
-}
-
-.wl-stitch-roster-card {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: 16px;
-  border: 1px solid var(--wireline-color-border-default);
-  border-radius: var(--radius-xl);
-  background: var(--wireline-color-surface-default);
-  padding: 16px;
-  text-align: left;
-  transition: border-color 0.2s ease-out, background-color 0.2s ease-out, transform 0.2s ease-out;
-}
-
-.wl-stitch-roster-card:hover,
-.wl-stitch-roster-card--active {
-  border-color: var(--accent);
-  background: var(--wireline-color-surface-subtle);
-}
-
-.wl-stitch-roster-card:active {
-  transform: translateY(1px);
-}
-
-.wl-stitch-build-map-tab {
-  border-bottom: 2px solid transparent;
-  padding: 8px 4px;
-  font-family: var(--wireline-font-mono);
-  font-size: var(--wireline-typography-overline-size);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--wireline-color-text-secondary);
-}
-
-.wl-stitch-build-map-tab--active {
-  border-bottom-color: var(--accent);
-  color: var(--accent);
-}
-
-.wl-stitch-knowledge-panel {
-  display: flex;
-  min-height: 192px;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.wl-stitch-knowledge-panel__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border-bottom: 1px solid var(--wireline-color-border-default);
-  background: var(--wireline-color-surface-subtle);
-  padding: 14px 16px;
-}
-
-.wl-stitch-knowledge-entry {
-  border: 1px solid var(--wireline-color-border-default);
-  border-radius: var(--radius-lg);
-  background: var(--wireline-color-surface-default);
-  padding: 14px 16px;
-  font-size: var(--wireline-typography-body-size);
-  line-height: 1.5;
-  color: var(--wireline-color-text-primary);
-}
-
-.wl-stitch-tool-row {
-  transition: background-color 0.2s ease-out, transform 0.2s ease-out;
-}
-
-.wl-stitch-tool-row:hover:not(:disabled) {
-  background: var(--wireline-color-surface-subtle);
-}
-
-.wl-stitch-tool-row:active:not(:disabled) {
-  transform: translateY(1px);
-}
-
-.wl-stitch-tool-check {
-  display: grid;
-  height: 18px;
-  width: 18px;
-  flex-shrink: 0;
-  place-items: center;
-  border: 2px solid var(--wireline-color-border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--wireline-color-surface-default);
-}
-
-.wl-stitch-tool-row[aria-pressed="true"] .wl-stitch-tool-check {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: #fff;
-}
-
-.wl-stitch-connection-card {
-  display: flex;
-  min-height: 160px;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 20px;
 }
 
 .wl-stitch-auth-divider {

@@ -74,27 +74,6 @@
   .marketing-hero-proof span:nth-child(n + 4) {
     border-top: 1px solid var(--wireline-color-border-default);
   }
-  .marketing-channel-grid {
-    gap: 0.75rem;
-  }
-  .marketing-channel-row {
-    min-height: 0;
-    gap: 0.625rem;
-    padding: 1rem;
-  }
-  .marketing-channel-row__icon,
-  .marketing-channel-row__icon + div {
-    margin-bottom: 0.5rem;
-  }
-  .marketing-channel-row .wl-section-title {
-    font-size: 1.12rem !important;
-    line-height: 1.05;
-  }
-  .marketing-channel-row p:last-child {
-    margin-top: 0.5rem;
-    font-size: 0.92rem;
-    line-height: 1.45;
-  }
   .marketing-demo-surface {
     align-items: stretch;
     gap: 1rem;
@@ -112,10 +91,6 @@
     justify-content: center;
   }
   .wl-stitch-card,
-  .wl-stitch-agent-card,
-  .wl-stitch-pricing-card,
-  .wl-stitch-knowledge-panel,
-  .wl-stitch-connection-card,
   .wl-stitch-auth-card {
     border-radius: var(--radius-lg);
     box-shadow: none;

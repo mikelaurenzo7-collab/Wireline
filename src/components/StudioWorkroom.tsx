@@ -104,7 +104,7 @@ function MessageBubble({
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
         </div>
         {mode === "configure" && message.proposals && suggestions > 0 ? (
-          <div className="mt-2 rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-3 py-2 text-xs text-primary">
+          <div className="mt-2 rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-3 py-2 text-xs text-[var(--wireline-color-status-success)]">
             {suggestions} proposed update{suggestions === 1 ? "" : "s"} ready for review.
           </div>
         ) : null}

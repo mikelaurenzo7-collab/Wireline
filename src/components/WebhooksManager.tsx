@@ -441,7 +441,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
             {hook.last_status !== null && (
               <span
                 className={cn(
-                  "px-2 py-0.5 rounded-full wl-label border flex items-center gap-1",
+                  "px-2 py-0.5 rounded-full wl-label border flex items-center gap-1 font-mono",
                   hook.last_status >= 200 && hook.last_status < 300
                     ? WL_APP_CLASSES.statusOk
                     : "bg-destructive/10 text-destructive border-destructive/20",
@@ -468,7 +468,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
             ))}
           </div>
           {hook.last_triggered_at && (
-            <div className="wl-label-muted mt-2 flex items-center gap-2">
+            <div className="wl-label-muted mt-2 flex items-center gap-2 tabular-nums">
               <span>Last fired: {formatDateTime(hook.last_triggered_at)}</span>
               {hook.delivery_count !== null && hook.delivery_count > 0 && (
                 <span>· {hook.delivery_count} deliveries</span>

@@ -15,7 +15,7 @@ type ToastStackStyle = CSSProperties & {
 const META = {
   success: {
     icon: CheckCircle2,
-    border: "border-[color-mix(in_srgb,var(--wireline-signal)_35%,transparent)]",
+    border: "border-[color-mix(in_srgb,var(--wireline-color-status-success)_35%,transparent)]",
     bg: "wl-status-success",
   },
   error: {

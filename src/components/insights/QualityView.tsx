@@ -248,7 +248,7 @@ export default function QualityView({ days }: { days: number }) {
                     background: "var(--card)",
                     border: "1px solid var(--border)",
                     borderRadius: 12,
-                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+                    boxShadow: "var(--wireline-elevation-card)",
                     fontSize: "12px",
                     padding: "8px 12px",
                   }}

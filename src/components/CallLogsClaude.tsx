@@ -478,7 +478,7 @@ function FloorTab({
             />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-baseline gap-2">
-                <span className="text-sm font-semibold text-[var(--wireline-color-text-primary)]">
+                <span className="font-[var(--wireline-font-mono)] text-sm font-semibold text-[var(--wireline-color-text-primary)]">
                   {call.customer_number || "Unknown caller"}
                 </span>
                 <span className="font-[var(--wireline-font-mono)] text-[10px] text-[var(--wireline-color-text-tertiary)]">
@@ -582,7 +582,7 @@ function IntelTab({
             className="flex items-center gap-3.5 rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-4 transition-colors hover:border-[var(--wireline-color-action-primary-default)]"
           >
             <div
-              className="grid size-9 shrink-0 place-items-center rounded-[9px] text-base"
+              className="grid size-9 shrink-0 place-items-center rounded-[var(--wireline-radius-md)] text-base"
               style={{
                 background: "var(--wireline-color-feedback-success-surface)",
                 color: "var(--wireline-color-action-primary-pressed)",
@@ -669,10 +669,10 @@ function TriageTab({
               >
                 {humanizeTaxonomy(call.outcome_tag, "Voice")}
               </span>
-              <span className="text-sm font-semibold text-[var(--wireline-color-text-primary)]">
+              <span className="font-[var(--wireline-font-mono)] text-sm font-semibold text-[var(--wireline-color-text-primary)]">
                 {call.customer_number || "Unknown caller"}
               </span>
-              <span className="ml-auto text-xs text-[var(--wireline-color-text-tertiary)]">
+              <span className="ml-auto font-[var(--wireline-font-mono)] text-xs text-[var(--wireline-color-text-tertiary)]">
                 {formatTime(call.created_at)}
               </span>
             </div>

@@ -78,7 +78,14 @@ function Ring({
   return (
     <div className="relative w-[132px] h-[132px] shrink-0">
       <svg viewBox="0 0 132 132" className="w-full h-full -rotate-90">
-        <circle cx="66" cy="66" r={R} fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="11" />
+        <circle
+          cx="66"
+          cy="66"
+          r={R}
+          fill="none"
+          stroke="var(--wireline-color-border-default)"
+          strokeWidth="11"
+        />
         <motion.circle
           cx="66"
           cy="66"

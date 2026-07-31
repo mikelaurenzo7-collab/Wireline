@@ -112,19 +112,19 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                   "rounded-md border p-4",
                   tile.healthy
                     ? "bg-brand/8 border-brand/20"
-                    : "bg-amber-50/50 border-amber-200/50",
+                    : "bg-[var(--wireline-color-feedback-warning-surface)] border-[var(--wireline-color-feedback-warning-border)]",
                 )}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <tile.icon
-                    className={cn("w-3 h-3", tile.healthy ? "text-brand" : "text-brand-deep")}
+                    className={cn("w-3 h-3", tile.healthy ? "text-brand" : "text-warning")}
                   />
                   <p className="font-mono wl-label text-muted">{tile.label}</p>
                 </div>
                 <p
                   className={cn(
                     "font-display italic text-2xl",
-                    tile.healthy ? "text-brand" : "text-brand-deep",
+                    tile.healthy ? "text-brand" : "text-warning",
                   )}
                 >
                   {tile.value}
@@ -157,9 +157,11 @@ export default function VoiceLatencyView({ days }: { days: number }) {
           )}
 
           {!ttftHealthy && (
-            <div className="flex items-center gap-2 mt-4 p-3 rounded-md bg-amber-50 border border-amber-200">
+            <div className="flex items-center gap-2 mt-4 p-3 rounded-md bg-[var(--wireline-color-feedback-warning-surface)] border border-[var(--wireline-color-feedback-warning-border)]">
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-              <p className="text-xs text-amber-800">TTFT p95 &gt; 1.2s</p>
+              <p className="text-xs text-[var(--wireline-color-status-warning)]">
+                TTFT p95 &gt; 1.2s
+              </p>
             </div>
           )}
         </div>

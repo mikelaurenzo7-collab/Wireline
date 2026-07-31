@@ -45,12 +45,13 @@
 
 .wl-public-rail,
 .wl-measure {
-  width: min(100%, 1180px);
+  width: min(100%, var(--wireline-layout-contentMax, 72rem));
   margin-inline: auto;
 }
 
+/* .wl-card's shell lives in typography-prose.css (radius-lg, padded);
+   listing it here too gave it a second, conflicting radius. */
 .wl-stitch-card,
-.wl-card,
 .studio-card {
   border: 1px solid var(--wireline-rule);
   border-radius: var(--wireline-radius-xl);
@@ -60,31 +61,6 @@
 
 .wl-stitch-card:hover {
   border-color: var(--wireline-rule-strong);
-}
-
-.wl-stitch-sidebar,
-.wl-workspace-sidebar {
-  background: var(--wireline-card);
-  border-color: var(--wireline-rule);
-}
-
-.wl-stitch-sidebar-link {
-  color: var(--wireline-ink-muted);
-  text-decoration: none;
-  transition:
-    background-color var(--transition-base),
-    color var(--transition-base),
-    border-color var(--transition-base);
-}
-
-.wl-stitch-sidebar-link:hover {
-  background: var(--wireline-card-muted);
-  color: var(--wireline-ink);
-}
-
-.wl-stitch-sidebar-link[aria-current="page"] {
-  background: var(--wireline-action-soft);
-  color: var(--wireline-action);
 }
 
 .marketing-btn-primary,
@@ -239,61 +215,6 @@
       transparent 32rem
     ),
     var(--wireline-page);
-}
-
-.marketing-channel-grid {
-  display: grid;
-  gap: 1rem;
-}
-
-@keyframes wl-wave-bar {
-  0%,
-  100% {
-    transform: scaleY(0.3);
-  }
-
-  50% {
-    transform: scaleY(1);
-  }
-}
-
-@keyframes wl-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.wireline-wave-bar {
-  animation: wl-wave-bar 1.2s ease-in-out infinite;
-  animation-delay: var(--wl-wave-delay, 0s);
-}
-
-.wireline-hero-motion {
-  animation: wl-fade-up 0.7s ease-out both;
-}
-
-.wireline-hero-motion--delay {
-  animation-delay: 0.15s;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .wireline-hero-motion,
-  .wireline-wave-bar {
-    animation: none !important;
-    transform: none !important;
-  }
-}
-
-@media (min-width: 768px) {
-  .marketing-channel-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 .text-primary {
