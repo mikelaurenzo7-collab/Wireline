@@ -70,6 +70,19 @@ describe("authenticated responsive polish contract", () => {
     expect(dnc).not.toContain("sm:grid-cols-4");
   });
 
+  it("gives the Wireline number its own line on phones", () => {
+    const panel = read("src/components/PhoneSetupPanel.tsx");
+
+    // The card is 210px of content at 360px. With the status chip beside it the
+    // number heading got 113px and broke across three lines at 28px — and that
+    // hit real numbers, not just the placeholder: "(312) 555-0142" needs 117px.
+    // Stacking under `sm` gives the heading the full 208px.
+    expect(panel).toContain(
+      "flex flex-col-reverse items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4",
+    );
+    expect(panel).not.toContain('<div className="flex items-start justify-between gap-4">');
+  });
+
   it("keeps compact metric tiles from clipping their own icon", () => {
     const css = read("src/styles/letterpress-polish.css");
     const overview = read("src/pages/OverviewPage.tsx");

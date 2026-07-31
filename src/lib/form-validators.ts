@@ -404,6 +404,18 @@ export const FollowUpTaskCreateSchema = z.object({
   // Ownership is still enforced by the `agent_id -> wireline_agents.id`
   // foreign key plus tenant-scoped RLS on the insert.
   agent_id: z.string().max(120, "Invalid agent ID").optional().nullable(),
-  due_date: z.string().max(40).optional().nullable(),
+  // A string is not necessarily a date. `new Date("not-a-date")` yields an
+  // Invalid Date, which the create handler passed straight to the driver and
+  // surfaced as an opaque 500 for what is a malformed request. The update path
+  // already guards this; the create path was never given the same check.
+  // Empty, null, and absent all mean "no due date" and stay valid.
+  due_date: z
+    .string()
+    .max(40)
+    .optional()
+    .nullable()
+    .refine((value) => !value || !Number.isNaN(new Date(value).getTime()), {
+      message: "due_date must be a valid date",
+    }),
 });
 export type FollowUpTaskCreate = z.infer<typeof FollowUpTaskCreateSchema>;

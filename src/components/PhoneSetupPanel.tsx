@@ -215,7 +215,15 @@ export default function PhoneSetupPanel() {
       </section>
 
       <section className="rounded-2xl border border-primary/20 bg-primary p-5 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
-        <div className="flex items-start justify-between gap-4">
+        {/*
+         * The status chip sits above the number on phones rather than beside it.
+         * At 360px this card is 210px of content, and the chip plus its gap took
+         * 95px of that — leaving the number 113px and breaking a 28px display
+         * heading across three lines. That hit real numbers too, not just this
+         * placeholder: "(312) 555-0142" needs 117px on one line. Stacking gives
+         * the heading the full 208px; from `sm` up the original row is restored.
+         */}
+        <div className="flex flex-col-reverse items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0">
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">
               Your Wireline number
