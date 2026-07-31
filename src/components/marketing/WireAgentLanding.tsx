@@ -219,7 +219,7 @@ export default function WireAgentLanding() {
                   buttonLabel="Start the live demo"
                   fallback={
                     <div className="text-center">
-                      <p className="text-[15px] leading-6 text-muted-foreground">
+                      <p className="mx-auto text-[15px] leading-6 text-muted-foreground">
                         Prefer the phone? Call a live demo line without signing up.
                       </p>
                       <a
