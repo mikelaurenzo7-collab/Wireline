@@ -2,16 +2,19 @@ package com.wireline.app.auth
 
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import androidx.security.crypto.MasterKeys
 import java.util.UUID
 
 class AuthTokenStore(context: Context) {
+    // security-crypto 1.0.0 is the pinned stable release: the master key is an
+    // alias string from MasterKeys, and create() takes (fileName, alias,
+    // context, ...). The MasterKey.Builder form this used to call belongs to
+    // 1.1.0, which has never left alpha -- not a dependency to take on for the
+    // component that guards the session token.
     private val prefs = EncryptedSharedPreferences.create(
-        context.applicationContext,
         "wireline_auth",
-        MasterKey.Builder(context.applicationContext)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build(),
+        MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC),
+        context.applicationContext,
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
     )

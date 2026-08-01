@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +51,7 @@ import com.wireline.app.data.ActiveCall
 import com.wireline.app.data.ApiException
 import com.wireline.app.ui.theme.Brand
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private sealed class TransferUiState {
     data object Idle : TransferUiState()
@@ -71,6 +73,10 @@ fun LiveCallScreen(
     var elapsed by remember(callId) { mutableIntStateOf(0) }
     var transferState by remember(callId) { mutableStateOf<TransferUiState>(TransferUiState.Idle) }
     var didAutoHandoff by remember(callId) { mutableStateOf(false) }
+    // performTransfer suspends (it calls the transfer API and can retry on
+    // conflict). onClick is not a coroutine context, so the button hands it to
+    // the composition scope rather than blocking the click handler.
+    val transferScope = rememberCoroutineScope()
 
     LaunchedEffect(callId, state.activeCalls) {
         call = resolveActiveCall(callId, state.activeCalls)
@@ -151,7 +157,7 @@ fun LiveCallScreen(
                 when (val ui = transferState) {
                     TransferUiState.Idle -> {
                         Button(
-                            onClick = { performTransfer(callId, call, model) { transferState = it } },
+                            onClick = { transferScope.launch { performTransfer(callId, call, model) { transferState = it } } },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(Brand.RadiusMd),
                             colors = ButtonDefaults.buttonColors(containerColor = Brand.Accent),
@@ -203,7 +209,7 @@ fun LiveCallScreen(
                                 }
                             }
                             Button(
-                                onClick = { performTransfer(callId, call, model) { transferState = it } },
+                                onClick = { transferScope.launch { performTransfer(callId, call, model) { transferState = it } } },
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = ButtonDefaults.buttonColors(containerColor = Brand.Accent),
                             ) {

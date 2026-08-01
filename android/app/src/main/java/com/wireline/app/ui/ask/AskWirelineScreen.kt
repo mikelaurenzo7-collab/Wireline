@@ -317,7 +317,7 @@ fun AskWirelineScreen(
                                                     containerColor = containerColor,
                                                     labelColor = contentColor
                                                 ),
-                                                border = AssistChipDefaults.assistChipBorder(borderColor = Brand.Border)
+                                                border = BorderStroke(1.dp, Brand.Border)
                                             )
                                         }
                                     }
@@ -472,7 +472,8 @@ fun AskWirelineScreen(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Brand.Text,
                             unfocusedTextColor = Brand.Text,
-                            containerColor = Brand.Panel,
+                            focusedContainerColor = Brand.Panel,
+                            unfocusedContainerColor = Brand.Panel,
                             focusedBorderColor = Brand.Accent,
                             unfocusedBorderColor = Brand.Border
                         ),
