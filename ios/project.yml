@@ -50,6 +50,15 @@ targets:
         INFOPLIST_FILE: Wireline/Info.plist
         CODE_SIGN_ENTITLEMENTS: Wireline/Wireline.entitlements
         GENERATE_INFOPLIST_FILE: NO
+        # The app compiles, links, and bundles; the build then dies in
+        # AppIntentsSSUTraining with "Unable to parse Info.plist". That step runs
+        # appintentsnltrainingprocessor against the *built* Info.plist, which
+        # infoPlistUtility writes as a binary plist by default. Emitting XML is
+        # the one lever here that is a documented Xcode setting rather than a
+        # guess, and it costs nothing at runtime. Treat this as a hypothesis CI
+        # adjudicates, not a confirmed fix -- it has not been reproduced on a
+        # macOS toolchain.
+        INFOPLIST_OUTPUT_FORMAT: XML
         TARGETED_DEVICE_FAMILY: "1" # iPhone (CarPlay rides the phone target)
         ENABLE_USER_SCRIPT_SANDBOXING: YES
 
