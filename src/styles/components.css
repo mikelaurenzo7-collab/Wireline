@@ -173,15 +173,6 @@
   background-size: 100% 100%;
 }
 
-/* Surface polish sets a comfortable 44px tap target on workspace inputs. A
- * checkbox is not a text field: left alone it stretched into a 16x44 pill.
- * `input[data-slot]` outranks the `:where()` surface rules whatever the import
- * order, and clearing only `min-height` leaves a caller's `size-*` override
- * free to set the box. */
-input[data-slot="checkbox"] {
-  min-height: 0;
-}
-
 /* Banner */
 .wl-banner {
   display: flex;
