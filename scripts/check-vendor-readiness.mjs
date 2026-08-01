@@ -11,7 +11,14 @@
 
 const checks = [];
 
-function record(id, required, level, detail, fundingAction = null, metadata = undefined) {
+function record(
+  id,
+  required,
+  level,
+  detail,
+  fundingAction = null,
+  metadata = undefined,
+) {
   checks.push({
     id,
     required,
@@ -85,7 +92,11 @@ function httpsOrigin(value) {
 }
 
 function arrayAt(body, key) {
-  return Array.isArray(body?.[key]) ? body[key] : Array.isArray(body) ? body : [];
+  return Array.isArray(body?.[key])
+    ? body[key]
+    : Array.isArray(body)
+      ? body
+      : [];
 }
 
 function basicAuth(username, password) {
@@ -99,7 +110,9 @@ record(
   present("POSTGRES_URL")
     ? "Database URL configured; run npm run db:health."
     : "POSTGRES_URL missing.",
-  present("POSTGRES_URL") ? "Maintain the Supabase plan; no prepaid balance is required." : null,
+  present("POSTGRES_URL")
+    ? "Maintain the Supabase plan; no prepaid balance is required."
+    : null,
 );
 
 record(
@@ -112,12 +125,15 @@ record(
   "Maintain a production Upstash database and billing method.",
 );
 
-const twilioConfigured = present("TWILIO_ACCOUNT_SID") && present("TWILIO_AUTH_TOKEN");
+const twilioConfigured =
+  present("TWILIO_ACCOUNT_SID") && present("TWILIO_AUTH_TOKEN");
 const twilioAuthorization = twilioConfigured
   ? basicAuth(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
   : null;
 const gatewayCredential =
-  process.env.AI_GATEWAY_API_KEY?.trim() || process.env.VERCEL_OIDC_TOKEN?.trim() || "";
+  process.env.AI_GATEWAY_API_KEY?.trim() ||
+  process.env.VERCEL_OIDC_TOKEN?.trim() ||
+  "";
 
 const [
   xai,
@@ -138,6 +154,7 @@ const [
   stripeTaxSettings,
   resend,
   elevenlabs,
+  elevenlabsVoices,
 ] = await Promise.all([
   present("XAI_API_KEY")
     ? readJson("https://api.x.ai/v1/models", {
@@ -193,9 +210,12 @@ const [
       })
     : null,
   twilioConfigured
-    ? readJson("https://messaging.twilio.com/v1/Channels/Senders?Channel=whatsapp&PageSize=50", {
-        headers: { Authorization: twilioAuthorization },
-      })
+    ? readJson(
+        "https://messaging.twilio.com/v1/Channels/Senders?Channel=whatsapp&PageSize=50",
+        {
+          headers: { Authorization: twilioAuthorization },
+        },
+      )
     : null,
   present("STRIPE_SECRET_KEY")
     ? readJson("https://api.stripe.com/v1/account", {
@@ -208,9 +228,12 @@ const [
       })
     : null,
   present("STRIPE_SECRET_KEY")
-    ? readJson("https://api.stripe.com/v1/billing_portal/configurations?active=true&limit=100", {
-        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
-      })
+    ? readJson(
+        "https://api.stripe.com/v1/billing_portal/configurations?active=true&limit=100",
+        {
+          headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+        },
+      )
     : null,
   present("STRIPE_SECRET_KEY")
     ? readJson("https://api.stripe.com/v1/webhook_endpoints?limit=100", {
@@ -232,6 +255,11 @@ const [
         headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY },
       })
     : null,
+  present("ELEVENLABS_API_KEY")
+    ? readJson("https://api.elevenlabs.io/v1/voices", {
+        headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY },
+      })
+    : null,
 ]);
 
 const openaiModelIds = new Set(
@@ -239,8 +267,10 @@ const openaiModelIds = new Set(
     .map((model) => String(model?.id || ""))
     .filter(Boolean),
 );
-const openaiStructuredModelReady = openai?.ok && openaiModelIds.has("gpt-5.6-terra");
-const openaiRealtimeModelReady = openai?.ok && openaiModelIds.has("gpt-realtime-2.1");
+const openaiStructuredModelReady =
+  openai?.ok && openaiModelIds.has("gpt-5.6-terra");
+const openaiRealtimeModelReady =
+  openai?.ok && openaiModelIds.has("gpt-realtime-2.1");
 const openaiTranscriberReady =
   openai?.ok && openaiModelIds.has("gpt-4o-mini-transcribe");
 
@@ -267,7 +297,9 @@ record(
   "gemini",
   false,
   gemini?.ok ? "ready" : "degraded",
-  gemini?.ok ? "Gemini continuity fallback key accepted." : "Gemini fallback unavailable.",
+  gemini?.ok
+    ? "Gemini continuity fallback key accepted."
+    : "Gemini fallback unavailable.",
   "Attach Google Cloud billing only if free or committed quota is insufficient.",
 );
 record(
@@ -290,28 +322,57 @@ record(
     ? "xAI key accepted; optional Grok experiment APIs are reachable."
     : "Optional xAI layer missing or rejected; launch defaults stay on OpenAI → Gemini → AI Gateway.",
   "Keep xAI experiment-only. Fund only if WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK is intentionally enabled.",
-  { structured_primary_model: "gpt-5.6-terra", xai_role: "optional_experiment" },
+  {
+    structured_primary_model: "gpt-5.6-terra",
+    xai_role: "optional_experiment",
+  },
 );
 
+const curatedElevenLabsVoiceIds = new Set([
+  "21m00Tcm4TlvDq8ikWAM",
+  "pNInz6obpgDQGcFmaJgB",
+  "JBFqnCBsd6RMkjVDRZzb",
+]);
+const elevenLabsVoiceInventory = arrayAt(elevenlabsVoices?.body, "voices");
+const availableElevenLabsVoiceIds = new Set(
+  elevenLabsVoiceInventory
+    .map((voice) => String(voice?.voice_id || ""))
+    .filter(Boolean),
+);
+const curatedElevenLabsVoicesReady = [...curatedElevenLabsVoiceIds].every(
+  (voiceId) => availableElevenLabsVoiceIds.has(voiceId),
+);
+const elevenLabsReady = Boolean(
+  elevenlabs?.ok && elevenlabsVoices?.ok && curatedElevenLabsVoicesReady,
+);
 record(
   "elevenlabs",
-  false,
-  elevenlabs?.ok ? "ready" : "degraded",
-  elevenlabs?.ok
-    ? `ElevenLabs key accepted (${elevenlabs.body?.tier || "unknown"} tier); pre-baked showcase audio can be regenerated.`
-    : "Optional ElevenLabs key missing or rejected; committed showcase audio under public/sounds keeps serving.",
-  "Keep ElevenLabs showcase/clone-only: build-time asset generation, never the tenant PSTN path, never browser-reachable.",
+  true,
+  elevenLabsReady ? "ready" : "blocked",
+  elevenLabsReady
+    ? `ElevenLabs key accepted (${elevenlabs.body?.tier || "unknown"} tier); all curated studio voices are reachable.`
+    : elevenlabs?.ok && elevenlabsVoices?.ok
+      ? "ElevenLabs key accepted, but one or more curated studio voices are unavailable."
+      : "ElevenLabs managed voice credential missing, rejected, or voice inventory unavailable.",
+  "Keep provider billing and usage alerts active; confirm the ElevenLabs key in Vapi Integrations and prove one fallback call before GA.",
   elevenlabs?.ok
     ? {
         character_count: elevenlabs.body?.character_count ?? null,
         character_limit: elevenlabs.body?.character_limit ?? null,
+        voice_count: elevenLabsVoiceInventory.length,
+        curated_voice_count: [...curatedElevenLabsVoiceIds].filter((id) =>
+          availableElevenLabsVoiceIds.has(id),
+        ).length,
+        runtime_model: "eleven_flash_v2_5",
       }
     : undefined,
 );
 
 const vapiPhoneInventory = arrayAt(vapiPhones?.body, "data");
 const vapiAssistantInventory = arrayAt(vapiAssistants?.body, "data");
-const vapiReady = Boolean(vapiPhones?.ok && vapiAssistants?.ok && vapiPhoneInventory.length > 0);
+const vapiReady = Boolean(
+  vapiPhones?.ok && vapiAssistants?.ok && vapiPhoneInventory.length > 0,
+);
 record(
   "vapi",
   true,
@@ -322,27 +383,44 @@ record(
   vapiPhoneInventory.length > 0
     ? "Keep Vapi billing funded and auto-reload enabled."
     : "Provision or import at least one production phone number before launch.",
-  { phone_number_count: vapiPhoneInventory.length, assistant_sample_count: vapiAssistantInventory.length },
+  {
+    phone_number_count: vapiPhoneInventory.length,
+    assistant_sample_count: vapiAssistantInventory.length,
+  },
 );
 
-const twilioAccountReady = Boolean(twilioAccount?.ok && twilioAccount.body?.status === "active");
-const twilioIncomingNumbers = arrayAt(twilioNumbers?.body, "incoming_phone_numbers");
-const voiceCapableNumbers = twilioIncomingNumbers.filter((number) => number?.capabilities?.voice === true);
-const smsCapableNumbers = twilioIncomingNumbers.filter((number) => number?.capabilities?.sms === true);
+const twilioAccountReady = Boolean(
+  twilioAccount?.ok && twilioAccount.body?.status === "active",
+);
+const twilioIncomingNumbers = arrayAt(
+  twilioNumbers?.body,
+  "incoming_phone_numbers",
+);
+const voiceCapableNumbers = twilioIncomingNumbers.filter(
+  (number) => number?.capabilities?.voice === true,
+);
+const smsCapableNumbers = twilioIncomingNumbers.filter(
+  (number) => number?.capabilities?.sms === true,
+);
 const twilioServices = arrayAt(twilioMessagingServices?.body, "services");
 const whatsappSenders = arrayAt(twilioWhatsappSenders?.body, "senders");
 const onlineWhatsappSenders = whatsappSenders.filter(
-  (sender) => String(sender?.status || "").trim().toUpperCase() === "ONLINE",
+  (sender) =>
+    String(sender?.status || "")
+      .trim()
+      .toUpperCase() === "ONLINE",
 );
 const twilioBalanceUsd = Number(twilioBalance?.body?.balance ?? Number.NaN);
 const twilioFunded = Boolean(
-  twilioBalance?.ok && Number.isFinite(twilioBalanceUsd) && twilioBalanceUsd >= 0,
+  twilioBalance?.ok &&
+  Number.isFinite(twilioBalanceUsd) &&
+  twilioBalanceUsd >= 0,
 );
 const twilioVoiceSmsReady = Boolean(
   twilioAccountReady &&
-    twilioFunded &&
-    voiceCapableNumbers.length > 0 &&
-    (smsCapableNumbers.length > 0 || twilioServices.length > 0),
+  twilioFunded &&
+  voiceCapableNumbers.length > 0 &&
+  (smsCapableNumbers.length > 0 || twilioServices.length > 0),
 );
 record(
   "twilio_voice_sms",
@@ -361,7 +439,10 @@ record(
       ? "Restore a non-negative Twilio balance and successful recharge posture before launch."
       : "Restore valid credentials and provision at least one voice-capable number plus an SMS sender or Messaging Service.",
   {
-    balance_usd: twilioBalance?.ok && Number.isFinite(twilioBalanceUsd) ? twilioBalanceUsd : null,
+    balance_usd:
+      twilioBalance?.ok && Number.isFinite(twilioBalanceUsd)
+        ? twilioBalanceUsd
+        : null,
     balance_non_negative: twilioFunded,
     incoming_number_count: twilioIncomingNumbers.length,
     voice_capable_number_count: voiceCapableNumbers.length,
@@ -379,23 +460,29 @@ record(
   onlineWhatsappSenders.length > 0
     ? "Maintain Meta business verification, approved templates, quality rating, and Twilio funding."
     : "Complete WABA/sender onboarding and approve templates before enabling business-initiated WhatsApp messages.",
-  { sender_count: whatsappSenders.length, online_sender_count: onlineWhatsappSenders.length },
+  {
+    sender_count: whatsappSenders.length,
+    online_sender_count: onlineWhatsappSenders.length,
+  },
 );
 
 // An unread balance must not read as a verified $0.00. Defaulting the amount to
 // 0 satisfied the `>= 0` check below and printed "available USD balance 0.00"
 // as fact, so a Stripe outage or a key without balance scope passed the gate.
 const stripeBalanceAmount = stripeBalance?.ok
-  ? stripeBalance.body?.available?.find?.((row) => row.currency === "usd")?.amount
+  ? stripeBalance.body?.available?.find?.((row) => row.currency === "usd")
+      ?.amount
   : undefined;
-const stripeBalanceRead = typeof stripeBalanceAmount === "number" && Number.isFinite(stripeBalanceAmount);
+const stripeBalanceRead =
+  typeof stripeBalanceAmount === "number" &&
+  Number.isFinite(stripeBalanceAmount);
 const stripeAvailable = stripeBalanceRead ? Number(stripeBalanceAmount) : null;
 const stripeCoreReady = Boolean(
   stripeAccount?.ok &&
-    stripeAccount.body?.charges_enabled &&
-    stripeAccount.body?.payouts_enabled &&
-    stripeBalanceRead &&
-    stripeAvailable >= 0,
+  stripeAccount.body?.charges_enabled &&
+  stripeAccount.body?.payouts_enabled &&
+  stripeBalanceRead &&
+  stripeAvailable >= 0,
 );
 
 const stripePublicName = String(
@@ -408,13 +495,17 @@ const stripeStatementDescriptor = String(
 )
   .trim()
   .toUpperCase();
-const stripeWebsiteOrigin = httpsOrigin(stripeAccount?.body?.business_profile?.url);
-const stripeSupportOrigin = httpsOrigin(stripeAccount?.body?.business_profile?.support_url);
+const stripeWebsiteOrigin = httpsOrigin(
+  stripeAccount?.body?.business_profile?.url,
+);
+const stripeSupportOrigin = httpsOrigin(
+  stripeAccount?.body?.business_profile?.support_url,
+);
 const stripeBrandReady = Boolean(
   /wireline/i.test(stripePublicName) &&
-    stripeStatementDescriptor.startsWith("WIRELINE") &&
-    stripeWebsiteOrigin === "https://trywireline.com" &&
-    stripeSupportOrigin === "https://trywireline.com",
+  stripeStatementDescriptor.startsWith("WIRELINE") &&
+  stripeWebsiteOrigin === "https://trywireline.com" &&
+  stripeSupportOrigin === "https://trywireline.com",
 );
 
 const stripePortalConfigs = arrayAt(stripePortalConfigurations?.body, "data");
@@ -427,14 +518,21 @@ const stripePortalHasCustomerControls = (configuration) =>
   configuration?.features?.invoice_history?.enabled === true &&
   configuration?.features?.subscription_cancel?.enabled === true;
 const stripePortalCandidates = stripePortalConfigs.filter(
-  (configuration) => configuration?.active === true && stripePortalHasCustomerControls(configuration),
+  (configuration) =>
+    configuration?.active === true &&
+    stripePortalHasCustomerControls(configuration),
 );
 const stripePortalConfiguration =
   stripePortalCandidates.find(
     (configuration) => configuration?.metadata?.wireline_managed === "true",
-  ) || stripePortalCandidates.find((configuration) => configuration?.is_default === true);
+  ) ||
+  stripePortalCandidates.find(
+    (configuration) => configuration?.is_default === true,
+  );
 const stripePortalFeatures = stripePortalConfiguration?.features ?? {};
-const stripePortalReady = Boolean(stripePortalConfigurations?.ok && stripePortalConfiguration);
+const stripePortalReady = Boolean(
+  stripePortalConfigurations?.ok && stripePortalConfiguration,
+);
 
 const expectedStripeWebhookEvents = [
   "charge.dispute.created",
@@ -464,12 +562,18 @@ const stripeExtraWebhookEvents = stripeEnabledWebhookEvents.filter(
 );
 const stripeWebhookReady = Boolean(
   stripeWebhook &&
-    stripeMissingWebhookEvents.length === 0 &&
-    stripeExtraWebhookEvents.length === 0,
+  stripeMissingWebhookEvents.length === 0 &&
+  stripeExtraWebhookEvents.length === 0,
 );
-const stripeTaxReady = Boolean(stripeTaxSettings?.ok && stripeTaxSettings.body?.status === "active");
+const stripeTaxReady = Boolean(
+  stripeTaxSettings?.ok && stripeTaxSettings.body?.status === "active",
+);
 const stripeReady = Boolean(
-  stripeCoreReady && stripeBrandReady && stripePortalReady && stripeWebhookReady && stripeTaxReady,
+  stripeCoreReady &&
+  stripeBrandReady &&
+  stripePortalReady &&
+  stripeWebhookReady &&
+  stripeTaxReady,
 );
 
 const stripeFundingAction = !stripeBalanceRead
@@ -505,14 +609,18 @@ record(
   {
     core_account_ready: stripeCoreReady,
     public_name: stripePublicName || null,
-    statement_descriptor_ready: stripeStatementDescriptor.startsWith("WIRELINE"),
+    statement_descriptor_ready:
+      stripeStatementDescriptor.startsWith("WIRELINE"),
     website_origin: stripeWebsiteOrigin,
     support_origin: stripeSupportOrigin,
     brand_ready: stripeBrandReady,
     managed_or_default_portal_present: Boolean(stripePortalConfiguration),
-    portal_payment_method_update: stripePortalFeatures.payment_method_update?.enabled === true,
-    portal_invoice_history: stripePortalFeatures.invoice_history?.enabled === true,
-    portal_subscription_cancel: stripePortalFeatures.subscription_cancel?.enabled === true,
+    portal_payment_method_update:
+      stripePortalFeatures.payment_method_update?.enabled === true,
+    portal_invoice_history:
+      stripePortalFeatures.invoice_history?.enabled === true,
+    portal_subscription_cancel:
+      stripePortalFeatures.subscription_cancel?.enabled === true,
     portal_ready: stripePortalReady,
     webhook_ready: stripeWebhookReady,
     webhook_missing_events: stripeMissingWebhookEvents,
@@ -535,13 +643,16 @@ record(
   "Maintain the Resend plan; no prepaid balance is required.",
 );
 
-const liveVideoCatalogGate = process.env.WIRELINE_LIVE_VIDEO_CATALOG_READY === "true";
+const liveVideoCatalogGate =
+  process.env.WIRELINE_LIVE_VIDEO_CATALOG_READY === "true";
 const liveVideoProviderConfigured = present("LIVEAVATAR_API_KEY");
 const liveVideoPriceConfigured =
   present("STRIPE_LIVE_VIDEO_ADDON_PRICE_ID") ||
   present("STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID");
 const liveVideoReady =
-  liveVideoCatalogGate && liveVideoProviderConfigured && liveVideoPriceConfigured;
+  liveVideoCatalogGate &&
+  liveVideoProviderConfigured &&
+  liveVideoPriceConfigured;
 record(
   "live_video",
   false,
@@ -564,7 +675,8 @@ record(
 
 const federalDncConfigured = isFederalDncVendorConfigured();
 const federalDncKey = process.env.FEDERAL_DNC_API_KEY?.trim() || "";
-const federalDncLooksLikeVercelToken = /^vcp_/i.test(federalDncKey) || /^vercel_/i.test(federalDncKey);
+const federalDncLooksLikeVercelToken =
+  /^vcp_/i.test(federalDncKey) || /^vercel_/i.test(federalDncKey);
 record(
   "federal_dnc",
   // Deferred launch checklist: marketing outbound still fails closed at runtime
@@ -581,7 +693,9 @@ record(
   "Register the business, obtain a DNCScrub loginId, then fund scrub credits before marketing outbound.",
 );
 
-const blocked = checks.filter((check) => check.required && check.level === "blocked");
+const blocked = checks.filter(
+  (check) => check.required && check.level === "blocked",
+);
 const degraded = checks.filter((check) => check.level === "degraded");
 const report = {
   generated_at: new Date().toISOString(),
