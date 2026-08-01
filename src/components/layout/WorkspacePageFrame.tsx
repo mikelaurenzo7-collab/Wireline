@@ -50,12 +50,15 @@ type WorkspacePageIntroProps = {
   /** Start-aligned product header (default) or centered status/empty-state header. */
   align?: "center" | "start";
   /**
-   * Drop the visible heading when an adjacent tab strip already names the
-   * section — repeating "Phone" under a selected "Phone" tab is noise. The
-   * heading stays in the accessibility tree so the page keeps a document
-   * outline and screen-reader users still get a page name.
+   * Drop the visible heading when something else already names the section.
+   * `true` hides it at every breakpoint — right when a tab strip below carries
+   * the name on mobile too (Settings, Inbox). `"lg"` hides it only at `lg` and
+   * up, where the workspace sidebar names the page — right when mobile has no
+   * substitute (Connections sits under the dock's "More", with no tab strip,
+   * so below `lg` this heading is the page's only on-screen name). Either way
+   * the heading stays in the accessibility tree.
    */
-  titleHidden?: boolean;
+  titleHidden?: boolean | "lg";
 };
 
 /** Minimal page title for authenticated workspace surfaces. */
@@ -71,7 +74,8 @@ export function WorkspacePageIntro({
   // Nothing left to show: render the accessible heading alone. `sr-only` is
   // absolutely positioned, so it leaves the frame's flex flow entirely and
   // contributes no gap — a wrapper here would leave a blank band instead.
-  if (titleHidden && !description && !action) {
+  // (Only for the fully-hidden variant — the "lg" variant still shows below lg.)
+  if (titleHidden === true && !description && !action) {
     return <h1 className="sr-only">{title}</h1>;
   }
 
@@ -88,7 +92,8 @@ export function WorkspacePageIntro({
       <div className={cn("min-w-0", start ? "flex-1" : "w-full")}>
         <h1
           className={cn(
-            titleHidden ? "sr-only" : "wl-display-3 break-words text-balance uppercase",
+            titleHidden === true ? "sr-only" : "wl-display-3 break-words text-balance uppercase",
+            titleHidden === "lg" && "lg:sr-only",
             !titleHidden && !start && "text-center",
           )}
         >
@@ -99,6 +104,7 @@ export function WorkspacePageIntro({
             className={cn(
               "max-w-prose text-pretty text-sm leading-relaxed text-muted-foreground",
               !titleHidden && "mt-2",
+              titleHidden === "lg" && "mt-2 lg:mt-0",
               !start && "mx-auto text-center",
             )}
           >
