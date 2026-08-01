@@ -18,24 +18,28 @@ describe("dual-voice PSTN routing contracts", () => {
     );
   });
 
-  it("clamps every PSTN call to a curated managed Vapi voice", () => {
-    // The managed runtime replaced per-provider PSTN substitution: the factory
-    // accepts only curated Vapi voice ids and falls back to the managed
-    // default. Presenter/live-voice agents' dedicated phone pick
-    // (agents.phone_voice_id) participates via resolvePstnVoiceCandidate,
-    // which itself only passes MANAGED ids through — so the clamp invariant
-    // holds while the UI-promised phone voice actually reaches the call
-    // (previously it was stored and surfaced but never read at dial time).
+  it("routes every PSTN call through the governed managed voice runtime", () => {
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
-    expect(factory).toContain("isManagedVapiVoiceId");
-    expect(factory).toContain("DEFAULT_MANAGED_VOICE_ID");
-    expect(factory).toContain('provider: "vapi" as const');
+    const managedRuntime = read("src/lib/managed-voice-runtime.ts");
+    expect(factory).toContain("buildManagedVoiceRuntime");
+    expect(factory).toContain('schema.clonedVoices.status, "approved"');
     expect(factory).toContain("resolvePstnVoiceCandidate");
     expect(factory).not.toContain('voiceProvider === "presenter"');
+    expect(managedRuntime).toContain("isManagedVapiVoiceId");
+    expect(managedRuntime).toContain("DEFAULT_MANAGED_VOICE_ID");
+    expect(managedRuntime).toContain('provider: "vapi" as const');
+    expect(managedRuntime).toContain('provider: "11labs" as const');
+    expect(managedRuntime).toContain("input.approvedClone === true");
     const roster = read("src/data/voice-roster.ts");
-    const helper = roster.slice(roster.indexOf("export function resolvePstnVoiceCandidate"));
-    expect(helper).toContain("if (isManagedVapiVoiceId(studioVoiceId)) return studioVoiceId;");
-    expect(helper).toContain("if (isManagedVapiVoiceId(phoneVoiceId)) return phoneVoiceId;");
+    const helper = roster.slice(
+      roster.indexOf("export function resolvePstnVoiceCandidate"),
+    );
+    expect(helper).toContain(
+      "if (isManagedVapiVoiceId(studioVoiceId)) return studioVoiceId;",
+    );
+    expect(helper).toContain(
+      "if (isManagedVapiVoiceId(phoneVoiceId)) return phoneVoiceId;",
+    );
     // The outbound client applies the same candidate resolution.
     const client = read("src/lib/vapi-client.ts");
     expect(client).toContain("resolvePstnVoiceCandidate");
@@ -62,7 +66,9 @@ describe("ChatGPT private voice simulation routing", () => {
       accountRoutes.indexOf('if (name === "list_wireline_agents")'),
     );
     expect(simulationHandler).toContain("createOpenAIRealtimeClientSecret({");
-    expect(simulationHandler).toContain("instructions: draft.runtimeInstructions");
+    expect(simulationHandler).toContain(
+      "instructions: draft.runtimeInstructions",
+    );
     expect(simulationHandler).toContain("agentName: draft.view.name");
     expect(simulationHandler).toContain("tools: []");
     expect(simulationHandler).toContain('toolChoice: "none"');
@@ -75,12 +81,16 @@ describe("ChatGPT private voice simulation routing", () => {
     expect(openaiService).toContain("agentName?: string | null");
     expect(openaiService).toContain("tools?: OpenAIRealtimeToolDefinition[]");
     expect(openaiService).toContain('toolChoice?: "auto" | "none"');
-    expect(openaiService).toContain('apiKeyPurpose?: "runtime" | "chatgpt_demo"');
+    expect(openaiService).toContain(
+      'apiKeyPurpose?: "runtime" | "chatgpt_demo"',
+    );
     expect(openaiService).toContain("OPENAI_API_KEY_CHATKIT");
     expect(openaiService).toContain(
       'purpose === "chatgpt_demo" ? process.env.OPENAI_API_KEY_CHATKIT',
     );
-    expect(openaiService).toContain('endpoint: "https://api.openai.com/v1/realtime/calls"');
+    expect(openaiService).toContain(
+      'endpoint: "https://api.openai.com/v1/realtime/calls"',
+    );
     expect(openaiService).toContain("rate: 24000");
   });
 
@@ -103,7 +113,11 @@ describe("ChatGPT private voice simulation routing", () => {
     expect(widget).not.toContain("api.x.ai");
     expect(widget).not.toContain("input_audio_buffer.append");
 
-    expect(accountRoutes).toContain('connectDomains: ["https://api.openai.com"]');
-    expect(accountRoutes).not.toContain('connectDomains: ["https://api.x.ai", "wss://api.x.ai"]');
+    expect(accountRoutes).toContain(
+      'connectDomains: ["https://api.openai.com"]',
+    );
+    expect(accountRoutes).not.toContain(
+      'connectDomains: ["https://api.x.ai", "wss://api.x.ai"]',
+    );
   });
 });

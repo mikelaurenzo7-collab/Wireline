@@ -3,7 +3,10 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 function read(relativePath: string) {
-  return readFileSync(resolve(process.cwd(), relativePath), "utf8").replace(/\r\n/g, "\n");
+  return readFileSync(resolve(process.cwd(), relativePath), "utf8").replace(
+    /\r\n/g,
+    "\n",
+  );
 }
 
 describe("authenticated agent flow", () => {
@@ -22,16 +25,24 @@ describe("authenticated agent flow", () => {
     expect(authPortal).toContain("plan.price_usd_monthly");
     expect(authPortal).not.toContain("const SIGNUP_PLAN_LABELS");
     expect(authPortal).toContain('nextMode === "personal"');
-    expect(authPortal).toContain('import WirelineMark from "./brand/WirelineMark"');
+    expect(authPortal).toContain(
+      'import WirelineMark from "./brand/WirelineMark"',
+    );
     // The auth funnel stays minimal (PR #738): product promise, not a decorative loop grid.
     expect(authPortal).toContain("customerAgentLanguage(workspaceMode)");
-    expect(authPortal).not.toContain('<span className="wl-auth-brand-badge">W</span>');
-    expect(workspaceShell).toContain('import WirelineMark from "./brand/WirelineMark"');
+    expect(authPortal).not.toContain(
+      '<span className="wl-auth-brand-badge">W</span>',
+    );
+    expect(workspaceShell).toContain(
+      'import WirelineMark from "./brand/WirelineMark"',
+    );
     expect(workspaceShell).not.toMatch(/>\s*W\s*<\/span>/);
     expect(authRedirect).toContain(
       'workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1"',
     );
-    expect(authPortal.match(/navigate\(resolvePostAuthDestination/g)).toHaveLength(1);
+    expect(
+      authPortal.match(/navigate\(resolvePostAuthDestination/g),
+    ).toHaveLength(1);
     expect(onboardingFlow).toContain("Opening your first ${language.singular}");
     expect(onboardingFlow).not.toContain("Link your phone");
     expect(appShell).not.toContain("ActivationCheckpoint");
@@ -43,7 +54,9 @@ describe("authenticated agent flow", () => {
     const carrierRoutes = read("src/routes/carrier-routes.ts");
 
     expect(trialGate).toContain("enforceLiveWorkActivation");
-    expect(trialGate).toContain("other provider-spending live actions until verified");
+    expect(trialGate).toContain(
+      "other provider-spending live actions until verified",
+    );
     expect(agentRoutes).not.toContain("enforceLiveWorkActivation");
     expect(carrierRoutes).toContain("enforceLiveWorkActivation");
     expect(carrierRoutes).toContain('"/api/phone-numbers/provision"');
@@ -93,7 +106,9 @@ describe("authenticated agent flow", () => {
     expect(createDialog).toContain("I&apos;ll explore first");
     expect(createDialog).not.toContain("VoicePickerField");
     expect(createDialog).not.toContain("CreateAgentCatalogFacePicker");
-    expect(productCopy).toContain('createHeadline: "Build your next AI voice agent."');
+    expect(productCopy).toContain(
+      'createHeadline: "Build your next AI voice agent."',
+    );
     expect(productCopy).toContain(
       'emptyCue: "Brief it. Train it once. Connect calls, texts, and email."',
     );
@@ -104,7 +119,9 @@ describe("authenticated agent flow", () => {
 
     expect(studioHome).toContain('params.get("brief")');
     expect(studioHome).toContain('params.get("posture")');
-    expect(studioHome).toContain('requestedPosture !== "personal" && accountType === "business"');
+    expect(studioHome).toContain(
+      'requestedPosture !== "personal" && accountType === "business"',
+    );
     expect(studioHome).toContain("PostCreateActivationWizard");
     expect(studioHome).toContain("readPostCreateWizard");
     expect(studioHome).not.toContain("mode=workroom");
@@ -116,7 +133,9 @@ describe("authenticated agent flow", () => {
     expect(createDialog).toContain("Revenue Desk");
     expect(createDialog).toContain("Support Desk");
     expect(createDialog).toContain("Sales, support, and scheduling");
-    expect(createDialog).toContain("Qualify inbound demand, answer support questions");
+    expect(createDialog).toContain(
+      "Qualify inbound demand, answer support questions",
+    );
     expect(createDialog).not.toContain("Handle pharmacy calls");
   });
 
@@ -140,7 +159,9 @@ describe("authenticated agent flow", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const studioHome = read("src/pages/AgentStudioHome.tsx");
     const createFlow = read("src/lib/wireline-create-flow.ts");
-    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
+    const wizard = read(
+      "src/components/onboarding/PostCreateActivationWizard.tsx",
+    );
     const copy = read("src/lib/wireline-onboarding-copy.ts");
 
     expect(createDialog).toContain("stashPostCreateWizard");
@@ -194,14 +215,18 @@ describe("authenticated agent flow", () => {
     // template deploy, and mobile all seed identically — assert the delegation
     // here and the composition where it actually happens.
     expect(routes).toContain("resolveCreatePersonality({");
-    expect(routes).toContain("resolveCreateEnabledTools(role, isBusinessAgent)");
+    expect(routes).toContain(
+      "resolveCreateEnabledTools(role, isBusinessAgent)",
+    );
     const createDefaults = read("src/lib/agent-create-defaults.ts");
     expect(createDefaults).toContain("composeAgentPersonality");
     expect(createDefaults).toContain("TEMPLATE_OVERLAYS[opts.templateId]");
     expect(templates).toContain("voice_id: values.voiceId");
     expect(deployModal).toContain("VAPI_CURATED_VOICES");
     expect(deployModal).toContain("MANAGED_VOICE_BY_GENDER");
-    expect(deployModal).not.toMatch(/PREMIUM_VOICES|\/api\/voices\/|VoicePreviewButton/);
+    expect(deployModal).not.toMatch(
+      /PREMIUM_VOICES|\/api\/voices\/|VoicePreviewButton/,
+    );
   });
 
   it("surfaces the create warning even though Studio is already mounted", () => {
@@ -219,7 +244,10 @@ describe("authenticated agent flow", () => {
     // legitimately keeps mount-only deps, and a wider window would read its
     // dependency array instead of this one's.
     const start = studioHome.indexOf("consumeCreateWarning()");
-    const consumeEffect = studioHome.slice(start, studioHome.indexOf("]);", start) + 3);
+    const consumeEffect = studioHome.slice(
+      start,
+      studioHome.indexOf("]);", start) + 3,
+    );
     // The post-create redirect swaps `create=1` for `agent=<id>`, so the search
     // params are the signal that the flow finished.
     expect(consumeEffect).toMatch(/\}, \[toast, params\]\);$/);
@@ -227,7 +255,9 @@ describe("authenticated agent flow", () => {
 
   it("defers phone provisioning from Fast Start into the post-create wizard", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
-    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
+    const wizard = read(
+      "src/components/onboarding/PostCreateActivationWizard.tsx",
+    );
     const createFlow = read("src/lib/wireline-create-flow.ts");
 
     expect(createDialog).not.toContain('"/api/phone-numbers/provision"');
@@ -237,31 +267,40 @@ describe("authenticated agent flow", () => {
   });
 
   it("scopes wizard phone state to the created agent only", () => {
-    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
+    const wizard = read(
+      "src/components/onboarding/PostCreateActivationWizard.tsx",
+    );
 
     expect(wizard).toContain("row.agent_id === payload.agentId");
     expect(wizard).not.toContain("numbers[0]");
     expect(wizard).toContain("ACTIVATION_REQUIRED");
   });
 
-  it("routes every PSTN call through the managed Vapi voice runtime", () => {
+  it("routes every PSTN call through the governed managed voice runtime", () => {
     const schema = read("src/db/schema.ts");
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
+    const managedRuntime = read("src/lib/managed-voice-runtime.ts");
     const routes = read("src/routes/agent-routes-v2.ts");
 
-    // Dual phone-voice columns remain persisted for continuity, but the live
-    // factory clamps every call to a curated managed Vapi voice.
+    // Dual phone-voice columns remain persisted for continuity. The live
+    // factory admits only curated ElevenLabs voices or tenant-owned approved
+    // clones, and the shared runtime always carries a managed Vapi fallback.
     expect(schema).toContain("phoneVoiceId");
     expect(schema).toContain("phoneVoiceProvider");
-    expect(factory).toContain("isManagedVapiVoiceId");
-    expect(factory).toContain("DEFAULT_MANAGED_VOICE_ID");
+    expect(factory).toContain("buildManagedVoiceRuntime");
+    expect(factory).toContain('schema.clonedVoices.status, "approved"');
+    expect(managedRuntime).toContain("isManagedVapiVoiceId");
+    expect(managedRuntime).toContain("DEFAULT_MANAGED_VOICE_ID");
+    expect(managedRuntime).toContain("fallbackPlan");
     expect(factory).not.toContain("configured.phoneVoiceProvider");
     expect(routes).toContain("phoneVoiceId");
   });
 
   it("surfaces custom presence consent FTUX for business agents", () => {
     const preview = read("src/components/AgentPresenceLivePreview.tsx");
-    const panel = read("src/components/video-presenter/CustomPresenceConsentPanel.tsx");
+    const panel = read(
+      "src/components/video-presenter/CustomPresenceConsentPanel.tsx",
+    );
 
     expect(preview).toContain("CustomPresenceConsentPanel");
     expect(preview).toContain("consentStatus");

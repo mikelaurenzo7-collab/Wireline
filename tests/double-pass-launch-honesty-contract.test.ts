@@ -7,7 +7,8 @@ const read = (path: string) =>
 
 function matchingCallEnd(source: string, openIndex: number): number {
   let depth = 0;
-  let mode: "code" | "line" | "block" | "single" | "double" | "template" = "code";
+  let mode: "code" | "line" | "block" | "single" | "double" | "template" =
+    "code";
   let escaped = false;
 
   for (let index = openIndex; index < source.length; index += 1) {
@@ -110,7 +111,9 @@ describe("double-pass launch honesty", () => {
     expect(source).toContain(
       "await grantSubscriptionRuntimeAllowance(userId, periodReference, plan.id, interval);",
     );
-    expect(source).not.toMatch(/grantSubscriptionRuntimeAllowance\([\s\S]*?\)\.catch\(/);
+    expect(source).not.toMatch(
+      /grantSubscriptionRuntimeAllowance\([\s\S]*?\)\.catch\(/,
+    );
     expect(source).toContain("refusing overwrite");
   });
 
@@ -140,7 +143,9 @@ describe("double-pass launch honesty", () => {
   it("scopes runtime reserve idempotency to the tenant", () => {
     const source = read("src/lib/runtime-usage-billing.ts");
     expect(source).toContain("eq(schema.creditLedger.userId, input.userId)");
-    expect(source).toContain("eq(schema.creditLedger.idempotencyKey, idempotencyKey)");
+    expect(source).toContain(
+      "eq(schema.creditLedger.idempotencyKey, idempotencyKey)",
+    );
   });
 
   it("gates manual SMS replies and fails mark-read honestly", () => {
@@ -163,7 +168,9 @@ describe("double-pass launch honesty", () => {
     expect(statusRoute).toContain("Keep tenant reads sequential");
     expect(statusRoute).not.toContain("await Promise.all([");
 
-    const subscriptionRead = statusRoute.indexOf("const subRows = await drizzle");
+    const subscriptionRead = statusRoute.indexOf(
+      "const subRows = await drizzle",
+    );
     const agentRead = statusRoute.indexOf("const agentCounts = await drizzle");
     const phoneRead = statusRoute.indexOf("const phoneCounts = await drizzle");
     const entitlementRead = statusRoute.indexOf(
@@ -176,21 +183,29 @@ describe("double-pass launch honesty", () => {
 
   it("fails launch closed when Stripe brand or customer controls drift", () => {
     const vendorProbe = read("scripts/check-vendor-readiness.mjs");
-    expect(vendorProbe).toContain("/v1/billing_portal/configurations?active=true&limit=100");
+    expect(vendorProbe).toContain(
+      "/v1/billing_portal/configurations?active=true&limit=100",
+    );
     expect(vendorProbe).toContain("/v1/webhook_endpoints?limit=100");
     expect(vendorProbe).toContain("/v1/tax/settings");
     expect(vendorProbe).toContain("stripeBrandReady");
     expect(vendorProbe).toContain("stripePortalReady");
     expect(vendorProbe).toContain("stripeWebhookReady");
     expect(vendorProbe).toContain("stripeTaxReady");
-    expect(vendorProbe).toContain(
-      "stripeCoreReady && stripeBrandReady && stripePortalReady && stripeWebhookReady && stripeTaxReady",
+    expect(vendorProbe).toMatch(
+      /stripeCoreReady\s*&&\s*stripeBrandReady\s*&&\s*stripePortalReady\s*&&\s*stripeWebhookReady\s*&&\s*stripeTaxReady/,
     );
 
     const launchStatus = read("scripts/generate-launch-status.mjs");
-    expect(launchStatus).toContain('blockers.push("stripe_brand_not_wireline")');
-    expect(launchStatus).toContain('blockers.push("stripe_customer_portal_not_ready")');
-    expect(launchStatus).toContain('blockers.push("stripe_webhook_not_aligned")');
+    expect(launchStatus).toContain(
+      'blockers.push("stripe_brand_not_wireline")',
+    );
+    expect(launchStatus).toContain(
+      'blockers.push("stripe_customer_portal_not_ready")',
+    );
+    expect(launchStatus).toContain(
+      'blockers.push("stripe_webhook_not_aligned")',
+    );
     expect(launchStatus).toContain('blockers.push("stripe_tax_not_active")');
   });
 
@@ -213,12 +228,16 @@ describe("double-pass launch honesty", () => {
 
     for (const [path, expectedBatches] of expectedTransactionBatches) {
       const source = read(path);
-      const transactionBatches = source.match(/drizzle\.transaction\(\(tx\) =>/g)?.length ?? 0;
+      const transactionBatches =
+        source.match(/drizzle\.transaction\(\(tx\) =>/g)?.length ?? 0;
       expect(transactionBatches, path).toBeGreaterThanOrEqual(expectedBatches);
 
       for (const block of promiseAllBlocks(source)) {
         const rootQueryFanout = block.match(/\bdrizzle(?=\s*\.)/g)?.length ?? 0;
-        expect(rootQueryFanout, path + " still fans out tenant pool clients").toBeLessThan(4);
+        expect(
+          rootQueryFanout,
+          path + " still fans out tenant pool clients",
+        ).toBeLessThan(4);
       }
     }
   });

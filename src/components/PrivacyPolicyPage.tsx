@@ -78,7 +78,7 @@ export default function PrivacyPolicyPage() {
     <MarketingChrome stickyCta={false}>
       <PageMeta
         title="Privacy Policy"
-        description="Wireline's privacy policy — how we collect, use, protect, and disclose account, conversation, authorized voice, billing, and measurement data. Last updated August 1, 2026."
+        description="Privacy for Wireline's AI voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 1, 2026."
         path="/privacy"
       />
 
@@ -333,8 +333,9 @@ export default function PrivacyPolicyPage() {
               </li>
               <li>
                 <strong>Have I Been Pwned Pwned Passwords</strong> —
-                Compromised-password screening using a k-anonymous partial hash
-                prefix
+                {
+                  "Compromised-password screening using a k-anonymous partial hash prefix"
+                }
               </li>
               <li>
                 <strong>Services you connect</strong> — Such as Google,

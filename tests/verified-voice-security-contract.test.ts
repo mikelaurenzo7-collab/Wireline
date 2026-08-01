@@ -45,6 +45,8 @@ describe("verified private voice security contract", () => {
     expect(routes).toContain('createHash("sha256")');
     expect(routes).toContain("pg_advisory_xact_lock");
     expect(routes).toContain('status: "creating"');
+    expect(routes).toContain("CREATING_RESERVATION_TTL_MS");
+    expect(routes).toContain('rejectionReason: "reservation_expired"');
     expect(routes).toContain("voice.clone.consent_granted");
     expect(routes).toContain("sourceAudioRetained: false");
     expect(migration).toContain("uq_cloned_voices_active_source");

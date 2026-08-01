@@ -57,7 +57,9 @@ export default function SimpleVoicePicker({
     () =>
       RECOMMENDED_VOICE_IDS.map((id) =>
         VAPI_CURATED_VOICES.find((voice) => voice.id === id),
-      ).filter((voice): voice is VoiceOption => Boolean(voice)),
+      )
+        .filter((voice): voice is VoiceOption => Boolean(voice))
+        .map((voice) => ({ ...voice, provider: "vapi" as const })),
     [],
   );
   const [studioVoices, setStudioVoices] = useState<VoiceOption[]>([]);
@@ -293,9 +295,13 @@ export default function SimpleVoicePicker({
           className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
         >
           <MessageCircle className="size-4" aria-hidden="true" />
-          Test agent
+          Test response
         </button>
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        Browser tests the words. Place a real call to verify the selected audio.
+      </p>
 
       {notice ? (
         <StatusNotice tone="success" title="Voice saved">

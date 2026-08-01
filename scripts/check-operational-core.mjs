@@ -186,6 +186,11 @@ requirePattern(
   "Provider spend must follow a durable clone reservation and consent record.",
 );
 requirePattern(
+  "src/routes/voices-routes.ts",
+  /CREATING_RESERVATION_TTL_MS[\s\S]*rejectionReason:\s*"reservation_expired"/,
+  "Timed-out clone reservations must recover before a new provider spend.",
+);
+requirePattern(
   "src/lib/csp.ts",
   /api\.x\.ai/,
   "Optional xAI experiment hosts remain allowlisted in the browser CSP boundary.",

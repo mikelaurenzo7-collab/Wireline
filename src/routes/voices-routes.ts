@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { Router, type Response } from "express";
-import { and, desc, eq, gte, notInArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lte, notInArray, or, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { AppError, asyncHandler } from "../lib/api-error";
@@ -34,6 +34,7 @@ const router = Router();
 
 const CLONE_WINDOW_MS = 24 * 60 * 60_000;
 const MAX_CLONE_REQUESTS_PER_WINDOW = 5;
+const CREATING_RESERVATION_TTL_MS = 60 * 60_000;
 // 3 MiB expands to about 4 MiB as base64, leaving room below Vercel's body ceiling.
 const MAX_CLONE_AUDIO_BYTES = 3 * 1024 * 1024;
 const MIN_CLONE_AUDIO_BYTES = 32 * 1024;
@@ -198,6 +199,28 @@ async function reserveCloneRequest(args: {
     await tx.execute(
       sql`select pg_advisory_xact_lock(hashtext(${`wireline:voice-clone:${args.req.user.id}`}))`,
     );
+
+    // A serverless timeout can strand a pre-spend reservation. Expire only
+    // reservations older than an hour; if the original request later resumes,
+    // its conditional finalize fails and compensates by deleting the provider
+    // voice instead of creating an unowned asset.
+    const staleReservationCutoff = new Date(
+      Date.now() - CREATING_RESERVATION_TTL_MS,
+    );
+    await tx
+      .update(schema.clonedVoices)
+      .set({
+        status: "failed",
+        rejectionReason: "reservation_expired",
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(schema.clonedVoices.userId, args.req.user.id),
+          eq(schema.clonedVoices.status, "creating"),
+          lte(schema.clonedVoices.updatedAt, staleReservationCutoff),
+        ),
+      );
 
     const recent = await tx
       .select({ id: schema.auditLog.id })

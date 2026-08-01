@@ -121,7 +121,7 @@ export const ELEVENLABS_CURATED_VOICES: readonly VoiceOption[] = [
   },
   {
     id: "pNInz6obpgDQGcFmaJgB",
-    name: "Adam — Deep & Assured",
+    name: "Adam — Deep",
     provider: "11labs",
     gender: "male",
   },
