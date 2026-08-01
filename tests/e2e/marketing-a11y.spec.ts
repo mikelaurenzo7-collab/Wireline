@@ -32,7 +32,8 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
   await expect(
     page.getByRole("heading", { name: MARKETING_VOICE.headline, exact: true }),
   ).toBeVisible();
-  await expect(page.getByText(MARKETING_VOICE.subline, { exact: true })).toBeVisible();
+  // The hero heading carries the accessible name; the subline is no longer
+  // rendered as a hero subhead (the pitch lives in the title, chips, and demo).
 
   // Source the accessible name from MARKETING_VOICE (same as the hero markup)
   // so a brand-spine copy change can never silently desync this E2E assertion.

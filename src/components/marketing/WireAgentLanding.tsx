@@ -198,7 +198,6 @@ export default function WireAgentLanding() {
         <MarketingHero
           eyebrow={MARKETING_VOICE.eyebrow}
           title={MARKETING_VOICE.headline}
-          description={MARKETING_VOICE.subline}
           primaryAction={{ label: MARKETING_VOICE.primaryCta, to: "/signup" }}
           secondaryAction={{ label: "Hear it live", to: "#hear-a-demo", tone: "secondary" }}
           proof={HERO_CAPABILITIES}
