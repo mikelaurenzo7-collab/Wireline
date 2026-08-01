@@ -332,7 +332,14 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
 
   return (
     <section className={`${frameClass} min-h-0`}>
-      <header className="flex shrink-0 flex-wrap items-center justify-end gap-3 border-b border-[var(--wireline-color-border-default)] px-5 py-3 sm:px-6">
+      {/* Embedded in the Inbox page the tab strip above already draws a divider,
+          so a second bordered band holding one button reads as a dead zone —
+          keep the band borderless and tight there; standalone keeps its header. */}
+      <header
+        className={`flex shrink-0 flex-wrap items-center justify-end gap-3 px-5 sm:px-6 ${
+          embedded ? "py-2" : "border-b border-[var(--wireline-color-border-default)] py-3"
+        }`}
+      >
         <Button
           type="button"
           variant="secondary"
@@ -447,7 +454,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
               density="default"
               className="min-h-[360px] border-dashed border-border bg-card p-8"
               icon={<Sparkles className="size-5" />}
-              title="Select thread"
+              title="Select a conversation"
             />
           ) : detailLoading ? (
             <div

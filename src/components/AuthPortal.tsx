@@ -285,13 +285,7 @@ function OAuthSignInButtons({
 
 const cn = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
 
-function AuthShell({
-  children,
-  compact = false,
-}: {
-  children: ReactNode;
-  compact?: boolean;
-}) {
+function AuthShell({ children, compact = false }: { children: ReactNode; compact?: boolean }) {
   return (
     <div className="wl-stitch-auth-shell">
       <main
@@ -743,10 +737,7 @@ export default function AuthPortal() {
 
             <form
               onSubmit={handleAuth}
-              className={cn(
-                "wl-auth-form flex flex-col",
-                isSignUp ? "mt-4 gap-3" : "mt-6 gap-5",
-              )}
+              className={cn("wl-auth-form flex flex-col", isSignUp ? "mt-4 gap-3" : "mt-6 gap-5")}
             >
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-foreground" htmlFor="auth-email">
@@ -789,7 +780,7 @@ export default function AuthPortal() {
                           setError(null);
                           setMessage(null);
                         }}
-                        className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
+                        className="text-sm font-medium text-primary underline-offset-4 hover:underline"
                       >
                         Forgot password?
                       </button>

@@ -489,7 +489,7 @@ function FloorTab({
             />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-baseline gap-2">
-                <span className="font-[var(--wireline-font-mono)] text-sm font-semibold text-[var(--wireline-color-text-primary)]">
+                <span className="whitespace-nowrap font-[var(--wireline-font-mono)] text-sm font-semibold text-[var(--wireline-color-text-primary)]">
                   {formatPhone(call.customer_number, "Unknown caller")}
                 </span>
                 <span className="font-[var(--wireline-font-mono)] text-[10px] text-[var(--wireline-color-text-tertiary)]">
@@ -680,7 +680,7 @@ function TriageTab({
               >
                 {humanizeTaxonomy(call.outcome_tag, "Voice")}
               </span>
-              <span className="font-[var(--wireline-font-mono)] text-sm font-semibold text-[var(--wireline-color-text-primary)]">
+              <span className="whitespace-nowrap font-[var(--wireline-font-mono)] text-sm font-semibold text-[var(--wireline-color-text-primary)]">
                 {formatPhone(call.customer_number, "Unknown caller")}
               </span>
               <span className="ml-auto font-[var(--wireline-font-mono)] text-xs text-[var(--wireline-color-text-tertiary)]">

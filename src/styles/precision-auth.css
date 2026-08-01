@@ -82,6 +82,8 @@
   font-family: var(--wireline-font-mono);
   font-size: 0.6875rem;
   letter-spacing: 0.08em;
+  /* Mono micro-labels are uppercase everywhere else; the divider joins the tier. */
+  text-transform: uppercase;
 }
 
 @media (min-width: 640px) and (max-height: 900px) {
