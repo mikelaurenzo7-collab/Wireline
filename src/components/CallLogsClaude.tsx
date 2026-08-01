@@ -6,6 +6,7 @@ import { usePresenceSignals } from "../hooks/usePresenceSignals";
 import { Download, Phone, Zap } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import { formatPhone } from "../lib/safe-number";
 import { emitProductEventOnce } from "../lib/product-event-client";
 import AgentFace from "./AgentFace";
 import LiveFloorPresence from "./LiveFloorPresence";
@@ -115,15 +116,27 @@ function outcomeStatusStyle(tag: string | null | undefined): {
       background: "color-mix(in srgb, var(--wireline-color-status-warning) 14%, transparent)",
     };
   }
+  // Escalations/handoffs are warning-level everywhere else (the amber
+  // Escalations KPI, the Triage tab), so the row pill carries the same amber
+  // instead of reading as a neutral outcome.
+  if (/escalat|handoff|transfer/.test(normalized)) {
+    return {
+      color: "var(--wireline-color-status-warning)",
+      background: "color-mix(in srgb, var(--wireline-color-status-warning) 14%, transparent)",
+    };
+  }
   if (/booked|qualified|success|completed/.test(normalized)) {
     return {
       color: "var(--wireline-color-status-success)",
       background: "var(--wireline-color-feedback-success-surface)",
     };
   }
+  // Neutral outcomes share the same pill anatomy as the semantic ones — a
+  // quiet tint rather than a bare label, so the three chips read as one
+  // component family (green booked / amber escalation / gray informational).
   return {
     color: "var(--wireline-color-text-tertiary)",
-    background: "transparent",
+    background: "color-mix(in srgb, var(--wireline-color-text-tertiary) 10%, transparent)",
   };
 }
 
@@ -312,9 +325,10 @@ export default function CallLogsClaude() {
           size="sm"
           className="shrink-0"
           onClick={() => setShowOutboundDial(true)}
+          aria-label="Place outbound call"
         >
           <Phone className="h-3.5 w-3.5" aria-hidden />
-          Place outbound call
+          <span className="hidden sm:inline">Place outbound call</span>
         </Button>
       </div>
       <section
@@ -429,7 +443,7 @@ function FloorTab({
         fill
         titleTone="ui"
         title="No call history yet"
-        description="Live and outbound conversations will appear here with summaries, outcomes, follow-ups, and exports."
+        description="Calls appear here with summaries, outcomes, and follow-ups."
         density="compact"
         withHalo={false}
         action={
@@ -478,8 +492,8 @@ function FloorTab({
             />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-baseline gap-2">
-                <span className="font-[var(--wireline-font-mono)] text-sm font-semibold text-[var(--wireline-color-text-primary)]">
-                  {call.customer_number || "Unknown caller"}
+                <span className="whitespace-nowrap font-[var(--wireline-font-mono)] text-sm font-semibold text-[var(--wireline-color-text-primary)]">
+                  {formatPhone(call.customer_number, "Unknown caller")}
                 </span>
                 <span className="font-[var(--wireline-font-mono)] text-[10px] text-[var(--wireline-color-text-tertiary)]">
                   {formatTime(call.created_at)}
@@ -669,8 +683,8 @@ function TriageTab({
               >
                 {humanizeTaxonomy(call.outcome_tag, "Voice")}
               </span>
-              <span className="font-[var(--wireline-font-mono)] text-sm font-semibold text-[var(--wireline-color-text-primary)]">
-                {call.customer_number || "Unknown caller"}
+              <span className="whitespace-nowrap font-[var(--wireline-font-mono)] text-sm font-semibold text-[var(--wireline-color-text-primary)]">
+                {formatPhone(call.customer_number, "Unknown caller")}
               </span>
               <span className="ml-auto font-[var(--wireline-font-mono)] text-xs text-[var(--wireline-color-text-tertiary)]">
                 {formatTime(call.created_at)}

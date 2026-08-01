@@ -41,6 +41,7 @@ export default function EmailPage() {
       <WorkspacePageFrame mode="standard" className="flex min-h-0 flex-1 flex-col">
         <WorkspacePageIntro
           title="Inbox"
+          titleHidden
           action={
             <Button asChild size="sm" variant="secondary">
               <Link to="/approvals">

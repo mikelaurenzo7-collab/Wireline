@@ -157,7 +157,7 @@ export default function DeployAgentModal({
                   <p className="wl-micro-meta">Deploy · {template.category}</p>
                   <h2
                     id="deploy-agent-title"
-                    className="font-display italic text-2xl text-foreground leading-tight"
+                    className="font-display text-2xl text-foreground leading-tight"
                   >
                     {template.name}
                   </h2>

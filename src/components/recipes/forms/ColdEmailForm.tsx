@@ -131,7 +131,7 @@ export function ColdEmailForm({
       {email && (
         <div className="space-y-3 pt-3">
           <ResultCard title="Subject" copyText={email.subject}>
-            <p className="font-display italic text-xl">{email.subject}</p>
+            <p className="font-display text-xl">{email.subject}</p>
           </ResultCard>
           <ResultCard title="Body" copyText={email.body}>
             <pre className="whitespace-pre-wrap font-sans">{email.body}</pre>

@@ -99,7 +99,7 @@ export function CoachForm({
             </ResultCard>
           </div>
           <ResultCard title="Suggested Next Words" copyText={coaching.suggested_next_words}>
-            <p className="font-display italic text-xl leading-snug text-foreground">
+            <p className="font-display text-xl leading-snug text-foreground">
               "{coaching.suggested_next_words}"
             </p>
           </ResultCard>

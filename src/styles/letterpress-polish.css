@@ -285,6 +285,13 @@
   color: var(--wireline-color-text-secondary);
 }
 
+/* Compact metric-tile constraints (formerly the standalone pr948 merge layer).
+ * These were once imported last, after the responsive tiers, to guarantee the
+ * override survived. They live here now because `.wl-metric-tile--compact` is a
+ * single-owner selector: no rule in responsive.css, ruthless-mobile-cleanup.css,
+ * or e2e-design-polish.css targets it, so nothing later in the cascade competes.
+ * If a later tier ever adds a same-specificity `.wl-metric-tile--compact` rule,
+ * either raise its specificity or move this block after those imports. */
 .wl-metric-tile--compact {
   min-height: 0;
   gap: 0.375rem;
@@ -294,6 +301,33 @@
 .wl-metric-tile--compact .wl-metric-tile__value {
   font-size: clamp(1.35rem, 1.1rem + 0.5vw, 1.75rem);
   margin-block: 0;
+}
+
+/* Reserve two lines for the compact label so a tile whose label wraps
+ * ("Customer conversations today") keeps its value on the same baseline as the
+ * single-line tiles beside it, instead of stair-stepping the KPI row. */
+.wl-metric-tile--compact .wl-metric-tile__label {
+  min-height: 2lh;
+}
+
+/* Two compact tiles sit side by side, so a 360px phone leaves each about 113px
+ * of content. The icon is aria-hidden ornament; drop it where it cannot fit and
+ * give the metric label the full tile width rather than letting the row push
+ * past the tile's overflow:hidden and get sliced. */
+@media (max-width: 26rem) {
+  .wl-metric-tile--compact .wl-metric-tile__icon {
+    display: none;
+  }
+}
+
+/* At the smallest supported widths, let the label's min-content size shrink and
+ * break instead of clipping the compact tile. Confined to this tier on purpose:
+ * breaking at 360px regressed the three-up Knowledge tiles. */
+@media (max-width: 22rem) {
+  .wl-metric-tile--compact .wl-metric-tile__label {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
 }
 
 /* ----------------------------------------------------------------------------

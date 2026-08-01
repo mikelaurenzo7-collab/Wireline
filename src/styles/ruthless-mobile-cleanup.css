@@ -170,18 +170,18 @@
   /* -----------------------------------------------------------------------
    * Legacy per-agent chat: retain the task, remove explanatory scaffolding.
    * --------------------------------------------------------------------- */
-  .scroll-viewport > div:has(> h3.font-display.italic) {
+  .scroll-viewport > div:has(> h3.font-display) {
     align-items: stretch !important;
     padding-block: 1.25rem !important;
     text-align: left !important;
   }
 
-  .scroll-viewport > div:has(> h3.font-display.italic) > p:first-child,
-  .scroll-viewport > div:has(> h3.font-display.italic) > h3 + p {
+  .scroll-viewport > div:has(> h3.font-display) > p:first-child,
+  .scroll-viewport > div:has(> h3.font-display) > h3 + p {
     display: none;
   }
 
-  .scroll-viewport > div:has(> h3.font-display.italic) > h3 {
+  .scroll-viewport > div:has(> h3.font-display) > h3 {
     margin: 0 0 0.875rem;
     font-size: 1.4rem;
     font-style: normal;
@@ -190,7 +190,7 @@
     text-align: center;
   }
 
-  .scroll-viewport > div:has(> h3.font-display.italic) > div:last-child {
+  .scroll-viewport > div:has(> h3.font-display) > div:last-child {
     display: grid;
     width: 100%;
     max-width: none;
@@ -198,11 +198,11 @@
     gap: 0.5rem;
   }
 
-  .scroll-viewport > div:has(> h3.font-display.italic) > div:last-child > button:nth-child(n + 3) {
+  .scroll-viewport > div:has(> h3.font-display) > div:last-child > button:nth-child(n + 3) {
     display: none;
   }
 
-  .scroll-viewport > div:has(> h3.font-display.italic) > div:last-child > button {
+  .scroll-viewport > div:has(> h3.font-display) > div:last-child > button {
     min-width: 0;
     min-height: 2.75rem;
     justify-content: center;
@@ -213,7 +213,7 @@
     white-space: nowrap;
   }
 
-  .scroll-viewport > div:has(> h3.font-display.italic) > div:last-child > button > span {
+  .scroll-viewport > div:has(> h3.font-display) > div:last-child > button > span {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -263,7 +263,10 @@
 
   main:has(#studio-brief) :is(p, span, button, a, textarea, input, label),
   main:has(#studio-workroom-message) :is(p, span, button, a, textarea, input, label),
-  main[data-wireline-route^="/settings"] :is(p, span, button, a, input, label, h1, h2, h3),
+  main[data-wireline-route^="/settings"]
+    :is(p, span, button, a, input, label, h1, h2, h3):not(.wl-eyebrow):not(.wl-overline):not(
+      .text-eyebrow
+    ):not(.wl-micro-meta):not(.wl-stitch-eyebrow):not(.wl-stitch-label),
   form[aria-labelledby="create-agent-title"] :is(p, span, button, textarea, input, select, label) {
     text-transform: none;
     letter-spacing: 0;

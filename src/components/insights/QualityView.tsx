@@ -155,7 +155,7 @@ export default function QualityView({ days }: { days: number }) {
           >
             <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-25 blur-3xl pointer-events-none wl-accent-halo" />
             <p className="wl-insight-label mb-2">{label}</p>
-            <p className="font-display italic text-2xl leading-none wl-accent-text">{value}</p>
+            <p className="font-display text-2xl leading-none wl-accent-text">{value}</p>
           </div>
         ))}
       </div>

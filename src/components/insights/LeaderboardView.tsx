@@ -85,13 +85,13 @@ export default function LeaderboardView({ days }: { days: number }) {
             )}
             data-rank={i < 3 ? String(i) : undefined}
           >
-            <div className="absolute right-5 top-1/2 -translate-y-1/2 font-display italic text-[96px] leading-none opacity-[0.04] select-none pointer-events-none">
+            <div className="absolute right-5 top-1/2 -translate-y-1/2 font-display text-[96px] leading-none opacity-[0.04] select-none pointer-events-none">
               {i + 1}
             </div>
             <div className="shrink-0 flex flex-col items-center gap-0.5">
               <div
                 className={cn(
-                  "w-12 h-12 rounded-md flex items-center justify-center font-display italic text-2xl border border-white/10",
+                  "w-12 h-12 rounded-md flex items-center justify-center font-display text-2xl border border-white/10",
                   i < 3 && "wl-leaderboard-avatar",
                 )}
                 data-rank={i < 3 ? String(i) : undefined}
@@ -119,7 +119,7 @@ export default function LeaderboardView({ days }: { days: number }) {
             </div>
             <div className="flex-1 min-w-0 relative">
               <div className="flex items-center gap-2 flex-wrap mb-2">
-                <h4 className="font-display italic text-2xl text-foreground leading-tight">
+                <h4 className="font-display text-2xl text-foreground leading-tight">
                   {a.agent_name}
                 </h4>
                 <RolePill role={a.role} />

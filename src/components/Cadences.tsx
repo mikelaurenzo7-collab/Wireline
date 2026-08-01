@@ -452,7 +452,7 @@ export default function Cadences() {
             className="rounded-md wl-panel-elevated border border-brand/40 p-5"
           >
             <div className="flex items-center justify-between mb-4">
-              <h4 className="font-display italic text-lg text-foreground">Build a sequence</h4>
+              <h4 className="font-display text-lg text-foreground">Build a sequence</h4>
               <ShadButton
                 type="button"
                 variant="ghost"

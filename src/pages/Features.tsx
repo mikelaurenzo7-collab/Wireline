@@ -160,7 +160,7 @@ export default function Features() {
           eyebrow="Features"
           title="AI Voice Agents for every customer conversation."
           description="Train one voice agent or a coordinated team with your rules and channels. Each agent handles the conversation, finishes the next step, and keeps one outcome record."
-          primaryAction={{ label: "Build your AI Voice Agent", to: "/signup" }}
+          primaryAction={{ label: "Build your voice agent", to: "/signup" }}
           secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
           proof={FEATURE_HERO_PROOF}
         />
@@ -301,7 +301,7 @@ export default function Features() {
             </h2>
             <div className="marketing-hero__actions mt-8">
               <Link to="/signup" className="marketing-btn-primary px-6 text-sm font-semibold">
-                Build your AI Voice Agent
+                Build your voice agent
               </Link>
               <Link to="/pricing" className="marketing-btn-secondary px-6 text-sm font-semibold">
                 See plans <ArrowRight size={15} aria-hidden="true" />

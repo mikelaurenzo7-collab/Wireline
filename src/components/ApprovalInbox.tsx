@@ -57,9 +57,13 @@ const BUCKET_LABELS: Record<ApprovalBucket, string> = {
   knowledge_gaps: "Knowledge gaps",
 };
 
+// Short labels stay the same word as the full label, just clipped to the head
+// noun (Hot leads → Hot, Knowledge gaps → Gaps). Avoid re-labelling to a
+// narrower synonym ("Compliance" → "Consent") or a non-word ("Pending" →
+// "Pend"): mobile and desktop must read as the same tab.
 const BUCKET_SHORT_LABELS: Record<ApprovalBucket, string> = {
-  pending: "Pend",
-  compliance: "Consent",
+  pending: "Pending",
+  compliance: "Compliance",
   hot_leads: "Hot",
   escalations: "Esc.",
   knowledge_gaps: "Gaps",
@@ -396,7 +400,8 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         : (triage?.counts?.[key] ?? triage?.[key]?.length ?? 0);
     return {
       id: key,
-      label: `${BUCKET_SHORT_LABELS[key]} (${count})`,
+      label: `${BUCKET_LABELS[key]} (${count})`,
+      shortLabel: `${BUCKET_SHORT_LABELS[key]} (${count})`,
     };
   });
 
@@ -454,7 +459,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       ) : bucketItems.length === 0 ? (
         <ApprovalEmptyCard
           title={`${BUCKET_SHORT_LABELS[bucket]} clear`}
-          description="Nothing needs attention in this bucket right now. Evidence-backed items will appear here automatically."
+          description="Evidence-backed items will appear here automatically."
         />
       ) : (
         <div className="grid gap-3">

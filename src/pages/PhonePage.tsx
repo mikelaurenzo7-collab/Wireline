@@ -77,6 +77,7 @@ export default function PhonePage() {
       >
         <WorkspaceOperateIntro
           title="Calls"
+          titleHidden
           tabs={
             <WorkspaceTabStrip
               tabs={[...PHONE_TABS]}

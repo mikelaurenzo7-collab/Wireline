@@ -114,7 +114,7 @@ export default function PageShell({
               <div className="lg:hidden">
                 {eyebrow && <p className="text-eyebrow text-brand mb-1">{eyebrow}</p>}
                 {title && (
-                  <h1 className="wl-page-title font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance">
+                  <h1 className="wl-page-title font-display text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance">
                     {title}
                   </h1>
                 )}
@@ -472,9 +472,7 @@ export function Panel({
               </div>
             )}
             {title && (
-              <h3 className="font-display italic text-base text-foreground leading-tight">
-                {title}
-              </h3>
+              <h3 className="font-display text-base text-foreground leading-tight">{title}</h3>
             )}
             {hint && <span className="text-eyebrow ml-1 opacity-80">{hint}</span>}
           </div>
@@ -543,7 +541,7 @@ export function StatTile({
           )}
         </div>
 
-        <div className="metric-value font-display italic text-2xl max-md:text-[1.75rem] text-foreground leading-none truncate mb-2">
+        <div className="metric-value font-display text-2xl max-md:text-[1.75rem] text-foreground leading-none truncate mb-2">
           {value}
         </div>
 

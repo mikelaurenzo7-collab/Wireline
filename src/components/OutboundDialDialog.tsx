@@ -196,7 +196,7 @@ export default function OutboundDialDialog({
         ) : (
           <div className="space-y-4 px-6 py-5">
             <label className="block space-y-1.5">
-              <span className="wl-eyebrow wl-eyebrow--muted wl-eyebrow--no-rule">Agent</span>
+              <span className="block text-sm font-semibold text-foreground">Agent</span>
               <select
                 className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                 value={agentId}
@@ -211,12 +211,12 @@ export default function OutboundDialDialog({
             </label>
 
             <label className="block space-y-1.5">
-              <span className="wl-eyebrow wl-eyebrow--muted wl-eyebrow--no-rule">Phone number</span>
+              <span className="block text-sm font-semibold text-foreground">Phone number</span>
               <input
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel"
-                placeholder="+15551234567"
+                placeholder="+1 (415) 555-0142"
                 className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                 value={number}
                 onChange={(event) => setNumber(event.target.value)}
@@ -224,7 +224,7 @@ export default function OutboundDialDialog({
             </label>
 
             <label className="block space-y-1.5">
-              <span className="wl-eyebrow wl-eyebrow--muted wl-eyebrow--no-rule">
+              <span className="block text-sm font-semibold text-foreground">
                 Instruction (optional)
               </span>
               <textarea
@@ -237,7 +237,7 @@ export default function OutboundDialDialog({
             </label>
 
             <label className="block space-y-1.5">
-              <span className="wl-eyebrow wl-eyebrow--muted wl-eyebrow--no-rule">Call type</span>
+              <span className="block text-sm font-semibold text-foreground">Call type</span>
               <select
                 className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                 value={callPurpose}

@@ -216,7 +216,9 @@ describe("product voice cohesion", () => {
     const workroom = read("src/components/StudioWorkroom.tsx");
     const extension = read("apps/browser-extension/panel/index.html");
     expect(landing).toContain("MARKETING_VOICE.headline");
-    expect(landing).toContain("MARKETING_VOICE.subline");
+    // The landing hero is deliberately minimal: the headline, capability chips,
+    // and live demo carry the pitch, so the subline is no longer rendered as a
+    // hero subhead. It still backs the SEO description in index.html.
     expect(landing).toContain("MARKETING_VOICE.primaryCta");
     expect(landing).toContain("AGENT_DIRECTION_MODES");
     expect(landing).toContain("HERO_LOOP");

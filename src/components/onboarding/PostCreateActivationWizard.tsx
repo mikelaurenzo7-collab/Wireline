@@ -266,7 +266,7 @@ export default function PostCreateActivationWizard({
   return (
     <div
       ref={dialogRef}
-      className="fixed inset-0 z-[var(--wireline-z-modal,80)] flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[var(--wireline-zIndex-modal,1050)] flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="post-create-wizard-title"

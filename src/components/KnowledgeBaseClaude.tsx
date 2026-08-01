@@ -293,7 +293,9 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   const compactUpload = knowledge.length === 0 && directives.length > 0;
 
   const stats: Array<{ value: number; label: string }> = [
-    { value: knowledge.length, label: "Knowledge" },
+    // "Entries", not "Knowledge" — the page title directly above already says
+    // KNOWLEDGE, and this counts entries in the base.
+    { value: knowledge.length, label: "Entries" },
     { value: directives.length, label: "Rules" },
     { value: hasPersonality ? 1 : 0, label: "Tone" },
   ];
@@ -314,7 +316,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
             return (
               <div
                 key={directive.id ?? `d-${index}`}
-                className="rounded-[10px] border border-[var(--wireline-color-border-subtle)] px-3.5 py-2.5"
+                className="rounded-[10px] border border-[var(--wireline-color-border-soft)] px-3.5 py-2.5"
               >
                 <p className="text-sm font-semibold text-[var(--wireline-color-text-primary)]">
                   <FileText

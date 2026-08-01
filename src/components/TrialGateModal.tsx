@@ -366,7 +366,7 @@ export default function TrialGateModal() {
               </div>
               <h2
                 id="trial-gate-title"
-                className="mb-2 text-balance font-display text-2xl italic text-foreground sm:text-3xl"
+                className="mb-2 text-balance font-display text-2xl text-foreground sm:text-3xl"
               >
                 {title}
               </h2>
@@ -486,11 +486,11 @@ export default function TrialGateModal() {
                               Recommended
                             </div>
                           )}
-                          <div className="mb-1 font-display text-lg italic text-foreground">
+                          <div className="mb-1 font-display text-lg text-foreground">
                             {tier.label}
                           </div>
                           <div className="mb-2 flex items-baseline gap-1">
-                            <span className="font-display text-2xl italic text-foreground">
+                            <span className="font-display text-2xl text-foreground">
                               ${tier.price}
                             </span>
                             <span className="wl-label-muted/70">{tier.suffix}</span>

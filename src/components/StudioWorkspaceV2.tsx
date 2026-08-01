@@ -71,8 +71,8 @@ function StudioEmptyState({ posture }: { posture: "personal" | "business" }) {
       title={`Create your first ${language.singular}`}
       description={
         posture === "business"
-          ? "Start with one customer-facing job. Wireline will guide setup, testing, and launch."
-          : "Start with one call, appointment, or personal task. Wireline will guide setup and testing."
+          ? "Start with one customer-facing job."
+          : "Start with one call, appointment, or personal task."
       }
       className="wl-composer-dock"
     >
@@ -218,7 +218,7 @@ export default function StudioWorkspaceV2() {
         fill
         icon={Users}
         title={`Choose ${emptyLanguage.indefiniteSingular}`}
-        description="Select one from the sidebar, or create a new one to get started."
+        description="Select one, or create a new one."
         action={
           <Button asChild>
             <Link to="/studio?create=1">

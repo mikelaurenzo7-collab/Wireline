@@ -54,7 +54,7 @@ export function QualifyForm({
           <div className="rounded-md p-6 wl-panel-elevated border border-white/12 flex items-center justify-between">
             <div>
               <div className="app-section-title mb-2">Aggregate</div>
-              <div className="font-display italic text-6xl text-brand-display leading-none">
+              <div className="font-display text-6xl text-brand-display leading-none">
                 {q.total_score}
               </div>
             </div>
@@ -84,7 +84,7 @@ export function QualifyForm({
             {(["budget", "authority", "need", "timeline"] as const).map((k) => (
               <ResultCard key={k} title={k}>
                 <div className="flex items-baseline justify-between mb-2">
-                  <div className="font-display italic text-3xl text-foreground">{q[k].score}</div>
+                  <div className="font-display text-3xl text-foreground">{q[k].score}</div>
                   <div className="wl-label-muted">/ 100</div>
                 </div>
                 <p className="text-sm text-foreground/70">{q[k].evidence}</p>

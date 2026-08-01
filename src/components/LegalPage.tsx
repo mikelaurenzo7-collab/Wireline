@@ -94,7 +94,7 @@ function Section({
 }) {
   return (
     <section id={id}>
-      <h2 className="text-base font-semibold text-foreground mb-3 border-b border-white/8 pb-2">
+      <h2 className="text-base font-semibold uppercase tracking-[0.04em] text-foreground mb-3 border-b border-white/8 pb-2">
         {title}
       </h2>
       <div className="space-y-3 text-sm">{children}</div>
@@ -132,9 +132,9 @@ export function TermsOfService() {
 
       <Section title="2. Service Description">
         <p>
-          Wireline provides AI-powered voice, SMS, and email agent infrastructure for personal and business use. The
-          service includes agent configuration tools, call routing, email triage, outbound dialing
-          campaigns, a DNC manager, and analytics.
+          Wireline provides AI-powered voice, SMS, and email agent infrastructure for personal and
+          business use. The service includes agent configuration tools, call routing, email triage,
+          outbound dialing campaigns, a DNC manager, and analytics.
         </p>
       </Section>
 
@@ -204,10 +204,10 @@ export function TermsOfService() {
 
       <Section title="6. Billing and Subscriptions">
         <p>
-          Paid features are billed monthly or annually via Stripe, according to the interval selected
-          at checkout. Subscriptions renew automatically at that interval unless canceled before the
-          renewal date. You may cancel at any time via the Billing section in Settings; cancellation
-          takes effect at the end of the current billing period.
+          Paid features are billed monthly or annually via Stripe, according to the interval
+          selected at checkout. Subscriptions renew automatically at that interval unless canceled
+          before the renewal date. You may cancel at any time via the Billing section in Settings;
+          cancellation takes effect at the end of the current billing period.
         </p>
         <p>
           <strong>30-day money-back guarantee.</strong> If Wireline isn't working for your business

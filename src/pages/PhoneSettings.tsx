@@ -9,12 +9,9 @@ export default function PhoneSettings() {
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
         {/* The selected Settings tab already reads "Phone"; the heading stays
-            for assistive tech only so the page is not labelled twice on screen. */}
-        <WorkspacePageIntro
-          title="Phone"
-          titleHidden
-          description="Configure the voice agent, local number, routing, and company identity from one setup path."
-        />
+            for assistive tech only so the page is not labelled twice on screen.
+            The setup panel below carries its own intro, so no description here. */}
+        <WorkspacePageIntro title="Phone" titleHidden />
         <PhoneSetupPanel />
       </WorkspacePageFrame>
     </WorkspaceShell>

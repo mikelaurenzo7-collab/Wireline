@@ -77,8 +77,8 @@
   border-radius: var(--wireline-radius-xl) !important;
 }
 
-[role="dialog"][aria-labelledby="trial-gate-title"] .font-display.italic,
-[role="dialog"][aria-labelledby="deploy-agent-title"] .font-display.italic {
+[role="dialog"][aria-labelledby="trial-gate-title"] .font-display,
+[role="dialog"][aria-labelledby="deploy-agent-title"] .font-display {
   font-style: normal !important;
 }
 

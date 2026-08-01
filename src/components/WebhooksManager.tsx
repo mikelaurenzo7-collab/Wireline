@@ -106,7 +106,7 @@ export default function WebhooksManager() {
           <div className={WL_APP_CLASSES.settingsIcon}>
             <Webhook className="w-5 h-5" />
           </div>
-          <h4 className="font-display italic text-2xl text-foreground leading-tight">Webhooks</h4>
+          <h4 className="font-display text-2xl text-foreground leading-tight">Webhooks</h4>
         </div>
         <ShadButton
           type="button"

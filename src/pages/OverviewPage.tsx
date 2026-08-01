@@ -184,8 +184,7 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
               : "Put one customer-facing job to work today."}
           </h2>
           <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
-            Give one {language.singular} a clear job, test it, then connect only the channels that
-            job needs.
+            Test it, then connect only the channels the job needs.
           </p>
           <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
             <Button asChild className="w-full justify-center sm:w-auto">
@@ -284,8 +283,9 @@ function DemandReadinessCard({
       ? {
           eyebrow: "Line ready",
           title: "Your line is live. Put it where customers already call.",
-          detail:
-            "Publish the number or forward unanswered calls, then place one real inbound call.",
+          // No detail: the title states the situation and the two buttons name
+          // the next actions. A third sentence restating them is noise.
+          detail: undefined,
           primaryHref: "/settings/phone",
           primaryLabel: "Review phone setup",
           secondaryHref: testHref,
@@ -307,7 +307,8 @@ function DemandReadinessCard({
               callsCount > 0
                 ? "Wireline is handling conversations and recording what happened."
                 : "No new conversations today. Your customer line is still ready.",
-            detail: "Review customer outcomes to decide what to improve next.",
+            // The "Review conversations" button already names the action.
+            detail: undefined,
             primaryHref: "/phone?tab=logs",
             primaryLabel: "Review conversations",
             secondaryHref: setupHref,
@@ -332,7 +333,9 @@ function DemandReadinessCard({
           <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             {state.title}
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{state.detail}</p>
+          {state.detail ? (
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{state.detail}</p>
+          ) : null}
           {connectionsCount > 0 ? (
             <p
               className="mt-3 truncate text-xs font-medium text-muted-foreground"
@@ -620,7 +623,7 @@ export default function OverviewPage() {
                   <Button asChild className="shrink-0 justify-center sm:min-w-[170px]">
                     <Link to={primaryStudioHref}>
                       <Sparkles aria-hidden="true" size={15} />
-                      Manage {language.navLabel}
+                      Manage {language.navLabel.toLowerCase()}
                     </Link>
                   </Button>
                   {hasLiveLine ? (

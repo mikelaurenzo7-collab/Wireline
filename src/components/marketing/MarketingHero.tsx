@@ -20,7 +20,9 @@ type HeroMetric = {
 type MarketingHeroProps = {
   eyebrow?: ReactNode;
   title: ReactNode;
-  description: ReactNode;
+  /** Optional hero subhead. Omit for a deliberately minimal hero (the home
+   * page, where the title, chips, and live demo already carry the pitch). */
+  description?: ReactNode;
   primaryAction?: HeroAction;
   secondaryAction?: HeroAction;
   proof?: readonly string[];
@@ -101,7 +103,7 @@ export default function MarketingHero({
           {isHomeHero ? (
             <div
               aria-label={MARKETING_VOICE.spine.join(", ")}
-              className="inline-flex max-w-full flex-wrap items-center justify-center gap-x-[clamp(.4rem,2.5vw,.75rem)] gap-y-1 rounded-2xl border border-border bg-card px-[clamp(.8rem,4vw,1.25rem)] py-2 font-[var(--wireline-font-family-mono)] text-[clamp(.75rem,3.3vw,.875rem)] font-semibold tracking-[.04em] text-muted-foreground shadow-[var(--wireline-elevation-sm)]"
+              className="inline-flex max-w-full flex-wrap items-center justify-center gap-x-[clamp(.4rem,2.5vw,.75rem)] gap-y-1 rounded-2xl border border-border bg-card px-[clamp(.8rem,4vw,1.25rem)] py-2 font-[var(--wireline-font-family-mono)] text-[clamp(.7rem,3vw,.8rem)] font-semibold uppercase tracking-[.1em] text-muted-foreground shadow-[var(--wireline-elevation-sm)]"
             >
               {MARKETING_VOICE.spine.map((item, index) => (
                 <Fragment key={item}>
@@ -126,14 +128,16 @@ export default function MarketingHero({
             {title}
           </h1>
 
-          <p
-            className={cn(
-              "marketing-hero__description mx-auto mt-6 max-w-[46rem] text-pretty font-[var(--wireline-font-family-body)] text-[1.0625rem] font-normal leading-8 text-muted-foreground sm:text-[1.1875rem] sm:leading-[1.62]",
-              isHomeHero && "max-w-[42rem] text-[clamp(1.0625rem,1.8vw,1.25rem)]",
-            )}
-          >
-            {description}
-          </p>
+          {description ? (
+            <p
+              className={cn(
+                "marketing-hero__description mx-auto mt-6 max-w-[46rem] text-pretty font-[var(--wireline-font-family-body)] text-[1.0625rem] font-normal leading-8 text-muted-foreground sm:text-[1.1875rem] sm:leading-[1.62]",
+                isHomeHero && "max-w-[42rem] text-[clamp(1.0625rem,1.8vw,1.25rem)]",
+              )}
+            >
+              {description}
+            </p>
+          ) : null}
 
           {actions.length ? (
             <div className="marketing-hero__actions mt-9">

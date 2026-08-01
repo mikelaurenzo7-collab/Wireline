@@ -132,7 +132,7 @@ export default function Developers() {
         aria-labelledby="mcp-apps-heading"
       >
         <div className="mx-auto max-w-5xl text-center">
-          <p className="wl-stitch-eyebrow">ChatGPT · Claude · Cursor</p>
+          <p className="wl-stitch-eyebrow">One connector</p>
           <h2 id="mcp-apps-heading" className="wl-stitch-display mt-3 text-balance">
             Connect once. Draft and simulate in the client you already open.
           </h2>

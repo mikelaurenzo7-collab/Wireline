@@ -27,7 +27,7 @@ const DIFFERENCES = [
   {
     icon: MessageSquare,
     title: "You explain it normally.",
-    copy: "Your voice, playbook, and Training — no scripts, no flowcharts.",
+    copy: "Your voice, playbook, and training — no scripts, no flowcharts.",
   },
   {
     icon: Clock3,
@@ -142,7 +142,7 @@ export default function Compare() {
       <MarketingHero
         eyebrow="Why Wireline"
         title="Wireline vs. other voice AI."
-        description="One trained voice agent across voice, SMS, and email—with prepaid overflow instead of surprise per call bills."
+        description="One trained voice agent across voice, SMS, and email — with prepaid overflow instead of surprise per call bills."
         primaryAction={{ label: "Start free", to: "/signup?plan=personal" }}
         secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
         proof={COMPARE_HERO_PROOF}

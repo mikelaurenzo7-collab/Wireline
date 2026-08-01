@@ -57,7 +57,7 @@ export default function FailureModesView() {
         >
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="flex flex-wrap items-center gap-2">
-              <h4 className="font-display italic text-2xl text-foreground leading-tight">
+              <h4 className="font-display text-2xl text-foreground leading-tight">
                 {m.failure_type}
               </h4>
               <span
@@ -77,9 +77,7 @@ export default function FailureModesView() {
                 {m.fix_target}
               </span>
             </div>
-            <div className="font-display italic text-3xl text-brand-display tabular-nums">
-              {m.count}
-            </div>
+            <div className="font-display text-3xl text-brand-display tabular-nums">{m.count}</div>
           </div>
           <p className="text-sm text-foreground/80">{m.recommended_fix}</p>
         </motion.div>

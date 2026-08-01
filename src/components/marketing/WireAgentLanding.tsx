@@ -198,7 +198,6 @@ export default function WireAgentLanding() {
         <MarketingHero
           eyebrow={MARKETING_VOICE.eyebrow}
           title={MARKETING_VOICE.headline}
-          description={MARKETING_VOICE.subline}
           primaryAction={{ label: MARKETING_VOICE.primaryCta, to: "/signup" }}
           secondaryAction={{ label: "Hear it live", to: "#hear-a-demo", tone: "secondary" }}
           proof={HERO_CAPABILITIES}
@@ -219,8 +218,8 @@ export default function WireAgentLanding() {
                   buttonLabel="Start the live demo"
                   fallback={
                     <div className="text-center">
-                      <p className="text-[15px] leading-6 text-muted-foreground">
-                        Prefer the phone? Call a live demo line without signing up.
+                      <p className="mx-auto text-[15px] leading-6 text-muted-foreground">
+                        Prefer the phone? Call a live demo line.
                       </p>
                       <a
                         href={`tel:${HERO_DEMO_AGENT.tel}`}

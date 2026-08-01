@@ -108,7 +108,7 @@ export default function ResetPassword() {
               <WirelineMark className="w-5 h-5" stroke="white" strokeWidth={10} />
             </div>
             <div>
-              <h1 className="font-display italic text-2xl sm:text-3xl text-foreground leading-tight">
+              <h1 className="font-display text-2xl sm:text-3xl text-foreground leading-tight">
                 Reset password
               </h1>
               <p className="text-caption mt-1.5">

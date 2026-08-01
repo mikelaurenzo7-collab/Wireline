@@ -158,7 +158,7 @@ export default function IntakeKeysManager() {
             <Inbox className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="font-display italic text-2xl text-foreground leading-tight">
+            <h4 className="text-base font-semibold text-foreground leading-tight">
               Lead intake keys
             </h4>
           </div>
@@ -172,10 +172,10 @@ export default function IntakeKeysManager() {
             setShowForm(!showForm);
             setCreateError(null);
           }}
-          className="!py-2.5 !px-5 !text-[length:var(--wireline-typography-overline-size)] !tracking-[0.3em] uppercase"
+          className="!px-5 !py-2.5"
         >
           {showForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-          {showForm ? "Cancel" : "New Key"}
+          {showForm ? "Cancel" : "New key"}
         </ShadButton>
       </div>
 

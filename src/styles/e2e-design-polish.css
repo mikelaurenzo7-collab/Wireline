@@ -12,8 +12,8 @@
   max-width: min(100%, 19ch);
   font-weight: 650;
   line-height: 1;
-  letter-spacing: -0.04em;
-  text-transform: none;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
   text-wrap: balance;
   white-space: normal;
 }

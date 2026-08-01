@@ -80,20 +80,6 @@ export default function Blog() {
             basics that make an agent useful from day one — clear jobs, firm boundaries, and useful
             handoffs.
           </p>
-          <nav
-            className="mx-auto mt-7 flex max-w-2xl flex-wrap justify-center gap-2"
-            aria-label="Browse Wireline notes"
-          >
-            {NOTES.map(({ title }) => (
-              <a
-                key={title}
-                href={`#${noteSlug(title)}`}
-                className="inline-flex min-h-10 items-center rounded-full border border-border bg-card px-4 text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-              >
-                {title.replace(/\.$/, "")}
-              </a>
-            ))}
-          </nav>
         </div>
       </section>
 

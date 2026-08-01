@@ -119,7 +119,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                 </div>
                 <p
                   className={cn(
-                    "font-display italic text-2xl",
+                    "font-display text-2xl",
                     tile.healthy ? "text-brand" : "text-warning",
                   )}
                 >
@@ -176,9 +176,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
             className="stat-tile-mobile rounded-md wl-panel border border-border p-5"
           >
             <p className="wl-insight-label mb-2">{tile.label}</p>
-            <p className="metric-value font-display italic text-3xl text-foreground">
-              {tile.value}
-            </p>
+            <p className="metric-value font-display text-3xl text-foreground">{tile.value}</p>
             {tile.label === "Avg latency" && (
               <p className="wl-insight-label mt-2 tabular-nums">{latency.sample_count} samples</p>
             )}

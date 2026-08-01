@@ -157,7 +157,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
             </div>
             <p
               className={cn(
-                "font-display italic text-2xl",
+                "font-display text-2xl",
                 tile.healthy ? "text-foreground" : "text-amber-600",
               )}
             >

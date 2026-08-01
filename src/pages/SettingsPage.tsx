@@ -296,13 +296,8 @@ export default function SettingsPage() {
         <WorkspacePageIntro title="Account" titleHidden />
 
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-          <div className="mb-5">
-            <p className="wl-eyebrow wl-eyebrow--muted">Profile</p>
-            <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-[clamp(1.55rem,4vw,2.1rem)] font-normal leading-tight tracking-[-0.035em] text-foreground">
-              Account identity
-            </h2>
-          </div>
-          <div className="grid gap-3">
+          <p className="wl-eyebrow wl-eyebrow--muted">Profile</p>
+          <div className="mt-5 grid gap-3">
             <ProfileRow icon={UserRound} label="Name" value={displayName} />
             <ProfileRow icon={Mail} label="Email" value={email || "—"} wrapValue />
           </div>

@@ -46,7 +46,7 @@ interface DncEntry {
 }
 
 const REASON_OPTIONS = [
-  { value: "opt-out", label: "Customer Opt-Out" },
+  { value: "opt-out", label: "Customer opt-out" },
   { value: "legal", label: "Legal / Regulatory" },
   { value: "litigator", label: "Known Litigator" },
   { value: "federal", label: "National DNC Registry" },
@@ -310,7 +310,9 @@ export default function DncManager() {
               </Button>
               <Button
                 type="button"
-                variant="destructive"
+                // The page's primary action adds a protective block entry — it
+                // should not out-shout the app's genuinely destructive actions.
+                variant="default"
                 size="sm"
                 onClick={() => setShowAdd(true)}
               >
@@ -323,10 +325,10 @@ export default function DncManager() {
         {/* Stat bar */}
         <div className="grid shrink-0 grid-cols-2 gap-2">
           {[
-            { label: "Total Blocked", value: stats.total, icon: Shield },
-            { label: "Manual Entries", value: stats.manual, icon: Plus },
-            { label: "CSV Imported", value: stats.csv, icon: FileText },
-            { label: "Opt-Out", value: stats.optOut, icon: CheckCircle2 },
+            { label: "Total blocked", value: stats.total, icon: Shield },
+            { label: "Manual entries", value: stats.manual, icon: Plus },
+            { label: "CSV imported", value: stats.csv, icon: FileText },
+            { label: "Opt-out", value: stats.optOut, icon: CheckCircle2 },
           ].map(({ label, value, icon: Icon }) => (
             <div
               key={label}
@@ -349,8 +351,8 @@ export default function DncManager() {
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center border border-border">
                   <Shield className="h-3.5 w-3.5 text-brand" />
                 </div>
-                <h3 className="font-display text-base italic leading-tight text-foreground">
-                  Blocked Numbers
+                <h3 className="font-display text-base leading-tight text-foreground">
+                  Blocked numbers
                 </h3>
                 <span className="text-eyebrow ml-1 opacity-80">{filtered.length} entries</span>
               </div>
@@ -515,7 +517,7 @@ export default function DncManager() {
               <Shield className="h-4.5 w-4.5 text-rose-500" />
             </div>
             <div className="text-left">
-              <DialogTitle className="font-display text-xl italic leading-none text-foreground">
+              <DialogTitle className="font-display text-xl leading-none text-foreground">
                 Add to DNC
               </DialogTitle>
               <DialogDescription className="wl-label-muted mt-1">

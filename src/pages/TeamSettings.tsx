@@ -204,7 +204,9 @@ export default function TeamSettings() {
                   </div>
                   <Badge
                     className="shrink-0"
-                    variant={member.role === "owner" ? "success" : "outline"}
+                    // A role is identity, not a state — green is reserved for
+                    // success/live signals.
+                    variant={member.role === "owner" ? "default" : "outline"}
                   >
                     {formatRole(member.role)}
                   </Badge>

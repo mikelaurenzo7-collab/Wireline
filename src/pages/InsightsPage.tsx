@@ -10,7 +10,11 @@ export default function InsightsPage() {
         mode="operate"
         className="flex min-h-0 flex-1 flex-col gap-0 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] lg:pb-6"
       >
-        <WorkspaceOperateIntro title="Activity" tabs={<AppChromeSubTabs density="compact" />} />
+        <WorkspaceOperateIntro
+          title="Activity"
+          titleHidden
+          tabs={<AppChromeSubTabs density="compact" />}
+        />
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
           <InsightsView />
         </div>

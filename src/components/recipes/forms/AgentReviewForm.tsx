@@ -94,7 +94,7 @@ export function AgentReviewForm({
           <div className="rounded-md wl-panel-elevated border border-white/12 p-6 flex items-center justify-between">
             <div>
               <div className="app-section-title mb-2">Overall Grade</div>
-              <div className="font-display italic text-7xl text-brand-display leading-none">
+              <div className="font-display text-7xl text-brand-display leading-none">
                 {review.overall_grade}
               </div>
             </div>

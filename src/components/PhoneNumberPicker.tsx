@@ -142,7 +142,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-display italic text-2xl text-foreground leading-none">
+          <h3 className="font-display text-2xl text-foreground leading-none">
             {title || "Pick a phone number"}
           </h3>
           <p className="text-[length:var(--wireline-typography-overline-size)] text-muted/70 mt-1.5">

@@ -135,7 +135,7 @@ export default function UsageMeter({
             <Activity className="w-4.5 h-4.5 wl-accent-text" />
           </div>
           <div>
-            <h4 className="font-display italic text-lg text-foreground leading-tight font-bold">
+            <h4 className="font-display text-lg text-foreground leading-tight font-bold">
               Voice minutes
             </h4>
             <p className="wl-label text-foreground/55 font-medium">
