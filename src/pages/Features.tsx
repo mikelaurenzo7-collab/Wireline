@@ -72,7 +72,7 @@ const CORE_FEATURES = [
   {
     icon: CheckCircle2,
     title: "Work that finishes",
-    body: "Book, update, recap, route the exception, and preserve proof—not just a transcript.",
+    body: "Book, update, recap, route the exception, and preserve proof — not just a transcript.",
   },
   {
     icon: CalendarClock,
@@ -173,7 +173,7 @@ export default function Features() {
                 Calls, SMS, and email belong to the same agent.
               </h2>
               <p className="wl-public-copy mx-auto mt-5">
-                Voice handles the live moment. Text and email keep momentum—without splitting
+                Voice handles the live moment. Text and email keep momentum — without splitting
                 identity, memory, or ownership.
               </p>
             </div>

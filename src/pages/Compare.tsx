@@ -175,7 +175,8 @@ export default function Compare() {
             </h2>
             <p className="mt-4 text-base leading-7 text-muted-foreground">
               Some products meter minutes or calls. Wireline bundles a multichannel voice agent with
-              visible capacity and prepaid overflow—compare what you get and what can move the bill.
+              visible capacity and prepaid overflow — compare what you get and what can move the
+              bill.
             </p>
           </div>
 

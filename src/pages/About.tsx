@@ -49,7 +49,7 @@ export default function About() {
           </div>
           <div className="bg-card px-5 py-9 text-center sm:px-8 sm:py-12 lg:px-10">
             <p className="mx-auto max-w-xl text-base leading-7 text-muted-foreground">
-              Independently built. Every agent is fully customizable—your training, voice, and
+              Independently built. Every agent is fully customizable — your training, voice, and
               playbook.
             </p>
             <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-muted-foreground">
