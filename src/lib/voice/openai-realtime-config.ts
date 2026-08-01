@@ -34,9 +34,12 @@ export function normalizeOpenAIRealtimeVoice(raw: unknown): OpenAIRealtimeVoice 
   const value = String(raw || "")
     .trim()
     .toLowerCase();
-  return (OPENAI_REALTIME_VOICES as readonly string[]).includes(value)
-    ? (value as OpenAIRealtimeVoice)
-    : (OPENAI_REALTIME_DEFAULT_VOICE as OpenAIRealtimeVoice);
+  const supportedVoices = OPENAI_REALTIME_VOICES as readonly string[];
+  if (supportedVoices.includes(value)) return value as OpenAIRealtimeVoice;
+  const configuredDefault = OPENAI_REALTIME_DEFAULT_VOICE.trim().toLowerCase();
+  return supportedVoices.includes(configuredDefault)
+    ? (configuredDefault as OpenAIRealtimeVoice)
+    : "marin";
 }
 
 export function buildOpenAIRealtimeInstructions(agentName?: string | null): string {
