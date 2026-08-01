@@ -92,6 +92,16 @@ describe("ChatGPT private voice simulation routing", () => {
       'endpoint: "https://api.openai.com/v1/realtime/calls"',
     );
     expect(openaiService).toContain("rate: 24000");
+    expect(openaiService).toContain('mode: "ga"');
+    expect(openaiService).not.toContain('mode: "beta"');
+  });
+
+  it("fails a misconfigured default voice back to a supported GA voice", () => {
+    const openaiConfig = read("src/lib/voice/openai-realtime-config.ts");
+    expect(openaiConfig).toContain(
+      "supportedVoices.includes(configuredDefault)",
+    );
+    expect(openaiConfig).toContain(': "marin";');
   });
 
   it("keeps OPENAI_API_KEY_CHATKIT documented alongside OPENAI_API_KEY", () => {
