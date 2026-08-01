@@ -298,7 +298,8 @@ describe("double-pass launch honesty", () => {
     for (const [path, expectedBatches] of expectedTransactionBatches) {
       const source = read(path);
       const transactionBatches =
-        source.match(/drizzle\.transaction\(\(tx\) =>/g)?.length ?? 0;
+        source.match(/drizzle\.transaction\(\s*(?:async\s*)?\(tx\)\s*=>/g)
+          ?.length ?? 0;
       expect(transactionBatches, path).toBeGreaterThanOrEqual(expectedBatches);
 
       for (const block of promiseAllBlocks(source)) {
