@@ -162,6 +162,13 @@
       "when": 1785585600000,
       "tag": "0119_elevenlabs_managed_voice_runtime",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1785610800000,
+      "tag": "0120_cloned_voice_approved_by_index",
+      "breakpoints": true
     }
   ]
 }
