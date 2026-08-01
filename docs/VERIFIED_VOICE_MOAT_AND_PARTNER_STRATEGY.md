@@ -1,7 +1,7 @@
 # Wireline Verified Voice Moat & Partner Strategy
 
 **Status:** Product and architecture direction  
-**Date:** 2026-07-11  
+**Date:** 2026-08-01  
 **Decision owner:** Wireline
 
 ## Executive decision
@@ -42,6 +42,7 @@ The strict review also identified material gaps that must be closed before voice
 - Public preview is restricted to provider-premade voices.
 - Authenticated catalogs include the tenant’s own clones plus premade voices only.
 - Audio MIME, base64 integrity, decoded size, and minimum payload are validated server-side.
+- File signatures are matched to the declared audio MIME before provider processing.
 - A versioned speaker-authorization attestation is persisted to the consent ledger.
 - A SHA-256 source fingerprint is recorded; Wireline does not persist source audio in its database.
 - Clone requests are reserved inside a database transaction with a per-user PostgreSQL advisory lock and a durable 24-hour audit-ledger quota.
@@ -49,6 +50,9 @@ The strict review also identified material gaps that must be closed before voice
 - Provider clones are deleted as compensation when local ownership persistence fails.
 - Provider failure details remain in server logs and are not returned to users.
 - Voice deletion records an authorization-revocation event.
+- New clones remain private until a founder listens to a fresh Flash 2.5 proof and approves them.
+- Provider-verification requirements fail closed; revoked voices are removed from every live agent.
+- Inbound and outbound calls share one managed runtime with a different-provider Vapi fallback.
 - The product UI explains authorization evidence, source handling, permitted formats, and revocation.
 - Regression contracts protect the above behaviors.
 
@@ -81,21 +85,21 @@ Wireline assistants handle voice, text, and email conversations under the accoun
 
 The order matters. Do not integrate every vendor simultaneously. Each partner must improve resilience, trust, distribution, workflow depth, or unit economics.
 
-| Priority | Partner / category | Role for Wireline | Why it matters | Integration gate |
-|---|---|---|---|---|
-| 1 | **ElevenLabs** | Primary expressive TTS and current cloning provider | Existing implementation, strong voice quality, broad creation options | Keep behind Wireline provider contract; remove hard-coded assumptions and benchmark quarterly |
-| 1 | **Cartesia** | Secondary cloning/TTS lane | Creates an immediate second-source path and supports private cloned voices | Ship only after capability contract, consent parity, deletion parity, latency/cost benchmarks, and failover tests |
-| 1 | **LiveKit** | Provider-neutral realtime orchestration evaluation | Open framework, telephony, handoffs, interruption handling, testing, and broad model plugins reduce runtime lock-in | Build a controlled spike; do not replace Vapi until call completion, latency, observability, and operating cost are proven |
-| 1 | **Deepgram** | Full-pipeline benchmark and emergency voice runtime | One WebSocket can cover listening, reasoning integration, speaking, function calling, multi-agent flows, and telephony | Benchmark as a fallback lane and enterprise deployment option; preserve Wireline tools and memory as the control plane |
-| 1 | **Telnyx or Bandwidth** | Secondary telephony carrier | Carrier redundancy, number portability, routing control, and margin leverage | Abstract phone-number inventory and routing before adding; test emergency reroute and webhook parity |
-| 1 | **Jobber or Housecall Pro** | First vertical system-of-record wedge | Home-service businesses have clear call-to-booking workflows and measurable revenue outcomes | Select one based on API access and design-partner demand; complete booking, customer, job, quote, and status loops |
-| 2 | **Microsoft Azure Personal Voice** | Regulated/enterprise personal voice lane | Microsoft requires approved use cases and recorded verbal consent, which aligns with a verified-voice enterprise offer | Pursue after identity verification and consent artifact storage are production-ready |
-| 2 | **Resemble AI** | Deepfake detection, watermarking, and provenance partner | Trust tooling can differentiate Wireline as synthetic voice becomes easier to produce | Begin with outbound watermark/provenance evaluation and high-risk inbound-call detection; treat vendor performance claims as claims to validate |
-| 2 | **Pindrop** | Enterprise contact-center fraud/deepfake layer | Strong fit for financial services and large contact centers that need authentication and fraud controls | Partner only when enterprise pipeline warrants integration and procurement cost |
-| 2 | **ServiceTitan** | Higher-ACV field-service system of record | Deep workflow and revenue value for mature service businesses | Enter after the first SMB field-service integration proves activation and retention |
-| 2 | **Genesys Cloud / Amazon Connect / Five9** | Enterprise distribution and contact-center embedding | Lets Wireline become an intelligence/action layer instead of replacing mature telephony estates | Package as an adapter and supervised assistant offering, not a second full product |
-| 3 | **Rime, Hume, or specialized voice vendors** | Specialty timbre, emotion, or vertical voice quality | Can win specific languages, accents, or expressive use cases | Add only through measured provider scorecards and customer demand |
-| 3 | **Persona / Stripe Identity / equivalent** | Speaker identity and authorization verification | Supports higher-risk cloning use cases and enterprise evidence | Required before third-party celebrity, executive, employee, healthcare, or financial voice programs |
+| Priority | Partner / category                           | Role for Wireline                                        | Why it matters                                                                                                         | Integration gate                                                                                                                                |
+| -------- | -------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1        | **ElevenLabs**                               | Primary expressive TTS and current cloning provider      | Existing implementation, strong voice quality, broad creation options                                                  | Keep behind Wireline provider contract; remove hard-coded assumptions and benchmark quarterly                                                   |
+| 1        | **Cartesia**                                 | Secondary cloning/TTS lane                               | Creates an immediate second-source path and supports private cloned voices                                             | Ship only after capability contract, consent parity, deletion parity, latency/cost benchmarks, and failover tests                               |
+| 1        | **LiveKit**                                  | Provider-neutral realtime orchestration evaluation       | Open framework, telephony, handoffs, interruption handling, testing, and broad model plugins reduce runtime lock-in    | Build a controlled spike; do not replace Vapi until call completion, latency, observability, and operating cost are proven                      |
+| 1        | **Deepgram**                                 | Full-pipeline benchmark and emergency voice runtime      | One WebSocket can cover listening, reasoning integration, speaking, function calling, multi-agent flows, and telephony | Benchmark as a fallback lane and enterprise deployment option; preserve Wireline tools and memory as the control plane                          |
+| 1        | **Telnyx or Bandwidth**                      | Secondary telephony carrier                              | Carrier redundancy, number portability, routing control, and margin leverage                                           | Abstract phone-number inventory and routing before adding; test emergency reroute and webhook parity                                            |
+| 1        | **Jobber or Housecall Pro**                  | First vertical system-of-record wedge                    | Home-service businesses have clear call-to-booking workflows and measurable revenue outcomes                           | Select one based on API access and design-partner demand; complete booking, customer, job, quote, and status loops                              |
+| 2        | **Microsoft Azure Personal Voice**           | Regulated/enterprise personal voice lane                 | Microsoft requires approved use cases and recorded verbal consent, which aligns with a verified-voice enterprise offer | Pursue after identity verification and consent artifact storage are production-ready                                                            |
+| 2        | **Resemble AI**                              | Deepfake detection, watermarking, and provenance partner | Trust tooling can differentiate Wireline as synthetic voice becomes easier to produce                                  | Begin with outbound watermark/provenance evaluation and high-risk inbound-call detection; treat vendor performance claims as claims to validate |
+| 2        | **Pindrop**                                  | Enterprise contact-center fraud/deepfake layer           | Strong fit for financial services and large contact centers that need authentication and fraud controls                | Partner only when enterprise pipeline warrants integration and procurement cost                                                                 |
+| 2        | **ServiceTitan**                             | Higher-ACV field-service system of record                | Deep workflow and revenue value for mature service businesses                                                          | Enter after the first SMB field-service integration proves activation and retention                                                             |
+| 2        | **Genesys Cloud / Amazon Connect / Five9**   | Enterprise distribution and contact-center embedding     | Lets Wireline become an intelligence/action layer instead of replacing mature telephony estates                        | Package as an adapter and supervised assistant offering, not a second full product                                                              |
+| 3        | **Rime, Hume, or specialized voice vendors** | Specialty timbre, emotion, or vertical voice quality     | Can win specific languages, accents, or expressive use cases                                                           | Add only through measured provider scorecards and customer demand                                                                               |
+| 3        | **Persona / Stripe Identity / equivalent**   | Speaker identity and authorization verification          | Supports higher-risk cloning use cases and enterprise evidence                                                         | Required before third-party celebrity, executive, employee, healthcare, or financial voice programs                                             |
 
 ## Provider architecture
 
@@ -151,7 +155,10 @@ Route by declared policy, not hard-coded vendor names:
 - `brand_voice_required`
 - `fallback_only`
 
-Do not automatically fail a cloned voice over to a different provider unless an approved equivalent voice exists. Fallback must preserve disclosure and never silently substitute an unapproved identity.
+A failed private voice may fall back to a clearly generic managed voice so the
+call can continue, but Wireline must never present that fallback as the cloned
+speaker or silently substitute another person's identity. An identity-preserving
+fallback requires a separately authorized equivalent voice.
 
 ## Verified Voice Passport
 
