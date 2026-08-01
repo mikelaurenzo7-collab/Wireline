@@ -41,7 +41,7 @@ function Section({
 }) {
   return (
     <section id={id}>
-      <h2 className="text-base font-semibold text-foreground mb-3 border-b border-white/8 pb-2">
+      <h2 className="text-base font-semibold uppercase tracking-[0.04em] text-foreground mb-3 border-b border-white/8 pb-2">
         {title}
       </h2>
       <div className="space-y-3 text-sm">{children}</div>
@@ -171,9 +171,9 @@ export default function PrivacyPolicyPage() {
         <div className="prose prose-sm sm:prose-base max-w-none space-y-8 text-foreground/85 leading-relaxed">
           <Section title="1. Who We Are">
             <p>
-              <strong>Wireline</strong> ("we", "our", or "us") operates an AI voice agent platform for
-              business conversations across voice, SMS, and email. Questions about this policy can
-              be sent to <strong>support@trywireline.com</strong>.
+              <strong>Wireline</strong> ("we", "our", or "us") operates an AI voice agent platform
+              for business conversations across voice, SMS, and email. Questions about this policy
+              can be sent to <strong>support@trywireline.com</strong>.
             </p>
           </Section>
 
@@ -214,10 +214,10 @@ export default function PrivacyPolicyPage() {
           <Section title="3. How We Use Data">
             <p>
               We use data to provide and secure Wireline; process managed AI requests primarily
-              through OpenAI, with Google Gemini and Vercel AI Gateway as continuity routes (and
-              xAI only when explicitly enabled); route calls and messages; execute connected
-              workflows; provide support; prevent fraud and abuse; bill through Stripe; and
-              understand aggregate product performance.
+              through OpenAI, with Google Gemini and Vercel AI Gateway as continuity routes (and xAI
+              only when explicitly enabled); route calls and messages; execute connected workflows;
+              provide support; prevent fraud and abuse; bill through Stripe; and understand
+              aggregate product performance.
             </p>
             <p>
               Optional Meta measurement is used only after your explicit choice to attribute

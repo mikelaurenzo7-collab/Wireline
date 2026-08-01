@@ -89,8 +89,12 @@ export function InsightEmpty({
   titleOverride,
   actionsOverride,
   success,
-  fill = false,
-  framed = true,
+  // A "no data yet" panel reads better as a message centered in the empty
+  // space than as a small bordered card parked at the top of a tall column.
+  // Center it in the available height and drop the frame; views that supply
+  // their own panel chrome (e.g. AI Spend) still pass framed/fill explicitly.
+  fill = true,
+  framed = false,
 }: {
   configKey: InsightEmptyKey;
   icon: LucideIcon;
