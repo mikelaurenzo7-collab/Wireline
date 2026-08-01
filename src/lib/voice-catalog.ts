@@ -161,9 +161,9 @@ export function voicePreviewUrl(voice: VoiceOption): string | null {
   if (voice.provider === "xai") {
     return `/api/voices/curated/preview?provider=xai&voiceId=${encodeURIComponent(voice.id)}`;
   }
-  if (voice.provider === "presenter") {
-    return `/api/voices/presenter/${encodeURIComponent(voice.id)}/preview`;
-  }
+  // Vapi voices audition during a phone test and presenter voices through the
+  // lip-sync sample flow; neither has a standalone GET audio URL, and we never
+  // fake one provider's voice with another.
   return null;
 }
 

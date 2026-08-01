@@ -1,13 +1,6 @@
 export type IntegrationStatus = "configured" | "missing" | "fallback";
 export type IntegrationGroup =
-  | "core"
-  | "ai"
-  | "voice"
-  | "oauth"
-  | "billing"
-  | "actions"
-  | "infra"
-  | "security";
+  "core" | "ai" | "voice" | "oauth" | "billing" | "actions" | "infra" | "security";
 export type IntegrationDescriptor = {
   id: string;
   label: string;
@@ -58,6 +51,15 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "ai",
     false,
     ["GEMINI_API_KEY"],
+  ),
+  item(
+    "perplexity",
+    "Perplexity",
+    "Optional first route for approved live public research tools.",
+    "ai",
+    false,
+    ["PERPLEXITY_API_KEY"],
+    "Gemini grounded search covers live research when unset.",
   ),
   item(
     "ai-gateway",
@@ -240,9 +242,36 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     false,
     ["MCP_OAUTH_TOKEN_PEPPER"],
   ),
+  item(
+    "apns",
+    "Apple Push (APNs)",
+    "Wakes the native iOS app for inbound calls and urgent owner alerts.",
+    "infra",
+    false,
+    ["APNS_KEY_ID", "APNS_TEAM_ID", "APNS_AUTH_KEY", "APNS_BUNDLE_ID"],
+    "Missing push configuration degrades safely; web and API behavior is unaffected.",
+  ),
+  item(
+    "fcm",
+    "Firebase Cloud Messaging",
+    "Wakes the native Android app for inbound calls and urgent owner alerts.",
+    "infra",
+    false,
+    ["FCM_PROJECT_ID", "FCM_CLIENT_EMAIL", "FCM_PRIVATE_KEY"],
+    "Missing push configuration degrades safely; web and API behavior is unaffected.",
+  ),
   item("secret-vault", "Secret Vault", "Encrypted integration secrets.", "security", false, [
     "WIRELINE_DATA_KEY",
   ]),
+  item(
+    "federal-dnc",
+    "Federal DNC scrub",
+    "Marketing/campaign outbound scrub against the federal Do Not Call registry.",
+    "security",
+    false,
+    ["FEDERAL_DNC_API_URL", "FEDERAL_DNC_API_KEY"],
+    "Runtime validates the vendor credential shape and fails closed when unconfigured.",
+  ),
   item(
     "pwned-passwords",
     "Have I Been Pwned Pwned Passwords",
