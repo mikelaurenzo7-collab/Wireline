@@ -169,6 +169,13 @@
       "when": 1785610800000,
       "tag": "0120_cloned_voice_approved_by_index",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1785611400000,
+      "tag": "0121_align_voice_clone_consent_contract",
+      "breakpoints": true
     }
   ]
 }
