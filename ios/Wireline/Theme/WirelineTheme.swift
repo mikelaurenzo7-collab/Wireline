@@ -96,7 +96,7 @@ public struct AssistantCardModifier: ViewModifier {
         self.isHoverable = isHoverable
     }
 
-    public func makeBody(content: Content) -> some View {
+    public func body(content: Content) -> some View {
         content
             .padding(WirelineDesignTokens.Metric.space200)
             .background(Brand.panel)
@@ -120,7 +120,7 @@ public struct AssistantTextModifier: ViewModifier {
         self.style = style
     }
 
-    public func makeBody(content: Content) -> some View {
+    public func body(content: Content) -> some View {
         switch style {
         case .display:
             content
