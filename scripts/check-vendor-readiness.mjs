@@ -48,7 +48,7 @@ function present(name) {
 }
 
 /**
- * Mirror src/lib/federal-dnc-service.ts `isFederalDncVendorConfigured`.
+ * Mirror src/lib/federal-dnc-config.ts `isFederalDncVendorConfigured`.
  * Presence-only checks lied when a Vercel personal token (`vcp_…`) was pasted
  * as FEDERAL_DNC_API_KEY — readiness said ready while runtime correctly failed closed.
  */

@@ -1,4 +1,5 @@
 import { isFederalDncVendorConfigured } from "./federal-dnc-config";
+import { perplexityRuntimeAvailable } from "./platform-integration-flags";
 
 export type IntegrationStatus = "configured" | "missing" | "fallback";
 export type IntegrationGroup =
@@ -61,15 +62,22 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     false,
     ["GEMINI_API_KEY"],
   ),
-  item(
-    "perplexity",
-    "Perplexity",
-    "Optional first route for approved live public research tools.",
-    "ai",
-    false,
-    ["PERPLEXITY_API_KEY"],
-    "Gemini grounded search covers live research when unset.",
-  ),
+  {
+    ...item(
+      "perplexity",
+      "Perplexity",
+      "Optional first route for approved live public research tools.",
+      "ai",
+      false,
+      [],
+      "Gemini grounded search covers live research when unset.",
+      [["PERPLEXITY_API_KEY", "PERPLEXITY_PREVIEW_API_KEY"]],
+    ),
+    // Production keys are intentionally inert on Vercel previews (a preview
+    // needs its own PERPLEXITY_PREVIEW_API_KEY), so configured-ness follows the
+    // runtime's key policy, not raw variable presence.
+    validate: perplexityRuntimeAvailable,
+  },
   item(
     "ai-gateway",
     "Vercel AI Gateway",

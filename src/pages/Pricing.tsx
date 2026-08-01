@@ -42,7 +42,7 @@ const PAID_TIERS = [
     eyebrow: "Put one agent live",
     tagline: "Your AI Voice Agent from $19/month.",
     detail:
-      "One focused agent for inbound, outbound, or scheduling—with an included Wireline number.",
+      "One focused agent for inbound, outbound, or scheduling — with an included Wireline number.",
     ctaMonthly: "Start for $19",
     ctaAnnual: "Start for $190/yr",
     ctaPath: "/signup?plan=starter",
@@ -95,7 +95,7 @@ const CHANNEL_RULES = [
   {
     icon: PhoneCall,
     title: "Voice + included number",
-    body: "A Wireline number on every paid plan. Extra minutes draw from prepaid balance—live calls never cut mid conversation.",
+    body: "A Wireline number on every paid plan. Extra minutes draw from prepaid balance — live calls never cut mid conversation.",
   },
   {
     icon: MessageSquareText,
@@ -117,7 +117,7 @@ const CHANNEL_RULES = [
 const FAQ = [
   [
     "Does one agent handle voice, SMS, and email?",
-    "Yes. A single Wireline agent can call, text, and email under one business identity, memory, rule set, approval posture, and outcome record. Additional agents are for concurrency or specialized roles—not to unlock basic channels.",
+    "Yes. A single Wireline agent can call, text, and email under one business identity, memory, rule set, approval posture, and outcome record. Additional agents are for concurrency or specialized roles — not to unlock basic channels.",
   ],
   [
     "Is the Wireline number free?",
@@ -452,7 +452,7 @@ export default function Pricing() {
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
                 One agent calls, texts, and emails on one subscription. Costs track numbers,
-                minutes, and segments—not seats per channel.
+                minutes, and segments — not seats per channel.
               </p>
             </div>
             <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">

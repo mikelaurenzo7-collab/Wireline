@@ -142,6 +142,39 @@ describe("integration vendor operating map", () => {
     }
   });
 
+  it("follows the runtime's Perplexity key policy instead of raw presence", () => {
+    // Production Perplexity keys are intentionally inert on Vercel previews
+    // (src/lib/perplexity-platform.ts); the registry must not report the
+    // integration configured from a key the runtime refuses to use.
+    const saved = {
+      vercelEnv: process.env.VERCEL_ENV,
+      key: process.env.PERPLEXITY_API_KEY,
+      previewKey: process.env.PERPLEXITY_PREVIEW_API_KEY,
+    };
+    try {
+      process.env.VERCEL_ENV = "preview";
+      process.env.PERPLEXITY_API_KEY = "pplx-production-key";
+      delete process.env.PERPLEXITY_PREVIEW_API_KEY;
+      expect(getRuntimeCapabilities().perplexity).toBe(false);
+
+      process.env.PERPLEXITY_PREVIEW_API_KEY = "pplx-preview-key";
+      expect(getRuntimeCapabilities().perplexity).toBe(true);
+
+      process.env.VERCEL_ENV = "production";
+      delete process.env.PERPLEXITY_PREVIEW_API_KEY;
+      expect(getRuntimeCapabilities().perplexity).toBe(true);
+    } finally {
+      for (const [name, value] of [
+        ["VERCEL_ENV", saved.vercelEnv],
+        ["PERPLEXITY_API_KEY", saved.key],
+        ["PERPLEXITY_PREVIEW_API_KEY", saved.previewKey],
+      ] as const) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      }
+    }
+  });
+
   it("classifies buyer-facing runtime connectors with current registry ids", () => {
     expect(buyerTierForIntegration("google-workspace")).toBe("certified");
     expect(buyerTierForIntegration("microsoft-365")).toBe("certified");
