@@ -193,6 +193,7 @@ export default function SimpleVoicePicker({
     audioRef.current = audio;
     setPreviewingVoiceId(voice.id);
     const stop = () => {
+      if (audioRef.current !== audio) return;
       audioRef.current = null;
       setPreviewingVoiceId(null);
     };

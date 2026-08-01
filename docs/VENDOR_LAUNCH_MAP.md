@@ -34,7 +34,7 @@ immediately before GA:
 - Scoped Twilio REST credentials `TWILIO_API_KEY` + `TWILIO_API_SECRET` are installed on
   Vercel production/preview (Standard key verified against IncomingPhoneNumbers). Keep
   `TWILIO_AUTH_TOKEN` for webhook-signature validation; rotate it out-of-band when convenient.
-- Resend credentials and the `trywireline.com` domain are configured; a controlled real verification/reset delivery remains unproven and is a launch gate.
+- Resend credentials and the `trywireline.com` domain are configured; a controlled real verification/reset delivery remains unproven. Commercial email also remains fail-closed until the operator's valid physical postal address is configured.
 - ElevenLabs is on Creator with the Voice API and curated catalog reachable. Wireline now uses
   ElevenLabs Flash 2.5 as managed streaming TTS through Vapi for the small Studio catalog and
   founder-approved private clones. Every Studio call payload carries a curated Vapi fallback;
@@ -81,10 +81,18 @@ Launch remains blocked until the following are cleared:
    viewports; inspect current screenshots and core interactions before merge.
 8. **Certify Studio speech end to end.** Install the ElevenLabs credential in Vapi Integrations,
    prove inbound/outbound Flash 2.5 speech, then force and verify the Vapi fallback.
-   External Sentry is not a launch gate. Structured Vercel/runtime logs and the bounded
-   `/api/health/report` browser reporter are the launch observability boundary; adopt Sentry later
-   only after its SDK, project, alert policy, and browser/backend receipt are explicitly tested.
-   Ads Manager is intentionally out of scope by founder direction.
+9. **Prove carrier registration, not just inventory.** Before outbound voice or SMS is opened,
+   confirm the Wireline Primary Business Profile, SHAKEN/STIR number assignments, and the relevant
+   approved A2P 10DLC or toll-free registration. Every future customer brand/use case needs its own
+   compliant registration and sender isolation before messaging is enabled.
+10. **Complete the operator identity in legal and email surfaces.** Provide the exact legal entity
+    name and valid physical postal/notice address. Set `WIRELINE_POSTAL_ADDRESS` in production,
+    verify it appears in every commercial email, and update Terms/Privacy contact language before
+    admitting customers. The lifecycle-email path must stay fail-closed while this is unresolved.
+    External Sentry is not a launch gate. Structured Vercel/runtime logs and the bounded
+    `/api/health/report` browser reporter are the launch observability boundary; adopt Sentry later
+    only after its SDK, project, alert policy, and browser/backend receipt are explicitly tested.
+    Ads Manager is intentionally out of scope by founder direction.
 
 WhatsApp is not a core-launch blocker, but it remains **private beta** until an
 approved ONLINE Twilio sender, Meta business/WABA approval, callback
@@ -122,11 +130,11 @@ latency-sensitive phone turn.
 
 ## Twilio channel posture
 
-| Channel  | Verified state          | Requirement / next gate                                                                 |
-| -------- | ----------------------- | --------------------------------------------------------------------------------------- |
-| Voice    | account/inventory ready | Nine voice-capable numbers on Vapi inbound; complete live-call matrix                   |
-| SMS      | account/inventory ready | Nine SMS webhooks on trywireline.com + Messaging Service status callback; run STOP/HELP |
-| WhatsApp | private beta            | Zero ONLINE senders; complete WABA, sender, templates, callbacks, and consent           |
+| Channel  | Verified state          | Requirement / next gate                                                          |
+| -------- | ----------------------- | -------------------------------------------------------------------------------- |
+| Voice    | account/inventory ready | Prove Business Profile + SHAKEN/STIR assignments, then complete live-call matrix |
+| SMS      | account/inventory ready | Prove A2P/toll-free approval + sender association, then run STOP/HELP            |
+| WhatsApp | private beta            | Zero ONLINE senders; complete WABA, sender, templates, callbacks, and consent    |
 
 Promotional trials and one-time onboarding credits are not durable production
 entitlements or customer promises. Wireline does not promise 100 free SMS or
@@ -157,7 +165,7 @@ compatibility fallback until it is rotated.
 | Vapi                | PSTN orchestration                              | credential ready; 18 numbers reachable                      | Confirm billing/auto-reload and complete live call matrix                      |
 | Twilio              | Carrier, numbers, SMS, WhatsApp                 | active; ~$23.66; 9 voice/SMS; API key pair installed        | Rotate Auth Token when convenient; Usage Triggers; channel E2E                 |
 | ElevenLabs          | Managed Studio TTS + private clones             | Creator; API/catalog ready; Vapi live proof pending         | Install Vapi BYOK; disable provider training; prove voice + fallback           |
-| Resend              | Transactional email                             | configured; real delivery unproven                          | Test real verification/reset delivery and maintain plan                        |
+| Resend              | Transactional + lifecycle email                 | configured; delivery/address proof pending                  | Set postal address; test real verification/reset and one commercial footer     |
 | Upstash             | Distributed rate limits                         | credentials ready                                           | Maintain production database and billing                                       |
 | Federal DNC vendor  | Marketing scrub                                 | **unconfigured; marketing fails closed**                    | Configure valid loginId; prove live JSON semantics; maintain scrub credits     |
 | Sentry              | Error alerts                                    | not connected/certified in this audit                       | Add SDK/project/DSN and prove browser+backend receipt, or keep it non-required |

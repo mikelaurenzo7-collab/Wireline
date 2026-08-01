@@ -553,7 +553,9 @@ export const clonedVoices = pgTable(
     qualitySampleModel: text("quality_sample_model"),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
     approvedBy: uuid("approved_by").references(() => users.id, {
-      onDelete: "set null",
+      // Approval is durable authorization evidence. Do not let deleting a
+      // reviewer silently erase it while an approved clone remains live.
+      onDelete: "restrict",
     }),
     rejectionReason: text("rejection_reason"),
     createdAt: timestamp("created_at", { withTimezone: true })

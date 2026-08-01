@@ -114,12 +114,15 @@ export async function buildVapiAssistant({
   const modelSelection = resolveCoherentVoiceModel(configured, userSettings);
   // Presenter/live-voice agents store a non-Vapi studio voice; their dedicated
   // PSTN pick (phone_voice_id) applies before the roster default.
-  const requestedVoice = resolvePstnVoiceCandidate(
-    isOutbound
-      ? configured.voiceIdOutbound || configured.voiceId
-      : configured.voiceIdInbound || configured.voiceId,
-    configured.phoneVoiceId,
-  );
+  const directionalVoice = isOutbound
+    ? configured.voiceIdOutbound || configured.voiceId
+    : configured.voiceIdInbound || configured.voiceId;
+  // ElevenLabs is itself a PSTN voice through Vapi. The presenter-only phone
+  // fallback must not replace it before the managed runtime can authorize it.
+  const requestedVoice =
+    configured.voiceProvider === "11labs"
+      ? directionalVoice
+      : resolvePstnVoiceCandidate(directionalVoice, configured.phoneVoiceId);
   let approvedClone = false;
   if (
     configured.voiceProvider === "11labs" &&

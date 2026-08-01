@@ -304,6 +304,7 @@ router.get(
         userId: req.user.id,
       });
       res.status(503).json({
+        code: "AGENT_ROSTER_UNAVAILABLE",
         agents: [],
         degraded: true,
         error: "Agent roster is temporarily unavailable",

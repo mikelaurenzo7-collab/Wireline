@@ -582,10 +582,13 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     settings?.businessName || agentConfig.name,
     { outboundAiCall: true, recordingEnabled },
   );
-  const requestedPhoneVoiceId = resolvePstnVoiceCandidate(
-    agentConfig.voiceIdOutbound || agentConfig.voiceId,
-    agentConfig.phoneVoiceId,
-  );
+  const outboundVoiceId = agentConfig.voiceIdOutbound || agentConfig.voiceId;
+  // A selected ElevenLabs voice already runs on PSTN through Vapi. Reserve the
+  // separate phoneVoiceId fallback for presenter/browser-only providers.
+  const requestedPhoneVoiceId =
+    agentConfig.voiceProvider === "11labs"
+      ? outboundVoiceId
+      : resolvePstnVoiceCandidate(outboundVoiceId, agentConfig.phoneVoiceId);
   let approvedClone = false;
   if (
     agentConfig.voiceProvider === "11labs" &&

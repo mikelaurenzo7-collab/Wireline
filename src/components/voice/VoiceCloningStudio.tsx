@@ -127,6 +127,7 @@ export default function VoiceCloningStudio({
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fileSelectionRef = useRef(0);
 
   useEffect(
     () => () => {
@@ -139,6 +140,7 @@ export default function VoiceCloningStudio({
   if (!canManage) return null;
 
   async function chooseFile(next: File | null) {
+    const selection = ++fileSelectionRef.current;
     setFile(null);
     setDurationSeconds(null);
     setError(null);
@@ -154,6 +156,7 @@ export default function VoiceCloningStudio({
     }
     try {
       const duration = await audioDuration(next);
+      if (selection !== fileSelectionRef.current) return;
       if (duration < 10 || duration > 90) {
         setError("Use a 10–90 second single-speaker sample.");
         return;
@@ -161,10 +164,21 @@ export default function VoiceCloningStudio({
       setFile(next);
       setDurationSeconds(duration);
     } catch (reason) {
+      if (selection !== fileSelectionRef.current) return;
       setError(
         reason instanceof Error ? reason.message : "Audio could not be read.",
       );
     }
+  }
+
+  function resetDraft() {
+    fileSelectionRef.current += 1;
+    setName("");
+    setFile(null);
+    setDurationSeconds(null);
+    setRemoveBackgroundNoise(false);
+    setConsentAccepted(false);
+    setOpen(false);
   }
 
   async function createVoice(event: FormEvent) {
@@ -183,7 +197,7 @@ export default function VoiceCloningStudio({
           audioMimeType: fileMimeType(file),
           sourceDurationSeconds: durationSeconds,
           removeBackgroundNoise,
-          consentAccepted: true,
+          consentAccepted,
           consentVersion: ELEVENLABS_VOICE_CONSENT_VERSION,
         }),
       });
@@ -192,12 +206,7 @@ export default function VoiceCloningStudio({
       } | null;
       if (!response.ok)
         throw new Error(body?.error || "Voice could not be created.");
-      setName("");
-      setFile(null);
-      setDurationSeconds(null);
-      setRemoveBackgroundNoise(false);
-      setConsentAccepted(false);
-      setOpen(false);
+      resetDraft();
       setNotice("Voice created. Listen once, then approve it for live calls.");
       await onChanged().catch(() => {
         setError("Voice created. Refresh to load its review status.");
@@ -225,16 +234,19 @@ export default function VoiceCloningStudio({
     audioRef.current = audio;
     setPlayingId(voice.voice_id);
     audio.onended = () => {
+      if (audioRef.current !== audio) return;
       audioRef.current = null;
       setPlayingId(null);
       setReviewedIds((current) => new Set(current).add(voice.voice_id));
     };
     audio.onerror = () => {
+      if (audioRef.current !== audio) return;
       audioRef.current = null;
       setPlayingId(null);
       setError("Proof audio is unavailable. The voice remains private.");
     };
     void audio.play().catch(() => {
+      if (audioRef.current !== audio) return;
       audioRef.current = null;
       setPlayingId(null);
       setError("Proof audio could not play.");
@@ -445,7 +457,7 @@ export default function VoiceCloningStudio({
             </button>
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={resetDraft}
               disabled={busy === "create"}
               className="min-h-10 rounded-lg px-4 text-sm font-semibold text-muted-foreground hover:bg-muted"
             >

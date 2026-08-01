@@ -113,7 +113,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     archetype: "The Closer",
     firstMessage:
       "Hey, Aisha with Wireline partnerships. Are you reselling for clients or running this in your own business?",
-    team: "retention",
+    team: "revenue",
     personalityVibe: "playful",
     websiteUrl: "https://trywireline.com",
   },
@@ -169,7 +169,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     channel: "email",
     archetype: "Receptionist",
     firstMessage: "Thanks for reaching out. Happy to help with campaigns or follow up.",
-    team: "retention",
+    team: "revenue",
     personalityVibe: "playful",
     emailAgentTone: "Friendly",
     emailSignature: "— The Wireline Team",

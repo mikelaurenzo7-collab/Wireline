@@ -20,6 +20,7 @@ import {
   buildListUnsubscribeHeaders,
   buildComplianceFooterText,
   buildComplianceFooterHtml,
+  getPostalAddress,
 } from "./email-compliance";
 import { BRAND } from "../constants/brand-colors";
 import {
@@ -497,6 +498,17 @@ export async function sendTrialEndingSoonEmail(opts: {
   daysLeft: number;
   checkoutUrl: string;
 }): Promise<SendResult> {
+  if (!getPostalAddress()) {
+    log.error("Commercial email disabled: WIRELINE_POSTAL_ADDRESS is missing", {
+      ...emailLogContext(opts.to),
+    });
+    return {
+      ok: false,
+      provider: "no-transport",
+      error: "Commercial email compliance is not configured",
+    };
+  }
+
   // This is the one clearly *commercial* (upsell) email Wireline sends, so it
   // gets the full CAN-SPAM + bulk-sender treatment: honor opt-outs, RFC 8058
   // one-click unsubscribe headers, and a footer with a working unsubscribe

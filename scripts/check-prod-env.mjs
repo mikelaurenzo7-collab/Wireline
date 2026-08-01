@@ -159,6 +159,10 @@ const recommended = [
   ["APP_URL", "Canonical URL for OAuth redirects and email links"],
   ["CORS_ORIGINS", "Production CORS allowlist"],
   [
+    "WIRELINE_POSTAL_ADDRESS",
+    "Valid physical postal address required before commercial email can send",
+  ],
+  [
     "VITE_STRIPE_PUBLIC_KEY",
     "Stripe publishable key for client-side checkout UI",
   ],

@@ -348,6 +348,10 @@ export default function PrivacyPolicyPage() {
               Optional providers receive data only when you enable the related
               feature or direct an agent to use it.
             </p>
+            <p>
+              Mobile contact information and SMS opt-in records are not sold or
+              shared with third parties for their marketing.
+            </p>
           </Section>
 
           <Section title="5. Data Retention and Security">

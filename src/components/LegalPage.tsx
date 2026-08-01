@@ -245,14 +245,25 @@ export function TermsOfService() {
           may. Wireline is not responsible for carrier fees.
         </p>
         <p>
+          Mobile contact information and SMS opt-in records are not sold or
+          shared with third parties for their marketing. Carriers are not liable
+          for delayed or undelivered messages. See our{" "}
+          <Link
+            to="/privacy"
+            className="text-brand underline hover:text-brand/80"
+          >
+            Privacy Policy
+          </Link>
+          .
+        </p>
+        <p>
           <strong>A2P 10DLC registration (US carriers).</strong> Business
           (Application-to-Person) messaging in the United States requires brand
-          and campaign registration with US carrier consortia. Wireline (as the
-          Communications Service Provider) coordinates that registration with
-          account holders who send business SMS; the registered brand and use
-          case are the account holder's, not Wireline's. Unregistered or
-          misrepresented traffic may be filtered, blocked, or rate-limited by
-          carriers.
+          and campaign registration with US carrier consortia. Wireline
+          coordinates that registration through Twilio; each account holder's
+          legal brand, use case, consent flow, and campaign must be registered
+          accurately before messaging is enabled. Unregistered or misrepresented
+          traffic may be blocked.
         </p>
         <p>
           Report messaging complaints or ask a question about SMS from a

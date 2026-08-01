@@ -104,6 +104,16 @@ export function getPostalAddress(): string | null {
   return a || null;
 }
 
+function requirePostalAddress(): string {
+  const address = getPostalAddress();
+  if (!address) {
+    throw new Error(
+      "WIRELINE_POSTAL_ADDRESS is required for commercial email",
+    );
+  }
+  return address;
+}
+
 /** Plain-text compliance footer (unsubscribe link + postal address). */
 export function buildComplianceFooterText(email: string): string {
   const lines = [
@@ -112,14 +122,13 @@ export function buildComplianceFooterText(email: string): string {
     `You're receiving this because you have a Wireline account (${normalizeEmail(email)}).`,
     `Unsubscribe from product & billing reminders: ${unsubscribeUrl(email)}`,
   ];
-  const addr = getPostalAddress();
-  if (addr) lines.push(addr);
+  lines.push(requirePostalAddress());
   return lines.join("\n");
 }
 
 /** HTML compliance footer matching the email design system. */
 export function buildComplianceFooterHtml(email: string): string {
-  const addr = getPostalAddress();
+  const addr = requirePostalAddress();
   const safeEmail = escapeBasicHtml(normalizeEmail(email));
   const safeUnsub = escapeBasicHtml(unsubscribeUrl(email));
   return `
@@ -128,7 +137,7 @@ export function buildComplianceFooterHtml(email: string): string {
       You're receiving this because you have a Wireline account (${safeEmail}).
       <a href="${safeUnsub}" style="color: #6B6B7A;">Unsubscribe</a> from product &amp; billing reminders.
     </p>
-    ${addr ? `<p style="margin: 0; line-height: 1.5; color: #9A9AA8; font-size: 11px;">${escapeBasicHtml(addr)}</p>` : ""}
+    <p style="margin: 0; line-height: 1.5; color: #9A9AA8; font-size: 11px;">${escapeBasicHtml(addr)}</p>
   `;
 }
 

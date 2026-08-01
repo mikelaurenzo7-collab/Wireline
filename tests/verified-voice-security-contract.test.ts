@@ -13,6 +13,7 @@ describe("verified private voice security contract", () => {
   const migration = read(
     "drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql",
   );
+  const schema = read("src/db/schema.ts");
   const terms = read("src/components/LegalPage.tsx");
   const privacy = read("src/components/PrivacyPolicyPage.tsx");
 
@@ -57,6 +58,20 @@ describe("verified private voice security contract", () => {
     expect(routes).toContain("providerVerificationRequired");
     expect(migration).toContain("voice.status = 'approved'");
     expect(migration).toContain("wireline_cloned_voices_approval_check");
+    expect(migration).toContain("provider_verification_required = false");
+    expect(migration).toContain(
+      "quality_check_version = 'voice-quality-v1-2026-08-01'",
+    );
+    expect(migration).toContain("ON DELETE RESTRICT");
+    expect(schema).toMatch(
+      /approvedBy: uuid\("approved_by"\)[\s\S]*onDelete: "restrict"/,
+    );
+    expect(migration).toContain(
+      "consent_version = 'voice-clone-consent-v1-2026-08-01'",
+    );
+    expect(migration).toContain("intended_use = 'wireline-agents'");
+    expect(migration).toContain("char_length(btrim(name)) BETWEEN 2 AND 80");
+    expect(migration).toContain("wireline_cloned_voices_mime_check");
     expect(migration).toContain("wireline_cloned_voice_revocation");
     expect(migration).toContain("ENABLE ROW LEVEL SECURITY");
   });

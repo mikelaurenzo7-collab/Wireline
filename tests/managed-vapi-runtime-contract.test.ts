@@ -78,6 +78,15 @@ describe("managed phone voice runtime policy", () => {
     expect(draftService).toMatch(/voiceProvider: "vapi"/);
   });
 
+  it("does not replace an approved ElevenLabs selection with the presenter fallback", () => {
+    expect(factory).toMatch(
+      /configured\.voiceProvider === "11labs"[\s\S]*\? directionalVoice[\s\S]*: resolvePstnVoiceCandidate/,
+    );
+    expect(outboundClient).toMatch(
+      /agentConfig\.voiceProvider === "11labs"[\s\S]*\? outboundVoiceId[\s\S]*: resolvePstnVoiceCandidate/,
+    );
+  });
+
   it("gates private voices on authorization, human proof review, and revocation", () => {
     expect(voiceRoutes).toMatch(/requirePlatformAdmin/);
     expect(voiceRoutes).toMatch(/ELEVENLABS_VOICE_CONSENT_VERSION/);
@@ -104,6 +113,17 @@ describe("managed phone voice runtime policy", () => {
     expect(migration).toMatch(/CREATE POLICY tenant_isolation/);
     expect(migration).toMatch(/voice\.status = 'approved'/);
     expect(migration).toMatch(/wireline_cloned_voice_revocation/);
+    expect(migration).toMatch(/provider_verification_required = false/);
+    expect(migration).toMatch(
+      /quality_check_version = 'voice-quality-v1-2026-08-01'/,
+    );
+  });
+
+  it("preserves governed presenter mappings without coupling video state to phone voice", () => {
+    expect(migration).toMatch(
+      /lower\(coalesce\(NEW\.phone_voice_provider, ''\)\) = 'vapi'/,
+    );
+    expect(migration).not.toMatch(/NEW\.video_presenter_[a-z_]+\s*:=/);
   });
 
   it("bounds inbound context and preserves runtime guardrails", () => {

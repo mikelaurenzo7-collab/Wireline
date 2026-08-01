@@ -23,18 +23,26 @@ CREATE TABLE IF NOT EXISTS public.wireline_cloned_voices (
   quality_check_version text,
   quality_sample_model text,
   approved_at timestamptz,
-  approved_by uuid REFERENCES public.wireline_users(id) ON DELETE SET NULL,
+  approved_by uuid REFERENCES public.wireline_users(id) ON DELETE RESTRICT,
   rejection_reason text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT wireline_cloned_voices_provider_check
     CHECK (provider = 'elevenlabs'),
+  CONSTRAINT wireline_cloned_voices_name_check
+    CHECK (char_length(btrim(name)) BETWEEN 2 AND 80),
   CONSTRAINT wireline_cloned_voices_status_check
     CHECK (status IN ('creating', 'pending_review', 'approved', 'rejected', 'revoked', 'failed', 'deletion_pending')),
+  CONSTRAINT wireline_cloned_voices_consent_check
+    CHECK (consent_version = 'voice-clone-consent-v1-2026-08-01'),
   CONSTRAINT wireline_cloned_voices_hash_check
     CHECK (source_sha256 ~ '^[0-9a-f]{64}$'),
+  CONSTRAINT wireline_cloned_voices_mime_check
+    CHECK (source_mime_type IN ('audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/mp4', 'audio/m4a', 'audio/x-m4a', 'audio/ogg', 'audio/webm')),
   CONSTRAINT wireline_cloned_voices_duration_check
     CHECK (source_duration_seconds BETWEEN 10 AND 90),
+  CONSTRAINT wireline_cloned_voices_intended_use_check
+    CHECK (intended_use = 'wireline-agents'),
   CONSTRAINT wireline_cloned_voices_source_retention_check
     CHECK (source_audio_retained = false),
   CONSTRAINT wireline_cloned_voices_approval_check
@@ -43,7 +51,8 @@ CREATE TABLE IF NOT EXISTS public.wireline_cloned_voices (
       OR (
         approved_at IS NOT NULL
         AND approved_by IS NOT NULL
-        AND quality_check_version IS NOT NULL
+        AND provider_verification_required = false
+        AND quality_check_version = 'voice-quality-v1-2026-08-01'
         AND quality_sample_model = 'eleven_flash_v2_5'
       )
     )
@@ -166,11 +175,19 @@ BEGIN
     END IF;
   END IF;
 
-  NEW.phone_voice_id := NULL;
-  NEW.phone_voice_provider := NULL;
-  NEW.video_presenter_provider := NULL;
-  NEW.video_presenter_avatar_id := NULL;
-  NEW.video_presenter_consent_status := 'not_started';
+  -- Presenter-matched phone voices remain a governed Vapi fallback. Keep
+  -- valid mappings intact and reject legacy/external ids. Video presenter
+  -- fields are deliberately outside this phone-voice trigger.
+  IF lower(coalesce(NEW.phone_voice_provider, '')) = 'vapi'
+    AND NEW.phone_voice_id IN (
+      'Savannah', 'Elliot', 'Rohan', 'Emma', 'Clara', 'Nico', 'Kai',
+      'Sagar', 'Godfrey', 'Neil', 'Layla', 'Sid', 'Naina'
+    ) THEN
+    NEW.phone_voice_provider := 'vapi';
+  ELSE
+    NEW.phone_voice_id := NULL;
+    NEW.phone_voice_provider := NULL;
+  END IF;
   RETURN NEW;
 END;
 $$;

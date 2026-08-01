@@ -29,23 +29,34 @@ describe("authz tooling covers factory handlers, commented declarations, and sub
   });
 
   it("sees the cron sweep routes (named handler) and marks them protected", () => {
-    expect(matrix).toMatch(/\| job-routes\.ts \| GET \| `\/api\/jobs\/sweep` \|.*\| Protected \|/);
-    expect(matrix).toMatch(/\| job-routes\.ts \| POST \| `\/api\/jobs\/sweep` \|.*\| Protected \|/);
+    expect(matrix).toMatch(
+      /\| job-routes\.ts \| GET \| `\/api\/jobs\/sweep` \|.*\| Protected \|/,
+    );
+    expect(matrix).toMatch(
+      /\| job-routes\.ts \| POST \| `\/api\/jobs\/sweep` \|.*\| Protected \|/,
+    );
   });
 
   it("sees routes with comments between the method call and the path string", () => {
-    expect(matrix).toContain("| job-routes.ts | GET | `/api/jobs/:id([0-9a-fA-F-]{36})` |");
+    expect(matrix).toContain(
+      "| job-routes.ts | GET | `/api/jobs/:id([0-9a-fA-F-]{36})` |",
+    );
   });
 
   it("traverses sub-routers mounted via router.use(subRouter)", () => {
     // oauth/index.ts provider composition.
-    expect(matrix).toContain("| oauth/google.ts | GET | `/api/oauth/google/callback` |");
+    expect(matrix).toContain(
+      "| oauth/google.ts | GET | `/api/oauth/google/callback` |",
+    );
     expect(matrix).toMatch(
       /\| oauth\/square\.ts \| GET \| `\/api\/ecommerce\/oauth\/callback` \|.*\| Public \(allowlisted\) \|/,
     );
     // twilio-webhook.ts -> twilio-webhook-base.ts.
     expect(matrix).toMatch(
       /\| twilio-webhook-base\.ts \| POST \| `\/api\/twilio-webhook\/voice-fallback` \|.*\| Public \(allowlisted\) \|/,
+    );
+    expect(matrix).toMatch(
+      /\| twilio-webhook-base\.ts \| POST \| `\/api\/twilio-webhook\/voice-fallback-complete` \|.*\| Public \(allowlisted\) \|/,
     );
     // video-presenter-routes.ts -> video-presenter-routes-base.ts.
     expect(matrix).toMatch(
@@ -66,6 +77,8 @@ describe("authz tooling covers factory handlers, commented declarations, and sub
   it("verifies MOUNTED_ELSEWHERE claims instead of trusting prose", () => {
     const registryCheck = read("scripts/check-route-registry.mjs");
     expect(registryCheck).toContain("mountedBy");
-    expect(registryCheck).toMatch(/does not import|never app\.use\(\)\/router\.use\(\)s it/);
+    expect(registryCheck).toMatch(
+      /does not import|never app\.use\(\)\/router\.use\(\)s it/,
+    );
   });
 });

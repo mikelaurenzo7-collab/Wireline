@@ -157,6 +157,49 @@ describe("double-pass launch honesty", () => {
     expect(source).not.toContain("res.json({ ok: false })");
   });
 
+  it("keeps carrier messaging disclosures and registration ownership accurate", () => {
+    const terms = read("src/components/LegalPage.tsx");
+    const privacy = read("src/components/PrivacyPolicyPage.tsx");
+    expect(terms).toContain(
+      "Mobile contact information and SMS opt-in records are not sold or",
+    );
+    expect(terms).toContain("Carriers are not liable");
+    expect(terms).toContain("coordinates that registration through Twilio");
+    expect(terms).not.toContain("as the Communications Service Provider");
+    expect(privacy).toContain(
+      "Mobile contact information and SMS opt-in records are not sold or",
+    );
+  });
+
+  it("fails commercial email readiness closed without a postal address", () => {
+    const envCheck = read("scripts/check-prod-env.mjs");
+    const vendorProbe = read("scripts/check-vendor-readiness.mjs");
+    const emailService = read("src/lib/email-service.ts");
+    expect(envCheck).toContain('"WIRELINE_POSTAL_ADDRESS"');
+    expect(vendorProbe).toContain('"commercial_email_postal_address"');
+    expect(vendorProbe).toMatch(
+      /commercialEmailPostalAddressReady \? "ready" : "blocked"/,
+    );
+    expect(emailService).toContain("getPostalAddress");
+    expect(emailService).toContain(
+      "Commercial email disabled: WIRELINE_POSTAL_ADDRESS is missing",
+    );
+  });
+
+  it("routes founder partnerships and growth work to revenue", () => {
+    const fleet = read("src/lib/founder-fleet-seed.ts");
+    const aisha = fleet.slice(
+      fleet.indexOf('id: "founder-aisha"'),
+      fleet.indexOf('id: "founder-elena"'),
+    );
+    const growth = fleet.slice(
+      fleet.indexOf('id: "founder-growth-email"'),
+      fleet.indexOf('id: "founder-tier2"'),
+    );
+    expect(aisha).toContain('team: "revenue"');
+    expect(growth).toContain('team: "revenue"');
+  });
+
   it("keeps billing status within serverless database pool headroom", () => {
     const source = read("src/routes/billing-routes.ts");
     const start = source.indexOf('"/billing/status"');

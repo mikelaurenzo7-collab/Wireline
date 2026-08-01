@@ -643,6 +643,19 @@ record(
   "Maintain the Resend plan; no prepaid balance is required.",
 );
 
+const commercialEmailPostalAddressReady = present("WIRELINE_POSTAL_ADDRESS");
+record(
+  "commercial_email_postal_address",
+  true,
+  commercialEmailPostalAddressReady ? "ready" : "blocked",
+  commercialEmailPostalAddressReady
+    ? "Commercial email has a configured physical postal address."
+    : "WIRELINE_POSTAL_ADDRESS is missing; commercial email must remain fail-closed.",
+  commercialEmailPostalAddressReady
+    ? "Keep the address current in Vercel and every commercial email footer."
+    : "Provide the operator's valid current postal address before enabling lifecycle or marketing email.",
+);
+
 const liveVideoCatalogGate =
   process.env.WIRELINE_LIVE_VIDEO_CATALOG_READY === "true";
 const liveVideoProviderConfigured = present("LIVEAVATAR_API_KEY");
