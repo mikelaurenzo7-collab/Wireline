@@ -568,6 +568,7 @@ export const clonedVoices = pgTable(
   () => ({
     userStatusCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_cloned_voices_user_status_created ON wireline_cloned_voices USING btree (user_id, status, created_at DESC)`,
     sourceFingerprintIdx: sql`CREATE INDEX IF NOT EXISTS idx_cloned_voices_source_fingerprint ON wireline_cloned_voices USING btree (user_id, source_sha256)`,
+    approvedByIdx: sql`CREATE INDEX IF NOT EXISTS idx_cloned_voices_approved_by ON wireline_cloned_voices USING btree (approved_by)`,
     activeSourceUniqueIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_cloned_voices_active_source ON wireline_cloned_voices (user_id, source_sha256) WHERE status NOT IN ('revoked', 'failed')`,
   }),
 );
