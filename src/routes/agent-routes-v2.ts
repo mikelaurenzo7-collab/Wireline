@@ -463,80 +463,81 @@ router.get(
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
     const [agentRows, personalities, directives, knowledge] =
-      await drizzle.transaction((tx) =>
-        Promise.all([
-          tx
-            .select({
-              name: schema.agents.name,
-              role: schema.agents.role,
-              archetype: schema.agents.archetype,
-              flowConfig: schema.agents.flowConfig,
-              enabledTools: schema.agents.enabledTools,
-              llmProvider: schema.agents.llmProvider,
-              llmModel: schema.agents.llmModel,
-              llmTemperature: schema.agents.llmTemperature,
-              voiceId: schema.agents.voiceId,
-              voiceProvider: schema.agents.voiceProvider,
-              phoneVoiceId: schema.agents.phoneVoiceId,
-              phoneVoiceProvider: schema.agents.phoneVoiceProvider,
-              // business profile fields
-              businessHours: schema.agents.businessHours,
-              timezone: schema.agents.timezone,
-              complianceMode: schema.agents.complianceMode,
-              disallowedTopics: schema.agents.disallowedTopics,
-              escalationKeywords: schema.agents.escalationKeywords,
-              escalationPhone: schema.agents.escalationPhone,
-              escalationEmail: schema.agents.escalationEmail,
-              escalationHandoffEnabled: schema.agents.escalationHandoffEnabled,
-              businessVariables: schema.agents.businessVariables,
-              outOfHoursMessage: schema.agents.outOfHoursMessage,
-              kpiFocus: schema.agents.kpiFocus,
-              isBusinessAgent: schema.agents.isBusinessAgent,
-              videoPresenterProvider: schema.agents.videoPresenterProvider,
-              videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
-              videoPresenterConsentStatus:
-                schema.agents.videoPresenterConsentStatus,
-            })
-            .from(schema.agents)
-            .where(
-              and(
-                eq(schema.agents.id, req.params.id),
-                eq(schema.agents.userId, req.user.id),
-              ),
-            )
-            .limit(1),
-          tx
-            .select({ content: schema.personality.content })
-            .from(schema.personality)
-            .where(
-              and(
-                eq(schema.personality.agentId, req.params.id),
-                eq(schema.personality.userId, req.user.id),
-              ),
-            )
-            .limit(1),
-          tx
-            .select()
-            .from(schema.directives)
-            .where(
-              and(
-                eq(schema.directives.agentId, req.params.id),
-                eq(schema.directives.userId, req.user.id),
-              ),
-            )
-            .orderBy(desc(schema.directives.priority)),
-          tx
-            .select()
-            .from(schema.knowledge)
-            .where(
-              and(
-                eq(schema.knowledge.agentId, req.params.id),
-                eq(schema.knowledge.userId, req.user.id),
-              ),
-            )
-            .orderBy(desc(schema.knowledge.createdAt)),
-        ]),
-      );
+      await drizzle.transaction(async (tx) => {
+        // A transaction is a single pg client. Run the snapshot reads in
+        // order instead of relying on pg@8's deprecated concurrent queue.
+        const agentRows = await tx
+          .select({
+            name: schema.agents.name,
+            role: schema.agents.role,
+            archetype: schema.agents.archetype,
+            flowConfig: schema.agents.flowConfig,
+            enabledTools: schema.agents.enabledTools,
+            llmProvider: schema.agents.llmProvider,
+            llmModel: schema.agents.llmModel,
+            llmTemperature: schema.agents.llmTemperature,
+            voiceId: schema.agents.voiceId,
+            voiceProvider: schema.agents.voiceProvider,
+            phoneVoiceId: schema.agents.phoneVoiceId,
+            phoneVoiceProvider: schema.agents.phoneVoiceProvider,
+            // business profile fields
+            businessHours: schema.agents.businessHours,
+            timezone: schema.agents.timezone,
+            complianceMode: schema.agents.complianceMode,
+            disallowedTopics: schema.agents.disallowedTopics,
+            escalationKeywords: schema.agents.escalationKeywords,
+            escalationPhone: schema.agents.escalationPhone,
+            escalationEmail: schema.agents.escalationEmail,
+            escalationHandoffEnabled: schema.agents.escalationHandoffEnabled,
+            businessVariables: schema.agents.businessVariables,
+            outOfHoursMessage: schema.agents.outOfHoursMessage,
+            kpiFocus: schema.agents.kpiFocus,
+            isBusinessAgent: schema.agents.isBusinessAgent,
+            videoPresenterProvider: schema.agents.videoPresenterProvider,
+            videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
+            videoPresenterConsentStatus:
+              schema.agents.videoPresenterConsentStatus,
+          })
+          .from(schema.agents)
+          .where(
+            and(
+              eq(schema.agents.id, req.params.id),
+              eq(schema.agents.userId, req.user.id),
+            ),
+          )
+          .limit(1);
+        const personalities = await tx
+          .select({ content: schema.personality.content })
+          .from(schema.personality)
+          .where(
+            and(
+              eq(schema.personality.agentId, req.params.id),
+              eq(schema.personality.userId, req.user.id),
+            ),
+          )
+          .limit(1);
+        const directives = await tx
+          .select()
+          .from(schema.directives)
+          .where(
+            and(
+              eq(schema.directives.agentId, req.params.id),
+              eq(schema.directives.userId, req.user.id),
+            ),
+          )
+          .orderBy(desc(schema.directives.priority));
+        const knowledge = await tx
+          .select()
+          .from(schema.knowledge)
+          .where(
+            and(
+              eq(schema.knowledge.agentId, req.params.id),
+              eq(schema.knowledge.userId, req.user.id),
+            ),
+          )
+          .orderBy(desc(schema.knowledge.createdAt));
+        return [agentRows, personalities, directives, knowledge] as const;
+      });
     const record = agentRows[0];
     const identity = record
       ? resolveAgentVideoPresenter({
