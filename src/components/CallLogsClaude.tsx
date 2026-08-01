@@ -116,6 +116,15 @@ function outcomeStatusStyle(tag: string | null | undefined): {
       background: "color-mix(in srgb, var(--wireline-color-status-warning) 14%, transparent)",
     };
   }
+  // Escalations/handoffs are warning-level everywhere else (the amber
+  // Escalations KPI, the Triage tab), so the row pill carries the same amber
+  // instead of reading as a neutral outcome.
+  if (/escalat|handoff|transfer/.test(normalized)) {
+    return {
+      color: "var(--wireline-color-status-warning)",
+      background: "color-mix(in srgb, var(--wireline-color-status-warning) 14%, transparent)",
+    };
+  }
   if (/booked|qualified|success|completed/.test(normalized)) {
     return {
       color: "var(--wireline-color-status-success)",
