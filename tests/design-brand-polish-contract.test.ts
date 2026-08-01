@@ -153,8 +153,11 @@ describe("E2E design and brand polish", () => {
     expect(caps).toMatch(
       /\.wl-ui-caps \.wl-preserve-case,\s*\.wl-ui-caps \.wl-preserve-case \*\s*\{[^}]*?text-transform: none;/,
     );
+    // Tolerant of formatting: prettier wraps this JSX onto three lines once the
+    // class list grows, so an assertion that required `">{agent.name}` adjacent
+    // passed locally and then failed in CI after the pre-commit format pass.
     expect(read("src/components/WorkspaceShell.tsx")).toMatch(
-      /wl-preserve-case[^"]*">\{agent\.name\}/,
+      /wl-preserve-case[^"]*"[^>]*>\s*\{agent\.name\}/,
     );
 
     // Caps need more air than lowercase; the tight display tracking would run
