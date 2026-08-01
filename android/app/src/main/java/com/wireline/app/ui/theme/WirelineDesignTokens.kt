@@ -3,6 +3,7 @@ package com.wireline.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 internal object WirelineDesignTokens {
   object ColorToken {
@@ -87,22 +88,22 @@ internal object WirelineDesignTokens {
     val space500 = 40.dp
     val space600 = 48.dp
     val space800 = 64.dp
-    val typographyBodyLineHeight = 26.dp
-    val typographyBodySize = 16.dp
-    val typographyBodyStrongLineHeight = 26.dp
-    val typographyBodyStrongSize = 16.dp
-    val typographyCaptionLineHeight = 19.dp
-    val typographyCaptionSize = 13.dp
-    val typographyDisplayLineHeight = 60.dp
-    val typographyDisplaySize = 56.dp
-    val typographyH1LineHeight = 46.dp
-    val typographyH1Size = 40.dp
-    val typographyH2LineHeight = 36.dp
-    val typographyH2Size = 30.dp
-    val typographyH3LineHeight = 30.dp
-    val typographyH3Size = 22.dp
-    val typographyOverlineLineHeight = 16.dp
-    val typographyOverlineSize = 11.dp
+    val typographyBodyLineHeight = 26.sp
+    val typographyBodySize = 16.sp
+    val typographyBodyStrongLineHeight = 26.sp
+    val typographyBodyStrongSize = 16.sp
+    val typographyCaptionLineHeight = 19.sp
+    val typographyCaptionSize = 13.sp
+    val typographyDisplayLineHeight = 60.sp
+    val typographyDisplaySize = 56.sp
+    val typographyH1LineHeight = 46.sp
+    val typographyH1Size = 40.sp
+    val typographyH2LineHeight = 36.sp
+    val typographyH2Size = 30.sp
+    val typographyH3LineHeight = 30.sp
+    val typographyH3Size = 22.sp
+    val typographyOverlineLineHeight = 16.sp
+    val typographyOverlineSize = 11.sp
   }
 
   object Motion {

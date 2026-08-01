@@ -138,8 +138,22 @@ describe("Wireline design token pipeline", () => {
       expect(px, `${path} should be a px token`).toBeTruthy();
       expect(iosTokens).toContain(`public static let ${metricName}: CGFloat = ${px}`);
       expect(iosSharedTokens).toContain(`public static let ${metricName}: CGFloat = ${px}`);
-      expect(kotlinTokens).toContain(`val ${metricName} = ${px}.dp`);
+      // Compose is the one surface that distinguishes the two kinds of
+      // measurement CSS and CGFloat collapse into one number. Type sizes and
+      // line heights must be TextUnit (`sp`) so they follow the reader's system
+      // font-size setting; spacing, radii, and hit targets stay Dp. Emitting the
+      // whole group as `.dp` is not a style nit — `.sp` has no Dp receiver, so
+      // every consumer of a typography token failed to compile and the Android
+      // app could not be built at all.
+      const unit = path.startsWith("typography.") ? "sp" : "dp";
+      expect(kotlinTokens).toContain(`val ${metricName} = ${px}.${unit}`);
     }
+
+    // Guard the split itself, not just these paths: no typography token may be
+    // emitted as a Dp, and the generator has to import both units.
+    expect(kotlinTokens).not.toMatch(/val typography[A-Za-z0-9]+ = [\d.]+\.dp/);
+    expect(kotlinTokens).toContain("import androidx.compose.ui.unit.sp");
+    expect(kotlinTokens).toContain("import androidx.compose.ui.unit.dp");
 
     expect(values["interaction.target.minimum"]).toBe("40px");
     expect(iosTokens).not.toContain("interactionTargetMinimum: CGFloat = 24");
@@ -177,6 +191,6 @@ describe("Wireline design token pipeline", () => {
     expect(hardeningCss).toContain(":is(.marketing-surface, .prose, .wl-copy");
     expect(hardeningCss).toContain(".wl-compact-control");
     expect(hardeningCss).not.toContain("p,\nli,\ndd,\ndt,\nsummary,");
-    expect(hardeningCss).not.toContain("button,\n[role=\"button\"],\na[role=\"button\"],\ninput,");
+    expect(hardeningCss).not.toContain('button,\n[role="button"],\na[role="button"],\ninput,');
   });
 });

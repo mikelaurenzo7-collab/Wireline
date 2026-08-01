@@ -31,7 +31,9 @@ class AssistantWidgetProvider : GlanceAppWidgetReceiver() {
 }
 
 class AssistantStatusWidget : GlanceAppWidget() {
-    override suspend fun provideContent(context: Context, id: GlanceId) {
+    // See AskWirelineWidget: `provideGlance` is the member to override, and
+    // `provideContent` is what you call inside it.
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
         val snapshot = WidgetSync.load(context)
         provideContent {
             WidgetContent(snapshot)
@@ -55,7 +57,7 @@ class AssistantStatusWidget : GlanceAppWidget() {
                 text = "Wireline Agents",
                 style = TextStyle(
                     color = ColorProvider(WidgetPalette.Accent),
-                    fontSize = WirelineDesignTokens.Metric.typographyBodySize.sp,
+                    fontSize = WirelineDesignTokens.Metric.typographyBodySize,
                     fontWeight = FontWeight.Bold,
                 ),
             )
@@ -69,7 +71,7 @@ class AssistantStatusWidget : GlanceAppWidget() {
                     text = if (!snapshot.signedIn) "Sign in" else if (snapshot.needsAttention == 0) "All clear" else "${snapshot.needsAttention}",
                     style = TextStyle(
                         color = ColorProvider(if (snapshot.needsAttention > 0) WidgetPalette.Accent else WidgetPalette.Success),
-                        fontSize = WirelineDesignTokens.Metric.typographyCaptionSize.sp,
+                        fontSize = WirelineDesignTokens.Metric.typographyCaptionSize,
                         fontWeight = FontWeight.Bold,
                     ),
                 )
@@ -88,7 +90,7 @@ class AssistantStatusWidget : GlanceAppWidget() {
                     },
                     style = TextStyle(
                         color = ColorProvider(WidgetPalette.Text),
-                        fontSize = WirelineDesignTokens.Metric.typographyCaptionSize.sp,
+                        fontSize = WirelineDesignTokens.Metric.typographyCaptionSize,
                         fontWeight = FontWeight.Bold,
                     ),
                 )

@@ -2,7 +2,6 @@ package com.wireline.app.widget
 
 import android.content.Context
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
@@ -27,7 +26,11 @@ import com.wireline.app.MainActivity
 import com.wireline.app.R
 
 class AskWirelineWidget : GlanceAppWidget() {
-    override suspend fun provideContent(context: Context, id: GlanceId) {
+    // `provideGlance` is the abstract member Glance asks widgets to implement;
+    // `provideContent` is the suspend function you call from inside it to hand
+    // back the composition. Overriding `provideContent` instead left the class
+    // abstract and overriding nothing.
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
             WidgetContent()
         }
@@ -55,7 +58,7 @@ class AskWirelineWidget : GlanceAppWidget() {
                 text = "Ask Wireline",
                 style = TextStyle(
                     color = ColorProvider(WidgetPalette.Accent),
-                    fontSize = WirelineDesignTokens.Metric.typographyBodySize.sp,
+                    fontSize = WirelineDesignTokens.Metric.typographyBodySize,
                     fontWeight = FontWeight.Bold,
                 ),
             )

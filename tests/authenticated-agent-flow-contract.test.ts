@@ -116,7 +116,12 @@ describe("authenticated agent flow", () => {
     expect(createDialog).toContain("Revenue Desk");
     expect(createDialog).toContain("Support Desk");
     expect(createDialog).toContain("Sales, support, and scheduling");
-    expect(createDialog).toContain("Qualify inbound demand, answer support questions");
+    // Breadth used to be asserted against the brief the composer was pre-filled
+    // with. That pre-fill is gone — the box opens empty so the customer writes
+    // their own job — so the same promise is checked where it still lives: the
+    // placeholder, which suggests the range without occupying the field.
+    expect(createDialog).toContain("Qualify inbound demos, answer support questions");
+    expect(createDialog).toContain("route urgent calls");
     expect(createDialog).not.toContain("Handle pharmacy calls");
   });
 
