@@ -158,7 +158,7 @@ export default function ClientAppsPage() {
           <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
             Add <code className="wl-code">https://trywireline.com/mcp</code> as a remote MCP
             connector, then sign in with your Wireline account. Draft and privately simulate here —
-            numbers, dialing, Training, billing, and launch stay in Studio.
+            numbers, dialing, training, billing, and launch stay in Studio.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Button asChild variant="editorial" size="sm">

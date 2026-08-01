@@ -19,6 +19,7 @@ export default function ConnectionsPage() {
       <WorkspacePageFrame mode="standard" className="gap-4">
         <WorkspacePageIntro
           title="Connections"
+          titleHidden
           action={
             <div className="flex flex-wrap items-center gap-2">
               <Button asChild size="sm" variant="secondary">

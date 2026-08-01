@@ -220,7 +220,7 @@ export default function WireAgentLanding() {
                   fallback={
                     <div className="text-center">
                       <p className="mx-auto text-[15px] leading-6 text-muted-foreground">
-                        Prefer the phone? Call a live demo line without signing up.
+                        Prefer the phone? Call a live demo line.
                       </p>
                       <a
                         href={`tel:${HERO_DEMO_AGENT.tel}`}

@@ -170,8 +170,7 @@ export default function PublicChangelog() {
               Every change we've shipped.
             </h1>
             <p className="marketing-hero-lead">
-              Wireline ships continuously. This page is hand-curated: when a customer-visible
-              release is worth documenting, it lands here with the behavior that actually shipped.
+              Customer-visible releases, with the behavior that actually shipped.
             </p>
           </motion.div>
 
