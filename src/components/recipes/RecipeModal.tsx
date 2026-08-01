@@ -148,7 +148,11 @@ export function RecipeModal({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 id="recipe-modal-title" className="font-display text-2xl leading-none">
+                  <h2
+                    data-slot="dialog-title"
+                    id="recipe-modal-title"
+                    className="font-display text-2xl leading-none"
+                  >
                     {meta.title}
                   </h2>
                   {meta.thinking && (

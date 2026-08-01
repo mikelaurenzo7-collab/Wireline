@@ -365,6 +365,8 @@ export default function TrialGateModal() {
                 {eyebrow}
               </div>
               <h2
+                data-slot="dialog-title"
+
                 id="trial-gate-title"
                 className="mb-2 text-balance font-display text-2xl text-foreground sm:text-3xl"
               >

@@ -1,7 +1,10 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { globSync } from "glob";
 import { describe, expect, it } from "vitest";
 
+const root = process.cwd();
+const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
@@ -163,6 +166,34 @@ describe("E2E design and brand polish", () => {
     // Caps need more air than lowercase; the tight display tracking would run
     // the letterforms together at control sizes.
     expect(caps).toMatch(/--wl-caps-control-tracking:\s*0\.0[3-9]\d*em/);
+  });
+
+  it("marks every hand-rolled dialog title so the case system reaches it", () => {
+    // The case system finds modal headings through `data-slot="dialog-title"`,
+    // which the Dialog primitive sets for you. Eleven surfaces in this product
+    // hand-roll their overlay instead -- Fast Start, the deploy and trial-gate
+    // modals, the post-create wizard -- and every one of those titles sat in
+    // sentence case above cased labels and cased buttons. Case is doing the
+    // ranking in this design; a title that opts out of it reads as body copy.
+    const files = globSync("src/**/*.tsx", { cwd: root })
+      .filter((file) => source(file).includes('role="dialog"'))
+      .sort();
+    expect(files.length, "no dialogs found -- the glob or attribute changed").toBeGreaterThan(5);
+
+    const unmarked: string[] = [];
+    for (const file of files) {
+      const text = source(file);
+      for (const [, titleId] of text.matchAll(/aria-labelledby="([^"{}]+)"/g)) {
+        const at = text.indexOf(`id="${titleId}"`);
+        if (at === -1) continue; // Labelled by an element the primitive owns.
+        // Walk out to the opening tag that carries the id.
+        const tag = text.slice(text.lastIndexOf("<", at), text.indexOf(">", at) + 1);
+        // An sr-only label has no case to get wrong.
+        if (tag.includes("sr-only") || tag.includes('data-slot="dialog-title"')) continue;
+        unmarked.push(`${file} (#${titleId})`);
+      }
+    }
+    expect(unmarked, `dialog titles outside the case system:\n${unmarked.join("\n")}`).toEqual([]);
   });
 
   it("uppercases field captions without shouting the values beside them", () => {

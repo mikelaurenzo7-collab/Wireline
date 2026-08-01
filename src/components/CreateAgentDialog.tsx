@@ -337,6 +337,7 @@ export default function CreateAgentDialog({
               <div className="min-w-0">
                 <h2
                   id="create-agent-title"
+                  data-slot="dialog-title"
                   className="font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-[-.025em] text-foreground"
                 >
                   Fast Start
@@ -365,7 +366,7 @@ export default function CreateAgentDialog({
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
           <p className={WL_APP_CLASSES.wiredEyebrow}>One job</p>
-          <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(2rem,4vw,2.5rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
+          <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(2rem,4vw,2.5rem)] font-normal uppercase leading-none tracking-[-0.02em] text-foreground">
             {language.setupPrompt}
           </h3>
           <p className="mt-3 text-sm text-muted-foreground">
