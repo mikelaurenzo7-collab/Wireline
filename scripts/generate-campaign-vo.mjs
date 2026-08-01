@@ -32,27 +32,38 @@ const DEFAULT_VOICE_ID = "cgSgspJ2msm6clMCkdW9";
 const MODEL_ID = "eleven_multilingual_v2";
 
 /**
- * Canonical voiceover copy, verbatim from the campaign document.
- * Pinned by tests/launch-campaign-vo-contract.test.ts so the script and the
- * document cannot drift apart.
+ * Canonical voiceover copy, verbatim from the campaign document. Pinned by
+ * tests/launch-campaign-vo-contract.test.ts so the script and the document
+ * cannot drift apart.
+ *
+ * The delivery guide targets 2.3-2.5 words per second. Left at speed 1.0 the
+ * provider reads noticeably faster than that — measured 2.57 / 2.69 / 3.02 wps
+ * across the three cuts — which pushed the founder explainer to 42.7s inside a
+ * 60-second slot, i.e. seventeen seconds of dead air. Per-track speed brings
+ * each render back onto the guide's pace, which is also the pace the cuts were
+ * timecoded against.
  */
 export const CAMPAIGN_VO = [
   {
     id: "missed-call-15s",
     file: "wireline-missed-call-15s.mp3",
     targetSeconds: 15,
+    // Already lands at 14.4s; the 15s cut has no room to slow down.
+    speed: 1.0,
     text: "Six forty-seven. The phone rings, and you cannot pick up. Your Wireline agent can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at trywireline.com.",
   },
   {
     id: "ai-voice-agent-30s",
     file: "wireline-ai-voice-agent-30s.mp3",
     targetSeconds: 30,
+    speed: 0.9,
     text: "This is Wireline. Create an agent for your personal line or your front desk. Train it on your facts, your tone, your rules, and what it must never say. Wire it to a real number, texts, and email. Then run it: every call answered, every follow-up sent, every outcome logged where you can check it. Build free. Test it privately. Go live from nineteen dollars a month.",
   },
   {
     id: "founder-60s",
     file: "wireline-founder-60s.mp3",
     targetSeconds: 60,
+    speed: 0.8,
     text: "I built Wireline because the phone call is still where real business happens, and it is still the easiest thing to miss. Every missed call is a customer deciding to try the next name on the list. So we made it simple to build an AI voice agent of your own. Train it on your facts and rules in plain language. Let it practice in private simulation. Only then does it touch a real number. From that moment it answers your calls, sends the follow-up text or email, and logs every outcome so you can check its work. Personal line or front desk. One agent, or a team when volume proves the need. Build free. Go live from nineteen dollars a month, with a Wireline number included on every paid plan.",
   },
 ];
@@ -119,7 +130,13 @@ async function main() {
           model_id: MODEL_ID,
           // The guide asks for an even, unhurried read that leaves air at the
           // ends rather than an announcer performance.
-          voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0, use_speaker_boost: true },
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75,
+            style: 0,
+            use_speaker_boost: true,
+            speed: track.speed ?? 1,
+          },
         }),
       },
     );
