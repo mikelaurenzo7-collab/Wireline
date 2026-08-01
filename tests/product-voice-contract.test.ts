@@ -152,7 +152,13 @@ describe("product voice cohesion", () => {
     expect(landing).toContain("Build your voice agent");
     expect(landing).toContain("Hear it live");
     expect(landing).toContain("Build free. No card.");
-    expect(about).toContain("front-desk or sales voice agent");
+    // Pinned to the positioning copy rather than a CTA heading: the contract
+    // guards that About names the business use cases, and a heading is the
+    // first thing to get tightened. It previously tracked "front-desk or sales
+    // voice agent" in the closing CTA, which made shortening that heading look
+    // like a regression when the framing had not moved.
+    expect(about).toContain("front-desk and");
+    expect(about).toContain("sales qualification");
     expect(compare).toContain("multichannel voice agent");
     expect(privacy).toContain("voice agent platform");
     expect(contactAgents).toContain("Wireline specialists");

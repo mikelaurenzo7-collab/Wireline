@@ -243,7 +243,7 @@ export default function Pricing() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-overline text-primary">Plans for different stages</p>
               <h2 className="wl-public-section-heading mt-3">
-                Start with one agent. Add specialists when demand earns them.
+                Start with one. Add when demand earns it.
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
                 Every paid plan includes voice, SMS, email, and a Wireline number. Higher tiers buy
@@ -448,7 +448,7 @@ export default function Pricing() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-overline text-primary">Channel economics</p>
               <h2 className="wl-public-section-heading mt-3">
-                One agent. No channel seat tax. Clear usage costs.
+                One agent. No seat tax. Clear costs.
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
                 One agent calls, texts, and emails on one subscription. Costs track numbers,
@@ -501,7 +501,7 @@ export default function Pricing() {
               <div className="mx-auto max-w-3xl">
                 <p className="wl-overline text-primary">Founder Early Access</p>
                 <h2 className="wl-public-section-heading mt-3 text-[var(--wireline-color-text-primary)]">
-                  Build the agent first. Let real demand choose the plan.
+                  Build first. Let demand choose the plan.
                 </h2>
                 <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-2xl text-base leading-7">
                   Start private, launch for $19 with an included number, then upgrade when completed

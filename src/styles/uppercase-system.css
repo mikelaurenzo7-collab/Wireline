@@ -9,7 +9,7 @@
 .wl-ui-caps {
   --wl-caps-display-tracking: -0.035em;
   --wl-caps-title-tracking: -0.025em;
-  --wl-caps-control-tracking: 0.005em;
+  --wl-caps-control-tracking: 0.045em;
   --wl-caps-label-tracking: 0.12em;
 }
 
@@ -102,7 +102,9 @@
   text-transform: uppercase;
 }
 
-/* Controls: sentence case, gentle tracking. */
+/* Controls join the cased system: buttons, tabs, menu items, badges, and nav.
+ * Caps need air that lowercase does not, so the control tier carries its own
+ * tracking rather than inheriting the tight display value. */
 .wl-ui-caps
   :is(
     button,
@@ -116,9 +118,30 @@
     .marketing-btn-secondary,
     .studio-primary-button,
     .studio-secondary-button,
-    nav a
+    nav a,
+    header a,
+    footer a
   ) {
   letter-spacing: var(--wl-caps-control-tracking);
+  text-transform: uppercase;
+}
+
+/* A control is a label, not a container. Anything a button wraps that is a
+ * sentence, a value, or someone's name has to read as written — an agent name
+ * in a sidebar row, a plan price, a search field's placeholder. Buttons in this
+ * product are frequently composite rows, not bare labels. */
+.wl-ui-caps
+  :is(button, [role="button"], [role="tab"], [role="menuitem"], .wl-btn, nav a, header a, footer a)
+  :is(p, input, textarea, select, time, code, [data-value]) {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* Explicit opt-out for anything the customer authored — agent names, contact
+ * names, transcript text. Never let the case system rewrite someone's words. */
+.wl-ui-caps .wl-preserve-case,
+.wl-ui-caps .wl-preserve-case * {
+  letter-spacing: normal;
   text-transform: none;
 }
 
@@ -166,7 +189,7 @@
 
 @media (max-width: 640px) {
   .wl-ui-caps {
-    --wl-caps-control-tracking: 0.005em;
+    --wl-caps-control-tracking: 0.04em;
     --wl-caps-label-tracking: 0.11em;
   }
 

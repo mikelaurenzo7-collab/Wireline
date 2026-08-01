@@ -171,7 +171,7 @@ export default function Compare() {
           <div className="mx-auto max-w-3xl text-center">
             <p className="wl-stitch-eyebrow">Market reference · Verified July 29, 2026</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
-              Compare the buying model, not only the headline price.
+              Compare the model, not the sticker.
             </h2>
             <p className="mt-4 text-base leading-7 text-muted-foreground">
               Some products meter minutes or calls. Wireline bundles a multichannel voice agent with

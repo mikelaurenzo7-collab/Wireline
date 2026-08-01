@@ -225,7 +225,7 @@ export default function Security() {
                 <h1 className="wl-public-section-heading mt-3 max-w-[22ch]">
                   {isTrustHub
                     ? "Trust Center — how Wireline earns live calls."
-                    : "How we keep your calls — and your data — safe."}
+                    : "How we keep your data safe."}
                 </h1>
               </div>
             </div>

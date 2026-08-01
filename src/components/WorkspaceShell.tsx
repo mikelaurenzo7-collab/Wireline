@@ -268,7 +268,9 @@ function DesktopRail({ pathname }: { pathname: string }) {
                     className="shrink-0"
                   />
                   <span className="min-w-0">
-                    <span className="block truncate text-[12px] font-semibold">{agent.name}</span>
+                    <span className="wl-preserve-case block truncate text-[12px] font-semibold">
+                      {agent.name}
+                    </span>
                     <span className="block truncate text-[10px] leading-tight text-[color:var(--wireline-color-text-secondary)]">
                       {formatAgentRoleLabel(agent.role)} ·{" "}
                       {agentReadinessLabel(agent, phoneLookupDegraded)}

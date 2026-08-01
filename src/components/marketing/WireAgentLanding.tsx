@@ -313,7 +313,7 @@ export default function WireAgentLanding() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">Work lanes</p>
               <h2 className="wl-display-2 mx-auto mt-4 max-w-[18ch]">
-                Choose the outcome. Your agent handles the conversation.
+                Choose the outcome. It handles the rest.
               </h2>
               <p className="mx-auto mt-4 max-w-[44rem] text-[16px] leading-[1.65] text-muted-foreground">
                 Start with sales, service, or all purpose follow through. Voice, text, email, and

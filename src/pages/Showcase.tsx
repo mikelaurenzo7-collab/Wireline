@@ -31,7 +31,7 @@ export default function Showcase() {
 
       <MarketingHero
         eyebrow="Try Wireline"
-        title="Hear the voice agent your customer meets first."
+        title="Hear what your customer hears."
         description="Start a live preview, ask a real question, and hear how a trained voice agent turns the conversation into a clear next step."
         primaryAction={{ label: "Create an agent", to: "/signup" }}
         secondaryAction={{ label: "Call a demo line", to: "#demo-lines", tone: "secondary" }}

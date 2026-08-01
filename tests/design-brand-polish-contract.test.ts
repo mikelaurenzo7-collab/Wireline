@@ -137,6 +137,31 @@ describe("E2E design and brand polish", () => {
     expect(announcer).toContain('className="sr-only"');
   });
 
+  it("cases controls with the rest of the system, but never the customer's words", () => {
+    const caps = read("src/styles/uppercase-system.css");
+
+    // Buttons, tabs, menu items, badges, and header/footer navigation are part
+    // of the cased system rather than an exception to it.
+    expect(caps).toMatch(
+      /\.studio-secondary-button,\s*nav a,\s*header a,\s*footer a\s*\)\s*\{[^}]*?text-transform: uppercase;/,
+    );
+
+    // Controls in this product are frequently composite rows, not bare labels:
+    // a sidebar row is a link wrapping an agent name the customer chose. The
+    // case system must never rewrite someone's own words, so `wl-preserve-case`
+    // opts an element and its subtree out.
+    expect(caps).toMatch(
+      /\.wl-ui-caps \.wl-preserve-case,\s*\.wl-ui-caps \.wl-preserve-case \*\s*\{[^}]*?text-transform: none;/,
+    );
+    expect(read("src/components/WorkspaceShell.tsx")).toMatch(
+      /wl-preserve-case[^"]*">\{agent\.name\}/,
+    );
+
+    // Caps need more air than lowercase; the tight display tracking would run
+    // the letterforms together at control sizes.
+    expect(caps).toMatch(/--wl-caps-control-tracking:\s*0\.0[3-9]\d*em/);
+  });
+
   it("uppercases field captions without shouting the values beside them", () => {
     const caps = read("src/styles/uppercase-system.css");
 

@@ -169,9 +169,7 @@ export default function Features() {
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-3xl text-center">
               <p className="wl-overline text-primary">Voice first · multichannel by design</p>
-              <h2 className="wl-public-section-heading mt-3">
-                Calls, SMS, and email belong to the same agent.
-              </h2>
+              <h2 className="wl-public-section-heading mt-3">Every channel, one agent.</h2>
               <p className="wl-public-copy mx-auto mt-5">
                 Voice handles the live moment. Text and email keep momentum — without splitting
                 identity, memory, or ownership.
@@ -220,7 +218,7 @@ export default function Features() {
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-overline text-primary">Core product</p>
               <h2 className="wl-public-section-heading mt-3">
-                The controls that make conversation work reliably.
+                The controls that make it reliable.
               </h2>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -237,7 +235,7 @@ export default function Features() {
               <Workflow size={22} className="mx-auto text-primary" aria-hidden="true" />
               <p className="wl-overline mt-5 text-primary">Approved connections</p>
               <h2 className="wl-public-section-heading mt-3">
-                Connect tools only when they improve the outcome.
+                Connect tools that improve outcomes.
               </h2>
               <p className="wl-public-copy mx-auto mt-5">
                 Each connection shows access, status, and the most recent useful result.
@@ -265,7 +263,7 @@ export default function Features() {
             <div className="mx-auto max-w-2xl text-center">
               <p className="wl-overline text-primary">Useful on day one</p>
               <h2 className="wl-public-section-heading mt-3">
-                Start with the conversation work you want off your plate.
+                Start with the work you want off your plate.
               </h2>
             </div>
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -296,9 +294,7 @@ export default function Features() {
         <section className="wl-public-section">
           <div className="wl-public-rail text-center">
             <p className="wl-overline text-primary">Private to start · ready when you are</p>
-            <h2 className="wl-public-section-heading mt-3">
-              Train the agent. Test the work. Launch with confidence.
-            </h2>
+            <h2 className="wl-public-section-heading mt-3">Train it. Test it. Launch it.</h2>
             <div className="marketing-hero__actions mt-8">
               <Link to="/signup" className="marketing-btn-primary px-6 text-sm font-semibold">
                 Build your voice agent

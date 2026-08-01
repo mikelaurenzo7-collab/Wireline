@@ -32,7 +32,7 @@ export default function About() {
 
       <MarketingHero
         eyebrow="About Wireline"
-        title="Agents that run your calls exactly like you would."
+        title="Agents that run calls like you would."
         description="Train them on your business, voice, and playbook — then hold every call and follow‑up to your standard."
         primaryAction={{ label: "Get started now", to: "/pricing" }}
         secondaryAction={{ label: "Contact support", to: "/contact", tone: "secondary" }}
@@ -43,9 +43,7 @@ export default function About() {
         <div className="mx-auto grid max-w-6xl overflow-hidden rounded-[1.05rem] border border-border bg-border lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
           <div className="bg-card px-5 py-9 text-center sm:px-8 sm:py-12 lg:px-10">
             <p className="wl-stitch-eyebrow">Built with accountability</p>
-            <h2 className="wl-stitch-display mt-3 text-balance">
-              Built independently, with a direct line to the people improving it.
-            </h2>
+            <h2 className="wl-stitch-display mt-3 text-balance">Independent. Direct line to us.</h2>
           </div>
           <div className="bg-card px-5 py-9 text-center sm:px-8 sm:py-12 lg:px-10">
             <p className="mx-auto max-w-xl text-base leading-7 text-muted-foreground">
@@ -73,7 +71,7 @@ export default function About() {
             <div>
               <p className="wl-stitch-eyebrow">What guides the product</p>
               <h2 className="wl-stitch-display mt-3 text-balance">
-                A business agent should be predictable, trained, and brand-safe.
+                Predictable, trained, brand-safe.
               </h2>
             </div>
             <p className="mx-auto max-w-xl text-base leading-7 text-muted-foreground">
@@ -108,7 +106,7 @@ export default function About() {
               Your custom agent begins as a private draft.
             </p>
             <h2 className="wl-stitch-display mx-auto mt-4 max-w-2xl text-balance">
-              Create your first custom front-desk or sales voice agent.
+              Create your first voice agent.
             </h2>
           </div>
           <Link
