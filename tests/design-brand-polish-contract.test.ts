@@ -140,9 +140,12 @@ describe("E2E design and brand polish", () => {
   it("uppercases field captions without shouting the values beside them", () => {
     const caps = read("src/styles/uppercase-system.css");
 
-    // Field captions and column headers join the label tier.
+    // Field captions and column headers join the label tier. `[^}]` keeps the
+    // match inside this rule block: with `[\s\S]` the pattern ran past the
+    // closing brace and was satisfied by the caption-span rule further down, so
+    // deleting the declaration here left the test green.
     expect(caps).toMatch(
-      /\.wl-ui-caps :is\(label, legend, th\) \{[\s\S]*?text-transform: uppercase;/,
+      /\.wl-ui-caps :is\(label, legend, th\) \{[^}]*?text-transform: uppercase;/,
     );
 
     // A label can also hold the control and a help line. `<input>` must reset or

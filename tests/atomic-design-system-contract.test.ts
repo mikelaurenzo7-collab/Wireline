@@ -65,21 +65,25 @@ describe("Atomic Design completion contract", () => {
     const checkbox = source("src/components/ui/shadcn/Checkbox.tsx");
     const components = source("src/styles/components.css");
 
-    expect(checkbox).toContain('data-slot="checkbox"');
+    // Comments are stripped before asserting on the component. The doc comment
+    // names `[data-slot="checkbox"]` to explain the CSS companion, so a bare
+    // `toContain` matched that prose even with the real attribute deleted --
+    // confirmed by deleting it and watching this test still pass.
+    const code = checkbox.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    expect(code).toMatch(/^\s*data-slot="checkbox"$/m);
 
     // The fill and tick must live in CSS. Inline, the tick's SVG data URI
     // carried literal spaces; `cn()` splits its argument on whitespace before
     // tailwind-merge runs, so one class became fifteen garbage tokens and
     // `checked:bg-primary` was dropped as a background conflict — a checked box
-    // rendered with no fill and no tick.
-    expect(components).toMatch(/\[data-slot="checkbox"\]:checked\s*\{[\s\S]*?background-image:/);
-    expect(components).toMatch(/\[data-slot="checkbox"\]:checked\s*\{[\s\S]*?background-color:/);
+    // rendered with no fill and no tick. `[^}]` keeps each match inside its own
+    // rule block; `[\s\S]` would run past the closing brace and be satisfied by
+    // a later rule.
+    expect(components).toMatch(/\[data-slot="checkbox"\]:checked\s*\{[^}]*?background-image:/);
+    expect(components).toMatch(/\[data-slot="checkbox"\]:checked\s*\{[^}]*?background-color:/);
 
     // Guard the shape of the hazard, not just this one instance: no Tailwind
-    // arbitrary value in the primitive may contain a literal space. Comments
-    // are stripped first — the doc comment above quotes the broken pattern on
-    // purpose, and flagging that would make the explanation unwritable.
-    const code = checkbox.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    // arbitrary value in the primitive may contain a literal space.
     const arbitraryWithSpace = /\b[a-z-]+(?::[a-z-]+)*-\[[^\]]* [^\]]*\]/;
     expect(code).not.toMatch(arbitraryWithSpace);
   });
