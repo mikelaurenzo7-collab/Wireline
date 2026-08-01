@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { planById } from "../src/lib/plan-catalog";
+import {
+  EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY,
+  STRIPE_PLANS,
+  planById,
+} from "../src/lib/plan-catalog";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -54,6 +58,45 @@ describe("marketing metadata contract", () => {
       "https://www.retellai.com/pricing",
     ]) {
       expect(compare).toContain(href);
+    }
+  });
+
+  it("never quotes a public price the catalog does not charge", () => {
+    // The plan cards read `price_usd_monthly` straight from the catalog, so the
+    // table can never lie. The prose around it is written by hand — hero lines,
+    // CTA labels, SEO descriptions, section copy — and a reprice touches the
+    // catalog and one or two of those, leaving the rest advertising the old
+    // number. Quoting a price we do not charge is the kind of mistake that
+    // costs trust at exactly the moment someone reaches for a card.
+    //
+    // Only surfaces that quote Wireline's own pricing belong here. Compare.tsx
+    // is deliberately excluded: its rows carry competitors' published prices.
+    const surfaces = [
+      "src/pages/Pricing.tsx",
+      "src/components/marketing/WireAgentLanding.tsx",
+      "src/pages/Features.tsx",
+      "src/pages/SolutionsPage.tsx",
+      "src/components/ContactPage.tsx",
+    ];
+
+    const chargeable = new Set<number>([0, EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY]);
+    for (const plan of STRIPE_PLANS) {
+      chargeable.add(plan.price_usd_monthly);
+      chargeable.add(plan.price_usd_annual);
+      chargeable.add(plan.runtime_allowance_usd_monthly);
+      chargeable.add(plan.overage_per_min_usd);
+    }
+
+    for (const path of surfaces) {
+      const quoted = [...read(path).matchAll(/\$(\d+(?:\.\d+)?)/g)].map((match) =>
+        Number(match[1]),
+      );
+      for (const amount of quoted) {
+        expect(
+          chargeable.has(amount),
+          `${path} quotes $${amount}, which no plan, add-on, allowance, or overage rate charges`,
+        ).toBe(true);
+      }
     }
   });
 
