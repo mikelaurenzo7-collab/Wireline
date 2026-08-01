@@ -47,9 +47,7 @@ function emailLogContext(email: string): {
   const normalized = email.trim().toLowerCase();
   const at = normalized.lastIndexOf("@");
   const recipientDomain =
-    at >= 0 && at < normalized.length - 1
-      ? normalized.slice(at + 1)
-      : undefined;
+    at >= 0 && at < normalized.length - 1 ? normalized.slice(at + 1) : undefined;
   return {
     recipientRedacted: true,
     ...(recipientDomain ? { recipientDomain } : {}),
@@ -88,9 +86,7 @@ async function sendViaResend(args: {
         subject: args.subject,
         html: args.html,
         text: args.text,
-        ...(args.headers && Object.keys(args.headers).length
-          ? { headers: args.headers }
-          : {}),
+        ...(args.headers && Object.keys(args.headers).length ? { headers: args.headers } : {}),
       }),
       // Cap the send so a hung Resend request can't stall auth/billing critical
       // paths (password reset, security alerts) indefinitely.
@@ -144,18 +140,12 @@ export async function sendEmail(opts: {
   html: string;
 }): Promise<SendResult> {
   if (!process.env.RESEND_API_KEY) {
-    return {
-      ok: false,
-      provider: "no-transport",
-      error: "RESEND_API_KEY not set",
-    };
+    return { ok: false, provider: "no-transport", error: "RESEND_API_KEY not set" };
   }
   return await sendViaResend(opts);
 }
 
-export async function sendPasswordResetEmail(
-  opts: PasswordResetEmailOpts,
-): Promise<SendResult> {
+export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Promise<SendResult> {
   const expiresHuman = `${Math.max(1, Math.round((opts.expiresAt.getTime() - Date.now()) / 60_000))} min`;
 
   const subject = "Reset your Wireline password";
@@ -188,11 +178,7 @@ export async function sendPasswordResetEmail(
   // Fail closed. The reset URL is a bearer credential and must never
   // be copied into runtime logs, even as a development fallback.
   log.error("Password reset email unavailable: RESEND_API_KEY missing");
-  return {
-    ok: false,
-    provider: "no-transport",
-    error: "RESEND_API_KEY not set",
-  };
+  return { ok: false, provider: "no-transport", error: "RESEND_API_KEY not set" };
 }
 
 /**
@@ -211,10 +197,7 @@ export async function sendPasswordResetEmail(
 /**
  * Branded payment-link email for the showcase `send_payment_link` Vapi tool.
  */
-function redactPayUrlForLog(payUrl: string): {
-  payUrlRedacted: true;
-  payUrlHost?: string;
-} {
+function redactPayUrlForLog(payUrl: string): { payUrlRedacted: true; payUrlHost?: string } {
   try {
     const parsed = new URL(payUrl);
     return { payUrlRedacted: true, payUrlHost: parsed.hostname };
@@ -228,9 +211,7 @@ export async function sendPaymentLinkEmail(opts: {
   payUrl: string;
   planLabel?: string;
 }): Promise<SendResult> {
-  const planSuffix = opts.planLabel
-    ? ` (${escapeHtml(opts.planLabel)} plan)`
-    : "";
+  const planSuffix = opts.planLabel ? ` (${escapeHtml(opts.planLabel)} plan)` : "";
   const subject = "Your Wireline payment link";
   const text = [
     "Hi,",
@@ -254,13 +235,10 @@ export async function sendPaymentLinkEmail(opts: {
   `;
 
   if (!process.env.RESEND_API_KEY?.trim()) {
-    log.warn(
-      "send_payment_link called but RESEND_API_KEY is not set — failing loud.",
-      {
-        ...emailLogContext(opts.to),
-        ...redactPayUrlForLog(opts.payUrl),
-      },
-    );
+    log.warn("send_payment_link called but RESEND_API_KEY is not set — failing loud.", {
+      ...emailLogContext(opts.to),
+      ...redactPayUrlForLog(opts.payUrl),
+    });
     return {
       ok: false,
       provider: "no-transport",
@@ -286,12 +264,8 @@ export async function sendSignupLinkEmail(opts: {
 }): Promise<SendResult> {
   const signupUrl = `${(process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "")}/signup`;
   const greetingHtml = firstNameGreeting(opts.callerName);
-  const greetingText = opts.callerName
-    ? `Hi ${opts.callerName.trim().split(/\s+/)[0]},`
-    : "Hi,";
-  const fromAgentHtml = opts.agentName
-    ? ` — ${escapeHtml(opts.agentName)}`
-    : "";
+  const greetingText = opts.callerName ? `Hi ${opts.callerName.trim().split(/\s+/)[0]},` : "Hi,";
+  const fromAgentHtml = opts.agentName ? ` — ${escapeHtml(opts.agentName)}` : "";
   const fromAgentText = opts.agentName ? ` — ${opts.agentName}` : "";
 
   const subject = "Your Wireline sign-up link";
@@ -374,9 +348,7 @@ export async function sendEmailVerification(opts: {
   fullName?: string | null;
 }): Promise<SendResult> {
   const greetingHtml = firstNameGreeting(opts.fullName);
-  const greetingText = opts.fullName
-    ? `Hi ${opts.fullName.trim().split(/\s+/)[0]},`
-    : "Hi,";
+  const greetingText = opts.fullName ? `Hi ${opts.fullName.trim().split(/\s+/)[0]},` : "Hi,";
 
   const subject = "Verify your Wireline email";
   const text = [
@@ -410,12 +382,9 @@ export async function sendEmailVerification(opts: {
   // "check your email" but no email actually goes out. Bad UX, worse
   // brand. Better to surface the transport failure so the user can
   // see "verification email transport down — try again in a few".
-  log.warn(
-    "sendEmailVerification called but RESEND_API_KEY is not set — failing loud.",
-    {
-      ...emailLogContext(opts.to),
-    },
-  );
+  log.warn("sendEmailVerification called but RESEND_API_KEY is not set — failing loud.", {
+    ...emailLogContext(opts.to),
+  });
   return {
     ok: false,
     provider: "no-transport",
@@ -514,12 +483,9 @@ export async function sendPaymentFailedEmail(opts: {
   if (process.env.RESEND_API_KEY) {
     return await sendViaResend({ to: opts.to, subject, html, text });
   }
-  log.warn(
-    "[email-service] payment failed email skipped — RESEND_API_KEY missing.",
-    {
-      ...emailLogContext(opts.to),
-    },
-  );
+  log.warn("[email-service] payment failed email skipped — RESEND_API_KEY missing.", {
+    ...emailLogContext(opts.to),
+  });
   return {
     ok: false,
     provider: "no-transport",
@@ -548,17 +514,10 @@ export async function sendTrialEndingSoonEmail(opts: {
   // one-click unsubscribe headers, and a footer with a working unsubscribe
   // link + physical postal address. (Transactional mail above is exempt.)
   if (await isEmailSuppressed(opts.to)) {
-    log.info(
-      "[email-service] trial-ending-soon email skipped — recipient unsubscribed.",
-      {
-        ...emailLogContext(opts.to),
-      },
-    );
-    return {
-      ok: false,
-      provider: "no-transport",
-      error: "Recipient has unsubscribed",
-    };
+    log.info("[email-service] trial-ending-soon email skipped — recipient unsubscribed.", {
+      ...emailLogContext(opts.to),
+    });
+    return { ok: false, provider: "no-transport", error: "Recipient has unsubscribed" };
   }
 
   const dayWord = opts.daysLeft === 1 ? "1 day" : `${opts.daysLeft} days`;
@@ -596,13 +555,10 @@ export async function sendTrialEndingSoonEmail(opts: {
       headers: buildListUnsubscribeHeaders(opts.to),
     });
   }
-  log.warn(
-    "[email-service] trial-ending-soon email skipped — RESEND_API_KEY missing.",
-    {
-      ...emailLogContext(opts.to),
-      daysLeft: opts.daysLeft,
-    },
-  );
+  log.warn("[email-service] trial-ending-soon email skipped — RESEND_API_KEY missing.", {
+    ...emailLogContext(opts.to),
+    daysLeft: opts.daysLeft,
+  });
   return {
     ok: false,
     provider: "no-transport",

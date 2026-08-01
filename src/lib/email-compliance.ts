@@ -46,19 +46,13 @@ export function normalizeEmail(email: string): string {
 
 /** Sign a tamper-proof one-click unsubscribe token that encodes the email. */
 export function signUnsubscribeToken(email: string): string {
-  const payload = Buffer.from(normalizeEmail(email), "utf8").toString(
-    "base64url",
-  );
-  const sig = createHmac("sha256", unsubKey())
-    .update(payload)
-    .digest("base64url");
+  const payload = Buffer.from(normalizeEmail(email), "utf8").toString("base64url");
+  const sig = createHmac("sha256", unsubKey()).update(payload).digest("base64url");
   return `${payload}.${sig}`;
 }
 
 /** Verify an unsubscribe token; returns the (normalized) email or null. */
-export function verifyUnsubscribeToken(
-  token: string | undefined | null,
-): string | null {
+export function verifyUnsubscribeToken(token: string | undefined | null): string | null {
   if (!token || typeof token !== "string") return null;
   const dot = token.indexOf(".");
   if (dot <= 0) return null;
@@ -66,9 +60,7 @@ export function verifyUnsubscribeToken(
   const sig = token.slice(dot + 1);
   if (!payload || !sig) return null;
 
-  const expected = createHmac("sha256", unsubKey())
-    .update(payload)
-    .digest("base64url");
+  const expected = createHmac("sha256", unsubKey()).update(payload).digest("base64url");
   const a = Buffer.from(sig);
   const b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
@@ -91,9 +83,7 @@ export function unsubscribeUrl(email: string): string {
 }
 
 function unsubscribeMailto(): string {
-  return (
-    process.env.WIRELINE_UNSUBSCRIBE_MAILTO || "unsubscribe@trywireline.com"
-  ).trim();
+  return (process.env.WIRELINE_UNSUBSCRIBE_MAILTO || "unsubscribe@trywireline.com").trim();
 }
 
 /**
@@ -101,9 +91,7 @@ function unsubscribeMailto(): string {
  * one-click button; the mailto is the fallback. List-Unsubscribe-Post signals
  * true one-click support (no landing page / confirmation required).
  */
-export function buildListUnsubscribeHeaders(
-  email: string,
-): Record<string, string> {
+export function buildListUnsubscribeHeaders(email: string): Record<string, string> {
   return {
     "List-Unsubscribe": `<${unsubscribeUrl(email)}>, <mailto:${unsubscribeMailto()}?subject=unsubscribe>`,
     "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
@@ -119,7 +107,9 @@ export function getPostalAddress(): string | null {
 function requirePostalAddress(): string {
   const address = getPostalAddress();
   if (!address) {
-    throw new Error("WIRELINE_POSTAL_ADDRESS is required for commercial email");
+    throw new Error(
+      "WIRELINE_POSTAL_ADDRESS is required for commercial email",
+    );
   }
   return address;
 }
