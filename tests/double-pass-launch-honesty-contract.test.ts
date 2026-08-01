@@ -231,6 +231,25 @@ describe("double-pass launch honesty", () => {
     expect(phoneRead).toBeLessThan(entitlementRead);
   });
 
+  it("never dispatches concurrent queries through one pg transaction client", () => {
+    for (const path of [
+      "src/routes/agent-routes-v2.ts",
+      "src/lib/vapi-assistant-factory-v2.ts",
+      "src/lib/vapi-client.ts",
+    ]) {
+      const source = read(path);
+      for (const match of source.matchAll(/drizzle\.transaction\(/g)) {
+        const start = match.index ?? 0;
+        const open = start + "drizzle.transaction".length;
+        const transaction = source.slice(
+          start,
+          matchingCallEnd(source, open) + 1,
+        );
+        expect(transaction, path).not.toContain("Promise.all(");
+      }
+    }
+  });
+
   it("fails launch closed when Stripe brand or customer controls drift", () => {
     const vendorProbe = read("scripts/check-vendor-readiness.mjs");
     expect(vendorProbe).toContain(
