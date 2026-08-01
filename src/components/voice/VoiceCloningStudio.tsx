@@ -425,7 +425,8 @@ export default function VoiceCloningStudio({
               className="mt-1 size-4 accent-primary"
             />
             <span>
-              I am the speaker or have documented permission.{" "}
+              I am the speaker or have documented commercial permission; this is
+              not a minor or public figure.{" "}
               <Link to="/terms" className="underline underline-offset-2">
                 Terms
               </Link>{" "}
