@@ -175,6 +175,7 @@ describe("double-pass launch honesty", () => {
     const envCheck = read("scripts/check-prod-env.mjs");
     const vendorProbe = read("scripts/check-vendor-readiness.mjs");
     const emailService = read("src/lib/email-service.ts");
+    const emailCompliance = read("src/lib/email-compliance.ts");
     expect(envCheck).toContain('"WIRELINE_POSTAL_ADDRESS"');
     expect(vendorProbe).toContain('"commercial_email_postal_address"');
     expect(vendorProbe).toMatch(
@@ -183,6 +184,12 @@ describe("double-pass launch honesty", () => {
     expect(emailService).toContain("getPostalAddress");
     expect(emailService).toContain(
       "Commercial email disabled: WIRELINE_POSTAL_ADDRESS is missing",
+    );
+    expect(emailCompliance).toContain(
+      "isEmailSuppressed check failed — treating as suppressed",
+    );
+    expect(emailCompliance).toMatch(
+      /isEmailSuppressed[\s\S]*catch \(err\)[\s\S]*return true;/,
     );
   });
 
