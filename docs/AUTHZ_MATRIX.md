@@ -421,10 +421,10 @@
 | voice-observability-routes.ts | GET | `/api/insights/voice-reliability` | inline | permission | — | Protected |
 | voice-observability-routes.ts | POST | `/api/voice/metrics` | — | — | yes | Public (allowlisted) |
 | voices-routes.ts | GET | `/api/voices` | inline | — | — | Protected |
+| voices-routes.ts | DELETE | `/api/voices/:id` | inline | platform_admin | — | Protected |
+| voices-routes.ts | POST | `/api/voices/:id/approve` | inline | platform_admin | — | Protected |
 | voices-routes.ts | GET | `/api/voices/:id/preview` | inline | — | — | Protected |
 | voices-routes.ts | POST | `/api/voices/clone` | inline | platform_admin | — | Protected |
-| voices-routes.ts | POST | `/api/voices/:id/approve` | inline | platform_admin | — | Protected |
-| voices-routes.ts | DELETE | `/api/voices/:id` | inline | platform_admin | — | Protected |
 | webhook-routes.ts | GET | `/api/webhooks` | inline | — | — | Protected |
 | webhook-routes.ts | POST | `/api/webhooks` | inline | permission | — | Protected |
 | webhook-routes.ts | PATCH | `/api/webhooks/:id` | inline | permission | — | Protected |
@@ -434,4 +434,3 @@
 | webhook-routes.ts | DELETE | `/api/webhooks/deliveries/:id` | inline | — | — | Protected |
 | webhook-routes.ts | POST | `/api/webhooks/deliveries/:id/retry` | inline | — | — | Protected |
 | workspace-knowledge-routes.ts | POST | `/api/workspace-knowledge/google-drive` | inline | — | — | Protected |
-

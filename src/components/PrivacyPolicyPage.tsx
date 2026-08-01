@@ -9,6 +9,7 @@ const LAST_UPDATED = "August 1, 2026";
 const NOTICE_STORAGE_KEY = "wireline_cookie_consent";
 const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
 const MEASUREMENT_CONSENT_EVENT = "wireline:marketing-measurement-consent";
+const CCPA_SHARING_DISCLOSURE = `We do not sell personal information for money. California law may treat disclosure of limited website event and device data to an advertising platform for cross-context campaign measurement as "sharing," even when no money changes hands. Meta measurement remains off unless you affirmatively allow it.`;
 
 type MeasurementConsent = "granted" | "denied";
 
@@ -391,13 +392,7 @@ export default function PrivacyPolicyPage() {
           </Section>
 
           <Section id="ccpa" title="7. California Privacy Rights (CCPA / CPRA)">
-            <p>
-              We do not sell personal information for money. California law may
-              treat disclosure of limited website event and device data to an
-              advertising platform for cross-context campaign measurement as
-              "sharing," even when no money changes hands. Meta measurement
-              remains off unless you affirmatively allow it.
-            </p>
+            <p>{CCPA_SHARING_DISCLOSURE}</p>
             <p>
               Select <strong>Keep measurement off</strong>, close the privacy
               notice, or enable Global Privacy Control to opt out. You may
