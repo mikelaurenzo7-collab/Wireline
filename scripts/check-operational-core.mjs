@@ -146,24 +146,44 @@ requirePattern(
 );
 
 requirePattern(
-  "drizzle/migrations/0100_managed_vapi_runtime.sql",
+  "drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql",
   /CREATE TRIGGER wireline_agents_managed_voice/,
   "Managed voice invariants must be enforced in the database.",
 );
 requirePattern(
-  "drizzle/migrations/0101_operational_core_function_privileges.sql",
+  "drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql",
+  /CREATE UNIQUE INDEX IF NOT EXISTS uq_cloned_voices_active_source/,
+  "Concurrent clone requests must share one active source reservation.",
+);
+requirePattern(
+  "drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql",
   /REVOKE ALL ON FUNCTION public\.wireline_normalize_managed_voice\(\) FROM PUBLIC/,
   "Internal trigger functions must not inherit PUBLIC execution privileges.",
 );
 requirePattern(
-  "drizzle/migrations/0101_operational_core_function_privileges.sql",
+  "drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql",
   /REVOKE EXECUTE ON FUNCTION public\.wireline_normalize_managed_voice\(\) FROM anon, authenticated/,
   "Client roles must not directly execute the managed-runtime trigger function.",
 );
 requirePattern(
-  "src/lib/vapi-assistant-factory-v2.ts",
-  /provider:\s*"vapi" as const/,
-  "The active phone runtime must remain on the managed Vapi provider.",
+  "src/lib/managed-voice-runtime.ts",
+  /provider:\s*"11labs" as const/,
+  "Approved studio voices must use ElevenLabs through the managed phone runtime.",
+);
+requirePattern(
+  "src/lib/managed-voice-runtime.ts",
+  /fallbackPlan:[\s\S]*provider:\s*"vapi" as const/,
+  "Every ElevenLabs phone voice must carry a different-provider Vapi fallback.",
+);
+requirePattern(
+  "src/routes/voices-routes.ts",
+  /requirePlatformAdmin[\s\S]*voiceMutationRateLimit[\s\S]*cloneIpRateLimit/,
+  "Private voice creation must remain founder-only and rate-limited.",
+);
+requirePattern(
+  "src/routes/voices-routes.ts",
+  /status:\s*"creating"[\s\S]*voice\.clone\.consent_granted/,
+  "Provider spend must follow a durable clone reservation and consent record.",
 );
 requirePattern(
   "src/lib/csp.ts",
