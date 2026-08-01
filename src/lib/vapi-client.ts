@@ -37,12 +37,11 @@ import {
 } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
-import { vapiVoiceVersion } from "./voice-catalog";
+import { resolvePstnVoiceCandidate } from "../data/voice-roster";
 import {
-  DEFAULT_MANAGED_VOICE_ID,
-  isManagedVapiVoiceId,
-  resolvePstnVoiceCandidate,
-} from "../data/voice-roster";
+  buildManagedVoiceRuntime,
+  isCuratedElevenLabsVoiceId,
+} from "./managed-voice-runtime";
 import { sanitizeAmbientNoise } from "./workspace-planner";
 import {
   buildOutboundVoicemailMessage,
@@ -135,7 +134,10 @@ async function fetchWithRetry(
   }
 
   // All retries exhausted
-  throw lastError || new Error(`${operationName}: Failed after ${MAX_RETRIES} attempts`);
+  throw (
+    lastError ||
+    new Error(`${operationName}: Failed after ${MAX_RETRIES} attempts`)
+  );
 }
 
 export type PlaceCallResult = {
@@ -148,7 +150,8 @@ export type PlaceCallResult = {
 /** Turn raw Vapi error JSON into a short Account Holder-facing message. */
 export function formatVapiCallError(errBody: string): string {
   const trimmed = errBody.trim();
-  if (!trimmed) return "Voice carrier rejected the call. Try again in a moment.";
+  if (!trimmed)
+    return "Voice carrier rejected the call. Try again in a moment.";
 
   try {
     const parsed = JSON.parse(trimmed) as {
@@ -160,7 +163,9 @@ export function formatVapiCallError(errBody: string): string {
     if (typeof parsed.message === "string" && parsed.message.trim()) {
       parts.push(parsed.message.trim());
     } else if (Array.isArray(parsed.message)) {
-      parts.push(...parsed.message.map((m) => String(m).trim()).filter(Boolean));
+      parts.push(
+        ...parsed.message.map((m) => String(m).trim()).filter(Boolean),
+      );
     }
     if (parsed.error?.trim()) parts.push(parsed.error.trim());
     if (Array.isArray(parsed.errors)) {
@@ -182,7 +187,9 @@ function buildOutboundFirstMessage(
   customerName?: string | null,
 ): string {
   const name = agentName || "your representative";
-  const firstName = customerName?.trim() ? customerName.trim().split(" ")[0] : null;
+  const firstName = customerName?.trim()
+    ? customerName.trim().split(" ")[0]
+    : null;
   const customer = firstName || "there";
   const hasName = !!firstName;
   switch (role) {
@@ -231,12 +238,14 @@ export async function placeOutboundCall(opts: {
     .where(eq(schema.settings.userId, userId))
     .limit(1);
 
-  const subscriptionStatus = userSettings?.subscriptionStatus ?? "pending_activation";
+  const subscriptionStatus =
+    userSettings?.subscriptionStatus ?? "pending_activation";
   if (subscriptionStatus !== "active") {
     return {
       ok: false,
       status: 403,
-      error: "Access Denied: Please upgrade your billing plan to access outbound dialing.",
+      error:
+        "Access Denied: Please upgrade your billing plan to access outbound dialing.",
     };
   }
 
@@ -270,7 +279,10 @@ export async function placeOutboundCall(opts: {
   }
 
   const { resolveAgentVapiPhoneNumberId } = await import("./agent-phone-lines");
-  const outboundPhoneNumberId = await resolveAgentVapiPhoneNumberId(userId, agentId);
+  const outboundPhoneNumberId = await resolveAgentVapiPhoneNumberId(
+    userId,
+    agentId,
+  );
   if (!outboundPhoneNumberId) {
     return {
       ok: false,
@@ -291,7 +303,11 @@ export async function placeOutboundCall(opts: {
     outboundCapturedProfileRes,
   ] = await drizzle.transaction((tx) =>
     Promise.all([
-      tx.select().from(schema.agents).where(eq(schema.agents.id, agentId)).limit(1),
+      tx
+        .select()
+        .from(schema.agents)
+        .where(eq(schema.agents.id, agentId))
+        .limit(1),
       // Prompt size is the largest cost lever on voice calls (the system prompt
       // is re-sent every turn). Load only what the prompt will actually carry —
       // the highest-priority directives and most recent knowledge — instead of
@@ -349,7 +365,10 @@ export async function placeOutboundCall(opts: {
               and(
                 eq(schema.followUpTasks.agentId, agentId),
                 eq(schema.followUpTasks.taskType, "customer_profile_captured"),
-                ilike(schema.followUpTasks.description, `%${safeOutboundPhone}%`),
+                ilike(
+                  schema.followUpTasks.description,
+                  `%${safeOutboundPhone}%`,
+                ),
               ),
             )
             .orderBy(desc(schema.followUpTasks.createdAt))
@@ -366,16 +385,25 @@ export async function placeOutboundCall(opts: {
   const lessons = (lessonsRes || [])
     .filter(
       (l: any) =>
-        l.lesson && typeof l.lesson === "string" && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX),
+        l.lesson &&
+        typeof l.lesson === "string" &&
+        !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX),
     )
     .map((l: any) => l.lesson)
     .join("\n");
 
   const outboundPastCalls: any[] = outboundCallerHistoryRes || [];
-  const outboundCallerProfile = buildCallerProfileBlock(outboundPastCalls, true);
+  const outboundCallerProfile = buildCallerProfileBlock(
+    outboundPastCalls,
+    true,
+  );
 
-  const outboundRawProfileDesc = outboundCapturedProfileRes[0]?.description || "";
-  const outboundCustomerIntelBlock = buildCustomerIntelBlock(outboundRawProfileDesc, true);
+  const outboundRawProfileDesc =
+    outboundCapturedProfileRes[0]?.description || "";
+  const outboundCustomerIntelBlock = buildCustomerIntelBlock(
+    outboundRawProfileDesc,
+    true,
+  );
 
   const outboundTimeZone = agentConfig.timezone || "America/New_York";
   const currentDateTime = new Date().toLocaleString("en-US", {
@@ -388,11 +416,17 @@ export async function placeOutboundCall(opts: {
     minute: "2-digit",
     timeZoneName: "short",
   });
-  const outboundAgentRole = mapOutboundVoiceRole(agentConfig.role || DEFAULT_AGENT_ROLE);
+  const outboundAgentRole = mapOutboundVoiceRole(
+    agentConfig.role || DEFAULT_AGENT_ROLE,
+  );
   const archetype =
-    OUTBOUND_ARCHETYPE_BY_ROLE[outboundAgentRole] || agentConfig.archetype || "The Closer";
-  const { rules: archetypeRules, temp: llmTemp } = getArchetypeConfig(archetype);
-  const ambientNoiseActive = agentConfig.ambientNoise && agentConfig.ambientNoise !== "off";
+    OUTBOUND_ARCHETYPE_BY_ROLE[outboundAgentRole] ||
+    agentConfig.archetype ||
+    "The Closer";
+  const { rules: archetypeRules, temp: llmTemp } =
+    getArchetypeConfig(archetype);
+  const ambientNoiseActive =
+    agentConfig.ambientNoise && agentConfig.ambientNoise !== "off";
   const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[outboundAgentRole] || "";
   // Per-agent brain first (mirrors the inbound factory), tenant default second
   // — resolved as a coherent pair so a partially-configured agent can't cross
@@ -494,11 +528,13 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
 
   const runtimeProfile: AgentRuntimeProfile = {
     timezone: agentConfig.timezone,
-    business_hours: agentConfig.businessHours as AgentRuntimeProfile["business_hours"],
+    business_hours:
+      agentConfig.businessHours as AgentRuntimeProfile["business_hours"],
     compliance_mode: agentConfig.complianceMode,
     disallowed_topics: agentConfig.disallowedTopics,
     escalation_keywords: agentConfig.escalationKeywords,
-    business_variables: agentConfig.businessVariables as AgentRuntimeProfile["business_variables"],
+    business_variables:
+      agentConfig.businessVariables as AgentRuntimeProfile["business_variables"],
     out_of_hours_message: agentConfig.outOfHoursMessage,
     kpi_focus: agentConfig.kpiFocus,
     personality_vibe: agentConfig.personalityVibe,
@@ -546,6 +582,40 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     settings?.businessName || agentConfig.name,
     { outboundAiCall: true, recordingEnabled },
   );
+  const requestedPhoneVoiceId = resolvePstnVoiceCandidate(
+    agentConfig.voiceIdOutbound || agentConfig.voiceId,
+    agentConfig.phoneVoiceId,
+  );
+  let approvedClone = false;
+  if (
+    agentConfig.voiceProvider === "11labs" &&
+    requestedPhoneVoiceId &&
+    !isCuratedElevenLabsVoiceId(requestedPhoneVoiceId)
+  ) {
+    const [clone] = await drizzle
+      .select({ voiceId: schema.clonedVoices.voiceId })
+      .from(schema.clonedVoices)
+      .where(
+        and(
+          eq(schema.clonedVoices.voiceId, requestedPhoneVoiceId),
+          eq(schema.clonedVoices.userId, agentConfig.userId),
+          eq(schema.clonedVoices.status, "approved"),
+        ),
+      )
+      .limit(1);
+    approvedClone = Boolean(clone);
+  }
+  const managedVoiceRuntime = buildManagedVoiceRuntime({
+    voiceProvider: agentConfig.voiceProvider,
+    voiceId: requestedPhoneVoiceId,
+    approvedClone,
+    voiceSpeed: agentConfig.voiceSpeed,
+    voiceStability: agentConfig.voiceStability,
+    voiceSimilarityBoost: agentConfig.voiceSimilarityBoost,
+    voiceStyle: agentConfig.voiceStyle,
+    voiceSpeakerBoost: agentConfig.voiceSpeakerBoost,
+    fallbackVoiceId: agentConfig.phoneVoiceId,
+  });
 
   const assistantPayload: Record<string, unknown> = {
     name: agentConfig.name || "Wireline Outbound Agent",
@@ -554,7 +624,9 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
     maxDurationSeconds: VAPI_MAX_OUTBOUND_CALL_SECONDS,
     voicemailDetection: VAPI_VOICEMAIL_DETECTION_PLAN,
-    voicemailMessage: buildOutboundVoicemailMessage(agentConfig.name || "your representative"),
+    voicemailMessage: buildOutboundVoicemailMessage(
+      agentConfig.name || "your representative",
+    ),
     responseDelaySeconds: 0,
     numWordsToInterruptAssistant: 2,
     backgroundDenoisingEnabled: false,
@@ -564,7 +636,9 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     analysisPlan: VAPI_ANALYSIS_PLAN,
     startSpeakingPlan: resolveOutboundStartSpeakingPlan(speechPipeline),
     transcriber: speechPipeline.transcriber,
-    ...(outboundServerUrl && { server: buildVapiServerConfig(outboundServerUrl) }),
+    ...(outboundServerUrl && {
+      server: buildVapiServerConfig(outboundServerUrl),
+    }),
     serverMessages: [
       "tool-calls",
       "status-update",
@@ -588,23 +662,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     // for agents whose owners selected HIPAA compliance, and persisted the
     // recording URL to call logs.
     recordingEnabled,
-    voice: (() => {
-      // Outbound calls use the same managed Vapi voice roster as inbound calls.
-      // Presenter/live-voice agents store a non-Vapi studio voice; their
-      // dedicated PSTN pick (phoneVoiceId) applies before the roster default.
-      const requestedVoiceId = resolvePstnVoiceCandidate(
-        agentConfig.voiceIdOutbound || agentConfig.voiceId,
-        agentConfig.phoneVoiceId,
-      );
-      const voiceId = isManagedVapiVoiceId(requestedVoiceId)
-        ? requestedVoiceId
-        : DEFAULT_MANAGED_VOICE_ID;
-      return {
-        provider: "vapi" as const,
-        voiceId,
-        ...(vapiVoiceVersion(voiceId) ? { version: vapiVoiceVersion(voiceId) } : {}),
-      };
-    })(),
+    voice: managedVoiceRuntime,
   };
 
   const vapiPayload = {
@@ -631,20 +689,24 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     if (!vapiResponse.ok && voiceSelection.provider === "google") {
       const geminiErrorBody = await vapiResponse.text();
       const retryModel =
-        voiceSelection.fallbackModels?.find((model) => isOpenAIModelId(model)) ||
-        VAPI_TENANT_DEFAULT_MODEL;
+        voiceSelection.fallbackModels?.find((model) =>
+          isOpenAIModelId(model),
+        ) || VAPI_TENANT_DEFAULT_MODEL;
       const retryProvider = isGeminiModelId(retryModel)
         ? VAPI_VOICE_FALLBACK_PROVIDER
         : VAPI_TENANT_DEFAULT_PROVIDER;
-      log.warn("Vapi rejected Gemini outbound model; retrying with OpenAI voice fallback", {
-        userId,
-        agentId,
-        customerNumber,
-        model: voiceSelection.model,
-        retryProvider,
-        retryModel,
-        error: geminiErrorBody.slice(0, 500),
-      });
+      log.warn(
+        "Vapi rejected Gemini outbound model; retrying with OpenAI voice fallback",
+        {
+          userId,
+          agentId,
+          customerNumber,
+          model: voiceSelection.model,
+          retryProvider,
+          retryModel,
+          error: geminiErrorBody.slice(0, 500),
+        },
+      );
 
       const fallbackPayload = {
         ...vapiPayload,
@@ -687,7 +749,8 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     }
     const vapiData = await vapiResponse.json();
     if (vapiData?.id) {
-      const { recordOutboundCallPlaced } = await import("./outbound-call-tracking");
+      const { recordOutboundCallPlaced } =
+        await import("./outbound-call-tracking");
       void recordOutboundCallPlaced({
         userId,
         agentId,
@@ -752,11 +815,19 @@ export async function transferLiveCall(
         status: response.status,
         body: body.slice(0, 200),
       });
-      return { ok: false, status: response.status, error: "Transfer was rejected by the carrier." };
+      return {
+        ok: false,
+        status: response.status,
+        error: "Transfer was rejected by the carrier.",
+      };
     }
     return { ok: true, status: 200 };
   } catch (err) {
     log.error("Vapi live transfer failed", { error: getErrorMessage(err) });
-    return { ok: false, status: 502, error: "Could not reach the voice carrier." };
+    return {
+      ok: false,
+      status: 502,
+      error: "Could not reach the voice carrier.",
+    };
   }
 }
