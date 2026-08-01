@@ -13,6 +13,9 @@ describe("verified private voice security contract", () => {
   const migration = read(
     "drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql",
   );
+  const approvalIndexMigration = read(
+    "drizzle/migrations/0120_cloned_voice_approved_by_index.sql",
+  );
   const schema = read("src/db/schema.ts");
   const terms = read("src/components/LegalPage.tsx");
   const privacy = read("src/components/PrivacyPolicyPage.tsx");
@@ -66,6 +69,8 @@ describe("verified private voice security contract", () => {
     expect(schema).toMatch(
       /approvedBy: uuid\("approved_by"\)[\s\S]*onDelete: "restrict"/,
     );
+    expect(approvalIndexMigration).toContain("idx_cloned_voices_approved_by");
+    expect(schema).toContain("idx_cloned_voices_approved_by");
     expect(migration).toContain(
       "consent_version = 'voice-clone-consent-v1-2026-08-01'",
     );
