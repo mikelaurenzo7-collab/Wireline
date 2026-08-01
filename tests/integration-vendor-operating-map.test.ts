@@ -5,7 +5,10 @@ import { describe, expect, it } from "vitest";
 import { AGENT_TOOL_CATALOG } from "../src/lib/agent-capabilities";
 import { buyerTierForIntegration } from "../src/lib/integrations-certification";
 import { validatePlaybookCoverage } from "../src/lib/integration-playbooks";
-import { RUNTIME_INTEGRATIONS } from "../src/lib/runtime-integrations-registry";
+import {
+  RUNTIME_INTEGRATIONS,
+  getRuntimeCapabilities,
+} from "../src/lib/runtime-integrations-registry";
 import {
   WORKSPACE_INTEGRATION_CATALOG,
   workspaceCatalogCoversIntegration,
@@ -109,6 +112,34 @@ describe("integration vendor operating map", () => {
     expect(envValidator).not.toContain("const directRuntime");
     expect(launchReadiness).toContain("TWILIO_ACCOUNT_SID+TWILIO_AUTH_TOKEN");
     expect(launchReadiness).toContain("PSTN voice + number stack");
+  });
+
+  it("refuses to report federal DNC configured on credential shape the runtime rejects", () => {
+    // Presence-only registry checks previously diverged from
+    // isFederalDncVendorConfigured(): a pasted Vercel token or an http URL
+    // read as "configured" in /api/health/internal while campaign outbound
+    // stayed fail-closed. The registry must apply the runtime's rule.
+    const saved = {
+      url: process.env.FEDERAL_DNC_API_URL,
+      key: process.env.FEDERAL_DNC_API_KEY,
+    };
+    try {
+      process.env.FEDERAL_DNC_API_URL = "https://www.dncscrub.com/app/main/rpc/scrub";
+      process.env.FEDERAL_DNC_API_KEY = "vcp_not_a_dnc_credential";
+      expect(getRuntimeCapabilities().federal_dnc).toBe(false);
+
+      process.env.FEDERAL_DNC_API_KEY = "real-login-id";
+      process.env.FEDERAL_DNC_API_URL = "http://www.dncscrub.com/app/main/rpc/scrub";
+      expect(getRuntimeCapabilities().federal_dnc).toBe(false);
+
+      process.env.FEDERAL_DNC_API_URL = "https://www.dncscrub.com/app/main/rpc/scrub";
+      expect(getRuntimeCapabilities().federal_dnc).toBe(true);
+    } finally {
+      if (saved.url === undefined) delete process.env.FEDERAL_DNC_API_URL;
+      else process.env.FEDERAL_DNC_API_URL = saved.url;
+      if (saved.key === undefined) delete process.env.FEDERAL_DNC_API_KEY;
+      else process.env.FEDERAL_DNC_API_KEY = saved.key;
+    }
   });
 
   it("classifies buyer-facing runtime connectors with current registry ids", () => {

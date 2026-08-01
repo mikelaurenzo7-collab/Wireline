@@ -1,3 +1,5 @@
+import { isFederalDncVendorConfigured } from "./federal-dnc-config";
+
 export type IntegrationStatus = "configured" | "missing" | "fallback";
 export type IntegrationGroup =
   "core" | "ai" | "voice" | "oauth" | "billing" | "actions" | "infra" | "security";
@@ -10,6 +12,13 @@ export type IntegrationDescriptor = {
   envVars: readonly string[];
   oneOfEnvVars?: readonly (readonly string[])[];
   fallback?: string;
+  /**
+   * Optional value-shape validation on top of env presence. Presence-only
+   * checks have lied before (a pasted Vercel token as FEDERAL_DNC_API_KEY made
+   * readiness claim a vendor the runtime rejects), so integrations whose
+   * runtime validates credential shape must apply the same rule here.
+   */
+  validate?: () => boolean;
 };
 const item = (
   id: string,
@@ -263,15 +272,20 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item("secret-vault", "Secret Vault", "Encrypted integration secrets.", "security", false, [
     "WIRELINE_DATA_KEY",
   ]),
-  item(
-    "federal-dnc",
-    "Federal DNC scrub",
-    "Marketing/campaign outbound scrub against the federal Do Not Call registry.",
-    "security",
-    false,
-    ["FEDERAL_DNC_API_URL", "FEDERAL_DNC_API_KEY"],
-    "Runtime validates the vendor credential shape and fails closed when unconfigured.",
-  ),
+  {
+    ...item(
+      "federal-dnc",
+      "Federal DNC scrub",
+      "Marketing/campaign outbound scrub against the federal Do Not Call registry.",
+      "security",
+      false,
+      ["FEDERAL_DNC_API_URL", "FEDERAL_DNC_API_KEY"],
+      "Runtime validates the vendor credential shape and fails closed when unconfigured.",
+    ),
+    // Same rule the runtime applies — presence of a misplaced Vercel token or
+    // an http URL must not report the scrub vendor as configured.
+    validate: isFederalDncVendorConfigured,
+  },
   item(
     "pwned-passwords",
     "Have I Been Pwned Pwned Passwords",
@@ -284,7 +298,9 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
 ] as const;
 const present = (name: string) => !!process.env[name];
 const configured = (entry: IntegrationDescriptor) =>
-  entry.envVars.every(present) && (entry.oneOfEnvVars ?? []).every((group) => group.some(present));
+  entry.envVars.every(present) &&
+  (entry.oneOfEnvVars ?? []).every((group) => group.some(present)) &&
+  (entry.validate?.() ?? true);
 export function getRuntimeIntegrationStatus() {
   return RUNTIME_INTEGRATIONS.map((entry) => ({
     ...entry,

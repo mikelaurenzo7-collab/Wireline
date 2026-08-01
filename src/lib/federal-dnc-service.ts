@@ -3,28 +3,15 @@
  * Marketing/campaign outbound hard-blocks when the vendor is not configured.
  */
 import { log } from "./server-context";
+import { isFederalDncVendorConfigured } from "./federal-dnc-config";
+
+export { isFederalDncVendorConfigured };
 
 export type FederalDncLookupResult = {
   listed: boolean;
   source: "vendor" | "unconfigured" | "error";
   checked_at: string;
 };
-
-export function isFederalDncVendorConfigured(): boolean {
-  const apiKey = process.env.FEDERAL_DNC_API_KEY?.trim();
-  const apiUrl = process.env.FEDERAL_DNC_API_URL?.trim();
-  if (!apiKey || !apiUrl) return false;
-  // Vercel personal/access tokens have been pasted as DNC keys by mistake.
-  // They authenticate nothing at DNCScrub and make readiness probes lie.
-  if (/^vcp_/i.test(apiKey) || /^vercel_/i.test(apiKey)) return false;
-  try {
-    const parsed = new URL(apiUrl);
-    if (parsed.protocol !== "https:") return false;
-  } catch {
-    return false;
-  }
-  return true;
-}
 
 function isDncScrubProvider(apiUrl: string): boolean {
   const provider = process.env.FEDERAL_DNC_PROVIDER?.trim().toLowerCase();
