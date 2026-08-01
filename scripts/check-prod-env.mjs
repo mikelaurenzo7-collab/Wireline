@@ -56,25 +56,66 @@ const required = [
     "Session JWT signing - canonical Wireline session secret (legacy alias: SUPABASE_JWT_SECRET)",
     process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET,
   ],
-  ["OAUTH_STATE_SECRET", "HMAC secret for OAuth CSRF state tokens", process.env.OAUTH_STATE_SECRET],
+  [
+    "OAUTH_STATE_SECRET",
+    "HMAC secret for OAuth CSRF state tokens",
+    process.env.OAUTH_STATE_SECRET,
+  ],
   [
     "UPSTASH_REDIS_REST_URL",
     "Distributed rate-limit store for Vercel",
     process.env.UPSTASH_REDIS_REST_URL,
   ],
-  ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token", process.env.UPSTASH_REDIS_REST_TOKEN],
-  ["OPENAI_API_KEY", "Primary managed runtime and OpenAI Realtime sessions", process.env.OPENAI_API_KEY],
-  ["VAPI_PRIVATE_KEY", "Vapi managed inbound and outbound voice runtime", process.env.VAPI_PRIVATE_KEY],
-  ["VAPI_WEBHOOK_SECRET", "Vapi webhook HMAC secret", process.env.VAPI_WEBHOOK_SECRET],
-  ["TWILIO_ACCOUNT_SID", "Twilio programmable voice and messaging account", process.env.TWILIO_ACCOUNT_SID],
+  [
+    "UPSTASH_REDIS_REST_TOKEN",
+    "Upstash Redis token",
+    process.env.UPSTASH_REDIS_REST_TOKEN,
+  ],
+  [
+    "OPENAI_API_KEY",
+    "Primary managed runtime and OpenAI Realtime sessions",
+    process.env.OPENAI_API_KEY,
+  ],
+  [
+    "VAPI_PRIVATE_KEY",
+    "Vapi managed inbound and outbound voice runtime",
+    process.env.VAPI_PRIVATE_KEY,
+  ],
+  [
+    "VAPI_WEBHOOK_SECRET",
+    "Vapi webhook HMAC secret",
+    process.env.VAPI_WEBHOOK_SECRET,
+  ],
+  [
+    "ELEVENLABS_API_KEY",
+    "Server-only managed Studio TTS and authorized private voice cloning",
+    process.env.ELEVENLABS_API_KEY,
+  ],
+  [
+    "TWILIO_ACCOUNT_SID",
+    "Twilio programmable voice and messaging account",
+    process.env.TWILIO_ACCOUNT_SID,
+  ],
   [
     "TWILIO_AUTH_TOKEN",
     "Twilio inbound webhook signature validation; rotate after any disclosure",
     process.env.TWILIO_AUTH_TOKEN,
   ],
-  ["STRIPE_SECRET_KEY", "Stripe subscriptions, prepaid balances, and billing portal", process.env.STRIPE_SECRET_KEY],
-  ["STRIPE_WEBHOOK_SECRET", "Stripe webhook signature verification", process.env.STRIPE_WEBHOOK_SECRET],
-  ["RESEND_API_KEY", "Transactional email for verification, billing, and lifecycle delivery", process.env.RESEND_API_KEY],
+  [
+    "STRIPE_SECRET_KEY",
+    "Stripe subscriptions, prepaid balances, and billing portal",
+    process.env.STRIPE_SECRET_KEY,
+  ],
+  [
+    "STRIPE_WEBHOOK_SECRET",
+    "Stripe webhook signature verification",
+    process.env.STRIPE_WEBHOOK_SECRET,
+  ],
+  [
+    "RESEND_API_KEY",
+    "Transactional email for verification, billing, and lifecycle delivery",
+    process.env.RESEND_API_KEY,
+  ],
 ];
 
 const recommended = [
@@ -90,16 +131,37 @@ const recommended = [
     "DATABASE_POOL_URL",
     "Pooler URL the runtime prefers; POSTGRES_URL remains the supported fallback",
   ],
-  ["OPENAI_API_KEY_CHATKIT", "Scoped ChatGPT app realtime voice key for spend isolation"],
-  ["GEMINI_API_KEY", "Gemini continuity fallback when direct OpenAI is unavailable"],
-  ["AI_GATEWAY_API_KEY", "Vercel AI Gateway governed final fallback and centralized budgets"],
-  ["XAI_API_KEY", "Optional xAI experiments (structured fallback requires explicit opt-in)"],
+  [
+    "OPENAI_API_KEY_CHATKIT",
+    "Scoped ChatGPT app realtime voice key for spend isolation",
+  ],
+  [
+    "GEMINI_API_KEY",
+    "Gemini continuity fallback when direct OpenAI is unavailable",
+  ],
+  [
+    "AI_GATEWAY_API_KEY",
+    "Vercel AI Gateway governed final fallback and centralized budgets",
+  ],
+  [
+    "XAI_API_KEY",
+    "Optional xAI experiments (structured fallback requires explicit opt-in)",
+  ],
   ["VITE_VAPI_PUBLIC_KEY", "Vapi browser-side test calls"],
-  ["TWILIO_API_KEY", "Scoped Twilio REST API key SID; preferred over the Account Auth Token"],
-  ["TWILIO_API_SECRET", "Secret paired with TWILIO_API_KEY for production REST calls"],
+  [
+    "TWILIO_API_KEY",
+    "Scoped Twilio REST API key SID; preferred over the Account Auth Token",
+  ],
+  [
+    "TWILIO_API_SECRET",
+    "Secret paired with TWILIO_API_KEY for production REST calls",
+  ],
   ["APP_URL", "Canonical URL for OAuth redirects and email links"],
   ["CORS_ORIGINS", "Production CORS allowlist"],
-  ["VITE_STRIPE_PUBLIC_KEY", "Stripe publishable key for client-side checkout UI"],
+  [
+    "VITE_STRIPE_PUBLIC_KEY",
+    "Stripe publishable key for client-side checkout UI",
+  ],
 
   // Canonical Founder Early Access catalog. These keys mirror
   // src/lib/plan-catalog.ts and scripts/lib/stripe-founder-catalog.mjs.
@@ -114,23 +176,38 @@ const recommended = [
   ["STRIPE_EXTRA_AGENT_PRICE_ID", "Extra Agent + 50 Minutes recurring add-on"],
   ["STRIPE_LIVE_VIDEO_ADDON_PRICE_ID", "Live Video recurring add-on"],
 
-  ["WIRELINE_DATA_KEY", "AES-256-GCM key for encrypting webhook secrets at rest"],
+  [
+    "WIRELINE_DATA_KEY",
+    "AES-256-GCM key for encrypting webhook secrets at rest",
+  ],
   ["CRON_SECRET", "Bearer token for cron job authentication"],
 ];
 
 const optional = [
   ["XAI_API_KEY_CHATKIT", "Optional isolated xAI experiment key"],
-  ["WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK", "Optional xAI experiments — set true to append direct xAI after the AI Gateway"],
-  ["WIRELINE_LAUNCH_DEMO_MODE", "Mark launch telemetry as demo-only until real customers are admitted"],
+  [
+    "WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK",
+    "Optional xAI experiments — set true to append direct xAI after the AI Gateway",
+  ],
+  [
+    "WIRELINE_LAUNCH_DEMO_MODE",
+    "Mark launch telemetry as demo-only until real customers are admitted",
+  ],
   ["GOOGLE_CLIENT_ID", "Gmail OAuth - disables email integration when unset"],
   ["GOOGLE_CLIENT_SECRET", "Gmail OAuth"],
   ["MICROSOFT_CLIENT_ID", "Outlook OAuth"],
   ["MICROSOFT_CLIENT_SECRET", "Outlook OAuth"],
-  ["SENTRY_DSN", "Backend + browser error monitoring (browser reports via /api/health/report)"],
+  [
+    "SENTRY_DSN",
+    "Backend + browser error monitoring (browser reports via /api/health/report)",
+  ],
   // VITE_SENTRY_DSN is intentionally absent: the browser reporter beacons to
   // /api/health/report and the server forwards with SENTRY_DSN. A build-time
   // browser DSN is not read by app code.
-  ["CLAUDE_MONTHLY_BUDGET_USD", "Legacy alias for rolling-24h AI spend alert threshold"],
+  [
+    "CLAUDE_MONTHLY_BUDGET_USD",
+    "Legacy alias for rolling-24h AI spend alert threshold",
+  ],
   [
     "STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID",
     "Reserved only if Enterprise add-on checkout is re-enabled",
@@ -147,12 +224,18 @@ const optional = [
     "LIVEAVATAR_DEFAULT_AVATAR_ID",
     "Default LiveAvatar catalog UUID assigned to new business agents",
   ],
-  ["LIVEAVATAR_SANDBOX", "Force sandbox sessions (true/false; auto in non-production)"],
+  [
+    "LIVEAVATAR_SANDBOX",
+    "Force sandbox sessions (true/false; auto in non-production)",
+  ],
   ["HEYGEN_API_KEY", "Optional HeyGen Studio key for presenter voice previews"],
 ];
 
 const formatHints = new Map([
-  ["POSTGRES_URL", "postgresql://user:pass@host:port/db (host must be dotted, localhost, or IP)"],
+  [
+    "POSTGRES_URL",
+    "postgresql://user:pass@host:port/db (host must be dotted, localhost, or IP)",
+  ],
   ["DATABASE_POOL_URL", "postgresql://user:pass@pooler-host:6543/db"],
   ["TWILIO_ACCOUNT_SID", "AC followed by 32 hexadecimal characters"],
   ["TWILIO_API_KEY", "SK followed by 32 hexadecimal characters"],
@@ -168,8 +251,10 @@ function isValidEnvValue(key, value) {
   if (key === "POSTGRES_URL" || key === "DATABASE_POOL_URL") {
     return isPostgresConnectionString(value);
   }
-  if (key === "TWILIO_ACCOUNT_SID") return /^AC[a-fA-F0-9]{32}$/.test(String(value).trim());
-  if (key === "TWILIO_API_KEY") return /^SK[a-fA-F0-9]{32}$/.test(String(value).trim());
+  if (key === "TWILIO_ACCOUNT_SID")
+    return /^AC[a-fA-F0-9]{32}$/.test(String(value).trim());
+  if (key === "TWILIO_API_KEY")
+    return /^SK[a-fA-F0-9]{32}$/.test(String(value).trim());
   if (key === "FEDERAL_DNC_API_URL") {
     try {
       return new URL(String(value).trim()).protocol === "https:";
@@ -184,7 +269,8 @@ function isValidEnvValue(key, value) {
     if (/^vcp_/i.test(trimmed) || /^vercel_/i.test(trimmed)) return false;
     return trimmed.length >= 8;
   }
-  if (key === "STRIPE_SECRET_KEY") return /^sk_(test|live)_/.test(String(value).trim());
+  if (key === "STRIPE_SECRET_KEY")
+    return /^sk_(test|live)_/.test(String(value).trim());
   return true;
 }
 
@@ -201,7 +287,8 @@ const jwtSecretConflict =
   process.env.INTERNAL_JWT_SECRET !== process.env.SUPABASE_JWT_SECRET;
 
 const twilioApiKeyPairPartial =
-  Boolean(process.env.TWILIO_API_KEY?.trim()) !== Boolean(process.env.TWILIO_API_SECRET?.trim());
+  Boolean(process.env.TWILIO_API_KEY?.trim()) !==
+  Boolean(process.env.TWILIO_API_SECRET?.trim());
 
 const missing = (vars) => vars.filter((entry) => !configuredValue(entry));
 
@@ -239,7 +326,9 @@ if (
   missingRecommended.length === 0 &&
   invalidRecommended.length === 0
 ) {
-  console.log("OK: all required and recommended env vars are set and shaped correctly.\n");
+  console.log(
+    "OK: all required and recommended env vars are set and shaped correctly.\n",
+  );
   if (missingOptional.length) {
     console.log("  Optional (informational only):");
     missingOptional.forEach(([k, d]) => console.log(`    - ${k} - ${d}`));
@@ -256,7 +345,9 @@ if (invalidRequired.length) {
   console.log("\nINVALID REQUIRED env vars (deploy will fail):\n");
   invalidRequired.forEach(([k, d]) => {
     const hint = formatHints.get(k);
-    console.log(`    - ${k}\n      ${d}${hint ? `\n      Expected: ${hint}` : ""}`);
+    console.log(
+      `    - ${k}\n      ${d}${hint ? `\n      Expected: ${hint}` : ""}`,
+    );
   });
 }
 
@@ -266,10 +357,14 @@ if (missingRecommended.length) {
 }
 
 if (invalidRecommended.length) {
-  console.log("\nINVALID RECOMMENDED env vars (features will be degraded or ignored):\n");
+  console.log(
+    "\nINVALID RECOMMENDED env vars (features will be degraded or ignored):\n",
+  );
   invalidRecommended.forEach(([k, d]) => {
     const hint = formatHints.get(k);
-    console.log(`    - ${k}\n      ${d}${hint ? `\n      Expected: ${hint}` : ""}`);
+    console.log(
+      `    - ${k}\n      ${d}${hint ? `\n      Expected: ${hint}` : ""}`,
+    );
   });
 }
 
@@ -281,7 +376,10 @@ if (missingOptional.length) {
 console.log("");
 
 if (missingRequired.length || invalidRequired.length) process.exit(1);
-if (process.env.PRODUCTION_CHECK === "1" && (missingRecommended.length || invalidRecommended.length)) {
+if (
+  process.env.PRODUCTION_CHECK === "1" &&
+  (missingRecommended.length || invalidRecommended.length)
+) {
   process.exit(2);
 }
 process.exit(0);
