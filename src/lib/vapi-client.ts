@@ -301,81 +301,88 @@ export async function placeOutboundCall(opts: {
     lessonsRes,
     outboundCallerHistoryRes,
     outboundCapturedProfileRes,
-  ] = await drizzle.transaction((tx) =>
-    Promise.all([
-      tx
-        .select()
-        .from(schema.agents)
-        .where(eq(schema.agents.id, agentId))
-        .limit(1),
-      // Prompt size is the largest cost lever on voice calls (the system prompt
-      // is re-sent every turn). Load only what the prompt will actually carry —
-      // the highest-priority directives and most recent knowledge — instead of
-      // 500 of each, mirroring the inbound factory's caps.
-      tx
-        .select()
-        .from(schema.directives)
-        .where(eq(schema.directives.agentId, agentId))
-        .orderBy(desc(schema.directives.priority))
-        .limit(MAX_RUNTIME_DIRECTIVES),
-      tx
-        .select()
-        .from(schema.knowledge)
-        .where(eq(schema.knowledge.agentId, agentId))
-        .orderBy(desc(schema.knowledge.createdAt))
-        .limit(MAX_RUNTIME_KNOWLEDGE),
-      tx
-        .select()
-        .from(schema.personality)
-        .where(eq(schema.personality.agentId, agentId))
-        .limit(1),
-      tx
-        .select()
-        .from(schema.agentLessons)
-        .where(eq(schema.agentLessons.agentId, agentId))
-        .orderBy(desc(schema.agentLessons.createdAt))
-        .limit(MAX_RUNTIME_LESSONS),
-      safeOutboundPhone
-        ? tx
-            .select({
-              summary: schema.callLogs.summary,
-              intentLabel: schema.callLogs.intentLabel,
-              sentiment: schema.callLogs.sentiment,
-              createdAt: schema.callLogs.createdAt,
-              direction: schema.callLogs.direction,
-            })
-            .from(schema.callLogs)
-            .where(
-              and(
-                eq(schema.callLogs.customerNumber, safeOutboundPhone),
-                eq(schema.callLogs.agentId, agentId),
-              ),
-            )
-            .orderBy(desc(schema.callLogs.createdAt))
-            .limit(3)
-        : Promise.resolve([]),
-      safeOutboundPhone
-        ? tx
-            .select({
-              description: schema.followUpTasks.description,
-              createdAt: schema.followUpTasks.createdAt,
-            })
-            .from(schema.followUpTasks)
-            .where(
-              and(
-                eq(schema.followUpTasks.agentId, agentId),
-                eq(schema.followUpTasks.taskType, "customer_profile_captured"),
-                ilike(
-                  schema.followUpTasks.description,
-                  `%${safeOutboundPhone}%`,
-                ),
-              ),
-            )
-            .orderBy(desc(schema.followUpTasks.createdAt))
-            .limit(1)
-        : Promise.resolve([]),
-    ]),
-  );
+  ] = await drizzle.transaction(async (tx) => {
+    // Voice setup reads share one transaction snapshot and therefore one pg
+    // client. Explicit sequencing avoids pg@8's deprecated concurrent-query
+    // queue and keeps this path compatible with pg@9.
+    const agentRes = await tx
+      .select()
+      .from(schema.agents)
+      .where(eq(schema.agents.id, agentId))
+      .limit(1);
+    // Prompt size is the largest cost lever on voice calls (the system prompt
+    // is re-sent every turn). Load only what the prompt will actually carry —
+    // the highest-priority directives and most recent knowledge — instead of
+    // 500 of each, mirroring the inbound factory's caps.
+    const directivesRes = await tx
+      .select()
+      .from(schema.directives)
+      .where(eq(schema.directives.agentId, agentId))
+      .orderBy(desc(schema.directives.priority))
+      .limit(MAX_RUNTIME_DIRECTIVES);
+    const knowledgeRes = await tx
+      .select()
+      .from(schema.knowledge)
+      .where(eq(schema.knowledge.agentId, agentId))
+      .orderBy(desc(schema.knowledge.createdAt))
+      .limit(MAX_RUNTIME_KNOWLEDGE);
+    const personalityRes = await tx
+      .select()
+      .from(schema.personality)
+      .where(eq(schema.personality.agentId, agentId))
+      .limit(1);
+    const lessonsRes = await tx
+      .select()
+      .from(schema.agentLessons)
+      .where(eq(schema.agentLessons.agentId, agentId))
+      .orderBy(desc(schema.agentLessons.createdAt))
+      .limit(MAX_RUNTIME_LESSONS);
+    const outboundCallerHistoryRes = safeOutboundPhone
+      ? await tx
+          .select({
+            summary: schema.callLogs.summary,
+            intentLabel: schema.callLogs.intentLabel,
+            sentiment: schema.callLogs.sentiment,
+            createdAt: schema.callLogs.createdAt,
+            direction: schema.callLogs.direction,
+          })
+          .from(schema.callLogs)
+          .where(
+            and(
+              eq(schema.callLogs.customerNumber, safeOutboundPhone),
+              eq(schema.callLogs.agentId, agentId),
+            ),
+          )
+          .orderBy(desc(schema.callLogs.createdAt))
+          .limit(3)
+      : [];
+    const outboundCapturedProfileRes = safeOutboundPhone
+      ? await tx
+          .select({
+            description: schema.followUpTasks.description,
+            createdAt: schema.followUpTasks.createdAt,
+          })
+          .from(schema.followUpTasks)
+          .where(
+            and(
+              eq(schema.followUpTasks.agentId, agentId),
+              eq(schema.followUpTasks.taskType, "customer_profile_captured"),
+              ilike(schema.followUpTasks.description, `%${safeOutboundPhone}%`),
+            ),
+          )
+          .orderBy(desc(schema.followUpTasks.createdAt))
+          .limit(1)
+      : [];
+    return [
+      agentRes,
+      directivesRes,
+      knowledgeRes,
+      personalityRes,
+      lessonsRes,
+      outboundCallerHistoryRes,
+      outboundCapturedProfileRes,
+    ] as const;
+  });
 
   const agentConfig = agentRes[0];
   if (!agentConfig) {
