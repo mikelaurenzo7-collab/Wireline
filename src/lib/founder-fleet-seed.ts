@@ -12,6 +12,8 @@ import { AGENT_TOOL_NAME_VALUES, type AgentToolName } from "./agent-capabilities
 import { ROLE_PERSONALITY_TEMPLATES } from "./agent-constants";
 import { pickRotatedVoiceId } from "../data/voice-roster";
 import { getOwnerEmails } from "./auth-service";
+import { BRAND_SYSTEM, AGENT_NUMBER_PROMISE } from "./product-copy";
+import { plansForClient, EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY } from "./plan-catalog";
 
 export const ALL_AGENT_TOOLS: AgentToolName[] = [...AGENT_TOOL_NAME_VALUES];
 
@@ -25,6 +27,23 @@ You are also a full AI collaborator in private chat — not just a voice agent. 
 - Coach the operator on call performance, objection handling, and agent strategy using your role expertise.
 Be substantive, structured, and actionable. Match the operator's industry when known.`;
 
+/**
+ * Operating pods for the founder fleet.
+ *
+ * Wireline sells and serves itself with this account, so the roster is grouped
+ * by the work it does rather than by vertical flavor. The pod is persisted in
+ * `business_variables.team` so Studio, analytics, and routing can group agents
+ * without a schema change.
+ */
+export const FOUNDER_FLEET_TEAMS = [
+  "front_door",
+  "revenue",
+  "support",
+  "retention",
+  "personal",
+] as const;
+export type FounderFleetTeam = (typeof FOUNDER_FLEET_TEAMS)[number];
+
 export interface AssistantAgentTemplate {
   id: string;
   name: string;
@@ -32,6 +51,7 @@ export interface AssistantAgentTemplate {
   channel: "voice" | "email";
   archetype: string;
   firstMessage: string;
+  team: FounderFleetTeam;
   personalityVibe?: "warm" | "playful" | "authoritative";
   emailAgentTone?: string;
   emailSignature?: string;
@@ -40,7 +60,15 @@ export interface AssistantAgentTemplate {
   isBusinessAgent?: boolean;
 }
 
-/** Vertical + specialty agents beyond the 6 internal Wireline personas. */
+/**
+ * Specialty roster beyond the 6 internal Wireline personas.
+ *
+ * Every business agent here sells or serves Wireline itself. The roster used to
+ * carry vertical demo flavor (a real-estate closer asking about listings, an
+ * insurance desk asking for a policy number), which reads as someone else's
+ * company on the account that runs Wireline. Vertical role-play belongs to the
+ * public demo lines in `src/data/contact-agents.ts`, not to the founder fleet.
+ */
 export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
   {
     id: "founder-jordan",
@@ -48,7 +76,8 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     role: "customer_service",
     channel: "voice",
     archetype: "Receptionist",
-    firstMessage: "Hi, Jordan here. Thanks for calling — what can I help you with today?",
+    firstMessage: "Hi, Jordan here with Wireline. What can I help you with today?",
+    team: "support",
     personalityVibe: "warm",
     websiteUrl: "https://trywireline.com",
   },
@@ -58,8 +87,11 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     role: "scheduler",
     channel: "voice",
     archetype: "Scheduler",
-    firstMessage: "Hi, this is Marcus. I can help you book or reschedule — what's your name?",
+    firstMessage:
+      "Hi, this is Marcus with Wireline. I can get a walkthrough on the calendar. What's your name?",
+    team: "front_door",
     personalityVibe: "authoritative",
+    websiteUrl: "https://trywireline.com",
   },
   {
     id: "founder-diana",
@@ -68,8 +100,10 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     channel: "voice",
     archetype: "Intake Specialist",
     firstMessage:
-      "Diana here — I'll get a few details so we route you correctly. May I have your name?",
+      "Diana with Wireline. A couple of quick questions so I route you to the right person. May I have your name?",
+    team: "revenue",
     personalityVibe: "authoritative",
+    websiteUrl: "https://trywireline.com",
   },
   {
     id: "founder-aisha",
@@ -77,8 +111,11 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     role: "sales",
     channel: "voice",
     archetype: "The Closer",
-    firstMessage: "Hey, Aisha here. Are you looking at listings or thinking about selling?",
+    firstMessage:
+      "Hey, Aisha with Wireline partnerships. Are you reselling for clients or running this in your own business?",
+    team: "retention",
     personalityVibe: "playful",
+    websiteUrl: "https://trywireline.com",
   },
   {
     id: "founder-elena",
@@ -87,8 +124,10 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     channel: "voice",
     archetype: "Claims Intake",
     firstMessage:
-      "Elena with client services — can I get your name and policy number if you have it?",
+      "Elena with Wireline account care. I can look at your plan, usage, or renewal. What's going on?",
+    team: "retention",
     personalityVibe: "warm",
+    websiteUrl: "https://trywireline.com",
   },
   {
     id: "founder-jake",
@@ -96,8 +135,10 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     role: "sales",
     channel: "voice",
     archetype: "The Closer",
-    firstMessage: "Hey, Jake here from the growth team. Who am I speaking with?",
+    firstMessage: "Hey, Jake with Wireline. Who am I speaking with?",
+    team: "revenue",
     personalityVibe: "playful",
+    websiteUrl: "https://trywireline.com",
   },
   {
     id: "founder-billing",
@@ -105,7 +146,8 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     role: "collections",
     channel: "voice",
     archetype: "The Collector",
-    firstMessage: "Billing department — how can I help with your account today?",
+    firstMessage: "Wireline billing. How can I help with your account today?",
+    team: "retention",
     personalityVibe: "authoritative",
   },
   {
@@ -114,8 +156,11 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     role: "sales",
     channel: "voice",
     archetype: "The Closer",
-    firstMessage: "Hi there — calling from the growth team. Got a quick minute?",
+    firstMessage:
+      "Hi, this is Wireline. You're talking to an AI voice agent right now. Got a quick minute?",
+    team: "revenue",
     personalityVibe: "playful",
+    websiteUrl: "https://trywireline.com",
   },
   {
     id: "founder-growth-email",
@@ -123,10 +168,12 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     role: "marketing",
     channel: "email",
     archetype: "Receptionist",
-    firstMessage: "Thanks for reaching out — happy to help with campaigns or follow-ups.",
+    firstMessage: "Thanks for reaching out. Happy to help with campaigns or follow up.",
+    team: "retention",
     personalityVibe: "playful",
     emailAgentTone: "Friendly",
-    emailSignature: "— The Growth Team, Wireline",
+    emailSignature: "— The Wireline Team",
+    websiteUrl: "https://trywireline.com",
   },
   {
     id: "founder-tier2",
@@ -134,7 +181,8 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     role: "technical_support",
     channel: "voice",
     archetype: "Support Tech",
-    firstMessage: "Wireline Technical Support — what symptoms are you seeing?",
+    firstMessage: "Wireline technical support. What symptoms are you seeing?",
+    team: "support",
     personalityVibe: "warm",
   },
   {
@@ -144,6 +192,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     channel: "voice",
     archetype: "Executive Assistant",
     firstMessage: "Hi, this is your agent. How can I help with your schedule today?",
+    team: "personal",
     personalityVibe: "warm",
     isBusinessAgent: false,
   },
@@ -153,23 +202,75 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
 export const EXPECTED_FOUNDER_FLEET_AGENT_COUNT =
   Object.keys(WIRELINE_PERSONAS).length + FOUNDER_FLEET_TEMPLATES.length;
 
+/**
+ * Live plan facts for the agents that sell Wireline.
+ *
+ * Derived from the Stripe catalog rather than written out, so a catalog change
+ * cannot leave the fleet quoting a retired price on a real call. Never hardcode
+ * plan pricing here.
+ */
+export function wirelinePlanFacts(): string[] {
+  // plansForClient() is the same public catalog the pricing page consumes. A
+  // hand-rolled `plan.public` filter here silently dropped every paid plan,
+  // because paid plans are public by omission (`public !== false`) — the fleet
+  // would have gone to work knowing only Free Builder.
+  const lines = plansForClient().map((plan) => {
+    const price =
+      plan.price_usd_monthly === 0
+        ? "free"
+        : `$${plan.price_usd_monthly}/month or $${plan.price_usd_annual}/year`;
+    const minutes = plan.voice_minutes_monthly
+      ? `${plan.voice_minutes_monthly} guaranteed live voice minutes each month`
+      : "no production minutes until a paid plan is active";
+    const numbers = plan.included_phone_numbers
+      ? `${plan.included_phone_numbers} included Wireline number${plan.included_phone_numbers === 1 ? "" : "s"}`
+      : "no included number";
+    const agents = `${plan.max_agents} agent${plan.max_agents === 1 ? "" : "s"}`;
+    return `${plan.name}: ${price}. ${agents}, ${minutes}, ${numbers}.`;
+  });
+  return [
+    `Wireline in one line: ${BRAND_SYSTEM.northStar}`,
+    ...lines,
+    `Additional agents are an add-on at $${EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY}/month each.`,
+    AGENT_NUMBER_PROMISE,
+    "Usage beyond included minutes draws from prepaid Runtime Balance. There is no surprise postpaid overage invoice, and live calls are never cut mid conversation.",
+    "Quote only these plan facts. If asked for a discount, custom terms, or anything not listed, take the request and escalate instead of inventing an offer.",
+  ];
+}
+
 const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
   default: [
-    "Free Builder creates and trains for free; Starter, Starter Plus, Pro, and Business unlock guaranteed live-voice minutes plus Runtime Balance for anything beyond that.",
     "Operators configure agents via Create, Training, Wire or Integrations, and Studio.",
     "Escalations route to the configured phone/email; use escalate_to_human when risk is high.",
+    "Wireline agents work across voice, text, and email under one identity, memory, and outcome record.",
   ],
   sales: [
     "Lead with outcome before features. Always propose a concrete next step before ending the conversation.",
-    "Business plan outline: Problem → ICP → Offer → Channels → Unit economics → 90-day milestones.",
+    "Qualify on the phone problem first: what call is being missed, who handles it now, and what a missed call costs.",
+    "Common objection — 'will callers know it is AI?': yes, disclosure is built in and the agent identifies itself. Never claim an agent passes as human.",
+    "Common objection — 'what if it goes wrong?': sensitive actions sit behind approvals, and escalation hands the conversation to a person with context intact.",
+    "Never promise a capability that is not live today. Beta and planned surfaces are described as such.",
   ],
   customer_service: [
     "Use HEARD: Hear, Empathize, Apologize, Resolve, Diagnose. Never transfer without context.",
   ],
   collections: [
     "Always verify identity before discussing balances. Log every promise-to-pay immediately.",
+    "Billing questions resolve against the plan catalog and the account's Runtime Balance. Refunds and credits are escalated, never promised on the call.",
   ],
-  marketing: ["Campaign brief template: Audience → Hook → Offer → CTA → Success metric."],
+  marketing: [
+    "Campaign brief template: Audience → Hook → Offer → CTA → Success metric.",
+    "Wireline markets its own product with its own agents. Anything sent must be something the founder would sign.",
+    "Outbound marketing contact runs only after consent and DNC gates pass. If a gate blocks the work, report it instead of routing around it.",
+  ],
+  technical_support: [
+    "Diagnose in this order: number and routing, then agent configuration, then integration connection, then provider status.",
+    "Never invent a root cause. If telemetry does not show it, say what is known and escalate with the call id.",
+  ],
+  scheduler: [
+    "Confirm date, time, timezone, and contact method out loud before closing any booking.",
+    "A walkthrough is the offer. Capture what the caller wants to see so the demo is specific to them.",
+  ],
 };
 
 const DIRECTIVE_SNIPPETS: string[] = [
@@ -186,6 +287,14 @@ const LESSON_SNIPPETS: string[] = [
   "Logo requests in agent chat -> outline concepts here; send the operator to Studio for brand artifacts.",
 ];
 
+/** Pod for each internal Wireline persona. */
+function personaTeam(personaId: WirelinePersonaId): FounderFleetTeam {
+  if (personaId === "sales") return "revenue";
+  if (personaId === "support" || personaId === "technical") return "support";
+  if (personaId === "success") return "retention";
+  return "front_door";
+}
+
 function personalityForRole(role: string): string {
   const key = role in ROLE_PERSONALITY_TEMPLATES ? role : "customer_service";
   return (
@@ -194,15 +303,40 @@ function personalityForRole(role: string): string {
   );
 }
 
-function knowledgeForRole(role: string): string[] {
-  const base = KNOWLEDGE_SNIPPETS.default;
-  if (role.includes("sales") || role === "marketing") return [...base, ...KNOWLEDGE_SNIPPETS.sales];
-  if (role === "collections") return [...base, ...KNOWLEDGE_SNIPPETS.collections];
-  if (role === "marketing") return [...base, ...KNOWLEDGE_SNIPPETS.marketing];
-  if (role === "customer_service" || role.includes("reception")) {
-    return [...base, ...KNOWLEDGE_SNIPPETS.customer_service];
+/**
+ * Knowledge for a role, accumulated rather than early-returned.
+ *
+ * The previous chain returned on the first match, so `marketing` was captured by
+ * the sales branch above it and the marketing snippets were unreachable — the
+ * Growth Coordinator never received its own campaign knowledge. Accumulating
+ * makes overlapping roles additive and keeps a later block from being shadowed.
+ */
+export function knowledgeForRole(role: string): string[] {
+  const snippets = [...KNOWLEDGE_SNIPPETS.default];
+
+  // Every business agent fields pricing questions, so the whole fleet carries
+  // the same live plan facts. The personal agent stays out of the sales lane.
+  if (role !== "personal_assistant") snippets.push(...wirelinePlanFacts());
+
+  if (role.includes("sales") || role === "lead_qualifier" || role === "marketing") {
+    snippets.push(...KNOWLEDGE_SNIPPETS.sales);
   }
-  return base;
+  if (role === "marketing") snippets.push(...KNOWLEDGE_SNIPPETS.marketing);
+  if (role === "collections") snippets.push(...KNOWLEDGE_SNIPPETS.collections);
+  if (
+    role === "customer_service" ||
+    role.includes("reception") ||
+    role.includes("support") ||
+    role.includes("success")
+  ) {
+    snippets.push(...KNOWLEDGE_SNIPPETS.customer_service);
+  }
+  if (role.includes("technical")) snippets.push(...KNOWLEDGE_SNIPPETS.technical_support);
+  if (role === "scheduler" || role.includes("onboarding")) {
+    snippets.push(...KNOWLEDGE_SNIPPETS.scheduler);
+  }
+
+  return [...new Set(snippets)];
 }
 
 export interface FounderAssistantSeedReport {
@@ -361,9 +495,10 @@ async function upsertAgent(
     ? {
         wireline_internal: true,
         wireline_persona_id: template.wirelinePersonaId,
+        team: template.team,
         provisioned_at: new Date().toISOString(),
       }
-    : { founder_fleet_seed: true, seeded_at: new Date().toISOString() };
+    : { founder_fleet_seed: true, team: template.team, seeded_at: new Date().toISOString() };
 
   const values = {
     userId,
@@ -432,6 +567,7 @@ export async function seedFounderAssistant(userId: string): Promise<FounderAssis
         archetype: "Receptionist",
         firstMessage: persona.firstMessage,
         wirelinePersonaId: persona.id,
+        team: personaTeam(persona.id),
         personalityVibe:
           persona.id === "sales" || persona.id === "onboarding"
             ? "playful"
