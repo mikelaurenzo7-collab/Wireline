@@ -8,12 +8,18 @@ import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { WIRELINE_PERSONAS } from "./wireline-agent-personas";
 import type { WirelinePersonaId } from "./wireline-agent-escalation";
-import { AGENT_TOOL_NAME_VALUES, type AgentToolName } from "./agent-capabilities";
+import {
+  AGENT_TOOL_NAME_VALUES,
+  type AgentToolName,
+} from "./agent-capabilities";
 import { ROLE_PERSONALITY_TEMPLATES } from "./agent-constants";
 import { pickRotatedVoiceId } from "../data/voice-roster";
 import { getOwnerEmails } from "./auth-service";
 import { BRAND_SYSTEM, AGENT_NUMBER_PROMISE } from "./product-copy";
-import { plansForClient, EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY } from "./plan-catalog";
+import {
+  plansForClient,
+  EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY,
+} from "./plan-catalog";
 
 export const ALL_AGENT_TOOLS: AgentToolName[] = [...AGENT_TOOL_NAME_VALUES];
 
@@ -76,7 +82,8 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     role: "customer_service",
     channel: "voice",
     archetype: "Receptionist",
-    firstMessage: "Hi, Jordan here with Wireline. What can I help you with today?",
+    firstMessage:
+      "Hi, Jordan here with Wireline. What can I help you with today?",
     team: "support",
     personalityVibe: "warm",
     websiteUrl: "https://trywireline.com",
@@ -168,7 +175,8 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     role: "marketing",
     channel: "email",
     archetype: "Receptionist",
-    firstMessage: "Thanks for reaching out. Happy to help with campaigns or follow up.",
+    firstMessage:
+      "Thanks for reaching out. Happy to help with campaigns or follow up.",
     team: "revenue",
     personalityVibe: "playful",
     emailAgentTone: "Friendly",
@@ -191,7 +199,8 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     role: "personal_assistant",
     channel: "voice",
     archetype: "Executive Assistant",
-    firstMessage: "Hi, this is your agent. How can I help with your schedule today?",
+    firstMessage:
+      "Hi, this is your agent. How can I help with your schedule today?",
     team: "personal",
     personalityVibe: "warm",
     isBusinessAgent: false,
@@ -298,8 +307,10 @@ function personaTeam(personaId: WirelinePersonaId): FounderFleetTeam {
 function personalityForRole(role: string): string {
   const key = role in ROLE_PERSONALITY_TEMPLATES ? role : "customer_service";
   return (
-    (ROLE_PERSONALITY_TEMPLATES[key as keyof typeof ROLE_PERSONALITY_TEMPLATES] ||
-      ROLE_PERSONALITY_TEMPLATES.customer_service) + CHAT_COLLABORATOR_OVERLAY
+    (ROLE_PERSONALITY_TEMPLATES[
+      key as keyof typeof ROLE_PERSONALITY_TEMPLATES
+    ] || ROLE_PERSONALITY_TEMPLATES.customer_service) +
+    CHAT_COLLABORATOR_OVERLAY
   );
 }
 
@@ -318,7 +329,11 @@ export function knowledgeForRole(role: string): string[] {
   // the same live plan facts. The personal agent stays out of the sales lane.
   if (role !== "personal_assistant") snippets.push(...wirelinePlanFacts());
 
-  if (role.includes("sales") || role === "lead_qualifier" || role === "marketing") {
+  if (
+    role.includes("sales") ||
+    role === "lead_qualifier" ||
+    role === "marketing"
+  ) {
     snippets.push(...KNOWLEDGE_SNIPPETS.sales);
   }
   if (role === "marketing") snippets.push(...KNOWLEDGE_SNIPPETS.marketing);
@@ -331,7 +346,8 @@ export function knowledgeForRole(role: string): string[] {
   ) {
     snippets.push(...KNOWLEDGE_SNIPPETS.customer_service);
   }
-  if (role.includes("technical")) snippets.push(...KNOWLEDGE_SNIPPETS.technical_support);
+  if (role.includes("technical"))
+    snippets.push(...KNOWLEDGE_SNIPPETS.technical_support);
   if (role === "scheduler" || role.includes("onboarding")) {
     snippets.push(...KNOWLEDGE_SNIPPETS.scheduler);
   }
@@ -354,11 +370,17 @@ export function founderAssistantAgentScope(agentId: string, userId: string) {
 }
 
 /** When canonical template ids are already owned by another tenant, namespace per user. */
-export function namespacedAssistantAgentId(templateId: string, userId: string): string {
+export function namespacedAssistantAgentId(
+  templateId: string,
+  userId: string,
+): string {
   return `${userId.slice(0, 8)}-${templateId}`;
 }
 
-export async function resolveAssistantAgentId(templateId: string, userId: string): Promise<string> {
+export async function resolveAssistantAgentId(
+  templateId: string,
+  userId: string,
+): Promise<string> {
   const [ownedCanonical] = await drizzle
     .select({ id: schema.agents.id })
     .from(schema.agents)
@@ -384,17 +406,31 @@ export async function resolveAssistantAgentId(templateId: string, userId: string
   return templateId;
 }
 
-async function upsertPersonality(agentId: string, userId: string, content: string): Promise<void> {
+async function upsertPersonality(
+  agentId: string,
+  userId: string,
+  content: string,
+): Promise<void> {
   const [existing] = await drizzle
     .select({ agentId: schema.personality.agentId })
     .from(schema.personality)
-    .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)))
+    .where(
+      and(
+        eq(schema.personality.agentId, agentId),
+        eq(schema.personality.userId, userId),
+      ),
+    )
     .limit(1);
   if (existing) {
     await drizzle
       .update(schema.personality)
       .set({ content })
-      .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)));
+      .where(
+        and(
+          eq(schema.personality.agentId, agentId),
+          eq(schema.personality.userId, userId),
+        ),
+      );
     return;
   }
 
@@ -404,10 +440,13 @@ async function upsertPersonality(agentId: string, userId: string, content: strin
     .where(eq(schema.personality.agentId, agentId))
     .limit(1);
   if (foreign) {
-    log.warn("founder agent seed: personality row owned by another tenant, skipping", {
-      agentId,
-      userId,
-    });
+    log.warn(
+      "founder agent seed: personality row owned by another tenant, skipping",
+      {
+        agentId,
+        userId,
+      },
+    );
     return;
   }
 
@@ -433,7 +472,9 @@ async function seedTrainingArtifacts(
       )
       .limit(1);
     if (exists.length === 0) {
-      await drizzle.insert(schema.knowledge).values({ agentId, userId, content });
+      await drizzle
+        .insert(schema.knowledge)
+        .values({ agentId, userId, content });
       report.knowledgeInserted++;
     }
   }
@@ -498,7 +539,11 @@ async function upsertAgent(
         team: template.team,
         provisioned_at: new Date().toISOString(),
       }
-    : { founder_fleet_seed: true, team: template.team, seeded_at: new Date().toISOString() };
+    : {
+        founder_fleet_seed: true,
+        team: template.team,
+        seeded_at: new Date().toISOString(),
+      };
 
   const values = {
     userId,
@@ -516,7 +561,8 @@ async function upsertAgent(
     websiteUrl: template.websiteUrl,
     businessVariables,
     emailAutoRespond: template.channel === "email",
-    isBusinessAgent: template.isBusinessAgent ?? template.role !== "personal_assistant",
+    isBusinessAgent:
+      template.isBusinessAgent ?? template.role !== "personal_assistant",
   };
 
   if (existing) {
@@ -543,7 +589,9 @@ async function upsertAgent(
  * Seed (or refresh) the founder's full agent roster with max capabilities
  * and training artifacts. Idempotent — safe to re-run.
  */
-export async function seedFounderAssistant(userId: string): Promise<FounderAssistantSeedReport> {
+export async function seedFounderAssistant(
+  userId: string,
+): Promise<FounderAssistantSeedReport> {
   const report: FounderAssistantSeedReport = {
     agentsCreated: 0,
     agentsUpdated: 0,
@@ -602,7 +650,12 @@ export async function seedFounderAssistant(userId: string): Promise<FounderAssis
         .update(schema.agents)
         .set({ enabledTools: ALL_AGENT_TOOLS })
         .where(eq(schema.agents.id, row.id));
-      await seedTrainingArtifacts(row.id, userId, row.role || "customer_service", report);
+      await seedTrainingArtifacts(
+        row.id,
+        userId,
+        row.role || "customer_service",
+        report,
+      );
       report.agentIds.push(row.id);
       report.agentsUpdated++;
     }
@@ -612,8 +665,15 @@ export async function seedFounderAssistant(userId: string): Promise<FounderAssis
   return report;
 }
 
-export async function resolveFounderUserId(ownerEmail?: string): Promise<string | null> {
-  const email = (ownerEmail || process.env.OWNER_EMAIL || [...getOwnerEmails()][0] || "")
+export async function resolveFounderUserId(
+  ownerEmail?: string,
+): Promise<string | null> {
+  const email = (
+    ownerEmail ||
+    process.env.OWNER_EMAIL ||
+    [...getOwnerEmails()][0] ||
+    ""
+  )
     .trim()
     .toLowerCase();
   if (!email) return null;
