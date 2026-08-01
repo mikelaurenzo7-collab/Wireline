@@ -128,7 +128,7 @@ struct BrandEmptyState: View {
 
 #Preview("Components") {
     List {
-        AssistantRow(agent: Agent(id: "1", name: "Ava", role: "personal_agent", archetype: "Personal Agent", channels: ["voice", "email"], voiceId: nil))
+        AssistantRow(agent: Agent(id: "1", name: "Ava", role: "personal_agent", archetype: "Personal Agent", channels: ["voice", "email"], voiceId: nil, isBusinessAgent: false))
         CallCard(call: ActiveCall(callId: "c1", agentId: "1", customerNumber: "+1 555 123 4567", status: "in-progress", label: nil, type: "inbound"))
         Button("Place a call") {}.buttonStyle(PrimaryButtonStyle())
         BrandEmptyState(title: "No agents yet", message: "Set up your first call agent on the web to get started.")
