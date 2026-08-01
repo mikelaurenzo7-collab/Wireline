@@ -106,14 +106,32 @@ describe("Atomic Design completion contract", () => {
     // Every shipped icon carries the same path as the component. Favicon, PWA
     // icon, OG card, and the ChatGPT app icon are separate files; without this
     // they drift from the product and each other.
+    //
+    // `scripts/apple-touch-icon.svg` is in this list because it is a *source*,
+    // not an output: `npm run assets` renders it into apple-touch-icon.png and
+    // wireline-icon-192.png as a prebuild step. Redrawing the mark and updating
+    // only the committed PNGs looked correct until the next build silently
+    // regenerated both from this file and restored the old glyph.
     for (const asset of [
       "public/favicon.svg",
       "public/wireline-icon.svg",
       "public/og-image.svg",
       "public/wireline-chatgpt-app-icon.svg",
+      "scripts/apple-touch-icon.svg",
     ]) {
       expect(source(asset), `${asset} is not on the canonical glyph`).toContain(path!);
     }
+
+    // Android's adaptive launcher is a vector drawable, so it carries the same
+    // geometry in Android's own comma-separated path syntax rather than the
+    // SVG spelling. It previously shipped a third, unrelated filled W.
+    const androidPath = path!
+      .replace(/([\d.])\s+([\d.])/g, "$1,$2")
+      .replace(/([A-Z])(\d)/g, "$1$2");
+    expect(
+      source("android/app/src/main/res/drawable/ic_launcher_foreground.xml"),
+      "android launcher is not on the canonical glyph",
+    ).toContain(androidPath);
   });
 
   it("keeps the brand mark square and its stroke scalable", () => {
