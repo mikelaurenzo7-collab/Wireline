@@ -1,53 +1,55 @@
-# Production Voice Runtime Policy - 2026-07-26
+# Production Voice Runtime Policy — 2026-08-01
 
-Status: **Active launch policy**. This is the voice-provider boundary for Wireline's live-call,
-browser-demo, presenter, and marketing-audio surfaces.
+Status: **Active launch policy**
 
-## Operating rule
+## Runtime boundary
 
-Wireline can sound distinctive without confusing four different voice surfaces:
+| Surface              | Production path                                                                                        | Policy                                                                                                |
+| -------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| Phone calls          | Twilio carrier → Vapi orchestration → Deepgram STT → OpenAI/Gemini call model → Vapi or ElevenLabs TTS | ElevenLabs uses `eleven_flash_v2_5` through Vapi. Every ElevenLabs voice has a curated Vapi fallback. |
+| Browser/mobile voice | OpenAI Realtime WebRTC                                                                                 | No ElevenLabs key or direct provider request reaches the browser.                                     |
+| Video presenter      | LiveAvatar/HeyGen catalog                                                                              | Presenter identity does not silently become the phone voice.                                          |
+| Marketing audio      | Approved generation tools                                                                              | Rendered assets are not a live-call runtime.                                                          |
 
-| Surface | Production owner | What is allowed | What is not allowed |
-| --- | --- | --- | --- |
-| PSTN phone calls | Vapi orchestration with Twilio carrier/messaging transport | Curated Vapi voices today; future Vapi-supported streaming custom voices only after consent, rights, latency, fallback, and telephony verification. | Audio-file generators, presenter TTS, browser-only voices, or unverified cloned voices answering live callers. |
-| Browser/mobile live demo | OpenAI Realtime WebRTC | Role-tuned OpenAI voice profiles controlled by Wireline. | xAI/Grok client-secret routing or custom browser-demo voice cloning. |
-| Video presenter | Live video / presenter catalog | Curated presenter faces and matched public presenter voices with explicit consent and fallback to the Wireline identity badge. | Selling presenter voice or face choices as the phone-call voice. |
-| Marketing and ads | AI Voice Generator, HeyGen, Beautiful.ai, Canva, Adobe, Runway, BlitzReels | Voiceovers, narration, ad reads, demo reels, and reference reads. | Treating generated files as a streaming phone-call voice runtime. |
+## Available phone voices
 
-## Answer to "Can we create our own voices with AI Voice Generator?"
+- Included Wireline Phone voices use Vapi's managed catalog.
+- Wireline Studio exposes only three curated ElevenLabs voices plus private clones owned by the authenticated founder account.
+- Private voice creation, review, approval, and deletion are platform-admin only.
+- A private voice cannot enter an agent configuration or call payload until Postgres records `approved` status.
+- If provider access, ownership, approval, or voice identity cannot be proven, the runtime falls back to Savannah.
 
-Yes for **marketing audio** and reference direction. No as the live phone-call runtime.
+## Clone contract
 
-AI Voice Generator creates audio assets. Production phone calls require a low-latency streaming voice
-inside the Vapi/Twilio call path, plus provider terms that cover commercial use, voice rights,
-consent, revocation, disclosure, fallback, monitoring, and latency under interruption.
+1. The requester attests that they are the speaker or hold documented authorization and commercial-use rights.
+2. The server validates base64, decoded size, declared MIME, file signature, and client-measured 10–90 second duration.
+3. Before provider spend, Wireline atomically reserves the sample fingerprint and records consent; concurrent duplicate requests cannot create twice.
+4. Wireline processes the upload in memory, stores no source file, and retains only the fingerprint, authorization, ownership, review, and audit evidence.
+5. Provider creation is compensated with provider deletion if ownership finalization fails; a failed compensation remains `deletion_pending` for an authorized retry.
+6. New clones remain `pending_review`; the founder must play a full Flash 2.5 proof and approve them.
+7. Provider verification, when required, blocks approval.
+8. Revocation immediately removes live assignments and requests provider deletion. Failed provider deletion remains visible as `deletion_pending` for an authorized retry.
 
-## Launch promise
+## Call and legal guardrails
 
-Use this promise externally:
+- AI and cloned voices are artificial voices. Calling consent, DNC, calling-hours, recording, identification, and disclosure rules still apply.
+- Do not clone minors, political candidates or officials, celebrities, public figures, or other high-risk voices.
+- Do not use synthetic voices for impersonation, deception, fraud, harassment, voter influence, unauthorized transactions, or harm.
+- Never expose the founder provider key, private provider inventory, provider errors, or internal tenant identifiers to the client.
+- Noise cleanup is opt-in only for noisy samples; it is not applied blindly to clean audio.
 
-> Wireline lets you choose a polished production phone voice today, and we can design a signature
-> brand voice direction for campaigns and demos. Custom live-call voices are available only after
-> the streaming provider path is verified for rights, latency, fallback, and telephony quality.
+## Launch acceptance
 
-Do not say:
+Before general availability, prove all of the following on the exact release commit:
 
-- "Upload any voice and it will answer calls."
-- "AI Voice Generator powers production phone calls."
-- "Presenter voice equals phone voice."
-- "Grok/xAI is the default live-voice runtime."
-- "Custom cloned voices are generally available."
+1. ElevenLabs production key and curated inventory pass the read-only readiness probe.
+2. The same ElevenLabs key is configured in Vapi Integrations.
+3. One inbound and one outbound call use a curated Studio voice with acceptable first-audio latency, interruption, voicemail, tool use, and transfer.
+4. A controlled provider-failure test switches to the Vapi fallback without ending the call.
+5. A founder-owned sample completes create → proof → approve → assign → call → revoke → provider-delete.
+6. Database RLS, grants, approval constraints, revocation trigger, and tenant ownership are verified after migration.
+7. Terms, Privacy Policy, consent UI, audit records, usage limits, provider training controls, and deletion behavior receive final review.
 
-## Acceptance checklist for future custom live-call voices
+Do not market custom cloning as generally available while the control remains founder-only. The accurate product promise is:
 
-Before enabling a custom voice for production PSTN, verify:
-
-1. The voice provider is reachable through Vapi or a Direct SIP/media path that supports streaming,
-   interruption, barge-in, and low-latency TTS.
-2. The voice owner has explicit commercial consent and revocation terms.
-3. The runtime has a deterministic fallback to a curated Vapi voice.
-4. Call recording, AI disclosure, consent, opt-out, DNC, and calling-hours policies still apply.
-5. Quality is tested with one inbound call, one outbound call, noisy audio, long turns, interruption,
-   voicemail, and transfer/handoff.
-6. Pricing and margin include any custom voice synthesis surcharge.
-7. Customer-facing copy labels the capability as configured/custom, not universal.
+> Polished live voices with managed fallback. Authorized private voices are reviewed before they can answer a call.
