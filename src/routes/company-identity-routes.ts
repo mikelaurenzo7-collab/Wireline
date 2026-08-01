@@ -15,7 +15,7 @@ import {
   readCompanyIdentityPreferences,
 } from "../lib/company-identity";
 import { isOwnerEmail } from "../lib/auth-service";
-import { drizzle, log } from "../lib/server-context";
+import { drizzle, log, serialQueryBatch } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { authenticateUser } from "../middleware/auth";
 import { userPreferencesRateLimit } from "../middleware/api-rate-limits";
@@ -124,16 +124,17 @@ async function lockIdentityState(db: IdentityLocker, userId: string): Promise<vo
   await db.execute(
     sql`SELECT pg_advisory_xact_lock(hashtext('company-identity'), hashtext(${userId}))`,
   );
-  await db.execute(
-    sql`SELECT id FROM wireline_settings WHERE user_id = ${userId} FOR UPDATE`,
-  );
+  await db.execute(sql`SELECT id FROM wireline_settings WHERE user_id = ${userId} FOR UPDATE`);
   await db.execute(
     sql`SELECT user_id FROM wireline_user_preferences WHERE user_id = ${userId} FOR UPDATE`,
   );
 }
 
 async function loadIdentityState(userId: string, db: IdentityReader = drizzle) {
-  const [[settingsRow], [preferencesRow], [phoneRow]] = await Promise.all([
+  // Serialized: loadIdentityState is called with a live transaction handle
+  // (see the drizzle.transaction callbacks below), and one pg client cannot
+  // run concurrent queries inside a transaction.
+  const [[settingsRow], [preferencesRow], [phoneRow]] = await serialQueryBatch([
     db
       .select({
         businessName: schema.settings.businessName,
@@ -483,7 +484,8 @@ router.post(
               status: 409,
               body: {
                 code: "IDENTITY_REVIEW_REQUIRES_CHANGES",
-                error: "Update the rejected company identity details before requesting another review.",
+                error:
+                  "Update the rejected company identity details before requesting another review.",
                 ...publicPayload(current),
               },
             },
@@ -499,7 +501,8 @@ router.post(
               body: {
                 ok: true,
                 already_requested: true,
-                message: "The current company identity is already submitted or has a provider decision.",
+                message:
+                  "The current company identity is already submitted or has a provider decision.",
                 ...publicPayload(current),
               },
             },

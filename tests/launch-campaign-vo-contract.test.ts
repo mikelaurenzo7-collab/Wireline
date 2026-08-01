@@ -1,0 +1,74 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+
+// @ts-expect-error -- plain .mjs build script, imported for its canonical copy.
+import { CAMPAIGN_VO, speakable } from "../scripts/generate-campaign-vo.mjs";
+
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+
+/**
+ * The campaign document is the source of truth for voiceover copy; the
+ * generator only renders it. These checks keep the two from drifting, which
+ * would put a different script in the audio than the one the reels were
+ * timecoded against.
+ */
+describe("launch campaign voiceover", () => {
+  const campaign = read("docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md");
+  const mediaKit = read("docs/LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md");
+
+  const tracks = CAMPAIGN_VO as Array<{
+    id: string;
+    file: string;
+    targetSeconds: number;
+    text: string;
+  }>;
+
+  it("renders exactly the three audio deliverables the media kit lists", () => {
+    for (const track of tracks) {
+      expect(mediaKit, `${track.file} is not listed in the media kit`).toContain(track.file);
+    }
+    expect(tracks).toHaveLength(3);
+  });
+
+  it("keeps every voiceover verbatim from the campaign document", () => {
+    for (const track of tracks) {
+      expect(campaign, `${track.id} copy has drifted from the campaign document`).toContain(
+        track.text,
+      );
+    }
+  });
+
+  it("follows the delivery guide when speaking the domain and prices", () => {
+    // The guide: speak "trywireline.com" as "try wireline dot com", and speak
+    // prices as words, never digits.
+    expect(speakable("Build free at trywireline.com.")).toBe("Build free at try wireline dot com.");
+    for (const track of tracks) {
+      const spoken = speakable(track.text);
+      expect(spoken).not.toMatch(/trywireline\.com/i);
+      expect(spoken, `${track.id} speaks a numeric price`).not.toMatch(/\$\d/);
+    }
+  });
+
+  it("sizes each script to its cut at the guide's speaking rate", () => {
+    // The guide targets 2.3-2.5 words per second and says the scripts are
+    // sized to leave air at the ends, so a script must never overrun its cut.
+    for (const track of tracks) {
+      const words = speakable(track.text).split(/\s+/).filter(Boolean).length;
+      const fastestSeconds = words / 2.5;
+      expect(
+        fastestSeconds,
+        `${track.id} cannot fit ${words} words into ${track.targetSeconds}s`,
+      ).toBeLessThanOrEqual(track.targetSeconds);
+    }
+  });
+
+  it("keeps campaign audio out of the production call path", () => {
+    const script = read("scripts/generate-campaign-vo.mjs");
+    expect(script).toMatch(/marketing and reference use only/i);
+    expect(script).toMatch(/official-assets\/audio/);
+    // official-assets/ is gitignored and hygiene-banned; the generator must not
+    // be pointed at a tracked directory.
+    expect(read(".gitignore")).toContain("official-assets/");
+  });
+});

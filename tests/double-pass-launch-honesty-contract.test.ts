@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { globSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -7,8 +7,7 @@ const read = (path: string) =>
 
 function matchingCallEnd(source: string, openIndex: number): number {
   let depth = 0;
-  let mode: "code" | "line" | "block" | "single" | "double" | "template" =
-    "code";
+  let mode: "code" | "line" | "block" | "single" | "double" | "template" = "code";
   let escaped = false;
 
   for (let index = openIndex; index < source.length; index += 1) {
@@ -111,9 +110,7 @@ describe("double-pass launch honesty", () => {
     expect(source).toContain(
       "await grantSubscriptionRuntimeAllowance(userId, periodReference, plan.id, interval);",
     );
-    expect(source).not.toMatch(
-      /grantSubscriptionRuntimeAllowance\([\s\S]*?\)\.catch\(/,
-    );
+    expect(source).not.toMatch(/grantSubscriptionRuntimeAllowance\([\s\S]*?\)\.catch\(/);
     expect(source).toContain("refusing overwrite");
   });
 
@@ -143,9 +140,7 @@ describe("double-pass launch honesty", () => {
   it("scopes runtime reserve idempotency to the tenant", () => {
     const source = read("src/lib/runtime-usage-billing.ts");
     expect(source).toContain("eq(schema.creditLedger.userId, input.userId)");
-    expect(source).toContain(
-      "eq(schema.creditLedger.idempotencyKey, idempotencyKey)",
-    );
+    expect(source).toContain("eq(schema.creditLedger.idempotencyKey, idempotencyKey)");
   });
 
   it("gates manual SMS replies and fails mark-read honestly", () => {
@@ -160,15 +155,11 @@ describe("double-pass launch honesty", () => {
   it("keeps carrier messaging disclosures and registration ownership accurate", () => {
     const terms = read("src/components/LegalPage.tsx");
     const privacy = read("src/components/PrivacyPolicyPage.tsx");
-    expect(terms).toContain(
-      "Mobile contact information and SMS opt-in records are not sold or",
-    );
+    expect(terms).toContain("Mobile contact information and SMS opt-in records are not sold or");
     expect(terms).toContain("Carriers are not liable");
     expect(terms).toContain("coordinates that registration through Twilio");
     expect(terms).not.toContain("as the Communications Service Provider");
-    expect(privacy).toContain(
-      "Mobile contact information and SMS opt-in records are not sold or",
-    );
+    expect(privacy).toContain("Mobile contact information and SMS opt-in records are not sold or");
   });
 
   it("fails commercial email readiness closed without a postal address", () => {
@@ -178,19 +169,11 @@ describe("double-pass launch honesty", () => {
     const emailCompliance = read("src/lib/email-compliance.ts");
     expect(envCheck).toContain('"WIRELINE_POSTAL_ADDRESS"');
     expect(vendorProbe).toContain('"commercial_email_postal_address"');
-    expect(vendorProbe).toMatch(
-      /commercialEmailPostalAddressReady \? "ready" : "blocked"/,
-    );
+    expect(vendorProbe).toMatch(/commercialEmailPostalAddressReady \? "ready" : "blocked"/);
     expect(emailService).toContain("getPostalAddress");
-    expect(emailService).toContain(
-      "Commercial email disabled: WIRELINE_POSTAL_ADDRESS is missing",
-    );
-    expect(emailCompliance).toContain(
-      "isEmailSuppressed check failed — treating as suppressed",
-    );
-    expect(emailCompliance).toMatch(
-      /isEmailSuppressed[\s\S]*catch \(err\)[\s\S]*return true;/,
-    );
+    expect(emailService).toContain("Commercial email disabled: WIRELINE_POSTAL_ADDRESS is missing");
+    expect(emailCompliance).toContain("isEmailSuppressed check failed — treating as suppressed");
+    expect(emailCompliance).toMatch(/isEmailSuppressed[\s\S]*catch \(err\)[\s\S]*return true;/);
   });
 
   it("routes founder partnerships and growth work to revenue", () => {
@@ -218,9 +201,7 @@ describe("double-pass launch honesty", () => {
     expect(statusRoute).toContain("Keep tenant reads sequential");
     expect(statusRoute).not.toContain("await Promise.all([");
 
-    const subscriptionRead = statusRoute.indexOf(
-      "const subRows = await drizzle",
-    );
+    const subscriptionRead = statusRoute.indexOf("const subRows = await drizzle");
     const agentRead = statusRoute.indexOf("const agentCounts = await drizzle");
     const phoneRead = statusRoute.indexOf("const phoneCounts = await drizzle");
     const entitlementRead = statusRoute.indexOf(
@@ -232,39 +213,46 @@ describe("double-pass launch honesty", () => {
   });
 
   it("never dispatches concurrent queries through one pg transaction client", () => {
-    for (const path of [
-      "src/routes/agent-routes-v2.ts",
-      "src/lib/vapi-assistant-factory-v2.ts",
-      "src/lib/vapi-client.ts",
-      "src/lib/daily-brief.ts",
-      "src/routes/fleet-routes.ts",
-      "src/routes/insights-routes.ts",
-      "src/lib/voice/grok-voice-service.ts",
-      "src/routes/settings-routes.ts",
-      "src/routes/dashboard-routes.ts",
-      "src/lib/voice/openai-live-agent-service.ts",
-      "src/routes/mobile-routes.ts",
-      "src/routes/agent-workspace-routes.ts",
-      "src/routes/agent-test-routes.ts",
-    ]) {
+    // One pg client cannot run queries concurrently inside a transaction, so a
+    // Promise.all over transaction-bound builders is always wrong.
+    //
+    // This used to scan a hardcoded file list for text lexically between
+    // `drizzle.transaction(` and its closing paren. That shape cannot see the
+    // most common form of the bug: a helper that receives `tx` as a parameter
+    // and fans out inside it, in a file that may not call drizzle.transaction
+    // at all. Three such sites (company-identity-routes loadIdentityState,
+    // company-identity-mutation reconcile, phone-provisioning release) were
+    // live while this test passed. Sweep every source file instead and judge
+    // by what the Promise.all actually awaits.
+    const files = globSync("src/**/*.ts", { cwd: process.cwd() }).filter(
+      (file) => !file.endsWith(".test.ts"),
+    );
+    expect(files.length).toBeGreaterThan(50);
+
+    const offenders: string[] = [];
+    for (const path of files) {
       const source = read(path);
-      for (const match of source.matchAll(/drizzle\.transaction\(/g)) {
-        const start = match.index ?? 0;
-        const open = start + "drizzle.transaction".length;
-        const transaction = source.slice(
-          start,
-          matchingCallEnd(source, open) + 1,
-        );
-        expect(transaction, path).not.toContain("Promise.all(");
+      for (const match of source.matchAll(/Promise\.all\(/g)) {
+        const open = (match.index ?? 0) + "Promise.all".length;
+        const body = source.slice(open, matchingCallEnd(source, open) + 1);
+        // Transaction-bound builders read `tx.select(...)`, possibly wrapped
+        // across lines. Root-pool `drizzle.…` fan-out is legitimate.
+        if (/\btx\s*\r?\n?\s*\.(select|insert|update|delete|execute)\b/.test(body)) {
+          const line = source.slice(0, match.index ?? 0).split("\n").length;
+          offenders.push(`${path}:${line}`);
+        }
       }
     }
+
+    expect(
+      offenders,
+      `Promise.all over transaction-bound queries: ${offenders.join(", ")}`,
+    ).toEqual([]);
   });
 
   it("fails launch closed when Stripe brand or customer controls drift", () => {
     const vendorProbe = read("scripts/check-vendor-readiness.mjs");
-    expect(vendorProbe).toContain(
-      "/v1/billing_portal/configurations?active=true&limit=100",
-    );
+    expect(vendorProbe).toContain("/v1/billing_portal/configurations?active=true&limit=100");
     expect(vendorProbe).toContain("/v1/webhook_endpoints?limit=100");
     expect(vendorProbe).toContain("/v1/tax/settings");
     expect(vendorProbe).toContain("stripeBrandReady");
@@ -276,15 +264,9 @@ describe("double-pass launch honesty", () => {
     );
 
     const launchStatus = read("scripts/generate-launch-status.mjs");
-    expect(launchStatus).toContain(
-      'blockers.push("stripe_brand_not_wireline")',
-    );
-    expect(launchStatus).toContain(
-      'blockers.push("stripe_customer_portal_not_ready")',
-    );
-    expect(launchStatus).toContain(
-      'blockers.push("stripe_webhook_not_aligned")',
-    );
+    expect(launchStatus).toContain('blockers.push("stripe_brand_not_wireline")');
+    expect(launchStatus).toContain('blockers.push("stripe_customer_portal_not_ready")');
+    expect(launchStatus).toContain('blockers.push("stripe_webhook_not_aligned")');
     expect(launchStatus).toContain('blockers.push("stripe_tax_not_active")');
   });
 
@@ -308,16 +290,12 @@ describe("double-pass launch honesty", () => {
     for (const [path, expectedBatches] of expectedTransactionBatches) {
       const source = read(path);
       const transactionBatches =
-        source.match(/drizzle\.transaction\(\s*(?:async\s*)?\(tx\)\s*=>/g)
-          ?.length ?? 0;
+        source.match(/drizzle\.transaction\(\s*(?:async\s*)?\(tx\)\s*=>/g)?.length ?? 0;
       expect(transactionBatches, path).toBeGreaterThanOrEqual(expectedBatches);
 
       for (const block of promiseAllBlocks(source)) {
         const rootQueryFanout = block.match(/\bdrizzle(?=\s*\.)/g)?.length ?? 0;
-        expect(
-          rootQueryFanout,
-          path + " still fans out tenant pool clients",
-        ).toBeLessThan(4);
+        expect(rootQueryFanout, path + " still fans out tenant pool clients").toBeLessThan(4);
       }
     }
   });

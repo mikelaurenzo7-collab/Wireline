@@ -8,7 +8,7 @@ import {
   defaultCompanyIdentityPreferences,
   readCompanyIdentityPreferences,
 } from "./company-identity";
-import { drizzle } from "./server-context";
+import { drizzle, serialQueryBatch } from "./server-context";
 
 type PreferenceEnvelope = Record<string, unknown>;
 
@@ -37,7 +37,9 @@ export async function reconcileCompanyIdentityAfterMutation(
   userId: string,
   reason: "branding_changed" | "phone_number_changed",
 ): Promise<boolean> {
-  const [[settingsRow], [preferencesRow], [phoneRow]] = await Promise.all([
+  // Serialized: this always runs on a transaction handle passed in by
+  // runCompanyIdentityMutation.
+  const [[settingsRow], [preferencesRow], [phoneRow]] = await serialQueryBatch([
     tx
       .select({
         businessName: schema.settings.businessName,

@@ -20,14 +20,8 @@ import { ELEVENLABS_CURATED_VOICES } from "../lib/voice-catalog";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { authenticateUser } from "../middleware/auth";
-import {
-  createIpRateLimiter,
-  createRateLimiter,
-} from "../middleware/api-rate-limits";
-import {
-  isPlatformAdmin,
-  requirePlatformAdmin,
-} from "../middleware/platform-admin";
+import { createIpRateLimiter, createRateLimiter } from "../middleware/api-rate-limits";
+import { isPlatformAdmin, requirePlatformAdmin } from "../middleware/platform-admin";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -62,7 +56,12 @@ const cloneIpRateLimit = createIpRateLimiter({
 });
 
 const voicePreviewRateLimit = createRateLimiter({
-  bucket: "api:voice-preview",
+  // Distinct from grok-voice-routes' "api:voice-preview". rateLimit() keys on
+  // the bucket name, so sharing it made two endpoints increment one counter
+  // that was then compared against two different ceilings (12 fail-closed here,
+  // 20 fail-open there) — legacy xAI previews spent this endpoint's ElevenLabs
+  // budget and vice versa.
+  bucket: "api:voice-preview-managed",
   windowMs: 60_000,
   max: 12,
   failClosedOnError: true,
@@ -77,28 +76,17 @@ const voiceMutationRateLimit = createRateLimiter({
 
 function normalizeMimeType(value: unknown): string {
   const normalized =
-    typeof value === "string"
-      ? value.split(";")[0]?.trim().toLowerCase() || ""
-      : "";
+    typeof value === "string" ? value.split(";")[0]?.trim().toLowerCase() || "" : "";
   if (!ALLOWED_CLONE_AUDIO_MIME_TYPES.has(normalized)) {
-    throw new AppError(
-      415,
-      "UNSUPPORTED_MEDIA_TYPE",
-      "Use MP3, WAV, M4A, OGG, or WebM audio.",
-    );
+    throw new AppError(415, "UNSUPPORTED_MEDIA_TYPE", "Use MP3, WAV, M4A, OGG, or WebM audio.");
   }
   return normalized;
 }
 
 function decodeAudio(value: unknown): Buffer {
-  if (typeof value !== "string")
-    throw AppError.badRequest("Audio sample required.");
+  if (typeof value !== "string") throw AppError.badRequest("Audio sample required.");
   const base64 = value.replace(/\s/g, "");
-  if (
-    base64.length < 4 ||
-    base64.length % 4 === 1 ||
-    !/^[A-Za-z0-9+/]*={0,2}$/.test(base64)
-  ) {
+  if (base64.length < 4 || base64.length % 4 === 1 || !/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) {
     throw AppError.badRequest("Audio sample is not valid base64.");
   }
   const bytes = Buffer.from(base64, "base64");
@@ -110,22 +98,16 @@ function decodeAudio(value: unknown): Buffer {
     throw AppError.badRequest("Audio sample is too short.");
   }
   if (bytes.length > MAX_CLONE_AUDIO_BYTES) {
-    throw new AppError(
-      413,
-      "PAYLOAD_TOO_LARGE",
-      "Audio sample too large (max 3 MB).",
-    );
+    throw new AppError(413, "PAYLOAD_TOO_LARGE", "Audio sample too large (max 3 MB).");
   }
   return bytes;
 }
 
 function validateAudioSignature(bytes: Buffer, mimeType: string): void {
-  const ascii = (start: number, end: number) =>
-    bytes.subarray(start, end).toString("ascii");
+  const ascii = (start: number, end: number) => bytes.subarray(start, end).toString("ascii");
   const isWav = ascii(0, 4) === "RIFF" && ascii(8, 12) === "WAVE";
   const isMp3 =
-    ascii(0, 3) === "ID3" ||
-    (bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0);
+    ascii(0, 3) === "ID3" || (bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0);
   const isM4a = bytes.length >= 12 && ascii(4, 8) === "ftyp";
   const isOgg = ascii(0, 4) === "OggS";
   const isWebm =
@@ -146,11 +128,7 @@ function validateAudioSignature(bytes: Buffer, mimeType: string): void {
             ? isWebm
             : false;
   if (!valid) {
-    throw new AppError(
-      415,
-      "UNSUPPORTED_MEDIA_TYPE",
-      "The file does not match its audio type.",
-    );
+    throw new AppError(415, "UNSUPPORTED_MEDIA_TYPE", "The file does not match its audio type.");
   }
 }
 
@@ -204,9 +182,7 @@ async function reserveCloneRequest(args: {
     // reservations older than an hour; if the original request later resumes,
     // its conditional finalize fails and compensates by deleting the provider
     // voice instead of creating an unowned asset.
-    const staleReservationCutoff = new Date(
-      Date.now() - CREATING_RESERVATION_TTL_MS,
-    );
+    const staleReservationCutoff = new Date(Date.now() - CREATING_RESERVATION_TTL_MS);
     await tx
       .update(schema.clonedVoices)
       .set({
@@ -234,9 +210,7 @@ async function reserveCloneRequest(args: {
       )
       .limit(MAX_CLONE_REQUESTS_PER_WINDOW);
     if (recent.length >= MAX_CLONE_REQUESTS_PER_WINDOW) {
-      throw AppError.tooManyRequests(
-        "Voice creation limit reached. Try again tomorrow.",
-      );
+      throw AppError.tooManyRequests("Voice creation limit reached. Try again tomorrow.");
     }
 
     const [duplicate] = await tx
@@ -335,8 +309,7 @@ router.get(
         name: schema.clonedVoices.name,
         status: schema.clonedVoices.status,
         previewUrl: schema.clonedVoices.previewUrl,
-        providerVerificationRequired:
-          schema.clonedVoices.providerVerificationRequired,
+        providerVerificationRequired: schema.clonedVoices.providerVerificationRequired,
         createdAt: schema.clonedVoices.createdAt,
       })
       .from(schema.clonedVoices)
@@ -411,10 +384,7 @@ router.get(
           ),
         )
         .limit(1);
-      if (
-        !owned ||
-        ["revoked", "failed", "deletion_pending"].includes(owned.status)
-      ) {
+      if (!owned || ["revoked", "failed", "deletion_pending"].includes(owned.status)) {
         throw AppError.notFound("Voice not found.");
       }
     }
@@ -423,10 +393,7 @@ router.get(
       const proof = await generateElevenLabsProof({ voiceId });
       res.setHeader("Content-Type", "audio/mpeg");
       res.setHeader("X-Content-Type-Options", "nosniff");
-      res.setHeader(
-        "Cache-Control",
-        curated ? "private, max-age=3600" : "private, no-store",
-      );
+      res.setHeader("Cache-Control", curated ? "private, max-age=3600" : "private, no-store");
       res.send(Buffer.from(proof));
     } catch (error) {
       log.warn("voice quality preview failed", {
@@ -434,9 +401,7 @@ router.get(
         voiceId,
         error: getErrorMessage(error),
       });
-      throw AppError.serviceUnavailable(
-        "Voice preview is temporarily unavailable.",
-      );
+      throw AppError.serviceUnavailable("Voice preview is temporarily unavailable.");
     }
   }),
 );
@@ -455,18 +420,14 @@ router.post(
       throw AppError.badRequest("Speaker authorization is required.");
     }
     if (req.body?.consentVersion !== ELEVENLABS_VOICE_CONSENT_VERSION) {
-      throw AppError.badRequest(
-        "Voice authorization changed. Refresh and confirm it again.",
-      );
+      throw AppError.badRequest("Voice authorization changed. Refresh and confirm it again.");
     }
 
     const name = cleanVoiceName(req.body?.name);
     const audioMimeType = normalizeMimeType(req.body?.audioMimeType);
     const audioBytes = decodeAudio(req.body?.audioBase64);
     validateAudioSignature(audioBytes, audioMimeType);
-    const sourceDurationSeconds = normalizeDuration(
-      req.body?.sourceDurationSeconds,
-    );
+    const sourceDurationSeconds = normalizeDuration(req.body?.sourceDurationSeconds);
     const removeBackgroundNoise = req.body?.removeBackgroundNoise === true;
     const sourceSha256 = createHash("sha256").update(audioBytes).digest("hex");
 
@@ -587,9 +548,7 @@ router.post(
         error: getErrorMessage(error),
       });
       if (error instanceof AppError) throw error;
-      throw AppError.internal(
-        "Voice creation failed. Try again or contact support.",
-      );
+      throw AppError.internal("Voice creation failed. Try again or contact support.");
     }
   }),
 );
@@ -601,28 +560,20 @@ router.post(
   voiceMutationRateLimit,
   asyncHandler<AuthenticatedRequest>(async (req, res) => {
     if (req.body?.qualityConfirmed !== true) {
-      throw AppError.badRequest(
-        "Listen to the proof and confirm its quality first.",
-      );
+      throw AppError.badRequest("Listen to the proof and confirm its quality first.");
     }
     if (req.body?.qualityVersion !== ELEVENLABS_VOICE_QUALITY_VERSION) {
-      throw AppError.badRequest(
-        "The quality checklist changed. Refresh and review again.",
-      );
+      throw AppError.badRequest("The quality checklist changed. Refresh and review again.");
     }
     const voiceId = req.params.id.trim();
     const [voice] = await drizzle
       .select({
         status: schema.clonedVoices.status,
-        providerVerificationRequired:
-          schema.clonedVoices.providerVerificationRequired,
+        providerVerificationRequired: schema.clonedVoices.providerVerificationRequired,
       })
       .from(schema.clonedVoices)
       .where(
-        and(
-          eq(schema.clonedVoices.voiceId, voiceId),
-          eq(schema.clonedVoices.userId, req.user.id),
-        ),
+        and(eq(schema.clonedVoices.voiceId, voiceId), eq(schema.clonedVoices.userId, req.user.id)),
       )
       .limit(1);
     if (!voice) throw AppError.notFound("Voice not found.");
@@ -634,9 +585,7 @@ router.post(
       throw AppError.conflict("Only a pending voice can be approved.");
     }
     if (voice.providerVerificationRequired) {
-      throw AppError.conflict(
-        "Provider verification is required before this voice can go live.",
-      );
+      throw AppError.conflict("Provider verification is required before this voice can go live.");
     }
 
     try {
@@ -649,9 +598,7 @@ router.post(
         voiceId,
         error: getErrorMessage(error),
       });
-      throw AppError.serviceUnavailable(
-        "Quality proof failed. The voice remains private.",
-      );
+      throw AppError.serviceUnavailable("Quality proof failed. The voice remains private.");
     }
 
     const approvedAt = new Date();
@@ -708,10 +655,7 @@ router.delete(
       })
       .from(schema.clonedVoices)
       .where(
-        and(
-          eq(schema.clonedVoices.voiceId, voiceId),
-          eq(schema.clonedVoices.userId, req.user.id),
-        ),
+        and(eq(schema.clonedVoices.voiceId, voiceId), eq(schema.clonedVoices.userId, req.user.id)),
       )
       .limit(1);
     if (!voice) throw AppError.notFound("Voice not found.");
@@ -782,10 +726,7 @@ router.delete(
     await drizzle
       .delete(schema.clonedVoices)
       .where(
-        and(
-          eq(schema.clonedVoices.voiceId, voiceId),
-          eq(schema.clonedVoices.userId, req.user.id),
-        ),
+        and(eq(schema.clonedVoices.voiceId, voiceId), eq(schema.clonedVoices.userId, req.user.id)),
       );
     await recordOutcome({
       userId: req.user.id,

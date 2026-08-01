@@ -38,6 +38,18 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_webhook_health", userColumns: ["user_id"] },
   { table: "wireline_webhooks", userColumns: ["user_id"] },
   { table: "wireline_intake_keys", userColumns: ["user_id"] },
+  // Purged by owner only. `approved_by` carries ON DELETE RESTRICT while
+  // user_id carries CASCADE; because 0119 declares the CASCADE first, its
+  // trigger has the lower OID and fires first, so the row is gone before the
+  // RESTRICT is evaluated and the user delete succeeds either way. That makes
+  // an explicit `OR approved_by = $1` predicate unnecessary — and unsafe to
+  // add: approval is self-scoped today (voices-routes.ts updates only where
+  // user_id = req.user.id), but if a platform admin is ever allowed to review
+  // another tenant's voice, that predicate would delete the *other* tenant's
+  // row and the revoke trigger would silently reset their live agents. Deleting
+  // by owner keeps this entry correct under either approval model; the worst
+  // case becomes a blocked purge, never another tenant's data loss.
+  { table: "wireline_cloned_voices", userColumns: ["user_id"] },
   { table: "wireline_agent_lessons", userColumns: ["user_id"] },
   { table: "wireline_directives", userColumns: ["user_id"] },
   { table: "wireline_knowledge", userColumns: ["user_id"] },
@@ -174,6 +186,8 @@ export interface ExternalReleaseSummary {
   /** Best-effort OAuth provider revoke counts (never blocks purge). */
   oauthRevoked: number;
   oauthAttempted: number;
+  /** Cloned voice models deleted at the provider (erasure evidence). */
+  clonedVoicesDeleted: number;
 }
 
 /** Stripe "already gone" errors — treat as success, not a reason to retry. */
@@ -220,6 +234,7 @@ async function releaseExternalResourcesOutsideTenantContext(
   let numbersReleased = 0;
   let oauthRevoked = 0;
   let oauthAttempted = 0;
+  let clonedVoicesDeleted = 0;
 
   // 1. Cancel every active Stripe subscription on the customer — the plan row
   //    AND any add-on that shares the customer (e.g. the live-video add-on is a
@@ -340,6 +355,36 @@ async function releaseExternalResourcesOutsideTenantContext(
     }
   }
 
+  // 2.5 Delete cloned voice models at ElevenLabs while the local rows still
+  //     map voice_id -> tenant. This is the only such mapping: once the purge
+  //     removes wireline_cloned_voices, the model would stay live in Wireline's
+  //     provider account forever, still synthesizable, still billed, and no
+  //     longer attributable to anyone — a permanent orphan of what may be
+  //     biometric data, directly contradicting the erasure promise in the
+  //     privacy policy. Treated like number release rather than OAuth revoke:
+  //     a provider failure DEFERS the purge (throws so the job retries) instead
+  //     of destroying the ids, because there is no ledger to hand them to.
+  const clonedVoiceRows = await db
+    .select({ voiceId: schema.clonedVoices.voiceId })
+    .from(schema.clonedVoices)
+    .where(eq(schema.clonedVoices.userId, userId));
+
+  if (clonedVoiceRows.length) {
+    const { deleteElevenLabsVoice } = await import("./elevenlabs-client");
+    for (const row of clonedVoiceRows) {
+      try {
+        await deleteElevenLabsVoice(row.voiceId);
+        clonedVoicesDeleted++;
+      } catch (err) {
+        log.error("cloned voice provider deletion failed — deferring account purge", {
+          userId,
+          error: getErrorMessage(err),
+        });
+        throw err;
+      }
+    }
+  }
+
   // 3. Best-effort revoke of provider OAuth grants while encrypted tokens still
   //    exist. Never throws — a provider outage must not block GDPR erasure.
   try {
@@ -362,7 +407,14 @@ async function releaseExternalResourcesOutsideTenantContext(
     });
   }
 
-  return { subscriptionsCanceled, numbersReleased, numberErrors, oauthRevoked, oauthAttempted };
+  return {
+    subscriptionsCanceled,
+    numbersReleased,
+    numberErrors,
+    oauthRevoked,
+    oauthAttempted,
+    clonedVoicesDeleted,
+  };
 }
 
 /**
