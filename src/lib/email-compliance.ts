@@ -151,10 +151,9 @@ function escapeBasicHtml(s: string): string {
 }
 
 /**
- * True when the recipient has opted out. Defensive: on any DB error (incl. a
- * not-yet-migrated suppression table) returns false so a transient issue
- * never blocks transactional-adjacent sends — opt-outs that DO exist are
- * still honored once the table is present.
+ * True when the recipient has opted out. A lookup failure also returns true:
+ * the only caller is commercial email, so uncertainty must fail closed rather
+ * than risk contacting someone whose opt-out cannot currently be verified.
  */
 export async function isEmailSuppressed(email: string): Promise<boolean> {
   try {
@@ -165,10 +164,10 @@ export async function isEmailSuppressed(email: string): Promise<boolean> {
       .limit(1);
     return !!row;
   } catch (err) {
-    log.warn("isEmailSuppressed check failed — treating as not suppressed", {
+    log.error("isEmailSuppressed check failed — treating as suppressed", {
       error: getErrorMessage(err),
     });
-    return false;
+    return true;
   }
 }
 
