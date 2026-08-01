@@ -398,18 +398,27 @@ router.post(
 
     res.setHeader("Content-Type", "text/xml");
 
-    const tenantUserId = await lookupTenant(to);
-
     // If we can't find the tenant or they don't have a human fallback number,
-    // we just take a voicemail.
+    // we just take a voicemail. This route exists for the moment things are
+    // already broken, so a database failure here must degrade to the voicemail
+    // branch too — a thrown 500 would leave the caller with Twilio's own error
+    // announcement instead of a professional close.
     let fallbackNumber = null;
-    if (tenantUserId) {
-      const [settings] = await drizzle
-        .select({ humanFallbackNumber: schema.settings.twilioManagerAlertNumber })
-        .from(schema.settings)
-        .where(eq(schema.settings.userId, tenantUserId))
-        .limit(1);
-      fallbackNumber = settings?.humanFallbackNumber;
+    try {
+      const tenantUserId = await lookupTenant(to);
+      if (tenantUserId) {
+        const [settings] = await drizzle
+          .select({ humanFallbackNumber: schema.settings.twilioManagerAlertNumber })
+          .from(schema.settings)
+          .where(eq(schema.settings.userId, tenantUserId))
+          .limit(1);
+        fallbackNumber = settings?.humanFallbackNumber;
+      }
+    } catch (error) {
+      log.error("Failover tenant lookup failed; degrading to voicemail", {
+        error: error instanceof Error ? error.message : String(error),
+        to_suffix: phoneSuffixForLog(to),
+      });
     }
 
     // Generate TwiML for a professional offline experience
