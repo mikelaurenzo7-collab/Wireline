@@ -149,8 +149,8 @@ export default function Features() {
   return (
     <div className="marketing-surface wl-features-page min-h-screen bg-background text-foreground">
       <PageMeta
-        title="Features | Wireline AI Voice Agents"
-        description="Build and train AI voice agents that call, text, email, book, follow up, update connected systems, and log outcomes under shared rules and memory."
+        title="Features | Wireline Voice Agents"
+        description="Build and train voice agents that call, text, email, book, follow up, update connected systems, and log outcomes under shared rules and memory."
         path="/features"
       />
       <PrecisionPublicHeader />
@@ -158,7 +158,7 @@ export default function Features() {
       <main id="main-content" className="pt-16" tabIndex={-1}>
         <MarketingHero
           eyebrow="Features"
-          title="AI Voice Agents for every customer conversation."
+          title="Voice Agents for every customer conversation."
           description="Train one voice agent or a coordinated team with your rules and channels. Each agent handles the conversation, finishes the next step, and keeps one outcome record."
           primaryAction={{ label: "Build your voice agent", to: "/signup" }}
           secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}

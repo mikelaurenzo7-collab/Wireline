@@ -207,7 +207,7 @@ export default function CallLogsClaude() {
   const agentNameForId = useCallback(
     (agentId: string) => {
       const match = calls.find((call) => call.agent_id === agentId);
-      return match?.agent_name || "AI voice agent";
+      return match?.agent_name || "Voice agent";
     },
     [calls],
   );
@@ -449,7 +449,7 @@ function FloorTab({
         action={
           <div className="mt-5 flex flex-col items-center justify-center gap-2 sm:flex-row">
             <Button asChild size="sm">
-              <Link to="/studio?create=1">Create AI voice agent</Link>
+              <Link to="/studio?create=1">Create voice agent</Link>
             </Button>
             <Button type="button" variant="secondary" size="sm" onClick={onOutboundCall}>
               Place outbound call
@@ -487,7 +487,7 @@ function FloorTab({
               seed={call.agent_name || call.agent_id || "agent"}
               size={40}
               speaking={isLive(call)}
-              title={call.agent_name ? `${call.agent_name} on call` : "AI voice agent on call"}
+              title={call.agent_name ? `${call.agent_name} on call` : "Voice agent on call"}
               className="shrink-0"
             />
             <div className="min-w-0 flex-1">
@@ -610,7 +610,7 @@ function IntelTab({
                 {humanizeTaxonomy(call.intent_label, call.summary || "Follow up requested")}
               </div>
               <div className="mt-0.5 truncate text-xs text-[var(--wireline-color-text-tertiary)]">
-                {call.agent_name || "AI voice agent"} · {formatTime(call.created_at)}
+                {call.agent_name || "Voice agent"} · {formatTime(call.created_at)}
               </div>
             </div>
             <span
@@ -695,7 +695,7 @@ function TriageTab({
             </div>
             <div className="mt-3 flex items-center justify-between text-xs">
               <span className="text-[var(--wireline-color-text-tertiary)]">
-                {call.agent_name || "AI voice agent"}
+                {call.agent_name || "Voice agent"}
               </span>
             </div>
           </li>

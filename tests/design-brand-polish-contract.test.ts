@@ -136,4 +136,30 @@ describe("E2E design and brand polish", () => {
     const announcer = read("src/components/RouteChangeA11y.tsx");
     expect(announcer).toContain('className="sr-only"');
   });
+
+  it("uppercases field captions without shouting the values beside them", () => {
+    const caps = read("src/styles/uppercase-system.css");
+
+    // Field captions and column headers join the label tier.
+    expect(caps).toMatch(
+      /\.wl-ui-caps :is\(label, legend, th\) \{[\s\S]*?text-transform: uppercase;/,
+    );
+
+    // A label can also hold the control and a help line. `<input>` must reset or
+    // the transform shouts whatever the user typed -- and `::placeholder`
+    // inherits it, so an untouched placeholder would shout too.
+    const reset = caps.match(
+      /\.wl-ui-caps\s*\n?\s*:is\(label, legend\) :is\(([^)]*)\) \{[\s\S]*?text-transform: none;/,
+    );
+    expect(reset, "labels must reset their nested control and prose").toBeTruthy();
+    for (const tag of ["input", "textarea", "select", "p", "span"]) {
+      expect(reset?.[1]).toContain(tag);
+    }
+
+    // Where a caption needs its own styling it is the leading span, which the
+    // blanket reset above would otherwise catch.
+    expect(caps).toMatch(
+      /:is\(label, legend\) > span:first-child:not\(:has\(input, textarea, select, button\)\)/,
+    );
+  });
 });

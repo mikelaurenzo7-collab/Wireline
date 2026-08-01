@@ -103,7 +103,7 @@ const PLAN_PREVIEW = [
     price: `$${planCatalog.starter.price_usd_monthly}`,
     period: "/mo",
     facts: [
-      `${planCatalog.starter.max_agents} live AI voice agent`,
+      `${planCatalog.starter.max_agents} live voice agent`,
       `${planCatalog.starter.included_phone_numbers} Wireline number`,
       `${planCatalog.starter.voice_minutes_monthly} voice minutes each month`,
       "SMS and email",
@@ -131,7 +131,7 @@ const PLAN_PREVIEW = [
     price: `$${planCatalog.business.price_usd_monthly}`,
     period: "/mo",
     facts: [
-      `${planCatalog.business.max_agents} live AI voice agents`,
+      `${planCatalog.business.max_agents} live voice agents`,
       `${planCatalog.business.included_phone_numbers} Wireline numbers`,
       `${planCatalog.business.voice_minutes_monthly} voice minutes each month`,
       "Shared channels, analytics, and approvals",

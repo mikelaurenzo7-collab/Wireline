@@ -102,7 +102,7 @@
   text-transform: uppercase;
 }
 
-/* Controls and copy: sentence case, gentle tracking. */
+/* Controls: sentence case, gentle tracking. */
 .wl-ui-caps
   :is(
     button,
@@ -116,13 +116,37 @@
     .marketing-btn-secondary,
     .studio-primary-button,
     .studio-secondary-button,
-    nav a,
-    label,
-    legend,
-    th
+    nav a
   ) {
   letter-spacing: var(--wl-caps-control-tracking);
   text-transform: none;
+}
+
+/* Field captions and column headers join the label tier: caps with the wide
+ * label tracking, at whatever size the field authored. */
+.wl-ui-caps :is(label, legend, th) {
+  letter-spacing: var(--wl-caps-label-tracking);
+  text-transform: uppercase;
+}
+
+/* The rest of what a label can hold is not a caption and must read as written:
+ * the control itself — an uppercased `<input>` would shout the value the user
+ * just typed, and `::placeholder` inherits the transform — plus any nested help
+ * line or consent sentence, which live in a span or paragraph. */
+.wl-ui-caps
+  :is(label, legend) :is(p, span, small, em, strong, a, input, textarea, select, button) {
+  letter-spacing: var(--wl-caps-control-tracking);
+  text-transform: none;
+}
+
+/* A caption is what the label opens with. Usually a bare text node ("Name",
+ * "Sample"), but where it needs its own styling it is the leading span
+ * ("Preferred area code"), and the blanket reset above would miss it. A label
+ * that wraps its control leads with the control, so its following sentence span
+ * is never :first-child and correctly stays sentence case. */
+.wl-ui-caps :is(label, legend) > span:first-child:not(:has(input, textarea, select, button)) {
+  letter-spacing: var(--wl-caps-label-tracking);
+  text-transform: uppercase;
 }
 
 .wl-ui-caps

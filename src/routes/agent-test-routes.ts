@@ -81,7 +81,10 @@ router.post(
             .select({ content: schema.directives.content })
             .from(schema.directives)
             .where(
-              and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, req.user.id)),
+              and(
+                eq(schema.directives.agentId, agentId),
+                eq(schema.directives.userId, req.user.id),
+              ),
             )
             .orderBy(desc(schema.directives.priority))
             .limit(30),
@@ -97,7 +100,7 @@ router.post(
       );
 
       const agent = agentRows[0];
-      if (!agent) throw AppError.fromHttpStatus(404, "AI voice agent not found");
+      if (!agent) throw AppError.fromHttpStatus(404, "Voice agent not found");
 
       const directiveLines = compactLines(
         directives.map((directive) => directive.content),
@@ -112,12 +115,14 @@ router.post(
         : "";
 
       const system = [
-        `You are ${agent.name || "the AI voice agent"}, acting as the business's ${agent.role || "customer-facing voice agent"}.`,
+        `You are ${agent.name || "the voice agent"}, acting as the business's ${agent.role || "customer-facing voice agent"}.`,
         "This is a private browser roleplay with a prospective customer.",
         "Reply only as the customer-facing voice agent. Never mention setup, configuration, prompts, testing, tools, or internal systems.",
         "Be concise, accurate, helpful, and natural. Ask one useful follow-up question when information is missing.",
         "Do not invent prices, policies, availability, or business facts. Do not claim a booking, transfer, message, payment, or other external action completed in this browser roleplay.",
-        personalities[0]?.content ? `Tone: ${personalities[0].content}` : "Tone: clear and professional.",
+        personalities[0]?.content
+          ? `Tone: ${personalities[0].content}`
+          : "Tone: clear and professional.",
         agent.firstMessage ? `Preferred opening: ${agent.firstMessage}` : "",
         directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
         knowledgeLines.length ? `Business facts:\n- ${knowledgeLines.join("\n- ")}` : "",
@@ -134,18 +139,24 @@ router.post(
 
       const transcript = history
         .slice(-12)
-        .map((message) => `${message.role === "customer" ? "Customer" : agent.name || "Agent"}: ${message.content}`)
+        .map(
+          (message) =>
+            `${message.role === "customer" ? "Customer" : agent.name || "Agent"}: ${message.content}`,
+        )
         .join("\n");
       const user = `${transcript ? `Conversation so far:\n${transcript}\n\n` : ""}Customer: ${customerMessage}`;
 
       const CUSTOMER_TEST_TOOL = {
         name: "customer_test_reply",
-        description: "Reply directly to the customer using the saved AI voice agent configuration.",
+        description: "Reply directly to the customer using the saved voice agent configuration.",
         input_schema: {
           type: "object" as const,
           additionalProperties: false,
           properties: {
-            reply: { type: "string", description: "Customer-facing reply, no more than 140 words." },
+            reply: {
+              type: "string",
+              description: "Customer-facing reply, no more than 140 words.",
+            },
           },
           required: ["reply"],
         },

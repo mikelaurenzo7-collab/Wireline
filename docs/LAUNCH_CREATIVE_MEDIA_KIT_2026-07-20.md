@@ -6,12 +6,12 @@ Related: `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`
 
 ## Current Creative Doctrine
 
-Wireline's public creative promise is **AI Voice Agents for personal and business conversations**. The market should immediately understand that Wireline can start with one useful agent and grow into a coordinated roster, without making personal plans feel like an afterthought.
+Wireline's public creative promise is **Voice Agents for personal and business conversations**. The market should immediately understand that Wireline can start with one useful agent and grow into a coordinated roster, without making personal plans feel like an afterthought.
 
 Use:
 
-- **AI Voice Agents**
-- **Build your AI Voice Agent**
+- **Voice Agents**
+- **Build your Voice Agent**
 - **Build free. Go live from $19/mo.**
 - **Personal + Business**
 - **Voice + SMS + Email**
@@ -40,11 +40,11 @@ Business-context assets may use "AI employee" only when the placement is explici
 
 | Asset | Format | Copy |
 | --- | --- | --- |
-| `social/wireline-social-ai-voice-agents.png` | 1:1 | AI Voice Agents / Personal + Business |
+| `social/wireline-social-ai-voice-agents.png` | 1:1 | Voice Agents / Personal + Business |
 | `social/wireline-social-missed-call.png` | 1:1 | Missed calls should not become lost revenue |
 | `ads/wireline-ad-build-free-live-19.png` | 16:9 | Build free / Go live from $19/mo |
 | `ads/wireline-ad-one-agent-every-channel.png` | 16:9 | One agent / voice + SMS + email |
-| `stories/wireline-story-voice-agent.png` | 9:16 | Build your AI Voice Agent |
+| `stories/wireline-story-voice-agent.png` | 9:16 | Build your Voice Agent |
 | `deck/wireline-founder-early-access.pdf` | 16:9 deck | Founder Early Access from $19/mo |
 | `audio/wireline-ai-voice-agent-30s.mp3` | audio | AI Voice Generator campaign VO |
 | `audio/wireline-missed-call-15s.mp3` | audio | 15s reel VO from the campaign pack ("Your agent can.") |
@@ -56,7 +56,7 @@ Legacy filenames containing `one-employee`, `employee`, `launch-9`, or `starter-
 
 ### Canva / Adobe Express Static Ad
 
-Prompt: Create a premium SaaS launch ad for Wireline. Headline: "AI Voice Agents". Subhead: "Personal + Business. Voice + SMS + Email." CTA: "Build free. Go live from $19/mo." Use a clean product-interface composition with an incoming call, SMS confirmation, and logged outcome. Use electric-violet accents, cool near-white or obsidian canvas, platinum wire detail, crisp type, and no generic stock photos.
+Prompt: Create a premium SaaS launch ad for Wireline. Headline: "Voice Agents". Subhead: "Personal + Business. Voice + SMS + Email." CTA: "Build free. Go live from $19/mo." Use a clean product-interface composition with an incoming call, SMS confirmation, and logged outcome. Use electric-violet accents, cool near-white or obsidian canvas, platinum wire detail, crisp type, and no generic stock photos.
 
 ### Adobe Firefly Product Scene
 
@@ -64,7 +64,7 @@ Prompt: A realistic premium SaaS workspace scene showing a laptop with a clean v
 
 ### HeyGen / HyperFrames Founder Video
 
-Prompt: Produce a 60-second founder-style launch video for Wireline using the 60-second founder explainer voiceover from `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md` word for word. Tone: confident, warm, practical - a founder explaining their product to a friend, not an announcer. Visuals: real product footage of create, train, wire, and run. End card: Build your AI Voice Agent at trywireline.com.
+Prompt: Produce a 60-second founder-style launch video for Wireline using the 60-second founder explainer voiceover from `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md` word for word. Tone: confident, warm, practical - a founder explaining their product to a friend, not an announcer. Visuals: real product footage of create, train, wire, and run. End card: Build your Voice Agent at trywireline.com.
 
 ### BlitzReels Short Cut
 
@@ -72,7 +72,7 @@ Prompt: Cut the 15-second vertical reel exactly as timecoded in `docs/WIRELINE_L
 
 ### Beautiful.ai Deck
 
-Prompt: Build a concise 6-slide launch deck for Wireline: 1) AI Voice Agents, 2) Missed calls are expensive, 3) Create -> Train -> Wire -> Run, 4) Personal + business use cases, 5) Founder Early Access from $19/mo, 6) Build your AI Voice Agent.
+Prompt: Build a concise 6-slide launch deck for Wireline: 1) Voice Agents, 2) Missed calls are expensive, 3) Create -> Train -> Wire -> Run, 4) Personal + business use cases, 5) Founder Early Access from $19/mo, 6) Build your Voice Agent.
 
 ## AI Voice Generator Asset
 
@@ -80,15 +80,15 @@ This voiceover was generated for promotion/reference only. It is not approved as
 
 - Preview: https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/ec315585-89bf-4b2b-ad7f-7e30bb50d5fd.mp3
 - Full audio: https://www.aidocmaker.com/g0/audio?name=acdf9b5a628e4558923c63ba0ed2d821
-- Script: "Missed calls should not become lost revenue. Wireline helps you build AI voice agents for personal tasks and business conversations. Start with one agent, train it on your rules, connect calls, texts, and email, and let it handle the next conversation with every outcome logged. Build free. Go live from nineteen dollars a month at trywireline dot com."
+- Script: "Missed calls should not become lost revenue. Wireline helps you build voice agents for personal tasks and business conversations. Start with one agent, train it on your rules, connect calls, texts, and email, and let it handle the next conversation with every outcome logged. Build free. Go live from nineteen dollars a month at trywireline dot com."
 
 ## Placement Plan
 
 | Channel | Asset | Notes |
 | --- | --- | --- |
-| Homepage / pricing support | 16:9 AI Voice Agents banner | Align with current metadata and product-copy constants |
+| Homepage / pricing support | 16:9 Voice Agents banner | Align with current metadata and product-copy constants |
 | LinkedIn organic | Founder post + 16:9 banner | Promote founder early access, not public WhatsApp |
 | X / Twitter | Short text + 1:1 missed-call image | Drive to signup/pricing with v6 UTM |
-| Meta / LinkedIn ads | 16:9 build-free-live-19 and 1:1 AI Voice Agents | Start only after phone and payment loops are verified |
+| Meta / LinkedIn ads | 16:9 build-free-live-19 and 1:1 Voice Agents | Start only after phone and payment loops are verified |
 | Reels / Shorts | 9:16 missed-call sequence + 15s reel VO | Overlays must carry the story with sound off; captions on |
 | Sales deck | 6-slide deck | Use for warm founder outreach and early adopters |

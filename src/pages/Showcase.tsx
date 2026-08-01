@@ -25,7 +25,7 @@ export default function Showcase() {
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title="Try Wireline"
-        description="Hear the AI voice agent your customers will meet first, then build one for voice, SMS, and email."
+        description="Hear the voice agent your customers will meet first, then build one for voice, SMS, and email."
         path="/showcase"
       />
 

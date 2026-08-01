@@ -136,7 +136,7 @@ describe("authenticated mobile cleanup", () => {
     expect(callbacks).not.toContain("description=");
     expect(billing).toContain('"voice agent" : "voice agents"');
     expect(billingSettings).toContain("live voice agent");
-    expect(trialBanner).toContain("keep your AI voice agents live");
+    expect(trialBanner).toContain("keep your voice agents live");
     expect(activationWizard).toContain("connected to this voice agent");
   });
 });

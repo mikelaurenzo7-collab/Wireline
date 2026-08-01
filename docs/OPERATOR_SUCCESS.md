@@ -1,12 +1,12 @@
 # Wireline Agent Success Playbook
 
-How we win: owners and busy people trust their **AI voice agents** - on the phone, in Studio, and in the outcomes they review.
+How we win: owners and busy people trust their **Voice agents** - on the phone, in Studio, and in the outcomes they review.
 
 ## Activation Definition
 
 A workspace is activated when the user has:
 
-1. Created an AI voice agent.
+1. Created a voice agent.
 2. Trained it with role, facts, tone, rules, and escalation behavior.
 3. Completed a private simulation or test call.
 4. Wired a paid-plan number or clearly understands what remains before live launch.
@@ -14,7 +14,7 @@ A workspace is activated when the user has:
 
 ## Onboarding Motion
 
-1. **Build AI voice agent** - choose personal or business context and one clear outcome.
+1. **Build voice agent** - choose personal or business context and one clear outcome.
 2. **Train the rules** - facts, approved answers, prohibited topics, escalation path, tone.
 3. **Wire the channel** - paid-plan number, SMS/email, routing, approvals, billing controls.
 4. **Run and review** - call, follow-up, log, coach, improve.

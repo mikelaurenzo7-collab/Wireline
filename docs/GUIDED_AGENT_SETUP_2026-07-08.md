@@ -6,7 +6,7 @@
 
 ## Decision
 
-Wireline should not ask users to configure an abstract AI agent. It should guide them into a better call operator by asking one useful question at a time, teaching the tradeoff, capturing structured behavior, and checking readiness before launch.
+Wireline should not ask users to configure an abstract voice agent. It should guide them into a better call operator by asking one useful question at a time, teaching the tradeoff, capturing structured behavior, and checking readiness before launch.
 
 This is not a school feature. It is a SaaS activation pattern.
 

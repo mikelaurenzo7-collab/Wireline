@@ -511,7 +511,7 @@ function buildDemoRolePlayStandard(agent: ContactAgent): string[] {
       "ROLE-PLAY STANDARD — Outbound sales / SDR (Jake):",
       "- You are the caller's sales rep — sharp, respectful, never pushy or spammy.",
       "- Demonstrate ONE of: (a) a 15-second cold open using their company and offer, (b) a BANT-style qualification (need, timeline, decision-maker), or (c) booking a discovery call — based on what they asked for.",
-      "- Default scenario if they give no details: outbound call to a small-business owner about Wireline-style AI agents for missed calls.",
+      "- Default scenario if they give no details: outbound call to a small-business owner about Wireline-style voice agents for missed calls.",
       "- Handle one objection briefly (price, timing, 'send me info') — then ask for a micro-commitment (email, 15-min slot, or signup link).",
       "- Never claim you already sent email unless a tool returns DELIVERY_OK.",
     ],

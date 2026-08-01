@@ -50,7 +50,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "home-services",
     metaTitle: "Wireline for Home Services | AI Receptionist for Calls and Follow Up",
     metaDescription:
-      "AI voice + email agent for HVAC, plumbing, electrical, and roofing teams. Answer after hours calls, book jobs, and follow up through Runtime Balance.",
+      "Voice + email agent for HVAC, plumbing, electrical, and roofing teams. Answer after hours calls, book jobs, and follow up through Runtime Balance.",
     eyebrow: "For Home Services Pros",
     headline: "Turn after hours calls into scheduled work.",
     subhead:
@@ -109,7 +109,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "medical",
     metaTitle: "Wireline for Medical Practices | AI Intake and Scheduling",
     metaDescription:
-      "AI voice + email agent for dental, med spa, chiropractic, and primary care practices. Book appointments and manage intake. Call the medical demo.",
+      "Voice + email agent for dental, med spa, chiropractic, and primary care practices. Book appointments and manage intake. Call the medical demo.",
     eyebrow: "For Medical Practices",
     headline: "Patients on hold become patients on the schedule.",
     subhead:
@@ -168,7 +168,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "legal",
     metaTitle: "Wireline for Law Firms | AI Intake and Consult Routing",
     metaDescription:
-      "AI voice + email intake for law firms. Capture new matters, qualify urgency, schedule consults, and route conflict checks. Call the legal demo.",
+      "Voice + email intake for law firms. Capture new matters, qualify urgency, schedule consults, and route conflict checks. Call the legal demo.",
     eyebrow: "For Law Firms",
     headline: "Give every routed intake a clear next step.",
     subhead:
@@ -227,11 +227,11 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "real-estate",
     metaTitle: "Wireline for Real Estate | AI Listing Call Qualification",
     metaDescription:
-      "AI voice + email agent for real estate teams. Qualify buyers, book showings, revive cold leads, and sync CRM notes.",
+      "Voice + email agent for real estate teams. Qualify buyers, book showings, revive cold leads, and sync CRM notes.",
     eyebrow: "For Real Estate",
     headline: "Work more listing calls without losing control.",
     subhead:
-      "An AI agent that handles routed listing inquiries, gathers qualification details, offers approved showing times, and keeps follow up visible.",
+      "A voice agent that handles routed listing inquiries, gathers qualification details, offers approved showing times, and keeps follow up visible.",
     pains: [
       {
         icon: Phone,
@@ -350,11 +350,11 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "insurance",
     metaTitle: "Wireline for Insurance Agencies | AI Quote Intake + Renewal Follow Up",
     metaDescription:
-      "AI voice + email agent for insurance agencies. Capture quote intake, FNOL details, renewal follow up, and producer ready notes.",
+      "Voice + email agent for insurance agencies. Capture quote intake, FNOL details, renewal follow up, and producer ready notes.",
     eyebrow: "For Insurance Agencies",
     headline: "Keep quote intake and renewal follow up moving.",
     subhead:
-      "An AI agent that handles routed after hours quote intake, captures approved fields, and runs the renewal follow up cadence your agency configures.",
+      "A voice agent that handles routed after hours quote intake, captures approved fields, and runs the renewal follow up cadence your agency configures.",
     pains: [
       {
         icon: Phone,
@@ -409,7 +409,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "restaurants",
     metaTitle: "Wireline for Restaurants | AI Phone Host for Reservations + Takeout",
     metaDescription:
-      "AI voice + email host for restaurants. Take reservations, capture takeout orders, handle event inquiries, and follow up by SMS.",
+      "Voice + email host for restaurants. Take reservations, capture takeout orders, handle event inquiries, and follow up by SMS.",
     eyebrow: "For Restaurants",
     headline: "The phone rings during dinner rush. The agent picks up.",
     subhead:

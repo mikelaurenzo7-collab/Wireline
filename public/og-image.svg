@@ -74,7 +74,7 @@
       <circle cx="122" cy="33" r="6.5"/>
     </g>
     <text x="104" y="48" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700" fill="#F5F4F8">
-      AI voice agent
+      Voice agent
     </text>
     <text x="104" y="72" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="10" font-weight="700" letter-spacing="1.2" fill="#A78BFA">
       TRAINED FOR YOUR WORK

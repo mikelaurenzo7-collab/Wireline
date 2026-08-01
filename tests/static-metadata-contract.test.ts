@@ -5,10 +5,10 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("static marketing metadata", () => {
-  it("keeps the HTML shell aligned with the current AI voice agent promise", () => {
+  it("keeps the HTML shell aligned with the current voice agent promise", () => {
     const index = read("index.html");
 
-    expect(index).toContain("Wireline | AI voice agents that get work done");
+    expect(index).toContain("Wireline | Voice agents that get work done");
     expect(index).toContain("Build one for your business or your life.");
     expect(index).toContain("call, answer, text, email, book, and follow through");
     expect(index).toContain('"slogan": "Build. Train. Launch."');
@@ -50,7 +50,7 @@ describe("static marketing metadata", () => {
     expect(hero).toContain("text-[clamp(2.45rem,5vw,4.75rem)]");
     expect(hero).toContain("max-w-[19ch]");
     expect(hero).not.toContain("uppercase leading");
-    expect(landing).toContain('title="Wireline | AI voice agents that get work done"');
+    expect(landing).toContain('title="Wireline | Voice agents that get work done"');
     expect(landing).toContain("MARKETING_VOICE.subline");
     expect(landing).not.toContain('title="Wireline —');
   });
@@ -75,7 +75,7 @@ describe("static marketing metadata", () => {
       description: string;
     };
 
-    expect(manifest.name).toBe("Wireline | AI Voice Agents");
+    expect(manifest.name).toBe("Wireline | Voice Agents");
     expect(manifest.description).toContain("Build one for your business or your life.");
     expect(manifest.description).toContain("call, answer, text, email, book");
     expect(manifest.description).toContain("follow through while you stay in control");

@@ -24,10 +24,7 @@ async function resolveCalendarTimeZone(
     .select({ timeZone: schema.agents.timezone })
     .from(schema.agents)
     .where(
-      and(
-        eq(schema.agents.id, context.agent.id),
-        eq(schema.agents.userId, context.agent.user_id),
-      ),
+      and(eq(schema.agents.id, context.agent.id), eq(schema.agents.userId, context.agent.user_id)),
     )
     .limit(1);
   return normalizeIanaTimeZone(requestedTimeZone, row?.timeZone || "UTC");
@@ -94,7 +91,7 @@ export async function handleCalendarToolCall(
 
       const success = await service.bookAppointment({
         title,
-        description: `Booked via Wireline AI Agent. Confirmed timezone: ${timeZone}.`,
+        description: `Booked via Wireline Voice Agent. Confirmed timezone: ${timeZone}.`,
         startTime,
         endTime,
         agentId: agent.id,

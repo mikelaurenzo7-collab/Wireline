@@ -29,7 +29,7 @@ const clientSurfaces = [
   {
     icon: MessageSquareText,
     title: "ChatGPT",
-    blurb: "Draft and privately simulate an AI voice agent with the account-bound MCP connector.",
+    blurb: "Draft and privately simulate a voice agent with the account-bound MCP connector.",
     status: CLIENT_SURFACE_POSTURE.chatgpt.status,
     statusVariant: "info" as const,
     action: "MCP setup",

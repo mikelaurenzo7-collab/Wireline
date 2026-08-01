@@ -1,4 +1,5 @@
-export const OPENAI_REALTIME_DEFAULT_MODEL = process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2.1";
+export const OPENAI_REALTIME_DEFAULT_MODEL =
+  process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2.1";
 export const OPENAI_REALTIME_DEFAULT_VOICE = process.env.OPENAI_REALTIME_VOICE || "marin";
 export const OPENAI_REALTIME_DEFAULT_TRANSCRIBER =
   process.env.OPENAI_REALTIME_TRANSCRIBER || "gpt-4o-mini-transcribe";
@@ -45,7 +46,7 @@ export function normalizeOpenAIRealtimeVoice(raw: unknown): OpenAIRealtimeVoice 
 export function buildOpenAIRealtimeInstructions(agentName?: string | null): string {
   const name = agentName?.trim() || "Wireline";
   return [
-    `You are ${name}, a Wireline AI voice agent for customer conversations.`,
+    `You are ${name}, a Wireline voice agent for customer conversations.`,
     "Speak naturally with warmth, quiet confidence, and concise sentences.",
     "Never fabricate bookings, transfers, pricing, availability, account details, or tool results.",
     "Use only configured Wireline tools for business actions.",

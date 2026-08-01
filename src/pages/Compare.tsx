@@ -135,7 +135,7 @@ export default function Compare() {
     <MarketingPageFrame className="wl-compare-page" mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title="Why Wireline"
-        description="Compare Wireline's owner ready AI voice agent with per agent, per call, and developer voice infrastructure pricing."
+        description="Compare Wireline's owner ready voice agent with per agent, per call, and developer voice infrastructure pricing."
         path="/compare"
       />
 

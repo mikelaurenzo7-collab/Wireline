@@ -136,7 +136,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     annualPriceIdEnv: "STRIPE_PERSONAL_ANNUAL_PRICE_ID",
     public: true,
     features: [
-      "1 private draft AI communications agent",
+      "1 private draft communications agent",
       "Agent setup, training, knowledge, and private simulation",
       "No production number or paid provider action until activation",
     ],
@@ -159,7 +159,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     lookupKeyAnnual: "starter_annual_founder_2026_07_v6",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
-      "1 live AI communications agent",
+      "1 live communications agent",
       "1 production-number slot, provisioned when needed",
       "60 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
@@ -217,7 +217,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     lookupKeyAnnual: "business_annual_founder_2026_07_v6",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
-      "Up to 5 live AI communications agents",
+      "Up to 5 live communications agents",
       "Up to 5 production-number slots, provisioned when needed",
       "245 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
@@ -247,7 +247,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     lookupKeyAnnual: "enterprise_annual_founder_2026_07_v6",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
-      "Up to 15 live AI communications agents",
+      "Up to 15 live communications agents",
       "Up to 15 production-number slots, provisioned when needed",
       "450 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
@@ -286,8 +286,7 @@ export type BillingInterval = "month" | "year";
 export function estimatedStripeCommercialFeesUsd(grossChargeUsd: number): number {
   if (!Number.isFinite(grossChargeUsd) || grossChargeUsd <= 0) return 0;
   return (
-    grossChargeUsd *
-      (PAYMENT_PROCESSING_RATE + STRIPE_BILLING_RATE + STRIPE_TAX_TRANSACTION_RATE) +
+    grossChargeUsd * (PAYMENT_PROCESSING_RATE + STRIPE_BILLING_RATE + STRIPE_TAX_TRANSACTION_RATE) +
     PAYMENT_PROCESSING_FIXED_USD
   );
 }

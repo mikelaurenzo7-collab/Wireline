@@ -23,7 +23,7 @@ export default function LandingPage() {
     "@id": "https://trywireline.com/#software",
     offers: {
       "@type": "OfferCatalog",
-      name: "Wireline AI voice agent plans",
+      name: "Wireline voice agent plans",
       itemListElement: ["Free Builder", "Starter", "Starter Plus", "Pro", "Business"].map(
         (name) => ({
           "@type": "Offer",
@@ -37,7 +37,7 @@ export default function LandingPage() {
   return (
     <>
       <PageMeta
-        title="Wireline | AI voice agents that get work done"
+        title="Wireline | Voice agents that get work done"
         description={PUBLIC_DESCRIPTION}
         path="/"
       />

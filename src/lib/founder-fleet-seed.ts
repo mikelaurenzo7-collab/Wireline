@@ -157,7 +157,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     channel: "voice",
     archetype: "The Closer",
     firstMessage:
-      "Hi, this is Wireline. You're talking to an AI voice agent right now. Got a quick minute?",
+      "Hi, this is Wireline. You're talking to a voice agent right now. Got a quick minute?",
     team: "revenue",
     personalityVibe: "playful",
     websiteUrl: "https://trywireline.com",

@@ -109,7 +109,7 @@ fun AskWirelineScreen(
                         "You don't have any agents on your roster currently."
                     } else {
                         val names = state.agents.joinToString("\n") { "• ${it.name} (${it.role ?: "Support"})" }
-                        "Here are your active AI agents:\n\n$names"
+                        "Here are your active voice agents:\n\n$names"
                     }
                 }
                 cleanQuery.contains("summary") || cleanQuery.contains("last call") || cleanQuery.contains("summarize") -> {

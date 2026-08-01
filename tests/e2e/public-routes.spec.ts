@@ -70,8 +70,8 @@ for (const route of PUBLIC_ROUTES) {
  * Assert the served response directly: no redirect, and the route's own head.
  */
 const PRERENDERED_HEAD = [
-  { route: "/pricing", title: "Pricing | Wireline AI Voice Agents from $19/month" },
-  { route: "/features", title: "Features | Wireline AI Voice Agents" },
+  { route: "/pricing", title: "Pricing | Wireline Voice Agents from $19/month" },
+  { route: "/features", title: "Features | Wireline Voice Agents" },
   { route: "/for/legal", title: "Wireline for Law Firms | AI Intake and Consult Routing" },
 ];
 

@@ -28,11 +28,11 @@ const CORE_BUYING_SURFACES = [
 describe("product voice cohesion", () => {
   it("keeps one direct personal and business voice system", () => {
     expect(BRAND_SYSTEM.northStar).toBe(
-      "AI voice agents that call, answer, follow up, and finish the work.",
+      "Voice agents that call, answer, follow up, and finish the work.",
     );
-    expect(BRAND_SYSTEM.productNoun).toBe("AI voice agent");
-    expect(BRAND_SYSTEM.buyingNoun).toBe("AI Voice Agent");
-    expect(BRAND_SYSTEM.defaultRole).toBe("Your AI voice agent");
+    expect(BRAND_SYSTEM.productNoun).toBe("Voice agent");
+    expect(BRAND_SYSTEM.buyingNoun).toBe("Voice Agent");
+    expect(BRAND_SYSTEM.defaultRole).toBe("Your voice agent");
     expect(BRAND_SYSTEM.brandSpine).toEqual(["Build", "Train", "Launch"]);
     expect(BRAND_SYSTEM.proofLoop).toEqual(["Brief", "Train", "Launch", "Improve"]);
     expect(BRAND_SYSTEM.toneRules).toContain("Lead with outcomes before AI mechanics.");
@@ -40,7 +40,7 @@ describe("product voice cohesion", () => {
       "Welcome both personal and business use without making either audience feel secondary.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
-      "Present calling, texting, and email as channels each trained AI voice agent can use, not separate products customers must assemble.",
+      "Present calling, texting, and email as channels each trained voice agent can use, not separate products customers must assemble.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
       "State that the included Wireline number applies to paid plans so the free builder is never misrepresented.",
@@ -50,7 +50,7 @@ describe("product voice cohesion", () => {
     );
 
     expect(MARKETING_VOICE.eyebrow).toBeNull();
-    expect(MARKETING_VOICE.headline).toBe("AI voice agents that get the work done.");
+    expect(MARKETING_VOICE.headline).toBe("Voice agents that get the work done.");
     expect(MARKETING_VOICE.primaryCta).toBe("Build your voice agent");
     expect(MARKETING_VOICE.subline).toBe(
       "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.",
@@ -83,7 +83,7 @@ describe("product voice cohesion", () => {
     }
     expect(OUTBOUND_WEDGE.subline).toContain("specialists");
     expect(OUTBOUND_WEDGE.loop).toEqual(["Research", "Call", "Book", "Log"]);
-    expect(AGENT_NUMBER_PROMISE).toContain("Every paid AI voice agent");
+    expect(AGENT_NUMBER_PROMISE).toContain("Every paid voice agent");
     expect(AGENT_NUMBER_PROMISE).toContain("includes a Wireline number");
     expect(AGENT_NUMBER_PROMISE).toContain("send texts");
     expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Act", "Log"]);
@@ -133,7 +133,7 @@ describe("product voice cohesion", () => {
     expect(features).toContain("Build → Train → Launch → Improve");
     expect(features).not.toContain("Create → Train → Wire → Run");
     expect(features).not.toMatch(/\bemployees?\b/i);
-    expect(features).toContain("AI Voice Agents for every customer conversation.");
+    expect(features).toContain("Voice Agents for every customer conversation.");
     expect(pricing).not.toContain("create, train, wire, run");
     expect(pricing).not.toContain("Extra employees at");
     const starterPlus = STRIPE_PLANS.find((plan) => plan.id === "team");
@@ -154,7 +154,7 @@ describe("product voice cohesion", () => {
     expect(landing).toContain("Build free. No card.");
     expect(about).toContain("front-desk or sales voice agent");
     expect(compare).toContain("multichannel voice agent");
-    expect(privacy).toContain("AI voice agent platform");
+    expect(privacy).toContain("voice agent platform");
     expect(contactAgents).toContain("Wireline specialists");
 
     const publicSources = [
@@ -193,14 +193,14 @@ describe("product voice cohesion", () => {
     const checklist = read("docs/WIRELINE_CEO_LAUNCH_CHECKLIST_2026-07-10.md");
 
     for (const source of [campaign, mediaKit, launchGuru, checklist]) {
-      expect(source).toContain("AI Voice Agents");
+      expect(source).toContain("Voice Agents");
       expect(source).toContain("Build free. Go live from $19/mo");
       expect(source).not.toContain("Launch for $9");
       expect(source).not.toContain("from $9");
       expect(source).not.toContain("The best employee you've ever had");
     }
 
-    expect(campaign).toContain("AI voice agents for personal tasks and business conversations");
+    expect(campaign).toContain("Voice agents for personal tasks and business conversations");
     expect(campaign).toContain("wl_launch_ai_voice_agents_v6");
     expect(campaign).toContain("AI Voice Generator Audio");
     expect(campaign).toContain("marketing/reference use only");

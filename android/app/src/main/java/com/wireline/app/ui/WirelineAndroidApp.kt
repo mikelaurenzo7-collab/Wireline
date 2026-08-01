@@ -251,7 +251,7 @@ private fun SignInScreen(state: WirelineUiState, onSignIn: (String, String) -> U
         Medallion(Icons.Default.PhoneInTalk, size = 56.dp)
         Spacer(Modifier.height(16.dp))
         Text("WIRELINE", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Brand.Text)
-        Text("AI voice agents for appointments, lead revival, promotions, and follow-up.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+        Text("Voice agents for appointments, lead revival, promotions, and follow-up.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
         Spacer(Modifier.height(24.dp))
         OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
         Spacer(Modifier.height(12.dp))
@@ -293,7 +293,7 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
             }
         }
         state.me?.let { me ->
-            item { AssistantCard { Text(me.account.businessName ?: me.user.fullName ?: me.user.email, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("${me.account.planName} - ${state.agents.size} AI voice agents", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) } }
+            item { AssistantCard { Text(me.account.businessName ?: me.user.fullName ?: me.user.email, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("${me.account.planName} - ${state.agents.size} voice agents", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) } }
         }
         item {
             AssistantCard {
@@ -331,7 +331,7 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
 @Composable
 private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCreate: () -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("AI voice agents", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("Appointment setting, lead revival, promotions, recovery, support, and follow-up.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2) }; TextButton(onClick = onCreate) { Icon(Icons.Default.Add, contentDescription = "Create agent", modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("New") } } }
+        item { Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Voice agents", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("Appointment setting, lead revival, promotions, recovery, support, and follow-up.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2) }; TextButton(onClick = onCreate) { Icon(Icons.Default.Add, contentDescription = "Create agent", modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("New") } } }
         if (agents.isEmpty()) {
             item {
               AssistantCard {

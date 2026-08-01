@@ -40,7 +40,7 @@ const PAID_TIERS = [
     plan: planById.starter,
     publicName: "Starter",
     eyebrow: "Put one agent live",
-    tagline: "Your AI Voice Agent from $19/month.",
+    tagline: "Your Voice Agent from $19/month.",
     detail:
       "One focused agent for inbound, outbound, or scheduling — with an included Wireline number.",
     ctaMonthly: "Start for $19",
@@ -125,7 +125,7 @@ const FAQ = [
   ],
   [
     "Why are there two Starter plans?",
-    "Starter is the lowest risk way to put one AI Voice Agent live. Starter Plus is the founder hybrid: personal Concierge plus a business voice agent, two number slots, more voice minutes, and the fuller Lead Hunt, inbox, email, SMS, and automation experience.",
+    "Starter is the lowest risk way to put one Voice Agent live. Starter Plus is the founder hybrid: personal Concierge plus a business voice agent, two number slots, more voice minutes, and the fuller Lead Hunt, inbox, email, SMS, and automation experience.",
   ],
   [
     "Does every agent automatically create a phone number cost?",
@@ -157,7 +157,7 @@ const assurances = [
   {
     icon: WalletCards,
     label: "Build free",
-    detail: "Train and simulate one private AI Voice Agent before paying.",
+    detail: "Train and simulate one private Voice Agent before paying.",
   },
   {
     icon: PhoneCall,
@@ -184,7 +184,7 @@ const assurances = [
 const pricingJsonLd = {
   "@context": "https://schema.org",
   "@type": "OfferCatalog",
-  name: "Wireline AI Voice Agents pricing",
+  name: "Wireline Voice Agents pricing",
   url: "https://trywireline.com/pricing",
   itemListElement: [
     {
@@ -192,7 +192,7 @@ const pricingJsonLd = {
       name: "Wireline Free Builder",
       price: 0,
       priceCurrency: "USD",
-      description: "Build, train, and privately simulate one AI Voice Agent.",
+      description: "Build, train, and privately simulate one Voice Agent.",
     },
     ...PAID_TIERS.map(({ plan, publicName, detail }) => ({
       "@type": "Offer",
@@ -211,8 +211,8 @@ export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page min-h-screen bg-background text-foreground">
       <PageMeta
-        title="Pricing | Wireline AI Voice Agents from $19/month"
-        description="Build an AI voice agent free, then launch from $19/month with an included Wireline number, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls."
+        title="Pricing | Wireline Voice Agents from $19/month"
+        description="Build a voice agent free, then launch from $19/month with an included Wireline number, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls."
         path="/pricing"
       />
       <script
@@ -297,7 +297,7 @@ export default function Pricing() {
                   <span className="pb-1 text-sm text-muted-foreground">forever</span>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Build, train, and privately simulate one AI Voice Agent. Live numbers unlock after
+                  Build, train, and privately simulate one Voice Agent. Live numbers unlock after
                   activation.
                 </p>
                 <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
@@ -474,9 +474,7 @@ export default function Pricing() {
           <div className="wl-public-rail mx-auto max-w-[1000px]">
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-overline text-primary">Questions before launch</p>
-              <h2 className="wl-public-section-heading mt-3">
-                Predictable enough for owners. Flexible enough to grow.
-              </h2>
+              <h2 className="wl-public-section-heading mt-3">Two things to pay for.</h2>
               <p className="wl-public-copy mx-auto mt-4">
                 Subscription funds agent capacity. Prepaid balance funds variable provider work.
               </p>

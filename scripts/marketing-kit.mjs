@@ -501,7 +501,7 @@ Generated from **${resolvedEmail}** on ${baseURL} — ${new Date().toISOString()
 
 ## Instagram carousel (5 slides)
 
-1. Auth hero — "AI agents for every channel"
+1. Auth hero — "Voice agents for every channel"
 2. Phone zoom — "Hot leads surface automatically"
 3. Integrations — "10+ connectors, one hub"
 4. Compare — "Why Wireline vs voice-only APIs"
