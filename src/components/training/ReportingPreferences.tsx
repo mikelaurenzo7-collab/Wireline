@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import { Button, NativeSelect } from "../atoms";
 import { StatusNotice } from "../molecules";
+import { Checkbox } from "../ui/shadcn/Checkbox";
 import { authFetch } from "../../lib/api";
 import { REPORT_PREFERENCES_SAVED_EVENT } from "./RecentCallArtifactRequests";
 
@@ -256,8 +257,7 @@ export default function ReportingPreferences() {
             </p>
           </div>
           <label className="flex items-center gap-2 text-sm font-semibold">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={preferences.artifact_mode === "manual"}
               onChange={(event) =>
                 patch({ artifact_mode: event.target.checked ? "manual" : "off" })

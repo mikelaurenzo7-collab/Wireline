@@ -13,16 +13,12 @@ import { authFetch } from "../../lib/api";
 import { cn } from "../../lib/utils";
 import { Button } from "../atoms";
 import { StatusNotice } from "../molecules";
+import { Checkbox } from "../ui/shadcn/Checkbox";
 
 const CHANNELS = ["voice", "sms", "email"] as const;
 type Channel = (typeof CHANNELS)[number];
 type ProviderStatus =
-  | "not_requested"
-  | "review_requested"
-  | "in_review"
-  | "approved"
-  | "rejected"
-  | "limited";
+  "not_requested" | "review_requested" | "in_review" | "approved" | "rejected" | "limited";
 
 type IdentityResponse = {
   profile: {
@@ -403,9 +399,9 @@ export default function CompanyIdentityPack() {
               Brand the voice agent, not just the workspace.
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-              Prepare one verified company identity for the voice agent's dedicated number, SMS sender,
-              and email sender. Provider approval and recipient-device display remain external
-              states.
+              Prepare one verified company identity for the voice agent's dedicated number, SMS
+              sender, and email sender. Provider approval and recipient-device display remain
+              external states.
             </p>
           </div>
         </div>
@@ -549,11 +545,9 @@ export default function CompanyIdentityPack() {
                         : "border-border bg-card text-muted-foreground",
                     )}
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={form.requested_channels.includes(channel)}
                       onChange={() => toggleChannel(channel)}
-                      className="size-4 accent-primary"
                     />
                     {channel === "voice" ? "Calling" : channel === "sms" ? "SMS" : "Email"}
                   </label>

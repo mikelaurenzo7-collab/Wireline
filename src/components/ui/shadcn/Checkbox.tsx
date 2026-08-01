@@ -14,6 +14,15 @@ import { cn } from "../../../lib/utils";
  * The default styling matches the rest of the shadcn layer: 1px ring border
  * using `border-input`, focus ring via `--ring`, brand accent on the checked
  * state, and disabled opacity parity with `Input` / `Switch`.
+ *
+ * The checked fill and tick live in `styles/components.css` under
+ * `[data-slot="checkbox"]`, not in a Tailwind arbitrary value. An inline
+ * `checked:bg-[url('data:…<svg … viewBox="0 0 16 16" …>')]` carries literal
+ * spaces, and `cn()` splits its argument on whitespace before merging: the one
+ * class became fifteen garbage tokens, tailwind-merge read the truncated
+ * `checked:bg-[url('data:image/svg+xml;utf8,<svg` as a background conflict and
+ * dropped `checked:bg-primary`, and the checkbox rendered with no fill and no
+ * tick in the checked state. CSS has no such quoting hazard.
  */
 const Checkbox = React.forwardRef<
   HTMLInputElement,
@@ -22,11 +31,9 @@ const Checkbox = React.forwardRef<
   <input
     type="checkbox"
     ref={ref}
+    data-slot="checkbox"
     className={cn(
       "h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-[var(--wireline-radius-xs)] border border-border bg-card align-middle transition-colors",
-      "checked:border-primary checked:bg-primary",
-      "checked:bg-[length:100%_100%] checked:bg-center checked:bg-no-repeat",
-      "checked:bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 fill=%22none%22 stroke=%22white%22 stroke-width=%223%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%223 8.5 6.5 12 13 4.5%22/></svg>')]",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
       "disabled:cursor-not-allowed disabled:opacity-50",
       className,

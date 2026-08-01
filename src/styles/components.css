@@ -155,6 +155,33 @@
   }
 }
 
+/* Checkbox
+ *
+ * Companion to `components/ui/shadcn/Checkbox.tsx`. The checked fill and tick
+ * live here rather than in a Tailwind arbitrary value because the tick is an
+ * inline SVG data URI: its literal spaces survive CSS but get shredded by
+ * `cn()`, which splits on whitespace before tailwind-merge runs.
+ *
+ * Scoped to the primitive's `data-slot` so a checkbox looks the same wherever
+ * it is mounted, without reaching for `!important` against surface polish. */
+[data-slot="checkbox"]:checked {
+  border-color: var(--wireline-color-action-primary-default);
+  background-color: var(--wireline-color-action-primary-default);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='3.5 8.5 6.75 11.75 12.5 4.75'/></svg>");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+/* Surface polish sets a comfortable 44px tap target on workspace inputs. A
+ * checkbox is not a text field: left alone it stretched into a 16x44 pill.
+ * `input[data-slot]` outranks the `:where()` surface rules whatever the import
+ * order, and clearing only `min-height` leaves a caller's `size-*` override
+ * free to set the box. */
+input[data-slot="checkbox"] {
+  min-height: 0;
+}
+
 /* Banner */
 .wl-banner {
   display: flex;

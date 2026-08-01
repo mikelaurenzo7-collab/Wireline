@@ -78,6 +78,17 @@ describe("verified private voice security contract", () => {
     expect(migration).toContain("ENABLE ROW LEVEL SECURITY");
   });
 
+  it("explains why voice creation is unavailable instead of showing a dead button", () => {
+    // The Create voice button is disabled whenever the provider credential is
+    // absent. Without a reason next to it, an admin sees a greyed control and
+    // reads it as broken.
+    expect(studio).toContain("Custom voices need the voice provider connected.");
+    expect(studio).toContain('id="create-voice-unavailable"');
+    expect(studio).toMatch(
+      /aria-describedby=\{configured \? undefined : "create-voice-unavailable"\}/,
+    );
+  });
+
   it("purges cloned voices by owner, never by approver", () => {
     // Doctrine requires every new tenant table to carry explicit account
     // deletion behavior rather than relying on FK cascade alone.

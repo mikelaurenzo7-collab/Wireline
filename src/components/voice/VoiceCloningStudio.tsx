@@ -1,14 +1,5 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import {
-  Check,
-  Loader2,
-  Mic2,
-  Pause,
-  Play,
-  ShieldCheck,
-  Trash2,
-  Upload,
-} from "lucide-react";
+import { Check, Loader2, Mic2, Pause, Play, ShieldCheck, Trash2, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { authFetch } from "../../lib/api";
@@ -17,6 +8,7 @@ import {
   ELEVENLABS_VOICE_QUALITY_VERSION,
 } from "../../lib/managed-voice-runtime";
 import { StatusNotice } from "../molecules";
+import { Checkbox } from "../ui/shadcn/Checkbox";
 
 const MAX_CLONE_UPLOAD_BYTES = 3 * 1024 * 1024;
 
@@ -64,10 +56,7 @@ async function audioDuration(file: File): Promise<number> {
   try {
     return await new Promise<number>((resolve, reject) => {
       const audio = new Audio();
-      const timer = window.setTimeout(
-        () => reject(new Error("Audio could not be read.")),
-        8_000,
-      );
+      const timer = window.setTimeout(() => reject(new Error("Audio could not be read.")), 8_000);
       audio.preload = "metadata";
       audio.onloadedmetadata = () => {
         window.clearTimeout(timer);
@@ -92,9 +81,7 @@ async function fileToBase64(file: File): Promise<string> {
     reader.onload = () => {
       const value = typeof reader.result === "string" ? reader.result : "";
       const comma = value.indexOf(",");
-      comma >= 0
-        ? resolve(value.slice(comma + 1))
-        : reject(new Error("Audio could not be read."));
+      comma >= 0 ? resolve(value.slice(comma + 1)) : reject(new Error("Audio could not be read."));
     };
     reader.onerror = () => reject(new Error("Audio could not be read."));
     reader.readAsDataURL(file);
@@ -109,12 +96,7 @@ function statusLabel(status: string): string {
   return status.replace(/_/g, " ");
 }
 
-export default function VoiceCloningStudio({
-  configured,
-  canManage,
-  voices,
-  onChanged,
-}: Props) {
+export default function VoiceCloningStudio({ configured, canManage, voices, onChanged }: Props) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -165,9 +147,7 @@ export default function VoiceCloningStudio({
       setDurationSeconds(duration);
     } catch (reason) {
       if (selection !== fileSelectionRef.current) return;
-      setError(
-        reason instanceof Error ? reason.message : "Audio could not be read.",
-      );
+      setError(reason instanceof Error ? reason.message : "Audio could not be read.");
     }
   }
 
@@ -204,19 +184,14 @@ export default function VoiceCloningStudio({
       const body = (await response.json().catch(() => null)) as {
         error?: string;
       } | null;
-      if (!response.ok)
-        throw new Error(body?.error || "Voice could not be created.");
+      if (!response.ok) throw new Error(body?.error || "Voice could not be created.");
       resetDraft();
       setNotice("Voice created. Listen once, then approve it for live calls.");
       await onChanged().catch(() => {
         setError("Voice created. Refresh to load its review status.");
       });
     } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Voice could not be created.",
-      );
+      setError(reason instanceof Error ? reason.message : "Voice could not be created.");
     } finally {
       setBusy(null);
     }
@@ -272,47 +247,33 @@ export default function VoiceCloningStudio({
       const body = (await response.json().catch(() => null)) as {
         error?: string;
       } | null;
-      if (!response.ok)
-        throw new Error(body?.error || "Voice could not be approved.");
+      if (!response.ok) throw new Error(body?.error || "Voice could not be approved.");
       setNotice(`${voice.name} is ready for live calls.`);
       await onChanged().catch(() => {
         setError("Voice approved. Refresh to update the library.");
       });
     } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Voice could not be approved.",
-      );
+      setError(reason instanceof Error ? reason.message : "Voice could not be approved.");
     } finally {
       setBusy(null);
     }
   }
 
   async function revoke(voice: PrivateVoice) {
-    if (
-      busy ||
-      !window.confirm(
-        `Revoke “${voice.name}”? Assigned agents will use Savannah.`,
-      )
-    ) {
+    if (busy || !window.confirm(`Revoke “${voice.name}”? Assigned agents will use Savannah.`)) {
       return;
     }
     setBusy(voice.voice_id);
     setError(null);
     try {
-      const response = await authFetch(
-        `/api/voices/${encodeURIComponent(voice.voice_id)}`,
-        {
-          method: "DELETE",
-        },
-      );
+      const response = await authFetch(`/api/voices/${encodeURIComponent(voice.voice_id)}`, {
+        method: "DELETE",
+      });
       const body = (await response.json().catch(() => null)) as {
         error?: string;
         status?: string;
       } | null;
-      if (!response.ok)
-        throw new Error(body?.error || "Voice could not be revoked.");
+      if (!response.ok) throw new Error(body?.error || "Voice could not be revoked.");
       setNotice(
         body?.status === "deletion_pending"
           ? "Live use stopped. Provider deletion is pending; retry revoke."
@@ -322,11 +283,7 @@ export default function VoiceCloningStudio({
         setError("Revocation was sent. Refresh to update its status.");
       });
     } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Voice could not be revoked.",
-      );
+      setError(reason instanceof Error ? reason.message : "Voice could not be revoked.");
     } finally {
       setBusy(null);
     }
@@ -346,25 +303,31 @@ export default function VoiceCloningStudio({
       ) : null}
 
       {!open ? (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          disabled={!configured}
-          className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <Mic2 className="size-4" aria-hidden="true" />
-          Create voice
-        </button>
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            disabled={!configured}
+            aria-describedby={configured ? undefined : "create-voice-unavailable"}
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Mic2 className="size-4" aria-hidden="true" />
+            Create voice
+          </button>
+          {/* A disabled control with no reason reads as a broken button. Say why. */}
+          {!configured ? (
+            <p id="create-voice-unavailable" className="text-xs text-muted-foreground">
+              Custom voices need the voice provider connected.
+            </p>
+          ) : null}
+        </div>
       ) : (
         <form
           onSubmit={createVoice}
           className="space-y-4 rounded-xl border border-border bg-muted/20 p-4"
         >
           <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
-            <ShieldCheck
-              className="mt-0.5 size-4 shrink-0 text-primary"
-              aria-hidden="true"
-            />
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
             <p className="text-xs leading-5 text-muted-foreground">
               Wireline does not store the upload. Live use requires review.
             </p>
@@ -389,9 +352,7 @@ export default function VoiceCloningStudio({
               type="file"
               required
               accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/m4a,audio/x-m4a,audio/ogg,audio/webm,.mp3,.wav,.m4a,.ogg,.webm"
-              onChange={(event) =>
-                void chooseFile(event.target.files?.[0] || null)
-              }
+              onChange={(event) => void chooseFile(event.target.files?.[0] || null)}
               className="mt-1.5 block w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-muted file:px-3 file:py-2 file:text-sm file:font-semibold file:text-foreground"
             />
             <span className="mt-1 block text-xs font-normal text-muted-foreground">
@@ -401,13 +362,10 @@ export default function VoiceCloningStudio({
           </label>
 
           <label className="flex items-start gap-2.5 text-sm text-foreground">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={removeBackgroundNoise}
-              onChange={(event) =>
-                setRemoveBackgroundNoise(event.target.checked)
-              }
-              className="mt-1 size-4 accent-primary"
+              onChange={(event) => setRemoveBackgroundNoise(event.target.checked)}
+              className="mt-1"
             />
             <span>
               Clean background noise
@@ -418,15 +376,14 @@ export default function VoiceCloningStudio({
           </label>
 
           <label className="flex items-start gap-2.5 text-sm leading-5 text-foreground">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={consentAccepted}
               onChange={(event) => setConsentAccepted(event.target.checked)}
-              className="mt-1 size-4 accent-primary"
+              className="mt-1"
             />
             <span>
-              I am the speaker or have documented commercial permission; this is
-              not a minor or public figure.{" "}
+              I am the speaker or have documented commercial permission; this is not a minor or
+              public figure.{" "}
               <Link to="/terms" className="underline underline-offset-2">
                 Terms
               </Link>{" "}
@@ -473,8 +430,7 @@ export default function VoiceCloningStudio({
           {voices.map((voice) => {
             const pending = voice.status === "pending_review";
             const reviewed = reviewedIds.has(voice.voice_id);
-            const providerBlocked =
-              voice.provider_verification_required === true;
+            const providerBlocked = voice.provider_verification_required === true;
             return (
               <div
                 key={voice.voice_id}
@@ -483,9 +439,7 @@ export default function VoiceCloningStudio({
                 <button
                   type="button"
                   onClick={() => preview(voice)}
-                  disabled={
-                    Boolean(busy) || voice.status === "deletion_pending"
-                  }
+                  disabled={Boolean(busy) || voice.status === "deletion_pending"}
                   className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-foreground disabled:opacity-50"
                   aria-label={`${playingId === voice.voice_id ? "Pause" : "Play"} ${voice.name} proof`}
                 >
@@ -496,14 +450,10 @@ export default function VoiceCloningStudio({
                   )}
                 </button>
                 <div className="min-w-32 flex-1">
-                  <p className="truncate text-sm font-semibold text-foreground">
-                    {voice.name}
-                  </p>
+                  <p className="truncate text-sm font-semibold text-foreground">{voice.name}</p>
                   <p className="text-xs capitalize text-muted-foreground">
                     {statusLabel(voice.status)}
-                    {voice.provider_verification_required
-                      ? " · provider check"
-                      : ""}
+                    {voice.provider_verification_required ? " · provider check" : ""}
                   </p>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
@@ -522,10 +472,7 @@ export default function VoiceCloningStudio({
                       className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 text-xs font-semibold text-primary disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {busy === voice.voice_id ? (
-                        <Loader2
-                          className="size-3.5 animate-spin"
-                          aria-hidden="true"
-                        />
+                        <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
                       ) : (
                         <Check className="size-3.5" aria-hidden="true" />
                       )}
@@ -540,10 +487,7 @@ export default function VoiceCloningStudio({
                     aria-label={`Revoke ${voice.name}`}
                   >
                     {busy === voice.voice_id ? (
-                      <Loader2
-                        className="size-4 animate-spin"
-                        aria-hidden="true"
-                      />
+                      <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                     ) : (
                       <Trash2 className="size-4" aria-hidden="true" />
                     )}
