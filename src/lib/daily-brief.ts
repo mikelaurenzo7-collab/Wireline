@@ -17,10 +17,7 @@ import { cachedInsight, setCachedInsight } from "./insights-cache";
 import { BRAND } from "../constants/brand-colors";
 import { localDateKey } from "./date-display";
 
-export async function computeDailyBrief(
-  userId: string,
-  opts?: { force?: boolean },
-) {
+export async function computeDailyBrief(userId: string, opts?: { force?: boolean }) {
   const today = localDateKey(new Date());
   const cacheKey = `brief:${userId}:${today}`;
   if (!opts?.force) {
@@ -41,149 +38,120 @@ export async function computeDailyBrief(
   const wStart = new Date();
   wStart.setDate(wStart.getDate() - 7);
 
-  const [yCalls, wCalls, appts, tasks, leads, wins, losses] =
-    await drizzle.transaction((tx) =>
-      serialQueryBatch([
-        tx
-          .select({
-            leadScore: schema.callLogs.leadScore,
-            intentLabel: schema.callLogs.intentLabel,
-            durationSeconds: schema.callLogs.durationSeconds,
-            cost: schema.callLogs.cost,
-            summary: schema.callLogs.summary,
-            customerNumber: schema.callLogs.customerNumber,
-          })
-          .from(schema.callLogs)
-          .where(
-            and(
-              eq(schema.callLogs.userId, userId),
-              gte(schema.callLogs.createdAt, yStart),
-              lt(schema.callLogs.createdAt, yEnd),
-            ),
+  const [yCalls, wCalls, appts, tasks, leads, wins, losses] = await drizzle.transaction((tx) =>
+    serialQueryBatch([
+      tx
+        .select({
+          leadScore: schema.callLogs.leadScore,
+          intentLabel: schema.callLogs.intentLabel,
+          durationSeconds: schema.callLogs.durationSeconds,
+          cost: schema.callLogs.cost,
+          summary: schema.callLogs.summary,
+          customerNumber: schema.callLogs.customerNumber,
+        })
+        .from(schema.callLogs)
+        .where(
+          and(
+            eq(schema.callLogs.userId, userId),
+            gte(schema.callLogs.createdAt, yStart),
+            lt(schema.callLogs.createdAt, yEnd),
           ),
-        tx
-          .select({
-            leadScore: schema.callLogs.leadScore,
-            durationSeconds: schema.callLogs.durationSeconds,
-            cost: schema.callLogs.cost,
-          })
-          .from(schema.callLogs)
-          .where(
-            and(
-              eq(schema.callLogs.userId, userId),
-              gte(schema.callLogs.createdAt, wStart),
-            ),
+        ),
+      tx
+        .select({
+          leadScore: schema.callLogs.leadScore,
+          durationSeconds: schema.callLogs.durationSeconds,
+          cost: schema.callLogs.cost,
+        })
+        .from(schema.callLogs)
+        .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, wStart))),
+      tx
+        .select({ id: schema.appointments.id })
+        .from(schema.appointments)
+        .where(
+          and(
+            eq(schema.appointments.userId, userId),
+            gte(schema.appointments.createdAt, yStart),
+            lt(schema.appointments.createdAt, yEnd),
           ),
-        tx
-          .select({ id: schema.appointments.id })
-          .from(schema.appointments)
-          .where(
-            and(
-              eq(schema.appointments.userId, userId),
-              gte(schema.appointments.createdAt, yStart),
-              lt(schema.appointments.createdAt, yEnd),
-            ),
+        ),
+      tx
+        .select({
+          priority: schema.followUpTasks.priority,
+          description: schema.followUpTasks.description,
+        })
+        .from(schema.followUpTasks)
+        .where(
+          and(eq(schema.followUpTasks.userId, userId), eq(schema.followUpTasks.status, "pending")),
+        )
+        .orderBy(desc(schema.followUpTasks.createdAt))
+        .limit(8),
+      tx
+        .select({ id: schema.outboundLeads.id })
+        .from(schema.outboundLeads)
+        .where(
+          and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.status, "Pending")),
+        ),
+      tx
+        .select({
+          customerNumber: schema.callLogs.customerNumber,
+          leadScore: schema.callLogs.leadScore,
+          summary: schema.callLogs.summary,
+        })
+        .from(schema.callLogs)
+        .where(
+          and(
+            eq(schema.callLogs.userId, userId),
+            gte(schema.callLogs.createdAt, yStart),
+            lt(schema.callLogs.createdAt, yEnd),
+            gte(schema.callLogs.leadScore, 70),
           ),
-        tx
-          .select({
-            priority: schema.followUpTasks.priority,
-            description: schema.followUpTasks.description,
-          })
-          .from(schema.followUpTasks)
-          .where(
-            and(
-              eq(schema.followUpTasks.userId, userId),
-              eq(schema.followUpTasks.status, "pending"),
-            ),
-          )
-          .orderBy(desc(schema.followUpTasks.createdAt))
-          .limit(8),
-        tx
-          .select({ id: schema.outboundLeads.id })
-          .from(schema.outboundLeads)
-          .where(
-            and(
-              eq(schema.outboundLeads.userId, userId),
-              eq(schema.outboundLeads.status, "Pending"),
-            ),
+        )
+        .orderBy(desc(schema.callLogs.leadScore))
+        .limit(3),
+      tx
+        .select({
+          customerNumber: schema.callLogs.customerNumber,
+          leadScore: schema.callLogs.leadScore,
+          summary: schema.callLogs.summary,
+        })
+        .from(schema.callLogs)
+        .where(
+          and(
+            eq(schema.callLogs.userId, userId),
+            gte(schema.callLogs.createdAt, yStart),
+            lt(schema.callLogs.createdAt, yEnd),
+            lt(schema.callLogs.leadScore, 30),
           ),
-        tx
-          .select({
-            customerNumber: schema.callLogs.customerNumber,
-            leadScore: schema.callLogs.leadScore,
-            summary: schema.callLogs.summary,
-          })
-          .from(schema.callLogs)
-          .where(
-            and(
-              eq(schema.callLogs.userId, userId),
-              gte(schema.callLogs.createdAt, yStart),
-              lt(schema.callLogs.createdAt, yEnd),
-              gte(schema.callLogs.leadScore, 70),
-            ),
-          )
-          .orderBy(desc(schema.callLogs.leadScore))
-          .limit(3),
-        tx
-          .select({
-            customerNumber: schema.callLogs.customerNumber,
-            leadScore: schema.callLogs.leadScore,
-            summary: schema.callLogs.summary,
-          })
-          .from(schema.callLogs)
-          .where(
-            and(
-              eq(schema.callLogs.userId, userId),
-              gte(schema.callLogs.createdAt, yStart),
-              lt(schema.callLogs.createdAt, yEnd),
-              lt(schema.callLogs.leadScore, 30),
-            ),
-          )
-          .orderBy(desc(schema.callLogs.createdAt))
-          .limit(3),
-      ]),
-    );
+        )
+        .orderBy(desc(schema.callLogs.createdAt))
+        .limit(3),
+    ]),
+  );
 
   const yTotal = yCalls?.length || 0;
   const yMinutes = Math.round(
-    (yCalls || []).reduce(
-      (s: number, c: any) => s + (c.durationSeconds || 0),
-      0,
-    ) / 60,
+    (yCalls || []).reduce((s: number, c: any) => s + (c.durationSeconds || 0), 0) / 60,
   );
   const yAvgScore = yTotal
-    ? Math.round(
-        (yCalls || []).reduce(
-          (s: number, c: any) => s + (c.leadScore || 0),
-          0,
-        ) / yTotal,
-      )
+    ? Math.round((yCalls || []).reduce((s: number, c: any) => s + (c.leadScore || 0), 0) / yTotal)
     : 0;
-  const yHighIntent = (yCalls || []).filter(
-    (c: any) => c.intentLabel === "high",
-  ).length;
+  const yHighIntent = (yCalls || []).filter((c: any) => c.intentLabel === "high").length;
   const yCost = Number(
-    (yCalls || [])
-      .reduce((s: number, c: any) => s + Number(c.cost || 0), 0)
-      .toFixed(2),
+    (yCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0).toFixed(2),
   );
 
   const wDays = 7;
   const wAvgPerDay = (wCalls?.length || 0) / wDays;
   const wAvgScore = wCalls?.length
-    ? (wCalls || []).reduce((s: number, c: any) => s + (c.leadScore || 0), 0) /
-      wCalls.length
+    ? (wCalls || []).reduce((s: number, c: any) => s + (c.leadScore || 0), 0) / wCalls.length
     : 0;
   const wAvgCostPerDay =
-    (wCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0) /
-    wDays;
+    (wCalls || []).reduce((s: number, c: any) => s + Number(c.cost || 0), 0) / wDays;
 
-  const callsPct =
-    wAvgPerDay > 0 ? ((yTotal - wAvgPerDay) / wAvgPerDay) * 100 : 0;
-  const scorePct =
-    wAvgScore > 0 ? ((yAvgScore - wAvgScore) / wAvgScore) * 100 : 0;
-  const costPct =
-    wAvgCostPerDay > 0 ? ((yCost - wAvgCostPerDay) / wAvgCostPerDay) * 100 : 0;
+  const callsPct = wAvgPerDay > 0 ? ((yTotal - wAvgPerDay) / wAvgPerDay) * 100 : 0;
+  const scorePct = wAvgScore > 0 ? ((yAvgScore - wAvgScore) / wAvgScore) * 100 : 0;
+  const costPct = wAvgCostPerDay > 0 ? ((yCost - wAvgCostPerDay) / wAvgCostPerDay) * 100 : 0;
 
   const result = await insightsAi.composeDailyBrief({
     yesterdayStats: {
@@ -232,9 +200,7 @@ export function renderDailyBriefEmail(
   const mood = brief.mood || "neutral";
   const highlights: string[] = brief.highlights || [];
   const concerns: string[] = brief.concerns || [];
-  const actions: string[] = (brief.action_items || [])
-    .map(actionItemText)
-    .filter(Boolean);
+  const actions: string[] = (brief.action_items || []).map(actionItemText).filter(Boolean);
 
   const moodColor =
     mood === "positive"
@@ -247,9 +213,7 @@ export function renderDailyBriefEmail(
     const sign = v >= 0 ? "+" : "";
     return `${sign}${v.toFixed(0)}%`;
   };
-  const link = opts.appUrl
-    ? `${opts.appUrl.replace(/\/+$/, "")}/overview`
-    : null;
+  const link = opts.appUrl ? `${opts.appUrl.replace(/\/+$/, "")}/overview` : null;
 
   // The subject is a plain-text MIME header, not markup: HTML-escaping it put
   // literal `&#39;`/`&amp;` in the operator's inbox. Collapse newlines instead,
@@ -406,11 +370,9 @@ function actionItemText(item: unknown): string {
   if (typeof item === "string") return item.trim();
   if (item && typeof item === "object") {
     const record = item as { description?: unknown; urgency?: unknown };
-    const description =
-      typeof record.description === "string" ? record.description.trim() : "";
+    const description = typeof record.description === "string" ? record.description.trim() : "";
     if (!description) return "";
-    const urgency =
-      typeof record.urgency === "string" ? record.urgency.trim() : "";
+    const urgency = typeof record.urgency === "string" ? record.urgency.trim() : "";
     return urgency ? `${description} (${urgency})` : description;
   }
   return "";
@@ -425,10 +387,7 @@ function escapeHtml(s: any): string {
     .replace(/'/g, "&#39;");
 }
 
-export async function sendDailyBriefEmail(
-  userId: string,
-  opts?: { force?: boolean },
-) {
+export async function sendDailyBriefEmail(userId: string, opts?: { force?: boolean }) {
   // Pull settings + the Account Holder's connected Gmail account.
   const [settingsRow, accountRow] = await Promise.all([
     drizzle
@@ -449,28 +408,20 @@ export async function sendDailyBriefEmail(
       })
       .from(schema.emailAccounts)
       .where(
-        and(
-          eq(schema.emailAccounts.userId, userId),
-          eq(schema.emailAccounts.provider, "google"),
-        ),
+        and(eq(schema.emailAccounts.userId, userId), eq(schema.emailAccounts.provider, "google")),
       )
       .limit(1)
       .then((rows) => rows[0] || null),
   ]);
 
   const recipient = settingsRow?.dailyBriefRecipient;
-  if (!recipient)
-    throw new Error("No recipient configured (dailyBriefRecipient).");
+  if (!recipient) throw new Error("No recipient configured (dailyBriefRecipient).");
   const account: any = accountRow;
   if (!account?.refreshToken)
-    throw new Error(
-      "No connected Gmail account — connect one in Carrier Bridge first.",
-    );
+    throw new Error("No connected Gmail account — connect one in Carrier Bridge first.");
 
   // Compute the brief (uses the per-day cache) — may throw CLAUDE_OFFLINE.
-  const { payload } = await computeDailyBrief(userId, {
-    force: opts?.force === true,
-  });
+  const { payload } = await computeDailyBrief(userId, { force: opts?.force === true });
   const dateLabel = localDateKey(new Date());
   const { subject, html, text } = renderDailyBriefEmail(payload, {
     dateLabel,
@@ -480,9 +431,7 @@ export async function sendDailyBriefEmail(
   const oauth2Client = buildOAuthClient();
   oauth2Client.setCredentials({
     access_token: decryptSecret(account.accessToken),
-    refresh_token: account.refreshToken
-      ? decryptSecret(account.refreshToken)
-      : null,
+    refresh_token: account.refreshToken ? decryptSecret(account.refreshToken) : null,
     expiry_date: account.expiresAt ? Number(account.expiresAt) : null,
   });
   const gmail = google.gmail({ version: "v1", auth: oauth2Client });
@@ -511,10 +460,7 @@ export async function sendDailyBriefEmail(
     `--${boundary}--`,
   ].join("\r\n");
   const encoded = Buffer.from(messageParts).toString("base64url");
-  await gmail.users.messages.send({
-    userId: "me",
-    requestBody: { raw: encoded },
-  });
+  await gmail.users.messages.send({ userId: "me", requestBody: { raw: encoded } });
 
   return { recipient, subject };
 }
