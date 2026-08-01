@@ -411,7 +411,7 @@ function TemplateCard({
             )}
             <span
               className={cn(
-                "px-1.5 py-0.5 rounded-full border wl-label leading-none",
+                "px-1.5 py-0.5 rounded-full border wl-label capitalize leading-none",
                 template.channel === "email"
                   ? "bg-muted border-border text-foreground/70"
                   : "bg-primary/10 border-primary/30 text-primary",
@@ -460,7 +460,7 @@ function TemplateCard({
           variant="default"
           onClick={() => onDeploy(template)}
           disabled={deploying}
-          className="w-full !py-2 !text-[length:var(--wireline-typography-overline-size)] !tracking-[0.22em] flex items-center justify-center gap-2 shadow-sm"
+          className="w-full !py-2 !text-[length:var(--wireline-typography-overline-size)] !tracking-normal flex items-center justify-center gap-2 shadow-sm"
           aria-label={`${alreadyDeployed ? "Use again" : "Use"} ${template.name} template`}
         >
           {deploying ? <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin" /> : null}

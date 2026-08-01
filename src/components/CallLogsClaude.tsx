@@ -131,9 +131,12 @@ function outcomeStatusStyle(tag: string | null | undefined): {
       background: "var(--wireline-color-feedback-success-surface)",
     };
   }
+  // Neutral outcomes share the same pill anatomy as the semantic ones — a
+  // quiet tint rather than a bare label, so the three chips read as one
+  // component family (green booked / amber escalation / gray informational).
   return {
     color: "var(--wireline-color-text-tertiary)",
-    background: "transparent",
+    background: "color-mix(in srgb, var(--wireline-color-text-tertiary) 10%, transparent)",
   };
 }
 

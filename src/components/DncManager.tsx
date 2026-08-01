@@ -46,7 +46,7 @@ interface DncEntry {
 }
 
 const REASON_OPTIONS = [
-  { value: "opt-out", label: "Customer Opt-Out" },
+  { value: "opt-out", label: "Customer opt-out" },
   { value: "legal", label: "Legal / Regulatory" },
   { value: "litigator", label: "Known Litigator" },
   { value: "federal", label: "National DNC Registry" },
@@ -310,7 +310,9 @@ export default function DncManager() {
               </Button>
               <Button
                 type="button"
-                variant="destructive"
+                // The page's primary action adds a protective block entry — it
+                // should not out-shout the app's genuinely destructive actions.
+                variant="default"
                 size="sm"
                 onClick={() => setShowAdd(true)}
               >
@@ -323,10 +325,10 @@ export default function DncManager() {
         {/* Stat bar */}
         <div className="grid shrink-0 grid-cols-2 gap-2">
           {[
-            { label: "Total Blocked", value: stats.total, icon: Shield },
-            { label: "Manual Entries", value: stats.manual, icon: Plus },
-            { label: "CSV Imported", value: stats.csv, icon: FileText },
-            { label: "Opt-Out", value: stats.optOut, icon: CheckCircle2 },
+            { label: "Total blocked", value: stats.total, icon: Shield },
+            { label: "Manual entries", value: stats.manual, icon: Plus },
+            { label: "CSV imported", value: stats.csv, icon: FileText },
+            { label: "Opt-out", value: stats.optOut, icon: CheckCircle2 },
           ].map(({ label, value, icon: Icon }) => (
             <div
               key={label}
@@ -350,7 +352,7 @@ export default function DncManager() {
                   <Shield className="h-3.5 w-3.5 text-brand" />
                 </div>
                 <h3 className="font-display text-base leading-tight text-foreground">
-                  Blocked Numbers
+                  Blocked numbers
                 </h3>
                 <span className="text-eyebrow ml-1 opacity-80">{filtered.length} entries</span>
               </div>

@@ -293,7 +293,9 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   const compactUpload = knowledge.length === 0 && directives.length > 0;
 
   const stats: Array<{ value: number; label: string }> = [
-    { value: knowledge.length, label: "Knowledge" },
+    // "Entries", not "Knowledge" — the page title directly above already says
+    // KNOWLEDGE, and this counts entries in the base.
+    { value: knowledge.length, label: "Entries" },
     { value: directives.length, label: "Rules" },
     { value: hasPersonality ? 1 : 0, label: "Tone" },
   ];
