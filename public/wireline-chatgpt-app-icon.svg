@@ -15,11 +15,9 @@
   </defs>
   <rect width="1024" height="1024" rx="224" fill="#0A0A0E"/>
   <rect x="28" y="28" width="968" height="968" rx="204" fill="url(#bg)" stroke="#6D28D9" stroke-width="28"/>
-  <path d="M182 416H238L386 710Q416 768 452 704L646 330"
-        fill="none" stroke="url(#mark)" stroke-width="78" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M438 426H512Q552 426 574 466L710 710Q742 768 776 704L876 426H892"
-        fill="none" stroke="url(#mark)" stroke-width="78" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="150" cy="416" r="46" fill="#D8B4FE"/>
-  <circle cx="646" cy="292" r="46" fill="#BFA4FB"/>
-  <circle cx="892" cy="426" r="46" fill="#9D7BF8"/>
+  <g transform="translate(152 152) scale(15)" fill="none" stroke="url(#mark)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 16H11L19 32L24 21L29 32L37 16H44"/>
+    <circle cx="4" cy="16" r="3.7" fill="url(#mark)" stroke="none"/>
+    <circle cx="44" cy="16" r="3.7" fill="url(#mark)" stroke="none"/>
+  </g>
 </svg>

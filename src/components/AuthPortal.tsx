@@ -299,7 +299,7 @@ function AuthShell({ children, compact = false }: { children: ReactNode; compact
         <div className="w-full max-w-[520px]">
           <Link to="/" className="wl-auth-entry-mark" aria-label="Wireline home">
             <span className="wl-auth-brand-badge">
-              <WirelineMark className="h-4 w-6" strokeWidth={10} />
+              <WirelineMark className="size-8" />
             </span>
             <span>Wireline</span>
           </Link>

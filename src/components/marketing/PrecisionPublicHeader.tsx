@@ -42,7 +42,7 @@ export default function PrecisionPublicHeader() {
             className="flex shrink-0 items-center gap-2.5 rounded-[var(--radius-md)] font-[var(--wireline-font-display)] text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             aria-label="Wireline home"
           >
-            <WirelineMark className="h-6 w-9 shrink-0 text-primary" signal />
+            <WirelineMark className="size-11 shrink-0 text-primary" signal />
             <span>Wireline</span>
           </Link>
           <nav

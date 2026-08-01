@@ -187,7 +187,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
         className="mb-1.5 flex items-center gap-2.5 px-1.5"
       >
         <span className="grid size-7 place-items-center rounded-[7px] bg-primary text-primary-foreground">
-          <WirelineMark className="h-3.5 w-5" strokeWidth={10} />
+          <WirelineMark className="size-7" />
         </span>
         <span className="font-[var(--wireline-font-family-display)] text-[19px] leading-none tracking-[-0.01em] text-foreground">
           Wireline

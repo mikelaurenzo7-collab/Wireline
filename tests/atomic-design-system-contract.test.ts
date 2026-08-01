@@ -88,6 +88,49 @@ describe("Atomic Design completion contract", () => {
     expect(code).not.toMatch(arbitraryWithSpace);
   });
 
+  it("draws the brand mark once, and ships that exact geometry everywhere", () => {
+    // The glyph used to exist twice — the canonical component and a legacy copy
+    // under components/ — so a redesign had to be applied in two places or the
+    // brand silently forked. The legacy copy is gone; keep it that way.
+    const mark = source("src/components/brand/WirelineMark.tsx");
+    const path = mark.match(/<path d="([^"]+)"/)?.[1];
+    expect(path, "canonical mark path not found").toBeTruthy();
+
+    const drawnBy = globSync("src/**/*.tsx", { cwd: root })
+      .filter(
+        (file) => /<path d="M[\d.]+ [\d.]+/.test(source(file)) && source(file).includes("H44"),
+      )
+      .sort();
+    expect(drawnBy).toEqual(["src/components/brand/WirelineMark.tsx"]);
+
+    // Every shipped icon carries the same path as the component. Favicon, PWA
+    // icon, OG card, and the ChatGPT app icon are separate files; without this
+    // they drift from the product and each other.
+    for (const asset of [
+      "public/favicon.svg",
+      "public/wireline-icon.svg",
+      "public/og-image.svg",
+      "public/wireline-chatgpt-app-icon.svg",
+    ]) {
+      expect(source(asset), `${asset} is not on the canonical glyph`).toContain(path!);
+    }
+  });
+
+  it("keeps the brand mark square and its stroke scalable", () => {
+    const mark = source("src/components/brand/WirelineMark.tsx");
+
+    // Every slot the mark lands in is square — favicon, PWA icon, app icon,
+    // avatar. The old 128x96 board letterboxed in all of them.
+    expect(mark).toContain('viewBox="0 0 48 48"');
+
+    // `non-scaling-stroke` pins stroke width to screen pixels no matter how
+    // small the mark renders, which turned the favicon into a blob. Comments
+    // are stripped because the component's own doc names the attribute to
+    // explain why it is gone.
+    const code = mark.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    expect(code).not.toContain("non-scaling-stroke");
+  });
+
   it("keeps the control radius reset in @layer base so rounded-* utilities win", () => {
     // Tailwind v4 emits utilities into `@layer utilities`, and unlayered rules
     // outrank every layer regardless of specificity. Unlayered, this reset
