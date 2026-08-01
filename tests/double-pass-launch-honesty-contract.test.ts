@@ -236,6 +236,16 @@ describe("double-pass launch honesty", () => {
       "src/routes/agent-routes-v2.ts",
       "src/lib/vapi-assistant-factory-v2.ts",
       "src/lib/vapi-client.ts",
+      "src/lib/daily-brief.ts",
+      "src/routes/fleet-routes.ts",
+      "src/routes/insights-routes.ts",
+      "src/lib/voice/grok-voice-service.ts",
+      "src/routes/settings-routes.ts",
+      "src/routes/dashboard-routes.ts",
+      "src/lib/voice/openai-live-agent-service.ts",
+      "src/routes/mobile-routes.ts",
+      "src/routes/agent-workspace-routes.ts",
+      "src/routes/agent-test-routes.ts",
     ]) {
       const source = read(path);
       for (const match of source.matchAll(/drizzle\.transaction\(/g)) {
