@@ -65,8 +65,13 @@ Launch remains blocked until the following are cleared:
    compliant portal by exercising Wireline's managed bootstrap (or configuring a Dashboard default).
 2. **Complete one controlled Stripe lifecycle.** Prove checkout → webhook → entitlement → portal →
    cancellation/refund on a real test customer before inviting paid self-serve users.
-3. **Restore full GitHub Actions execution.** PR workflow runs still end in `startup_failure`
-   before any job is created. Vercel exact-head builds compensate but are not the full CI matrix.
+3. ~~**Restore full GitHub Actions execution.**~~ **Cleared 2026-08-01.** Workflow runs execute
+   again: PR #952 head `e9278fc` completed the whole matrix green, including the Full verification
+   ladder (3m 8s), build-smoke, the P0 route-capture gate (5m 59s), the Playwright axe WCAG gate,
+   and the static/metadata contract jobs — real durations and retrievable logs, not the
+   `startup_failure` billing pattern that produced two-second jobs with no logs. Treat a single
+   green matrix as recovery evidence, not a permanent guarantee: if `startup_failure` returns, the
+   repository billing limit is back and Vercel exact-head builds are again the compensating gate.
 4. **Rotate every Vercel personal token pasted into chat** (a second `vcp_…` token was shared
    in chat on 2026-08-01); revoke each after redeploying any values changed with that credential.
 5. **Configure and prove Federal DNCScrub with a live JSON scrub** before scaled marketing
