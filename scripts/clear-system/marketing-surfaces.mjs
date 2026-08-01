@@ -89,12 +89,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     /MARKETING_VOICE\.headline/,
     "landing hero must consume the shared headline",
   );
-  mustInclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    wireAgentLanding,
-    /MARKETING_VOICE\.subline/,
-    "landing hero must consume the shared subline",
-  );
+  // Subline intentionally omitted from the hero (minimal hero); it still backs
+  // the SEO/social description in index.html.
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,

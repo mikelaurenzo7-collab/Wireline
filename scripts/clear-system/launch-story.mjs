@@ -107,12 +107,9 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     /MARKETING_VOICE\.headline/,
     "landing must consume the shared headline",
   );
-  mustInclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    wireAgentLanding,
-    /MARKETING_VOICE\.subline/,
-    "landing must consume the shared product subline",
-  );
+  // The landing hero is deliberately minimal — the shared subline is no longer
+  // rendered as a hero subhead. It still backs the SEO/social description in
+  // index.html, which static-metadata-contract guards.
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
