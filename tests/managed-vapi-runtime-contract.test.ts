@@ -2,37 +2,108 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import {
+  buildManagedVoiceRuntime,
+  ELEVENLABS_REALTIME_MODEL,
+} from "../src/lib/managed-voice-runtime";
+
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
-describe("managed Vapi runtime policy", () => {
+describe("managed phone voice runtime policy", () => {
   const roster = read("src/data/voice-roster.ts");
   const factory = read("src/lib/vapi-assistant-factory-v2.ts");
   const outboundClient = read("src/lib/vapi-client.ts");
   const draftService = read("src/lib/agent-draft-service.ts");
+  const voiceRoutes = read("src/routes/voices-routes.ts");
   const studio = read("src/components/StudioAgentWorkspacePanel.tsx");
   const knowledge = read("src/pages/KnowledgePage.tsx");
   const liveFloor = read("src/components/LiveFloorPresence.tsx");
   const carrier = read("src/components/admin/CarrierPanel.tsx");
   const csp = read("src/lib/csp.ts");
   const vercel = read("vercel.json");
-  const migration = read("drizzle/migrations/0100_managed_vapi_runtime.sql");
+  const migration = read(
+    "drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql",
+  );
 
-  it("uses only curated Vapi voices for active phone runtime", () => {
+  it("streams curated studio speech with an independent Vapi fallback", () => {
+    const voice = buildManagedVoiceRuntime({
+      voiceProvider: "11labs",
+      voiceId: "21m00Tcm4TlvDq8ikWAM",
+      fallbackVoiceId: "Elliot",
+    });
+    expect(voice).toMatchObject({
+      provider: "11labs",
+      voiceId: "21m00Tcm4TlvDq8ikWAM",
+      model: ELEVENLABS_REALTIME_MODEL,
+      fallbackPlan: { voices: [{ provider: "vapi", voiceId: "Elliot" }] },
+    });
+    expect(voice).toMatchObject({
+      stability: 0.5,
+      similarityBoost: 0.75,
+      speed: 1,
+    });
+  });
+
+  it("fails an unapproved private id closed to a managed phone voice", () => {
+    expect(
+      buildManagedVoiceRuntime({
+        voiceProvider: "11labs",
+        voiceId: "private-unapproved-id",
+        approvedClone: false,
+      }),
+    ).toMatchObject({ provider: "vapi", voiceId: "Savannah" });
+
+    expect(
+      buildManagedVoiceRuntime({
+        voiceProvider: "11labs",
+        voiceId: "private-approved-id",
+        approvedClone: true,
+      }),
+    ).toMatchObject({
+      provider: "11labs",
+      voiceId: "private-approved-id",
+      fallbackPlan: { voices: [{ provider: "vapi", voiceId: "Savannah" }] },
+    });
+  });
+
+  it("uses the same managed decision for inbound and outbound phone calls", () => {
     expect(roster).toMatch(/DEFAULT_MANAGED_VOICE_ID/);
     expect(roster).toMatch(/Savannah/);
     expect(roster).toMatch(/Elliot/);
-    expect(roster).toMatch(/provider `vapi`/);
-    expect(roster).not.toMatch(/ElevenLabs|pNInz6obpgDQGcFmaJgB|21m00Tcm4TlvDq8ikWAM/);
-    expect(factory).toMatch(/provider: "vapi" as const/);
-    expect(factory).toMatch(/isManagedVapiVoiceId/);
-    expect(factory).not.toMatch(
-      /resolveElevenLabsSpeed|pronunciationDictionaryLocators|eleven_flash/,
-    );
-    expect(outboundClient).toMatch(/provider: "vapi" as const/);
-    expect(outboundClient).toMatch(/DEFAULT_MANAGED_VOICE_ID/);
-    expect(outboundClient).not.toMatch(/provider === "11labs"|eleven_flash/);
+    expect(factory).toMatch(/buildManagedVoiceRuntime/);
+    expect(factory).toMatch(/schema\.clonedVoices\.status, "approved"/);
+    expect(outboundClient).toMatch(/buildManagedVoiceRuntime/);
+    expect(outboundClient).toMatch(/schema\.clonedVoices\.status, "approved"/);
     expect(draftService).toMatch(/voiceProvider: "vapi"/);
+  });
+
+  it("gates private voices on authorization, human proof review, and revocation", () => {
+    expect(voiceRoutes).toMatch(/requirePlatformAdmin/);
+    expect(voiceRoutes).toMatch(/ELEVENLABS_VOICE_CONSENT_VERSION/);
+    expect(voiceRoutes).toMatch(/sourceAudioRetained: false/);
+    expect(voiceRoutes).toMatch(/createHash\("sha256"\)/);
+    expect(voiceRoutes).toMatch(/validateAudioSignature/);
+    expect(voiceRoutes).toMatch(/qualityConfirmed/);
+    expect(voiceRoutes).toMatch(/generateElevenLabsProof/);
+    expect(voiceRoutes).toMatch(/providerVerificationRequired/);
+    expect(voiceRoutes).toMatch(/voice\.clone\.consent_withdrawn/);
+    expect(voiceRoutes).not.toMatch(/res\.json\(\{[^}]*getErrorMessage/s);
+  });
+
+  it("enforces approval and tenant isolation in Postgres", () => {
+    expect(migration).toMatch(
+      /CREATE TABLE IF NOT EXISTS public\.wireline_cloned_voices/,
+    );
+    expect(migration).toMatch(/source_audio_retained = false/);
+    expect(migration).toMatch(/quality_sample_model = 'eleven_flash_v2_5'/);
+    expect(migration).toMatch(/ENABLE ROW LEVEL SECURITY/);
+    expect(migration).toMatch(
+      /REVOKE ALL ON TABLE[\s\S]*FROM anon, authenticated, service_role/,
+    );
+    expect(migration).toMatch(/CREATE POLICY tenant_isolation/);
+    expect(migration).toMatch(/voice\.status = 'approved'/);
+    expect(migration).toMatch(/wireline_cloned_voice_revocation/);
   });
 
   it("bounds inbound context and preserves runtime guardrails", () => {
@@ -46,17 +117,20 @@ describe("managed Vapi runtime policy", () => {
 
   it("makes after-hours follow-up durable and truthful", () => {
     expect(factory).toContain("Use create_followup_task before closing");
-    expect(factory).toContain("Promise follow-up only if that tool explicitly confirms");
-    expect(factory).toContain("Promise a relay only if that tool explicitly confirms");
+    expect(factory).toContain(
+      "Promise follow-up only if that tool explicitly confirms",
+    );
+    expect(factory).toContain(
+      "Promise a relay only if that tool explicitly confirms",
+    );
     expect(factory).toContain("I can take a message for the team");
     expect(factory).not.toContain("make sure the right person follows up");
   });
 
-  it("keeps external voice and avatar experiments out of active authenticated pages", () => {
-    expect(studio).toMatch(/Phone voice/);
+  it("keeps unrelated avatar experiments out of active authenticated pages", () => {
     expect(studio).toMatch(/SimpleVoicePicker/);
     expect(studio).not.toMatch(
-      /AgentPresenceLivePreview|VoiceGallery|video presenter|External voice/,
+      /AgentPresenceLivePreview|VoiceGallery|video presenter/,
     );
     expect(knowledge).toMatch(/Business knowledge/);
     expect(knowledge).toMatch(/Test in Studio/);
@@ -71,7 +145,9 @@ describe("managed Vapi runtime policy", () => {
     expect(carrier).toMatch(/Vapi handles the phone conversation runtime/);
     expect(carrier).toMatch(/OpenAI is the primary call model/);
     expect(carrier).toMatch(/Gemini is the automatic fallback/);
-    expect(carrier).toMatch(/Twilio supplies phone and messaging infrastructure/);
+    expect(carrier).toMatch(
+      /Twilio supplies phone and messaging infrastructure/,
+    );
     expect(carrier).not.toMatch(
       /Advanced Cognitive Routing|Custom Model Selection|Model Revision Override/,
     );
@@ -81,20 +157,8 @@ describe("managed Vapi runtime policy", () => {
     for (const source of [csp, vercel]) {
       expect(source).toMatch(/api\.openai\.com/);
       expect(source).toMatch(/api\.vapi\.ai/);
-      // Optional xAI hosts remain allowlisted for experimental surfaces; customer
-      // demos and the managed runtime use OpenAI.
       expect(source).toMatch(/api\.x\.ai/);
-      // ElevenLabs is invoked server-side only; it must never be reachable from
-      // the browser.
       expect(source).not.toMatch(/api\.elevenlabs\.io|cdn\.elevenlabs\.io/);
     }
-  });
-
-  it("normalizes every persisted agent to the managed runtime", () => {
-    expect(migration).toMatch(/CREATE TRIGGER wireline_agents_managed_voice/);
-    expect(migration).toMatch(/NEW\.voice_provider := 'vapi'/);
-    expect(migration).toMatch(/NEW\.video_presenter_provider := NULL/);
-    expect(migration).toMatch(/UPDATE wireline_agents/);
-    expect(migration).toMatch(/voice_provider = 'vapi'/);
   });
 });
