@@ -13,9 +13,13 @@ describe("verified private voice security contract", () => {
   const migration = read(
     "drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql",
   );
+  const consentMigration = read(
+    "drizzle/migrations/0121_align_voice_clone_consent_contract.sql",
+  );
   const approvalIndexMigration = read(
     "drizzle/migrations/0120_cloned_voice_approved_by_index.sql",
   );
+  const managedRuntime = read("src/lib/managed-voice-runtime.ts");
   const schema = read("src/db/schema.ts");
   const terms = read("src/components/LegalPage.tsx");
   const privacy = read("src/components/PrivacyPolicyPage.tsx");
@@ -57,6 +61,12 @@ describe("verified private voice security contract", () => {
   });
 
   it("fails live use closed at both API and database layers", () => {
+    const consentVersion = managedRuntime.match(
+      /ELEVENLABS_VOICE_CONSENT_VERSION\s*=\s*\n?\s*"([^"]+)"/,
+    )?.[1];
+    expect(consentVersion).toBeTruthy();
+    expect(migration).toContain(`consent_version = '${consentVersion}'`);
+    expect(consentMigration).toContain(`consent_version = '${consentVersion}'`);
     expect(routes).toContain('voice.status === "approved"');
     expect(routes).toContain("providerVerificationRequired");
     expect(migration).toContain("voice.status = 'approved'");
@@ -72,7 +82,7 @@ describe("verified private voice security contract", () => {
     expect(approvalIndexMigration).toContain("idx_cloned_voices_approved_by");
     expect(schema).toContain("idx_cloned_voices_approved_by");
     expect(migration).toContain(
-      "consent_version = 'voice-clone-consent-v1-2026-08-01'",
+      "consent_version = 'voice-clone-consent-v3-2026-08-01'",
     );
     expect(migration).toContain("intended_use = 'wireline-agents'");
     expect(migration).toContain("char_length(btrim(name)) BETWEEN 2 AND 80");
