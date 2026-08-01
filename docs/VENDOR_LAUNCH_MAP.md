@@ -3,7 +3,7 @@
 Status: **Active canonical vendor, funding, and configuration inventory**.
 Executable probe: `npm run vendor:readiness`.
 
-## Current launch snapshot — 2026-07-29
+## Current launch snapshot — 2026-08-01
 
 The production deployment and Supabase database are reachable. The managed
 runtime is OpenAI-first (structured, GPT-5.6 Terra), Vapi-orchestrated (PSTN),
@@ -11,7 +11,15 @@ and Twilio for carrier/SMS, with Gemini as the first structured continuity
 fallback and the Vercel AI Gateway as the governed last route. xAI remains
 optional experiment-only.
 
-The July 29 pass re-verified Vercel, Supabase, Stripe, runtime policy, and current source. The provider inventory below also carries forward the most recent explicit Twilio, Vapi, Resend, and model-account probes; rerun `npm run vendor:readiness` immediately before GA:
+The August 1 pass live-verified Vercel (production READY on current `main`
+`680a5f7`), Supabase (`ACTIVE_HEALTHY`, Postgres 17.6, advisor posture
+unchanged: one Supabase-Auth WARN that Wireline's custom scrypt+HIBP auth
+already supersedes), Stripe (Tax active and livemode; identity and portal
+still blocked — see below), Resend (`trywireline.com` verified, sending
+enabled), and ElevenLabs (Creator key live; showcase audio committed). The
+provider inventory below also carries forward the most recent explicit
+Twilio, Vapi, and model-account probes; rerun `npm run vendor:readiness`
+immediately before GA:
 
 - OpenAI, Gemini, Vercel AI Gateway, and xAI credentials are accepted.
 - Since 2026-07-25, OpenAI is the managed structured primary and the live-demo
@@ -29,6 +37,11 @@ The July 29 pass re-verified Vercel, Supabase, Stripe, runtime policy, and curre
 - Resend credentials and the `trywireline.com` domain are configured; a controlled real verification/reset delivery remains unproven and is a launch gate.
 - ElevenLabs is on Creator with Voice API reachable; remains **optional** clone/showcase TTS only
   (tenant PSTN speech stays on managed Vapi voices — do not route ElevenLabs Agents into core calls).
+  The showcase audio it owns is now shipped: `public/sounds/wireline-jingle.mp3` (Mira's
+  singing-receptionist pre-roll, ElevenLabs-rendered 2026-08-01) and
+  `public/sounds/wireline-transfer-chime.wav` (deterministic local synthesis) are committed
+  static assets, and `npm run vendor:readiness` now probes the ElevenLabs subscription as an
+  optional vendor.
 - Live public research for PSTN tools already exists as `gemini_ground` →
   `freshPublicResearch()` (Perplexity-first when `PERPLEXITY_API_KEY` is set, else Gemini grounded
   search via `GEMINI_API_KEY`). **Do not add Tavily/Serper.** `PERPLEXITY_API_KEY` is optional
@@ -38,10 +51,11 @@ The July 29 pass re-verified Vercel, Supabase, Stripe, runtime policy, and curre
   allowlists only callable dispositions; configure a real vendor endpoint/loginId and prove one live
   JSON scrub before scaling marketing outbound. A Vercel token is not a DNCScrub credential.
 - Stripe processing, the Founder catalog (14/14 prices), Stripe Tax, and the
-  `trywireline.com` webhook are reachable and aligned. **Customer billing is still blocked**:
-  the public account identity is Cadence AI, website/support details are not fully aligned to Wireline,
-  and there is no active managed or default customer portal configuration yet. Wireline can create a
-  catalog-fingerprinted managed configuration on first use, but that path must be proven before paid self-serve checkout.
+  `trywireline.com` webhook are reachable and aligned. **Customer billing is still blocked**
+  (re-verified live 2026-08-01): the public account identity is still Cadence AI, website/support
+  details are not fully aligned to Wireline, and the active portal-configuration list is empty.
+  Wireline can create a catalog-fingerprinted managed configuration on first use, but that path
+  must be proven before paid self-serve checkout.
 - Twilio has no ONLINE WhatsApp sender (private beta).
 
 Launch remains blocked until the following are cleared:
@@ -53,8 +67,8 @@ Launch remains blocked until the following are cleared:
    cancellation/refund on a real test customer before inviting paid self-serve users.
 3. **Restore full GitHub Actions execution.** PR workflow runs still end in `startup_failure`
    before any job is created. Vercel exact-head builds compensate but are not the full CI matrix.
-4. **Rotate the exposed Vercel personal token** that was pasted into chat; revoke it after
-   redeploying any values changed with that credential.
+4. **Rotate every Vercel personal token pasted into chat** (a second `vcp_…` token was shared
+   in chat on 2026-08-01); revoke each after redeploying any values changed with that credential.
 5. **Configure and prove Federal DNCScrub with a live JSON scrub** before scaled marketing
    outbound. Set a valid endpoint/loginId in each intended environment; variable presence alone does
    not prove vendor authentication or disposition semantics.
@@ -218,6 +232,7 @@ The active products match the Founder catalog. Before future catalog writes:
 - Provider chain: `src/lib/ai-client.ts`
 - Funding and inventory probe: `scripts/check-vendor-readiness.mjs`
 - Production env check: `scripts/check-prod-env.mjs`
+- Showcase audio assets: `scripts/generate-jingle.mjs`, `scripts/generate-transfer-chime.mjs`
 - Twilio messaging: `src/lib/twilio-service.ts`
 - Twilio REST authentication: `src/lib/twilio-service-base.ts`
 - Vapi orchestration: `src/lib/vapi-client.ts`

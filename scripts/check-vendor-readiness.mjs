@@ -137,6 +137,7 @@ const [
   stripeWebhookEndpoints,
   stripeTaxSettings,
   resend,
+  elevenlabs,
 ] = await Promise.all([
   present("XAI_API_KEY")
     ? readJson("https://api.x.ai/v1/models", {
@@ -226,6 +227,11 @@ const [
         headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
       })
     : null,
+  present("ELEVENLABS_API_KEY")
+    ? readJson("https://api.elevenlabs.io/v1/user/subscription", {
+        headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY },
+      })
+    : null,
 ]);
 
 const openaiModelIds = new Set(
@@ -285,6 +291,22 @@ record(
     : "Optional xAI layer missing or rejected; launch defaults stay on OpenAI → Gemini → AI Gateway.",
   "Keep xAI experiment-only. Fund only if WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK is intentionally enabled.",
   { structured_primary_model: "gpt-5.6-terra", xai_role: "optional_experiment" },
+);
+
+record(
+  "elevenlabs",
+  false,
+  elevenlabs?.ok ? "ready" : "degraded",
+  elevenlabs?.ok
+    ? `ElevenLabs key accepted (${elevenlabs.body?.tier || "unknown"} tier); pre-baked showcase audio can be regenerated.`
+    : "Optional ElevenLabs key missing or rejected; committed showcase audio under public/sounds keeps serving.",
+  "Keep ElevenLabs showcase/clone-only: build-time asset generation, never the tenant PSTN path, never browser-reachable.",
+  elevenlabs?.ok
+    ? {
+        character_count: elevenlabs.body?.character_count ?? null,
+        character_limit: elevenlabs.body?.character_limit ?? null,
+      }
+    : undefined,
 );
 
 const vapiPhoneInventory = arrayAt(vapiPhones?.body, "data");
