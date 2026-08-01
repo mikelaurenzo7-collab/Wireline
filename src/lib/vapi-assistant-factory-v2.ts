@@ -78,32 +78,34 @@ export async function buildVapiAssistant({
     message.type === "outboundPhoneCall" ||
     message.call?.type === "outboundPhoneCall";
   const [agentRows, directives, knowledge, personalityRows] =
-    await drizzle.transaction((tx) =>
-      Promise.all([
-        tx
-          .select()
-          .from(schema.agents)
-          .where(eq(schema.agents.id, agentId))
-          .limit(1),
-        tx
-          .select({ content: schema.directives.content })
-          .from(schema.directives)
-          .where(eq(schema.directives.agentId, agentId))
-          .orderBy(desc(schema.directives.priority))
-          .limit(MAX_RUNTIME_DIRECTIVES),
-        tx
-          .select({ content: schema.knowledge.content })
-          .from(schema.knowledge)
-          .where(eq(schema.knowledge.agentId, agentId))
-          .orderBy(desc(schema.knowledge.createdAt))
-          .limit(MAX_RUNTIME_KNOWLEDGE),
-        tx
-          .select({ content: schema.personality.content })
-          .from(schema.personality)
-          .where(eq(schema.personality.agentId, agentId))
-          .limit(1),
-      ]),
-    );
+    await drizzle.transaction(async (tx) => {
+      // A pg transaction owns one client. Concurrent tx queries are only
+      // queued by pg@8 and are rejected by pg@9, so keep this snapshot's
+      // reads explicitly ordered on the checked-out client.
+      const agentRows = await tx
+        .select()
+        .from(schema.agents)
+        .where(eq(schema.agents.id, agentId))
+        .limit(1);
+      const directives = await tx
+        .select({ content: schema.directives.content })
+        .from(schema.directives)
+        .where(eq(schema.directives.agentId, agentId))
+        .orderBy(desc(schema.directives.priority))
+        .limit(MAX_RUNTIME_DIRECTIVES);
+      const knowledge = await tx
+        .select({ content: schema.knowledge.content })
+        .from(schema.knowledge)
+        .where(eq(schema.knowledge.agentId, agentId))
+        .orderBy(desc(schema.knowledge.createdAt))
+        .limit(MAX_RUNTIME_KNOWLEDGE);
+      const personalityRows = await tx
+        .select({ content: schema.personality.content })
+        .from(schema.personality)
+        .where(eq(schema.personality.agentId, agentId))
+        .limit(1);
+      return [agentRows, directives, knowledge, personalityRows] as const;
+    });
   const configured = agentRows[0];
   if (!configured)
     throw new Error("Agent not found for Vapi assistant request");
