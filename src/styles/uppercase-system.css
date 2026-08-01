@@ -147,6 +147,13 @@
 
 /* Field captions and column headers join the label tier: caps with the wide
  * label tracking, at whatever size the field authored. */
+/* Dialog titles are titles. A sentence-case modal heading sitting above cased
+ * labels and buttons was the one place the system visibly broke. */
+.wl-ui-caps [data-slot="dialog-title"] {
+  letter-spacing: var(--wl-caps-title-tracking);
+  text-transform: uppercase;
+}
+
 .wl-ui-caps :is(label, legend, th) {
   letter-spacing: var(--wl-caps-label-tracking);
   text-transform: uppercase;
