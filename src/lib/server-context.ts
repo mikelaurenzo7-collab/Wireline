@@ -65,15 +65,21 @@ export async function fetchWithTimeout(
 }
 
 const databaseConnection = tryResolveDatabaseConnection();
-const isNoDatabaseImportSmoke = process.env.WIRELINE_IMPORT_SMOKE_NO_DATABASE === "true";
+const isNoDatabaseImportSmoke =
+  process.env.WIRELINE_IMPORT_SMOKE_NO_DATABASE === "true";
 if (databaseConnection?.ignoredInvalidPoolUrl) {
-  log.warn("Ignoring invalid DATABASE_POOL_URL; using validated POSTGRES_URL fallback", {
-    selected: databaseConnection.source,
-  });
+  log.warn(
+    "Ignoring invalid DATABASE_POOL_URL; using validated POSTGRES_URL fallback",
+    {
+      selected: databaseConnection.source,
+    },
+  );
 }
 
 const databaseUnavailable = () =>
-  AppError.serviceUnavailable("Database is not configured for this deployment.");
+  AppError.serviceUnavailable(
+    "Database is not configured for this deployment.",
+  );
 
 function rejectDatabaseOperation(callback?: unknown): Promise<never> | void {
   const error = databaseUnavailable();
@@ -90,16 +96,22 @@ function createUnavailablePool(): InstanceType<typeof Pool> {
       return rejectDatabaseOperation(callback);
     },
     query(_config: unknown, values?: unknown, callback?: unknown) {
-      return rejectDatabaseOperation(typeof values === "function" ? values : callback);
+      return rejectDatabaseOperation(
+        typeof values === "function" ? values : callback,
+      );
     },
   } as unknown as InstanceType<typeof Pool>;
 }
 
 if (!databaseConnection) {
   if (isNoDatabaseImportSmoke) {
-    log.info("Database intentionally unavailable for no-database import smoke.");
+    log.info(
+      "Database intentionally unavailable for no-database import smoke.",
+    );
   } else {
-    log.warn("Database unavailable for this deployment; database-backed routes will return 503.");
+    log.warn(
+      "Database unavailable for this deployment; database-backed routes will return 503.",
+    );
   }
 }
 
@@ -117,7 +129,26 @@ const pool = databaseConnection
 
 export const tenantStore = new AsyncLocalStorage<string>();
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+type AwaitedTuple<T extends readonly unknown[]> = {
+  -readonly [K in keyof T]: Awaited<T[K]>;
+};
+
+/**
+ * Resolve lazy Drizzle query builders one at a time on a transaction-bound
+ * pg client. `Promise.all()` calls every thenable concurrently; pg@8 only
+ * queues that unsupported pattern and pg@9 rejects it. Keeping the batch lazy
+ * preserves one tenant-scoped snapshot without overlapping `client.query()`.
+ */
+export async function serialQueryBatch<const T extends readonly unknown[]>(
+  queries: T,
+): Promise<AwaitedTuple<T>> {
+  const rows: unknown[] = [];
+  for (const query of queries) rows.push(await query);
+  return rows as unknown as AwaitedTuple<T>;
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const _origConnect = pool.connect.bind(pool);
 
 // Savepoint used to remap drizzle's own top-level BEGIN/COMMIT/ROLLBACK so that
@@ -155,7 +186,9 @@ async function scopeClientToTenant(userId: string) {
     // fails closed when the database is genuinely a read-only replica.
     await client.query("SET TRANSACTION READ WRITE");
     await client.query("SET LOCAL ROLE wireline_server");
-    await client.query("SELECT set_config('app.current_user_id', $1, true)", [userId]);
+    await client.query("SELECT set_config('app.current_user_id', $1, true)", [
+      userId,
+    ]);
   } catch (e) {
     // Roll back any partial transaction and discard the (now poisoned) connection.
     try {
@@ -176,9 +209,12 @@ async function scopeClientToTenant(userId: string) {
     if (typeof text === "string") {
       const normalized = text.trim().toLowerCase();
       let remapped: string | null = null;
-      if (/^begin(\s|$)/.test(normalized)) remapped = `SAVEPOINT ${OUTER_SAVEPOINT}`;
-      else if (normalized === "commit") remapped = `RELEASE SAVEPOINT ${OUTER_SAVEPOINT}`;
-      else if (normalized === "rollback") remapped = `ROLLBACK TO SAVEPOINT ${OUTER_SAVEPOINT}`;
+      if (/^begin(\s|$)/.test(normalized))
+        remapped = `SAVEPOINT ${OUTER_SAVEPOINT}`;
+      else if (normalized === "commit")
+        remapped = `RELEASE SAVEPOINT ${OUTER_SAVEPOINT}`;
+      else if (normalized === "rollback")
+        remapped = `ROLLBACK TO SAVEPOINT ${OUTER_SAVEPOINT}`;
       if (remapped) {
         if (typeof config === "string") return _origQuery(remapped, values, cb);
         return _origQuery({ ...config, text: remapped }, values, cb);
@@ -231,7 +267,10 @@ export const db = drizzleDb(pool, { schema });
 export const drizzle: Omit<typeof db, "$client"> = db;
 
 export const auditLogger = new AuditLogger(drizzle);
-export const { requirePermission, requireRole } = createRbacMiddleware({ drizzle, auditLogger });
+export const { requirePermission, requireRole } = createRbacMiddleware({
+  drizzle,
+  auditLogger,
+});
 
 export const quotaTracker = new QuotaTracker({
   drizzle,
@@ -251,7 +290,8 @@ export const quotaTracker = new QuotaTracker({
         .where(eq(schema.subscriptions.userId, userId))
         .limit(1);
       const sub = rows[0];
-      const stripeActive = sub?.stripeStatus === "active" || sub?.stripeStatus === "trialing";
+      const stripeActive =
+        sub?.stripeStatus === "active" || sub?.stripeStatus === "trialing";
       if (!stripeActive) return "free";
 
       switch (sub?.plan) {
