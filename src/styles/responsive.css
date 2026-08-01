@@ -23,7 +23,9 @@
   .wl-public-section-heading {
     max-width: 14ch;
     font-size: clamp(2rem, 9.6vw, 2.55rem);
-    letter-spacing: -0.05em;
+    /* Uppercase headings read as caps here; keep tracking gentle so the
+     * letterforms don't collide at mobile width. */
+    letter-spacing: -0.02em;
     line-height: 1.03;
   }
   .marketing-hero__content {

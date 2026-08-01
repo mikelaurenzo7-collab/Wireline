@@ -142,7 +142,9 @@
   max-width: 20ch;
   font-size: clamp(2rem, 1.55rem + 2.25vw, 3.55rem);
   font-weight: 700;
-  letter-spacing: -0.04em;
+  /* Uppercase caps need room to breathe — a hair of negative tracking, not the
+   * deep -0.04em that suited the old lowercase display and now jams the caps. */
+  letter-spacing: -0.015em;
   line-height: 1;
 }
 
@@ -172,6 +174,57 @@
     var(--wireline-color-action-primary-default) 26%,
     var(--wireline-color-border-default)
   );
+}
+
+/* Content-page primitives — Changelog, Status, Legal, Privacy, and the Trust
+ * hub are simple document pages that never adopted the full stitch vocabulary.
+ * They reference this small, shared set of hooks. Defining them here (rather
+ * than per page) keeps them inside the one marketing type + surface language:
+ * the hero title joins the uppercase display tier; body and lead map to the
+ * public copy scale; panels mirror `.wl-stitch-card`. */
+.marketing-surface .marketing-hero-title {
+  font-family: var(--wireline-font-family-display);
+  font-weight: 700;
+  /* No font-size: each page sizes its own hero with a text-* utility, so the
+   * class stays purely about family, weight, casing, and rhythm. */
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: var(--wireline-color-text-primary);
+}
+
+.marketing-surface .marketing-hero-lead {
+  max-width: 44rem;
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.15rem);
+  line-height: 1.6;
+  color: var(--wireline-color-text-secondary);
+  text-wrap: pretty;
+}
+
+.marketing-surface .marketing-body {
+  font-size: clamp(0.9rem, 0.87rem + 0.15vw, 1rem);
+  line-height: 1.6;
+  color: var(--wireline-color-text-secondary);
+}
+
+.marketing-surface .hero-accent-line {
+  display: inline-block;
+  width: 1.75rem;
+  height: 2px;
+  border-radius: 999px;
+}
+
+.marketing-surface .marketing-panel {
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--radius-xl);
+  background: var(--wireline-color-surface-default);
+}
+
+.marketing-surface .marketing-panel-muted {
+  border: 1px solid var(--wireline-color-border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--wireline-color-surface-subtle);
 }
 
 /* Pricing: keep the comparison complete, but remove the wall-of-text feeling. */

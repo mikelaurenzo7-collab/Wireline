@@ -166,7 +166,9 @@ export default function PublicChangelog() {
               <span className="hero-accent-line bg-brand" />
               <span className="text-eyebrow">Shipping log</span>
             </div>
-            <h1 className="marketing-hero-title mb-3">Every change we've shipped.</h1>
+            <h1 className="marketing-hero-title mb-3 text-3xl sm:text-4xl">
+              Every change we've shipped.
+            </h1>
             <p className="marketing-hero-lead">
               Wireline ships continuously. This page is hand-curated: when a customer-visible
               release is worth documenting, it lands here with the behavior that actually shipped.

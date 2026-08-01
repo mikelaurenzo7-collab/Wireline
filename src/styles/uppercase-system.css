@@ -64,6 +64,11 @@
  * deliberately left out so case alone separates the title from its support
  * line. Caps get a hair more tracking than the tight lowercase display so the
  * letterforms breathe. */
+/* Semantic title classes only. The size-display classes (wl-display-1/2/3,
+ * wl-display-mark) are deliberately NOT here — they are also used for data
+ * readouts (a plan name, a runtime balance, the 404 mark), and uppercasing
+ * those would shout the value. Titles that use a display size opt in explicitly
+ * at their element (WorkspacePageIntro/OperateIntro/greeting carry `uppercase`). */
 .wl-page-title,
 .wl-app-page-title,
 .wl-section-title,
@@ -71,10 +76,6 @@
 .wl-workspace-title,
 .wl-public-section-heading,
 .wl-stitch-display,
-.wl-display-1,
-.wl-display-2,
-.wl-display-3,
-.wl-display-mark,
 .marketing-hero__title,
 .wl-stitch-marketing-hero {
   text-transform: uppercase;

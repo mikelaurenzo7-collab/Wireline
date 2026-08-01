@@ -175,7 +175,7 @@ export default function IntakeKeysManager() {
           className="!px-5 !py-2.5"
         >
           {showForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-          {showForm ? "Cancel" : "New Key"}
+          {showForm ? "Cancel" : "New key"}
         </ShadButton>
       </div>
 

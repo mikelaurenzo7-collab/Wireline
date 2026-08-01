@@ -88,7 +88,7 @@ export function WorkspacePageIntro({
       <div className={cn("min-w-0", start ? "flex-1" : "w-full")}>
         <h1
           className={cn(
-            titleHidden ? "sr-only" : "wl-display-3 break-words text-balance",
+            titleHidden ? "sr-only" : "wl-display-3 break-words text-balance uppercase",
             !titleHidden && !start && "text-center",
           )}
         >
@@ -146,7 +146,12 @@ export function WorkspaceOperateIntro({
     <header className="wl-operate-surface shrink-0 border-b border-border/60 pb-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className={cn("wl-display-3 break-words text-balance", titleHidden && "lg:sr-only")}>
+          <h1
+            className={cn(
+              "wl-display-3 break-words text-balance uppercase",
+              titleHidden && "lg:sr-only",
+            )}
+          >
             {title}
           </h1>
         </div>

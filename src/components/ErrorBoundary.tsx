@@ -101,7 +101,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 <div className="wl-label text-rose-500">
                   {staleChunk ? "Update required" : "Something broke"}
                 </div>
-                <h2 className="mt-1 font-display text-3xl italic leading-tight text-foreground">
+                <h2 className="mt-1 font-display text-3xl leading-tight text-foreground">
                   {title}
                 </h2>
               </div>
@@ -122,15 +122,15 @@ export default class ErrorBoundary extends Component<Props, State> {
                 variant="editorial"
                 onClick={staleChunk ? this.reload : this.reset}
                 disableAnimations
-                className="!px-6 !py-3 !text-[length:var(--wireline-typography-overline-size)] !uppercase !tracking-[0.3em]"
+                className="!px-6 !py-3 !text-[length:var(--wireline-typography-overline-size)]"
               >
-                <RefreshCw className="h-3.5 w-3.5" /> {staleChunk ? "Reload" : "Try Again"}
+                <RefreshCw className="h-3.5 w-3.5" /> {staleChunk ? "Reload" : "Try again"}
               </ShadButton>
               <ShadButton
                 variant="outline"
                 asChild
                 disableAnimations
-                className="!text-[length:var(--wireline-typography-overline-size)] !uppercase !tracking-[0.3em]"
+                className="!text-[length:var(--wireline-typography-overline-size)]"
               >
                 <a href={this.recoveryHref().href} className="flex items-center gap-2">
                   <Home className="h-3.5 w-3.5" /> {this.recoveryHref().label}
@@ -141,7 +141,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                   variant="outline"
                   onClick={this.reload}
                   disableAnimations
-                  className="!text-[length:var(--wireline-typography-overline-size)] !uppercase !tracking-[0.3em]"
+                  className="!text-[length:var(--wireline-typography-overline-size)]"
                 >
                   <RefreshCw className="h-3.5 w-3.5" /> Reload
                 </ShadButton>

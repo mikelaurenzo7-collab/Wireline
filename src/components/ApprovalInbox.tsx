@@ -57,9 +57,13 @@ const BUCKET_LABELS: Record<ApprovalBucket, string> = {
   knowledge_gaps: "Knowledge gaps",
 };
 
+// Short labels stay the same word as the full label, just clipped to the head
+// noun (Hot leads → Hot, Knowledge gaps → Gaps). Avoid re-labelling to a
+// narrower synonym ("Compliance" → "Consent") or a non-word ("Pending" →
+// "Pend"): mobile and desktop must read as the same tab.
 const BUCKET_SHORT_LABELS: Record<ApprovalBucket, string> = {
-  pending: "Pend",
-  compliance: "Consent",
+  pending: "Pending",
+  compliance: "Compliance",
   hot_leads: "Hot",
   escalations: "Esc.",
   knowledge_gaps: "Gaps",

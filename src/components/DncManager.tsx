@@ -349,7 +349,7 @@ export default function DncManager() {
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center border border-border">
                   <Shield className="h-3.5 w-3.5 text-brand" />
                 </div>
-                <h3 className="font-display text-base italic leading-tight text-foreground">
+                <h3 className="font-display text-base leading-tight text-foreground">
                   Blocked Numbers
                 </h3>
                 <span className="text-eyebrow ml-1 opacity-80">{filtered.length} entries</span>
@@ -515,7 +515,7 @@ export default function DncManager() {
               <Shield className="h-4.5 w-4.5 text-rose-500" />
             </div>
             <div className="text-left">
-              <DialogTitle className="font-display text-xl italic leading-none text-foreground">
+              <DialogTitle className="font-display text-xl leading-none text-foreground">
                 Add to DNC
               </DialogTitle>
               <DialogDescription className="wl-label-muted mt-1">

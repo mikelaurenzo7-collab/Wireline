@@ -6,6 +6,7 @@ import { usePresenceSignals } from "../hooks/usePresenceSignals";
 import { Download, Phone, Zap } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import { formatPhone } from "../lib/safe-number";
 import { emitProductEventOnce } from "../lib/product-event-client";
 import AgentFace from "./AgentFace";
 import LiveFloorPresence from "./LiveFloorPresence";
@@ -312,9 +313,10 @@ export default function CallLogsClaude() {
           size="sm"
           className="shrink-0"
           onClick={() => setShowOutboundDial(true)}
+          aria-label="Place outbound call"
         >
           <Phone className="h-3.5 w-3.5" aria-hidden />
-          Place outbound call
+          <span className="hidden sm:inline">Place outbound call</span>
         </Button>
       </div>
       <section
@@ -479,7 +481,7 @@ function FloorTab({
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="font-[var(--wireline-font-mono)] text-sm font-semibold text-[var(--wireline-color-text-primary)]">
-                  {call.customer_number || "Unknown caller"}
+                  {formatPhone(call.customer_number, "Unknown caller")}
                 </span>
                 <span className="font-[var(--wireline-font-mono)] text-[10px] text-[var(--wireline-color-text-tertiary)]">
                   {formatTime(call.created_at)}
@@ -670,7 +672,7 @@ function TriageTab({
                 {humanizeTaxonomy(call.outcome_tag, "Voice")}
               </span>
               <span className="font-[var(--wireline-font-mono)] text-sm font-semibold text-[var(--wireline-color-text-primary)]">
-                {call.customer_number || "Unknown caller"}
+                {formatPhone(call.customer_number, "Unknown caller")}
               </span>
               <span className="ml-auto font-[var(--wireline-font-mono)] text-xs text-[var(--wireline-color-text-tertiary)]">
                 {formatTime(call.created_at)}

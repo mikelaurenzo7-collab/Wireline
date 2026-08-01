@@ -263,7 +263,10 @@
 
   main:has(#studio-brief) :is(p, span, button, a, textarea, input, label),
   main:has(#studio-workroom-message) :is(p, span, button, a, textarea, input, label),
-  main[data-wireline-route^="/settings"] :is(p, span, button, a, input, label, h1, h2, h3),
+  main[data-wireline-route^="/settings"]
+    :is(p, span, button, a, input, label, h1, h2, h3):not(.wl-eyebrow):not(.wl-overline):not(
+      .text-eyebrow
+    ):not(.wl-micro-meta):not(.wl-stitch-eyebrow):not(.wl-stitch-label),
   form[aria-labelledby="create-agent-title"] :is(p, span, button, textarea, input, select, label) {
     text-transform: none;
     letter-spacing: 0;

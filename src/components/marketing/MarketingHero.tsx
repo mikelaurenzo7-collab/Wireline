@@ -101,7 +101,7 @@ export default function MarketingHero({
           {isHomeHero ? (
             <div
               aria-label={MARKETING_VOICE.spine.join(", ")}
-              className="inline-flex max-w-full flex-wrap items-center justify-center gap-x-[clamp(.4rem,2.5vw,.75rem)] gap-y-1 rounded-2xl border border-border bg-card px-[clamp(.8rem,4vw,1.25rem)] py-2 font-[var(--wireline-font-family-mono)] text-[clamp(.75rem,3.3vw,.875rem)] font-semibold tracking-[.04em] text-muted-foreground shadow-[var(--wireline-elevation-sm)]"
+              className="inline-flex max-w-full flex-wrap items-center justify-center gap-x-[clamp(.4rem,2.5vw,.75rem)] gap-y-1 rounded-2xl border border-border bg-card px-[clamp(.8rem,4vw,1.25rem)] py-2 font-[var(--wireline-font-family-mono)] text-[clamp(.7rem,3vw,.8rem)] font-semibold uppercase tracking-[.1em] text-muted-foreground shadow-[var(--wireline-elevation-sm)]"
             >
               {MARKETING_VOICE.spine.map((item, index) => (
                 <Fragment key={item}>
