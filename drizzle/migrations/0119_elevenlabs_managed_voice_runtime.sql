@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS public.wireline_cloned_voices (
   CONSTRAINT wireline_cloned_voices_status_check
     CHECK (status IN ('creating', 'pending_review', 'approved', 'rejected', 'revoked', 'failed', 'deletion_pending')),
   CONSTRAINT wireline_cloned_voices_consent_check
-    CHECK (consent_version = 'voice-clone-consent-v1-2026-08-01'),
+    CHECK (consent_version = 'voice-clone-consent-v3-2026-08-01'),
   CONSTRAINT wireline_cloned_voices_hash_check
     CHECK (source_sha256 ~ '^[0-9a-f]{64}$'),
   CONSTRAINT wireline_cloned_voices_mime_check
