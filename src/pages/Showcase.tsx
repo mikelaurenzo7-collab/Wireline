@@ -57,7 +57,7 @@ export default function Showcase() {
                 fallback={
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground">
-                      Prefer the phone? Call a live demo line — no signup to listen.
+                      Prefer the phone? Call a live demo line. No signup to listen.
                     </p>
                     <a
                       href={`tel:${primaryDemo.tel}`}

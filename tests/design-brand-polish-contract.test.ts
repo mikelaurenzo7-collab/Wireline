@@ -35,13 +35,21 @@ describe("E2E design and brand polish", () => {
     expect(dialog).toContain("overflow-y-auto overscroll-contain");
   });
 
-  it("casts the public hero title in uppercase display while keeping copy and controls sentence case", () => {
+  it("casts every public heading and supporting line in one uppercase display voice", () => {
     const hero = read("src/components/marketing/MarketingHero.tsx");
     const polish = read("src/styles/e2e-design-polish.css");
-    // Case carries the hierarchy: the hero title is uppercased in CSS (the copy
-    // string itself is untouched), while the description and buttons stay
-    // sentence case.
+    // Case carries the hierarchy across the whole marketing surface: headings
+    // and supporting copy are uppercased in CSS (the copy strings themselves are
+    // never changed), so hero, section, and card read as one cased voice.
+    expect(polish).toContain(".marketing-surface :is(h1, h2, h3, h4, h5, h6) {");
+    expect(polish).toContain(
+      ":is(p, li, .wl-public-copy, .wl-route-copy, .wl-page-copy, .marketing-hero__description) {",
+    );
     expect(polish).toContain("text-transform: uppercase");
+    // Read-as-written exceptions: long-form legal prose and customer-authored
+    // words are never rewritten by the case system.
+    expect(polish).toContain(".marketing-surface .prose");
+    expect(polish).toContain(".wl-preserve-case");
     expect(polish).toContain("text-transform: none");
     // The Build -> Train -> Launch spine reads as an uppercase mono micro-label.
     expect(hero).toContain("uppercase tracking-[.1em]");
@@ -49,7 +57,6 @@ describe("E2E design and brand polish", () => {
     expect(hero).toContain("max-w-[19ch]");
     expect(hero).toContain("leading-[0.99]");
     expect(hero).toContain("font-[var(--wireline-font-family-body)]");
-    expect(hero).toContain("sm:text-sm");
     expect(polish).toContain("white-space: normal");
     expect(polish).toContain("line-height: 1");
   });

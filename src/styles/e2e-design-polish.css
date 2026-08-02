@@ -18,12 +18,42 @@
   white-space: normal;
 }
 
+/* Marketing surfaces speak entirely in the cased voice. Every heading is
+ * uppercased (the title tier already sizes and tracks it), and supporting copy
+ * joins as a smaller, tracked caps tier so hero, section, and card read as one
+ * voice. The copy strings themselves never change — this is presentation only.
+ * Long-form legal prose (Tailwind .prose), customer-authored words
+ * (.wl-preserve-case), and literal values (code, timestamps, data values) are
+ * excluded and read exactly as written. */
+.marketing-surface :is(h1, h2, h3, h4, h5, h6) {
+  text-transform: uppercase;
+}
+
+.marketing-surface
+  :is(p, li, .wl-public-copy, .wl-route-copy, .wl-page-copy, .marketing-hero__description) {
+  font-family: var(--wireline-font-family-body);
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+  line-height: 1.6;
+}
+
 .marketing-surface .wireline-home-hero .marketing-hero__description {
   max-width: 42rem;
-  font-family: var(--wireline-font-family-body);
-  font-weight: 400;
-  line-height: 1.62;
-  letter-spacing: -0.01em;
+}
+
+/* Read-as-written. The uppercase rules above are intentionally kept to a single
+ * class of specificity so these resets win by specificity or source order:
+ *   - long-form legal prose (Tailwind .prose) reads normally, where dense text
+ *     is genuinely more comfortable sentence-cased;
+ *   - customer-authored words (.wl-preserve-case) are never rewritten;
+ *   - literal values (code, keys, timestamps, data values) read as written. */
+.marketing-surface .prose,
+.marketing-surface .prose :is(p, h1, h2, h3, h4, h5, h6, li, blockquote, td, th, a, span),
+.marketing-surface .wl-preserve-case,
+.marketing-surface .wl-preserve-case *,
+.marketing-surface :is(code, kbd, samp, time, [data-value]) {
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .marketing-surface :where(.marketing-btn-primary, .marketing-btn-secondary) {

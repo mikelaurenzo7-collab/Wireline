@@ -88,15 +88,13 @@ export default function PrivacyPolicyPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> Back home
         </Link>
 
-        <div className="mb-3 flex flex-col items-center gap-3 text-center">
+        <div className="mb-3 flex items-center gap-3">
           <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-brand">
             <Shield className="w-5 h-5 text-on-brand" />
           </div>
           <h1 className="marketing-hero-title text-2xl sm:text-3xl">Privacy Policy</h1>
         </div>
-        <p className="mb-10 text-center text-eyebrow !text-[0.625rem]">
-          Last updated: {LAST_UPDATED}
-        </p>
+        <p className="mb-10 text-eyebrow !mx-0 !text-[0.625rem]">Last updated: {LAST_UPDATED}</p>
 
         <div className="mb-10 grid gap-3 sm:grid-cols-3" aria-label="Privacy Policy summary">
           {[
@@ -106,7 +104,7 @@ export default function PrivacyPolicyPage() {
           ].map((item) => (
             <div
               key={item}
-              className="rounded-md border border-border bg-background/45 p-4 text-center"
+              className="flex items-center justify-center rounded-md border border-border bg-background/45 p-4 text-center"
             >
               <p className="text-sm leading-6 text-foreground">{item}</p>
             </div>
