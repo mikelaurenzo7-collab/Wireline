@@ -37,8 +37,7 @@ export const XAI_STRUCTURED_PRIMARY_MODEL =
   process.env.WIRELINE_XAI_STRUCTURED_MODEL?.trim() || XAI_MODELS.GROK_4_5;
 /** Managed structured default through the direct OpenAI Responses API. */
 export const OPENAI_STRUCTURED_PRIMARY_MODEL =
-  process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() ||
-  OPENAI_MODELS.GPT_5_6_TERRA;
+  process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() || OPENAI_MODELS.GPT_5_6_TERRA;
 /** First automatic fallback if direct OpenAI is unavailable. */
 export const GEMINI_STRUCTURED_FALLBACK_MODEL =
   process.env.WIRELINE_GEMINI_STRUCTURED_FALLBACK_MODEL?.trim() ||
