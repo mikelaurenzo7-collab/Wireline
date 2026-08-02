@@ -404,6 +404,47 @@ async function settle(page) {
   await page.waitForTimeout(1600);
 }
 
+/**
+ * A capture must prove that it reached the requested canonical surface before
+ * the frame is written or the recorder starts holding it. Hash comparison can
+ * catch repeated failure pages, but a unique 404 or a one-off sign-in/loading
+ * screen is still unique bytes. Reject those states at the DOM boundary.
+ */
+async function assertCaptureSurface(page, { id, route }) {
+  const requestedPath = new URL(route, baseURL).pathname;
+  const currentPath = new URL(page.url()).pathname;
+  if (currentPath !== requestedPath) {
+    throw new Error(
+      `Marketing capture ${id} redirected from ${requestedPath} to ${currentPath}. ` +
+        "Capture canonical routes directly; redirects and auth bounces are not product footage.",
+    );
+  }
+
+  const blockers = [
+    {
+      label: "404 surface",
+      locator: page.getByRole("heading", { name: "Page not found", exact: true }).first(),
+    },
+    {
+      label: "sign-in wall",
+      locator: page.locator('input[type="password"]').first(),
+    },
+    {
+      label: "route-loading surface",
+      locator: page.locator(".wl-transition-shell").first(),
+    },
+  ];
+
+  for (const blocker of blockers) {
+    if (await blocker.locator.isVisible().catch(() => false)) {
+      throw new Error(
+        `Marketing capture ${id} resolved to a ${blocker.label} at ${currentPath}. ` +
+          "Fix the route/session/data state before generating release evidence.",
+      );
+    }
+  }
+}
+
 async function captureScreenshots(browser, session, manifest) {
   for (const [layoutName, viewport] of Object.entries(layouts)) {
     const dir = path.join(outRoot, "screenshots", layoutName);
@@ -431,6 +472,7 @@ async function captureScreenshots(browser, session, manifest) {
         timeout: 60_000,
       });
       await settle(page);
+      await assertCaptureSurface(page, { id: `screenshot:${layoutName}:${p.id}`, route });
       const file = path.join(dir, `${p.id}.png`);
       await page.screenshot({ path: file, fullPage: p.id === "compare" });
       manifest.assets.push({
@@ -468,6 +510,7 @@ async function captureZoomCrops(browser, session, manifest) {
   for (const s of shots) {
     await page.goto(new URL(s.route, baseURL).toString(), { timeout: 60_000 });
     await settle(page);
+    await assertCaptureSurface(page, { id: `zoom:${s.id}`, route: s.route });
     const loc = page.locator(s.selector).first();
     const file = path.join(dir, `${s.id}.png`);
     try {
@@ -489,6 +532,7 @@ async function playBeats(page, beats) {
   for (const beat of beats) {
     await page.goto(new URL(beat.route, baseURL).toString(), { timeout: 60_000 });
     await settle(page);
+    await assertCaptureSurface(page, { id: `reel:${beat.route}`, route: beat.route });
 
     if (beat.openDialog) {
       // The reel's one modal beat. Worth filming deliberately: modals render in
@@ -552,7 +596,7 @@ async function recordReel(browser, session, manifest) {
         { route: "/knowledge", hold: 2600 },
         { route: "/settings/phone", hold: 3000 },
         { route: "/phone?tab=outbound", hold: 2600, openDialog: "Dial now" },
-        { route: "/email", hold: 2600 },
+        { route: "/inbox", hold: 2600 },
         { route: "/phone?tab=logs", hold: 3000, scroll: 280 },
       ],
     },
@@ -575,7 +619,7 @@ async function recordReel(browser, session, manifest) {
       beats: [
         { route: "/phone?tab=logs", hold: 3200 },
         { route: "/phone?tab=outbound", hold: 2600, openDialog: "Dial now" },
-        { route: "/email", hold: 2600 },
+        { route: "/inbox", hold: 2600 },
       ],
     },
   ];
@@ -710,8 +754,12 @@ async function capturePublicProd(browser, manifest) {
   const page = await ctx.newPage();
   for (const route of ["/", "/compare", "/pricing"]) {
     const id = route === "/" ? "auth-hero" : route.slice(1);
-    await page.goto(new URL(route, prod).toString());
-    await page.waitForTimeout(2000);
+    await page.goto(new URL(route, prod).toString(), {
+      waitUntil: "domcontentloaded",
+      timeout: 60_000,
+    });
+    await settle(page);
+    await assertCaptureSurface(page, { id: `production-public:${id}`, route });
     const file = path.join(dir, `${id}.png`);
     await page.screenshot({ path: file, fullPage: route === "/compare" });
     manifest.assets.push({
