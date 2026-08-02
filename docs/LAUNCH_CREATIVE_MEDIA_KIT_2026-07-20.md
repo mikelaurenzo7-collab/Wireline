@@ -85,11 +85,24 @@ The command runs the raw Playwright capture, then:
 
 Use `npm run marketing:kit:raw` only while debugging the capture script. Raw output is not release-certified.
 
+### Raw-source visual acceptance
+
+Certification proves provenance and distinct routes; it does not replace frame review. Before any source capture moves into Descript, CapCut, Premiere, or a platform upload:
+
+- confirm every held scene is the intended product surface, not the sign-in wall, authenticated 404, or shared error screen;
+- trim route-loading transitions from the edit rather than presenting them as product beats;
+- verify modal, dropdown, sheet, and select content remains centered and visible after portal styling changes;
+- reframe vertical cuts around the active UI; a full desktop shell surrounded by unused 9:16 space is source footage, not a publishable vertical composition;
+- confirm the finished edit meets its named duration and includes the approved end card;
+- treat any route named in the scene map as a release contract. `tests/launch-reel-route-integrity-contract.test.ts` fails when a beat no longer exists in the authenticated router.
+
+The August 2 source review found the 15-second raw capture holding on an authenticated 404 because its historical `/email` beat no longer existed after Inbox moved to `/inbox`. The application now preserves `/email` as a redirect to `/inbox` for old links and historical capture instructions. Existing affected footage remains rejected; re-run the kit on the certified source commit.
+
 | Capture | Frame | Scene map |
 | --- | --- | --- |
-| `videos/reel-46s-master-walkthrough.webm` | 1920×1080 | home → overview → studio → knowledge → number → outbound (dial modal) → email → call log |
+| `videos/reel-46s-master-walkthrough.webm` | 1920×1080 | home → overview → studio → knowledge → number → outbound (dial modal) → inbox/email → call log |
 | `videos/reel-30s-product-loop.webm` | 1080×1920 | Create → Train → Wire → Run |
-| `videos/reel-15s-missed-call.webm` | 1080×1920 | call log → outbound dial modal → inbox |
+| `videos/reel-15s-missed-call.webm` | 1080×1920 | call log → outbound dial modal → inbox/email |
 
 Each beat is a hold long enough to cut from; the editor trims down, never stretches up. Scrolls are eased across twelve steps rather than jumped, so the motion matches what a person sees.
 
