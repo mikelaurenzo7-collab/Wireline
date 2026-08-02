@@ -4,11 +4,12 @@
  * Primary groups + secondary views live in WorkspaceTopBar (AppChromeSubTabs).
  * This shell renders the active view body only.
  */
-import { useMemo, useState } from "react";
+import { Suspense, lazy, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import CsvExportButton from "../CsvExportButton";
 import GoalsView from "../GoalsView";
 import WidgetBoundary from "../WidgetBoundary";
+import { PanelSkeleton } from "../atoms/skeleton-presets";
 import ClientRouteViewport from "../layout/ClientRouteViewport";
 import ClientToolbar from "../layout/ClientToolbar";
 import { SegmentStrip } from "../ui/SegmentStrip";
@@ -28,10 +29,17 @@ import HeatmapView from "./HeatmapView";
 import LeaderboardView from "./LeaderboardView";
 import FailureModesView from "./FailureModesView";
 import VoiceLatencyView from "./VoiceLatencyView";
-import VoiceReliabilityView from "./VoiceReliabilityView";
 import AISpendView from "./AISpendView";
-import QualityView from "./QualityView";
 import LearningMetricsView from "./LearningMetricsView";
+
+// Reliability and Scorecards are the only two of these twelve views that draw
+// with Recharts, and they are not the default tab. Imported eagerly they put the
+// whole charting library — ~107 kB gzipped, the largest chunk in the app — on
+// the critical path for everyone who opens Insights, including the ten tabs that
+// never render a chart. Loading them on demand keeps that cost with the two tabs
+// that actually spend it.
+const VoiceReliabilityView = lazy(() => import("./VoiceReliabilityView"));
+const QualityView = lazy(() => import("./QualityView"));
 
 const DAY_OPTIONS = [7, 14, 30, 60, 90] as const;
 
@@ -56,7 +64,9 @@ export default function InsightsView() {
   const wrap = (label: string, node: React.ReactNode) => (
     <WidgetBoundary label={label}>
       <div className="flex flex-col flex-1 min-h-0 w-full scroll-viewport scroll-pb-safe pr-1 pb-4">
-        {node}
+        {/* Only one view renders at a time, so a single boundary here covers
+            whichever of them is lazy without each view declaring its own. */}
+        <Suspense fallback={<PanelSkeleton rows={6} />}>{node}</Suspense>
       </div>
     </WidgetBoundary>
   );

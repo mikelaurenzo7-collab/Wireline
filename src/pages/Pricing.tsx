@@ -19,11 +19,7 @@ import MarketingFooter from "../components/marketing/MarketingFooter";
 import MarketingHero from "../components/marketing/MarketingHero";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
-import {
-  FLAT_OVERAGE_PER_MIN_USD,
-  STRIPE_PLANS,
-  type StripePlanId,
-} from "../lib/plan-catalog";
+import { FLAT_OVERAGE_PER_MIN_USD, STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
 import { cn } from "../lib/utils";
 
 const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
@@ -328,7 +324,7 @@ export default function Pricing() {
                 </ul>
                 <Link
                   to="/signup?plan=personal"
-                  className="mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold transition hover:bg-muted"
+                  className="marketing-btn-secondary mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition"
                 >
                   Build free <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
@@ -452,7 +448,7 @@ export default function Pricing() {
                 </ul>
                 <Link
                   to="/contact?topic=enterprise"
-                  className="mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold transition hover:bg-muted"
+                  className="marketing-btn-secondary mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition"
                 >
                   Design a scale plan <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>

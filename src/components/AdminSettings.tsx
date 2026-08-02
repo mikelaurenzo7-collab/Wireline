@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import React, { useState, useEffect } from "react";
+import React, { Suspense, lazy, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Settings } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
@@ -25,9 +25,16 @@ import { CarrierPanel } from "./admin/CarrierPanel";
 import { SubscriptionPanel } from "./admin/SubscriptionPanel";
 import { TeamPanel } from "./admin/TeamPanel";
 import { GrowthPanel } from "./admin/GrowthPanel";
-import { AuditActivityPanel } from "./admin/AuditActivityPanel";
 import ComplianceChecklist from "./admin/ComplianceChecklist";
+import { PanelSkeleton } from "./atoms/skeleton-presets";
 import { isLegacyAdminTabRedirect } from "../lib/admin-access";
+
+// The audit activity panel is the only Recharts consumer in Admin settings, and
+// it lives behind the compliance tab. Imported eagerly it pulls the charting
+// library onto every admin page load, so it loads with the tab that draws it.
+const AuditActivityPanel = lazy(() =>
+  import("./admin/AuditActivityPanel").then((m) => ({ default: m.AuditActivityPanel })),
+);
 
 type ConfirmState = {
   open: boolean;
@@ -114,13 +121,7 @@ export default function AdminSettings() {
   const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealthPayload | null>(null);
 
   type AdminTab =
-    | "accounts"
-    | "branding"
-    | "carrier"
-    | "subscription"
-    | "team"
-    | "flywheel"
-    | "activity";
+    "accounts" | "branding" | "carrier" | "subscription" | "team" | "flywheel" | "activity";
   const VALID_TABS: AdminTab[] = [
     "accounts",
     "branding",
@@ -377,7 +378,9 @@ export default function AdminSettings() {
           if (!resp.ok) {
             const body = (await safeJson(resp)) as { error?: string; message?: string } | null;
             throw new Error(
-              body?.error || body?.message || `Carrier number could not be released (${resp.status}).`,
+              body?.error ||
+                body?.message ||
+                `Carrier number could not be released (${resp.status}).`,
             );
           }
           setPhoneNumbers((prev) => prev.filter((n) => n.id !== id));
@@ -386,7 +389,9 @@ export default function AdminSettings() {
           clientLog.error("admin-settings:delete-number", e);
           toastError(
             "Release failed",
-            e instanceof Error ? e.message : "Could not release this carrier number. Please try again.",
+            e instanceof Error
+              ? e.message
+              : "Could not release this carrier number. Please try again.",
           );
         } finally {
           setIsDeletingNumber(null);
@@ -584,7 +589,9 @@ export default function AdminSettings() {
                     >
                       <div className="space-y-5">
                         <ComplianceChecklist />
-                        <AuditActivityPanel />
+                        <Suspense fallback={<PanelSkeleton rows={5} />}>
+                          <AuditActivityPanel />
+                        </Suspense>
                       </div>
                     </motion.div>
                   )}
