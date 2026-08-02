@@ -1,7 +1,7 @@
 # Wireline Launch Creative Media Kit
 
 Date: 2026-07-26  
-Status: Active agent-first creative kit  
+Status: Active creative kit; published reels require source-commit certification  
 Related: `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`
 
 ## Current Creative Doctrine
@@ -49,30 +49,41 @@ Business-context assets may use "AI employee" only when the placement is explici
 | `audio/wireline-ai-voice-agent-30s.mp3` | audio | AI Voice Generator campaign VO |
 | `audio/wireline-missed-call-15s.mp3` | audio | 15s reel VO from the campaign pack ("Your agent can.") |
 | `audio/wireline-founder-60s.mp3` | audio | 60s founder explainer VO from the campaign pack |
-| [Launch Reel 46s (VO mixed)](https://share.descript.com/view/MvGqlYX4NMf) | 16:9 video master | Primary launch reel; product-first picture, approved VO, minimal text |
+| [Published Launch Reel 46s (VO mixed)](https://share.descript.com/view/MvGqlYX4NMf) | 16:9 edit | Published August 1 cut; release-current only when its delivery record certifies the deployed source commit |
 
 Legacy filenames containing `one-employee`, `employee`, `launch-9`, or `starter-9` are not publishable unless regenerated with the current copy above.
 
 ## Launch Reel Source of Truth
 
-The 46-second [Descript master](https://share.descript.com/view/MvGqlYX4NMf) is the launch reel. Derivatives must preserve its approved voiceover, product sequence, timing, and price promise.
+The [Descript share](https://share.descript.com/view/MvGqlYX4NMf) is the currently published edit, not proof that its picture matches current production. A reel is **release-current** only when its delivery record includes the exact `sourceCommit` from `marketing-kit/release-record.json` and that SHA matches the production deployment being promoted. An older published link remains a historical edit until it is re-cut and recertified.
+
+Derivatives must preserve the approved voiceover, product sequence, timing, and price promise while using picture certified against the current production source commit.
 
 - Show the real product. No stock footage, mock dashboards, vendor logos, decorative captions, or extra claims.
 - Burn in only four chapter words when they help orientation: **Create. Train. Wire. Run.**
 - End card only: **Build free. Go live from $19/mo.** and **trywireline.com**.
 - Provide accurate platform captions as a selectable accessibility track. Do not stack persistent subtitles over already legible product UI.
 - Cut 9:16 and 1:1 variants from the 16:9 master by reframing the active UI, never by shrinking the full desktop canvas into unreadable space.
+- Do not publish when `release-record.json.sourceCommit` differs from the deployed production SHA. Re-run the capture, inspect the frames, and update the delivery record first.
 
-### Re-cutting the picture
+### Re-cutting and certifying the picture
 
-`npm run marketing:kit` records the picture for all three cuts. It captures the
-live product, so **the footage expires whenever the product's design changes** —
-a reel cut before a type or layout change shows a product that no longer exists.
+`npm run marketing:kit` records and certifies the picture for all three cuts. It captures the live product, so **the footage expires whenever the product's design changes** — a reel cut before a type or layout change shows a product that no longer exists.
 
 ```bash
 npm run build && node -e "require('./dist/server.cjs')"   # serve the real bundle
 E2E_BASE_URL=http://127.0.0.1:3000 MARKETING_USE_MOCKS=1 npm run marketing:kit
 ```
+
+The command runs the raw Playwright capture, then:
+
+- records the exact 40-character Git source commit and ref;
+- verifies all declared assets exist;
+- requires all three intended video captures and rejects implausibly empty files;
+- hashes every authenticated screenshot and rejects duplicate route frames, the signature of an auth wall, redirect, or shared error screen;
+- writes the evidence to `marketing-kit/manifest.json` and the portable delivery proof to `marketing-kit/release-record.json`.
+
+Use `npm run marketing:kit:raw` only while debugging the capture script. Raw output is not release-certified.
 
 | Capture | Frame | Scene map |
 | --- | --- | --- |
@@ -80,17 +91,11 @@ E2E_BASE_URL=http://127.0.0.1:3000 MARKETING_USE_MOCKS=1 npm run marketing:kit
 | `videos/reel-30s-product-loop.webm` | 1080×1920 | Create → Train → Wire → Run |
 | `videos/reel-15s-missed-call.webm` | 1080×1920 | call log → outbound dial modal → inbox |
 
-Each beat is a hold long enough to cut from; the editor trims down, never
-stretches up. Scrolls are eased across twelve steps rather than jumped, so the
-motion matches what a person sees.
+Each beat is a hold long enough to cut from; the editor trims down, never stretches up. Scrolls are eased across twelve steps rather than jumped, so the motion matches what a person sees.
 
 Two rules the capture enforces rather than trusts:
 
-- **Copy comes from the campaign document.** `copy/social-copy.md` is generated
-  from the Brand Spine in `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`. Edit the
-  document, re-run the kit; never edit the generated file. It previously
-  hardcoded its own hooks, which had drifted to naming three competitors — against
-  the doctrine above — and to omitting the price line entirely.
+- **Copy comes from the campaign document.** `copy/social-copy.md` is generated from the Brand Spine in `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`. Edit the document, re-run the kit; never edit the generated file. It previously hardcoded its own hooks, which had drifted to naming three competitors — against the doctrine above — and to omitting the price line entirely.
 - **No reel films `/compare`.** It is the one route that renders vendor marks.
 
 ## Plugin-Ready Design Briefs
