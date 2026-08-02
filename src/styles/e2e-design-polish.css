@@ -51,7 +51,13 @@
 .marketing-surface .prose :is(p, h1, h2, h3, h4, h5, h6, li, blockquote, td, th, a, span),
 .marketing-surface .wl-preserve-case,
 .marketing-surface .wl-preserve-case *,
-.marketing-surface :is(code, kbd, samp, time, [data-value]) {
+.marketing-surface :is(code, kbd, samp, time, [data-value]),
+/* The reset-password card is a functional account-recovery form that reuses the
+ * marketing chrome. Its heading, instructions, and status notices read as
+ * written so guidance like "uppercase, lowercase, and a number" stays legible
+ * and error notices do not shout. Field labels and the submit button keep the
+ * cased control/label tier from uppercase-system.css. */
+.marketing-surface .wl-auth-card :is(p, h1, h2, h3, h4, h5, h6) {
   text-transform: none;
   letter-spacing: normal;
 }
