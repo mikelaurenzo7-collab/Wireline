@@ -2,7 +2,7 @@
 import { Router, Response } from "express";
 import { AppError } from "../lib/api-error";
 import type { AuthenticatedRequest } from "../types/auth";
-import { log, auditLogger, drizzle } from "../lib/server-context";
+import { log, auditLogger, drizzle, serialQueryBatch } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, desc, lt, gte, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
@@ -40,7 +40,7 @@ router.get(
 
       const [[triageResult], [emailResult], [outboundResult], liveSignals] =
         await drizzle.transaction((tx) =>
-          Promise.all([
+          serialQueryBatch([
             tx
               .select({ count: sql`count(*)` })
               .from(schema.followUpTasks)
@@ -157,8 +157,15 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
     // detail panel actually populates lead score, intent label, transcript
     // metadata, recording URL — everything beyond the few fields that
     // happened to match by coincidence (id, summary, transcript, direction).
+    const safeCalls = (calls || []).map((call) => ({
+      ...call,
+      recordingUrl: call.recordingUrl
+        ? `/api/calls/${String(call.id)}/recording`
+        : null,
+    }));
+
     res.json({
-      calls: mapObjectToSnake(calls || []),
+      calls: mapObjectToSnake(safeCalls),
       hasMore: offset + limit < count,
       total: count || 0,
     });
@@ -199,7 +206,7 @@ router.get(
         recentApptsResult,
         prevLogsResult,
       ] = await drizzle.transaction((tx) =>
-        Promise.all([
+        serialQueryBatch([
           tx
             .select({ count: sql`count(*)` })
             .from(schema.appointments)
@@ -352,7 +359,7 @@ router.get(
       // capped at five, so a bare Promise.all here would put two concurrent
       // dashboard mounts over the cap and fail on the 5s checkout timeout.
       const [calls, leads, agents] = await drizzle.transaction((tx) =>
-        Promise.all([
+        serialQueryBatch([
           tx
             .select({
               duration_seconds: schema.callLogs.durationSeconds,

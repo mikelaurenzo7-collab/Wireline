@@ -36,7 +36,7 @@ function EmptyKnowledge() {
         density="default"
         className="wl-paper wl-paper-elevated w-full max-w-[620px] px-8 py-12 text-center sm:px-10"
         icon={<BookOpen size={30} strokeWidth={1.7} />}
-        title="Knowledge starts with an AI voice agent"
+        title="Knowledge starts with a voice agent"
         action={
           <div className="space-y-4">
             <p className="mx-auto max-w-[44ch] text-sm leading-relaxed text-muted-foreground">
@@ -100,7 +100,7 @@ export default function KnowledgePage() {
           <WorkspacePageIntro title="Knowledge" />
           {/* An empty roster and an unreachable one are the same `agents.length`
               but opposite facts. Without this check a failed load rendered
-              "Knowledge starts with an AI voice agent — create the agent
+              "Knowledge starts with a voice agent — create the agent
               first", so a customer whose agents were merely unreachable was
               told they had none and invited to build a duplicate. */}
           {degraded ? <WorkspaceRecovery onRetry={refresh} /> : <EmptyKnowledge />}

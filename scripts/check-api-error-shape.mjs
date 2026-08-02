@@ -15,7 +15,11 @@ function walkRoutes(dir, out = []) {
     const p = path.join(dir, name);
     const st = fs.statSync(p);
     if (st.isDirectory()) walkRoutes(p, out);
-    else if (name.endsWith(".ts") && !name.endsWith(".test.ts") && p.includes(`${path.sep}routes${path.sep}`)) {
+    else if (
+      name.endsWith(".ts") &&
+      !name.endsWith(".test.ts") &&
+      p.includes(`${path.sep}routes${path.sep}`)
+    ) {
       out.push(p);
     }
   }
@@ -56,9 +60,18 @@ if (count > max) {
 }
 
 if (count < max) {
-  ratchet.maxLegacyErrorResponses = count;
-  fs.writeFileSync(RATCHET_PATH, `${JSON.stringify(ratchet, null, 2)}\n`);
-  console.log(`api-error ratchet tightened: ${max} → ${count}`);
+  if (process.argv.includes("--write")) {
+    ratchet.maxLegacyErrorResponses = count;
+    fs.writeFileSync(RATCHET_PATH, `${JSON.stringify(ratchet, null, 2)}\n`);
+    console.log(`api-error ratchet tightened: ${max} → ${count}`);
+  } else {
+    console.log(
+      `api-error ratchet can tighten: ${max} → ${count}. ` +
+        "Run `node scripts/check-api-error-shape.mjs --write` and commit the ratchet file.",
+    );
+  }
 } else {
-  console.log(`api-error ratchet OK: ${count}/${max} legacy responses without inline code`);
+  console.log(
+    `api-error ratchet OK: ${count}/${max} legacy responses without inline code`,
+  );
 }

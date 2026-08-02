@@ -1,3 +1,6 @@
+import { isFederalDncVendorConfigured } from "./federal-dnc-config";
+import { perplexityRuntimeAvailable } from "./platform-integration-flags";
+
 export type IntegrationStatus = "configured" | "missing" | "fallback";
 export type IntegrationGroup =
   | "core"
@@ -17,6 +20,13 @@ export type IntegrationDescriptor = {
   envVars: readonly string[];
   oneOfEnvVars?: readonly (readonly string[])[];
   fallback?: string;
+  /**
+   * Optional value-shape validation on top of env presence. Presence-only
+   * checks have lied before (a pasted Vercel token as FEDERAL_DNC_API_KEY made
+   * readiness claim a vendor the runtime rejects), so integrations whose
+   * runtime validates credential shape must apply the same rule here.
+   */
+  validate?: () => boolean;
 };
 const item = (
   id: string,
@@ -38,10 +48,14 @@ const item = (
   oneOfEnvVars,
 });
 export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
-  item("drizzle", "Supabase Postgres", "Tenant data plane and persistence.", "core", true, [
-    "POSTGRES_URL",
-    "INTERNAL_JWT_SECRET",
-  ]),
+  item(
+    "drizzle",
+    "Supabase Postgres",
+    "Tenant data plane and persistence.",
+    "core",
+    true,
+    ["POSTGRES_URL", "INTERNAL_JWT_SECRET"],
+  ),
   item(
     "openai",
     "OpenAI",
@@ -59,6 +73,22 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     false,
     ["GEMINI_API_KEY"],
   ),
+  {
+    ...item(
+      "perplexity",
+      "Perplexity",
+      "Optional first route for approved live public research tools.",
+      "ai",
+      false,
+      [],
+      "Gemini grounded search covers live research when unset.",
+      [["PERPLEXITY_API_KEY", "PERPLEXITY_PREVIEW_API_KEY"]],
+    ),
+    // Production keys are intentionally inert on Vercel previews (a preview
+    // needs its own PERPLEXITY_PREVIEW_API_KEY), so configured-ness follows the
+    // runtime's key policy, not raw variable presence.
+    validate: perplexityRuntimeAvailable,
+  },
   item(
     "ai-gateway",
     "Vercel AI Gateway",
@@ -78,10 +108,23 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     ["XAI_API_KEY"],
     "Structured fallback requires WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=true.",
   ),
-  item("vapi", "Vapi", "Managed PSTN inbound and outbound call orchestration.", "voice", true, [
-    "VAPI_PRIVATE_KEY",
-    "VAPI_WEBHOOK_SECRET",
-  ]),
+  item(
+    "vapi",
+    "Vapi",
+    "Managed PSTN inbound and outbound call orchestration.",
+    "voice",
+    true,
+    ["VAPI_PRIVATE_KEY", "VAPI_WEBHOOK_SECRET"],
+  ),
+  item(
+    "elevenlabs",
+    "ElevenLabs",
+    "Managed low-latency studio speech and founder-approved private voice cloning.",
+    "voice",
+    true,
+    ["ELEVENLABS_API_KEY"],
+    "Every ElevenLabs phone voice carries a curated Vapi fallback.",
+  ),
   item(
     "twilio",
     "Twilio",
@@ -144,10 +187,14 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "YAHOO_CLIENT_ID",
     "YAHOO_CLIENT_SECRET",
   ]),
-  item("icloud", "iCloud Mail", "Personal iCloud mailbox connection.", "oauth", false, [
-    "ICLOUD_APPLE_ID",
-    "ICLOUD_APP_PASSWORD",
-  ]),
+  item(
+    "icloud",
+    "iCloud Mail",
+    "Personal iCloud mailbox connection.",
+    "oauth",
+    false,
+    ["ICLOUD_APPLE_ID", "ICLOUD_APP_PASSWORD"],
+  ),
   item(
     "stripe",
     "Stripe",
@@ -165,10 +212,14 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     ["RESEND_API_KEY"],
     "A verified production sending domain is also required.",
   ),
-  item("hubspot", "HubSpot", "CRM contacts, deals, and activity.", "actions", false, [
-    "HUBSPOT_CLIENT_ID",
-    "HUBSPOT_CLIENT_SECRET",
-  ]),
+  item(
+    "hubspot",
+    "HubSpot",
+    "CRM contacts, deals, and activity.",
+    "actions",
+    false,
+    ["HUBSPOT_CLIENT_ID", "HUBSPOT_CLIENT_SECRET"],
+  ),
   item(
     "salesforce",
     "Salesforce",
@@ -195,9 +246,14 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "DOCUSIGN_JWT_TOKEN can replace DOCUSIGN_ACCESS_TOKEN.",
     [["DOCUSIGN_ACCESS_TOKEN", "DOCUSIGN_JWT_TOKEN"]],
   ),
-  item("apollo", "Apollo", "Lead enrichment and prospect intelligence.", "actions", false, [
-    "APOLLO_API_KEY",
-  ]),
+  item(
+    "apollo",
+    "Apollo",
+    "Lead enrichment and prospect intelligence.",
+    "actions",
+    false,
+    ["APOLLO_API_KEY"],
+  ),
   item("meta", "Meta", "Lead follow-up and attribution.", "actions", false, [
     "META_APP_ID",
     "META_APP_SECRET",
@@ -210,10 +266,14 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "SQUARE_APPLICATION_ID",
     "SQUARE_APPLICATION_SECRET",
   ]),
-  item("x", "X", "Approved social engagement and reporting.", "actions", false, [
-    "X_CLIENT_ID",
-    "X_CLIENT_SECRET",
-  ]),
+  item(
+    "x",
+    "X",
+    "Approved social engagement and reporting.",
+    "actions",
+    false,
+    ["X_CLIENT_ID", "X_CLIENT_SECRET"],
+  ),
   item(
     "x-ads",
     "X Ads API",
@@ -228,10 +288,14 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
       "X_ADS_ACCOUNT_ID",
     ],
   ),
-  item("upstash", "Upstash Redis", "Distributed rate limits and spend controls.", "infra", true, [
-    "UPSTASH_REDIS_REST_URL",
-    "UPSTASH_REDIS_REST_TOKEN",
-  ]),
+  item(
+    "upstash",
+    "Upstash Redis",
+    "Distributed rate limits and spend controls.",
+    "infra",
+    true,
+    ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"],
+  ),
   item(
     "chatgpt-mcp",
     "ChatGPT MCP",
@@ -240,9 +304,46 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     false,
     ["MCP_OAUTH_TOKEN_PEPPER"],
   ),
-  item("secret-vault", "Secret Vault", "Encrypted integration secrets.", "security", false, [
-    "WIRELINE_DATA_KEY",
-  ]),
+  item(
+    "apns",
+    "Apple Push (APNs)",
+    "Wakes the native iOS app for inbound calls and urgent owner alerts.",
+    "infra",
+    false,
+    ["APNS_KEY_ID", "APNS_TEAM_ID", "APNS_AUTH_KEY", "APNS_BUNDLE_ID"],
+    "Missing push configuration degrades safely; web and API behavior is unaffected.",
+  ),
+  item(
+    "fcm",
+    "Firebase Cloud Messaging",
+    "Wakes the native Android app for inbound calls and urgent owner alerts.",
+    "infra",
+    false,
+    ["FCM_PROJECT_ID", "FCM_CLIENT_EMAIL", "FCM_PRIVATE_KEY"],
+    "Missing push configuration degrades safely; web and API behavior is unaffected.",
+  ),
+  item(
+    "secret-vault",
+    "Secret Vault",
+    "Encrypted integration secrets.",
+    "security",
+    false,
+    ["WIRELINE_DATA_KEY"],
+  ),
+  {
+    ...item(
+      "federal-dnc",
+      "Federal DNC scrub",
+      "Marketing/campaign outbound scrub against the federal Do Not Call registry.",
+      "security",
+      false,
+      ["FEDERAL_DNC_API_URL", "FEDERAL_DNC_API_KEY"],
+      "Runtime validates the vendor credential shape and fails closed when unconfigured.",
+    ),
+    // Same rule the runtime applies — presence of a misplaced Vercel token or
+    // an http URL must not report the scrub vendor as configured.
+    validate: isFederalDncVendorConfigured,
+  },
   item(
     "pwned-passwords",
     "Have I Been Pwned Pwned Passwords",
@@ -255,7 +356,9 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
 ] as const;
 const present = (name: string) => !!process.env[name];
 const configured = (entry: IntegrationDescriptor) =>
-  entry.envVars.every(present) && (entry.oneOfEnvVars ?? []).every((group) => group.some(present));
+  entry.envVars.every(present) &&
+  (entry.oneOfEnvVars ?? []).every((group) => group.some(present)) &&
+  (entry.validate?.() ?? true);
 export function getRuntimeIntegrationStatus() {
   return RUNTIME_INTEGRATIONS.map((entry) => ({
     ...entry,
@@ -274,6 +377,9 @@ export function getRuntimeIntegrationStatus() {
 }
 export function getRuntimeCapabilities() {
   return Object.fromEntries(
-    RUNTIME_INTEGRATIONS.map((entry) => [entry.id.replace(/-/g, "_"), configured(entry)]),
+    RUNTIME_INTEGRATIONS.map((entry) => [
+      entry.id.replace(/-/g, "_"),
+      configured(entry),
+    ]),
   );
 }

@@ -14,7 +14,7 @@ function envPresent(name: string): boolean {
 }
 
 /** Mirrors src/lib/perplexity-platform.ts so tool exposure matches runtime key policy. */
-function perplexityRuntimeAvailable(): boolean {
+export function perplexityRuntimeAvailable(): boolean {
   if (process.env.VERCEL_ENV === "preview") {
     return envPresent("PERPLEXITY_PREVIEW_API_KEY");
   }

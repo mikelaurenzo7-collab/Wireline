@@ -25,7 +25,7 @@ function rosterEmptyStateSurfaces(): string[] {
       const source = readFileSync(file, "utf8");
       return source.includes("/studio?create=1") && emptyBranch.test(source);
     })
-    .map((file) => relative(process.cwd(), file))
+    .map((file) => relative(process.cwd(), file).replaceAll("\\", "/"))
     .sort();
 }
 
@@ -61,7 +61,7 @@ describe("agent roster: empty versus unreachable", () => {
     // The component started out private to OverviewPage; three more surfaces
     // needed it, and duplicating the copy is how the wording drifts.
     const redefinitions = tsxFiles(SRC)
-      .map((file) => relative(process.cwd(), file))
+      .map((file) => relative(process.cwd(), file).replaceAll("\\", "/"))
       .filter(
         (file) =>
           file !== "src/components/WorkspaceRecovery.tsx" &&

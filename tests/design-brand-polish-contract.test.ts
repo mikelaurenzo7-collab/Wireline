@@ -1,7 +1,10 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { globSync } from "glob";
 import { describe, expect, it } from "vitest";
 
+const root = process.cwd();
+const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
@@ -135,5 +138,90 @@ describe("E2E design and brand polish", () => {
     expect(app).toContain("<RouteChangeA11y />");
     const announcer = read("src/components/RouteChangeA11y.tsx");
     expect(announcer).toContain('className="sr-only"');
+  });
+
+  it("cases controls with the rest of the system, but never the customer's words", () => {
+    const caps = read("src/styles/uppercase-system.css");
+
+    // Buttons, tabs, menu items, badges, and header/footer navigation are part
+    // of the cased system rather than an exception to it.
+    expect(caps).toMatch(
+      /\.studio-secondary-button,\s*nav a,\s*header a,\s*footer a\s*\)\s*\{[^}]*?text-transform: uppercase;/,
+    );
+
+    // Controls in this product are frequently composite rows, not bare labels:
+    // a sidebar row is a link wrapping an agent name the customer chose. The
+    // case system must never rewrite someone's own words, so `wl-preserve-case`
+    // opts an element and its subtree out.
+    expect(caps).toMatch(
+      /\.wl-ui-caps \.wl-preserve-case,\s*\.wl-ui-caps \.wl-preserve-case \*\s*\{[^}]*?text-transform: none;/,
+    );
+    // Tolerant of formatting: prettier wraps this JSX onto three lines once the
+    // class list grows, so an assertion that required `">{agent.name}` adjacent
+    // passed locally and then failed in CI after the pre-commit format pass.
+    expect(read("src/components/WorkspaceShell.tsx")).toMatch(
+      /wl-preserve-case[^"]*"[^>]*>\s*\{agent\.name\}/,
+    );
+
+    // Caps need more air than lowercase; the tight display tracking would run
+    // the letterforms together at control sizes.
+    expect(caps).toMatch(/--wl-caps-control-tracking:\s*0\.0[3-9]\d*em/);
+  });
+
+  it("marks every hand-rolled dialog title so the case system reaches it", () => {
+    // The case system finds modal headings through `data-slot="dialog-title"`,
+    // which the Dialog primitive sets for you. Eleven surfaces in this product
+    // hand-roll their overlay instead -- Fast Start, the deploy and trial-gate
+    // modals, the post-create wizard -- and every one of those titles sat in
+    // sentence case above cased labels and cased buttons. Case is doing the
+    // ranking in this design; a title that opts out of it reads as body copy.
+    const files = globSync("src/**/*.tsx", { cwd: root })
+      .filter((file) => source(file).includes('role="dialog"'))
+      .sort();
+    expect(files.length, "no dialogs found -- the glob or attribute changed").toBeGreaterThan(5);
+
+    const unmarked: string[] = [];
+    for (const file of files) {
+      const text = source(file);
+      for (const [, titleId] of text.matchAll(/aria-labelledby="([^"{}]+)"/g)) {
+        const at = text.indexOf(`id="${titleId}"`);
+        if (at === -1) continue; // Labelled by an element the primitive owns.
+        // Walk out to the opening tag that carries the id.
+        const tag = text.slice(text.lastIndexOf("<", at), text.indexOf(">", at) + 1);
+        // An sr-only label has no case to get wrong.
+        if (tag.includes("sr-only") || tag.includes('data-slot="dialog-title"')) continue;
+        unmarked.push(`${file} (#${titleId})`);
+      }
+    }
+    expect(unmarked, `dialog titles outside the case system:\n${unmarked.join("\n")}`).toEqual([]);
+  });
+
+  it("uppercases field captions without shouting the values beside them", () => {
+    const caps = read("src/styles/uppercase-system.css");
+
+    // Field captions and column headers join the label tier. `[^}]` keeps the
+    // match inside this rule block: with `[\s\S]` the pattern ran past the
+    // closing brace and was satisfied by the caption-span rule further down, so
+    // deleting the declaration here left the test green.
+    expect(caps).toMatch(
+      /\.wl-ui-caps :is\(label, legend, th\) \{[^}]*?text-transform: uppercase;/,
+    );
+
+    // A label can also hold the control and a help line. `<input>` must reset or
+    // the transform shouts whatever the user typed -- and `::placeholder`
+    // inherits it, so an untouched placeholder would shout too.
+    const reset = caps.match(
+      /\.wl-ui-caps\s*\n?\s*:is\(label, legend\) :is\(([^)]*)\) \{[\s\S]*?text-transform: none;/,
+    );
+    expect(reset, "labels must reset their nested control and prose").toBeTruthy();
+    for (const tag of ["input", "textarea", "select", "p", "span"]) {
+      expect(reset?.[1]).toContain(tag);
+    }
+
+    // Where a caption needs its own styling it is the leading span, which the
+    // blanket reset above would otherwise catch.
+    expect(caps).toMatch(
+      /:is\(label, legend\) > span:first-child:not\(:has\(input, textarea, select, button\)\)/,
+    );
   });
 });

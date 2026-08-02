@@ -25,12 +25,16 @@ final class CallManager: NSObject {
     private var pendingCalls: [UUID: PendingCall] = [:]
 
     override init() {
+        // `CXProviderConfiguration()` reads the name from the bundle and makes
+        // `localizedName` get-only; the old settable form came with the
+        // `init(localizedName:)` deprecated in iOS 14. Info.plist already
+        // carries CFBundleDisplayName = "Wireline", so the call UI shows the
+        // same name it did, from one source instead of two.
         let config = CXProviderConfiguration()
         config.supportsVideo = false
         config.maximumCallGroups = 1
         config.maximumCallsPerCallGroup = 1
         config.supportedHandleTypes = [.phoneNumber, .generic]
-        config.localizedName = "Wireline"
         provider = CXProvider(configuration: config)
         super.init()
         provider.setDelegate(self, queue: nil)

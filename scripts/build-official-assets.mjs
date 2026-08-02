@@ -343,11 +343,11 @@ Cut: Home, Overview, Studio, Phone, Pricing
 CTA: Link in bio
 
 ### Meta ad primary text
-Create and train an AI voice agent for free. Live work draws from prepaid Runtime Balance.
+Create and train a voice agent for free. Live work draws from prepaid Runtime Balance.
 Free Builder, Starter, Starter Plus, Pro, and Business. Clear rates. No surprise math.
 
 ### App Store subtitle
-AI voice agents for sales and support
+Voice agents for sales and support
 
 ### App Store promo text
 Wireline trains outbound and inbound agents that book meetings, update your systems, and keep a clean outcome record.

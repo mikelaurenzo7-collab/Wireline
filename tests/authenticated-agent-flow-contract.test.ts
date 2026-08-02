@@ -93,7 +93,7 @@ describe("authenticated agent flow", () => {
     expect(createDialog).toContain("I&apos;ll explore first");
     expect(createDialog).not.toContain("VoicePickerField");
     expect(createDialog).not.toContain("CreateAgentCatalogFacePicker");
-    expect(productCopy).toContain('createHeadline: "Build your next AI voice agent."');
+    expect(productCopy).toContain('createHeadline: "Build your next voice agent."');
     expect(productCopy).toContain(
       'emptyCue: "Brief it. Train it once. Connect calls, texts, and email."',
     );
@@ -116,7 +116,12 @@ describe("authenticated agent flow", () => {
     expect(createDialog).toContain("Revenue Desk");
     expect(createDialog).toContain("Support Desk");
     expect(createDialog).toContain("Sales, support, and scheduling");
-    expect(createDialog).toContain("Qualify inbound demand, answer support questions");
+    // Breadth used to be asserted against the brief the composer was pre-filled
+    // with. That pre-fill is gone — the box opens empty so the customer writes
+    // their own job — so the same promise is checked where it still lives: the
+    // placeholder, which suggests the range without occupying the field.
+    expect(createDialog).toContain("Qualify inbound demos, answer support questions");
+    expect(createDialog).toContain("route urgent calls");
     expect(createDialog).not.toContain("Handle pharmacy calls");
   });
 
@@ -244,17 +249,22 @@ describe("authenticated agent flow", () => {
     expect(wizard).toContain("ACTIVATION_REQUIRED");
   });
 
-  it("routes every PSTN call through the managed Vapi voice runtime", () => {
+  it("routes every PSTN call through the governed managed voice runtime", () => {
     const schema = read("src/db/schema.ts");
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
+    const managedRuntime = read("src/lib/managed-voice-runtime.ts");
     const routes = read("src/routes/agent-routes-v2.ts");
 
-    // Dual phone-voice columns remain persisted for continuity, but the live
-    // factory clamps every call to a curated managed Vapi voice.
+    // Dual phone-voice columns remain persisted for continuity. The live
+    // factory admits only curated ElevenLabs voices or tenant-owned approved
+    // clones, and the shared runtime always carries a managed Vapi fallback.
     expect(schema).toContain("phoneVoiceId");
     expect(schema).toContain("phoneVoiceProvider");
-    expect(factory).toContain("isManagedVapiVoiceId");
-    expect(factory).toContain("DEFAULT_MANAGED_VOICE_ID");
+    expect(factory).toContain("buildManagedVoiceRuntime");
+    expect(factory).toContain('schema.clonedVoices.status, "approved"');
+    expect(managedRuntime).toContain("isManagedVapiVoiceId");
+    expect(managedRuntime).toContain("DEFAULT_MANAGED_VOICE_ID");
+    expect(managedRuntime).toContain("fallbackPlan");
     expect(factory).not.toContain("configured.phoneVoiceProvider");
     expect(routes).toContain("phoneVoiceId");
   });

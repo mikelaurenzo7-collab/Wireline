@@ -57,7 +57,10 @@ export default function StudioAgentWorkspacePanel({
   );
   const [setupPersonality, setSetupPersonality] = useState("Clear");
   const [loadedPersonality, setLoadedPersonality] = useState<string | null>(null);
-  const [setupGreeting, setSetupGreeting] = useState(defaultGreeting);
+  // Empty until the saved greeting loads. A generated sentence sitting in the
+  // box reads as something the customer already wrote and saved, when nothing
+  // has been saved at all; it belongs in the placeholder instead.
+  const [setupGreeting, setSetupGreeting] = useState("");
   const [setupKnowledge, setSetupKnowledge] = useState("");
   const [loadingSetup, setLoadingSetup] = useState(true);
   const [applyingSetup, setApplyingSetup] = useState(false);
@@ -79,11 +82,10 @@ export default function StudioAgentWorkspacePanel({
         const personality = typeof data.personality === "string" ? data.personality : "";
         setLoadedPersonality(personality || null);
         setSetupPersonality(inferPersonality(personality));
-        setSetupGreeting(existingGreeting(data.directives) || defaultGreeting);
+        setSetupGreeting(existingGreeting(data.directives));
       })
       .catch((reason) => {
         if (!cancelled) {
-          setSetupGreeting(defaultGreeting);
           setSetupError(
             reason instanceof Error ? reason.message : "Current setup could not be loaded.",
           );
@@ -95,7 +97,7 @@ export default function StudioAgentWorkspacePanel({
     return () => {
       cancelled = true;
     };
-  }, [agentId, defaultGreeting]);
+  }, [agentId]);
 
   async function saveManual(type: "personality" | "directive", content: string) {
     const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, {
@@ -225,6 +227,7 @@ export default function StudioAgentWorkspacePanel({
                   id="setup-greeting"
                   value={setupGreeting}
                   onChange={(event) => setSetupGreeting(event.target.value)}
+                  placeholder={defaultGreeting}
                   rows={2}
                   className="min-h-11 w-full resize-y rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary/50"
                 />

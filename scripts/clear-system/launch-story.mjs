@@ -1,5 +1,5 @@
 /**
- * Launch story. Build, Train, Launch and the AI voice agent operating model are
+ * Launch story. Build, Train, Launch and the voice agent operating model are
  * the active truth across metadata, install surfaces, shared copy, conversion,
  * and billing. Retired brand eras must not return to active product surfaces.
  */
@@ -24,7 +24,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /<title>Wireline \| AI voice agents that get work done<\/title>/,
+    /<title>Wireline \| Voice agents that get work done<\/title>/,
     "static metadata must state the current product promise",
   );
   mustInclude(
@@ -36,7 +36,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "Wireline \| AI voice agents that get work done"/,
+    /DEFAULT_TITLE = "Wireline \| Voice agents that get work done"/,
     "runtime metadata must state the current product promise",
   );
   mustInclude(
@@ -48,8 +48,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"name"\s*:\s*"Wireline \| AI Voice Agents"/,
-    "install metadata must use the canonical AI voice agent positioning",
+    /"name"\s*:\s*"Wireline \| Voice Agents"/,
+    "install metadata must use the canonical voice agent positioning",
   );
   mustInclude(
     "public/site.webmanifest",
@@ -67,13 +67,13 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/product-copy.ts",
     productCopy,
-    /northStar:\s*"AI voice agents that call, answer, follow up, and finish the work\."/,
+    /northStar:\s*"Voice agents that call, answer, follow up, and finish the work\."/,
     "shared copy must preserve the north star promise",
   );
   mustInclude(
     "src/lib/product-copy.ts",
     productCopy,
-    /productNoun:\s*"AI voice agent"/,
+    /productNoun:\s*"Voice agent"/,
     "shared copy must define the canonical product noun",
   );
   mustInclude(

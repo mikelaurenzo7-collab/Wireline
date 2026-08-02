@@ -12,7 +12,7 @@
  * Customers never see a carrier bill — COGS are in the monthly tier price.
  */
 
-import { drizzle, log } from "./server-context";
+import { drizzle, log, serialQueryBatch } from "./server-context";
 import * as schema from "../db/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
@@ -166,7 +166,8 @@ async function removeTwilioNumberByE164Strict(
   phoneNumber: string,
   client: ReturnType<typeof getTwilioClient> = getTwilioClient(),
 ): Promise<void> {
-  if (!client) throw new Error("Twilio client is unavailable — carrier release cannot be verified.");
+  if (!client)
+    throw new Error("Twilio client is unavailable — carrier release cannot be verified.");
   const rows = await client.incomingPhoneNumbers.list({ phoneNumber, limit: 1 });
   if (rows[0]?.sid) await client.incomingPhoneNumbers(rows[0].sid).remove();
 }
@@ -521,7 +522,9 @@ export async function releaseTenantNumber(
     await runCompanyIdentityMutation(userId, "phone_number_changed", async (tx) => {
       await tx.delete(schema.phoneNumbers).where(eq(schema.phoneNumbers.id, row.id));
 
-      const [[settingsRow], remainingLines] = await Promise.all([
+      // Serialized: inside the runCompanyIdentityMutation transaction callback,
+      // immediately after the delete above.
+      const [[settingsRow], remainingLines] = await serialQueryBatch([
         tx
           .select({
             vapiPhoneNumberId: schema.settings.vapiPhoneNumberId,
@@ -545,9 +548,8 @@ export async function releaseTenantNumber(
         const patch: Partial<typeof schema.settings.$inferInsert> = {};
         if (carrierId && settingsRow.vapiPhoneNumberId === carrierId) {
           patch.vapiPhoneNumberId =
-            remainingLines.find(
-              (line: { phoneNumber: string; vapiNumberId: string | null }) =>
-                isVapiPhoneNumberId(line.vapiNumberId),
+            remainingLines.find((line: { phoneNumber: string; vapiNumberId: string | null }) =>
+              isVapiPhoneNumberId(line.vapiNumberId),
             )?.vapiNumberId ?? null;
         }
         if (settingsRow.twilioSmsFromNumber === phoneNumber) {

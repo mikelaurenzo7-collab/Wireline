@@ -11,7 +11,7 @@ export const FOUNDER_PRODUCTS = [
     key: "starter",
     name: "Wireline Starter",
     description:
-      "Founder plan for one live AI communications agent: 1 on-demand production number, 60 pooled voice minutes monthly, Lead Hunt access, connected email workflows, and prepaid Runtime Balance for additional usage.",
+      "Founder plan for one live communications agent: 1 on-demand production number, 60 pooled voice minutes monthly, Lead Hunt access, connected email workflows, and prepaid Runtime Balance for additional usage.",
     defaultPriceKey: "starter_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "starter",
@@ -29,7 +29,7 @@ export const FOUNDER_PRODUCTS = [
     key: "team",
     name: "Wireline Starter Plus",
     description:
-      "Founder hybrid plan: personal Concierge + business AI voice agent (2 live agents), 2 on-demand production numbers, 120 pooled voice minutes monthly, full Lead Hunt workflows, shared conversation inbox, connected email and SMS automation, and prepaid Runtime Balance for additional usage.",
+      "Founder hybrid plan: personal Concierge + business voice agent (2 live agents), 2 on-demand production numbers, 120 pooled voice minutes monthly, full Lead Hunt workflows, shared conversation inbox, connected email and SMS automation, and prepaid Runtime Balance for additional usage.",
     defaultPriceKey: "team_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "team",
@@ -47,7 +47,7 @@ export const FOUNDER_PRODUCTS = [
     key: "business",
     name: "Wireline Pro",
     description:
-      "Multi-agent operating plan for growing businesses: up to 5 live AI communications agents and on-demand numbers, 245 pooled voice minutes monthly, Lead Hunt workflows, shared inbox, routing, approvals, connected email and SMS automation, and prepaid overflow.",
+      "Multi-agent operating plan for growing businesses: up to 5 live communications agents and on-demand numbers, 245 pooled voice minutes monthly, Lead Hunt workflows, shared inbox, routing, approvals, connected email and SMS automation, and prepaid overflow.",
     defaultPriceKey: "business_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "business",
@@ -65,7 +65,7 @@ export const FOUNDER_PRODUCTS = [
     key: "enterprise",
     name: "Wireline Business",
     description:
-      "High-capacity operating plan: up to 15 live AI communications agents and on-demand numbers, 450 pooled voice minutes monthly, Lead Hunt and enrichment workflows, analytics, CRM controls, approvals, connected email and SMS automation, and prepaid overflow.",
+      "High-capacity operating plan: up to 15 live communications agents and on-demand numbers, 450 pooled voice minutes monthly, Lead Hunt and enrichment workflows, analytics, CRM controls, approvals, connected email and SMS automation, and prepaid overflow.",
     defaultPriceKey: "enterprise_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "enterprise",
@@ -83,7 +83,7 @@ export const FOUNDER_PRODUCTS = [
     key: "scale",
     name: "Wireline Scale & Enterprise",
     description:
-      "Custom committed-usage plan for 25 or more AI communications agents, advanced governance, SSO, custom telephony and integrations, retention controls, security review, implementation support, and negotiated channel economics.",
+      "Custom committed-usage plan for 25 or more communications agents, advanced governance, SSO, custom telephony and integrations, retention controls, security review, implementation support, and negotiated channel economics.",
     defaultPriceKey: null,
     metadata: {
       wireline_offer: "enterprise_contact",

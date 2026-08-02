@@ -28,7 +28,7 @@ const SITE_URL = "https://trywireline.com";
 const BRAND_SUFFIX = " | Wireline";
 
 /** Exact static strings in `index.html` that carry the homepage defaults. */
-export const HOME_TITLE = "Wireline | AI voice agents that get work done";
+export const HOME_TITLE = "Wireline | Voice agents that get work done";
 export const HOME_DESCRIPTION =
   "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.";
 const HOME_CANONICAL_TAG = '<link rel="canonical" href="https://trywireline.com/" />';
@@ -52,19 +52,79 @@ function withBrand(title: string): string {
  */
 const STATIC_ROUTE_META: Record<string, { title: string; description: string }> = {
   "/pricing": {
-    title: "Pricing | Wireline AI Voice Agents from $19/month",
+    title: "Pricing | Wireline Voice Agents from $19/month",
     description:
-      "Build an AI voice agent free, then launch from $19/month with an included Wireline number, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls.",
+      "Build a voice agent free, then launch from $19/month with an included Wireline number, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls.",
   },
   "/features": {
-    title: "Features | Wireline AI Voice Agents",
+    title: "Features | Wireline Voice Agents",
     description:
-      "Build and train AI voice agents that call, text, email, book, follow up, update connected systems, and log outcomes under shared rules and memory.",
+      "Build and train voice agents that call, text, email, book, follow up, update connected systems, and log outcomes under shared rules and memory.",
   },
   "/compare": {
     title: "Why Wireline",
     description:
-      "Compare Wireline's owner ready AI voice agent with per agent, per call, and developer voice infrastructure pricing.",
+      "Compare Wireline's owner ready voice agent with per agent, per call, and developer voice infrastructure pricing.",
+  },
+  "/about": {
+    title: "About Wireline | Voice Agents for Calls and Follow up",
+    description:
+      "Wireline is a customizable agent platform built for calls, texts, follow up, browser context, email, and integrations.",
+  },
+  "/showcase": {
+    title: "Try Wireline",
+    description:
+      "Hear the voice agent your customers will meet first, then build one for voice, SMS, and email.",
+  },
+  "/blog": {
+    title: "Wireline Notes | Voice agent guides for small business phone coverage",
+    description:
+      "Practical guides for voice agents: appointment booking, support queues, handoff boundaries, and getting routine phone work off your plate.",
+  },
+  "/support": {
+    title: "Support | Wireline",
+    description:
+      "Get help with Wireline for personal call support or business call coverage.",
+  },
+  "/contact": {
+    title: "Contact Wireline",
+    description:
+      "Talk to Wireline about personal call coverage, team rollout, partnerships, or support.",
+  },
+  "/status": {
+    title: "System Status | Wireline",
+    description:
+      "Live operational status of Wireline's voice runtime, fallback path, and reasoning layer. Updated every 60 seconds.",
+  },
+  "/security": {
+    title: "Security and Compliance | Wireline",
+    description:
+      "How Wireline handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and honest security proof.",
+  },
+  "/trust": {
+    title: "Trust Center | Wireline",
+    description:
+      "How Wireline handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and honest security proof.",
+  },
+  "/developers": {
+    title: "Developer Portal | Wireline",
+    description:
+      "Wireline MCP apps for ChatGPT, Claude, and Cursor. Draft and simulate with an account bound connector, then continue in Studio. No public API keys.",
+  },
+  "/changelog": {
+    title: "Changelog | Wireline",
+    description:
+      "Every shipped improvement to Wireline: features, infrastructure, polish, security. Updated when we ship.",
+  },
+  "/privacy": {
+    title: "Privacy Policy",
+    description:
+      "Privacy for Wireline's voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 1, 2026.",
+  },
+  "/terms": {
+    title: "Terms of Service",
+    description:
+      "Wireline's terms of service: acceptable use, authorized synthetic voices, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 1, 2026.",
   },
   "/solutions/sales": {
     title: "Every good lead gets a next step. | Wireline",

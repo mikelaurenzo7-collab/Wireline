@@ -25,11 +25,21 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function trustedTwilioRecordingUrl(value: string): string | null {
+function trustedWirelineRecordingUrl(value: string): string | null {
   try {
     const url = new URL(value);
-    const isTwilioHost = url.hostname === "api.twilio.com" || url.hostname.endsWith(".twilio.com");
-    if (url.protocol !== "https:" || !isTwilioHost || url.username || url.password) return null;
+    const isWirelineHost =
+      url.hostname === "trywireline.com" ||
+      url.hostname === "www.trywireline.com" ||
+      url.hostname.endsWith(".vercel.app");
+    if (
+      url.protocol !== "https:" ||
+      !isWirelineHost ||
+      url.username ||
+      url.password ||
+      !/^\/api\/calls\/\d+\/recording$/.test(url.pathname)
+    )
+      return null;
     return url.toString();
   } catch {
     return null;
@@ -43,18 +53,20 @@ export function buildFailoverVoicemailEmail(
   const escapedTo = escapeHtml(input.to);
   const escapedRecordingUrl = escapeHtml(input.recordingUrl);
   const escapedTranscription = escapeHtml(input.transcription);
-  const trustedRecordingUrl = trustedTwilioRecordingUrl(input.recordingUrl);
+  const trustedRecordingUrl = trustedWirelineRecordingUrl(input.recordingUrl);
   const recordingHtml = trustedRecordingUrl
     ? `<a href="${escapeHtml(trustedRecordingUrl)}">${escapedRecordingUrl}</a>`
     : escapedRecordingUrl;
 
   return {
     text: [
-      "A caller left a voicemail while your AI voice line was in failover mode.",
+      "A caller left a voicemail while your voice line was in failover mode.",
       "",
       input.from ? `From: ${input.from}` : null,
       input.to ? `To: ${input.to}` : null,
-      input.durationSeconds != null ? `Duration: ${input.durationSeconds}s` : null,
+      input.durationSeconds != null
+        ? `Duration: ${input.durationSeconds}s`
+        : null,
       `Recording: ${input.recordingUrl}`,
       input.transcription ? `Transcript: ${input.transcription}` : null,
       "",
@@ -63,7 +75,7 @@ export function buildFailoverVoicemailEmail(
       .filter(Boolean)
       .join("\n"),
     html: `
-      <p>A caller left a voicemail while your AI voice line was in failover mode.</p>
+      <p>A caller left a voicemail while your voice line was in failover mode.</p>
       <ul>
         ${input.from ? `<li><strong>From:</strong> ${escapedFrom}</li>` : ""}
         ${input.to ? `<li><strong>To:</strong> ${escapedTo}</li>` : ""}

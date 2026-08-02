@@ -137,7 +137,7 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "May 19, 2026",
     tag: "feature",
-    title: "Per-agent Workspace — private DM with each AI voice agent",
+    title: "Per-agent Workspace — private DM with each voice agent",
     body: 'Every agent now has its own persistent chat thread. Coach the agent in plain English ("be warmer on price objections"), ask how this week\'s calls went, give context. Memory model: the thread itself + the last 5 call summaries injected as context on every reply.',
   },
 ];
@@ -150,8 +150,8 @@ export default function PublicChangelog() {
   return (
     <>
       <PageMeta
-        title="Changelog — Wireline"
-        description="Every shipped improvement to Wireline — features, infrastructure, polish, security. Updated when we ship."
+        title="Changelog | Wireline"
+        description="Every shipped improvement to Wireline: features, infrastructure, polish, security. Updated when we ship."
         path="/changelog"
       />
       <MarketingChrome stickyCta={false}>

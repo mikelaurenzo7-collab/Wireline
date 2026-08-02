@@ -13,6 +13,7 @@ import healthRouter from "../routes/health-routes";
 import aiStatusRouter from "../routes/ai-status-routes";
 import openaiRealtimeRouter from "../routes/openai-realtime-routes";
 import grokVoiceRouter from "../routes/grok-voice-routes";
+import voicesRouter from "../routes/voices-routes";
 import billingRouter from "../routes/billing-routes";
 import extraAgentBillingAtomicRouter from "../routes/extra-agent-billing-atomic-routes";
 import { stripeRuntimeAllowanceRetryPreflight } from "../middleware/stripe-runtime-allowance-retry";
@@ -36,6 +37,7 @@ import companyIdentityRouter from "../routes/company-identity-routes";
 import teamRouter from "../routes/team-routes";
 import emailRouter from "../routes/email-routes";
 import dashboardRouter from "../routes/dashboard-routes";
+import callRecordingRouter from "../routes/call-recording-routes";
 import fleetRouter from "../routes/fleet-routes";
 import calendarRouter from "../routes/calendar-routes";
 import workspaceKnowledgeRouter from "../routes/workspace-knowledge-routes";
@@ -85,6 +87,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(aiStatusRouter);
   app.use(openaiRealtimeRouter);
   app.use(grokVoiceRouter);
+  app.use(voicesRouter);
   app.use(videoPresenterRouter);
   // Must precede the sign-in OAuth router: it binds provider state to the
   // initiating browser cookie before the canonical callbacks claim the nonce.
@@ -136,6 +139,8 @@ export function registerApiRoutes(app: Express): void {
   app.use("/api/billing/extra-agents", extraAgentBillingAtomicRouter);
   app.use("/api", billingRouter);
   app.use(emailRouter);
+  // Tenant-owned, server-mediated access to Vapi/Twilio call artifacts.
+  app.use(callRecordingRouter);
   // Dashboard data plane: /api/dashboard/*, /api/calls, /api/appointments,
   // /api/nav-counts, /api/export/:type.csv -- Overview and Phone read these.
   app.use(dashboardRouter);

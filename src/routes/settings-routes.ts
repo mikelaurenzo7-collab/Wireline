@@ -2,7 +2,7 @@
 import { Router, Response } from "express";
 import { AppError } from "../lib/api-error";
 import type { AuthenticatedRequest } from "../types/auth";
-import { drizzle, log, auditLogger } from "../lib/server-context";
+import { drizzle, log, auditLogger, serialQueryBatch } from "../lib/server-context";
 import { settings, userPreferences, agents, callLogs, deletionQueue } from "../db/schema";
 import * as schema from "../db/schema";
 import { eq, sql } from "drizzle-orm";
@@ -325,7 +325,7 @@ router.get(
     try {
       const userId = req.user.id;
       const [[agentRow], [callLogRow], [settingsRow], [prefsRow], [phoneRow]] = await drizzle.transaction((tx) =>
-        Promise.all([
+        serialQueryBatch([
           tx
             .select({ count: sql<number>`count(*)` })
             .from(agents)

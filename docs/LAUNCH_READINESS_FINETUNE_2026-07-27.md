@@ -29,7 +29,7 @@ Wireline remains a strong controlled-beta / founder-led launch candidate. Prior 
 ### Product / UX polish
 
 8. **Anonymous session probe** — `GET /api/auth/session` returns `200 { user: null }` instead of `401`, silencing public-page console noise. CookieConsent now keys off `body.user`, not bare `ok`.
-9. **Voice-agent copy alignment** — verification email, Compare meta, Client Apps, Privacy Policy, StudioWorkroom fallback, and Call Logs fallback use **AI voice agent** on broad/default surfaces.
+9. **Voice-agent copy alignment** — verification email, Compare meta, Client Apps, Privacy Policy, StudioWorkroom fallback, and Call Logs fallback use **Voice agent** on broad/default surfaces.
 10. **Docs index** — promoted `ONE-AGENT-STRATEGY.md` to Active (was Active-status but only historically linked).
 
 ### Contracts

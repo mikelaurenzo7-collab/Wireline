@@ -16,7 +16,7 @@
 
 import { and, eq, sql } from "drizzle-orm";
 import { chargeCompletedVoiceUsage } from "./voice-completion-grace";
-import { planById } from "./plan-catalog";
+import { FLAT_OVERAGE_PER_MIN_USD, planById } from "./plan-catalog";
 import { drizzle, log, quotaTracker } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import * as schema from "../db/schema";
@@ -47,7 +47,9 @@ export interface VoiceUsageSnapshot {
 
 /** Count one minimum billable minute per completed provider attempt. */
 export function billableVoiceMinutes(durationSeconds: number): number {
-  const safeSeconds = Number.isFinite(durationSeconds) ? Math.max(0, durationSeconds) : 0;
+  const safeSeconds = Number.isFinite(durationSeconds)
+    ? Math.max(0, durationSeconds)
+    : 0;
   return Math.max(1, Math.ceil(safeSeconds / 60));
 }
 
@@ -61,7 +63,8 @@ export function includedVoiceMinutes(
   const plan = planById(planId ?? "personal");
   const safeExtraAgents = Math.max(0, Number(extraAgents ?? 0));
   const baseIncluded = Math.max(0, plan?.voice_minutes_monthly ?? 0);
-  const extraIncluded = safeExtraAgents * Math.max(0, plan?.extra_agent_voice_minutes_monthly ?? 0);
+  const extraIncluded =
+    safeExtraAgents * Math.max(0, plan?.extra_agent_voice_minutes_monthly ?? 0);
   return { plan, included: baseIncluded + extraIncluded };
 }
 
@@ -120,23 +123,36 @@ export async function trackVoiceMinutes(opts: {
       });
 
     const [billing] = await drizzle
-      .select({ plan: schema.subscriptions.plan, extraAgents: schema.settings.extraAgents })
+      .select({
+        plan: schema.subscriptions.plan,
+        extraAgents: schema.settings.extraAgents,
+      })
       .from(schema.settings)
-      .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+      .leftJoin(
+        schema.subscriptions,
+        eq(schema.subscriptions.userId, schema.settings.userId),
+      )
       .where(eq(schema.settings.userId, userId))
       .limit(1);
 
     const planId = billing?.plan ?? null;
-    const { plan, included } = includedVoiceMinutes(planId, billing?.extraAgents);
+    const { plan, included } = includedVoiceMinutes(
+      planId,
+      billing?.extraAgents,
+    );
     if (!plan) return;
 
     const previousOverage = Math.max(0, previousUsed - included);
     const newOverageTotal = Math.max(0, newUsed - included);
-    const incrementalOverageMinutes = Math.max(0, newOverageTotal - previousOverage);
+    const incrementalOverageMinutes = Math.max(
+      0,
+      newOverageTotal - previousOverage,
+    );
     if (incrementalOverageMinutes <= 0) return;
 
     const overageCostUsd =
-      Math.round(incrementalOverageMinutes * plan.overage_per_min_usd * 100) / 100;
+      Math.round(incrementalOverageMinutes * plan.overage_per_min_usd * 100) /
+      100;
     if (overageCostUsd <= 0) return;
 
     let charge;
@@ -164,7 +180,9 @@ export async function trackVoiceMinutes(opts: {
       // next call — billability is the more important of the two to preserve.
       await drizzle
         .update(schema.quotaUsage)
-        .set({ used: sql`GREATEST(0, ${schema.quotaUsage.used} - ${BigInt(minutes)})` })
+        .set({
+          used: sql`GREATEST(0, ${schema.quotaUsage.used} - ${BigInt(minutes)})`,
+        })
         .where(
           and(
             eq(schema.quotaUsage.userId, userId),
@@ -173,14 +191,17 @@ export async function trackVoiceMinutes(opts: {
           ),
         )
         .catch(() => {});
-      log.error("Voice overage charge failed — usage counter rolled back for retry", {
-        userId,
-        callId: vapiCallId,
-        minutes,
-        incrementalOverageMinutes,
-        overageCostUsd,
-        error: getErrorMessage(chargeError),
-      });
+      log.error(
+        "Voice overage charge failed — usage counter rolled back for retry",
+        {
+          userId,
+          callId: vapiCallId,
+          minutes,
+          incrementalOverageMinutes,
+          overageCostUsd,
+          error: getErrorMessage(chargeError),
+        },
+      );
       return;
     }
 
@@ -206,7 +227,9 @@ export async function trackVoiceMinutes(opts: {
   }
 }
 
-export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageSnapshot> {
+export async function getVoiceUsageSnapshot(
+  userId: string,
+): Promise<VoiceUsageSnapshot> {
   const periodKey = monthlyPeriodKey();
 
   const [[usageRow], [billing]] = await Promise.all([
@@ -222,9 +245,15 @@ export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageS
       )
       .limit(1),
     drizzle
-      .select({ plan: schema.subscriptions.plan, extraAgents: schema.settings.extraAgents })
+      .select({
+        plan: schema.subscriptions.plan,
+        extraAgents: schema.settings.extraAgents,
+      })
       .from(schema.settings)
-      .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+      .leftJoin(
+        schema.subscriptions,
+        eq(schema.subscriptions.userId, schema.settings.userId),
+      )
       .where(eq(schema.settings.userId, userId))
       .limit(1),
   ]);
@@ -233,7 +262,7 @@ export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageS
   const planId = billing?.plan ?? null;
   const { plan, included } = includedVoiceMinutes(planId, billing?.extraAgents);
   const overage = Math.max(0, used - included);
-  const overageRate = plan?.overage_per_min_usd ?? 0.2;
+  const overageRate = plan?.overage_per_min_usd ?? FLAT_OVERAGE_PER_MIN_USD;
 
   return {
     plan_id: plan?.id ?? null,

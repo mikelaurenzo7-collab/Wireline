@@ -19,8 +19,14 @@ import MarketingFooter from "../components/marketing/MarketingFooter";
 import MarketingHero from "../components/marketing/MarketingHero";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
-import { STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
+import {
+  FLAT_OVERAGE_PER_MIN_USD,
+  STRIPE_PLANS,
+  type StripePlanId,
+} from "../lib/plan-catalog";
 import { cn } from "../lib/utils";
+
+const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
 
 const planById = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
   StripePlanId,
@@ -40,9 +46,9 @@ const PAID_TIERS = [
     plan: planById.starter,
     publicName: "Starter",
     eyebrow: "Put one agent live",
-    tagline: "Your AI Voice Agent from $19/month.",
+    tagline: "Your Voice Agent from $19/month.",
     detail:
-      "One focused agent for inbound, outbound, or scheduling—with an included Wireline number.",
+      "One focused agent for inbound, outbound, or scheduling, with an included Wireline number.",
     ctaMonthly: "Start for $19",
     ctaAnnual: "Start for $190/yr",
     ctaPath: "/signup?plan=starter",
@@ -54,7 +60,7 @@ const PAID_TIERS = [
     plan: planById.team,
     publicName: "Starter Plus",
     eyebrow: "Founder hybrid",
-    tagline: "Personal Concierge + business voice agent — from $39/month.",
+    tagline: "Personal Concierge + business voice agent from $39/month.",
     detail: `Two live agents, two numbers, ${planById.team.voice_minutes_monthly} voice minutes, Lead Hunt, inbox, SMS, and email.`,
     ctaMonthly: "Choose Starter Plus",
     ctaAnnual: "Choose annual Starter Plus",
@@ -95,7 +101,7 @@ const CHANNEL_RULES = [
   {
     icon: PhoneCall,
     title: "Voice + included number",
-    body: "A Wireline number on every paid plan. Extra minutes draw from prepaid balance—live calls never cut mid conversation.",
+    body: `A Wireline number on every paid plan. Extra minutes stay prepaid at ${TOPUP_RATE}; live calls never cut mid conversation.`,
   },
   {
     icon: MessageSquareText,
@@ -117,7 +123,7 @@ const CHANNEL_RULES = [
 const FAQ = [
   [
     "Does one agent handle voice, SMS, and email?",
-    "Yes. A single Wireline agent can call, text, and email under one business identity, memory, rule set, approval posture, and outcome record. Additional agents are for concurrency or specialized roles—not to unlock basic channels.",
+    "Yes. A single Wireline agent can call, text, and email under one business identity, memory, rule set, approval posture, and outcome record. Additional agents add concurrency or specialized roles, not basic channels.",
   ],
   [
     "Is the Wireline number free?",
@@ -125,7 +131,7 @@ const FAQ = [
   ],
   [
     "Why are there two Starter plans?",
-    "Starter is the lowest risk way to put one AI Voice Agent live. Starter Plus is the founder hybrid: personal Concierge plus a business voice agent, two number slots, more voice minutes, and the fuller Lead Hunt, inbox, email, SMS, and automation experience.",
+    "Starter is the lowest risk way to put one Voice Agent live. Starter Plus is the founder hybrid: personal Concierge plus a business voice agent, two number slots, more voice minutes, and the fuller Lead Hunt, inbox, email, SMS, and automation experience.",
   ],
   [
     "Does every agent automatically create a phone number cost?",
@@ -133,7 +139,7 @@ const FAQ = [
   ],
   [
     "What happens when included voice minutes run out?",
-    "New live work uses prepaid Runtime Balance. Wireline does not silently add a postpaid metered line item. Add balance, wait for renewal, or upgrade. An active call is never cut off for billing — only the next new action pauses until coverage is restored.",
+    `New live work draws prepaid Runtime Balance at ${TOPUP_RATE}, never a surprise postpaid bill. Add balance, wait for renewal, or upgrade. An active call is never cut off; only the next new action pauses until coverage is restored.`,
   ],
   [
     "Are live calls limited to a few seconds?",
@@ -145,7 +151,7 @@ const FAQ = [
   ],
   [
     "Can I cancel or get a refund?",
-    "Yes. Every paid plan is month to month by default with no long term contract, and you can cancel from Stripe at any time — access continues through the end of the current billing period. Reach out at support@trywireline.com within 30 days of your first paid invoice if a plan wasn't the right fit and we'll make it right.",
+    "Yes. Paid plans are month to month by default, with no long term contract. Cancel in Stripe anytime; access continues through the current billing period. Email support@trywireline.com within 30 days of your first paid invoice if the plan wasn't the right fit.",
   ],
   [
     "What is the Scale plan?",
@@ -157,7 +163,7 @@ const assurances = [
   {
     icon: WalletCards,
     label: "Build free",
-    detail: "Train and simulate one private AI Voice Agent before paying.",
+    detail: "Train and simulate one private Voice Agent before paying.",
   },
   {
     icon: PhoneCall,
@@ -183,24 +189,36 @@ const assurances = [
 
 const pricingJsonLd = {
   "@context": "https://schema.org",
-  "@type": "OfferCatalog",
-  name: "Wireline AI Voice Agents pricing",
-  url: "https://trywireline.com/pricing",
-  itemListElement: [
+  "@graph": [
     {
-      "@type": "Offer",
-      name: "Wireline Free Builder",
-      price: 0,
-      priceCurrency: "USD",
-      description: "Build, train, and privately simulate one AI Voice Agent.",
+      "@type": "OfferCatalog",
+      name: "Wireline Voice Agents pricing",
+      url: "https://trywireline.com/pricing",
+      itemListElement: [
+        {
+          "@type": "Offer",
+          name: "Wireline Free Builder",
+          price: 0,
+          priceCurrency: "USD",
+          description: "Build, train, and privately simulate one Voice Agent.",
+        },
+        ...PAID_TIERS.map(({ plan, publicName, detail }) => ({
+          "@type": "Offer",
+          name: `Wireline ${publicName}`,
+          price: plan.price_usd_monthly,
+          priceCurrency: "USD",
+          description: detail,
+        })),
+      ],
     },
-    ...PAID_TIERS.map(({ plan, publicName, detail }) => ({
-      "@type": "Offer",
-      name: `Wireline ${publicName}`,
-      price: plan.price_usd_monthly,
-      priceCurrency: "USD",
-      description: detail,
-    })),
+    {
+      "@type": "FAQPage",
+      mainEntity: FAQ.map(([question, answer]) => ({
+        "@type": "Question",
+        name: question,
+        acceptedAnswer: { "@type": "Answer", text: answer },
+      })),
+    },
   ],
 };
 
@@ -211,8 +229,8 @@ export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page min-h-screen bg-background text-foreground">
       <PageMeta
-        title="Pricing | Wireline AI Voice Agents from $19/month"
-        description="Build an AI voice agent free, then launch from $19/month with an included Wireline number, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls."
+        title="Pricing | Wireline Voice Agents from $19/month"
+        description="Build a voice agent free, then launch from $19/month with an included Wireline number, voice capacity, SMS, email, Lead Hunt, and prepaid usage controls."
         path="/pricing"
       />
       <script
@@ -225,7 +243,7 @@ export default function Pricing() {
         <MarketingHero
           eyebrow="Founder Early Access"
           title="Build free. Launch for $19. Scale when it pays."
-          description="Calls, texts, email, follow up, and Lead Hunt — plus a number on every paid plan. Extra usage stays prepaid."
+          description={`Calls, texts, email, follow up, and Lead Hunt. Every paid plan includes a number. Extra minutes stay prepaid at ${TOPUP_RATE}.`}
           primaryAction={{
             label: annual ? "Launch for $190/yr" : "Launch for $19/mo",
             to: annual ? "/signup?plan=starter&interval=year" : "/signup?plan=starter",
@@ -243,7 +261,7 @@ export default function Pricing() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-overline text-primary">Plans for different stages</p>
               <h2 className="wl-public-section-heading mt-3">
-                Start with one agent. Add specialists when demand earns them.
+                Start with one. Add when demand earns it.
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
                 Every paid plan includes voice, SMS, email, and a Wireline number. Higher tiers buy
@@ -297,7 +315,7 @@ export default function Pricing() {
                   <span className="pb-1 text-sm text-muted-foreground">forever</span>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Build, train, and privately simulate one AI Voice Agent. Live numbers unlock after
+                  Build, train, and privately simulate one Voice Agent. Live numbers unlock after
                   activation.
                 </p>
                 <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
@@ -448,11 +466,11 @@ export default function Pricing() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-overline text-primary">Channel economics</p>
               <h2 className="wl-public-section-heading mt-3">
-                One agent. No channel seat tax. Clear usage costs.
+                One agent. No seat tax. Clear costs.
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
                 One agent calls, texts, and emails on one subscription. Costs track numbers,
-                minutes, and segments—not seats per channel.
+                minutes, and segments, not seats per channel.
               </p>
             </div>
             <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -474,9 +492,7 @@ export default function Pricing() {
           <div className="wl-public-rail mx-auto max-w-[1000px]">
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-overline text-primary">Questions before launch</p>
-              <h2 className="wl-public-section-heading mt-3">
-                Predictable enough for owners. Flexible enough to grow.
-              </h2>
+              <h2 className="wl-public-section-heading mt-3">Two things to pay for.</h2>
               <p className="wl-public-copy mx-auto mt-4">
                 Subscription funds agent capacity. Prepaid balance funds variable provider work.
               </p>
@@ -503,7 +519,7 @@ export default function Pricing() {
               <div className="mx-auto max-w-3xl">
                 <p className="wl-overline text-primary">Founder Early Access</p>
                 <h2 className="wl-public-section-heading mt-3 text-[var(--wireline-color-text-primary)]">
-                  Build the agent first. Let real demand choose the plan.
+                  Build first. Let demand choose the plan.
                 </h2>
                 <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-2xl text-base leading-7">
                   Start private, launch for $19 with an included number, then upgrade when completed

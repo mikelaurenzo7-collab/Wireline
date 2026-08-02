@@ -5,10 +5,11 @@ import { PageMeta } from "../lib/page-meta";
 import MarketingChrome from "./marketing/MarketingChrome";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
-const LAST_UPDATED = "July 19, 2026";
+const LAST_UPDATED = "August 1, 2026";
 const NOTICE_STORAGE_KEY = "wireline_cookie_consent";
 const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
 const MEASUREMENT_CONSENT_EVENT = "wireline:marketing-measurement-consent";
+const CCPA_SHARING_DISCLOSURE = `We do not sell personal information for money. California law may treat disclosure of limited website event and device data to an advertising platform for cross-context campaign measurement as "sharing," even when no money changes hands. Meta measurement remains off unless you affirmatively allow it.`;
 
 type MeasurementConsent = "granted" | "denied";
 
@@ -75,7 +76,7 @@ export default function PrivacyPolicyPage() {
     <MarketingChrome stickyCta={false}>
       <PageMeta
         title="Privacy Policy"
-        description="Wireline's privacy policy — how we collect, use, protect, and disclose data, including privacy-friendly product analytics and optional advertising measurement. Last updated July 19, 2026."
+        description="Privacy for Wireline's voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 1, 2026."
         path="/privacy"
       />
 
@@ -101,7 +102,7 @@ export default function PrivacyPolicyPage() {
           {[
             "We do not sell personal information.",
             "Optional advertising measurement stays off unless you allow it.",
-            "Agent configurations and conversations are not used to train third-party AI models.",
+            "Custom voices stay private and require speaker authorization.",
           ].map((item) => (
             <div
               key={item}
@@ -184,12 +185,19 @@ export default function PrivacyPolicyPage() {
             </p>
             <p>
               <strong>Agent configuration</strong> — Names, personas, directives, knowledge entries,
-              connected tools, and voice settings you create for your AI voice agents.
+              connected tools, and voice settings you create for your voice agents.
             </p>
             <p>
               <strong>Conversation data</strong> — Phone numbers, message addresses, recordings,
               transcripts, summaries, message content, and operational metadata needed to provide
               the calling, texting, and email service you configure.
+            </p>
+            <p>
+              <strong>Authorized voice data</strong> — When the account owner creates a custom
+              voice, we process the submitted recording, voice characteristics, a one-way sample
+              fingerprint, voice-model identifier, consent record, review audio, approval status,
+              and lifecycle audit events. Voice characteristics may be biometric or sensitive data
+              under applicable law.
             </p>
             <p>
               <strong>Usage and billing data</strong> — Feature usage, AI-model consumption, plan
@@ -215,9 +223,9 @@ export default function PrivacyPolicyPage() {
             <p>
               We use data to provide and secure Wireline; process managed AI requests primarily
               through OpenAI, with Google Gemini and Vercel AI Gateway as continuity routes (and xAI
-              only when explicitly enabled); route calls and messages; execute connected workflows;
-              provide support; prevent fraud and abuse; bill through Stripe; and understand
-              aggregate product performance.
+              only when explicitly enabled); synthesize authorized voice output through ElevenLabs;
+              route calls and messages; execute connected workflows; provide support; prevent fraud
+              and abuse; bill through Stripe; and understand aggregate product performance.
             </p>
             <p>
               Optional Meta measurement is used only after your explicit choice to attribute
@@ -226,8 +234,10 @@ export default function PrivacyPolicyPage() {
               this page.
             </p>
             <p>
-              We do not use customer agent configurations, recordings, transcripts, or message
-              content to train third-party AI models.
+              Wireline does not train its own models on customer agent configurations, recordings,
+              transcripts, message content, or custom voice samples. AI and voice providers process
+              submitted data under their applicable contracts, privacy terms, account controls, and
+              safety obligations.
             </p>
           </Section>
 
@@ -235,11 +245,15 @@ export default function PrivacyPolicyPage() {
             <p>We rely on the following providers for defined service functions:</p>
             <ul className="list-disc list-inside space-y-1.5 ml-2">
               <li>
-                <strong>Postgres hosting</strong> — Database storage and backup infrastructure
+                <strong>Supabase</strong> — Managed Postgres storage and backup
               </li>
               <li>
-                <strong>Vapi and Twilio</strong> — Managed call orchestration, phone-number carrier,
-                SMS transport, and communications processing
+                <strong>Vapi, Twilio, and Deepgram</strong> — Calls, phone numbers, SMS, and
+                transcription
+              </li>
+              <li>
+                <strong>ElevenLabs</strong> — Managed text-to-speech, authorized private voice-model
+                creation, quality proofs, and voice-model deletion
               </li>
               <li>
                 <strong>OpenAI</strong> — Primary managed AI inference, call models, and realtime
@@ -247,6 +261,9 @@ export default function PrivacyPolicyPage() {
               </li>
               <li>
                 <strong>Google Gemini</strong> — Managed continuity inference and grounded search
+              </li>
+              <li>
+                <strong>Perplexity</strong> — Optional live public research
               </li>
               <li>
                 <strong>Vercel AI Gateway</strong> — Governed multi-model continuity, budgets, and
@@ -259,7 +276,16 @@ export default function PrivacyPolicyPage() {
                 <strong>Stripe</strong> — Payment processing, billing, and tax calculation
               </li>
               <li>
+                <strong>Resend</strong> — Transactional email delivery
+              </li>
+              <li>
                 <strong>Vercel</strong> — Hosting, functions, and edge delivery
+              </li>
+              <li>
+                <strong>Upstash</strong> — Distributed rate limits and spend controls
+              </li>
+              <li>
+                <strong>HeyGen and LiveAvatar</strong> — Optional presenter video and voice features
               </li>
               <li>
                 <strong>Plausible</strong> — Privacy-oriented aggregate website analytics
@@ -269,10 +295,22 @@ export default function PrivacyPolicyPage() {
                 only after explicit consent and subject to Global Privacy Control
               </li>
               <li>
-                <strong>Have I Been Pwned Pwned Passwords</strong> — Compromised-password screening
-                using a k-anonymous partial hash prefix
+                <strong>Have I Been Pwned Pwned Passwords</strong> —
+                {"Compromised-password screening using a k-anonymous partial hash prefix"}
+              </li>
+              <li>
+                <strong>Services you connect</strong> — Such as Google, Microsoft, CRM, commerce,
+                calendar, or team tools, only when you authorize them
               </li>
             </ul>
+            <p>
+              Optional providers receive data only when you enable the related feature or direct an
+              agent to use it.
+            </p>
+            <p>
+              Mobile contact information and SMS opt-in records are not sold or shared with third
+              parties for their marketing.
+            </p>
           </Section>
 
           <Section title="5. Data Retention and Security">
@@ -282,6 +320,15 @@ export default function PrivacyPolicyPage() {
               deletion starts a documented deletion process; associated personal data is erased
               within 30 days except for records we must retain by law or security records that have
               been de-identified.
+            </p>
+            <p>
+              Wireline processes a custom-voice upload in memory and does not place the source file
+              in its database or object storage. We retain the one-way fingerprint, authorization,
+              ownership, review, and audit records needed to prevent duplicate or unauthorized use.
+              ElevenLabs receives the sample to create and operate the voice model and retains or
+              deletes provider-side data under its terms, privacy controls, and legal obligations.
+              Revoking a voice immediately blocks new Wireline calls and requests provider deletion;
+              if that request fails, deletion remains pending for an authorized retry.
             </p>
             <p>
               We use access controls, encryption in transit, restricted secrets, tenant isolation,
@@ -301,12 +348,7 @@ export default function PrivacyPolicyPage() {
           </Section>
 
           <Section id="ccpa" title="7. California Privacy Rights (CCPA / CPRA)">
-            <p>
-              We do not sell personal information for money. California law may treat disclosure of
-              limited website event and device data to an advertising platform for cross-context
-              campaign measurement as "sharing," even when no money changes hands. Meta measurement
-              remains off unless you affirmatively allow it.
-            </p>
+            <p>{CCPA_SHARING_DISCLOSURE}</p>
             <p>
               Select <strong>Keep measurement off</strong>, close the privacy notice, or enable
               Global Privacy Control to opt out. You may return to the controls above at any time.

@@ -277,7 +277,7 @@ export default function BillingSettings() {
                     ? "Available after a live plan is active."
                     : balanceDue > 0
                       ? "A previous call finished after coverage ran out. Restore this amount before another paid action."
-                      : "Extra usage draws only from this balance—never an automatic overage invoice."}
+                      : "Extra usage draws only from this balance — never an automatic overage invoice."}
                 </p>
 
                 {canAddBalance ? (

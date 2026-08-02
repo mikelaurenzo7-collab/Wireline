@@ -283,12 +283,25 @@ h4 {
   letter-spacing: -0.025em;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-  border-radius: var(--radius);
+/* A default radius for controls that carry no `rounded-*` utility — a reset,
+ * not an override, so it belongs in `@layer base`.
+ *
+ * Unlayered, it outranked every Tailwind utility (v4 emits those into
+ * `@layer utilities`, and unlayered rules beat any layer regardless of
+ * specificity). Every `rounded-xl` button, input, select, and textarea in the
+ * authenticated product silently rendered at 8px instead of 12px — measured on
+ * 27 controls across /overview, /studio, /settings, and /phone — so a
+ * `rounded-xl` field sat inside a `rounded-xl` card with visibly tighter
+ * corners. In `@layer base` the default still applies to bare controls and
+ * yields to any utility that asks for a specific radius. */
+@layer base {
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    border-radius: var(--radius);
+  }
 }
 
 button,

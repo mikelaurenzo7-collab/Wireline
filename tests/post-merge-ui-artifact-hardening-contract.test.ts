@@ -45,13 +45,15 @@ describe("post-merge UI and artifact hardening", () => {
   it("keeps official asset capture portable, fail-safe, and on current brand language", () => {
     const assets = read("scripts/build-official-assets.mjs");
 
-    expect(assets).toContain('const baseUrl = new URL(process.env.E2E_BASE_URL || "https://trywireline.com")');
+    expect(assets).toContain(
+      'const baseUrl = new URL(process.env.E2E_BASE_URL || "https://trywireline.com")',
+    );
     expect(assets).toContain("url: baseUrl.origin");
     expect(assets).toContain('secure: baseUrl.protocol === "https:"');
     expect(assets).toContain("try {\n    const context = await browser.newContext");
     expect(assets).toContain("finally {\n    await browser.close();");
     expect(assets).toContain("Free Builder, Starter, Starter Plus, Pro, and Business.");
-    expect(assets).toContain("AI voice agents for sales and support");
+    expect(assets).toContain("Voice agents for sales and support");
     expect(assets).not.toContain("Free Builder · Starter · Growth · Scale · Business");
     expect(assets).not.toContain("Your best salesperson, without the commission");
   });

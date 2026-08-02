@@ -1,10 +1,10 @@
 # Wireline
 
-Wireline is the operating layer for **AI voice agents for personal and business conversations**: calls, texts, follow-up, browser context, email, and integrations. Start with one trained agent or build a coordinated roster that can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
+Wireline is the operating layer for **voice agents for personal and business conversations**: calls, texts, follow-up, browser context, email, and integrations. Start with one trained agent or build a coordinated roster that can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
 
 The customer-facing loop is **Create -> Train -> Run**. Operationally, Wire sits between Training and Run:
 
-1. **Create** a focused AI voice agent quickly.
+1. **Create** a focused voice agent quickly.
 2. **Train** it with facts, sources, policies, voice, tone, tools, and workflows.
 3. **Wire** it to an included number, integrations, routing, approvals, and billing controls.
 4. **Run** it in Studio for calls, texts, follow-up, approvals, handoffs, and review.

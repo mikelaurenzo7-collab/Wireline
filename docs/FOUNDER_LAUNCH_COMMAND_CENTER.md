@@ -23,6 +23,20 @@ cloning, and showcase infrastructure. Keep:
 5. ElevenLabs as optional voice identity, not reasoning.
 6. xAI only as an explicit opt-in experiment — never a split default for demos vs runtime.
 
+## Certification log
+
+### 2026-08-02 — K3 launch-perfect pass (commit `dfb76da` + fixes)
+
+Verified with evidence, not vibes:
+
+- **Gates green:** `tsc` (app/server/strict), `eslint` 0 warnings, `vitest` 1509/1509, 134/134 contract suites, production build, server smoke, all repo check scripts; authz matrix regenerated (356 routes / 293 protected / 0 violations).
+- **pg fix:** production logs showed `client.query() while already executing` (pg@9 hard-fail path). Root cause was the tenant-scoped `release` wrapper queueing `ROLLBACK` behind in-flight queries; the error path now destroys the client directly. 20/20 tenant tests pass. Fix rides this merge.
+- **Supabase prod:** RLS on 100% of public tables; migrations 0119/0120/0121 applied; voice-clone consent CHECK + approval gate + triggers + index live; zero cloned voices.
+- **Stripe:** 8 products / 14 active prices in exact parity with `plan-catalog.ts` (Starter $19/$190 … Runtime Balance top-ups); Live Video price deliberately `launch_paused`.
+- **Reels:** 5 cuts re-scored with ElevenLabs VO — see `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md` → Produced cuts.
+- **GitHub Actions:** red from account billing, not code — owner deferred; commit statuses (Vercel, GitGuardian) are green.
+- **Open:** cloud-browser dogfood (extension not connected), Twilio prepaid top-up, Federal DNC registration, `launch:status` re-run from `main` post-merge with full env.
+
 ## Current go/no-go
 
 ### Red — resolve before taking live customers

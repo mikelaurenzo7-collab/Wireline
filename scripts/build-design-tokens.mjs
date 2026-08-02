@@ -161,6 +161,7 @@ const kotlin = [
   "",
   "import androidx.compose.ui.graphics.Color",
   "import androidx.compose.ui.unit.dp",
+  "import androidx.compose.ui.unit.sp",
   "",
   "internal object WirelineDesignTokens {",
   "  object ColorToken {",
@@ -168,7 +169,15 @@ const kotlin = [
   "  }",
   "",
   "  object Metric {",
-  ...dimensionEntries.map(([path, value]) => `    val ${camel(path)} = ${pxNumber(value)}.dp`),
+  // Compose splits the two kinds of measurement that CSS and CGFloat conflate.
+  // Type sizes and line heights are TextUnit (`sp`) so they scale with the
+  // reader's system font-size setting; everything else is Dp. Emitting the
+  // whole group as `.dp` made every font-size token unusable — `.sp` has no
+  // Dp receiver, so the Android app failed to compile at all.
+  ...dimensionEntries.map(
+    ([path, value]) =>
+      `    val ${camel(path)} = ${pxNumber(value)}${path.startsWith("typography.") ? ".sp" : ".dp"}`,
+  ),
   "  }",
   "",
   "  object Motion {",

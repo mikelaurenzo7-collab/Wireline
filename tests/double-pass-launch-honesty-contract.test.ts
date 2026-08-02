@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { globSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -152,6 +152,44 @@ describe("double-pass launch honesty", () => {
     expect(source).not.toContain("res.json({ ok: false })");
   });
 
+  it("keeps carrier messaging disclosures and registration ownership accurate", () => {
+    const terms = read("src/components/LegalPage.tsx");
+    const privacy = read("src/components/PrivacyPolicyPage.tsx");
+    expect(terms).toContain("Mobile contact information and SMS opt-in records are not sold or");
+    expect(terms).toContain("Carriers are not liable");
+    expect(terms).toContain("coordinates that registration through Twilio");
+    expect(terms).not.toContain("as the Communications Service Provider");
+    expect(privacy).toContain("Mobile contact information and SMS opt-in records are not sold or");
+  });
+
+  it("fails commercial email readiness closed without a postal address", () => {
+    const envCheck = read("scripts/check-prod-env.mjs");
+    const vendorProbe = read("scripts/check-vendor-readiness.mjs");
+    const emailService = read("src/lib/email-service.ts");
+    const emailCompliance = read("src/lib/email-compliance.ts");
+    expect(envCheck).toContain('"WIRELINE_POSTAL_ADDRESS"');
+    expect(vendorProbe).toContain('"commercial_email_postal_address"');
+    expect(vendorProbe).toMatch(/commercialEmailPostalAddressReady \? "ready" : "blocked"/);
+    expect(emailService).toContain("getPostalAddress");
+    expect(emailService).toContain("Commercial email disabled: WIRELINE_POSTAL_ADDRESS is missing");
+    expect(emailCompliance).toContain("isEmailSuppressed check failed — treating as suppressed");
+    expect(emailCompliance).toMatch(/isEmailSuppressed[\s\S]*catch \(err\)[\s\S]*return true;/);
+  });
+
+  it("routes founder partnerships and growth work to revenue", () => {
+    const fleet = read("src/lib/founder-fleet-seed.ts");
+    const aisha = fleet.slice(
+      fleet.indexOf('id: "founder-aisha"'),
+      fleet.indexOf('id: "founder-elena"'),
+    );
+    const growth = fleet.slice(
+      fleet.indexOf('id: "founder-growth-email"'),
+      fleet.indexOf('id: "founder-tier2"'),
+    );
+    expect(aisha).toContain('team: "revenue"');
+    expect(growth).toContain('team: "revenue"');
+  });
+
   it("keeps billing status within serverless database pool headroom", () => {
     const source = read("src/routes/billing-routes.ts");
     const start = source.indexOf('"/billing/status"');
@@ -174,6 +212,44 @@ describe("double-pass launch honesty", () => {
     expect(phoneRead).toBeLessThan(entitlementRead);
   });
 
+  it("never dispatches concurrent queries through one pg transaction client", () => {
+    // One pg client cannot run queries concurrently inside a transaction, so a
+    // Promise.all over transaction-bound builders is always wrong.
+    //
+    // This used to scan a hardcoded file list for text lexically between
+    // `drizzle.transaction(` and its closing paren. That shape cannot see the
+    // most common form of the bug: a helper that receives `tx` as a parameter
+    // and fans out inside it, in a file that may not call drizzle.transaction
+    // at all. Three such sites (company-identity-routes loadIdentityState,
+    // company-identity-mutation reconcile, phone-provisioning release) were
+    // live while this test passed. Sweep every source file instead and judge
+    // by what the Promise.all actually awaits.
+    const files = globSync("src/**/*.ts", { cwd: process.cwd() }).filter(
+      (file) => !file.endsWith(".test.ts"),
+    );
+    expect(files.length).toBeGreaterThan(50);
+
+    const offenders: string[] = [];
+    for (const path of files) {
+      const source = read(path);
+      for (const match of source.matchAll(/Promise\.all\(/g)) {
+        const open = (match.index ?? 0) + "Promise.all".length;
+        const body = source.slice(open, matchingCallEnd(source, open) + 1);
+        // Transaction-bound builders read `tx.select(...)`, possibly wrapped
+        // across lines. Root-pool `drizzle.…` fan-out is legitimate.
+        if (/\btx\s*\r?\n?\s*\.(select|insert|update|delete|execute)\b/.test(body)) {
+          const line = source.slice(0, match.index ?? 0).split("\n").length;
+          offenders.push(`${path}:${line}`);
+        }
+      }
+    }
+
+    expect(
+      offenders,
+      `Promise.all over transaction-bound queries: ${offenders.join(", ")}`,
+    ).toEqual([]);
+  });
+
   it("fails launch closed when Stripe brand or customer controls drift", () => {
     const vendorProbe = read("scripts/check-vendor-readiness.mjs");
     expect(vendorProbe).toContain("/v1/billing_portal/configurations?active=true&limit=100");
@@ -183,8 +259,8 @@ describe("double-pass launch honesty", () => {
     expect(vendorProbe).toContain("stripePortalReady");
     expect(vendorProbe).toContain("stripeWebhookReady");
     expect(vendorProbe).toContain("stripeTaxReady");
-    expect(vendorProbe).toContain(
-      "stripeCoreReady && stripeBrandReady && stripePortalReady && stripeWebhookReady && stripeTaxReady",
+    expect(vendorProbe).toMatch(
+      /stripeCoreReady\s*&&\s*stripeBrandReady\s*&&\s*stripePortalReady\s*&&\s*stripeWebhookReady\s*&&\s*stripeTaxReady/,
     );
 
     const launchStatus = read("scripts/generate-launch-status.mjs");
@@ -213,7 +289,8 @@ describe("double-pass launch honesty", () => {
 
     for (const [path, expectedBatches] of expectedTransactionBatches) {
       const source = read(path);
-      const transactionBatches = source.match(/drizzle\.transaction\(\(tx\) =>/g)?.length ?? 0;
+      const transactionBatches =
+        source.match(/drizzle\.transaction\(\s*(?:async\s*)?\(tx\)\s*=>/g)?.length ?? 0;
       expect(transactionBatches, path).toBeGreaterThanOrEqual(expectedBatches);
 
       for (const block of promiseAllBlocks(source)) {

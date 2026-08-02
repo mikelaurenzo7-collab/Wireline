@@ -1,4 +1,4 @@
-# Wireline Launch Campaign - AI Voice Agents
+# Wireline Launch Campaign - Voice Agents
 
 Date: 2026-07-26  
 Status: Active launch campaign pack  
@@ -6,36 +6,36 @@ Owner: Founder / GTM
 
 ## Campaign Truth
 
-Wireline helps people and teams build **AI voice agents for personal tasks and business conversations**. Start with one agent, train it on the rules, wire it to calls, texts, email, and connected work, then add specialized agents when volume proves the need.
+Wireline helps people and teams build **Voice agents for personal tasks and business conversations**. Start with one agent, train it on the rules, wire it to calls, texts, email, and connected work, then add specialized agents when volume proves the need.
 
 This pack intentionally avoids broad "one AI employee" positioning. Business workspace copy may use "AI employee" when the buyer context is explicit, but public launch copy must keep personal plans welcome and make multi-agent growth clear.
 
 ## Launch Offer
 
-- Primary CTA: **Build your AI Voice Agent**
+- Primary CTA: **Build your Voice Agent**
 - Price line: **Build free. Go live from $19/mo.**
 - Live plan floor: **Starter - $19/mo**
 - Builder posture: Free Builder is for creating, training, and simulating before a paid live launch.
-- Number promise: Every paid AI voice agent includes a Wireline number.
+- Number promise: Every paid voice agent includes a Wireline number.
 - Retired line: Do not use sub-$19 launch pricing in active launch assets.
 
 ## Brand Spine
 
 | Element | Current Copy |
 | --- | --- |
-| North star | AI voice agents for every conversation - personal or business. |
+| North star | Voice agents for every conversation - personal or business. |
 | Compact line | Start with one agent. Build a team when you need one. |
 | Outcome line | Capture the call, send the follow-up, log the outcome. |
 | Proof loop | Brief -> Train -> Launch -> Improve |
 | Product loop | Create -> Train -> Wire -> Run |
-| CTA | Build your AI Voice Agent |
+| CTA | Build your Voice Agent |
 | Price | Build free. Go live from $19/mo. |
 
 ## Claim Guardrails
 
 Use:
 
-- "AI voice agents"
+- "Voice agents"
 - "personal tasks and business conversations"
 - "calls, texts, email, follow-up, and logged outcomes"
 - "paid plans include a Wireline number"
@@ -57,27 +57,34 @@ Avoid:
 "Missed calls should not become lost revenue."
 
 **Script**  
-"Wireline helps you build AI voice agents for personal tasks and business conversations. Start with one agent, train it on your rules, connect calls, texts, and email, and let it handle the next conversation with every outcome logged. Build free. Go live from $19 a month at trywireline.com."
+"Wireline helps you build voice agents for personal tasks and business conversations. Start with one agent, train it on your rules, connect calls, texts, and email, and let it handle the next conversation with every outcome logged. Build free. Go live from $19 a month at trywireline.com."
 
 **On-screen text**
 
-- AI Voice Agents
+- Voice Agents
 - Personal + Business
 - Voice + SMS + Email
 - Paid plans include a Wireline number
 - Build free. Go live from $19/mo.
 
 **CTA**  
-Build your AI Voice Agent
+Build your Voice Agent
 
 ## AI Voice Generator Audio
 
-Generated with AI Voice Generator for marketing/reference use only. This is not a production phone-call runtime voice and must not be wired into live PSTN calls without provider rights, latency, fallback, and telephony verification.
+Canonical voiceover masters were re-rendered with ElevenLabs on 2026-08-01 (clear, direct, founder-friendly; ~2.4 words/sec per the delivery guide below):
+
+- `wireline-missed-call-15s.mp3` (14.39s) — 15-second reel VO
+- `wireline-voice-agent-fit25.mp3` (24.24s) — walkthrough/final reel VO
+- `wireline-ai-voice-agent-30s.mp3` (27.12s) — primary 30-second ad VO
+- `wireline-founder-60s.mp3` (54.65s) — founder explainer VO, reserved for the 46s Descript master cut
+
+Earlier AI Voice Generator previews below are superseded; keep them for reference only. All regenerated audio remains marketing/reference use only — never a production phone-call runtime voice without provider rights, latency, fallback, and telephony verification.
 
 - Preview: https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/ec315585-89bf-4b2b-ad7f-7e30bb50d5fd.mp3
 - Full audio: https://www.aidocmaker.com/g0/audio?name=acdf9b5a628e4558923c63ba0ed2d821
 - Voice style: clear, direct, polished, founder-friendly
-- Transcript: "Missed calls should not become lost revenue. Wireline helps you build AI voice agents for personal tasks and business conversations. Start with one agent, train it on your rules, connect calls, texts, and email, and let it handle the next conversation with every outcome logged. Build free. Go live from nineteen dollars a month at trywireline dot com."
+- Transcript: "Missed calls should not become lost revenue. Wireline helps you build voice agents for personal tasks and business conversations. Start with one agent, train it on your rules, connect calls, texts, and email, and let it handle the next conversation with every outcome logged. Build free. Go live from nineteen dollars a month at trywireline dot com."
 
 ## Paid Social Set
 
@@ -85,20 +92,20 @@ Generated with AI Voice Generator for marketing/reference use only. This is not 
 
 Audience: owners and operators who lose revenue to unanswered calls.
 
-- Primary text: "Every missed call is a customer trying the next name on the list. Wireline lets you build an AI voice agent that answers, qualifies, texts the follow-up, and logs the outcome - while you stay on the job."
-- Headline: "AI Voice Agents"
+- Primary text: "Every missed call is a customer trying the next name on the list. Wireline lets you build a voice agent that answers, qualifies, texts the follow-up, and logs the outcome - while you stay on the job."
+- Headline: "Voice Agents"
 - Description: "Build free. Go live from $19/mo."
-- CTA: Build your AI Voice Agent
+- CTA: Build your Voice Agent
 - UTM: `utm_campaign=wl_launch_ai_voice_agents_v6&utm_content=missed_call_recovery`
 
 ### Ad 2 - One Agent, Every Channel
 
 Audience: buyers comparing AI receptionist, voice agent, chatbot, and workflow automation tools.
 
-- Primary text: "Do not stitch together a call bot, a texting tool, and a follow-up spreadsheet. Train one Wireline AI voice agent to work across calls, texts, email, and outcomes."
+- Primary text: "Do not stitch together a call bot, a texting tool, and a follow-up spreadsheet. Train one Wireline voice agent to work across calls, texts, email, and outcomes."
 - Headline: "Voice, SMS, Email, Follow-up"
 - Description: "Start with one agent. Add specialists when you need them."
-- CTA: Build your AI Voice Agent
+- CTA: Build your Voice Agent
 - UTM: `utm_campaign=wl_launch_ai_voice_agents_v6&utm_content=one_agent_every_channel`
 
 ### Ad 3 - Personal + Business
@@ -107,7 +114,7 @@ Audience: solo operators, busy professionals, and small teams.
 
 - Primary text: "Use Wireline for personal call delegation, front-desk coverage, support triage, lead response, and appointment follow-up. Your agent learns the rules before it ever goes live."
 - Headline: "Personal or Business"
-- Description: "Create, train, wire, and run AI voice agents."
+- Description: "Create, train, wire, and run voice agents."
 - CTA: Start free
 - UTM: `utm_campaign=wl_launch_ai_voice_agents_v6&utm_content=personal_business`
 
@@ -115,7 +122,7 @@ Audience: solo operators, busy professionals, and small teams.
 
 Audience: beta-friendly operators.
 
-- Primary text: "Founder Early Access is open for builders who want a practical AI voice agent, not another dashboard. Build free, test privately, and go live from $19/mo when ready."
+- Primary text: "Founder Early Access is open for builders who want a practical voice agent, not another dashboard. Build free, test privately, and go live from $19/mo when ready."
 - Headline: "Founder Early Access"
 - Description: "Calls, texts, email, outcomes."
 - CTA: Start free
@@ -125,10 +132,10 @@ Audience: beta-friendly operators.
 
 | Theme | Headline Options | Description |
 | --- | --- | --- |
-| AI voice agent | AI Voice Agents; Build Your AI Voice Agent; Voice Agents for Calls | Create, train, and launch AI voice agents for calls, texts, email, and follow-up. |
+| Voice agent | Voice Agents; Build Your Voice Agent; Voice Agents for Calls | Create, train, and launch voice agents for calls, texts, email, and follow-up. |
 | AI receptionist | AI Receptionist for Calls; Never Miss the Next Lead; Front Desk Voice Agent | Answer, qualify, route, and log conversations with a trained Wireline voice agent. |
 | Small business calls | Turn Calls Into Outcomes; Missed Calls Cost Revenue; Follow Up Every Lead | Build free. Go live from $19/mo with a paid-plan Wireline number. |
-| Personal call assistant | Personal Voice Agent; Delegate Calls Privately; Train Before Launch | Personal and business-friendly AI voice agents with private simulation before live use. |
+| Personal call assistant | Personal Voice Agent; Delegate Calls Privately; Train Before Launch | Personal and business-friendly voice agents with private simulation before live use. |
 
 Negative / avoid terms: free phone number, robocall, auto-dialer, guaranteed leads, WhatsApp public API, retired employee-price copy.
 
@@ -138,44 +145,67 @@ Negative / avoid terms: free phone number, robocall, auto-dialer, guaranteed lea
 
 I built Wireline because calls are still where real work shows up - and they are still too easy to miss.
 
-Wireline lets you build AI voice agents for personal tasks and business conversations. Start with one agent, train it on your facts and rules, connect calls, texts, and email, then let every outcome get logged.
+Wireline lets you build voice agents for personal tasks and business conversations. Start with one agent, train it on your facts and rules, connect calls, texts, and email, then let every outcome get logged.
 
 The launch offer is simple: build free, test privately, and go live from $19/mo when you are ready.
 
-CTA: Build your AI Voice Agent at trywireline.com.
+CTA: Build your Voice Agent at trywireline.com.
 
 ### X / Short Post
 
 You cannot answer every call. Your agent can.
 
-Wireline helps you build AI voice agents for personal tasks and business conversations - voice, SMS, email, follow-up, and logged outcomes.
+Wireline helps you build voice agents for personal tasks and business conversations - voice, SMS, email, follow-up, and logged outcomes.
 
 Build free. Go live from $19/mo.
 
 ### Short Demo Caption
 
-Hear the agent answer, qualify, follow up, and log the outcome. Wireline is AI voice agents for every conversation - personal or business.
+Hear the agent answer, qualify, follow up, and log the outcome. Wireline is voice agents for every conversation - personal or business.
 
 ## Video/Reel Briefs
 
 Reel doctrine, applied to every cut below:
 
-- Design for sound-off. Most reel views are muted, so the overlays must carry the whole story on their own; the voiceover rewards the minority who listen. Never put a fact in the VO that is not also on screen.
-- One idea per shot, real product screens only (use `npm run marketing:kit` captures), never mockups.
-- Cut rhythm: a new shot roughly every 2.5 seconds at 15s, every 4 seconds at 30s.
-- Every cut ends on the same card: CTA, price line, trywireline.com.
+- The [46-second Descript master](https://share.descript.com/view/MvGqlYX4NMf) is authoritative.
+- One idea per shot. Real product only; never stock footage, mock dashboards, or vendor marks.
+- Keep burned-in words scarce: **Create. Train. Wire. Run.** when useful, then one end card.
+- Ship accurate platform captions for accessibility; do not cover legible product UI with persistent subtitles.
+- Reframe every derivative around the active UI. Never scale an entire desktop screen into an unreadable vertical frame.
+
+### Produced cuts (scored 2026-08-01)
+
+ElevenLabs VO laid over the delivered reel videos; audio levels verified (mean ≈ −24.5 dB):
+
+| Cut | Length | Voiceover |
+| --- | --- | --- |
+| `wirelinelaunchreelfinal.mp4` | 25.57s | walkthrough (24.24s) |
+| `wirelinelaunchreel16x9.mp4` | 25.57s | walkthrough (24.24s) |
+| `wirelinelaunchreel15s.mp4` | 16.80s | missed-call (14.39s) |
+| `wirelinelaunchreelsquare.mp4` | 16.80s | missed-call (14.39s) |
+| `wirelinelaunchreelalt.mp4` | 20.43s | missed-call (14.39s) |
+
+QA note: the "15s" cut runs 16.80s — trim to ≤15.0s before strict-length paid placements. The 46s Descript master is not yet re-cut; the founder-60s VO (54.65s) is ready for it.
+
+### 46-Second Launch Reel — Master
+
+Approved voiceover:
+
+> "This is Wireline. Voice agents that pick up the calls you can't and finish the work that follows. One workspace holds every agent, every conversation, every outcome. Train yours in plain language: the job it owns, the tone it takes, the greeting it opens with. Then choose how it sounds. Wire it to a real number. Place an outbound call or let it answer the ones coming in. Texts and email follow from the same agent under the same rules, and every conversation lands where you can check the work. Build free at trywireline.com. Go live from nineteen dollars a month."
+
+Picture sequence: workspace -> agent setup -> training -> voice -> number -> inbound/outbound -> text/email follow-up -> outcome -> end card. The UI carries the proof; the VO carries the story.
 
 ### 15-Second Reel - Missed Call
 
-The hinge of the whole cut is shot 2 into shot 3: "You cannot pick up. / Your agent can."
+Use this as the paid-social cutdown. The hinge is "You cannot pick up. / Your agent can."
 
 | Time | Shot | Overlay | Sound |
 | --- | --- | --- | --- |
-| 0.0-2.5 | Phone face-down on a workbench, screen lighting up | 6:47 PM. The phone rings. | Ring tone, room ambience |
+| 0.0-2.5 | Phone face-down on a workbench, screen lighting up | — | Ring tone, room ambience |
 | 2.5-5.0 | Lock screen stacking missed calls | You cannot pick up. | Ring cuts to silence |
-| 5.0-8.0 | Wireline call card answering live (product screen) | Your agent can. | Agent voice, low in the mix |
-| 8.0-11.5 | Outcome card + SMS follow-up appearing | Answered. Booked. Logged. | Three soft UI ticks, one per word |
-| 11.5-15.0 | End card | Build free. Go live from $19/mo. - trywireline.com | Music resolves |
+| 5.0-8.0 | Wireline call card answering live | Your agent can. | Agent voice, low in the mix |
+| 8.0-11.5 | Outcome card + SMS follow-up | — | Three soft UI ticks |
+| 11.5-15.0 | End card | Build free. Go live from $19/mo. / trywireline.com | Music resolves |
 
 Voiceover (34 words, ~14s at a relaxed pace):
 
@@ -193,7 +223,7 @@ Four verbs, four screens, no filler. Overlay each stage word as a full-frame cha
 | 6-13 | Train | Facts, tone, escalation rules, prohibited topics | Train it on your rules |
 | 13-19 | Wire | Number, SMS/email, billing, launch controls | Wire it to real channels |
 | 19-26 | Run | Calls, follow-ups, approvals, outcomes in Studio | Run it. Check its work. |
-| 26-30 | CTA card | Build your AI Voice Agent | Build free. Go live from $19/mo. |
+| 26-30 | CTA card | Build your Voice Agent | Build free. Go live from $19/mo. |
 
 Voiceover (70 words, ~28s):
 
@@ -207,9 +237,9 @@ Founder on camera or voice over product footage. Warm, direct, zero hype.
 
 Voiceover (129 words, ~54s):
 
-> "I built Wireline because the phone call is still where real business happens, and it is still the easiest thing to miss. Every missed call is a customer deciding to try the next name on the list. So we made it simple to build an AI voice agent of your own. Train it on your facts and rules in plain language. Let it practice in private simulation. Only then does it touch a real number. From that moment it answers your calls, sends the follow-up text or email, and logs every outcome so you can check its work. Personal line or front desk. One agent, or a team when volume proves the need. Build free. Go live from nineteen dollars a month, with a Wireline number included on every paid plan."
+> "I built Wireline because the phone call is still where real business happens, and it is still the easiest thing to miss. Every missed call is a customer deciding to try the next name on the list. So we made it simple to build a voice agent of your own. Train it on your facts and rules in plain language. Let it practice in private simulation. Only then does it touch a real number. From that moment it answers your calls, sends the follow-up text or email, and logs every outcome so you can check its work. Personal line or front desk. One agent, or a team when volume proves the need. Build free. Go live from nineteen dollars a month, with a Wireline number included on every paid plan."
 
-End card: Build your AI Voice Agent - trywireline.com.
+End card: Build your Voice Agent - trywireline.com.
 
 ### Voiceover Delivery Guide
 
@@ -227,26 +257,26 @@ Use these with Canva, Adobe Express, Adobe Firefly, HeyGen, BlitzReels, HyperFra
 
 ### Static Social - 1:1
 
-Create a premium SaaS social ad for Wireline. Headline: "AI Voice Agents". Subhead: "Personal + Business. Voice + SMS + Email." CTA: "Build free. Go live from $19/mo." Visual: clear product-interface inspired composition showing an incoming call, follow-up text, and logged outcome. Style: Wireline Letterpress, crisp professional SaaS, electric-violet accents, platinum wire line, spacious, high contrast, no cartoons.
+Create a premium SaaS social ad for Wireline. Headline: "Voice Agents". Subhead: "Personal + Business. Voice + SMS + Email." CTA: "Build free. Go live from $19/mo." Visual: clear product-interface inspired composition showing an incoming call, follow-up text, and logged outcome. Style: Wireline Letterpress, crisp professional SaaS, electric-violet accents, platinum wire line, spacious, high contrast, no cartoons.
 
 ### Story/Reel Cover - 9:16
 
-Create a vertical launch cover for Wireline. Headline: "Missed calls should not become lost revenue." Secondary line: "Build your AI Voice Agent." Footer: "trywireline.com". Visual: clean mobile-first call card flowing into a text confirmation and outcome log.
+Create a vertical launch cover for Wireline. Headline: "Missed calls should not become lost revenue." Secondary line: "Build your Voice Agent." Footer: "trywireline.com". Visual: clean mobile-first call card flowing into a text confirmation and outcome log.
 
 ### LinkedIn Banner - 16:9
 
-Create a polished LinkedIn launch banner for Wireline. Headline: "AI voice agents for every conversation - personal or business." Supporting line: "Create -> Train -> Wire -> Run." CTA: "Build free. Go live from $19/mo." Visual: professional dashboard scene, voice waveform, SMS thread, email follow-up, and outcome ledger.
+Create a polished LinkedIn launch banner for Wireline. Headline: "Voice agents for every conversation - personal or business." Supporting line: "Create -> Train -> Wire -> Run." CTA: "Build free. Go live from $19/mo." Visual: professional dashboard scene, voice waveform, SMS thread, email follow-up, and outcome ledger.
 
 ### Demo Deck
 
 Create a 6-slide promotional deck:
 
-1. AI Voice Agents
+1. Voice Agents
 2. The missed-call problem
 3. Create -> Train -> Wire -> Run
 4. Personal and business use cases
 5. Founder Early Access pricing from $19/mo
-6. CTA: Build your AI Voice Agent
+6. CTA: Build your Voice Agent
 
 ## Activation QA
 

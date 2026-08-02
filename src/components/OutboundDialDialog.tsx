@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "./atoms/Dialog";
 import { Button } from "./atoms";
+import { Checkbox } from "./ui/shadcn/Checkbox";
 import { useAgents } from "../contexts/AgentsContext";
 import { useToast } from "../contexts/ToastContext";
 import { authFetch } from "../lib/api";
@@ -254,8 +255,7 @@ export default function OutboundDialDialog({
 
             {callPurpose === "marketing_or_sales" ? (
               <label className="flex items-start gap-3 rounded-md border border-input/80 bg-muted/30 p-3">
-                <input
-                  type="checkbox"
+                <Checkbox
                   className="mt-1"
                   checked={consentConfirmed}
                   onChange={(event) => setConsentConfirmed(event.target.checked)}

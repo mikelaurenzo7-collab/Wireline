@@ -1,24 +1,24 @@
 /** Shared product voice for public marketing, workspace copy, and audience positioning. */
 
 export const BRAND_SYSTEM = {
-  northStar: "AI voice agents that call, answer, follow up, and finish the work.",
-  productNoun: "AI voice agent",
+  northStar: "Voice agents that call, answer, follow up, and finish the work.",
+  productNoun: "Voice agent",
   /** Public buying-surface noun. Business contexts should use "business voice agent". */
-  buyingNoun: "AI Voice Agent",
-  defaultRole: "Your AI voice agent",
+  buyingNoun: "Voice Agent",
+  defaultRole: "Your voice agent",
   brandSpine: ["Build", "Train", "Launch"],
   proofLoop: ["Brief", "Train", "Launch", "Improve"],
   toneRules: [
     "Lead with outcomes before AI mechanics.",
     "Welcome both personal and business use without making either audience feel secondary.",
-    "Make clear that customers can start with one AI voice agent and add specialized AI voice agents as their needs grow.",
+    "Make clear that customers can start with one voice agent and add specialized voice agents as their needs grow.",
     "Keep the owner in control: guardrails, approvals, spend, handoffs, and escalation stay explicit.",
-    "Present calling, texting, and email as channels each trained AI voice agent can use, not separate products customers must assemble.",
+    "Present calling, texting, and email as channels each trained voice agent can use, not separate products customers must assemble.",
     "State that the included Wireline number applies to paid plans so the free builder is never misrepresented.",
     "Treat specialists as optional expansion, not setup homework.",
     "Show logged proof after every call, text, email, handoff, campaign, and follow-up.",
     "Never name the customer-facing role after the platform; Wireline is the platform and the customer owns the agent.",
-    "On broad and default product surfaces, prefer AI Voice Agent; use personal voice agent or business voice agent when the audience context is explicit.",
+    "On broad and default product surfaces, prefer Voice Agent; use personal voice agent or business voice agent when the audience context is explicit.",
     "Use sentence case for headlines, buttons, tabs, and labels.",
     "Prefer short sentences, concrete verbs, and specific outcomes.",
     "Avoid em dashes, inflated AI language, and stacked claims on public buying surfaces.",
@@ -79,21 +79,21 @@ export function customerAgentLanguage(posture: CustomerAgentPosture) {
 export const AGENT_DIRECTION_MODES = {
   outbound: {
     label: "Sales",
-    eyebrow: "AI voice agent for outbound growth",
+    eyebrow: "Voice agent for outbound growth",
     loop: ["Research", "Call", "Book", "Log"],
     promise:
       "Researches the lead, calls with context, sends the follow up, books the meeting, and logs what moved forward.",
   },
   inbound: {
     label: "Service",
-    eyebrow: "AI voice agent for demand capture",
+    eyebrow: "Voice agent for demand capture",
     loop: ["Answer", "Qualify", "Act", "Log"],
     promise:
       "Answers live demand, continues by text or email when useful, and routes only what needs a person.",
   },
   hybrid: {
     label: "All purpose",
-    eyebrow: "AI voice agent for daily operations",
+    eyebrow: "Voice agent for daily operations",
     loop: ["Answer", "Sell", "Follow up", "Sync"],
     promise:
       "Keeps calls, texts, email, sales, service, scheduling, and follow through in one visible workflow under the owner's direction.",
@@ -101,13 +101,13 @@ export const AGENT_DIRECTION_MODES = {
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Every paid AI voice agent includes a Wireline number at no extra line fee. It can call, take callbacks, send texts, and manage handoffs under your direction." as const;
+  "Every paid voice agent includes a Wireline number at no extra line fee. It can call, take callbacks, send texts, and manage handoffs under your direction." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
   headline: "A voice agent that moves growth work forward.",
   subline:
-    "Start with one capable AI voice agent that researches leads, calls, texts, emails, sells, books, follows up, and logs proof. Add specialists only when volume or workflow complexity calls for them.",
+    "Start with one capable voice agent that researches leads, calls, texts, emails, sells, books, follows up, and logs proof. Add specialists only when volume or workflow complexity calls for them.",
   lanes: [
     "Appointment setting",
     "Lead revival",
@@ -121,12 +121,12 @@ export const OUTBOUND_WEDGE = {
   differentiator:
     "Wireline turns calls, texts, and email into completed tasks, booked appointments, revived leads, handled callbacks, recovered opportunities, and logged proof.",
   beforeStrip:
-    "Build one capable AI voice agent or a coordinated roster. Train each for its role, connect the right channels, and improve from logged outcomes.",
+    "Build one capable voice agent or a coordinated roster. Train each for its role, connect the right channels, and improve from logged outcomes.",
 } as const;
 
 export const MARKETING_VOICE = {
   eyebrow: null,
-  headline: "AI voice agents that get the work done.",
+  headline: "Voice agents that get the work done.",
   /** Public hero CTA broad enough for personal and business buyers. */
   primaryCta: "Build your voice agent",
   subline:
@@ -184,8 +184,8 @@ export const BUSINESS_MARKETING_VOICE = {
 } as const;
 
 export const WORKSPACE_VOICE = {
-  createHeadline: "Build your next AI voice agent.",
-  runHeadline: "Your AI voice agent is live.",
+  createHeadline: "Build your next voice agent.",
+  runHeadline: "Your voice agent is live.",
   emptyCue: "Brief it. Train it once. Connect calls, texts, and email.",
   configurePrompts: ["Adjust the greeting", "Change the tone", "Add a business rule"],
   testPrompts: [
@@ -197,10 +197,10 @@ export const WORKSPACE_VOICE = {
 } as const;
 
 export const PRODUCT_VERSATILITY = {
-  eyebrow: "AI voice agents for life and work",
-  tagline: "Start with one AI voice agent. Build a team when you need one.",
+  eyebrow: "Voice agents for life and work",
+  tagline: "Start with one voice agent. Build a team when you need one.",
   short:
-    "AI voice agents for calling, texting, email, sales, marketing, appointment setting, lead revival, support, scheduling, follow up, inbound conversion, recovery, and personal admin.",
+    "Voice agents for calling, texting, email, sales, marketing, appointment setting, lead revival, support, scheduling, follow up, inbound conversion, recovery, and personal admin.",
   hero: "One platform for the voice agents and conversations that keep life and work moving.",
 } as const;
 

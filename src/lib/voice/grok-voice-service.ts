@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { AppError } from "../api-error";
-import { drizzle, fetchWithTimeout, log } from "../server-context";
+import { drizzle, fetchWithTimeout, log, serialQueryBatch } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import * as schema from "../../db/schema";
 import {
@@ -213,7 +213,7 @@ function buildDraftInstructions(agentName?: string | null): string {
 
 async function loadAgentRuntime(agentId: string, userId: string) {
   const [agents, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
-    Promise.all([
+    serialQueryBatch([
       tx
         .select({
           id: schema.agents.id,

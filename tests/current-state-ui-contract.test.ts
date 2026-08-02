@@ -79,7 +79,7 @@ describe("current-state UI contract", () => {
     expect(developers).toContain("Cursor");
     expect(developers).toContain("one account-bound MCP connector");
     expect(developers).toContain(
-      "this connector cannot place calls, send messages,\n              provision numbers, or launch a live AI voice agent.",
+      "this connector cannot place calls, send messages,\n              provision numbers, or launch a live voice agent.",
     );
     expect(developers).not.toContain("Settings -> API Access");
     expect(developers).not.toContain("wl_YOUR_API_KEY");

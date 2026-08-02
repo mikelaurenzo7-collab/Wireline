@@ -103,10 +103,10 @@ const PLAN_PREVIEW = [
     price: `$${planCatalog.starter.price_usd_monthly}`,
     period: "/mo",
     facts: [
-      `${planCatalog.starter.max_agents} live AI voice agent`,
+      `${planCatalog.starter.max_agents} live voice agent`,
       `${planCatalog.starter.included_phone_numbers} Wireline number`,
       `${planCatalog.starter.voice_minutes_monthly} voice minutes each month`,
-      "SMS and email",
+      "SMS, email, and Lead Hunt access",
     ],
     cta: "Choose Starter",
     ctaPath: "/signup?plan=starter",
@@ -120,7 +120,7 @@ const PLAN_PREVIEW = [
       `${planCatalog.team.max_agents} live agents`,
       `${planCatalog.team.included_phone_numbers} Wireline numbers`,
       `${planCatalog.team.voice_minutes_monthly} voice minutes each month`,
-      "SMS and Lead Hunt",
+      "Full Lead Hunt and enrichment",
     ],
     cta: "Choose Starter Plus",
     ctaPath: "/signup?plan=team",
@@ -131,7 +131,7 @@ const PLAN_PREVIEW = [
     price: `$${planCatalog.business.price_usd_monthly}`,
     period: "/mo",
     facts: [
-      `${planCatalog.business.max_agents} live AI voice agents`,
+      `${planCatalog.business.max_agents} live voice agents`,
       `${planCatalog.business.included_phone_numbers} Wireline numbers`,
       `${planCatalog.business.voice_minutes_monthly} voice minutes each month`,
       "Shared channels, analytics, and approvals",
@@ -313,7 +313,7 @@ export default function WireAgentLanding() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">Work lanes</p>
               <h2 className="wl-display-2 mx-auto mt-4 max-w-[18ch]">
-                Choose the outcome. Your agent handles the conversation.
+                Choose the outcome. It handles the rest.
               </h2>
               <p className="mx-auto mt-4 max-w-[44rem] text-[16px] leading-[1.65] text-muted-foreground">
                 Start with sales, service, or all purpose follow through. Voice, text, email, and

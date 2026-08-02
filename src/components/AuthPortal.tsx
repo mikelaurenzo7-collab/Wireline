@@ -16,6 +16,7 @@ import {
 
 import { useAuth } from "../contexts/AuthContext";
 import { StatusNotice } from "./molecules";
+import { Checkbox } from "./ui/shadcn/Checkbox";
 import WirelineMark from "./brand/WirelineMark";
 import { PageMeta } from "../lib/page-meta";
 import {
@@ -298,7 +299,7 @@ function AuthShell({ children, compact = false }: { children: ReactNode; compact
         <div className="w-full max-w-[520px]">
           <Link to="/" className="wl-auth-entry-mark" aria-label="Wireline home">
             <span className="wl-auth-brand-badge">
-              <WirelineMark className="h-4 w-6" strokeWidth={10} />
+              <WirelineMark className="size-8" />
             </span>
             <span>Wireline</span>
           </Link>
@@ -692,13 +693,12 @@ export default function AuthPortal() {
           <div className="pt-2">
             {isSignUp && (
               <div className="wl-auth-terms mb-3 flex items-start gap-3 rounded-xl border border-border bg-muted/50 p-2.5 text-sm leading-relaxed text-foreground/75">
-                <input
+                <Checkbox
                   id="auth-terms"
-                  type="checkbox"
                   aria-labelledby="auth-terms-label"
                   checked={agreedToTerms}
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  className="mt-1 h-4 w-4 shrink-0 accent-primary"
+                  className="mt-1"
                 />
                 <span id="auth-terms-label">
                   <label htmlFor="auth-terms" className="cursor-pointer select-none">

@@ -57,7 +57,7 @@ node scripts/audit-stripe-catalog-live.mjs
 5. Confirm `POST /api/billing/checkout` returns a Stripe Checkout URL.
 6. Confirm Free Builder has no recurring checkout; live work requires choosing a paid plan.
 
-Expected failure modes must be explicit JSON: `SERVICE_UNAVAILABLE` for missing price/env, `CONTACT_SALES_PLAN` for Enterprise, and `ALREADY_SUBSCRIBED` for existing live subscriptions.
+Expected failure modes must be explicit JSON: `FREE_PLAN_NO_CHECKOUT` for Free Builder, `SERVICE_UNAVAILABLE` for a missing paid-plan price, `LEGACY_PLAN_RETIRED` for retired catalog entries, and `ALREADY_SUBSCRIBED` for an existing live subscription. Scale/custom sales intents are not plan aliases and never resolve to checkout.
 
 ### 2. Successful checkout updates server-owned entitlement state
 

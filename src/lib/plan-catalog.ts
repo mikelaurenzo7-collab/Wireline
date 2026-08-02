@@ -19,6 +19,9 @@ export const STRIPE_TAX_TRANSACTION_RATE = 0.005;
 
 export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v6";
 
+/** Published prepaid top-up rate, shared by catalog, billing, and UI. */
+export const FLAT_OVERAGE_PER_MIN_USD = 0.22;
+
 export const EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY = 15;
 export const EXTRA_AGENT_ADDON_VOICE_MINUTES_MONTHLY = 50;
 export const EXTRA_AGENT_ADDON_PHONE_NUMBERS = 1;
@@ -43,8 +46,8 @@ export type StripePlan = {
   overage_per_min_usd: number;
   included_phone_numbers: number;
   features: string[];
-  priceIdEnv: string;
-  annualPriceIdEnv: string;
+  priceIdEnv?: string;
+  annualPriceIdEnv?: string;
   fallbackPriceId?: string;
   fallbackAnnualPriceId?: string;
   lookupKeyMonthly?: string;
@@ -86,8 +89,7 @@ const PLAN_ID_ALIASES: Record<string, StripePlanId> = {
   enterprise: "enterprise",
   growth: "enterprise",
   "business-plus": "enterprise",
-  custom: "enterprise",
-  scale: "enterprise",
+  // Scale/custom are sales intents, not aliases for a self-serve plan.
 };
 
 const PRICE_KEY_PLAN_PREFIXES: Record<string, StripePlanId> = {
@@ -130,13 +132,12 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 1,
     voice_minutes_monthly: 0,
     runtime_allowance_usd_monthly: 0,
-    overage_per_min_usd: 0.22,
+    overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 0,
-    priceIdEnv: "STRIPE_PERSONAL_PRICE_ID",
-    annualPriceIdEnv: "STRIPE_PERSONAL_ANNUAL_PRICE_ID",
+    // Free Builder is not a Stripe product.
     public: true,
     features: [
-      "1 private draft AI communications agent",
+      "1 private draft communications agent",
       "Agent setup, training, knowledge, and private simulation",
       "No production number or paid provider action until activation",
     ],
@@ -149,7 +150,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 1,
     voice_minutes_monthly: 60,
     runtime_allowance_usd_monthly: 1,
-    overage_per_min_usd: 0.22,
+    overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_STARTER_9_PRICE_ID",
     annualPriceIdEnv: "STRIPE_STARTER_9_ANNUAL_PRICE_ID",
@@ -159,7 +160,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     lookupKeyAnnual: "starter_annual_founder_2026_07_v6",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
-      "1 live AI communications agent",
+      "1 live communications agent",
       "1 production-number slot, provisioned when needed",
       "60 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
@@ -178,7 +179,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 2,
     voice_minutes_monthly: 120,
     runtime_allowance_usd_monthly: 3,
-    overage_per_min_usd: 0.22,
+    overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 2,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
     annualPriceIdEnv: "STRIPE_STARTER_ANNUAL_PRICE_ID",
@@ -207,7 +208,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 5,
     voice_minutes_monthly: 245,
     runtime_allowance_usd_monthly: 6,
-    overage_per_min_usd: 0.22,
+    overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 5,
     priceIdEnv: "STRIPE_TEAM_PRICE_ID",
     annualPriceIdEnv: "STRIPE_TEAM_ANNUAL_PRICE_ID",
@@ -217,7 +218,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     lookupKeyAnnual: "business_annual_founder_2026_07_v6",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
-      "Up to 5 live AI communications agents",
+      "Up to 5 live communications agents",
       "Up to 5 production-number slots, provisioned when needed",
       "245 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
@@ -237,7 +238,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 15,
     voice_minutes_monthly: 450,
     runtime_allowance_usd_monthly: 12,
-    overage_per_min_usd: 0.22,
+    overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 15,
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
     annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
@@ -247,7 +248,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     lookupKeyAnnual: "enterprise_annual_founder_2026_07_v6",
     ...PAID_EXTRA_AGENT_ADDON,
     features: [
-      "Up to 15 live AI communications agents",
+      "Up to 15 live communications agents",
       "Up to 15 production-number slots, provisioned when needed",
       "450 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
@@ -286,8 +287,7 @@ export type BillingInterval = "month" | "year";
 export function estimatedStripeCommercialFeesUsd(grossChargeUsd: number): number {
   if (!Number.isFinite(grossChargeUsd) || grossChargeUsd <= 0) return 0;
   return (
-    grossChargeUsd *
-      (PAYMENT_PROCESSING_RATE + STRIPE_BILLING_RATE + STRIPE_TAX_TRANSACTION_RATE) +
+    grossChargeUsd * (PAYMENT_PROCESSING_RATE + STRIPE_BILLING_RATE + STRIPE_TAX_TRANSACTION_RATE) +
     PAYMENT_PROCESSING_FIXED_USD
   );
 }
@@ -357,7 +357,7 @@ export function canonicalPlanId(id: string | null | undefined): StripePlanId | n
 function configuredPriceId(plan: StripePlan, interval: "month" | "year"): string | null {
   const envKey = interval === "year" ? plan.annualPriceIdEnv : plan.priceIdEnv;
   const fallback = interval === "year" ? plan.fallbackAnnualPriceId : plan.fallbackPriceId;
-  return process.env[envKey] || fallback || null;
+  return (envKey ? process.env[envKey] : null) || fallback || null;
 }
 
 function configuredExtraAgentPriceId(plan: StripePlan): string | null {

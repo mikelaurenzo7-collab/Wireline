@@ -30,7 +30,7 @@ async function resolveLaunchPriceId(
   if (!plan) return null;
 
   const envKey = interval === "year" ? plan.annualPriceIdEnv : plan.priceIdEnv;
-  const envPriceId = process.env[envKey]?.trim();
+  const envPriceId = envKey ? process.env[envKey]?.trim() : undefined;
   if (envPriceId) {
     try {
       const price = await stripe.prices.retrieve(envPriceId);
@@ -98,11 +98,8 @@ router.post(
     }
     if (plan.id === "personal" || plan.price_usd_monthly === 0) {
       return res.status(400).json({
-        code: "CONTACT_SALES_PLAN",
-        error:
-          plan.id === "enterprise"
-            ? "Enterprise is founder-led. Contact sales@trywireline.com."
-            : "Free Builder does not require checkout.",
+        code: "FREE_PLAN_NO_CHECKOUT",
+        error: "Free Builder does not require checkout.",
       });
     }
 

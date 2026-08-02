@@ -156,6 +156,8 @@ export default function DeployAgentModal({
                 <div className="space-y-1.5 min-w-0">
                   <p className="wl-micro-meta">Deploy · {template.category}</p>
                   <h2
+                    data-slot="dialog-title"
+
                     id="deploy-agent-title"
                     className="font-display text-2xl text-foreground leading-tight"
                   >

@@ -58,7 +58,7 @@ describe("launch readiness sextuple-pass 2026-07-27", () => {
     const playbooks = read("src/lib/integration-playbooks.ts");
     const aiErrors = read("src/lib/ai-stream-errors.ts");
     const browser = read("src/pages/BrowserCommandInstallPage.tsx");
-    expect(blog).toContain("AI voice agent");
+    expect(blog).toContain("Voice agent");
     expect(blog).not.toContain("AI call agent");
     expect(pricing).toContain("Full phone coverage for growing teams.");
     expect(pricing).not.toContain("AI conversation workforce");

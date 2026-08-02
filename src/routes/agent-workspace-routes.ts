@@ -14,7 +14,7 @@ import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser, authenticateEventStream } from "../middleware/auth";
 import { claudeRateLimiter, smsRateLimit } from "../middleware/api-rate-limits";
 import { validateBody, workspaceMessageSchema, pdfUploadSchema } from "../lib/api-validation";
-import { log, drizzle } from "../lib/server-context";
+import { log, drizzle, serialQueryBatch } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { publicAiStreamFailureMessage } from "../lib/ai-stream-errors";
@@ -729,7 +729,7 @@ router.get(
 
       const [callRows, emailRows, textRows, bookingRows, openTaskRows, recentCalls] =
         await drizzle.transaction((tx) =>
-          Promise.all([
+          serialQueryBatch([
             tx
               .select({ n: sql<number>`count(*)::int` })
               .from(schema.callLogs)

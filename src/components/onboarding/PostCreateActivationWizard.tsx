@@ -278,9 +278,11 @@ export default function PostCreateActivationWizard({
             <p className={WL_APP_CLASSES.wiredEyebrow}>{POST_CREATE_WIZARD_COPY.eyebrow}</p>
             <h2
               id="post-create-wizard-title"
+              data-slot="dialog-title"
               className="mt-1 font-[var(--wireline-font-family-display)] text-xl tracking-[-0.02em] text-foreground sm:text-2xl"
             >
-              {POST_CREATE_WIZARD_COPY.title} {payload.agentName}
+              {POST_CREATE_WIZARD_COPY.title}{" "}
+              <span className="wl-preserve-case">{payload.agentName}</span>
             </h2>
           </div>
           <button

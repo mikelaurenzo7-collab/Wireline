@@ -19,7 +19,7 @@ import { randomUUID } from "node:crypto";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { z } from "zod";
 import { AppError } from "../lib/api-error";
-import { log, drizzle } from "../lib/server-context";
+import { log, drizzle, serialQueryBatch } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
 import { validate } from "../middleware/input-validation";
@@ -102,7 +102,7 @@ router.get(
       // serverless pool, so a bare Promise.all would let two concurrent mobile
       // bootstraps exhaust it and fail on the 5s checkout timeout.
       const [[profile], [row], [{ count }]] = await drizzle.transaction((tx) =>
-        Promise.all([
+        serialQueryBatch([
           tx
             .select({ fullName: schema.users.fullName, email: schema.users.email })
             .from(schema.users)
@@ -381,7 +381,7 @@ router.get(
         throw AppError.fromHttpStatus(404, "Agent not found.");
       }
       const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
-        Promise.all([
+        serialQueryBatch([
           tx
             .select({
               name: schema.agents.name,
@@ -964,7 +964,15 @@ router.get(
       if (!call) {
         return res.status(404).json({ code: "NOT_FOUND", error: "Call not found." });
       }
-      res.json({ call: { ...call, id: String(call.id) } });
+      res.json({
+        call: {
+          ...call,
+          id: String(call.id),
+          recordingUrl: call.recordingUrl
+            ? `/api/calls/${String(call.id)}/recording`
+            : null,
+        },
+      });
     } catch (err) {
       log.error("GET /api/mobile/calls/:callId/detail failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to load call.");

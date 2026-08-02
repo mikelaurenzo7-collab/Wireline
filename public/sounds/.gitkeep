@@ -1,9 +1,0 @@
-# Generated dialogue samples land here.
-# Refresh via:
-#   curl -X POST https://wireline.app/api/admin/generate-dialogue-sample \
-#     -H 'X-Migration-Token: $MIGRATION_TOKEN' \
-#     -H 'Content-Type: application/json' \
-#     -d '{"name":"landing-demo","lines":[{"voice_id":"pNInz6obpgDQGcFmaJgB","text":"Hi, this is Adam at Wireline."},{"voice_id":"EXAVITQu4vr4xnSDxMaL","text":"Great to meet you — can you tell me about your business?"}]}'
-#
-# After local generation, commit the resulting .mp3 + push so Vercel
-# serves it from /sounds/<name>.mp3 on the next deploy.

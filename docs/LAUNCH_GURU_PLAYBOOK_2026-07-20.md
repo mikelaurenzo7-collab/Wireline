@@ -7,10 +7,10 @@ Status: Active ops playbook; pricing and campaign copy refreshed to Founder Earl
 
 | Area | Current Direction |
 | --- | --- |
-| Product | AI voice agents for personal tasks and business conversations |
+| Product | Voice agents for personal tasks and business conversations |
 | Core loop | Create -> Train -> Wire -> Run |
-| Public hero | AI Voice Agents |
-| CTA | Build your AI Voice Agent |
+| Public hero | Voice Agents |
+| CTA | Build your Voice Agent |
 | Price line | Build free. Go live from $19/mo |
 | GTM posture | Founder Early Access, manual quality gate before paid spend |
 | Voice runtime | Production phone calls use approved telephony/voice providers; marketing audio is separate |
@@ -30,7 +30,7 @@ Status: Active ops playbook; pricing and campaign copy refreshed to Founder Earl
 | Plan | Monthly | Annual | Agents / Numbers | Live Voice Minutes | Best Fit |
 | --- | ---: | ---: | ---: | ---: | --- |
 | Free Builder | $0 | $0 | Builder only | 0 | Create, train, simulate |
-| Starter | $19 | $190 | 1 | 60 | First live AI voice agent |
+| Starter | $19 | $190 | 1 | 60 | First live voice agent |
 | Starter Plus | $39 | $390 | 2 | 120 | Personal + business or two roles |
 | Pro | $79 | $790 | 5 | 245 | Growing team / higher volume |
 | Business | $159 | $1,590 | 15 | 450 | Multi-role operations |
@@ -44,7 +44,7 @@ Add-on: $15/mo per extra agent, including +50 live voice minutes and +1 number.
 
 - Run smoke checks for public pages, signup, pricing, and checkout.
 - Manually complete phone and payment loops.
-- Confirm campaign docs and ads use AI Voice Agents and $19 floor.
+- Confirm campaign docs and ads use Voice Agents and $19 floor.
 - Confirm Vercel production logs are clean.
 
 ### Day 2-4 - Private Operator Trials
@@ -103,7 +103,7 @@ Add-on: $15/mo per extra agent, including +50 live voice minutes and +1 number.
 
 | Angle | Hook | CTA |
 | --- | --- | --- |
-| Missed call | Missed calls should not become lost revenue. | Build your AI Voice Agent |
+| Missed call | Missed calls should not become lost revenue. | Build your Voice Agent |
 | Personal | Delegate calls without handing over your life. | Start free |
 | Business | Give every high-intent call a trained first response. | Go live from $19/mo |
-| Multi-agent | Start with one agent. Add specialists when volume proves it. | Build your AI Voice Agent |
+| Multi-agent | Start with one agent. Add specialists when volume proves it. | Build your Voice Agent |

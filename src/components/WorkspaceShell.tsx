@@ -187,7 +187,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
         className="mb-1.5 flex items-center gap-2.5 px-1.5"
       >
         <span className="grid size-7 place-items-center rounded-[7px] bg-primary text-primary-foreground">
-          <WirelineMark className="h-3.5 w-5" strokeWidth={10} />
+          <WirelineMark className="size-7" />
         </span>
         <span className="font-[var(--wireline-font-family-display)] text-[19px] leading-none tracking-[-0.01em] text-foreground">
           Wireline
@@ -268,7 +268,9 @@ function DesktopRail({ pathname }: { pathname: string }) {
                     className="shrink-0"
                   />
                   <span className="min-w-0">
-                    <span className="block truncate text-[12px] font-semibold">{agent.name}</span>
+                    <span className="wl-preserve-case block truncate text-[12px] font-semibold">
+                      {agent.name}
+                    </span>
                     <span className="block truncate text-[10px] leading-tight text-[color:var(--wireline-color-text-secondary)]">
                       {formatAgentRoleLabel(agent.role)} ·{" "}
                       {agentReadinessLabel(agent, phoneLookupDegraded)}

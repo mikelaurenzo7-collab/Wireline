@@ -8,19 +8,26 @@
  */
 export const XAI_MODELS = {
   GROK_4_5: "grok-4.5",
-  GROK_4_1_FAST_REASONING: "grok-4.1-fast-reasoning",
+  // Retired 2026-05-15. xAI redirects the old 4.1-fast slug to 4.3, so use
+  // the served model explicitly for predictable behavior and spend records.
+  GROK_4_3: "grok-4.3",
 } as const;
 
 export const OPENAI_MODELS = {
   GPT_5_6_TERRA: "gpt-5.6-terra",
+  GPT_5_6_LUNA: "gpt-5.6-luna",
+  GPT_5_6_SOL: "gpt-5.6-sol",
+  // Historical audit rows still use this id. New simple/medium work routes
+  // to Luna below.
   GPT_5: "gpt-5",
   GPT_4O: "gpt-4o",
 } as const;
 
 export const GEMINI_MODELS = {
+  FLASH_3_6: "gemini-3.6-flash",
   FLASH_3_5: "gemini-3.5-flash",
+  FLASH_3_5_LITE: "gemini-3.5-flash-lite",
   FLASH_3_1_LITE: "gemini-3.1-flash-lite",
-  FLASH_3_PREVIEW: "gemini-3-flash-preview",
   FLASH_2_5: "gemini-2.5-flash",
   PRO_3_1: "gemini-3.1-pro-preview",
 } as const;
@@ -33,7 +40,8 @@ export const OPENAI_STRUCTURED_PRIMARY_MODEL =
   process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() || OPENAI_MODELS.GPT_5_6_TERRA;
 /** First automatic fallback if direct OpenAI is unavailable. */
 export const GEMINI_STRUCTURED_FALLBACK_MODEL =
-  process.env.WIRELINE_GEMINI_STRUCTURED_FALLBACK_MODEL?.trim() || GEMINI_MODELS.FLASH_3_5;
+  process.env.WIRELINE_GEMINI_STRUCTURED_FALLBACK_MODEL?.trim() ||
+  GEMINI_MODELS.FLASH_3_6;
 
 /** The managed structured default the runtime asks for first. */
 export const STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL;
@@ -67,7 +75,9 @@ export const VAPI_PREMIUM_MODEL = OPENAI_MODELS.GPT_4O;
 export const VAPI_OPENAI_FALLBACK_MODEL = OPENAI_MODELS.GPT_4O;
 export const VAPI_VOICE_FALLBACK_PROVIDER = "google" as const;
 export const VAPI_VOICE_FALLBACK_MODEL = GEMINI_MODELS.FLASH_3_5;
-export const VAPI_DEFAULT_FALLBACK_MODELS: readonly string[] = [VAPI_VOICE_FALLBACK_MODEL];
+export const VAPI_DEFAULT_FALLBACK_MODELS: readonly string[] = [
+  VAPI_VOICE_FALLBACK_MODEL,
+];
 
 export function isOpenAIModelId(value: unknown): value is string {
   return typeof value === "string" && /^gpt-[a-z0-9._-]+$/i.test(value.trim());
@@ -78,7 +88,9 @@ export function isXAIModelId(value: unknown): value is string {
 }
 
 export function isGeminiModelId(value: unknown): value is string {
-  return typeof value === "string" && value.trim().toLowerCase().includes("gemini");
+  return (
+    typeof value === "string" && value.trim().toLowerCase().includes("gemini")
+  );
 }
 
 export function resolveVapiVoiceModelSelection(input?: {
@@ -124,8 +136,14 @@ export function resolveVapiVoiceModelSelection(input?: {
  * tenant second, else the managed default.
  */
 export function resolveCoherentVoiceModel(
-  agent: { llmProvider?: string | null; llmModel?: string | null } | null | undefined,
-  tenant: { voiceLlmProvider?: string | null; voiceLlmModel?: string | null } | null | undefined,
+  agent:
+    | { llmProvider?: string | null; llmModel?: string | null }
+    | null
+    | undefined,
+  tenant:
+    | { voiceLlmProvider?: string | null; voiceLlmModel?: string | null }
+    | null
+    | undefined,
 ): VapiVoiceModelSelection {
   const agentPair =
     agent?.llmProvider && agent?.llmModel
@@ -157,38 +175,190 @@ export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
   },
 ] as const;
 
-export function clampVoiceTemperature(value: unknown, fallback: number): number {
+export function clampVoiceTemperature(
+  value: unknown,
+  fallback: number,
+): number {
   if (value == null) return fallback;
   const n = Number(value);
   return Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : fallback;
 }
 
 export type TaskComplexity = "simple" | "medium" | "complex";
+export interface ModelPricingRow {
+  input: number;
+  output: number;
+  cacheRead: number;
+  cacheWrite: number;
+}
+
+/** Standard synchronous API rates in USD per 1M text tokens, verified 2026-08-01. */
 export const MODEL_PRICING = {
-  [XAI_MODELS.GROK_4_5]: { input: 2, output: 6, cacheRead: 0.5, cacheWrite: 0 },
-  [XAI_MODELS.GROK_4_1_FAST_REASONING]: { input: 0.2, output: 0.5, cacheRead: 0.05, cacheWrite: 0 },
-  [OPENAI_MODELS.GPT_5_6_TERRA]: { input: 2.5, output: 15, cacheRead: 0.25, cacheWrite: 3.125 },
-  [OPENAI_MODELS.GPT_5]: { input: 1.25, output: 10, cacheRead: 0.125, cacheWrite: 1.5625 },
-  [OPENAI_MODELS.GPT_4O]: { input: 5, output: 15, cacheRead: 0, cacheWrite: 0 },
-  [GEMINI_MODELS.FLASH_3_5]: { input: 1.5, output: 9, cacheRead: 0.15, cacheWrite: 0 },
-  [GEMINI_MODELS.FLASH_3_1_LITE]: { input: 0.25, output: 1.5, cacheRead: 0.025, cacheWrite: 0 },
-  [GEMINI_MODELS.FLASH_2_5]: { input: 0.3, output: 2.5, cacheRead: 0, cacheWrite: 0 },
-  [GEMINI_MODELS.PRO_3_1]: { input: 2, output: 12, cacheRead: 0.2, cacheWrite: 0 },
-} as const;
+  [XAI_MODELS.GROK_4_5]: { input: 2, output: 6, cacheRead: 0.3, cacheWrite: 0 },
+  [XAI_MODELS.GROK_4_3]: {
+    input: 1.25,
+    output: 2.5,
+    cacheRead: 0.2,
+    cacheWrite: 0,
+  },
+  [OPENAI_MODELS.GPT_5_6_TERRA]: {
+    input: 2,
+    output: 12,
+    cacheRead: 0.2,
+    cacheWrite: 2.5,
+  },
+  [OPENAI_MODELS.GPT_5_6_LUNA]: {
+    input: 0.2,
+    output: 1.2,
+    cacheRead: 0.02,
+    cacheWrite: 0.25,
+  },
+  [OPENAI_MODELS.GPT_5_6_SOL]: {
+    input: 5,
+    output: 30,
+    cacheRead: 0.5,
+    cacheWrite: 6.25,
+  },
+  [OPENAI_MODELS.GPT_5]: {
+    input: 1.25,
+    output: 10,
+    cacheRead: 0.125,
+    cacheWrite: 0,
+  },
+  [OPENAI_MODELS.GPT_4O]: {
+    input: 2.5,
+    output: 10,
+    cacheRead: 1.25,
+    cacheWrite: 0,
+  },
+  // Realtime rows price text tokens. Browser-to-vendor WebRTC audio tokens
+  // are not emitted through this structured-runtime audit path.
+  "gpt-realtime-2.1": { input: 4, output: 24, cacheRead: 0.4, cacheWrite: 0 },
+  "gpt-realtime-2.1-mini": {
+    input: 0.6,
+    output: 2.4,
+    cacheRead: 0.06,
+    cacheWrite: 0,
+  },
+  [GEMINI_MODELS.FLASH_3_6]: {
+    input: 1.5,
+    output: 7.5,
+    cacheRead: 0.15,
+    cacheWrite: 0,
+  },
+  [GEMINI_MODELS.FLASH_3_5]: {
+    input: 1.5,
+    output: 9,
+    cacheRead: 0.15,
+    cacheWrite: 0,
+  },
+  [GEMINI_MODELS.FLASH_3_5_LITE]: {
+    input: 0.3,
+    output: 2.5,
+    cacheRead: 0.03,
+    cacheWrite: 0,
+  },
+  [GEMINI_MODELS.FLASH_3_1_LITE]: {
+    input: 0.25,
+    output: 1.5,
+    cacheRead: 0.025,
+    cacheWrite: 0,
+  },
+  [GEMINI_MODELS.FLASH_2_5]: {
+    input: 0.3,
+    output: 2.5,
+    cacheRead: 0.03,
+    cacheWrite: 0,
+  },
+  [GEMINI_MODELS.PRO_3_1]: {
+    input: 2,
+    output: 12,
+    cacheRead: 0.2,
+    cacheWrite: 0,
+  },
+} as const satisfies Record<string, ModelPricingRow>;
+
+type LongContextRule = {
+  thresholdTokens: number;
+  inclusive: boolean;
+  rates: ModelPricingRow;
+};
+
+/** Vendor long-context tiers. The higher rate applies to the full request. */
+const MODEL_LONG_CONTEXT_PRICING: Partial<
+  Record<keyof typeof MODEL_PRICING, LongContextRule>
+> = {
+  [OPENAI_MODELS.GPT_5_6_TERRA]: {
+    thresholdTokens: 272_000,
+    inclusive: false,
+    rates: { input: 4, output: 18, cacheRead: 0.4, cacheWrite: 5 },
+  },
+  [OPENAI_MODELS.GPT_5_6_LUNA]: {
+    thresholdTokens: 272_000,
+    inclusive: false,
+    rates: { input: 0.4, output: 1.8, cacheRead: 0.04, cacheWrite: 0.5 },
+  },
+  [OPENAI_MODELS.GPT_5_6_SOL]: {
+    thresholdTokens: 272_000,
+    inclusive: false,
+    rates: { input: 10, output: 45, cacheRead: 1, cacheWrite: 12.5 },
+  },
+  [XAI_MODELS.GROK_4_5]: {
+    thresholdTokens: 200_000,
+    inclusive: true,
+    rates: { input: 4, output: 12, cacheRead: 0.6, cacheWrite: 0 },
+  },
+  [XAI_MODELS.GROK_4_3]: {
+    thresholdTokens: 200_000,
+    inclusive: true,
+    rates: { input: 2.5, output: 5, cacheRead: 0.4, cacheWrite: 0 },
+  },
+  [GEMINI_MODELS.PRO_3_1]: {
+    thresholdTokens: 200_000,
+    inclusive: false,
+    rates: { input: 4, output: 18, cacheRead: 0.4, cacheWrite: 0 },
+  },
+};
+
+export function bareModelId(model: string): string {
+  return model.includes("/") ? model.slice(model.lastIndexOf("/") + 1) : model;
+}
+
+/** Price the served model and its full prompt size, including cache reads/writes. */
+export function pricingForModel(
+  model: string,
+  totalInputTokens = 0,
+): ModelPricingRow {
+  const bare = bareModelId(model);
+  const key = bare as keyof typeof MODEL_PRICING;
+  const standard =
+    MODEL_PRICING[key] ?? MODEL_PRICING[OPENAI_MODELS.GPT_5_6_TERRA];
+  const long = MODEL_LONG_CONTEXT_PRICING[key];
+  if (!long) return standard;
+  const crossed = long.inclusive
+    ? totalInputTokens >= long.thresholdTokens
+    : totalInputTokens > long.thresholdTokens;
+  return crossed ? long.rates : standard;
+}
 export const DEFAULT_MODEL = STRUCTURED_PRIMARY_MODEL;
 /**
  * Route structured work by complexity inside the OpenAI primary lane.
  * Gemini remains the automatic continuity fallback (see ai-client), not a
  * complexity selector — OpenAI only accepts gpt-* ids on the primary path.
- * GPT-5 is ~½ the input cost of GPT-5.6 Terra for simple/medium tasks.
+ * Luna is the low-cost member of the same current model family; Terra remains
+ * the default for complex work.
  */
 export function selectModelForTask(complexity: TaskComplexity): string {
-  if (complexity === "simple" || complexity === "medium") return OPENAI_MODELS.GPT_5;
+  if (complexity === "simple" || complexity === "medium")
+    return OPENAI_MODELS.GPT_5_6_LUNA;
   return STRUCTURED_PRIMARY_MODEL;
 }
 export function modelLabel(model: string): string {
   if (model === OPENAI_MODELS.GPT_5_6_TERRA) return "GPT-5.6 Terra";
+  if (model === OPENAI_MODELS.GPT_5_6_LUNA) return "GPT-5.6 Luna";
+  if (model === OPENAI_MODELS.GPT_5_6_SOL) return "GPT-5.6 Sol";
   if (model === XAI_MODELS.GROK_4_5) return "Grok 4.5";
+  if (model === XAI_MODELS.GROK_4_3) return "Grok 4.3";
   if (model === OPENAI_MODELS.GPT_5) return "GPT-5";
   if (model === OPENAI_MODELS.GPT_4O) return "GPT-4o";
   if (model.toLowerCase().includes("gemini")) return "Gemini";
@@ -198,5 +368,7 @@ export function modelLabel(model: string): string {
 export type AdaptiveEffort = "low" | "medium" | "high";
 export function resolveAdaptiveEffort(): AdaptiveEffort {
   const value = process.env.WIRELINE_DEEP_EFFORT?.trim().toLowerCase();
-  return value === "low" || value === "medium" || value === "high" ? value : "medium";
+  return value === "low" || value === "medium" || value === "high"
+    ? value
+    : "medium";
 }

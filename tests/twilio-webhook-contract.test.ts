@@ -1,10 +1,33 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("Twilio webhook XML contract", () => {
+  it("degrades the Vapi failover route to voicemail when the database fails", () => {
+    // The failover route exists for the moment things are already broken. A
+    // thrown tenant/settings lookup previously became a 500, leaving callers
+    // with Twilio's own error announcement instead of the professional close.
+    const route = read("src/routes/twilio-webhook-base.ts");
+    expect(route).toContain("Failover tenant lookup failed; degrading to voicemail");
+  });
+
+  it("ships the committed sound assets the TwiML references", () => {
+    // Both <Play> URLs referenced assets that did not exist for weeks; pin the
+    // committed files so a stray deletion cannot silently reintroduce the gap.
+    const route = read("src/routes/twilio-webhook-base.ts");
+    expect(route).toContain("/sounds/wireline-transfer-chime.wav");
+    expect(route).not.toContain("wireline-transfer-chime.mp3");
+    expect(route).toContain("/sounds/wireline-jingle.mp3");
+    expect(
+      statSync(resolve(process.cwd(), "public/sounds/wireline-transfer-chime.wav")).size,
+    ).toBeGreaterThan(10_000);
+    expect(
+      statSync(resolve(process.cwd(), "public/sounds/wireline-jingle.mp3")).size,
+    ).toBeGreaterThan(50_000);
+  });
+
   it("escapes XML special characters in TwiML replies", () => {
     const route = read("src/routes/twilio-webhook-base.ts");
 

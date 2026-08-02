@@ -2,7 +2,7 @@
 import { Router, Response } from "express";
 import { AppError, rethrowIfAppError } from "../lib/api-error";
 
-import { log, drizzle } from "../lib/server-context";
+import { log, drizzle, serialQueryBatch } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, like, ne, gte } from "drizzle-orm";
 import { presenceStreams } from "../services/presence-stream-service";
@@ -419,7 +419,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const [logs, tasks, lessons, emails] = await drizzle.transaction((tx) =>
-        Promise.all([
+        serialQueryBatch([
           tx
             .select({
               id: schema.callLogs.id,
@@ -492,7 +492,7 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
   try {
     const [hotLeads, complianceTasks, pendingTasks, knowledgeGaps, escalations] =
       await drizzle.transaction((tx) =>
-        Promise.all([
+        serialQueryBatch([
           tx
             .select({
               id: schema.callLogs.id,

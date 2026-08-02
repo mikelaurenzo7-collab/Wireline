@@ -19,6 +19,7 @@ import {
 import { resolveCreateEnabledTools, resolveCreatePersonality } from "../lib/agent-create-defaults";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import { defaultPresenterPhoneVoicePayload } from "../lib/voice-catalog";
+import { isCuratedElevenLabsVoiceId } from "../lib/managed-voice-runtime";
 import { AI_TOOLS } from "../lib/ai-tools";
 import {
   isGeminiModelId,
@@ -105,7 +106,11 @@ function normalizeExtraction(value: unknown): ExtractedConfig {
         .map((item) => ({ content: cleanText(item.content, 4000) }))
         .filter((item) => !!item.content)
     : [];
-  return { directives, knowledge, personality: cleanText(raw.personality, 4000) };
+  return {
+    directives,
+    knowledge,
+    personality: cleanText(raw.personality, 4000),
+  };
 }
 
 async function persistExtraction(agentId: string, userId: string, extraction: ExtractedConfig) {
@@ -121,9 +126,13 @@ async function persistExtraction(agentId: string, userId: string, extraction: Ex
       );
     }
     if (extraction.knowledge.length) {
-      await tx
-        .insert(schema.knowledge)
-        .values(extraction.knowledge.map((item) => ({ content: item.content, agentId, userId })));
+      await tx.insert(schema.knowledge).values(
+        extraction.knowledge.map((item) => ({
+          content: item.content,
+          agentId,
+          userId,
+        })),
+      );
     }
     if (extraction.personality) {
       await tx
@@ -181,7 +190,10 @@ async function extractImageAsset(fileName: string, dataUrl: string): Promise<Ext
         items: {
           type: "object",
           additionalProperties: false,
-          properties: { content: { type: "string" }, priority: { type: "integer" } },
+          properties: {
+            content: { type: "string" },
+            priority: { type: "integer" },
+          },
           required: ["content", "priority"],
         },
       },
@@ -200,11 +212,14 @@ async function extractImageAsset(fileName: string, dataUrl: string): Promise<Ext
   };
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({
       model: OPENAI_STRUCTURED_PRIMARY_MODEL,
       instructions:
-        "Analyze the uploaded image only for explicit business facts, operating rules, service details, schedules, product details, or tone direction that can safely train an AI agent. Do not infer private information or create facts that are not visibly supported.",
+        "Analyze the uploaded image only for explicit business facts, operating rules, service details, schedules, product details, or tone direction that can safely train a voice agent. Do not infer private information or create facts that are not visibly supported.",
       input: [
         {
           role: "user",
@@ -241,10 +256,16 @@ router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, re
   try {
     res.json({ agents: await listAgentsForUser(req.user.id) });
   } catch (error) {
-    log.warn("Agent roster unavailable", { error: getErrorMessage(error), userId: req.user.id });
-    res
-      .status(503)
-      .json({ agents: [], degraded: true, error: "Agent roster is temporarily unavailable" });
+    log.warn("Agent roster unavailable", {
+      error: getErrorMessage(error),
+      userId: req.user.id,
+    });
+    res.status(503).json({
+      code: "AGENT_ROSTER_UNAVAILABLE",
+      agents: [],
+      degraded: true,
+      error: "Agent roster is temporarily unavailable",
+    });
   }
 });
 
@@ -342,7 +363,11 @@ router.post(
       if (seededPersonality) {
         await tx
           .insert(schema.personality)
-          .values({ agentId: id, userId: req.user.id, content: seededPersonality })
+          .values({
+            agentId: id,
+            userId: req.user.id,
+            content: seededPersonality,
+          })
           .onConflictDoUpdate({
             target: schema.personality.agentId,
             set: { userId: req.user.id, content: seededPersonality },
@@ -374,9 +399,11 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
-    const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
-      Promise.all([
-        tx
+    const [agentRows, personalities, directives, knowledge] = await drizzle.transaction(
+      async (tx) => {
+        // A transaction is a single pg client. Run the snapshot reads in
+        // order instead of relying on pg@8's deprecated concurrent queue.
+        const agentRows = await tx
           .select({
             name: schema.agents.name,
             role: schema.agents.role,
@@ -409,8 +436,8 @@ router.get(
           })
           .from(schema.agents)
           .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
-          .limit(1),
-        tx
+          .limit(1);
+        const personalities = await tx
           .select({ content: schema.personality.content })
           .from(schema.personality)
           .where(
@@ -419,8 +446,8 @@ router.get(
               eq(schema.personality.userId, req.user.id),
             ),
           )
-          .limit(1),
-        tx
+          .limit(1);
+        const directives = await tx
           .select()
           .from(schema.directives)
           .where(
@@ -429,8 +456,8 @@ router.get(
               eq(schema.directives.userId, req.user.id),
             ),
           )
-          .orderBy(desc(schema.directives.priority)),
-        tx
+          .orderBy(desc(schema.directives.priority));
+        const knowledge = await tx
           .select()
           .from(schema.knowledge)
           .where(
@@ -439,8 +466,9 @@ router.get(
               eq(schema.knowledge.userId, req.user.id),
             ),
           )
-          .orderBy(desc(schema.knowledge.createdAt)),
-      ]),
+          .orderBy(desc(schema.knowledge.createdAt));
+        return [agentRows, personalities, directives, knowledge] as const;
+      },
     );
     const record = agentRows[0];
     const identity = record
@@ -513,9 +541,12 @@ router.post(
           set: { userId: req.user.id, content },
         });
     } else if (type === "directive") {
-      await drizzle
-        .insert(schema.directives)
-        .values({ agentId: req.params.id, userId: req.user.id, content, priority: 5 });
+      await drizzle.insert(schema.directives).values({
+        agentId: req.params.id,
+        userId: req.user.id,
+        content,
+        priority: 5,
+      });
     } else if (type === "knowledge") {
       await drizzle
         .insert(schema.knowledge)
@@ -567,7 +598,11 @@ router.patch(
       .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
     res.json({
       success: true,
-      runtime: { provider: provider || null, model: model || null, temperature },
+      runtime: {
+        provider: provider || null,
+        model: model || null,
+        temperature,
+      },
     });
   },
 );
@@ -590,11 +625,33 @@ router.patch(
     const voiceId = cleanText(req.body?.voiceId, 160) || null;
     const providerRaw =
       cleanText(req.body?.provider, 32).toLowerCase() || (voiceId ? "vapi" : null);
-    const allowedProviders = new Set(["xai", "vapi", "presenter"]);
+    const allowedProviders = new Set(["xai", "vapi", "11labs", "presenter"]);
     if (providerRaw && !allowedProviders.has(providerRaw)) {
       throw AppError.fromHttpStatus(400, "Invalid voice provider.");
     }
     const provider = providerRaw;
+    if (provider === "vapi" && voiceId && !isManagedVapiVoiceId(voiceId)) {
+      throw AppError.fromHttpStatus(400, "Choose an included phone voice.");
+    }
+    if (provider === "11labs") {
+      if (!voiceId) throw AppError.fromHttpStatus(400, "Choose a studio voice.");
+      if (!isCuratedElevenLabsVoiceId(voiceId)) {
+        const [approvedClone] = await drizzle
+          .select({ voiceId: schema.clonedVoices.voiceId })
+          .from(schema.clonedVoices)
+          .where(
+            and(
+              eq(schema.clonedVoices.voiceId, voiceId),
+              eq(schema.clonedVoices.userId, req.user.id),
+              eq(schema.clonedVoices.status, "approved"),
+            ),
+          )
+          .limit(1);
+        if (!approvedClone) {
+          throw AppError.fromHttpStatus(400, "This private voice has not passed review.");
+        }
+      }
+    }
     const phoneVoiceId = cleanText(req.body?.phoneVoiceId, 160) || null;
     const phoneVoiceProviderRaw = cleanText(req.body?.phoneVoiceProvider, 32).toLowerCase() || null;
     const phoneProviders = new Set(["vapi"]);
@@ -622,23 +679,23 @@ router.patch(
       patch.phoneVoiceId = defaults.phoneVoiceId;
       patch.phoneVoiceProvider = defaults.phoneVoiceProvider;
     }
-    await drizzle
+    const [savedVoice] = await drizzle
       .update(schema.agents)
       .set(patch)
-      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+      .returning({
+        voiceId: schema.agents.voiceId,
+        provider: schema.agents.voiceProvider,
+        phoneVoiceId: schema.agents.phoneVoiceId,
+        phoneVoiceProvider: schema.agents.phoneVoiceProvider,
+      });
     res.json({
       success: true,
       voice: {
-        voiceId,
-        provider,
-        phoneVoiceId:
-          patch.phoneVoiceId !== undefined
-            ? patch.phoneVoiceId
-            : (voiceState?.phoneVoiceId ?? null),
-        phoneVoiceProvider:
-          patch.phoneVoiceProvider !== undefined
-            ? patch.phoneVoiceProvider
-            : (voiceState?.phoneVoiceProvider ?? null),
+        voiceId: savedVoice?.voiceId ?? voiceId,
+        provider: savedVoice?.provider ?? provider,
+        phoneVoiceId: savedVoice?.phoneVoiceId ?? null,
+        phoneVoiceProvider: savedVoice?.phoneVoiceProvider ?? null,
       },
     });
   },

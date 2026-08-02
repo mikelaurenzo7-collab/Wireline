@@ -435,8 +435,9 @@ export default function PhoneAgentBlueprint({
             <div className="studio-blueprint-heading">
               <div>
                 <p className="studio-kicker">Guided call plan</p>
-                <h2 id="phone-agent-blueprint-title">
-                  Teach {agentName || "this agent"} the call job.
+                <h2 id="phone-agent-blueprint-title" data-slot="dialog-title">
+                  Teach <span className="wl-preserve-case">{agentName || "this agent"}</span> the
+                  call job.
                 </h2>
                 <p id="phone-agent-blueprint-description">
                   Choose direction first, tune the work, then pass the readiness check. This saves a

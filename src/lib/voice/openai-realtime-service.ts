@@ -101,7 +101,7 @@ export function getOpenAIRealtimeStatus() {
     defaultModel: OPENAI_REALTIME_DEFAULT_MODEL,
     defaultVoice: normalizeOpenAIRealtimeVoice(process.env.OPENAI_REALTIME_VOICE),
     deepgramFluxRecommended: true,
-    mode: "beta",
+    mode: "ga",
   };
 }
 

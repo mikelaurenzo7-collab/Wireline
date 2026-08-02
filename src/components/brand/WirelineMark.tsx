@@ -8,44 +8,60 @@ type WirelineMarkProps = {
    * Product/native surfaces can keep the mark monochrome by omitting this.
    */
   signal?: boolean;
-  /** Stroke width in the 128x96 viewBox. */
+  /** Stroke width in the 48x48 viewBox. */
   strokeWidth?: number;
 };
 
 /**
- * Official Wireline circuit-W mark.
+ * Official Wireline mark: one continuous line, two ports.
  *
- * The glyph is intentionally simple: a W built from routed wire, with three
- * terminal nodes for signal in, routing, and outcome. It reads as a brand mark
- * at favicon size while still carrying the product story on public pages.
+ * A single unbroken stroke enters from the left, traces a W, and exits right —
+ * the product name drawn literally. The filled terminals are the line's two
+ * ports: the call that arrives, and the outcome that leaves.
+ *
+ * Geometry notes, because they are load-bearing rather than taste:
+ *
+ * - The artboard is square. Every slot the mark has to survive is square —
+ *   favicon, PWA icon, app icon, avatar — and the previous 128x96 board
+ *   letterboxed in all of them.
+ * - The W is symmetric about x=24: the outer arms span 8 units either side of
+ *   center, the inner arms 5. The middle apex sits at y=21, five units under
+ *   the 16 cap line, which is the ordinary optical correction for a W; level
+ *   with the cap it reads as a crown.
+ * - The leads stop 7 units out. Longer and the top edge fuses into one
+ *   horizontal bar that reads as a strikethrough; shorter and the line looks
+ *   clipped rather than continuous.
+ * - No `vector-effect="non-scaling-stroke"`. It pins the stroke to screen
+ *   pixels regardless of render size, which thickened the mark into a blob at
+ *   favicon sizes — the exact place a mark has to stay legible.
  */
 export default function WirelineMark({
   className = "",
   label,
   signal = false,
-  strokeWidth = 9,
+  strokeWidth = 5,
 }: WirelineMarkProps) {
   const gradientId = `wireline-mark-${useId().replace(/:/g, "")}`;
   const stroke = signal ? `url(#${gradientId})` : "currentColor";
 
   return (
     <svg
-      viewBox="0 0 128 96"
+      viewBox="0 0 48 48"
       role={label ? "img" : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}
       focusable="false"
-      className={`inline-block shrink-0 overflow-visible ${className}`}
+      className={`inline-block shrink-0 ${className}`}
       fill="none"
     >
       {signal && (
         <defs>
           <linearGradient
             id={gradientId}
-            x1="14"
-            y1="18"
-            x2="122"
-            y2="78"
+            x1="4"
+            y1="14"
+            x2="44"
+            y2="34"
             gradientUnits="userSpaceOnUse"
             colorInterpolation="sRGB"
           >
@@ -56,18 +72,10 @@ export default function WirelineMark({
           </linearGradient>
         </defs>
       )}
-      <g
-        stroke={stroke}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-      >
-        <path d="M21 31H25L44 73C47 80 53 80 56 74L82 25" />
-        <path d="M51 33H63C68 33 71 36 73 40L90 73C94 80 100 80 103 74L115 33H122" />
-        <circle cx="14" cy="31" r="6.5" />
-        <circle cx="82" cy="18" r="6.5" />
-        <circle cx="122" cy="33" r="6.5" />
+      <g stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 16H11L19 32L24 21L29 32L37 16H44" />
+        <circle cx="4" cy="16" r="3.7" fill={stroke} stroke="none" />
+        <circle cx="44" cy="16" r="3.7" fill={stroke} stroke="none" />
       </g>
     </svg>
   );

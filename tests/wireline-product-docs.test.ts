@@ -26,7 +26,7 @@ describe("Wireline product documentation contract", () => {
     expect(readme).toContain("Wireline Command");
     expect(readme).toContain("Wireline Letterpress design system");
     expect(readme).toContain("Create -> Train -> Run");
-    expect(readme).toContain("AI voice agents");
+    expect(readme).toContain("voice agents");
     expect(readme).toContain("personal and business conversations");
     expect(readme).toContain("included number");
     expectNoTerms(readme, retiredProductTerms);
@@ -39,10 +39,10 @@ describe("Wireline product documentation contract", () => {
     // inside a retired-thesis footnote ("AI Profit Agents"), so it passed by
     // accident and would have kept passing while the real terminology drifted.
     // Assert the contextual naming rule the index actually states instead.
-    expect(readme).toContain("Broad public copy uses **AI voice agents**");
+    expect(readme).toContain("Broad public copy uses **voice agents**");
     expect(readme).toContain("personal agents");
-    expect(readme).toContain("AI employees");
-    expect(readme).toContain("AI sales agents");
+    expect(readme).toContain("support agents");
+    expect(readme).toContain("sales agents");
     expect(readme).toContain("included number");
     expect(readme).toContain("Training");
     expect(readme).toContain("Wireline Command");
@@ -101,7 +101,7 @@ describe("Wireline product documentation contract", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("Wireline | AI voice agents that get work done");
+    expect(head).toContain("Wireline | Voice agents that get work done");
     expect(head).toContain("Build one for your business or your life.");
     expect(head).toContain("call, answer, text, email, book, and follow through");
     expect(head).toContain("personal voice agent");

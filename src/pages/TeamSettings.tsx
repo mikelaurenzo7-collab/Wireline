@@ -253,6 +253,8 @@ export default function TeamSettings() {
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2
+                  data-slot="dialog-title"
+
                   id="team-invite-title"
                   className="font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-[-.025em] text-foreground"
                 >

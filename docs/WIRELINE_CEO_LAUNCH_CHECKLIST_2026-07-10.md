@@ -7,7 +7,7 @@ Status: Active founder launch checklist; supersedes the broad "best employee" fr
 
 Lead with:
 
-> AI voice agents for every conversation - personal or business.
+> Voice agents for every conversation - personal or business.
 
 Support with:
 
@@ -15,7 +15,7 @@ Support with:
 
 > Build free. Go live from $19/mo.
 
-Business workspace copy should use "business voice agent" when the audience is explicitly business. Broad public surfaces should use "AI Voice Agent" so personal plans and multi-agent growth stay clear.
+Business workspace copy should use "business voice agent" when the audience is explicitly business. Broad public surfaces should use "Voice Agent" so personal plans and multi-agent growth stay clear.
 
 ## Go / No-Go
 
@@ -23,7 +23,7 @@ Business workspace copy should use "business voice agent" when the audience is e
 | --- | --- |
 | Phone loop | Inbound call, outbound call, SMS follow-up, outcome log, and handoff state verified |
 | Payment loop | Starter checkout, entitlement, Customer Portal, cancellation, and Conversation Balance behavior verified |
-| Positioning | Public copy says AI Voice Agents; no broad "one AI employee"; no sub-$19 launch copy |
+| Positioning | Public copy says Voice Agents; no broad "one AI employee"; no sub-$19 launch copy |
 | Capacity | Pricing and included minutes match `src/lib/plan-catalog.ts` |
 | Compliance | DNC/SMS consent/STOP posture reviewed before outbound spend |
 | Runtime | Vercel production deploy READY and runtime errors clean |
@@ -43,10 +43,10 @@ Extra agent add-on: $15/mo, +50 live voice minutes, +1 included number. Enterpri
 
 ## Public Copy Checklist
 
-- Homepage hero: AI Voice Agents.
-- Primary CTA: Build your AI Voice Agent.
+- Homepage hero: Voice Agents.
+- Primary CTA: Build your Voice Agent.
 - Pricing line: Build free. Go live from $19/mo.
-- Number promise: Every paid AI voice agent includes a Wireline number.
+- Number promise: Every paid voice agent includes a Wireline number.
 - Free Builder: create, train, and simulate before paid live launch.
 - Personal examples: call delegation, scheduling, vendors, reminders, follow-up.
 - Business examples: lead response, front desk, support triage, appointment setting, collections.
@@ -55,7 +55,7 @@ Extra agent add-on: $15/mo, +50 live voice minutes, +1 included number. Enterpri
 ## Launch QA Walkthrough
 
 1. Sign up as a new user.
-2. Create one AI voice agent using either Personal or Business context.
+2. Create one voice agent using either Personal or Business context.
 3. Train with facts, tone, escalation rules, and prohibited topics.
 4. Run a private simulation.
 5. Upgrade to Starter.

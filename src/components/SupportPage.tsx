@@ -89,7 +89,7 @@ export function SupportPage() {
   return (
     <MarketingPageFrame stickyCta={false} mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
       <PageMeta
-        title="Support - Wireline"
+        title="Support | Wireline"
         description="Get help with Wireline for personal call support or business call coverage."
         path="/support"
       />

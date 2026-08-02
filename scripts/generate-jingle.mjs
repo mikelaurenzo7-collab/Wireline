@@ -8,6 +8,12 @@
  * under public/sounds — we don't pay ElevenLabs per visitor, and
  * the demo line has zero pre-roll latency.
  *
+ * Provenance: the currently committed MP3 was rendered 2026-08-01 with
+ * ElevenLabs TTS (eleven_v3, expressive singing delivery, voice
+ * "Jessica"). This script remains the canonical regeneration path via
+ * the ElevenLabs Music API for a fully produced track; either output
+ * ships the same way — review the audio, then commit the static file.
+ *
  * Usage:
  *   ELEVENLABS_API_KEY=… node scripts/generate-jingle.mjs
  *

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import {
@@ -28,13 +28,15 @@ import {
   type AgentRuntimeProfile,
 } from "./agent-runtime";
 import { clampVoiceTemperature, resolveCoherentVoiceModel } from "./ai-models";
-import { buildGrokStrengthsPromptSection, isGrokModelId } from "./grok-features";
-import { vapiVoiceVersion } from "./voice-catalog";
 import {
-  DEFAULT_MANAGED_VOICE_ID,
-  isManagedVapiVoiceId,
-  resolvePstnVoiceCandidate,
-} from "../data/voice-roster";
+  buildGrokStrengthsPromptSection,
+  isGrokModelId,
+} from "./grok-features";
+import { resolvePstnVoiceCandidate } from "../data/voice-roster";
+import {
+  buildManagedVoiceRuntime,
+  isCuratedElevenLabsVoiceId,
+} from "./managed-voice-runtime";
 import { sanitizeAmbientNoise } from "./workspace-planner";
 
 export interface AssistantRequestPayload {
@@ -43,7 +45,10 @@ export interface AssistantRequestPayload {
   userSettings: any;
 }
 
-const promptItem = (prefix: string, values: Array<{ content?: string | null }>) => {
+const promptItem = (
+  prefix: string,
+  values: Array<{ content?: string | null }>,
+) => {
   const lines = values
     .map((value) => truncateRuntimeSnippet(value.content || ""))
     .filter(Boolean)
@@ -70,31 +75,40 @@ export async function buildVapiAssistant({
 }: AssistantRequestPayload) {
   const agentId = agent.id;
   const isOutbound =
-    message.type === "outboundPhoneCall" || message.call?.type === "outboundPhoneCall";
-  const [agentRows, directives, knowledge, personalityRows] = await drizzle.transaction((tx) =>
-    Promise.all([
-      tx.select().from(schema.agents).where(eq(schema.agents.id, agentId)).limit(1),
-      tx
+    message.type === "outboundPhoneCall" ||
+    message.call?.type === "outboundPhoneCall";
+  const [agentRows, directives, knowledge, personalityRows] =
+    await drizzle.transaction(async (tx) => {
+      // A pg transaction owns one client. Concurrent tx queries are only
+      // queued by pg@8 and are rejected by pg@9, so keep this snapshot's
+      // reads explicitly ordered on the checked-out client.
+      const agentRows = await tx
+        .select()
+        .from(schema.agents)
+        .where(eq(schema.agents.id, agentId))
+        .limit(1);
+      const directives = await tx
         .select({ content: schema.directives.content })
         .from(schema.directives)
         .where(eq(schema.directives.agentId, agentId))
         .orderBy(desc(schema.directives.priority))
-        .limit(MAX_RUNTIME_DIRECTIVES),
-      tx
+        .limit(MAX_RUNTIME_DIRECTIVES);
+      const knowledge = await tx
         .select({ content: schema.knowledge.content })
         .from(schema.knowledge)
         .where(eq(schema.knowledge.agentId, agentId))
         .orderBy(desc(schema.knowledge.createdAt))
-        .limit(MAX_RUNTIME_KNOWLEDGE),
-      tx
+        .limit(MAX_RUNTIME_KNOWLEDGE);
+      const personalityRows = await tx
         .select({ content: schema.personality.content })
         .from(schema.personality)
         .where(eq(schema.personality.agentId, agentId))
-        .limit(1),
-    ]),
-  );
+        .limit(1);
+      return [agentRows, directives, knowledge, personalityRows] as const;
+    });
   const configured = agentRows[0];
-  if (!configured) throw new Error("Agent not found for Vapi assistant request");
+  if (!configured)
+    throw new Error("Agent not found for Vapi assistant request");
 
   // Coherent (provider, model) pair — agent brain first, tenant default
   // second — so a partially-configured agent never crosses its provider with
@@ -102,27 +116,64 @@ export async function buildVapiAssistant({
   const modelSelection = resolveCoherentVoiceModel(configured, userSettings);
   // Presenter/live-voice agents store a non-Vapi studio voice; their dedicated
   // PSTN pick (phone_voice_id) applies before the roster default.
-  const requestedVoice = resolvePstnVoiceCandidate(
-    isOutbound
-      ? configured.voiceIdOutbound || configured.voiceId
-      : configured.voiceIdInbound || configured.voiceId,
-    configured.phoneVoiceId,
-  );
-  const voiceId = isManagedVapiVoiceId(requestedVoice) ? requestedVoice : DEFAULT_MANAGED_VOICE_ID;
+  const directionalVoice = isOutbound
+    ? configured.voiceIdOutbound || configured.voiceId
+    : configured.voiceIdInbound || configured.voiceId;
+  // ElevenLabs is itself a PSTN voice through Vapi. The presenter-only phone
+  // fallback must not replace it before the managed runtime can authorize it.
+  const requestedVoice =
+    configured.voiceProvider === "11labs"
+      ? directionalVoice
+      : resolvePstnVoiceCandidate(directionalVoice, configured.phoneVoiceId);
+  let approvedClone = false;
+  if (
+    configured.voiceProvider === "11labs" &&
+    requestedVoice &&
+    !isCuratedElevenLabsVoiceId(requestedVoice)
+  ) {
+    const [clone] = await drizzle
+      .select({ voiceId: schema.clonedVoices.voiceId })
+      .from(schema.clonedVoices)
+      .where(
+        and(
+          eq(schema.clonedVoices.voiceId, requestedVoice),
+          eq(schema.clonedVoices.userId, configured.userId),
+          eq(schema.clonedVoices.status, "approved"),
+        ),
+      )
+      .limit(1);
+    approvedClone = Boolean(clone);
+  }
+  const voiceRuntime = buildManagedVoiceRuntime({
+    voiceProvider: configured.voiceProvider,
+    voiceId: requestedVoice,
+    approvedClone,
+    voiceSpeed: configured.voiceSpeed,
+    voiceStability: configured.voiceStability,
+    voiceSimilarityBoost: configured.voiceSimilarityBoost,
+    voiceStyle: configured.voiceStyle,
+    voiceSpeakerBoost: configured.voiceSpeakerBoost,
+    fallbackVoiceId: configured.phoneVoiceId,
+  });
   const speech = resolveVapiSpeechPipeline();
   const latency = getVoiceLatencyProfile({
     archetype: configured.archetype || undefined,
     role: configured.role || undefined,
     isOutbound,
   });
-  const personality = truncateRuntimeSnippet(personalityRows[0]?.content || "", 1_200);
+  const personality = truncateRuntimeSnippet(
+    personalityRows[0]?.content || "",
+    1_200,
+  );
   const flow = Array.isArray(configured.flowConfig)
-    ? (configured.flowConfig as Array<{
-        name?: string;
-        instructions?: string;
-        transitionCondition?: string;
-        isEndNode?: boolean;
-      }>).slice(0, 12)
+    ? (
+        configured.flowConfig as Array<{
+          name?: string;
+          instructions?: string;
+          transitionCondition?: string;
+          isEndNode?: boolean;
+        }>
+      ).slice(0, 12)
     : [];
   const flowBlock = flow.length
     ? `\n## CALL FLOW\n${flow
@@ -167,7 +218,9 @@ export async function buildVapiAssistant({
   // call-specific context (tone, rules, training, flow, escalation) appended.
   const basePrompt = resolveAssistantBasePrompt({
     override: configured.systemPromptOverride,
-    autoComposedPrompt: [identityBlock, callSpecificContext].filter(Boolean).join("\n"),
+    autoComposedPrompt: [identityBlock, callSpecificContext]
+      .filter(Boolean)
+      .join("\n"),
     callSpecificContext,
   });
   // Layer the runtime guardrails (compliance disclosure, do-not-discuss,
@@ -176,11 +229,13 @@ export async function buildVapiAssistant({
   // override can never silently drop them.
   const runtimeProfile: AgentRuntimeProfile = {
     timezone: configured.timezone,
-    business_hours: configured.businessHours as AgentRuntimeProfile["business_hours"],
+    business_hours:
+      configured.businessHours as AgentRuntimeProfile["business_hours"],
     compliance_mode: configured.complianceMode,
     disallowed_topics: configured.disallowedTopics,
     escalation_keywords: configured.escalationKeywords,
-    business_variables: configured.businessVariables as AgentRuntimeProfile["business_variables"],
+    business_variables:
+      configured.businessVariables as AgentRuntimeProfile["business_variables"],
     out_of_hours_message: configured.outOfHoursMessage,
     kpi_focus: configured.kpiFocus,
     personality_vibe: configured.personalityVibe,
@@ -198,7 +253,9 @@ export async function buildVapiAssistant({
   const augmentedSystemPrompt = isGrokModelId(modelSelection.model)
     ? `${systemPrompt}\n\n${buildGrokStrengthsPromptSection()}`
     : systemPrompt;
-  const finalSystemPrompt = clampRuntimePromptPreservingTail(augmentedSystemPrompt);
+  const finalSystemPrompt = clampRuntimePromptPreservingTail(
+    augmentedSystemPrompt,
+  );
   const afterHoursGreeting = afterHours
     ? runtime.outOfHoursMessage ||
       (isBusinessAgent
@@ -219,7 +276,9 @@ export async function buildVapiAssistant({
   );
   const appUrl = process.env.APP_URL?.trim().replace(/\/+$/, "");
   const webhookServer = appUrl
-    ? buildVapiServerConfig(`${appUrl}/api/vapi-webhook?agentId=${encodeURIComponent(agentId)}`)
+    ? buildVapiServerConfig(
+        `${appUrl}/api/vapi-webhook?agentId=${encodeURIComponent(agentId)}`,
+      )
     : undefined;
 
   // Spoken disclosure is part of the actual first message, not only a prompt
@@ -238,8 +297,12 @@ export async function buildVapiAssistant({
       (afterHoursGreeting ||
         configured.firstMessage ||
         `Hi, this is ${configured.name}. How can I help?`),
-    ...(isOutbound ? { firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE } : {}),
-    maxDurationSeconds: isOutbound ? VAPI_MAX_OUTBOUND_CALL_SECONDS : VAPI_MAX_INBOUND_CALL_SECONDS,
+    ...(isOutbound
+      ? { firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE }
+      : {}),
+    maxDurationSeconds: isOutbound
+      ? VAPI_MAX_OUTBOUND_CALL_SECONDS
+      : VAPI_MAX_INBOUND_CALL_SECONDS,
     model: {
       provider: modelSelection.provider,
       model: modelSelection.model,
@@ -250,11 +313,7 @@ export async function buildVapiAssistant({
       temperature: clampVoiceTemperature(configured.llmTemperature, 0.3),
       tools: functionTools,
     },
-    voice: {
-      provider: "vapi" as const,
-      voiceId,
-      ...(vapiVoiceVersion(voiceId) ? { version: vapiVoiceVersion(voiceId) } : {}),
-    },
+    voice: voiceRuntime,
     transcriber: speech.transcriber,
     ...(webhookServer ? { server: webhookServer } : {}),
     startSpeakingPlan: isOutbound
@@ -281,7 +340,13 @@ export async function buildVapiAssistant({
       "tool-calls",
       "speech-update",
     ],
-    clientMessages: ["transcript", "hang", "function-call", "speech-update", "conversation-update"],
+    clientMessages: [
+      "transcript",
+      "hang",
+      "function-call",
+      "speech-update",
+      "conversation-update",
+    ],
     analysisPlan: VAPI_ANALYSIS_PLAN,
     // Ambient noise parity with outbound — the user-settable field only
     // affected outbound dials before; inbound calls silently ignored it.

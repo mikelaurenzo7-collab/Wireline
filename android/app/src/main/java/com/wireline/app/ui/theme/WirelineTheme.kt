@@ -3,14 +3,11 @@ package com.wireline.app.ui.theme
 import android.app.Activity
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RippleConfiguration
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -83,29 +80,29 @@ private val LightColors: ColorScheme = lightColorScheme(
 
 val WirelineTypography = Typography(
     displayLarge = androidx.compose.ui.text.TextStyle(
-        fontSize = WirelineDesignTokens.Metric.typographyDisplaySize.sp,
+        fontSize = WirelineDesignTokens.Metric.typographyDisplaySize,
         fontWeight = FontWeight.SemiBold,
-        lineHeight = (WirelineDesignTokens.Metric.typographyDisplaySize * 1.15f).sp,
+        lineHeight = WirelineDesignTokens.Metric.typographyDisplaySize * 1.15f,
     ),
     headlineLarge = androidx.compose.ui.text.TextStyle(
-        fontSize = WirelineDesignTokens.Metric.typographyH1Size.sp,
+        fontSize = WirelineDesignTokens.Metric.typographyH1Size,
         fontWeight = FontWeight.SemiBold,
-        lineHeight = (WirelineDesignTokens.Metric.typographyH1Size * 1.2f).sp,
+        lineHeight = WirelineDesignTokens.Metric.typographyH1Size * 1.2f,
     ),
     bodyLarge = androidx.compose.ui.text.TextStyle(
-        fontSize = WirelineDesignTokens.Metric.typographyBodySize.sp,
+        fontSize = WirelineDesignTokens.Metric.typographyBodySize,
         fontWeight = FontWeight.Normal,
-        lineHeight = WirelineDesignTokens.Metric.typographyBodyLineHeight.sp,
+        lineHeight = WirelineDesignTokens.Metric.typographyBodyLineHeight,
     ),
     bodyMedium = androidx.compose.ui.text.TextStyle(
-        fontSize = WirelineDesignTokens.Metric.typographyBodySize.sp,
+        fontSize = WirelineDesignTokens.Metric.typographyBodySize,
         fontWeight = FontWeight.SemiBold,
-        lineHeight = WirelineDesignTokens.Metric.typographyBodyLineHeight.sp,
+        lineHeight = WirelineDesignTokens.Metric.typographyBodyLineHeight,
     ),
     labelSmall = androidx.compose.ui.text.TextStyle(
-        fontSize = WirelineDesignTokens.Metric.typographyCaptionSize.sp,
+        fontSize = WirelineDesignTokens.Metric.typographyCaptionSize,
         fontWeight = FontWeight.Normal,
-        lineHeight = (WirelineDesignTokens.Metric.typographyCaptionSize * 1.4f).sp,
+        lineHeight = WirelineDesignTokens.Metric.typographyCaptionSize * 1.4f,
     ),
 )
 
@@ -121,7 +118,6 @@ private val AppTypography = WirelineTypography.copy(
     labelSmall = WirelineTypography.labelSmall.copy(fontFamily = FontFamily.Monospace, letterSpacing = (0.8).sp),
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WirelineTheme(content: @Composable () -> Unit) {
     val colorScheme = LightColors
@@ -136,18 +132,22 @@ fun WirelineTheme(content: @Composable () -> Unit) {
         }
     }
 
-    CompositionLocalProvider(LocalRippleConfiguration provides RippleConfiguration(color = Brand.Accent)) {
-        MaterialTheme(
-            colorScheme = colorScheme,
-            shapes = Shapes(
-                extraSmall = RoundedCornerShape(Brand.RadiusSm),
-                small = RoundedCornerShape(Brand.RadiusMd),
-                medium = RoundedCornerShape(Brand.RadiusLg),
-                large = RoundedCornerShape(Brand.RadiusLg),
-                extraLarge = RoundedCornerShape(Brand.RadiusXl),
-            ),
-            typography = AppTypography,
-            content = content,
-        )
-    }
+    // The accent-tinted ripple this used to force (LocalRippleConfiguration /
+    // RippleConfiguration) arrived in Material3 1.3.0; the Compose BOM pinned in
+    // app/build.gradle.kts resolves 1.2.1, so those symbols do not exist here and
+    // the whole module failed to compile. Material3's default ripple already
+    // derives from the color scheme below, which is ours. Restore the explicit
+    // tint when the BOM moves to 1.3+.
+    MaterialTheme(
+        colorScheme = colorScheme,
+        shapes = Shapes(
+            extraSmall = RoundedCornerShape(Brand.RadiusSm),
+            small = RoundedCornerShape(Brand.RadiusMd),
+            medium = RoundedCornerShape(Brand.RadiusLg),
+            large = RoundedCornerShape(Brand.RadiusLg),
+            extraLarge = RoundedCornerShape(Brand.RadiusXl),
+        ),
+        typography = AppTypography,
+        content = content,
+    )
 }

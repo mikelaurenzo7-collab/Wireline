@@ -104,6 +104,16 @@ export function getPostalAddress(): string | null {
   return a || null;
 }
 
+function requirePostalAddress(): string {
+  const address = getPostalAddress();
+  if (!address) {
+    throw new Error(
+      "WIRELINE_POSTAL_ADDRESS is required for commercial email",
+    );
+  }
+  return address;
+}
+
 /** Plain-text compliance footer (unsubscribe link + postal address). */
 export function buildComplianceFooterText(email: string): string {
   const lines = [
@@ -112,14 +122,13 @@ export function buildComplianceFooterText(email: string): string {
     `You're receiving this because you have a Wireline account (${normalizeEmail(email)}).`,
     `Unsubscribe from product & billing reminders: ${unsubscribeUrl(email)}`,
   ];
-  const addr = getPostalAddress();
-  if (addr) lines.push(addr);
+  lines.push(requirePostalAddress());
   return lines.join("\n");
 }
 
 /** HTML compliance footer matching the email design system. */
 export function buildComplianceFooterHtml(email: string): string {
-  const addr = getPostalAddress();
+  const addr = requirePostalAddress();
   const safeEmail = escapeBasicHtml(normalizeEmail(email));
   const safeUnsub = escapeBasicHtml(unsubscribeUrl(email));
   return `
@@ -128,7 +137,7 @@ export function buildComplianceFooterHtml(email: string): string {
       You're receiving this because you have a Wireline account (${safeEmail}).
       <a href="${safeUnsub}" style="color: #6B6B7A;">Unsubscribe</a> from product &amp; billing reminders.
     </p>
-    ${addr ? `<p style="margin: 0; line-height: 1.5; color: #9A9AA8; font-size: 11px;">${escapeBasicHtml(addr)}</p>` : ""}
+    <p style="margin: 0; line-height: 1.5; color: #9A9AA8; font-size: 11px;">${escapeBasicHtml(addr)}</p>
   `;
 }
 
@@ -142,10 +151,9 @@ function escapeBasicHtml(s: string): string {
 }
 
 /**
- * True when the recipient has opted out. Defensive: on any DB error (incl. a
- * not-yet-migrated suppression table) returns false so a transient issue
- * never blocks transactional-adjacent sends — opt-outs that DO exist are
- * still honored once the table is present.
+ * True when the recipient has opted out. A lookup failure also returns true:
+ * the only caller is commercial email, so uncertainty must fail closed rather
+ * than risk contacting someone whose opt-out cannot currently be verified.
  */
 export async function isEmailSuppressed(email: string): Promise<boolean> {
   try {
@@ -156,10 +164,10 @@ export async function isEmailSuppressed(email: string): Promise<boolean> {
       .limit(1);
     return !!row;
   } catch (err) {
-    log.warn("isEmailSuppressed check failed — treating as not suppressed", {
+    log.error("isEmailSuppressed check failed — treating as suppressed", {
       error: getErrorMessage(err),
     });
-    return false;
+    return true;
   }
 }
 

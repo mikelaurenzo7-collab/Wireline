@@ -117,12 +117,6 @@ function defaultAgentName(posture: Posture, role: Role) {
   return "Front Desk";
 }
 
-function defaultBrief(posture: Posture) {
-  return posture === "business"
-    ? "Qualify inbound demand, answer support questions, route urgent calls, and text every outcome."
-    : "Answer unknown callers, book appointments, take messages, and text me what happened.";
-}
-
 function defaultRole(posture: Posture): Role {
   return posture === "business" ? "sales" : "personal_assistant";
 }
@@ -162,7 +156,12 @@ export default function CreateAgentDialog({
     setPosture(nextPosture);
     setRole(defaultRole(nextPosture));
     setName("");
-    setBrief(initialBrief || defaultBrief(nextPosture));
+    // The composer opens empty unless the caller carried a brief in (a deep
+    // link from marketing). Seeding it with our own sentence meant the first
+    // thing a new customer saw in their own text box was words we wrote, and
+    // the fastest path was to delete them. The suggestion chips underneath
+    // offer the same starting points without occupying the field.
+    setBrief(initialBrief);
     setError("");
     const frame = requestAnimationFrame(() => briefRef.current?.focus());
     return () => cancelAnimationFrame(frame);
@@ -195,7 +194,7 @@ export default function CreateAgentDialog({
   async function create(event: FormEvent) {
     event.preventDefault();
     if (creating) return;
-    const finalBrief = brief.trim() || defaultBrief(activePosture);
+    const finalBrief = brief.trim();
     const finalName = name.trim() || defaultAgentName(activePosture, role);
     // Server create already seeds role + template personality. Do not overwrite
     // that depth with a one-line tone stub from the client.
@@ -224,23 +223,29 @@ export default function CreateAgentDialog({
       // The agent now exists with server-seeded personality. Applying the first
       // brief is best-effort: if extract fails, keep the created agent and
       // surface a truthful warning instead of prompting a duplicate retry.
-      let trainingApplied = true;
-      try {
-        const extractRes = await authFetch("/api/train/extract", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            agentId: body.id,
-            message: [
-              `Role: ${role}.`,
-              `Posture: ${activePosture}.`,
-              `First brief: ${finalBrief}`,
-            ].join("\n"),
-          }),
-        });
-        if (!extractRes.ok) trainingApplied = false;
-      } catch {
-        trainingApplied = false;
+      // An empty composer trains nothing — the server already seeded role and
+      // personality, and substituting a house sentence here would teach the
+      // agent words the customer never wrote.
+      let trainingApplied = false;
+      if (finalBrief) {
+        trainingApplied = true;
+        try {
+          const extractRes = await authFetch("/api/train/extract", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              agentId: body.id,
+              message: [
+                `Role: ${role}.`,
+                `Posture: ${activePosture}.`,
+                `First brief: ${finalBrief}`,
+              ].join("\n"),
+            }),
+          });
+          if (!extractRes.ok) trainingApplied = false;
+        } catch {
+          trainingApplied = false;
+        }
       }
 
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
@@ -256,7 +261,7 @@ export default function CreateAgentDialog({
           agentId: body.id,
           metadata: { source: "fast_start_brief", has_training: true },
         });
-      } else {
+      } else if (finalBrief) {
         stashCreateWarning(
           `${finalName} was created, but the starting brief didn't fully apply. Open Studio and paste it into the Set up tab to try again.`,
         );
@@ -332,6 +337,7 @@ export default function CreateAgentDialog({
               <div className="min-w-0">
                 <h2
                   id="create-agent-title"
+                  data-slot="dialog-title"
                   className="font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-[-.025em] text-foreground"
                 >
                   Fast Start
@@ -360,7 +366,7 @@ export default function CreateAgentDialog({
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
           <p className={WL_APP_CLASSES.wiredEyebrow}>One job</p>
-          <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(2rem,4vw,2.5rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
+          <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(2rem,4vw,2.5rem)] font-normal uppercase leading-none tracking-[-0.02em] text-foreground">
             {language.setupPrompt}
           </h3>
           <p className="mt-3 text-sm text-muted-foreground">
@@ -380,15 +386,11 @@ export default function CreateAgentDialog({
                   key={value}
                   type="button"
                   onClick={() => {
-                    const previousDefault = defaultBrief(activePosture);
+                    // Switching use case re-aims the role and the placeholder.
+                    // It never touches the composer: whatever the customer has
+                    // written is theirs, and an empty field stays empty.
                     setPosture(value);
                     setRole(defaultRole(value));
-                    setBrief((current) => {
-                      if (!current.trim() || current === previousDefault) {
-                        return defaultBrief(value);
-                      }
-                      return current;
-                    });
                   }}
                   className={`rounded-[12px] border px-4 py-3 text-left transition-colors ${
                     selected

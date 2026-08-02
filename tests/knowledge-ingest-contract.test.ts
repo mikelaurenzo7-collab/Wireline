@@ -13,13 +13,17 @@ import {
   knowledgeTextTruncationNotice,
 } from "../src/lib/knowledge-asset-limits";
 
-const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8");
 
 /** The assets handler, isolated from the rest of the (very long) route file. */
 function assetsHandler(): string {
   const source = read("src/routes/agent-routes-v2.ts");
   const start = source.indexOf('"/api/agent-config/:id/assets"');
-  const end = source.indexOf('router.delete(\n  "/api/agent-config/:id/:type/:rowId"', start);
+  const end = source.indexOf(
+    'router.delete(\n  "/api/agent-config/:id/:type/:rowId"',
+    start,
+  );
   expect(start).toBeGreaterThan(-1);
   expect(end).toBeGreaterThan(start);
   return source.slice(start, end);
@@ -31,7 +35,9 @@ describe("knowledge asset limits", () => {
     // only meaningful relative to the express body limit. Deriving the limit
     // from server.ts means raising one without the other fails here rather than
     // in production, where it surfaced as a bare "request entity too large".
-    const bodyLimit = /express\.json\(\{\s*limit:\s*"(\d+)mb"\s*\}\)/.exec(read("server.ts"));
+    const bodyLimit = /express\.json\(\{\s*limit:\s*"(\d+)mb"\s*\}\)/.exec(
+      read("server.ts"),
+    );
     expect(bodyLimit).not.toBeNull();
     const bodyLimitBytes = Number(bodyLimit![1]) * 1024 * 1024;
 
@@ -46,11 +52,17 @@ describe("knowledge asset limits", () => {
 
   it("reports text truncation only when part of the document was actually dropped", () => {
     expect(knowledgeTextTruncationNotice(0)).toBeNull();
-    expect(knowledgeTextTruncationNotice(KNOWLEDGE_TEXT_EXTRACT_CHARS)).toBeNull();
+    expect(
+      knowledgeTextTruncationNotice(KNOWLEDGE_TEXT_EXTRACT_CHARS),
+    ).toBeNull();
 
-    const notice = knowledgeTextTruncationNotice(KNOWLEDGE_TEXT_EXTRACT_CHARS + 1);
+    const notice = knowledgeTextTruncationNotice(
+      KNOWLEDGE_TEXT_EXTRACT_CHARS + 1,
+    );
     expect(notice).toContain(KNOWLEDGE_TEXT_EXTRACT_CHARS.toLocaleString());
-    expect(notice).toContain((KNOWLEDGE_TEXT_EXTRACT_CHARS + 1).toLocaleString());
+    expect(notice).toContain(
+      (KNOWLEDGE_TEXT_EXTRACT_CHARS + 1).toLocaleString(),
+    );
   });
 
   it("names the file and its size when it is too large to upload", () => {
@@ -60,13 +72,19 @@ describe("knowledge asset limits", () => {
     expect(message).toContain(KNOWLEDGE_ASSET_MAX_LABEL);
     // Size is optional — a server-side rejection knows the name but not the
     // original file length, and must not emit "is undefined MB".
-    expect(knowledgeAssetTooLargeMessage("shot.png")).not.toMatch(/undefined|NaN/);
+    expect(knowledgeAssetTooLargeMessage("shot.png")).not.toMatch(
+      /undefined|NaN/,
+    );
   });
 
   it("accounts for files dropped past the per-batch cap", () => {
     expect(knowledgeAssetFileCountNotice(KNOWLEDGE_ASSET_MAX_FILES)).toBeNull();
-    expect(knowledgeAssetFileCountNotice(KNOWLEDGE_ASSET_MAX_FILES + 1)).toContain("1 more was");
-    expect(knowledgeAssetFileCountNotice(KNOWLEDGE_ASSET_MAX_FILES + 3)).toContain("3 more were");
+    expect(
+      knowledgeAssetFileCountNotice(KNOWLEDGE_ASSET_MAX_FILES + 1),
+    ).toContain("1 more was");
+    expect(
+      knowledgeAssetFileCountNotice(KNOWLEDGE_ASSET_MAX_FILES + 3),
+    ).toContain("3 more were");
   });
 });
 
@@ -83,7 +101,9 @@ describe("knowledge asset ingestion API", () => {
     // The refusal has to precede extraction, or the corrupt bytes are billed
     // to a provider before anyone notices.
     const guard = handler.indexOf("KNOWLEDGE_IMAGE_MAX_DATA_URL_CHARS");
-    expect(guard).toBeLessThan(handler.indexOf("extractImageAsset(fileName, dataUrl)"));
+    expect(guard).toBeLessThan(
+      handler.indexOf("extractImageAsset(fileName, dataUrl)"),
+    );
   });
 
   it("discloses how much of an over-long text asset was read", () => {
@@ -97,7 +117,7 @@ describe("knowledge asset ingestion API", () => {
   });
 
   it("gives an over-large payload a status a caller can act on", () => {
-    expect(assetsHandler()).toContain("AppError.fromHttpStatus(413");
+    expect(assetsHandler()).toMatch(/AppError\.fromHttpStatus\(\s*413/);
     // Without the mapping both the handler's 413 and express's own body-limit
     // 413 report a meaningless "ERROR" code.
     expect(read("src/lib/api-error.ts")).toContain('413: "PAYLOAD_TOO_LARGE"');
@@ -116,7 +136,9 @@ describe("knowledge upload surface", () => {
     // Rejected in the browser, so the message names the file instead of
     // surfacing express's bare "request entity too large".
     expect(source).toContain("file.size > KNOWLEDGE_ASSET_MAX_BYTES");
-    expect(source).toContain("knowledgeAssetTooLargeMessage(file.name, file.size)");
+    expect(source).toContain(
+      "knowledgeAssetTooLargeMessage(file.name, file.size)",
+    );
   });
 
   it("reports what landed when a batch only partly succeeds", () => {
@@ -145,7 +167,9 @@ describe("knowledge upload surface", () => {
     expect(effectEnd).toBeGreaterThan(-1);
     const effectStart = source.lastIndexOf("useEffect(() => {", effectEnd);
     expect(effectStart).toBeGreaterThan(-1);
-    expect(source.slice(effectStart, effectEnd)).toContain("authFetch(`/api/agent-config/");
+    expect(source.slice(effectStart, effectEnd)).toContain(
+      "authFetch(`/api/agent-config/",
+    );
 
     // The load effect re-runs on every successful upload and clears its own
     // error on the way in. While both errors shared one state slot that wiped

@@ -8,7 +8,7 @@ import { getPasswordPolicyError } from "../lib/password-policy";
 import { Button, Input } from "../components/atoms";
 import { FormField, StatusNotice } from "../components/molecules";
 import MarketingChrome from "../components/marketing/MarketingChrome";
-import WirelineMark from "../components/WirelineMark";
+import WirelineMark from "../components/brand/WirelineMark";
 import { readStoredWorkspaceMode, resolvePostAuthDestination } from "../lib/auth-redirect";
 
 /**
@@ -105,7 +105,7 @@ export default function ResetPassword() {
         <div className="w-full max-w-[420px] wl-auth-card rounded-md p-6 sm:p-8">
           <div className="wl-auth-card-header mb-6">
             <div className="wl-auth-brand-chip" aria-hidden="true">
-              <WirelineMark className="w-5 h-5" stroke="white" strokeWidth={10} />
+              <WirelineMark className="size-8 text-white" />
             </div>
             <div>
               <h1 className="font-display text-2xl sm:text-3xl text-foreground leading-tight">

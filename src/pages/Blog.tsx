@@ -53,7 +53,7 @@ const structuredData = {
       "@type": "CollectionPage",
       name: "Wireline Notes",
       description:
-        "Practical guides for AI voice agents — appointments, support queues, handoff boundaries, and getting time back.",
+        "Practical guides for voice agents — appointments, support queues, handoff boundaries, and getting time back.",
       url: `${SITE_URL}/blog`,
     },
   ],
@@ -63,8 +63,8 @@ export default function Blog() {
   return (
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
       <PageMeta
-        title="Wireline Notes | AI voice agent guides for small business phone coverage"
-        description="Practical guides for AI voice agents: appointment booking, support queues, handoff boundaries, and getting routine phone work off your plate."
+        title="Wireline Notes | Voice agent guides for small business phone coverage"
+        description="Practical guides for voice agents: appointment booking, support queues, handoff boundaries, and getting routine phone work off your plate."
         path="/blog"
         structuredData={structuredData}
       />

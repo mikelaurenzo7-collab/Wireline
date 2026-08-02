@@ -15,6 +15,7 @@ import {
   gatewayModelId,
   isAIGatewayConfigured,
 } from "./ai-gateway";
+import { normalizeResponsesUsage } from "./ai-usage";
 
 const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses";
 
@@ -128,6 +129,8 @@ function message(args: {
   stopReason: RuntimeStopReason;
   inputTokens: number;
   outputTokens: number;
+  cacheReadTokens?: number;
+  cacheWriteTokens?: number;
 }): RuntimeMessage {
   return {
     id: `msg_${Math.random().toString(36).slice(2)}`,
@@ -140,8 +143,8 @@ function message(args: {
     usage: {
       input_tokens: args.inputTokens,
       output_tokens: args.outputTokens,
-      cache_creation_input_tokens: 0,
-      cache_read_input_tokens: 0,
+      cache_creation_input_tokens: args.cacheWriteTokens ?? 0,
+      cache_read_input_tokens: args.cacheReadTokens ?? 0,
     },
   };
 }
@@ -282,6 +285,10 @@ async function callResponsesEndpoint(args: {
   const text = extractResponsesText(payload);
   if (!text) throw new Error(`${args.provider} returned an empty response`);
   const usage = (payload.usage || {}) as Record<string, unknown>;
+  // Responses includes cached and cache-write tokens in input_tokens. Split
+  // both details out so the audit layer can apply their actual vendor rates.
+  const { inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens } =
+    normalizeResponsesUsage(usage);
   log.info("[ai-runtime] response complete", {
     provider: args.provider,
     model: args.model,
@@ -302,15 +309,19 @@ async function callResponsesEndpoint(args: {
           },
         ],
         stopReason: "tool_use",
-        inputTokens: Number(usage.input_tokens || 0),
-        outputTokens: Number(usage.output_tokens || 0),
+        inputTokens,
+        outputTokens,
+        cacheReadTokens,
+        cacheWriteTokens,
       })
     : message({
         model: args.model,
         content: [{ type: "text", text, citations: null }],
         stopReason: "end_turn",
-        inputTokens: Number(usage.input_tokens || 0),
-        outputTokens: Number(usage.output_tokens || 0),
+        inputTokens,
+        outputTokens,
+        cacheReadTokens,
+        cacheWriteTokens,
       });
 }
 

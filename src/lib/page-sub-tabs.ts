@@ -185,9 +185,9 @@ export const OUTBOUND_VIEW_TABS: AppPageSubTab[] = [
   { id: "dispatch", label: "Dispatch", icon: Zap },
   {
     id: "campaigns",
-    label: "Campaigns",
+    label: "Lead Hunt",
     shortLabel: "Camps",
-    ariaLabel: "Campaigns",
+    ariaLabel: "Hunt",
     icon: Megaphone,
   },
   { id: "sequences", label: "Sequences", shortLabel: "Seq", ariaLabel: "Sequences", icon: Repeat },

@@ -202,7 +202,7 @@ export default function Security() {
   return (
     <>
       <PageMeta
-        title={isTrustHub ? "Trust Center — Wireline" : "Security & Compliance — Wireline"}
+        title={isTrustHub ? "Trust Center | Wireline" : "Security and Compliance | Wireline"}
         description="How Wireline handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and honest security proof."
         // /trust adds buyer-facing vendor, compliance, billing, and lifecycle
         // evidence beyond /security, so each indexable route owns its canonical.
@@ -225,7 +225,7 @@ export default function Security() {
                 <h1 className="wl-public-section-heading mt-3 max-w-[22ch]">
                   {isTrustHub
                     ? "Trust Center — how Wireline earns live calls."
-                    : "How we keep your calls — and your data — safe."}
+                    : "How we keep your data safe."}
                 </h1>
               </div>
             </div>

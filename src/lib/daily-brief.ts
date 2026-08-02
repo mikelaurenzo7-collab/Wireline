@@ -6,7 +6,7 @@
  * Extracted from server.ts to avoid circular dependencies.
  */
 
-import { drizzle } from "./server-context";
+import { drizzle, serialQueryBatch } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, gte, lt, desc } from "drizzle-orm";
 import * as insightsAi from "./insights-ai";
@@ -39,7 +39,7 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
   wStart.setDate(wStart.getDate() - 7);
 
   const [yCalls, wCalls, appts, tasks, leads, wins, losses] = await drizzle.transaction((tx) =>
-    Promise.all([
+    serialQueryBatch([
       tx
         .select({
           leadScore: schema.callLogs.leadScore,

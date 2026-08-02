@@ -34,8 +34,12 @@ function managedPriceIds(): string[] {
   const ids = STRIPE_PLANS.filter(
     (plan) => plan.price_usd_monthly > 0 && plan.public !== false,
   ).flatMap((plan) => [
-    process.env[plan.priceIdEnv]?.trim() || plan.fallbackPriceId || "",
-    process.env[plan.annualPriceIdEnv]?.trim() || plan.fallbackAnnualPriceId || "",
+    (plan.priceIdEnv ? process.env[plan.priceIdEnv]?.trim() : "") ||
+      plan.fallbackPriceId ||
+      "",
+    (plan.annualPriceIdEnv ? process.env[plan.annualPriceIdEnv]?.trim() : "") ||
+      plan.fallbackAnnualPriceId ||
+      "",
   ]);
   return [...new Set(ids.filter(Boolean))];
 }

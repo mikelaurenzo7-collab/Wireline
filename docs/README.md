@@ -2,7 +2,7 @@
 
 Wireline's durable product loop is **Create -> Train -> Run**. Operationally, Wire sits between Training and Run for numbers, integrations, routing, approvals, billing, and launch controls: **Create -> Train -> Wire -> Run**.
 
-Broad public copy uses **AI voice agents** for personal and business conversations. Personal workspaces create **personal agents**. Business workspaces may describe role-specific **AI employees** or **AI sales agents** when the context is explicit. Technical contracts retain `agent`. Every included agent has an **included number**. Outbound, inbound, and hybrid modes are first-class.
+Broad public copy uses **voice agents** for personal and business conversations. Personal workspaces create **personal agents**. Business workspaces may describe role-specific **sales agents** or **support agents** when the context is explicit. Never pair "AI" with "agent" in copy: see `CUSTOMER_TERMINOLOGY.md`. Technical contracts retain `agent`. Every included agent has an **included number**. Outbound, inbound, and hybrid modes are first-class.
 
 This file maps current doctrine, operating runbooks, and active plans. Dated audits and superseded decision evidence live in [AUDIT_INDEX.md](./AUDIT_INDEX.md).
 

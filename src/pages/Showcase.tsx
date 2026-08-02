@@ -25,13 +25,13 @@ export default function Showcase() {
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title="Try Wireline"
-        description="Hear the AI voice agent your customers will meet first, then build one for voice, SMS, and email."
+        description="Hear the voice agent your customers will meet first, then build one for voice, SMS, and email."
         path="/showcase"
       />
 
       <MarketingHero
         eyebrow="Try Wireline"
-        title="Hear the voice agent your customer meets first."
+        title="Hear what your customer hears."
         description="Start a live preview, ask a real question, and hear how a trained voice agent turns the conversation into a clear next step."
         primaryAction={{ label: "Create an agent", to: "/signup" }}
         secondaryAction={{ label: "Call a demo line", to: "#demo-lines", tone: "secondary" }}

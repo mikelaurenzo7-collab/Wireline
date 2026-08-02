@@ -2,7 +2,7 @@
 import { Router, Response } from "express";
 import { AppError } from "../lib/api-error";
 
-import { drizzle } from "../lib/server-context";
+import { drizzle, serialQueryBatch } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, gte, lt, or, sql, count } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
@@ -122,7 +122,7 @@ router.get(
       // below: root Drizzle queries each check out their own tenant-scoped
       // client against a five-connection serverless pool.
       const [callRows, apptRows, leadRows] = await drizzle.transaction((tx) =>
-        Promise.all([
+        serialQueryBatch([
           tx
             .select({
               totalCalls: count(),
@@ -261,7 +261,7 @@ router.get(
       );
 
       const [agents, callStats, apptStats, aiCostStats] = await drizzle.transaction((tx) =>
-        Promise.all([
+        serialQueryBatch([
           tx
             .select({
               id: schema.agents.id,

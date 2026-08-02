@@ -33,8 +33,8 @@ export default function TrustSignals() {
     >
       <div className="wl-public-rail">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="wl-overline text-primary">Operational trust</p>
-          <h2 id="trust-heading" className="wl-section-title mx-auto mt-3 max-w-[20ch]">
+          <p className="wl-eyebrow wl-eyebrow--wired text-primary">Operational trust</p>
+          <h2 id="trust-heading" className="wl-display-2 mx-auto mt-4 max-w-[20ch]">
             Built to stay under your control.
           </h2>
         </div>
@@ -60,7 +60,11 @@ export default function TrustSignals() {
             ["/security", "Security"],
             ["/status", "System status"],
           ].map(([to, label]) => (
-            <Link key={to} to={to} className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground">
+            <Link
+              key={to}
+              to={to}
+              className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
+            >
               {label}
               <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>

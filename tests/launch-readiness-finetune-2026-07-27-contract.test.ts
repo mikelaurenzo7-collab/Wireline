@@ -116,14 +116,14 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(consent).toContain("sessionPresent = Boolean(body?.user)");
   });
 
-  it("aligns broad public/onboarding copy to AI voice agent", () => {
-    expect(read("src/lib/email-service.ts")).toContain("first AI voice agent");
+  it("aligns broad public/onboarding copy to voice agent", () => {
+    expect(read("src/lib/email-service.ts")).toContain("first voice agent");
     expect(read("src/lib/email-service.ts")).not.toContain("first AI employee");
-    expect(read("src/pages/Compare.tsx")).toContain("owner ready AI voice agent");
-    expect(read("src/pages/ClientAppsPage.tsx")).toContain("simulate an AI voice agent");
-    expect(read("src/components/PrivacyPolicyPage.tsx")).toContain("AI voice agent platform");
-    expect(read("src/components/PrivacyPolicyPage.tsx")).toContain("your AI voice agents");
-    expect(read("src/components/StudioWorkroom.tsx")).toContain('"AI voice agent"');
-    expect(read("src/components/CallLogsClaude.tsx")).toContain('"AI voice agent"');
+    expect(read("src/pages/Compare.tsx")).toContain("owner ready voice agent");
+    expect(read("src/pages/ClientAppsPage.tsx")).toContain("simulate a voice agent");
+    expect(read("src/components/PrivacyPolicyPage.tsx")).toContain("voice agent platform");
+    expect(read("src/components/PrivacyPolicyPage.tsx")).toContain("your voice agents");
+    expect(read("src/components/StudioWorkroom.tsx")).toContain('"Voice agent"');
+    expect(read("src/components/CallLogsClaude.tsx")).toContain('"Voice agent"');
   });
 });

@@ -117,6 +117,24 @@ const pool = databaseConnection
 
 export const tenantStore = new AsyncLocalStorage<string>();
 
+type AwaitedTuple<T extends readonly unknown[]> = {
+  -readonly [K in keyof T]: Awaited<T[K]>;
+};
+
+/**
+ * Resolve lazy Drizzle query builders one at a time on a transaction-bound
+ * pg client. `Promise.all()` calls every thenable concurrently; pg@8 only
+ * queues that unsupported pattern and pg@9 rejects it. Keeping the batch lazy
+ * preserves one tenant-scoped snapshot without overlapping `client.query()`.
+ */
+export async function serialQueryBatch<const T extends readonly unknown[]>(
+  queries: T,
+): Promise<AwaitedTuple<T>> {
+  const rows: unknown[] = [];
+  for (const query of queries) rows.push(await query);
+  return rows as unknown as AwaitedTuple<T>;
+}
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const _origConnect = pool.connect.bind(pool);
 
@@ -196,12 +214,21 @@ async function scopeClientToTenant(userId: string) {
     // Restore the raw query fn before finalizing so our control statements run as-is.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- restoring pg client.query
     (client as any).query = _origQuery;
-    // COMMIT/ROLLBACK must settle before the client returns to the pool
+    if (err) {
+      // The pool discards errored clients, and closing the socket rolls the
+      // outer transaction back implicitly. Issuing ROLLBACK here would queue
+      // it behind any still in-flight query on this client — the exact
+      // pattern pg@8 deprecates ("client already executing a query") and
+      // pg@9 rejects outright.
+      _origRelease(err);
+      return;
+    }
+    // COMMIT must settle before the client returns to the pool
     // (_origRelease only runs after). SET LOCAL ROLE is transaction-scoped, so
     // the next checkout never inherits wireline_server from this one.
-    _origQuery(err ? "ROLLBACK" : "COMMIT")
-      .then(() => _origRelease(err))
-      .catch(() => _origRelease(err || true));
+    _origQuery("COMMIT")
+      .then(() => _origRelease())
+      .catch(() => _origRelease(true));
   };
   return client;
 }

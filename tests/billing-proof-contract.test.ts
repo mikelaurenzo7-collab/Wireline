@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 
-const read = (path: string) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
+const read = (path: string) =>
+  readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 
 describe("billing proof contract", () => {
   it("keeps a single founder-catalog checkout owner reachable for new users", () => {
@@ -13,12 +14,16 @@ describe("billing proof contract", () => {
     expect(registry).toContain("app.use(launchBillingCheckoutRouter)");
     expect(registry).not.toContain("subscriptionCheckoutGuardRouter");
     expect(launchCheckout).toContain('router.post(\n  "/api/billing/checkout"');
-    expect(launchCheckout).toContain('code: "CONTACT_SALES_PLAN"');
+    expect(launchCheckout).toContain('code: "FREE_PLAN_NO_CHECKOUT"');
     expect(launchCheckout).toContain('code: "ALREADY_SUBSCRIBED"');
     expect(launchCheckout).toContain('code: "LEGACY_PLAN_RETIRED"');
     expect(launchCheckout).toContain("FOUNDER_CATALOG_VERSION");
-    expect(launchCheckout).toContain('success_url: `${appUrl.url}/settings/billing?billing=success');
-    expect(launchCheckout).toContain('cancel_url: `${appUrl.url}/settings/billing?billing=canceled`');
+    expect(launchCheckout).toContain(
+      "success_url: `${appUrl.url}/settings/billing?billing=success",
+    );
+    expect(launchCheckout).toContain(
+      "cancel_url: `${appUrl.url}/settings/billing?billing=canceled`",
+    );
     expect(launchCheckout).not.toContain("/admin?billing=");
     expect(billingRoutes).not.toContain('router.post(\n  "/billing/checkout"');
     expect(billingRoutes).not.toContain("subscriptionCheckoutLineItems");
@@ -33,8 +38,8 @@ describe("billing proof contract", () => {
     expect(registry).toContain("app.use(billingPortalReadinessRouter)");
     expect(portal).toContain('router.post(\n  "/api/billing/portal"');
     expect(portal).toContain("ensureManagedPortalConfiguration");
-    expect(portal).toContain('return_url: `${appUrl.url}/settings/billing`');
-    expect(portal).not.toContain('return_url: `${appUrl.url}/admin`');
+    expect(portal).toContain("return_url: `${appUrl.url}/settings/billing`");
+    expect(portal).not.toContain("return_url: `${appUrl.url}/admin`");
     expect(billingRoutes).not.toContain('router.post(\n  "/billing/portal"');
   });
 
@@ -44,10 +49,14 @@ describe("billing proof contract", () => {
 
     expect(billingRoutes).toContain('case "checkout.session.completed"');
     expect(billingRoutes).toContain("await syncSubscriptionFromStripe(sub)");
-    expect(stripeHelpers).toContain("export async function syncSubscriptionFromStripe");
+    expect(stripeHelpers).toContain(
+      "export async function syncSubscriptionFromStripe",
+    );
     expect(stripeHelpers).toContain("schema.subscriptions");
     expect(stripeHelpers).toContain("schema.settings");
-    expect(stripeHelpers).toContain("const baseMaxAgents = plan?.max_agents ?? 1");
+    expect(stripeHelpers).toContain(
+      "const baseMaxAgents = plan?.max_agents ?? 1",
+    );
     expect(stripeHelpers).toContain("maxAgents: effectiveMaxAgents");
     expect(stripeHelpers).toContain("subscriptionStatus: localStatus");
   });
@@ -58,7 +67,9 @@ describe("billing proof contract", () => {
 
     expect(billingRoutes).toContain("schema.stripeEvents");
     expect(billingRoutes).toContain("duplicate: true");
-    expect(billingRoutes).toContain("Webhook idempotency store unavailable. Retry later.");
+    expect(billingRoutes).toContain(
+      "Webhook idempotency store unavailable. Retry later.",
+    );
     expect(wallet).toContain("onConflictDoNothing()");
     expect(wallet).toContain("idempotencyKey: ref?.idempotencyKey");
   });
@@ -70,8 +81,12 @@ describe("billing proof contract", () => {
 
     expect(billingRoutes).toContain('case "customer.subscription.updated"');
     expect(billingRoutes).toContain('case "customer.subscription.deleted"');
-    expect(stripeHelpers).toContain("cancelAtPeriodEnd: !!sub.cancel_at_period_end");
-    expect(stripeHelpers).toContain('stripeStatus === "past_due" || stripeStatus === "unpaid"');
+    expect(stripeHelpers).toContain(
+      "cancelAtPeriodEnd: !!sub.cancel_at_period_end",
+    );
+    expect(stripeHelpers).toContain(
+      'stripeStatus === "past_due" || stripeStatus === "unpaid"',
+    );
     expect(billingCard).toContain("cancel_at_period_end");
     expect(billingCard).toContain("Cancels at period end");
   });
@@ -92,7 +107,9 @@ describe("billing proof contract", () => {
     expect(deletionBilling).toContain("stripe.subscriptions.list");
     expect(deletionBilling).toContain("for await");
     expect(deletionBilling).toContain("DELETION_RENEWAL_MARKER");
-    expect(deletionBilling).toContain('metadata: { [DELETION_RENEWAL_MARKER]: "" }');
+    expect(deletionBilling).toContain(
+      'metadata: { [DELETION_RENEWAL_MARKER]: "" }',
+    );
     expect(settings).toContain("Future subscription renewal is stopped");
     expect(settings).toContain('authFetch("/api/account/deletion-status"');
     expect(settings).toContain('authFetch("/api/account/cancel-deletion"');
@@ -105,7 +122,9 @@ describe("billing proof contract", () => {
     const billingRoutes = read("src/routes/billing-routes.ts");
 
     expect(balanceRoutes).toContain('purpose: "credit_topup"');
-    expect(balanceRoutes).toContain("payment_intent_data: { metadata: creditMeta }");
+    expect(balanceRoutes).toContain(
+      "payment_intent_data: { metadata: creditMeta }",
+    );
     expect(balanceRoutes).toContain("metadata: creditMeta");
     expect(billingRoutes).toContain("await addCredit(userId, creditUsd");
     expect(billingRoutes).toContain('case "charge.refunded"');
@@ -139,16 +158,24 @@ describe("billing proof contract", () => {
     const billingRoutes = read("src/routes/billing-routes.ts");
 
     expect(balanceRoutes).toContain('plan.id !== "personal"');
-    expect(modal).not.toContain('authFetch("/api/conversation-balance/checkout"');
+    expect(modal).not.toContain(
+      'authFetch("/api/conversation-balance/checkout"',
+    );
     expect(modal).toContain('authFetch("/api/billing/portal"');
     expect(modal).toContain('detail.code === "SUBSCRIPTION_REQUIRED"');
     expect(billingCard).toContain("{canAddBalance && <CreditTopUpCard");
     expect(billingCard).not.toContain(
       'sub.status === "trialing" || sub.status === "past_due");\n    if (!hasPaidSubscription)',
     );
-    expect(read("src/pages/BillingSettings.tsx")).toContain("const canAddBalance =");
-    expect(billingCard).not.toContain("Personal activation without a subscription");
-    expect(billingRoutes).not.toContain("credit top-up activates a pending account");
+    expect(read("src/pages/BillingSettings.tsx")).toContain(
+      "const canAddBalance =",
+    );
+    expect(billingCard).not.toContain(
+      "Personal activation without a subscription",
+    );
+    expect(billingRoutes).not.toContain(
+      "credit top-up activates a pending account",
+    );
   });
 
   it("reconciles voice usage against plan, included minutes, and completion grace", () => {
@@ -161,7 +188,9 @@ describe("billing proof contract", () => {
     expect(usage).toContain("chargeCompletedVoiceUsage");
     expect(usage).toContain("No Stripe meter event is emitted");
     expect(grace).toContain("reverseCredit");
-    expect(grace).toContain("idempotencyKey: `voice_completion:${opts.providerCallId}`");
+    expect(grace).toContain(
+      "idempotencyKey: `voice_completion:${opts.providerCallId}`",
+    );
   });
 
   it("grants a recurring Runtime Allowance credit when a paid subscription syncs", () => {
@@ -212,7 +241,11 @@ describe("billing proof contract", () => {
   });
 
   it("links the canonical billing runbook from the docs index", () => {
-    expect(read("docs/BILLING_RUNBOOK.md")).toContain("Status: **Active canonical runbook**");
-    expect(read("docs/README.md")).toContain("[BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md)");
+    expect(read("docs/BILLING_RUNBOOK.md")).toContain(
+      "Status: **Active canonical runbook**",
+    );
+    expect(read("docs/README.md")).toContain(
+      "[BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md)",
+    );
   });
 });

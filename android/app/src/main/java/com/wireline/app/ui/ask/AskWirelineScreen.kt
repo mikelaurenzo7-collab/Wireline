@@ -109,7 +109,7 @@ fun AskWirelineScreen(
                         "You don't have any agents on your roster currently."
                     } else {
                         val names = state.agents.joinToString("\n") { "• ${it.name} (${it.role ?: "Support"})" }
-                        "Here are your active AI agents:\n\n$names"
+                        "Here are your active voice agents:\n\n$names"
                     }
                 }
                 cleanQuery.contains("summary") || cleanQuery.contains("last call") || cleanQuery.contains("summarize") -> {
@@ -317,7 +317,7 @@ fun AskWirelineScreen(
                                                     containerColor = containerColor,
                                                     labelColor = contentColor
                                                 ),
-                                                border = AssistChipDefaults.assistChipBorder(borderColor = Brand.Border)
+                                                border = BorderStroke(1.dp, Brand.Border)
                                             )
                                         }
                                     }
@@ -472,7 +472,8 @@ fun AskWirelineScreen(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Brand.Text,
                             unfocusedTextColor = Brand.Text,
-                            containerColor = Brand.Panel,
+                            focusedContainerColor = Brand.Panel,
+                            unfocusedContainerColor = Brand.Panel,
                             focusedBorderColor = Brand.Accent,
                             unfocusedBorderColor = Brand.Border
                         ),

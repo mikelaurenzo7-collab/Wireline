@@ -74,10 +74,7 @@ async function recoverSourceAgentId(
     .select({ agentId: schema.callLogs.agentId })
     .from(schema.callLogs)
     .where(
-      and(
-        eq(schema.callLogs.userId, userId),
-        eq(schema.callLogs.vapiCallId, context.sourceId),
-      ),
+      and(eq(schema.callLogs.userId, userId), eq(schema.callLogs.vapiCallId, context.sourceId)),
     )
     .limit(1);
   return call?.agentId || null;
@@ -297,7 +294,7 @@ async function executeAutonomousAction(
       const endTime = addMinutesToIso(startTime, 60);
       const calOk = await service.bookAppointment({
         title: action.payload.event_name || "Meeting",
-        description: `${action.reasoning || "Scheduled via AI Agent"}\n\nConfirmed timezone: ${timeZone}.`,
+        description: `${action.reasoning || "Scheduled via Voice Agent"}\n\nConfirmed timezone: ${timeZone}.`,
         startTime,
         endTime,
         agentId: action.agentId,

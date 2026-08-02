@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("OpenAI runtime cohesion across agent postures", () => {
   it("keeps personal and business create paths on the OpenAI structured primary", () => {
@@ -10,7 +11,9 @@ describe("OpenAI runtime cohesion across agent postures", () => {
     const defaults = read("src/lib/agent-create-defaults.ts");
     const models = read("src/lib/ai-models.ts");
 
-    expect(models).toContain("STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL");
+    expect(models).toContain(
+      "STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL",
+    );
     expect(routes).toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
     expect(routes).toContain("is_business_agent");
     // Posture changes tools/personality, not the provider chain.
@@ -23,10 +26,15 @@ describe("OpenAI runtime cohesion across agent postures", () => {
   it("keeps Vapi phone runtime OpenAI-default for every agent posture", () => {
     const models = read("src/lib/ai-models.ts");
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
+    const managedRuntime = read("src/lib/managed-voice-runtime.ts");
     expect(models).toContain('VAPI_TENANT_DEFAULT_PROVIDER = "openai"');
-    expect(models).toContain("VAPI_TENANT_DEFAULT_MODEL = OPENAI_MODELS.GPT_4O");
+    expect(models).toContain(
+      "VAPI_TENANT_DEFAULT_MODEL = OPENAI_MODELS.GPT_4O",
+    );
     expect(factory).toContain("isBusinessAgent");
-    expect(factory).toContain('provider: "vapi" as const');
+    expect(factory).toContain("buildManagedVoiceRuntime");
+    expect(managedRuntime).toContain('provider: "vapi" as const');
+    expect(managedRuntime).toContain("fallbackPlan");
     // Business vs personal changes identity copy / tools, not LLM vendor.
     expect(factory).not.toContain('llmProvider: "xai"');
     expect(factory).not.toContain("grok-4.5");
@@ -48,7 +56,9 @@ describe("OpenAI runtime cohesion across agent postures", () => {
     const grokDoc = read("docs/GROK_LIVE_VOICE.md");
     const vendor = read("docs/VENDOR_LAUNCH_MAP.md");
 
-    expect(architecture).toContain("Primary: direct OpenAI Responses API using GPT-5.6 Terra");
+    expect(architecture).toContain(
+      "Primary: direct OpenAI Responses API using GPT-5.6 Terra",
+    );
     expect(architecture).toContain(
       "Personal agents, business agents, and hybrid direction all share this same managed chain",
     );
