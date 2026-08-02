@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 355
-**Protected:** 292
+**Routes scanned:** 356
+**Protected:** 293
 **Public (allowlisted):** 63
 **Violations:** 0
 
@@ -159,6 +159,7 @@
 | calendar-routes.ts | GET | `/api/calendar/accounts` | inline | — | — | Protected |
 | calendar-routes.ts | GET | `/api/calendar/events` | inline | — | — | Protected |
 | calendar-routes.ts | POST | `/api/calendar/sync` | inline | — | — | Protected |
+| call-recording-routes.ts | GET | `/api/calls/:callId/recording` | inline | — | — | Protected |
 | campaign-routes.ts | GET | `/api/campaigns` | inline | — | — | Protected |
 | campaign-routes.ts | POST | `/api/campaigns` | inline | — | — | Protected |
 | campaign-routes.ts | PATCH | `/api/campaigns/:id` | inline | — | — | Protected |
@@ -297,56 +298,56 @@
 | mobile-routes.ts | GET | `/api/mobile/me` | inline | — | — | Protected |
 | mobile-routes.ts | PUT | `/api/mobile/settings` | inline | — | — | Protected |
 | mobile-routes.ts | GET | `/api/mobile/wallet` | inline | — | — | Protected |
-| oauth/apollo.ts | GET | `/api/oauth/apollo/callback` | — | — | yes | Public (allowlisted) |
-| oauth/apollo.ts | POST | `/api/oauth/apollo/disconnect` | inline | — | yes | Protected |
-| oauth/apollo.ts | GET | `/api/oauth/apollo/url` | inline | — | yes | Protected |
-| oauth/google-sheets.ts | GET | `/api/oauth/google_sheets/callback` | — | — | yes | Public (allowlisted) |
-| oauth/google-sheets.ts | POST | `/api/oauth/google_sheets/disconnect` | inline | — | yes | Protected |
-| oauth/google-sheets.ts | GET | `/api/oauth/google_sheets/url` | inline | — | yes | Protected |
-| oauth/google.ts | GET | `/api/oauth/google/callback` | — | — | yes | Public (allowlisted) |
-| oauth/google.ts | GET | `/api/oauth/google/url` | inline | — | yes | Protected |
-| oauth/hubspot.ts | GET | `/api/oauth/hubspot/callback` | — | — | yes | Public (allowlisted) |
-| oauth/hubspot.ts | POST | `/api/oauth/hubspot/disconnect` | inline | — | yes | Protected |
-| oauth/hubspot.ts | GET | `/api/oauth/hubspot/url` | inline | — | yes | Protected |
-| oauth/meta.ts | GET | `/api/oauth/meta/callback` | — | — | yes | Public (allowlisted) |
-| oauth/meta.ts | POST | `/api/oauth/meta/disconnect` | inline | — | yes | Protected |
-| oauth/meta.ts | GET | `/api/oauth/meta/url` | inline | — | yes | Protected |
-| oauth/microsoft-graph.ts | GET | `/api/oauth/microsoft_excel/callback` | — | — | yes | Public (allowlisted) |
-| oauth/microsoft-graph.ts | POST | `/api/oauth/microsoft_excel/disconnect` | inline | — | yes | Protected |
-| oauth/microsoft-graph.ts | GET | `/api/oauth/microsoft_excel/url` | inline | — | yes | Protected |
-| oauth/microsoft-graph.ts | GET | `/api/oauth/microsoft_teams/callback` | — | — | yes | Public (allowlisted) |
-| oauth/microsoft-graph.ts | GET | `/api/oauth/microsoft_teams/channels` | inline | — | yes | Protected |
-| oauth/microsoft-graph.ts | POST | `/api/oauth/microsoft_teams/disconnect` | inline | — | yes | Protected |
-| oauth/microsoft-graph.ts | POST | `/api/oauth/microsoft_teams/notify-target` | inline | — | yes | Protected |
-| oauth/microsoft-graph.ts | GET | `/api/oauth/microsoft_teams/url` | inline | — | yes | Protected |
-| oauth/microsoft.ts | GET | `/api/oauth/microsoft/callback` | — | — | yes | Public (allowlisted) |
-| oauth/microsoft.ts | GET | `/api/oauth/microsoft/url` | inline | — | yes | Protected |
-| oauth/salesforce.ts | GET | `/api/oauth/salesforce/callback` | — | — | yes | Public (allowlisted) |
-| oauth/salesforce.ts | POST | `/api/oauth/salesforce/disconnect` | inline | — | yes | Protected |
-| oauth/salesforce.ts | GET | `/api/oauth/salesforce/url` | inline | — | yes | Protected |
-| oauth/shopify.ts | GET | `/api/oauth/shopify/callback` | — | — | yes | Public (allowlisted) |
-| oauth/shopify.ts | POST | `/api/oauth/shopify/disconnect` | inline | — | yes | Protected |
-| oauth/shopify.ts | GET | `/api/oauth/shopify/url` | inline | — | yes | Protected |
-| oauth/slack.ts | GET | `/api/oauth/slack/callback` | — | — | yes | Public (allowlisted) |
-| oauth/slack.ts | GET | `/api/oauth/slack/channels` | inline | — | yes | Protected |
-| oauth/slack.ts | POST | `/api/oauth/slack/default-channel` | inline | — | yes | Protected |
-| oauth/slack.ts | POST | `/api/oauth/slack/disconnect` | inline | — | yes | Protected |
-| oauth/slack.ts | GET | `/api/oauth/slack/url` | inline | — | yes | Protected |
-| oauth/square.ts | GET | `/api/ecommerce/oauth/callback` | — | — | yes | Public (allowlisted) |
-| oauth/square.ts | POST | `/api/oauth/square/disconnect` | inline | — | yes | Protected |
-| oauth/square.ts | GET | `/api/oauth/square/url` | inline | — | yes | Protected |
-| oauth/status.ts | PUT | `/api/oauth/crm/salesforce/preferences` | inline | — | yes | Protected |
-| oauth/status.ts | GET | `/api/oauth/crm/status` | inline | — | yes | Protected |
-| oauth/status.ts | GET | `/api/oauth/integration-health` | inline | — | yes | Protected |
-| oauth/x.ts | GET | `/api/oauth/x/callback` | — | — | yes | Public (allowlisted) |
-| oauth/x.ts | POST | `/api/oauth/x/disconnect` | inline | — | yes | Protected |
-| oauth/x.ts | GET | `/api/oauth/x/url` | inline | — | yes | Protected |
-| oauth/yahoo.ts | GET | `/api/oauth/yahoo/callback` | — | — | yes | Public (allowlisted) |
-| oauth/yahoo.ts | POST | `/api/oauth/yahoo/disconnect` | inline | — | yes | Protected |
-| oauth/yahoo.ts | GET | `/api/oauth/yahoo/url` | inline | — | yes | Protected |
-| oauth/zoom.ts | GET | `/api/oauth/zoom/callback` | — | — | yes | Public (allowlisted) |
-| oauth/zoom.ts | POST | `/api/oauth/zoom/disconnect` | inline | — | yes | Protected |
-| oauth/zoom.ts | GET | `/api/oauth/zoom/url` | inline | — | yes | Protected |
+| oauth\apollo.ts | GET | `/api/oauth/apollo/callback` | — | — | yes | Public (allowlisted) |
+| oauth\apollo.ts | POST | `/api/oauth/apollo/disconnect` | inline | — | yes | Protected |
+| oauth\apollo.ts | GET | `/api/oauth/apollo/url` | inline | — | yes | Protected |
+| oauth\google-sheets.ts | GET | `/api/oauth/google_sheets/callback` | — | — | yes | Public (allowlisted) |
+| oauth\google-sheets.ts | POST | `/api/oauth/google_sheets/disconnect` | inline | — | yes | Protected |
+| oauth\google-sheets.ts | GET | `/api/oauth/google_sheets/url` | inline | — | yes | Protected |
+| oauth\google.ts | GET | `/api/oauth/google/callback` | — | — | yes | Public (allowlisted) |
+| oauth\google.ts | GET | `/api/oauth/google/url` | inline | — | yes | Protected |
+| oauth\hubspot.ts | GET | `/api/oauth/hubspot/callback` | — | — | yes | Public (allowlisted) |
+| oauth\hubspot.ts | POST | `/api/oauth/hubspot/disconnect` | inline | — | yes | Protected |
+| oauth\hubspot.ts | GET | `/api/oauth/hubspot/url` | inline | — | yes | Protected |
+| oauth\meta.ts | GET | `/api/oauth/meta/callback` | — | — | yes | Public (allowlisted) |
+| oauth\meta.ts | POST | `/api/oauth/meta/disconnect` | inline | — | yes | Protected |
+| oauth\meta.ts | GET | `/api/oauth/meta/url` | inline | — | yes | Protected |
+| oauth\microsoft-graph.ts | GET | `/api/oauth/microsoft_excel/callback` | — | — | yes | Public (allowlisted) |
+| oauth\microsoft-graph.ts | POST | `/api/oauth/microsoft_excel/disconnect` | inline | — | yes | Protected |
+| oauth\microsoft-graph.ts | GET | `/api/oauth/microsoft_excel/url` | inline | — | yes | Protected |
+| oauth\microsoft-graph.ts | GET | `/api/oauth/microsoft_teams/callback` | — | — | yes | Public (allowlisted) |
+| oauth\microsoft-graph.ts | GET | `/api/oauth/microsoft_teams/channels` | inline | — | yes | Protected |
+| oauth\microsoft-graph.ts | POST | `/api/oauth/microsoft_teams/disconnect` | inline | — | yes | Protected |
+| oauth\microsoft-graph.ts | POST | `/api/oauth/microsoft_teams/notify-target` | inline | — | yes | Protected |
+| oauth\microsoft-graph.ts | GET | `/api/oauth/microsoft_teams/url` | inline | — | yes | Protected |
+| oauth\microsoft.ts | GET | `/api/oauth/microsoft/callback` | — | — | yes | Public (allowlisted) |
+| oauth\microsoft.ts | GET | `/api/oauth/microsoft/url` | inline | — | yes | Protected |
+| oauth\salesforce.ts | GET | `/api/oauth/salesforce/callback` | — | — | yes | Public (allowlisted) |
+| oauth\salesforce.ts | POST | `/api/oauth/salesforce/disconnect` | inline | — | yes | Protected |
+| oauth\salesforce.ts | GET | `/api/oauth/salesforce/url` | inline | — | yes | Protected |
+| oauth\shopify.ts | GET | `/api/oauth/shopify/callback` | — | — | yes | Public (allowlisted) |
+| oauth\shopify.ts | POST | `/api/oauth/shopify/disconnect` | inline | — | yes | Protected |
+| oauth\shopify.ts | GET | `/api/oauth/shopify/url` | inline | — | yes | Protected |
+| oauth\slack.ts | GET | `/api/oauth/slack/callback` | — | — | yes | Public (allowlisted) |
+| oauth\slack.ts | GET | `/api/oauth/slack/channels` | inline | — | yes | Protected |
+| oauth\slack.ts | POST | `/api/oauth/slack/default-channel` | inline | — | yes | Protected |
+| oauth\slack.ts | POST | `/api/oauth/slack/disconnect` | inline | — | yes | Protected |
+| oauth\slack.ts | GET | `/api/oauth/slack/url` | inline | — | yes | Protected |
+| oauth\square.ts | GET | `/api/ecommerce/oauth/callback` | — | — | yes | Public (allowlisted) |
+| oauth\square.ts | POST | `/api/oauth/square/disconnect` | inline | — | yes | Protected |
+| oauth\square.ts | GET | `/api/oauth/square/url` | inline | — | yes | Protected |
+| oauth\status.ts | PUT | `/api/oauth/crm/salesforce/preferences` | inline | — | yes | Protected |
+| oauth\status.ts | GET | `/api/oauth/crm/status` | inline | — | yes | Protected |
+| oauth\status.ts | GET | `/api/oauth/integration-health` | inline | — | yes | Protected |
+| oauth\x.ts | GET | `/api/oauth/x/callback` | — | — | yes | Public (allowlisted) |
+| oauth\x.ts | POST | `/api/oauth/x/disconnect` | inline | — | yes | Protected |
+| oauth\x.ts | GET | `/api/oauth/x/url` | inline | — | yes | Protected |
+| oauth\yahoo.ts | GET | `/api/oauth/yahoo/callback` | — | — | yes | Public (allowlisted) |
+| oauth\yahoo.ts | POST | `/api/oauth/yahoo/disconnect` | inline | — | yes | Protected |
+| oauth\yahoo.ts | GET | `/api/oauth/yahoo/url` | inline | — | yes | Protected |
+| oauth\zoom.ts | GET | `/api/oauth/zoom/callback` | — | — | yes | Public (allowlisted) |
+| oauth\zoom.ts | POST | `/api/oauth/zoom/disconnect` | inline | — | yes | Protected |
+| oauth\zoom.ts | GET | `/api/oauth/zoom/url` | inline | — | yes | Protected |
 | openai-realtime-routes.ts | POST | `/api/voice/openai/session` | inline | — | — | Protected |
 | openai-realtime-routes.ts | GET | `/api/voice/openai/status` | inline | — | — | Protected |
 | openapi-routes.ts | GET | `/api/openapi.json` | — | — | yes | Public (allowlisted) |

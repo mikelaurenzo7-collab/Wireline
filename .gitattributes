@@ -1,0 +1,4 @@
+# Contract tests read repository source and assert on LF newlines; keep
+# checkouts LF on every platform so Windows contributors run the same suite CI
+# runs.
+* text=auto eol=lf

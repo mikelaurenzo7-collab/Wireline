@@ -489,6 +489,11 @@ function formatRbac(entry: RouteEntry): string {
   return tags.length ? tags.join("+") : "—";
 }
 
+/** Deterministic across Node/ICU builds, unlike localeCompare. */
+function compareCodeUnits(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
 function normalizeMarkdownForComparison(markdown: string): string {
   return markdown.replace(/\r\n/g, "\n");
 }
@@ -505,7 +510,7 @@ function main() {
             `${entry.file}:${entry.method}:${entry.fullPath}`,
         ) === index,
     )
-    .sort((a, b) => a.file.localeCompare(b.file) || a.fullPath.localeCompare(b.fullPath));
+    .sort((a, b) => compareCodeUnits(a.file, b.file) || compareCodeUnits(a.fullPath, b.fullPath));
 
   const isProtected = (entry: RouteEntry) => entry.hasInlineAuth || entry.hasRouterAuth;
   const violations = entries.filter((entry) => !isProtected(entry) && !entry.allowReason);

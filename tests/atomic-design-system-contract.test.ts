@@ -55,6 +55,7 @@ describe("Atomic Design completion contract", () => {
     // its own sizing and accent — the reason the app shipped a mix of
     // `accent-primary` natives and design-system boxes.
     const declarations = globSync("src/**/*.tsx", { cwd: root })
+      .map((file) => file.replaceAll("\\", "/"))
       .filter((file) => source(file).includes('type="checkbox"'))
       .sort();
 
@@ -97,6 +98,7 @@ describe("Atomic Design completion contract", () => {
     expect(path, "canonical mark path not found").toBeTruthy();
 
     const drawnBy = globSync("src/**/*.tsx", { cwd: root })
+      .map((file) => file.replaceAll("\\", "/"))
       .filter(
         (file) => /<path d="M[\d.]+ [\d.]+/.test(source(file)) && source(file).includes("H44"),
       )

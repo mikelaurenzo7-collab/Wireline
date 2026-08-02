@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Render the launch-campaign voiceover tracks.
  *
