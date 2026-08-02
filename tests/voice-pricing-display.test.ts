@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   estimateVoiceMinutesFromBalance,
@@ -6,13 +8,31 @@ import {
 } from "../src/lib/voice-pricing-display";
 
 describe("voice-pricing-display", () => {
-  it("publishes balance and paid-tier overage rates", () => {
+  it("publishes one prepaid rate for every paid plan", () => {
     const rates = publishedVoiceRates();
-    expect(rates.map((row) => row.planId)).toEqual(["starter", "team", "business"]);
+    expect(rates.map((row) => row.planId)).toEqual([
+      "starter",
+      "team",
+      "business",
+      "enterprise",
+    ]);
     expect(rates[0]?.rateUsd).toBe(voiceRateForPlan("starter"));
+    expect(
+      rates.every((row) => row.rateUsd === voiceRateForPlan("starter")),
+    ).toBe(true);
   });
 
-  it("estimates minutes from Runtime Balance at the catalog Starter rate", () => {
+  it("derives the public rate from the catalog", () => {
+    const pricing = readFileSync(
+      resolve(process.cwd(), "src/pages/Pricing.tsx"),
+      "utf8",
+    );
+    expect(pricing).toContain("FLAT_OVERAGE_PER_MIN_USD");
+    expect(pricing).toContain("TOPUP_RATE");
+    expect(pricing).not.toContain('"$0.22');
+  });
+
+  it("estimates minutes at the published rate", () => {
     const rate = voiceRateForPlan("starter");
     expect(rate).toBe(0.22);
     expect(estimateVoiceMinutesFromBalance(50, rate)).toBe(227);

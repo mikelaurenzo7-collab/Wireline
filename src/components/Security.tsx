@@ -189,9 +189,15 @@ const TRUST_PACK_SECTIONS = [
 ];
 
 const SECURITY_SUMMARY = [
-  ["Runtime", "Encrypted transport, webhook verification, fallback voice, public probes."],
+  [
+    "Runtime",
+    "Encrypted transport, webhook verification, fallback voice, public probes.",
+  ],
   ["Data", "Tenant-scoped access, opt-in recordings, retention, deletion."],
-  ["Compliance", "TCPA/DNC controls, healthcare-sensitive guardrails, no unearned badges."],
+  [
+    "Compliance",
+    "TCPA/DNC controls, healthcare-sensitive guardrails, no unearned badges.",
+  ],
   ["Billing", "Stripe card handling, prepaid Runtime Balance, spend controls."],
 ] as const;
 
@@ -202,7 +208,11 @@ export default function Security() {
   return (
     <>
       <PageMeta
-        title={isTrustHub ? "Trust Center — Wireline" : "Security & Compliance — Wireline"}
+        title={
+          isTrustHub
+            ? "Trust Center | Wireline"
+            : "Security and Compliance | Wireline"
+        }
         description="How Wireline handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and honest security proof."
         // /trust adds buyer-facing vendor, compliance, billing, and lifecycle
         // evidence beyond /security, so each indexable route owns its canonical.
@@ -221,7 +231,9 @@ export default function Security() {
                 <ShieldCheck className="h-5 w-5 text-on-brand" />
               </div>
               <div className="text-center">
-                <p className="wl-overline text-muted-foreground">Security · Compliance · Honesty</p>
+                <p className="wl-overline text-muted-foreground">
+                  Security · Compliance · Honesty
+                </p>
                 <h1 className="wl-public-section-heading mt-3 max-w-[22ch]">
                   {isTrustHub
                     ? "Trust Center — how Wireline earns live calls."
@@ -230,71 +242,90 @@ export default function Security() {
               </div>
             </div>
             <p className="wl-public-copy mx-auto">
-              What we ship today, what is still on the roadmap, and how to reach us if you find a
-              gap.
+              What we ship today, what is still on the roadmap, and how to reach
+              us if you find a gap.
             </p>
             <p className="mt-4 inline-flex flex-wrap justify-center gap-x-3 gap-y-1 text-eyebrow !text-[0.625rem]">
-              <span className="whitespace-nowrap">Last updated · July 28, 2026</span>
-              <span className="whitespace-nowrap">Reviewed for launch · July 28, 2026</span>
+              <span className="whitespace-nowrap">
+                Last updated · July 28, 2026
+              </span>
+              <span className="whitespace-nowrap">
+                Reviewed for launch · July 28, 2026
+              </span>
             </p>
           </motion.div>
 
-          <section className="mb-10 grid gap-3 sm:grid-cols-2" aria-label="Security summary">
+          <section
+            className="mb-10 grid gap-3 sm:grid-cols-2"
+            aria-label="Security summary"
+          >
             {SECURITY_SUMMARY.map(([label, detail]) => (
               <div
                 key={label}
                 className="rounded-[1.05rem] border border-border bg-background/45 p-4 text-center"
               >
                 <p className="text-sm font-semibold text-foreground">{label}</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {detail}
+                </p>
               </div>
             ))}
           </section>
 
           <div className="space-y-7">
-            {(isTrustHub ? [...TRUST_PACK_SECTIONS, ...SECTIONS] : SECTIONS).map(
-              ({ icon: Icon, title, items }, idx) => (
-                <motion.section
-                  key={title}
-                  initial={{ opacity: 0, y: 8 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.4) }}
-                >
-                  <div className="mb-3 flex items-center justify-center gap-2.5 text-center">
-                    <Icon className="h-4 w-4 text-brand" strokeWidth={1.8} />
-                    <h2 className="font-display text-lg leading-tight text-foreground">{title}</h2>
-                  </div>
-                  <ul className="mx-auto max-w-2xl space-y-1.5 text-left marketing-body">
-                    {items.map((line, i) => (
-                      <li key={i} className="pl-5 relative">
-                        <span
-                          aria-hidden="true"
-                          className="absolute left-0 top-2 w-1.5 h-1.5 rounded-full bg-brand/55"
-                        />
-                        {line}
-                      </li>
-                    ))}
-                  </ul>
-                </motion.section>
-              ),
-            )}
+            {(isTrustHub
+              ? [...TRUST_PACK_SECTIONS, ...SECTIONS]
+              : SECTIONS
+            ).map(({ icon: Icon, title, items }, idx) => (
+              <motion.section
+                key={title}
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.4) }}
+              >
+                <div className="mb-3 flex items-center justify-center gap-2.5 text-center">
+                  <Icon className="h-4 w-4 text-brand" strokeWidth={1.8} />
+                  <h2 className="font-display text-lg leading-tight text-foreground">
+                    {title}
+                  </h2>
+                </div>
+                <ul className="mx-auto max-w-2xl space-y-1.5 text-left marketing-body">
+                  {items.map((line, i) => (
+                    <li key={i} className="pl-5 relative">
+                      <span
+                        aria-hidden="true"
+                        className="absolute left-0 top-2 w-1.5 h-1.5 rounded-full bg-brand/55"
+                      />
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              </motion.section>
+            ))}
           </div>
 
           <div className="mt-12 border-t border-border pt-6 text-center">
             <p className="text-eyebrow mb-2">Under active evaluation</p>
             <ul className="mx-auto max-w-2xl space-y-1 pl-5 text-left marketing-body">
               <li>Independent SOC 2 readiness work and audit planning.</li>
-              <li>Continuous regression coverage for tenant isolation and public data exposure.</li>
               <li>
-                Additional data regions based on contractual demand and operational readiness.
+                Continuous regression coverage for tenant isolation and public
+                data exposure.
+              </li>
+              <li>
+                Additional data regions based on contractual demand and
+                operational readiness.
               </li>
               <li>Hardware-backed MFA and enterprise identity controls.</li>
-              <li>A structured vulnerability-disclosure or bounty program with written scope.</li>
+              <li>
+                A structured vulnerability-disclosure or bounty program with
+                written scope.
+              </li>
             </ul>
             <p className="mx-auto mt-3 max-w-2xl text-xs leading-5 text-muted-foreground">
-              Evaluation is not a delivery commitment. Contractual requirements apply only when
-              Wireline confirms them in writing.
+              Evaluation is not a delivery commitment. Contractual requirements
+              apply only when Wireline confirms them in writing.
             </p>
           </div>
 
@@ -307,10 +338,16 @@ export default function Security() {
               <Link to="/trust/legal" className="text-brand hover:underline">
                 Legal
               </Link>
-              <Link to="/trust/insurance" className="text-brand hover:underline">
+              <Link
+                to="/trust/insurance"
+                className="text-brand hover:underline"
+              >
                 Insurance
               </Link>
-              <Link to="/trust/enterprise" className="text-brand hover:underline">
+              <Link
+                to="/trust/enterprise"
+                className="text-brand hover:underline"
+              >
                 Enterprise
               </Link>
             </div>
@@ -319,7 +356,10 @@ export default function Security() {
           <div className="mt-10 text-caption text-center space-y-2">
             <p>
               Questions?{" "}
-              <a href="mailto:security@trywireline.com" className="text-brand hover:underline">
+              <a
+                href="mailto:security@trywireline.com"
+                className="text-brand hover:underline"
+              >
                 security@trywireline.com
               </a>
             </p>

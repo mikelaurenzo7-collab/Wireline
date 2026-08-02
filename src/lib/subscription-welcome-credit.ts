@@ -30,20 +30,25 @@ export async function grantSubscriptionRuntimeAllowance(
   const amountUsd = runtimeAllowanceUsdForPlan(planId, interval);
   if (!(amountUsd > 0)) return;
 
-  const { applied } = await addCredit(userId, amountUsd, "subscription_runtime_allowance", {
-    type: "subscription_runtime_allowance",
-    id: billingPeriodReference,
-    entryKind: "grant",
-    source: "stripe",
-    provider: "stripe",
-    customerReason: "Included Wireline Runtime Allowance",
-    metadata: {
-      plan_id: planId,
-      billing_interval: interval,
-      runtime_allowance_usd: amountUsd,
-      voice_capacity_separate: true,
+  const { applied } = await addCredit(
+    userId,
+    amountUsd,
+    "subscription_runtime_allowance",
+    {
+      type: "subscription_runtime_allowance",
+      id: billingPeriodReference,
+      entryKind: "grant",
+      source: "stripe",
+      provider: "stripe",
+      customerReason: "Included Wireline Runtime Allowance",
+      metadata: {
+        plan_id: planId,
+        billing_interval: interval,
+        runtime_allowance_usd: amountUsd,
+        voice_capacity_separate: true,
+      },
     },
-  });
+  );
 
   if (applied > 0) {
     log.info("subscription runtime allowance granted", {
@@ -64,9 +69,9 @@ export async function grantSubscriptionRuntimeAllowance(
  * subscription path was not: charge.refunded / charge.dispute.created check for
  * `purpose === "credit_topup"` on the PaymentIntent, and a subscription invoice
  * PaymentIntent carries no such marker, so the handler simply broke out. A
- * refunded annual Business plan kept its $120 of Runtime Balance to spend as
- * real provider work — ~6,000 SMS segments or ~480 artifact jobs — on top of
- * the $1,490 already reversed.
+ * refunded annual Business plan kept its $144 of Runtime Balance (v6 catalog:
+ * $12/mo x 12) to spend as real provider work — ~7,200 SMS segments — on top
+ * of the $1,590 already reversed.
  *
  * The reversal is keyed on the refund/dispute id rather than on the grant's own
  * period reference. That id is unique per event, so the (user, ref) ledger index
@@ -85,11 +90,15 @@ export async function reverseSubscriptionRuntimeAllowance(
   portion = 1,
 ): Promise<void> {
   if (!userId || !reversalReference) return;
-  const clampedPortion = Number.isFinite(portion) ? Math.min(1, Math.max(0, portion)) : 1;
+  const clampedPortion = Number.isFinite(portion)
+    ? Math.min(1, Math.max(0, portion))
+    : 1;
   // Round the reversed share DOWN to the cent so the sum of partial reversals
   // stays at or below the granted allowance.
   const amountUsd =
-    Math.floor(runtimeAllowanceUsdForPlan(planId, interval) * clampedPortion * 100) / 100;
+    Math.floor(
+      runtimeAllowanceUsdForPlan(planId, interval) * clampedPortion * 100,
+    ) / 100;
   if (!(amountUsd > 0)) return;
 
   const { reverseCredit } = await import("./credit-wallet");
@@ -138,5 +147,10 @@ export async function grantWelcomeSubscriptionCredit(
   subscriptionId: string,
   planId: string | null | undefined,
 ): Promise<void> {
-  return grantSubscriptionRuntimeAllowance(userId, subscriptionId, planId, "month");
+  return grantSubscriptionRuntimeAllowance(
+    userId,
+    subscriptionId,
+    planId,
+    "month",
+  );
 }

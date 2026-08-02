@@ -632,7 +632,11 @@ router.post(
               from,
               to,
               durationSeconds,
-              recordingUrl,
+              // Never email the persistent Twilio media URL. The recipient
+              // re-enters Wireline's authenticated, tenant-owned boundary.
+              recordingUrl: publicAssetUrl(
+                `/api/calls/${String(inserted.id)}/recording`,
+              ),
               transcription,
             });
             const notification = await Promise.race([

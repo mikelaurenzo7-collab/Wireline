@@ -1,4 +1,4 @@
-import { MODEL_PRICING } from "./ai-models";
+import { DEFAULT_MODEL, pricingForModel } from "./ai-models";
 
 // ────────────────────────────────────────────────────────────────────────
 //  Audit summary math.
@@ -77,7 +77,9 @@ export interface AuditSummary {
 }
 
 /** p50 / p95 from sorted latencies (audit log AI + tool rows). */
-export function computeLatencyPercentiles(rows: AuditLogRow[]): LatencyPercentiles {
+export function computeLatencyPercentiles(
+  rows: AuditLogRow[],
+): LatencyPercentiles {
   const values = rows
     .map((r) => num(r.latencyMs ?? r.latency_ms))
     .filter((ms) => ms > 0)
@@ -86,7 +88,10 @@ export function computeLatencyPercentiles(rows: AuditLogRow[]): LatencyPercentil
     return { p50_ms: 0, p95_ms: 0, sample_count: 0 };
   }
   const at = (q: number) => {
-    const idx = Math.min(values.length - 1, Math.max(0, Math.ceil(q * values.length) - 1));
+    const idx = Math.min(
+      values.length - 1,
+      Math.max(0, Math.ceil(q * values.length) - 1),
+    );
     return Math.round(values[idx]);
   };
   return { p50_ms: at(0.5), p95_ms: at(0.95), sample_count: values.length };
@@ -98,18 +103,12 @@ const num = (n: unknown): number => {
   return Number.isFinite(v) ? v : 0;
 };
 
-/** Input $/MTok for audit dashboards — derived from MODEL_PRICING (single source of truth). */
-export function inputRateForModel(model: string | null | undefined): number {
-  if (!model) return 15;
-  const bare = model.includes("/") ? model.slice(model.lastIndexOf("/") + 1) : model;
-  const pricing = MODEL_PRICING[bare as keyof typeof MODEL_PRICING];
-  if (pricing) return pricing.input;
-  if (bare.includes("haiku")) return 1;
-  if (bare.includes("sonnet")) return 3;
-  if (bare.includes("opus")) return 5;
-  if (bare.includes("gemini") && bare.includes("flash")) return 0.3;
-  if (bare.includes("gpt-4o")) return 5;
-  return 15;
+/** Input $/MTok for audit dashboards, including vendor long-context tiers. */
+export function inputRateForModel(
+  model: string | null | undefined,
+  totalInputTokens = 0,
+): number {
+  return pricingForModel(model || DEFAULT_MODEL, totalInputTokens).input;
 }
 
 const round4 = (n: number) => Number(n.toFixed(4));
@@ -136,7 +135,18 @@ export function computeAuditSummary(input: {
 
   const cacheSavings = all.reduce((s, r) => {
     const cacheRead = num(r.cacheReadTokens ?? r.cache_read_tokens);
-    return s + (cacheRead * inputRateForModel(r.model) * 0.9) / 1_000_000;
+    const cacheWrite = num(r.cacheCreateTokens ?? r.cache_create_tokens);
+    const uncachedInput = num(r.inputTokens ?? r.input_tokens);
+    const totalInput = uncachedInput + cacheRead + cacheWrite;
+    const rates = pricingForModel(r.model || DEFAULT_MODEL, totalInput);
+    // Net against processing the same tokens as ordinary input. Cache reads
+    // save money; GPT-5.6 cache writes carry a 25% premium and reduce savings.
+    return (
+      s +
+      (cacheRead * (rates.input - rates.cacheRead) +
+        cacheWrite * (rates.input - rates.cacheWrite)) /
+        1_000_000
+    );
   }, 0);
 
   const byDayMap = new Map<string, ByDayBucket>();
@@ -164,7 +174,12 @@ export function computeAuditSummary(input: {
   >();
   for (const r of all) {
     const action = r.action || "unknown";
-    const a = byActionMap.get(action) ?? { action, calls: 0, cost: 0, latencySum: 0 };
+    const a = byActionMap.get(action) ?? {
+      action,
+      calls: 0,
+      cost: 0,
+      latencySum: 0,
+    };
     a.calls += 1;
     a.cost += num(r.costUsd ?? r.cost_usd);
     a.latencySum += num(r.latencyMs ?? r.latency_ms);
@@ -191,7 +206,10 @@ export function computeAuditSummary(input: {
     .map((m) => ({ ...m, cost: round4(m.cost) }))
     .sort((x, y) => y.cost - x.cost);
 
-  const totalLatency = all.reduce((s, r) => s + num(r.latencyMs ?? r.latency_ms), 0);
+  const totalLatency = all.reduce(
+    (s, r) => s + num(r.latencyMs ?? r.latency_ms),
+    0,
+  );
 
   return {
     window_days: windowDays,

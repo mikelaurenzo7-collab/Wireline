@@ -15,6 +15,7 @@ import {
   gatewayModelId,
   isAIGatewayConfigured,
 } from "./ai-gateway";
+import { normalizeResponsesUsage } from "./ai-usage";
 
 const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses";
 
@@ -63,7 +64,10 @@ export type RuntimeMessage = {
 export type RuntimeRequestOptions = { signal?: AbortSignal };
 export type RuntimeClient = {
   messages: {
-    create: (body: RuntimeRequest, options?: RuntimeRequestOptions) => Promise<RuntimeMessage>;
+    create: (
+      body: RuntimeRequest,
+      options?: RuntimeRequestOptions,
+    ) => Promise<RuntimeMessage>;
     stream: (
       body: RuntimeRequest,
       options?: RuntimeRequestOptions,
@@ -77,16 +81,21 @@ export type RuntimeClient = {
 type RuntimeProviderName = "xAI" | "OpenAI" | "Gemini" | "AI Gateway";
 type RuntimeProvider = {
   name: RuntimeProviderName;
-  call: (body: RuntimeRequest, options?: RuntimeRequestOptions) => Promise<RuntimeMessage>;
+  call: (
+    body: RuntimeRequest,
+    options?: RuntimeRequestOptions,
+  ) => Promise<RuntimeMessage>;
   breaker?: RuntimeCircuitBreaker;
 };
 
 let client: RuntimeClient | null = null;
-const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
+const errorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : String(error);
 
 function extractText(value: unknown): string {
   if (typeof value === "string") return value;
-  if (Array.isArray(value)) return value.map(extractText).filter(Boolean).join("\n");
+  if (Array.isArray(value))
+    return value.map(extractText).filter(Boolean).join("\n");
   if (!value || typeof value !== "object") return "";
   const block = value as Record<string, unknown>;
   if (typeof block.text === "string") return block.text;
@@ -128,6 +137,8 @@ function message(args: {
   stopReason: RuntimeStopReason;
   inputTokens: number;
   outputTokens: number;
+  cacheReadTokens?: number;
+  cacheWriteTokens?: number;
 }): RuntimeMessage {
   return {
     id: `msg_${Math.random().toString(36).slice(2)}`,
@@ -140,8 +151,8 @@ function message(args: {
     usage: {
       input_tokens: args.inputTokens,
       output_tokens: args.outputTokens,
-      cache_creation_input_tokens: 0,
-      cache_read_input_tokens: 0,
+      cache_creation_input_tokens: args.cacheWriteTokens ?? 0,
+      cache_read_input_tokens: args.cacheReadTokens ?? 0,
     },
   };
 }
@@ -197,7 +208,9 @@ function withRequestTimeout(callerSignal?: AbortSignal): {
   let timedOutFlag = false;
   const timer = setTimeout(() => {
     timedOutFlag = true;
-    controller.abort(new Error(`AI provider timed out after ${RUNTIME_REQUEST_TIMEOUT_MS}ms`));
+    controller.abort(
+      new Error(`AI provider timed out after ${RUNTIME_REQUEST_TIMEOUT_MS}ms`),
+    );
   }, RUNTIME_REQUEST_TIMEOUT_MS);
   const onCallerAbort = () => {
     controller.abort(callerSignal?.reason);
@@ -275,13 +288,19 @@ async function callResponsesEndpoint(args: {
       status: response.status,
       detail,
     });
-    throw new Error(`${args.provider} Responses request failed (${response.status})`);
+    throw new Error(
+      `${args.provider} Responses request failed (${response.status})`,
+    );
   }
 
   const payload = (await response.json()) as Record<string, unknown>;
   const text = extractResponsesText(payload);
   if (!text) throw new Error(`${args.provider} returned an empty response`);
   const usage = (payload.usage || {}) as Record<string, unknown>;
+  // Responses includes cached and cache-write tokens in input_tokens. Split
+  // both details out so the audit layer can apply their actual vendor rates.
+  const { inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens } =
+    normalizeResponsesUsage(usage);
   log.info("[ai-runtime] response complete", {
     provider: args.provider,
     model: args.model,
@@ -302,15 +321,19 @@ async function callResponsesEndpoint(args: {
           },
         ],
         stopReason: "tool_use",
-        inputTokens: Number(usage.input_tokens || 0),
-        outputTokens: Number(usage.output_tokens || 0),
+        inputTokens,
+        outputTokens,
+        cacheReadTokens,
+        cacheWriteTokens,
       })
     : message({
         model: args.model,
         content: [{ type: "text", text, citations: null }],
         stopReason: "end_turn",
-        inputTokens: Number(usage.input_tokens || 0),
-        outputTokens: Number(usage.output_tokens || 0),
+        inputTokens,
+        outputTokens,
+        cacheReadTokens,
+        cacheWriteTokens,
       });
 }
 
@@ -323,10 +346,15 @@ async function callXAI(
   const requested = String(body.model || "").trim();
   // Only forward xAI-native model ids directly. This path is opt-in and never
   // receives OpenAI or Gemini ids from the managed launch default.
-  const model = /grok/i.test(requested) ? requested : XAI_STRUCTURED_PRIMARY_MODEL;
+  const model = /grok/i.test(requested)
+    ? requested
+    : XAI_STRUCTURED_PRIMARY_MODEL;
   return callResponsesEndpoint({
     endpoint: XAI_RESPONSES_URL,
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
     model,
     body,
     options,
@@ -356,10 +384,15 @@ async function callOpenAI(
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
   const requested = String(body.model || "").trim();
-  const model = requested.startsWith("gpt-") ? requested : OPENAI_STRUCTURED_PRIMARY_MODEL;
+  const model = requested.startsWith("gpt-")
+    ? requested
+    : OPENAI_STRUCTURED_PRIMARY_MODEL;
   return callResponsesEndpoint({
     endpoint: "https://api.openai.com/v1/responses",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
     model,
     body,
     options,
@@ -411,7 +444,9 @@ async function callGemini(
       };
       if (timer.signal.aborted) return onAbort();
       timer.signal.addEventListener("abort", onAbort, { once: true });
-      model.generateContent({ contents, generationConfig }).then(resolve, reject);
+      model
+        .generateContent({ contents, generationConfig })
+        .then(resolve, reject);
     });
   } finally {
     timer.dispose();
@@ -478,7 +513,10 @@ class RuntimeCircuitBreaker {
       failureCount: this.failureCount,
       error: errorMessage(error),
     });
-    if (this.state === "HALF_OPEN" || this.failureCount >= this.failureThreshold)
+    if (
+      this.state === "HALF_OPEN" ||
+      this.failureCount >= this.failureThreshold
+    )
       this.transitionTo("OPEN");
   }
 
@@ -499,17 +537,32 @@ const openAICircuitBreaker = new RuntimeCircuitBreaker("OpenAI");
 const geminiCircuitBreaker = new RuntimeCircuitBreaker("Gemini");
 
 function xaiStructuredFallbackEnabled(): boolean {
-  return process.env.WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK?.trim().toLowerCase() === "true";
+  return (
+    process.env.WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK?.trim().toLowerCase() ===
+    "true"
+  );
 }
 
 function configuredProviders(): RuntimeProvider[] {
   const providers: RuntimeProvider[] = [];
   if (process.env.OPENAI_API_KEY)
-    providers.push({ name: "OpenAI", call: callOpenAI, breaker: openAICircuitBreaker });
+    providers.push({
+      name: "OpenAI",
+      call: callOpenAI,
+      breaker: openAICircuitBreaker,
+    });
   if (process.env.GEMINI_API_KEY)
-    providers.push({ name: "Gemini", call: callGemini, breaker: geminiCircuitBreaker });
+    providers.push({
+      name: "Gemini",
+      call: callGemini,
+      breaker: geminiCircuitBreaker,
+    });
   if (isAIGatewayConfigured())
-    providers.push({ name: "AI Gateway", call: callGateway, breaker: gatewayCircuitBreaker });
+    providers.push({
+      name: "AI Gateway",
+      call: callGateway,
+      breaker: gatewayCircuitBreaker,
+    });
   if (xaiStructuredFallbackEnabled() && process.env.XAI_API_KEY)
     providers.push({ name: "xAI", call: callXAI, breaker: xaiCircuitBreaker });
   return providers;
@@ -519,11 +572,17 @@ function nextAvailableProvider(
   providers: RuntimeProvider[],
   currentIndex: number,
 ): RuntimeProvider | undefined {
-  return providers.slice(currentIndex + 1).find((provider) => !provider.breaker?.isOpen());
+  return providers
+    .slice(currentIndex + 1)
+    .find((provider) => !provider.breaker?.isOpen());
 }
 
-function fallbackMessage(from: RuntimeProviderName, to: RuntimeProviderName): string {
-  if (from === "OpenAI" && to === "Gemini") return "OpenAI request failed; trying Gemini fallback";
+function fallbackMessage(
+  from: RuntimeProviderName,
+  to: RuntimeProviderName,
+): string {
+  if (from === "OpenAI" && to === "Gemini")
+    return "OpenAI request failed; trying Gemini fallback";
   if (from === "Gemini" && to === "AI Gateway")
     return "Gemini request failed; trying AI Gateway fallback";
   if (from === "AI Gateway" && to === "xAI")
@@ -534,7 +593,9 @@ function fallbackMessage(from: RuntimeProviderName, to: RuntimeProviderName): st
 export class RuntimeUnavailableError extends Error {
   status = 503;
   constructor() {
-    super("AI runtime is unavailable. Configure OpenAI, Gemini, or the AI Gateway.");
+    super(
+      "AI runtime is unavailable. Configure OpenAI, Gemini, or the AI Gateway.",
+    );
     this.name = "RuntimeUnavailableError";
   }
 }
@@ -551,10 +612,13 @@ async function createWithFallbacks(
   for (let index = 0; index < providers.length; index++) {
     const provider = providers[index];
     if (provider.breaker?.isOpen()) {
-      log.info("[ai-runtime] provider circuit breaker open; skipping provider", {
-        provider: provider.name,
-        breakerState: provider.breaker.getState(),
-      });
+      log.info(
+        "[ai-runtime] provider circuit breaker open; skipping provider",
+        {
+          provider: provider.name,
+          breakerState: provider.breaker.getState(),
+        },
+      );
       continue;
     }
 
@@ -591,7 +655,10 @@ function fallbackStream(promise: Promise<RuntimeMessage>) {
         delta:
           block.type === "text"
             ? { type: "text_delta", text: block.text }
-            : { type: "input_json_delta", partial_json: JSON.stringify(block.input) },
+            : {
+                type: "input_json_delta",
+                partial_json: JSON.stringify(block.input),
+              },
       };
       yield { type: "content_block_stop", index: 0 };
     },
@@ -606,7 +673,8 @@ export function getRuntimeClient(): RuntimeClient {
     client = {
       messages: {
         create: createWithFallbacks,
-        stream: (body, options) => fallbackStream(createWithFallbacks(body, options)),
+        stream: (body, options) =>
+          fallbackStream(createWithFallbacks(body, options)),
       },
     };
   return client;

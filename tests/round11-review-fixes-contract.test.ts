@@ -13,10 +13,14 @@ describe("round-11 review fixes", () => {
     // Quiet-hours and own-24h-window denials leave the lead processable; only
     // genuinely terminal denials (DNC/TCPA/duplicate-of-another-lead) may
     // write the gate status onto the lead.
-    expect(dialer).toContain('gate.reason === "outside_permitted_calling_hours"');
+    expect(dialer).toContain(
+      'gate.reason === "outside_permitted_calling_hours"',
+    );
     expect(dialer).toContain('gate.reason === "self_recent_call_scheduled"');
     expect(dialer).toContain("lead stays processable");
-    const deferBranch = dialer.indexOf('gate.reason === "outside_permitted_calling_hours"');
+    const deferBranch = dialer.indexOf(
+      'gate.reason === "outside_permitted_calling_hours"',
+    );
     const statusWrite = dialer.indexOf("status: gate.status");
     expect(deferBranch).toBeGreaterThanOrEqual(0);
     expect(statusWrite).toBeGreaterThan(deferBranch);
@@ -32,24 +36,28 @@ describe("round-11 review fixes", () => {
   it("matches every stored phone variant when terminating live calls on DNC adds", () => {
     const sentinel = read("src/services/sentinel.ts");
     expect(sentinel).toContain("dncPhoneCandidates(phoneNumber)");
-    expect(sentinel).toContain("inArray(schema.signalPresence.customerNumber, candidates)");
+    expect(sentinel).toContain(
+      "inArray(schema.signalPresence.customerNumber, candidates)",
+    );
     expect(sentinel).not.toContain("eq(schema.signalPresence.customerNumber");
   });
 
   it("bounds the daily-brief win/loss samples to yesterday on both ends", () => {
     const brief = read("src/lib/daily-brief.ts");
-    const upperBounds = brief.split("lt(schema.callLogs.createdAt, yEnd)").length - 1;
+    const upperBounds =
+      brief.split("lt(schema.callLogs.createdAt, yEnd)").length - 1;
     expect(upperBounds).toBeGreaterThanOrEqual(2);
   });
 
   it("prices gateway-prefixed and unknown models against the OpenAI-first table", () => {
     // Gateway-served ids ("openai/gpt-5.6-terra") must normalize to the bare model.
-    expect(inputRateForModel("openai/gpt-5.6-terra")).toBe(2.5);
+    expect(inputRateForModel("openai/gpt-5.6-terra")).toBe(2);
     expect(inputRateForModel("gpt-5")).toBe(1.25);
     expect(inputRateForModel("xai/grok-4.5")).toBe(2);
-    expect(inputRateForModel("grok-4.1-fast-reasoning")).toBe(0.2);
+    expect(inputRateForModel("grok-4.3")).toBe(1.25);
+    expect(inputRateForModel("unknown")).toBe(2);
     const audit = read("src/lib/ai-audit.ts");
-    expect(audit).toContain("MODEL_PRICING[OPENAI_MODELS.GPT_5_6_TERRA]");
+    expect(audit).toContain("pricingForModel");
     const structured = read("src/lib/ai-structured.ts");
     expect(structured).toContain('provider: "openai" | "gemini"');
   });
@@ -77,7 +85,9 @@ describe("round-11 review fixes", () => {
   it("scales the Runtime Allowance reversal to the refunded portion", () => {
     const credit = read("src/lib/subscription-welcome-credit.ts");
     expect(credit).toContain("portion = 1");
-    expect(credit).toContain("runtimeAllowanceUsdForPlan(planId, interval) * clampedPortion");
+    expect(credit).toContain(
+      "runtimeAllowanceUsdForPlan(planId, interval) * clampedPortion",
+    );
     const billing = read("src/routes/billing-routes.ts");
     // Interval resolved the same way the grant did, not off items.data[0].
     expect(billing).toContain("subscriptionBillingInterval(sub)");

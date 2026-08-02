@@ -10,9 +10,9 @@ the same honest story.
 Wireline processes customer call metadata, transcripts, agent configuration,
 knowledge sources, OAuth connection records, billing metadata, DNC entries, and
 audit events. The current deployment model is a Vercel-hosted application with
-Postgres on Supabase, Vapi/Twilio for voice and telephony, the managed
-structured-AI chain in `src/lib/ai-models.ts` for reasoning, Stripe for
-billing, and Resend for transactional email.
+Postgres on Supabase, Vapi/Twilio for telephony, OpenAI and approved
+ElevenLabs voices through Vapi, the managed structured-reasoning chain in
+`src/lib/ai-models.ts`, Stripe for billing, and Resend for transactional email.
 
 ## Implemented controls
 
@@ -24,7 +24,7 @@ billing, and Resend for transactional email.
 | Webhook integrity | Vapi, Stripe, Twilio, and Meta webhooks use shared-secret or signature verification.                                             | `src/routes/*webhook*`, `src/routes/vapi-routes.ts`                                           |
 | Secrets at rest   | Webhook secrets are encrypted with AES-256-GCM via `WIRELINE_DATA_KEY`; plaintext fallback is not allowed.                       | `src/lib/secret-vault.ts`                                                                     |
 | Data deletion     | Account deletion queues and purges user-owned tables with a documented 30-day grace window.                                      | `src/lib/account-deletion.ts`                                                                 |
-| Spend controls    | Claude spend and outbound dialing paths have budget/rate gates and trial caps.                                                   | `src/lib/spend-guards.ts`, `src/lib/trial-gate.ts`                                            |
+| Spend controls    | Managed AI spend and outbound dialing paths have budget/rate gates and trial caps.                                               | `src/lib/spend-guards.ts`, `src/lib/trial-gate.ts`                                            |
 | Public trust      | `/status`, `/security`, `/changelog`, `security.txt`, and `humans.txt` publish operational posture without requiring sign-in.    | `src/components/Status.tsx`, `src/components/Security.tsx`, `public/.well-known/security.txt` |
 
 ## Supabase posture

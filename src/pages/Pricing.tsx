@@ -19,16 +19,24 @@ import MarketingFooter from "../components/marketing/MarketingFooter";
 import MarketingHero from "../components/marketing/MarketingHero";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
-import { STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
+import {
+  FLAT_OVERAGE_PER_MIN_USD,
+  STRIPE_PLANS,
+  type StripePlanId,
+} from "../lib/plan-catalog";
 import { cn } from "../lib/utils";
 
-const planById = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
-  StripePlanId,
-  (typeof STRIPE_PLANS)[number]
->;
+const planById = Object.fromEntries(
+  STRIPE_PLANS.map((plan) => [plan.id, plan]),
+) as Record<StripePlanId, (typeof STRIPE_PLANS)[number]>;
+
+const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
 
 /** Honest annual savings vs paying monthly for 12 months (every paid tier's annual is 10x monthly, i.e. 2 months free). */
-function annualSavingsLabel(monthlyUsd: number, annualUsd: number): string | null {
+function annualSavingsLabel(
+  monthlyUsd: number,
+  annualUsd: number,
+): string | null {
   if (!(monthlyUsd > 0) || !(annualUsd > 0)) return null;
   const monthsSaved = Math.max(0, Math.round(12 - annualUsd / monthlyUsd));
   if (monthsSaved <= 0) return null;
@@ -68,7 +76,8 @@ const PAID_TIERS = [
     publicName: "Pro",
     eyebrow: "For a growing operation",
     tagline: "Five specialized agents. One supervised workspace.",
-    detail: "Up to five specialized agents with shared routing, approvals, and analytics.",
+    detail:
+      "Up to five specialized agents with shared routing, approvals, and analytics.",
     ctaMonthly: "Go Pro",
     ctaAnnual: "Go Pro annually",
     ctaPath: "/signup?plan=business",
@@ -81,7 +90,8 @@ const PAID_TIERS = [
     publicName: "Business",
     eyebrow: "For serious operators",
     tagline: "Full phone coverage for growing teams.",
-    detail: "Up to fifteen purpose built agents with stronger governance and oversight.",
+    detail:
+      "Up to fifteen purpose built agents with stronger governance and oversight.",
     ctaMonthly: "Start Business",
     ctaAnnual: "Start Business annually",
     ctaPath: "/signup?plan=enterprise",
@@ -95,7 +105,7 @@ const CHANNEL_RULES = [
   {
     icon: PhoneCall,
     title: "Voice + included number",
-    body: "A Wireline number on every paid plan. Extra minutes draw from prepaid balance — live calls never cut mid conversation.",
+    body: `A Wireline number on every paid plan. Extra minutes stay prepaid at ${TOPUP_RATE}; live calls never cut mid-conversation.`,
   },
   {
     icon: MessageSquareText,
@@ -133,7 +143,7 @@ const FAQ = [
   ],
   [
     "What happens when included voice minutes run out?",
-    "New live work uses prepaid Runtime Balance. Wireline does not silently add a postpaid metered line item. Add balance, wait for renewal, or upgrade. An active call is never cut off for billing — only the next new action pauses until coverage is restored.",
+    `New live work draws prepaid Runtime Balance at ${TOPUP_RATE}, never a surprise postpaid bill. Add balance, wait for renewal, or upgrade. An active call is never cut off; only the next new action pauses until coverage is restored.`,
   ],
   [
     "Are live calls limited to a few seconds?",
@@ -145,7 +155,7 @@ const FAQ = [
   ],
   [
     "Can I cancel or get a refund?",
-    "Yes. Every paid plan is month to month by default with no long term contract, and you can cancel from Stripe at any time — access continues through the end of the current billing period. Reach out at support@trywireline.com within 30 days of your first paid invoice if a plan wasn't the right fit and we'll make it right.",
+    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel in Stripe anytime; access continues through the current billing period. Email support@trywireline.com within 30 days of your first paid invoice if the plan wasn't the right fit.",
   ],
   [
     "What is the Scale plan?",
@@ -162,7 +172,8 @@ const assurances = [
   {
     icon: PhoneCall,
     label: "Number included",
-    detail: "Every paid agent can claim a Wireline number at no extra line fee.",
+    detail:
+      "Every paid agent can claim a Wireline number at no extra line fee.",
   },
   {
     icon: CircleDollarSign,
@@ -172,40 +183,56 @@ const assurances = [
   {
     icon: ShieldCheck,
     label: "Spend controls",
-    detail: "Approvals, consent, spend controls, logs, and outcomes remain visible.",
+    detail:
+      "Approvals, consent, spend controls, logs, and outcomes remain visible.",
   },
   {
     icon: Radio,
     label: "Cancel anytime",
-    detail: "Month to month by default. Cancel in Stripe with nothing locked in.",
+    detail:
+      "Month to month by default. Cancel in Stripe with nothing locked in.",
   },
 ] as const;
 
 const pricingJsonLd = {
   "@context": "https://schema.org",
-  "@type": "OfferCatalog",
-  name: "Wireline Voice Agents pricing",
-  url: "https://trywireline.com/pricing",
-  itemListElement: [
+  "@graph": [
     {
-      "@type": "Offer",
-      name: "Wireline Free Builder",
-      price: 0,
-      priceCurrency: "USD",
-      description: "Build, train, and privately simulate one Voice Agent.",
+      "@type": "OfferCatalog",
+      name: "Wireline Voice Agents pricing",
+      url: "https://trywireline.com/pricing",
+      itemListElement: [
+        {
+          "@type": "Offer",
+          name: "Wireline Free Builder",
+          price: 0,
+          priceCurrency: "USD",
+          description: "Build, train, and privately simulate one Voice Agent.",
+        },
+        ...PAID_TIERS.map(({ plan, publicName, detail }) => ({
+          "@type": "Offer",
+          name: `Wireline ${publicName}`,
+          price: plan.price_usd_monthly,
+          priceCurrency: "USD",
+          description: detail,
+        })),
+      ],
     },
-    ...PAID_TIERS.map(({ plan, publicName, detail }) => ({
-      "@type": "Offer",
-      name: `Wireline ${publicName}`,
-      price: plan.price_usd_monthly,
-      priceCurrency: "USD",
-      description: detail,
-    })),
+    {
+      "@type": "FAQPage",
+      mainEntity: FAQ.map(([question, answer]) => ({
+        "@type": "Question",
+        name: question,
+        acceptedAnswer: { "@type": "Answer", text: answer },
+      })),
+    },
   ],
 };
 
 export default function Pricing() {
-  const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
+  const [billingInterval, setBillingInterval] = useState<"month" | "year">(
+    "month",
+  );
   const annual = billingInterval === "year";
 
   return (
@@ -225,10 +252,12 @@ export default function Pricing() {
         <MarketingHero
           eyebrow="Founder Early Access"
           title="Build free. Launch for $19. Scale when it pays."
-          description="Calls, texts, email, follow up, and Lead Hunt — plus a number on every paid plan. Extra usage stays prepaid."
+          description={`Calls, texts, email, follow up, and Lead Hunt — plus a number on every paid plan. Extra minutes stay prepaid at ${TOPUP_RATE}.`}
           primaryAction={{
             label: annual ? "Launch for $190/yr" : "Launch for $19/mo",
-            to: annual ? "/signup?plan=starter&interval=year" : "/signup?plan=starter",
+            to: annual
+              ? "/signup?plan=starter&interval=year"
+              : "/signup?plan=starter",
           }}
           secondaryAction={{
             label: "Build free first",
@@ -241,13 +270,15 @@ export default function Pricing() {
         <section id="plans" className="wl-public-section">
           <div className="wl-public-rail mx-auto max-w-[1500px]">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="wl-overline text-primary">Plans for different stages</p>
+              <p className="wl-overline text-primary">
+                Plans for different stages
+              </p>
               <h2 className="wl-public-section-heading mt-3">
                 Start with one. Add when demand earns it.
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
-                Every paid plan includes voice, SMS, email, and a Wireline number. Higher tiers buy
-                capacity, not features.
+                Every paid plan includes voice, SMS, email, and a Wireline
+                number. Higher tiers buy capacity, not features.
               </p>
               <div
                 className="mx-auto mt-8 inline-flex rounded-full border border-border bg-muted/40 p-1"
@@ -288,22 +319,34 @@ export default function Pricing() {
                 <div className="flex flex-col items-center justify-center gap-3 text-center">
                   <div>
                     <p className="wl-stitch-label">Build before billing</p>
-                    <h3 className="mt-2 text-2xl font-semibold">Free Builder</h3>
+                    <h3 className="mt-2 text-2xl font-semibold">
+                      Free Builder
+                    </h3>
                   </div>
-                  <WalletCards className="h-6 w-6 text-primary" aria-hidden="true" />
+                  <WalletCards
+                    className="h-6 w-6 text-primary"
+                    aria-hidden="true"
+                  />
                 </div>
                 <div className="mt-6 flex items-end justify-center gap-2">
-                  <span className="text-4xl font-semibold tracking-[-0.04em]">$0</span>
-                  <span className="pb-1 text-sm text-muted-foreground">forever</span>
+                  <span className="text-4xl font-semibold tracking-[-0.04em]">
+                    $0
+                  </span>
+                  <span className="pb-1 text-sm text-muted-foreground">
+                    forever
+                  </span>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Build, train, and privately simulate one Voice Agent. Live numbers unlock after
-                  activation.
+                  Build, train, and privately simulate one Voice Agent. Live
+                  numbers unlock after activation.
                 </p>
                 <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
                   {planById.personal.features.map((feature) => (
                     <li key={feature} className="flex gap-3">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                      <Check
+                        className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                        aria-hidden="true"
+                      />
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -312,7 +355,8 @@ export default function Pricing() {
                   to="/signup?plan=personal"
                   className="mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold transition hover:bg-muted"
                 >
-                  Build free <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  Build free{" "}
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </article>
 
@@ -331,10 +375,17 @@ export default function Pricing() {
                   badge,
                 }) => {
                   const showAnnual = annual && plan.price_usd_annual > 0;
-                  const price = showAnnual ? plan.price_usd_annual : plan.price_usd_monthly;
+                  const price = showAnnual
+                    ? plan.price_usd_annual
+                    : plan.price_usd_monthly;
                   const priceSuffix = showAnnual ? "/year" : "/month";
-                  const savings = annualSavingsLabel(plan.price_usd_monthly, plan.price_usd_annual);
-                  const path = showAnnual ? `${ctaPath}&interval=year` : ctaPath;
+                  const savings = annualSavingsLabel(
+                    plan.price_usd_monthly,
+                    plan.price_usd_annual,
+                  );
+                  const path = showAnnual
+                    ? `${ctaPath}&interval=year`
+                    : ctaPath;
                   return (
                     <article
                       key={plan.id}
@@ -359,15 +410,26 @@ export default function Pricing() {
                             {publicName}
                           </h3>
                         </div>
-                        <Icon className="h-6 w-6 text-primary" aria-hidden="true" />
+                        <Icon
+                          className="h-6 w-6 text-primary"
+                          aria-hidden="true"
+                        />
                       </div>
-                      <p className="mt-3 text-sm font-semibold text-foreground">{tagline}</p>
+                      <p className="mt-3 text-sm font-semibold text-foreground">
+                        {tagline}
+                      </p>
                       <div className="mt-5 flex items-end justify-center gap-2">
-                        <span className="text-4xl font-semibold tracking-[-0.04em]">${price}</span>
-                        <span className="pb-1 text-sm text-muted-foreground">{priceSuffix}</span>
+                        <span className="text-4xl font-semibold tracking-[-0.04em]">
+                          ${price}
+                        </span>
+                        <span className="pb-1 text-sm text-muted-foreground">
+                          {priceSuffix}
+                        </span>
                       </div>
                       {showAnnual && savings ? (
-                        <p className="mt-1 text-xs text-muted-foreground">{savings} vs monthly</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {savings} vs monthly
+                        </p>
                       ) : plan.price_usd_annual > 0 ? (
                         <p className="mt-1 text-xs text-muted-foreground">
                           {savings
@@ -375,7 +437,9 @@ export default function Pricing() {
                             : `or $${plan.price_usd_annual}/yr`}
                         </p>
                       ) : null}
-                      <p className="mt-4 text-sm leading-6 text-muted-foreground">{detail}</p>
+                      <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                        {detail}
+                      </p>
                       <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
                         {plan.features.map((feature) => (
                           <li key={feature} className="flex gap-3">
@@ -390,14 +454,18 @@ export default function Pricing() {
                       <Link
                         to={path}
                         className={`mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition ${
-                          featured ? "marketing-btn-primary border-0" : "marketing-btn-secondary"
+                          featured
+                            ? "marketing-btn-primary border-0"
+                            : "marketing-btn-secondary"
                         }`}
                       >
                         {showAnnual ? ctaAnnual : ctaMonthly}{" "}
                         <ArrowRight className="h-4 w-4" aria-hidden="true" />
                       </Link>
                       <p className="mt-3 text-center text-xs text-muted-foreground">
-                        {featured ? "Cancel anytime · no long term contract" : badge}
+                        {featured
+                          ? "Cancel anytime · no long term contract"
+                          : badge}
                       </p>
                     </article>
                   );
@@ -410,14 +478,24 @@ export default function Pricing() {
               >
                 <div className="flex flex-col items-center justify-center gap-3 text-center">
                   <div>
-                    <p className="wl-stitch-label">25+ agents or custom needs</p>
-                    <h3 className="mt-2 text-2xl font-semibold">Scale &amp; Enterprise</h3>
+                    <p className="wl-stitch-label">
+                      25+ agents or custom needs
+                    </p>
+                    <h3 className="mt-2 text-2xl font-semibold">
+                      Scale &amp; Enterprise
+                    </h3>
                   </div>
-                  <ShieldCheck className="h-6 w-6 text-primary" aria-hidden="true" />
+                  <ShieldCheck
+                    className="h-6 w-6 text-primary"
+                    aria-hidden="true"
+                  />
                 </div>
-                <div className="mt-6 text-4xl font-semibold tracking-[-0.04em]">Custom</div>
+                <div className="mt-6 text-4xl font-semibold tracking-[-0.04em]">
+                  Custom
+                </div>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Custom capacity, governance, SSO, integrations, security review, and SLAs.
+                  Custom capacity, governance, SSO, integrations, security
+                  review, and SLAs.
                 </p>
                 <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
                   {[
@@ -427,7 +505,10 @@ export default function Pricing() {
                     "Security, rollout, and support plan",
                   ].map((feature) => (
                     <li key={feature} className="flex gap-3">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                      <Check
+                        className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                        aria-hidden="true"
+                      />
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -436,7 +517,8 @@ export default function Pricing() {
                   to="/contact?topic=enterprise"
                   className="mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold transition hover:bg-muted"
                 >
-                  Design a scale plan <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  Design a scale plan{" "}
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </article>
             </div>
@@ -451,8 +533,8 @@ export default function Pricing() {
                 One agent. No seat tax. Clear costs.
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
-                One agent calls, texts, and emails on one subscription. Costs track numbers,
-                minutes, and segments — not seats per channel.
+                One agent calls, texts, and emails on one subscription. Costs
+                track numbers, minutes, and segments — not seats per channel.
               </p>
             </div>
             <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -463,7 +545,9 @@ export default function Pricing() {
                 >
                   <Icon className="mx-auto h-6 w-6" aria-hidden="true" />
                   <h3 className="mt-5 text-lg font-semibold">{title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{body}</p>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    {body}
+                  </p>
                 </article>
               ))}
             </div>
@@ -473,10 +557,15 @@ export default function Pricing() {
         <section className="wl-public-section">
           <div className="wl-public-rail mx-auto max-w-[1000px]">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="wl-overline text-primary">Questions before launch</p>
-              <h2 className="wl-public-section-heading mt-3">Two things to pay for.</h2>
+              <p className="wl-overline text-primary">
+                Questions before launch
+              </p>
+              <h2 className="wl-public-section-heading mt-3">
+                Two things to pay for.
+              </h2>
               <p className="wl-public-copy mx-auto mt-4">
-                Subscription funds agent capacity. Prepaid balance funds variable provider work.
+                Subscription funds agent capacity. Prepaid balance funds
+                variable provider work.
               </p>
             </div>
             <div className="mx-auto mt-10 max-w-3xl space-y-3">
@@ -488,7 +577,9 @@ export default function Pricing() {
                   <summary className="cursor-pointer list-none text-sm font-semibold">
                     {question}
                   </summary>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{answer}</p>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    {answer}
+                  </p>
                 </details>
               ))}
             </div>
@@ -504,15 +595,16 @@ export default function Pricing() {
                   Build first. Let demand choose the plan.
                 </h2>
                 <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-2xl text-base leading-7">
-                  Start private, launch for $19 with an included number, then upgrade when completed
-                  work justifies more capacity.
+                  Start private, launch for $19 with an included number, then
+                  upgrade when completed work justifies more capacity.
                 </p>
               </div>
               <Link
                 to="/signup?plan=personal"
                 className="marketing-btn-primary min-h-12 justify-center px-6 text-sm font-semibold"
               >
-                Build your voice agent <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                Build your voice agent{" "}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </div>
           </div>

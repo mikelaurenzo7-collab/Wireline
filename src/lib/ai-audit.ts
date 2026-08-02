@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AsyncLocalStorage } from "node:async_hooks";
-import { DEFAULT_MODEL, MODEL_PRICING, OPENAI_MODELS, isXAIModelId } from "./ai-models";
+import { DEFAULT_MODEL, isXAIModelId, pricingForModel } from "./ai-models";
 
 export interface RuntimeCallMeta {
   model: string;
@@ -36,19 +36,8 @@ export async function withAuditCapture<T>(
   );
 }
 export const createAuditContext = (): AuditContext => ({ records: [] });
-export const runInAuditContext = <T>(ctx: AuditContext, fn: () => T): T => auditCtx.run(ctx, fn);
-function pricingFor(model: string) {
-  const direct = MODEL_PRICING[model as keyof typeof MODEL_PRICING];
-  if (direct) return direct;
-  // AI-Gateway-served turns report prefixed ids (for example,
-  // "xai/grok-4.5" or "openai/gpt-5.6-terra"). Price them by the
-  // bare model so every route shares one audited price table.
-  const bare = model.includes("/") ? model.slice(model.lastIndexOf("/") + 1) : model;
-  return (
-    MODEL_PRICING[bare as keyof typeof MODEL_PRICING] ??
-    MODEL_PRICING[OPENAI_MODELS.GPT_5_6_TERRA]
-  );
-}
+export const runInAuditContext = <T>(ctx: AuditContext, fn: () => T): T =>
+  auditCtx.run(ctx, fn);
 export function estimateCost(
   usage: {
     input_tokens?: number;
@@ -58,12 +47,15 @@ export function estimateCost(
   },
   model = DEFAULT_MODEL,
 ): number {
-  const p = pricingFor(model);
+  const input = usage.input_tokens || 0;
+  const read = usage.cache_read_input_tokens || 0;
+  const write = usage.cache_creation_input_tokens || 0;
+  const p = pricingForModel(model, input + read + write);
   return (
-    ((usage.input_tokens || 0) * p.input +
+    (input * p.input +
       (usage.output_tokens || 0) * p.output +
-      (usage.cache_read_input_tokens || 0) * p.cacheRead +
-      (usage.cache_creation_input_tokens || 0) * p.cacheWrite) /
+      read * p.cacheRead +
+      write * p.cacheWrite) /
     1_000_000
   );
 }
@@ -85,12 +77,13 @@ export function estimateCostDetailed(
   },
   model = DEFAULT_MODEL,
 ): CostBreakdown {
-  const p = pricingFor(model);
-  const primary = pricingFor(DEFAULT_MODEL);
   const input = usage.input_tokens || 0,
     output = usage.output_tokens || 0,
     read = usage.cache_read_input_tokens || 0,
     write = usage.cache_creation_input_tokens || 0;
+  const totalInput = input + read + write;
+  const p = pricingForModel(model, totalInput);
+  const primary = pricingForModel(DEFAULT_MODEL, totalInput);
   const inputCost = (input * p.input) / 1_000_000,
     outputCost = (output * p.output) / 1_000_000,
     cacheReadCost = (read * p.cacheRead) / 1_000_000,
@@ -131,12 +124,17 @@ export function recordUsage(
   // Attribute cost to the model that actually served the turn. On provider
   // failover the runtime returns a different model than requested, so pricing
   // and provider attribution must follow the response, not the request.
-  const served = typeof response.model === "string" && response.model ? response.model : model;
+  const served =
+    typeof response.model === "string" && response.model
+      ? response.model
+      : model;
   push({
     model: served,
     provider: providerFor(served),
-    input_tokens: response.usage?.input_tokens ?? response.usage?.prompt_tokens ?? 0,
-    output_tokens: response.usage?.output_tokens ?? response.usage?.completion_tokens ?? 0,
+    input_tokens:
+      response.usage?.input_tokens ?? response.usage?.prompt_tokens ?? 0,
+    output_tokens:
+      response.usage?.output_tokens ?? response.usage?.completion_tokens ?? 0,
     cache_read_tokens: response.usage?.cache_read_input_tokens ?? 0,
     cache_create_tokens: response.usage?.cache_creation_input_tokens ?? 0,
     latency_ms: latencyMs,

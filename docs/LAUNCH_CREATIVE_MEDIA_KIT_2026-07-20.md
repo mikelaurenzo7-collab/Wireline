@@ -49,8 +49,19 @@ Business-context assets may use "AI employee" only when the placement is explici
 | `audio/wireline-ai-voice-agent-30s.mp3` | audio | AI Voice Generator campaign VO |
 | `audio/wireline-missed-call-15s.mp3` | audio | 15s reel VO from the campaign pack ("Your agent can.") |
 | `audio/wireline-founder-60s.mp3` | audio | 60s founder explainer VO from the campaign pack |
+| [Launch Reel 46s (VO mixed)](https://share.descript.com/view/MvGqlYX4NMf) | 16:9 video master | Primary launch reel; product-first picture, approved VO, minimal text |
 
 Legacy filenames containing `one-employee`, `employee`, `launch-9`, or `starter-9` are not publishable unless regenerated with the current copy above.
+
+## Launch Reel Source of Truth
+
+The 46-second [Descript master](https://share.descript.com/view/MvGqlYX4NMf) is the launch reel. Derivatives must preserve its approved voiceover, product sequence, timing, and price promise.
+
+- Show the real product. No stock footage, mock dashboards, vendor logos, decorative captions, or extra claims.
+- Burn in only four chapter words when they help orientation: **Create. Train. Wire. Run.**
+- End card only: **Build free. Go live from $19/mo.** and **trywireline.com**.
+- Provide accurate platform captions as a selectable accessibility track. Do not stack persistent subtitles over already legible product UI.
+- Cut 9:16 and 1:1 variants from the 16:9 master by reframing the active UI, never by shrinking the full desktop canvas into unreadable space.
 
 ## Plugin-Ready Design Briefs
 
@@ -68,7 +79,7 @@ Prompt: Produce a 60-second founder-style launch video for Wireline using the 60
 
 ### BlitzReels Short Cut
 
-Prompt: Cut the 15-second vertical reel exactly as timecoded in `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`: ringing phone -> missed-call stack -> Wireline agent answering -> outcome card and follow-up text -> end card. Overlays in order: "6:47 PM. The phone rings.", "You cannot pick up.", "Your agent can.", "Answered. Booked. Logged.", "Build free. Go live from $19/mo." The cut must read complete with the sound off.
+Prompt: Cut a 15-second 9:16 derivative from the approved 46-second Descript master. Use only real product footage: answer -> follow up -> logged outcome -> end card. Keep the approved VO phrases in order. No persistent overlays or vendor marks. Use platform captions for accessibility. End card: "Build free. Go live from $19/mo." and "trywireline.com".
 
 ### Beautiful.ai Deck
 
@@ -90,5 +101,5 @@ This voiceover was generated for promotion/reference only. It is not approved as
 | LinkedIn organic | Founder post + 16:9 banner | Promote founder early access, not public WhatsApp |
 | X / Twitter | Short text + 1:1 missed-call image | Drive to signup/pricing with v6 UTM |
 | Meta / LinkedIn ads | 16:9 build-free-live-19 and 1:1 Voice Agents | Start only after phone and payment loops are verified |
-| Reels / Shorts | 9:16 missed-call sequence + 15s reel VO | Overlays must carry the story with sound off; captions on |
+| Reels / Shorts | 46s master + 15s 9:16 cut | Real product, minimal chapter words, selectable captions, one end card |
 | Sales deck | 6-slide deck | Use for warm founder outreach and early adopters |

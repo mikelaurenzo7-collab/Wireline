@@ -37,6 +37,7 @@ import companyIdentityRouter from "../routes/company-identity-routes";
 import teamRouter from "../routes/team-routes";
 import emailRouter from "../routes/email-routes";
 import dashboardRouter from "../routes/dashboard-routes";
+import callRecordingRouter from "../routes/call-recording-routes";
 import fleetRouter from "../routes/fleet-routes";
 import calendarRouter from "../routes/calendar-routes";
 import workspaceKnowledgeRouter from "../routes/workspace-knowledge-routes";
@@ -138,6 +139,8 @@ export function registerApiRoutes(app: Express): void {
   app.use("/api/billing/extra-agents", extraAgentBillingAtomicRouter);
   app.use("/api", billingRouter);
   app.use(emailRouter);
+  // Tenant-owned, server-mediated access to Vapi/Twilio call artifacts.
+  app.use(callRecordingRouter);
   // Dashboard data plane: /api/dashboard/*, /api/calls, /api/appointments,
   // /api/nav-counts, /api/export/:type.csv -- Overview and Phone read these.
   app.use(dashboardRouter);

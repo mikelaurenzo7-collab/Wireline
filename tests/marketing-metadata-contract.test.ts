@@ -7,7 +7,8 @@ import {
   planById,
 } from "../src/lib/plan-catalog";
 
-const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("marketing metadata contract", () => {
   it("keeps static and runtime fallback metadata aligned to the direct voice agent promise", () => {
@@ -20,10 +21,14 @@ describe("marketing metadata contract", () => {
     );
     for (const source of [staticHead, runtimeMeta]) {
       expect(source).toContain("Build one for your business or your life.");
-      expect(source).toContain("call, answer, text, email, book, and follow through");
+      expect(source).toContain(
+        "call, answer, text, email, book, and follow through",
+      );
       expect(source).not.toContain("—");
     }
-    expect(staticHead).not.toContain("AI phone employees that turn calls into sales");
+    expect(staticHead).not.toContain(
+      "AI phone employees that turn calls into sales",
+    );
     expect(runtimeMeta).not.toContain("Personal & Business AI Assistants");
   });
 
@@ -37,7 +42,9 @@ describe("marketing metadata contract", () => {
   it("keeps Trust Center metadata distinct and one main landmark per page", () => {
     const security = read("src/components/Security.tsx");
     const trustPack = read("src/components/TrustPackPage.tsx");
-    const marketingChrome = read("src/components/marketing/MarketingChrome.tsx");
+    const marketingChrome = read(
+      "src/components/marketing/MarketingChrome.tsx",
+    );
     const sitemap = read("public/sitemap.xml");
 
     expect(security).toContain('path={isTrustHub ? "/trust" : "/security"}');
@@ -50,7 +57,7 @@ describe("marketing metadata contract", () => {
   it("keeps the public market reference tied to current first-party sources", () => {
     const compare = read("src/pages/Compare.tsx");
 
-    expect(compare.match(/July 29, 2026/g)).toHaveLength(2);
+    expect(compare.match(/August 1, 2026/g)).toHaveLength(2);
     for (const href of [
       "https://www.goodcall.com/pricing",
       "https://smith.ai/pricing/ai-receptionist",
@@ -79,7 +86,10 @@ describe("marketing metadata contract", () => {
       "src/components/ContactPage.tsx",
     ];
 
-    const chargeable = new Set<number>([0, EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY]);
+    const chargeable = new Set<number>([
+      0,
+      EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY,
+    ]);
     for (const plan of STRIPE_PLANS) {
       chargeable.add(plan.price_usd_monthly);
       chargeable.add(plan.price_usd_annual);
@@ -88,8 +98,8 @@ describe("marketing metadata contract", () => {
     }
 
     for (const path of surfaces) {
-      const quoted = [...read(path).matchAll(/\$(\d+(?:\.\d+)?)/g)].map((match) =>
-        Number(match[1]),
+      const quoted = [...read(path).matchAll(/\$(\d+(?:\.\d+)?)/g)].map(
+        (match) => Number(match[1]),
       );
       for (const amount of quoted) {
         expect(
@@ -114,11 +124,15 @@ describe("marketing metadata contract", () => {
     expect(planById("business")?.price_usd_monthly).toBe(79);
     expect(planById("business")?.included_phone_numbers).toBe(5);
 
-    expect(pricing).toContain("Build free. Launch for $19. Scale when it pays.");
+    expect(pricing).toContain(
+      "Build free. Launch for $19. Scale when it pays.",
+    );
     expect(contact).toContain('planById("starter")');
     expect(contact).toContain('planById("team")');
     expect(contact).toContain("Starter launches at ${STARTER_PRICE}/mo");
-    expect(contact).toContain('searchParams.get("intent") ?? searchParams.get("topic")');
+    expect(contact).toContain(
+      'searchParams.get("intent") ?? searchParams.get("topic")',
+    );
     expect(contact).toContain("Preferred callback");
 
     for (const source of [pricing, contact]) {

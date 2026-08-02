@@ -83,8 +83,20 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
         ariaLabel: "Reliability",
         icon: ShieldAlert,
       },
-      { id: "quality", label: "Quality", shortLabel: "Quality", ariaLabel: "Quality", icon: Star },
-      { id: "revenue", label: "Revenue", shortLabel: "Rev", ariaLabel: "Revenue", icon: Receipt },
+      {
+        id: "quality",
+        label: "Quality",
+        shortLabel: "Quality",
+        ariaLabel: "Quality",
+        icon: Star,
+      },
+      {
+        id: "revenue",
+        label: "Revenue",
+        shortLabel: "Rev",
+        ariaLabel: "Revenue",
+        icon: Receipt,
+      },
     ],
   },
   // /agents (the Studio) intentionally has no sub-tabs: it's one open build
@@ -98,12 +110,15 @@ export function isAdminHubPath(pathname: string): boolean {
   return (ADMIN_HUB_PATHS as readonly string[]).includes(pathname);
 }
 
-export function resolveAppPageSubTabRoute(pathname: string): AppPageSubTabRoute | undefined {
+export function resolveAppPageSubTabRoute(
+  pathname: string,
+): AppPageSubTabRoute | undefined {
   return APP_PAGE_SUB_TAB_ROUTES.find((r) => r.pathname === pathname);
 }
 
 /** Human-friendly ?tab= values from docs, emails, and legacy links. */
-const APP_PAGE_TAB_ALIASES: Partial<Record<string, Record<string, string>>> = {};
+const APP_PAGE_TAB_ALIASES: Partial<Record<string, Record<string, string>>> =
+  {};
 
 export function normalizeAppPageSubTabParam(
   route: AppPageSubTabRoute,
@@ -114,9 +129,13 @@ export function normalizeAppPageSubTabParam(
   return alias ?? tabParam;
 }
 
-export function resolveAppPageSubTabId(route: AppPageSubTabRoute, tabParam: string | null): string {
+export function resolveAppPageSubTabId(
+  route: AppPageSubTabRoute,
+  tabParam: string | null,
+): string {
   const normalized = normalizeAppPageSubTabParam(route, tabParam) ?? tabParam;
-  if (normalized && route.tabs.some((t) => t.id === normalized)) return normalized;
+  if (normalized && route.tabs.some((t) => t.id === normalized))
+    return normalized;
   return route.defaultTab;
 }
 
@@ -185,12 +204,18 @@ export const OUTBOUND_VIEW_TABS: AppPageSubTab[] = [
   { id: "dispatch", label: "Dispatch", icon: Zap },
   {
     id: "campaigns",
-    label: "Campaigns",
-    shortLabel: "Camps",
-    ariaLabel: "Campaigns",
+    label: "Lead Hunt",
+    shortLabel: "Hunt",
+    ariaLabel: "Lead Hunt",
     icon: Megaphone,
   },
-  { id: "sequences", label: "Sequences", shortLabel: "Seq", ariaLabel: "Sequences", icon: Repeat },
+  {
+    id: "sequences",
+    label: "Sequences",
+    shortLabel: "Seq",
+    ariaLabel: "Sequences",
+    icon: Repeat,
+  },
   {
     id: "callbacks",
     label: "Callbacks",
@@ -219,7 +244,9 @@ export function resolveInsightsSecondaryTabs(groupId: string): AppPageSubTab[] {
     .filter((tab): tab is AppPageSubTab => Boolean(tab));
 }
 
-export function resolveInsightsGroupForView(viewId: string | null): string | null {
+export function resolveInsightsGroupForView(
+  viewId: string | null,
+): string | null {
   if (!viewId) return null;
   const group = OPS_INSIGHTS_GROUPS.find((candidate) =>
     (candidate.tabs as readonly string[]).includes(viewId),

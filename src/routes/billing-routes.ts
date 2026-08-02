@@ -14,7 +14,12 @@ import {
   syncSubscriptionFromStripe,
 } from "../lib/stripe-helpers";
 import { sendPaymentFailedEmail } from "../lib/email-service";
-import { planById, plansForClient, FOUNDER_CATALOG_VERSION } from "../lib/plan-catalog";
+import {
+  planById,
+  planExtraAgentPriceId,
+  plansForClient,
+  FOUNDER_CATALOG_VERSION,
+} from "../lib/plan-catalog";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import { getWorkspaceUsageSnapshot } from "../lib/workspace-usage-snapshot";
 import { addCredit, reverseCredit } from "../lib/credit-wallet";
@@ -34,11 +39,14 @@ const router = express.Router();
 // checkout's resolveLaunchPriceId validator (see launch-billing-checkout-routes.ts).
 // Returns `null` when the price is missing, inactive, or lacks the catalog
 // marker; callers should refuse the checkout with a 503 in that case.
-async function validateFounderCatalogPriceId(priceId: string): Promise<string | null> {
+async function validateFounderCatalogPriceId(
+  priceId: string,
+): Promise<string | null> {
   try {
     const price = await stripe.prices.retrieve(priceId);
     if (!price.active) return null;
-    if (price.metadata?.wireline_catalog_version !== FOUNDER_CATALOG_VERSION) return null;
+    if (price.metadata?.wireline_catalog_version !== FOUNDER_CATALOG_VERSION)
+      return null;
     return price.id;
   } catch (error) {
     log.warn("Stripe price validation failed for founder-catalog checkout", {
@@ -62,13 +70,20 @@ async function validateFounderCatalogPriceId(priceId: string): Promise<string | 
  * Falls back to the gross amount when the metadata is absent (legacy top-ups)
  * or no exclusive tax was added (ratio = 1 — identical to prior behavior).
  */
-function creditPortionUsd(grossCents: number, pi: Stripe.PaymentIntent): number {
+function creditPortionUsd(
+  grossCents: number,
+  pi: Stripe.PaymentIntent,
+): number {
   const grossUsd = (grossCents || 0) / 100;
   const creditUsd = Number(pi.metadata?.credit_usd);
   const chargedUsd = (pi.amount || 0) / 100;
-  if (!Number.isFinite(creditUsd) || creditUsd <= 0 || chargedUsd <= 0) return grossUsd;
+  if (!Number.isFinite(creditUsd) || creditUsd <= 0 || chargedUsd <= 0)
+    return grossUsd;
   if (creditUsd >= chargedUsd) return grossUsd;
-  return Math.min(creditUsd, Math.floor(grossUsd * (creditUsd / chargedUsd) * 100) / 100);
+  return Math.min(
+    creditUsd,
+    Math.floor(grossUsd * (creditUsd / chargedUsd) * 100) / 100,
+  );
 }
 
 /**
@@ -87,17 +102,23 @@ async function reverseRuntimeAllowanceForCharge(
   explicitReference?: string,
 ): Promise<void> {
   try {
-    const invoiceId = typeof charge.invoice === "string" ? charge.invoice : charge.invoice?.id;
+    const invoiceId =
+      typeof charge.invoice === "string" ? charge.invoice : charge.invoice?.id;
     if (!invoiceId) return;
 
     const invoice = await stripe.invoices.retrieve(invoiceId);
-    const subField = (invoice as Stripe.Invoice & { subscription?: string | { id: string } })
-      .subscription;
-    const subscriptionId = typeof subField === "string" ? subField : subField?.id;
+    const subField = (
+      invoice as Stripe.Invoice & { subscription?: string | { id: string } }
+    ).subscription;
+    const subscriptionId =
+      typeof subField === "string" ? subField : subField?.id;
     if (!subscriptionId) return;
 
     const [row] = await drizzle
-      .select({ userId: schema.subscriptions.userId, plan: schema.subscriptions.plan })
+      .select({
+        userId: schema.subscriptions.userId,
+        plan: schema.subscriptions.plan,
+      })
       .from(schema.subscriptions)
       .where(eq(schema.subscriptions.stripeSubscriptionId, subscriptionId))
       .limit(1);
@@ -128,7 +149,8 @@ async function reverseRuntimeAllowanceForCharge(
       reason === "dispute"
         ? chargeCents
         : (succeededRefund?.amount ?? charge.amount_refunded ?? chargeCents);
-    const portion = chargeCents > 0 ? Math.min(1, refundedCents / chargeCents) : 1;
+    const portion =
+      chargeCents > 0 ? Math.min(1, refundedCents / chargeCents) : 1;
 
     await tenantStore.run(row.userId, async () => {
       await reverseSubscriptionRuntimeAllowance(
@@ -159,12 +181,17 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
     throw AppError.fromHttpStatus(503, "Stripe webhook not configured.");
   }
   const sig = req.headers["stripe-signature"] as string | undefined;
-  if (!sig) throw AppError.fromHttpStatus(400, "Missing stripe-signature header.");
+  if (!sig)
+    throw AppError.fromHttpStatus(400, "Missing stripe-signature header.");
 
   let event: Stripe.Event;
   try {
     // express.raw populated req.body as a Buffer
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET,
+    );
   } catch (err: any) {
     // Include ip + signature prefix so abuse patterns (probing, replay)
     // are detectable from log aggregation. Full signature isn't logged
@@ -177,7 +204,10 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
       sig_prefix: typeof sig === "string" ? sig.slice(0, 12) : null,
       ts: Date.now(),
     });
-    throw AppError.fromHttpStatus(400, "Webhook signature verification failed.");
+    throw AppError.fromHttpStatus(
+      400,
+      "Webhook signature verification failed.",
+    );
   }
 
   const idempotencyKey = event.id;
@@ -185,7 +215,11 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
   try {
     await drizzle
       .insert(schema.stripeEvents)
-      .values({ eventId: idempotencyKey, eventType: event.type, status: "processing" });
+      .values({
+        eventId: idempotencyKey,
+        eventType: event.type,
+        status: "processing",
+      });
 
     claimed = true;
   } catch (err: any) {
@@ -197,7 +231,10 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
       // event, which for a credit top-up means the customer paid and their
       // balance never moved. Release the stale claim and make Stripe redeliver.
       const [prior] = await drizzle
-        .select({ status: schema.stripeEvents.status, at: schema.stripeEvents.processedAt })
+        .select({
+          status: schema.stripeEvents.status,
+          at: schema.stripeEvents.processedAt,
+        })
         .from(schema.stripeEvents)
         .where(eq(schema.stripeEvents.eventId, idempotencyKey))
         .limit(1);
@@ -205,7 +242,8 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
       const abandonedAfterMs = 5 * 60 * 1000;
       const isProcessing = prior?.status === "processing";
       const stale =
-        isProcessing && Date.now() - new Date(prior.at ?? 0).getTime() > abandonedAfterMs;
+        isProcessing &&
+        Date.now() - new Date(prior.at ?? 0).getTime() > abandonedAfterMs;
 
       // Never 2xx an unfinished claim. Stripe stops redelivering after 2xx, so
       // a mid-flight "processing" row would permanently drop paid events
@@ -226,7 +264,10 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
             eventType: event.type,
           });
         }
-        throw AppError.fromHttpStatus(503, "Prior delivery did not complete. Retry.");
+        throw AppError.fromHttpStatus(
+          503,
+          "Prior delivery did not complete. Retry.",
+        );
       }
 
       if (prior?.status === "processed") {
@@ -251,7 +292,10 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
       eventId: idempotencyKey,
       eventType: event.type,
     });
-    throw AppError.fromHttpStatus(503, "Webhook idempotency store unavailable. Retry later.");
+    throw AppError.fromHttpStatus(
+      503,
+      "Webhook idempotency store unavailable. Retry later.",
+    );
   }
 
   try {
@@ -338,7 +382,8 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
           // first — leaving later partial/full refunds spendable as balance.
           const refunds = charge.refunds?.data ?? [];
           const reversible = refunds.filter(
-            (r) => (!r.status || r.status === "succeeded") && (r.amount ?? 0) > 0,
+            (r) =>
+              (!r.status || r.status === "succeeded") && (r.amount ?? 0) > 0,
           );
           if (userId && reversible.length) {
             await tenantStore.run(userId, async () => {
@@ -378,7 +423,9 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
               .list({ charge: charge.id, limit: 100 })
               .then((r) =>
                 r.data.filter(
-                  (x) => (!x.status || x.status === "succeeded") && (x.amount ?? 0) > 0,
+                  (x) =>
+                    (!x.status || x.status === "succeeded") &&
+                    (x.amount ?? 0) > 0,
                 ),
               );
             await tenantStore.run(userId, async () => {
@@ -397,7 +444,10 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                       providerEventId: event.id,
                       providerObjectId: refund.id,
                       customerReason: "Runtime Balance refund",
-                      metadata: { payment_intent_id: piId, charge_id: charge.id },
+                      metadata: {
+                        payment_intent_id: piId,
+                        charge_id: charge.id,
+                      },
                     },
                   );
                 }
@@ -462,9 +512,15 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
           }
         } else if (dispute.charge) {
           const disputedCharge = await stripe.charges.retrieve(
-            typeof dispute.charge === "string" ? dispute.charge : dispute.charge.id,
+            typeof dispute.charge === "string"
+              ? dispute.charge
+              : dispute.charge.id,
           );
-          await reverseRuntimeAllowanceForCharge(disputedCharge, "dispute", dispute.id);
+          await reverseRuntimeAllowanceForCharge(
+            disputedCharge,
+            "dispute",
+            dispute.id,
+          );
         }
         break;
       }
@@ -483,9 +539,14 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
             // past_due / incomplete stay enabled so a temporary card decline
             // does not yank a paid feature mid-session; Stripe will fire the
             // delete event once dunning is exhausted.
-            const terminal = new Set(["canceled", "incomplete_expired", "unpaid"]);
+            const terminal = new Set([
+              "canceled",
+              "incomplete_expired",
+              "unpaid",
+            ]);
             const disable =
-              event.type === "customer.subscription.deleted" || terminal.has(sub.status);
+              event.type === "customer.subscription.deleted" ||
+              terminal.has(sub.status);
             await drizzle
               .update(schema.settings)
               .set({ liveVideoAddonEnabled: !disable, updatedAt: new Date() })
@@ -530,7 +591,8 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         const inv = event.data.object as Stripe.Invoice;
         log.warn("Stripe invoice payment failed", { customerId: inv.customer });
         try {
-          const customerId = typeof inv.customer === "string" ? inv.customer : inv.customer?.id;
+          const customerId =
+            typeof inv.customer === "string" ? inv.customer : inv.customer?.id;
           if (customerId) {
             const [row] = await drizzle
               .select({ userId: schema.subscriptions.userId })
@@ -542,8 +604,14 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                 .logBilling("payment_failed", {
                   userId: row.userId,
                   customerId,
-                  amountCents: typeof inv.amount_due === "number" ? inv.amount_due : undefined,
-                  metadata: { invoice_id: inv.id, attempt_count: inv.attempt_count },
+                  amountCents:
+                    typeof inv.amount_due === "number"
+                      ? inv.amount_due
+                      : undefined,
+                  metadata: {
+                    invoice_id: inv.id,
+                    attempt_count: inv.attempt_count,
+                  },
                 })
                 .catch((err) =>
                   log.warn("billing audit log failed", {
@@ -564,10 +632,9 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                   typeof inv.amount_due === "number"
                     ? `$${(inv.amount_due / 100).toFixed(2)}`
                     : "your subscription payment";
-                const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(
-                  /\/+$/,
-                  "",
-                );
+                const appUrl = (
+                  process.env.APP_URL || "https://trywireline.com"
+                ).replace(/\/+$/, "");
                 void sendPaymentFailedEmail({
                   to: userRow.email,
                   amountDisplay,
@@ -592,14 +659,17 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
           }
         } catch (err) {
           if (err instanceof AppError) throw err;
-          log.error("invoice.payment_failed handler error", { error: getErrorMessage(err) });
+          log.error("invoice.payment_failed handler error", {
+            error: getErrorMessage(err),
+          });
         }
         break;
       }
       case "invoice.payment_succeeded": {
         const inv = event.data.object as Stripe.Invoice;
         try {
-          const customerId = typeof inv.customer === "string" ? inv.customer : inv.customer?.id;
+          const customerId =
+            typeof inv.customer === "string" ? inv.customer : inv.customer?.id;
           if (customerId) {
             const [row] = await drizzle
               .select({ userId: schema.subscriptions.userId })
@@ -611,7 +681,10 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                 .logBilling("payment_succeeded", {
                   userId: row.userId,
                   customerId,
-                  amountCents: typeof inv.amount_paid === "number" ? inv.amount_paid : undefined,
+                  amountCents:
+                    typeof inv.amount_paid === "number"
+                      ? inv.amount_paid
+                      : undefined,
                   metadata: { invoice_id: inv.id },
                 })
                 .catch((err) =>
@@ -657,16 +730,20 @@ router.get("/billing/plans", (_req: Request, res: Response) => {
   res.json({ plans: plansForClient(), stripe_configured: stripeAvailable() });
 });
 
-router.get("/billing/usage", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const snapshot = await getWorkspaceUsageSnapshot(req.user!.id);
-    res.json(snapshot);
-  } catch (err) {
-    if (err instanceof AppError) throw err;
-    log.error("/billing/usage failed", { error: getErrorMessage(err) });
-    throw AppError.fromHttpStatus(500, "Failed to load usage snapshot");
-  }
-});
+router.get(
+  "/billing/usage",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const snapshot = await getWorkspaceUsageSnapshot(req.user!.id);
+      res.json(snapshot);
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      log.error("/billing/usage failed", { error: getErrorMessage(err) });
+      throw AppError.fromHttpStatus(500, "Failed to load usage snapshot");
+    }
+  },
+);
 
 /**
  * Verify a Stripe customer actually exists in the current Stripe account.
@@ -759,7 +836,8 @@ router.get(
       // that's been deleted (or lives in the other Stripe mode) reports
       // has_customer=true here and STRIPE_CUSTOMER_MISSING at /portal —
       // confusing dead-end UX. Phase 3 fix.
-      let customerState: "present" | "deleted" | "missing" | "unknown" | "none" = "none";
+      let customerState:
+        "present" | "deleted" | "missing" | "unknown" | "none" = "none";
       if (sub?.stripeCustomerId && stripeAvailable()) {
         customerState = await verifyStripeCustomer(sub.stripeCustomerId);
       }
@@ -799,18 +877,33 @@ router.get(
         agents_cap: number;
         agents_used: number;
       } | null = null;
-      if (settingsRow?.status === "trialing" || settingsRow?.status === "trial_expired") {
-        const { TRIAL_MAX_AGENTS, TRIAL_MAX_OUTBOUND } = await import("../lib/trial-gate");
-        const endsAt = settingsRow.trialEndsAt as Date | string | null | undefined;
-        const endsDate = endsAt instanceof Date ? endsAt : endsAt ? new Date(endsAt as any) : null;
+      if (
+        settingsRow?.status === "trialing" ||
+        settingsRow?.status === "trial_expired"
+      ) {
+        const { TRIAL_MAX_AGENTS, TRIAL_MAX_OUTBOUND } =
+          await import("../lib/trial-gate");
+        const endsAt = settingsRow.trialEndsAt as
+          Date | string | null | undefined;
+        const endsDate =
+          endsAt instanceof Date
+            ? endsAt
+            : endsAt
+              ? new Date(endsAt as any)
+              : null;
         const daysLeft = endsDate
-          ? Math.max(0, Math.ceil((endsDate.getTime() - Date.now()) / 86_400_000))
+          ? Math.max(
+              0,
+              Math.ceil((endsDate.getTime() - Date.now()) / 86_400_000),
+            )
           : null;
         // Lazy-expire mirroring the trial-gate middleware: if endsAt
         // is in the past but the sweep hasn't flipped status yet, show
         // expired here so the banner / modal copy agrees with reality.
         const effectiveStatus =
-          settingsRow.status === "trialing" && endsDate && endsDate.getTime() < Date.now()
+          settingsRow.status === "trialing" &&
+          endsDate &&
+          endsDate.getTime() < Date.now()
             ? "trial_expired"
             : settingsRow.status;
         trial = {
@@ -853,10 +946,15 @@ router.get(
               plan_name: planMeta?.name || null,
               max_agents: (() => {
                 const catalog =
-                  (planMeta?.max_agents ?? 0) + Math.max(0, settingsRow?.extraAgents ?? 0);
+                  (planMeta?.max_agents ?? 0) +
+                  Math.max(0, settingsRow?.extraAgents ?? 0);
                 const stored =
-                  typeof settingsRow?.maxAgents === "number" ? settingsRow.maxAgents : 0;
-                return Math.max(catalog, stored) || planMeta?.max_agents || null;
+                  typeof settingsRow?.maxAgents === "number"
+                    ? settingsRow.maxAgents
+                    : 0;
+                return (
+                  Math.max(catalog, stored) || planMeta?.max_agents || null
+                );
               })(),
               extra_agents: settingsRow?.extraAgents ?? 0,
               status: sub.status,
@@ -920,7 +1018,8 @@ router.get(
 
       const withId = rows.filter((r) => r.stripeCustomerId);
       const tally = { present: 0, deleted: 0, missing: 0, unknown: 0 };
-      const missingSample: { user_id: string; stripe_customer_id: string }[] = [];
+      const missingSample: { user_id: string; stripe_customer_id: string }[] =
+        [];
 
       // Serialize the Stripe calls so we don't burst against the API
       // rate limit. The audit is owner-triggered and infrequent so
@@ -958,11 +1057,13 @@ router.post(
   enforceLaunchHardGate,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
+      if (!stripeAvailable())
+        throw AppError.fromHttpStatus(503, "Stripe not configured.");
       if (!isLiveVideoCatalogReady()) {
         return res.status(503).json({
           code: "LIVE_VIDEO_CATALOG_UNAVAILABLE",
-          error: "Live video checkout is paused while the curated Presence Catalog is prepared.",
+          error:
+            "Live video checkout is paused while the curated Presence Catalog is prepared.",
         });
       }
       // Canonical env is STRIPE_LIVE_VIDEO_ADDON_PRICE_ID; STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID
@@ -973,7 +1074,8 @@ router.post(
       if (!configuredPriceId) {
         return res.status(503).json({
           code: "SERVICE_UNAVAILABLE",
-          error: "Live video add-on is not configured (STRIPE_LIVE_VIDEO_ADDON_PRICE_ID).",
+          error:
+            "Live video add-on is not configured (STRIPE_LIVE_VIDEO_ADDON_PRICE_ID).",
         });
       }
       const [row] = await drizzle
@@ -985,7 +1087,10 @@ router.post(
           subscriptionStatus: schema.settings.subscriptionStatus,
         })
         .from(schema.settings)
-        .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+        .leftJoin(
+          schema.subscriptions,
+          eq(schema.subscriptions.userId, schema.settings.userId),
+        )
         .where(eq(schema.settings.userId, req.user.id))
         .limit(1);
 
@@ -997,9 +1102,11 @@ router.post(
       }
 
       const plan = planById(row?.planId);
-      const stripeActive = row?.stripeStatus === "active" || row?.stripeStatus === "trialing";
+      const stripeActive =
+        row?.stripeStatus === "active" || row?.stripeStatus === "trialing";
       const settingsActive =
-        row?.subscriptionStatus === "active" || row?.subscriptionStatus === "trialing";
+        row?.subscriptionStatus === "active" ||
+        row?.subscriptionStatus === "trialing";
       if (!plan || plan.id === "personal" || !stripeActive || !settingsActive) {
         return res.status(402).json({
           code: "LIVE_VIDEO_BASE_PLAN_REQUIRED",
@@ -1025,7 +1132,11 @@ router.post(
         customerId = customer.id;
         await drizzle
           .insert(schema.subscriptions)
-          .values({ userId: req.user.id, stripeCustomerId: customerId, updatedAt: new Date() })
+          .values({
+            userId: req.user.id,
+            stripeCustomerId: customerId,
+            updatedAt: new Date(),
+          })
           .onConflictDoUpdate({
             target: schema.subscriptions.userId,
             set: { stripeCustomerId: customerId, updatedAt: new Date() },
@@ -1036,7 +1147,9 @@ router.post(
       if ("error" in appUrl) {
         return res
           .status(503)
-          .json({ error: "Billing is unavailable: APP_URL is not configured." });
+          .json({
+            error: "Billing is unavailable: APP_URL is not configured.",
+          });
       }
       const base = appUrl.url;
       const addonMeta = {
@@ -1060,7 +1173,9 @@ router.post(
 
       res.json({ url: session.url });
     } catch (e: any) {
-      log.error("Live video checkout creation failed", { error: getErrorMessage(e) });
+      log.error("Live video checkout creation failed", {
+        error: getErrorMessage(e),
+      });
       throw AppError.fromHttpStatus(500, "Live video checkout failed");
     }
   },
@@ -1085,21 +1200,26 @@ router.get(
           extra_agents: schema.settings.extraAgents,
         })
         .from(schema.settings)
-        .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+        .leftJoin(
+          schema.subscriptions,
+          eq(schema.subscriptions.userId, schema.settings.userId),
+        )
         .where(eq(schema.settings.userId, req.user!.id))
         .limit(1);
       const plan = planById(row?.plan_id || "personal");
       res.json({
         plan_id: plan?.id || "personal",
-        plan_name: plan?.name || "Personal",
+        plan_name: plan?.name || "Wireline Free Builder",
         included_agents: plan?.max_agents ?? 1,
         extra_agents: row?.extra_agents ?? 0,
         extra_agent_price_usd: plan?.extra_agent_price_usd ?? null,
-        configured: !!plan?.extraAgentPriceIdEnv && !!process.env[plan.extraAgentPriceIdEnv],
+        configured: plan ? !!planExtraAgentPriceId(plan) : false,
       });
     } catch (err) {
       if (err instanceof AppError) throw err;
-      log.error("/billing/extra-agents GET failed", { error: getErrorMessage(err) });
+      log.error("/billing/extra-agents GET failed", {
+        error: getErrorMessage(err),
+      });
       throw AppError.fromHttpStatus(500, "Failed to load extra-agent state");
     }
   },

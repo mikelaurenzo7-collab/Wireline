@@ -188,6 +188,10 @@ const recommended = [
 ];
 
 const optional = [
+  [
+    "PERPLEXITY_API_KEY",
+    "Preferred live public-research vendor; grounded Gemini covers when unset",
+  ],
   ["XAI_API_KEY_CHATKIT", "Optional isolated xAI experiment key"],
   [
     "WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK",

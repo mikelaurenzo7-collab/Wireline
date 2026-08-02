@@ -19,14 +19,19 @@ export const STRIPE_TAX_TRANSACTION_RATE = 0.005;
 
 export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v6";
 
+/** Published prepaid top-up rate, shared by catalog, billing, and UI. */
+export const FLAT_OVERAGE_PER_MIN_USD = 0.22;
+
 export const EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY = 15;
 export const EXTRA_AGENT_ADDON_VOICE_MINUTES_MONTHLY = 50;
 export const EXTRA_AGENT_ADDON_PHONE_NUMBERS = 1;
 export const EXTRA_AGENT_ADDON_PRICE_ENV = "STRIPE_EXTRA_AGENT_PRICE_ID";
 /** Wireline founder catalog — keep in sync with scripts/.stripe-env.generated.json */
-export const EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID = "price_1Tv9K58e6If87QKm7rzn3MNS";
+export const EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID =
+  "price_1Tv9K58e6If87QKm7rzn3MNS";
 
-export type StripePlanId = "personal" | "starter" | "team" | "business" | "enterprise";
+export type StripePlanId =
+  "personal" | "starter" | "team" | "business" | "enterprise";
 
 export type StripePlan = {
   id: StripePlanId;
@@ -43,8 +48,8 @@ export type StripePlan = {
   overage_per_min_usd: number;
   included_phone_numbers: number;
   features: string[];
-  priceIdEnv: string;
-  annualPriceIdEnv: string;
+  priceIdEnv?: string;
+  annualPriceIdEnv?: string;
   fallbackPriceId?: string;
   fallbackAnnualPriceId?: string;
   lookupKeyMonthly?: string;
@@ -86,8 +91,7 @@ const PLAN_ID_ALIASES: Record<string, StripePlanId> = {
   enterprise: "enterprise",
   growth: "enterprise",
   "business-plus": "enterprise",
-  custom: "enterprise",
-  scale: "enterprise",
+  // Scale/custom are sales intents, not aliases for a self-serve plan.
 };
 
 const PRICE_KEY_PLAN_PREFIXES: Record<string, StripePlanId> = {
@@ -130,10 +134,9 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 1,
     voice_minutes_monthly: 0,
     runtime_allowance_usd_monthly: 0,
-    overage_per_min_usd: 0.22,
+    overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 0,
-    priceIdEnv: "STRIPE_PERSONAL_PRICE_ID",
-    annualPriceIdEnv: "STRIPE_PERSONAL_ANNUAL_PRICE_ID",
+    // Free Builder is not a Stripe product.
     public: true,
     features: [
       "1 private draft communications agent",
@@ -149,7 +152,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 1,
     voice_minutes_monthly: 60,
     runtime_allowance_usd_monthly: 1,
-    overage_per_min_usd: 0.22,
+    overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_STARTER_9_PRICE_ID",
     annualPriceIdEnv: "STRIPE_STARTER_9_ANNUAL_PRICE_ID",
@@ -178,7 +181,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 2,
     voice_minutes_monthly: 120,
     runtime_allowance_usd_monthly: 3,
-    overage_per_min_usd: 0.22,
+    overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 2,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
     annualPriceIdEnv: "STRIPE_STARTER_ANNUAL_PRICE_ID",
@@ -207,7 +210,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 5,
     voice_minutes_monthly: 245,
     runtime_allowance_usd_monthly: 6,
-    overage_per_min_usd: 0.22,
+    overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 5,
     priceIdEnv: "STRIPE_TEAM_PRICE_ID",
     annualPriceIdEnv: "STRIPE_TEAM_ANNUAL_PRICE_ID",
@@ -237,7 +240,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 15,
     voice_minutes_monthly: 450,
     runtime_allowance_usd_monthly: 12,
-    overage_per_min_usd: 0.22,
+    overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 15,
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
     annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
@@ -283,10 +286,15 @@ export type BillingInterval = "month" | "year";
  * Payments processing, Stripe Billing, and the future Stripe Tax transaction
  * reserve. Callers divide annual-charge fees by 12 when comparing monthly COGS.
  */
-export function estimatedStripeCommercialFeesUsd(grossChargeUsd: number): number {
+export function estimatedStripeCommercialFeesUsd(
+  grossChargeUsd: number,
+): number {
   if (!Number.isFinite(grossChargeUsd) || grossChargeUsd <= 0) return 0;
   return (
-    grossChargeUsd * (PAYMENT_PROCESSING_RATE + STRIPE_BILLING_RATE + STRIPE_TAX_TRANSACTION_RATE) +
+    grossChargeUsd *
+      (PAYMENT_PROCESSING_RATE +
+        STRIPE_BILLING_RATE +
+        STRIPE_TAX_TRANSACTION_RATE) +
     PAYMENT_PROCESSING_FIXED_USD
   );
 }
@@ -339,7 +347,9 @@ export function estimatedContributionMarginAtExpectedUsage(
       ? estimatedStripeCommercialFeesUsd(plan.price_usd_annual) / 12
       : estimatedStripeCommercialFeesUsd(plan.price_usd_monthly);
   const expectedVariableCost =
-    plan.voice_minutes_monthly * EXPECTED_INCLUDED_UTILIZATION * VOICE_VARIABLE_COST_PER_MIN_USD +
+    plan.voice_minutes_monthly *
+      EXPECTED_INCLUDED_UTILIZATION *
+      VOICE_VARIABLE_COST_PER_MIN_USD +
     plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD +
     plan.runtime_allowance_usd_monthly * EXPECTED_INCLUDED_UTILIZATION +
     commercialFees;
@@ -347,24 +357,35 @@ export function estimatedContributionMarginAtExpectedUsage(
   return (recurringRevenue - expectedVariableCost) / recurringRevenue;
 }
 
-export function canonicalPlanId(id: string | null | undefined): StripePlanId | null {
+export function canonicalPlanId(
+  id: string | null | undefined,
+): StripePlanId | null {
   const cleaned = id?.trim().toLowerCase();
   if (!cleaned) return null;
   return PLAN_ID_ALIASES[cleaned] || null;
 }
 
-function configuredPriceId(plan: StripePlan, interval: "month" | "year"): string | null {
+function configuredPriceId(
+  plan: StripePlan,
+  interval: "month" | "year",
+): string | null {
   const envKey = interval === "year" ? plan.annualPriceIdEnv : plan.priceIdEnv;
-  const fallback = interval === "year" ? plan.fallbackAnnualPriceId : plan.fallbackPriceId;
-  return process.env[envKey] || fallback || null;
+  const fallback =
+    interval === "year" ? plan.fallbackAnnualPriceId : plan.fallbackPriceId;
+  return (envKey ? process.env[envKey] : null) || fallback || null;
 }
 
 function configuredExtraAgentPriceId(plan: StripePlan): string | null {
-  const envPrice = plan.extraAgentPriceIdEnv ? process.env[plan.extraAgentPriceIdEnv] : null;
+  const envPrice = plan.extraAgentPriceIdEnv
+    ? process.env[plan.extraAgentPriceIdEnv]
+    : null;
   return envPrice || plan.extraAgentFallbackPriceId || null;
 }
 
-export function planPriceId(plan: StripePlan, interval: "month" | "year"): string | null {
+export function planPriceId(
+  plan: StripePlan,
+  interval: "month" | "year",
+): string | null {
   return configuredPriceId(plan, interval);
 }
 
@@ -372,7 +393,9 @@ export function planExtraAgentPriceId(plan: StripePlan): string | null {
   return configuredExtraAgentPriceId(plan);
 }
 
-export function planByPriceId(priceId: string | null | undefined): StripePlan | null {
+export function planByPriceId(
+  priceId: string | null | undefined,
+): StripePlan | null {
   if (!priceId) return null;
   return (
     STRIPE_PLANS.find(
@@ -380,12 +403,16 @@ export function planByPriceId(priceId: string | null | undefined): StripePlan | 
         configuredPriceId(plan, "month") === priceId ||
         configuredPriceId(plan, "year") === priceId ||
         configuredExtraAgentPriceId(plan) === priceId ||
-        (plan.overagePriceIdEnv ? process.env[plan.overagePriceIdEnv] === priceId : false),
+        (plan.overagePriceIdEnv
+          ? process.env[plan.overagePriceIdEnv] === priceId
+          : false),
     ) || null
   );
 }
 
-function planByPriceKey(priceKey: string | null | undefined): StripePlan | null {
+function planByPriceKey(
+  priceKey: string | null | undefined,
+): StripePlan | null {
   const prefix = priceKey?.trim().toLowerCase().split("_")[0];
   const planId = prefix ? PRICE_KEY_PLAN_PREFIXES[prefix] : null;
   return planId ? planById(planId) : null;
@@ -399,7 +426,9 @@ export function planByStripePrice(
   const metadataPlan = planById(price.metadata?.wireline_plan_id);
   if (metadataPlan) return metadataPlan;
 
-  const metadataPriceKeyPlan = planByPriceKey(price.metadata?.wireline_price_key);
+  const metadataPriceKeyPlan = planByPriceKey(
+    price.metadata?.wireline_price_key,
+  );
   if (metadataPriceKeyPlan) return metadataPriceKeyPlan;
 
   const lookupKeyPlan = planByPriceKey(price.lookup_key);
@@ -415,13 +444,20 @@ export function planById(id: string | null | undefined): StripePlan | null {
 }
 
 /** Paid plans that include room for a personal agent + a business voice agent. */
-export function supportsFounderAgentPair(planId: string | null | undefined): boolean {
+export function supportsFounderAgentPair(
+  planId: string | null | undefined,
+): boolean {
   const plan = planById(planId);
   return Boolean(plan && plan.price_usd_monthly > 0 && plan.max_agents >= 2);
 }
 
-export function planLookupKey(plan: StripePlan, interval: "month" | "year"): string | null {
-  return interval === "year" ? plan.lookupKeyAnnual || null : plan.lookupKeyMonthly || null;
+export function planLookupKey(
+  plan: StripePlan,
+  interval: "month" | "year",
+): string | null {
+  return interval === "year"
+    ? plan.lookupKeyAnnual || null
+    : plan.lookupKeyMonthly || null;
 }
 
 /** Public API catalog for Free Builder and all self-serve founder plans. */
@@ -437,12 +473,15 @@ export function plansForClient() {
     overage_per_min_usd: plan.overage_per_min_usd,
     included_phone_numbers: plan.included_phone_numbers,
     extra_agent_price_usd: plan.extra_agent_price_usd ?? null,
-    extra_agent_voice_minutes_monthly: plan.extra_agent_voice_minutes_monthly ?? 0,
-    extra_agent_included_phone_numbers: plan.extra_agent_included_phone_numbers ?? 0,
+    extra_agent_voice_minutes_monthly:
+      plan.extra_agent_voice_minutes_monthly ?? 0,
+    extra_agent_included_phone_numbers:
+      plan.extra_agent_included_phone_numbers ?? 0,
     extra_agent_configured: !!configuredExtraAgentPriceId(plan),
     features: plan.features,
     configured: plan.id === "personal" || !!configuredPriceId(plan, "month"),
-    annual_configured: plan.id === "personal" || !!configuredPriceId(plan, "year"),
+    annual_configured:
+      plan.id === "personal" || !!configuredPriceId(plan, "year"),
     contact_sales: false,
     is_free: plan.id === "personal",
     public: true,

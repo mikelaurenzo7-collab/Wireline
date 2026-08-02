@@ -13,11 +13,13 @@ import {
 import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 import { isSessionOptionalPublicPath } from "../src/lib/public-routes";
 
-const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8");
 
 const CORE_BUYING_SURFACES = [
   "src/lib/product-copy.ts",
   "src/pages/LandingPage.tsx",
+  "src/pages/Pricing.tsx",
   "src/components/marketing/MarketingHero.tsx",
   "src/components/marketing/WireAgentLanding.tsx",
   "src/components/marketing/PrecisionPublicHeader.tsx",
@@ -28,19 +30,26 @@ const CORE_BUYING_SURFACES = [
 describe("product voice cohesion", () => {
   it("keeps one direct personal and business voice system", () => {
     expect(BRAND_SYSTEM.northStar).toBe(
-      "Voice agents that call, answer, follow up, and finish the work.",
+      "AI voice agents that call, answer, follow up, and finish the work.",
     );
-    expect(BRAND_SYSTEM.productNoun).toBe("Voice agent");
-    expect(BRAND_SYSTEM.buyingNoun).toBe("Voice Agent");
-    expect(BRAND_SYSTEM.defaultRole).toBe("Your voice agent");
+    expect(BRAND_SYSTEM.productNoun).toBe("AI voice agent");
+    expect(BRAND_SYSTEM.buyingNoun).toBe("AI Voice Agent");
+    expect(BRAND_SYSTEM.defaultRole).toBe("Your AI voice agent");
     expect(BRAND_SYSTEM.brandSpine).toEqual(["Build", "Train", "Launch"]);
-    expect(BRAND_SYSTEM.proofLoop).toEqual(["Brief", "Train", "Launch", "Improve"]);
-    expect(BRAND_SYSTEM.toneRules).toContain("Lead with outcomes before AI mechanics.");
+    expect(BRAND_SYSTEM.proofLoop).toEqual([
+      "Brief",
+      "Train",
+      "Launch",
+      "Improve",
+    ]);
+    expect(BRAND_SYSTEM.toneRules).toContain(
+      "Lead with outcomes before AI mechanics.",
+    );
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Welcome both personal and business use without making either audience feel secondary.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
-      "Present calling, texting, and email as channels each trained voice agent can use, not separate products customers must assemble.",
+      "Present calling, texting, and email as channels each trained AI voice agent can use, not separate products customers must assemble.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
       "State that the included Wireline number applies to paid plans so the free builder is never misrepresented.",
@@ -50,7 +59,9 @@ describe("product voice cohesion", () => {
     );
 
     expect(MARKETING_VOICE.eyebrow).toBeNull();
-    expect(MARKETING_VOICE.headline).toBe("Voice agents that get the work done.");
+    expect(MARKETING_VOICE.headline).toBe(
+      "AI voice agents that get the work done.",
+    );
     expect(MARKETING_VOICE.primaryCta).toBe("Build your voice agent");
     expect(MARKETING_VOICE.subline).toBe(
       "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.",
@@ -77,19 +88,40 @@ describe("product voice cohesion", () => {
   });
 
   it("keeps growth, service, and all purpose positioning concrete", () => {
-    expect(OUTBOUND_WEDGE.headline).toBe("A voice agent that moves growth work forward.");
-    for (const verb of ["researches", "calls", "texts", "emails", "books", "logs proof"]) {
+    expect(OUTBOUND_WEDGE.headline).toBe(
+      "A voice agent that moves growth work forward.",
+    );
+    for (const verb of [
+      "researches",
+      "calls",
+      "texts",
+      "emails",
+      "books",
+      "logs proof",
+    ]) {
       expect(OUTBOUND_WEDGE.subline).toContain(verb);
     }
     expect(OUTBOUND_WEDGE.subline).toContain("specialists");
     expect(OUTBOUND_WEDGE.loop).toEqual(["Research", "Call", "Book", "Log"]);
-    expect(AGENT_NUMBER_PROMISE).toContain("Every paid voice agent");
+    expect(AGENT_NUMBER_PROMISE).toContain("Every paid AI voice agent");
     expect(AGENT_NUMBER_PROMISE).toContain("includes a Wireline number");
     expect(AGENT_NUMBER_PROMISE).toContain("send texts");
-    expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Act", "Log"]);
+    expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual([
+      "Answer",
+      "Qualify",
+      "Act",
+      "Log",
+    ]);
     expect(AGENT_DIRECTION_MODES.inbound.promise).toContain("text or email");
-    expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Sell", "Follow up", "Sync"]);
-    expect(AGENT_DIRECTION_MODES.hybrid.promise).toContain("calls, texts, email");
+    expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual([
+      "Answer",
+      "Sell",
+      "Follow up",
+      "Sync",
+    ]);
+    expect(AGENT_DIRECTION_MODES.hybrid.promise).toContain(
+      "calls, texts, email",
+    );
   });
 
   it("uses contextual customer nouns without renaming the technical agent domain", () => {
@@ -116,7 +148,11 @@ describe("product voice cohesion", () => {
     expect(sources[3]).toContain("Your voice agent is live");
 
     for (const source of sources) {
-      for (const phrase of ["AI employee", "best employee", "All-Purpose AI Employee"]) {
+      for (const phrase of [
+        "AI employee",
+        "best employee",
+        "All-Purpose AI Employee",
+      ]) {
         expect(source).not.toContain(phrase);
       }
     }
@@ -133,7 +169,9 @@ describe("product voice cohesion", () => {
     expect(features).toContain("Build → Train → Launch → Improve");
     expect(features).not.toContain("Create → Train → Wire → Run");
     expect(features).not.toMatch(/\bemployees?\b/i);
-    expect(features).toContain("Voice Agents for every customer conversation.");
+    expect(features).toContain(
+      "AI Voice Agents for every customer conversation.",
+    );
     expect(pricing).not.toContain("create, train, wire, run");
     expect(pricing).not.toContain("Extra employees at");
     const starterPlus = STRIPE_PLANS.find((plan) => plan.id === "team");
@@ -152,15 +190,9 @@ describe("product voice cohesion", () => {
     expect(landing).toContain("Build your voice agent");
     expect(landing).toContain("Hear it live");
     expect(landing).toContain("Build free. No card.");
-    // Pinned to the positioning copy rather than a CTA heading: the contract
-    // guards that About names the business use cases, and a heading is the
-    // first thing to get tightened. It previously tracked "front-desk or sales
-    // voice agent" in the closing CTA, which made shortening that heading look
-    // like a regression when the framing had not moved.
-    expect(about).toContain("front-desk and");
-    expect(about).toContain("sales qualification");
+    expect(about).toContain("front-desk or sales voice agent");
     expect(compare).toContain("multichannel voice agent");
-    expect(privacy).toContain("voice agent platform");
+    expect(privacy).toContain("AI voice agent platform");
     expect(contactAgents).toContain("Wireline specialists");
 
     const publicSources = [
@@ -176,7 +208,9 @@ describe("product voice cohesion", () => {
       read("src/components/PhoneCallHistoryPanel.tsx"),
       read("chatgpt-app-submission.json"),
       read("ios/Wireline/Views/SignInView.swift"),
-      read("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt"),
+      read(
+        "android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt",
+      ),
       read("scripts/lib/stripe-founder-catalog.mjs"),
     ];
     for (const source of publicSources) {
@@ -199,14 +233,16 @@ describe("product voice cohesion", () => {
     const checklist = read("docs/WIRELINE_CEO_LAUNCH_CHECKLIST_2026-07-10.md");
 
     for (const source of [campaign, mediaKit, launchGuru, checklist]) {
-      expect(source).toContain("Voice Agents");
+      expect(source).toContain("AI Voice Agents");
       expect(source).toContain("Build free. Go live from $19/mo");
       expect(source).not.toContain("Launch for $9");
       expect(source).not.toContain("from $9");
       expect(source).not.toContain("The best employee you've ever had");
     }
 
-    expect(campaign).toContain("Voice agents for personal tasks and business conversations");
+    expect(campaign).toContain(
+      "AI voice agents for personal tasks and business conversations",
+    );
     expect(campaign).toContain("wl_launch_ai_voice_agents_v6");
     expect(campaign).toContain("AI Voice Generator Audio");
     expect(campaign).toContain("marketing/reference use only");
@@ -270,7 +306,9 @@ describe("product voice cohesion", () => {
     expect(catalog).toContain(
       "Every paid tier guarantees live voice capacity and an on-demand number slot",
     );
-    expect(catalog).toContain("Paid extra-agent add-ons increase both agent count");
+    expect(catalog).toContain(
+      "Paid extra-agent add-ons increase both agent count",
+    );
     expect(billing).toContain("plan.included_phone_numbers");
     expect(verification).toContain("A live");
     expect(verification).toContain("plan and compliant number");
@@ -293,10 +331,14 @@ describe("product voice cohesion", () => {
 
   it("keeps public entry paths broad instead of defaulting to home services", () => {
     const app = read("src/App.tsx");
-    const precisionHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
+    const precisionHeader = read(
+      "src/components/marketing/PrecisionPublicHeader.tsx",
+    );
     const publicHeader = read("src/components/marketing/PublicSiteHeader.tsx");
     const footer = read("src/components/marketing/MarketingFooter.tsx");
-    expect(app).toContain('path="/for/*" element={<Navigate to="/for/personal" replace />}');
+    expect(app).toContain(
+      'path="/for/*" element={<Navigate to="/for/personal" replace />}',
+    );
     expect(precisionHeader).toContain('to: "/solutions/support"');
     expect(precisionHeader).toContain('path.startsWith("/for/")');
     expect(publicHeader).toContain('to: "/for/personal", label: "Use cases"');
@@ -342,10 +384,16 @@ describe("product voice cohesion", () => {
   it("keeps authenticated setup examples broad across support and call coverage", () => {
     const blueprint = read("src/components/PhoneAgentBlueprint.tsx");
     const wireForm = read("src/components/recipes/forms/AgentWireForm.tsx");
-    const documentForm = read("src/components/recipes/forms/KnowledgeFromDocumentForm.tsx");
-    const urlForm = read("src/components/recipes/forms/KnowledgeFromUrlForm.tsx");
+    const documentForm = read(
+      "src/components/recipes/forms/KnowledgeFromDocumentForm.tsx",
+    );
+    const urlForm = read(
+      "src/components/recipes/forms/KnowledgeFromUrlForm.tsx",
+    );
     const chatgptSubmission = read("docs/CHATGPT_APP_SUBMISSION.md");
-    const customizationArchitecture = read("docs/AGENT_CUSTOMIZATION_ARCHITECTURE.md");
+    const customizationArchitecture = read(
+      "docs/AGENT_CUSTOMIZATION_ARCHITECTURE.md",
+    );
     expect(blueprint).toContain('label: "Support desk"');
     expect(blueprint).toContain('label: "Call center / overflow"');
     expect(blueprint.indexOf('label: "Sales and qualification"')).toBeLessThan(
@@ -358,9 +406,13 @@ describe("product voice cohesion", () => {
     expect(wireForm).toContain('label="Use case"');
     expect(documentForm).toContain("Sales and support agent");
     expect(urlForm).toContain("answers FAQs, routes requests");
-    expect(chatgptSubmission).toContain("personal call delegation, sales, support, scheduling");
+    expect(chatgptSubmission).toContain(
+      "personal call delegation, sales, support, scheduling",
+    );
     expect(chatgptSubmission).toContain("sales and support phone agent");
-    expect(customizationArchitecture).toContain("front-desk and sales support agent");
+    expect(customizationArchitecture).toContain(
+      "front-desk and sales support agent",
+    );
     expect(wireForm).not.toContain("Acme HVAC");
     expect(wireForm).not.toContain('placeholder="Home services"');
     expect(documentForm).not.toContain("HVAC service company");
@@ -410,11 +462,21 @@ describe("product voice cohesion", () => {
     const customization = read("src/pages/CustomizationSettings.tsx");
     const authenticatedVisualQa = read("scripts/capture-prod-visual-qa.mjs");
     expect(read("src/pages/TemplatesPage.tsx")).toContain("AgentTemplates");
-    expect(read("src/pages/AgentStudioHome.tsx")).toContain("CreateAgentDialog");
-    expect(read("src/pages/OverviewPage.tsx")).toContain("Customer demand and outcomes");
-    expect(read("src/pages/OverviewPage.tsx")).toContain("Recent customer conversations");
-    expect(read("src/components/outbound/OutboundHub.tsx")).toContain("CampaignsPanel");
-    expect(read("src/components/outbound/OutboundHub.tsx")).toContain("IntakeKeysManager");
+    expect(read("src/pages/AgentStudioHome.tsx")).toContain(
+      "CreateAgentDialog",
+    );
+    expect(read("src/pages/OverviewPage.tsx")).toContain(
+      "Customer demand and outcomes",
+    );
+    expect(read("src/pages/OverviewPage.tsx")).toContain(
+      "Recent customer conversations",
+    );
+    expect(read("src/components/outbound/OutboundHub.tsx")).toContain(
+      "CampaignsPanel",
+    );
+    expect(read("src/components/outbound/OutboundHub.tsx")).toContain(
+      "IntakeKeysManager",
+    );
     expect(customization).toContain('href: "/knowledge"');
     expect(customization).toContain("WorkspaceBrandingSettings");
     expect(customization).not.toContain('href: "/training');
@@ -425,8 +487,12 @@ describe("product voice cohesion", () => {
 
   it("keeps authenticated surfaces action first", () => {
     const docs = read("docs/README.md");
-    expect(docs).toContain("Public pages explain. Authenticated pages execute.");
-    expect(docs).toContain("Use labels, tabs, icons, state, and clear next actions");
+    expect(docs).toContain(
+      "Public pages explain. Authenticated pages execute.",
+    );
+    expect(docs).toContain(
+      "Use labels, tabs, icons, state, and clear next actions",
+    );
     expect(docs).toContain(
       "Phone / Call History and Analytics may explain history, coaching, exports, and insights",
     );

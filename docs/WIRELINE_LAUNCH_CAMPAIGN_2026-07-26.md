@@ -160,22 +160,31 @@ Hear the agent answer, qualify, follow up, and log the outcome. Wireline is voic
 
 Reel doctrine, applied to every cut below:
 
-- Design for sound-off. Most reel views are muted, so the overlays must carry the whole story on their own; the voiceover rewards the minority who listen. Never put a fact in the VO that is not also on screen.
-- One idea per shot, real product screens only (use `npm run marketing:kit` captures), never mockups.
-- Cut rhythm: a new shot roughly every 2.5 seconds at 15s, every 4 seconds at 30s.
-- Every cut ends on the same card: CTA, price line, trywireline.com.
+- The [46-second Descript master](https://share.descript.com/view/MvGqlYX4NMf) is authoritative.
+- One idea per shot. Real product only; never stock footage, mock dashboards, or vendor marks.
+- Keep burned-in words scarce: **Create. Train. Wire. Run.** when useful, then one end card.
+- Ship accurate platform captions for accessibility; do not cover legible product UI with persistent subtitles.
+- Reframe every derivative around the active UI. Never scale an entire desktop screen into an unreadable vertical frame.
+
+### 46-Second Launch Reel — Master
+
+Approved voiceover:
+
+> "This is Wireline. Voice agents that pick up the calls you can't and finish the work that follows. One workspace holds every agent, every conversation, every outcome. Train yours in plain language: the job it owns, the tone it takes, the greeting it opens with. Then choose how it sounds. Wire it to a real number. Place an outbound call or let it answer the ones coming in. Texts and email follow from the same agent under the same rules, and every conversation lands where you can check the work. Build free at trywireline.com. Go live from nineteen dollars a month."
+
+Picture sequence: workspace -> agent setup -> training -> voice -> number -> inbound/outbound -> text/email follow-up -> outcome -> end card. The UI carries the proof; the VO carries the story.
 
 ### 15-Second Reel - Missed Call
 
-The hinge of the whole cut is shot 2 into shot 3: "You cannot pick up. / Your agent can."
+Use this as the paid-social cutdown. The hinge is "You cannot pick up. / Your agent can."
 
 | Time | Shot | Overlay | Sound |
 | --- | --- | --- | --- |
-| 0.0-2.5 | Phone face-down on a workbench, screen lighting up | 6:47 PM. The phone rings. | Ring tone, room ambience |
+| 0.0-2.5 | Phone face-down on a workbench, screen lighting up | — | Ring tone, room ambience |
 | 2.5-5.0 | Lock screen stacking missed calls | You cannot pick up. | Ring cuts to silence |
-| 5.0-8.0 | Wireline call card answering live (product screen) | Your agent can. | Agent voice, low in the mix |
-| 8.0-11.5 | Outcome card + SMS follow-up appearing | Answered. Booked. Logged. | Three soft UI ticks, one per word |
-| 11.5-15.0 | End card | Build free. Go live from $19/mo. - trywireline.com | Music resolves |
+| 5.0-8.0 | Wireline call card answering live | Your agent can. | Agent voice, low in the mix |
+| 8.0-11.5 | Outcome card + SMS follow-up | — | Three soft UI ticks |
+| 11.5-15.0 | End card | Build free. Go live from $19/mo. / trywireline.com | Music resolves |
 
 Voiceover (34 words, ~14s at a relaxed pace):
 
