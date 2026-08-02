@@ -36,7 +36,8 @@ const TOKEN = "var(--wireline-typography-overline-letterSpacing)";
  * a `:not(.wl-eyebrow)` exclusion, is not a label-tier definition — the mobile
  * reset for Studio and Settings contains both and is deliberately a reset.
  */
-const LABEL_SELECTOR = /(^|[\s,>+~])\.[\w-]*(eyebrow|overline|stitch-label|tile__label)[\w-]*/i;
+const LABEL_SELECTOR =
+  /(^|[\s,>+~])\.[\w-]*(eyebrow|overline|stitch-label|tile__label|wl-label|insight-label|micro-badge)[\w-]*/i;
 
 describe("label tracking single-source contract", () => {
   it("routes the caps-system label variable at the design token", () => {
@@ -44,6 +45,44 @@ describe("label tracking single-source contract", () => {
     expect(caps, "--wl-caps-label-tracking must read the overline token").toMatch(
       new RegExp(`--wl-caps-label-tracking:\\s*${TOKEN.replace(/[()-]/g, "\\$&")}`),
     );
+  });
+
+  it("declares the label variable exactly once, from the token", () => {
+    /*
+     * Checking only the base declaration is what let the responsive override
+     * survive the unification. `--wl-caps-label-tracking` was re-set to a
+     * literal 0.11em inside the <=640px block — written back when the base was
+     * 0.12em, so it read as a tightening. Re-pointing the base at the 0.09em
+     * token left the literal behind, and mobile silently became *wider* than
+     * desktop: the responsive intent inverted exactly where horizontal space is
+     * scarcest, and the fourth source of truth the change had just removed came
+     * straight back.
+     *
+     * Deriving the breakpoint value from the token instead fixed the inversion
+     * but not the split: only uppercase-system.css reads
+     * `--wl-caps-label-tracking`, while the seven stylesheets unified alongside
+     * it read the token directly and never see a breakpoint. Measured on a 390px
+     * viewport, that came back as 0.08em and 0.09em side by side — two values
+     * for one tier again, from the opposite direction.
+     *
+     * So the variable is declared once, full stop. A responsive override cannot
+     * reach the whole tier, which makes any second declaration a split by
+     * construction rather than by oversight.
+     */
+    const declarations: string[] = [];
+    for (const file of globSync("src/styles/**/*.css", { cwd: root })
+      .map((f) => f.replaceAll("\\", "/"))
+      .sort()) {
+      const css = source(file).replace(/\/\*[\s\S]*?\*\//g, "");
+      for (const match of css.matchAll(/--wl-caps-label-tracking:\s*([^;]+);/g)) {
+        declarations.push(`${file}: --wl-caps-label-tracking: ${match[1].trim()}`);
+      }
+    }
+
+    expect(
+      declarations,
+      `the label-tier variable must be declared exactly once, from the token:\n${declarations.join("\n")}`,
+    ).toEqual([`src/styles/uppercase-system.css: --wl-caps-label-tracking: ${TOKEN}`]);
   });
 
   it("never hardcodes a letter-spacing on a label-tier rule", () => {
@@ -93,5 +132,51 @@ describe("label tracking single-source contract", () => {
     expect(polish, "the marketing eyebrow rule must use :is() to carry specificity").toMatch(
       /\.marketing-surface\s+:is\(\s*\.wl-eyebrow/,
     );
+  });
+
+  it("carries the whole eyebrow tier past the marketing body rule, not part of it", () => {
+    /*
+     * The specificity fix above was applied to the two classes that happened to
+     * be measured at the time. The tier has ten members, and the other eight
+     * lose the same race for the same reason: one class cannot outrank
+     * `.marketing-surface :is(p, li, …)`. Re-measuring the rendered DOM found 88
+     * label-tier nodes still at 0.045em body tracking across eight public routes
+     * — `.wl-stitch-eyebrow`, `.wl-stitch-label` and `.text-eyebrow` authored as
+     * paragraphs.
+     *
+     * Membership is read from the tier's own definition in uppercase-system.css
+     * rather than restated here, so adding a class to the tier and forgetting the
+     * marketing surface fails this test instead of shipping.
+     */
+    const caps = source("src/styles/uppercase-system.css");
+    const polish = source("src/styles/e2e-design-polish.css");
+
+    const tierRule = caps
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .match(/((?:\.[\w-]+,\s*)*\.text-eyebrow)\s*\{[^}]*?text-transform: uppercase;[^}]*\}/);
+    expect(tierRule, "could not find the eyebrow tier definition").not.toBeNull();
+
+    const members = (tierRule?.[1] ?? "")
+      .split(",")
+      .map((name) => name.trim())
+      .filter((name) => name.startsWith("."));
+    expect(members.length, "the eyebrow tier should list several classes").toBeGreaterThan(5);
+
+    // The eyebrow rule is the `.marketing-surface :is(…)` group that names the
+    // tier — not the cased body rule, which shares the same selector shape and
+    // is what the tier has to outrank in the first place.
+    const eyebrowRule =
+      Array.from(
+        polish.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/\.marketing-surface\s+:is\(([^)]*)\)/g),
+        (match) => match[1],
+      ).find((group) => group.includes(".wl-eyebrow")) ?? "";
+    expect(eyebrowRule, "could not find the marketing eyebrow rule").not.toBe("");
+
+    const missing = members.filter((name) => !eyebrowRule.includes(name));
+
+    expect(
+      missing,
+      `eyebrow-tier classes the marketing surface leaves at body tracking:\n${missing.join("\n")}`,
+    ).toEqual([]);
   });
 });

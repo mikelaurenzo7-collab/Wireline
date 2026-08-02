@@ -134,7 +134,7 @@ export default function QualityView({ days }: { days: number }) {
           size="sm"
           onClick={handleScoreAll}
           disabled={scoring}
-          className="rounded-full bg-brand/15 border-brand/40 text-brand wl-ops-chip hover:bg-brand/25 touch-press"
+          className="rounded-full bg-brand/15 border-brand/40 text-brand hover:bg-brand/25 touch-press"
         >
           {scoring ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
           {scoring ? "Scoring…" : "Score All Unscored"}

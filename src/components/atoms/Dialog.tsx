@@ -68,7 +68,25 @@ const DialogContent = React.forwardRef<
       ref={ref}
       data-slot="dialog-content"
       data-presentation={presentation ?? "modal"}
-      className={cn(dialogContentVariants({ presentation }), className)}
+      /* `wl-cased` marks a subtree as belonging to the case system.
+       *
+       * Radix portals this content to `document.body`, which makes it a sibling
+       * of the app shell rather than a descendant — so every cased tier, all of
+       * which are scoped under a marker class, missed every modal in the
+       * product. Measured with the same markup in both positions: a
+       * `[data-slot="dialog-title"]` renders `uppercase` inside the marker and
+       * `none` portalled; a `<label>` loses the label tracking (1.44px -> the
+       * default) and a `<button>` the control tracking.
+       *
+       * It has to be `wl-cased` and not `wl-ui-caps`. The shell class is not a
+       * neutral marker: `foundation.css` gives it `position: relative`,
+       * `height: 100%`, `min-height: 100dvh` and `overflow: hidden` as the app's
+       * layout root. Putting that on a portalled dialog overrode its `fixed`
+       * positioning, stretched it to the full viewport, and killed its own
+       * scroll — measured landing the panel at y=900 on a 900px viewport,
+       * entirely below the fold. `wl-cased` carries the case tiers and the
+       * `--wl-caps-*` custom properties they read, and nothing else. */
+      className={cn("wl-cased", dialogContentVariants({ presentation }), className)}
       {...props}
     >
       {children}

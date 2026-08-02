@@ -102,7 +102,11 @@ function formFromIdentity(identity: IdentityResponse): IdentityForm {
     website: identity.profile.website ?? "",
     support_email: identity.profile.support_email ?? "",
     default_call_reason: identity.profile.default_call_reason ?? "",
-    requested_channels: [...identity.profile.requested_channels],
+    // The only non-string field, and the only one a missing value throws on
+    // rather than blanking: spreading `undefined` is a TypeError.
+    requested_channels: Array.isArray(identity.profile.requested_channels)
+      ? [...identity.profile.requested_channels]
+      : [],
   };
 }
 
@@ -274,7 +278,13 @@ export default function CompanyIdentityPack() {
     try {
       const response = await authFetch("/api/company-identity");
       const body = (await response.json().catch(() => null)) as IdentityResponse | null;
-      if (!response.ok || !body) throw new Error("Company identity is unavailable.");
+      // `profile` is checked, not just the body: every read below goes through
+      // `identity.profile.*`, so a 200 carrying an error envelope or a renamed
+      // field threw on the first property access and took the settings page down
+      // with it. The existing error path already renders this cleanly.
+      if (!response.ok || !body || typeof body.profile !== "object" || body.profile === null) {
+        throw new Error("Company identity is unavailable.");
+      }
       setIdentity(body);
       setForm(formFromIdentity(body));
       if (body.review_state_invalidated) {

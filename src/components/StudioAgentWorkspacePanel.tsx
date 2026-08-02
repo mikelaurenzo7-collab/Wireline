@@ -161,11 +161,9 @@ export default function StudioAgentWorkspacePanel({
     <div className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}>
       <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
         <header>
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
-            Set up
-          </p>
+          <p className="text-eyebrow text-primary">Set up</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Give {agentName} one clear job.
+            Give <span className="wl-preserve-case">{agentName}</span> one clear job.
           </h2>
         </header>
 

@@ -65,7 +65,7 @@ const DropdownMenuContent = React.forwardRef<
       sideOffset={sideOffset}
       collisionPadding={12}
       className={cn(
-        "wl-panel glass z-50 max-h-[min(70dvh,28rem)] min-w-[8rem] max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-xl border p-1 text-left shadow-[var(--wireline-elevation-md)]",
+        "wl-cased wl-panel glass z-50 max-h-[min(70dvh,28rem)] min-w-[8rem] max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-xl border p-1 text-left shadow-[var(--wireline-elevation-md)]",
         className,
       )}
       {...props}

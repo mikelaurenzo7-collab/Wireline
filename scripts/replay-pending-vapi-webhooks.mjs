@@ -31,7 +31,7 @@ console.log(`Found ${rows.length} pending vapi_webhook job(s)`);
 for (const row of rows) {
   const base =
     process.env.WIRELINE_REPLAY_BASE_URL ||
-    process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}` ||
+    (process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`) ||
     "http://localhost:3000";
   const sweepUrl = `${base.replace(/\/$/, "")}/api/jobs/sweep`;
   console.log(`Triggering sweep (processes queue): ${sweepUrl}`);

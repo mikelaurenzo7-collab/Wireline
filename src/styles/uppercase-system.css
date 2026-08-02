@@ -10,7 +10,7 @@
  * the cased title tier below sets one value for every title size, and a fourth
  * variable that the same file overrode 50 lines later was a knob that looked
  * tunable and did nothing. */
-.wl-ui-caps {
+:is(.wl-ui-caps, .wl-cased) {
   --wl-caps-title-tracking: -0.025em;
   --wl-caps-control-tracking: 0.045em;
   /* Label tracking has one origin: the `overline` entry in
@@ -21,7 +21,7 @@
   --wl-caps-label-tracking: var(--wireline-typography-overline-letterSpacing);
 }
 
-.wl-ui-caps :where(h1, h2, h3, h4, h5, h6),
+:is(.wl-ui-caps, .wl-cased) :where(h1, h2, h3, h4, h5, h6),
 .wl-page-title,
 .wl-app-page-title,
 .wl-section-title,
@@ -100,9 +100,32 @@
  *
  * Same exclusions as marketing: long-form prose, anything the customer authored,
  * and literal values read exactly as written. Presentation only — the copy
- * strings never change. */
+ * strings never change.
+ *
+ * Reaching headings by element also reaches two tiers that are not the title
+ * tier, so both are named out explicitly:
+ *
+ *   - The eyebrow classes. A section kicker is often authored as a heading
+ *     element (`<h3 class="text-eyebrow">AI USAGE</h3>`). Without this, the
+ *     title tier's -0.025em overrode the label tier's tracking on exactly the
+ *     nodes the same change was unifying — the rule undid its own commit.
+ *   - `.wl-display-mark`. It is deliberately kept out of the cased title tier
+ *     (see the note above) because it renders values: a plan name, a runtime
+ *     balance, the 404 mark. Reaching it by element defeats that. */
 .wl-workspace-shell
-  :is(h1, h2, h3, h4, h5, h6):not(.wl-preserve-case):not(.prose *):not(:has(code, time, [data-value])) {
+  :is(h1, h2, h3, h4, h5, h6):not(.wl-preserve-case, .prose *, :has(code, time, [data-value])):not(
+    .wl-display-mark,
+    .wl-overline,
+    .wl-pro-eyebrow,
+    .wl-micro-meta,
+    .wl-stitch-eyebrow,
+    .wl-stitch-label,
+    .wl-page-context,
+    .wl-workspace-eyebrow,
+    .text-eyebrow,
+    .wl-label,
+    .wl-insight-label
+  ) {
   text-transform: uppercase;
   letter-spacing: var(--wl-caps-title-tracking);
 }
@@ -111,9 +134,14 @@
  * prose. The base rule only reaches links inside nav/header/footer, so
  * body-level calls to action in the workspace opted themselves out of the tier
  * they belong to. These are identified the way the design identifies them: a
- * link that carries the action color or lays itself out as a control. */
+ * link that carries the action color or lays itself out as a control.
+ *
+ * `~=` matches a whole class token, not a substring. `*=` also matched the
+ * variant forms — `hover:text-primary`, `group-hover:inline-flex` — so a
+ * mid-sentence prose link that merely changes color on hover was pulled into
+ * the control tier and shouted inside its own sentence. */
 .wl-workspace-shell
-  :is(a[class*="text-primary"], a[class*="inline-flex"], a[class*="place-items-center"]):not(
+  :is(a[class~="text-primary"], a[class~="inline-flex"], a[class~="place-items-center"]):not(
     .wl-preserve-case
   ):not([class*="wl-preserve-case"]) {
   letter-spacing: var(--wl-caps-control-tracking);
@@ -138,10 +166,64 @@
   text-transform: uppercase;
 }
 
+/* The other half of the label tier — the half that was never declared.
+ *
+ * `.wl-label`, `.wl-label-muted`, `.wl-micro-badge` and `.wl-insight-label` are
+ * used at 176 call sites across 80 components: field captions, stat labels,
+ * badge counts, insight headers. Every one of them was authored as a member of
+ * this tier. None of them was ever a member of it — the classes were defined by
+ * the legacy design system and went out with it in "Remove legacy Wireline
+ * design system CSS"; the call sites stayed. Nothing declares them today, so
+ * they inherit: 16px, weight 400, Inter, no tracking, no caps. Measuring the
+ * rendered DOM is what surfaced it — a `.wl-label` chip reading "voice" at full
+ * body size inside a pill built for an 11px micro-label.
+ *
+ * That is why a case audit that reads only stylesheets keeps coming back clean
+ * while the product still ranks wrong: the largest break in the tier was a
+ * class with no rule at all, and a stylesheet cannot show you the absence.
+ *
+ * Layered deliberately. Unlayered rules beat Tailwind utilities in this build
+ * (verified in-browser: `@layer components` loses to `text-brand`/`font-bold`,
+ * unlayered wins). These call sites carry their own colors and weights —
+ * `wl-label text-brand`, `wl-label font-black`, `wl-label-muted hover:text-brand`
+ * — so declaring the tier unlayered would silently flatten 176 intentional
+ * choices. In `components` the tier supplies the floor and each call site keeps
+ * what it asked for. */
+@layer components {
+  .wl-label,
+  .wl-label-muted,
+  .wl-micro-badge,
+  .wl-insight-label {
+    font-family: var(--wireline-font-family-mono);
+    font-size: clamp(0.61rem, 0.57rem + 0.12vw, 0.7rem);
+    font-weight: 700;
+    letter-spacing: var(--wl-caps-label-tracking);
+    line-height: 1.25;
+    text-transform: uppercase;
+  }
+
+  /* The muted variant's whole job is the recessive color; it is otherwise the
+     tier above. Call sites that name their own color still win — the layer is
+     what makes `hover:text-brand` on a `.wl-label-muted` keep working. */
+  .wl-label-muted {
+    color: var(--wireline-color-text-tertiary);
+  }
+
+  /* A badge is the tier set solid inside a pill: counts and one-word states,
+     lining up in a row, so the numerals are tabular and the box does not ride
+     on the label's line-height. */
+  .wl-micro-badge {
+    display: inline-flex;
+    align-items: center;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+}
+
 /* Controls join the cased system: buttons, tabs, menu items, badges, and nav.
  * Caps need air that lowercase does not, so the control tier carries its own
  * tracking rather than inheriting the tight display value. */
-.wl-ui-caps
+:is(.wl-ui-caps, .wl-cased)
   :is(
     button,
     [role="button"],
@@ -166,7 +248,7 @@
  * sentence, a value, or someone's name has to read as written — an agent name
  * in a sidebar row, a plan price, a search field's placeholder. Buttons in this
  * product are frequently composite rows, not bare labels. */
-.wl-ui-caps
+:is(.wl-ui-caps, .wl-cased)
   :is(button, [role="button"], [role="tab"], [role="menuitem"], .wl-btn, nav a, header a, footer a)
   :is(p, input, textarea, select, time, code, [data-value]) {
   letter-spacing: normal;
@@ -174,23 +256,95 @@
 }
 
 /* Explicit opt-out for anything the customer authored — agent names, contact
- * names, transcript text. Never let the case system rewrite someone's words. */
-.wl-ui-caps .wl-preserve-case,
-.wl-ui-caps .wl-preserve-case * {
-  letter-spacing: normal;
-  text-transform: none;
+ * names, transcript text. Never let the case system rewrite someone's words.
+ *
+ * This is a guarantee, not a preference, so it is weighted to win outright
+ * rather than to hold a specificity lead. It previously scored 0,2,0 and was
+ * quietly overtaken by the workspace heading rule at 0,3,1: a heading that
+ * *contained* a `.wl-preserve-case` wrapper still shouted, and every future
+ * selector added above would have restarted the same race. Marking the opt-out
+ * important ends the race permanently — no later rule can reintroduce the bug
+ * by being more specific. */
+:is(.wl-ui-caps, .wl-cased) .wl-preserve-case,
+:is(.wl-ui-caps, .wl-cased) .wl-preserve-case * {
+  text-transform: none !important;
+}
+
+/* The tracking reset is narrower than the case guarantee, because the two are
+ * not the same promise. Caps tracking left behind on lowercase text reads wrong,
+ * so it is cleared — but an element that names its own step on the type scale
+ * asked for that tracking directly, and the case system never gave it. Clearing
+ * it there does visible damage: the Overview greeting is
+ * `wl-preserve-case wl-display-2`, and an unconditional reset took its -0.025em
+ * off a 57.6px display heading, measured as -1.44px -> normal. */
+:is(.wl-ui-caps, .wl-cased)
+  .wl-preserve-case:not(
+    .wl-display-1,
+    .wl-display-2,
+    .wl-display-3,
+    .wl-display-4,
+    .wl-display-mark,
+    .wl-page-title,
+    .wl-app-page-title,
+    .wl-section-title,
+    .wl-card-title,
+    .wl-metric-value
+  ),
+:is(.wl-ui-caps, .wl-cased)
+  .wl-preserve-case
+  *:not(
+    .wl-display-1,
+    .wl-display-2,
+    .wl-display-3,
+    .wl-display-4,
+    .wl-display-mark,
+    .wl-page-title,
+    .wl-app-page-title,
+    .wl-section-title,
+    .wl-card-title,
+    .wl-metric-value
+  ) {
+  letter-spacing: normal !important;
 }
 
 /* Field captions and column headers join the label tier: caps with the wide
  * label tracking, at whatever size the field authored. */
 /* Dialog titles are titles. A sentence-case modal heading sitting above cased
- * labels and buttons was the one place the system visibly broke. */
-.wl-ui-caps [data-slot="dialog-title"] {
-  letter-spacing: var(--wl-caps-title-tracking);
+ * labels and buttons was the one place the system visibly broke.
+ *
+ * Now that the portalled surfaces carry `wl-ui-caps`, this rule finally reaches
+ * a real modal — and so does the generic heading rule above it, which was never
+ * meant to restyle one. Measured, it also took the title from weight 600 to 700
+ * and from a 1.15 line-height to 1.05. The Dialog atom authors
+ * `font-semibold leading-[1.15]` deliberately, for a title that has to stay
+ * contained in a fixed box and now wraps sooner because caps are wider; a
+ * contract pins that string. Restating both here keeps the rendered result equal
+ * to the authored one, which is the divergence this whole pass exists to close.
+ * Case is the only thing the system changes here. */
+:is(.wl-ui-caps, .wl-cased)
+  :is([data-slot="dialog-title"], [data-slot="alert-dialog-title"], [data-slot="sheet-title"]) {
+  font-weight: 600;
   text-transform: uppercase;
 }
 
-.wl-ui-caps :is(label, legend, th) {
+/* Each modal title keeps the measure its own atom authored. Dialog and Sheet
+ * both write `text-xl leading-[1.15] tracking-[-.025em]`; AlertDialog is a
+ * smaller, denser confirm box at `leading-tight` and `-.02em`. Naming all three
+ * slots matters: the moment the portalled roots joined the case system, the
+ * alert-dialog and sheet titles started taking the generic heading rule's weight
+ * and 1.05 line-height while getting none of its case — the side effect without
+ * the intent, which is worse than either. */
+:is(.wl-ui-caps, .wl-cased) :is([data-slot="dialog-title"], [data-slot="sheet-title"]) {
+  letter-spacing: var(--wl-caps-title-tracking);
+  line-height: 1.15;
+}
+
+:is(.wl-ui-caps, .wl-cased) [data-slot="alert-dialog-title"] {
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+:is(.wl-ui-caps, .wl-cased) :is(label, legend, th) {
   letter-spacing: var(--wl-caps-label-tracking);
   text-transform: uppercase;
 }
@@ -199,8 +353,9 @@
  * the control itself — an uppercased `<input>` would shout the value the user
  * just typed, and `::placeholder` inherits the transform — plus any nested help
  * line or consent sentence, which live in a span or paragraph. */
-.wl-ui-caps
-  :is(label, legend) :is(p, span, small, em, strong, a, input, textarea, select, button) {
+:is(.wl-ui-caps, .wl-cased)
+  :is(label, legend)
+  :is(p, span, small, em, strong, a, input, textarea, select, button) {
   letter-spacing: var(--wl-caps-control-tracking);
   text-transform: none;
 }
@@ -210,12 +365,14 @@
  * ("Preferred area code"), and the blanket reset above would miss it. A label
  * that wraps its control leads with the control, so its following sentence span
  * is never :first-child and correctly stays sentence case. */
-.wl-ui-caps :is(label, legend) > span:first-child:not(:has(input, textarea, select, button)) {
+:is(.wl-ui-caps, .wl-cased)
+  :is(label, legend)
+  > span:first-child:not(:has(input, textarea, select, button)) {
   letter-spacing: var(--wl-caps-label-tracking);
   text-transform: uppercase;
 }
 
-.wl-ui-caps
+:is(.wl-ui-caps, .wl-cased)
   :is(
     .wl-public-copy,
     .wl-page-copy,
@@ -231,9 +388,26 @@
 }
 
 @media (max-width: 640px) {
-  .wl-ui-caps {
+  :is(.wl-ui-caps, .wl-cased) {
     --wl-caps-control-tracking: 0.04em;
-    --wl-caps-label-tracking: 0.11em;
+    /* The label tier deliberately has no responsive override, unlike the control
+     * tier above it.
+     *
+     * There was one: a literal 0.11em, written when the base was 0.12em so it
+     * read as a tightening. Re-pointing the base at the 0.09em token left the
+     * literal behind and mobile silently became *wider* than desktop — the
+     * intent inverted exactly where horizontal space is scarcest.
+     *
+     * Deriving it from the token instead (`calc(… - 0.01em)`) fixed the
+     * inversion but not the split, because only this file reads
+     * `--wl-caps-label-tracking`; the seven stylesheets unified in the previous
+     * commit read the token directly and never saw the breakpoint. Measured on a
+     * 390px viewport that came back as 0.08em and 0.09em side by side — two
+     * values for one tier again, from the opposite direction.
+     *
+     * A tier defined as one value is one value. The knob is gone rather than
+     * re-plumbed: at 0.09em the tier is already tight enough that the hair it
+     * bought was never worth a second code path. */
   }
 
   .wl-page-title {

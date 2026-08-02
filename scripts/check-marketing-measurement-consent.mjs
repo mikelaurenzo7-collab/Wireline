@@ -20,7 +20,9 @@ let vercel;
 try {
   vercel = JSON.parse(vercelSource);
 } catch (error) {
-  failures.push(`vercel.json must remain valid JSON: ${error instanceof Error ? error.message : error}`);
+  failures.push(
+    `vercel.json must remain valid JSON: ${error instanceof Error ? error.message : error}`,
+  );
 }
 
 const consentKey = "wireline_marketing_measurement_consent";
@@ -48,7 +50,10 @@ assert(
 );
 
 assert(loader.includes(consentKey), "measurement loader must read the canonical consent key.");
-assert(loader.includes(consentEvent), "measurement loader must listen for the canonical consent event.");
+assert(
+  loader.includes(consentEvent),
+  "measurement loader must listen for the canonical consent event.",
+);
 assert(
   loader.includes('readConsent() !== "granted"'),
   "measurement loader must default off without an explicit grant.",
@@ -78,14 +83,21 @@ assert(
   "measurement revocation must stop future Wireline-triggered Meta events.",
 );
 assert(
-  loader.includes('event.detail === "granted"') && loader.includes("disableMarketingMeasurement();"),
+  loader.includes('event.detail === "granted"') &&
+    loader.includes("disableMarketingMeasurement();"),
   "measurement consent events must support both grant and revocation.",
 );
 
 assert(notice.includes(consentKey), "privacy notice must write the canonical consent key.");
 assert(notice.includes(consentEvent), "privacy notice must dispatch the canonical consent event.");
-assert(notice.includes(privacyChoicesEvent), "privacy notice must support reopening saved choices.");
-assert(footer.includes(privacyChoicesEvent), "public footer must expose the privacy choice control.");
+assert(
+  notice.includes(privacyChoicesEvent),
+  "privacy notice must support reopening saved choices.",
+);
+assert(
+  footer.includes(privacyChoicesEvent),
+  "public footer must expose the privacy choice control.",
+);
 assert(footer.includes("Privacy choices"), "public footer must label the privacy choice control.");
 assert(notice.includes("Essential only"), "privacy notice must offer a privacy-preserving choice.");
 assert(notice.includes("Allow measurement"), "privacy notice must offer explicit opt-in.");
@@ -128,7 +140,10 @@ assert(
   "the public privacy route must remain registered.",
 );
 assert(privacyPage.includes(consentKey), "privacy center must persist the canonical consent key.");
-assert(privacyPage.includes(consentEvent), "privacy center must dispatch the canonical consent event.");
+assert(
+  privacyPage.includes(consentEvent),
+  "privacy center must dispatch the canonical consent event.",
+);
 assert(
   privacyPage.includes("Keep measurement off") && privacyPage.includes("Allow measurement"),
   "privacy policy must disclose and control optional advertising measurement.",
@@ -143,7 +158,8 @@ assert(
   "privacy policy must identify both aggregate analytics and optional advertising measurement providers.",
 );
 assert(
-  privacyPage.includes("California law may treat disclosure") && privacyPage.includes('as "sharing,"'),
+  privacyPage.includes("California law may treat disclosure") &&
+    privacyPage.includes('as "sharing,"'),
   "privacy policy must disclose the potential CCPA/CPRA sharing classification.",
 );
 assert(
@@ -159,14 +175,20 @@ assert(
   "public privacy policy must not retain the obsolete no-analytics claim.",
 );
 
-assert(!csp.includes(removedInlineMetaHash), "CSP source must not retain the removed inline Meta hash.");
+assert(
+  !csp.includes(removedInlineMetaHash),
+  "CSP source must not retain the removed inline Meta hash.",
+);
 assert(
   !vercelSource.includes(removedInlineMetaHash),
   "Vercel edge CSP must not retain the removed inline Meta hash.",
 );
 for (const host of retiredAnalyticsHosts) {
   assert(!csp.includes(host), `CSP source must not allow retired analytics host ${host}.`);
-  assert(!vercelSource.includes(host), `Vercel edge CSP must not allow retired analytics host ${host}.`);
+  assert(
+    !vercelSource.includes(host),
+    `Vercel edge CSP must not allow retired analytics host ${host}.`,
+  );
 }
 
 if (vercel) {

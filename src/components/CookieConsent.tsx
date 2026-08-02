@@ -204,12 +204,12 @@ export default function CookieConsent() {
           aria-label="Privacy choices"
           ref={dialogRef}
         >
-          {/* bg-background/95 is load-bearing: the legacy wl-cookie-card class
+          {/* bg-background/95 is load-bearing: the legacy class
               has no CSS definition, so without an explicit background the card
               was transparent-with-blur and page text ghosted through it. */}
           <div
             className={cn(
-              "rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg flex items-start gap-2.5 wl-cookie-card",
+              "rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg flex items-start gap-2.5",
               hasSession ? "px-3 py-2.5" : "px-3.5 py-3",
             )}
           >

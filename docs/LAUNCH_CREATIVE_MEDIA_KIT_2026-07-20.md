@@ -63,6 +63,36 @@ The 46-second [Descript master](https://share.descript.com/view/MvGqlYX4NMf) is 
 - Provide accurate platform captions as a selectable accessibility track. Do not stack persistent subtitles over already legible product UI.
 - Cut 9:16 and 1:1 variants from the 16:9 master by reframing the active UI, never by shrinking the full desktop canvas into unreadable space.
 
+### Re-cutting the picture
+
+`npm run marketing:kit` records the picture for all three cuts. It captures the
+live product, so **the footage expires whenever the product's design changes** —
+a reel cut before a type or layout change shows a product that no longer exists.
+
+```bash
+npm run build && node -e "require('./dist/server.cjs')"   # serve the real bundle
+E2E_BASE_URL=http://127.0.0.1:3000 MARKETING_USE_MOCKS=1 npm run marketing:kit
+```
+
+| Capture | Frame | Scene map |
+| --- | --- | --- |
+| `videos/reel-46s-master-walkthrough.webm` | 1920×1080 | home → overview → studio → knowledge → number → outbound (dial modal) → email → call log |
+| `videos/reel-30s-product-loop.webm` | 1080×1920 | Create → Train → Wire → Run |
+| `videos/reel-15s-missed-call.webm` | 1080×1920 | call log → outbound dial modal → inbox |
+
+Each beat is a hold long enough to cut from; the editor trims down, never
+stretches up. Scrolls are eased across twelve steps rather than jumped, so the
+motion matches what a person sees.
+
+Two rules the capture enforces rather than trusts:
+
+- **Copy comes from the campaign document.** `copy/social-copy.md` is generated
+  from the Brand Spine in `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`. Edit the
+  document, re-run the kit; never edit the generated file. It previously
+  hardcoded its own hooks, which had drifted to naming three competitors — against
+  the doctrine above — and to omitting the price line entirely.
+- **No reel films `/compare`.** It is the one route that renders vendor marks.
+
 ## Plugin-Ready Design Briefs
 
 ### Canva / Adobe Express Static Ad

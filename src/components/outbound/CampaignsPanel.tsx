@@ -323,7 +323,7 @@ export default function CampaignsPanel() {
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-medium truncate">{c.name}</h3>
+                    <h3 className="wl-preserve-case font-medium truncate">{c.name}</h3>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-muted">
                       {STATUS_LABEL[c.status] || c.status}
                     </span>

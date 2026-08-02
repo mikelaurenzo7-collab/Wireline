@@ -68,7 +68,8 @@ if (!missing.length && !extra.length) {
   process.exit(0);
 }
 
-if (missing.length) console.log(`Missing from endpoint (events would be dropped): ${missing.join(", ")}`);
+if (missing.length)
+  console.log(`Missing from endpoint (events would be dropped): ${missing.join(", ")}`);
 if (extra.length) console.log(`Enabled but unhandled (delivery noise): ${extra.join(", ")}`);
 
 if (!apply) {

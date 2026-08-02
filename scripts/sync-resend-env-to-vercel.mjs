@@ -107,7 +107,9 @@ async function upsertEnv(key, value) {
 }
 
 async function main() {
-  console.log("Syncing Resend env vars to Vercel (encrypted · production + preview + development)…\n");
+  console.log(
+    "Syncing Resend env vars to Vercel (encrypted · production + preview + development)…\n",
+  );
   for (const [key, value] of Object.entries(envMap)) {
     await upsertEnv(key, value);
   }

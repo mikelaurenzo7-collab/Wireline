@@ -510,7 +510,7 @@ export default function DncManager() {
           onPointerDownOutside={(event) => {
             if (adding) event.preventDefault();
           }}
-          className="sm:max-w-md rounded-md border border-border p-6 shadow-2xl wl-modal-surface"
+          className="sm:max-w-md rounded-md border border-border p-6 shadow-2xl"
         >
           <DialogHeader className="flex flex-row items-center gap-3 space-y-0 border-b border-border/60 pb-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-md border border-rose-500/30 bg-rose-500/10">

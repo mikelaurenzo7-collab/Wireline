@@ -111,22 +111,19 @@ async function main() {
   console.log("[generate-jingle] Calling ElevenLabs Music API…");
 
   const t0 = Date.now();
-  const r = await fetch(
-    "https://api.elevenlabs.io/v1/music?output_format=mp3_44100_128",
-    {
-      method: "POST",
-      headers: {
-        "xi-api-key": apiKey,
-        "Content-Type": "application/json",
-        Accept: "audio/mpeg",
-      },
-      body: JSON.stringify({
-        prompt,
-        music_length_ms: length,
-        model_id: "music_v1",
-      }),
+  const r = await fetch("https://api.elevenlabs.io/v1/music?output_format=mp3_44100_128", {
+    method: "POST",
+    headers: {
+      "xi-api-key": apiKey,
+      "Content-Type": "application/json",
+      Accept: "audio/mpeg",
     },
-  );
+    body: JSON.stringify({
+      prompt,
+      music_length_ms: length,
+      model_id: "music_v1",
+    }),
+  });
 
   if (!r.ok) {
     const errText = await r.text().catch(() => "");
@@ -139,9 +136,7 @@ async function main() {
   await writeFile(OUTPUT_PATH, buf);
   const elapsedMs = Date.now() - t0;
 
-  console.log(
-    `[generate-jingle] Wrote ${OUTPUT_PATH} (${buf.length} bytes) in ${elapsedMs}ms.`,
-  );
+  console.log(`[generate-jingle] Wrote ${OUTPUT_PATH} (${buf.length} bytes) in ${elapsedMs}ms.`);
   console.log("[generate-jingle] Commit + push so the jingle ships with the next deploy.");
 }
 

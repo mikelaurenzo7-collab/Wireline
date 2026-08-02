@@ -76,7 +76,9 @@ for (const entry of accepted) {
 if (blocking.length) {
   console.error("Security audit gate failed — unaccepted high/critical advisories:");
   for (const entry of blocking) {
-    console.error(`- ${entry.severity.toUpperCase()} ${entry.ghsa} in ${entry.name}: ${entry.title}`);
+    console.error(
+      `- ${entry.severity.toUpperCase()} ${entry.ghsa} in ${entry.name}: ${entry.title}`,
+    );
   }
   console.error(
     "Fix the dependency, or (only for a provably unreachable path with no available fix) add an " +

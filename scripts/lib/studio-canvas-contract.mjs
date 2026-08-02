@@ -59,7 +59,8 @@ export const STUDIO_CANVAS_REQUIRED = {
     // preserving query/hash so legacy deep-links keep working.
     {
       id: "agents-redirect",
-      pattern: /path="\/agents"[\s\S]*AgentsToStudioRedirect|AgentsToStudioRedirect[\s\S]*\/studio\$\{location\.search\}/,
+      pattern:
+        /path="\/agents"[\s\S]*AgentsToStudioRedirect|AgentsToStudioRedirect[\s\S]*\/studio\$\{location\.search\}/,
     },
   ],
   studioHome: [

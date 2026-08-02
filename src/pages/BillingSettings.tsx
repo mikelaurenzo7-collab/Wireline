@@ -174,9 +174,7 @@ export default function BillingSettings() {
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0">
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                Current plan
-              </p>
+              <p className="text-eyebrow text-muted-foreground">Current plan</p>
               {loading ? (
                 <div className="mt-4 space-y-3" aria-busy="true">
                   <Skeleton shape="text" className="h-10 w-56" />
@@ -250,7 +248,7 @@ export default function BillingSettings() {
           <article className="wl-paper wl-paper-elevated flex min-h-[250px] flex-col p-5 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                <p className="text-eyebrow text-muted-foreground">
                   {CONVERSATION_BALANCE_COPY.title}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -318,9 +316,7 @@ export default function BillingSettings() {
           </article>
 
           <article className="wl-paper wl-paper-elevated flex min-h-[250px] flex-col p-5 sm:p-6">
-            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-              Subscription
-            </p>
+            <p className="text-eyebrow text-muted-foreground">Subscription</p>
             {loading ? (
               <div className="mt-6 flex items-center gap-2 text-muted-foreground" aria-busy="true">
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />

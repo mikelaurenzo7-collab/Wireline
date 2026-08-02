@@ -14,7 +14,9 @@ let url;
 try {
   url = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
 } catch {
-  console.error("Invalid URL. Pass a full origin, e.g. http://localhost:3000 or https://app.example.com");
+  console.error(
+    "Invalid URL. Pass a full origin, e.g. http://localhost:3000 or https://app.example.com",
+  );
   process.exit(1);
 }
 const origin = url.origin.replace(/\/$/, "");

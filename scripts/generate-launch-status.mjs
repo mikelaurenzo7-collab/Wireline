@@ -78,10 +78,9 @@ async function stripeStatus() {
           })
         : Promise.resolve({ ok: false, status: 0, body: null }),
       jsonFetch("https://api.stripe.com/v1/account", { headers }),
-      jsonFetch(
-        "https://api.stripe.com/v1/billing_portal/configurations?active=true&limit=100",
-        { headers },
-      ),
+      jsonFetch("https://api.stripe.com/v1/billing_portal/configurations?active=true&limit=100", {
+        headers,
+      }),
       jsonFetch("https://api.stripe.com/v1/webhook_endpoints?limit=100", { headers }),
       jsonFetch("https://api.stripe.com/v1/tax/settings", { headers }),
     ]);
@@ -120,9 +119,7 @@ async function stripeStatus() {
     websiteOrigin === "https://trywireline.com" &&
     supportOrigin === "https://trywireline.com";
 
-  const portalConfigurations = Array.isArray(portalResult.body?.data)
-    ? portalResult.body.data
-    : [];
+  const portalConfigurations = Array.isArray(portalResult.body?.data) ? portalResult.body.data : [];
   // Same selection rule as check-vendor-readiness.mjs: require the customer
   // controls first, then prefer the Wireline-managed configuration, so a bare
   // Dashboard default cannot mask the one the application actually uses.
@@ -150,9 +147,7 @@ async function stripeStatus() {
     "invoice.payment_failed",
     "invoice.payment_succeeded",
   ];
-  const webhookEndpoints = Array.isArray(webhookResult.body?.data)
-    ? webhookResult.body.data
-    : [];
+  const webhookEndpoints = Array.isArray(webhookResult.body?.data) ? webhookResult.body.data : [];
   const webhook = webhookEndpoints.find(
     (endpoint) =>
       endpoint?.status === "enabled" &&

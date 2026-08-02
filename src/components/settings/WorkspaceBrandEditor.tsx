@@ -105,9 +105,7 @@ export default function WorkspaceBrandEditor({
             background: `color-mix(in srgb, ${primary} 10%, var(--wireline-color-surface-default))`,
           }}
         >
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            Preview
-          </p>
+          <p className="text-eyebrow text-muted-foreground">Preview</p>
           <div className="mt-4 rounded-xl border border-border bg-card p-5 shadow-[var(--wireline-elevation-sm)]">
             <div className="flex items-center gap-3">
               {settings.brand_logo_url ? (

@@ -57,12 +57,28 @@ function withoutComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
 }
 
-/** Displayed text: double-quoted strings and template literals, not code. */
+/**
+ * Displayed text: double-quoted strings, template literals, and JSX text nodes.
+ *
+ * The JSX half was missing, which made this gate largely decorative. Prose in
+ * this codebase is overwhelmingly written as a text child — `<p>Annual billing
+ * is not configured for checkout yet.</p>` — not as a string literal, and a text
+ * child sits between `>` and `<` where neither quote pattern can reach it.
+ * Verified by injecting the banned sentence as JSX text into a component: the
+ * suite stayed green. The one real guard was the whole-file `not.toContain` in
+ * the sibling test below, which covers a single file.
+ */
 function displayedStrings(source: string): string[] {
   const code = withoutComments(source);
   const out: string[] = [];
   for (const m of code.matchAll(/"([^"\\]{4,200})"/g)) out.push(m[1]);
   for (const m of code.matchAll(/`([^`\\]{4,300})`/g)) out.push(m[1]);
+  // Text between a tag close and the next tag open. Interpolations (`{...}`) are
+  // expressions rather than literal copy, so they end a run of prose.
+  for (const m of code.matchAll(/>([^<>{}]{4,300})</g)) {
+    const text = m[1].replace(/\s+/g, " ").trim();
+    if (text.length >= 4) out.push(text);
+  }
   return out;
 }
 

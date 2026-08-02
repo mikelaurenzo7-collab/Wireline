@@ -58,6 +58,7 @@ const SheetContent = React.forwardRef<
       data-slot="sheet-content"
       data-side={side}
       className={cn(
+        "wl-cased",
         sheetVariants({ side }),
         "pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pl-[max(1.5rem,env(safe-area-inset-left,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))]",
         className,
@@ -121,7 +122,10 @@ const SheetDescription = React.forwardRef<
   <SheetPrimitive.Description
     ref={ref}
     data-slot="sheet-description"
-    className={cn("max-w-prose break-words text-left text-[15px] leading-6 text-muted-foreground", className)}
+    className={cn(
+      "max-w-prose break-words text-left text-[15px] leading-6 text-muted-foreground",
+      className,
+    )}
     {...props}
   />
 ));

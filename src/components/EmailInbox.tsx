@@ -492,7 +492,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Outcome
                     </p>
-                    <h2 className="mt-2 text-xl font-semibold tracking-[-.03em] text-foreground sm:text-2xl">
+                    <h2 className="wl-preserve-case mt-2 text-xl font-semibold tracking-[-.03em] text-foreground sm:text-2xl">
                       {selectedThread.subject}
                     </h2>
                     <p className="mt-2 text-sm text-muted-foreground">{selectedThread.sender}</p>

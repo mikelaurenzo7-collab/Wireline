@@ -93,7 +93,7 @@ export default function ClientSubTabs({
     >
       <div
         className={cn(
-          "app-tab-strip wl-subtab-strip flex min-w-0 items-center gap-0.5 wl-panel",
+          "app-tab-strip flex min-w-0 items-center gap-0.5 wl-panel",
           density === "compact" ? "border-0 bg-transparent p-0.5 shadow-none" : "p-0.5",
         )}
       >

@@ -117,7 +117,7 @@ export default function SettingsTabSwitcher({
     >
       <div
         className={cn(
-          "app-tab-strip wl-subtab-strip flex items-center gap-0.5 wl-panel border border-white/8 w-max min-w-full",
+          "app-tab-strip flex items-center gap-0.5 wl-panel border border-white/8 w-max min-w-full",
           density === "compact" ? "p-0.5 border-0 bg-transparent shadow-none" : "p-0.5",
         )}
       >

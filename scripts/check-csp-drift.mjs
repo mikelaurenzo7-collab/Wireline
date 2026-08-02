@@ -19,7 +19,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const repoRoot = resolve(__dirname, "..");
 const vercelPath = resolve(repoRoot, "vercel.json");
-const staticHtmlSources = ["index.html", "public/chatgpt-app-privacy.html", "public/legal/data-deletion.html"];
+const staticHtmlSources = [
+  "index.html",
+  "public/chatgpt-app-privacy.html",
+  "public/legal/data-deletion.html",
+];
 
 function expectedCsp() {
   const tsxCli = join(repoRoot, "node_modules", "tsx", "dist", "cli.mjs");

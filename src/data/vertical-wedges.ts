@@ -33,7 +33,6 @@ export interface VerticalConfig {
   metaTitle: string;
   metaDescription: string;
   headline: string;
-  subhead: string;
   eyebrow: string;
   pains: PainPoint[];
   scriptPreview: string;
@@ -53,8 +52,6 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Voice + email agent for HVAC, plumbing, electrical, and roofing teams. Answer after hours calls, book jobs, and follow up through Runtime Balance.",
     eyebrow: "For Home Services Pros",
     headline: "Turn after hours calls into scheduled work.",
-    subhead:
-      "Answers configured lines, qualifies urgency, offers available times, and sends the next step confirmation.",
     pains: [
       {
         icon: Clock,
@@ -112,8 +109,6 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Voice + email agent for dental, med spa, chiropractic, and primary care practices. Book appointments and manage intake. Call the medical demo.",
     eyebrow: "For Medical Practices",
     headline: "Patients on hold become patients on the schedule.",
-    subhead:
-      "An AI front desk for configured intake, scheduling, and confirmations while your staff focuses on patient care.",
     pains: [
       {
         icon: Phone,
@@ -171,8 +166,6 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Voice + email intake for law firms. Capture new matters, qualify urgency, schedule consults, and route conflict checks. Call the legal demo.",
     eyebrow: "For Law Firms",
     headline: "Give every routed intake a clear next step.",
-    subhead:
-      "An AI intake specialist that follows your approved script, captures the matter, flags conflict review data, and routes the record to your team.",
     pains: [
       {
         icon: Phone,
@@ -230,8 +223,6 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Voice + email agent for real estate teams. Qualify buyers, book showings, revive cold leads, and sync CRM notes.",
     eyebrow: "For Real Estate",
     headline: "Work more listing calls without losing control.",
-    subhead:
-      "A voice agent that handles routed listing inquiries, gathers qualification details, offers approved showing times, and keeps follow up visible.",
     pains: [
       {
         icon: Phone,
@@ -289,8 +280,6 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Personal AI phone agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow ups. Starts at $19/mo, with Runtime Balance covering anything beyond your included minutes.",
     eyebrow: "For everyone who hates the phone",
     headline: "Hand off the calls you keep avoiding.",
-    subhead:
-      "Your personal AI calls the debt collector, books the dentist, disputes the cable bill, and handles the conversation you've been avoiding for weeks.",
     pains: [
       {
         icon: Clock,
@@ -353,8 +342,6 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Voice + email agent for insurance agencies. Capture quote intake, FNOL details, renewal follow up, and producer ready notes.",
     eyebrow: "For Insurance Agencies",
     headline: "Keep quote intake and renewal follow up moving.",
-    subhead:
-      "A voice agent that handles routed after hours quote intake, captures approved fields, and runs the renewal follow up cadence your agency configures.",
     pains: [
       {
         icon: Phone,
@@ -412,8 +399,6 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Voice + email host for restaurants. Take reservations, capture takeout orders, handle event inquiries, and follow up by SMS.",
     eyebrow: "For Restaurants",
     headline: "The phone rings during dinner rush. The agent picks up.",
-    subhead:
-      "An AI host for routed reservation calls, structured takeout requests, and configurable SMS confirmations while the floor team is busy.",
     pains: [
       {
         icon: Calendar,
@@ -471,8 +456,6 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Compliance first phone agents for sales teams. Speed to lead, quote follow up, warm reactivation, and governed outbound queues with approved CRM actions.",
     eyebrow: "For Sales Teams",
     headline: "Your sales voice agent works the queue while your team works the deals.",
-    subhead:
-      "Calls new leads fast, qualifies cleanly, books meetings, and logs every outcome — from speed to lead and missed call recovery to governed warm follow up from approved lead lists.",
     pains: [
       {
         icon: Phone,

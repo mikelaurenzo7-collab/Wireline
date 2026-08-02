@@ -33,7 +33,7 @@ const AlertDialogContent = React.forwardRef<
       ref={ref}
       data-slot="alert-dialog-content"
       className={cn(
-        "fixed left-[50%] top-[50%] z-[200] grid max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-sm translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto overscroll-contain rounded-xl border border-border bg-card p-6 text-left shadow-[var(--wireline-elevation-lg)] duration-200",
+        "wl-cased fixed left-[50%] top-[50%] z-[200] grid max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-sm translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto overscroll-contain rounded-xl border border-border bg-card p-6 text-left shadow-[var(--wireline-elevation-lg)] duration-200",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-[0.98] data-[state=open]:zoom-in-[0.98]",
         "pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pt-[max(1.5rem,env(safe-area-inset-top,0px))]",
         className,
@@ -85,7 +85,10 @@ const AlertDialogDescription = React.forwardRef<
   <AlertDialogPrimitive.Description
     ref={ref}
     data-slot="alert-dialog-description"
-    className={cn("max-w-prose break-words text-left text-sm leading-6 text-muted-foreground", className)}
+    className={cn(
+      "max-w-prose break-words text-left text-sm leading-6 text-muted-foreground",
+      className,
+    )}
     {...props}
   />
 ));

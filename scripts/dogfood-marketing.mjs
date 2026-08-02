@@ -4,11 +4,13 @@
  * Output defaults to a local ignored directory.
  */
 import { chromium } from "playwright";
+import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 const base = process.env.APP_URL || "https://trywireline.com";
-const out = process.env.DOGFOOD_OUT || path.join(process.cwd(), ".tmp", "wireline-marketing-dogfood");
+const out =
+  process.env.DOGFOOD_OUT || path.join(process.cwd(), ".tmp", "wireline-marketing-dogfood");
 const screenshots = path.join(out, "screenshots");
 if (!existsSync(screenshots)) mkdirSync(screenshots, { recursive: true });
 
@@ -38,7 +40,11 @@ async function gotoStable(page, url) {
 
 async function main() {
   console.log(`Marketing dogfood @ ${base}`);
-  const browser = await chromium.launch({ headless: true, args: ["--no-sandbox", "--disable-gpu"] });
+  const browser = await chromium.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-gpu"],
+    ...chromiumLaunchOptions(),
+  });
 
   try {
     for (const viewport of viewports) {
@@ -57,7 +63,9 @@ async function main() {
         try {
           await gotoStable(page, `${base}${route}`);
           const body = await page.locator("body").innerText();
-          const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2);
+          const overflow = await page.evaluate(
+            () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2,
+          );
           if (/something went wrong|error boundary|failed to load/i.test(body)) {
             record("failed", id, "error state visible");
             continue;
@@ -75,7 +83,8 @@ async function main() {
         }
       }
 
-      if (consoleErrors.length) record("warnings", `console:${viewport.name}`, `${consoleErrors.length} errors`);
+      if (consoleErrors.length)
+        record("warnings", `console:${viewport.name}`, `${consoleErrors.length} errors`);
       await context.close();
     }
   } finally {

@@ -42,9 +42,24 @@ describe("E2E design and brand polish", () => {
     // and supporting copy are uppercased in CSS (the copy strings themselves are
     // never changed), so hero, section, and card read as one cased voice.
     expect(polish).toContain(".marketing-surface :is(h1, h2, h3, h4, h5, h6) {");
-    expect(polish).toContain(
-      ":is(p, li, .wl-public-copy, .wl-route-copy, .wl-page-copy, .marketing-hero__description) {",
-    );
+    expect(polish).toContain(":is(p, li, .wl-public-copy, .wl-route-copy, .wl-page-copy) {");
+    // The hero-subhead node is gone from the DOM, so it must not survive in the
+    // stylesheets either. Six rules across three files still styled it, and
+    // pinning one of those selector strings here had made the dead rule
+    // contractually required to stay. Comments are stripped first so the note
+    // explaining the absence does not read as the presence.
+    const dressers = globSync("src/styles/**/*.css", { cwd: root })
+      .map((file) => file.replaceAll("\\", "/"))
+      .filter((file) =>
+        source(file)
+          .replace(/\/\*[\s\S]*?\*\//g, "")
+          .includes("marketing-hero__description"),
+      )
+      .sort();
+    expect(
+      dressers,
+      `stylesheets still dressing the removed hero subhead:\n${dressers.join("\n")}`,
+    ).toEqual([]);
     expect(polish).toContain("text-transform: uppercase");
     // Read-as-written exceptions: long-form legal prose and customer-authored
     // words are never rewritten by the case system.
@@ -164,8 +179,13 @@ describe("E2E design and brand polish", () => {
     // a sidebar row is a link wrapping an agent name the customer chose. The
     // case system must never rewrite someone's own words, so `wl-preserve-case`
     // opts an element and its subtree out.
+    //
+    // Weighted to win outright rather than to hold a specificity lead. At 0,2,0
+    // the opt-out was overtaken by the workspace heading rule, so a heading that
+    // merely *contained* a preserve-case wrapper still shouted — and every new
+    // selector added above would have restarted the same race.
     expect(caps).toMatch(
-      /\.wl-ui-caps \.wl-preserve-case,\s*\.wl-ui-caps \.wl-preserve-case \*\s*\{[^}]*?text-transform: none;/,
+      /:is\(\.wl-ui-caps, \.wl-cased\) \.wl-preserve-case,\s*:is\(\.wl-ui-caps, \.wl-cased\) \.wl-preserve-case \*\s*\{[^}]*?text-transform: none !important;/,
     );
     // Tolerant of formatting: prettier wraps this JSX onto three lines once the
     // class list grows, so an assertion that required `">{agent.name}` adjacent
@@ -215,14 +235,17 @@ describe("E2E design and brand polish", () => {
     // closing brace and was satisfied by the caption-span rule further down, so
     // deleting the declaration here left the test green.
     expect(caps).toMatch(
-      /\.wl-ui-caps :is\(label, legend, th\) \{[^}]*?text-transform: uppercase;/,
+      /:is\(\.wl-ui-caps, \.wl-cased\) :is\(label, legend, th\) \{[^}]*?text-transform: uppercase;/,
     );
 
     // A label can also hold the control and a help line. `<input>` must reset or
     // the transform shouts whatever the user typed -- and `::placeholder`
     // inherits it, so an untouched placeholder would shout too.
+    // Whitespace-tolerant: prettier rewraps this selector onto three lines once
+    // the marker list grows, and a regex that pins the line shape fails on a
+    // formatting pass rather than on a real change.
     const reset = caps.match(
-      /\.wl-ui-caps\s*\n?\s*:is\(label, legend\) :is\(([^)]*)\) \{[\s\S]*?text-transform: none;/,
+      /:is\(\.wl-ui-caps, \.wl-cased\)\s+:is\(label, legend\)\s+:is\(([^)]*)\)\s*\{[\s\S]*?text-transform: none;/,
     );
     expect(reset, "labels must reset their nested control and prose").toBeTruthy();
     for (const tag of ["input", "textarea", "select", "p", "span"]) {
@@ -232,7 +255,7 @@ describe("E2E design and brand polish", () => {
     // Where a caption needs its own styling it is the leading span, which the
     // blanket reset above would otherwise catch.
     expect(caps).toMatch(
-      /:is\(label, legend\) > span:first-child:not\(:has\(input, textarea, select, button\)\)/,
+      /:is\(label, legend\)\s*>\s*span:first-child:not\(:has\(input, textarea, select, button\)\)/,
     );
   });
 });

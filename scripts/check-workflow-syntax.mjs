@@ -4,9 +4,7 @@ import * as prettier from "prettier";
 
 const root = process.cwd();
 const workflowsDir = resolve(root, ".github/workflows");
-const workflowFiles = (await readdir(workflowsDir))
-  .filter((name) => /\.ya?ml$/i.test(name))
-  .sort();
+const workflowFiles = (await readdir(workflowsDir)).filter((name) => /\.ya?ml$/i.test(name)).sort();
 
 if (workflowFiles.length === 0) {
   throw new Error("No GitHub Actions workflow files were found.");

@@ -62,8 +62,10 @@ async function main() {
 
   const directorData = await director.json().catch(() => ({}));
   const demoData = await demo.json().catch(() => ({}));
-  if (!director.ok) throw new Error(`Director clear failed ${director.status}: ${JSON.stringify(directorData)}`);
-  if (!demo.ok) throw new Error(`Demo data wipe failed ${demo.status}: ${JSON.stringify(demoData)}`);
+  if (!director.ok)
+    throw new Error(`Director clear failed ${director.status}: ${JSON.stringify(directorData)}`);
+  if (!demo.ok)
+    throw new Error(`Demo data wipe failed ${demo.status}: ${JSON.stringify(demoData)}`);
 
   console.log(`Dogfood reset @ ${base}`);
   console.log("  Demo dry run:", demoDryRunData);

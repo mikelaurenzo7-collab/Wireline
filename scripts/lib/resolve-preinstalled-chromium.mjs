@@ -64,3 +64,23 @@ export function resolvePreinstalledChromium(env = process.env) {
   }
   return undefined;
 }
+
+/**
+ * The launch-options fragment every `chromium.launch()` in `scripts/` should
+ * spread, so the resolution above is applied once rather than remembered six
+ * times.
+ *
+ * It was remembered once. The helper was written for the asset-capture
+ * sandboxes and then wired into a single caller, which left both asset
+ * producers — the marketing kit that records the launch reels, and the official
+ * asset builder — dying at launch with "Executable doesn't exist" wherever
+ * browsers are preinstalled rather than downloaded. A reel cannot be re-cut from
+ * a script that cannot open a browser.
+ *
+ * Returns an empty object when Playwright should resolve browsers itself, so
+ * spreading it is a no-op on CI and on a normal local install.
+ */
+export function chromiumLaunchOptions(env = process.env) {
+  const executablePath = resolvePreinstalledChromium(env);
+  return executablePath ? { executablePath } : {};
+}

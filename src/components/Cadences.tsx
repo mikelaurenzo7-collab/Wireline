@@ -368,7 +368,7 @@ export default function Cadences() {
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h4 className="text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground">
+                  <h4 className="wl-preserve-case text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground">
                     {c.name}
                   </h4>
                   {c.active ? (

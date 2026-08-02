@@ -155,7 +155,9 @@ async function ensureEnvironment(identifier, name, type) {
 async function ensureAgent() {
   const list = await api(`/gateway/agents/api/v1/agents?${scope}`);
   const agents = Array.isArray(list.data) ? list.data : [];
-  const existing = agents.find((a) => a.uid === "wireline_wingman" || a.identifier === "wireline_wingman");
+  const existing = agents.find(
+    (a) => a.uid === "wireline_wingman" || a.identifier === "wireline_wingman",
+  );
   if (existing) {
     results.push({ resource: "agent", identifier: "wireline_wingman", status: "exists" });
     return;

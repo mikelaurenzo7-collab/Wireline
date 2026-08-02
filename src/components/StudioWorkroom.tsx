@@ -320,11 +320,19 @@ const StudioWorkroom = forwardRef<
       <header className="shrink-0 border-b border-border/60 bg-card/50 px-4 py-4 sm:px-6">
         <div className="mx-auto flex w-full max-w-3xl items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+            <p className="text-eyebrow text-primary">
               {mode === "test" ? "Browser test" : "Build by conversation"}
             </p>
             <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
-              {mode === "test" ? `Talk to ${agentName} like a customer` : `Improve ${agentName}`}
+              {mode === "test" ? (
+                <>
+                  Talk to <span className="wl-preserve-case">{agentName}</span> like a customer
+                </>
+              ) : (
+                <>
+                  Improve <span className="wl-preserve-case">{agentName}</span>
+                </>
+              )}
             </h2>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
