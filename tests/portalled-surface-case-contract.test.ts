@@ -58,8 +58,23 @@ describe("portalled surface case contract", () => {
     // The rule is scoped to a `.wl-ui-caps` ancestor, and the shared Dialog atom
     // is what supplies that ancestor for portalled content. If either half
     // moves, modal headings silently fall out of the title tier again.
+    //
+    // All three modal-title slots, not just the one: once the portalled roots
+    // joined the case system, an unnamed slot took the generic heading rule's
+    // weight and line-height while getting none of its case — the side effect
+    // without the intent.
     const caps = source("src/styles/uppercase-system.css");
-    expect(caps).toMatch(/\.wl-ui-caps \[data-slot="dialog-title"\]/);
+    const titleRule =
+      caps
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .match(/\.wl-ui-caps\s+:is\(([^)]*data-slot="dialog-title"[^)]*)\)\s*\{[^}]*\}/)?.[0] ?? "";
+    expect(titleRule, "the modal-title rule must be present").not.toBe("");
+    for (const slot of ["dialog-title", "alert-dialog-title", "sheet-title"]) {
+      expect(titleRule, `${slot} must join the cased title tier`).toContain(
+        `[data-slot="${slot}"]`,
+      );
+    }
+    expect(titleRule).toContain("text-transform: uppercase");
 
     const dialog = source("src/components/atoms/Dialog.tsx");
     expect(dialog).toMatch(/data-slot="dialog-content"/);

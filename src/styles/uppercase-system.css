@@ -310,10 +310,38 @@
 /* Field captions and column headers join the label tier: caps with the wide
  * label tracking, at whatever size the field authored. */
 /* Dialog titles are titles. A sentence-case modal heading sitting above cased
- * labels and buttons was the one place the system visibly broke. */
-.wl-ui-caps [data-slot="dialog-title"] {
-  letter-spacing: var(--wl-caps-title-tracking);
+ * labels and buttons was the one place the system visibly broke.
+ *
+ * Now that the portalled surfaces carry `wl-ui-caps`, this rule finally reaches
+ * a real modal — and so does the generic heading rule above it, which was never
+ * meant to restyle one. Measured, it also took the title from weight 600 to 700
+ * and from a 1.15 line-height to 1.05. The Dialog atom authors
+ * `font-semibold leading-[1.15]` deliberately, for a title that has to stay
+ * contained in a fixed box and now wraps sooner because caps are wider; a
+ * contract pins that string. Restating both here keeps the rendered result equal
+ * to the authored one, which is the divergence this whole pass exists to close.
+ * Case is the only thing the system changes here. */
+.wl-ui-caps
+  :is([data-slot="dialog-title"], [data-slot="alert-dialog-title"], [data-slot="sheet-title"]) {
+  font-weight: 600;
   text-transform: uppercase;
+}
+
+/* Each modal title keeps the measure its own atom authored. Dialog and Sheet
+ * both write `text-xl leading-[1.15] tracking-[-.025em]`; AlertDialog is a
+ * smaller, denser confirm box at `leading-tight` and `-.02em`. Naming all three
+ * slots matters: the moment the portalled roots joined the case system, the
+ * alert-dialog and sheet titles started taking the generic heading rule's weight
+ * and 1.05 line-height while getting none of its case — the side effect without
+ * the intent, which is worse than either. */
+.wl-ui-caps :is([data-slot="dialog-title"], [data-slot="sheet-title"]) {
+  letter-spacing: var(--wl-caps-title-tracking);
+  line-height: 1.15;
+}
+
+.wl-ui-caps [data-slot="alert-dialog-title"] {
+  letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 
 .wl-ui-caps :is(label, legend, th) {
