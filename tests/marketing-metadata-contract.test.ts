@@ -10,9 +10,9 @@ describe("marketing metadata contract", () => {
     const staticHead = read("index.html");
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
-    expect(staticHead).toContain("Wireline | AI voice agents that get work done");
+    expect(staticHead).toContain("Wireline | AI voice agents that get the work done");
     expect(runtimeMeta).toContain(
-      'const DEFAULT_TITLE = "Wireline | AI voice agents that get work done"',
+      'const DEFAULT_TITLE = "Wireline | AI voice agents that get the work done"',
     );
     for (const source of [staticHead, runtimeMeta]) {
       expect(source).toContain("Build one for your business or your life.");
@@ -46,7 +46,7 @@ describe("marketing metadata contract", () => {
   it("keeps the public market reference tied to current first-party sources", () => {
     const compare = read("src/pages/Compare.tsx");
 
-    expect(compare.match(/July 29, 2026/g)).toHaveLength(2);
+    expect(compare.match(/August 2, 2026/g)).toHaveLength(2);
     for (const href of [
       "https://www.goodcall.com/pricing",
       "https://smith.ai/pricing/ai-receptionist",
@@ -81,7 +81,6 @@ describe("marketing metadata contract", () => {
     for (const source of [pricing, contact]) {
       expect(source).not.toContain("Personal starts at $9");
       expect(source).not.toContain("Business coverage starts at $99");
-      expect(source).not.toContain("Wireline Pro");
       expect(source).not.toContain("Account Holder tier");
       expect(source).not.toContain("Everyday tier");
       expect(source).not.toContain("~$0.07/min");

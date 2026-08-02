@@ -82,6 +82,30 @@ describe("marketing route meta prerendering", () => {
       expect(solutions).toContain(`"${meta.title.replace(" | Wireline", "")}"`);
       expect(solutions).toContain(meta.description);
     }
+    // The wider sitemap set: every prerendered route's title and description
+    // must appear verbatim in the page component that owns its PageMeta call.
+    const routeSources: Record<string, string> = {
+      "/about": "src/pages/About.tsx",
+      "/showcase": "src/pages/Showcase.tsx",
+      "/blog": "src/pages/Blog.tsx",
+      "/support": "src/components/SupportPage.tsx",
+      "/contact": "src/components/ContactPage.tsx",
+      "/status": "src/components/Status.tsx",
+      "/security": "src/components/Security.tsx",
+      "/trust": "src/components/Security.tsx",
+      "/developers": "src/pages/Developers.tsx",
+      "/changelog": "src/components/PublicChangelog.tsx",
+      "/privacy": "src/components/PrivacyPolicyPage.tsx",
+      "/terms": "src/components/LegalPage.tsx",
+    };
+    for (const [route, path] of Object.entries(routeSources)) {
+      const meta = resolveRouteMeta(route)!;
+      const source = read(path);
+      // Titles may carry the PageMeta brand suffix client-side; assert the
+      // pre-suffix half the page actually declares.
+      expect(source, `${route} title`).toContain(meta.title.replace(" | Wireline", ""));
+      expect(source, `${route} description`).toContain(meta.description);
+    }
   });
 
   it("normalizes trailing slashes and strips query/hash", () => {

@@ -24,7 +24,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /<title>Wireline \| AI voice agents that get work done<\/title>/,
+    /<title>Wireline \| AI voice agents that get the work done<\/title>/,
     "static metadata must state the current product promise",
   );
   mustInclude(
@@ -36,7 +36,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "Wireline \| AI voice agents that get work done"/,
+    /DEFAULT_TITLE = "Wireline \| AI voice agents that get the work done"/,
     "runtime metadata must state the current product promise",
   );
   mustInclude(

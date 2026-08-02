@@ -75,7 +75,7 @@ export default function PrivacyPolicyPage() {
     <MarketingChrome stickyCta={false}>
       <PageMeta
         title="Privacy Policy"
-        description="Wireline's privacy policy — how we collect, use, protect, and disclose data, including privacy-friendly product analytics and optional advertising measurement. Last updated July 19, 2026."
+        description="Wireline's privacy policy: how we collect, use, protect, and disclose data, including privacy friendly product analytics and optional advertising measurement. Last updated July 19, 2026."
         path="/privacy"
       />
 

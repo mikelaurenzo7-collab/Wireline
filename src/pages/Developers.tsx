@@ -113,8 +113,8 @@ export default function Developers() {
   return (
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
-        title="Developer Portal - Wireline"
-        description="Wireline MCP apps for ChatGPT, Claude, and Cursor — account-bound draft, simulate, and continue in Studio. No public API keys."
+        title="Developer Portal | Wireline"
+        description="Wireline MCP apps for ChatGPT, Claude, and Cursor. Draft, simulate, and continue in Studio with account bound access and no public API keys."
         path="/developers"
       />
 

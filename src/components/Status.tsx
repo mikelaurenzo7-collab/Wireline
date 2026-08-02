@@ -158,7 +158,7 @@ export default function Status() {
   return (
     <>
       <PageMeta
-        title="System Status — Wireline"
+        title="System Status | Wireline"
         description="Live operational status of Wireline's voice runtime, fallback path, and reasoning layer. Updated every 60 seconds."
         path="/status"
       />

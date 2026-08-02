@@ -18,6 +18,7 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 const CORE_BUYING_SURFACES = [
   "src/lib/product-copy.ts",
   "src/pages/LandingPage.tsx",
+  "src/pages/Pricing.tsx",
   "src/components/marketing/MarketingHero.tsx",
   "src/components/marketing/WireAgentLanding.tsx",
   "src/components/marketing/PrecisionPublicHeader.tsx",

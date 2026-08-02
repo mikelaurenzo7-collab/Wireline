@@ -134,7 +134,7 @@ export default function Compare() {
   return (
     <MarketingPageFrame className="wl-compare-page" mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
-        title="Why Wireline"
+        title="Why Wireline | Compare AI Receptionist and Voice Agent Pricing"
         description="Compare Wireline's owner ready AI voice agent with per agent, per call, and developer voice infrastructure pricing."
         path="/compare"
       />
@@ -169,7 +169,7 @@ export default function Compare() {
       <section className="wl-public-section">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="wl-stitch-eyebrow">Market reference · Verified July 29, 2026</p>
+            <p className="wl-stitch-eyebrow">Market reference · Verified August 2, 2026</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
               Compare the buying model, not only the headline price.
             </h2>
@@ -256,9 +256,9 @@ export default function Compare() {
           </div>
 
           <p className="mt-4 max-w-4xl text-xs leading-5 text-muted-foreground">
-            Public prices were checked on the linked official pages on July 29, 2026 and may change.
-            Taxes, carrier fees, optional extras, annual discounts, implementation services, and
-            usage patterns can change the effective total. This is a buying-model reference,{" "}
+            Public prices were checked on the linked official pages on August 2, 2026 and may
+            change. Taxes, carrier fees, optional extras, annual discounts, implementation services,
+            and usage patterns can change the effective total. This is a buying-model reference,{" "}
             {"not a claim that unlike products are feature for feature equivalents."}
           </p>
         </div>

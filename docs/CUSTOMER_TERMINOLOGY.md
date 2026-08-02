@@ -7,7 +7,7 @@ Status: **Active canonical language policy**.
 Wireline keeps both account types because they change defaults, collaboration,
 and customer intent:
 
-- **Personal workspace** — the customer creates a **personal agent** for their
+- **Personal workspace** — the customer creates a **personal voice agent** for their
   own calls, appointments, follow-up, and personal tasks.
 - **Business workspace** — the customer creates a **business voice agent** for a
   customer-facing job shared with a team.
@@ -20,11 +20,11 @@ permanent silos; the creation flow can still switch posture deliberately.
 
 | Surface                                       | Canonical language                                       |
 | --------------------------------------------- | -------------------------------------------------------- |
-| Personal signup/setup                         | `personal agent`, `agent`                                |
+| Personal signup/setup                         | `personal voice agent`, `agent`                          |
 | Business signup/setup                         | `business voice agent`, `voice agent`                    |
 | Broad business marketing                      | `AI voice agent`, `business voice agent`                 |
-| Personal marketing                            | `personal agent` or plain-language task copy             |
-| Navigation                                    | `Agent` in Personal; `Voice Agent` in Business           |
+| Personal marketing                            | `personal voice agent` or plain-language task copy       |
+| Navigation                                    | `Voice Agent` (short form `Agent`) in both workspaces    |
 | Technical APIs, routes, DB, events, MCP tools | `agent`                                                  |
 | Internal identifiers                          | Keep `agentId`, `agents`, `/api/agents`, `agent_created` |
 
@@ -36,10 +36,10 @@ The customer-facing noun is resolved by `CUSTOMER_AGENT_LANGUAGE` in
 
 ### Personal
 
-- “Build your first personal agent.”
-- “What should your personal agent handle?”
+- “Personal voice agent in about a minute”
+- “What should your personal voice agent handle?”
 - “Start with one call, appointment, or personal task.”
-- CTA: “Create personal agent”
+- CTA: “Create personal voice agent”
 
 ### Business
 

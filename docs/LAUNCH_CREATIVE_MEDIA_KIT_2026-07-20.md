@@ -15,7 +15,7 @@ Use:
 - **Build free. Go live from $19/mo.**
 - **Personal + Business**
 - **Voice + SMS + Email**
-- **Create -> Train -> Wire -> Run**
+- **Build -> Train -> Launch -> Improve**
 
 Do not use:
 
@@ -72,7 +72,7 @@ Prompt: Cut the 15-second vertical reel exactly as timecoded in `docs/WIRELINE_L
 
 ### Beautiful.ai Deck
 
-Prompt: Build a concise 6-slide launch deck for Wireline: 1) AI Voice Agents, 2) Missed calls are expensive, 3) Create -> Train -> Wire -> Run, 4) Personal + business use cases, 5) Founder Early Access from $19/mo, 6) Build your AI Voice Agent.
+Prompt: Build a concise 6-slide launch deck for Wireline: 1) AI Voice Agents, 2) Missed calls are expensive, 3) Build -> Train -> Launch -> Improve, 4) Personal + business use cases, 5) Founder Early Access from $19/mo, 6) Build your AI Voice Agent.
 
 ## AI Voice Generator Asset
 

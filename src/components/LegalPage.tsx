@@ -118,7 +118,7 @@ export function TermsOfService() {
     >
       <PageMeta
         title="Terms of Service"
-        description="Wireline's terms of service — acceptable use, billing, telemarketing compliance (TCPA), SMS opt-out disclosure, limitation of liability, and governing law (Delaware). Last updated July 28, 2026."
+        description="Wireline's terms of service: acceptable use, billing, telemarketing compliance (TCPA), SMS opt out disclosure, limitation of liability, and governing law (Delaware). Last updated July 28, 2026."
         path="/terms"
       />
 

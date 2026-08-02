@@ -28,7 +28,7 @@ const SITE_URL = "https://trywireline.com";
 const BRAND_SUFFIX = " | Wireline";
 
 /** Exact static strings in `index.html` that carry the homepage defaults. */
-export const HOME_TITLE = "Wireline | AI voice agents that get work done";
+export const HOME_TITLE = "Wireline | AI voice agents that get the work done";
 export const HOME_DESCRIPTION =
   "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.";
 const HOME_CANONICAL_TAG = '<link rel="canonical" href="https://trywireline.com/" />';
@@ -62,9 +62,68 @@ const STATIC_ROUTE_META: Record<string, { title: string; description: string }> 
       "Build and train AI voice agents that call, text, email, book, follow up, update connected systems, and log outcomes under shared rules and memory.",
   },
   "/compare": {
-    title: "Why Wireline",
+    title: "Why Wireline | Compare AI Receptionist and Voice Agent Pricing",
     description:
       "Compare Wireline's owner ready AI voice agent with per agent, per call, and developer voice infrastructure pricing.",
+  },
+  "/about": {
+    title: "About Wireline | AI Voice Agents for Calls and Follow Through",
+    description:
+      "Wireline is a customizable agent platform built for calls, texts, follow through, browser context, email, and integrations.",
+  },
+  "/showcase": {
+    title: "Live AI Voice Agent Demo | Try Wireline",
+    description:
+      "Hear the AI voice agent your customers will meet first, then build one for voice, SMS, and email.",
+  },
+  "/blog": {
+    title: "Wireline Notes | AI voice agent guides for small business phone coverage",
+    description:
+      "Practical guides for AI voice agents: appointment booking, support queues, handoff boundaries, and getting routine phone work off your plate.",
+  },
+  "/support": {
+    title: "Support | Wireline",
+    description: "Get help with Wireline for personal call support or business call coverage.",
+  },
+  "/contact": {
+    title: "Contact Wireline",
+    description:
+      "Talk to Wireline about personal call coverage, team rollout, partnerships, or support.",
+  },
+  "/status": {
+    title: "System Status | Wireline",
+    description:
+      "Live operational status of Wireline's voice runtime, fallback path, and reasoning layer. Updated every 60 seconds.",
+  },
+  "/security": {
+    title: "Security and Compliance | Wireline",
+    description:
+      "How Wireline handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and honest security proof.",
+  },
+  "/trust": {
+    title: "Trust Center | Wireline",
+    description:
+      "How Wireline handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and honest security proof.",
+  },
+  "/developers": {
+    title: "Developer Portal | Wireline",
+    description:
+      "Wireline MCP apps for ChatGPT, Claude, and Cursor. Draft, simulate, and continue in Studio with account bound access and no public API keys.",
+  },
+  "/changelog": {
+    title: "Changelog | Wireline",
+    description:
+      "Every shipped improvement to Wireline: features, infrastructure, polish, security. Updated when we ship.",
+  },
+  "/privacy": {
+    title: "Privacy Policy",
+    description:
+      "Wireline's privacy policy: how we collect, use, protect, and disclose data, including privacy friendly product analytics and optional advertising measurement. Last updated July 19, 2026.",
+  },
+  "/terms": {
+    title: "Terms of Service",
+    description:
+      "Wireline's terms of service: acceptable use, billing, telemarketing compliance (TCPA), SMS opt out disclosure, limitation of liability, and governing law (Delaware). Last updated July 28, 2026.",
   },
   "/solutions/sales": {
     title: "Every good lead gets a next step. | Wireline",

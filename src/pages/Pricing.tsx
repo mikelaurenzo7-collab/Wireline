@@ -19,13 +19,16 @@ import MarketingFooter from "../components/marketing/MarketingFooter";
 import MarketingHero from "../components/marketing/MarketingHero";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
-import { STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
+import { FLAT_OVERAGE_PER_MIN_USD, STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
 import { cn } from "../lib/utils";
 
 const planById = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
   StripePlanId,
   (typeof STRIPE_PLANS)[number]
 >;
+
+/** Published prepaid rate, derived from the catalog so display can never drift. */
+const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
 
 /** Honest annual savings vs paying monthly for 12 months (every paid tier's annual is 10x monthly, i.e. 2 months free). */
 function annualSavingsLabel(monthlyUsd: number, annualUsd: number): string | null {
@@ -42,7 +45,7 @@ const PAID_TIERS = [
     eyebrow: "Put one agent live",
     tagline: "Your AI Voice Agent from $19/month.",
     detail:
-      "One focused agent for inbound, outbound, or scheduling—with an included Wireline number.",
+      "One focused agent for inbound, outbound, or scheduling, with an included Wireline number.",
     ctaMonthly: "Start for $19",
     ctaAnnual: "Start for $190/yr",
     ctaPath: "/signup?plan=starter",
@@ -54,7 +57,7 @@ const PAID_TIERS = [
     plan: planById.team,
     publicName: "Starter Plus",
     eyebrow: "Founder hybrid",
-    tagline: "Personal Concierge + business voice agent — from $39/month.",
+    tagline: "Personal Concierge plus business voice agent, from $39/month.",
     detail: `Two live agents, two numbers, ${planById.team.voice_minutes_monthly} voice minutes, Lead Hunt, inbox, SMS, and email.`,
     ctaMonthly: "Choose Starter Plus",
     ctaAnnual: "Choose annual Starter Plus",
@@ -95,7 +98,7 @@ const CHANNEL_RULES = [
   {
     icon: PhoneCall,
     title: "Voice + included number",
-    body: "A Wireline number on every paid plan. Extra minutes draw from prepaid balance—live calls never cut mid conversation.",
+    body: `A Wireline number on every paid plan. Extra minutes stay prepaid at a flat ${TOPUP_RATE}, and live calls never cut mid conversation.`,
   },
   {
     icon: MessageSquareText,
@@ -117,7 +120,7 @@ const CHANNEL_RULES = [
 const FAQ = [
   [
     "Does one agent handle voice, SMS, and email?",
-    "Yes. A single Wireline agent can call, text, and email under one business identity, memory, rule set, approval posture, and outcome record. Additional agents are for concurrency or specialized roles—not to unlock basic channels.",
+    "Yes. A single Wireline agent can call, text, and email under one business identity, memory, rule set, approval posture, and outcome record. Additional agents are for concurrency or specialized roles, not to unlock basic channels.",
   ],
   [
     "Is the Wireline number free?",
@@ -133,7 +136,7 @@ const FAQ = [
   ],
   [
     "What happens when included voice minutes run out?",
-    "New live work uses prepaid Runtime Balance. Wireline does not silently add a postpaid metered line item. Add balance, wait for renewal, or upgrade. An active call is never cut off for billing — only the next new action pauses until coverage is restored.",
+    `New live work draws prepaid Runtime Balance at a flat ${TOPUP_RATE}, never a surprise postpaid bill. Add balance, wait for renewal, or upgrade. An active call is never cut off for billing; only the next new action pauses until coverage is restored.`,
   ],
   [
     "Are live calls limited to a few seconds?",
@@ -145,7 +148,7 @@ const FAQ = [
   ],
   [
     "Can I cancel or get a refund?",
-    "Yes. Every paid plan is month to month by default with no long term contract, and you can cancel from Stripe at any time — access continues through the end of the current billing period. Reach out at support@trywireline.com within 30 days of your first paid invoice if a plan wasn't the right fit and we'll make it right.",
+    "Yes. Every paid plan is month to month by default with no long term contract, and you can cancel from Stripe at any time, and access continues through the end of the current billing period. Reach out at support@trywireline.com within 30 days of your first paid invoice if a plan wasn't the right fit and we'll make it right.",
   ],
   [
     "What is the Scale plan?",
@@ -183,24 +186,36 @@ const assurances = [
 
 const pricingJsonLd = {
   "@context": "https://schema.org",
-  "@type": "OfferCatalog",
-  name: "Wireline AI Voice Agents pricing",
-  url: "https://trywireline.com/pricing",
-  itemListElement: [
+  "@graph": [
     {
-      "@type": "Offer",
-      name: "Wireline Free Builder",
-      price: 0,
-      priceCurrency: "USD",
-      description: "Build, train, and privately simulate one AI Voice Agent.",
+      "@type": "OfferCatalog",
+      name: "Wireline AI Voice Agents pricing",
+      url: "https://trywireline.com/pricing",
+      itemListElement: [
+        {
+          "@type": "Offer",
+          name: "Wireline Free Builder",
+          price: 0,
+          priceCurrency: "USD",
+          description: "Build, train, and privately simulate one AI Voice Agent.",
+        },
+        ...PAID_TIERS.map(({ plan, publicName, detail }) => ({
+          "@type": "Offer",
+          name: `Wireline ${publicName}`,
+          price: plan.price_usd_monthly,
+          priceCurrency: "USD",
+          description: detail,
+        })),
+      ],
     },
-    ...PAID_TIERS.map(({ plan, publicName, detail }) => ({
-      "@type": "Offer",
-      name: `Wireline ${publicName}`,
-      price: plan.price_usd_monthly,
-      priceCurrency: "USD",
-      description: detail,
-    })),
+    {
+      "@type": "FAQPage",
+      mainEntity: FAQ.map(([question, answer]) => ({
+        "@type": "Question",
+        name: question,
+        acceptedAnswer: { "@type": "Answer", text: answer },
+      })),
+    },
   ],
 };
 
@@ -225,7 +240,7 @@ export default function Pricing() {
         <MarketingHero
           eyebrow="Founder Early Access"
           title="Build free. Launch for $19. Scale when it pays."
-          description="Calls, texts, email, follow up, and Lead Hunt — plus a number on every paid plan. Extra usage stays prepaid."
+          description={`Calls, texts, email, follow up, and Lead Hunt, plus a number on every paid plan. Extra minutes stay prepaid at a flat ${TOPUP_RATE}.`}
           primaryAction={{
             label: annual ? "Launch for $190/yr" : "Launch for $19/mo",
             to: annual ? "/signup?plan=starter&interval=year" : "/signup?plan=starter",
@@ -452,7 +467,7 @@ export default function Pricing() {
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
                 One agent calls, texts, and emails on one subscription. Costs track numbers,
-                minutes, and segments—not seats per channel.
+                minutes, and segments, not seats per channel.
               </p>
             </div>
             <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">

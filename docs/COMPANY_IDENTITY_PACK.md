@@ -6,7 +6,7 @@
 
 ## Decision
 
-Wireline should give each live AI employee a dedicated company identity, not merely a phone number.
+Wireline should give each live AI voice agent a dedicated company identity, not merely a phone number.
 
 The customer-facing package is:
 
@@ -14,7 +14,7 @@ The customer-facing package is:
 2. **Verified calling identity** using the customer's company display name, traditional CNAM fallback, and optional enhanced logo/call-reason assets where supported.
 3. **Registered SMS identity** for compliant application-to-person messaging.
 4. **Branded email identity** using the customer's sender name and authenticated sending domain.
-5. **One shared identity record** across the employee's voice, SMS, and email work.
+5. **One shared identity record** across the agent's voice, SMS, and email work.
 
 ## What Wireline can promise
 
@@ -26,7 +26,7 @@ Wireline can:
 - record an auditable request for Wireline review;
 - support founder-led provider submission during the founding-customer phase;
 - track review state per channel;
-- use one company identity across the employee's connected channels;
+- use one company identity across the agent's connected channels;
 - show exactly what is missing before a review request can be made.
 
 ## What Wireline must not promise
@@ -185,7 +185,7 @@ Official references:
 
 ## Success criteria
 
-- Customers understand that the number belongs to their AI employee.
+- Customers understand that the number belongs to their AI voice agent.
 - Customers can configure one recognizable company identity across channels.
 - Wireline never represents profile completion as provider approval.
 - Every review request and invalidation is auditable.

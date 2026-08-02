@@ -27,7 +27,7 @@ This pack intentionally avoids broad "one AI employee" positioning. Business wor
 | Compact line | Start with one agent. Build a team when you need one. |
 | Outcome line | Capture the call, send the follow-up, log the outcome. |
 | Proof loop | Brief -> Train -> Launch -> Improve |
-| Product loop | Create -> Train -> Wire -> Run |
+| Product loop | Build -> Train -> Launch -> Improve |
 | CTA | Build your AI Voice Agent |
 | Price | Build free. Go live from $19/mo. |
 
@@ -235,7 +235,7 @@ Create a vertical launch cover for Wireline. Headline: "Missed calls should not 
 
 ### LinkedIn Banner - 16:9
 
-Create a polished LinkedIn launch banner for Wireline. Headline: "AI voice agents for every conversation - personal or business." Supporting line: "Create -> Train -> Wire -> Run." CTA: "Build free. Go live from $19/mo." Visual: professional dashboard scene, voice waveform, SMS thread, email follow-up, and outcome ledger.
+Create a polished LinkedIn launch banner for Wireline. Headline: "AI voice agents for every conversation - personal or business." Supporting line: "Build -> Train -> Launch -> Improve." CTA: "Build free. Go live from $19/mo." Visual: professional dashboard scene, voice waveform, SMS thread, email follow-up, and outcome ledger.
 
 ### Demo Deck
 
@@ -243,7 +243,7 @@ Create a 6-slide promotional deck:
 
 1. AI Voice Agents
 2. The missed-call problem
-3. Create -> Train -> Wire -> Run
+3. Build -> Train -> Launch -> Improve
 4. Personal and business use cases
 5. Founder Early Access pricing from $19/mo
 6. CTA: Build your AI Voice Agent

@@ -150,8 +150,8 @@ export default function PublicChangelog() {
   return (
     <>
       <PageMeta
-        title="Changelog — Wireline"
-        description="Every shipped improvement to Wireline — features, infrastructure, polish, security. Updated when we ship."
+        title="Changelog | Wireline"
+        description="Every shipped improvement to Wireline: features, infrastructure, polish, security. Updated when we ship."
         path="/changelog"
       />
       <MarketingChrome stickyCta={false}>

@@ -25,8 +25,8 @@ export default function About() {
   return (
     <MarketingPageFrame className="wl-about-page" mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
-        title="About Wireline | AI Agents for Calls and Follow-up"
-        description="Wireline is a customizable agent platform built for calls, texts, follow-up, browser context, email, and integrations."
+        title="About Wireline | AI Voice Agents for Calls and Follow Through"
+        description="Wireline is a customizable agent platform built for calls, texts, follow through, browser context, email, and integrations."
         path="/about"
       />
 
