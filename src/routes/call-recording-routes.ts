@@ -70,7 +70,10 @@ async function pipeAudio(
   }
   if (!upstream.body)
     throw new Error("Recording provider returned an empty body");
-  await pipeline(Readable.fromWeb(upstream.body), res);
+  await pipeline(
+    Readable.from(upstream.body as unknown as AsyncIterable<Uint8Array>),
+    res,
+  );
 }
 
 /**
