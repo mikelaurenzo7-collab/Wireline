@@ -29,25 +29,20 @@ function LegalLayout({
           <ArrowLeft className="w-3.5 h-3.5" /> Back home
         </Link>
 
-        <div className="mb-3 flex flex-col items-center gap-3 text-center">
+        <div className="mb-3 flex items-center gap-3">
           <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-brand">
             <Icon className="w-5 h-5 text-on-brand" />
           </div>
           <h1 className="marketing-hero-title text-2xl sm:text-3xl">{title}</h1>
         </div>
-        <p className="mb-10 text-center text-eyebrow !text-[0.625rem]">
-          Last updated: {LAST_UPDATED}
-        </p>
+        <p className="mb-10 text-eyebrow !mx-0 !text-[0.625rem]">Last updated: {LAST_UPDATED}</p>
 
         {summary?.length ? (
-          <div
-            className="mb-10 grid gap-3 sm:grid-cols-3"
-            aria-label={`${title} summary`}
-          >
+          <div className="mb-10 grid gap-3 sm:grid-cols-3" aria-label={`${title} summary`}>
             {summary.map((item) => (
               <div
                 key={item}
-                className="rounded-md border border-border bg-background/45 p-4 text-center"
+                className="flex items-center justify-center rounded-md border border-border bg-background/45 p-4 text-center"
               >
                 <p className="text-sm leading-6 text-foreground">{item}</p>
               </div>
@@ -127,187 +122,154 @@ export function TermsOfService() {
 
       <Section title="1. Acceptance">
         <p>
-          By accessing or using Wireline you agree to these Terms of Service
-          ("Terms"). If you do not agree, do not use the service. These Terms
-          constitute a binding agreement between you and{" "}
-          <strong>Wireline</strong>.
+          By accessing or using Wireline you agree to these Terms of Service ("Terms"). If you do
+          not agree, do not use the service. These Terms constitute a binding agreement between you
+          and <strong>Wireline</strong>.
         </p>
       </Section>
 
       <Section title="2. Service Description">
         <p>
-          Wireline provides AI-powered voice, SMS, and email agent
-          infrastructure for personal and business use. The service includes
-          agent configuration tools, call routing, email triage, outbound
-          dialing campaigns, a DNC manager, and analytics.
+          Wireline provides AI-powered voice, SMS, and email agent infrastructure for personal and
+          business use. The service includes agent configuration tools, call routing, email triage,
+          outbound dialing campaigns, a DNC manager, and analytics.
         </p>
       </Section>
 
       <Section title="3. Acceptable Use">
         <p>You agree not to use Wireline to:</p>
         <ul className="list-disc list-inside space-y-1 ml-2">
+          <li>Dial numbers on the National Do Not Call Registry without a valid exemption</li>
           <li>
-            Dial numbers on the National Do Not Call Registry without a valid
-            exemption
-          </li>
-          <li>
-            Send unsolicited commercial messages (spam) in violation of
-            CAN-SPAM, CASL, or similar laws
+            Send unsolicited commercial messages (spam) in violation of CAN-SPAM, CASL, or similar
+            laws
           </li>
           <li>Impersonate any person or organization</li>
           <li>
-            Violate any telemarketing law including the TCPA (US), CASL
-            (Canada), or applicable state law
+            Violate any telemarketing law including the TCPA (US), CASL (Canada), or applicable
+            state law
           </li>
           <li>
-            Process highly sensitive categories of personal data (health,
-            financial) without appropriate safeguards
+            Process highly sensitive categories of personal data (health, financial) without
+            appropriate safeguards
           </li>
           <li>
-            Reverse-engineer, scrape, or abuse the platform's APIs beyond their
-            intended purpose
+            Reverse-engineer, scrape, or abuse the platform's APIs beyond their intended purpose
           </li>
-          <li>
-            Use the platform for illegal purposes or to facilitate illegal
-            activity
-          </li>
+          <li>Use the platform for illegal purposes or to facilitate illegal activity</li>
         </ul>
       </Section>
 
       <Section title="4. Telemarketing Compliance">
         <p>
-          You are solely responsible for ensuring all outbound calls and
-          messages comply with applicable laws, including the Telephone Consumer
-          Protection Act (TCPA), FTC regulations, and any state or local laws.
-          Wireline provides DNC list management tools to assist compliance, but
-          does not guarantee your legal compliance and accepts no liability for
+          You are solely responsible for ensuring all outbound calls and messages comply with
+          applicable laws, including the Telephone Consumer Protection Act (TCPA), FTC regulations,
+          and any state or local laws. Wireline provides DNC list management tools to assist
+          compliance, but does not guarantee your legal compliance and accepts no liability for
           regulatory violations.
         </p>
         <p>
-          AI-generated and cloned voices are artificial voices. You must obtain
-          every consent and provide every identification or disclosure required
-          for the call, its purpose, and its recipients. A Wireline feature,
-          safeguard, or default is not legal advice or a substitute for your own
-          compliance review.
+          AI-generated and cloned voices are artificial voices. You must obtain every consent and
+          provide every identification or disclosure required for the call, its purpose, and its
+          recipients. A Wireline feature, safeguard, or default is not legal advice or a substitute
+          for your own compliance review.
         </p>
       </Section>
 
       <Section title="5. Voice Cloning and Synthetic Media">
         <p>
-          You may create or use a custom voice only when you are the speaker or
-          have documented, legally sufficient authorization from the speaker and
-          all rights needed for the intended commercial use. You represent that
-          submitted audio and resulting use do not violate privacy, publicity,
-          biometric, intellectual-property, employment, contract, or other
+          You may create or use a custom voice only when you are the speaker or have documented,
+          legally sufficient authorization from the speaker and all rights needed for the intended
+          commercial use. You represent that submitted audio and resulting use do not violate
+          privacy, publicity, biometric, intellectual-property, employment, contract, or other
           rights.
         </p>
         <p>
-          You may not clone or imitate a minor, political candidate or public
-          official, celebrity, or other high-risk voice; bypass a provider
-          verification step; conceal synthetic origin where disclosure is
-          required; or use a synthetic voice for fraud, deception, harassment,
-          impersonation, identity verification, biometric authentication, voter
-          influence, unauthorized transactions, or harm. Wireline may reject,
-          suspend, or delete a voice when authorization, quality, safety, or
-          provider eligibility cannot be verified.
+          You may not clone or imitate a minor, political candidate or public official, celebrity,
+          or other high-risk voice; bypass a provider verification step; conceal synthetic origin
+          where disclosure is required; or use a synthetic voice for fraud, deception, harassment,
+          impersonation, identity verification, biometric authentication, voter influence,
+          unauthorized transactions, or harm. Wireline may reject, suspend, or delete a voice when
+          authorization, quality, safety, or provider eligibility cannot be verified.
         </p>
         <p>
-          You retain your rights in authorized source audio and voice
-          characteristics. You grant Wireline and its voice-processing providers
-          a limited license to process the sample, create and operate a private
-          voice model, generate review audio, and synthesize calls only to
-          provide the service you direct. Withdrawal stops future Wireline use
-          and starts provider deletion; it cannot undo audio already lawfully
-          generated or processing already completed.
+          You retain your rights in authorized source audio and voice characteristics. You grant
+          Wireline and its voice-processing providers a limited license to process the sample,
+          create and operate a private voice model, generate review audio, and synthesize calls only
+          to provide the service you direct. Withdrawal stops future Wireline use and starts
+          provider deletion; it cannot undo audio already lawfully generated or processing already
+          completed.
         </p>
       </Section>
 
       <Section title="6. SMS and Messaging Terms">
         <p>
-          <strong>
-            Consumer notice — reply STOP to opt out, HELP for help.
-          </strong>{" "}
-          Wireline numbers can send transactional and business communications by
-          SMS. Recipients may reply
-          <strong> STOP</strong>, <strong>UNSUBSCRIBE</strong>,{" "}
-          <strong>CANCEL</strong>, <strong>QUIT</strong>, or{" "}
-          <strong>END</strong> at any time to stop further messages from that
-          number, and <strong>HELP</strong> to receive support contact
-          information. Wireline honors these keywords automatically and records
-          the opt-out on the underlying consent ledger.
+          <strong>Consumer notice — reply STOP to opt out, HELP for help.</strong> Wireline numbers
+          can send transactional and business communications by SMS. Recipients may reply
+          <strong> STOP</strong>, <strong>UNSUBSCRIBE</strong>, <strong>CANCEL</strong>,{" "}
+          <strong>QUIT</strong>, or <strong>END</strong> at any time to stop further messages from
+          that number, and <strong>HELP</strong> to receive support contact information. Wireline
+          honors these keywords automatically and records the opt-out on the underlying consent
+          ledger.
         </p>
         <p>
-          <strong>
-            Message and data rates may apply. Message frequency varies
-          </strong>{" "}
-          by the business, the campaign, and the recipient's activity. Wireline
-          does not charge recipients for messages, but the recipient's carrier
-          may. Wireline is not responsible for carrier fees.
+          <strong>Message and data rates may apply. Message frequency varies</strong> by the
+          business, the campaign, and the recipient's activity. Wireline does not charge recipients
+          for messages, but the recipient's carrier may. Wireline is not responsible for carrier
+          fees.
         </p>
         <p>
-          Mobile contact information and SMS opt-in records are not sold or
-          shared with third parties for their marketing. Carriers are not liable
-          for delayed or undelivered messages. See our{" "}
-          <Link
-            to="/privacy"
-            className="text-brand underline hover:text-brand/80"
-          >
+          Mobile contact information and SMS opt-in records are not sold or shared with third
+          parties for their marketing. Carriers are not liable for delayed or undelivered messages.
+          See our{" "}
+          <Link to="/privacy" className="text-brand underline hover:text-brand/80">
             Privacy Policy
           </Link>
           .
         </p>
         <p>
-          <strong>A2P 10DLC registration (US carriers).</strong> Business
-          (Application-to-Person) messaging in the United States requires brand
-          and campaign registration with US carrier consortia. Wireline
-          coordinates that registration through Twilio; each account holder's
-          legal brand, use case, consent flow, and campaign must be registered
-          accurately before messaging is enabled. Unregistered or misrepresented
-          traffic may be blocked.
+          <strong>A2P 10DLC registration (US carriers).</strong> Business (Application-to-Person)
+          messaging in the United States requires brand and campaign registration with US carrier
+          consortia. Wireline coordinates that registration through Twilio; each account holder's
+          legal brand, use case, consent flow, and campaign must be registered accurately before
+          messaging is enabled. Unregistered or misrepresented traffic may be blocked.
         </p>
         <p>
-          Report messaging complaints or ask a question about SMS from a
-          Wireline number by emailing <strong>support@trywireline.com</strong>.
+          Report messaging complaints or ask a question about SMS from a Wireline number by emailing{" "}
+          <strong>support@trywireline.com</strong>.
         </p>
       </Section>
 
       <Section title="7. Billing and Subscriptions">
         <p>
-          Paid features are billed monthly or annually via Stripe, according to
-          the interval selected at checkout. Subscriptions renew automatically
-          at that interval unless canceled before the renewal date. You may
-          cancel at any time via the Billing section in Settings; cancellation
-          takes effect at the end of the current billing period.
+          Paid features are billed monthly or annually via Stripe, according to the interval
+          selected at checkout. Subscriptions renew automatically at that interval unless canceled
+          before the renewal date. You may cancel at any time via the Billing section in Settings;
+          cancellation takes effect at the end of the current billing period.
         </p>
         <p>
-          <strong>30-day money-back guarantee.</strong> If Wireline isn't
-          working for your business for any reason within 30 days of your first
-          paid invoice, email <strong>support@trywireline.com</strong> with the
-          subject "Refund request" and we'll refund that month's charge in full
-          — no forms, no escalation, no questions about your reason. The 30-day
-          window starts on the date of your first paid invoice. Outbound call
-          minutes consumed prior to the refund request are not separately
-          deducted — the refund is on the subscription line item.
+          <strong>30-day money-back guarantee.</strong> If Wireline isn't working for your business
+          for any reason within 30 days of your first paid invoice, email{" "}
+          <strong>support@trywireline.com</strong> with the subject "Refund request" and we'll
+          refund that month's charge in full — no forms, no escalation, no questions about your
+          reason. The 30-day window starts on the date of your first paid invoice. Outbound call
+          minutes consumed prior to the refund request are not separately deducted — the refund is
+          on the subscription line item.
         </p>
         <p>
-          After the 30-day window, no refunds are issued for partial periods,
-          but you can cancel renewal at any time (effective at the end of the
-          current period) so future charges stop.
+          After the 30-day window, no refunds are issued for partial periods, but you can cancel
+          renewal at any time (effective at the end of the current period) so future charges stop.
         </p>
         <p>
-          We reserve the right to change pricing with 30 days' notice. Your
-          continued use after the effective date constitutes acceptance of the
-          new pricing.
+          We reserve the right to change pricing with 30 days' notice. Your continued use after the
+          effective date constitutes acceptance of the new pricing.
         </p>
       </Section>
 
       <Section title="8. Data and Privacy">
         <p>
           Your use of Wireline is governed by our{" "}
-          <Link
-            to="/privacy"
-            className="text-brand hover:text-brand/80 underline"
-          >
+          <Link to="/privacy" className="text-brand hover:text-brand/80 underline">
             Privacy Policy
           </Link>
           , which is incorporated into these Terms by reference.
@@ -316,62 +278,57 @@ export function TermsOfService() {
 
       <Section title="9. Intellectual Property">
         <p>
-          As between you and Wireline, and subject to third-party rights, you
-          retain ownership of your agent configurations, knowledge, authorized
-          recordings, and other data you create in Wireline. By using the
-          platform you grant us a limited, non-exclusive license to process this
-          data solely to provide, secure, and support the service.
+          As between you and Wireline, and subject to third-party rights, you retain ownership of
+          your agent configurations, knowledge, authorized recordings, and other data you create in
+          Wireline. By using the platform you grant us a limited, non-exclusive license to process
+          this data solely to provide, secure, and support the service.
         </p>
         <p>
-          All platform code, design, trademarks, and other IP belonging to{" "}
-          <strong>Wireline</strong> remain our exclusive property. You may not
-          copy, modify, or distribute any part of the platform.
+          All platform code, design, trademarks, and other IP belonging to <strong>Wireline</strong>{" "}
+          remain our exclusive property. You may not copy, modify, or distribute any part of the
+          platform.
         </p>
       </Section>
 
       <Section title="10. Disclaimer of Warranties">
         <p>
-          Wireline is provided "as is" and "as available" without warranty of
-          any kind, express or implied, including warranties of merchantability,
-          fitness for a particular purpose, or non-infringement. We do not
-          warrant that the service will be uninterrupted, error-free, or free of
-          viruses.
+          Wireline is provided "as is" and "as available" without warranty of any kind, express or
+          implied, including warranties of merchantability, fitness for a particular purpose, or
+          non-infringement. We do not warrant that the service will be uninterrupted, error-free, or
+          free of viruses.
         </p>
       </Section>
 
       <Section title="11. Limitation of Liability">
         <p>
-          To the maximum extent permitted by applicable law,{" "}
-          <strong>Wireline</strong>'s total liability arising out of or related
-          to these Terms or the service shall not exceed the amounts paid by you
-          in the 12 months preceding the claim. We are not liable for any
+          To the maximum extent permitted by applicable law, <strong>Wireline</strong>'s total
+          liability arising out of or related to these Terms or the service shall not exceed the
+          amounts paid by you in the 12 months preceding the claim. We are not liable for any
           indirect, incidental, special, consequential, or punitive damages.
         </p>
       </Section>
 
       <Section title="12. Indemnification">
         <p>
-          You agree to indemnify and hold harmless <strong>Wireline</strong>{" "}
-          from any claims, damages, or expenses (including reasonable attorneys'
-          fees) arising from your use of the service, violation of these Terms,
-          or violation of any applicable law or third-party right.
+          You agree to indemnify and hold harmless <strong>Wireline</strong> from any claims,
+          damages, or expenses (including reasonable attorneys' fees) arising from your use of the
+          service, violation of these Terms, or violation of any applicable law or third-party
+          right.
         </p>
       </Section>
 
       <Section title="13. Governing Law">
         <p>
-          These Terms are governed by the laws of{" "}
-          <strong>Delaware, United States</strong>, without regard to
-          conflict-of-law principles. Any disputes shall be resolved exclusively
-          in the courts of <strong>Wilmington, Delaware</strong>.
+          These Terms are governed by the laws of <strong>Delaware, United States</strong>, without
+          regard to conflict-of-law principles. Any disputes shall be resolved exclusively in the
+          courts of <strong>Wilmington, Delaware</strong>.
         </p>
       </Section>
 
       <Section title="14. Modifications">
         <p>
-          We may update these Terms with 14 days' advance notice posted on this
-          page. Your continued use after the effective date constitutes
-          acceptance of the revised Terms.
+          We may update these Terms with 14 days' advance notice posted on this page. Your continued
+          use after the effective date constitutes acceptance of the revised Terms.
         </p>
       </Section>
 

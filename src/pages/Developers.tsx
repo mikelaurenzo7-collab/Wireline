@@ -52,7 +52,7 @@ const MCP_BOUNDARIES = [
   },
   {
     path: "start_private_voice_simulation",
-    description: "Run a private voice simulation — not a live customer call.",
+    description: "Run a private voice simulation, not a live customer call.",
   },
   {
     path: "/api/openapi.json",
@@ -121,8 +121,8 @@ export default function Developers() {
       <MarketingHero
         eyebrow="Developers"
         title="Bring Wireline into the tools you already use."
-        description="The live developer surface is an account-bound MCP connector. Draft and simulate privately in ChatGPT, Claude, or Cursor — then finish Training, Wire, and launch in Wireline."
-        primaryAction={{ label: "Copy MCP endpoint", to: "#mcp-endpoint" }}
+        description="The live developer surface is an account-bound MCP connector. Draft and simulate privately in ChatGPT, Claude, or Cursor, then finish Training, Wire, and launch in Wireline."
+        primaryAction={{ label: "View MCP endpoint", to: "#mcp-endpoint" }}
         secondaryAction={{ label: "OpenAPI map", to: openApiUrl, tone: "secondary" }}
         proof={["OAuth PKCE", "Account-bound tools", "ChatGPT · Claude · Cursor"]}
       />
@@ -229,7 +229,7 @@ export default function Developers() {
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
             MCP clients use OAuth PKCE against your Wireline account. The OpenAPI map documents the
-            same session-authenticated product routes the web app uses — there is no separate public
+            same session-authenticated product routes the web app uses. There is no separate public
             API-key product today.
           </p>
         </div>

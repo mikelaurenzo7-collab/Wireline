@@ -33,7 +33,7 @@ export default function About() {
       <MarketingHero
         eyebrow="About Wireline"
         title="Agents that run calls like you would."
-        description="Train them on your business, voice, and playbook — then hold every call and follow‑up to your standard."
+        description="Train them on your business, voice, and playbook. Then hold every call and follow-up to your standard."
         primaryAction={{ label: "Get started now", to: "/pricing" }}
         secondaryAction={{ label: "Contact support", to: "/contact", tone: "secondary" }}
         proof={ABOUT_HERO_ITEMS}
@@ -47,7 +47,7 @@ export default function About() {
           </div>
           <div className="bg-card px-5 py-9 text-center sm:px-8 sm:py-12 lg:px-10">
             <p className="mx-auto max-w-xl text-base leading-7 text-muted-foreground">
-              Independently built. Every agent is fully customizable — your training, voice, and
+              Independently built. Every agent is fully customizable to your training, voice, and
               playbook.
             </p>
             <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-muted-foreground">

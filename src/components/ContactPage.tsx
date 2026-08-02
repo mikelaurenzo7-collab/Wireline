@@ -226,7 +226,7 @@ export function ContactPage() {
                     key={item.value}
                     aria-pressed={inquiryType === item.value}
                     onClick={() => setInquiryType(item.value)}
-                    className={`min-h-11 rounded border px-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40 focus-visible:outline-offset-2 ${inquiryType === item.value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+                    className={`min-h-11 min-w-0 rounded border px-2 text-[13px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40 focus-visible:outline-offset-2 sm:px-3 sm:text-sm ${inquiryType === item.value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
                   >
                     {item.label}
                   </button>
