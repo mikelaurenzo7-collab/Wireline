@@ -139,7 +139,7 @@ Hard floor — 100% utilization, annual revenue/mo vs reserved COGS/mo:
 | Business $1,590 | 132.50 | 57.60 | 17.25 | 12.00 | 5.46 | **30.3%** |
 
 All ≥30% at absolute worst case after the complete commercial-fee reserve.
-Monthly-interval full-use margins run 41–43%. Planning-floor margins at 70%
+Monthly-interval full-use margins run ~41–42.6% (Pro rounds up to 41%). Planning-floor margins at 70%
 utilization run 54–56% monthly and 46–50% annual, so every tier clears 45% on
 both intervals. Blended at realistic usage, contribution stays in the 50s;
 the fixed stack is covered by roughly five Starter Plus subscribers.

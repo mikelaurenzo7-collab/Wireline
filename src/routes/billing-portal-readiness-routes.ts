@@ -34,8 +34,10 @@ function managedPriceIds(): string[] {
   const ids = STRIPE_PLANS.filter(
     (plan) => plan.price_usd_monthly > 0 && plan.public !== false,
   ).flatMap((plan) => [
-    process.env[plan.priceIdEnv]?.trim() || plan.fallbackPriceId || "",
-    process.env[plan.annualPriceIdEnv]?.trim() || plan.fallbackAnnualPriceId || "",
+    (plan.priceIdEnv ? process.env[plan.priceIdEnv]?.trim() : "") || plan.fallbackPriceId || "",
+    (plan.annualPriceIdEnv ? process.env[plan.annualPriceIdEnv]?.trim() : "") ||
+      plan.fallbackAnnualPriceId ||
+      "",
   ]);
   return [...new Set(ids.filter(Boolean))];
 }
@@ -171,93 +173,89 @@ async function ensureManagedPortalConfiguration(baseUrl: string): Promise<string
  * stranded on an unconfigured portal configuration. Rebuilds when the live
  * price/product fingerprint drifts inside the same founder catalog version.
  */
-router.post(
-  "/api/billing/portal",
-  authenticateUser,
-  async (req: AuthenticatedRequest, res) => {
-    try {
-      if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
+router.post("/api/billing/portal", authenticateUser, async (req: AuthenticatedRequest, res) => {
+  try {
+    if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
 
-      const [subscription] = await drizzle
-        .select({ stripeCustomerId: schema.subscriptions.stripeCustomerId })
-        .from(schema.subscriptions)
-        .where(eq(schema.subscriptions.userId, req.user!.id))
-        .limit(1);
+    const [subscription] = await drizzle
+      .select({ stripeCustomerId: schema.subscriptions.stripeCustomerId })
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.userId, req.user!.id))
+      .limit(1);
 
-      if (!subscription?.stripeCustomerId) {
-        return res.status(404).json({
-          error: "No Stripe customer exists for this workspace yet. Complete checkout first.",
-          code: "STRIPE_CUSTOMER_REQUIRED",
-        });
-      }
-
-      const appUrl = resolveCanonicalAppUrl();
-      if ("error" in appUrl) {
-        return res.status(503).json({
-          error: "Billing portal unavailable: APP_URL is not configured.",
-          code: "PORTAL_NOT_CONFIGURED",
-        });
-      }
-
-      const configuration = await ensureManagedPortalConfiguration(appUrl.url);
-      const portal = await stripe.billingPortal.sessions.create({
-        customer: subscription.stripeCustomerId,
-        configuration,
-        return_url: `${appUrl.url}/settings/billing`,
+    if (!subscription?.stripeCustomerId) {
+      return res.status(404).json({
+        error: "No Stripe customer exists for this workspace yet. Complete checkout first.",
+        code: "STRIPE_CUSTOMER_REQUIRED",
       });
-
-      res.json({ url: portal.url });
-      void auditLogger
-        .logBilling("portal_opened", {
-          userId: req.user!.id,
-          customerId: subscription.stripeCustomerId,
-          ip: req.ip,
-          metadata: { configuration_id: configuration },
-        })
-        .catch((error) =>
-          log.warn("billing audit log failed", {
-            event: "portal_opened",
-            error: getErrorMessage(error),
-          }),
-        );
-    } catch (error: unknown) {
-      if (error instanceof AppError) throw error;
-
-      const stripeError = error as {
-        type?: string;
-        code?: string;
-        statusCode?: number;
-        requestId?: string;
-        message?: string;
-      };
-      log.error("Managed Stripe portal session failed", {
-        userId: req.user?.id,
-        type: stripeError.type,
-        code: stripeError.code,
-        statusCode: stripeError.statusCode,
-        requestId: stripeError.requestId,
-        error: getErrorMessage(error),
-      });
-
-      if (stripeError.type === "StripeAuthenticationError") {
-        return res.status(503).json({
-          error: "Stripe authentication failed. Billing is temporarily unavailable.",
-          code: "STRIPE_AUTH_ERROR",
-        });
-      }
-      if (
-        stripeError.code === "resource_missing" ||
-        /No such customer/i.test(stripeError.message || "")
-      ) {
-        return res.status(404).json({
-          error: "Stripe customer record is missing. Complete checkout to recreate it.",
-          code: "STRIPE_CUSTOMER_MISSING",
-        });
-      }
-
-      throw AppError.fromHttpStatus(500, "Portal failed");
     }
-  },
-);
+
+    const appUrl = resolveCanonicalAppUrl();
+    if ("error" in appUrl) {
+      return res.status(503).json({
+        error: "Billing portal unavailable: APP_URL is not configured.",
+        code: "PORTAL_NOT_CONFIGURED",
+      });
+    }
+
+    const configuration = await ensureManagedPortalConfiguration(appUrl.url);
+    const portal = await stripe.billingPortal.sessions.create({
+      customer: subscription.stripeCustomerId,
+      configuration,
+      return_url: `${appUrl.url}/settings/billing`,
+    });
+
+    res.json({ url: portal.url });
+    void auditLogger
+      .logBilling("portal_opened", {
+        userId: req.user!.id,
+        customerId: subscription.stripeCustomerId,
+        ip: req.ip,
+        metadata: { configuration_id: configuration },
+      })
+      .catch((error) =>
+        log.warn("billing audit log failed", {
+          event: "portal_opened",
+          error: getErrorMessage(error),
+        }),
+      );
+  } catch (error: unknown) {
+    if (error instanceof AppError) throw error;
+
+    const stripeError = error as {
+      type?: string;
+      code?: string;
+      statusCode?: number;
+      requestId?: string;
+      message?: string;
+    };
+    log.error("Managed Stripe portal session failed", {
+      userId: req.user?.id,
+      type: stripeError.type,
+      code: stripeError.code,
+      statusCode: stripeError.statusCode,
+      requestId: stripeError.requestId,
+      error: getErrorMessage(error),
+    });
+
+    if (stripeError.type === "StripeAuthenticationError") {
+      return res.status(503).json({
+        error: "Stripe authentication failed. Billing is temporarily unavailable.",
+        code: "STRIPE_AUTH_ERROR",
+      });
+    }
+    if (
+      stripeError.code === "resource_missing" ||
+      /No such customer/i.test(stripeError.message || "")
+    ) {
+      return res.status(404).json({
+        error: "Stripe customer record is missing. Complete checkout to recreate it.",
+        code: "STRIPE_CUSTOMER_MISSING",
+      });
+    }
+
+    throw AppError.fromHttpStatus(500, "Portal failed");
+  }
+});
 
 export default router;

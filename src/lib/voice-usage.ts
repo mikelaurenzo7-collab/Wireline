@@ -16,7 +16,7 @@
 
 import { and, eq, sql } from "drizzle-orm";
 import { chargeCompletedVoiceUsage } from "./voice-completion-grace";
-import { planById } from "./plan-catalog";
+import { FLAT_OVERAGE_PER_MIN_USD, planById } from "./plan-catalog";
 import { drizzle, log, quotaTracker } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import * as schema from "../db/schema";
@@ -233,7 +233,7 @@ export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageS
   const planId = billing?.plan ?? null;
   const { plan, included } = includedVoiceMinutes(planId, billing?.extraAgents);
   const overage = Math.max(0, used - included);
-  const overageRate = plan?.overage_per_min_usd ?? 0.2;
+  const overageRate = plan?.overage_per_min_usd ?? FLAT_OVERAGE_PER_MIN_USD;
 
   return {
     plan_id: plan?.id ?? null,

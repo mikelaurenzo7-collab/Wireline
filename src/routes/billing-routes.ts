@@ -14,7 +14,12 @@ import {
   syncSubscriptionFromStripe,
 } from "../lib/stripe-helpers";
 import { sendPaymentFailedEmail } from "../lib/email-service";
-import { planById, plansForClient, FOUNDER_CATALOG_VERSION } from "../lib/plan-catalog";
+import {
+  planById,
+  planExtraAgentPriceId,
+  plansForClient,
+  FOUNDER_CATALOG_VERSION,
+} from "../lib/plan-catalog";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import { getWorkspaceUsageSnapshot } from "../lib/workspace-usage-snapshot";
 import { addCredit, reverseCredit } from "../lib/credit-wallet";
@@ -1091,11 +1096,13 @@ router.get(
       const plan = planById(row?.plan_id || "personal");
       res.json({
         plan_id: plan?.id || "personal",
-        plan_name: plan?.name || "Personal",
+        plan_name: plan?.name || "Wireline Free Builder",
         included_agents: plan?.max_agents ?? 1,
         extra_agents: row?.extra_agents ?? 0,
         extra_agent_price_usd: plan?.extra_agent_price_usd ?? null,
-        configured: !!plan?.extraAgentPriceIdEnv && !!process.env[plan.extraAgentPriceIdEnv],
+        // Env-first with the founder-catalog fallback, matching plansForClient
+        // and the atomic purchase route so all three surfaces agree.
+        configured: plan ? !!planExtraAgentPriceId(plan) : false,
       });
     } catch (err) {
       if (err instanceof AppError) throw err;

@@ -30,7 +30,7 @@ async function resolveLaunchPriceId(
   if (!plan) return null;
 
   const envKey = interval === "year" ? plan.annualPriceIdEnv : plan.priceIdEnv;
-  const envPriceId = process.env[envKey]?.trim();
+  const envPriceId = envKey ? process.env[envKey]?.trim() : undefined;
   if (envPriceId) {
     try {
       const price = await stripe.prices.retrieve(envPriceId);
@@ -96,13 +96,14 @@ router.post(
         replacement: "starter",
       });
     }
+    // Every public paid plan (including the $159 Wireline Business tier) is
+    // self-serve; only the free Builder short-circuits here. Scale/custom
+    // intents never reach this handler because canonicalPlanId no longer
+    // aliases them to a purchasable plan.
     if (plan.id === "personal" || plan.price_usd_monthly === 0) {
       return res.status(400).json({
         code: "CONTACT_SALES_PLAN",
-        error:
-          plan.id === "enterprise"
-            ? "Enterprise is founder-led. Contact sales@trywireline.com."
-            : "Free Builder does not require checkout.",
+        error: "Free Builder does not require checkout.",
       });
     }
 

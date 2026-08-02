@@ -13,7 +13,7 @@ import {
   reconciledStoredAgentCap,
 } from "../lib/extra-agent-billing";
 import { isLaunchHardBlocked, launchBlockResponse } from "../lib/launch-readiness";
-import { FOUNDER_CATALOG_VERSION, planById } from "../lib/plan-catalog";
+import { FOUNDER_CATALOG_VERSION, planById, planExtraAgentPriceId } from "../lib/plan-catalog";
 import { getErrorMessage } from "../lib/server-utils";
 import { auditLogger, drizzle, log } from "../lib/server-context";
 import { stripe, stripeAvailable } from "../lib/stripe-helpers";
@@ -178,8 +178,11 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
         };
       }
 
-      const priceIdEnv = plan.extraAgentPriceIdEnv;
-      const configuredPriceId = priceIdEnv ? process.env[priceIdEnv] : undefined;
+      // Resolve env-first with the founder-catalog fallback price id, matching
+      // plansForClient()'s extra_agent_configured signal so the client can
+      // never advertise an add-on the purchase path refuses. A bad fallback
+      // still fails closed at validateFounderCatalogPriceId below.
+      const configuredPriceId = planExtraAgentPriceId(plan) || undefined;
       const matchingItems = extraAgentItems(subscription, configuredPriceId || "none");
       if (matchingItems.length > 1) {
         log.error("Multiple Extra Agent subscription items require manual reconciliation", {
@@ -217,7 +220,7 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
 
       let createPriceId: string | null = null;
       if (!existing && target > 0) {
-        if (!priceIdEnv || !configuredPriceId) {
+        if (!configuredPriceId) {
           return {
             status: 503,
             body: {

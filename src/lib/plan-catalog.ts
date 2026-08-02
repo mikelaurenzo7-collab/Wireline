@@ -3,9 +3,20 @@
 /**
  * Conservative blended variable voice reserve used for pricing guardrails.
  * Includes carrier, voice runtime, model, and operational variance.
+ *
+ * 2026-08 component check (Vapi Build $0.05/min platform + Twilio outbound
+ * $0.014/min + Deepgram Nova-3 $0.0048/min + Turbo-class TTS ~$0.04/min +
+ * 4o-class LLM ~$0.02/min) blends to ~$0.11-0.15/min for the standard
+ * configuration, so $0.128 holds ONLY while premium TTS voices and
+ * long-context models stay off the metered path. The $0.14 COGS-drift alarm
+ * in tenant-economics is the leading indicator that premium configs leak in.
  */
 export const VOICE_VARIABLE_COST_PER_MIN_USD = 0.128;
+/** Twilio US local number rental; verified 2026-08 (toll-free would be $2.15). */
 export const PHONE_NUMBER_COST_MONTHLY_USD = 1.15;
+// Stripe commercial rates verified 2026-08 against stripe.com/pricing and
+// stripe.com/billing/pricing: US cards 2.9% + $0.30; Billing pay-as-you-go
+// 0.7% (the $620/mo contract tier only wins above ~$88K/mo billing volume).
 export const PAYMENT_PROCESSING_RATE = 0.029;
 export const PAYMENT_PROCESSING_FIXED_USD = 0.3;
 /** Stripe Billing fee on recurring subscription volume. */
@@ -18,6 +29,12 @@ export const STRIPE_BILLING_RATE = 0.007;
 export const STRIPE_TAX_TRANSACTION_RATE = 0.005;
 
 export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v6";
+
+/**
+ * One flat prepaid top-up rate across every plan (catalog v6). Exported so
+ * display and usage fallbacks can never drift below the published rate.
+ */
+export const FLAT_OVERAGE_PER_MIN_USD = 0.22;
 
 export const EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY = 15;
 export const EXTRA_AGENT_ADDON_VOICE_MINUTES_MONTHLY = 50;
@@ -43,8 +60,8 @@ export type StripePlan = {
   overage_per_min_usd: number;
   included_phone_numbers: number;
   features: string[];
-  priceIdEnv: string;
-  annualPriceIdEnv: string;
+  priceIdEnv?: string;
+  annualPriceIdEnv?: string;
   fallbackPriceId?: string;
   fallbackAnnualPriceId?: string;
   lookupKeyMonthly?: string;
@@ -86,8 +103,11 @@ const PLAN_ID_ALIASES: Record<string, StripePlanId> = {
   enterprise: "enterprise",
   growth: "enterprise",
   "business-plus": "enterprise",
-  custom: "enterprise",
-  scale: "enterprise",
+  // "scale" and "custom" intentionally do NOT alias to enterprise: the
+  // pricing page's Scale card (25+ agents) is a contact-sales handoff, and
+  // aliasing here would silently check a Scale prospect into the $159
+  // self-serve plan. Legacy stored rows keep their own switches in
+  // server-context.ts and plan-entitlements.ts.
 };
 
 const PRICE_KEY_PLAN_PREFIXES: Record<string, StripePlanId> = {
@@ -130,10 +150,11 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 1,
     voice_minutes_monthly: 0,
     runtime_allowance_usd_monthly: 0,
-    overage_per_min_usd: 0.22,
+    overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 0,
-    priceIdEnv: "STRIPE_PERSONAL_PRICE_ID",
-    annualPriceIdEnv: "STRIPE_PERSONAL_ANNUAL_PRICE_ID",
+    // Intentionally no Stripe price env hooks: the Free Builder is not a
+    // Stripe product, and a populated env var here would let a webhook map a
+    // paid price onto the free plan.
     public: true,
     features: [
       "1 private draft AI communications agent",
@@ -149,7 +170,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 1,
     voice_minutes_monthly: 60,
     runtime_allowance_usd_monthly: 1,
-    overage_per_min_usd: 0.22,
+    overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_STARTER_9_PRICE_ID",
     annualPriceIdEnv: "STRIPE_STARTER_9_ANNUAL_PRICE_ID",
@@ -178,7 +199,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 2,
     voice_minutes_monthly: 120,
     runtime_allowance_usd_monthly: 3,
-    overage_per_min_usd: 0.22,
+    overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 2,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
     annualPriceIdEnv: "STRIPE_STARTER_ANNUAL_PRICE_ID",
@@ -207,7 +228,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 5,
     voice_minutes_monthly: 245,
     runtime_allowance_usd_monthly: 6,
-    overage_per_min_usd: 0.22,
+    overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 5,
     priceIdEnv: "STRIPE_TEAM_PRICE_ID",
     annualPriceIdEnv: "STRIPE_TEAM_ANNUAL_PRICE_ID",
@@ -237,7 +258,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 15,
     voice_minutes_monthly: 450,
     runtime_allowance_usd_monthly: 12,
-    overage_per_min_usd: 0.22,
+    overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 15,
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
     annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
@@ -286,8 +307,7 @@ export type BillingInterval = "month" | "year";
 export function estimatedStripeCommercialFeesUsd(grossChargeUsd: number): number {
   if (!Number.isFinite(grossChargeUsd) || grossChargeUsd <= 0) return 0;
   return (
-    grossChargeUsd *
-      (PAYMENT_PROCESSING_RATE + STRIPE_BILLING_RATE + STRIPE_TAX_TRANSACTION_RATE) +
+    grossChargeUsd * (PAYMENT_PROCESSING_RATE + STRIPE_BILLING_RATE + STRIPE_TAX_TRANSACTION_RATE) +
     PAYMENT_PROCESSING_FIXED_USD
   );
 }
@@ -357,7 +377,7 @@ export function canonicalPlanId(id: string | null | undefined): StripePlanId | n
 function configuredPriceId(plan: StripePlan, interval: "month" | "year"): string | null {
   const envKey = interval === "year" ? plan.annualPriceIdEnv : plan.priceIdEnv;
   const fallback = interval === "year" ? plan.fallbackAnnualPriceId : plan.fallbackPriceId;
-  return process.env[envKey] || fallback || null;
+  return (envKey ? process.env[envKey] : null) || fallback || null;
 }
 
 function configuredExtraAgentPriceId(plan: StripePlan): string | null {
