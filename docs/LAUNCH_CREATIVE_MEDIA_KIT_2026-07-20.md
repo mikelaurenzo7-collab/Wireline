@@ -94,7 +94,7 @@ Certification proves provenance and distinct routes; it does not replace frame r
 - verify modal, dropdown, sheet, and select content remains centered and visible after portal styling changes;
 - reframe vertical cuts around the active UI; a full desktop shell surrounded by unused 9:16 space is source footage, not a publishable vertical composition;
 - confirm the finished edit meets its named duration and includes the approved end card;
-- treat any route named in the scene map as a release contract. `tests/launch-reel-route-integrity-contract.test.ts` fails when a beat no longer exists in the authenticated router.
+- treat any route named in the scene map as a release contract. `tests/launch-completeness-contract.test.ts` fails in the mandatory Vercel gate when a beat no longer exists in the authenticated router.
 
 The August 2 source review found the 15-second raw capture holding on an authenticated 404 because its historical `/email` beat no longer existed after Inbox moved to `/inbox`. The application now preserves `/email` as a redirect to `/inbox` for old links and historical capture instructions. Existing affected footage remains rejected; re-run the kit on the certified source commit.
 
