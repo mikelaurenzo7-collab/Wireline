@@ -469,7 +469,12 @@ export default function CrmConnectionCard() {
                             ? `${group} · Ready to connect`
                             : platformReady
                               ? `${group} · Platform configured`
-                              : `${group} · Not configured on this deployment`}
+                              : // Customers do not have a mental model for "this deployment", and
+                                // reading it on a catalog card makes an integration Wireline has
+                                // not switched on yet look like something that broke. State the
+                                // fact in the customer's terms and keep the `category · state`
+                                // shape the other branches use.
+                                `${group} · Not available yet`}
                       </div>
                     )}
                   </div>
