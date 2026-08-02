@@ -6,10 +6,11 @@ const root = process.cwd();
 const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 function reelBeatPaths(kit: string): string[] {
-  const reels = kit.slice(
-    kit.indexOf("const reels = ["),
-    kit.indexOf("for (const reel of reels)"),
-  );
+  const start = kit.indexOf("const reels = [");
+  const end = kit.indexOf("for (const reel of reels)");
+  if (start < 0 || end <= start) return [];
+
+  const reels = kit.slice(start, end);
   return [...reels.matchAll(/route:\s*["'`]([^"'`]+)["'`]/g)]
     .map((match) => new URL(match[1], "https://trywireline.com").pathname)
     .filter((path, index, all) => all.indexOf(path) === index)
@@ -57,9 +58,19 @@ describe("launch completeness contracts", () => {
   it("keeps every reel beat on a declared route instead of filming the authenticated 404", () => {
     const kit = source("scripts/marketing-kit.mjs");
     const appRoutes = source("src/routes/AppRoutes.tsx");
+    const beats = reelBeatPaths(kit);
     const declared = declaredRoutePaths(appRoutes);
-    const missing = reelBeatPaths(kit).filter((path) => !declared.has(path));
+    const missing = beats.filter((path) => !declared.has(path));
 
+    expect(beats).toEqual([
+      "/",
+      "/email",
+      "/knowledge",
+      "/overview",
+      "/phone",
+      "/settings/phone",
+      "/studio",
+    ]);
     expect(
       missing,
       `Launch reel beats reference routes absent from AppRoutes: ${missing.join(", ")}. ` +
