@@ -36,10 +36,16 @@ function resolveSourceCommit() {
   const fromEnvironment = [process.env.VERCEL_GIT_COMMIT_SHA, process.env.GITHUB_SHA].find(
     (value) => /^[0-9a-f]{40}$/i.test(value || ""),
   );
-  const commit = fromEnvironment || gitValue(["rev-parse", "HEAD"]);
+  const checkoutCommit = gitValue(["rev-parse", "HEAD"]);
+  const commit = fromEnvironment || checkoutCommit;
   if (!/^[0-9a-f]{40}$/i.test(commit)) {
     throw new Error(
       "Launch-reel capture requires an exact 40-character source commit. Run it from a Git checkout or provide VERCEL_GIT_COMMIT_SHA/GITHUB_SHA.",
+    );
+  }
+  if (checkoutCommit && checkoutCommit.toLowerCase() !== commit.toLowerCase()) {
+    throw new Error(
+      `Launch-reel source mismatch: environment says ${commit}, but the checkout is ${checkoutCommit}.`,
     );
   }
   return commit.toLowerCase();
@@ -54,6 +60,22 @@ function resolveSourceRef() {
   );
 }
 
+function assertCleanCheckout(sourceCommit) {
+  const checkoutCommit = gitValue(["rev-parse", "HEAD"]);
+  if (!checkoutCommit) return;
+  if (checkoutCommit.toLowerCase() !== sourceCommit) {
+    throw new Error(
+      `Launch-reel source moved during capture: started at ${sourceCommit}, now at ${checkoutCommit}.`,
+    );
+  }
+  const dirty = gitValue(["status", "--porcelain", "--untracked-files=all"]);
+  if (dirty) {
+    throw new Error(
+      "Launch-reel certification requires a clean Git checkout. Commit or discard local changes, then rebuild and recapture.",
+    );
+  }
+}
+
 function fileDigest(filePath) {
   return createHash("sha256").update(readFileSync(filePath)).digest("hex");
 }
@@ -63,8 +85,9 @@ function resolveAssetPath(asset) {
     throw new Error("Marketing-kit manifest contains an asset without a path.");
   }
   const resolved = path.resolve(repoRoot, asset.path);
-  if (!resolved.startsWith(`${repoRoot}${path.sep}`)) {
-    throw new Error(`Marketing-kit asset escapes the repository: ${asset.path}`);
+  const relativeToOutput = path.relative(outputRoot, resolved);
+  if (relativeToOutput.startsWith("..") || path.isAbsolute(relativeToOutput)) {
+    throw new Error(`Marketing-kit asset escapes marketing-kit/: ${asset.path}`);
   }
   return resolved;
 }
@@ -168,6 +191,12 @@ function certifyManifest(manifest, sourceCommit, sourceRef) {
   };
 }
 
+// Resolve and freeze provenance before opening a browser. A checkout that moves
+// during a long capture must not be allowed to label old frames with a new SHA.
+const sourceCommit = resolveSourceCommit();
+const sourceRef = resolveSourceRef();
+assertCleanCheckout(sourceCommit);
+
 const capture = spawnSync(process.execPath, [path.join(scriptDir, "marketing-kit.mjs")], {
   cwd: repoRoot,
   env: process.env,
@@ -179,8 +208,7 @@ if (!existsSync(manifestPath)) {
   throw new Error("Marketing-kit capture completed without writing marketing-kit/manifest.json.");
 }
 
-const sourceCommit = resolveSourceCommit();
-const sourceRef = resolveSourceRef();
+assertCleanCheckout(sourceCommit);
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 const certifiedManifest = certifyManifest(manifest, sourceCommit, sourceRef);
 writeFileSync(manifestPath, `${JSON.stringify(certifiedManifest, null, 2)}\n`, "utf8");
