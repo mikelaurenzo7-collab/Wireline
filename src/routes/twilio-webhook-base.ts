@@ -52,14 +52,7 @@ const OPT_OUT_KEYWORDS = new Set([
   "opt out",
 ]);
 
-const OPT_IN_KEYWORDS = new Set([
-  "start",
-  "unstop",
-  "yes",
-  "optin",
-  "opt-in",
-  "opt in",
-]);
+const OPT_IN_KEYWORDS = new Set(["start", "unstop", "yes", "optin", "opt-in", "opt in"]);
 
 const HELP_KEYWORDS = new Set(["help", "info", "support"]);
 
@@ -99,15 +92,14 @@ function failoverVoicemailTwiml(includeOutageContext = false): string {
     `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n` +
     context +
     `  <Say voice="Polly.Matthew-Neural">Please leave your name, number, and a brief message, and a human agent will return your call as soon as possible. Thank you.</Say>\n` +
-    `  <Record maxLength="120" action="/api/twilio-webhook/voicemail-complete" method="POST" transcribe="true" />\n` +
+    `  <Record maxLength="120" action="/api/twilio-webhook/voicemail-complete" method="POST" transcribe="true" transcribeCallback="/api/twilio-webhook/voicemail-transcription" />\n` +
     `</Response>`
   );
 }
 
 function publicAssetUrl(pathname: string): string {
   const canonical = resolveCanonicalAppUrl();
-  const baseUrl =
-    "error" in canonical ? "https://trywireline.com" : canonical.url;
+  const baseUrl = "error" in canonical ? "https://trywireline.com" : canonical.url;
   return new URL(pathname, `${baseUrl.replace(/\/+$/, "")}/`).toString();
 }
 
@@ -159,9 +151,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
       !process.env.TWILIO_AUTH_TOKEN &&
       (process.env.NODE_ENV === "production" || process.env.VERCEL === "1")
     ) {
-      log.error(
-        "TWILIO_AUTH_TOKEN not configured in production — rejecting webhook",
-      );
+      log.error("TWILIO_AUTH_TOKEN not configured in production — rejecting webhook");
     } else {
       log.warn("Twilio webhook signature verification failed", {
         path: req.path,
@@ -241,14 +231,11 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         // does not exist. Tell the consumer to retry and page ops: an
         // unhonored STOP is a compliance incident, not telemetry.
         log.error("SMS opt-out write failed", { error: e?.message });
-        reportError(
-          e instanceof Error ? e : new Error(String(e?.message || e)),
-          {
-            route: "/api/twilio-webhook/sms",
-            flow: "sms_opt_out",
-            tenant: opaqueIdSuffixForLog(tenantUserId),
-          },
-        );
+        reportError(e instanceof Error ? e : new Error(String(e?.message || e)), {
+          route: "/api/twilio-webhook/sms",
+          flow: "sms_opt_out",
+          tenant: opaqueIdSuffixForLog(tenantUserId),
+        });
         return res
           .status(200)
           .send(
@@ -314,9 +301,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
           );
       }
 
-      return res
-        .status(200)
-        .send(twimlReply("You have been resubscribed. Welcome back."));
+      return res.status(200).send(twimlReply("You have been resubscribed. Welcome back."));
     }
 
     // ─── HELP FLOW ─────────────────────────────────────────────────
@@ -438,264 +423,295 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
  * We play an emergency degraded-mode message and offer voicemail or forward
  * to the business's human fallback number.
  */
-router.post(
-  "/api/twilio-webhook/voice-fallback",
-  async (req: Request, res: Response) => {
-    res.setHeader("Content-Type", "text/xml");
-    if (!verifyTwilioSignature(req)) {
-      log.warn("Twilio webhook signature verification failed", {
-        path: req.path,
+router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Response) => {
+  res.setHeader("Content-Type", "text/xml");
+  if (!verifyTwilioSignature(req)) {
+    log.warn("Twilio webhook signature verification failed", {
+      path: req.path,
+    });
+    return res.status(403).send(twimlEmpty());
+  }
+
+  const to = (req.body?.To as string | undefined) || "";
+  const from = (req.body?.From as string | undefined) || "";
+  log.error("VAPI FAILOVER TRIGGERED", {
+    to_suffix: phoneSuffixForLog(to),
+    from_suffix: phoneSuffixForLog(from),
+  });
+
+  // If we can't find the tenant or they don't have a human fallback number,
+  // we just take a voicemail. This route exists for the moment things are
+  // already broken, so a database failure here must degrade to the voicemail
+  // branch too — a thrown 500 would leave the caller with Twilio's own error
+  // announcement instead of a professional close.
+  let fallbackNumber: string | null = null;
+  try {
+    const tenantUserId = await lookupTenant(to);
+    if (tenantUserId) {
+      const [settings] = await drizzle
+        .select({
+          humanFallbackNumber: schema.settings.twilioManagerAlertNumber,
+        })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, tenantUserId))
+        .limit(1);
+      fallbackNumber = validE164(settings?.humanFallbackNumber);
+      if (settings?.humanFallbackNumber && !fallbackNumber) {
+        log.warn("Failover number is not valid E.164; degrading to voicemail", {
+          tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
+        });
+      }
+    }
+  } catch (error) {
+    log.error("Failover tenant lookup failed; degrading to voicemail", {
+      error: error instanceof Error ? error.message : String(error),
+      to_suffix: phoneSuffixForLog(to),
+    });
+  }
+
+  // Absolute URL to the brand transfer chime — Twilio's <Play> needs a
+  // full public URL because it fetches the media file itself. The committed
+  // asset is regenerated by scripts/generate-transfer-chime.mjs and checked
+  // by launch readiness before this callback is enabled.
+  const transferChimeUrl = publicAssetUrl("/sounds/wireline-transfer-chime.wav");
+
+  if (fallbackNumber) {
+    let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
+    twiml += `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a Wireline agent line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`;
+    twiml += `  <Say voice="Polly.Matthew-Neural">Please hold while we transfer you to an available team member.</Say>\n`;
+    // Brand transfer chime — only plays on the failover path (Vapi
+    // down). Vapi's own transfer flow can't inject MP3s; see
+    // vapi-assistant-factory-v2.ts for the spoken-message workaround used
+    // during normal-runtime transfers.
+    twiml += `  <Play>${escapeTwimlValue(transferChimeUrl)}</Play>\n`;
+    twiml += `  <Dial answerOnBridge="true" action="/api/twilio-webhook/voice-fallback-complete" method="POST">${escapeTwimlValue(fallbackNumber)}</Dial>\n`;
+    twiml += `</Response>`;
+    return res.status(200).send(twiml);
+  }
+
+  return res.status(200).send(failoverVoicemailTwiml(true));
+});
+
+router.post("/api/twilio-webhook/voice-fallback-complete", (req: Request, res: Response) => {
+  res.setHeader("Content-Type", "text/xml");
+  if (!verifyTwilioSignature(req)) {
+    log.warn("Twilio webhook signature verification failed", {
+      path: req.path,
+    });
+    return res.status(403).send(twimlHangup());
+  }
+
+  const dialStatus =
+    typeof req.body?.DialCallStatus === "string"
+      ? req.body.DialCallStatus.trim().toLowerCase()
+      : "unknown";
+  log.info("Voice failover transfer completed", { dial_status: dialStatus });
+
+  return res
+    .status(200)
+    .send(dialStatus === "completed" ? twimlHangup() : failoverVoicemailTwiml());
+});
+
+router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: Response) => {
+  res.setHeader("Content-Type", "text/xml");
+  if (!verifyTwilioSignature(req)) {
+    log.warn("Twilio webhook signature verification failed", {
+      path: req.path,
+    });
+    return res.status(403).send(twimlHangup());
+  }
+
+  const recordingUrl =
+    typeof req.body?.RecordingUrl === "string" ? req.body.RecordingUrl.trim() : "";
+  const recordingSid =
+    typeof req.body?.RecordingSid === "string" ? req.body.RecordingSid.trim() : "";
+  const transcription =
+    typeof req.body?.TranscriptionText === "string" ? req.body.TranscriptionText.trim() : "";
+  const from = typeof req.body?.From === "string" ? req.body.From : "";
+  const to = typeof req.body?.To === "string" ? req.body.To : "";
+  const durationRaw = Number(req.body?.RecordingDuration);
+  const durationSeconds = Number.isFinite(durationRaw)
+    ? Math.max(0, Math.round(durationRaw))
+    : null;
+
+  if (!recordingUrl) {
+    log.warn("Voicemail complete missing RecordingUrl", {
+      from_suffix: phoneSuffixForLog(from),
+      to_suffix: phoneSuffixForLog(to),
+    });
+    return res.status(200).send(twimlHangup());
+  }
+
+  try {
+    const tenantUserId = to ? await lookupTenant(to) : null;
+    if (!tenantUserId) {
+      log.warn("Voicemail recorded but no tenant matched To number", {
+        to_suffix: phoneSuffixForLog(to),
+        from_suffix: phoneSuffixForLog(from),
       });
-      return res.status(403).send(twimlEmpty());
+      return res.status(200).send(twimlHangup());
     }
 
-    const to = (req.body?.To as string | undefined) || "";
-    const from = (req.body?.From as string | undefined) || "";
-    log.error("VAPI FAILOVER TRIGGERED", {
-      to_suffix: phoneSuffixForLog(to),
-      from_suffix: phoneSuffixForLog(from),
+    const persisted = await tenantStore.run(tenantUserId, async () => {
+      const recordingKey = createHash("sha256")
+        .update(recordingSid || recordingUrl)
+        .digest("hex");
+      const [inserted] = await drizzle
+        .insert(schema.callLogs)
+        .values({
+          userId: tenantUserId,
+          vapiCallId: `twilio-voicemail:${recordingKey}`,
+          direction: "inbound",
+          customerNumber: from ? sanitizePhone(from) || from : null,
+          durationSeconds,
+          recordingUrl,
+          transcript: transcription || null,
+          summary: "Voicemail left during voice failover (Vapi unavailable).",
+          outcomeTag: "voicemail",
+          intentLabel: "voicemail",
+        })
+        .onConflictDoNothing({ target: schema.callLogs.vapiCallId })
+        .returning({ id: schema.callLogs.id });
+
+      if (!inserted) {
+        log.info("Duplicate Twilio voicemail callback ignored", {
+          recording_sid_suffix: opaqueIdSuffixForLog(recordingSid),
+        });
+        return false;
+      }
+
+      // Best-effort owner notify via Resend. The call log is already durable,
+      // and Twilio expects callback responses within 15 seconds, so bound the
+      // nonessential notification wait instead of letting Resend's broader
+      // 10-second transport timeout consume the entire webhook budget.
+      try {
+        const [owner] = await drizzle
+          .select({ email: schema.users.email })
+          .from(schema.users)
+          .where(eq(schema.users.id, tenantUserId))
+          .limit(1);
+        if (owner?.email) {
+          const { sendEmail } = await import("../lib/email-service");
+          const voicemailEmail = buildFailoverVoicemailEmail({
+            from,
+            to,
+            durationSeconds,
+            // Never email the persistent Twilio media URL. The recipient
+            // re-enters Wireline's authenticated, tenant-owned boundary.
+            recordingUrl: publicAssetUrl(`/api/calls/${String(inserted.id)}/recording`),
+            transcription,
+          });
+          const notification = await Promise.race([
+            sendEmail({
+              to: owner.email,
+              subject: "Wireline: voicemail left during call failover",
+              ...voicemailEmail,
+            }).then((result) => ({ state: "settled" as const, result })),
+            new Promise<{ state: "timed_out" }>((resolve) => {
+              const timer = setTimeout(() => resolve({ state: "timed_out" }), 3_000);
+              timer.unref?.();
+            }),
+          ]);
+          if (notification.state === "timed_out") {
+            log.warn("Voicemail owner notify exceeded webhook budget");
+          } else if (!notification.result.ok) {
+            log.warn("Voicemail owner notify was not accepted", {
+              provider: notification.result.provider,
+              error: notification.result.error,
+            });
+          }
+        }
+      } catch (notifyErr) {
+        log.warn("Voicemail owner notify failed", {
+          error: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
+        });
+      }
+      return true;
     });
 
-    // If we can't find the tenant or they don't have a human fallback number,
-    // we just take a voicemail. This route exists for the moment things are
-    // already broken, so a database failure here must degrade to the voicemail
-    // branch too — a thrown 500 would leave the caller with Twilio's own error
-    // announcement instead of a professional close.
-    let fallbackNumber: string | null = null;
-    try {
-      const tenantUserId = await lookupTenant(to);
-      if (tenantUserId) {
-        const [settings] = await drizzle
-          .select({
-            humanFallbackNumber: schema.settings.twilioManagerAlertNumber,
-          })
-          .from(schema.settings)
-          .where(eq(schema.settings.userId, tenantUserId))
-          .limit(1);
-        fallbackNumber = validE164(settings?.humanFallbackNumber);
-        if (settings?.humanFallbackNumber && !fallbackNumber) {
-          log.warn(
-            "Failover number is not valid E.164; degrading to voicemail",
-            {
-              tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
-            },
-          );
-        }
-      }
-    } catch (error) {
-      log.error("Failover tenant lookup failed; degrading to voicemail", {
-        error: error instanceof Error ? error.message : String(error),
-        to_suffix: phoneSuffixForLog(to),
-      });
+    if (!persisted) return res.status(200).send(twimlHangup());
+
+    log.info("Voicemail persisted during Vapi failover", {
+      tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
+      from_suffix: phoneSuffixForLog(from),
+      to_suffix: phoneSuffixForLog(to),
+      has_recording: true,
+      has_transcript: Boolean(transcription),
+    });
+    return res.status(200).send(twimlHangup());
+  } catch (err) {
+    log.error("Failed to persist failover voicemail", {
+      error: err instanceof Error ? err.message : String(err),
+      from_suffix: phoneSuffixForLog(from),
+      to_suffix: phoneSuffixForLog(to),
+      has_recording: Boolean(recordingUrl),
+    });
+    // A non-2xx response asks Twilio to retry. The recording key makes that
+    // retry idempotent if the first database write actually committed.
+    return res.status(503).send(twimlHangup());
+  }
+});
+
+/**
+ * Twilio delivers <Record transcribe="true"> results to a separate
+ * transcribeCallback, never on the recording `action` callback above. This
+ * upserts the transcript onto the voicemail row the action callback already
+ * persisted, keyed by the same RecordingSid hash so the two callbacks converge
+ * regardless of arrival order.
+ */
+router.post("/api/twilio-webhook/voicemail-transcription", async (req: Request, res: Response) => {
+  res.setHeader("Content-Type", "text/xml");
+  if (!verifyTwilioSignature(req)) {
+    log.warn("Twilio webhook signature verification failed", {
+      path: req.path,
+    });
+    return res.status(403).send(twimlHangup());
+  }
+
+  const recordingSid =
+    typeof req.body?.RecordingSid === "string" ? req.body.RecordingSid.trim() : "";
+  const status =
+    typeof req.body?.TranscriptionStatus === "string"
+      ? req.body.TranscriptionStatus.trim().toLowerCase()
+      : "";
+  const transcription =
+    typeof req.body?.TranscriptionText === "string" ? req.body.TranscriptionText.trim() : "";
+  const to = typeof req.body?.To === "string" ? req.body.To : "";
+
+  // Nothing to persist unless a completed transcript arrived for a known
+  // recording on a resolvable tenant number. Always acknowledge so Twilio
+  // does not retry a callback that carries no actionable payload.
+  if (status !== "completed" || !transcription || !recordingSid || !to) {
+    return res.status(200).send('<?xml version="1.0" encoding="UTF-8"?><Response/>');
+  }
+
+  try {
+    const tenantUserId = await lookupTenant(to);
+    if (!tenantUserId) {
+      return res.status(200).send('<?xml version="1.0" encoding="UTF-8"?><Response/>');
     }
-
-    // Absolute URL to the brand transfer chime — Twilio's <Play> needs a
-    // full public URL because it fetches the media file itself. The committed
-    // asset is regenerated by scripts/generate-transfer-chime.mjs and checked
-    // by launch readiness before this callback is enabled.
-    const transferChimeUrl = publicAssetUrl(
-      "/sounds/wireline-transfer-chime.wav",
-    );
-
-    if (fallbackNumber) {
-      let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
-      twiml += `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a Wireline agent line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`;
-      twiml += `  <Say voice="Polly.Matthew-Neural">Please hold while we transfer you to an available team member.</Say>\n`;
-      // Brand transfer chime — only plays on the failover path (Vapi
-      // down). Vapi's own transfer flow can't inject MP3s; see
-      // vapi-assistant-factory-v2.ts for the spoken-message workaround used
-      // during normal-runtime transfers.
-      twiml += `  <Play>${escapeTwimlValue(transferChimeUrl)}</Play>\n`;
-      twiml += `  <Dial answerOnBridge="true" action="/api/twilio-webhook/voice-fallback-complete" method="POST">${escapeTwimlValue(fallbackNumber)}</Dial>\n`;
-      twiml += `</Response>`;
-      return res.status(200).send(twiml);
-    }
-
-    return res.status(200).send(failoverVoicemailTwiml(true));
-  },
-);
-
-router.post(
-  "/api/twilio-webhook/voice-fallback-complete",
-  (req: Request, res: Response) => {
-    res.setHeader("Content-Type", "text/xml");
-    if (!verifyTwilioSignature(req)) {
-      log.warn("Twilio webhook signature verification failed", {
-        path: req.path,
-      });
-      return res.status(403).send(twimlHangup());
-    }
-
-    const dialStatus =
-      typeof req.body?.DialCallStatus === "string"
-        ? req.body.DialCallStatus.trim().toLowerCase()
-        : "unknown";
-    log.info("Voice failover transfer completed", { dial_status: dialStatus });
-
-    return res
-      .status(200)
-      .send(
-        dialStatus === "completed" ? twimlHangup() : failoverVoicemailTwiml(),
-      );
-  },
-);
-
-router.post(
-  "/api/twilio-webhook/voicemail-complete",
-  async (req: Request, res: Response) => {
-    res.setHeader("Content-Type", "text/xml");
-    if (!verifyTwilioSignature(req)) {
-      log.warn("Twilio webhook signature verification failed", {
-        path: req.path,
-      });
-      return res.status(403).send(twimlHangup());
-    }
-
-    const recordingUrl =
-      typeof req.body?.RecordingUrl === "string"
-        ? req.body.RecordingUrl.trim()
-        : "";
-    const recordingSid =
-      typeof req.body?.RecordingSid === "string"
-        ? req.body.RecordingSid.trim()
-        : "";
-    const transcription =
-      typeof req.body?.TranscriptionText === "string"
-        ? req.body.TranscriptionText.trim()
-        : "";
-    const from = typeof req.body?.From === "string" ? req.body.From : "";
-    const to = typeof req.body?.To === "string" ? req.body.To : "";
-    const durationRaw = Number(req.body?.RecordingDuration);
-    const durationSeconds = Number.isFinite(durationRaw)
-      ? Math.max(0, Math.round(durationRaw))
-      : null;
-
-    if (!recordingUrl) {
-      log.warn("Voicemail complete missing RecordingUrl", {
-        from_suffix: phoneSuffixForLog(from),
-        to_suffix: phoneSuffixForLog(to),
-      });
-      return res.status(200).send(twimlHangup());
-    }
-
-    try {
-      const tenantUserId = to ? await lookupTenant(to) : null;
-      if (!tenantUserId) {
-        log.warn("Voicemail recorded but no tenant matched To number", {
-          to_suffix: phoneSuffixForLog(to),
-          from_suffix: phoneSuffixForLog(from),
-        });
-        return res.status(200).send(twimlHangup());
-      }
-
-      const persisted = await tenantStore.run(tenantUserId, async () => {
-        const recordingKey = createHash("sha256")
-          .update(recordingSid || recordingUrl)
-          .digest("hex");
-        const [inserted] = await drizzle
-          .insert(schema.callLogs)
-          .values({
-            userId: tenantUserId,
-            vapiCallId: `twilio-voicemail:${recordingKey}`,
-            direction: "inbound",
-            customerNumber: from ? sanitizePhone(from) || from : null,
-            durationSeconds,
-            recordingUrl,
-            transcript: transcription || null,
-            summary: "Voicemail left during voice failover (Vapi unavailable).",
-            outcomeTag: "voicemail",
-            intentLabel: "voicemail",
-          })
-          .onConflictDoNothing({ target: schema.callLogs.vapiCallId })
-          .returning({ id: schema.callLogs.id });
-
-        if (!inserted) {
-          log.info("Duplicate Twilio voicemail callback ignored", {
-            recording_sid_suffix: opaqueIdSuffixForLog(recordingSid),
-          });
-          return false;
-        }
-
-        // Best-effort owner notify via Resend. The call log is already durable,
-        // and Twilio expects callback responses within 15 seconds, so bound the
-        // nonessential notification wait instead of letting Resend's broader
-        // 10-second transport timeout consume the entire webhook budget.
-        try {
-          const [owner] = await drizzle
-            .select({ email: schema.users.email })
-            .from(schema.users)
-            .where(eq(schema.users.id, tenantUserId))
-            .limit(1);
-          if (owner?.email) {
-            const { sendEmail } = await import("../lib/email-service");
-            const voicemailEmail = buildFailoverVoicemailEmail({
-              from,
-              to,
-              durationSeconds,
-              // Never email the persistent Twilio media URL. The recipient
-              // re-enters Wireline's authenticated, tenant-owned boundary.
-              recordingUrl: publicAssetUrl(
-                `/api/calls/${String(inserted.id)}/recording`,
-              ),
-              transcription,
-            });
-            const notification = await Promise.race([
-              sendEmail({
-                to: owner.email,
-                subject: "Wireline: voicemail left during call failover",
-                ...voicemailEmail,
-              }).then((result) => ({ state: "settled" as const, result })),
-              new Promise<{ state: "timed_out" }>((resolve) => {
-                const timer = setTimeout(
-                  () => resolve({ state: "timed_out" }),
-                  3_000,
-                );
-                timer.unref?.();
-              }),
-            ]);
-            if (notification.state === "timed_out") {
-              log.warn("Voicemail owner notify exceeded webhook budget");
-            } else if (!notification.result.ok) {
-              log.warn("Voicemail owner notify was not accepted", {
-                provider: notification.result.provider,
-                error: notification.result.error,
-              });
-            }
-          }
-        } catch (notifyErr) {
-          log.warn("Voicemail owner notify failed", {
-            error:
-              notifyErr instanceof Error
-                ? notifyErr.message
-                : String(notifyErr),
-          });
-        }
-        return true;
-      });
-
-      if (!persisted) return res.status(200).send(twimlHangup());
-
-      log.info("Voicemail persisted during Vapi failover", {
-        tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
-        from_suffix: phoneSuffixForLog(from),
-        to_suffix: phoneSuffixForLog(to),
-        has_recording: true,
-        has_transcript: Boolean(transcription),
-      });
-      return res.status(200).send(twimlHangup());
-    } catch (err) {
-      log.error("Failed to persist failover voicemail", {
-        error: err instanceof Error ? err.message : String(err),
-        from_suffix: phoneSuffixForLog(from),
-        to_suffix: phoneSuffixForLog(to),
-        has_recording: Boolean(recordingUrl),
-      });
-      // A non-2xx response asks Twilio to retry. The recording key makes that
-      // retry idempotent if the first database write actually committed.
-      return res.status(503).send(twimlHangup());
-    }
-  },
-);
+    const recordingKey = createHash("sha256").update(recordingSid).digest("hex");
+    const vapiCallId = `twilio-voicemail:${recordingKey}`;
+    await tenantStore.run(tenantUserId, async () => {
+      await drizzle
+        .update(schema.callLogs)
+        .set({ transcript: transcription })
+        .where(
+          and(eq(schema.callLogs.vapiCallId, vapiCallId), eq(schema.callLogs.userId, tenantUserId)),
+        );
+    });
+    log.info("Failover voicemail transcript persisted", {
+      tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
+      recording_sid_suffix: opaqueIdSuffixForLog(recordingSid),
+    });
+  } catch (err) {
+    log.warn("Failed to persist failover voicemail transcript", {
+      error: err instanceof Error ? err.message : String(err),
+      recording_sid_suffix: opaqueIdSuffixForLog(recordingSid),
+    });
+  }
+  return res.status(200).send('<?xml version="1.0" encoding="UTF-8"?><Response/>');
+});
 
 /**
  * SINGING RECEPTIONIST PRE-ROLL (Fun Demo)
@@ -728,44 +744,41 @@ router.post(
  * to a graceful spoken message instead of leaving the caller in
  * silence — Twilio numbers are real money + real customers.
  */
-router.post(
-  "/api/twilio-webhook/singing-receptionist",
-  (req: Request, res: Response) => {
-    res.setHeader("Content-Type", "text/xml");
-    if (!verifyTwilioSignature(req)) {
-      log.warn("Twilio webhook signature verification failed", {
-        path: req.path,
-      });
-      return res.status(403).send(twimlEmpty());
-    }
-    const from = (req.body?.From as string | undefined) || "";
-    log.info("Singing receptionist demo line hit", {
-      from_suffix: phoneSuffixForLog(from),
+router.post("/api/twilio-webhook/singing-receptionist", (req: Request, res: Response) => {
+  res.setHeader("Content-Type", "text/xml");
+  if (!verifyTwilioSignature(req)) {
+    log.warn("Twilio webhook signature verification failed", {
+      path: req.path,
     });
+    return res.status(403).send(twimlEmpty());
+  }
+  const from = (req.body?.From as string | undefined) || "";
+  log.info("Singing receptionist demo line hit", {
+    from_suffix: phoneSuffixForLog(from),
+  });
 
-    // Absolute URL for Twilio <Play> — Twilio's media fetcher needs a
-    // public origin. Falls back to the prod host when APP_URL isn't set.
-    const jingleUrl = publicAssetUrl("/sounds/wireline-jingle.mp3");
-    const sipUri = process.env.SINGING_VAPI_SIP_URI || "";
+  // Absolute URL for Twilio <Play> — Twilio's media fetcher needs a
+  // public origin. Falls back to the prod host when APP_URL isn't set.
+  const jingleUrl = publicAssetUrl("/sounds/wireline-jingle.mp3");
+  const sipUri = process.env.SINGING_VAPI_SIP_URI || "";
 
-    let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
-    twiml += `  <Play>${escapeTwimlValue(jingleUrl)}</Play>\n`;
-    if (sipUri) {
-      // Bridge to Vapi via SIP. answerOnBridge defers Twilio's billing
-      // start until Vapi actually answers, so the caller isn't billed for
-      // the jingle-only window if Vapi's down. Caller hears:
-      //   jingle → Mira's "Haha sorry about that!" → conversation.
-      twiml += `  <Dial answerOnBridge="true"><Sip>${escapeTwimlValue(sipUri)}</Sip></Dial>\n`;
-    } else {
-      // Dev / unconfigured fallback. Lets a curl smoke-test the route
-      // return clean TwiML even before Vapi is wired up.
-      twiml += `  <Say voice="Polly.Joanna-Neural">Haha, sorry about that. We like to have fun at Wireline sometimes. To finish setting up this demo, configure the SINGING_VAPI_SIP_URI environment variable. Goodbye.</Say>\n`;
-      twiml += `  <Hangup/>\n`;
-    }
-    twiml += `</Response>`;
+  let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
+  twiml += `  <Play>${escapeTwimlValue(jingleUrl)}</Play>\n`;
+  if (sipUri) {
+    // Bridge to Vapi via SIP. answerOnBridge defers Twilio's billing
+    // start until Vapi actually answers, so the caller isn't billed for
+    // the jingle-only window if Vapi's down. Caller hears:
+    //   jingle → Mira's "Haha sorry about that!" → conversation.
+    twiml += `  <Dial answerOnBridge="true"><Sip>${escapeTwimlValue(sipUri)}</Sip></Dial>\n`;
+  } else {
+    // Dev / unconfigured fallback. Lets a curl smoke-test the route
+    // return clean TwiML even before Vapi is wired up.
+    twiml += `  <Say voice="Polly.Joanna-Neural">Haha, sorry about that. We like to have fun at Wireline sometimes. To finish setting up this demo, configure the SINGING_VAPI_SIP_URI environment variable. Goodbye.</Say>\n`;
+    twiml += `  <Hangup/>\n`;
+  }
+  twiml += `</Response>`;
 
-    return res.status(200).send(twiml);
-  },
-);
+  return res.status(200).send(twiml);
+});
 
 export default router;
