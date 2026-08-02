@@ -411,7 +411,11 @@ function TemplateCard({
             )}
             <span
               className={cn(
-                "px-1.5 py-0.5 rounded-full border wl-label capitalize leading-none",
+                // `capitalize` was covering for the label tier: the channel is a
+                // raw enum ("voice", "email"), and with `.wl-label` declaring
+                // nothing it rendered as a lowercase word at full body size.
+                // The tier casts it now, so the workaround only fought it.
+                "px-1.5 py-0.5 rounded-full border wl-label leading-none",
                 template.channel === "email"
                   ? "bg-muted border-border text-foreground/70"
                   : "bg-primary/10 border-primary/30 text-primary",

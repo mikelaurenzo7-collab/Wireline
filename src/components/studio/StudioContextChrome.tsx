@@ -27,7 +27,7 @@ export default function StudioContextChrome() {
 
   return (
     <header
-      className="wl-studio-context-chrome shrink-0 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90"
+      className="shrink-0 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90"
       aria-label={`${language.singular} context`}
     >
       <div className="flex min-h-[56px] items-center justify-between gap-3 px-3 sm:px-5">
@@ -53,7 +53,7 @@ export default function StudioContextChrome() {
                   variant="badge"
                 />
               </span>
-              <h1 className="min-w-0 flex-1 truncate !whitespace-nowrap text-sm font-semibold text-foreground sm:max-w-[18rem] sm:flex-none">
+              <h1 className="wl-preserve-case min-w-0 flex-1 truncate !whitespace-nowrap text-sm font-semibold text-foreground sm:max-w-[18rem] sm:flex-none">
                 {activeAgent.name}
               </h1>
             </>

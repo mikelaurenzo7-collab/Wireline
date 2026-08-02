@@ -106,7 +106,7 @@ export default function StudioAgentReviewPanel({
             Review
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Is {agentName} ready for customers?
+            Is <span className="wl-preserve-case">{agentName}</span> ready for customers?
           </h2>
         </header>
 

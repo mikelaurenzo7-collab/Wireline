@@ -29,16 +29,14 @@
   text-transform: uppercase;
 }
 
-.marketing-surface
-  :is(p, li, .wl-public-copy, .wl-route-copy, .wl-page-copy, .marketing-hero__description) {
+/* `.marketing-hero__description` is deliberately absent from this list. Heroes
+ * stopped rendering a subhead, and the six rules across three stylesheets that
+ * still styled that node were dressing an element the DOM no longer contains. */
+.marketing-surface :is(p, li, .wl-public-copy, .wl-route-copy, .wl-page-copy) {
   font-family: var(--wireline-font-family-body);
   text-transform: uppercase;
   letter-spacing: 0.045em;
   line-height: 1.6;
-}
-
-.marketing-surface .wireline-home-hero .marketing-hero__description {
-  max-width: 42rem;
 }
 
 /* Read-as-written. The uppercase rules above are intentionally kept to a single
@@ -108,11 +106,6 @@
     font-size: clamp(2.35rem, 10.8vw, 3.45rem) !important;
     line-height: 1.01;
     letter-spacing: -0.04em;
-  }
-
-  .marketing-surface .marketing-hero__description {
-    font-size: 1.0625rem;
-    line-height: 1.58;
   }
 
   [data-slot="dialog-footer"] > :where(button, a, [role="button"]) {

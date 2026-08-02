@@ -148,14 +148,6 @@ body {
   text-shadow: 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 10%, transparent);
 }
 
-.marketing-surface .marketing-hero__description {
-  color: color-mix(
-    in srgb,
-    var(--wireline-color-text-secondary) 94%,
-    var(--wireline-color-text-primary) 6%
-  );
-}
-
 .marketing-surface :where(.marketing-btn-primary, .marketing-btn-secondary) {
   border: 1px solid transparent;
   border-radius: 0.75rem;

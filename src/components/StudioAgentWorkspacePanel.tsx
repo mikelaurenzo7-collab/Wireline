@@ -165,7 +165,7 @@ export default function StudioAgentWorkspacePanel({
             Set up
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Give {agentName} one clear job.
+            Give <span className="wl-preserve-case">{agentName}</span> one clear job.
           </h2>
         </header>
 

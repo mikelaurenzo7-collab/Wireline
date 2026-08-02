@@ -89,7 +89,13 @@ export default class ErrorBoundary extends Component<Props, State> {
       : "The rest of the app is fine — only this view failed. Try again, reload, or head back to the workspace.";
 
     return (
-      <div className="flex min-h-[70svh] items-center justify-center p-6">
+      /* `wl-ui-caps` is carried here rather than inherited: this boundary wraps
+         <App/> in main.tsx, so when it catches, the tree that owns the class is
+         precisely the tree that just unmounted. The recovery screen was the one
+         surface in the product rendering outside the case system — sentence-case
+         heading, untracked buttons — which is the worst possible moment to look
+         like a different application. */
+      <div className="wl-ui-caps flex min-h-[70svh] items-center justify-center p-6">
         <div className={cn(WL_APP_CLASSES.panelFrame, "w-full max-w-xl")}>
           <div className="relative space-y-6 p-8 md:p-10">
             <div className="pointer-events-none absolute -right-20 -top-20 h-64 max-h-[50vw] w-64 max-w-[50vw] rounded-full bg-[radial-gradient(circle,var(--wireline-color-status-error),transparent)] opacity-30 blur-3xl sm:max-h-none sm:max-w-none" />
@@ -101,7 +107,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 <div className="wl-label text-rose-500">
                   {staleChunk ? "Update required" : "Something broke"}
                 </div>
-                <h2 className="mt-1 font-display text-3xl leading-tight text-foreground">
+                <h2 className="mt-1 font-display text-3xl uppercase leading-tight tracking-[-0.025em] text-foreground">
                   {title}
                 </h2>
               </div>

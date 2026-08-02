@@ -324,7 +324,15 @@ const StudioWorkroom = forwardRef<
               {mode === "test" ? "Browser test" : "Build by conversation"}
             </p>
             <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
-              {mode === "test" ? `Talk to ${agentName} like a customer` : `Improve ${agentName}`}
+              {mode === "test" ? (
+                <>
+                  Talk to <span className="wl-preserve-case">{agentName}</span> like a customer
+                </>
+              ) : (
+                <>
+                  Improve <span className="wl-preserve-case">{agentName}</span>
+                </>
+              )}
             </h2>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">

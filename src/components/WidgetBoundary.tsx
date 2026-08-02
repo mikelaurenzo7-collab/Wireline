@@ -77,7 +77,7 @@ export default class WidgetBoundary extends Component<Props, State> {
           variant="outline"
           size="sm"
           onClick={this.reset}
-          className="touch-press rounded-full wl-ops-chip hover:text-foreground hover:border-brand/25 gap-1.5"
+          className="touch-press rounded-full hover:text-foreground hover:border-brand/25 gap-1.5"
         >
           <RefreshCw className="w-3 h-3" aria-hidden /> Retry
         </ShadButton>

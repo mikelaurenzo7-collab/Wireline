@@ -389,7 +389,7 @@ function WorkspaceSelector({
               {option.title}
               {mode === option.id && <Check className="h-4 w-4 text-brand" />}
             </span>
-            <span className="wl-auth-workspace-short mt-0.5 text-[11px] text-muted-foreground sm:hidden">
+            <span className="mt-0.5 text-[11px] text-muted-foreground sm:hidden">
               {option.shortText}
             </span>
             <span className="mt-1 hidden text-xs leading-5 text-muted-foreground sm:block">

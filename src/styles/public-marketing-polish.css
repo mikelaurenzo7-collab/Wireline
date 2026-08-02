@@ -84,15 +84,6 @@
   text-wrap: nowrap;
 }
 
-.marketing-surface .marketing-hero__description {
-  max-width: 47rem;
-  margin-top: 1.5rem;
-  font-size: clamp(1rem, 0.94rem + 0.32vw, 1.2rem);
-  line-height: 1.62;
-  text-align: center;
-  text-wrap: pretty;
-}
-
 .marketing-surface .marketing-hero__actions {
   margin-top: 2rem;
   gap: 0.65rem;
@@ -410,12 +401,6 @@
     padding-inline: 1rem;
     white-space: normal;
     overflow-wrap: anywhere;
-  }
-
-  .marketing-surface .marketing-hero__description {
-    margin-top: 1.15rem;
-    font-size: 1rem;
-    line-height: 1.55;
   }
 
   .marketing-surface .wl-public-section-heading,

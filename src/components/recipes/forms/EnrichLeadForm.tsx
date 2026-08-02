@@ -89,10 +89,7 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
                   <Building2 className="w-4 h-4 text-paper" />
                 </div>
                 <div>
-                  <div
-                    className="wl-label wl-confidence-text"
-                    data-confidence-color={confidenceAccent}
-                  >
+                  <div className="wl-label" data-confidence-color={confidenceAccent}>
                     {enrichment.research_confidence} confidence
                   </div>
                   <div className="text-sm text-foreground/85 mt-0.5">

@@ -29,10 +29,7 @@ const Progress = React.forwardRef<React.ElementRef<typeof ProgressPrimitive.Root
         no stylesheet reads it -- so nothing was compensating.
       */}
       <ProgressPrimitive.Indicator
-        className={cn(
-          "h-full w-full flex-1 bg-primary transition-all wl-progress-indicator",
-          indicatorClassName,
-        )}
+        className={cn("h-full w-full flex-1 bg-primary transition-all", indicatorClassName)}
         style={{ transform: `translateX(-${100 - clampPercent(value)}%)` }}
         data-progress={`${clampPercent(value)}%`}
       />

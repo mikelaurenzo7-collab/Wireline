@@ -415,7 +415,7 @@ export default function OpenAILiveVoiceSandbox({
           <div className="min-w-0">
             <p className="wl-stitch-label">Live voice</p>
             <h3 className="mt-1 font-display text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.02em] text-foreground">
-              Speak with {agentName}
+              Speak with <span className="wl-preserve-case">{agentName}</span>
             </h3>
             <p className="mt-1 max-w-2xl text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
               A private browser test using this agent's rules, facts, and voice profile.

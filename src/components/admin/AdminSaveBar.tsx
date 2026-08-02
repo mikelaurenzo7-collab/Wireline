@@ -20,7 +20,7 @@ export function AdminSaveBar({
   fullWidth,
 }: AdminSaveBarProps) {
   return (
-    <div className={cn("wl-admin-save-bar", className)}>
+    <div className={cn("", className)}>
       <ShadButton
         onClick={onClick}
         disabled={isSaving}

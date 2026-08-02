@@ -451,7 +451,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "relative wl-panel border border-border flex flex-col min-h-0 overflow-hidden wl-panel-editorial",
+        "relative wl-panel border border-border flex flex-col min-h-0 overflow-hidden",
         autoHeight ? "h-auto" : "h-full",
         "panel-mobile-surface",
         className,

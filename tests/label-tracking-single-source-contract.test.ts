@@ -46,6 +46,39 @@ describe("label tracking single-source contract", () => {
     );
   });
 
+  it("never redeclares the label variable with a literal at any breakpoint", () => {
+    /*
+     * Checking only the base declaration is what let the responsive override
+     * survive the unification. `--wl-caps-label-tracking` was re-set to a
+     * literal 0.11em inside the <=640px block — written back when the base was
+     * 0.12em, so it read as a tightening. Re-pointing the base at the 0.09em
+     * token left the literal behind, and mobile silently became *wider* than
+     * desktop: the responsive intent inverted exactly where horizontal space is
+     * scarcest, and the fourth source of truth the change had just removed came
+     * straight back.
+     *
+     * A breakpoint may still tighten the tier — it just has to do it relative to
+     * the token (`calc(var(--wireline-typography-overline-letterSpacing) - …)`)
+     * so the relationship holds wherever the token moves.
+     */
+    const offenders: string[] = [];
+    for (const file of globSync("src/styles/**/*.css", { cwd: root })
+      .map((f) => f.replaceAll("\\", "/"))
+      .sort()) {
+      const css = source(file).replace(/\/\*[\s\S]*?\*\//g, "");
+      for (const match of css.matchAll(/--wl-caps-label-tracking:\s*([^;]+);/g)) {
+        const value = match[1].trim();
+        if (value.includes("var(--wireline-typography-overline-letterSpacing)")) continue;
+        offenders.push(`${file}: --wl-caps-label-tracking: ${value}`);
+      }
+    }
+
+    expect(
+      offenders,
+      `label-tier variable redeclared without the token:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
   it("never hardcodes a letter-spacing on a label-tier rule", () => {
     const offenders: string[] = [];
     const files = globSync("src/styles/**/*.css", { cwd: root })

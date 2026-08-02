@@ -163,7 +163,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
             >
               {tile.value}
             </p>
-            <p className="wl-director-meta mt-1">{tile.sub}</p>
+            <p className="mt-1">{tile.sub}</p>
           </div>
         ))}
       </div>

@@ -119,7 +119,7 @@ export default function LeaderboardView({ days }: { days: number }) {
             </div>
             <div className="flex-1 min-w-0 relative">
               <div className="flex items-center gap-2 flex-wrap mb-2">
-                <h4 className="font-display text-2xl text-foreground leading-tight">
+                <h4 className="wl-preserve-case font-display text-2xl text-foreground leading-tight">
                   {a.agent_name}
                 </h4>
                 <RolePill role={a.role} />
