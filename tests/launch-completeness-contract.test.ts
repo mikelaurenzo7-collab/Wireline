@@ -26,6 +26,16 @@ describe("launch completeness contracts", () => {
     expect(wrapper).toMatch(/Expected authenticated screenshot certification/);
   });
 
+  it("does not call an unproven published edit release-current", () => {
+    const mediaKit = source("docs/LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md");
+
+    expect(mediaKit).toContain("release-current");
+    expect(mediaKit).toContain("marketing-kit/release-record.json");
+    expect(mediaKit).toContain("sourceCommit");
+    expect(mediaKit).toContain("deployed production SHA");
+    expect(mediaKit).toContain("Raw output is not release-certified.");
+  });
+
   it("keeps the public status refresh cadence aligned with its 60-second copy", () => {
     const status = source("src/components/Status.tsx");
 
