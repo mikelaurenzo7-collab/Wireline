@@ -262,7 +262,7 @@ html.light .prose {
   font-family: var(--wireline-font-family-mono), ui-monospace, monospace;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--wireline-typography-overline-letterSpacing);
   text-transform: uppercase;
 }
 

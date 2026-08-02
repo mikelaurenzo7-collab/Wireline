@@ -57,9 +57,6 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   if (!cfg) return null;
 
   const heroProof = isPersonal ? ["Your voice", "Clear outcomes", "Private by default"] : undefined;
-  const heroDescription = isPersonal
-    ? "Hand the phone work to Wireline so your day stays yours."
-    : cfg.subhead;
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -101,7 +98,6 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       <MarketingHero
         eyebrow={isPersonal ? "Personal call help" : cfg.eyebrow}
         title={cfg.headline}
-        description={heroDescription}
         primaryAction={{ label: cfg.primaryCta.label, to: cfg.primaryCta.href }}
         secondaryAction={{
           label: cfg.secondaryCta.label,

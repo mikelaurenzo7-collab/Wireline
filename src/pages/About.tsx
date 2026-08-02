@@ -33,7 +33,6 @@ export default function About() {
       <MarketingHero
         eyebrow="About Wireline"
         title="Agents that run calls like you would."
-        description="Train them on your business, voice, and playbook. Then hold every call and follow-up to your standard."
         primaryAction={{ label: "Get started now", to: "/pricing" }}
         secondaryAction={{ label: "Contact support", to: "/contact", tone: "secondary" }}
         proof={ABOUT_HERO_ITEMS}

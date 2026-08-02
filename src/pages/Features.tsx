@@ -159,7 +159,6 @@ export default function Features() {
         <MarketingHero
           eyebrow="Features"
           title="Voice Agents for every customer conversation."
-          description="Train one voice agent or a coordinated team with your rules and channels. Each agent handles the conversation, finishes the next step, and keeps one outcome record."
           primaryAction={{ label: "Build your voice agent", to: "/signup" }}
           secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
           proof={FEATURE_HERO_PROOF}

@@ -20,9 +20,6 @@ type HeroMetric = {
 type MarketingHeroProps = {
   eyebrow?: ReactNode;
   title: ReactNode;
-  /** Optional hero subhead. Omit for a deliberately minimal hero (the home
-   * page, where the title, chips, and live demo already carry the pitch). */
-  description?: ReactNode;
   primaryAction?: HeroAction;
   secondaryAction?: HeroAction;
   proof?: readonly string[];
@@ -42,7 +39,6 @@ function isExternalHref(href: string): boolean {
 export default function MarketingHero({
   eyebrow,
   title,
-  description,
   primaryAction,
   secondaryAction,
   proof = [],
@@ -127,17 +123,6 @@ export default function MarketingHero({
           >
             {title}
           </h1>
-
-          {description ? (
-            <p
-              className={cn(
-                "marketing-hero__description mx-auto mt-6 max-w-[46rem] text-pretty font-[var(--wireline-font-family-body)] text-[1.0625rem] font-normal leading-8 text-muted-foreground sm:text-[1.1875rem] sm:leading-[1.62]",
-                isHomeHero && "max-w-[42rem] text-[clamp(1.0625rem,1.8vw,1.25rem)]",
-              )}
-            >
-              {description}
-            </p>
-          ) : null}
 
           {actions.length ? (
             <div className="marketing-hero__actions mt-9">

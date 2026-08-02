@@ -67,9 +67,15 @@
   text-transform: none;
 }
 
-.marketing-surface :where(.wl-eyebrow, .wl-overline) {
+/* `:where()` contributes no specificity, so this rule lost to the cased body
+ * rule above for every eyebrow authored as a `<p class="wl-eyebrow">` — which
+ * is most of them. Forty-three eyebrows across the marketing surface were
+ * silently rendering at the 0.045em body tracking instead of the label tier.
+ * `:is()` gives it the weight the rule was always meant to have, and the
+ * overline token supplies the value so this is not a fourth source of truth. */
+.marketing-surface :is(.wl-eyebrow, .wl-overline) {
   font-size: 0.75rem;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--wireline-typography-overline-letterSpacing);
 }
 
 .marketing-surface :where(.wl-body-sm, .wl-info-list, .wl-info-list li) {
