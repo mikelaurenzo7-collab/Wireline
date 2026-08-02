@@ -6,19 +6,28 @@ const root = process.cwd();
 const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("launch completeness contracts", () => {
-  it("routes the launch-reel command through the certifying wrapper", () => {
+  it("routes the launch-reel command through the certifying wrapper and Vercel gate", () => {
     const pkg = JSON.parse(source("package.json")) as {
       scripts?: Record<string, string>;
     };
+    const vercelBuild = source("scripts/vercel-build.mjs");
+
     expect(pkg.scripts?.["marketing:kit"]).toBe("node scripts/run-marketing-kit.mjs");
     expect(pkg.scripts?.["marketing:kit:raw"]).toBe("node scripts/marketing-kit.mjs");
+    expect(vercelBuild).toContain('"tests/launch-completeness-contract.test.ts"');
   });
 
-  it("records the exact source commit and rejects duplicate authenticated frames", () => {
+  it("freezes the exact source before capture and rejects unsafe output", () => {
     const wrapper = source("scripts/run-marketing-kit.mjs");
+    const provenanceIndex = wrapper.indexOf("const sourceCommit = resolveSourceCommit();");
+    const captureIndex = wrapper.indexOf("const capture = spawnSync");
 
-    expect(wrapper).toContain("sourceCommit");
-    expect(wrapper).toContain('gitValue(["rev-parse", "HEAD"])');
+    expect(provenanceIndex).toBeGreaterThan(-1);
+    expect(captureIndex).toBeGreaterThan(provenanceIndex);
+    expect(wrapper).toContain("assertCleanCheckout(sourceCommit);");
+    expect(wrapper.match(/assertCleanCheckout\(sourceCommit\);/g)).toHaveLength(2);
+    expect(wrapper).toContain("path.relative(outputRoot, resolved)");
+    expect(wrapper).toMatch(/escapes marketing-kit\//);
     expect(wrapper).toContain("release-record.json");
     expect(wrapper).toContain("AUTHENTICATED_SCREENSHOT_IDS");
     expect(wrapper).toMatch(/byte-identical routes/);
