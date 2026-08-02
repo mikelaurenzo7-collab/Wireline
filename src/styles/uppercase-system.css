@@ -6,8 +6,11 @@
  * beneath them stays sentence case. Applied via text-transform so the copy
  * strings themselves never change. */
 
+/* Three knobs, all live. There is deliberately no separate display tracking:
+ * the cased title tier below sets one value for every title size, and a fourth
+ * variable that the same file overrode 50 lines later was a knob that looked
+ * tunable and did nothing. */
 .wl-ui-caps {
-  --wl-caps-display-tracking: -0.035em;
   --wl-caps-title-tracking: -0.025em;
   --wl-caps-control-tracking: 0.045em;
   --wl-caps-label-tracking: 0.12em;
@@ -29,9 +32,9 @@
   text-wrap: balance;
 }
 
+/* Tracking for this tier is set with the cased titles below, not here. */
 .wl-page-title {
   font-size: clamp(2.15rem, 4.5vw + 0.8rem, 4.35rem);
-  letter-spacing: var(--wl-caps-display-tracking);
 }
 
 .wl-app-page-title {
