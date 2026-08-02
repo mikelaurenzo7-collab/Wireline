@@ -73,6 +73,7 @@ export default function AppRoutes() {
         <Route path="/phone" element={<PhonePage />} />
         <Route path="/insights" element={<InsightsPage />} />
         <Route path="/inbox" element={<EmailPage />} />
+        <Route path="/email" element={<Navigate to="/inbox" replace />} />
         <Route path="/approvals" element={<ApprovalsPage />} />
         <Route path="/apps" element={<ClientAppsPage />} />
         <Route path="/apps/command" element={<BrowserCommandInstallPage />} />
