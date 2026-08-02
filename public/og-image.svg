@@ -49,17 +49,17 @@
     </text>
   </g>
 
-  <text x="80" y="216" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="60" font-weight="650" letter-spacing="-2.4" fill="#F5F4F8">
-    Voice agents that
+  <text x="80" y="212" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="52" font-weight="700" letter-spacing="0.5" fill="#F5F4F8">
+    VOICE AGENTS THAT
   </text>
-  <text x="80" y="286" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="60" font-weight="650" letter-spacing="-2.4" fill="#F5F4F8">
-    get the work done.
+  <text x="80" y="276" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="52" font-weight="700" letter-spacing="0.5" fill="#F5F4F8">
+    GET THE WORK DONE.
   </text>
 
-  <text x="84" y="360" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="26" font-weight="500" fill="#B6B1C6">
+  <text x="80" y="352" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="26" font-weight="500" fill="#B6B1C6">
     Build one for business or life.
   </text>
-  <text x="84" y="404" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="22" font-weight="500" fill="#B6B1C6">
+  <text x="80" y="398" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="22" font-weight="500" fill="#B6B1C6">
     Calls, answers, texts, emails, books, follows through.
   </text>
 
@@ -80,22 +80,22 @@
       TRAINED FOR YOUR WORK
     </text>
 
-    <rect x="24" y="108" width="94" height="38" rx="15" fill="#201E29"/>
-    <text x="44" y="133" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#C7CCD6">Voice</text>
-    <rect x="132" y="108" width="94" height="38" rx="15" fill="#201E29"/>
-    <text x="159" y="133" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#C7CCD6">Text</text>
-    <rect x="240" y="108" width="96" height="38" rx="15" fill="#201E29"/>
-    <text x="266" y="133" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#C7CCD6">Email</text>
+    <rect x="24" y="108" width="94" height="38" rx="15" fill="#201E29" stroke="#2E2350" stroke-width="1"/>
+    <text x="71" y="131" text-anchor="middle" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="11" font-weight="700" letter-spacing="1.5" fill="#C7CCD6">VOICE</text>
+    <rect x="132" y="108" width="94" height="38" rx="15" fill="#201E29" stroke="#2E2350" stroke-width="1"/>
+    <text x="179" y="131" text-anchor="middle" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="11" font-weight="700" letter-spacing="1.5" fill="#C7CCD6">TEXT</text>
+    <rect x="240" y="108" width="96" height="38" rx="15" fill="#201E29" stroke="#2E2350" stroke-width="1"/>
+    <text x="288" y="131" text-anchor="middle" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="11" font-weight="700" letter-spacing="1.5" fill="#C7CCD6">EMAIL</text>
 
     <rect x="24" y="164" width="312" height="48" rx="18" fill="#A78BFA"/>
-    <text x="64" y="194" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700" fill="#0E0B16">
+    <text x="180" y="193" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#0E0B16">
       Conversation handled. Work finished.
     </text>
     <g transform="translate(24, 238)">
       <rect width="142" height="24" rx="12" fill="#1E1730"/>
-      <text x="16" y="16" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#A78BFA">Shared context</text>
+      <text x="71" y="16" text-anchor="middle" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="9" font-weight="700" letter-spacing="1.2" fill="#A78BFA">SHARED CONTEXT</text>
       <rect x="154" width="158" height="24" rx="12" fill="#1C1D22"/>
-      <text x="170" y="16" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#C7CCD6">Outcome logged</text>
+      <text x="233" y="16" text-anchor="middle" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="9" font-weight="700" letter-spacing="1.2" fill="#C7CCD6">OUTCOME LOGGED</text>
     </g>
   </g>
 

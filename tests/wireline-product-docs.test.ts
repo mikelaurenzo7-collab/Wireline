@@ -109,7 +109,7 @@ describe("Wireline product documentation contract", () => {
     expect(head).not.toContain("AI employee");
     expect(head).not.toContain("multichannel AI employee");
     expect(head).not.toContain("—");
-    expect(ogImage).toMatch(/Voice agents that[\s\S]*get the work done\./);
+    expect(ogImage).toMatch(/VOICE AGENTS THAT[\s\S]*GET THE WORK DONE\./);
     expect(ogImage).toContain("VOICE | TEXT | EMAIL | BOOKINGS | FOLLOW UP | CONTROL");
     expect(ogImage).not.toContain("·");
     expectNoTerms(head, retiredProductTerms);

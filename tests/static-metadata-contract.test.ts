@@ -58,8 +58,8 @@ describe("static marketing metadata", () => {
   it("keeps the OG image aligned with voice, channels, number, and outcomes", () => {
     const ogImage = read("public/og-image.svg");
 
-    expect(ogImage).toContain("Voice agents that");
-    expect(ogImage).toContain("get the work done.");
+    expect(ogImage).toContain("VOICE AGENTS THAT");
+    expect(ogImage).toContain("GET THE WORK DONE.");
     expect(ogImage).toContain("NUMBER INCLUDED ON PAID PLANS");
     expect(ogImage).toContain("Build one for business or life.");
     expect(ogImage).toContain("Conversation handled. Work finished.");
