@@ -119,6 +119,7 @@ const recommended = [
 ];
 
 const optional = [
+  ["PERPLEXITY_API_KEY", "Preferred live public-research vendor; grounded Gemini covers when unset"],
   ["XAI_API_KEY_CHATKIT", "Optional isolated xAI experiment key"],
   ["WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK", "Optional xAI experiments — set true to append direct xAI after the AI Gateway"],
   ["WIRELINE_LAUNCH_DEMO_MODE", "Mark launch telemetry as demo-only until real customers are admitted"],

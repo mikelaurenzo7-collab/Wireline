@@ -39,11 +39,11 @@ Do **not** make live video calls the default product center. Voice and phone rem
 
 | Layer | Provider (internal) | Customer experience |
 | --- | --- | --- |
-| Voice + LLM + PSTN | Vapi, ElevenLabs, xAI | Wireline Phone, Voice library, Live |
+| Voice + LLM + PSTN | Vapi, OpenAI, optional xAI | Wireline Phone, Voice library, Live |
 | In-app avatar | Wireline SVG | Identity badge across app, training, analytics, and logs |
 | On-screen video | LiveAvatar (HeyGen) LITE mode | Paused/limited until curated catalog is launch-quality |
 | Presenter-matched voice | HeyGen speech API | Retained internally for future lip-sync aligned preview |
-| PSTN with presenter voice | Falls back to ElevenLabs | Disclosed in voice picker + Studio banner |
+| PSTN with presenter voice | Falls back to the managed Vapi voice (never ElevenLabs on PSTN) | Disclosed in voice picker + Studio banner |
 
 Architecture: Wireline owns brains, telephony, permissions, consent, and outcomes; video vendors render approved presence assets. This split is correct — do not route PSTN audio through avatar vendors and do not build an in-house neural renderer before PMF.
 

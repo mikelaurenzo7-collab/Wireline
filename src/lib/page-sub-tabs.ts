@@ -184,10 +184,12 @@ export const INSIGHTS_VIEW_TABS: Record<string, AppPageSubTab> = {
 export const OUTBOUND_VIEW_TABS: AppPageSubTab[] = [
   { id: "dispatch", label: "Dispatch", icon: Zap },
   {
+    // The marketed "Lead Hunt" capability lives here: research a niche,
+    // enrich targets, and hand them to the agent as an outbound campaign.
     id: "campaigns",
-    label: "Campaigns",
-    shortLabel: "Camps",
-    ariaLabel: "Campaigns",
+    label: "Lead Hunt",
+    shortLabel: "Hunt",
+    ariaLabel: "Lead Hunt campaigns",
     icon: Megaphone,
   },
   { id: "sequences", label: "Sequences", shortLabel: "Seq", ariaLabel: "Sequences", icon: Repeat },

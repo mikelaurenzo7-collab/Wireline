@@ -1,13 +1,6 @@
 export type IntegrationStatus = "configured" | "missing" | "fallback";
 export type IntegrationGroup =
-  | "core"
-  | "ai"
-  | "voice"
-  | "oauth"
-  | "billing"
-  | "actions"
-  | "infra"
-  | "security";
+  "core" | "ai" | "voice" | "oauth" | "billing" | "actions" | "infra" | "security";
 export type IntegrationDescriptor = {
   id: string;
   label: string;
@@ -77,6 +70,15 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     false,
     ["XAI_API_KEY"],
     "Structured fallback requires WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=true.",
+  ),
+  item(
+    "perplexity",
+    "Perplexity",
+    "Preferred live public-research vendor for fresh web answers (freshPublicResearch).",
+    "ai",
+    false,
+    ["PERPLEXITY_API_KEY"],
+    "Falls back to grounded Gemini search when unset.",
   ),
   item("vapi", "Vapi", "Managed PSTN inbound and outbound call orchestration.", "voice", true, [
     "VAPI_PRIVATE_KEY",

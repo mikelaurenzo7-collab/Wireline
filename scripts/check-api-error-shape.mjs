@@ -56,9 +56,18 @@ if (count > max) {
 }
 
 if (count < max) {
-  ratchet.maxLegacyErrorResponses = count;
-  fs.writeFileSync(RATCHET_PATH, `${JSON.stringify(ratchet, null, 2)}\n`);
-  console.log(`api-error ratchet tightened: ${max} → ${count}`);
+  // Only rewrite the tracked ratchet file when explicitly asked: check mode
+  // must never dirty the working tree mid-verification (mirrors csp:sync).
+  if (process.argv.includes("--write")) {
+    ratchet.maxLegacyErrorResponses = count;
+    fs.writeFileSync(RATCHET_PATH, `${JSON.stringify(ratchet, null, 2)}\n`);
+    console.log(`api-error ratchet tightened: ${max} → ${count}`);
+  } else {
+    console.log(
+      `api-error ratchet can tighten: ${max} → ${count}. ` +
+        "Run `node scripts/check-api-error-shape.mjs --write` and commit the ratchet file.",
+    );
+  }
 } else {
   console.log(`api-error ratchet OK: ${count}/${max} legacy responses without inline code`);
 }

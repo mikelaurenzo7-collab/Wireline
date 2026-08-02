@@ -45,6 +45,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md) | Web, browser, native, ChatGPT, and presenter ownership and release boundaries. |
 | [CHATGPT_APP.md](./CHATGPT_APP.md) | ChatGPT App behavior, OAuth, tool boundaries, and release verification. |
 | [business-usage-pricing-decision.md](./business-usage-pricing-decision.md) | Canonical billing model and Runtime Balance posture. |
+| [COMPETITIVE_PRICING_2026-08.md](./COMPETITIVE_PRICING_2026-08.md) | Dated competitive pricing baseline for the next catalog decision. |
 | [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md) | Checkout, entitlement, webhook, cancellation, and reconciliation proof. |
 | [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md) | Whole-product feature and commercial-status matrix. |
 | [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md) | Customer-facing trust, compliance, and proof posture. |

@@ -48,7 +48,7 @@ Each tier can ship on its own cadence only when it stays inside these boundaries
 
 | Boundary | Requirement |
 | --- | --- |
-| Launch status | **Early access**. Local install and packaging checks are active; store submission waits on a real in-product install path and review. Aligns with `CLIENT_SURFACE_POSTURE.browser`. |
+| Launch status | **Early access**. Local install and packaging checks are active; the in-product install path ships at /apps/command (BrowserCommandInstallPage); store submission now waits only on store review readiness. Aligns with `CLIENT_SURFACE_POSTURE.browser`. |
 | Owning files/directories | `apps/browser-extension/`, its manifest overlays, service worker, side panel/sidebar, build scripts, package artifacts, and extension README. |
 | Required checks before release | `node apps/browser-extension/scripts/build.mjs --check`; target builds for Chromium and Firefox; manual install smoke in each target browser; explicit-action context handoff smoke into Studio; permissions review against store policies. |
 | Non-goals | Not a hidden scraper, CRM mirror, independent background agent, or always-on page monitor. It does not provision phone numbers, own sessions, execute outbound actions, or duplicate Studio. |

@@ -64,7 +64,7 @@ Every feature in this matrix should map to one of those states before paid acqui
 | Included capacity + Runtime Allowance + Runtime Balance      | **Live**    | Paid plans consume included voice/runtime capacity first; prepaid Runtime Balance funds explicit overflow with no automatic postpaid overage      |
 | Outbound hub + campaigns + cadences                          | **Live**    | Federal DNC required for marketing in production                                                                                                  |
 | Trust Center (`/trust`)                                      | **Live**    | Honest SOC2 roadmap + compliance posture                                                                                                          |
-| Wireline Command (browser extension)                         | **Early access** | Local install; store submission deferred until in-product install path exists |
+| Wireline Command (browser extension)                         | **Early access** | Local install with in-product install guide at /apps/command; store submission waits on store review readiness |
 | iOS app                                                      | **Planned** | Code + simulator CI; TestFlight pending; CarPlay Phase 2 |
 | Android app                                                  | **Internal beta** | Code + Gradle CI; Play pending |
 | ChatGPT / Claude / Cursor (shared MCP)                       | **Early access** | Account-bound tools live at `/mcp`; no guest transport or separate Claude/Cursor plugin packages |

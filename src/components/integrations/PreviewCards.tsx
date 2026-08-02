@@ -839,7 +839,9 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
     label: "Meta",
     color: INTEGRATION_ORBIT_COLOR,
     Icon: Target,
-    tagline: "Submit qualified leads to Meta CAPI for accurate ad attribution",
+    // The Meta OAuth surface is a placeholder (src/routes/oauth/meta.ts);
+    // keep the card honest until the CAPI export actually ships.
+    tagline: "Coming soon: submit qualified leads to Meta CAPI for ad attribution",
     PreviewCard: MetaPreviewCard,
   },
   {

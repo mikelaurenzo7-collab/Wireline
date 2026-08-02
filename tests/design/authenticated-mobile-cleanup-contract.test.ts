@@ -16,7 +16,7 @@ describe("authenticated mobile cleanup", () => {
     expect(tabStrip).toContain('className="hidden sm:inline"');
     expect(tabStrip).toContain("tab.ariaLabel ?? (tab.shortLabel ? fullLabel : undefined)");
     expect(tabStrip).not.toContain("(${tab.shortLabel})");
-    expect(tabs).toContain('shortLabel: "Camps"');
+    expect(tabs).toContain('shortLabel: "Hunt"');
     expect(tabs).toContain('shortLabel: "Seq"');
     expect(tabs).toContain('shortLabel: "Cbks"');
     // Settings uses full labels on every viewport — no redundant shortLabel twins.

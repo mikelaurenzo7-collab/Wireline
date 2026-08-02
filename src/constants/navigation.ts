@@ -81,7 +81,7 @@ export const WORKSPACE_NAV: ShellNavItem[] = [
     label: "Connections",
     shortLabel: "Connect",
     icon: Workflow,
-    matches: ["/connections", "/actions"],
+    matches: ["/connections"],
   },
 ];
 
@@ -119,14 +119,14 @@ export const MOBILE_MORE_NAV: ShellNavItem[] = [
     label: "Connections",
     shortLabel: "Connect",
     icon: Workflow,
-    matches: ["/connections", "/actions"],
+    matches: ["/connections"],
   },
   {
     href: "/knowledge",
     label: "Knowledge",
     shortLabel: "Train",
     icon: GraduationCap,
-    matches: ["/knowledge", "/training"],
+    matches: ["/knowledge"],
   },
   { href: "/approvals", label: "Approvals", shortLabel: "Approve", icon: CheckSquare },
   { href: "/insights", label: "Activity", icon: BarChart3 },

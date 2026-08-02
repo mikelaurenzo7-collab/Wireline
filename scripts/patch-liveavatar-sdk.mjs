@@ -25,16 +25,24 @@ const REPLACEMENT = `this._sessionEventSocket.send(JSON.stringify({
                     }));`;
 
 let patched = 0;
+let present = 0;
 for (const relative of targets) {
   const path = resolve(process.cwd(), relative);
   if (!existsSync(path)) continue;
+  present += 1;
   const before = readFileSync(path, "utf8");
   if (before.includes('audio: typeof btoa === "function" ? btoa(audioChunk)')) {
     continue;
   }
   if (!before.includes(NEEDLE)) {
-    console.warn(`[patch-liveavatar-sdk] pattern missing in ${relative} — skip`);
-    continue;
+    // The dependency is pinned exactly (no caret) so the needle cannot shift
+    // under us. If it still does, fail the install loudly: shipping without
+    // this patch silently breaks presenter audio on agent.speak.
+    console.error(
+      `[patch-liveavatar-sdk] pattern missing in ${relative} and fixed form absent — ` +
+        "the SDK build changed; update NEEDLE/REPLACEMENT before shipping.",
+    );
+    process.exit(1);
   }
   writeFileSync(path, before.replace(NEEDLE, REPLACEMENT));
   patched += 1;
@@ -42,5 +50,9 @@ for (const relative of targets) {
 }
 
 if (patched === 0) {
-  console.log("[patch-liveavatar-sdk] already applied or SDK absent");
+  console.log(
+    present === 0
+      ? "[patch-liveavatar-sdk] SDK absent — nothing to patch"
+      : "[patch-liveavatar-sdk] already applied",
+  );
 }
