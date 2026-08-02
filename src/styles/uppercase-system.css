@@ -267,8 +267,44 @@
  * by being more specific. */
 .wl-ui-caps .wl-preserve-case,
 .wl-ui-caps .wl-preserve-case * {
-  letter-spacing: normal !important;
   text-transform: none !important;
+}
+
+/* The tracking reset is narrower than the case guarantee, because the two are
+ * not the same promise. Caps tracking left behind on lowercase text reads wrong,
+ * so it is cleared — but an element that names its own step on the type scale
+ * asked for that tracking directly, and the case system never gave it. Clearing
+ * it there does visible damage: the Overview greeting is
+ * `wl-preserve-case wl-display-2`, and an unconditional reset took its -0.025em
+ * off a 57.6px display heading, measured as -1.44px -> normal. */
+.wl-ui-caps
+  .wl-preserve-case:not(
+    .wl-display-1,
+    .wl-display-2,
+    .wl-display-3,
+    .wl-display-4,
+    .wl-display-mark,
+    .wl-page-title,
+    .wl-app-page-title,
+    .wl-section-title,
+    .wl-card-title,
+    .wl-metric-value
+  ),
+.wl-ui-caps
+  .wl-preserve-case
+  *:not(
+    .wl-display-1,
+    .wl-display-2,
+    .wl-display-3,
+    .wl-display-4,
+    .wl-display-mark,
+    .wl-page-title,
+    .wl-app-page-title,
+    .wl-section-title,
+    .wl-card-title,
+    .wl-metric-value
+  ) {
+  letter-spacing: normal !important;
 }
 
 /* Field captions and column headers join the label tier: caps with the wide
@@ -322,14 +358,24 @@
 @media (max-width: 640px) {
   .wl-ui-caps {
     --wl-caps-control-tracking: 0.04em;
-    /* Small screens tighten the tier by a hair; they do not redefine it. This
-     * was written as a literal 0.11em back when the base was 0.12em, so it read
-     * as a tightening. Re-pointing the base at the 0.09em token left the literal
-     * behind — mobile silently became *wider* than desktop, inverting the intent
-     * exactly where horizontal space is scarcest, and restoring the fourth
-     * source of truth the token unification had just removed. Derived from the
-     * token, the relationship holds wherever the token moves. */
-    --wl-caps-label-tracking: calc(var(--wireline-typography-overline-letterSpacing) - 0.01em);
+    /* The label tier deliberately has no responsive override, unlike the control
+     * tier above it.
+     *
+     * There was one: a literal 0.11em, written when the base was 0.12em so it
+     * read as a tightening. Re-pointing the base at the 0.09em token left the
+     * literal behind and mobile silently became *wider* than desktop — the
+     * intent inverted exactly where horizontal space is scarcest.
+     *
+     * Deriving it from the token instead (`calc(… - 0.01em)`) fixed the
+     * inversion but not the split, because only this file reads
+     * `--wl-caps-label-tracking`; the seven stylesheets unified in the previous
+     * commit read the token directly and never saw the breakpoint. Measured on a
+     * 390px viewport that came back as 0.08em and 0.09em side by side — two
+     * values for one tier again, from the opposite direction.
+     *
+     * A tier defined as one value is one value. The knob is gone rather than
+     * re-plumbed: at 0.09em the tier is already tight enough that the hair it
+     * bought was never worth a second code path. */
   }
 
   .wl-page-title {

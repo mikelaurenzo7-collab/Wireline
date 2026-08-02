@@ -68,7 +68,22 @@ const DialogContent = React.forwardRef<
       ref={ref}
       data-slot="dialog-content"
       data-presentation={presentation ?? "modal"}
-      className={cn(dialogContentVariants({ presentation }), className)}
+      /* `wl-ui-caps` is carried on the portalled root, not inherited.
+       *
+       * Radix portals this content to `document.body`, which makes it a sibling
+       * of the `.wl-ui-caps` div on <App/> rather than a descendant — so every
+       * cased tier, all of which are scoped under that class, missed every modal
+       * in the product. Measured with the same markup in both positions: a
+       * `[data-slot="dialog-title"]` renders `uppercase` inside the root and
+       * `none` portalled; a `<label>` loses the label tracking (1.44px -> the
+       * default) and a `<button>` the control tracking.
+       *
+       * The rule written for exactly this — "a sentence-case modal heading
+       * sitting above cased labels and buttons was the one place the system
+       * visibly broke" — could never fire, because it needs an ancestor that a
+       * portal guarantees is absent. Carrying the class also brings the
+       * `--wl-caps-*` custom properties the tiers read; they are declared on it. */
+      className={cn("wl-ui-caps", dialogContentVariants({ presentation }), className)}
       {...props}
     >
       {children}

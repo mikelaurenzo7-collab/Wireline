@@ -8,6 +8,7 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertOctagon, RefreshCw } from "lucide-react";
 import { captureException } from "../lib/sentry";
+import { isLikelyStaleChunkError, requestStaleChunkReload } from "../lib/chunk-recovery";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { cn } from "../lib/utils";
 
@@ -33,6 +34,22 @@ export default class WidgetBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
+    // The same stale-chunk recovery the route-level ErrorBoundary performs, for
+    // the same reason — and this boundary needs it more, not less.
+    //
+    // Since the Insights charts became `lazy()`, this is the *nearest* boundary
+    // to a dynamic import, so it is the one that catches a 404 on a hashed chunk
+    // after a deploy. Being caught here is terminal in a way it is not upstream:
+    // React caches a rejected lazy payload, so the fallback's Retry button
+    // re-renders the same rejection forever and the panel can never come back
+    // without a manual hard reload. Nothing else would notice either — React 19
+    // routes boundary-caught errors to `onCaughtError` (a bare console.error by
+    // default), so neither the window `error` nor `unhandledrejection` handler
+    // in main.tsx ever sees them.
+    if (isLikelyStaleChunkError(error) && requestStaleChunkReload("widget-boundary")) {
+      return;
+    }
+
     // Send to Sentry with the widget label so we can group failures
     // by surface in the dashboard.
     if (import.meta.env.DEV) {

@@ -194,7 +194,7 @@ export default function PublicChangelog() {
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
                     <span className="text-eyebrow !text-[0.625rem]">{entry.date}</span>
                     <span
-                      className={`inline-flex items-center gap-1 text-eyebrow !text-[0.625rem] !tracking-[0.14em] px-2 py-0.5 rounded-full border leading-none ${meta.tone}`}
+                      className={`inline-flex items-center gap-1 text-eyebrow !text-[0.625rem] px-2 py-0.5 rounded-full border leading-none ${meta.tone}`}
                     >
                       <Icon className="w-2.5 h-2.5" strokeWidth={2.2} />
                       {meta.label}

@@ -326,9 +326,7 @@ function DemandReadinessCard({
             <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
               <PlugZap size={17} aria-hidden="true" />
             </span>
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {state.eyebrow}
-            </p>
+            <p className="text-eyebrow text-primary">{state.eyebrow}</p>
           </div>
           <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             {state.title}
@@ -424,9 +422,7 @@ function AgentSection({
   return (
     <section className="min-w-0" aria-label={heading}>
       <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-          {heading}
-        </p>
+        <p className="text-eyebrow text-muted-foreground">{heading}</p>
         <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
           {agents.length}
         </span>

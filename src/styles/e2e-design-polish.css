@@ -70,10 +70,36 @@
  * is most of them. Forty-three eyebrows across the marketing surface were
  * silently rendering at the 0.045em body tracking instead of the label tier.
  * `:is()` gives it the weight the rule was always meant to have, and the
- * overline token supplies the value so this is not a fourth source of truth. */
-.marketing-surface :is(.wl-eyebrow, .wl-overline) {
+ * overline token supplies the value so this is not a fourth source of truth.
+ *
+ * The list is the whole eyebrow tier, not the two classes that happened to be
+ * measured first. `.wl-stitch-eyebrow`, `.wl-stitch-label` and `.text-eyebrow`
+ * lose the same race for the same reason — a single class cannot outrank
+ * `.marketing-surface :is(p, li, …)` — and re-measuring found 88 more label-tier
+ * nodes still rendering at body tracking across /about, /compare, /developers,
+ * /showcase, /pricing, /security, /status and /changelog. Fixing a tier two
+ * members at a time is how it stays broken. */
+.marketing-surface
+  :is(
+    .wl-eyebrow,
+    .wl-overline,
+    .wl-stitch-eyebrow,
+    .wl-stitch-label,
+    .wl-pro-eyebrow,
+    .wl-micro-meta,
+    .wl-page-context,
+    .wl-workspace-eyebrow,
+    .studio-kicker,
+    .text-eyebrow
+  ) {
+  /* The body rule above sets `font-family` and `line-height` too, and it wins
+     the same race for the same reason — so restoring only size and tracking left
+     29 marketing eyebrows set in Inter at 1.6 line-height, a body paragraph
+     wearing label spacing. The tier is a face as much as a measure. */
+  font-family: var(--wireline-font-family-mono);
   font-size: 0.75rem;
   letter-spacing: var(--wireline-typography-overline-letterSpacing);
+  line-height: 1.25;
 }
 
 .marketing-surface :where(.wl-body-sm, .wl-info-list, .wl-info-list li) {

@@ -117,6 +117,39 @@ function presentationState(
   return data.overall;
 }
 
+const STATES: readonly OverallState[] = ["operational", "degraded", "outage", "unknown"];
+const isState = (value: unknown): value is ComponentState =>
+  typeof value === "string" && (STATES as readonly string[]).includes(value);
+
+/**
+ * The feed is a network payload, so it is narrowed at the boundary rather than
+ * asserted through a cast. A 200 whose body does not carry a recognised
+ * `overall` used to index `STATE_META` with `undefined` and throw while reading
+ * `.icon`, taking down the whole page — on the one public surface whose entire
+ * job is to still be standing when something else is not. Deploy skew, a proxy
+ * interstitial, or a future field rename are all enough to produce that body.
+ *
+ * Anything unrecognised now reads as "unknown", which the page already renders,
+ * and a body with no usable component map degrades instead of crashing.
+ */
+function normalizeHealth(payload: unknown): PublicHealth | null {
+  if (!payload || typeof payload !== "object") return null;
+  const raw = payload as Record<string, unknown>;
+  const components: Record<string, unknown> =
+    raw.components && typeof raw.components === "object"
+      ? (raw.components as Record<string, unknown>)
+      : {};
+  return {
+    overall: isState(raw.overall) ? raw.overall : "unknown",
+    components: {
+      voice_runtime: isState(components.voice_runtime) ? components.voice_runtime : "unknown",
+      voice_fallback: isState(components.voice_fallback) ? components.voice_fallback : "unknown",
+      reasoning: isState(components.reasoning) ? components.reasoning : "unknown",
+    },
+    last_checked: typeof raw.last_checked === "string" ? raw.last_checked : "",
+  };
+}
+
 export default function Status() {
   const [data, setData] = useState<PublicHealth | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -128,7 +161,8 @@ export default function Status() {
       try {
         const res = await fetch("/api/health/public", { headers: { Accept: "application/json" } });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = (await res.json()) as PublicHealth;
+        const json = normalizeHealth(await res.json());
+        if (!json) throw new Error("Unrecognised status payload");
         if (!cancelled) {
           setData(json);
           setError(null);
