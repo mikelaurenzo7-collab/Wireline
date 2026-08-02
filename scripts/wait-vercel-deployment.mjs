@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Poll a Vercel deployment until READY or ERROR. */
-const TEAM_ID = "team_ssX7cPECdHvXGFHSOuS9iXos";
+import { TEAM_ID } from "./lib/vercel-project.mjs";
 const id = process.argv[2];
 const token = process.env.VERCEL_TOKEN?.trim();
 if (!token || !id) {

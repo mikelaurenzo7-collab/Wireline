@@ -93,7 +93,10 @@ Live snapshot **2026-07-21**: Stripe available **$0.00**; Twilio **$23.664**.
 
 **Founder operating float to open gates:** roughly **$1,500–2,500** (Stripe buffer + voice wallets + AI budgets + optional $200–500 ad test).
 
-The generated current record is `docs/LAUNCH_STATUS.generated.json`; executable probes and vendor detail live in
+Generate the current record with `npm run launch:status`; it writes the untracked
+`docs/LAUNCH_STATUS.generated.json` by probing live production. Read it fresh rather than trusting a
+copy — the file is deliberately not committed because a stored snapshot reads as current truth long
+after the deployment it measured. Executable probes and vendor detail live in
 `docs/VENDOR_LAUNCH_MAP.md`. Creative assets: `docs/LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md`.
 
 ## Runtime operating rules

@@ -22,9 +22,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { FOUNDER_CATALOG_VERSION } from "./lib/stripe-founder-catalog.mjs";
+import { TEAM_ID, PROJECT_ID } from "./lib/vercel-project.mjs";
 
-const TEAM_ID = "team_ssX7cPECdHvXGFHSOuS9iXos";
-const PROJECT_ID = "prj_mCjWa69TtFye8z11u8bSaWwO41f2";
 const TARGETS = ["production", "preview", "development"];
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

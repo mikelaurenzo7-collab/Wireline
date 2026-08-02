@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -15,10 +15,7 @@ describe("Wireline floating surface design contract", () => {
   });
 
   it("keeps both dialog primitives left-aligned, viewport-contained, and scroll-safe", () => {
-    for (const path of [
-      "src/components/atoms/Dialog.tsx",
-      "src/components/ui/shadcn/Dialog.tsx",
-    ]) {
+    for (const path of ["src/components/atoms/Dialog.tsx", "src/components/ui/shadcn/Dialog.tsx"]) {
       const dialog = read(path);
       expect(dialog, path).toContain('data-slot="dialog-content"');
       expect(dialog, path).toContain("w-[calc(100vw-2rem)]");
@@ -41,7 +38,7 @@ describe("Wireline floating surface design contract", () => {
       expect(source, path).toContain("grid size-11 place-items-center");
       expect(source, path).not.toContain("grid size-9 place-items-center");
       expect(source, path).toContain("break-words pr-14 text-left");
-      expect(source, path).toContain('text-[15px] leading-6');
+      expect(source, path).toContain("text-[15px] leading-6");
     }
   });
 
@@ -96,21 +93,29 @@ describe("Wireline floating surface design contract", () => {
     expect(alertDialog).not.toContain("font-display italic");
   });
 
-  it("keeps popovers, menus, and selects inside narrow viewports", () => {
-    const popover = read("src/components/ui/shadcn/Popover.tsx");
-    const menu = read("src/components/ui/shadcn/DropdownMenu.tsx");
+  it("keeps menus and selects inside narrow viewports", () => {
+    // The menu contract lives on the canonical atom. A second, uncontained
+    // menu under `ui/shadcn` is what let narrow-viewport clipping regress
+    // before, so the duplicate must not come back alongside it.
+    const menu = read("src/components/atoms/DropdownMenu.tsx");
     const select = read("src/components/ui/shadcn/Select.tsx");
 
-    for (const source of [popover, menu, select]) {
+    for (const source of [menu, select]) {
       expect(source).toContain("collisionPadding={12}");
       expect(source).toContain("max-h-[min(70dvh");
       expect(source).toContain("text-left");
       expect(source).toContain("wireline-elevation-md");
+      expect(source).toContain("max-w-[calc(100vw-1.5rem)]");
     }
 
-    expect(popover).toContain("w-[min(18rem,calc(100vw-1.5rem))]");
-    expect(menu).toContain("max-w-[calc(100vw-1.5rem)]");
-    expect(select).toContain("max-w-[calc(100vw-1.5rem)]");
+    // Select scrolls through its own Radix viewport buttons; the menu scrolls
+    // its content directly, so only the menu needs scroll containment.
+    expect(menu).toContain("overflow-y-auto overscroll-contain");
+
+    expect(existsSync(resolve(process.cwd(), "src/components/ui/shadcn/DropdownMenu.tsx"))).toBe(
+      false,
+    );
+    expect(existsSync(resolve(process.cwd(), "src/components/ui/shadcn/Popover.tsx"))).toBe(false);
   });
 
   it("portals tooltips so workspace overflow cannot clip contextual help", () => {

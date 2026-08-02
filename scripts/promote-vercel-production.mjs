@@ -11,8 +11,7 @@
  * API: POST https://api.vercel.com/v1/projects/{projectId}/promote/{deploymentId}?teamId=...
  * (v10 promote returns 422 for staged main builds on this project.)
  */
-const TEAM_ID = "team_ssX7cPECdHvXGFHSOuS9iXos";
-const PROJECT_ID = "prj_mCjWa69TtFye8z11u8bSaWwO41f2";
+import { TEAM_ID, PROJECT_ID } from "./lib/vercel-project.mjs";
 
 const token = process.env.VERCEL_TOKEN || process.env.VERCEL_OIDC_TOKEN;
 if (!token) {

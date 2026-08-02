@@ -7,9 +7,7 @@
  * Secrets in this project are stored as `encrypted` (never `plain`), so any
  * script that needs a secret's value must resolve it per variable.
  */
-
-const TEAM_ID = "team_ssX7cPECdHvXGFHSOuS9iXos";
-const PROJECT_ID = "prj_mCjWa69TtFye8z11u8bSaWwO41f2";
+import { TEAM_ID, PROJECT_ID } from "./vercel-project.mjs";
 
 function authHeaders(token) {
   return { Authorization: `Bearer ${token}` };
