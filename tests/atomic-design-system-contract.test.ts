@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { globSync } from "glob";
 import { describe, expect, it } from "vitest";
@@ -7,15 +7,18 @@ const root = process.cwd();
 const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("Atomic Design completion contract", () => {
-  it("keeps Card canonical, variant-driven, and compatible with legacy imports", () => {
+  it("keeps Card canonical, variant-driven, and free of a legacy second implementation", () => {
     const card = source("src/components/molecules/Card.tsx");
-    const legacyCard = source("src/components/ui/shadcn/Card.tsx");
 
     expect(card).toContain("cardVariants = cva");
     expect(card).toContain('data-slot="card"');
     expect(card).toContain('data-slot="card-header"');
     expect(card).toContain('data-slot="card-content"');
-    expect(legacyCard).toContain('from "../../molecules/Card"');
+
+    // The `ui/shadcn` Card was a one-line re-export bridge kept only while
+    // surfaces migrated. That migration is finished, so the compatibility file
+    // must stay deleted rather than drift back into a second Card.
+    expect(existsSync(resolve(root, "src/components/ui/shadcn/Card.tsx"))).toBe(false);
   });
 
   it("keeps public account flows on canonical primitives and feedback molecules", () => {

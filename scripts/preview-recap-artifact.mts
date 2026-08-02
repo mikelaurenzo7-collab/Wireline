@@ -1,15 +1,18 @@
 #!/usr/bin/env tsx
 // Local-only preview renderer for the shareable recap templates.
-// Writes two HTML files to the scratchpad; never mounted in the app.
-import { writeFileSync } from "node:fs";
+// Writes two HTML files to a temporary directory; never mounted in the app.
+import { mkdirSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { renderCallRecap } from "../src/lib/shareable-artifact/template/render-call-recap.js";
 import { renderWeeklyRecap } from "../src/lib/shareable-artifact/template/render-weekly-recap.js";
 import type { WorkspaceBrand } from "../src/lib/shareable-artifact/brand.js";
 import type { CallRecapContent, WeeklyRecapContent } from "../src/lib/shareable-artifact/types.js";
 
-const OUT_DIR =
-  process.env.PREVIEW_OUT_DIR ||
-  "/tmp/claude-0/-home-user-Wireline/48807a86-11c2-5a36-9c5b-c118e50bf890/scratchpad/recap-preview";
+// Default to the OS temp directory so the preview never depends on one
+// contributor's machine layout. Override with PREVIEW_OUT_DIR when you want the
+// files somewhere you can keep them.
+const OUT_DIR = process.env.PREVIEW_OUT_DIR || join(tmpdir(), "wireline-recap-preview");
 
 const brand: WorkspaceBrand = {
   displayName: "Rita's Dental",
@@ -94,6 +97,7 @@ const week: WeeklyRecapContent = {
   headline: "27 booked · 12 qualified · 322 voice minutes on the wire.",
 };
 
+mkdirSync(OUT_DIR, { recursive: true });
 writeFileSync(`${OUT_DIR}/call-recap.html`, renderCallRecap(call, brand));
 writeFileSync(`${OUT_DIR}/weekly-recap.html`, renderWeeklyRecap(week, brand));
 console.log("wrote previews to", OUT_DIR);

@@ -85,7 +85,13 @@
     "docs:check": "node scripts/check-docs-index.mjs",
     "design:tokens:check": "node scripts/check-design-token-parity.mjs",
     "openapi:check": "node scripts/check-openapi-implementation.mjs",
-    "stripe:balance:audit": "node scripts/check-stripe-balance-cause.mjs"
+    "stripe:balance:audit": "node scripts/check-stripe-balance-cause.mjs",
+    "vercel:env:health": "node scripts/check-vercel-env-health.mjs",
+    "vercel:promote-production": "node scripts/promote-vercel-production.mjs",
+    "vercel:wait-deployment": "node scripts/wait-vercel-deployment.mjs",
+    "vapi:replay-pending-webhooks": "node scripts/replay-pending-vapi-webhooks.mjs",
+    "lint:strict:candidates": "node scripts/strict-coverage.mjs",
+    "recap:preview": "tsx scripts/preview-recap-artifact.mts"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -100,14 +106,11 @@
     "@radix-ui/react-alert-dialog": "^1.1.17",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.18",
-    "@radix-ui/react-label": "^2.1.10",
-    "@radix-ui/react-popover": "^1.1.17",
     "@radix-ui/react-progress": "^1.1.10",
     "@radix-ui/react-scroll-area": "^1.2.12",
     "@radix-ui/react-select": "^2.3.1",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-switch": "^1.3.1",
-    "@radix-ui/react-tabs": "^1.1.15",
     "@radix-ui/react-tooltip": "^1.2.10",
     "@tailwindcss/vite": "^4.3.1",
     "@upstash/redis": "^1.38.0",
@@ -116,7 +119,6 @@
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "cmdk": "^1.1.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",

@@ -1,6 +1,6 @@
 # Launch Perfection Pass — 2026-07-19
 
-Status: **Historical snapshot, superseded** — this audit records the 2026-07-19 state. Current launch truth is generated in `docs/LAUNCH_STATUS.generated.json`.
+Status: **Historical snapshot, superseded** — this audit records the 2026-07-19 state. For current launch truth, run `npm run launch:status`, which probes live production and writes the untracked `docs/LAUNCH_STATUS.generated.json`.
 
 ## What was verified against live vendors (production credentials, read-only)
 

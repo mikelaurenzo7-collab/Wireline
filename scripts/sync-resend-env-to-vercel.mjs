@@ -9,9 +9,8 @@
  *   # or: $env:RESEND_FROM_DOMAIN = "trywireline.com"
  *   node scripts/sync-resend-env-to-vercel.mjs
  */
+import { TEAM_ID, PROJECT_ID } from "./lib/vercel-project.mjs";
 
-const TEAM_ID = "team_ssX7cPECdHvXGFHSOuS9iXos";
-const PROJECT_ID = "prj_mCjWa69TtFye8z11u8bSaWwO41f2";
 const TARGETS = ["production", "preview", "development"];
 
 const token = process.env.VERCEL_TOKEN || process.env.VERCEL_OIDC_TOKEN;

@@ -109,6 +109,11 @@ stripe-env.json
 scripts/.stripe-env.generated.json
 stripe-catalog-proposal.json
 
+# Generated launch-status snapshot (`npm run launch:status`). It records a
+# point-in-time go/no-go probe of live production, so a committed copy is stale
+# the moment it lands and reads as current truth.
+docs/LAUNCH_STATUS.generated.json
+
 # Git worktrees and session-local scripts
 .worktrees/
 worktrees/

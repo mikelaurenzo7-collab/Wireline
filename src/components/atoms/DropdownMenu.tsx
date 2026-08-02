@@ -43,8 +43,10 @@ const DropdownMenuSubContent = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.SubContent
     ref={ref}
+    data-slot="dropdown-menu-sub-content"
+    collisionPadding={12}
     className={cn(
-      "wl-panel glass z-50 min-w-[8rem] overflow-hidden rounded-xl border p-1 shadow-xl",
+      "wl-panel glass z-50 max-h-[min(70dvh,28rem)] min-w-[8rem] max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-xl border p-1 text-left shadow-[var(--wireline-elevation-md)]",
       className,
     )}
     {...props}
@@ -55,13 +57,15 @@ DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayNam
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
->(({ className, sideOffset = 4, ...props }, ref) => (
+>(({ className, sideOffset = 8, ...props }, ref) => (
   <DropdownMenuPrimitive.Portal>
     <DropdownMenuPrimitive.Content
       ref={ref}
+      data-slot="dropdown-menu-content"
       sideOffset={sideOffset}
+      collisionPadding={12}
       className={cn(
-        "wl-panel glass z-50 min-w-[8rem] overflow-hidden rounded-xl border p-1 shadow-xl",
+        "wl-panel glass z-50 max-h-[min(70dvh,28rem)] min-w-[8rem] max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-xl border p-1 text-left shadow-[var(--wireline-elevation-md)]",
         className,
       )}
       {...props}
