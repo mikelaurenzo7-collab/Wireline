@@ -33,7 +33,7 @@ describe("E2E cleanliness contracts", () => {
     expect(registry).toContain("app.use(billingPortalReadinessRouter)");
     expect(registry).toContain("app.use(launchBillingCheckoutRouter)");
     expect(registry).not.toContain("subscriptionCheckoutGuardRouter");
-    expect(portal).toContain('router.post(\n  "/api/billing/portal"');
+    expect(portal).toContain('router.post("/api/billing/portal"');
     expect(portal).toContain("stripe.billingPortal.configurations.create");
     expect(portal).toContain("stripe.billingPortal.sessions.create");
     expect(portal).toContain(

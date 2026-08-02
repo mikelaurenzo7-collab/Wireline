@@ -17,8 +17,12 @@ describe("billing proof contract", () => {
     expect(launchCheckout).toContain('code: "ALREADY_SUBSCRIBED"');
     expect(launchCheckout).toContain('code: "LEGACY_PLAN_RETIRED"');
     expect(launchCheckout).toContain("FOUNDER_CATALOG_VERSION");
-    expect(launchCheckout).toContain('success_url: `${appUrl.url}/settings/billing?billing=success');
-    expect(launchCheckout).toContain('cancel_url: `${appUrl.url}/settings/billing?billing=canceled`');
+    expect(launchCheckout).toContain(
+      "success_url: `${appUrl.url}/settings/billing?billing=success",
+    );
+    expect(launchCheckout).toContain(
+      "cancel_url: `${appUrl.url}/settings/billing?billing=canceled`",
+    );
     expect(launchCheckout).not.toContain("/admin?billing=");
     expect(billingRoutes).not.toContain('router.post(\n  "/billing/checkout"');
     expect(billingRoutes).not.toContain("subscriptionCheckoutLineItems");
@@ -31,10 +35,10 @@ describe("billing proof contract", () => {
     const billingRoutes = read("src/routes/billing-routes.ts");
 
     expect(registry).toContain("app.use(billingPortalReadinessRouter)");
-    expect(portal).toContain('router.post(\n  "/api/billing/portal"');
+    expect(portal).toContain('router.post("/api/billing/portal"');
     expect(portal).toContain("ensureManagedPortalConfiguration");
-    expect(portal).toContain('return_url: `${appUrl.url}/settings/billing`');
-    expect(portal).not.toContain('return_url: `${appUrl.url}/admin`');
+    expect(portal).toContain("return_url: `${appUrl.url}/settings/billing`");
+    expect(portal).not.toContain("return_url: `${appUrl.url}/admin`");
     expect(billingRoutes).not.toContain('router.post(\n  "/billing/portal"');
   });
 
