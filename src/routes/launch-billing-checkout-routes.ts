@@ -2,11 +2,7 @@ import { Router, type Response } from "express";
 import { eq, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
-import {
-  FOUNDER_CATALOG_VERSION,
-  planById,
-  planLookupKey,
-} from "../lib/plan-catalog";
+import { FOUNDER_CATALOG_VERSION, planById, planLookupKey } from "../lib/plan-catalog";
 import { drizzle, auditLogger, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { stripe, stripeAvailable } from "../lib/stripe-helpers";
@@ -46,15 +42,12 @@ async function resolveLaunchPriceId(
         return price.id;
       }
     } catch (error) {
-      log.warn(
-        "Configured Stripe price could not be validated; using lookup key",
-        {
-          planId: plan.id,
-          interval,
-          envKey,
-          error: getErrorMessage(error),
-        },
-      );
+      log.warn("Configured Stripe price could not be validated; using lookup key", {
+        planId: plan.id,
+        interval,
+        envKey,
+        error: getErrorMessage(error),
+      });
     }
   }
 
@@ -88,8 +81,7 @@ router.post(
   authenticateUser,
   enforceLaunchHardGate,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!stripeAvailable())
-      throw AppError.fromHttpStatus(503, "Stripe not configured.");
+    if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
 
     const requestedPlanId = String(req.body?.plan_id || "").trim();
     const interval = req.body?.interval === "year" ? "year" : "month";
@@ -122,14 +114,10 @@ router.post(
       .where(eq(schema.subscriptions.userId, req.user.id))
       .limit(1);
 
-    if (
-      existing?.stripeSubscriptionId &&
-      LIVE_SUBSCRIPTION_STATUSES.has(existing.status || "")
-    ) {
+    if (existing?.stripeSubscriptionId && LIVE_SUBSCRIPTION_STATUSES.has(existing.status || "")) {
       return res.status(409).json({
         code: "ALREADY_SUBSCRIBED",
-        error:
-          "You already have a subscription. Use the Customer Portal to change plans.",
+        error: "You already have a subscription. Use the Customer Portal to change plans.",
         current_plan: existing.plan,
         current_status: existing.status,
       });
@@ -143,14 +131,11 @@ router.post(
         status: "all",
         limit: 20,
       });
-      const liveRemote = remote.data.find((sub) =>
-        LIVE_SUBSCRIPTION_STATUSES.has(sub.status),
-      );
+      const liveRemote = remote.data.find((sub) => LIVE_SUBSCRIPTION_STATUSES.has(sub.status));
       if (liveRemote) {
         return res.status(409).json({
           code: "ALREADY_SUBSCRIBED",
-          error:
-            "You already have a subscription. Use the Customer Portal to change plans.",
+          error: "You already have a subscription. Use the Customer Portal to change plans.",
           current_plan: existing.plan,
           current_status: liveRemote.status,
         });
@@ -184,9 +169,7 @@ router.post(
       // Serialize first-time Stripe customer creation per tenant so parallel
       // checkout clicks cannot orphan duplicate Stripe customers.
       customerId = await drizzle.transaction(async (tx) => {
-        await tx.execute(
-          sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`,
-        );
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
         const [locked] = await tx
           .select({ stripeCustomerId: schema.subscriptions.stripeCustomerId })
           .from(schema.subscriptions)
@@ -270,11 +253,7 @@ router.post(
         plan: plan.id,
         customerId,
         ip: req.ip,
-        metadata: {
-          interval,
-          price_id: priceId,
-          catalog: FOUNDER_CATALOG_VERSION,
-        },
+        metadata: { interval, price_id: priceId, catalog: FOUNDER_CATALOG_VERSION },
       })
       .catch((error) =>
         log.warn("billing audit log failed", {

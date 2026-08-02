@@ -121,7 +121,7 @@ export function TermsOfService() {
     >
       <PageMeta
         title="Terms of Service"
-        description="Wireline's terms of service — acceptable use, authorized synthetic voices, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 1, 2026."
+        description="Wireline's terms of service: acceptable use, authorized synthetic voices, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 1, 2026."
         path="/terms"
       />
 

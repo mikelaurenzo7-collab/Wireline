@@ -60,8 +60,7 @@ async function managedPortalProducts(): Promise<PortalProduct[]> {
     try {
       const price = await stripe.prices.retrieve(priceId);
       if (!price.active || price.type !== "recurring") continue;
-      const productId =
-        typeof price.product === "string" ? price.product : price.product?.id;
+      const productId = typeof price.product === "string" ? price.product : price.product?.id;
       if (!productId) continue;
       const prices = byProduct.get(productId) || [];
       if (!prices.includes(price.id)) prices.push(price.id);
@@ -74,10 +73,7 @@ async function managedPortalProducts(): Promise<PortalProduct[]> {
     }
   }
 
-  return [...byProduct.entries()].map(([product, prices]) => ({
-    product,
-    prices,
-  }));
+  return [...byProduct.entries()].map(([product, prices]) => ({ product, prices }));
 }
 
 async function createManagedPortalConfiguration(
@@ -85,15 +81,11 @@ async function createManagedPortalConfiguration(
   products: PortalProduct[],
   fingerprint: string,
 ): Promise<string> {
-  const existing = await stripe.billingPortal.configurations.list({
-    active: true,
-    limit: 100,
-  });
+  const existing = await stripe.billingPortal.configurations.list({ active: true, limit: 100 });
   const managed = existing.data.find(
     (configuration) =>
       configuration.metadata?.[MANAGED_PORTAL_METADATA_KEY] === "true" &&
-      configuration.metadata?.wireline_catalog_version ===
-        FOUNDER_CATALOG_VERSION &&
+      configuration.metadata?.wireline_catalog_version === FOUNDER_CATALOG_VERSION &&
       configuration.metadata?.[PORTAL_PRODUCTS_FINGERPRINT_KEY] === fingerprint,
   );
   if (managed) return managed.id;
@@ -119,13 +111,7 @@ async function createManagedPortalConfiguration(
           proration_behavior: "none",
           cancellation_reason: {
             enabled: true,
-            options: [
-              "too_expensive",
-              "missing_features",
-              "switched_service",
-              "unused",
-              "other",
-            ],
+            options: ["too_expensive", "missing_features", "switched_service", "unused", "other"],
           },
         },
         subscription_update: products.length
@@ -156,9 +142,7 @@ async function createManagedPortalConfiguration(
   return configuration.id;
 }
 
-async function ensureManagedPortalConfiguration(
-  baseUrl: string,
-): Promise<string> {
+async function ensureManagedPortalConfiguration(baseUrl: string): Promise<string> {
   const products = await managedPortalProducts();
   const fingerprint = portalProductsFingerprint(products);
 
@@ -171,11 +155,7 @@ async function ensureManagedPortalConfiguration(
   }
 
   if (!portalConfigurationPromise) {
-    portalConfigurationPromise = createManagedPortalConfiguration(
-      baseUrl,
-      products,
-      fingerprint,
-    )
+    portalConfigurationPromise = createManagedPortalConfiguration(baseUrl, products, fingerprint)
       .then((id) => {
         portalConfigurationCache = { id, fingerprint, baseUrl };
         portalConfigurationPromise = null;
@@ -200,8 +180,7 @@ router.post(
   authenticateUser,
   async (req: AuthenticatedRequest, res) => {
     try {
-      if (!stripeAvailable())
-        throw AppError.fromHttpStatus(503, "Stripe not configured.");
+      if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
 
       const [subscription] = await drizzle
         .select({ stripeCustomerId: schema.subscriptions.stripeCustomerId })
@@ -211,8 +190,7 @@ router.post(
 
       if (!subscription?.stripeCustomerId) {
         return res.status(404).json({
-          error:
-            "No Stripe customer exists for this workspace yet. Complete checkout first.",
+          error: "No Stripe customer exists for this workspace yet. Complete checkout first.",
           code: "STRIPE_CUSTOMER_REQUIRED",
         });
       }
@@ -267,8 +245,7 @@ router.post(
 
       if (stripeError.type === "StripeAuthenticationError") {
         return res.status(503).json({
-          error:
-            "Stripe authentication failed. Billing is temporarily unavailable.",
+          error: "Stripe authentication failed. Billing is temporarily unavailable.",
           code: "STRIPE_AUTH_ERROR",
         });
       }
@@ -277,8 +254,7 @@ router.post(
         /No such customer/i.test(stripeError.message || "")
       ) {
         return res.status(404).json({
-          error:
-            "Stripe customer record is missing. Complete checkout to recreate it.",
+          error: "Stripe customer record is missing. Complete checkout to recreate it.",
           code: "STRIPE_CUSTOMER_MISSING",
         });
       }

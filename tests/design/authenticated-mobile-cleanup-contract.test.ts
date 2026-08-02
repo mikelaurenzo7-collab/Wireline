@@ -2,8 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const read = (path: string) =>
-  readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("authenticated mobile cleanup", () => {
   it("renders existing short tab labels without weakening accessible names", () => {
@@ -15,11 +14,9 @@ describe("authenticated mobile cleanup", () => {
     expect(tabStrip).toContain("shortLabel?: string");
     expect(tabStrip).toContain('className="sm:hidden"');
     expect(tabStrip).toContain('className="hidden sm:inline"');
-    expect(tabStrip).toContain(
-      "tab.ariaLabel ?? (tab.shortLabel ? fullLabel : undefined)",
-    );
+    expect(tabStrip).toContain("tab.ariaLabel ?? (tab.shortLabel ? fullLabel : undefined)");
     expect(tabStrip).not.toContain("(${tab.shortLabel})");
-    expect(tabs).toContain('shortLabel: "Hunt"');
+    expect(tabs).toContain('shortLabel: "Camps"');
     expect(tabs).toContain('shortLabel: "Seq"');
     expect(tabs).toContain('shortLabel: "Cbks"');
     // Settings uses full labels on every viewport — no redundant shortLabel twins.
@@ -52,14 +49,10 @@ describe("authenticated mobile cleanup", () => {
     const cadences = read("src/components/Cadences.tsx");
     const outbound = read("src/components/outbound/OutboundHub.tsx");
 
-    expect(campaigns).toContain(
-      "flex flex-col items-stretch gap-2 sm:flex-row",
-    );
+    expect(campaigns).toContain("flex flex-col items-stretch gap-2 sm:flex-row");
     expect(campaigns).toContain('aria-label="Refresh campaigns"');
     expect(campaigns).toContain("campaigns.length > 0 ?");
-    expect(cadences).toContain(
-      "Build timed call, SMS, and email follow-up sequences.",
-    );
+    expect(cadences).toContain("Build timed call, SMS, and email follow-up sequences.");
     expect(cadences).not.toMatch(/job-worker|\/pipeline/);
     expect(cadences).toContain("cadences.length > 0 && !showBuilder");
     expect(outbound).toMatch(/Consent checks run\s+before every dial/);
@@ -108,16 +101,12 @@ describe("authenticated mobile cleanup", () => {
     const inbox = read("src/components/EmailInbox.tsx");
 
     expect(setup).not.toMatch(/Set the tone, greeting, essential facts/);
-    expect(setup).not.toMatch(
-      /Add only what the first customer workflow needs/,
-    );
+    expect(setup).not.toMatch(/Add only what the first customer workflow needs/);
     expect(review).not.toMatch(/Keep the loop small/);
     expect(voice).toMatch(
       /Browser tests the words\. Place a real call to verify the selected\s+audio\./,
     );
-    expect(inbox).toContain(
-      "Connect Gmail or Outlook to sync customer threads.",
-    );
+    expect(inbox).toContain("Connect Gmail or Outlook to sync customer threads.");
     expect(inbox).not.toContain("Summary + controls live here.");
   });
 
@@ -129,9 +118,7 @@ describe("authenticated mobile cleanup", () => {
     const billing = read("src/components/StripeBillingCard.tsx");
     const billingSettings = read("src/pages/BillingSettings.tsx");
     const trialBanner = read("src/components/layout/TrialBanner.tsx");
-    const activationWizard = read(
-      "src/components/onboarding/PostCreateActivationWizard.tsx",
-    );
+    const activationWizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
 
     // The rail's agents section keeps the posture-aware plural where it has room
     // to be read in full — the nav's accessible name. The visible kicker stays
@@ -149,7 +136,7 @@ describe("authenticated mobile cleanup", () => {
     expect(callbacks).not.toContain("description=");
     expect(billing).toContain('"voice agent" : "voice agents"');
     expect(billingSettings).toContain("live voice agent");
-    expect(trialBanner).toContain("keep your AI voice agents live");
+    expect(trialBanner).toContain("keep your voice agents live");
     expect(activationWizard).toContain("connected to this voice agent");
   });
 });

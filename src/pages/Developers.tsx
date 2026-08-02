@@ -44,13 +44,11 @@ const GETTING_STARTED = [
 const MCP_BOUNDARIES = [
   {
     path: "create_agent_draft / update_agent_draft",
-    description:
-      "Create or refine a private agent configuration draft in natural language.",
+    description: "Create or refine a private agent configuration draft in natural language.",
   },
   {
     path: "list_wireline_agents / get_wireline_workspace_summary",
-    description:
-      "Read account-scoped agents and a minimized workspace summary.",
+    description: "Read account-scoped agents and a minimized workspace summary.",
   },
   {
     path: "start_private_voice_simulation",
@@ -94,9 +92,7 @@ export default function Developers() {
   const [copied, setCopied] = useState(false);
 
   const appOrigin =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://trywireline.com";
+    typeof window !== "undefined" ? window.location.origin : "https://trywireline.com";
   const openApiUrl = `${appOrigin}/api/openapi.json`;
   const mcpEndpoint = "https://trywireline.com/mcp";
 
@@ -118,7 +114,7 @@ export default function Developers() {
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title="Developer Portal | Wireline"
-        description="Wireline MCP apps for ChatGPT, Claude, and Cursor — account-bound draft, simulate, and continue in Studio. No public API keys."
+        description="Wireline MCP apps for ChatGPT, Claude, and Cursor. Draft and simulate with an account bound connector, then continue in Studio. No public API keys."
         path="/developers"
       />
 
@@ -127,16 +123,8 @@ export default function Developers() {
         title="Bring Wireline into the tools you already use."
         description="The live developer surface is an account-bound MCP connector. Draft and simulate privately in ChatGPT, Claude, or Cursor — then finish Training, Wire, and launch in Wireline."
         primaryAction={{ label: "Copy MCP endpoint", to: "#mcp-endpoint" }}
-        secondaryAction={{
-          label: "OpenAPI map",
-          to: openApiUrl,
-          tone: "secondary",
-        }}
-        proof={[
-          "OAuth PKCE",
-          "Account-bound tools",
-          "ChatGPT · Claude · Cursor",
-        ]}
+        secondaryAction={{ label: "OpenAPI map", to: openApiUrl, tone: "secondary" }}
+        proof={["OAuth PKCE", "Account-bound tools", "ChatGPT · Claude · Cursor"]}
       />
 
       <section
@@ -145,48 +133,34 @@ export default function Developers() {
       >
         <div className="mx-auto max-w-5xl text-center">
           <p className="wl-stitch-eyebrow">One connector</p>
-          <h2
-            id="mcp-apps-heading"
-            className="wl-stitch-display mt-3 text-balance"
-          >
+          <h2 id="mcp-apps-heading" className="wl-stitch-display mt-3 text-balance">
             Connect once. Draft and simulate in the client you already open.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-            Use one account-bound MCP connector to draft a voice agent in
-            natural language, test its voice privately, and continue
-            configuration in Wireline when you are ready.
+            Use one account-bound MCP connector to draft a voice agent in natural language, test its
+            voice privately, and continue configuration in Wireline when you are ready.
           </p>
 
           <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {MCP_CLIENTS.map(
-              ({ title, description, action, href, icon: Icon }) => (
-                <article
-                  key={title}
-                  className="wl-stitch-card flex min-h-[15rem] flex-col items-center p-6 text-center"
-                >
-                  <span className="grid h-11 w-11 place-items-center rounded-full border border-border bg-background text-primary">
-                    <Icon className="h-5 w-5" aria-hidden="true" />
-                  </span>
-                  <h3 className="mt-5 text-xl font-semibold tracking-[-.025em]">
-                    {title}
-                  </h3>
-                  <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-                    {description}
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                    className="mt-auto"
-                  >
-                    <a href={href} target="_blank" rel="noopener noreferrer">
-                      {action}{" "}
-                      <ExternalLink className="h-3.5 w-3.5 opacity-60" />
-                    </a>
-                  </Button>
-                </article>
-              ),
-            )}
+            {MCP_CLIENTS.map(({ title, description, action, href, icon: Icon }) => (
+              <article
+                key={title}
+                className="wl-stitch-card flex min-h-[15rem] flex-col items-center p-6 text-center"
+              >
+                <span className="grid h-11 w-11 place-items-center rounded-full border border-border bg-background text-primary">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <h3 className="mt-5 text-xl font-semibold tracking-[-.025em]">{title}</h3>
+                <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+                  {description}
+                </p>
+                <Button variant="outline" size="sm" asChild className="mt-auto">
+                  <a href={href} target="_blank" rel="noopener noreferrer">
+                    {action} <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                  </a>
+                </Button>
+              </article>
+            ))}
           </div>
 
           <div
@@ -198,15 +172,10 @@ export default function Developers() {
               {mcpEndpoint}
             </code>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
-              Private-by-default boundary: this connector cannot place calls,
-              send messages, provision numbers, or launch a live voice agent.
+              Private-by-default boundary: this connector cannot place calls, send messages,
+              provision numbers, or launch a live voice agent.
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopy}
-              className="mt-4"
-            >
+            <Button variant="outline" size="sm" onClick={handleCopy} className="mt-4">
               <Copy className="mr-1 h-3.5 w-3.5" />
               {copied ? "Copied" : "Copy endpoint"}
             </Button>
@@ -222,8 +191,7 @@ export default function Developers() {
               One connector. Three clear steps.
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-              Connect with OAuth, draft and simulate privately, then finish
-              launch work in Studio.
+              Connect with OAuth, draft and simulate privately, then finish launch work in Studio.
             </p>
           </div>
 
@@ -241,12 +209,8 @@ export default function Developers() {
                   <p className="wl-overline mt-5 text-primary">
                     {String(index + 1).padStart(2, "0")}
                   </p>
-                  <h3 className="mt-2 text-lg font-semibold tracking-[-.025em]">
-                    {step.title}
-                  </h3>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    {step.description}
-                  </p>
+                  <h3 className="mt-2 text-lg font-semibold tracking-[-.025em]">{step.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{step.description}</p>
                 </article>
               );
             })}
@@ -264,10 +228,9 @@ export default function Developers() {
             OAuth for MCP. Session auth for the product API.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-            MCP clients use OAuth PKCE against your Wireline account. The
-            OpenAPI map documents the same session-authenticated product routes
-            the web app uses — there is no separate public API-key product
-            today.
+            MCP clients use OAuth PKCE against your Wireline account. The OpenAPI map documents the
+            same session-authenticated product routes the web app uses — there is no separate public
+            API-key product today.
           </p>
         </div>
       </section>
@@ -282,10 +245,7 @@ export default function Developers() {
           </div>
           <div className="mt-10 grid gap-3 sm:grid-cols-2">
             {MCP_BOUNDARIES.map((endpoint) => (
-              <article
-                key={endpoint.path}
-                className="wl-stitch-card p-5 text-center"
-              >
+              <article key={endpoint.path} className="wl-stitch-card p-5 text-center">
                 <code className="inline-flex rounded border border-brand/20 bg-brand/10 px-2 py-1 font-mono text-xs font-semibold text-primary">
                   {endpoint.path}
                 </code>

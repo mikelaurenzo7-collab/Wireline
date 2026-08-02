@@ -284,8 +284,8 @@ export default function Compare() {
           </div>
 
           <p className="mt-4 max-w-4xl text-xs leading-5 text-muted-foreground">
-            Public prices were checked on the linked official pages on August 1,
-            2026 and may change. Taxes, carrier fees, optional extras, annual
+            Public prices were checked on the linked official pages on August 1, 2026 and may
+            change. Taxes, carrier fees, optional extras, annual
             discounts, implementation services, and usage patterns can change
             the effective total. This is a buying-model reference,{" "}
             {

@@ -52,9 +52,8 @@ const DESKTOP_ROUTE_PARENTS: ReadonlyArray<{
 export function desktopNavParentHref(pathname: string): string | null {
   const current = cleanNavPath(pathname);
   return (
-    DESKTOP_ROUTE_PARENTS.find(
-      ({ route }) => current === route || current.startsWith(`${route}/`),
-    )?.parentHref ?? null
+    DESKTOP_ROUTE_PARENTS.find(({ route }) => current === route || current.startsWith(`${route}/`))
+      ?.parentHref ?? null
   );
 }
 
@@ -91,12 +90,7 @@ export const OPERATE_NAV: ShellNavItem[] = [
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/phone", label: "Calls", icon: Phone },
   { href: "/insights", label: "Activity", icon: BarChart3 },
-  {
-    href: "/settings",
-    label: "Settings",
-    icon: Settings,
-    matches: ["/settings", "/admin"],
-  },
+  { href: "/settings", label: "Settings", icon: Settings, matches: ["/settings", "/admin"] },
 ];
 
 export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
@@ -134,19 +128,9 @@ export const MOBILE_MORE_NAV: ShellNavItem[] = [
     icon: GraduationCap,
     matches: ["/knowledge"],
   },
-  {
-    href: "/approvals",
-    label: "Approvals",
-    shortLabel: "Approve",
-    icon: CheckSquare,
-  },
+  { href: "/approvals", label: "Approvals", shortLabel: "Approve", icon: CheckSquare },
   { href: "/insights", label: "Activity", icon: BarChart3 },
-  {
-    href: "/settings",
-    label: "Settings",
-    icon: Settings,
-    matches: ["/settings", "/admin"],
-  },
+  { href: "/settings", label: "Settings", icon: Settings, matches: ["/settings", "/admin"] },
 ];
 
 function toLegacyItem(item: ShellNavItem, section: string): NavItem {
@@ -202,9 +186,7 @@ export function isNavActive(pathname: string, href: string) {
     (nav) => nav.href === target,
   );
   if (item?.matches?.length) {
-    return item.matches.some(
-      (match) => current === match || current.startsWith(`${match}/`),
-    );
+    return item.matches.some((match) => current === match || current.startsWith(`${match}/`));
   }
   return current === target || current.startsWith(`${target}/`);
 }
@@ -221,9 +203,7 @@ export function findNavItemForPath(pathname: string): NavItem | undefined {
   return allItems.find(
     (item) =>
       pathname === item.path ||
-      item.matches?.some(
-        (match) => pathname === match || pathname.startsWith(`${match}/`),
-      ),
+      item.matches?.some((match) => pathname === match || pathname.startsWith(`${match}/`)),
   );
 }
 
@@ -256,10 +236,7 @@ export function workspacePageTitle(pathname: string) {
   let title = "Workspace";
 
   for (const [route, routeTitle] of Object.entries(PAGE_TITLES)) {
-    if (
-      (current === route || current.startsWith(`${route}/`)) &&
-      route.length > bestMatch.length
-    ) {
+    if ((current === route || current.startsWith(`${route}/`)) && route.length > bestMatch.length) {
       bestMatch = route;
       title = routeTitle;
     }

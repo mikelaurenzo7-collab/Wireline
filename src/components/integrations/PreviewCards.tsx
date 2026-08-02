@@ -51,12 +51,8 @@ export function CRMPreviewCard() {
             AC
           </div>
           <div>
-            <div className="text-xs text-white font-medium">
-              Acme Corporation
-            </div>
-            <div className="wl-preview-micro wl-preview-muted">
-              John Smith · (555) 234-5678
-            </div>
+            <div className="text-xs text-white font-medium">Acme Corporation</div>
+            <div className="wl-preview-micro wl-preview-muted">John Smith · (555) 234-5678</div>
           </div>
         </div>
 
@@ -82,8 +78,7 @@ export function CRMPreviewCard() {
         </div>
 
         <div className="wl-preview-micro wl-preview-muted">
-          Deal value: <span className="text-white font-medium">$4,800</span> ·
-          Stage moved to{" "}
+          Deal value: <span className="text-white font-medium">$4,800</span> · Stage moved to{" "}
           <span className="wl-preview-crm-accent">Qualified</span>
         </div>
       </div>
@@ -106,13 +101,9 @@ export function XPreviewCard() {
         <span className="wl-preview-x-muted">· just now</span>
       </div>
       <div className="wl-preview-x-body p-3 space-y-2">
-        <div
-          className="wl-preview-fade-up"
-          data-visible={visible ? "true" : "false"}
-        >
+        <div className="wl-preview-fade-up" data-visible={visible ? "true" : "false"}>
           <div className="text-[length:var(--wireline-typography-overline-size)] leading-relaxed wl-preview-x-text">
-            Thanks for calling in — we&apos;ll follow up with your quote by end
-            of day. 🎯
+            Thanks for calling in — we&apos;ll follow up with your quote by end of day. 🎯
           </div>
           <div className="flex items-center gap-3 mt-2 wl-preview-micro wl-preview-x-meta">
             <span>♡ 12</span>
@@ -151,9 +142,7 @@ export function SlackPreviewCard() {
               <span className="text-[length:var(--wireline-typography-overline-size)] font-semibold wl-preview-slack-name">
                 Wireline Agent
               </span>
-              <span className="wl-preview-micro wl-preview-muted-35">
-                just now
-              </span>
+              <span className="wl-preview-micro wl-preview-muted-35">just now</span>
             </div>
             <div className="text-[length:var(--wireline-typography-overline-size)] leading-relaxed wl-preview-slack-message">
               🔥 <strong>Qualified lead:</strong> Jennifer Park, ACME Corp
@@ -202,10 +191,7 @@ export function SMSPreviewCard() {
           <div className="flex justify-end">
             <div className="wl-preview-sms-bubble-out flex gap-1 items-center px-3.5 py-2.5 rounded-md rounded-tr-sm">
               {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="wl-preview-typing-dot w-1.5 h-1.5 rounded-full bg-white"
-                />
+                <div key={i} className="wl-preview-typing-dot w-1.5 h-1.5 rounded-full bg-white" />
               ))}
             </div>
           </div>
@@ -215,16 +201,13 @@ export function SMSPreviewCard() {
         {(phase === "sent" || phase === "replied") && (
           <div className="flex justify-end wl-preview-appear-up">
             <div className="wl-preview-sms-bubble-out max-w-[80%] px-3 py-2 rounded-md rounded-tr-sm text-[length:var(--wireline-typography-overline-size)] text-white leading-relaxed">
-              Thanks for calling! Here's your booking confirmation:
-              trywireline.com/b/4x9z
+              Thanks for calling! Here's your booking confirmation: trywireline.com/b/4x9z
             </div>
           </div>
         )}
         {(phase === "sent" || phase === "replied") && (
           <div className="flex items-center justify-end gap-1 wl-preview-appear-up-delayed">
-            <span className="wl-preview-micro wl-preview-sms-delivered">
-              Delivered
-            </span>
+            <span className="wl-preview-micro wl-preview-sms-delivered">Delivered</span>
           </div>
         )}
 
@@ -248,12 +231,8 @@ export function ZoomPreviewCard() {
         <Video size={10} /> Meeting Created
       </div>
       <div className="wl-preview-body p-3 space-y-2">
-        <div className="text-xs text-white font-medium">
-          Product Demo — Acme Corp
-        </div>
-        <div className="wl-preview-micro wl-preview-muted">
-          Tomorrow, 2:00 PM CST · 45 min
-        </div>
+        <div className="text-xs text-white font-medium">Product Demo — Acme Corp</div>
+        <div className="wl-preview-micro wl-preview-muted">Tomorrow, 2:00 PM CST · 45 min</div>
         <div className="wl-preview-zoom-link-box flex items-center gap-2 px-2.5 py-2 rounded-md wl-preview-micro">
           <Video size={12} className="wl-preview-zoom-accent" />
           <span className="wl-preview-zoom-accent">zoom.us/j/928473021</span>
@@ -285,18 +264,12 @@ export function CalendarPreviewCard() {
             className="wl-preview-cal-date-box w-10 h-10 rounded-md flex flex-col items-center justify-center shrink-0"
             data-confirmed={confirmed ? "true" : "false"}
           >
-            <div className="wl-preview-micro font-semibold uppercase wl-preview-cal-month">
-              JUN
-            </div>
+            <div className="wl-preview-micro font-semibold uppercase wl-preview-cal-month">JUN</div>
             <div className="text-lg font-bold leading-none text-white">17</div>
           </div>
           <div>
-            <div className="text-xs text-white font-medium">
-              Site Inspection
-            </div>
-            <div className="wl-preview-micro wl-preview-muted">
-              10:00 – 11:00 AM · Google Meet
-            </div>
+            <div className="text-xs text-white font-medium">Site Inspection</div>
+            <div className="wl-preview-micro wl-preview-muted">10:00 – 11:00 AM · Google Meet</div>
           </div>
         </div>
         <div
@@ -338,12 +311,8 @@ export function ShopifyPreviewCard() {
         <div className="flex items-center gap-2">
           <div className="wl-preview-shopify-thumb w-10 h-10 rounded-md shrink-0" />
           <div>
-            <div className="text-xs text-white font-medium">
-              Merino Wool Throw — Forest
-            </div>
-            <div className="wl-preview-micro wl-preview-muted-45">
-              Qty 2 · $89.00 each
-            </div>
+            <div className="text-xs text-white font-medium">Merino Wool Throw — Forest</div>
+            <div className="wl-preview-micro wl-preview-muted-45">Qty 2 · $89.00 each</div>
           </div>
         </div>
 
@@ -363,8 +332,7 @@ export function ShopifyPreviewCard() {
 
         <div className="wl-preview-shopify-footer flex items-center justify-between wl-preview-micro pt-1 border-t">
           <span className="wl-preview-muted-45">
-            Tracking:{" "}
-            <span className="font-mono wl-preview-muted-70">1Z999AA10</span>
+            Tracking: <span className="font-mono wl-preview-muted-70">1Z999AA10</span>
           </span>
           <span className="font-medium text-white">$178.00</span>
         </div>
@@ -389,18 +357,12 @@ export function SquarePreviewCard() {
       <div className="wl-preview-body p-3 space-y-2.5">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs text-white font-medium">
-              Invoice #INV-0047
-            </div>
-            <div className="wl-preview-micro wl-preview-muted-45">
-              Landscaping · Spring Package
-            </div>
+            <div className="text-xs text-white font-medium">Invoice #INV-0047</div>
+            <div className="wl-preview-micro wl-preview-muted-45">Landscaping · Spring Package</div>
           </div>
           <div className="text-right">
             <div className="text-sm font-bold text-white">$650.00</div>
-            <div className="wl-preview-micro wl-preview-muted-40">
-              Due May 28
-            </div>
+            <div className="wl-preview-micro wl-preview-muted-40">Due May 28</div>
           </div>
         </div>
         <div
@@ -436,12 +398,8 @@ export function DocuSignPreviewCard() {
             <FileText size={16} className="wl-preview-docusign-icon" />
           </div>
           <div>
-            <div className="text-xs text-white font-medium">
-              Service Agreement 2025
-            </div>
-            <div className="wl-preview-micro wl-preview-muted-45">
-              Sent to john@acmecorp.com
-            </div>
+            <div className="text-xs text-white font-medium">Service Agreement 2025</div>
+            <div className="wl-preview-micro wl-preview-muted-45">Sent to john@acmecorp.com</div>
           </div>
         </div>
         <div className="space-y-1">
@@ -465,10 +423,7 @@ export function DocuSignPreviewCard() {
                   {field} field
                 </span>
                 {isThisSigned ? (
-                  <CheckCircle2
-                    size={9}
-                    className="wl-preview-orbit-accent-text ml-auto"
-                  />
+                  <CheckCircle2 size={9} className="wl-preview-orbit-accent-text ml-auto" />
                 ) : i === 0 ? (
                   <span className="wl-preview-docusign-awaiting ml-auto wl-preview-micro">
                     Awaiting
@@ -513,9 +468,7 @@ export function MetaPreviewCard() {
             ["Campaign", "Spring Outreach"],
           ].map(([label, val]) => (
             <div key={label} className="flex items-center justify-between">
-              <span className="wl-preview-micro wl-preview-muted-40">
-                {label}
-              </span>
+              <span className="wl-preview-micro wl-preview-muted-40">{label}</span>
               <span className="wl-preview-micro text-white">{val}</span>
             </div>
           ))}
@@ -524,9 +477,7 @@ export function MetaPreviewCard() {
           className="wl-preview-meta-status wl-preview-micro text-center py-1.5 rounded"
           data-fired={fired ? "true" : "false"}
         >
-          {fired
-            ? "✓ Server-side event fired · deduplication enabled"
-            : "Sending event…"}
+          {fired ? "✓ Server-side event fired · deduplication enabled" : "Sending event…"}
         </div>
       </div>
     </div>
@@ -565,9 +516,7 @@ export function ApolloPreviewCard() {
           </div>
           <div>
             <div className="text-xs text-white font-medium">Jennifer Park</div>
-            <div className="wl-preview-micro wl-preview-muted">
-              VP of Operations · Acme Corp
-            </div>
+            <div className="wl-preview-micro wl-preview-muted">VP of Operations · Acme Corp</div>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-1.5">
@@ -578,9 +527,7 @@ export function ApolloPreviewCard() {
               data-revealed={i < revealed ? "true" : "false"}
             >
               <div className="wl-preview-micro wl-preview-muted-40">{k}</div>
-              <div className="wl-preview-micro text-white font-medium truncate">
-                {v}
-              </div>
+              <div className="wl-preview-micro text-white font-medium truncate">{v}</div>
             </div>
           ))}
         </div>
@@ -626,12 +573,8 @@ export function GeminiPreviewCard() {
                 G
               </div>
               <div>
-                <div className="wl-preview-micro wl-preview-gemini-result-src">
-                  {src}
-                </div>
-                <div className="wl-preview-micro wl-preview-gemini-result-text">
-                  {text}
-                </div>
+                <div className="wl-preview-micro wl-preview-gemini-result-src">{src}</div>
+                <div className="wl-preview-micro wl-preview-gemini-result-text">{text}</div>
               </div>
             </div>
           ))}
@@ -670,17 +613,12 @@ export function TeamsPreviewCard() {
           <div>
             <div className="wl-preview-micro font-semibold text-white">
               Wireline Bot{" "}
-              <span className="wl-preview-micro font-normal wl-preview-muted-35">
-                just now
-              </span>
+              <span className="wl-preview-micro font-normal wl-preview-muted-35">just now</span>
             </div>
             <div className="wl-preview-teams-card mt-1 px-2.5 py-2 rounded wl-preview-micro leading-relaxed">
-              <div className="font-semibold text-white mb-0.5">
-                Compliance flag raised
-              </div>
+              <div className="font-semibold text-white mb-0.5">Compliance flag raised</div>
               <div className="wl-preview-teams-card-body">
-                Agent Sarah escalated — caller requested DNC removal. Review
-                required.
+                Agent Sarah escalated — caller requested DNC removal. Review required.
               </div>
             </div>
           </div>
@@ -829,8 +767,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
     label: "CRM",
     color: INTEGRATION_ORBIT_COLOR,
     Icon: Database,
-    tagline:
-      "Create contacts, log calls, and update pipeline stages in real-time",
+    tagline: "Create contacts, log calls, and update pipeline stages in real-time",
     PreviewCard: CRMPreviewCard,
   },
   {
@@ -838,8 +775,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
     label: "Slack",
     color: INTEGRATION_ORBIT_COLOR,
     Icon: MessageSquare,
-    tagline:
-      "Notify your team the instant something important happens on a call",
+    tagline: "Notify your team the instant something important happens on a call",
     PreviewCard: SlackPreviewCard,
   },
   {
@@ -847,8 +783,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
     label: "X",
     color: INTEGRATION_ORBIT_COLOR,
     Icon: Share2,
-    tagline:
-      "Post, reply, like, repost, DM, and triage @mentions from connected accounts",
+    tagline: "Post, reply, like, repost, DM, and triage @mentions from connected accounts",
     PreviewCard: XPreviewCard,
   },
   {
@@ -880,8 +815,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
     label: "Shopify",
     color: INTEGRATION_ORBIT_COLOR,
     Icon: ShoppingBag,
-    tagline:
-      "Look up orders, manage returns, apply discounts, and draft orders",
+    tagline: "Look up orders, manage returns, apply discounts, and draft orders",
     PreviewCard: ShopifyPreviewCard,
   },
   {
@@ -897,8 +831,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
     label: "DocuSign",
     color: INTEGRATION_ORBIT_COLOR,
     Icon: FileText,
-    tagline:
-      "Dispatch contracts and collect e-signatures the moment a deal closes",
+    tagline: "Dispatch contracts and collect e-signatures the moment a deal closes",
     PreviewCard: DocuSignPreviewCard,
   },
   {
@@ -914,8 +847,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
     label: "Apollo",
     color: INTEGRATION_ORBIT_COLOR,
     Icon: Search,
-    tagline:
-      "Enrich any caller with LinkedIn profile, title, and company revenue",
+    tagline: "Enrich any caller with LinkedIn profile, title, and company revenue",
     PreviewCard: ApolloPreviewCard,
   },
   {
@@ -931,8 +863,7 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
     label: "Excel",
     color: INTEGRATION_ORBIT_COLOR,
     Icon: Table2,
-    tagline:
-      "Append call summaries to your Wireline log spreadsheet in OneDrive",
+    tagline: "Append call summaries to your Wireline log spreadsheet in OneDrive",
     PreviewCard: ExcelPreviewCard,
   },
   {
@@ -940,81 +871,73 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
     label: "Google Sheets",
     color: INTEGRATION_ORBIT_COLOR,
     Icon: Table2,
-    tagline:
-      "Append call summaries to your Wireline log spreadsheet in Google Drive",
+    tagline: "Append call summaries to your Wireline log spreadsheet in Google Drive",
     PreviewCard: SheetsPreviewCard,
   },
 ] as const;
 
 // ── Recent activity feed (demo content) ──────────────────────────────────────
 
-export const ACTIVITY_LOG: Partial<
-  Record<ToolIntegration, Array<{ text: string; time: string }>>
-> = {
-  crm: [
-    { text: "Created contact: Jennifer Park, Acme Corp", time: "3 calls ago" },
-    { text: "Deal updated → Qualified ($4,800)", time: "7 calls ago" },
-    { text: "Call outcome logged to HubSpot", time: "12 calls ago" },
-  ],
-  slack: [
-    {
-      text: '#hot-leads: "Qualified lead: Jennifer Park"',
-      time: "3 calls ago",
-    },
-    { text: '#compliance: "DNC request flagged"', time: "Yesterday" },
-  ],
-  x: [
-    {
-      text: "Posted follow-up tweet after qualified call",
-      time: "3 calls ago",
-    },
-    { text: "Replied to @mention on product question", time: "Yesterday" },
-  ],
-  twilio: [
-    { text: "SMS confirmation sent to (555) 234-5678", time: "3 calls ago" },
-    { text: "Phone validated: (555) 876-4321 → Mobile", time: "4 calls ago" },
-  ],
-  zoom: [
-    { text: "Meeting created: Product Demo — Acme Corp", time: "8 calls ago" },
-    { text: "Meeting link sent via SMS + email", time: "8 calls ago" },
-  ],
-  calendar: [
-    { text: "Appointment booked: Jun 17 · 10:00 AM", time: "3 calls ago" },
-    { text: "Conflict check: 2 slots available Jun 18", time: "4 calls ago" },
-  ],
-  shopify: [
-    { text: "Order #4821 status: Fulfilled", time: "5 calls ago" },
-    { text: "Discount code SUMMER15 applied", time: "11 calls ago" },
-  ],
-  square: [
-    { text: "Invoice #INV-0047 sent: $650.00", time: "2 calls ago" },
-    { text: "Payment link generated for landscaping", time: "6 calls ago" },
-  ],
-  docusign: [
-    { text: "Contract dispatched to john@acmecorp.com", time: "9 calls ago" },
-    { text: "Service Agreement 2025 signed ✓", time: "2 days ago" },
-  ],
-  meta: [
-    { text: "Lead event fired: Jennifer Park → CAPI", time: "3 calls ago" },
-    { text: "Purchase event deduplicated (web + call)", time: "Yesterday" },
-  ],
-  apollo: [
-    { text: "Enriched: Jennifer Park — VP Ops, $40M+", time: "3 calls ago" },
-    { text: "Enriched: Mike Torres — Director, 500–1K", time: "5 calls ago" },
-  ],
-  microsoft_teams: [
-    { text: "#sales-alerts: Compliance flag raised", time: "3 calls ago" },
-    { text: "#hot-leads: Enterprise lead — $12K ARR", time: "Yesterday" },
-  ],
-  microsoft_excel: [
-    { text: "Row appended: (555) 234-5678 → Qualified", time: "3 calls ago" },
-    { text: "Row appended: (555) 876-4321 → Booked", time: "4 calls ago" },
-  ],
-  google_sheets: [
-    { text: "Row appended: (555) 234-5678 → Qualified", time: "3 calls ago" },
-    { text: "Row appended: (555) 876-4321 → Booked", time: "4 calls ago" },
-  ],
-};
+export const ACTIVITY_LOG: Partial<Record<ToolIntegration, Array<{ text: string; time: string }>>> =
+  {
+    crm: [
+      { text: "Created contact: Jennifer Park, Acme Corp", time: "3 calls ago" },
+      { text: "Deal updated → Qualified ($4,800)", time: "7 calls ago" },
+      { text: "Call outcome logged to HubSpot", time: "12 calls ago" },
+    ],
+    slack: [
+      { text: '#hot-leads: "Qualified lead: Jennifer Park"', time: "3 calls ago" },
+      { text: '#compliance: "DNC request flagged"', time: "Yesterday" },
+    ],
+    x: [
+      { text: "Posted follow-up tweet after qualified call", time: "3 calls ago" },
+      { text: "Replied to @mention on product question", time: "Yesterday" },
+    ],
+    twilio: [
+      { text: "SMS confirmation sent to (555) 234-5678", time: "3 calls ago" },
+      { text: "Phone validated: (555) 876-4321 → Mobile", time: "4 calls ago" },
+    ],
+    zoom: [
+      { text: "Meeting created: Product Demo — Acme Corp", time: "8 calls ago" },
+      { text: "Meeting link sent via SMS + email", time: "8 calls ago" },
+    ],
+    calendar: [
+      { text: "Appointment booked: Jun 17 · 10:00 AM", time: "3 calls ago" },
+      { text: "Conflict check: 2 slots available Jun 18", time: "4 calls ago" },
+    ],
+    shopify: [
+      { text: "Order #4821 status: Fulfilled", time: "5 calls ago" },
+      { text: "Discount code SUMMER15 applied", time: "11 calls ago" },
+    ],
+    square: [
+      { text: "Invoice #INV-0047 sent: $650.00", time: "2 calls ago" },
+      { text: "Payment link generated for landscaping", time: "6 calls ago" },
+    ],
+    docusign: [
+      { text: "Contract dispatched to john@acmecorp.com", time: "9 calls ago" },
+      { text: "Service Agreement 2025 signed ✓", time: "2 days ago" },
+    ],
+    meta: [
+      { text: "Lead event fired: Jennifer Park → CAPI", time: "3 calls ago" },
+      { text: "Purchase event deduplicated (web + call)", time: "Yesterday" },
+    ],
+    apollo: [
+      { text: "Enriched: Jennifer Park — VP Ops, $40M+", time: "3 calls ago" },
+      { text: "Enriched: Mike Torres — Director, 500–1K", time: "5 calls ago" },
+    ],
+    microsoft_teams: [
+      { text: "#sales-alerts: Compliance flag raised", time: "3 calls ago" },
+      { text: "#hot-leads: Enterprise lead — $12K ARR", time: "Yesterday" },
+    ],
+    microsoft_excel: [
+      { text: "Row appended: (555) 234-5678 → Qualified", time: "3 calls ago" },
+      { text: "Row appended: (555) 876-4321 → Booked", time: "4 calls ago" },
+    ],
+    google_sheets: [
+      { text: "Row appended: (555) 234-5678 → Qualified", time: "3 calls ago" },
+      { text: "Row appended: (555) 876-4321 → Booked", time: "4 calls ago" },
+    ],
+  };
 
 // ── Helper ────────────────────────────────────────────────────────────────────
 
@@ -1024,11 +947,8 @@ export function resolveConnected(
 ): boolean {
   if (!status) return false;
   if (key === "twilio") return true;
-  if (key === "calendar")
-    return !!(status.google?.connected || status.microsoft?.connected);
-  if (key === "crm")
-    return !!(status.hubspot?.connected || status.salesforce?.connected);
-  if (key === "microsoft_teams" || key === "microsoft_excel")
-    return !!status.microsoft?.connected;
+  if (key === "calendar") return !!(status.google?.connected || status.microsoft?.connected);
+  if (key === "crm") return !!(status.hubspot?.connected || status.salesforce?.connected);
+  if (key === "microsoft_teams" || key === "microsoft_excel") return !!status.microsoft?.connected;
   return !!status[key]?.connected;
 }

@@ -33,8 +33,25 @@ describe("Twilio webhook privacy hardening", () => {
     expect(email.html).toContain("&quot;target&quot;");
     expect(email.html).toContain("&lt;img src=x onerror=&quot;boom&quot;&gt;&amp;&#39;");
     expect(email.html).not.toContain("<img");
-    expect(email.html).toContain('href="https://api.twilio.com/');
+    expect(email.html).not.toContain('href="https://api.twilio.com/');
+    expect(email.html).toContain(
+      "https://api.twilio.com/recordings/RE123?note=&quot;private&quot;&amp;x=1",
+    );
     expect(email.text).toContain('Transcript: <img src=x onerror="boom">&\'');
+  });
+
+  it("links only authenticated Wireline recording routes", () => {
+    const email = buildFailoverVoicemailEmail({
+      from: "",
+      to: "",
+      durationSeconds: null,
+      recordingUrl: "https://trywireline.com/api/calls/123/recording",
+      transcription: "",
+    });
+
+    expect(email.html).toContain(
+      'href="https://trywireline.com/api/calls/123/recording"',
+    );
   });
 
   it("renders untrusted recording URLs as text instead of clickable links", () => {

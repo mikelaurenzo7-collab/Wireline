@@ -31,10 +31,8 @@ const BRAND_SUFFIX = " | Wireline";
 export const HOME_TITLE = "Wireline | Voice agents that get work done";
 export const HOME_DESCRIPTION =
   "Build one for your business or your life. It can call, answer, text, email, book, and follow through while you stay in control.";
-const HOME_CANONICAL_TAG =
-  '<link rel="canonical" href="https://trywireline.com/" />';
-const HOME_OG_URL_TAG =
-  '<meta property="og:url" content="https://trywireline.com/" />';
+const HOME_CANONICAL_TAG = '<link rel="canonical" href="https://trywireline.com/" />';
+const HOME_OG_URL_TAG = '<meta property="og:url" content="https://trywireline.com/" />';
 
 export interface RouteMeta {
   title: string;
@@ -52,10 +50,7 @@ function withBrand(title: string): string {
  * verbatim in sync with each page's `PageMeta` call (contract-tested).
  * `/for/*` is intentionally absent here — it derives from `WEDGES`.
  */
-const STATIC_ROUTE_META: Record<
-  string,
-  { title: string; description: string }
-> = {
+const STATIC_ROUTE_META: Record<string, { title: string; description: string }> = {
   "/pricing": {
     title: "Pricing | Wireline Voice Agents from $19/month",
     description:
@@ -72,9 +67,9 @@ const STATIC_ROUTE_META: Record<
       "Compare Wireline's owner ready voice agent with per agent, per call, and developer voice infrastructure pricing.",
   },
   "/about": {
-    title: "About Wireline | Voice Agents for Calls and Follow-up",
+    title: "About Wireline | Voice Agents for Calls and Follow up",
     description:
-      "Wireline is a customizable agent platform built for calls, texts, follow-up, browser context, email, and integrations.",
+      "Wireline is a customizable agent platform built for calls, texts, follow up, browser context, email, and integrations.",
   },
   "/showcase": {
     title: "Try Wireline",
@@ -82,8 +77,7 @@ const STATIC_ROUTE_META: Record<
       "Hear the voice agent your customers will meet first, then build one for voice, SMS, and email.",
   },
   "/blog": {
-    title:
-      "Wireline Notes | Voice agent guides for small business phone coverage",
+    title: "Wireline Notes | Voice agent guides for small business phone coverage",
     description:
       "Practical guides for voice agents: appointment booking, support queues, handoff boundaries, and getting routine phone work off your plate.",
   },
@@ -115,7 +109,7 @@ const STATIC_ROUTE_META: Record<
   "/developers": {
     title: "Developer Portal | Wireline",
     description:
-      "Wireline MCP apps for ChatGPT, Claude, and Cursor — account-bound draft, simulate, and continue in Studio. No public API keys.",
+      "Wireline MCP apps for ChatGPT, Claude, and Cursor. Draft and simulate with an account bound connector, then continue in Studio. No public API keys.",
   },
   "/changelog": {
     title: "Changelog | Wireline",
@@ -125,12 +119,12 @@ const STATIC_ROUTE_META: Record<
   "/privacy": {
     title: "Privacy Policy",
     description:
-      "Privacy for Wireline's AI voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 1, 2026.",
+      "Privacy for Wireline's voice agent platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 1, 2026.",
   },
   "/terms": {
     title: "Terms of Service",
     description:
-      "Wireline's terms of service — acceptable use, authorized synthetic voices, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 1, 2026.",
+      "Wireline's terms of service: acceptable use, authorized synthetic voices, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 1, 2026.",
   },
   "/solutions/sales": {
     title: "Every good lead gets a next step. | Wireline",
@@ -203,12 +197,6 @@ export function injectMarketingMeta(html: string, meta: RouteMeta): string {
     .join(title) // <title>, og:title, twitter:title
     .split(HOME_DESCRIPTION)
     .join(description) // description, og:description, twitter:description
-    .replace(
-      HOME_CANONICAL_TAG,
-      `<link rel="canonical" href="${escapeHtml(meta.canonical)}" />`,
-    )
-    .replace(
-      HOME_OG_URL_TAG,
-      `<meta property="og:url" content="${escapeHtml(meta.canonical)}" />`,
-    );
+    .replace(HOME_CANONICAL_TAG, `<link rel="canonical" href="${escapeHtml(meta.canonical)}" />`)
+    .replace(HOME_OG_URL_TAG, `<meta property="og:url" content="${escapeHtml(meta.canonical)}" />`);
 }
