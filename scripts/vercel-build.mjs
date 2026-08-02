@@ -93,6 +93,9 @@ run("npx", [
   "tests/product-voice-contract.test.ts",
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
+  // Generated launch media must identify the deployed source commit and reject
+  // auth-wall/shared-error captures before any edit is called release-current.
+  "tests/launch-completeness-contract.test.ts",
   // Calling setup is a primary activation surface: keep its self-service entry,
   // agent/area-code choice, recovery path, and routing behavior in every build.
   "tests/phone-settings-attach-contract.test.ts",

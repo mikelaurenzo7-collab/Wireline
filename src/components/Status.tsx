@@ -62,6 +62,8 @@ const STATUS_DISCLOSURES = [
   ],
 ] as const;
 
+const STATUS_REFRESH_MS = 60_000;
+
 const STATE_META: Record<
   ComponentState | OverallState,
   { label: string; tone: string; pill: string; bgGradient: string; icon: typeof CheckCircle2 }
@@ -177,7 +179,7 @@ export default function Status() {
     void fetchHealth();
     const id = window.setInterval(() => {
       if (document.visibilityState === "visible") void fetchHealth();
-    }, 30_000);
+    }, STATUS_REFRESH_MS);
     return () => {
       cancelled = true;
       window.clearInterval(id);
