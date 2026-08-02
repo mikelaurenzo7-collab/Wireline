@@ -9,7 +9,10 @@ const KIT = "scripts/marketing-kit.mjs";
 const APP_ROUTES = "src/routes/AppRoutes.tsx";
 
 function reelBeatPaths(kit: string): string[] {
-  const reels = kit.slice(kit.indexOf("const reels = ["), kit.indexOf("for (const reel of reels)"));
+  const reels = kit.slice(
+    kit.indexOf("const reels = ["),
+    kit.indexOf("for (const reel of reels)"),
+  );
   return [...reels.matchAll(/route:\s*["'`]([^"'`]+)["'`]/g)]
     .map((match) => new URL(match[1], "https://trywireline.com").pathname)
     .filter((path, index, all) => all.indexOf(path) === index)
@@ -39,14 +42,16 @@ describe("launch reel route integrity", () => {
     ).toEqual([]);
   });
 
-  it("preserves the retired email deep link as an inbox redirect", () => {
+  it("preserves the retired email deep link and its state while Inbox remains canonical", () => {
     // The August 2 reel source used /email while the product had moved the
     // surface to /inbox. The resulting 15-second cut ended on a full 404 page.
     // Keep old external links and historical capture instructions safe while
-    // the canonical product route remains /inbox.
+    // preserving any tab/filter state carried in the query or hash.
     expect(appRoutes).toContain('<Route path="/inbox" element={<EmailPage />} />');
+    expect(appRoutes).toContain("function EmailToInboxRedirect()");
+    expect(appRoutes).toContain("`/inbox${location.search}${location.hash}`");
     expect(appRoutes).toContain(
-      '<Route path="/email" element={<Navigate to="/inbox" replace />} />',
+      '<Route path="/email" element={<EmailToInboxRedirect />} />',
     );
   });
 });
