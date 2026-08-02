@@ -72,7 +72,14 @@ Build your Voice Agent
 
 ## AI Voice Generator Audio
 
-Generated with AI Voice Generator for marketing/reference use only. This is not a production phone-call runtime voice and must not be wired into live PSTN calls without provider rights, latency, fallback, and telephony verification.
+Canonical voiceover masters were re-rendered with ElevenLabs on 2026-08-01 (clear, direct, founder-friendly; ~2.4 words/sec per the delivery guide below):
+
+- `wireline-missed-call-15s.mp3` (14.39s) — 15-second reel VO
+- `wireline-voice-agent-fit25.mp3` (24.24s) — walkthrough/final reel VO
+- `wireline-ai-voice-agent-30s.mp3` (27.12s) — primary 30-second ad VO
+- `wireline-founder-60s.mp3` (54.65s) — founder explainer VO, reserved for the 46s Descript master cut
+
+Earlier AI Voice Generator previews below are superseded; keep them for reference only. All regenerated audio remains marketing/reference use only — never a production phone-call runtime voice without provider rights, latency, fallback, and telephony verification.
 
 - Preview: https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/ec315585-89bf-4b2b-ad7f-7e30bb50d5fd.mp3
 - Full audio: https://www.aidocmaker.com/g0/audio?name=acdf9b5a628e4558923c63ba0ed2d821
@@ -165,6 +172,20 @@ Reel doctrine, applied to every cut below:
 - Keep burned-in words scarce: **Create. Train. Wire. Run.** when useful, then one end card.
 - Ship accurate platform captions for accessibility; do not cover legible product UI with persistent subtitles.
 - Reframe every derivative around the active UI. Never scale an entire desktop screen into an unreadable vertical frame.
+
+### Produced cuts (scored 2026-08-01)
+
+ElevenLabs VO laid over the delivered reel videos; audio levels verified (mean ≈ −24.5 dB):
+
+| Cut | Length | Voiceover |
+| --- | --- | --- |
+| `wirelinelaunchreelfinal.mp4` | 25.57s | walkthrough (24.24s) |
+| `wirelinelaunchreel16x9.mp4` | 25.57s | walkthrough (24.24s) |
+| `wirelinelaunchreel15s.mp4` | 16.80s | missed-call (14.39s) |
+| `wirelinelaunchreelsquare.mp4` | 16.80s | missed-call (14.39s) |
+| `wirelinelaunchreelalt.mp4` | 20.43s | missed-call (14.39s) |
+
+QA note: the "15s" cut runs 16.80s — trim to ≤15.0s before strict-length paid placements. The 46s Descript master is not yet re-cut; the founder-60s VO (54.65s) is ready for it.
 
 ### 46-Second Launch Reel — Master
 

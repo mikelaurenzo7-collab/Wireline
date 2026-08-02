@@ -117,7 +117,6 @@ const pool = databaseConnection
 
 export const tenantStore = new AsyncLocalStorage<string>();
 
-
 type AwaitedTuple<T extends readonly unknown[]> = {
   -readonly [K in keyof T]: Awaited<T[K]>;
 };
@@ -215,12 +214,21 @@ async function scopeClientToTenant(userId: string) {
     // Restore the raw query fn before finalizing so our control statements run as-is.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- restoring pg client.query
     (client as any).query = _origQuery;
-    // COMMIT/ROLLBACK must settle before the client returns to the pool
+    if (err) {
+      // The pool discards errored clients, and closing the socket rolls the
+      // outer transaction back implicitly. Issuing ROLLBACK here would queue
+      // it behind any still in-flight query on this client — the exact
+      // pattern pg@8 deprecates ("client already executing a query") and
+      // pg@9 rejects outright.
+      _origRelease(err);
+      return;
+    }
+    // COMMIT must settle before the client returns to the pool
     // (_origRelease only runs after). SET LOCAL ROLE is transaction-scoped, so
     // the next checkout never inherits wireline_server from this one.
-    _origQuery(err ? "ROLLBACK" : "COMMIT")
-      .then(() => _origRelease(err))
-      .catch(() => _origRelease(err || true));
+    _origQuery("COMMIT")
+      .then(() => _origRelease())
+      .catch(() => _origRelease(true));
   };
   return client;
 }
