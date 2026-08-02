@@ -609,7 +609,9 @@ export default function OverviewPage() {
           </p>
           <div className={`mt-3 flex flex-col gap-5 ${hasAgents ? "items-start" : "items-center"}`}>
             <div className="max-w-2xl">
-              <h1 className="wl-display-2 text-balance">
+              {/* Warm personal line carrying the operator's own name; the case
+                  system must never rewrite someone's words. */}
+              <h1 className="wl-preserve-case wl-display-2 text-balance">
                 {isFirstRun
                   ? `Let's put your first ${language.singular} to work.`
                   : `${dayGreeting()}, ${workspaceFirstName(user?.full_name, user?.email)}.`}

@@ -265,7 +265,8 @@
   font-family: var(--wireline-font-family-mono);
   font-size: var(--wireline-typography-overline-size);
   font-weight: 650;
-  letter-spacing: 0.14em;
+  /* A KPI caption is the label tier; it tracks with every other eyebrow. */
+  letter-spacing: var(--wireline-typography-overline-letterSpacing);
   text-transform: uppercase;
   color: var(--wireline-color-text-secondary);
 }
@@ -452,7 +453,10 @@
   font-family: var(--wireline-font-family-mono);
   font-size: var(--wireline-typography-overline-size);
   font-weight: 650;
-  letter-spacing: 0.14em;
+  /* The overline token owns label tracking. A literal here made the same
+     eyebrow render at three different widths depending on which later
+     stylesheet happened to reach it. */
+  letter-spacing: var(--wireline-typography-overline-letterSpacing);
   text-transform: uppercase;
   color: var(--wireline-color-text-secondary);
 }

@@ -109,7 +109,6 @@ export default function SolutionsPage() {
       <MarketingHero
         eyebrow={page.eyebrow}
         title={page.title}
-        description={page.description}
         primaryAction={{ to: page.primary.href, label: page.primary.label }}
         secondaryAction={{
           to: page.secondary.href,

@@ -8,7 +8,7 @@
   font-family: var(--wireline-font-mono);
   font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--wireline-typography-overline-letterSpacing);
   line-height: 1.2;
   text-transform: uppercase;
   color: var(--wireline-color-text-tertiary);

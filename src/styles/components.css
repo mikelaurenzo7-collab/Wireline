@@ -97,7 +97,7 @@
   font-family: var(--wireline-font-family-mono);
   font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--wireline-typography-overline-letterSpacing);
   text-transform: uppercase;
   color: var(--wireline-color-text-secondary);
 }

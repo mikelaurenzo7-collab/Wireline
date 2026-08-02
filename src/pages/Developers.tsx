@@ -121,7 +121,6 @@ export default function Developers() {
       <MarketingHero
         eyebrow="Developers"
         title="Bring Wireline into the tools you already use."
-        description="The live developer surface is an account-bound MCP connector. Draft and simulate privately in ChatGPT, Claude, or Cursor, then finish Training, Wire, and launch in Wireline."
         primaryAction={{ label: "View MCP endpoint", to: "#mcp-endpoint" }}
         secondaryAction={{ label: "OpenAPI map", to: openApiUrl, tone: "secondary" }}
         proof={["OAuth PKCE", "Account-bound tools", "ChatGPT · Claude · Cursor"]}

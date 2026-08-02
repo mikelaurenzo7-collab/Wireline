@@ -239,7 +239,6 @@ export default function Pricing() {
         <MarketingHero
           eyebrow="Founder Early Access"
           title="Build free. Launch for $19. Scale when it pays."
-          description={`Calls, texts, email, follow up, and Lead Hunt. Every paid plan includes a number. Extra minutes stay prepaid at ${TOPUP_RATE}.`}
           primaryAction={{
             label: annual ? "Launch for $190/yr" : "Launch for $19/mo",
             to: annual ? "/signup?plan=starter&interval=year" : "/signup?plan=starter",

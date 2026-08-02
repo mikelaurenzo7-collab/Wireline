@@ -13,7 +13,12 @@
 .wl-ui-caps {
   --wl-caps-title-tracking: -0.025em;
   --wl-caps-control-tracking: 0.045em;
-  --wl-caps-label-tracking: 0.12em;
+  /* Label tracking has one origin: the `overline` entry in
+   * design-tokens/wireline.tokens.json. This used to declare its own 0.12em
+   * while `.wl-eyebrow` hardcoded 0.14em and seven other stylesheets read the
+   * token — three sources for one tier, which is why the same eyebrow class
+   * measured 0.09em, 0.1em, and 0.14em on different surfaces. */
+  --wl-caps-label-tracking: var(--wireline-typography-overline-letterSpacing);
 }
 
 .wl-ui-caps :where(h1, h2, h3, h4, h5, h6),
@@ -85,6 +90,34 @@
 .wl-stitch-marketing-hero {
   text-transform: uppercase;
   letter-spacing: -0.01em;
+}
+
+/* The authenticated workspace ranks by case the same way the marketing surface
+ * does. Section, card, and empty-state headings sat in sentence case here while
+ * the identical construct shouted on marketing, so the two halves of the product
+ * read as two design systems: 42% of the workspace's rendered text was
+ * lowercase, most of it headings and inline calls to action.
+ *
+ * Same exclusions as marketing: long-form prose, anything the customer authored,
+ * and literal values read exactly as written. Presentation only — the copy
+ * strings never change. */
+.wl-workspace-shell
+  :is(h1, h2, h3, h4, h5, h6):not(.wl-preserve-case):not(.prose *):not(:has(code, time, [data-value])) {
+  text-transform: uppercase;
+  letter-spacing: var(--wl-caps-title-tracking);
+}
+
+/* An inline "Continue →", "View all →", or "Open Knowledge" is a control, not
+ * prose. The base rule only reaches links inside nav/header/footer, so
+ * body-level calls to action in the workspace opted themselves out of the tier
+ * they belong to. These are identified the way the design identifies them: a
+ * link that carries the action color or lays itself out as a control. */
+.wl-workspace-shell
+  :is(a[class*="text-primary"], a[class*="inline-flex"], a[class*="place-items-center"]):not(
+    .wl-preserve-case
+  ):not([class*="wl-preserve-case"]) {
+  letter-spacing: var(--wl-caps-control-tracking);
+  text-transform: uppercase;
 }
 
 /* Mono micro-labels — the eyebrow tier. */

@@ -142,7 +142,6 @@ export default function Compare() {
       <MarketingHero
         eyebrow="Why Wireline"
         title="Wireline vs. other voice AI."
-        description="One trained voice agent across voice, SMS, and email. Prepaid overflow, never surprise per call bills."
         primaryAction={{ label: "Start free", to: "/signup?plan=personal" }}
         secondaryAction={{
           label: "Hear a demo",

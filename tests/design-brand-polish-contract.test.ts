@@ -56,7 +56,11 @@ describe("E2E design and brand polish", () => {
     // Relaxed measure on the hero remains.
     expect(hero).toContain("max-w-[19ch]");
     expect(hero).toContain("leading-[0.99]");
-    expect(hero).toContain("font-[var(--wireline-font-family-body)]");
+    // The body-font assertion here pinned the hero subhead's styling. Heroes no
+    // longer render a subhead at all — the headline, actions, and proof carry
+    // the pitch — so the shape itself is pinned by
+    // `marketing-hero-no-subhead-contract` instead of a class on a removed node.
+    expect(hero, "the hero must not regrow a subhead").not.toContain("marketing-hero__description");
     expect(polish).toContain("white-space: normal");
     expect(polish).toContain("line-height: 1");
   });
