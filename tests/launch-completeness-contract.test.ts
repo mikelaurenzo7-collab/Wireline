@@ -5,6 +5,25 @@ import { describe, expect, it } from "vitest";
 const root = process.cwd();
 const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 
+function reelBeatPaths(kit: string): string[] {
+  const reels = kit.slice(
+    kit.indexOf("const reels = ["),
+    kit.indexOf("for (const reel of reels)"),
+  );
+  return [...reels.matchAll(/route:\s*["'`]([^"'`]+)["'`]/g)]
+    .map((match) => new URL(match[1], "https://trywireline.com").pathname)
+    .filter((path, index, all) => all.indexOf(path) === index)
+    .sort();
+}
+
+function declaredRoutePaths(appRoutes: string): Set<string> {
+  return new Set(
+    [...appRoutes.matchAll(/<Route\s+path="([^"]+)"/g)]
+      .map((match) => match[1])
+      .filter((path) => !path.includes("*")),
+  );
+}
+
 describe("launch completeness contracts", () => {
   it("routes the launch-reel command through the certifying wrapper and Vercel gate", () => {
     const pkg = JSON.parse(source("package.json")) as {
@@ -33,6 +52,34 @@ describe("launch completeness contracts", () => {
     expect(wrapper).toMatch(/byte-identical routes/);
     expect(wrapper).toMatch(/Expected exactly 3 launch-reel captures/);
     expect(wrapper).toMatch(/Expected authenticated screenshot certification/);
+  });
+
+  it("keeps every reel beat on a declared route instead of filming the authenticated 404", () => {
+    const kit = source("scripts/marketing-kit.mjs");
+    const appRoutes = source("src/routes/AppRoutes.tsx");
+    const declared = declaredRoutePaths(appRoutes);
+    const missing = reelBeatPaths(kit).filter((path) => !declared.has(path));
+
+    expect(
+      missing,
+      `Launch reel beats reference routes absent from AppRoutes: ${missing.join(", ")}. ` +
+        "A stale scene route records the authenticated 404 and can still look like a unique certified frame.",
+    ).toEqual([]);
+  });
+
+  it("preserves the retired email deep link and its state while Inbox remains canonical", () => {
+    const appRoutes = source("src/routes/AppRoutes.tsx");
+
+    // The August 2 reel source used /email while the product had moved the
+    // surface to /inbox. The resulting 15-second cut ended on a full 404 page.
+    // Keep old external links and historical capture instructions safe while
+    // preserving any tab/filter state carried in the query or hash.
+    expect(appRoutes).toContain('<Route path="/inbox" element={<EmailPage />} />');
+    expect(appRoutes).toContain("function EmailToInboxRedirect()");
+    expect(appRoutes).toContain("`/inbox${location.search}${location.hash}`");
+    expect(appRoutes).toContain(
+      '<Route path="/email" element={<EmailToInboxRedirect />} />',
+    );
   });
 
   it("does not call an unproven published edit release-current", () => {
