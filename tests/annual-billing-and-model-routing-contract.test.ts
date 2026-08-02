@@ -34,9 +34,11 @@ describe("annual billing purchase path", () => {
 });
 
 describe("structured model routing", () => {
-  it("routes simple and medium tasks to GPT-5 and complex to GPT-5.6 Terra", () => {
-    expect(selectModelForTask("simple")).toBe("gpt-5");
-    expect(selectModelForTask("medium")).toBe("gpt-5");
+  it("routes simple and medium tasks to GPT-5.6 Luna and complex to GPT-5.6 Terra", () => {
+    // gpt-5 (the previous cheap lane) shuts down 2026-12-11; Luna is the
+    // GPT-5.6 family's designated cost-sensitive lane at 6x lower input cost.
+    expect(selectModelForTask("simple")).toBe("gpt-5.6-luna");
+    expect(selectModelForTask("medium")).toBe("gpt-5.6-luna");
     expect(selectModelForTask("complex")).toBe("gpt-5.6-terra");
   });
 });

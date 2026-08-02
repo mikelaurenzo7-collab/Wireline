@@ -128,6 +128,7 @@ function message(args: {
   stopReason: RuntimeStopReason;
   inputTokens: number;
   outputTokens: number;
+  cacheReadTokens?: number;
 }): RuntimeMessage {
   return {
     id: `msg_${Math.random().toString(36).slice(2)}`,
@@ -141,7 +142,7 @@ function message(args: {
       input_tokens: args.inputTokens,
       output_tokens: args.outputTokens,
       cache_creation_input_tokens: 0,
-      cache_read_input_tokens: 0,
+      cache_read_input_tokens: args.cacheReadTokens ?? 0,
     },
   };
 }
@@ -282,6 +283,14 @@ async function callResponsesEndpoint(args: {
   const text = extractResponsesText(payload);
   if (!text) throw new Error(`${args.provider} returned an empty response`);
   const usage = (payload.usage || {}) as Record<string, unknown>;
+  // OpenAI Responses reports cached prompt tokens inside input_tokens (details
+  // under input_tokens_details.cached_tokens). Split them out so cached input
+  // is priced at the vendor's cached rate instead of the full input rate and
+  // the audit dashboard's cache-savings view stops reading zero.
+  const usageDetails = (usage.input_tokens_details || {}) as Record<string, unknown>;
+  const cacheReadTokens = Math.max(0, Number(usageDetails.cached_tokens || 0));
+  const inputTokens = Math.max(0, Number(usage.input_tokens || 0) - cacheReadTokens);
+  const outputTokens = Number(usage.output_tokens || 0);
   log.info("[ai-runtime] response complete", {
     provider: args.provider,
     model: args.model,
@@ -302,15 +311,17 @@ async function callResponsesEndpoint(args: {
           },
         ],
         stopReason: "tool_use",
-        inputTokens: Number(usage.input_tokens || 0),
-        outputTokens: Number(usage.output_tokens || 0),
+        inputTokens,
+        outputTokens,
+        cacheReadTokens,
       })
     : message({
         model: args.model,
         content: [{ type: "text", text, citations: null }],
         stopReason: "end_turn",
-        inputTokens: Number(usage.input_tokens || 0),
-        outputTokens: Number(usage.output_tokens || 0),
+        inputTokens,
+        outputTokens,
+        cacheReadTokens,
       });
 }
 

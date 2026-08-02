@@ -100,16 +100,13 @@ const num = (n: unknown): number => {
 
 /** Input $/MTok for audit dashboards — derived from MODEL_PRICING (single source of truth). */
 export function inputRateForModel(model: string | null | undefined): number {
-  if (!model) return 15;
+  const primaryRate = MODEL_PRICING["gpt-5.6-terra"].input;
+  if (!model) return primaryRate;
   const bare = model.includes("/") ? model.slice(model.lastIndexOf("/") + 1) : model;
   const pricing = MODEL_PRICING[bare as keyof typeof MODEL_PRICING];
   if (pricing) return pricing.input;
-  if (bare.includes("haiku")) return 1;
-  if (bare.includes("sonnet")) return 3;
-  if (bare.includes("opus")) return 5;
   if (bare.includes("gemini") && bare.includes("flash")) return 0.3;
-  if (bare.includes("gpt-4o")) return 5;
-  return 15;
+  return primaryRate;
 }
 
 const round4 = (n: number) => Number(n.toFixed(4));
