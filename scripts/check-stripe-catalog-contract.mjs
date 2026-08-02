@@ -40,7 +40,9 @@ requireText(
 if (packageJson.scripts?.["stripe:setup"] !== "node scripts/setup-stripe-catalog.mjs") {
   errors.push("stripe:setup must run the Founder catalog reconciler.");
 }
-if (packageJson.scripts?.["stripe:catalog:check"] !== "node scripts/check-stripe-catalog-contract.mjs") {
+if (
+  packageJson.scripts?.["stripe:catalog:check"] !== "node scripts/check-stripe-catalog-contract.mjs"
+) {
   errors.push("stripe:catalog:check must run this contract.");
 }
 
@@ -156,7 +158,9 @@ if (liveVideoProduct?.metadata?.wireline_catalog_state !== "launch_paused") {
 }
 
 if (FOUNDER_PRODUCTS.length !== 8) {
-  errors.push(`Founder manifest must define 8 active paid/add-on products; found ${FOUNDER_PRODUCTS.length}.`);
+  errors.push(
+    `Founder manifest must define 8 active paid/add-on products; found ${FOUNDER_PRODUCTS.length}.`,
+  );
 }
 if (FOUNDER_PRICES.length !== 14) {
   errors.push(`Founder manifest must define 14 active prices; found ${FOUNDER_PRICES.length}.`);
@@ -223,7 +227,10 @@ for (const [name, source] of [
     `${name} must refuse a generated env file whose catalog version mismatches the code.`,
   );
 }
-if (syncScript.includes("FALLBACK_ENV") || syncScript.includes("STRIPE_BUSINESS_STARTER_PRICE_ID")) {
+if (
+  syncScript.includes("FALLBACK_ENV") ||
+  syncScript.includes("STRIPE_BUSINESS_STARTER_PRICE_ID")
+) {
   errors.push(
     "sync-stripe-env-to-vercel must not carry a fallback env map of retired price-id names.",
   );

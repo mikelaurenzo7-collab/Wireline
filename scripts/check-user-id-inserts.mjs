@@ -99,19 +99,13 @@ function findTenantInsertIssues(files) {
 
   for (const file of files) {
     const source = readFileSync(file, "utf8");
-    const matches = source.matchAll(
-      /insert\(schema\.(\w+)\)\.values\(([\s\S]{0,900}?)\)/g,
-    );
+    const matches = source.matchAll(/insert\(schema\.(\w+)\)\.values\(([\s\S]{0,900}?)\)/g);
     for (const match of matches) {
       const [, table, valuesSnippet] = match;
       if (!USER_SCOPED_TABLES.has(table)) continue;
 
-      const nearbySource = source.slice(
-        Math.max(0, match.index - 900),
-        match.index + 1400,
-      );
-      if (/\buserId\b/.test(valuesSnippet) || /\buserId\b/.test(nearbySource))
-        continue;
+      const nearbySource = source.slice(Math.max(0, match.index - 900), match.index + 1400);
+      if (/\buserId\b/.test(valuesSnippet) || /\buserId\b/.test(nearbySource)) continue;
       if (
         VALUE_VARIABLE_HINTS.some((hint) =>
           new RegExp(`\\b${hint}\\w*\\b`, "i").test(valuesSnippet),
@@ -120,9 +114,7 @@ function findTenantInsertIssues(files) {
         continue;
       }
       const line = source.slice(0, match.index).split("\n").length;
-      issues.push(
-        `${file}:${line} inserts schema.${table} without an obvious userId`,
-      );
+      issues.push(`${file}:${line} inserts schema.${table} without an obvious userId`);
     }
   }
 
@@ -140,9 +132,7 @@ function main() {
     process.exit(1);
   }
 
-  console.log(
-    "✅ Tenant-owned inserts include an obvious userId or user-scoped values object",
-  );
+  console.log("✅ Tenant-owned inserts include an obvious userId or user-scoped values object");
 }
 
 main();

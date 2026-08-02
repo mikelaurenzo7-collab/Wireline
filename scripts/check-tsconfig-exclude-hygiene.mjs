@@ -28,7 +28,9 @@ for (const entry of excludes) {
   // Any new wildcard exclude should be deliberate and reviewed, not hidden
   // behind this file-existence check.
   if (entry.includes("*")) {
-    problems.push(`- ${entry} is a wildcard exclude not listed in check-tsconfig-exclude-hygiene.mjs.`);
+    problems.push(
+      `- ${entry} is a wildcard exclude not listed in check-tsconfig-exclude-hygiene.mjs.`,
+    );
     continue;
   }
 
@@ -40,7 +42,9 @@ for (const entry of excludes) {
 
 if (problems.length) {
   console.error("tsconfig exclude hygiene failed:\n" + problems.join("\n"));
-  console.error("\nEither restore the file, remove the stale exclude, or explicitly allow a reviewed pattern.");
+  console.error(
+    "\nEither restore the file, remove the stale exclude, or explicitly allow a reviewed pattern.",
+  );
   process.exit(1);
 }
 

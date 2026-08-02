@@ -185,7 +185,7 @@ describe("E2E design and brand polish", () => {
     // merely *contained* a preserve-case wrapper still shouted — and every new
     // selector added above would have restarted the same race.
     expect(caps).toMatch(
-      /\.wl-ui-caps \.wl-preserve-case,\s*\.wl-ui-caps \.wl-preserve-case \*\s*\{[^}]*?text-transform: none !important;/,
+      /:is\(\.wl-ui-caps, \.wl-cased\) \.wl-preserve-case,\s*:is\(\.wl-ui-caps, \.wl-cased\) \.wl-preserve-case \*\s*\{[^}]*?text-transform: none !important;/,
     );
     // Tolerant of formatting: prettier wraps this JSX onto three lines once the
     // class list grows, so an assertion that required `">{agent.name}` adjacent
@@ -235,14 +235,17 @@ describe("E2E design and brand polish", () => {
     // closing brace and was satisfied by the caption-span rule further down, so
     // deleting the declaration here left the test green.
     expect(caps).toMatch(
-      /\.wl-ui-caps :is\(label, legend, th\) \{[^}]*?text-transform: uppercase;/,
+      /:is\(\.wl-ui-caps, \.wl-cased\) :is\(label, legend, th\) \{[^}]*?text-transform: uppercase;/,
     );
 
     // A label can also hold the control and a help line. `<input>` must reset or
     // the transform shouts whatever the user typed -- and `::placeholder`
     // inherits it, so an untouched placeholder would shout too.
+    // Whitespace-tolerant: prettier rewraps this selector onto three lines once
+    // the marker list grows, and a regex that pins the line shape fails on a
+    // formatting pass rather than on a real change.
     const reset = caps.match(
-      /\.wl-ui-caps\s*\n?\s*:is\(label, legend\) :is\(([^)]*)\) \{[\s\S]*?text-transform: none;/,
+      /:is\(\.wl-ui-caps, \.wl-cased\)\s+:is\(label, legend\)\s+:is\(([^)]*)\)\s*\{[\s\S]*?text-transform: none;/,
     );
     expect(reset, "labels must reset their nested control and prose").toBeTruthy();
     for (const tag of ["input", "textarea", "select", "p", "span"]) {
@@ -252,7 +255,7 @@ describe("E2E design and brand polish", () => {
     // Where a caption needs its own styling it is the leading span, which the
     // blanket reset above would otherwise catch.
     expect(caps).toMatch(
-      /:is\(label, legend\) > span:first-child:not\(:has\(input, textarea, select, button\)\)/,
+      /:is\(label, legend\)\s*>\s*span:first-child:not\(:has\(input, textarea, select, button\)\)/,
     );
   });
 });

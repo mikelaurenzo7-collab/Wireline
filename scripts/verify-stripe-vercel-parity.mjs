@@ -9,10 +9,7 @@ import { FOUNDER_CATALOG_VERSION } from "./lib/stripe-founder-catalog.mjs";
 const TARGETS = ["production", "preview", "development"];
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-const EXTRA_KEYS = [
-  "VITE_STRIPE_PUBLIC_KEY",
-  "STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID",
-];
+const EXTRA_KEYS = ["VITE_STRIPE_PUBLIC_KEY", "STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID"];
 
 const token = process.env.VERCEL_TOKEN?.trim();
 if (!token) {
@@ -59,7 +56,10 @@ for (const [key, value] of Object.entries(canon)) {
 const publishable = snapshot.VITE_STRIPE_PUBLIC_KEY;
 const pkOk = TARGETS.every((t) => publishable?.[t]?.startsWith("pk_live_"));
 if (!pkOk) {
-  mismatches.push({ key: "VITE_STRIPE_PUBLIC_KEY", issue: "missing live publishable key on a target" });
+  mismatches.push({
+    key: "VITE_STRIPE_PUBLIC_KEY",
+    issue: "missing live publishable key on a target",
+  });
 }
 
 console.log(

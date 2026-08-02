@@ -1,7 +1,7 @@
 import { chromium } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { resolvePreinstalledChromium } from "./lib/resolve-preinstalled-chromium.mjs";
+import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 
 const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "http://localhost:3000").replace(
   /\/$/,
@@ -510,10 +510,9 @@ const proxyServer = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process
 const browser = await chromium.launch({
   headless: true,
   // Sandboxes with a preinstalled Chromium (and browser downloads disabled)
-  // resolve it automatically; WIRELINE_E2E_CHROMIUM still overrides.
-  ...(resolvePreinstalledChromium()
-    ? { executablePath: resolvePreinstalledChromium() }
-    : {}),
+  // resolve it automatically; WIRELINE_E2E_CHROMIUM still overrides. Shared with
+  // every other capture script so the resolution lives in one place.
+  ...chromiumLaunchOptions(),
   // Chromium does not read HTTPS_PROXY from the environment on its own —
   // sandboxes that route outbound HTTPS through an agent proxy need it wired
   // through explicitly or every navigation hangs until timeout. Local targets
@@ -525,9 +524,7 @@ const browser = await chromium.launch({
   // With it set, every local capture silently screenshotted the agent proxy's
   // "only accepts HTTPS CONNECT tunnels" error page instead of the app, and the
   // run still reported success.
-  ...(proxyServer
-    ? { proxy: { server: proxyServer, bypass: "localhost,127.0.0.1,::1" } }
-    : {}),
+  ...(proxyServer ? { proxy: { server: proxyServer, bypass: "localhost,127.0.0.1,::1" } } : {}),
 });
 const issues = [];
 let authenticatedStorageState = null;

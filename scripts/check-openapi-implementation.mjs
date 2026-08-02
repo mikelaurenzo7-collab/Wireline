@@ -45,21 +45,11 @@ function walk(dir) {
 }
 
 const routeText = walk(path.join(root, "src/routes"))
-  .concat([
-    path.join(root, "server.ts"),
-    path.join(root, "src/server/register-api-routes.ts"),
-  ])
+  .concat([path.join(root, "server.ts"), path.join(root, "src/server/register-api-routes.ts")])
   .map((file) => readFileSync(file, "utf8"))
   .join("\n");
 
-const mountedPrefixes = [
-  "/api/health",
-  "/api/intake",
-  "/api/webhooks",
-  "/api/quotas",
-  "/api",
-  "",
-];
+const mountedPrefixes = ["/api/health", "/api/intake", "/api/webhooks", "/api/quotas", "/api", ""];
 
 function expressPath(openapiPath) {
   return openapiPath.replace(/\{([^}]+)\}/g, ":$1");
@@ -81,10 +71,15 @@ const problems = [];
 for (const { method, path: specPath } of operations) {
   const methodName = methodMap[method];
   const candidates = routeCandidates(specPath);
-  const hasPath = candidates.some((candidate) => routeText.includes(`"${candidate}"`) || routeText.includes(`'${candidate}'`));
-  const hasMethod = methodName && new RegExp(`\\b(?:router|app)\\.${methodName}\\s*\\(`).test(routeText);
+  const hasPath = candidates.some(
+    (candidate) => routeText.includes(`"${candidate}"`) || routeText.includes(`'${candidate}'`),
+  );
+  const hasMethod =
+    methodName && new RegExp(`\\b(?:router|app)\\.${methodName}\\s*\\(`).test(routeText);
   if (!hasPath || !hasMethod) {
-    problems.push(`${method.toUpperCase()} ${specPath} is documented in OpenAPI but no matching Express path/method was found.`);
+    problems.push(
+      `${method.toUpperCase()} ${specPath} is documented in OpenAPI but no matching Express path/method was found.`,
+    );
   }
 }
 

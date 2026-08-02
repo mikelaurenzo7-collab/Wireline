@@ -7,6 +7,7 @@
  *   DOGFOOD_EMAIL=... DOGFOOD_PASSWORD=... npm run dogfood:prod
  */
 import { chromium } from "playwright";
+import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { requireDogfoodCredentials } from "./dogfood-credentials.mjs";
@@ -83,7 +84,9 @@ async function visit(page, route) {
     await page.waitForTimeout(1_500);
     const finalUrl = page.url();
     const body = await page.locator("body").innerText();
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2,
+    );
 
     if (finalUrl.includes("/signin") || finalUrl.includes("/login")) {
       record("failed", route, "redirected to sign-in");
@@ -95,7 +98,9 @@ async function visit(page, route) {
     }
     if (overflow) record("warnings", route, "horizontal overflow detected");
     if (body.trim().length < 40) record("warnings", route, "very little content rendered");
-    await page.screenshot({ path: path.join(screenshots, `${route.replace(/[^a-z0-9]+/gi, "_") || "home"}.png`) });
+    await page.screenshot({
+      path: path.join(screenshots, `${route.replace(/[^a-z0-9]+/gi, "_") || "home"}.png`),
+    });
     record("passed", route, "rendered");
   } catch (error) {
     record("failed", route, error instanceof Error ? error.message : String(error));
@@ -103,8 +108,15 @@ async function visit(page, route) {
 }
 
 async function main() {
-  const browser = await chromium.launch({ headless: true, args: ["--no-sandbox", "--disable-gpu"] });
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
+  const browser = await chromium.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-gpu"],
+    ...chromiumLaunchOptions(),
+  });
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    deviceScaleFactor: 1,
+  });
   const page = await context.newPage();
 
   page.on("console", (message) => {

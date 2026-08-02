@@ -85,9 +85,7 @@ async function dependencySnapshot(stripe) {
 
   const subscriptions = (
     await collect(stripe.subscriptions.list({ status: "all", limit: 100 }))
-  ).filter(
-    (subscription) => !["canceled", "incomplete_expired"].includes(subscription.status),
-  );
+  ).filter((subscription) => !["canceled", "incomplete_expired"].includes(subscription.status));
   for (const subscription of subscriptions) {
     for (const item of subscription.items?.data || []) {
       const priceId = priceIdOf(item);
@@ -279,12 +277,7 @@ async function main() {
     );
     const ensuredByKey = new Map();
     for (const priceSpec of pricesForProduct) {
-      const priceResult = await ensurePrice(
-        stripe,
-        ensured.product,
-        priceSpec,
-        activePricesBefore,
-      );
+      const priceResult = await ensurePrice(stripe, ensured.product, priceSpec, activePricesBefore);
       canonicalPriceIds.add(priceResult.price.id);
       ensuredByKey.set(priceSpec.key, priceResult.price);
       if (priceSpec.envTarget) generatedEnv[priceSpec.envTarget] = priceResult.price.id;
@@ -320,9 +313,7 @@ async function main() {
     if (!looksManaged) continue;
 
     const retainedRetiredDefault =
-      product &&
-      !canonicalProductIds.has(product.id) &&
-      product.default_price === price.id;
+      product && !canonicalProductIds.has(product.id) && product.default_price === price.id;
     if (retainedRetiredDefault) {
       cleanup.push({
         type: "price",
@@ -352,7 +343,12 @@ async function main() {
 
   for (const product of productsBefore.filter((row) => row.active)) {
     if (canonicalProductIds.has(product.id)) continue;
-    if (!product.name?.startsWith("Wireline ") && product.name !== "Conversation Balance" && product.name !== "Runtime Balance") continue;
+    if (
+      !product.name?.startsWith("Wireline ") &&
+      product.name !== "Conversation Balance" &&
+      product.name !== "Runtime Balance"
+    )
+      continue;
 
     const productPriceIds = activePricesBefore
       .filter((price) => productIdOf(price) === product.id)

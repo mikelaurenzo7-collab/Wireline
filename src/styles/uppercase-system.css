@@ -10,7 +10,7 @@
  * the cased title tier below sets one value for every title size, and a fourth
  * variable that the same file overrode 50 lines later was a knob that looked
  * tunable and did nothing. */
-.wl-ui-caps {
+:is(.wl-ui-caps, .wl-cased) {
   --wl-caps-title-tracking: -0.025em;
   --wl-caps-control-tracking: 0.045em;
   /* Label tracking has one origin: the `overline` entry in
@@ -21,7 +21,7 @@
   --wl-caps-label-tracking: var(--wireline-typography-overline-letterSpacing);
 }
 
-.wl-ui-caps :where(h1, h2, h3, h4, h5, h6),
+:is(.wl-ui-caps, .wl-cased) :where(h1, h2, h3, h4, h5, h6),
 .wl-page-title,
 .wl-app-page-title,
 .wl-section-title,
@@ -223,7 +223,7 @@
 /* Controls join the cased system: buttons, tabs, menu items, badges, and nav.
  * Caps need air that lowercase does not, so the control tier carries its own
  * tracking rather than inheriting the tight display value. */
-.wl-ui-caps
+:is(.wl-ui-caps, .wl-cased)
   :is(
     button,
     [role="button"],
@@ -248,7 +248,7 @@
  * sentence, a value, or someone's name has to read as written — an agent name
  * in a sidebar row, a plan price, a search field's placeholder. Buttons in this
  * product are frequently composite rows, not bare labels. */
-.wl-ui-caps
+:is(.wl-ui-caps, .wl-cased)
   :is(button, [role="button"], [role="tab"], [role="menuitem"], .wl-btn, nav a, header a, footer a)
   :is(p, input, textarea, select, time, code, [data-value]) {
   letter-spacing: normal;
@@ -265,8 +265,8 @@
  * selector added above would have restarted the same race. Marking the opt-out
  * important ends the race permanently — no later rule can reintroduce the bug
  * by being more specific. */
-.wl-ui-caps .wl-preserve-case,
-.wl-ui-caps .wl-preserve-case * {
+:is(.wl-ui-caps, .wl-cased) .wl-preserve-case,
+:is(.wl-ui-caps, .wl-cased) .wl-preserve-case * {
   text-transform: none !important;
 }
 
@@ -277,7 +277,7 @@
  * it there does visible damage: the Overview greeting is
  * `wl-preserve-case wl-display-2`, and an unconditional reset took its -0.025em
  * off a 57.6px display heading, measured as -1.44px -> normal. */
-.wl-ui-caps
+:is(.wl-ui-caps, .wl-cased)
   .wl-preserve-case:not(
     .wl-display-1,
     .wl-display-2,
@@ -290,7 +290,7 @@
     .wl-card-title,
     .wl-metric-value
   ),
-.wl-ui-caps
+:is(.wl-ui-caps, .wl-cased)
   .wl-preserve-case
   *:not(
     .wl-display-1,
@@ -321,7 +321,7 @@
  * contract pins that string. Restating both here keeps the rendered result equal
  * to the authored one, which is the divergence this whole pass exists to close.
  * Case is the only thing the system changes here. */
-.wl-ui-caps
+:is(.wl-ui-caps, .wl-cased)
   :is([data-slot="dialog-title"], [data-slot="alert-dialog-title"], [data-slot="sheet-title"]) {
   font-weight: 600;
   text-transform: uppercase;
@@ -334,17 +334,17 @@
  * alert-dialog and sheet titles started taking the generic heading rule's weight
  * and 1.05 line-height while getting none of its case — the side effect without
  * the intent, which is worse than either. */
-.wl-ui-caps :is([data-slot="dialog-title"], [data-slot="sheet-title"]) {
+:is(.wl-ui-caps, .wl-cased) :is([data-slot="dialog-title"], [data-slot="sheet-title"]) {
   letter-spacing: var(--wl-caps-title-tracking);
   line-height: 1.15;
 }
 
-.wl-ui-caps [data-slot="alert-dialog-title"] {
+:is(.wl-ui-caps, .wl-cased) [data-slot="alert-dialog-title"] {
   letter-spacing: -0.02em;
   line-height: 1.25;
 }
 
-.wl-ui-caps :is(label, legend, th) {
+:is(.wl-ui-caps, .wl-cased) :is(label, legend, th) {
   letter-spacing: var(--wl-caps-label-tracking);
   text-transform: uppercase;
 }
@@ -353,7 +353,9 @@
  * the control itself — an uppercased `<input>` would shout the value the user
  * just typed, and `::placeholder` inherits the transform — plus any nested help
  * line or consent sentence, which live in a span or paragraph. */
-.wl-ui-caps :is(label, legend) :is(p, span, small, em, strong, a, input, textarea, select, button) {
+:is(.wl-ui-caps, .wl-cased)
+  :is(label, legend)
+  :is(p, span, small, em, strong, a, input, textarea, select, button) {
   letter-spacing: var(--wl-caps-control-tracking);
   text-transform: none;
 }
@@ -363,12 +365,14 @@
  * ("Preferred area code"), and the blanket reset above would miss it. A label
  * that wraps its control leads with the control, so its following sentence span
  * is never :first-child and correctly stays sentence case. */
-.wl-ui-caps :is(label, legend) > span:first-child:not(:has(input, textarea, select, button)) {
+:is(.wl-ui-caps, .wl-cased)
+  :is(label, legend)
+  > span:first-child:not(:has(input, textarea, select, button)) {
   letter-spacing: var(--wl-caps-label-tracking);
   text-transform: uppercase;
 }
 
-.wl-ui-caps
+:is(.wl-ui-caps, .wl-cased)
   :is(
     .wl-public-copy,
     .wl-page-copy,
@@ -384,7 +388,7 @@
 }
 
 @media (max-width: 640px) {
-  .wl-ui-caps {
+  :is(.wl-ui-caps, .wl-cased) {
     --wl-caps-control-tracking: 0.04em;
     /* The label tier deliberately has no responsive override, unlike the control
      * tier above it.

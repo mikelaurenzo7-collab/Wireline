@@ -71,7 +71,5 @@ if (count < max) {
     );
   }
 } else {
-  console.log(
-    `api-error ratchet OK: ${count}/${max} legacy responses without inline code`,
-  );
+  console.log(`api-error ratchet OK: ${count}/${max} legacy responses without inline code`);
 }

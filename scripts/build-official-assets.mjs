@@ -8,6 +8,7 @@
  *   web/ app-store/ social/ ads/ reels/ copy/
  */
 import { chromium } from "@playwright/test";
+import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 import { readFileSync, existsSync } from "node:fs";
 import { mkdir, rm, writeFile, copyFile, readdir } from "node:fs/promises";
 import path from "node:path";
@@ -369,7 +370,7 @@ async function main() {
   await ensureDir(outRoot);
 
   const cookie = await signIn();
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, ...chromiumLaunchOptions() });
   try {
     const context = await browser.newContext({
       reducedMotion: "reduce",

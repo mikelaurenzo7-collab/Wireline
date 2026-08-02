@@ -25,10 +25,7 @@ const required = [
   "UPSTASH_REDIS_REST_TOKEN",
 ];
 
-const gateway = [
-  "AI_GATEWAY_API_KEY",
-  "WIRELINE_GATEWAY_STRUCTURED_MODEL",
-];
+const gateway = ["AI_GATEWAY_API_KEY", "WIRELINE_GATEWAY_STRUCTURED_MODEL"];
 
 const recommended = [
   "OAUTH_STATE_SECRET",
@@ -85,7 +82,9 @@ async function main() {
       // covering many targets. Coverage is correct as long as the UNION of
       // every entry's targets covers the required targets — not the per-entry
       // missing set, which unions false negatives when entries are split.
-      const covered = new Set(entries.flatMap((entry) => (Array.isArray(entry.target) ? entry.target : [])));
+      const covered = new Set(
+        entries.flatMap((entry) => (Array.isArray(entry.target) ? entry.target : [])),
+      );
       const missingTargets = TARGETS.filter((t) => t !== "development" && !covered.has(t));
       const types = [...new Set(entries.map((entry) => entry.type || "plain"))].join(", ");
       console.log(
@@ -117,7 +116,9 @@ async function main() {
   console.log(
     "  AI Gateway: deployed Vercel functions can use VERCEL_OIDC_TOKEN; AI_GATEWAY_API_KEY remains recommended for local and non-Vercel execution.",
   );
-  console.log(`  Informational gaps — gateway: ${missingGateway}, operations: ${missingRecommended}, voice: ${missingVoice}.`);
+  console.log(
+    `  Informational gaps — gateway: ${missingGateway}, operations: ${missingRecommended}, voice: ${missingVoice}.`,
+  );
 }
 
 main().catch((error) => {

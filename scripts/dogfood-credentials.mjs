@@ -3,7 +3,9 @@
  * Credentials are intentionally never committed as script defaults.
  */
 export function requireDogfoodCredentials() {
-  const email = (process.env.DOGFOOD_EMAIL || process.env.E2E_USER_EMAIL || "").trim().toLowerCase();
+  const email = (process.env.DOGFOOD_EMAIL || process.env.E2E_USER_EMAIL || "")
+    .trim()
+    .toLowerCase();
   const password = process.env.DOGFOOD_PASSWORD || process.env.E2E_USER_PASSWORD || "";
 
   if (!email || !password) {

@@ -6,8 +6,14 @@ const sourcePath = resolve(root, "design-tokens/wireline.tokens.json");
 const cssOutputPath = resolve(root, "src/styles/tokens.generated.css");
 const tsOutputPath = resolve(root, "src/constants/generated-design-tokens.ts");
 const swiftOutputPath = resolve(root, "ios/Wireline/Theme/WirelineDesignTokens.generated.swift");
-const swiftSharedOutputPath = resolve(root, "ios/WirelineShared/WirelineDesignTokens.generated.swift");
-const kotlinOutputPath = resolve(root, "android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt");
+const swiftSharedOutputPath = resolve(
+  root,
+  "ios/WirelineShared/WirelineDesignTokens.generated.swift",
+);
+const kotlinOutputPath = resolve(
+  root,
+  "android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt",
+);
 const extensionOutputPath = resolve(root, "apps/browser-extension/panel/tokens.generated.css");
 
 const tokens = JSON.parse(await readFile(sourcePath, "utf8"));
@@ -110,8 +116,13 @@ const rgbaToCompose = (value) => {
   const rgba = String(value).match(/^rgba\((\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+)\)$/);
   if (rgba) {
     const [, r, g, b, a] = rgba;
-    const alpha = Math.round(Number(a) * 255).toString(16).padStart(2, "0").toUpperCase();
-    const rgb = [r, g, b].map((part) => Number(part).toString(16).padStart(2, "0").toUpperCase()).join("");
+    const alpha = Math.round(Number(a) * 255)
+      .toString(16)
+      .padStart(2, "0")
+      .toUpperCase();
+    const rgb = [r, g, b]
+      .map((part) => Number(part).toString(16).padStart(2, "0").toUpperCase())
+      .join("");
     return `Color(0x${alpha}${rgb})`;
   }
   const hex = String(value).match(/^#([0-9A-Fa-f]{6})$/);
@@ -120,8 +131,15 @@ const rgbaToCompose = (value) => {
 };
 
 const colorEntries = orderedEntries.filter(([path]) => path.startsWith("color."));
-const dimensionEntries = orderedEntries.filter(([path, value]) => ["space.", "radius.", "interaction.", "typography.", "layout."].some((prefix) => path.startsWith(prefix)) && pxNumber(value) !== null);
-const durationEntries = orderedEntries.filter(([path, value]) => path.startsWith("motion.duration.") && millisecondNumber(value) !== null);
+const dimensionEntries = orderedEntries.filter(
+  ([path, value]) =>
+    ["space.", "radius.", "interaction.", "typography.", "layout."].some((prefix) =>
+      path.startsWith(prefix),
+    ) && pxNumber(value) !== null,
+);
+const durationEntries = orderedEntries.filter(
+  ([path, value]) => path.startsWith("motion.duration.") && millisecondNumber(value) !== null,
+);
 const zIndexEntries = orderedEntries.filter(([path]) => path.startsWith("zIndex."));
 // Numeric motion scalars (press scale, lift) — emitted as native constants so
 // Swift/Kotlin press feedback stays locked to the single token source instead
@@ -135,15 +153,23 @@ const swift = [
   "",
   "public enum WirelineDesignTokens {",
   "  public enum ColorToken {",
-  ...colorEntries.map(([path, value]) => `    public static let ${camel(path)} = ${rgbaToSwift(value) ?? "Color.clear"}`),
+  ...colorEntries.map(
+    ([path, value]) =>
+      `    public static let ${camel(path)} = ${rgbaToSwift(value) ?? "Color.clear"}`,
+  ),
   "  }",
   "",
   "  public enum Metric {",
-  ...dimensionEntries.map(([path, value]) => `    public static let ${camel(path)}: CGFloat = ${pxNumber(value)}`),
+  ...dimensionEntries.map(
+    ([path, value]) => `    public static let ${camel(path)}: CGFloat = ${pxNumber(value)}`,
+  ),
   "  }",
   "",
   "  public enum Motion {",
-  ...durationEntries.map(([path, value]) => `    public static let ${camel(path)}: Double = ${millisecondNumber(value) / 1000}`),
+  ...durationEntries.map(
+    ([path, value]) =>
+      `    public static let ${camel(path)}: Double = ${millisecondNumber(value) / 1000}`,
+  ),
   `    public static let pressScale: CGFloat = ${pressScaleValue}`,
   `    public static let liftPx: CGFloat = ${liftPxValue}`,
   "  }",
@@ -165,7 +191,9 @@ const kotlin = [
   "",
   "internal object WirelineDesignTokens {",
   "  object ColorToken {",
-  ...colorEntries.map(([path, value]) => `    val ${camel(path)} = ${rgbaToCompose(value) ?? "Color.Transparent"}`),
+  ...colorEntries.map(
+    ([path, value]) => `    val ${camel(path)} = ${rgbaToCompose(value) ?? "Color.Transparent"}`,
+  ),
   "  }",
   "",
   "  object Metric {",
@@ -181,7 +209,9 @@ const kotlin = [
   "  }",
   "",
   "  object Motion {",
-  ...durationEntries.map(([path, value]) => `    const val ${camel(path)}Millis = ${millisecondNumber(value)}`),
+  ...durationEntries.map(
+    ([path, value]) => `    const val ${camel(path)}Millis = ${millisecondNumber(value)}`,
+  ),
   `    const val pressScale = ${pressScaleValue}f`,
   `    const val liftPx = ${liftPxValue}`,
   "  }",
@@ -210,4 +240,6 @@ await Promise.all([
   writeFile(extensionOutputPath, css),
 ]);
 
-console.log(`Generated ${orderedEntries.length} Wireline design tokens for web, extension, iOS, and Android.`);
+console.log(
+  `Generated ${orderedEntries.length} Wireline design tokens for web, extension, iOS, and Android.`,
+);

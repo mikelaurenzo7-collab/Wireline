@@ -42,11 +42,7 @@ function repoPath(absolutePath) {
 
 function normalizeTarget(sourcePath, rawTarget) {
   const trimmed = rawTarget.trim();
-  if (
-    !trimmed ||
-    trimmed.startsWith("#") ||
-    /^(?:https?:|mailto:|tel:|data:)/i.test(trimmed)
-  ) {
+  if (!trimmed || trimmed.startsWith("#") || /^(?:https?:|mailto:|tel:|data:)/i.test(trimmed)) {
     return null;
   }
 
@@ -161,11 +157,7 @@ if (problems.length === 0) {
   }
 
   for (const file of trackedMarkdown) {
-    if (
-      file.startsWith("docs/") ||
-      file.startsWith(".github/") ||
-      canonicalLinks.has(file)
-    ) {
+    if (file.startsWith("docs/") || file.startsWith(".github/") || canonicalLinks.has(file)) {
       continue;
     }
     problems.push(

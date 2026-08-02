@@ -16,21 +16,30 @@ const android = readFileSync(
 // The token source is DTCG-shaped: leaves carry "$value", not the legacy
 // "value" key. Flattening on the wrong key silently yields zero leaves and
 // turns the whole parity sweep into a no-op, so match "$value" explicitly.
-const flatten = (obj, prefix = []) => Object.entries(obj).flatMap(([key, value]) => {
-  if (value && typeof value === "object" && "$value" in value) {
-    return [[prefix.concat(key).join("."), String(value.$value)]];
-  }
-  if (value && typeof value === "object") return flatten(value, prefix.concat(key));
-  return [];
-});
+const flatten = (obj, prefix = []) =>
+  Object.entries(obj).flatMap(([key, value]) => {
+    if (value && typeof value === "object" && "$value" in value) {
+      return [[prefix.concat(key).join("."), String(value.$value)]];
+    }
+    if (value && typeof value === "object") return flatten(value, prefix.concat(key));
+    return [];
+  });
 
 const expandHex = (value) => {
   const digits = value.slice(1);
-  return digits.length === 3 ? digits.split("").map((d) => d + d).join("") : digits;
+  return digits.length === 3
+    ? digits
+        .split("")
+        .map((d) => d + d)
+        .join("")
+    : digits;
 };
 
 const problems = [];
-if (!iosSharedColor.includes("public extension Color") || !iosSharedColor.includes("init(hex: UInt32")) {
+if (
+  !iosSharedColor.includes("public extension Color") ||
+  !iosSharedColor.includes("init(hex: UInt32")
+) {
   problems.push("iOS shared targets are missing the Color(hex:) token decoder.");
 }
 if (!iosSharedBrand.includes("enum Brand") || !iosSharedBrand.includes("extension Font")) {
@@ -48,7 +57,8 @@ for (const [name, value] of flatten(canonical)) {
     ["Android tokens", android, `0xff${hex}`],
   ];
   for (const [label, text, literal] of surfaces) {
-    if (!text.toLowerCase().includes(literal)) problems.push(`${label} is missing ${name} (${value}).`);
+    if (!text.toLowerCase().includes(literal))
+      problems.push(`${label} is missing ${name} (${value}).`);
   }
 }
 

@@ -1,4 +1,5 @@
 import { chromium } from "@playwright/test";
+import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -240,7 +241,9 @@ async function expectEnabled(locator, timeoutMs) {
     if (await locator.isEnabled().catch(() => false)) return;
     await locator.page().waitForTimeout(150);
   }
-  throw new Error("Submit control stayed disabled — terms checkbox or password policy likely unmet.");
+  throw new Error(
+    "Submit control stayed disabled — terms checkbox or password policy likely unmet.",
+  );
 }
 
 async function completeOnboardingIfNecessary(page, viewportName, issues) {
@@ -338,7 +341,7 @@ async function captureAuthenticated(browser, viewport, storageState, issues) {
 }
 
 await mkdir(outputDir, { recursive: true });
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: true, ...chromiumLaunchOptions() });
 const issues = [];
 let storageState = null;
 
@@ -382,8 +385,7 @@ if (qaFocus === "auto") {
 }
 
 try {
-  const desktop =
-    viewports.find((viewport) => viewport.name === "desktop") || viewports[0];
+  const desktop = viewports.find((viewport) => viewport.name === "desktop") || viewports[0];
 
   if (qaFocus === "onboarding") {
     console.log("Running onboarding flow focused QA...");

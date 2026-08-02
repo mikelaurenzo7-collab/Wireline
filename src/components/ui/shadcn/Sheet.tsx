@@ -58,7 +58,7 @@ const SheetContent = React.forwardRef<
       data-slot="sheet-content"
       data-side={side}
       className={cn(
-        "wl-ui-caps",
+        "wl-cased",
         sheetVariants({ side }),
         "pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pl-[max(1.5rem,env(safe-area-inset-left,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))]",
         className,

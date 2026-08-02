@@ -14,6 +14,7 @@
  *   manifest.json
  */
 import { chromium } from "@playwright/test";
+import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 import { readFileSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -31,7 +32,8 @@ function loadEnvFileEarly(filePath) {
       if (i < 0) continue;
       const k = line.slice(0, i).trim();
       let v = line.slice(i + 1).trim();
-      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'")))
+        v = v.slice(1, -1);
       if (!(k in process.env)) process.env[k] = v;
     }
   } catch {
@@ -49,6 +51,9 @@ const useMocks = process.env.MARKETING_USE_MOCKS === "1" || /localhost|127\.0\.0
 
 const outRoot = path.join(repoRoot, "marketing-kit");
 
+// Source of truth for every claim the copy pack makes.
+const CAMPAIGN_DOC = "docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md";
+
 const layouts = {
   desktop: { width: 1920, height: 1080 },
   mobile: { width: 390, height: 844 },
@@ -59,8 +64,42 @@ function json(body, status = 200) {
   return { status, contentType: "application/json", body: JSON.stringify(body) };
 }
 
+/**
+ * The one demo identity, so the session route and the seeded storage cannot
+ * describe two different people.
+ */
+const DEMO_USER = {
+  id: "2f85bad8-f9f6-479f-bb39-818d9cb9bf07",
+  email: "composer.demo@trywireline.com",
+  full_name: "Wireline Demo Showcase",
+  role: "owner",
+  is_owner: false,
+  account_type: "business",
+};
+
 function mockApi(pathname) {
   const now = "2026-05-22T12:00:00.000Z";
+
+  /*
+   * Without this the entire authenticated half of the kit is a screenshot of
+   * the sign-in wall.
+   *
+   * `mockSession` seeds `localStorage.wireline_session`, which is the *legacy*
+   * key. AuthContext moved to an httpOnly cookie hydrated through
+   * `GET /api/auth/session`, and that route fell through to the catch-all
+   * `{ ok: true }` below — no `user` field, so `data.user ?? null` resolved to
+   * null and every authenticated route bounced to /signin. The legacy key does
+   * not even survive: AuthContext's migration path reads it, POSTs it to
+   * `/api/auth/migrate-session`, and deletes it on first load.
+   *
+   * It failed silently, and the output looks plausible until you compare bytes:
+   * all eight "authenticated" desktop stills were byte-identical at 123,587
+   * bytes — the same sign-in page filed as overview, studio, connections,
+   * phone-logs, phone-outbound, insights, apps, and billing, at all three
+   * layouts, plus three reels recorded against the same wall.
+   */
+  if (pathname === "/api/auth/session") return json({ user: DEMO_USER });
+
   if (pathname === "/api/nav-counts") return json({ "/phone": 24, "/overview": 6 });
   if (pathname === "/api/user-preferences") {
     return json({ persona: "operator", onboarding_completed: true, tour_completed: true });
@@ -76,8 +115,20 @@ function mockApi(pathname) {
   if (pathname === "/api/agents") {
     return json({
       agents: [
-        { id: "demo-avery-2f85", name: "Avery", role: "front-desk", status: "active", created_at: now },
-        { id: "demo-riley-2f85", name: "Riley", role: "sales-development", status: "active", created_at: now },
+        {
+          id: "demo-avery-2f85",
+          name: "Avery",
+          role: "front-desk",
+          status: "active",
+          created_at: now,
+        },
+        {
+          id: "demo-riley-2f85",
+          name: "Riley",
+          role: "sales-development",
+          status: "active",
+          created_at: now,
+        },
       ],
     });
   }
@@ -91,15 +142,30 @@ function mockApi(pathname) {
       meta: { connected: false, configured: true },
       shopify: { connected: true, configured: true },
       square: { connected: false, configured: true },
-      microsoft_teams: { connected: true, team_name: "Alerts", channel_name: "wins", connected_at: now },
+      microsoft_teams: {
+        connected: true,
+        team_name: "Alerts",
+        channel_name: "wins",
+        connected_at: now,
+      },
       microsoft_excel: { connected: true, connected_at: now },
     });
   }
   if (pathname === "/api/emails/accounts") {
     return json({
       accounts: [
-        { id: "e1", provider: "google", email_address: "ops@wireline.test", agent_id: "demo-avery-2f85" },
-        { id: "e2", provider: "microsoft", email_address: "billing@wireline.test", agent_id: "demo-riley-2f85" },
+        {
+          id: "e1",
+          provider: "google",
+          email_address: "ops@wireline.test",
+          agent_id: "demo-avery-2f85",
+        },
+        {
+          id: "e2",
+          provider: "microsoft",
+          email_address: "billing@wireline.test",
+          agent_id: "demo-riley-2f85",
+        },
       ],
     });
   }
@@ -167,7 +233,8 @@ function mockApi(pathname) {
       totals: { calls: 24, avg_qa: 84 },
     });
   }
-  if (pathname === "/api/settings") return json({ brand_name: "Wireline", primary_color: "#4F1E7B", max_agents: 5 });
+  if (pathname === "/api/settings")
+    return json({ brand_name: "Wireline", primary_color: "#4F1E7B", max_agents: 5 });
   return json({ ok: true });
 }
 
@@ -224,7 +291,8 @@ function parseSetCookie(header) {
 }
 
 async function fetchSession() {
-  if (!resolvedEmail || !resolvedPassword) throw new Error("Set DEMO_PASSWORD / DOGFOOD_* / WIRELINE_E2E_*");
+  if (!resolvedEmail || !resolvedPassword)
+    throw new Error("Set DEMO_PASSWORD / DOGFOOD_* / WIRELINE_E2E_*");
   const res = await fetch(new URL("/api/auth/signin", baseURL).toString(), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -246,16 +314,21 @@ async function fetchSession() {
 
 async function loginViaUi(browser) {
   const ctx = await browser.newContext({ viewport: layouts.desktop });
-  await ctx.addInitScript(({ o }) => {
-    if (window.location.origin !== o) return;
-    localStorage.setItem("wireline_cookie_consent", "acknowledged");
-  }, { o: new URL(baseURL).origin });
+  await ctx.addInitScript(
+    ({ o }) => {
+      if (window.location.origin !== o) return;
+      localStorage.setItem("wireline_cookie_consent", "acknowledged");
+    },
+    { o: new URL(baseURL).origin },
+  );
   const page = await ctx.newPage();
   await page.goto(new URL("/signin", baseURL).toString(), { waitUntil: "domcontentloaded" });
   await page.fill('input[type="email"]', resolvedEmail);
   await page.fill('input[type="password"]', resolvedPassword);
   await page.locator('form button[type="submit"]').click();
-  await page.waitForURL(/\/(overview|studio|phone|connections|apps)?/i, { timeout: 45_000 }).catch(() => {});
+  await page
+    .waitForURL(/\/(overview|studio|phone|connections|apps)?/i, { timeout: 45_000 })
+    .catch(() => {});
   await page.waitForTimeout(2000);
   const cookies = await ctx.cookies();
   const sessionCookie = cookies.find((c) => c.name === "wireline_session");
@@ -289,32 +362,38 @@ async function seedSession(context, session) {
       },
     ]);
   }
-  await context.addInitScript(({ o, s }) => {
-    if (window.location.origin !== o) return;
-    if (s?.access_token) localStorage.setItem("wireline_session", JSON.stringify(s));
-    localStorage.setItem("wireline_cookie_consent", "acknowledged");
-    localStorage.setItem("wireline_tour_seen", "true");
-    localStorage.setItem("wireline_onboarding_completed", "true");
-  }, { o: origin, s: session?.access_token ? session : null });
+  await context.addInitScript(
+    ({ o, s }) => {
+      if (window.location.origin !== o) return;
+      if (s?.access_token) localStorage.setItem("wireline_session", JSON.stringify(s));
+      localStorage.setItem("wireline_cookie_consent", "acknowledged");
+      localStorage.setItem("wireline_tour_seen", "true");
+      localStorage.setItem("wireline_onboarding_completed", "true");
+    },
+    { o: origin, s: session?.access_token ? session : null },
+  );
 }
 
 async function mockSession(context) {
-  await seedSession(context, {
-    access_token: "marketing-mock",
-    user: {
-      id: "2f85bad8-f9f6-479f-bb39-818d9cb9bf07",
-      email: resolvedEmail,
-      full_name: "Wireline Demo Showcase",
-      role: "owner",
-      is_owner: false,
-    },
-  });
+  // Storage only carries the consent/tour flags; the session itself is served
+  // by the mocked `/api/auth/session` route, which is what the app actually
+  // reads. Seeding the legacy token here is deliberately not the credential —
+  // AuthContext deletes it during migration on first load.
+  await seedSession(context, { user: { ...DEMO_USER, email: resolvedEmail } });
 }
 
 async function dismissTour(page) {
   const close = page.getByRole("button", { name: /skip|close|dismiss|not now/i });
-  if (await close.first().isVisible().catch(() => false)) {
-    await close.first().click().catch(() => {});
+  if (
+    await close
+      .first()
+      .isVisible()
+      .catch(() => false)
+  ) {
+    await close
+      .first()
+      .click()
+      .catch(() => {});
     await page.waitForTimeout(500);
   }
 }
@@ -401,51 +480,103 @@ async function captureZoomCrops(browser, session, manifest) {
   await ctx.close();
 }
 
+/**
+ * Walk one scene. A hold is a still frame the editor can cut from; a scroll is
+ * eased over several small steps rather than jumped, because a single large
+ * wheel event records as a teleport and reads as a glitch in the cut.
+ */
+async function playBeats(page, beats) {
+  for (const beat of beats) {
+    await page.goto(new URL(beat.route, baseURL).toString(), { timeout: 60_000 });
+    await settle(page);
+
+    if (beat.openDialog) {
+      // The reel's one modal beat. Worth filming deliberately: modals render in
+      // a portal outside the app root, so until the cased tiers were carried
+      // onto the portalled surfaces they were the only part of the product that
+      // did not share its type system. This frame is the proof.
+      //
+      // The trigger is named, not matched fuzzily. A pattern like
+      // /call|dial|new|start/ reads fine and clicks the wrong control: on the
+      // outbound tab it matched the "Callbacks" tab before it ever reached
+      // "Dial now", so the beat filmed a tab switch instead of a modal — and,
+      // because the click was wrapped in a catch, reported success either way.
+      const trigger = page.getByRole("button", { name: beat.openDialog, exact: true }).first();
+      await trigger.click({ timeout: 8000 });
+      await page.waitForSelector('[data-slot="dialog-content"]', { timeout: 8000 });
+      await page.waitForTimeout(700);
+    }
+
+    await page.waitForTimeout(beat.hold ?? 2200);
+
+    if (beat.scroll) {
+      const steps = 12;
+      for (let i = 0; i < steps; i++) {
+        await page.mouse.wheel(0, Math.round(beat.scroll / steps));
+        await page.waitForTimeout(90);
+      }
+      await page.waitForTimeout(900);
+    }
+  }
+}
+
 async function recordReel(browser, session, manifest) {
   const videoDir = path.join(outRoot, "videos");
   await mkdir(videoDir, { recursive: true });
 
+  /*
+   * One capture per cut the campaign document actually briefs, so footage and
+   * brief cannot drift. Previously this recorded three clips that corresponded
+   * to no brief at all, and the 46-second master — the one cut the document
+   * calls authoritative — had no capture behind it.
+   *
+   * `reel-compare-pan` is deliberately gone. It panned the competitor
+   * comparison table, and the reel doctrine in the same document is explicit:
+   * "Real product only; never stock footage, mock dashboards, or vendor marks."
+   * A reel asset generator should not be the one thing in the kit producing
+   * footage of other companies' names.
+   *
+   * Each `beat` is a scene from the brief. Holds are long enough to cut from
+   * (the editor trims down, never stretches up) and the scrolls are eased, so
+   * the motion in the footage matches what a person actually sees.
+   */
   const reels = [
     {
-      id: "reel-operator-console",
-      viewport: layouts.reel,
-      steps: async (page) => {
-        for (const route of ["/overview", "/studio", "/phone?tab=logs", "/connections", "/apps"]) {
-          await page.goto(new URL(route, baseURL).toString());
-          await settle(page);
-          await page.waitForTimeout(2200);
-        }
-      },
-    },
-    {
-      id: "reel-compare-pan",
-      viewport: layouts.reel,
-      steps: async (page) => {
-        await page.goto(new URL("/compare", baseURL).toString());
-        await settle(page);
-        const table = page.locator("table").first();
-        const box = await table.boundingBox().catch(() => null);
-        if (box) {
-          for (let i = 0; i < 8; i++) {
-            await page.mouse.wheel(120, 0);
-            await page.waitForTimeout(400);
-          }
-        }
-        await page.waitForTimeout(1500);
-      },
-    },
-    {
-      id: "reel-auth-to-phone",
+      // The 46s master, scene-for-scene from the approved cut's scene map.
+      id: "reel-46s-master-walkthrough",
       viewport: layouts.desktop,
-      steps: async (page) => {
-        await page.goto(new URL("/", baseURL).toString());
-        await settle(page);
-        await page.waitForTimeout(2000);
-        await page.goto(new URL("/phone?tab=logs", baseURL).toString());
-        await settle(page);
-        await page.mouse.wheel(0, 280);
-        await page.waitForTimeout(2500);
-      },
+      beats: [
+        { route: "/", hold: 4000, scroll: 900 },
+        { route: "/overview", hold: 3000 },
+        { route: "/studio", hold: 3200 },
+        { route: "/knowledge", hold: 2600 },
+        { route: "/settings/phone", hold: 3000 },
+        { route: "/phone?tab=outbound", hold: 2600, openDialog: "Dial now" },
+        { route: "/email", hold: 2600 },
+        { route: "/phone?tab=logs", hold: 3000, scroll: 280 },
+      ],
+    },
+    {
+      // 30s product walkthrough — the document's four verbs, four screens.
+      id: "reel-30s-product-loop",
+      viewport: layouts.reel,
+      beats: [
+        { route: "/studio?create=1", hold: 3400 }, // Create
+        { route: "/knowledge", hold: 3400 }, // Train
+        { route: "/settings/phone", hold: 3400 }, // Wire
+        { route: "/phone?tab=logs", hold: 3400, scroll: 240 }, // Run
+      ],
+    },
+    {
+      // 15s missed-call cutdown — the hinge is "You cannot pick up / Your agent
+      // can", so the picture is the call arriving and the outcome landing.
+      id: "reel-15s-missed-call",
+      viewport: layouts.reel,
+      beats: [
+        { route: "/phone?tab=logs", hold: 3200 },
+        { route: "/phone?tab=outbound", hold: 2600, openDialog: "Dial now" },
+        { route: "/email", hold: 2600 },
+      ],
     },
   ];
 
@@ -462,57 +593,101 @@ async function recordReel(browser, session, manifest) {
     }
     const page = await ctx.newPage();
     console.log(`[video] ${reel.id}`);
-    await reel.steps(page);
+    await playBeats(page, reel.beats);
+
+    // Save under the cut's own name. Playwright writes `page@<hash>.webm`, so
+    // the kit was handing an editor three identical-looking hashes and a
+    // manifest to cross-reference them by — the one step where the asset stops
+    // being self-describing. `saveAs` must follow `page.close()`: that is what
+    // flushes the recording.
     const video = page.video();
-    const vpath = video ? await video.path() : null;
     await page.close();
+    const target = path.join(videoDir, `${reel.id}.webm`);
+    if (video) {
+      await video.saveAs(target);
+      await video.delete().catch(() => {});
+    }
     await ctx.close();
+
     manifest.assets.push({
       type: "video",
       id: reel.id,
-      path: vpath ? path.relative(repoRoot, vpath) : `videos/${reel.id}.webm`,
+      path: path.relative(repoRoot, target),
+      viewport: `${reel.viewport.width}x${reel.viewport.height}`,
+      beats: reel.beats.length,
       note: "Playwright webm — import to CapCut/Premiere for 9:16 export",
     });
   }
 }
 
+/**
+ * The Brand Spine table in the campaign document, read rather than restated.
+ *
+ * The copy pack used to hardcode its own headline, CTA, and reel hooks, and
+ * they had drifted past the guardrails in that same document: the 30s reel hook
+ * named three competitors by name — against the reel doctrine's "never vendor
+ * marks" — the 15s hook narrowed the product to "your receptionist", and the
+ * CTA offered a "Free Builder" and a demo line while omitting the launch offer's
+ * mandated price line entirely. Nothing checked, so nothing caught it.
+ *
+ * `scripts/generate-campaign-vo.mjs` already treats the document as the source
+ * and is pinned to it by a contract. The reel copy now works the same way.
+ */
+function readBrandSpine() {
+  const doc = readFileSync(path.join(repoRoot, CAMPAIGN_DOC), "utf8");
+  const spine = {};
+  for (const line of doc.split(/\r?\n/)) {
+    const row = line.match(/^\|\s*([^|]+?)\s*\|\s*(.+?)\s*\|\s*$/);
+    if (!row) continue;
+    const [, key, value] = row;
+    if (key === "Element" || /^-+$/.test(key)) continue;
+    spine[key.toLowerCase()] = value;
+  }
+  const required = ["north star", "compact line", "outcome line", "product loop", "cta", "price"];
+  const missing = required.filter((key) => !spine[key]);
+  if (missing.length) {
+    throw new Error(
+      `Brand Spine is missing ${missing.join(", ")} in ${CAMPAIGN_DOC}. ` +
+        "The copy pack is generated from that table and will not invent replacements.",
+    );
+  }
+  return spine;
+}
+
 async function writeCopy(manifest) {
   const copyDir = path.join(outRoot, "copy");
   await mkdir(copyDir, { recursive: true });
+  const spine = readBrandSpine();
   const md = `# Wireline marketing copy pack
 
 Generated from **${resolvedEmail}** on ${baseURL} — ${new Date().toISOString().slice(0, 10)}.
 
+Every line below is read from the Brand Spine in \`${CAMPAIGN_DOC}\`. Edit the
+campaign document, re-run \`npm run marketing:kit\`; do not edit this file.
+
 ## Hero (website / LinkedIn)
 
-**Headline:** One console for every customer conversation — voice, SMS, and email.
+**Headline:** ${spine["north star"]}
 
-**Sub:** Wireline agents answer, book, sync CRM, and escalate to your team with a real TCPA ledger. Not another voice API you have to assemble.
+**Sub:** ${spine["compact line"]} ${spine["outcome line"]}
 
-**CTA:** Start free on Free Builder · Call demo line (630) 581-1834
+**CTA:** ${spine.cta} — ${spine.price}
 
 ## 15s reel hook (vertical)
 
-"Your receptionist is a phone hub now. Watch call history, integrations, and live agents — all in Wireline."
+"You cannot pick up. Your agent can." ${spine["outcome line"]}
 
-## 30s reel (pan compare table)
+## 30s reel (product loop)
 
-"Honest scoring vs Bland, Retell, and roll-your-own Vapi. Wireline wins when you need the full operator product."
+"${spine["product loop"]}" — four verbs, four screens, real product in every frame.
 
 ## Instagram carousel (5 slides)
 
-1. Auth hero — "Voice agents for every channel"
-2. Phone zoom — "Hot leads surface automatically"
-3. Integrations — "10+ connectors, one hub"
-4. Compare — "Why Wireline vs voice-only APIs"
-5. CTA — trywireline.com + demo line
-
-## Call recordings note
-
-Demo account call logs are seeded with summaries and QA scores but **no hosted audio URLs** yet. For website hero audio:
-
-- Use **live demo line (630) 581-1834** and record a screen+call session, or
-- Export a real tenant call from **Logs → playback** after a staging call.
+1. Hero — "${spine["north star"]}"
+2. Studio — "Train it in plain language: the job, the tone, the greeting"
+3. Number — "Paid plans include a Wireline number"
+4. Outcomes — "${spine["outcome line"]}"
+5. CTA — "${spine.cta}. ${spine.price}"
 
 ## Asset folders
 
@@ -561,7 +736,7 @@ async function run() {
     assets: [],
   };
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, ...chromiumLaunchOptions() });
   let session = null;
   if (!useMocks) {
     session = await fetchSession().catch(() => null);

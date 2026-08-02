@@ -64,7 +64,8 @@ for (const file of routeFiles) {
   // A mount is strictly `x.use(subRouter)` or `x.use("/prefix", subRouter)`;
   // path-middleware chains with extra arguments do not count as mounting.
   const mountedModules = new Set();
-  const mountRe = /\b(?:app|router)\.use\(\s*(?:["'][^"']*["']\s*,\s*)?([A-Za-z_$][\w$]*)\s*,?\s*\)/g;
+  const mountRe =
+    /\b(?:app|router)\.use\(\s*(?:["'][^"']*["']\s*,\s*)?([A-Za-z_$][\w$]*)\s*,?\s*\)/g;
   for (const match of content.matchAll(mountRe)) {
     const target = defaultImports.get(match[1]);
     if (target) mountedModules.add(target);
@@ -80,7 +81,10 @@ for (const file of routeFiles) {
 const registryImports = new Map();
 const registryImportRe = /import\s+(\w+)\s+from\s+["']\.\.\/routes\/([\w/-]+)["']/g;
 for (const match of source.matchAll(registryImportRe)) {
-  const resolved = resolveRelativeImport("src/server/register-api-routes.ts", `../routes/${match[2]}`);
+  const resolved = resolveRelativeImport(
+    "src/server/register-api-routes.ts",
+    `../routes/${match[2]}`,
+  );
   if (resolved) registryImports.set(match[1], path.resolve(resolved));
 }
 const mounted = new Set();
@@ -109,11 +113,15 @@ const mountedElsewhereFiles = new Set();
 for (const { file, mountedBy } of MOUNTED_ELSEWHERE) {
   mountedElsewhereFiles.add(path.resolve(ROUTES_DIR, file));
   if (!existsSync(path.join(ROUTES_DIR, file))) {
-    problems.push(`MOUNTED_ELSEWHERE entry ${file} does not exist under src/routes/ (remove the stale entry).`);
+    problems.push(
+      `MOUNTED_ELSEWHERE entry ${file} does not exist under src/routes/ (remove the stale entry).`,
+    );
     continue;
   }
   if (!existsSync(mountedBy)) {
-    problems.push(`MOUNTED_ELSEWHERE claims ${file} is mounted by ${mountedBy}, but that file does not exist.`);
+    problems.push(
+      `MOUNTED_ELSEWHERE claims ${file} is mounted by ${mountedBy}, but that file does not exist.`,
+    );
     continue;
   }
   const mounterSource = readFileSync(mountedBy, "utf8");
@@ -122,12 +130,18 @@ for (const { file, mountedBy } of MOUNTED_ELSEWHERE) {
     `import\\s+([A-Za-z_$][\\w$]*)\\s+from\\s+["'][^"']*/${moduleName}["']`,
   ).exec(mounterSource);
   if (!importMatch) {
-    problems.push(`${mountedBy} does not import src/routes/${file} — the MOUNTED_ELSEWHERE claim is stale.`);
+    problems.push(
+      `${mountedBy} does not import src/routes/${file} — the MOUNTED_ELSEWHERE claim is stale.`,
+    );
     continue;
   }
-  const useRe = new RegExp(`\\b(?:app|router)\\.use\\(\\s*(?:["'][^"']*["']\\s*,\\s*)?${importMatch[1]}\\s*,?\\s*\\)`);
+  const useRe = new RegExp(
+    `\\b(?:app|router)\\.use\\(\\s*(?:["'][^"']*["']\\s*,\\s*)?${importMatch[1]}\\s*,?\\s*\\)`,
+  );
   if (!useRe.test(mounterSource)) {
-    problems.push(`${mountedBy} imports src/routes/${file} but never app.use()/router.use()s it (silent 404).`);
+    problems.push(
+      `${mountedBy} imports src/routes/${file} but never app.use()/router.use()s it (silent 404).`,
+    );
   }
 }
 
@@ -171,12 +185,36 @@ if (!appUseLines[0]?.line.includes('"/api/health", healthRouter')) {
   problems.push("/api/health must be the first registered API route.");
 }
 
-requireOrder("spendControlRouter", "auditRouter", "legacy /api/spend/budget shadowing depends on this order");
-requireOrder("metaWebhookRouter", '"/api/webhooks", webhookRouter', "public Meta webhook receiver must keep precedence over tenant webhook management");
-requireOrder("authOAuthRouter", "authRouter", "OAuth provider callback routes must precede the generic auth router");
-requireOrder("agentRouter", "agentWorkspaceRouter", "canonical agent CRUD/config routes should precede workspace helpers");
-requireOrder("dashboardRouter", "fleetRouter", "overview/calls route plane should precede assistant presence helpers");
-requireOrder("pipelineRouter", "quotaRouter", "insights/pipeline routes should stay ahead of quota management");
+requireOrder(
+  "spendControlRouter",
+  "auditRouter",
+  "legacy /api/spend/budget shadowing depends on this order",
+);
+requireOrder(
+  "metaWebhookRouter",
+  '"/api/webhooks", webhookRouter',
+  "public Meta webhook receiver must keep precedence over tenant webhook management",
+);
+requireOrder(
+  "authOAuthRouter",
+  "authRouter",
+  "OAuth provider callback routes must precede the generic auth router",
+);
+requireOrder(
+  "agentRouter",
+  "agentWorkspaceRouter",
+  "canonical agent CRUD/config routes should precede workspace helpers",
+);
+requireOrder(
+  "dashboardRouter",
+  "fleetRouter",
+  "overview/calls route plane should precede assistant presence helpers",
+);
+requireOrder(
+  "pipelineRouter",
+  "quotaRouter",
+  "insights/pipeline routes should stay ahead of quota management",
+);
 
 const duplicateMounts = new Map();
 for (const { line } of appUseLines) {
@@ -190,7 +228,9 @@ for (const { line } of appUseLines) {
 const allowedDuplicateMounts = new Set(["/api"]);
 for (const [mount, count] of duplicateMounts) {
   if (count > 1 && !allowedDuplicateMounts.has(mount)) {
-    problems.push(`Duplicate explicit route mount ${mount} appears ${count} times without an allowlist entry.`);
+    problems.push(
+      `Duplicate explicit route mount ${mount} appears ${count} times without an allowlist entry.`,
+    );
   }
 }
 

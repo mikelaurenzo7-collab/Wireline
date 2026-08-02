@@ -32,7 +32,10 @@ if (isProduction) {
   requireValue("OAUTH_STATE_SECRET", "OAuth state signing is missing");
   requireValue("OAUTH_BRIDGE_SECRET", "MCP authorization bridging is missing");
   requireValue("MCP_OAUTH_TOKEN_PEPPER", "MCP OAuth tokens cannot be hashed safely");
-  requireValue("OPENAI_API_KEY", "the primary managed structured runtime and OpenAI Realtime sessions are missing");
+  requireValue(
+    "OPENAI_API_KEY",
+    "the primary managed structured runtime and OpenAI Realtime sessions are missing",
+  );
   // XAI_API_KEY is optional experiment-only; never a production launch requirement.
   requireValue("VAPI_PRIVATE_KEY", "the managed live-call runtime is missing");
   requireValue("VAPI_WEBHOOK_SECRET", "Vapi callbacks cannot be verified");
@@ -55,10 +58,7 @@ if (isProduction) {
   if (value("STRIPE_SECRET_KEY") && !value("STRIPE_SECRET_KEY").startsWith("sk_live_")) {
     failures.push("STRIPE_SECRET_KEY: production must use a live-mode key");
   }
-  if (
-    value("VITE_STRIPE_PUBLIC_KEY") &&
-    !value("VITE_STRIPE_PUBLIC_KEY").startsWith("pk_live_")
-  ) {
+  if (value("VITE_STRIPE_PUBLIC_KEY") && !value("VITE_STRIPE_PUBLIC_KEY").startsWith("pk_live_")) {
     failures.push("VITE_STRIPE_PUBLIC_KEY: production must use a live-mode key");
   }
 }
@@ -105,10 +105,7 @@ const platformManagedCredential = /^(?:VERCEL|TURBO|NPM|NODE|GITHUB|CI)_/;
  *
  * This is intentionally not a generic provider-key bypass.
  */
-const reviewedPreviewCredentialKeys = new Set([
-  "PERPLEXITY_API_KEY",
-  "PERPLEXITY_PREVIEW_API_KEY",
-]);
+const reviewedPreviewCredentialKeys = new Set(["PERPLEXITY_API_KEY", "PERPLEXITY_PREVIEW_API_KEY"]);
 
 if (isPreview) {
   const productionOnlyPreviewKeySet = new Set(productionOnlyPreviewKeys);

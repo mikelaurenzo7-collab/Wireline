@@ -200,11 +200,16 @@ async function main() {
       (product.default_price === price.id ||
         price.metadata?.wireline_catalog_state === "retired_anchor");
     if (retainedRetiredDefault) {
-      addFinding(findings, "warning", "Inactive product retains its Stripe-required default price.", {
-        price_id: price.id,
-        product_id: product.id,
-        product: product.name,
-      });
+      addFinding(
+        findings,
+        "warning",
+        "Inactive product retains its Stripe-required default price.",
+        {
+          price_id: price.id,
+          product_id: product.id,
+          product: product.name,
+        },
+      );
       continue;
     }
 

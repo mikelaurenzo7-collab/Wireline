@@ -13,7 +13,7 @@ const assert = (condition, message) => {
 };
 
 assert(
-  implementation.includes('https://api.pwnedpasswords.com/range'),
+  implementation.includes("https://api.pwnedpasswords.com/range"),
   "Breached-password screening must use the Pwned Passwords range API.",
 );
 assert(
