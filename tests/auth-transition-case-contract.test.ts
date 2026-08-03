@@ -57,4 +57,31 @@ describe("auth transition and control case contract", () => {
     expect(invite).toContain("text-caption leading-relaxed");
     expect(oauth).toContain("text-caption leading-relaxed");
   });
+
+  it("hard-protects semantic authored content across email, transcript, and artifact surfaces", () => {
+    const css = source("src/styles/e2e-design-polish.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    const authoredRule =
+      css.match(
+        /:is\(\.wl-ui-caps, \.wl-cased\) \[data-wireline-preserve-case\],[\s\S]*?\{[^}]*\}/,
+      )?.[0] ?? "";
+    const conversation = source("src/components/molecules/ConversationMessage.tsx");
+    const emailInbox = source("src/components/EmailInbox.tsx");
+
+    expect(authoredRule, "semantic authored content needs a hard case reset").not.toBe("");
+    expect(authoredRule).toContain("text-transform: none !important");
+    expect(authoredRule).toContain("letter-spacing: normal !important");
+    expect(conversation).toContain("data-wireline-preserve-case");
+    expect(emailInbox).toContain("wl-preserve-case");
+  });
+
+  it("keeps legal prose explicitly outside the global marketing caps voice", () => {
+    const css = source("src/styles/e2e-design-polish.css");
+    const privacy = source("src/components/PrivacyPolicyPage.tsx");
+    const terms = source("src/components/LegalPage.tsx");
+
+    expect(css).toContain(".marketing-surface .prose");
+    expect(css).toContain(".prose :is(p, h1, h2, h3, h4, h5, h6, li, blockquote, td, th, a, span)");
+    expect(privacy).toContain("prose prose-sm sm:prose-base");
+    expect(terms).toContain("prose");
+  });
 });
