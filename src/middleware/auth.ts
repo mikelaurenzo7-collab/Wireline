@@ -17,6 +17,7 @@ type ActiveSessionUser = {
   id: string;
   email: string;
   sessionRevokedBefore: Date;
+  sessionVersion: number;
 };
 
 function tokenIssuedAtMs(payload: JwtPayload): number {
@@ -25,33 +26,37 @@ function tokenIssuedAtMs(payload: JwtPayload): number {
   return payload.iat * 1000;
 }
 
+function tokenSessionVersion(payload: JwtPayload): number | null {
+  const version = Number(payload.session_version);
+  return Number.isSafeInteger(version) && version >= 0 ? version : null;
+}
+
 async function loadActiveSessionUser(payload: JwtPayload): Promise<ActiveSessionUser | null> {
-  // The signed JWT subject is the only tenant identity available before auth
-  // middleware establishes AsyncLocalStorage. Enter that exact RLS context for
-  // the revocation lookup; querying with no GUC would hide the user row and
-  // incorrectly reject every otherwise-valid session.
   return tenantStore.run(payload.sub, async () => {
     const [user] = await drizzle
       .select({
         id: sessionUsers.id,
         email: sessionUsers.email,
         sessionRevokedBefore: sessionUsers.sessionRevokedBefore,
+        sessionVersion: sessionUsers.sessionVersion,
       })
       .from(sessionUsers)
       .where(eq(sessionUsers.id, payload.sub))
       .limit(1);
     if (!user) return null;
+
+    const version = tokenSessionVersion(payload);
+    if (version !== null) {
+      return version === user.sessionVersion ? user : null;
+    }
+
+    // Compatibility only for sessions minted before migration 0127. Every new
+    // token carries session_version and never depends on host clock ordering.
     if (tokenIssuedAtMs(payload) <= user.sessionRevokedBefore.getTime()) return null;
     return user;
   });
 }
 
-/**
- * Resolve a tenant only after an active membership check. A tenant embedded in
- * a session token was issued by Wireline after explicit workspace selection;
- * the compatibility header remains accepted only when it resolves to the same
- * verified membership.
- */
 async function resolveTenantId(
   req: Request,
   userId: string,
@@ -61,8 +66,6 @@ async function resolveTenantId(
   const requested = tokenTenantId?.trim() || headerTenantId;
   if (!requested || requested === userId) return userId;
 
-  // Membership self-read is deliberately available only in the member's own
-  // context. Do not query before setting the GUC or RLS will return no row.
   const [membership] = await tenantStore.run(userId, () =>
     drizzle
       .select({ id: secureTeamMembers.id })
@@ -76,7 +79,6 @@ async function resolveTenantId(
       )
       .limit(1),
   );
-
   if (membership) return requested;
 
   log.warn("Ignoring unverified tenant selection", {
@@ -150,8 +152,21 @@ async function verifyRequestSession(req: Request, res: Response) {
     authRequired(res, "AUTH_REVOKED");
     return null;
   }
-
   return { payload, activeUser };
+}
+
+function attachUser(authedReq: AuthedReq, payload: JwtPayload, activeUser: ActiveSessionUser): void {
+  authedReq.user = {
+    id: activeUser.id,
+    email: activeUser.email,
+    role: payload.role || "authenticated",
+    aud: payload.aud,
+    sessionVersion: activeUser.sessionVersion,
+    tenantId: typeof payload.tenant_id === "string" ? payload.tenant_id : undefined,
+    app_metadata: {},
+    user_metadata: {},
+    created_at: new Date(payload.iat * 1000).toISOString(),
+  } as User;
 }
 
 export async function authenticateUser(req: Request, res: Response, next: NextFunction) {
@@ -167,18 +182,7 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
     const verified = await verifyRequestSession(req, res);
     if (!verified) return;
     const { payload, activeUser } = verified;
-
-    authedReq.user = {
-      id: activeUser.id,
-      email: activeUser.email,
-      role: payload.role || "authenticated",
-      aud: payload.aud,
-      tenantId: typeof payload.tenant_id === "string" ? payload.tenant_id : undefined,
-      app_metadata: {},
-      user_metadata: {},
-      created_at: new Date(payload.iat * 1000).toISOString(),
-    } as User;
-
+    attachUser(authedReq, payload, activeUser);
     authedReq.tenantId = await resolveTenantId(
       req,
       activeUser.id,
@@ -212,7 +216,6 @@ export async function authenticateEventStream(req: Request, res: Response, next:
         requestId: res.locals?.requestId,
       });
     }
-
     if (!getSessionTokenFromRequest(req) && typeof req.query.token === "string") {
       req.headers.authorization = `Bearer ${req.query.token}`;
     }
@@ -220,18 +223,7 @@ export async function authenticateEventStream(req: Request, res: Response, next:
     const verified = await verifyRequestSession(req, res);
     if (!verified) return;
     const { payload, activeUser } = verified;
-
-    authedReq.user = {
-      id: activeUser.id,
-      email: activeUser.email,
-      role: payload.role || "authenticated",
-      aud: payload.aud,
-      tenantId: typeof payload.tenant_id === "string" ? payload.tenant_id : undefined,
-      app_metadata: {},
-      user_metadata: {},
-      created_at: new Date(payload.iat * 1000).toISOString(),
-    } as User;
-
+    attachUser(authedReq, payload, activeUser);
     authedReq.tenantId = await resolveTenantId(
       req,
       activeUser.id,
