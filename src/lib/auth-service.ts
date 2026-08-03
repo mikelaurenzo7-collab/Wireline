@@ -108,13 +108,21 @@ function authUserFlags(user: { id: string; email: string }) {
  * Generate a short-lived Wireline JWT. `session_version` is database-owned and
  * makes global revocation exact across hosts without relying on clock ordering.
  * `iat_ms` remains for compatibility with tokens minted before migration 0127.
+ *
+ * `sessionVersion` is optional at the type boundary only so stale, shadowed
+ * handlers remain compilable while they are removed. Runtime generation is
+ * fail-closed: every token actually minted must carry a verified generation.
  */
 export function generateToken(user: {
   id: string;
   email: string;
-  sessionVersion: number;
+  sessionVersion?: number;
   tenantId?: string | null;
 }): string {
+  if (!Number.isSafeInteger(user.sessionVersion) || Number(user.sessionVersion) < 0) {
+    throw new Error("SESSION_VERSION_REQUIRED");
+  }
+
   const header = { alg: "HS256", typ: "JWT" };
   const nowMs = Date.now();
   const now = Math.floor(nowMs / 1000);
