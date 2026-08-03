@@ -24,33 +24,37 @@ function issuedAtMs(payload: JwtPayload): number {
 }
 
 async function loadValidUser(payload: JwtPayload) {
-  const [user] = await drizzle
-    .select({
-      id: sessionUsers.id,
-      email: sessionUsers.email,
-      sessionRevokedBefore: sessionUsers.sessionRevokedBefore,
-    })
-    .from(sessionUsers)
-    .where(eq(sessionUsers.id, payload.sub))
-    .limit(1);
-  if (!user || issuedAtMs(payload) <= user.sessionRevokedBefore.getTime()) return null;
-  return user;
+  return tenantStore.run(payload.sub, async () => {
+    const [user] = await drizzle
+      .select({
+        id: sessionUsers.id,
+        email: sessionUsers.email,
+        sessionRevokedBefore: sessionUsers.sessionRevokedBefore,
+      })
+      .from(sessionUsers)
+      .where(eq(sessionUsers.id, payload.sub))
+      .limit(1);
+    if (!user || issuedAtMs(payload) <= user.sessionRevokedBefore.getTime()) return null;
+    return user;
+  });
 }
 
 async function validatedTenantId(payload: JwtPayload, userId: string): Promise<string> {
   const requested = typeof payload.tenant_id === "string" ? payload.tenant_id : "";
   if (!requested || requested === userId) return userId;
-  const [membership] = await drizzle
-    .select({ id: secureTeamMembers.id })
-    .from(secureTeamMembers)
-    .where(
-      and(
-        eq(secureTeamMembers.tenantId, requested),
-        eq(secureTeamMembers.userId, userId),
-        isNull(secureTeamMembers.revokedAt),
-      ),
-    )
-    .limit(1);
+  const [membership] = await tenantStore.run(userId, () =>
+    drizzle
+      .select({ id: secureTeamMembers.id })
+      .from(secureTeamMembers)
+      .where(
+        and(
+          eq(secureTeamMembers.tenantId, requested),
+          eq(secureTeamMembers.userId, userId),
+          isNull(secureTeamMembers.revokedAt),
+        ),
+      )
+      .limit(1),
+  );
   return membership ? requested : userId;
 }
 
