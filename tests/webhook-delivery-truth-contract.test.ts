@@ -18,6 +18,7 @@ describe("webhook delivery truth", () => {
     expect(source).toContain("lastTriggeredAt: attemptedAt");
     expect(source).toContain("lastStatus: outcome.statusCode");
     expect(source).toContain("coalesce(${schema.webhooks.deliveryCount}, 0) + 1");
+    expect(source).toContain(".where(eq(schema.webhooks.id, outcome.webhookId))");
   });
 
   it("persists terminal guard failures instead of returning silently", () => {
