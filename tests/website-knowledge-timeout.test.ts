@@ -36,10 +36,13 @@ describe("website knowledge extraction deadline", () => {
         }),
       1_000,
     );
+    const rejection = expect(pending).rejects.toBeInstanceOf(
+      WebsiteKnowledgeExtractionTimeoutError,
+    );
 
     await vi.advanceTimersByTimeAsync(1_000);
+    await rejection;
 
-    await expect(pending).rejects.toBeInstanceOf(WebsiteKnowledgeExtractionTimeoutError);
     expect(observedAbort).toBe(true);
   });
 
