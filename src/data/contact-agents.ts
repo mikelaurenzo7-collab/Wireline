@@ -154,7 +154,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     name: "Marcus",
     role: "Medical Practice Demo",
     scope:
-      "Role-plays a clinic front desk — greets patients, captures reason for visit, schedules appointments, handles insurance pre-check. Healthcare-style demo; not currently HIPAA-certified (BAA available on the Enterprise roadmap).",
+      "Role-plays a clinic front desk — greets patients, captures reason for visit, schedules appointments, handles insurance pre-check. Healthcare-style demo; Wireline is not HIPAA-certified and HIPAA or BAA support is not currently available.",
     firstMessage:
       "Good afternoon — Marcus on the Wireline medical demo. May I have your name, please?",
     voiceLabel: "Sagar · Steady & Professional",
