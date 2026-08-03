@@ -13,14 +13,21 @@ import {
 import { buildShowcaseAssistantPayload } from "../src/lib/showcase-assistant";
 import { sanitizeShowcaseAssistantPayload } from "../src/lib/showcase-prompt-truth-guard";
 
-// This mandatory contract also acts as the explicit, reviewed production-sync
-// request when its head commit carries the [sync-showcase] marker.
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
+type ModelConfig = {
+  provider?: string;
+  model?: string;
+  fallbackModels?: string[];
+  messages?: Array<{ role?: string; content?: unknown }>;
+};
+
+function modelFrom(payload: Record<string, unknown>): ModelConfig {
+  return (payload.model || {}) as ModelConfig;
+}
+
 function promptFrom(payload: Record<string, unknown>): string {
-  const messages = (payload.model as { messages?: Array<{ role?: string; content?: unknown }> })
-    ?.messages;
-  const system = messages?.find((message) => message.role === "system");
+  const system = modelFrom(payload).messages?.find((message) => message.role === "system");
   return typeof system?.content === "string" ? system.content : "";
 }
 
@@ -31,7 +38,7 @@ describe("public showcase truth guard", () => {
   ];
 
   it.each(publicAgents)(
-    "sanitizes $agent.name without stale commercial or compliance claims",
+    "sanitizes $agent.name without stale claims or cross-provider fallbacks",
     ({ agent, kind }) => {
       const payload = sanitizeShowcaseAssistantPayload(
         buildShowcaseAssistantPayload(agent, kind, {
@@ -39,6 +46,7 @@ describe("public showcase truth guard", () => {
         }) as Record<string, unknown>,
       );
       const prompt = promptFrom(payload);
+      const model = modelFrom(payload);
 
       expect(prompt).toContain("Pricing:");
       expect(prompt).toContain("when connected and currently available");
@@ -47,6 +55,11 @@ describe("public showcase truth guard", () => {
       );
       expect(prompt).not.toMatch(/14-day free trial|Personal \$49|Starter \$149|Pro \$499/i);
       expect(prompt).not.toContain("HIPAA-aware tone");
+
+      expect(model.provider).toBe("openai");
+      expect(model.fallbackModels).toEqual(["gpt-5.6-luna"]);
+      expect(model.fallbackModels?.every((candidate) => /^gpt-/i.test(candidate))).toBe(true);
+
       if (kind === "demo") {
         expect(prompt).not.toMatch(/have someone follow up/i);
         expect(prompt).toContain("never promise human follow-up from a demo line");
@@ -67,9 +80,12 @@ describe("public showcase truth guard", () => {
     expect(roadmap).not.toMatch(/auditor engaged|target Q4|on request|30 day onboarding/i);
   });
 
-  it("rewrites a stale provider payload and rejects any forbidden claim left behind", () => {
+  it("rewrites stale truth and cross-provider fallback values", () => {
     const stale = {
       model: {
+        provider: "openai",
+        model: "gpt-4o",
+        fallbackModels: ["gemini-3.5-flash"],
         messages: [
           {
             role: "system",
@@ -86,10 +102,12 @@ describe("public showcase truth guard", () => {
 
     const guarded = sanitizeShowcaseAssistantPayload(stale);
     const prompt = promptFrom(guarded);
+    const model = modelFrom(guarded);
     expect(prompt).toContain("not SOC 2 certified today");
     expect(prompt).toContain("not currently available");
     expect(prompt).toContain("never promise human follow-up from a demo line");
     expect(prompt).not.toMatch(/auditor engaged|have someone follow up/i);
+    expect(model.fallbackModels).toEqual(["gpt-5.6-luna"]);
   });
 });
 
