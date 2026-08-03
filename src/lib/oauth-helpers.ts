@@ -11,6 +11,7 @@ import { eq } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 import { verifyInternalJwt, type JwtPayload } from "./auth-utils";
+import { isSessionGenerationActive } from "./session-generation";
 import { getInternalJwtSecret } from "./internal-jwt-secret";
 
 // ────────────────────────────────────────────────────────────────────
@@ -306,22 +307,11 @@ export async function verifyAndClaimOAuthState(
   return verified;
 }
 
-function tokenIssuedAtMs(payload: JwtPayload): number {
-  const precise = Number(payload.iat_ms);
-  if (Number.isFinite(precise) && precise > 0) return precise;
-  return payload.iat * 1000;
-}
-
-function tokenSessionVersion(payload: JwtPayload): number | null {
-  const version = Number(payload.session_version);
-  return Number.isSafeInteger(version) && version >= 0 ? version : null;
-}
-
 /**
  * OAuth callbacks are not routed through authenticateUser because providers
- * return a browser navigation rather than an API request. Mirror the canonical
- * session-generation check here so a token revoked by sign-out, password reset,
- * or workspace rotation cannot complete an account-linking callback.
+ * return a browser navigation rather than an API request. Apply the exact same
+ * canonical session-generation fence so sign-out, password reset, or session
+ * rotation immediately blocks account-linking completion as well.
  */
 async function isActiveOAuthSession(payload: JwtPayload): Promise<boolean> {
   return tenantStore.run(payload.sub, async () => {
@@ -333,11 +323,7 @@ async function isActiveOAuthSession(payload: JwtPayload): Promise<boolean> {
       .from(sessionUsers)
       .where(eq(sessionUsers.id, payload.sub))
       .limit(1);
-    if (!user) return false;
-
-    const version = tokenSessionVersion(payload);
-    if (version !== null) return version === user.sessionVersion;
-    return tokenIssuedAtMs(payload) > user.sessionRevokedBefore.getTime();
+    return Boolean(user && isSessionGenerationActive(payload, user));
   });
 }
 
