@@ -26,6 +26,7 @@ type ClaimedJobIdentity = {
 };
 
 const CALLER_MANAGED_ENQUEUE_FAILURE_TYPES = new Set<JobType>(["campaign_dial"]);
+const STALE_RECOVERY_BATCH = 200;
 
 export function enforceDurableEnqueueResult(
   opts: Pick<EnqueueOptions, "type">,
@@ -204,6 +205,59 @@ export async function failJob(
       tags: { source: "job_queue", outcome: "dead_letter" },
     });
   }
+}
+
+/**
+ * Recover stale jobs only while the row still represents the exact attempt
+ * selected by this sweep. Status-only fencing can clobber a newer worker claim
+ * when overlapping sweeps race under READ COMMITTED isolation.
+ */
+export async function recoverStaleJobs(
+  db: QueueDb,
+  staleAfterMs = 30 * 60 * 1000,
+): Promise<number> {
+  const cutoff = new Date(Date.now() - staleAfterMs);
+  return db.transaction(async (tx) => {
+    const staleJobs = await tx
+      .select({
+        id: schema.jobs.id,
+        attempts: schema.jobs.attempts,
+        maxAttempts: schema.jobs.maxAttempts,
+      })
+      .from(schema.jobs)
+      .where(and(eq(schema.jobs.status, "running"), lte(schema.jobs.startedAt, cutoff)))
+      .orderBy(schema.jobs.startedAt, schema.jobs.id)
+      .limit(STALE_RECOVERY_BATCH);
+
+    let recovered = 0;
+    for (const job of staleJobs) {
+      const expectedAttempts = Number(job.attempts || 0);
+      const exhausted = expectedAttempts >= Number(job.maxAttempts || base.DEFAULT_MAX_ATTEMPTS);
+      const reset = await tx
+        .update(schema.jobs)
+        .set({
+          status: exhausted ? "dead" : "pending",
+          error: exhausted
+            ? "Marked dead: stuck in running state beyond timeout"
+            : "Reset from stale running state",
+          startedAt: null,
+          finishedAt: exhausted ? new Date() : null,
+          runAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(schema.jobs.id, job.id),
+            eq(schema.jobs.status, "running"),
+            eq(schema.jobs.attempts, expectedAttempts),
+          ),
+        )
+        .returning({ id: schema.jobs.id });
+      if (reset.length) recovered++;
+    }
+
+    return recovered;
+  }, base.writeTransactionConfig());
 }
 
 /**
