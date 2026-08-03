@@ -24,10 +24,14 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "json-summary"],
       thresholds: {
-        lines: 1,
-        functions: 1,
-        branches: 1,
-        statements: 1,
+        // Five percent is the first honest repository-wide floor for a large
+        // codebase whose historic suite leaned heavily on source contracts.
+        // It fails regressions today without pretending broad behavioral
+        // coverage exists; future releases should ratchet this upward.
+        lines: 5,
+        functions: 5,
+        branches: 5,
+        statements: 5,
       },
     },
   },
