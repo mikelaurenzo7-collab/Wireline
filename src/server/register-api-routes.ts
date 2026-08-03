@@ -37,6 +37,7 @@ import postCallOutputRouter from "../routes/post-call-output-routes";
 import phoneNumberReleaseRouter from "../routes/phone-number-release-routes";
 import carrierRouter from "../routes/carrier-routes";
 import companyIdentityRouter from "../routes/company-identity-routes";
+import sharedWorkspaceReadinessRouter from "../routes/shared-workspace-readiness-routes";
 import teamRouter from "../routes/team-routes";
 import emailRouter from "../routes/email-routes";
 import dashboardRouter from "../routes/dashboard-routes";
@@ -118,6 +119,9 @@ export function registerApiRoutes(app: Express): void {
   app.use(phoneNumberReleaseRouter);
   app.use(carrierRouter);
   app.use(companyIdentityRouter);
+  // Shared-workspace tables/functions are installed, but collaboration remains
+  // terminally gated until the actor-id/tenant-id data plane is certified.
+  app.use(sharedWorkspaceReadinessRouter);
   app.use(teamRouter);
   app.use(spendControlRouter);
   app.use(auditRouter);
