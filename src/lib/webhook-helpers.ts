@@ -4,7 +4,10 @@ import * as schema from "../db/schema";
 import { eq, and, isNull, lte, or, sql } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import { decryptSecret } from "./secret-vault";
-import { postWebhookSafely } from "./safe-webhook-delivery";
+import {
+  postWebhookSafely,
+  type WebhookBlockReason,
+} from "./safe-webhook-delivery";
 import {
   WEBHOOK_DELIVERY_FAILED,
   WEBHOOK_DELIVERY_PENDING,
@@ -154,9 +157,7 @@ async function claimWebhookDelivery(deliveryId: bigint): Promise<number | null> 
   return claimed?.attempts ?? null;
 }
 
-function blockedDeliveryReason(
-  reason: "invalid_url" | "unsupported_protocol" | "private_destination" | "dns_resolution_failed",
-): string {
+function blockedDeliveryReason(reason: WebhookBlockReason): string {
   if (reason === "private_destination") return "blocked_private_destination";
   if (reason === "unsupported_protocol") return "unsupported_protocol";
   if (reason === "invalid_url") return "invalid_url";
@@ -232,7 +233,23 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
   }
 
   const body = JSON.stringify(deliveryWithHook.payload);
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    // Delivery is deliberately at-least-once. These stable headers let a
+    // recipient suppress a replay after an acknowledged send whose local
+    // success update was interrupted.
+    "x-wireline-delivery-id": deliveryIdBig.toString(),
+    "x-wireline-delivery-attempt": String(nextAttempts),
+    "x-wireline-event": String(deliveryWithHook.event),
+  };
+  const payloadTimestamp =
+    deliveryWithHook.payload &&
+    typeof deliveryWithHook.payload === "object" &&
+    !Array.isArray(deliveryWithHook.payload) &&
+    typeof (deliveryWithHook.payload as Record<string, unknown>).timestamp === "string"
+      ? String((deliveryWithHook.payload as Record<string, unknown>).timestamp)
+      : null;
+  if (payloadTimestamp) headers["x-wireline-timestamp"] = payloadTimestamp;
   if (signingSecret) {
     headers["x-wireline-signature"] = createHmac("sha256", signingSecret)
       .update(body)
