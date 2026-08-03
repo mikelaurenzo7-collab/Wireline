@@ -1,5 +1,4 @@
 import { lookup } from "node:dns/promises";
-import * as http from "node:http";
 import * as https from "node:https";
 import { isIP } from "node:net";
 
@@ -7,17 +6,23 @@ import { isPrivateIp, isPrivateIpv6 } from "./webhook-validators";
 
 export type WebhookAddress = { address: string; family: 4 | 6 };
 export type WebhookAddressLookup = (hostname: string) => Promise<WebhookAddress[]>;
+export type WebhookBlockReason =
+  | "invalid_url"
+  | "unsupported_protocol"
+  | "private_destination"
+  | "dns_resolution_failed";
 
 export type PinnedWebhookDestination =
   | {
       status: "public";
       url: URL;
+      hostname: string;
       address: string;
       family: 4 | 6;
     }
   | {
       status: "blocked";
-      reason: "invalid_url" | "unsupported_protocol" | "private_destination" | "dns_resolution_failed";
+      reason: WebhookBlockReason;
     };
 
 export type SafeWebhookPostResult =
@@ -29,15 +34,16 @@ export type SafeWebhookPostResult =
     }
   | {
       status: "blocked";
-      reason: PinnedWebhookDestination extends infer _T
-        ? "invalid_url" | "unsupported_protocol" | "private_destination" | "dns_resolution_failed"
-        : never;
+      reason: WebhookBlockReason;
     };
 
 const defaultLookup: WebhookAddressLookup = async (hostname) => {
   const addresses = await lookup(hostname, { all: true });
   return addresses
-    .filter((entry): entry is { address: string; family: 4 | 6 } => entry.family === 4 || entry.family === 6)
+    .filter(
+      (entry): entry is { address: string; family: 4 | 6 } =>
+        entry.family === 4 || entry.family === 6,
+    )
     .map((entry) => ({ address: entry.address, family: entry.family }));
 };
 
@@ -49,7 +55,8 @@ function addressIsPrivate(address: WebhookAddress): boolean {
  * Resolve once, reject when any answer is non-public, and return the exact
  * address that the delivery socket must use. Rejecting mixed public/private
  * answers prevents an attacker from influencing address selection after the
- * safety decision.
+ * safety decision. Customer webhooks are HTTPS-only because their payloads may
+ * contain call, lead, email, appointment, or compliance data.
  */
 export async function resolvePinnedWebhookDestination(
   raw: string,
@@ -60,10 +67,6 @@ export async function resolvePinnedWebhookDestination(
     url = new URL(raw);
   } catch {
     return { status: "blocked", reason: "invalid_url" };
-  }
-
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    return { status: "blocked", reason: "unsupported_protocol" };
   }
 
   const rawHost = url.hostname.toLowerCase();
@@ -78,9 +81,17 @@ export async function resolvePinnedWebhookDestination(
       address: hostname,
       family: literalFamily,
     };
-    return addressIsPrivate(destination)
-      ? { status: "blocked", reason: "private_destination" }
-      : { status: "public", url, ...destination };
+    if (addressIsPrivate(destination)) {
+      return { status: "blocked", reason: "private_destination" };
+    }
+    if (url.protocol !== "https:") {
+      return { status: "blocked", reason: "unsupported_protocol" };
+    }
+    return { status: "public", url, hostname, ...destination };
+  }
+
+  if (url.protocol !== "https:") {
+    return { status: "blocked", reason: "unsupported_protocol" };
   }
 
   let addresses: WebhookAddress[];
@@ -96,7 +107,7 @@ export async function resolvePinnedWebhookDestination(
     return { status: "blocked", reason: "private_destination" };
   }
 
-  return { status: "public", url, ...addresses[0] };
+  return { status: "public", url, hostname, ...addresses[0] };
 }
 
 function requestWithPinnedAddress(
@@ -106,24 +117,47 @@ function requestWithPinnedAddress(
   timeoutMs: number,
 ): Promise<SafeWebhookPostResult> {
   return new Promise((resolve, reject) => {
-    const pinnedLookup: NonNullable<http.RequestOptions["lookup"]> = (
-      _hostname,
-      _options,
-      callback,
-    ) => callback(null, destination.address, destination.family);
+    const pinnedLookup = ((
+      _hostname: string,
+      options: { all?: boolean } | number,
+      callback: unknown,
+    ) => {
+      if (typeof callback !== "function") {
+        throw new TypeError("Webhook DNS callback is unavailable");
+      }
+      if (typeof options === "object" && options?.all === true) {
+        const allCallback = callback as (
+          error: NodeJS.ErrnoException | null,
+          addresses: WebhookAddress[],
+        ) => void;
+        allCallback(null, [
+          { address: destination.address, family: destination.family },
+        ]);
+        return;
+      }
+      const singleCallback = callback as (
+        error: NodeJS.ErrnoException | null,
+        address: string,
+        family: number,
+      ) => void;
+      singleCallback(null, destination.address, destination.family);
+    }) as NonNullable<https.RequestOptions["lookup"]>;
 
-    const transport = destination.url.protocol === "https:" ? https : http;
-    const request = transport.request(
+    const request = https.request(
       destination.url,
       {
         method: "POST",
         headers: {
           ...headers,
           "Content-Length": Buffer.byteLength(body).toString(),
+          Connection: "close",
         },
         lookup: pinnedLookup,
-        ...(destination.url.protocol === "https:"
-          ? { servername: destination.url.hostname }
+        // A fresh socket guarantees this request cannot reuse a connection that
+        // bypasses the address selected by the current safety decision.
+        agent: false,
+        ...(isIP(destination.hostname) === 0
+          ? { servername: destination.hostname }
           : {}),
       },
       (response) => {
@@ -150,9 +184,10 @@ function requestWithPinnedAddress(
 
 /**
  * POST a webhook without a second unconstrained DNS lookup. The destination is
- * resolved and classified first, then the HTTP(S) socket is forced to use that
- * exact approved address while TLS SNI and the Host header retain the original
- * customer hostname.
+ * resolved and classified first, then a fresh HTTPS socket is forced to use
+ * that exact approved address while TLS SNI and the Host header retain the
+ * original customer hostname. Redirects are surfaced to the caller and never
+ * followed.
  */
 export async function postWebhookSafely(
   rawUrl: string,
