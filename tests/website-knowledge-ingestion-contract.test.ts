@@ -56,6 +56,8 @@ describe("secure website knowledge ingestion", () => {
     expect(safeFetch).toContain('"Accept-Encoding": "identity"');
     expect(safeFetch).toContain("WEBSITE_FETCH_MAX_BYTES = 1_000_000");
     expect(safeFetch).toContain("WEBSITE_FETCH_MAX_REDIRECTS = 3");
+    expect(safeFetch).toContain("destination.url.port !== \"443\"");
+    expect(safeFetch).toContain("totalTimer = setTimeout");
     expect(safeFetch).toContain(
       "return fetchPage(redirected.toString(), requestedUrl, redirectsRemaining - 1, visited)",
     );
@@ -84,6 +86,8 @@ describe("secure website knowledge ingestion", () => {
     expect(service).toContain("eq(schema.directives.agentId, input.agentId)");
     expect(service).toContain("eq(schema.directives.userId, input.userId)");
     expect(service).toContain("normalizeForDedup");
+    expect(service).toContain("retainFirstUnique");
+    expect(service).toContain("known.add(key)");
     expect(service).toContain("if (newKnowledge.length)");
     expect(service).toContain("if (newDirectives.length)");
   });
@@ -95,6 +99,7 @@ describe("secure website knowledge ingestion", () => {
     expect(route).toContain("eq(schema.agents.id, req.params.id)");
     expect(route).toContain("eq(schema.agents.userId, req.user.id)");
     expect(route).toContain('parsed.protocol !== "https:"');
+    expect(route).toContain('parsed.port !== "443"');
     expect(route).toContain("parsed.username || parsed.password");
   });
 
