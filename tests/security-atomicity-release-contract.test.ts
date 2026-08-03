@@ -6,20 +6,26 @@ const root = path.resolve(process.cwd());
 const read = (relative: string) => fs.readFileSync(path.join(root, relative), "utf8");
 
 describe("security and external-operation atomicity", () => {
-  it("revokes issued sessions and performs pre-auth reads inside the signed user context", () => {
-    const migration = read("drizzle/migrations/0120_security_atomicity_team_sessions.sql");
+  it("revokes issued sessions through a monotonic database generation", () => {
+    const baseMigration = read("drizzle/migrations/0120_security_atomicity_team_sessions.sql");
+    const versionMigration = read("drizzle/migrations/0127_monotonic_session_version.sql");
     const auth = read("src/lib/auth-service.ts");
     const middleware = read("src/middleware/auth.ts");
     const sessionRoutes = read("src/routes/auth-session-hardening-routes.ts");
 
-    expect(migration).toContain("wireline_revoke_sessions_on_password_change");
-    expect(migration).toContain("BEFORE UPDATE OF password_hash");
-    expect(auth).toContain("iat_ms");
+    expect(baseMigration).toContain("wireline_revoke_sessions_on_password_change");
+    expect(baseMigration).toContain("BEFORE UPDATE OF password_hash");
+    expect(versionMigration).toContain("ADD COLUMN IF NOT EXISTS session_version bigint");
+    expect(versionMigration).toContain("NEW.session_version := OLD.session_version + 1");
+    expect(auth).toContain("session_version: user.sessionVersion");
+    expect(auth).toContain('throw new Error("SESSION_VERSION_REQUIRED")');
     expect(auth).toContain("await scryptAsync");
-    expect(middleware).toContain("sessionRevokedBefore");
-    expect(middleware).toContain("tokenIssuedAtMs(payload) <= user.sessionRevokedBefore.getTime()");
+    expect(middleware).toContain("tokenSessionVersion(payload)");
+    expect(middleware).toContain("version === user.sessionVersion");
     expect(middleware).toContain("tenantStore.run(payload.sub");
     expect(middleware).toContain("tenantStore.run(userId");
+    expect(sessionRoutes).toContain("sessionUsers.sessionVersion} + 1");
+    expect(sessionRoutes).toContain("sessionVersion: user.sessionVersion");
     expect(sessionRoutes).toContain("tenantStore.run(payload.sub");
     expect(sessionRoutes).toContain("tenantStore.run(userId");
   });
@@ -77,6 +83,8 @@ describe("security and external-operation atomicity", () => {
     expect(provider).toBeGreaterThan(reservation);
     expect(lead).toBeGreaterThan(provider);
     expect(completion).toBeGreaterThan(provider);
+    expect(source).toContain("type DeniedOutboundDialGate = Extract<");
+    expect(source).toContain("function gateResponse(res: Response, gate: DeniedOutboundDialGate)");
     expect(source).toContain(".onConflictDoNothing()");
     expect(source).toContain('status: "dialing",\n            failureCode: "provider_outcome_ambiguous"');
     expect(source).toContain('failureCode: "post_provider_persistence_failed"');
