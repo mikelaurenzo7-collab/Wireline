@@ -19,18 +19,17 @@ describe("website knowledge extraction deadline", () => {
     expect(result).toBe("ok");
   });
 
-  it("aborts a stalled provider call and returns the dedicated timeout error", async () => {
+  it("rejects on schedule even when the provider ignores cancellation", async () => {
     vi.useFakeTimers();
     let observedAbort = false;
 
     const pending = runWithWebsiteKnowledgeExtractionTimeout(
       (signal) =>
-        new Promise<never>((_resolve, reject) => {
+        new Promise<never>(() => {
           signal.addEventListener(
             "abort",
             () => {
               observedAbort = true;
-              reject(new DOMException("aborted", "AbortError"));
             },
             { once: true },
           );
