@@ -10,6 +10,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { getStoredSignupIntent, syncSignupIntent } from "../lib/signup-intent";
 import { readStoredWorkspaceMode, resolvePostAuthDestination } from "../lib/auth-redirect";
 import MarketingChrome from "../components/marketing/MarketingChrome";
+import WirelineMark from "../components/brand/WirelineMark";
 import { PageMeta } from "../lib/page-meta";
 import { sanitizeOAuthSignInError } from "../lib/oauth-public-error";
 
@@ -91,37 +92,60 @@ export default function OAuthComplete() {
   }, [location.hash, location.search, signIn, navigate]);
 
   return (
-    <MarketingChrome stickyCta={false} footer={false}>
+    <MarketingChrome stickyCta={false} footer={false} authCanvas>
       <PageMeta
         title="Completing sign-in — Wireline"
         description="Finishing your Wireline sign-in."
         path="/auth/oauth-complete"
         noIndex
       />
-      <div className="flex flex-1 items-center justify-center px-4 py-10">
-        <div className="w-full max-w-md border border-border bg-card/92 p-7 sm:p-8 text-center space-y-5">
+      <main
+        id="main-content"
+        className="flex flex-1 items-center justify-center px-4 py-8 pt-20 sm:pt-24"
+      >
+        <section
+          className="wl-auth-card w-full max-w-[420px] rounded-md p-6 text-center sm:p-8"
+          aria-live="polite"
+          aria-busy={!error}
+        >
+          <div className="flex justify-center">
+            <div className="wl-auth-brand-chip" aria-hidden="true">
+              <WirelineMark className="size-8 text-white" />
+            </div>
+          </div>
+
+          <div className="mt-7 flex justify-center" aria-hidden="true">
+            {error ? (
+              <span className="grid size-11 place-items-center rounded-full bg-destructive/10 text-destructive">
+                <AlertTriangle className="size-5" />
+              </span>
+            ) : (
+              <span className="grid size-11 place-items-center rounded-full bg-brand/10 text-brand">
+                <Loader2 className="size-5 animate-spin" />
+              </span>
+            )}
+          </div>
+
+          <h1 className="mt-4 font-display text-2xl leading-[1.05] tracking-[-.025em] text-foreground sm:text-3xl">
+            {error ? "Sign-in failed" : "Completing sign-in"}
+          </h1>
+          <p
+            role={error ? "alert" : undefined}
+            className="mt-3 text-caption leading-relaxed text-muted-foreground"
+          >
+            {error || "Securing your session and opening your workspace."}
+          </p>
+
           {error ? (
-            <>
-              <div role="alert" className="flex items-center justify-center gap-2 text-rose-600">
-                <AlertTriangle className="w-5 h-5" />
-                <h1 className="text-eyebrow text-rose-600">Sign-in failed</h1>
-              </div>
-              <p className="text-caption leading-relaxed">{error}</p>
-              <Link to="/signin" className="marketing-btn-secondary w-full min-h-[48px]">
-                Back to sign in
-              </Link>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center justify-center gap-2 text-brand">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <h1 className="text-eyebrow text-brand">Completing sign-in</h1>
-              </div>
-              <p className="text-caption">Just a moment…</p>
-            </>
-          )}
-        </div>
-      </div>
+            <Link
+              to="/signin"
+              className="marketing-btn-secondary mt-7 inline-flex min-h-12 w-full items-center justify-center"
+            >
+              Back to sign in
+            </Link>
+          ) : null}
+        </section>
+      </main>
     </MarketingChrome>
   );
 }
