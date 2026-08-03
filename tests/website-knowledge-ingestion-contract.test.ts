@@ -15,6 +15,10 @@ const route = readFileSync(
   new URL("../src/routes/website-knowledge-routes.ts", import.meta.url),
   "utf8",
 );
+const importLimits = readFileSync(
+  new URL("../src/middleware/website-knowledge-rate-limits.ts", import.meta.url),
+  "utf8",
+);
 const legacyRoute = readFileSync(
   new URL("../src/routes/legacy-knowledge-crawl-routes.ts", import.meta.url),
   "utf8",
@@ -99,10 +103,19 @@ describe("secure website knowledge ingestion", () => {
     expect(service).toContain("if (newDirectives.length)");
   });
 
-  it("authenticates, rate-limits, and verifies ownership before importing", () => {
+  it("authenticates, bounds vendor spend, and verifies ownership before importing", () => {
     expect(route).toContain('"/api/agent-config/:id/website"');
     expect(route).toContain("authenticateUser");
-    expect(route).toContain("agentMutationRateLimit");
+    expect(route).toContain("websiteKnowledgeBurstRateLimit");
+    expect(route).toContain("websiteKnowledgeDailyRateLimit");
+    expect(route).not.toContain("agentMutationRateLimit");
+    expect(importLimits).toContain('bucket: "api:website-knowledge:burst"');
+    expect(importLimits).toContain("windowMs: 15 * 60 * 1000");
+    expect(importLimits).toContain("max: 5");
+    expect(importLimits).toContain('bucket: "api:website-knowledge:daily"');
+    expect(importLimits).toContain("windowMs: 24 * 60 * 60 * 1000");
+    expect(importLimits).toContain("max: 50");
+    expect(importLimits.match(/failClosedOnError: true/g)).toHaveLength(2);
     expect(route).toContain("eq(schema.agents.id, req.params.id)");
     expect(route).toContain("eq(schema.agents.userId, req.user.id)");
     expect(route).toContain('parsed.protocol !== "https:"');
