@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle2, Loader2, TriangleAlert } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import MarketingChrome from "../components/marketing/MarketingChrome";
+import WirelineMark from "../components/brand/WirelineMark";
 import { PageMeta } from "../lib/page-meta";
 
 const PENDING_INVITE_KEY = "wireline_pending_invitation";
@@ -78,42 +79,73 @@ export default function AcceptInvite() {
       });
   }, [loading, navigate, token, user]);
 
+  const working = status === "idle" || status === "working";
+
   return (
-    <MarketingChrome stickyCta={false} footer={false}>
+    <MarketingChrome stickyCta={false} footer={false} authCanvas>
       <PageMeta
         title="Accept workspace invitation — Wireline"
         description="Join a shared Wireline workspace."
         path="/accept-invite"
         noIndex
       />
-      <main id="main-content" className="flex min-h-[70vh] items-center justify-center px-4 py-12">
-        <section className="w-full max-w-lg rounded-2xl border border-border bg-card p-7 text-center shadow-sm sm:p-9">
+      <main
+        id="main-content"
+        className="flex flex-1 items-center justify-center px-4 py-8 pt-20 sm:pt-24"
+      >
+        <section
+          className="wl-auth-card w-full max-w-[420px] rounded-md p-6 text-center sm:p-8"
+          aria-live="polite"
+          aria-busy={working}
+        >
+          <div className="flex justify-center">
+            <div className="wl-auth-brand-chip" aria-hidden="true">
+              <WirelineMark className="size-8 text-white" />
+            </div>
+          </div>
+
+          <div className="mt-7 flex justify-center" aria-hidden="true">
+            {status === "error" ? (
+              <span className="grid size-11 place-items-center rounded-full bg-destructive/10 text-destructive">
+                <TriangleAlert className="size-5" />
+              </span>
+            ) : status === "success" ? (
+              <span className="grid size-11 place-items-center rounded-full bg-emerald-500/10 text-emerald-600">
+                <CheckCircle2 className="size-5" />
+              </span>
+            ) : (
+              <span className="grid size-11 place-items-center rounded-full bg-brand/10 text-brand">
+                <Loader2 className="size-5 animate-spin" />
+              </span>
+            )}
+          </div>
+
+          <h1 className="mt-4 font-display text-2xl leading-[1.05] tracking-[-.025em] text-foreground sm:text-3xl">
+            {status === "error"
+              ? "Invitation unavailable"
+              : status === "success"
+                ? "Workspace joined"
+                : "Joining workspace"}
+          </h1>
+          <p
+            role={status === "error" ? "alert" : undefined}
+            className="mt-3 text-caption leading-relaxed text-muted-foreground"
+          >
+            {status === "error"
+              ? message
+              : status === "success"
+                ? message
+                : "Verifying the invitation and your account."}
+          </p>
+
           {status === "error" ? (
-            <>
-              <TriangleAlert className="mx-auto h-8 w-8 text-destructive" aria-hidden="true" />
-              <h1 className="mt-4 text-title">Invitation unavailable</h1>
-              <p role="alert" className="mt-3 text-caption text-muted-foreground">
-                {message}
-              </p>
-              <Link to="/signin" className="marketing-btn-secondary mt-6 inline-flex min-h-11 items-center">
-                Sign in with another email
-              </Link>
-            </>
-          ) : status === "success" ? (
-            <>
-              <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-600" aria-hidden="true" />
-              <h1 className="mt-4 text-title">Workspace joined</h1>
-              <p className="mt-3 text-caption text-muted-foreground">{message}</p>
-            </>
-          ) : (
-            <>
-              <Loader2 className="mx-auto h-8 w-8 animate-spin text-brand" aria-hidden="true" />
-              <h1 className="mt-4 text-title">Joining workspace</h1>
-              <p className="mt-3 text-caption text-muted-foreground">
-                Verifying the invitation and your account.
-              </p>
-            </>
-          )}
+            <Link
+              to="/signin"
+              className="marketing-btn-secondary mt-7 inline-flex min-h-12 w-full items-center justify-center"
+            >
+              Sign in with another email
+            </Link>
+          ) : null}
         </section>
       </main>
     </MarketingChrome>
