@@ -1,11 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
-import { randomBytes, scryptSync, createHmac, timingSafeEqual, createHash } from "node:crypto";
+import {
+  randomBytes,
+  scrypt,
+  scryptSync,
+  createHmac,
+  timingSafeEqual,
+  createHash,
+} from "node:crypto";
+import { promisify } from "node:util";
 import { drizzle, log, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
+import { sessionUsers } from "../db/security-schema";
 import { and, eq, gte, isNull } from "drizzle-orm";
 import { requireInternalJwtSecret } from "./internal-jwt-secret";
 import { verifyInternalJwt, type JwtPayload } from "./auth-utils";
 import { assertPasswordIsSafe, type PasswordBreachCheckContext } from "./breached-passwords";
+import { MAX_PASSWORD_BYTES, passwordFitsByteLimit } from "./password-limits";
 export {
   getOwnerEmails,
   resetOwnerEmailCacheForTests,
@@ -13,7 +23,8 @@ export {
 } from "./platform-owner-emails";
 import { isOwnerEmail } from "./platform-owner-emails";
 
-/** Lazy so importing auth-service does not crash the whole API when env is misconfigured. */
+const scryptAsync = promisify(scrypt);
+
 let cachedJwtSecret: string | null = null;
 
 function getJwtSecret(): string {
@@ -33,10 +44,17 @@ export class AuthConfigurationError extends Error {
   }
 }
 
+function requireBoundedPassword(password: string): void {
+  if (!passwordFitsByteLimit(password)) {
+    throw new Error(`PASSWORD_TOO_LONG: passwords are limited to ${MAX_PASSWORD_BYTES} UTF-8 bytes`);
+  }
+}
+
 async function requirePasswordSafety(
   password: string,
   context: PasswordBreachCheckContext,
 ): Promise<void> {
+  requireBoundedPassword(password);
   const result = await assertPasswordIsSafe(password, { context });
   if (!result.checked && result.error) {
     log.warn("Auth: password breach check unavailable in permissive mode", {
@@ -46,20 +64,24 @@ async function requirePasswordSafety(
   }
 }
 
-/**
- * Hash a password using scrypt.
- * Format: salt:hash
- */
+/** Compatibility helper for tests and offline scripts. */
 export function hashPassword(password: string): string {
+  requireBoundedPassword(password);
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(password, salt, 64).toString("hex");
   return `${salt}:${hash}`;
 }
 
-/**
- * Verify a password against a hash.
- */
+async function hashPasswordForRequest(password: string): Promise<string> {
+  requireBoundedPassword(password);
+  const salt = randomBytes(16).toString("hex");
+  const key = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${salt}:${Buffer.from(key).toString("hex")}`;
+}
+
+/** Compatibility helper; request handlers use verifyPasswordForRequest. */
 export function verifyPassword(password: string, storedHash: string): boolean {
+  if (!passwordFitsByteLimit(password)) return false;
   const [salt, hash] = storedHash.split(":");
   if (!salt || !hash) return false;
   const key = scryptSync(password, salt, 64);
@@ -68,58 +90,71 @@ export function verifyPassword(password: string, storedHash: string): boolean {
   return timingSafeEqual(hashBuf, key);
 }
 
+async function verifyPasswordForRequest(password: string, storedHash: string): Promise<boolean> {
+  if (!passwordFitsByteLimit(password)) return false;
+  const [salt, hash] = storedHash.split(":");
+  if (!salt || !hash) return false;
+  const key = Buffer.from((await scryptAsync(password, salt, 64)) as Buffer);
+  const hashBuf = Buffer.from(hash, "hex");
+  if (hashBuf.length !== key.length) return false;
+  return timingSafeEqual(hashBuf, key);
+}
+
 function authUserFlags(user: { id: string; email: string }) {
-  return {
-    is_owner: isOwnerEmail(user.email),
-  };
+  return { is_owner: isOwnerEmail(user.email) };
 }
 
 /**
- * Generate a JWT for a user.
- * This is a lightweight implementation to avoid external dependencies.
+ * Generate a short-lived Wireline JWT. `session_version` is database-owned and
+ * makes global revocation exact across hosts without relying on clock ordering.
+ * `iat_ms` remains for compatibility with tokens minted before migration 0127.
+ *
+ * `sessionVersion` is optional at the type boundary only so stale, shadowed
+ * handlers remain compilable while they are removed. Runtime generation is
+ * fail-closed: every token actually minted must carry a verified generation.
  */
-export function generateToken(user: { id: string; email: string }): string {
+export function generateToken(user: {
+  id: string;
+  email: string;
+  sessionVersion?: number;
+  tenantId?: string | null;
+}): string {
+  if (!Number.isSafeInteger(user.sessionVersion) || Number(user.sessionVersion) < 0) {
+    throw new Error("SESSION_VERSION_REQUIRED");
+  }
+
   const header = { alg: "HS256", typ: "JWT" };
-  const now = Math.floor(Date.now() / 1000);
+  const nowMs = Date.now();
+  const now = Math.floor(nowMs / 1000);
   const payload = {
     sub: user.id,
     email: user.email,
     iat: now,
-    exp: now + 60 * 60 * 2, // 2 hours
+    iat_ms: nowMs,
+    session_version: user.sessionVersion,
+    exp: now + 60 * 60 * 2,
     aud: "authenticated",
     role: "authenticated",
     iss: "wireline-internal",
+    ...(user.tenantId && user.tenantId !== user.id ? { tenant_id: user.tenantId } : {}),
   };
 
   const base64Header = Buffer.from(JSON.stringify(header)).toString("base64url");
   const base64Payload = Buffer.from(JSON.stringify(payload)).toString("base64url");
-
   const signature = createHmac("sha256", getJwtSecret())
     .update(`${base64Header}.${base64Payload}`)
     .digest("base64url");
-
   return `${base64Header}.${base64Payload}.${signature}`;
 }
 
-/**
- * Verify a Wireline session JWT and return the decoded payload.
- * Returns `null` when the token is invalid, expired, or malformed.
- * This is the symmetric counterpart to `generateToken` — callers that
- * need to introspect a session token without pulling the secret can use
- * this instead of `verifyInternalJwt` directly.
- */
 export async function verifyToken(token: string): Promise<JwtPayload | null> {
   try {
-    const secret = getJwtSecret();
-    return await verifyInternalJwt(token, secret);
+    return await verifyInternalJwt(token, getJwtSecret());
   } catch {
     return null;
   }
 }
 
-/**
- * Auth Service: High-level operations for user management.
- */
 export const authService = {
   async signIn(email: string, password: string) {
     try {
@@ -136,27 +171,32 @@ export const authService = {
       .from(schema.users)
       .where(eq(schema.users.email, email))
       .limit(1);
-
     if (!user || !user.passwordHash) {
       log.warn("Auth: User not found or no password set", { email });
       return null;
     }
-
-    if (!verifyPassword(password, user.passwordHash)) {
+    if (!(await verifyPasswordForRequest(password, user.passwordHash))) {
       log.warn("Auth: Invalid password", { email });
       return null;
     }
 
-    const [sub] = await drizzle
-      .select({ plan: schema.subscriptions.plan })
-      .from(schema.subscriptions)
-      .where(eq(schema.subscriptions.userId, user.id))
-      .limit(1);
+    const [[session], [sub]] = await Promise.all([
+      drizzle
+        .select({ sessionVersion: sessionUsers.sessionVersion })
+        .from(sessionUsers)
+        .where(eq(sessionUsers.id, user.id))
+        .limit(1),
+      drizzle
+        .select({ plan: schema.subscriptions.plan })
+        .from(schema.subscriptions)
+        .where(eq(schema.subscriptions.userId, user.id))
+        .limit(1),
+    ]);
+    if (!session) throw new Error("Authenticated user session state is unavailable");
 
     const { resolveAccountType } = await import("./account-type");
     const { ensureDefaultAccount } = await import("./account-service");
-    const fallbackAccountType = resolveAccountType(sub?.plan);
-    const account_type = (await ensureDefaultAccount(user.id, fallbackAccountType)).type;
+    const account_type = (await ensureDefaultAccount(user.id, resolveAccountType(sub?.plan))).type;
 
     return {
       user: {
@@ -166,7 +206,11 @@ export const authService = {
         ...authUserFlags(user),
         account_type,
       },
-      token: generateToken({ id: user.id, email: user.email }),
+      token: generateToken({
+        id: user.id,
+        email: user.email,
+        sessionVersion: session.sessionVersion,
+      }),
     };
   },
 
@@ -193,30 +237,17 @@ export const authService = {
     }
 
     await requirePasswordSafety(password, "signup");
-    const passwordHash = hashPassword(password);
+    const passwordHash = await hashPasswordForRequest(password);
 
-    // Signup bootstrap must never inherit an authenticated tenant ALS scope.
-    // An inherited scope SETs LOCAL ROLE wireline_server, and wireline_users
-    // WITH CHECK (id = current_user_id) rejects brand-new rows (pg 42501).
-    // Running under an empty store forces an unscoped pool checkout (postgres
-    // rolbypassrls) for the whole create-user transaction.
     return tenantStore.run("", async () => {
       try {
         return await drizzle.transaction(async (tx) => {
           const inserted = (await tx
             .insert(schema.users)
-            .values({
-              email,
-              passwordHash,
-              fullName,
-            })
+            .values({ email, passwordHash, fullName })
             .returning()) as Array<{ id: string; email: string; fullName: string | null }>;
           const user = inserted[0];
 
-          // Sets the account to pending_activation (Free Builder — no trial,
-          // no card, no expiry) so signup/create/train works immediately.
-          // Failures don't block signup — the sweep job will fix up any
-          // stragglers. Function name is historical; see trial-gate.ts.
           const { startTrialForUser } = await import("./trial-gate");
           await startTrialForUser(user.id, signupAttribution, tx);
 
@@ -237,7 +268,7 @@ export const authService = {
               ...authUserFlags(user),
               account_type,
             },
-            token: generateToken({ id: user.id, email: user.email }),
+            token: generateToken({ id: user.id, email: user.email, sessionVersion: 0 }),
           };
         });
       } catch (err: any) {
@@ -247,35 +278,18 @@ export const authService = {
     });
   },
 
-  /**
-   * Mint a single-use email-verification token for the given user.
-   * Mirrors createPasswordResetToken's hashed-storage pattern — only
-   * the sha256 hash hits the DB; the plaintext is returned to the
-   * caller so the route handler can email it. 24-hour TTL.
-   */
   async createEmailVerificationToken(userId: string) {
     const plaintext = randomBytes(32).toString("base64url");
     const tokenHash = createHash("sha256").update(plaintext).digest("hex");
     const expiresAt = new Date(Date.now() + 24 * 60 * 60_000);
-    await drizzle.insert(schema.emailVerificationTokens).values({
-      userId,
-      tokenHash,
-      expiresAt,
-    });
+    await drizzle.insert(schema.emailVerificationTokens).values({ userId, tokenHash, expiresAt });
     return { token: plaintext, expiresAt };
   },
 
-  /**
-   * Consume an email-verification token. The conditional UPDATE is the
-   * single-use claim: only one concurrent request can transition used_at from
-   * NULL while the token is still live. User verification occurs in the same
-   * transaction, so a failed user write rolls the claim back.
-   */
   async completeEmailVerification(token: string) {
     if (!token) return null;
     const tokenHash = createHash("sha256").update(token).digest("hex");
     const now = new Date();
-
     const userId = await drizzle.transaction(async (tx) => {
       const [claimed] = await tx
         .update(schema.emailVerificationTokens)
@@ -289,7 +303,6 @@ export const authService = {
         )
         .returning({ userId: schema.emailVerificationTokens.userId });
       if (!claimed) return null;
-
       const [updated] = await tx
         .update(schema.users)
         .set({ emailVerifiedAt: now, updatedAt: now })
@@ -307,13 +320,6 @@ export const authService = {
     return user;
   },
 
-  /**
-   * Issue a single-use password-reset token for the given email. The plaintext
-   * token is returned to the caller (so the route handler can email or log it)
-   * but only the sha256 hash is persisted — a DB leak doesn't allow account
-   * takeover. Returns null when the email isn't in the system so the caller
-   * can no-op silently to prevent enumeration.
-   */
   async createPasswordResetToken(email: string, requestedIp?: string) {
     const [user] = await drizzle
       .select({ id: schema.users.id })
@@ -324,39 +330,24 @@ export const authService = {
 
     const plaintext = randomBytes(32).toString("base64url");
     const tokenHash = createHash("sha256").update(plaintext).digest("hex");
-    // 1-hour TTL — mailbox delays (Gmail throttling, corp filters) can
-    // push 15-minute tokens over the edge in transit. 1 hour gives a
-    // comfortable safety margin while still being short enough that
-    // stolen email forensics matter.
     const expiresAt = new Date(Date.now() + 60 * 60_000);
-
     await drizzle.insert(schema.passwordResetTokens).values({
       userId: user.id,
       tokenHash,
       expiresAt,
       requestedIp: requestedIp || null,
     });
-
     return { token: plaintext, userId: user.id, expiresAt };
   },
 
-  /**
-   * Consume a password-reset token. Password safety is evaluated before the
-   * transaction, then the transaction atomically claims the still-live token
-   * with a conditional UPDATE and rotates the password for that claimed user.
-   * A replay or concurrent second request receives null and cannot overwrite
-   * the first request's password.
-   */
   async completePasswordReset(token: string, newPassword: string) {
     if (!token || !newPassword || newPassword.length < 8) return null;
-
     const tokenHash = createHash("sha256").update(token).digest("hex");
     const now = new Date();
-
     await requirePasswordSafety(newPassword, "reset");
-    const newHash = hashPassword(newPassword);
+    const newHash = await hashPasswordForRequest(newPassword);
 
-    const userId = await drizzle.transaction(async (tx) => {
+    const reset = await drizzle.transaction(async (tx) => {
       const [claimed] = await tx
         .update(schema.passwordResetTokens)
         .set({ usedAt: now })
@@ -370,19 +361,27 @@ export const authService = {
         .returning({ userId: schema.passwordResetTokens.userId });
       if (!claimed) return null;
 
-      const [updated] = await tx
+      const [changed] = await tx
         .update(schema.users)
         .set({ passwordHash: newHash, updatedAt: now })
         .where(eq(schema.users.id, claimed.userId))
         .returning({ id: schema.users.id });
-      return updated?.id ?? null;
+      if (!changed) return null;
+
+      const [session] = await tx
+        .select({ sessionVersion: sessionUsers.sessionVersion })
+        .from(sessionUsers)
+        .where(eq(sessionUsers.id, changed.id))
+        .limit(1);
+      if (!session) throw new Error("Reset user session state is unavailable");
+      return { userId: changed.id, sessionVersion: session.sessionVersion };
     });
-    if (!userId) return null;
+    if (!reset) return null;
 
     const [user] = await drizzle
       .select()
       .from(schema.users)
-      .where(eq(schema.users.id, userId))
+      .where(eq(schema.users.id, reset.userId))
       .limit(1);
     if (!user) return null;
 
@@ -391,11 +390,9 @@ export const authService = {
       .from(schema.subscriptions)
       .where(eq(schema.subscriptions.userId, user.id))
       .limit(1);
-
     const { resolveAccountType } = await import("./account-type");
     const { ensureDefaultAccount } = await import("./account-service");
-    const fallbackAccountType = resolveAccountType(sub?.plan);
-    const account_type = (await ensureDefaultAccount(user.id, fallbackAccountType)).type;
+    const account_type = (await ensureDefaultAccount(user.id, resolveAccountType(sub?.plan))).type;
 
     return {
       user: {
@@ -405,7 +402,11 @@ export const authService = {
         ...authUserFlags(user),
         account_type,
       },
-      token: generateToken({ id: user.id, email: user.email }),
+      token: generateToken({
+        id: user.id,
+        email: user.email,
+        sessionVersion: reset.sessionVersion,
+      }),
     };
   },
 };

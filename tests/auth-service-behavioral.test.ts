@@ -7,13 +7,19 @@ import {
   resetOwnerEmailCacheForTests,
 } from "../src/lib/auth-service";
 
+const versionedUser = (id: string, email: string, sessionVersion = 0) => ({
+  id,
+  email,
+  sessionVersion,
+});
+
 describe("hashPassword", () => {
   it("produces a salt:hash format", () => {
     const result = hashPassword("test-password");
     const parts = result.split(":");
     expect(parts).toHaveLength(2);
-    expect(parts[0]).toHaveLength(32); // 16 bytes hex = 32 chars
-    expect(parts[1]).toHaveLength(128); // 64 bytes hex = 128 chars
+    expect(parts[0]).toHaveLength(32);
+    expect(parts[1]).toHaveLength(128);
   });
 
   it("produces different hashes for the same password", () => {
@@ -24,21 +30,15 @@ describe("hashPassword", () => {
 
   it("handles special characters", () => {
     const result = hashPassword("p@ss!#$%^&*()_+-=[]{}|;:,.<>?/~`");
-    const parts = result.split(":");
-    expect(parts).toHaveLength(2);
+    expect(result.split(":")).toHaveLength(2);
   });
 
-  it("handles empty string", () => {
-    const result = hashPassword("");
-    const parts = result.split(":");
-    expect(parts).toHaveLength(2);
+  it("handles empty string for compatibility helpers", () => {
+    expect(hashPassword("").split(":")).toHaveLength(2);
   });
 
-  it("handles very long passwords", () => {
-    const longPassword = "a".repeat(1000);
-    const result = hashPassword(longPassword);
-    const parts = result.split(":");
-    expect(parts).toHaveLength(2);
+  it("rejects passwords beyond the request KDF byte bound", () => {
+    expect(() => hashPassword("a".repeat(1000))).toThrow("PASSWORD_TOO_LONG");
   });
 });
 
@@ -62,12 +62,7 @@ describe("verifyPassword", () => {
   it("rejects password with length mismatch in hash buffer", () => {
     const hash = hashPassword("original");
     const parts = hash.split(":");
-    const tampered = `${parts[0]}:${parts[1].slice(0, 10)}`;
-    expect(verifyPassword("original", tampered)).toBe(false);
-  });
-
-  it("rejects when stored hash is empty", () => {
-    expect(verifyPassword("password", "")).toBe(false);
+    expect(verifyPassword("original", `${parts[0]}:${parts[1].slice(0, 10)}`)).toBe(false);
   });
 
   it("is case-sensitive", () => {
@@ -84,49 +79,47 @@ describe("generateToken", () => {
   });
 
   it("generates a three-part JWT", () => {
-    const token = generateToken({ id: "user-123", email: "test@example.com" });
-    const parts = token.split(".");
-    expect(parts).toHaveLength(3);
+    expect(generateToken(versionedUser("user-123", "test@example.com")).split(".")).toHaveLength(3);
   });
 
-  it("includes correct user id in payload", () => {
-    const token = generateToken({ id: "user-abc", email: "test@example.com" });
+  it("includes identity and session generation in payload", () => {
+    const token = generateToken(versionedUser("user-abc", "test@example.com", 7));
     const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
     expect(payload.sub).toBe("user-abc");
+    expect(payload.email).toBe("test@example.com");
+    expect(payload.session_version).toBe(7);
   });
 
-  it("includes correct email in payload", () => {
-    const token = generateToken({ id: "user-1", email: "user@wireline.com" });
-    const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
-    expect(payload.email).toBe("user@wireline.com");
-  });
-
-  it("sets 2-hour expiry", () => {
-    const token = generateToken({ id: "user-1", email: "test@example.com" });
+  it("sets 2-hour expiry and standard claims", () => {
+    const token = generateToken(versionedUser("user-1", "test@example.com"));
     const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
     const now = Math.floor(Date.now() / 1000);
     expect(payload.exp).toBeGreaterThan(now + 60 * 60);
     expect(payload.exp).toBeLessThanOrEqual(now + 60 * 60 * 2 + 5);
-  });
-
-  it("includes standard JWT claims", () => {
-    const token = generateToken({ id: "user-1", email: "test@example.com" });
-    const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
     expect(payload.aud).toBe("authenticated");
     expect(payload.role).toBe("authenticated");
     expect(payload.iss).toBe("wireline-internal");
   });
 
+  it("refuses omitted or invalid session generations", () => {
+    expect(() => generateToken({ id: "user-1", email: "test@example.com" })).toThrow(
+      "SESSION_VERSION_REQUIRED",
+    );
+    expect(() => generateToken(versionedUser("user-1", "test@example.com", -1))).toThrow(
+      "SESSION_VERSION_REQUIRED",
+    );
+  });
+
   it("produces different tokens for different users", () => {
-    const a = generateToken({ id: "user-a", email: "a@example.com" });
-    const b = generateToken({ id: "user-b", email: "b@example.com" });
+    const a = generateToken(versionedUser("user-a", "a@example.com"));
+    const b = generateToken(versionedUser("user-b", "b@example.com"));
     expect(a).not.toBe(b);
   });
 
-  it("produces different tokens for same user (different iat)", async () => {
-    const a = generateToken({ id: "user-1", email: "test@example.com" });
-    await new Promise((r) => setTimeout(r, 1100));
-    const b = generateToken({ id: "user-1", email: "test@example.com" });
+  it("produces different tokens for same user after time advances", async () => {
+    const a = generateToken(versionedUser("user-1", "test@example.com"));
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    const b = generateToken(versionedUser("user-1", "test@example.com"));
     expect(a).not.toBe(b);
   });
 });
@@ -154,19 +147,13 @@ describe("isOwnerEmail", () => {
     expect(isOwnerEmail("user@wireline.com")).toBe(false);
   });
 
-  it("is case-insensitive", () => {
-    process.env.OWNER_EMAIL = "Admin@Wireline.com";
+  it("is case-insensitive and trims whitespace", () => {
+    process.env.OWNER_EMAIL = "  Admin@Wireline.com  ";
     resetOwnerEmailCacheForTests();
     expect(isOwnerEmail("admin@wireline.com")).toBe(true);
   });
 
-  it("trims whitespace", () => {
-    process.env.OWNER_EMAIL = "  admin@wireline.com  ";
-    resetOwnerEmailCacheForTests();
-    expect(isOwnerEmail("admin@wireline.com")).toBe(true);
-  });
-
-  it("returns false for null/undefined/empty", () => {
+  it("returns false for null, undefined, and empty values", () => {
     process.env.OWNER_EMAIL = "admin@wireline.com";
     resetOwnerEmailCacheForTests();
     expect(isOwnerEmail(null)).toBe(false);

@@ -1,7 +1,9 @@
 import type { Express } from "express";
 import authRouter from "../routes/auth-routes";
 import authOAuthBrowserBindingRouter from "../routes/auth-oauth-browser-binding";
+import authOAuthExchangeAtomicRouter from "../routes/auth-oauth-exchange-atomic-routes";
 import authOAuthRouter from "../routes/auth-oauth-routes";
+import authSessionHardeningRouter from "../routes/auth-session-hardening-routes";
 import productEventRouter from "../routes/product-event-routes";
 import oauthRouter from "../routes/oauth";
 import agentRouter from "../routes/agent-routes-v2";
@@ -18,6 +20,7 @@ import billingRouter from "../routes/billing-routes";
 import extraAgentBillingAtomicRouter from "../routes/extra-agent-billing-atomic-routes";
 import { stripeRuntimeAllowanceRetryPreflight } from "../middleware/stripe-runtime-allowance-retry";
 import billingPortalReadinessRouter from "../routes/billing-portal-readiness-routes";
+import launchBillingCheckoutAtomicRouter from "../routes/launch-billing-checkout-atomic-routes";
 import launchBillingCheckoutRouter from "../routes/launch-billing-checkout-routes";
 import conversationBalanceRouter from "../routes/conversation-balance-routes";
 import spendControlRouter from "../routes/spend-control-routes";
@@ -34,6 +37,7 @@ import postCallOutputRouter from "../routes/post-call-output-routes";
 import phoneNumberReleaseRouter from "../routes/phone-number-release-routes";
 import carrierRouter from "../routes/carrier-routes";
 import companyIdentityRouter from "../routes/company-identity-routes";
+import sharedWorkspaceReadinessRouter from "../routes/shared-workspace-readiness-routes";
 import teamRouter from "../routes/team-routes";
 import emailRouter from "../routes/email-routes";
 import dashboardRouter from "../routes/dashboard-routes";
@@ -49,6 +53,7 @@ import metaWebhookRouter from "../routes/meta-webhook-routes";
 import twilioWebhookRouter from "../routes/twilio-webhook";
 import escalationRouter from "../routes/escalation-routes";
 import smsRouter from "../routes/sms-routes";
+import webhookTestRouter from "../routes/webhook-test-routes";
 import webhookRouter from "../routes/webhook-routes";
 import intakeRouter from "../routes/intake-routes";
 import supportRouter from "../routes/support-routes";
@@ -56,6 +61,7 @@ import jobRouter from "../routes/job-routes";
 import mobileRouter from "../routes/mobile-routes";
 import videoPresenterRouter from "../routes/video-presenter-routes";
 import activationRouter from "../routes/activation-routes";
+import outboundDialAtomicRouter from "../routes/outbound-dial-atomic-routes";
 import outboundRouter from "../routes/outbound-routes";
 import cadenceRouter from "../routes/cadence-routes";
 import campaignRouter from "../routes/campaign-routes";
@@ -76,12 +82,7 @@ import soc2Router from "../routes/soc2-routes";
 import integrationsCertRouter from "../routes/integrations-cert-routes";
 import gatewayCatalogRouter from "../routes/gateway-catalog-routes";
 
-/**
- * Canonical API route order.
- *
- * Express resolves routes in registration order. This module preserves the
- * established production precedence while making it explicit and reviewable.
- */
+/** Canonical API route order. Express resolves routes in registration order. */
 export function registerApiRoutes(app: Express): void {
   app.use("/api/health", healthRouter);
   app.use(aiStatusRouter);
@@ -89,11 +90,18 @@ export function registerApiRoutes(app: Express): void {
   app.use(grokVoiceRouter);
   app.use(voicesRouter);
   app.use(videoPresenterRouter);
-  // Must precede the sign-in OAuth router: it binds provider state to the
-  // initiating browser cookie before the canonical callbacks claim the nonce.
+
+  // Atomic browser-bound exchange owns this exact path before the broader OAuth
+  // middleware and legacy callback router. Provider start/callback requests still
+  // flow through the browser-binding middleware, which also moves bridge values
+  // from query parameters into URL fragments.
+  app.use(authOAuthExchangeAtomicRouter);
   app.use(authOAuthBrowserBindingRouter);
   app.use(authOAuthRouter);
+  // Revocation-aware session routes shadow their legacy equivalents.
+  app.use(authSessionHardeningRouter);
   app.use(authRouter);
+
   app.use(oauthRouter);
   app.use(productEventRouter);
   app.use(agentRouter);
@@ -102,52 +110,36 @@ export function registerApiRoutes(app: Express): void {
   app.use(browserHandoffRouter);
   app.use(vapiRouter);
   app.use(accountRouter);
-  // These terminal/guard writers must precede the broad legacy settings router.
   app.use(userPreferenceGuardRouter);
   app.use(companyIdentitySettingsGuardRouter);
   app.use(settingsPhoneGuardRouter);
   app.use(accountExportGuardRouter);
   app.use(settingsRouter);
   app.use(postCallOutputRouter);
-  // Terminal carrier DELETE owner: release Vapi/Twilio before the canonical row
-  // is removed. The broad carrier router remains authoritative for all reads,
-  // binds, provisioning, pool operations, and metadata updates.
   app.use(phoneNumberReleaseRouter);
   app.use(carrierRouter);
   app.use(companyIdentityRouter);
+  // Shared-workspace tables/functions are installed, but collaboration remains
+  // terminally gated until the actor-id/tenant-id data plane is certified.
+  app.use(sharedWorkspaceReadinessRouter);
   app.use(teamRouter);
   app.use(spendControlRouter);
-  // Audit/AI-spend ledger: /api/audit/summary(/events/stats/export), plus a
-  // legacy /api/spend/budget GET that's intentionally shadowed by
-  // spendControlRouter's real handler above (registration order matters --
-  // this router must stay mounted after spendControlRouter).
   app.use(auditRouter);
   app.use(conversationBalanceRouter);
   app.use(emailOutcomeRouter);
   app.use(emailSyncRouter);
-  // Sole owners for plan checkout and customer portal. Do not re-register these
-  // paths on billingRouter — shadowed duplicates previously revived retired
-  // prices, /admin return URLs, and unconfigured Stripe Dashboard portals.
+
+  // Durable idempotent Checkout owner precedes the prior canonical implementation.
+  app.use(launchBillingCheckoutAtomicRouter);
   app.use(launchBillingCheckoutRouter);
   app.use(billingPortalReadinessRouter);
-  // Financial-integrity preflight for subscription refunds/disputes. It runs on
-  // the same raw-body Stripe path before the legacy billing router and only
-  // acknowledges after the idempotent Runtime Allowance reversal succeeds.
   app.use("/api/stripe-webhook", stripeRuntimeAllowanceRetryPreflight);
-  // Atomic write owner for purchased agent capacity. GET continues through the
-  // broad billing router; POST settles and verifies Stripe before Postgres.
   app.use("/api/billing/extra-agents", extraAgentBillingAtomicRouter);
   app.use("/api", billingRouter);
+
   app.use(emailRouter);
-  // Tenant-owned, server-mediated access to Vapi/Twilio call artifacts.
   app.use(callRecordingRouter);
-  // Dashboard data plane: /api/dashboard/*, /api/calls, /api/appointments,
-  // /api/nav-counts, /api/export/:type.csv -- Overview and Phone read these.
   app.use(dashboardRouter);
-  // Assistants data plane: /api/Assistants/presence(/stream), /tasks,
-  // /activity, /seed, plus /api/triage. Powers Phone's live-call data
-  // (usePresenceSignals) and is documented in the public OpenAPI spec --
-  // must stay registered or both go silently 404.
   app.use(fleetRouter);
   app.use(calendarRouter);
   app.use(workspaceKnowledgeRouter);
@@ -155,56 +147,41 @@ export function registerApiRoutes(app: Express): void {
   app.use(emailUnsubscribeRouter);
   app.use(shareableArtifactRouter);
   app.use(metaWebhookRouter);
-  // Twilio inbound SMS receiver (/api/twilio-webhook/*) -- signature-verified,
-  // TCPA opt-out keywords. The Carrier panel hands this URL to customers.
   app.use(twilioWebhookRouter);
-  // POST /api/escalate -- Vapi escalate_to_human tool receiver for the four
-  // customer-service voice agents (Sarah/Liam/Tyler/Maya). Auth via shared
-  // VAPI_WEBHOOK_SECRET. Missing this mount silently 404s every in-call
-  // escalation, so the route must stay registered.
   app.use(escalationRouter);
-  // SMS threads power the Inbox SMS tab (/api/sms/threads*).
   app.use(smsRouter);
-  // Tenant webhook management -- mounted after metaWebhookRouter so the
-  // public /api/webhooks/meta/leads receiver keeps precedence.
+
+  // Target-specific test delivery owns /:id/test before the broad webhook router.
+  app.use("/api/webhooks", webhookTestRouter);
   app.use("/api/webhooks", webhookRouter);
-  // Intake keys + key-authenticated public lead capture (/api/intake/*).
+
   app.use("/api/intake", intakeRouter);
-  // Public support/contact ticket form (/api/support/ticket) -- rate-limited.
   app.use(supportRouter);
-  // Job queue + the cron-driven operations sweep (/api/jobs/sweep): retention
-  // purges, deletion queue, trial expiry, webhook retries, queue draining.
   app.use("/api/jobs", jobRouter);
-  // Native app data plane (/api/mobile/*) -- every route is session-guarded.
   app.use(mobileRouter);
   app.use(marketingRuntimeRouter);
   app.use(activationRouter);
+
+  // Durable per-number reservations own manual dial before the broad outbound router.
+  app.use(outboundDialAtomicRouter);
   app.use(outboundRouter);
+
   app.use("/api/qa", qaV2Router);
   app.use(cadenceRouter);
   app.use(campaignRouter);
   app.use(complianceRouter);
   app.use(knowledgeRouter);
   app.use(learningRouter);
-  // The public contract is advertised and consumed at /api/openapi.json.
   app.use("/api", openapiRouter);
   app.use(supervisorRouter);
-  // Insights data plane: funnel, heatmap, leaderboard, topics, failure-modes, daily-brief.
   app.use(insightsRouter);
   app.use(dailyBriefRouter);
-  // Pipeline kanban + campaign attribution for Insights Attribution tab.
   app.use(pipelineRouter);
   app.use("/api/quotas", quotaRouter);
   app.use("/api/goals", goalsRouter);
   app.use(adminSeedDemoRouter);
   app.use(voiceObservabilityRouter);
-  // SOC2 evidence endpoints (/api/soc2/access-review, /evidence-pack) --
-  // authenticateUser + requirePermission("audit.read"), cited as a live
-  // control by docs/soc2-policies.md.
   app.use(soc2Router);
-  // Public trust-page data source (/api/integrations/certified) -- no auth,
-  // IP rate-limited.
   app.use(integrationsCertRouter);
-  // AI Gateway model catalog (/api/model-catalog) -- authenticateUser only.
   app.use(gatewayCatalogRouter);
 }

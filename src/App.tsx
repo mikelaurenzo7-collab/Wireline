@@ -12,11 +12,6 @@ import { useAuth } from "./contexts/AuthContext";
 import { isWorkspaceRoute } from "./lib/workspace-route-scope";
 
 import ToastStack from "./components/Toast";
-// Static import, not lazy: the consent notice is a compliance surface and must
-// render reliably on first paint of any route. It was previously never mounted
-// anywhere, so the footer "Privacy choices" control dispatched an event with
-// no listener and EU/UK visitors never saw a consent choice (leaving optional
-// ad measurement permanently dark — the loader correctly defaults it off).
 import CookieConsent from "./components/CookieConsent";
 
 const LandingPage = lazy(() => import("./pages/LandingPage"));
@@ -43,6 +38,7 @@ const AppShell = lazy(() => import("./components/layout/AppShell"));
 const AuthPortalRoute = lazy(() => import("./AuthPortalRoute"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
 const SolutionsPage = lazy(() => import("./pages/SolutionsPage"));
 const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
 const OnboardingFlow = lazy(() => import("./pages/OnboardingFlow"));
@@ -58,11 +54,6 @@ function RouteLoading() {
   );
 }
 
-/**
- * Preserve the authenticated workspace wildcard without turning anonymous
- * typos into a sign-in prompt. Unknown routes probe the session once: signed-in
- * people keep the native workspace 404, while visitors get the public 404.
- */
 function UnknownRoute() {
   const { user, loading } = useAuth();
   const { pathname } = useLocation();
@@ -101,7 +92,6 @@ function AppRouter() {
         <Route path="/changelog" element={<PublicChangelog />} />
         <Route path="/security" element={<Security />} />
         <Route path="/trust" element={<Security />} />
-        {/* Vertical trust packs — linked from /security for regulated buyers. */}
         <Route path="/trust/:vertical" element={<TrustPackPage />} />
         <Route path="/status" element={<Status />} />
         <Route path="/support" element={<SupportPage />} />
@@ -115,15 +105,13 @@ function AppRouter() {
         <Route path="/auth" element={<AuthPortalRoute />} />
         <Route path="/login" element={<Navigate to="/signin" replace />} />
         <Route path="/reset" element={<Navigate to="/signin" replace />} />
-        {/* Password-reset emails land here with ?token=… — must stay public. */}
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/auth/oauth-complete" element={<OAuthComplete />} />
         <Route path="/oauth-complete" element={<OAuthComplete />} />
         <Route path="/onboarding" element={<OnboardingFlow />} />
         <Route path="/404" element={<PublicNotFound />} />
         <Route path="/not-found" element={<PublicNotFound />} />
-        {/* All other paths under AppShell (authenticated workspace). Inside AppShell/AppRoutes,
-            authenticated visitors retain the workspace 404; anonymous visitors see the public 404. */}
         <Route path="/*" element={<UnknownRoute />} />
       </Routes>
     </Suspense>

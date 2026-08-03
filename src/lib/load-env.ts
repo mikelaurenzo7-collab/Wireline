@@ -3,5 +3,6 @@
  * before server-context / drizzle initialize.
  */
 import dotenv from "dotenv";
+import "./fatal-process-guard";
 
 dotenv.config({ path: [".env.local", ".env"], quiet: true });
