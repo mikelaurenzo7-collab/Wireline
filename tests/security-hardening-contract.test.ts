@@ -9,7 +9,6 @@ describe("security hardening contract", () => {
   it("auth limiters refuse when no distributed limiter is configured", () => {
     const mw = read("src/middleware/rate-limit-middleware.ts");
     expect(mw).toContain("distributedLimiterStatus");
-    // The three credential-facing limiters must call the guard.
     for (const fn of ["signinRateLimiter", "signupRateLimiter", "forgotPasswordRateLimiter"]) {
       const start = mw.indexOf(`export async function ${fn}`);
       expect(start).toBeGreaterThan(-1);
@@ -17,21 +16,25 @@ describe("security hardening contract", () => {
     }
   });
 
-  it("outbound webhook delivery does not follow redirects (SSRF)", () => {
+  it("outbound webhook delivery does not follow or count redirects (SSRF)", () => {
     const helpers = read("src/lib/webhook-helpers.ts");
     expect(helpers).toContain('redirect: "manual"');
-    // A blocked 3xx surfaces as an opaqueredirect (status 0) under undici;
-    // it must be detected by type and never counted as a delivered webhook.
-    expect(helpers).toContain('res.type === "opaqueredirect"');
-    expect(helpers).toMatch(/isRedirect[\s\S]{0,120}success = false/);
+    expect(helpers).toContain('response.type === "opaqueredirect"');
+    expect(helpers).toContain("let success = false");
+    expect(helpers).toContain('lastError = "redirect_blocked"');
+
+    const redirectBranch = helpers.slice(
+      helpers.indexOf("if (isRedirect)"),
+      helpers.indexOf("} else {", helpers.indexOf("if (isRedirect)")),
+    );
+    expect(redirectBranch).not.toContain("success = true");
+    expect(helpers).toContain("success = response.ok");
   });
 
   it("escalation binds the tenant to the invoked number, not a body field", () => {
     const routes = read("src/routes/escalation-routes.ts");
-    // Number owner is authoritative; the claimed id is only a validated fallback.
     expect(routes).toContain("schema.phoneNumbers.phoneNumber");
     expect(routes).toContain("claimedTenantId");
-    // All tenant writes run inside tenant context so RLS WITH CHECK applies.
     expect(routes).toContain("tenantStore.run(tenantUserId");
   });
 
@@ -39,7 +42,6 @@ describe("security hardening contract", () => {
     const csp = buildCSP(false, undefined, "'self'");
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("frame-ancestors 'none'");
-    // vercel.json header stays in sync with the source-of-truth builder.
     expect(read("vercel.json")).toContain("object-src 'none'");
   });
 });
