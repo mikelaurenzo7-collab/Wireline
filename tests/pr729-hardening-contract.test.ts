@@ -4,15 +4,20 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 
 describe("PR 729 hardening contract", () => {
-  it("returns retryable durable jobs to the claimable pending state", () => {
+  it("returns retryable durable jobs to a fairly claimable pending state", () => {
     const queue = read("src/lib/job-queue.ts");
-    // Non-exhausted attempts return to the claimable pending state while
-    // exhausted attempts dead-letter in the same attempt-fenced update.
+    // Non-exhausted attempts return to pending, while the unified claim
+    // transaction considers both pending and historical failed rows by due time
+    // and retry budget. The retired two-pass legacy helper must not return.
     expect(queue).toContain('status: exhausted ? "dead" : "pending"');
     expect(queue).toContain('row?.type === "post_call_artifact"');
     expect(queue).toContain('row?.type === "scheduled_report"');
     expect(queue).toContain("longRunning ? 5 * 60 : 0");
-    expect(queue).toContain("claimLegacyFailed");
+    expect(queue).toContain("async function claimEligibleJob");
+    expect(queue).toContain('const CLAIMABLE_STATUSES = ["pending", "failed"] as const');
+    expect(queue).toContain("inArray(schema.jobs.status, [...CLAIMABLE_STATUSES])");
+    expect(queue).toContain("retryBudgetRemaining");
+    expect(queue).not.toContain("claimLegacyFailed");
   });
 
   it("does not reserve Runtime Balance for a stale scheduled report", () => {
