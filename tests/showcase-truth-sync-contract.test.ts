@@ -28,30 +28,36 @@ describe("public showcase truth guard", () => {
     ...WIRELINE_DEMO_AGENTS.map((agent) => ({ agent, kind: "demo" as const })),
   ];
 
-  it.each(publicAgents)("sanitizes $agent.name without stale commercial or compliance claims", ({
-    agent,
-    kind,
-  }) => {
-    const payload = sanitizeShowcaseAssistantPayload(
-      buildShowcaseAssistantPayload(agent, kind, {
-        webhookSecret: "test-webhook-secret",
-      }) as Record<string, unknown>,
-    );
-    const prompt = promptFrom(payload);
+  it.each(publicAgents)(
+    "sanitizes $agent.name without stale commercial or compliance claims",
+    ({ agent, kind }) => {
+      const payload = sanitizeShowcaseAssistantPayload(
+        buildShowcaseAssistantPayload(agent, kind, {
+          webhookSecret: "test-webhook-secret",
+        }) as Record<string, unknown>,
+      );
+      const prompt = promptFrom(payload);
 
-    expect(prompt).toContain("Current").or.toContain("Pricing:");
-    expect(prompt).toContain("when connected and currently available");
-    expect(prompt).not.toMatch(/auditor engaged|target Q4 2026|on request \(~30 day onboarding\)/i);
-    expect(prompt).not.toMatch(/14-day free trial|Personal \$49|Starter \$149|Pro \$499/i);
-    expect(prompt).not.toContain("HIPAA-aware tone");
-    if (kind === "demo") {
-      expect(prompt).not.toMatch(/have someone follow up|someone will reach out/i);
-      expect(prompt).toContain("never promise human follow-up from a demo line");
-    }
-  });
+      expect(prompt).toContain("Pricing:");
+      expect(prompt).toContain("when connected and currently available");
+      expect(prompt).not.toMatch(
+        /auditor engaged|target Q4 2026|on request \(~30 day onboarding\)/i,
+      );
+      expect(prompt).not.toMatch(/14-day free trial|Personal \$49|Starter \$149|Pro \$499/i);
+      expect(prompt).not.toContain("HIPAA-aware tone");
+      if (kind === "demo") {
+        expect(prompt).not.toMatch(/have someone follow up|someone will reach out/i);
+        expect(prompt).toContain("never promise human follow-up from a demo line");
+      }
+    },
+  );
 
   it("keeps canonical source knowledge conservative before the last-mile guard", () => {
-    expect(WIRELINE_INTEGRATIONS.every((name) => /when connected|when configured|where supported|billing/i.test(name))).toBe(true);
+    expect(
+      WIRELINE_INTEGRATIONS.every((name) =>
+        /when connected|when configured|where supported|billing/i.test(name),
+      ),
+    ).toBe(true);
     const roadmap = WIRELINE_COMPLIANCE_STATUS.inProgress.join(" ");
     expect(roadmap).toContain("not SOC 2 certified today");
     expect(roadmap).toContain("not currently available");
@@ -95,12 +101,12 @@ describe("showcase synchronization boundary", () => {
     expect(vapi).toBeGreaterThan(guard);
   });
 
-  it("preflights the full provider fleet before the first PATCH", () => {
+  it("preflights the full provider fleet before the mutation loop", () => {
     const sync = read("scripts/sync-wireline-showcase.mts");
     const preflight = sync.indexOf("const targets = preflightTargets(");
-    const firstPatch = sync.indexOf("await patchAssistant(");
+    const mutationLoop = sync.indexOf("for (const target of targets)", preflight);
     expect(preflight).toBeGreaterThan(-1);
-    expect(firstPatch).toBeGreaterThan(preflight);
+    expect(mutationLoop).toBeGreaterThan(preflight);
     expect(sync).toContain("Showcase preflight failed before provider mutation");
     expect(sync).toContain("sanitizeShowcaseAssistantPayload(");
     expect(sync).toContain("counts.patched !== targets.length");
