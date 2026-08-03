@@ -11,6 +11,7 @@ describe("security and external-operation atomicity", () => {
     const baseMigration = read("drizzle/migrations/0120_security_atomicity_team_sessions.sql");
     const versionMigration = read("drizzle/migrations/0127_monotonic_session_version.sql");
     const auth = read("src/lib/auth-service.ts");
+    const sessionFence = read("src/lib/session-generation.ts");
     const middleware = read("src/middleware/auth.ts");
     const sessionRoutes = read("src/routes/auth-session-hardening-routes.ts");
 
@@ -21,10 +22,12 @@ describe("security and external-operation atomicity", () => {
     expect(auth).toContain("session_version: user.sessionVersion");
     expect(auth).toContain('throw new Error("SESSION_VERSION_REQUIRED")');
     expect(auth).toContain("await scryptAsync");
-    expect(middleware).toContain("tokenSessionVersion(payload)");
-    expect(middleware).toContain("version === user.sessionVersion");
+    expect(sessionFence).toContain("payload.session_version === state.sessionVersion");
+    expect(sessionFence).toContain('hasClaim(payload, "session_version")');
+    expect(middleware).toContain("isSessionGenerationActive(payload, user)");
     expect(middleware).toContain("tenantStore.run(payload.sub");
     expect(middleware).toContain("tenantStore.run(userId");
+    expect(sessionRoutes).toContain("isSessionGenerationActive(payload, user)");
     expect(sessionRoutes).toContain("sessionUsers.sessionVersion} + 1");
     expect(sessionRoutes).toContain("sessionVersion: user.sessionVersion");
     expect(sessionRoutes).toContain("tenantStore.run(payload.sub");
