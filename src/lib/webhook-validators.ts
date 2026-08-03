@@ -34,11 +34,14 @@ export function isPrivateIpv6(ip: string): boolean {
   return (
     h === "::1" ||
     h === "::" || // unspecified — binds to all interfaces
-    /^fe[89ab]/i.test(h) || // fe80::/10 link-local (fe80–febf)
+    /^::(?:ffff:)?/i.test(h) || // IPv4-compatible/mapped low-address space
+    /^64:ff9b(?::1)?:/i.test(h) || // NAT64 translation prefixes
+    /^100:/i.test(h) || // 100::/64 discard-only
+    /^fe[89abcdef]/i.test(h) || // link-local and deprecated site-local
     /^f[cd]/i.test(h) || // fc00::/7 ULA
     /^ff/i.test(h) || // ff00::/8 multicast
-    /^2001:db8:/i.test(h) || // documentation range; never a delivery destination
-    /^::ffff:/i.test(h) // IPv4-mapped
+    /^2001:(?:0:|10:|1[1-9a-f]:|2:|2[0-9a-f]:|db8:)/i.test(h) || // transition, ORCHID, benchmark, docs
+    /^2002:/i.test(h) // deprecated 6to4 transition space
   );
 }
 
@@ -75,7 +78,7 @@ export function isSsrfUrl(raw: string): boolean {
   const host = rawHost.startsWith("[") ? rawHost.slice(1, -1) : rawHost;
   const ipFamily = isIP(host);
   return (
-    parsed.protocol !== "https:" && parsed.protocol !== "http:" ||
+    (parsed.protocol !== "https:" && parsed.protocol !== "http:") ||
     host === "localhost" ||
     (ipFamily === 4 && isPrivateIp(host)) ||
     (ipFamily === 6 && isPrivateIpv6(host))
@@ -116,10 +119,10 @@ function addressesIncludePrivate(addrs: Array<{ address: string; family: number 
 }
 
 /**
- * Delivery-time hostname guard. It rejects private IP literals directly and
- * fails closed when a hostname does not resolve or any A/AAAA answer is not
- * public. The delivery transport must pin one of the validated answers to close
- * the DNS lookup-to-connect race completely.
+ * Hostname classification helper retained for non-webhook server fetches. It
+ * rejects private IP literals directly and fails closed when a hostname does
+ * not resolve or any A/AAAA answer is not public. Webhook delivery itself uses
+ * the DNS-pinned transport in safe-webhook-delivery.ts.
  */
 export async function resolveWebhookDeliveryHostname(
   raw: string,
@@ -152,8 +155,8 @@ export async function resolveWebhookDeliveryHostname(
 }
 
 /**
- * @deprecated Prefer resolveWebhookDeliveryHostname for delivery-time checks.
- * Returns true when the hostname resolves private OR DNS fails (fail-closed).
+ * @deprecated Prefer resolveWebhookDeliveryHostname for classification and the
+ * DNS-pinned delivery transport for actual customer webhook sends.
  */
 export async function hostnameResolvesToPrivate(raw: string): Promise<boolean> {
   const resolution = await resolveWebhookDeliveryHostname(raw);
@@ -161,8 +164,9 @@ export async function hostnameResolvesToPrivate(raw: string): Promise<boolean> {
 }
 
 /**
- * Full async validator used at registration time.
- * Checks URL scheme, hostname patterns, and resolves all DNS A/AAAA answers.
+ * Full async validator used at webhook registration time.
+ * Customer webhook payloads may contain sensitive business and communication
+ * data, so only HTTPS endpoints are accepted.
  */
 export async function validateWebhookUrl(raw: string): Promise<string | null> {
   let parsed: URL;
@@ -171,8 +175,8 @@ export async function validateWebhookUrl(raw: string): Promise<string | null> {
   } catch {
     return "Invalid URL.";
   }
-  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-    return "Webhook URL must use http or https.";
+  if (parsed.protocol !== "https:") {
+    return "Webhook URL must use HTTPS.";
   }
   const rawHost = parsed.hostname.toLowerCase();
   const host = rawHost.startsWith("[") ? rawHost.slice(1, -1) : rawHost;
