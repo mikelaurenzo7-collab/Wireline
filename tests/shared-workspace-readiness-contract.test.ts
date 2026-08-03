@@ -28,4 +28,21 @@ describe("shared workspace readiness posture", () => {
       'router.use("/api/team", authenticateUser, requireCertifiedSharedWorkspaces)',
     );
   });
+
+  it("explains the certification state instead of silently disabling collaboration", () => {
+    const page = read("src/pages/TeamSettings.tsx");
+    expect(page).toContain('payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED"');
+    expect(page).toContain('setTeamAccess("certifying")');
+    expect(page).toContain('title="Shared workspaces are being certified"');
+    expect(page).toContain("tenant-isolation and permission certification");
+    expect(page).toContain('teamAccess === "ok"');
+    expect(page).toContain("data-wireline-preserve-case");
+  });
+
+  it("surfaces canonical API errors from invitation attempts", () => {
+    const page = read("src/pages/TeamSettings.tsx");
+    expect(page).toContain(
+      'payload?.error || payload?.message || "Invite could not be sent."',
+    );
+  });
 });
