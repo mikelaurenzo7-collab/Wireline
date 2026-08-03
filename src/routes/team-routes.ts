@@ -7,6 +7,7 @@ import * as schema from "../db/schema";
 import { secureTeamMembers } from "../db/security-schema";
 import { eq, and, desc, isNull, inArray, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { emailRateLimiter } from "../middleware/rate-limit-middleware";
 import { validateBody, inviteTeamMemberSchema } from "../lib/api-validation";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -17,6 +18,8 @@ import { getPostgresErrorCode } from "../lib/pg-errors";
 
 const router = Router();
 const INVITE_TTL_MS = 7 * 24 * 60 * 60_000;
+const INVITE_TOKEN_RE = /^[A-Za-z0-9_-]{43}$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function escapeHtml(value: string): string {
   return value
@@ -33,6 +36,11 @@ function escapeAttribute(value: string): string {
 
 function inviteHash(token: string): string {
   return createHash("sha256").update(token, "utf8").digest("hex");
+}
+
+function requireUuid(value: string, label: string): string {
+  if (!UUID_RE.test(value)) throw AppError.fromHttpStatus(400, `Invalid ${label}.`);
+  return value.toLowerCase();
 }
 
 router.get(
@@ -68,6 +76,7 @@ router.post(
   "/api/team/invite",
   authenticateUser,
   requirePermission("team.manage"),
+  emailRateLimiter,
   validateBody(inviteTeamMemberSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     const { email, role } = req.body;
@@ -206,7 +215,9 @@ router.post(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     const token = typeof req.body?.token === "string" ? req.body.token.trim() : "";
-    if (!token || token.length > 256) throw AppError.fromHttpStatus(400, "Invalid invitation token.");
+    if (!INVITE_TOKEN_RE.test(token)) {
+      throw AppError.fromHttpStatus(400, "Invalid invitation token.");
+    }
     const tokenHash = inviteHash(token);
 
     try {
@@ -323,7 +334,7 @@ router.post(
   "/api/team/workspaces/:tenantId/select",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    const tenantId = req.params.tenantId;
+    const tenantId = requireUuid(req.params.tenantId, "workspace id");
     if (tenantId !== req.user.id) {
       const [membership] = await tenantStore.run("", () =>
         drizzle
@@ -351,6 +362,7 @@ router.delete(
   authenticateUser,
   requirePermission("team.manage"),
   async (req: AuthenticatedRequest, res: Response) => {
+    const membershipId = requireUuid(req.params.id, "team member id");
     const [removed] = await drizzle
       .update(secureTeamMembers)
       .set({
@@ -360,7 +372,7 @@ router.delete(
       })
       .where(
         and(
-          eq(secureTeamMembers.id, req.params.id),
+          eq(secureTeamMembers.id, membershipId),
           eq(secureTeamMembers.tenantId, req.tenantId),
           isNull(secureTeamMembers.revokedAt),
         ),
