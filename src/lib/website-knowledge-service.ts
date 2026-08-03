@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { AI_TOOLS } from "./ai-tools";
@@ -127,6 +127,12 @@ export async function importWebsiteKnowledge(input: {
   }));
 
   const inserted = await drizzle.transaction(async (tx) => {
+    // AI extraction runs outside the transaction, but the final read/dedup/write
+    // sequence must be serial per agent. Without this lock, two simultaneous
+    // imports can both observe the same pre-insert snapshot and create duplicate
+    // facts despite the application-level deduplication below.
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${input.agentId}))`);
+
     const existingKnowledge = await tx
       .select({ content: schema.knowledge.content })
       .from(schema.knowledge)
