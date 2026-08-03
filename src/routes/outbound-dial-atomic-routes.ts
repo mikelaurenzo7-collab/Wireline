@@ -91,6 +91,15 @@ function gateResponse(res: Response, gate: Awaited<ReturnType<typeof evaluateOut
   });
 }
 
+function isAmbiguousProviderResult(result: Awaited<ReturnType<typeof placeOutboundCall>>): boolean {
+  if (result.ok && !result.callId) return true;
+  return (
+    !result.ok &&
+    result.status === 502 &&
+    String(result.error || "").startsWith("Voice carrier unavailable after retries:")
+  );
+}
+
 router.post(
   "/api/outbound/dial",
   authenticateUser,
@@ -129,6 +138,7 @@ router.post(
     }
 
     const operationKey = randomUUID();
+    let providerCallId: string | null = null;
     try {
       await drizzle
         .update(outboundDialReservations)
@@ -184,6 +194,19 @@ router.post(
         context,
       });
       if (!result.ok || !result.callId) {
+        if (isAmbiguousProviderResult(result)) {
+          await markReservation(operationKey, {
+            status: "dialing",
+            failureCode: "provider_outcome_ambiguous",
+          });
+          return res.status(202).json({
+            success: false,
+            code: "DIAL_STATUS_UNCERTAIN",
+            error:
+              "The carrier response was interrupted. Wireline is holding this number to prevent a duplicate call; check Phone before trying again.",
+            operationId: operationKey,
+          });
+        }
         await markReservation(operationKey, {
           status: "failed",
           failureCode: `provider_${result.status || 500}`,
@@ -194,7 +217,8 @@ router.post(
         });
       }
 
-      await markReservation(operationKey, { status: "dialing", callId: result.callId });
+      providerCallId = result.callId;
+      await markReservation(operationKey, { status: "dialing", callId: providerCallId });
 
       await drizzle.transaction(async (tx) => {
         await tx.insert(schema.outboundLeads).values({
@@ -203,7 +227,7 @@ router.post(
           customerName,
           customerNumber: phoneE164,
           context,
-          callId: result.callId,
+          callId: providerCallId,
           status: "Dialing",
           attempts: 1,
           lastCalledAt: new Date(),
@@ -220,7 +244,7 @@ router.post(
         });
         await tx
           .update(outboundDialReservations)
-          .set({ status: "completed", callId: result.callId, updatedAt: new Date() })
+          .set({ status: "completed", callId: providerCallId, updatedAt: new Date() })
           .where(eq(outboundDialReservations.operationKey, operationKey));
       });
 
@@ -244,10 +268,31 @@ router.post(
 
       return res.json({
         success: true,
-        callId: result.callId,
+        callId: providerCallId,
         operationId: operationKey,
       });
     } catch (error) {
+      if (providerCallId) {
+        await markReservation(operationKey, {
+          status: "dialing",
+          callId: providerCallId,
+          failureCode: "post_provider_persistence_failed",
+        }).catch(() => {});
+        log.error("Carrier accepted outbound call but local persistence failed", {
+          operationKey,
+          callId: providerCallId,
+          error: getErrorMessage(error),
+        });
+        return res.status(202).json({
+          success: true,
+          code: "DIAL_ACCEPTED_RECONCILING",
+          callId: providerCallId,
+          operationId: operationKey,
+          warning:
+            "The carrier accepted the call, but Wireline is reconciling local tracking. Do not retry this number.",
+        });
+      }
+
       await markReservation(operationKey, {
         status: "failed",
         failureCode: "internal_error",
