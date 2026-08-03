@@ -13,6 +13,8 @@ import {
 import { buildShowcaseAssistantPayload } from "../src/lib/showcase-assistant";
 import { sanitizeShowcaseAssistantPayload } from "../src/lib/showcase-prompt-truth-guard";
 
+// This mandatory contract also acts as the explicit, reviewed production-sync
+// request when its head commit carries the [sync-showcase] marker.
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 function promptFrom(payload: Record<string, unknown>): string {
