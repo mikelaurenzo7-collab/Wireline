@@ -25,11 +25,22 @@ type ClaimedJobIdentity = {
   maxAttempts?: number | null;
 };
 
+type ClaimStatus = "pending" | "failed";
+
+type ClaimOptions = {
+  status: ClaimStatus;
+  typeFilter?: JobType[];
+  jobId?: string;
+  userId?: string;
+};
+
 const CALLER_MANAGED_ENQUEUE_FAILURE_TYPES = new Set<JobType>(["campaign_dial"]);
 const STALE_RECOVERY_BATCH = 200;
-const legacyRetryBudgetRemaining = sql`coalesce(${schema.jobs.attempts}, 0) < coalesce(${schema.jobs.maxAttempts}, ${base.DEFAULT_MAX_ATTEMPTS})`;
-const legacyRunAtDue = (claimTime: Date) =>
+const retryBudgetRemaining = sql`coalesce(${schema.jobs.attempts}, 0) < coalesce(${schema.jobs.maxAttempts}, ${base.DEFAULT_MAX_ATTEMPTS})`;
+const runAtDue = (claimTime: Date) =>
   sql`coalesce(${schema.jobs.runAt}, ${claimTime}) <= ${claimTime}`;
+const attemptCountEquals = (expectedAttempts: number) =>
+  sql`coalesce(${schema.jobs.attempts}, 0) = ${expectedAttempts}`;
 
 export function enforceDurableEnqueueResult(
   opts: Pick<EnqueueOptions, "type">,
@@ -46,27 +57,48 @@ export async function enqueue(db: QueueDb, opts: EnqueueOptions): Promise<base.E
   return enforceDurableEnqueueResult(opts, result);
 }
 
+/**
+ * Claim one due row from exactly one status while enforcing the retry budget.
+ *
+ * The base queue still supports the historical "failed" retry state, so calling
+ * its broad claim helpers here would let exhausted legacy rows bypass the
+ * wrapper's attempt fence. Keeping both pending and failed claims in this
+ * helper makes every runtime claim use the same null-safe predicates.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle rows remain camelCase.
-async function claimLegacyFailed(db: QueueDb, typeFilter?: JobType[]): Promise<any | null> {
+async function claimEligibleJob(db: QueueDb, options: ClaimOptions): Promise<any | null> {
   return db.transaction(async (tx) => {
     const claimTime = new Date();
     const clauses = [
-      eq(schema.jobs.status, "failed"),
-      legacyRunAtDue(claimTime),
-      legacyRetryBudgetRemaining,
+      eq(schema.jobs.status, options.status),
+      runAtDue(claimTime),
+      retryBudgetRemaining,
     ];
-    if (typeFilter?.length) clauses.push(inArray(schema.jobs.type, typeFilter));
+    if (options.typeFilter?.length) {
+      clauses.push(inArray(schema.jobs.type, options.typeFilter));
+    }
+    if (options.jobId) clauses.push(eq(schema.jobs.id, options.jobId));
+    if (options.userId) clauses.push(eq(schema.jobs.userId, options.userId));
 
     const [job] = await tx
       .select()
       .from(schema.jobs)
       .where(and(...clauses))
-      .orderBy(schema.jobs.runAt)
+      .orderBy(schema.jobs.runAt, schema.jobs.id)
       .limit(1)
       .for("update", { skipLocked: true });
     if (!job) return null;
 
-    const expectedAttempts = Number(job.attempts || 0);
+    const expectedAttempts = Number(job.attempts ?? 0);
+    const updateClauses = [
+      eq(schema.jobs.id, job.id),
+      eq(schema.jobs.status, options.status),
+      attemptCountEquals(expectedAttempts),
+      runAtDue(claimTime),
+      retryBudgetRemaining,
+    ];
+    if (options.userId) updateClauses.push(eq(schema.jobs.userId, options.userId));
+
     const [updated] = await tx
       .update(schema.jobs)
       .set({
@@ -75,76 +107,38 @@ async function claimLegacyFailed(db: QueueDb, typeFilter?: JobType[]): Promise<a
         attempts: expectedAttempts + 1,
         updatedAt: claimTime,
       })
-      .where(
-        and(
-          eq(schema.jobs.id, job.id),
-          eq(schema.jobs.status, "failed"),
-          eq(schema.jobs.attempts, expectedAttempts),
-          legacyRunAtDue(claimTime),
-          legacyRetryBudgetRemaining,
-        ),
-      )
+      .where(and(...updateClauses))
       .returning();
-    return updated || null;
+    return updated ?? null;
   }, base.writeTransactionConfig());
 }
 
-/** New work is claimed first; rows stranded by the former retry bug are reclaimed afterward. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see claimLegacyFailed above.
+/** New pending work is claimed first; retryable legacy failed rows follow. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see claimEligibleJob above.
 export async function claimJob(db: QueueDb, typeFilter?: JobType[]): Promise<any | null> {
-  const pending = await base.claimJob(db, typeFilter as base.JobType[] | undefined);
-  return pending || claimLegacyFailed(db, typeFilter);
+  const pending = await claimEligibleJob(db, { status: "pending", typeFilter });
+  return pending ?? claimEligibleJob(db, { status: "failed", typeFilter });
 }
 
 export async function claimJobById(
   db: QueueDb,
   jobId: string,
   userId: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see claimLegacyFailed above.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see claimEligibleJob above.
 ): Promise<any | null> {
-  const pending = await base.claimJobById(db, jobId, userId);
-  if (pending) return pending;
-
-  return db.transaction(async (tx) => {
-    const claimTime = new Date();
-    const [job] = await tx
-      .select()
-      .from(schema.jobs)
-      .where(
-        and(
-          eq(schema.jobs.id, jobId),
-          eq(schema.jobs.userId, userId),
-          eq(schema.jobs.status, "failed"),
-          legacyRunAtDue(claimTime),
-          legacyRetryBudgetRemaining,
-        ),
-      )
-      .limit(1)
-      .for("update", { skipLocked: true });
-    if (!job) return null;
-
-    const expectedAttempts = Number(job.attempts || 0);
-    const [updated] = await tx
-      .update(schema.jobs)
-      .set({
-        status: "running",
-        startedAt: claimTime,
-        attempts: expectedAttempts + 1,
-        updatedAt: claimTime,
-      })
-      .where(
-        and(
-          eq(schema.jobs.id, job.id),
-          eq(schema.jobs.userId, userId),
-          eq(schema.jobs.status, "failed"),
-          eq(schema.jobs.attempts, expectedAttempts),
-          legacyRunAtDue(claimTime),
-          legacyRetryBudgetRemaining,
-        ),
-      )
-      .returning();
-    return updated || null;
-  }, base.writeTransactionConfig());
+  const pending = await claimEligibleJob(db, {
+    status: "pending",
+    jobId,
+    userId,
+  });
+  return (
+    pending ??
+    claimEligibleJob(db, {
+      status: "failed",
+      jobId,
+      userId,
+    })
+  );
 }
 
 /**
@@ -201,8 +195,11 @@ export async function failJob(
     .where(eq(schema.jobs.id, job.id))
     .limit(1);
   const longRunning = row?.type === "post_call_artifact" || row?.type === "scheduled_report";
+  // Claimed rows use one-based attempt counts; backoffSeconds accepts a
+  // zero-based failure index. Subtracting one preserves the documented
+  // 30s → 2m → 10m → 1h schedule instead of silently skipping 30 seconds.
   const retryDelaySeconds = Math.max(
-    base.backoffSeconds(attempts),
+    base.backoffSeconds(Math.max(attempts - 1, 0)),
     longRunning ? 5 * 60 : 0,
   );
 
@@ -260,7 +257,7 @@ export async function recoverStaleJobs(
 
     let recovered = 0;
     for (const job of staleJobs) {
-      const expectedAttempts = Number(job.attempts || 0);
+      const expectedAttempts = Number(job.attempts ?? 0);
       const exhausted = expectedAttempts >= Number(job.maxAttempts || base.DEFAULT_MAX_ATTEMPTS);
       const reset = await tx
         .update(schema.jobs)
@@ -278,7 +275,7 @@ export async function recoverStaleJobs(
           and(
             eq(schema.jobs.id, job.id),
             eq(schema.jobs.status, "running"),
-            eq(schema.jobs.attempts, expectedAttempts),
+            attemptCountEquals(expectedAttempts),
           ),
         )
         .returning({ id: schema.jobs.id });
