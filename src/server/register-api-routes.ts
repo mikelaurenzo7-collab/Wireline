@@ -59,6 +59,7 @@ import webhookTestRouter from "../routes/webhook-test-routes";
 import webhookRouter from "../routes/webhook-routes";
 import intakeRouter from "../routes/intake-routes";
 import supportRouter from "../routes/support-routes";
+import legacyKnowledgeCrawlRouter from "../routes/legacy-knowledge-crawl-routes";
 import jobRouter from "../routes/job-routes";
 import mobileRouter from "../routes/mobile-routes";
 import videoPresenterRouter from "../routes/video-presenter-routes";
@@ -163,6 +164,10 @@ export function registerApiRoutes(app: Express): void {
 
   app.use("/api/intake", intakeRouter);
   app.use(supportRouter);
+  // The launch-certified website import supersedes the retired durable crawl
+  // route. Mount the authenticated 410 tombstone first so stale clients receive
+  // a permanent migration response instead of the historical 503.
+  app.use(legacyKnowledgeCrawlRouter);
   app.use("/api/jobs", jobRouter);
   app.use(mobileRouter);
   app.use(marketingRuntimeRouter);
