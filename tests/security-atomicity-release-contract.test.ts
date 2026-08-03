@@ -103,12 +103,21 @@ describe("security and external-operation atomicity", () => {
     expect(source).toContain('code: "CHECKOUT_RECONCILING"');
   });
 
-  it("binds OAuth code deletion to the browser state in one statement", () => {
+  it("binds OAuth code deletion to the browser state through a restricted function", () => {
     const source = read("src/routes/auth-oauth-exchange-atomic-routes.ts");
-    const deletion = source.indexOf("DELETE FROM wireline_oauth_pending_codes");
-    expect(deletion).toBeGreaterThan(-1);
-    expect(source.slice(deletion, deletion + 500)).toContain("bridge_state_hash =");
-    expect(source.slice(deletion, deletion + 500)).toContain("expires_at > clock_timestamp()");
+    const migration = read("drizzle/migrations/0126_oauth_bridge_atomic_consume_function.sql");
+
+    expect(source).toContain("wireline_consume_oauth_pending_code");
+    expect(source).toContain("tenantStore.run(entry.user_id");
+    expect(source).not.toContain("DELETE FROM wireline_oauth_pending_codes");
+    expect(migration).toContain("SECURITY DEFINER");
+    expect(migration).toContain("DELETE FROM public.wireline_oauth_pending_codes");
+    expect(migration).toContain("pending.code_hash = p_code_hash");
+    expect(migration).toContain("pending.bridge_state_hash = p_bridge_state_hash");
+    expect(migration).toContain("pending.expires_at > clock_timestamp()");
+    expect(migration).toContain(
+      "GRANT EXECUTE ON FUNCTION public.wireline_consume_oauth_pending_code",
+    );
   });
 
   it("tests exactly one selected webhook and returns delivery truth", () => {
