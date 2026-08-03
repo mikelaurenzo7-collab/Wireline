@@ -27,7 +27,9 @@ type ClaimedJobIdentity = {
 
 const CALLER_MANAGED_ENQUEUE_FAILURE_TYPES = new Set<JobType>(["campaign_dial"]);
 const STALE_RECOVERY_BATCH = 200;
-const legacyRetryBudgetRemaining = sql`${schema.jobs.attempts} < ${schema.jobs.maxAttempts}`;
+const legacyRetryBudgetRemaining = sql`coalesce(${schema.jobs.attempts}, 0) < coalesce(${schema.jobs.maxAttempts}, ${base.DEFAULT_MAX_ATTEMPTS})`;
+const legacyRunAtDue = (claimTime: Date) =>
+  sql`coalesce(${schema.jobs.runAt}, ${claimTime}) <= ${claimTime}`;
 
 export function enforceDurableEnqueueResult(
   opts: Pick<EnqueueOptions, "type">,
@@ -50,7 +52,7 @@ async function claimLegacyFailed(db: QueueDb, typeFilter?: JobType[]): Promise<a
     const claimTime = new Date();
     const clauses = [
       eq(schema.jobs.status, "failed"),
-      lte(schema.jobs.runAt, claimTime),
+      legacyRunAtDue(claimTime),
       legacyRetryBudgetRemaining,
     ];
     if (typeFilter?.length) clauses.push(inArray(schema.jobs.type, typeFilter));
@@ -78,7 +80,7 @@ async function claimLegacyFailed(db: QueueDb, typeFilter?: JobType[]): Promise<a
           eq(schema.jobs.id, job.id),
           eq(schema.jobs.status, "failed"),
           eq(schema.jobs.attempts, expectedAttempts),
-          lte(schema.jobs.runAt, claimTime),
+          legacyRunAtDue(claimTime),
           legacyRetryBudgetRemaining,
         ),
       )
@@ -113,7 +115,7 @@ export async function claimJobById(
           eq(schema.jobs.id, jobId),
           eq(schema.jobs.userId, userId),
           eq(schema.jobs.status, "failed"),
-          lte(schema.jobs.runAt, claimTime),
+          legacyRunAtDue(claimTime),
           legacyRetryBudgetRemaining,
         ),
       )
@@ -136,7 +138,7 @@ export async function claimJobById(
           eq(schema.jobs.userId, userId),
           eq(schema.jobs.status, "failed"),
           eq(schema.jobs.attempts, expectedAttempts),
-          lte(schema.jobs.runAt, claimTime),
+          legacyRunAtDue(claimTime),
           legacyRetryBudgetRemaining,
         ),
       )
