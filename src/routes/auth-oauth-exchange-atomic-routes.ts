@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { Router, type Request, type Response } from "express";
 import { eq, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
-import { drizzle } from "../lib/server-context";
+import { drizzle, tenantStore } from "../lib/server-context";
 import { generateToken } from "../lib/auth-service";
 import {
   clearOAuthBridgeStateCookie,
@@ -43,12 +43,14 @@ router.post(
       throw AppError.fromHttpStatus(400, "Invalid or expired code");
     }
 
-    const rows = (await drizzle.execute(sql`
-      DELETE FROM wireline_oauth_pending_codes
-      WHERE code_hash = ${hashOAuthBridgeValue(code)}
-        AND bridge_state_hash = ${hashOAuthBridgeValue(bridgeState)}
-        AND expires_at > clock_timestamp()
-      RETURNING user_id, email, full_name, is_owner
+    // The pending-code table intentionally denies direct wireline_server access.
+    // The database function exposes only this atomic, browser-bound DELETE.
+    const consumed = (await drizzle.execute(sql`
+      SELECT user_id, email, full_name, is_owner
+      FROM public.wireline_consume_oauth_pending_code(
+        ${hashOAuthBridgeValue(code)},
+        ${hashOAuthBridgeValue(bridgeState)}
+      )
     `)) as unknown as {
       rows?: Array<{
         user_id: string;
@@ -57,23 +59,23 @@ router.post(
         is_owner: boolean;
       }>;
     };
-    const entry = rows.rows?.[0];
+    const entry = consumed.rows?.[0];
     if (!entry) throw AppError.fromHttpStatus(400, "Invalid or expired code");
+
+    const account_type = await tenantStore.run(entry.user_id, async () => {
+      const [sub] = await drizzle
+        .select({ plan: schema.subscriptions.plan })
+        .from(schema.subscriptions)
+        .where(eq(schema.subscriptions.userId, entry.user_id))
+        .limit(1);
+      const { resolveAccountType } = await import("../lib/account-type");
+      const { ensureDefaultAccount } = await import("../lib/account-service");
+      return (await ensureDefaultAccount(entry.user_id, resolveAccountType(sub?.plan))).type;
+    });
 
     clearOAuthBridgeStateCookie(res);
     const sessionToken = generateToken({ id: entry.user_id, email: entry.email });
     setSessionCookie(res, sessionToken);
-
-    const [sub] = await drizzle
-      .select({ plan: schema.subscriptions.plan })
-      .from(schema.subscriptions)
-      .where(eq(schema.subscriptions.userId, entry.user_id))
-      .limit(1);
-    const { resolveAccountType } = await import("../lib/account-type");
-    const { ensureDefaultAccount } = await import("../lib/account-service");
-    const account_type = (
-      await ensureDefaultAccount(entry.user_id, resolveAccountType(sub?.plan))
-    ).type;
 
     return res.json({
       ...authSuccessBody({
