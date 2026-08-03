@@ -1,3 +1,5 @@
+import { isIP } from "node:net";
+
 // Pure SSRF-guard helpers for webhook URL validation.
 // Extracted from server.ts so they can be unit-tested independently.
 
@@ -5,20 +7,25 @@
 const CGN_RE = /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./;
 // Matches 198.18.0.0/15 — Benchmarking networks (RFC 2544).
 const BENCH_RE = /^198\.(1[89])\./;
+// Multicast and reserved/future-use IPv4 space must never be a webhook destination.
+const NON_PUBLIC_V4_RE = /^(?:22[4-9]|23\d|24\d|25[0-5])\./;
 
 export function isPrivateIp(ip: string): boolean {
   return (
-    ip === "0.0.0.0" ||
+    /^0\./.test(ip) || // 0.0.0.0/8 — current network / unspecified
     /^127\./.test(ip) ||
     /^10\./.test(ip) ||
     /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
     /^192\.168\./.test(ip) ||
     /^169\.254\./.test(ip) ||
+    /^192\.0\.0\./.test(ip) || // IETF protocol assignments
+    /^192\.88\.99\./.test(ip) || // deprecated 6to4 relay anycast
     CGN_RE.test(ip) ||
     BENCH_RE.test(ip) || // 198.18.0.0/15 benchmarking
     /^192\.0\.2\./.test(ip) || // 192.0.2.0/24 TEST-NET-1 (RFC 5737)
     /^198\.51\.100\./.test(ip) || // 198.51.100.0/24 TEST-NET-2 (RFC 5737)
-    /^203\.0\.113\./.test(ip) // 203.0.113.0/24 TEST-NET-3 (RFC 5737)
+    /^203\.0\.113\./.test(ip) || // 203.0.113.0/24 TEST-NET-3 (RFC 5737)
+    NON_PUBLIC_V4_RE.test(ip)
   );
 }
 
@@ -29,18 +36,17 @@ export function isPrivateIpv6(ip: string): boolean {
     h === "::" || // unspecified — binds to all interfaces
     /^fe[89ab]/i.test(h) || // fe80::/10 link-local (fe80–febf)
     /^f[cd]/i.test(h) || // fc00::/7 ULA
+    /^ff/i.test(h) || // ff00::/8 multicast
+    /^2001:db8:/i.test(h) || // documentation range; never a delivery destination
     /^::ffff:/i.test(h) // IPv4-mapped
   );
 }
 
-// True only for hostnames that look like an IPv4 literal (four numeric octets).
-// Used to gate IPv4 private-range checks so legitimate domains like
-// "10.example.com" or "192.168.example.com" aren't rejected before DNS resolution.
-const IPV4_LITERAL_RE = /^\d{1,3}(\.\d{1,3}){3}$/;
-
 /**
  * Fail-closed SSRF guard for server-initiated fetches of user-supplied URLs.
- * Combines sync literal/private-host checks with DNS resolution (blocks rebinding).
+ * Combines literal/private-host checks with DNS resolution. Callers that need
+ * full DNS-rebinding resistance must also pin the validated address during the
+ * network connection rather than performing an unrelated second lookup.
  * Returns a user-facing error string, or null when safe to fetch.
  */
 export async function assertUrlSafeForServerFetch(raw: string): Promise<string | null> {
@@ -57,7 +63,7 @@ export async function assertUrlSafeForServerFetch(raw: string): Promise<string |
   return null;
 }
 
-/** Sync SSRF guard — pattern checks only, no DNS. */
+/** Sync SSRF guard — pattern and normalized IP-literal checks only, no DNS. */
 export function isSsrfUrl(raw: string): boolean {
   let parsed: URL;
   try {
@@ -67,15 +73,12 @@ export function isSsrfUrl(raw: string): boolean {
   }
   const rawHost = parsed.hostname.toLowerCase();
   const host = rawHost.startsWith("[") ? rawHost.slice(1, -1) : rawHost;
-  const isIpv4Literal = IPV4_LITERAL_RE.test(host);
-  // IPv6 prefix checks must only run on IPv6 literals (presence of ":") — otherwise
-  // legitimate domains like "fd-prod.example.com" or "feb-promo.example.com" would
-  // be flagged as private.
-  const isIpv6Literal = host.includes(":");
+  const ipFamily = isIP(host);
   return (
+    parsed.protocol !== "https:" && parsed.protocol !== "http:" ||
     host === "localhost" ||
-    (isIpv4Literal && isPrivateIp(host)) ||
-    (isIpv6Literal && isPrivateIpv6(host))
+    (ipFamily === 4 && isPrivateIp(host)) ||
+    (ipFamily === 6 && isPrivateIpv6(host))
   );
 }
 
@@ -87,12 +90,14 @@ export type WebhookHostnameResolution =
   | { status: "private" }
   | { status: "dns_error" };
 
-function parseWebhookHost(raw: string): { host: string } | { error: "invalid_url" } {
+function parseWebhookHost(
+  raw: string,
+): { host: string; protocol: string } | { error: "invalid_url" } {
   try {
     const parsed = new URL(raw);
     const rawHost = parsed.hostname.toLowerCase();
     const host = rawHost.startsWith("[") ? rawHost.slice(1, -1) : rawHost;
-    return { host };
+    return { host, protocol: parsed.protocol };
   } catch {
     return { error: "invalid_url" };
   }
@@ -111,20 +116,34 @@ function addressesIncludePrivate(addrs: Array<{ address: string; family: number 
 }
 
 /**
- * Delivery-time DNS guard — fail closed on resolution failure to block rebinding.
+ * Delivery-time hostname guard. It rejects private IP literals directly and
+ * fails closed when a hostname does not resolve or any A/AAAA answer is not
+ * public. The delivery transport must pin one of the validated answers to close
+ * the DNS lookup-to-connect race completely.
  */
 export async function resolveWebhookDeliveryHostname(
   raw: string,
 ): Promise<WebhookHostnameResolution> {
   const parsed = parseWebhookHost(raw);
   if ("error" in parsed) return { status: "dns_error" };
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    return { status: "dns_error" };
+  }
 
   const { host } = parsed;
-  const isIpLiteral = /^[\d.]+$/.test(host) || host.includes(":");
-  if (isIpLiteral) return { status: "public" }; // sync guards already handled literals
+  if (host === "localhost") return { status: "private" };
+
+  const ipFamily = isIP(host);
+  if (ipFamily === 4) {
+    return { status: isPrivateIp(host) ? "private" : "public" };
+  }
+  if (ipFamily === 6) {
+    return { status: isPrivateIpv6(host) ? "private" : "public" };
+  }
 
   try {
     const addrs = await lookupHostnameAddresses(host);
+    if (!addrs.length) return { status: "dns_error" };
     if (addressesIncludePrivate(addrs)) return { status: "private" };
     return { status: "public" };
   } catch {
@@ -157,21 +176,19 @@ export async function validateWebhookUrl(raw: string): Promise<string | null> {
   }
   const rawHost = parsed.hostname.toLowerCase();
   const host = rawHost.startsWith("[") ? rawHost.slice(1, -1) : rawHost;
-
-  const isIpv4Literal = IPV4_LITERAL_RE.test(host);
-  const isIpv6Literal = host.includes(":");
+  const ipFamily = isIP(host);
   if (
     host === "localhost" ||
-    (isIpv4Literal && isPrivateIp(host)) ||
-    (isIpv6Literal && isPrivateIpv6(host))
+    (ipFamily === 4 && isPrivateIp(host)) ||
+    (ipFamily === 6 && isPrivateIpv6(host))
   ) {
     return PRIVATE_MSG;
   }
 
-  const isIpLiteral = /^[\d.]+$/.test(host) || host.includes(":");
-  if (!isIpLiteral) {
+  if (ipFamily === 0) {
     try {
       const addrs = await lookupHostnameAddresses(host);
+      if (!addrs.length) return DNS_MSG;
       if (addressesIncludePrivate(addrs)) return PRIVATE_MSG;
     } catch {
       return DNS_MSG;
