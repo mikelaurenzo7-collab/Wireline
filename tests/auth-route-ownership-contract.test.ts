@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 const root = path.resolve(process.cwd());
 const read = (relative: string) => fs.readFileSync(path.join(root, relative), "utf8");
 
+// Exact-PR-head release gate: session routes must remain generation-aware and precede legacy handlers.
 describe("authentication route ownership", () => {
   it("mounts revocation-aware session handlers before the legacy auth router", () => {
     const registry = read("src/server/register-api-routes.ts");
