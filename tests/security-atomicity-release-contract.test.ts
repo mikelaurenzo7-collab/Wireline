@@ -22,7 +22,10 @@ describe("security and external-operation atomicity", () => {
   it("claims invitations only for the bound email and issues verified workspace sessions", () => {
     const source = read("src/routes/team-routes.ts");
     const page = read("src/pages/AcceptInvite.tsx");
-    const rls = read("drizzle/migrations/0122_team_workspace_rls.sql");
+    const baseRls = read("drizzle/migrations/0122_team_workspace_rls.sql");
+    const consolidatedRls = read(
+      "drizzle/migrations/0123_team_workspace_rls_policy_consolidation.sql",
+    );
 
     expect(source).toContain("invitation_token_hash = ${tokenHash}");
     expect(source).toContain("lower(email) = lower(${req.user.email})");
@@ -36,10 +39,13 @@ describe("security and external-operation atomicity", () => {
     expect(page).toContain("wireline_pending_invitation");
     expect(page).toContain("window.history.replaceState");
     expect(page).toContain('window.location.assign("/overview")');
-    expect(rls).toContain("CREATE POLICY workspace_manage");
-    expect(rls).toContain("tenant_id = (SELECT public.wireline_current_user_id())");
-    expect(rls).toContain("CREATE POLICY membership_self_read");
-    expect(rls).toContain("FOR SELECT TO wireline_server");
+    expect(baseRls).toContain("REVOKE ALL ON TABLE public.wireline_team_members");
+    expect(consolidatedRls).toContain("CREATE POLICY workspace_read");
+    expect(consolidatedRls).toContain("tenant_id = (SELECT public.wireline_current_user_id())");
+    expect(consolidatedRls).toContain("OR user_id = (SELECT public.wireline_current_user_id())");
+    expect(consolidatedRls).toContain("CREATE POLICY workspace_insert");
+    expect(consolidatedRls).toContain("CREATE POLICY workspace_update");
+    expect(consolidatedRls).toContain("CREATE POLICY workspace_delete");
   });
 
   it("reserves each number before dialing and preserves the lock after uncertain outcomes", () => {
