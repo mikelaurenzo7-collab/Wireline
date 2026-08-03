@@ -61,6 +61,17 @@
   letter-spacing: normal;
 }
 
+/* Components that render customer/provider-authored strings use a semantic data
+ * marker when adding a utility class would be inappropriate (email bodies,
+ * transcripts, artifact fragments, brand values). Give it the same hard
+ * guarantee as `.wl-preserve-case`: future caps selectors cannot rewrite the
+ * content or leave uppercase tracking behind. */
+:is(.wl-ui-caps, .wl-cased) [data-wireline-preserve-case],
+:is(.wl-ui-caps, .wl-cased) [data-wireline-preserve-case] * {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
 /* CTAs are controls, not prose. The terminal layer previously reset these to
  * sentence case after uppercase-system.css had correctly placed them in the
  * control tier, causing identical buttons to render differently by surface. */
