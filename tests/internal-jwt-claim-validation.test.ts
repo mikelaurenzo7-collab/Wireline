@@ -50,6 +50,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+// These parser semantics run in the permanent preview/production boundary suite.
 describe("internal JWT claim validation", () => {
   it("accepts a canonical Wireline session token", async () => {
     const payload = await verifyInternalJwt(signedToken(validPayload()), SECRET);
