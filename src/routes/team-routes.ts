@@ -153,10 +153,10 @@ router.post(
       });
 
       const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
-      const acceptPath = `/accept-invite?token=${encodeURIComponent(plaintextToken)}`;
-      // Existing users should land directly on acceptance. The public page
-      // redirects unauthenticated recipients through signup while preserving
-      // the one-time token, so both account states share one canonical link.
+      // Fragments never reach access logs or referrer headers. AcceptInvite stores
+      // the token in sessionStorage before sending an unauthenticated recipient
+      // through signup, then removes it immediately after acceptance.
+      const acceptPath = `/accept-invite#token=${encodeURIComponent(plaintextToken)}`;
       const inviteUrl = `${appUrl}${acceptPath}`;
       const invitedBy = req.user.email || "A colleague";
       const subject = `Invitation to join ${invitedBy} on Wireline`;
