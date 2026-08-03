@@ -251,9 +251,8 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
       : null;
   if (payloadTimestamp) headers["x-wireline-timestamp"] = payloadTimestamp;
   if (signingSecret) {
-    headers["x-wireline-signature"] = createHmac("sha256", signingSecret)
-      .update(body)
-      .digest("hex");
+    const digest = createHmac("sha256", signingSecret).update(body).digest("hex");
+    headers["x-wireline-signature"] = `sha256=${digest}`;
   }
 
   let statusCode: number | null = null;
