@@ -147,15 +147,16 @@ run("npx", [
   "tests/extra-agent-payment-atomicity.test.ts",
   "tests/durable-enqueue-contract.test.ts",
   "tests/showcase-truth-sync-contract.test.ts",
-  // These are direct financial, tenant, external-delivery, and durable-work
-  // boundaries. They must run on every preview and production-equivalent build,
-  // not only in the one-shot full suite.
+  // These are direct financial, tenant, external-delivery, secure-ingestion,
+  // and durable-work boundaries. They must run on every preview and
+  // production-equivalent build, not only in the one-shot full suite.
   "tests/checkout-customer-recovery-contract.test.ts",
   "tests/shared-workspace-readiness-contract.test.ts",
   "tests/webhook-delivery-literal-ssrf-contract.test.ts",
   "tests/webhook-dns-pinning-contract.test.ts",
   "tests/webhook-management-hardening-contract.test.ts",
   "tests/webhook-signing-contract.test.ts",
+  "tests/website-knowledge-ingestion-contract.test.ts",
   "tests/job-attempt-fencing-contract.test.ts",
 ]);
 runLiveVapiSchemaAuditIfRequested();
