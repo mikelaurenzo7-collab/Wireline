@@ -158,6 +158,7 @@ run("npx", [
   "tests/webhook-signing-contract.test.ts",
   "tests/website-knowledge-ingestion-contract.test.ts",
   "tests/website-knowledge-timeout.test.ts",
+  "tests/website-fetch-stream-safety.test.ts",
   "tests/job-attempt-fencing-contract.test.ts",
 ]);
 runLiveVapiSchemaAuditIfRequested();
