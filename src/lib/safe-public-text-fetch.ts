@@ -64,6 +64,14 @@ function timeoutError(): WebsiteFetchError {
   );
 }
 
+function responseTooLargeError(): WebsiteFetchError {
+  return new WebsiteFetchError(
+    "response_too_large",
+    "That page is too large to import. Use a focused page with the essential business information.",
+    413,
+  );
+}
+
 function blockMessage(reason: WebhookBlockReason): WebsiteFetchError {
   if (reason === "private_destination") {
     return new WebsiteFetchError(
@@ -195,6 +203,11 @@ function getPinnedPage(
         ...(isIP(destination.hostname) === 0 ? { servername: destination.hostname } : {}),
       },
       (response) => {
+        // Attach the stream error handler before any header-driven early exit.
+        // Destroying an IncomingMessage with an error before this listener exists
+        // can surface as an unhandled stream error instead of a controlled API response.
+        response.once("error", finishError);
+
         const statusCode = response.statusCode || 0;
         const location = headerValue(response.headers.location) || null;
         const contentType = mimeType(headerValue(response.headers["content-type"]));
@@ -203,13 +216,26 @@ function getPinnedPage(
           .toLowerCase();
         const declaredLength = Number(headerValue(response.headers["content-length"]));
         if (Number.isFinite(declaredLength) && declaredLength > WEBSITE_FETCH_MAX_BYTES) {
-          response.destroy(
-            new WebsiteFetchError(
-              "response_too_large",
-              "That page is too large to import. Use a focused page with the essential business information.",
-              413,
-            ),
-          );
+          finishError(responseTooLargeError());
+          response.destroy();
+          return;
+        }
+
+        // A redirect body is irrelevant and can be attacker-controlled. Close the
+        // one-off socket immediately after capturing Location so each hop is
+        // re-resolved and revalidated without downloading up to the full body cap.
+        if (statusCode >= 300 && statusCode < 400) {
+          if (settled) return;
+          settled = true;
+          clearTotalTimer();
+          response.destroy();
+          resolve({
+            statusCode,
+            location,
+            contentType,
+            contentEncoding,
+            body: Buffer.alloc(0),
+          });
           return;
         }
 
@@ -219,18 +245,12 @@ function getPinnedPage(
           const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
           total += buffer.length;
           if (total > WEBSITE_FETCH_MAX_BYTES) {
-            response.destroy(
-              new WebsiteFetchError(
-                "response_too_large",
-                "That page is too large to import. Use a focused page with the essential business information.",
-                413,
-              ),
-            );
+            finishError(responseTooLargeError());
+            response.destroy();
             return;
           }
           chunks.push(buffer);
         });
-        response.once("error", finishError);
         response.once("end", () => {
           if (settled) return;
           settled = true;
