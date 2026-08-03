@@ -7,10 +7,15 @@ type VapiMessage = {
   content?: unknown;
 };
 
+type VapiModelConfig = {
+  provider?: string;
+  model?: string;
+  fallbackModels?: string[];
+  messages?: VapiMessage[];
+};
+
 type ShowcaseAssistantPayload = {
-  model?: {
-    messages?: VapiMessage[];
-  };
+  model?: VapiModelConfig;
 };
 
 const SHOWCASE_PROMPT_MARKERS = [
@@ -28,6 +33,9 @@ const FORBIDDEN_SHOWCASE_CLAIMS = [
   "Pro $499",
   "Business $1,499",
 ] as const;
+
+const OPENAI_SHOWCASE_FALLBACK = "gpt-5.6-luna";
+const GOOGLE_SHOWCASE_FALLBACK = "gemini-2.5-flash";
 
 function systemPrompt(payload: ShowcaseAssistantPayload): {
   message: VapiMessage;
@@ -49,13 +57,39 @@ function replaceLiteral(source: string, from: string, to: string): string {
   return source.includes(from) ? source.split(from).join(to) : source;
 }
 
+function makeModelFallbacksProviderCoherent(model: VapiModelConfig | undefined): void {
+  if (!model) return;
+  const provider = String(model.provider || "").trim().toLowerCase();
+  const primary = String(model.model || "").trim();
+  const configured = Array.isArray(model.fallbackModels) ? model.fallbackModels : [];
+
+  if (provider === "openai") {
+    const compatible = configured.filter(
+      (candidate) => /^gpt-/i.test(candidate) && candidate !== primary,
+    );
+    model.fallbackModels = compatible.length ? compatible : [OPENAI_SHOWCASE_FALLBACK];
+    return;
+  }
+
+  if (provider === "google") {
+    const compatible = configured.filter(
+      (candidate) => /^gemini-/i.test(candidate) && candidate !== primary,
+    );
+    model.fallbackModels = compatible.length ? compatible : [GOOGLE_SHOWCASE_FALLBACK];
+    return;
+  }
+
+  // Unknown Vapi providers must not inherit a cross-provider fallback list.
+  delete model.fallbackModels;
+}
+
 /**
- * Last-mile guard for public Vapi prompts.
+ * Last-mile guard for public Vapi prompts and model payloads.
  *
  * Public assistants are long-lived provider objects and can outlive a code
  * deployment. This guard keeps both dynamic assistant responses and the
- * provider-sync script from re-publishing unverified compliance schedules,
- * unconditional connector promises, or demo-only follow-up claims.
+ * provider-sync script from re-publishing unverified claims or cross-provider
+ * fallback model IDs that Vapi rejects at the assistant boundary.
  */
 export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayload>(payload: T): T {
   const promptRow = systemPrompt(payload);
@@ -63,6 +97,8 @@ export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayl
 
   const kind = showcaseKind(promptRow.content);
   if (!kind) return payload;
+
+  makeModelFallbacksProviderCoherent(payload.model);
 
   let prompt = promptRow.content;
   prompt = replaceLiteral(
@@ -103,9 +139,6 @@ export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayl
   if (forbidden) {
     throw new Error(`Showcase prompt contains forbidden claim: ${forbidden}`);
   }
-  // The prompt deliberately contains a negative rule stating that the agent
-  // must never say "someone will reach out". Reject the affirmative fallback
-  // phrase that caused the defect without rejecting that prohibition itself.
   if (kind === "demo" && /have someone follow up/i.test(prompt)) {
     throw new Error("Demo showcase prompt promises an unavailable human follow-up.");
   }
