@@ -54,6 +54,24 @@ function runDeepLaunchAuditIfRequested() {
   run("npm", ["run", "test:run"]);
 }
 
+function syncShowcaseIfRequested() {
+  const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
+  if (environment !== "production" || !commitMessage.includes("[sync-showcase]")) return;
+  if (isDuplicateV0Project) {
+    console.error("Refusing showcase synchronization from a duplicate Vercel project.");
+    process.exit(1);
+  }
+  if (!process.env.VAPI_PRIVATE_KEY || !process.env.VAPI_WEBHOOK_SECRET) {
+    console.error(
+      "Refusing showcase synchronization without VAPI_PRIVATE_KEY and VAPI_WEBHOOK_SECRET.",
+    );
+    process.exit(1);
+  }
+
+  console.log("Synchronizing all public Wireline assistants after build certification.");
+  run("npx", ["tsx", "scripts/sync-wireline-showcase.mts"]);
+}
+
 function configurePreviewEnvironment() {
   if (environment !== "preview") return;
 
@@ -128,6 +146,7 @@ run("npx", [
   "tests/capacity-and-carrier-double-pass.test.ts",
   "tests/extra-agent-payment-atomicity.test.ts",
   "tests/durable-enqueue-contract.test.ts",
+  "tests/showcase-truth-sync-contract.test.ts",
   // These are direct financial, tenant, external-delivery, and durable-work
   // boundaries. They must run on every preview and production-equivalent build,
   // not only in the one-shot full suite.
@@ -173,3 +192,4 @@ run("npx", [
   "--format=cjs",
   "--outfile=dist/chatgpt-mcp-api.cjs",
 ]);
+syncShowcaseIfRequested();
