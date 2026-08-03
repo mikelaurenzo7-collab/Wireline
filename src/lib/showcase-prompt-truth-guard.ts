@@ -27,6 +27,7 @@ const FORBIDDEN_SHOWCASE_CLAIMS = [
   "auditor engaged",
   "target Q4 2026",
   "on request (~30 day onboarding)",
+  "BAA available on the Enterprise roadmap",
   "14-day free trial",
   "Personal $49",
   "Starter $149",
@@ -57,6 +58,23 @@ function replaceLiteral(source: string, from: string, to: string): string {
   return source.includes(from) ? source.split(from).join(to) : source;
 }
 
+function setCompatibleFallbacks(
+  model: VapiModelConfig,
+  compatible: string[],
+  managedFallback: string,
+  primary: string,
+): void {
+  if (compatible.length) {
+    model.fallbackModels = compatible;
+    return;
+  }
+  if (!primary || primary === managedFallback) {
+    delete model.fallbackModels;
+    return;
+  }
+  model.fallbackModels = [managedFallback];
+}
+
 function makeModelFallbacksProviderCoherent(model: VapiModelConfig | undefined): void {
   if (!model) return;
   const provider = String(model.provider || "").trim().toLowerCase();
@@ -67,7 +85,7 @@ function makeModelFallbacksProviderCoherent(model: VapiModelConfig | undefined):
     const compatible = configured.filter(
       (candidate) => /^gpt-/i.test(candidate) && candidate !== primary,
     );
-    model.fallbackModels = compatible.length ? compatible : [OPENAI_SHOWCASE_FALLBACK];
+    setCompatibleFallbacks(model, compatible, OPENAI_SHOWCASE_FALLBACK, primary);
     return;
   }
 
@@ -75,7 +93,7 @@ function makeModelFallbacksProviderCoherent(model: VapiModelConfig | undefined):
     const compatible = configured.filter(
       (candidate) => /^gemini-/i.test(candidate) && candidate !== primary,
     );
-    model.fallbackModels = compatible.length ? compatible : [GOOGLE_SHOWCASE_FALLBACK];
+    setCompatibleFallbacks(model, compatible, GOOGLE_SHOWCASE_FALLBACK, primary);
     return;
   }
 
@@ -110,6 +128,11 @@ export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayl
     prompt,
     "HIPAA BAA - Enterprise tier only, on request (~30 day onboarding)",
     "HIPAA and BAA support are not currently available; do not present Wireline as HIPAA-certified",
+  );
+  prompt = replaceLiteral(
+    prompt,
+    "not currently HIPAA-certified (BAA available on the Enterprise roadmap)",
+    "not HIPAA-certified; HIPAA and BAA support are not currently available",
   );
   prompt = replaceLiteral(
     prompt,
