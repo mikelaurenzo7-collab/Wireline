@@ -34,6 +34,26 @@ function parseDeliveryId(raw: string): bigint {
   return id;
 }
 
+function publicWebhookRecord(row: any) {
+  // Never return either the legacy plaintext secret or encrypted vault blob.
+  // The last four characters are sufficient for an Account Holder to identify
+  // which signing secret is active.
+  return {
+    id: row.id,
+    userId: row.userId,
+    name: row.name,
+    url: row.url,
+    events: row.events,
+    active: row.active,
+    lastTriggeredAt: row.lastTriggeredAt,
+    lastStatus: row.lastStatus,
+    lastError: row.lastError,
+    deliveryCount: row.deliveryCount,
+    createdAt: row.createdAt,
+    secretLastFour: row.secretLastFour,
+  };
+}
+
 router.get("/", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const webhooks = await drizzle
@@ -119,7 +139,7 @@ router.post(
           ip: req.ip,
         })
         .catch(() => {});
-      res.json({ webhook: data });
+      res.json({ webhook: publicWebhookRecord(data) });
     } catch (e: any) {
       if (e instanceof AppError) throw e;
       log.error("Failed to create webhook", { error: getErrorMessage(e) });
@@ -202,7 +222,7 @@ router.patch(
           ip: req.ip,
         })
         .catch(() => {});
-      res.json({ webhook: data });
+      res.json({ webhook: publicWebhookRecord(data) });
     } catch (e: any) {
       if (e instanceof AppError) throw e;
       log.error("Failed to update", { error: getErrorMessage(e) });
@@ -218,9 +238,11 @@ router.delete(
   webhooksRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      await drizzle
+      const [deleted] = await drizzle
         .delete(schema.webhooks)
-        .where(and(eq(schema.webhooks.id, req.params.id), eq(schema.webhooks.userId, req.user.id)));
+        .where(and(eq(schema.webhooks.id, req.params.id), eq(schema.webhooks.userId, req.user.id)))
+        .returning({ id: schema.webhooks.id });
+      if (!deleted) throw AppError.fromHttpStatus(404, "Webhook not found.");
       void auditLogger
         .logWebhook("deleted", {
           userId: req.user.id,
@@ -291,26 +313,49 @@ router.get(
 router.post(
   "/deliveries/:id/retry",
   authenticateUser,
+  requirePermission("webhooks.manage"),
+  webhooksRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = parseDeliveryId(req.params.id);
-      const [row] = await drizzle
-        .select({ id: schema.webhookDeliveries.id, userId: schema.webhookDeliveries.userId })
-        .from(schema.webhookDeliveries)
-        .where(eq(schema.webhookDeliveries.id, id))
-        .limit(1);
-      if (!row || row.userId !== req.user.id)
-        throw AppError.fromHttpStatus(404, "Delivery not found.");
-
-      await drizzle
+      const [claimed] = await drizzle
         .update(schema.webhookDeliveries)
         .set({
           status: "pending",
           nextAttemptAt: new Date(),
           lastError: null,
           lastStatusCode: null,
+          deliveredAt: null,
         })
-        .where(eq(schema.webhookDeliveries.id, id));
+        .where(
+          and(
+            eq(schema.webhookDeliveries.id, id),
+            eq(schema.webhookDeliveries.userId, req.user.id),
+            eq(schema.webhookDeliveries.status, "failed"),
+          ),
+        )
+        .returning({ id: schema.webhookDeliveries.id });
+
+      if (!claimed) {
+        const [owned] = await drizzle
+          .select({ status: schema.webhookDeliveries.status })
+          .from(schema.webhookDeliveries)
+          .where(
+            and(
+              eq(schema.webhookDeliveries.id, id),
+              eq(schema.webhookDeliveries.userId, req.user.id),
+            ),
+          )
+          .limit(1);
+        if (!owned) throw AppError.fromHttpStatus(404, "Delivery not found.");
+        return res.status(409).json({
+          code: "DELIVERY_NOT_FAILED",
+          error:
+            owned.status === "pending"
+              ? "This delivery is already pending or in progress."
+              : "Only failed deliveries can be retried.",
+        });
+      }
 
       runInBackground(`webhook delivery retry ${id.toString()}`, () =>
         attemptWebhookDelivery(id.toString()),
@@ -327,17 +372,21 @@ router.post(
 router.delete(
   "/deliveries/:id",
   authenticateUser,
+  requirePermission("webhooks.manage"),
+  webhooksRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = parseDeliveryId(req.params.id);
-      await drizzle
+      const [deleted] = await drizzle
         .delete(schema.webhookDeliveries)
         .where(
           and(
             eq(schema.webhookDeliveries.id, id),
             eq(schema.webhookDeliveries.userId, req.user.id),
           ),
-        );
+        )
+        .returning({ id: schema.webhookDeliveries.id });
+      if (!deleted) throw AppError.fromHttpStatus(404, "Delivery not found.");
       res.json({ success: true });
     } catch (e: any) {
       if (e instanceof AppError) throw e;
