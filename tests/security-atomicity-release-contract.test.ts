@@ -28,7 +28,7 @@ describe("security and external-operation atomicity", () => {
     expect(source).toContain('"/api/team/workspaces/:tenantId/select"');
   });
 
-  it("reserves each number before dialing and closes the reservation with the lead", () => {
+  it("reserves each number before dialing and preserves the lock after uncertain outcomes", () => {
     const source = read("src/routes/outbound-dial-atomic-routes.ts");
     const reservation = source.indexOf(".insert(outboundDialReservations)");
     const provider = source.indexOf("await placeOutboundCall");
@@ -40,9 +40,13 @@ describe("security and external-operation atomicity", () => {
     expect(lead).toBeGreaterThan(provider);
     expect(completion).toBeGreaterThan(provider);
     expect(source).toContain(".onConflictDoNothing()");
+    expect(source).toContain('status: "dialing",\n            failureCode: "provider_outcome_ambiguous"');
+    expect(source).toContain('failureCode: "post_provider_persistence_failed"');
+    expect(source).toContain('code: "DIAL_STATUS_UNCERTAIN"');
+    expect(source).toContain('code: "DIAL_ACCEPTED_RECONCILING"');
   });
 
-  it("creates Stripe customers and Checkout Sessions with durable idempotency keys", () => {
+  it("creates resumable Stripe Checkout Sessions with durable idempotency keys", () => {
     const source = read("src/routes/launch-billing-checkout-atomic-routes.ts");
     const operation = source.indexOf(".insert(checkoutOperations)");
     const customer = source.indexOf("stripe.customers.create");
@@ -54,6 +58,11 @@ describe("security and external-operation atomicity", () => {
     expect(source).toContain("idempotencyKey: `wireline-customer-${userId}`");
     expect(source).toContain("idempotencyKey: `wireline-checkout-${operationId}`");
     expect(source).toContain("reused: true");
+    expect(source).toContain("resumed = true");
+    expect(source).toContain('status: "creating",\n          stripeCustomerId: customerId');
+    expect(source).toContain('failureCode: "stripe_checkout_outcome_unknown"');
+    expect(source).toContain('failureCode: "post_stripe_persistence_failed"');
+    expect(source).toContain('code: "CHECKOUT_RECONCILING"');
   });
 
   it("binds OAuth code deletion to the browser state in one statement", () => {
