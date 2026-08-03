@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- job and webhook payloads are stored as Postgres jsonb. */
 import { drizzle, log, fetchWithTimeout } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, lte, sql } from "drizzle-orm";
+import { eq, and, isNull, lte, or, sql } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import { decryptSecret } from "./secret-vault";
 import { resolveWebhookDeliveryHostname } from "./webhook-validators";
@@ -56,6 +56,7 @@ export const WEBHOOK_EVENTS: WebhookEvent[] = [
 
 /** Semantic version for CRM consumers parsing `call.completed.data`. Bump when shape changes. */
 export const WIREFLINE_CALL_OUTCOME_SCHEMA_VERSION = "2026-05-01";
+const WEBHOOK_DELIVERY_LEASE_MS = 2 * 60_000;
 
 export interface WirelineCallCompletedOutcome {
   outcome_schema_version: typeof WIREFLINE_CALL_OUTCOME_SCHEMA_VERSION;
@@ -124,8 +125,39 @@ async function persistDeliveryOutcome(outcome: DeliveryAttemptOutcome): Promise<
   });
 }
 
+/**
+ * Atomically lease one pending delivery before any DNS or network work. Vercel
+ * may run multiple retry workers at once; without this conditional update they
+ * can select the same due row and send duplicate customer webhooks. A crashed
+ * worker leaves the row pending and the short lease makes it eligible again.
+ */
+async function claimWebhookDelivery(deliveryId: bigint): Promise<number | null> {
+  const now = new Date();
+  const leaseUntil = new Date(now.getTime() + WEBHOOK_DELIVERY_LEASE_MS);
+  const [claimed] = await drizzle
+    .update(schema.webhookDeliveries)
+    .set({
+      attempts: sql`coalesce(${schema.webhookDeliveries.attempts}, 0) + 1`,
+      nextAttemptAt: leaseUntil,
+    })
+    .where(
+      and(
+        eq(schema.webhookDeliveries.id, deliveryId),
+        eq(schema.webhookDeliveries.status, WEBHOOK_DELIVERY_PENDING),
+        or(
+          isNull(schema.webhookDeliveries.nextAttemptAt),
+          lte(schema.webhookDeliveries.nextAttemptAt, now),
+        ),
+      ),
+    )
+    .returning({ attempts: schema.webhookDeliveries.attempts });
+  return claimed?.attempts ?? null;
+}
+
 export async function attemptWebhookDelivery(deliveryId: string | number) {
   const deliveryIdBig = BigInt(deliveryId);
+  const nextAttempts = await claimWebhookDelivery(deliveryIdBig);
+  if (nextAttempts === null) return;
 
   const deliveryWithHook = await drizzle.query.webhookDeliveries.findFirst({
     where: eq(schema.webhookDeliveries.id, deliveryIdBig),
@@ -135,7 +167,7 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
   });
 
   if (!deliveryWithHook) {
-    log.error("Webhook delivery fetch failed", { deliveryId });
+    log.error("Webhook delivery fetch failed after lease", { deliveryId });
     return;
   }
 
@@ -151,7 +183,6 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
     }
   ).webhook;
   const hook = Array.isArray(hookRaw) ? hookRaw[0] : hookRaw;
-  const nextAttempts = (deliveryWithHook.attempts || 0) + 1;
 
   if (!hook?.url) {
     await persistDeliveryOutcome({
@@ -325,7 +356,7 @@ export async function processWebhookRetries() {
       .from(schema.webhookDeliveries)
       .where(
         and(
-          eq(schema.webhookDeliveries.status, "pending"),
+          eq(schema.webhookDeliveries.status, WEBHOOK_DELIVERY_PENDING),
           lte(schema.webhookDeliveries.nextAttemptAt, new Date()),
         ),
       )
