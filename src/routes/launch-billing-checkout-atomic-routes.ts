@@ -82,37 +82,83 @@ async function markCheckoutOperation(
     .where(eq(checkoutOperations.id, id));
 }
 
+function isMissingStripeResource(error: unknown): boolean {
+  const candidate = error as { code?: unknown; statusCode?: unknown };
+  return candidate?.code === "resource_missing" || candidate?.statusCode === 404;
+}
+
+async function reusableStripeCustomerId(
+  customerId: string,
+  userId: string,
+): Promise<string | null> {
+  try {
+    const customer = await stripe.customers.retrieve(customerId);
+    if ("deleted" in customer && customer.deleted) return null;
+    const boundUserId = customer.metadata?.wireline_user_id?.trim();
+    if (boundUserId && boundUserId !== userId) {
+      log.error("Stored Stripe customer belongs to a different Wireline user", {
+        userId,
+        customerId,
+        boundUserId,
+      });
+      return null;
+    }
+    return customer.id;
+  } catch (error) {
+    if (isMissingStripeResource(error)) return null;
+    throw error;
+  }
+}
+
 async function ensureStripeCustomer(
   userId: string,
   email: string,
   existingCustomerId: string | null,
   attributionMetadata: Record<string, string>,
-): Promise<string> {
+): Promise<{ id: string; recovered: boolean }> {
   if (existingCustomerId) {
-    if (Object.keys(attributionMetadata).length) {
-      await stripe.customers.update(existingCustomerId, {
-        metadata: { wireline_user_id: userId, ...attributionMetadata },
-      });
+    const reusableId = await reusableStripeCustomerId(existingCustomerId, userId);
+    if (reusableId) {
+      if (Object.keys(attributionMetadata).length) {
+        try {
+          await stripe.customers.update(reusableId, {
+            metadata: { wireline_user_id: userId, ...attributionMetadata },
+          });
+        } catch (error) {
+          if (!isMissingStripeResource(error)) throw error;
+          // The customer was deleted between validation and update. Fall
+          // through to the deterministic recovery create below.
+        }
+      } else {
+        return { id: reusableId, recovered: false };
+      }
+
+      const stillReusable = await reusableStripeCustomerId(reusableId, userId);
+      if (stillReusable) return { id: stillReusable, recovered: false };
     }
-    return existingCustomerId;
   }
 
+  const idempotencyKey = existingCustomerId
+    ? `wireline-customer-recovery-${userId}-${existingCustomerId}`
+    : `wireline-customer-${userId}`;
   const customer = await stripe.customers.create(
     {
       email,
       metadata: { wireline_user_id: userId, ...attributionMetadata },
     },
-    { idempotencyKey: `wireline-customer-${userId}` },
+    { idempotencyKey },
   );
+  return { id: customer.id, recovered: Boolean(existingCustomerId) };
+}
 
+async function persistStripeCustomerId(userId: string, customerId: string): Promise<void> {
   await drizzle
     .insert(schema.subscriptions)
-    .values({ userId, stripeCustomerId: customer.id, updatedAt: new Date() })
+    .values({ userId, stripeCustomerId: customerId, updatedAt: new Date() })
     .onConflictDoUpdate({
       target: schema.subscriptions.userId,
-      set: { stripeCustomerId: customer.id, updatedAt: new Date() },
+      set: { stripeCustomerId: customerId, updatedAt: new Date() },
     });
-  return customer.id;
 }
 
 function isAmbiguousStripeError(error: unknown): boolean {
@@ -173,19 +219,33 @@ router.post(
       });
     }
     if (existing?.stripeCustomerId) {
-      const remote = await stripe.subscriptions.list({
-        customer: existing.stripeCustomerId,
-        status: "all",
-        limit: 20,
-      });
-      const liveRemote = remote.data.find((sub) => LIVE_SUBSCRIPTION_STATUSES.has(sub.status));
-      if (liveRemote) {
-        return res.status(409).json({
-          code: "ALREADY_SUBSCRIBED",
-          error: "You already have a subscription. Use the Customer Portal to change plans.",
-          current_plan: existing.plan,
-          current_status: liveRemote.status,
-        });
+      const reusableCustomerId = await reusableStripeCustomerId(
+        existing.stripeCustomerId,
+        req.user.id,
+      );
+      if (reusableCustomerId) {
+        try {
+          const remote = await stripe.subscriptions.list({
+            customer: reusableCustomerId,
+            status: "all",
+            limit: 20,
+          });
+          const liveRemote = remote.data.find((sub) =>
+            LIVE_SUBSCRIPTION_STATUSES.has(sub.status),
+          );
+          if (liveRemote) {
+            return res.status(409).json({
+              code: "ALREADY_SUBSCRIBED",
+              error: "You already have a subscription. Use the Customer Portal to change plans.",
+              current_plan: existing.plan,
+              current_status: liveRemote.status,
+            });
+          }
+        } catch (error) {
+          if (!isMissingStripeResource(error)) throw error;
+          // The customer disappeared after validation. The durable checkout
+          // operation below will recover it with a deterministic create key.
+        }
       }
     }
 
@@ -300,21 +360,38 @@ router.post(
     }
 
     let customerId: string | null = null;
+    let customerResolved = false;
     let checkoutAttempted = false;
     let checkoutResolved = false;
     let createdSession: { id: string; url: string } | null = null;
 
     try {
-      customerId = await ensureStripeCustomer(
+      const ensuredCustomer = await ensureStripeCustomer(
         req.user.id,
         req.user.email,
-        existing?.stripeCustomerId || operationCustomerId,
+        operationCustomerId || existing?.stripeCustomerId || null,
         attributionMetadata,
       );
-      await drizzle
-        .update(checkoutOperations)
-        .set({ stripeCustomerId: customerId, failureCode: null, updatedAt: new Date() })
-        .where(eq(checkoutOperations.id, operationId));
+      customerId = ensuredCustomer.id;
+      customerResolved = true;
+
+      // Persist to the durable operation first. If the subscription projection
+      // write fails, the same active operation can resume with this exact
+      // customer instead of creating another Stripe object.
+      await markCheckoutOperation(operationId, {
+        status: "creating",
+        stripeCustomerId: customerId,
+        failureCode: null,
+      });
+      await persistStripeCustomerId(req.user.id, customerId);
+
+      if (ensuredCustomer.recovered) {
+        log.warn("Recovered checkout from a stale Stripe customer reference", {
+          userId: req.user.id,
+          operationId,
+          customerId,
+        });
+      }
 
       checkoutAttempted = true;
       const session = await stripe.checkout.sessions.create(
@@ -416,6 +493,45 @@ router.post(
           url: createdSession.url,
           operation_id: operationId,
           warning: "Checkout is ready; Wireline is reconciling its local billing record.",
+        });
+      }
+
+      if (customerResolved && !checkoutAttempted) {
+        await markCheckoutOperation(operationId, {
+          status: "creating",
+          stripeCustomerId: customerId,
+          failureCode: "customer_state_persistence_failed",
+        }).catch(() => {});
+        log.warn("Stripe customer resolved but local checkout state is still reconciling", {
+          operationId,
+          userId: req.user.id,
+          customerId,
+          error: getErrorMessage(error),
+        });
+        return res.status(202).json({
+          code: "CHECKOUT_RECONCILING",
+          error:
+            "Your billing profile is ready, but Wireline is reconciling local checkout state. Retry the same plan safely.",
+          operation_id: operationId,
+        });
+      }
+
+      if (!checkoutAttempted && isAmbiguousStripeError(error)) {
+        await markCheckoutOperation(operationId, {
+          status: "creating",
+          stripeCustomerId: customerId,
+          failureCode: "stripe_customer_outcome_unknown",
+        }).catch(() => {});
+        log.warn("Stripe customer outcome is ambiguous; checkout remains resumable", {
+          operationId,
+          userId: req.user.id,
+          error: getErrorMessage(error),
+        });
+        return res.status(202).json({
+          code: "CHECKOUT_RECONCILING",
+          error:
+            "Stripe did not return a definitive billing-profile result. Retry the same plan to resume safely.",
+          operation_id: operationId,
         });
       }
 
