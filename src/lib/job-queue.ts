@@ -42,10 +42,7 @@ type ClaimedJobIdentity = {
   maxAttempts?: number | null;
 };
 
-type ClaimStatus = "pending" | "failed";
-
 type ClaimOptions = {
-  status: ClaimStatus;
   typeFilter?: JobType[];
   jobId?: string;
   userId?: string;
@@ -53,9 +50,12 @@ type ClaimOptions = {
 
 const CALLER_MANAGED_ENQUEUE_FAILURE_TYPES = new Set<JobType>(["campaign_dial"]);
 const STALE_RECOVERY_BATCH = 200;
+const CLAIMABLE_STATUSES = ["pending", "failed"] as const;
 const retryBudgetRemaining = sql`coalesce(${schema.jobs.attempts}, 0) < coalesce(${schema.jobs.maxAttempts}, ${base.DEFAULT_MAX_ATTEMPTS})`;
 const runAtDue = (claimTime: Date) =>
   sql`coalesce(${schema.jobs.runAt}, ${claimTime}) <= ${claimTime}`;
+const claimOrder = (claimTime: Date) =>
+  sql`coalesce(${schema.jobs.runAt}, ${schema.jobs.createdAt}, ${claimTime})`;
 const attemptCountEquals = (expectedAttempts: number) =>
   sql`coalesce(${schema.jobs.attempts}, 0) = ${expectedAttempts}`;
 
@@ -75,19 +75,20 @@ export async function enqueue(db: QueueDb, opts: EnqueueOptions): Promise<base.E
 }
 
 /**
- * Claim one due row from exactly one status while enforcing the retry budget.
+ * Claim the oldest due pending or retryable legacy-failed row while enforcing
+ * the retry budget.
  *
- * The base queue still supports the historical "failed" retry state, so calling
- * its broad claim helpers here would let exhausted legacy rows bypass the
- * wrapper's attempt fence. Keeping both pending and failed claims in this
- * helper makes every runtime claim use the same null-safe predicates.
+ * Pending and failed rows compete in the same transaction by effective run
+ * time. This preserves retry fairness under sustained new-work load and avoids
+ * a second claim transaction. Historical rows with a null run_at are eligible
+ * immediately and ordered by creation time instead of being left at NULLS LAST.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle rows remain camelCase.
 async function claimEligibleJob(db: QueueDb, options: ClaimOptions): Promise<any | null> {
   return db.transaction(async (tx) => {
     const claimTime = new Date();
     const clauses = [
-      eq(schema.jobs.status, options.status),
+      inArray(schema.jobs.status, [...CLAIMABLE_STATUSES]),
       runAtDue(claimTime),
       retryBudgetRemaining,
     ];
@@ -101,7 +102,7 @@ async function claimEligibleJob(db: QueueDb, options: ClaimOptions): Promise<any
       .select()
       .from(schema.jobs)
       .where(and(...clauses))
-      .orderBy(schema.jobs.runAt, schema.jobs.id)
+      .orderBy(claimOrder(claimTime), schema.jobs.id)
       .limit(1)
       .for("update", { skipLocked: true });
     if (!job) return null;
@@ -109,7 +110,7 @@ async function claimEligibleJob(db: QueueDb, options: ClaimOptions): Promise<any
     const expectedAttempts = Number(job.attempts ?? 0);
     const updateClauses = [
       eq(schema.jobs.id, job.id),
-      eq(schema.jobs.status, options.status),
+      eq(schema.jobs.status, job.status),
       attemptCountEquals(expectedAttempts),
       runAtDue(claimTime),
       retryBudgetRemaining,
@@ -130,11 +131,9 @@ async function claimEligibleJob(db: QueueDb, options: ClaimOptions): Promise<any
   }, base.writeTransactionConfig());
 }
 
-/** New pending work is claimed first; retryable legacy failed rows follow. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see claimEligibleJob above.
 export async function claimJob(db: QueueDb, typeFilter?: JobType[]): Promise<any | null> {
-  const pending = await claimEligibleJob(db, { status: "pending", typeFilter });
-  return pending ?? claimEligibleJob(db, { status: "failed", typeFilter });
+  return claimEligibleJob(db, { typeFilter });
 }
 
 export async function claimJobById(
@@ -143,19 +142,7 @@ export async function claimJobById(
   userId: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see claimEligibleJob above.
 ): Promise<any | null> {
-  const pending = await claimEligibleJob(db, {
-    status: "pending",
-    jobId,
-    userId,
-  });
-  return (
-    pending ??
-    claimEligibleJob(db, {
-      status: "failed",
-      jobId,
-      userId,
-    })
-  );
+  return claimEligibleJob(db, { jobId, userId });
 }
 
 /**
