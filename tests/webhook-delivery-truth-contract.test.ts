@@ -6,6 +6,22 @@ const root = path.resolve(process.cwd());
 const source = fs.readFileSync(path.join(root, "src/lib/webhook-helpers.ts"), "utf8");
 
 describe("webhook delivery truth", () => {
+  it("leases a pending delivery atomically before external work", () => {
+    const claim = source.indexOf("const nextAttempts = await claimWebhookDelivery");
+    const fetch = source.indexOf("drizzle.query.webhookDeliveries.findFirst");
+    const network = source.indexOf("await fetchWithTimeout");
+
+    expect(source).toContain("WEBHOOK_DELIVERY_LEASE_MS");
+    expect(source).toContain("async function claimWebhookDelivery");
+    expect(source).toContain("coalesce(${schema.webhookDeliveries.attempts}, 0) + 1");
+    expect(source).toContain("eq(schema.webhookDeliveries.status, WEBHOOK_DELIVERY_PENDING)");
+    expect(source).toContain("lte(schema.webhookDeliveries.nextAttemptAt, now)");
+    expect(source).toContain("if (nextAttempts === null) return");
+    expect(claim).toBeGreaterThan(-1);
+    expect(fetch).toBeGreaterThan(claim);
+    expect(network).toBeGreaterThan(fetch);
+  });
+
   it("records delivery timestamps and clears stale errors on success", () => {
     expect(source).toContain("deliveredAt: outcome.deliveredAt");
     expect(source).toContain("const deliveredAt = success ? new Date() : null");
