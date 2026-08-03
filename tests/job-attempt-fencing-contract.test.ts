@@ -40,38 +40,47 @@ describe("durable job attempt fencing", () => {
     expect(queue).toContain('status: exhausted ? "dead" : "pending"');
   });
 
-  it("routes every pending and failed claim through one budgeted, null-safe helper", () => {
+  it("claims pending and retryable failed work fairly in one null-safe transaction", () => {
     expect(queue).toContain("async function claimEligibleJob");
+    expect(queue).toContain('const CLAIMABLE_STATUSES = ["pending", "failed"] as const');
+    expect(queue).toContain("inArray(schema.jobs.status, [...CLAIMABLE_STATUSES])");
     expect(queue).toContain(
       "coalesce(${schema.jobs.attempts}, 0) < coalesce(${schema.jobs.maxAttempts}",
     );
     expect(queue).toContain("coalesce(${schema.jobs.runAt}, ${claimTime}) <= ${claimTime}");
+    expect(queue).toContain(
+      "coalesce(${schema.jobs.runAt}, ${schema.jobs.createdAt}, ${claimTime})",
+    );
     expect(queue).toContain("coalesce(${schema.jobs.attempts}, 0) = ${expectedAttempts}");
     expect(queue).not.toContain("base.claimJob(");
     expect(queue).not.toContain("base.claimJobById(");
 
     const helperStart = queue.indexOf("async function claimEligibleJob");
-    const helperEnd = queue.indexOf("/** New pending work is claimed first", helperStart);
+    const helperEnd = queue.indexOf(
+      "export async function claimJob(db: QueueDb",
+      helperStart,
+    );
     const claimHelper = queue.slice(helperStart, helperEnd);
     expect(claimHelper).toContain("retryBudgetRemaining");
     expect(claimHelper).toContain("runAtDue(claimTime)");
+    expect(claimHelper).toContain("claimOrder(claimTime)");
     expect(claimHelper).toContain("attemptCountEquals(expectedAttempts)");
-    expect(claimHelper).toContain("eq(schema.jobs.status, options.status)");
+    expect(claimHelper).toContain("eq(schema.jobs.status, job.status)");
     expect(claimHelper).toContain("attempts: expectedAttempts + 1");
 
     const claimStart = queue.indexOf("export async function claimJob(");
     const claimEnd = queue.indexOf("export async function claimJobById", claimStart);
     const claim = queue.slice(claimStart, claimEnd);
-    expect(claim).toContain('status: "pending"');
-    expect(claim).toContain('status: "failed"');
+    expect(claim).toContain("return claimEligibleJob(db, { typeFilter })");
+    expect(claim).not.toContain("pending ??");
+    expect(claim).not.toContain('status: "pending"');
+    expect(claim).not.toContain('status: "failed"');
 
     const byIdStart = queue.indexOf("export async function claimJobById");
     const byIdEnd = queue.indexOf("/**\n * Commit completion", byIdStart);
     const byIdClaim = queue.slice(byIdStart, byIdEnd);
-    expect(byIdClaim).toContain('status: "pending"');
-    expect(byIdClaim).toContain('status: "failed"');
-    expect(byIdClaim).toContain("jobId");
-    expect(byIdClaim).toContain("userId");
+    expect(byIdClaim).toContain("return claimEligibleJob(db, { jobId, userId })");
+    expect(byIdClaim).not.toContain("pending ??");
   });
 
   it("fences stale recovery to the selected nullable attempt before resetting it", () => {
