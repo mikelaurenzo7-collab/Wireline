@@ -67,6 +67,15 @@ function normalizeForDedup(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
+function retainFirstUnique<T extends { content: string }>(rows: T[], known: Set<string>): T[] {
+  return rows.filter((row) => {
+    const key = normalizeForDedup(row.content);
+    if (known.has(key)) return false;
+    known.add(key);
+    return true;
+  });
+}
+
 async function extractWebsiteConfig(input: {
   sourceUrl: string;
   title: string | null;
@@ -90,7 +99,7 @@ async function extractWebsiteConfig(input: {
 
 /**
  * Securely read one public page, extract conservative training facts/policies,
- * deduplicate exact existing entries, and commit the additions tenant-scoped.
+ * deduplicate exact existing and same-response entries, and commit the additions tenant-scoped.
  */
 export async function importWebsiteKnowledge(input: {
   agentId: string;
@@ -138,12 +147,8 @@ export async function importWebsiteKnowledge(input: {
       );
     const knownFacts = new Set(existingKnowledge.map((row) => normalizeForDedup(row.content)));
     const knownRules = new Set(existingDirectives.map((row) => normalizeForDedup(row.content)));
-    const newKnowledge = knowledgeRows.filter(
-      (row) => !knownFacts.has(normalizeForDedup(row.content)),
-    );
-    const newDirectives = directiveRows.filter(
-      (row) => !knownRules.has(normalizeForDedup(row.content)),
-    );
+    const newKnowledge = retainFirstUnique(knowledgeRows, knownFacts);
+    const newDirectives = retainFirstUnique(directiveRows, knownRules);
 
     if (newKnowledge.length) await tx.insert(schema.knowledge).values(newKnowledge);
     if (newDirectives.length) await tx.insert(schema.directives).values(newDirectives);
