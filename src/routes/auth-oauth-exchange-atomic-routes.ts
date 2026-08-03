@@ -10,6 +10,7 @@ import {
 } from "../lib/oauth-bridge-cookie";
 import { authSuccessBody, setSessionCookie } from "../lib/session-cookie";
 import { oauthRateLimiter } from "../middleware/rate-limit-middleware";
+import { sessionUsers } from "../db/security-schema";
 import * as schema from "../db/schema";
 
 const router = Router();
@@ -43,8 +44,6 @@ router.post(
       throw AppError.fromHttpStatus(400, "Invalid or expired code");
     }
 
-    // The pending-code table intentionally denies direct wireline_server access.
-    // The database function exposes only this atomic, browser-bound DELETE.
     const consumed = (await drizzle.execute(sql`
       SELECT user_id, email, full_name, is_owner
       FROM public.wireline_consume_oauth_pending_code(
@@ -62,19 +61,34 @@ router.post(
     const entry = consumed.rows?.[0];
     if (!entry) throw AppError.fromHttpStatus(400, "Invalid or expired code");
 
-    const account_type = await tenantStore.run(entry.user_id, async () => {
-      const [sub] = await drizzle
-        .select({ plan: schema.subscriptions.plan })
-        .from(schema.subscriptions)
-        .where(eq(schema.subscriptions.userId, entry.user_id))
-        .limit(1);
+    const session = await tenantStore.run(entry.user_id, async () => {
+      const [[state], [sub]] = await Promise.all([
+        drizzle
+          .select({ sessionVersion: sessionUsers.sessionVersion })
+          .from(sessionUsers)
+          .where(eq(sessionUsers.id, entry.user_id))
+          .limit(1),
+        drizzle
+          .select({ plan: schema.subscriptions.plan })
+          .from(schema.subscriptions)
+          .where(eq(schema.subscriptions.userId, entry.user_id))
+          .limit(1),
+      ]);
+      if (!state) throw new Error("OAuth user session state is unavailable");
       const { resolveAccountType } = await import("../lib/account-type");
       const { ensureDefaultAccount } = await import("../lib/account-service");
-      return (await ensureDefaultAccount(entry.user_id, resolveAccountType(sub?.plan))).type;
+      const accountType = (
+        await ensureDefaultAccount(entry.user_id, resolveAccountType(sub?.plan))
+      ).type;
+      return { accountType, sessionVersion: state.sessionVersion };
     });
 
     clearOAuthBridgeStateCookie(res);
-    const sessionToken = generateToken({ id: entry.user_id, email: entry.email });
+    const sessionToken = generateToken({
+      id: entry.user_id,
+      email: entry.email,
+      sessionVersion: session.sessionVersion,
+    });
     setSessionCookie(res, sessionToken);
 
     return res.json({
@@ -83,7 +97,7 @@ router.post(
         email: entry.email,
         full_name: entry.full_name,
         is_owner: entry.is_owner,
-        account_type,
+        account_type: session.accountType,
       }),
       user_id: entry.user_id,
       email: entry.email,
