@@ -100,10 +100,12 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
   const claimedTenantId = (b.tenant_user_id || "").trim() || null;
 
   // The webhook secret is shared across all tenants, so a body-supplied
-  // tenant_user_id cannot be trusted — a valid secret plus an arbitrary UUID
-  // would otherwise write an escalation task into any tenant's inbox. Bind
-  // the tenant to the phone number actually invoked (source_number → owner),
-  // and only fall back to the claimed id after confirming it's a real user.
+  // tenant_user_id can never be trusted — a valid secret plus an arbitrary
+  // UUID would otherwise write an escalation task into any tenant's inbox
+  // (and the tracked flag would double as a user-existence oracle). The
+  // tenant is bound exclusively to the phone number actually invoked
+  // (source_number → wireline_phone_numbers owner); a claimed id that
+  // disagrees is logged and ignored.
   let tenantUserId: string | null = null;
   if (sourceNumber) {
     const [owner] = await drizzle
@@ -113,17 +115,10 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
       .limit(1);
     if (owner?.userId) tenantUserId = owner.userId;
   }
-  if (!tenantUserId && claimedTenantId) {
-    const [validUser] = await drizzle
-      .select({ id: schema.users.id })
-      .from(schema.users)
-      .where(eq(schema.users.id, claimedTenantId))
-      .limit(1);
-    if (validUser?.id) tenantUserId = validUser.id;
-  }
-  if (tenantUserId && claimedTenantId && tenantUserId !== claimedTenantId) {
-    log.warn("Escalation tenant mismatch — using number owner, not claimed id", {
+  if (claimedTenantId && tenantUserId !== claimedTenantId) {
+    log.warn("Escalation tenant claim ignored — tenant is bound to the invoked number", {
       sourceNumber: sourceNumber.slice(0, 8),
+      resolved: !!tenantUserId,
     });
   }
 

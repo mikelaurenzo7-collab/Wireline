@@ -82,6 +82,25 @@ async function markCheckoutOperation(
     .where(eq(checkoutOperations.id, id));
 }
 
+/**
+ * Terminal-failure write fenced to operations still being created. A concurrent
+ * request can resolve the same operation to `open` while this one is failing;
+ * the failed write must never clobber that resolved state (and thereby free
+ * the partial-unique slot for a second payable checkout).
+ */
+async function failCheckoutOperation(
+  id: string,
+  values: {
+    stripeCustomerId?: string | null;
+    failureCode?: string | null;
+  },
+) {
+  await drizzle
+    .update(checkoutOperations)
+    .set({ status: "failed", ...values, updatedAt: new Date() })
+    .where(and(eq(checkoutOperations.id, id), eq(checkoutOperations.status, "creating")));
+}
+
 function isMissingStripeResource(error: unknown): boolean {
   const candidate = error as { code?: unknown; statusCode?: unknown };
   return candidate?.code === "resource_missing" || candidate?.statusCode === 404;
@@ -169,6 +188,10 @@ function isAmbiguousStripeError(error: unknown): boolean {
       ? candidate.statusCode
       : null;
   if (type === "StripeConnectionError") return true;
+  // A 409 idempotency conflict means a concurrent request is still in flight
+  // with this exact key; its outcome will materialize on the durable operation,
+  // so this request must stay resumable rather than marking anything failed.
+  if (type === "StripeIdempotencyError" || statusCode === 409) return true;
   if (statusCode === null) return true;
   return statusCode === 429 || statusCode >= 500;
 }
@@ -554,8 +577,7 @@ router.post(
         });
       }
 
-      await markCheckoutOperation(operationId, {
-        status: "failed",
+      await failCheckoutOperation(operationId, {
         stripeCustomerId: customerId,
         failureCode: "stripe_checkout_failed",
       }).catch(() => {});

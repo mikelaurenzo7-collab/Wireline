@@ -618,25 +618,34 @@ export function buildConsentLedgerRow(entry: ConsentLedgerEntry): ConsentLedgerR
  * Detect explicit opt-out language in a transcript. Conservative: only
  * matches phrases that unambiguously revoke consent. Soft phrases like
  * "I'm not interested" do NOT count as recording opt-out.
+ *
+ * Each match is classified so callers can act correctly: "dnc" patterns
+ * revoke future contact (suppress the number deterministically), while
+ * "recording" patterns revoke consent for the current call's recording only
+ * and must not suppress future calls on their own.
  */
-const OPT_OUT_PATTERNS: RegExp[] = [
-  /\bdo\s+not\s+record\b/i,
-  /\bdon'?t\s+record\b/i,
-  /\bstop\s+recording\b/i,
-  /\bturn\s+off\s+(the\s+)?recording\b/i,
-  /\bi\s+do\s+not\s+consent\s+to\s+(the\s+|this\s+)?recording\b/i,
-  /\bremove\s+me\s+from\s+(your|the)\s+(call\s+)?list\b/i,
-  /\bput\s+me\s+on\s+(your|the)\s+do[- ]not[- ]call\s+list\b/i,
+const OPT_OUT_PATTERNS: { pattern: RegExp; kind: "dnc" | "recording" }[] = [
+  { pattern: /\bdo\s+not\s+record\b/i, kind: "recording" },
+  { pattern: /\bdon'?t\s+record\b/i, kind: "recording" },
+  { pattern: /\bstop\s+recording\b/i, kind: "recording" },
+  { pattern: /\bturn\s+off\s+(the\s+)?recording\b/i, kind: "recording" },
+  {
+    pattern: /\bi\s+do\s+not\s+consent\s+to\s+(the\s+|this\s+)?recording\b/i,
+    kind: "recording",
+  },
+  { pattern: /\bremove\s+me\s+from\s+(your|the)\s+(call\s+)?list\b/i, kind: "dnc" },
+  { pattern: /\bput\s+me\s+on\s+(your|the)\s+do[- ]not[- ]call\s+list\b/i, kind: "dnc" },
 ];
 
 export function detectOptOut(transcript: string | null | undefined): {
   found: boolean;
   matched_pattern?: string;
+  kind?: "dnc" | "recording";
 } {
   if (!transcript) return { found: false };
-  for (const pat of OPT_OUT_PATTERNS) {
-    const m = transcript.match(pat);
-    if (m) return { found: true, matched_pattern: m[0] };
+  for (const { pattern, kind } of OPT_OUT_PATTERNS) {
+    const m = transcript.match(pattern);
+    if (m) return { found: true, matched_pattern: m[0], kind };
   }
   return { found: false };
 }

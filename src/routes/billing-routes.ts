@@ -12,6 +12,7 @@ import {
   stripeAvailable,
   subscriptionBillingInterval,
   syncSubscriptionFromStripe,
+  basePlanInvoiceShare,
 } from "../lib/stripe-helpers";
 import { sendPaymentFailedEmail } from "../lib/email-service";
 import { planById, plansForClient, FOUNDER_CATALOG_VERSION } from "../lib/plan-catalog";
@@ -110,6 +111,13 @@ async function reverseRuntimeAllowanceForCharge(
     // year's grant.
     const interval = subscriptionBillingInterval(sub);
 
+    // Scale by the share of the invoice that funded the base plan: refunding
+    // or disputing a separate add-on invoice (e.g. a monthly extra-agent
+    // charge on an annual plan) must not claw back allowance that charge
+    // never funded. A null share means this charge funded no allowance.
+    const allowanceShare = basePlanInvoiceShare(invoice);
+    if (allowanceShare === null) return;
+
     // Stripe orders refunds newest-first, so find() returns the refund that
     // triggered THIS event; its id is unique per event, so redelivery is
     // idempotent through the (user, ref) ledger index.
@@ -128,7 +136,8 @@ async function reverseRuntimeAllowanceForCharge(
       reason === "dispute"
         ? chargeCents
         : (succeededRefund?.amount ?? charge.amount_refunded ?? chargeCents);
-    const portion = chargeCents > 0 ? Math.min(1, refundedCents / chargeCents) : 1;
+    const portion =
+      (chargeCents > 0 ? Math.min(1, refundedCents / chargeCents) : 1) * allowanceShare;
 
     await tenantStore.run(row.userId, async () => {
       await reverseSubscriptionRuntimeAllowance(

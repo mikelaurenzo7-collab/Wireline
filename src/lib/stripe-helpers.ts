@@ -93,6 +93,27 @@ function isExtraAgentPrice(price: Stripe.Price | null | undefined): boolean {
   return STRIPE_PLANS.some((plan) => planExtraAgentPriceId(plan) === price.id);
 }
 
+/**
+ * Share of an invoice's pre-tax line total that funded the base plan (0–1], or
+ * null when the invoice funded no base-plan allowance at all. Refund/dispute
+ * reversals must scale by this share: a separate add-on invoice (e.g. a
+ * monthly extra-agent charge on an annual plan) never funded the Runtime
+ * Allowance, so refunding it must not claw the allowance back. Scaling keeps
+ * cumulative partial reversals at or below the grant for the same reason the
+ * reversal itself rounds down.
+ */
+export function basePlanInvoiceShare(invoice: Stripe.Invoice): number | null {
+  let baseCents = 0;
+  let totalCents = 0;
+  for (const line of invoice.lines?.data ?? []) {
+    const amount = line.amount || 0;
+    totalCents += amount;
+    if (basePlanByStripePrice(line.price)) baseCents += amount;
+  }
+  if (baseCents <= 0 || totalCents <= 0) return null;
+  return Math.min(1, baseCents / totalCents);
+}
+
 function extraAgentQuantityFromSubscription(sub: Stripe.Subscription): number {
   return sub.items.data.reduce((total, item) => {
     if (!isExtraAgentPrice(item.price)) return total;
@@ -136,11 +157,17 @@ function subscriptionPeriod(sub: Stripe.Subscription): {
   start: number | null;
   end: number | null;
 } {
-  const item = sub.items?.data?.[0] as (Stripe.SubscriptionItem & StripePeriodFields) | undefined;
+  const items = (sub.items?.data ?? []) as (Stripe.SubscriptionItem & StripePeriodFields)[];
+  // The period must track the base-plan item. An add-on (e.g. a monthly
+  // extra-agent seat) carries its own period, and Stripe has been observed
+  // returning it at index 0 — reading that item would advance the allowance
+  // period reference monthly on an annual subscription and re-grant the full
+  // annual Runtime Allowance every month.
+  const baseItem = items.find((item) => basePlanByStripePrice(item.price)) ?? items[0];
   const legacy = sub as Stripe.Subscription & StripePeriodFields;
   return {
-    start: item?.current_period_start ?? legacy.current_period_start ?? null,
-    end: item?.current_period_end ?? legacy.current_period_end ?? null,
+    start: baseItem?.current_period_start ?? legacy.current_period_start ?? null,
+    end: baseItem?.current_period_end ?? legacy.current_period_end ?? null,
   };
 }
 

@@ -148,4 +148,38 @@ describe("auth OAuth browser binding contract", () => {
     );
     expect(completion).toContain('resolvePostAuthDestination(readStoredWorkspaceMode(), "")');
   });
+
+  it("requires integration-link callbacks to complete as the initiating account", () => {
+    // Account-linking CSRF boundary: a forwarded consent URL must never attach
+    // the completing user's provider tokens to the initiator's Wireline
+    // account. Every provider callback resolves the linked user exclusively
+    // through the state-initiator/session equality check.
+    const providers = [
+      "apollo",
+      "google",
+      "google-sheets",
+      "hubspot",
+      "meta",
+      "microsoft",
+      "microsoft-graph",
+      "salesforce",
+      "shopify",
+      "slack",
+      "square",
+      "x",
+      "yahoo",
+      "zoom",
+    ];
+    for (const provider of providers) {
+      const route = read(`src/routes/oauth/${provider}.ts`);
+      expect(route).toContain("resolveLinkedOAuthUserId(req");
+      expect(route).not.toContain("vs.userId ??");
+      expect(route).not.toContain("resolveUserIdFromOAuthSession(req");
+    }
+
+    const helpers = read("src/lib/oauth-helpers.ts");
+    expect(helpers).toContain("export async function resolveLinkedOAuthUserId");
+    expect(helpers).toContain("sessionUserId === state.userId");
+    expect(helpers).toContain("getSessionTokenFromRequest(req)");
+  });
 });

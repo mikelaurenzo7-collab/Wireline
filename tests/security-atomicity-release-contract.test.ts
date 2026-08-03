@@ -96,13 +96,19 @@ describe("security and external-operation atomicity", () => {
   it("creates resumable Stripe Checkout Sessions with durable idempotency keys", () => {
     const source = read("src/routes/launch-billing-checkout-atomic-routes.ts");
     const operation = source.indexOf(".insert(checkoutOperations)");
-    const customerCall = source.indexOf("customerId = await ensureStripeCustomer");
+    const customerCall = source.indexOf("await ensureStripeCustomer(");
     const sessionCall = source.indexOf("const session = await stripe.checkout.sessions.create");
 
     expect(operation).toBeGreaterThan(-1);
     expect(customerCall).toBeGreaterThan(operation);
     expect(sessionCall).toBeGreaterThan(customerCall);
-    expect(source).toContain("idempotencyKey: `wireline-customer-${userId}`");
+    // The customer create stays idempotent per user, with a deterministic
+    // recovery key bound to any stale stored customer reference.
+    const customerCreate = source.indexOf("stripe.customers.create(");
+    expect(customerCreate).toBeGreaterThan(-1);
+    expect(source.indexOf("{ idempotencyKey }", customerCreate)).toBeGreaterThan(customerCreate);
+    expect(source).toContain("`wireline-customer-${userId}`");
+    expect(source).toContain("`wireline-customer-recovery-${userId}-${existingCustomerId}`");
     expect(source).toContain("idempotencyKey: `wireline-checkout-${operationId}`");
     expect(source).toContain("reused: true");
     expect(source).toContain("resumed = true");

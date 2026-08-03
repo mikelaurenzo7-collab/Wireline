@@ -15,7 +15,7 @@ import {
   getGoogleOAuthClient,
   generateOAuthState,
   verifyAndClaimOAuthState,
-  resolveUserIdFromOAuthSession,
+  resolveLinkedOAuthUserId,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
 
@@ -77,12 +77,12 @@ router.get(
 
       if (!emailAddress) throw new Error("Could not fetch user email.");
 
-      const userId = vs.userId ?? (await resolveUserIdFromOAuthSession(req as express.Request));
+      const userId = await resolveLinkedOAuthUserId(req as express.Request, vs);
       if (!userId) {
         return res
           .status(401)
           .send(
-            "Could not identify your account. Open Wireline, sign in, and connect Google again from Settings.",
+            "Complete this connection in the same browser and Wireline account that started it. Sign in, then connect Google again from Settings.",
           );
       }
 

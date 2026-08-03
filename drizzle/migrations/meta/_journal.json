@@ -176,6 +176,20 @@
       "when": 1785611400000,
       "tag": "0121_align_voice_clone_consent_contract",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1785775200000,
+      "tag": "0128_spend_alerts_threshold_dedup",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1785775260000,
+      "tag": "0129_audit_log_server_read_policy",
+      "breakpoints": true
     }
   ]
 }

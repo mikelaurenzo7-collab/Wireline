@@ -9,7 +9,7 @@ import { authenticateUser } from "../../middleware/auth";
 import {
   generateOAuthState,
   verifyAndClaimOAuthState,
-  resolveUserIdFromOAuthSession,
+  resolveLinkedOAuthUserId,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
 import { getErrorMessage } from "../../lib/server-utils";
@@ -90,9 +90,11 @@ router.get(
 
       const tokens = await exchangeXCode(code, redirectUri, vs.pkceVerifier);
 
-      let userId: string | null = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+      const userId = await resolveLinkedOAuthUserId(req, vs);
       if (!userId) {
-        return res.status(401).send("Could not identify user. Please reconnect from the app.");
+        return res
+          .status(401)
+          .send("Complete this connection in the same browser and Wireline account that started it.");
       }
 
       const profile = await fetchXUserProfile(tokens.access_token);

@@ -9,7 +9,7 @@ import { authenticateUser } from "../../middleware/auth";
 import {
   generateOAuthState,
   verifyAndClaimOAuthState,
-  resolveUserIdFromOAuthSession,
+  resolveLinkedOAuthUserId,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
 import {
@@ -78,9 +78,11 @@ router.get(
       const redirectUri = `${baseUrl}/api/oauth/apollo/callback`;
       const tokens = await exchangeApolloCode(code, redirectUri);
 
-      const userId: string | null = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+      const userId = await resolveLinkedOAuthUserId(req, vs);
       if (!userId) {
-        return res.status(401).send("Could not identify user. Please reconnect from the app.");
+        return res
+          .status(401)
+          .send("Complete this connection in the same browser and Wireline account that started it.");
       }
 
       const info = await getApolloUserInfo(tokens.access_token);

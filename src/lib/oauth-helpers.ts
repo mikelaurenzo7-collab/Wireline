@@ -4,7 +4,7 @@ import { google } from "googleapis";
 import { randomUUID, createHmac, timingSafeEqual } from "node:crypto";
 import { Redis } from "@upstash/redis";
 import { drizzle, fetchWithTimeout, IS_PROD } from "./server-context";
-import { isProductionRuntime } from "./session-cookie";
+import { isProductionRuntime, getSessionTokenFromRequest } from "./session-cookie";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
@@ -305,15 +305,39 @@ export async function verifyAndClaimOAuthState(
   return verified;
 }
 
+/**
+ * Resolve the Wireline account behind an OAuth callback's browser session.
+ * Bearer header first, then the HttpOnly session cookie — the provider
+ * redirect is a top-level SameSite=Lax navigation, so the completing browser
+ * always presents the cookie. This is an identity binding, not a session
+ * authorization: the signed state remains the authority for the flow.
+ */
 export async function resolveUserIdFromOAuthSession(req: express.Request): Promise<string | null> {
-  // Bearer-in-Authorization-header only — no cookie sessions (see README).
-  const authHeader = req.headers.authorization;
-  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-  if (!bearerToken) return null;
+  const token = getSessionTokenFromRequest(req);
+  if (!token) return null;
 
   const secret = getInternalJwtSecret() || "";
-  const payload = await verifyInternalJwt(bearerToken, secret);
+  const payload = await verifyInternalJwt(token, secret);
   return payload?.sub ?? null;
+}
+
+/**
+ * Integration-link callbacks must be completed by the same Wireline account
+ * and browser session that initiated them. The signed state's userId binds
+ * the initiator; the completing browser's session proves its account. Without
+ * this equality check, a forwarded consent URL would attach the completing
+ * user's provider mailbox/tokens to the initiator's Wireline account
+ * (account-linking CSRF). Returns the linked user id, or null when the
+ * completing browser is not signed in as the initiating account — callers
+ * must reject the callback.
+ */
+export async function resolveLinkedOAuthUserId(
+  req: express.Request,
+  state: VerifiedOAuthState,
+): Promise<string | null> {
+  if (!state.userId) return null;
+  const sessionUserId = await resolveUserIdFromOAuthSession(req);
+  return sessionUserId === state.userId ? state.userId : null;
 }
 
 /** Space-delimited Microsoft Graph scope line passed at token time — must include write access for booking. */

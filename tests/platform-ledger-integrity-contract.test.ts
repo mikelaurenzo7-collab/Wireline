@@ -31,6 +31,18 @@ describe("platform ledger migration delivery", () => {
     );
   });
 
+  it("restores tenant-scoped audit-log reads for the server role", () => {
+    const migration = read("drizzle/migrations/0129_audit_log_server_read_policy.sql");
+    const journal = read("drizzle/migrations/meta/_journal.json");
+
+    // Without a SELECT policy for wireline_server, spend MTD sums, tool-call
+    // idempotency dedup, and user-facing audit reads all default-deny.
+    expect(migration).toContain("CREATE POLICY server_audit_read ON public.wireline_audit_log");
+    expect(migration).toContain("FOR SELECT TO wireline_server");
+    expect(migration).toContain("user_id = (SELECT public.wireline_current_user_id())");
+    expect(journal).toContain('"tag": "0129_audit_log_server_read_policy"');
+  });
+
   it("keeps failed carrier releases durable and retry-idempotent", () => {
     const migration = read("drizzle/migrations/0116_orphan_carrier_resources.sql");
     const deletion = read("src/lib/account-deletion.ts");

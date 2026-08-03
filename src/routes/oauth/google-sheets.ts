@@ -11,7 +11,7 @@ import {
   getGoogleOAuthClient,
   generateOAuthState,
   verifyAndClaimOAuthState,
-  resolveUserIdFromOAuthSession,
+  resolveLinkedOAuthUserId,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
 import {
@@ -75,12 +75,12 @@ router.get(
 
       const tokens = await exchangeGoogleSheetsCode(code, redirectUri);
 
-      const userId = vs.userId ?? (await resolveUserIdFromOAuthSession(req as express.Request));
+      const userId = await resolveLinkedOAuthUserId(req as express.Request, vs);
       if (!userId) {
         return res
           .status(401)
           .send(
-            "Could not identify your account. Open Wireline, sign in, and connect Google Sheets again.",
+            "Complete this connection in the same browser and Wireline account that started it. Sign in, then connect Google Sheets again.",
           );
       }
 

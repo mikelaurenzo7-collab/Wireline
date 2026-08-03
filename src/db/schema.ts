@@ -20,7 +20,7 @@ import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
 // Schema version: latest committed migration is
-// `drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql`.
+// `drizzle/migrations/0129_audit_log_server_read_policy.sql`.
 // Live Supabase schema may also be ahead via out-of-band applies — see AGENTS.md.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
 
@@ -296,6 +296,9 @@ export const spendAlerts = pgTable(
   },
   () => ({
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_spend_alerts_user ON wireline_spend_alerts USING btree (user_id)`,
+    // One alert row per tenant/period/threshold; evaluateSpend claims the row
+    // before dispatching so a busy month cannot re-fire the same webhook.
+    userPeriodThresholdUnique: sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_spend_alerts_user_period_threshold ON wireline_spend_alerts (user_id, period, threshold_pct)`,
   }),
 );
 

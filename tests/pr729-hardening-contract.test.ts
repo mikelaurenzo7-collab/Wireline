@@ -6,7 +6,9 @@ const read = (path: string) => readFileSync(path, "utf8").replace(/\r\n/g, "\n")
 describe("PR 729 hardening contract", () => {
   it("returns retryable durable jobs to the claimable pending state", () => {
     const queue = read("src/lib/job-queue.ts");
-    expect(queue).toContain('status: "pending"');
+    // Non-exhausted attempts return to the claimable pending state while
+    // exhausted attempts dead-letter in the same attempt-fenced update.
+    expect(queue).toContain('status: exhausted ? "dead" : "pending"');
     expect(queue).toContain('row?.type === "post_call_artifact"');
     expect(queue).toContain('row?.type === "scheduled_report"');
     expect(queue).toContain("longRunning ? 5 * 60 : 0");

@@ -86,6 +86,7 @@ async function fetchWithRetry(
   options: RequestInit,
   timeoutMs: number,
   operationName: string,
+  retryTransportErrors = true,
 ): Promise<Response> {
   let lastError: Error | null = null;
 
@@ -112,8 +113,14 @@ async function fetchWithRetry(
         await delay(retryAfter);
       }
     } catch (error) {
-      // Network errors (timeout, connection reset, etc.) are retriable
+      // Transport failures (timeout, connection reset) are ambiguous for
+      // non-idempotent POSTs: the carrier may have accepted the call before
+      // its response was lost, and Vapi offers no idempotency key on call
+      // creation. Callers placing calls pass retryTransportErrors=false so an
+      // interrupted attempt surfaces once as ambiguous instead of re-POSTing
+      // and potentially dialing the same consumer twice.
       lastError = error instanceof Error ? error : new Error(String(error));
+      if (!retryTransportErrors) break;
 
       const retryAfter =
         attempt < MAX_RETRIES - 1
@@ -694,6 +701,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
       },
       20_000,
       "Vapi placeOutboundCall",
+      false,
     );
 
     if (!vapiResponse.ok && voiceSelection.provider === "google") {
@@ -743,6 +751,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
         },
         20_000,
         "Vapi placeOutboundCall voice fallback",
+        false,
       );
     }
 

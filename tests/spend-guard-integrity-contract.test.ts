@@ -76,4 +76,21 @@ describe("spend guard integrity", () => {
     expect(migration).toContain("ALTER COLUMN monthly_limit_usd SET NOT NULL");
     expect(journal).toContain('"tag": "0107_backfill_spend_guards"');
   });
+
+  it("claims each threshold alert once per period before dispatching", () => {
+    const guard = read("src/lib/spend-guards.ts");
+    const migration = read("drizzle/migrations/0128_spend_alerts_threshold_dedup.sql");
+    const journal = read("drizzle/migrations/meta/_journal.json");
+
+    // The webhook only fires when this request actually inserted the alert
+    // row; a conflicting concurrent or repeated evaluation skips dispatch.
+    expect(guard).toContain(".onConflictDoNothing()");
+    expect(guard).toContain(".returning({ id: schema.spendAlerts.id })");
+    expect(guard).toContain("if (!claimed) continue;");
+    expect(migration).toContain(
+      "CREATE UNIQUE INDEX IF NOT EXISTS uq_spend_alerts_user_period_threshold",
+    );
+    expect(migration).toContain("a.id > b.id");
+    expect(journal).toContain('"tag": "0128_spend_alerts_threshold_dedup"');
+  });
 });

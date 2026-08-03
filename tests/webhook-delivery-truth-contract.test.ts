@@ -9,7 +9,7 @@ describe("webhook delivery truth", () => {
   it("leases a pending delivery atomically before external work", () => {
     const claim = source.indexOf("const nextAttempts = await claimWebhookDelivery");
     const fetch = source.indexOf("drizzle.query.webhookDeliveries.findFirst");
-    const network = source.indexOf("await fetchWithTimeout");
+    const network = source.indexOf("await postWebhookSafely(");
 
     expect(source).toContain("WEBHOOK_DELIVERY_LEASE_MS");
     expect(source).toContain("async function claimWebhookDelivery");
@@ -26,7 +26,7 @@ describe("webhook delivery truth", () => {
     expect(source).toContain("deliveredAt: outcome.deliveredAt");
     expect(source).toContain("const deliveredAt = success ? new Date() : null");
     expect(source).toContain("lastError: outcome.lastError");
-    expect(source).toContain("lastError = success ? null : `http_${response.status}`");
+    expect(source).toContain("lastError = success ? null : `http_${response.statusCode}`");
   });
 
   it("updates the selected endpoint summary in the same transaction", () => {

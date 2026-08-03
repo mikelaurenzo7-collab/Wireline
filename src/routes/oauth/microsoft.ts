@@ -14,7 +14,7 @@ import {
   getMicrosoftRedirectUri,
   generateOAuthState,
   verifyAndClaimOAuthState,
-  resolveUserIdFromOAuthSession,
+  resolveLinkedOAuthUserId,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
 
@@ -101,12 +101,12 @@ router.get(
       if (!emailAddress)
         throw new Error("Could not retrieve email address from Microsoft account.");
 
-      const userId = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+      const userId = await resolveLinkedOAuthUserId(req, vs);
       if (!userId) {
         return res
           .status(401)
           .send(
-            "Could not identify your account. Sign in to Wireline and connect Microsoft again from Settings.",
+            "Complete this connection in the same browser and Wireline account that started it. Sign in, then connect Microsoft again from Settings.",
           );
       }
 

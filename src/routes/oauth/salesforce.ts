@@ -10,7 +10,7 @@ import { authenticateUser } from "../../middleware/auth";
 import {
   generateOAuthState,
   verifyAndClaimOAuthState,
-  resolveUserIdFromOAuthSession,
+  resolveLinkedOAuthUserId,
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
 import {
@@ -89,10 +89,12 @@ router.get(
       const identity = idRes.ok ? ((await idRes.json()) as any) : {};
       const connectedEmail = identity.email || "";
 
-      let userId: string | null = vs.userId ?? (await resolveUserIdFromOAuthSession(req));
+      const userId = await resolveLinkedOAuthUserId(req, vs);
 
       if (!userId) {
-        return res.status(401).send("Could not identify user. Please reconnect from the app.");
+        return res
+          .status(401)
+          .send("Complete this connection in the same browser and Wireline account that started it.");
       }
 
       const accessTokenSf = encryptSecret(tokens.access_token);

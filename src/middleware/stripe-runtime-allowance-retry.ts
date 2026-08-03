@@ -10,6 +10,7 @@ import {
   stripe,
   stripeAvailable,
   subscriptionBillingInterval,
+  basePlanInvoiceShare,
 } from "../lib/stripe-helpers";
 import { reverseSubscriptionRuntimeAllowance } from "../lib/subscription-welcome-credit";
 
@@ -99,6 +100,21 @@ export async function reverseSubscriptionRuntimeAllowanceForChargeStrict(
   const interval = subscriptionBillingInterval(subscription);
   const chargeCents = charge.amount || 0;
 
+  // Scale every reversal by the share of the invoice that funded the base
+  // plan. A separate add-on invoice (e.g. a monthly extra-agent charge on an
+  // annual plan) never funded the Runtime Allowance, so refunding or
+  // disputing it must not claw the allowance back; a null share means this
+  // charge funded no allowance at all and there is nothing to reverse.
+  const allowanceShare = basePlanInvoiceShare(invoice);
+  if (allowanceShare === null) {
+    log.warn("subscription allowance reversal skipped: invoice funded no base plan", {
+      chargeId: charge.id,
+      invoiceId,
+      reason,
+    });
+    return false;
+  }
+
   if (reason === "dispute") {
     const reference = explicitReference || charge.id;
     await tenantStore.run(row.userId, () =>
@@ -108,7 +124,7 @@ export async function reverseSubscriptionRuntimeAllowanceForChargeStrict(
         row.plan,
         interval,
         "dispute",
-        1,
+        allowanceShare,
       ),
     );
     return true;
@@ -127,7 +143,8 @@ export async function reverseSubscriptionRuntimeAllowanceForChargeStrict(
 
   await tenantStore.run(row.userId, async () => {
     for (const refund of refunds) {
-      const portion = chargeCents > 0 ? Math.min(1, refund.amount / chargeCents) : 1;
+      const portion =
+        chargeCents > 0 ? Math.min(1, refund.amount / chargeCents) * allowanceShare : allowanceShare;
       await reverseSubscriptionRuntimeAllowance(
         row.userId,
         refund.id,

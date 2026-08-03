@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
-import { drizzle, log } from "./server-context";
+import { drizzle, log, auditLogger } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, sql } from "drizzle-orm";
 import { invalidateDashboard } from "./dashboard-cache";
@@ -19,6 +19,7 @@ import {
   detectRecordingDisclosure,
   CONSENT_RULE_VERSION,
 } from "./tcpa-consent";
+import { normalizeDncPhone } from "./compliance";
 import { reportError } from "./error-reporter";
 import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
 import { isHardSpendCapExceeded } from "./spend-guards";
@@ -533,7 +534,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         rule_version: CONSENT_RULE_VERSION,
         rule,
         state,
-        metadata: { matched_pattern: optOut.matched_pattern },
+        metadata: { matched_pattern: optOut.matched_pattern, kind: optOut.kind },
       });
 
       await drizzle.insert(schema.consentLog).values({
@@ -546,6 +547,69 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         state: optOutRow.state,
         metadata: optOutRow.metadata,
       });
+
+      // A spoken do-not-call request is a legal revocation; it cannot depend
+      // on the LLM having chosen to invoke the add_to_dnc tool mid-call.
+      // Suppress the number deterministically (idempotent per user+phone) so
+      // every later outbound path blocks, and end any other in-flight call to
+      // it. Recording-only revocations ("stop recording") govern the current
+      // call's recording, not future contact, so they stay ledger-only.
+      if (optOut.kind === "dnc") {
+        const rawCallerNumber = call?.customer?.number || "";
+        const normalizedCallerNumber = normalizeDncPhone(rawCallerNumber);
+        if (normalizedCallerNumber) {
+          try {
+            await drizzle
+              .insert(schema.dncList)
+              .values({
+                userId,
+                phone: normalizedCallerNumber,
+                phoneRaw: rawCallerNumber,
+                reason: "spoken opt-out on call",
+                source: "call_transcript",
+              })
+              .onConflictDoNothing({
+                target: [schema.dncList.userId, schema.dncList.phone],
+              });
+
+            void auditLogger
+              .logDnc("added", {
+                userId,
+                count: 1,
+                metadata: {
+                  phone: rawCallerNumber,
+                  source: "call_transcript",
+                  matched_pattern: optOut.matched_pattern || null,
+                },
+              })
+              .catch((err) =>
+                log.warn("audit logDnc(call_transcript) failed", {
+                  error: err instanceof Error ? err.message : String(err),
+                }),
+              );
+
+            const { SentinelService } = await import("../services/sentinel");
+            const sentinel = new SentinelService();
+            void sentinel.terminateActiveCallsForNumber(normalizedCallerNumber).catch((err) =>
+              log.error("sentinel terminate-on-transcript-DNC failed", {
+                error: err instanceof Error ? err.message : String(err),
+              }),
+            );
+          } catch (dncErr) {
+            // The suppression write is the legally significant act; surface it
+            // to ops instead of letting it vanish into the ledger catch.
+            log.error("transcript DNC suppression failed", {
+              userId,
+              callId: call?.id,
+              error: getErrorMessage(dncErr),
+            });
+            reportError(
+              dncErr instanceof Error ? dncErr : new Error("transcript DNC suppression failed"),
+              { userId, callId: call?.id, tags: { compliance: "dnc_suppression_failed" } },
+            );
+          }
+        }
+      }
     }
   } catch (compErr) {
     log.error("Compliance ledger writer failed", { error: getErrorMessage(compErr) });

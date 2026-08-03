@@ -135,13 +135,22 @@ export async function evaluateSpend(userId: string, deltaUsd: number) {
     if (pct >= warnPct) thresholdsToFire.push({ pct: warnPct, event: "spend.warning" });
 
     for (const threshold of thresholdsToFire) {
+      // Claim the alert row first: only the request that actually inserts it
+      // dispatches the webhook. onConflictDoNothing without an explicit target
+      // dedups on the (user_id, period, threshold_pct) unique index once
+      // migration 0128 is applied, and degrades to the pre-constraint behavior
+      // (insert always succeeds) if this code deploys ahead of it.
+      let claimed: { id: bigint } | undefined;
       try {
-        await drizzle
+        [claimed] = await drizzle
           .insert(schema.spendAlerts)
-          .values({ userId, period: snap.period, thresholdPct: threshold.pct });
+          .values({ userId, period: snap.period, thresholdPct: threshold.pct })
+          .onConflictDoNothing()
+          .returning({ id: schema.spendAlerts.id });
       } catch {
         continue;
       }
+      if (!claimed) continue;
 
       await dispatchWebhook(userId, threshold.event, {
         period: snap.period,

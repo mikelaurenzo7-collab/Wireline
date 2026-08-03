@@ -19,24 +19,32 @@ describe("security hardening contract", () => {
 
   it("outbound webhook delivery does not follow or count redirects (SSRF)", () => {
     const helpers = read("src/lib/webhook-helpers.ts");
-    expect(helpers).toContain('redirect: "manual"');
-    expect(helpers).toContain('response.type === "opaqueredirect"');
+    const transport = read("src/lib/safe-webhook-delivery.ts");
     expect(helpers).toContain("let success = false");
     expect(helpers).toContain('lastError = "redirect_blocked"');
 
     const redirectBranch = helpers.slice(
-      helpers.indexOf("if (isRedirect)"),
-      helpers.indexOf("} else {", helpers.indexOf("if (isRedirect)")),
+      helpers.indexOf("if (response.redirect)"),
+      helpers.indexOf("} else {", helpers.indexOf("if (response.redirect)")),
     );
     expect(redirectBranch).not.toContain("success = true");
     expect(helpers).toContain("success = response.ok");
+
+    // The DNS-pinned transport issues one raw HTTPS request, which cannot
+    // follow redirects, and classifies every 3xx for the caller to block.
+    expect(transport).toContain("https.request(");
+    expect(transport).toContain("redirect: statusCode >= 300 && statusCode < 400");
   });
 
   it("escalation binds the tenant to the invoked number, not a body field", () => {
     const routes = read("src/routes/escalation-routes.ts");
     expect(routes).toContain("schema.phoneNumbers.phoneNumber");
-    expect(routes).toContain("claimedTenantId");
+    expect(routes).toContain("tenantUserId = owner.userId");
     expect(routes).toContain("tenantStore.run(tenantUserId");
+    // A valid shared webhook secret plus an arbitrary UUID must never write
+    // into another tenant's inbox: no existence-check fallback remains.
+    expect(routes).not.toContain("tenantUserId = validUser.id");
+    expect(routes).not.toContain("if (!tenantUserId && claimedTenantId)");
   });
 
   it("CSP denies plugin/embed vectors explicitly", () => {
