@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { and, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { drizzle, tenantStore } from "../lib/server-context";
 import { verifyInternalJwt, type JwtPayload } from "../lib/auth-utils";
+import { isSessionGenerationActive } from "../lib/session-generation";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import {
   clearSessionCookie,
@@ -19,16 +20,6 @@ import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
-function issuedAtMs(payload: JwtPayload): number {
-  const precise = Number(payload.iat_ms);
-  return Number.isFinite(precise) && precise > 0 ? precise : payload.iat * 1000;
-}
-
-function payloadSessionVersion(payload: JwtPayload): number | null {
-  const version = Number(payload.session_version);
-  return Number.isSafeInteger(version) && version >= 0 ? version : null;
-}
-
 async function loadValidUser(payload: JwtPayload) {
   return tenantStore.run(payload.sub, async () => {
     const [user] = await drizzle
@@ -43,9 +34,7 @@ async function loadValidUser(payload: JwtPayload) {
       .limit(1);
     if (!user) return null;
 
-    const version = payloadSessionVersion(payload);
-    if (version !== null) return version === user.sessionVersion ? user : null;
-    return issuedAtMs(payload) > user.sessionRevokedBefore.getTime() ? user : null;
+    return isSessionGenerationActive(payload, user) ? user : null;
   });
 }
 
