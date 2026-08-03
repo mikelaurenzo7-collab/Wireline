@@ -15,11 +15,18 @@ import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 
 type InviteRole = "admin" | "member" | "viewer";
+type TeamAccess = "ok" | "restricted" | "certifying" | "error";
 
 type TeamMemberRecord = {
   id: string;
   email: string | null;
   role: string | null;
+};
+
+type TeamErrorPayload = {
+  code?: string;
+  error?: string;
+  message?: string;
 };
 
 const inviteRoleOptions: { value: InviteRole; label: string }[] = [
@@ -41,7 +48,7 @@ export default function TeamSettings() {
   const { user } = useAuth();
   const [members, setMembers] = useState<TeamMemberRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [teamAccess, setTeamAccess] = useState<"ok" | "restricted" | "error">("ok");
+  const [teamAccess, setTeamAccess] = useState<TeamAccess>("ok");
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<InviteRole>("member");
@@ -51,6 +58,7 @@ export default function TeamSettings() {
   const inviteDialogRef = useRef<HTMLDivElement>(null);
 
   function openInviteDialog() {
+    if (teamAccess !== "ok") return;
     setInviteError(null);
     setIsInviteOpen(true);
   }
@@ -83,14 +91,24 @@ export default function TeamSettings() {
     setTeamAccess("ok");
     try {
       const response = await authFetch("/api/team");
+      const payload = (await response.json().catch(() => null)) as
+        | ({ members?: TeamMemberRecord[] } & TeamErrorPayload)
+        | null;
       if (response.status === 403) {
         setTeamAccess("restricted");
         setMembers([]);
         return;
       }
-      if (!response.ok) throw new Error(String(response.status));
-      const data = await response.json();
-      setMembers(data.members || []);
+      if (
+        response.status === 503 &&
+        payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED"
+      ) {
+        setTeamAccess("certifying");
+        setMembers([]);
+        return;
+      }
+      if (!response.ok) throw new Error(payload?.error || payload?.message || String(response.status));
+      setMembers(Array.isArray(payload?.members) ? payload.members : []);
     } catch {
       setTeamAccess("error");
       setMembers([]);
@@ -105,7 +123,7 @@ export default function TeamSettings() {
 
   const handleInvite = async (event: FormEvent) => {
     event.preventDefault();
-    if (!inviteEmail || inviting) return;
+    if (!inviteEmail || inviting || teamAccess !== "ok") return;
     setInviting(true);
     setInviteError(null);
     setInviteSuccess(null);
@@ -116,8 +134,8 @@ export default function TeamSettings() {
         body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
       });
       if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        throw new Error(payload?.message || "Invite could not be sent.");
+        const payload = (await response.json().catch(() => null)) as TeamErrorPayload | null;
+        throw new Error(payload?.error || payload?.message || "Invite could not be sent.");
       }
       setInviteSuccess(`Invitation sent to ${inviteEmail}.`);
       setIsInviteOpen(false);
@@ -154,6 +172,20 @@ export default function TeamSettings() {
           </StatusNotice>
         ) : null}
 
+        {teamAccess === "certifying" ? (
+          <StatusNotice tone="info" title="Shared workspaces are being certified">
+            Your workspace remains fully available for solo use. Invitations stay off until
+            Wireline completes the tenant-isolation and permission certification required for
+            safe multi-user access.
+          </StatusNotice>
+        ) : null}
+
+        {teamAccess === "error" ? (
+          <StatusNotice tone="destructive" title="Team settings could not be loaded">
+            Your workspace is unaffected. Refresh this page to retry the team status check.
+          </StatusNotice>
+        ) : null}
+
         {inviteSuccess ? (
           <StatusNotice tone="success" title="Invite sent">
             {inviteSuccess}
@@ -167,7 +199,12 @@ export default function TeamSettings() {
               type="button"
               size="sm"
               disabled={!canInvite}
-              onClick={() => openInviteDialog()}
+              onClick={openInviteDialog}
+              title={
+                teamAccess === "certifying"
+                  ? "Invitations will open after shared workspace certification."
+                  : undefined
+              }
             >
               <Plus size={14} aria-hidden="true" />
               Invite
@@ -194,7 +231,10 @@ export default function TeamSettings() {
                       {memberInitial(member.email)}
                     </span>
                     <div className="min-w-0 flex-1 overflow-hidden">
-                      <p className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-sm font-semibold text-foreground">
+                      <p
+                        data-wireline-preserve-case
+                        className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-sm font-semibold text-foreground"
+                      >
                         {member.email || "Pending invite"}
                       </p>
                       <p className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs text-muted-foreground">
@@ -222,16 +262,17 @@ export default function TeamSettings() {
               density="compact"
               withHalo={false}
               className="mt-5"
-              actions={[
-                {
-                  label: "Invite teammate",
-                  onClick: () => {
-                    if (!canInvite) return;
-                    openInviteDialog();
-                  },
-                  primary: true,
-                },
-              ]}
+              actions={
+                canInvite
+                  ? [
+                      {
+                        label: "Invite teammate",
+                        onClick: openInviteDialog,
+                        primary: true,
+                      },
+                    ]
+                  : []
+              }
             />
           )}
         </section>
@@ -251,16 +292,13 @@ export default function TeamSettings() {
             aria-busy={inviting}
           >
             <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h2
-                  data-slot="dialog-title"
-
-                  id="team-invite-title"
-                  className="font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-[-.025em] text-foreground"
-                >
-                  Invite teammate
-                </h2>
-              </div>
+              <h2
+                data-slot="dialog-title"
+                id="team-invite-title"
+                className="font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-[-.025em] text-foreground"
+              >
+                Invite teammate
+              </h2>
               <Button
                 type="button"
                 variant="ghost"
