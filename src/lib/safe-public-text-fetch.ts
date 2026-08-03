@@ -340,23 +340,23 @@ export function htmlToVisibleText(html: string): { title: string | null; text: s
         .replace(/<(br|hr)\b[^>]*\/?\s*>/gi, "\n")
         .replace(/<\/(p|div|section|article|main|header|footer|nav|aside|h[1-6]|li|tr|table|ul|ol)>/gi, "\n")
         .replace(/<[^>]+>/g, " "),
-    )
-      .replace(/\r/g, "")
-      .replace(/[\t\f\v ]+/g, " ")
-      .replace(/ *\n */g, "\n")
-      .replace(/\n{3,}/g, "\n\n"),
-  ).trim();
+    ),
+  )
+    .replace(/\r/g, "")
+    .replace(/[\t\f\v ]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
   return { title: title || null, text };
 }
 
 function normalizePlainText(input: string): string {
-  return stripUnsafeControlCharacters(
-    input
-      .replace(/\r/g, "")
-      .replace(/[\t\f\v ]+/g, " ")
-      .replace(/ *\n */g, "\n")
-      .replace(/\n{3,}/g, "\n\n"),
-  ).trim();
+  return stripUnsafeControlCharacters(input)
+    .replace(/\r/g, "")
+    .replace(/[\t\f\v ]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 async function fetchPage(
