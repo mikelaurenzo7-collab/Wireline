@@ -7,6 +7,7 @@ import authSessionHardeningRouter from "../routes/auth-session-hardening-routes"
 import productEventRouter from "../routes/product-event-routes";
 import oauthRouter from "../routes/oauth";
 import agentRouter from "../routes/agent-routes-v2";
+import websiteKnowledgeRouter from "../routes/website-knowledge-routes";
 import agentTestRouter from "../routes/agent-test-routes";
 import agentWorkspaceRouter from "../routes/agent-workspace-routes";
 import qaV2Router from "../routes/qa-routes-v2";
@@ -106,6 +107,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(oauthRouter);
   app.use(productEventRouter);
   app.use(agentRouter);
+  app.use(websiteKnowledgeRouter);
   app.use(agentTestRouter);
   app.use(agentWorkspaceRouter);
   app.use(browserHandoffRouter);

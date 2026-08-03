@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BookOpen, MessageCircle, WandSparkles } from "lucide-react";
 
@@ -10,6 +10,7 @@ import WorkspaceRecovery from "../components/WorkspaceRecovery";
 import KnowledgeBaseClaude from "../components/KnowledgeBaseClaude";
 import ReportingPreferences from "../components/training/ReportingPreferences";
 import RecentCallArtifactRequests from "../components/training/RecentCallArtifactRequests";
+import WebsiteKnowledgeImport from "../components/training/WebsiteKnowledgeImport";
 import { useAgents } from "../contexts/AgentsContext";
 
 type KnowledgeTabId = "knowledge" | "reports";
@@ -65,6 +66,7 @@ export default function KnowledgePage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const { agents, loading, degraded, refresh } = useAgents();
+  const [knowledgeRevision, setKnowledgeRevision] = useState(0);
   const agentId = params.get("agent") || agents[0]?.id || "";
   const rawRequestedTab = params.get("tab");
   const requestedTab = rawRequestedTab as KnowledgeTabId | null;
@@ -158,7 +160,18 @@ export default function KnowledgePage() {
             </div>
           ) : null}
 
-          {activeTab === "knowledge" ? <KnowledgeBaseClaude agentId={agentId} /> : null}
+          {activeTab === "knowledge" ? (
+            <div className="space-y-5">
+              <WebsiteKnowledgeImport
+                agentId={agentId}
+                onImported={() => setKnowledgeRevision((value) => value + 1)}
+              />
+              <KnowledgeBaseClaude
+                key={`${agentId}:${knowledgeRevision}`}
+                agentId={agentId}
+              />
+            </div>
+          ) : null}
           {activeTab === "reports" ? (
             <div className="space-y-5">
               <ReportingPreferences />
