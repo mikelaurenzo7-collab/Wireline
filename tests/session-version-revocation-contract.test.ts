@@ -36,4 +36,14 @@ describe("monotonic session revocation", () => {
     expect(sessions).toContain("version === user.sessionVersion");
     expect(sessions).toContain("sessionVersion: sql`${sessionUsers.sessionVersion} + 1`");
   });
+
+  it("fails closed when a shadowed legacy issuer omits the generation", () => {
+    const auth = read("src/lib/auth-service.ts");
+    const unit = read("src/lib/auth-service.test.ts");
+    const behavioral = read("tests/auth-service-behavioral.test.ts");
+
+    expect(auth).toContain('throw new Error("SESSION_VERSION_REQUIRED")');
+    expect(unit).toContain("refuses to mint a token without a verified session generation");
+    expect(behavioral).toContain("refuses omitted or invalid session generations");
+  });
 });
