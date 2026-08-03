@@ -4,6 +4,7 @@ import { Redis } from "@upstash/redis";
 import {
   OPENAI_STRUCTURED_PRIMARY_MODEL,
   VAPI_TENANT_DEFAULT_MODEL,
+  VAPI_VOICE_FALLBACK_MODEL,
 } from "../../src/lib/ai-models";
 import {
   buildPublicHealthPayload,
@@ -12,8 +13,8 @@ import {
   type PublicHealthPayload,
 } from "../../src/lib/public-health-probe";
 
-const RESULT_KEY = "wireline:health:public:v2";
-const LOCK_KEY = "wireline:health:public:probe-lock:v2";
+const RESULT_KEY = "wireline:health:public:v3";
+const LOCK_KEY = "wireline:health:public:probe-lock:v3";
 const RESULT_TTL_SECONDS = 120;
 const LOCK_TTL_SECONDS = 12;
 const LOCAL_STALE_TTL_MS = 5 * 60_000;
@@ -85,7 +86,7 @@ function unavailablePayload(code: string): PublicHealthPayload & { code: string 
     overall: "degraded",
     components: {
       voice_runtime: "degraded",
-      voice_fallback: process.env.GEMINI_API_KEY ? "operational" : "degraded",
+      voice_fallback: "degraded",
       reasoning: "degraded",
     },
     last_checked: new Date().toISOString(),
@@ -101,8 +102,8 @@ async function readCached(client: Redis): Promise<PublicHealthPayload | null> {
 }
 
 async function waitForConcurrentProbe(client: Redis): Promise<PublicHealthPayload | null> {
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 125));
+  for (let attempt = 0; attempt < 32; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 250));
     const cached = await readCached(client);
     if (cached) return cached;
   }
@@ -155,20 +156,25 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    const [voice, reasoning] = await Promise.all([
-      probeOpenAIModel(VAPI_TENANT_DEFAULT_MODEL, process.env.OPENAI_API_KEY),
+    const voicePromise = probeOpenAIModel(
+      VAPI_TENANT_DEFAULT_MODEL,
+      process.env.OPENAI_API_KEY,
+    );
+    const voiceFallbackPromise =
+      VAPI_VOICE_FALLBACK_MODEL === VAPI_TENANT_DEFAULT_MODEL
+        ? voicePromise
+        : probeOpenAIModel(VAPI_VOICE_FALLBACK_MODEL, process.env.OPENAI_API_KEY);
+    const [voice, voiceFallback, reasoning] = await Promise.all([
+      voicePromise,
+      voiceFallbackPromise,
       probeOpenAIModel(OPENAI_STRUCTURED_PRIMARY_MODEL, process.env.OPENAI_API_KEY),
     ]);
-    const payload = buildPublicHealthPayload({
-      voice,
-      reasoning,
-      voiceFallbackConfigured: !!process.env.GEMINI_API_KEY,
-    });
+    const payload = buildPublicHealthPayload({ voice, voiceFallback, reasoning });
     remember(payload);
     await client.set(RESULT_KEY, payload, { ex: RESULT_TTL_SECONDS });
     sendJson(req, res, 200, payload, "probe");
   } catch (error) {
-    console.warn("Public health distributed cache unavailable; refusing metered probe", {
+    console.warn("Public health distributed cache unavailable; refusing external probe fan-out", {
       error: error instanceof Error ? error.message : String(error),
     });
     const stale = freshLocalCache();
