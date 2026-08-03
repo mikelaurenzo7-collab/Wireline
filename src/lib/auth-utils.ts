@@ -34,7 +34,9 @@ export interface JwtPayload {
  */
 export async function verifyInternalJwt(token: string, secret: string): Promise<JwtPayload | null> {
   try {
-    const [headerB64, payloadB64, signatureB64] = token.split(".");
+    const segments = token.split(".");
+    if (segments.length !== 3) return null;
+    const [headerB64, payloadB64, signatureB64] = segments;
     if (!headerB64 || !payloadB64 || !signatureB64) return null;
 
     // 0. Lock algorithm + type before signature work (alg-confusion hardening).
@@ -71,17 +73,21 @@ export async function verifyInternalJwt(token: string, secret: string): Promise<
     const payloadJson = Buffer.from(payloadB64, "base64url").toString("utf8");
     const payload = JSON.parse(payloadJson) as JwtPayload;
 
-    // 3. Require numeric exp + enforce expiry. Reject tokens missing
-    //    `exp` or carrying a non-numeric value (e.g. a string or null
-    //    smuggled in by a forged/malformed token). A missing exp is
-    //    indistinguishable from an infinite-lifetime token and must
-    //    never validate.
-    const now = Math.floor(Date.now() / 1000);
+    // 3. Require finite NumericDate claims. Downstream session logic uses iat
+    //    for legacy revocation and user metadata, so malformed signed tokens
+    //    must be rejected here rather than surfacing as route-level exceptions.
+    if (typeof payload.iat !== "number" || !Number.isFinite(payload.iat) || payload.iat <= 0) {
+      log.warn("JWT missing or non-numeric iat", { sub: payload.sub, iat: payload.iat });
+      return null;
+    }
     if (typeof payload.exp !== "number" || !Number.isFinite(payload.exp)) {
       log.warn("JWT missing or non-numeric exp", { sub: payload.sub, exp: payload.exp });
       return null;
     }
-    if (payload.exp < now) {
+
+    const now = Math.floor(Date.now() / 1000);
+    // RFC 7519 requires the current time to be strictly before exp.
+    if (payload.exp <= now) {
       log.warn("JWT expired", { sub: payload.sub, exp: payload.exp, now });
       return null;
     }

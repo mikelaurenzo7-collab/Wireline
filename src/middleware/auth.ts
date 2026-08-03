@@ -3,6 +3,7 @@ import type { User } from "../types/auth";
 import { log, auditLogger, tenantStore, drizzle } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { verifyInternalJwt, type JwtPayload } from "../lib/auth-utils";
+import { isSessionGenerationActive } from "../lib/session-generation";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { getSessionTokenFromRequest, isProductionRuntime } from "../lib/session-cookie";
 import { sharedWorkspacesEnabled } from "../lib/shared-workspace-readiness";
@@ -21,17 +22,6 @@ type ActiveSessionUser = {
   sessionVersion: number;
 };
 
-function tokenIssuedAtMs(payload: JwtPayload): number {
-  const precise = Number(payload.iat_ms);
-  if (Number.isFinite(precise) && precise > 0) return precise;
-  return payload.iat * 1000;
-}
-
-function tokenSessionVersion(payload: JwtPayload): number | null {
-  const version = Number(payload.session_version);
-  return Number.isSafeInteger(version) && version >= 0 ? version : null;
-}
-
 async function loadActiveSessionUser(payload: JwtPayload): Promise<ActiveSessionUser | null> {
   return tenantStore.run(payload.sub, async () => {
     const [user] = await drizzle
@@ -46,15 +36,7 @@ async function loadActiveSessionUser(payload: JwtPayload): Promise<ActiveSession
       .limit(1);
     if (!user) return null;
 
-    const version = tokenSessionVersion(payload);
-    if (version !== null) {
-      return version === user.sessionVersion ? user : null;
-    }
-
-    // Compatibility only for sessions minted before migration 0127. Every new
-    // token carries session_version and never depends on host clock ordering.
-    if (tokenIssuedAtMs(payload) <= user.sessionRevokedBefore.getTime()) return null;
-    return user;
+    return isSessionGenerationActive(payload, user) ? user : null;
   });
 }
 

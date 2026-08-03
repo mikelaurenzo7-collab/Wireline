@@ -27,13 +27,21 @@ describe("monotonic session revocation", () => {
     expect(team).toContain("sessionVersion: requireSessionVersion(req)");
   });
 
-  it("uses exact generation equality and keeps timestamps only for legacy tokens", () => {
+  it("uses one exact generation fence and keeps timestamps only for legacy tokens", () => {
+    const canonical = read("src/lib/session-generation.ts");
     const middleware = read("src/middleware/auth.ts");
     const sessions = read("src/routes/auth-session-hardening-routes.ts");
+    const oauthHelpers = read("src/lib/oauth-helpers.ts");
 
-    expect(middleware).toContain("version === user.sessionVersion");
-    expect(middleware).toContain("Compatibility only for sessions minted before migration 0127");
-    expect(sessions).toContain("version === user.sessionVersion");
+    expect(canonical).toContain("validSessionVersion(payload.session_version)");
+    expect(canonical).toContain("payload.session_version === state.sessionVersion");
+    expect(canonical).toContain('hasClaim(payload, "session_version")');
+    expect(canonical).toContain("issuedAtMs > state.sessionRevokedBefore.getTime()");
+
+    for (const consumer of [middleware, sessions, oauthHelpers]) {
+      expect(consumer).toContain("isSessionGenerationActive(payload, user)");
+      expect(consumer).not.toContain("Number(payload.session_version)");
+    }
     expect(sessions).toContain("sessionVersion: sql`${sessionUsers.sessionVersion} + 1`");
   });
 

@@ -118,6 +118,7 @@ run("npx", [
   "tests/auth-token-atomicity-contract.test.ts",
   "tests/auth-oauth-browser-binding-contract.test.ts",
   "tests/oauth-active-session-binding-contract.test.ts",
+  "tests/internal-jwt-claim-validation.test.ts",
   "tests/oauth-rate-limit-middleware.test.ts",
   "tests/oauth-provider-identity-integrity-contract.test.ts",
   "tests/yahoo-openid-security.test.ts",
