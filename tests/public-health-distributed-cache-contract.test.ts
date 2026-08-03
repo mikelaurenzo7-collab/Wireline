@@ -20,14 +20,14 @@ describe("distributed public health boundary", () => {
     });
   });
 
-  it("requires a global cache and lock before any metered provider probe", () => {
+  it("requires a global cache and lock before any external provider probe", () => {
     const source = read("api/health/public.ts");
     const clientGuard = source.indexOf("if (!client)");
     const lock = source.indexOf("nx: true");
-    const probes = source.indexOf("const [voice, reasoning]");
+    const probes = source.indexOf("const [voice, voiceFallback, reasoning]");
 
-    expect(source).toContain('const RESULT_KEY = "wireline:health:public:v2"');
-    expect(source).toContain('const LOCK_KEY = "wireline:health:public:probe-lock:v2"');
+    expect(source).toContain('const RESULT_KEY = "wireline:health:public:v3"');
+    expect(source).toContain('const LOCK_KEY = "wireline:health:public:probe-lock:v3"');
     expect(source).toContain('unavailablePayload("DISTRIBUTED_CACHE_REQUIRED")');
     expect(source).toContain('unavailablePayload("DISTRIBUTED_CACHE_UNAVAILABLE")');
     expect(source).toContain("LOCAL_STALE_TTL_MS");
@@ -36,6 +36,19 @@ describe("distributed public health boundary", () => {
     expect(clientGuard).toBeGreaterThan(-1);
     expect(lock).toBeGreaterThan(clientGuard);
     expect(probes).toBeGreaterThan(lock);
+  });
+
+  it("checks the declared OpenAI voice fallback instead of inferring Gemini readiness", () => {
+    const functionSource = read("api/health/public.ts");
+    const probeSource = read("src/lib/public-health-probe.ts");
+
+    expect(functionSource).toContain("VAPI_VOICE_FALLBACK_MODEL");
+    expect(functionSource).toContain("voiceFallbackPromise");
+    expect(functionSource).not.toContain("GEMINI_API_KEY");
+    expect(probeSource).toContain("/v1/models/${encodeURIComponent(model)}");
+    expect(probeSource).toContain('method: "GET"');
+    expect(probeSource).not.toContain("/v1/responses");
+    expect(probeSource).not.toContain("max_output_tokens");
   });
 
   it("keeps the Express fallback from being the production public status implementation", () => {
