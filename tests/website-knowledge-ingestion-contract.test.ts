@@ -15,6 +15,10 @@ const route = readFileSync(
   new URL("../src/routes/website-knowledge-routes.ts", import.meta.url),
   "utf8",
 );
+const legacyRoute = readFileSync(
+  new URL("../src/routes/legacy-knowledge-crawl-routes.ts", import.meta.url),
+  "utf8",
+);
 const page = readFileSync(new URL("../src/pages/KnowledgePage.tsx", import.meta.url), "utf8");
 const component = readFileSync(
   new URL("../src/components/training/WebsiteKnowledgeImport.tsx", import.meta.url),
@@ -115,5 +119,23 @@ describe("secure website knowledge ingestion", () => {
     expect(component).toContain("reads page text only");
     expect(component).toContain("blocks private networks");
     expect(component).toContain("Import page");
+  });
+
+  it("retires the contradictory legacy crawl endpoint with an authenticated migration response", () => {
+    expect(legacyRoute).toContain('"/api/jobs/knowledge-crawl"');
+    expect(legacyRoute).toContain("authenticateUser");
+    expect(legacyRoute).toContain("jobsRateLimit");
+    expect(legacyRoute).toContain("res.status(410).json");
+    expect(legacyRoute).toContain('code: "GONE"');
+    expect(legacyRoute).toContain('replacement: "/api/agent-config/:agentId/website"');
+    expect(legacyRoute).toContain('scope: "single_public_https_page"');
+
+    expect(registry).toContain(
+      'import legacyKnowledgeCrawlRouter from "../routes/legacy-knowledge-crawl-routes"',
+    );
+    const legacyMount = registry.indexOf("app.use(legacyKnowledgeCrawlRouter)");
+    const broadJobMount = registry.indexOf('app.use("/api/jobs", jobRouter)');
+    expect(legacyMount).toBeGreaterThan(-1);
+    expect(broadJobMount).toBeGreaterThan(legacyMount);
   });
 });
