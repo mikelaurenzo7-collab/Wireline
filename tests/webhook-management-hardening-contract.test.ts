@@ -22,4 +22,16 @@ describe("webhook management hardening", () => {
     expect(source).not.toContain('router.post(\n  "/:id/test"');
     expect(source).not.toContain("dispatchWebhook(req.user.id");
   });
+
+  it("never returns plaintext or encrypted webhook secret columns", () => {
+    expect(source).toContain("function publicWebhookRecord");
+    expect(source).toContain("webhook: publicWebhookRecord(data)");
+    expect(source).not.toContain("res.json({ webhook: data })");
+  });
+
+  it("claims manual replay atomically from failed state only", () => {
+    expect(source).toContain('eq(schema.webhookDeliveries.status, "failed")');
+    expect(source).toContain('code: "DELIVERY_NOT_FAILED"');
+    expect(source).toContain('returning({ id: schema.webhookDeliveries.id })');
+  });
 });
