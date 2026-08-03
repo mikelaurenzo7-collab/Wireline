@@ -46,8 +46,9 @@ describe("public showcase truth guard", () => {
       expect(prompt).not.toMatch(/14-day free trial|Personal \$49|Starter \$149|Pro \$499/i);
       expect(prompt).not.toContain("HIPAA-aware tone");
       if (kind === "demo") {
-        expect(prompt).not.toMatch(/have someone follow up|someone will reach out/i);
+        expect(prompt).not.toMatch(/have someone follow up/i);
         expect(prompt).toContain("never promise human follow-up from a demo line");
+        expect(prompt).toContain("Never tell the caller");
       }
     },
   );
