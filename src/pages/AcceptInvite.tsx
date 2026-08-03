@@ -1,29 +1,48 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle2, Loader2, TriangleAlert } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import MarketingChrome from "../components/marketing/MarketingChrome";
 import { PageMeta } from "../lib/page-meta";
 
+const PENDING_INVITE_KEY = "wireline_pending_invitation";
+
+function readInviteToken(search: string, hash: string): string {
+  const queryToken = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search)
+    .get("token")
+    ?.trim();
+  const fragmentToken = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash)
+    .get("token")
+    ?.trim();
+  return fragmentToken || queryToken || sessionStorage.getItem(PENDING_INVITE_KEY)?.trim() || "";
+}
+
 export default function AcceptInvite() {
   const { user, loading } = useAuth();
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
-  const token = searchParams.get("token")?.trim() || "";
+  const [token] = useState(() => readInviteToken(location.search, location.hash));
   const started = useRef(false);
   const [status, setStatus] = useState<"idle" | "working" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
 
+  useLayoutEffect(() => {
+    if (token) sessionStorage.setItem(PENDING_INVITE_KEY, token);
+    if (location.search || location.hash) {
+      window.history.replaceState(window.history.state, "", location.pathname);
+    }
+  }, [location.hash, location.pathname, location.search, token]);
+
   useEffect(() => {
     if (loading || started.current) return;
     if (!token) {
+      sessionStorage.removeItem(PENDING_INVITE_KEY);
       setStatus("error");
       setMessage("This invitation link is incomplete.");
       return;
     }
     if (!user) {
-      const destination = `/accept-invite?token=${encodeURIComponent(token)}`;
-      navigate(`/signup?redirect=${encodeURIComponent(destination)}`, { replace: true });
+      navigate(`/signup?redirect=${encodeURIComponent("/accept-invite")}`, { replace: true });
       return;
     }
 
@@ -44,6 +63,7 @@ export default function AcceptInvite() {
               : "The invitation could not be accepted.",
           );
         }
+        sessionStorage.removeItem(PENDING_INVITE_KEY);
         setStatus("success");
         setMessage("You now have access to the shared workspace.");
         // The acceptance endpoint rotates the session into the shared tenant.
@@ -52,6 +72,7 @@ export default function AcceptInvite() {
         window.setTimeout(() => window.location.assign("/overview"), 900);
       })
       .catch((error: unknown) => {
+        sessionStorage.removeItem(PENDING_INVITE_KEY);
         setStatus("error");
         setMessage(error instanceof Error ? error.message : "The invitation could not be accepted.");
       });
