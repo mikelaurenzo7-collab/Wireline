@@ -1,19 +1,13 @@
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigint, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-/**
- * Security-critical columns and operation tables added by migration 0120.
- *
- * The main schema remains intentionally large and is generated independently.
- * Keeping these additive overlays isolated lets security routes use typed
- * Drizzle queries while the migration remains backward-compatible with the
- * currently deployed application.
- */
+/** Security-critical columns and operation tables added by migrations 0120+. */
 export const sessionUsers = pgTable("wireline_users", {
   id: uuid("id").primaryKey(),
   email: text("email").notNull(),
   sessionRevokedBefore: timestamp("session_revoked_before", {
     withTimezone: true,
   }).notNull(),
+  sessionVersion: bigint("session_version", { mode: "number" }).notNull().default(0),
 });
 
 export const secureTeamMembers = pgTable("wireline_team_members", {
