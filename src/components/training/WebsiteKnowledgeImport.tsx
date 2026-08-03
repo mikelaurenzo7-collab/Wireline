@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { Globe2, Loader2 } from "lucide-react";
 
 import { authFetch, safeJson } from "../../lib/api";
@@ -42,6 +42,10 @@ export default function WebsiteKnowledgeImport({
     }
     if (parsed.protocol !== "https:") {
       setError("Website imports require HTTPS.");
+      return;
+    }
+    if (parsed.port && parsed.port !== "443") {
+      setError("Website imports use the standard HTTPS port.");
       return;
     }
     if (parsed.username || parsed.password) {
