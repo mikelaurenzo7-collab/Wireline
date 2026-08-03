@@ -49,9 +49,20 @@ const contracts = [
     file: "src/routes/auth-oauth-exchange-atomic-routes.ts",
     required: [
       '"/api/auth/oauth/exchange"',
-      "bridge_state_hash =",
-      "DELETE FROM wireline_oauth_pending_codes",
-      "expires_at > clock_timestamp()",
+      "wireline_consume_oauth_pending_code",
+      "tenantStore.run(entry.user_id",
+      "oauthRateLimiter",
+    ],
+  },
+  {
+    file: "drizzle/migrations/0126_oauth_bridge_atomic_consume_function.sql",
+    required: [
+      "SECURITY DEFINER",
+      "DELETE FROM public.wireline_oauth_pending_codes",
+      "pending.code_hash = p_code_hash",
+      "pending.bridge_state_hash = p_bridge_state_hash",
+      "pending.expires_at > clock_timestamp()",
+      "GRANT EXECUTE ON FUNCTION public.wireline_consume_oauth_pending_code",
     ],
   },
   {
