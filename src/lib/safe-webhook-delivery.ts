@@ -124,6 +124,25 @@ function requestWithPinnedAddress(
   timeoutMs: number,
 ): Promise<SafeWebhookPostResult> {
   return new Promise((resolve, reject) => {
+    let settled = false;
+    let totalTimer: ReturnType<typeof setTimeout> | null = null;
+    const clearTotalTimer = () => {
+      if (totalTimer !== null) clearTimeout(totalTimer);
+      totalTimer = null;
+    };
+    const finish = (result: SafeWebhookPostResult) => {
+      if (settled) return;
+      settled = true;
+      clearTotalTimer();
+      resolve(result);
+    };
+    const finishError = (error: unknown) => {
+      if (settled) return;
+      settled = true;
+      clearTotalTimer();
+      reject(error instanceof Error ? error : new Error(String(error)));
+    };
+
     const pinnedLookup = ((
       _hostname: string,
       options: { all?: boolean } | number,
@@ -168,23 +187,31 @@ function requestWithPinnedAddress(
           : {}),
       },
       (response) => {
+        // The response body is not part of Wireline's delivery contract. Settle
+        // from the authenticated response headers, attach the stream guard
+        // before closing, and discard attacker-controlled bytes immediately.
+        // This prevents a peer from keeping a serverless invocation alive with
+        // an endless slow body or surfacing an unhandled IncomingMessage error.
+        response.once("error", finishError);
         const statusCode = response.statusCode || 0;
-        response.resume();
-        response.once("end", () => {
-          resolve({
-            status: "sent",
-            statusCode,
-            ok: statusCode >= 200 && statusCode < 300,
-            redirect: statusCode >= 300 && statusCode < 400,
-          });
+        finish({
+          status: "sent",
+          statusCode,
+          ok: statusCode >= 200 && statusCode < 300,
+          redirect: statusCode >= 300 && statusCode < 400,
         });
+        response.destroy();
       },
     );
 
+    totalTimer = setTimeout(() => {
+      request.destroy(new Error("Webhook delivery timed out"));
+    }, timeoutMs);
+    if (typeof totalTimer === "object" && "unref" in totalTimer) totalTimer.unref();
     request.setTimeout(timeoutMs, () => {
       request.destroy(new Error("Webhook delivery timed out"));
     });
-    request.once("error", reject);
+    request.once("error", finishError);
     request.end(body);
   });
 }
@@ -194,7 +221,8 @@ function requestWithPinnedAddress(
  * resolved and classified first, then a fresh HTTPS socket is forced to use
  * that exact approved address while TLS SNI and the Host header retain the
  * original customer hostname. Redirects are surfaced to the caller and never
- * followed.
+ * followed. Delivery settles from response headers and never downloads an
+ * unbounded response body.
  */
 export async function postWebhookSafely(
   rawUrl: string,
