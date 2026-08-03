@@ -1,4 +1,4 @@
-import { and, eq, inArray, lte } from "drizzle-orm";
+import { and, eq, inArray, lte, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import * as base from "./job-queue-base";
@@ -27,6 +27,7 @@ type ClaimedJobIdentity = {
 
 const CALLER_MANAGED_ENQUEUE_FAILURE_TYPES = new Set<JobType>(["campaign_dial"]);
 const STALE_RECOVERY_BATCH = 200;
+const legacyRetryBudgetRemaining = sql`${schema.jobs.attempts} < ${schema.jobs.maxAttempts}`;
 
 export function enforceDurableEnqueueResult(
   opts: Pick<EnqueueOptions, "type">,
@@ -46,7 +47,12 @@ export async function enqueue(db: QueueDb, opts: EnqueueOptions): Promise<base.E
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle rows remain camelCase.
 async function claimLegacyFailed(db: QueueDb, typeFilter?: JobType[]): Promise<any | null> {
   return db.transaction(async (tx) => {
-    const clauses = [eq(schema.jobs.status, "failed"), lte(schema.jobs.runAt, new Date())];
+    const claimTime = new Date();
+    const clauses = [
+      eq(schema.jobs.status, "failed"),
+      lte(schema.jobs.runAt, claimTime),
+      legacyRetryBudgetRemaining,
+    ];
     if (typeFilter?.length) clauses.push(inArray(schema.jobs.type, typeFilter));
 
     const [job] = await tx
@@ -58,15 +64,24 @@ async function claimLegacyFailed(db: QueueDb, typeFilter?: JobType[]): Promise<a
       .for("update", { skipLocked: true });
     if (!job) return null;
 
+    const expectedAttempts = Number(job.attempts || 0);
     const [updated] = await tx
       .update(schema.jobs)
       .set({
         status: "running",
-        startedAt: new Date(),
-        attempts: (job.attempts ?? 0) + 1,
-        updatedAt: new Date(),
+        startedAt: claimTime,
+        attempts: expectedAttempts + 1,
+        updatedAt: claimTime,
       })
-      .where(eq(schema.jobs.id, job.id))
+      .where(
+        and(
+          eq(schema.jobs.id, job.id),
+          eq(schema.jobs.status, "failed"),
+          eq(schema.jobs.attempts, expectedAttempts),
+          lte(schema.jobs.runAt, claimTime),
+          legacyRetryBudgetRemaining,
+        ),
+      )
       .returning();
     return updated || null;
   }, base.writeTransactionConfig());
@@ -89,6 +104,7 @@ export async function claimJobById(
   if (pending) return pending;
 
   return db.transaction(async (tx) => {
+    const claimTime = new Date();
     const [job] = await tx
       .select()
       .from(schema.jobs)
@@ -97,22 +113,33 @@ export async function claimJobById(
           eq(schema.jobs.id, jobId),
           eq(schema.jobs.userId, userId),
           eq(schema.jobs.status, "failed"),
-          lte(schema.jobs.runAt, new Date()),
+          lte(schema.jobs.runAt, claimTime),
+          legacyRetryBudgetRemaining,
         ),
       )
       .limit(1)
       .for("update", { skipLocked: true });
     if (!job) return null;
 
+    const expectedAttempts = Number(job.attempts || 0);
     const [updated] = await tx
       .update(schema.jobs)
       .set({
         status: "running",
-        startedAt: new Date(),
-        attempts: (job.attempts ?? 0) + 1,
-        updatedAt: new Date(),
+        startedAt: claimTime,
+        attempts: expectedAttempts + 1,
+        updatedAt: claimTime,
       })
-      .where(eq(schema.jobs.id, job.id))
+      .where(
+        and(
+          eq(schema.jobs.id, job.id),
+          eq(schema.jobs.userId, userId),
+          eq(schema.jobs.status, "failed"),
+          eq(schema.jobs.attempts, expectedAttempts),
+          lte(schema.jobs.runAt, claimTime),
+          legacyRetryBudgetRemaining,
+        ),
+      )
       .returning();
     return updated || null;
   }, base.writeTransactionConfig());
