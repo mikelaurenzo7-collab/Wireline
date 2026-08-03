@@ -11,6 +11,10 @@ const service = readFileSync(
   new URL("../src/lib/website-knowledge-service.ts", import.meta.url),
   "utf8",
 );
+const timeout = readFileSync(
+  new URL("../src/lib/website-knowledge-timeout.ts", import.meta.url),
+  "utf8",
+);
 const route = readFileSync(
   new URL("../src/routes/website-knowledge-routes.ts", import.meta.url),
   "utf8",
@@ -88,6 +92,16 @@ describe("secure website knowledge ingestion", () => {
     expect(service).toContain("website import must not overwrite the agent's established tone");
     expect(service).toContain("personality: cleanText(raw.personality");
     expect(service).not.toContain("schema.personality");
+  });
+
+  it("bounds the metered extraction step and maps timeouts explicitly", () => {
+    expect(timeout).toContain("WEBSITE_KNOWLEDGE_EXTRACTION_TIMEOUT_MS = 20_000");
+    expect(timeout).toContain("controller.abort()");
+    expect(timeout).toContain("WebsiteKnowledgeExtractionTimeoutError");
+    expect(service).toContain("runWithWebsiteKnowledgeExtractionTimeout((signal)");
+    expect(service).toContain("signal,");
+    expect(route).toContain("error instanceof WebsiteKnowledgeExtractionTimeoutError");
+    expect(route).toContain("AppError.fromHttpStatus(504, error.message)");
   });
 
   it("persists only tenant-scoped, serialized, deduplicated facts and rules", () => {
