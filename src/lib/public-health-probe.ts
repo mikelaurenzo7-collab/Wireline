@@ -29,13 +29,13 @@ function probeLevel(probe: Pick<PublicModelProbe, "ok" | "error">): PublicHealth
 
 export function buildPublicHealthPayload(input: {
   voice: PublicModelProbe;
+  voiceFallback: PublicModelProbe;
   reasoning: PublicModelProbe;
-  voiceFallbackConfigured: boolean;
   checkedAt?: Date;
 }): PublicHealthPayload {
   const components: PublicHealthPayload["components"] = {
     voice_runtime: probeLevel(input.voice),
-    voice_fallback: input.voiceFallbackConfigured ? "operational" : "degraded",
+    voice_fallback: probeLevel(input.voiceFallback),
     reasoning: probeLevel(input.reasoning),
   };
   const severity: Record<PublicHealthLevel, number> = {
@@ -54,6 +54,11 @@ export function buildPublicHealthPayload(input: {
   };
 }
 
+/**
+ * Check that the configured key can resolve a specific OpenAI model without
+ * generating output. The model metadata endpoint validates connectivity,
+ * authentication, and model access while consuming no inference tokens.
+ */
 export async function probeOpenAIModel(
   model: string,
   apiKey: string | undefined,
@@ -68,17 +73,16 @@ export async function probeOpenAIModel(
   const timeout = setTimeout(() => controller.abort(new Error("model probe timed out")), timeoutMs);
   timeout.unref?.();
   try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `https://api.openai.com/v1/models/${encodeURIComponent(model)}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        signal: controller.signal,
       },
-      body: JSON.stringify({ model, input: "ping", max_output_tokens: 16 }),
-      signal: controller.signal,
-    });
-    await response.body?.cancel();
-    if (!response.ok) throw new Error(`OpenAI probe failed (${response.status})`);
+    );
+    await response.body?.cancel().catch(() => undefined);
+    if (!response.ok) throw new Error(`OpenAI model probe failed (${response.status})`);
     return { ok: true, latency_ms: Date.now() - started, model };
   } catch (error) {
     const message = controller.signal.aborted
