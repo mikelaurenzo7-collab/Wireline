@@ -116,9 +116,15 @@ function getPinnedPage(
 ): Promise<PinnedGetResponse> {
   return new Promise((resolve, reject) => {
     let settled = false;
+    let totalTimer: ReturnType<typeof setTimeout> | null = null;
+    const clearTotalTimer = () => {
+      if (totalTimer !== null) clearTimeout(totalTimer);
+      totalTimer = null;
+    };
     const finishError = (error: unknown) => {
       if (settled) return;
       settled = true;
+      clearTotalTimer();
       reject(
         error instanceof WebsiteFetchError
           ? error
@@ -181,6 +187,7 @@ function getPinnedPage(
         response.once("end", () => {
           if (settled) return;
           settled = true;
+          clearTotalTimer();
           resolve({
             statusCode,
             location,
@@ -191,11 +198,21 @@ function getPinnedPage(
       },
     );
 
-    request.setTimeout(timeoutMs, () => {
+    totalTimer = setTimeout(() => {
       request.destroy(
         new WebsiteFetchError(
           "request_failed",
           "The website took too long to respond.",
+          504,
+        ),
+      );
+    }, timeoutMs);
+    if (typeof totalTimer === "object" && "unref" in totalTimer) totalTimer.unref();
+    request.setTimeout(timeoutMs, () => {
+      request.destroy(
+        new WebsiteFetchError(
+          "request_failed",
+          "The website stopped responding.",
           504,
         ),
       );
@@ -275,6 +292,13 @@ async function fetchPage(
 ): Promise<PublicWebsiteText> {
   const destination = await resolvePinnedWebhookDestination(rawUrl);
   if (destination.status === "blocked") throw blockMessage(destination.reason);
+  if (destination.url.port && destination.url.port !== "443") {
+    throw new WebsiteFetchError(
+      "unsupported_protocol",
+      "Website imports use the standard HTTPS port.",
+      400,
+    );
+  }
   const normalizedUrl = destination.url.toString();
   if (visited.has(normalizedUrl)) {
     throw new WebsiteFetchError("redirect_loop", "The website redirects in a loop.", 422);
