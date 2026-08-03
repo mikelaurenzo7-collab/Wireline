@@ -52,6 +52,9 @@ router.post(
     if (parsed.protocol !== "https:") {
       throw AppError.fromHttpStatus(400, "Website imports require an HTTPS URL.");
     }
+    if (parsed.port && parsed.port !== "443") {
+      throw AppError.fromHttpStatus(400, "Website imports use the standard HTTPS port.");
+    }
     if (parsed.username || parsed.password) {
       throw AppError.fromHttpStatus(400, "Website URLs must not contain credentials.");
     }
