@@ -27,6 +27,9 @@ const router = Router();
 const RESERVATION_TTL_MS = 30 * 60_000;
 const ACTIVE_RESERVATION_STATES = ["reserved", "dialing"];
 
+type OutboundDialGateResult = Awaited<ReturnType<typeof evaluateOutboundDialGate>>;
+type DeniedOutboundDialGate = Extract<OutboundDialGateResult, { allowed: false }>;
+
 const dialSchema = z.object({
   agentId: z.string().min(1, "agentId is required"),
   customerNumber: z
@@ -60,7 +63,7 @@ async function markReservation(
     .where(eq(outboundDialReservations.operationKey, operationKey));
 }
 
-function gateResponse(res: Response, gate: Awaited<ReturnType<typeof evaluateOutboundDialGate>>) {
+function gateResponse(res: Response, gate: DeniedOutboundDialGate) {
   if (gate.reason === "federal_dnc_unconfigured") {
     return res.status(503).json({
       code: gate.federalDncCode || "FEDERAL_DNC_UNCONFIGURED",
