@@ -312,36 +312,51 @@ function decodeHtmlEntities(input: string): string {
     .replace(/&([a-z]+);/gi, (match, name: string) => named[name.toLowerCase()] ?? match);
 }
 
+function stripUnsafeControlCharacters(input: string): string {
+  const safeCharacters: string[] = [];
+  for (const character of input) {
+    const code = character.charCodeAt(0);
+    const unsafe =
+      code <= 0x08 ||
+      code === 0x0b ||
+      code === 0x0c ||
+      (code >= 0x0e && code <= 0x1f) ||
+      code === 0x7f;
+    if (!unsafe) safeCharacters.push(character);
+  }
+  return safeCharacters.join("");
+}
+
 export function htmlToVisibleText(html: string): { title: string | null; text: string } {
   const titleMatch = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
   const title = titleMatch
     ? decodeHtmlEntities(titleMatch[1].replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim()
     : null;
-  const text = decodeHtmlEntities(
-    html
-      .replace(/<!--[\s\S]*?-->/g, " ")
-      .replace(/<(script|style|noscript|template|svg)\b[^>]*>[\s\S]*?<\/\1>/gi, " ")
-      .replace(/<(br|hr)\b[^>]*\/?\s*>/gi, "\n")
-      .replace(/<\/(p|div|section|article|main|header|footer|nav|aside|h[1-6]|li|tr|table|ul|ol)>/gi, "\n")
-      .replace(/<[^>]+>/g, " "),
-  )
-    .replace(/\r/g, "")
-    .replace(/[\t\f\v ]+/g, " ")
-    .replace(/ *\n */g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
-    .trim();
+  const text = stripUnsafeControlCharacters(
+    decodeHtmlEntities(
+      html
+        .replace(/<!--[\s\S]*?-->/g, " ")
+        .replace(/<(script|style|noscript|template|svg)\b[^>]*>[\s\S]*?<\/\1>/gi, " ")
+        .replace(/<(br|hr)\b[^>]*\/?\s*>/gi, "\n")
+        .replace(/<\/(p|div|section|article|main|header|footer|nav|aside|h[1-6]|li|tr|table|ul|ol)>/gi, "\n")
+        .replace(/<[^>]+>/g, " "),
+    )
+      .replace(/\r/g, "")
+      .replace(/[\t\f\v ]+/g, " ")
+      .replace(/ *\n */g, "\n")
+      .replace(/\n{3,}/g, "\n\n"),
+  ).trim();
   return { title: title || null, text };
 }
 
 function normalizePlainText(input: string): string {
-  return input
-    .replace(/\r/g, "")
-    .replace(/[\t\f\v ]+/g, " ")
-    .replace(/ *\n */g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
-    .trim();
+  return stripUnsafeControlCharacters(
+    input
+      .replace(/\r/g, "")
+      .replace(/[\t\f\v ]+/g, " ")
+      .replace(/ *\n */g, "\n")
+      .replace(/\n{3,}/g, "\n\n"),
+  ).trim();
 }
 
 async function fetchPage(
