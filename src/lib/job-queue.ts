@@ -2,6 +2,7 @@ import { and, eq, inArray, lte } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import * as base from "./job-queue-base";
+import { reportError } from "./error-reporter";
 
 export * from "./job-queue-base";
 
@@ -18,12 +19,12 @@ export interface WorkerOptions extends Omit<base.WorkerOptions, "typeFilter"> {
 
 type QueueDb = Parameters<typeof base.enqueue>[0];
 
-/**
- * Campaign launch owns a state rollback when its first dial job cannot be queued,
- * so that one producer intentionally receives the structured failure result.
- * Every other durable producer must fail loudly: resolving `{ ok: false }` lets
- * callers that only `await enqueue(...)` acknowledge work that was never stored.
- */
+type ClaimedJobIdentity = {
+  id: string;
+  attempts?: number | null;
+  maxAttempts?: number | null;
+};
+
 const CALLER_MANAGED_ENQUEUE_FAILURE_TYPES = new Set<JobType>(["campaign_dial"]);
 
 export function enforceDurableEnqueueResult(
@@ -41,9 +42,7 @@ export async function enqueue(db: QueueDb, opts: EnqueueOptions): Promise<base.E
   return enforceDurableEnqueueResult(opts, result);
 }
 
-// Drizzle returns camelCase rows that don't structurally match the legacy snake_case JobRow shape
-// (callers already defensively read both forms, e.g. job-worker.ts's jobOwnerId()).
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see explanation above.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle rows remain camelCase.
 async function claimLegacyFailed(db: QueueDb, typeFilter?: JobType[]): Promise<any | null> {
   return db.transaction(async (tx) => {
     const clauses = [eq(schema.jobs.status, "failed"), lte(schema.jobs.runAt, new Date())];
@@ -69,9 +68,6 @@ async function claimLegacyFailed(db: QueueDb, typeFilter?: JobType[]): Promise<a
       .where(eq(schema.jobs.id, job.id))
       .returning();
     return updated || null;
-    // Same explicit READ WRITE declaration the base queue uses: these claim and
-    // retry writes run from unscoped cron/worker contexts, where a reused
-    // Supavisor backend can otherwise leak a session-level read-only default.
   }, base.writeTransactionConfig());
 }
 
@@ -122,25 +118,52 @@ export async function claimJobById(
 }
 
 /**
- * The base queue historically wrote retryable failures as `failed`, while both
- * claim paths only selected `pending`. Keep the original dead-letter behavior,
- * but put non-exhausted work back into the claimable state after its backoff.
- *
- * Artifact/report jobs can legitimately outlive the legacy 30-second sweep race.
- * Give the in-flight operation up to five minutes to persist its result before a
- * later sweep can reclaim the row; the worker also treats a persisted result as
- * idempotent completion.
+ * Commit completion only while the row still represents the exact attempt that
+ * produced the result. A stale worker must not overwrite a newer retry after
+ * recovery has incremented the attempt counter.
+ */
+export async function completeClaimedJob(
+  db: QueueDb,
+  job: ClaimedJobIdentity,
+  result?: base.JobPayload,
+): Promise<boolean> {
+  const expectedAttempts = Number(job.attempts || 0);
+  const [updated] = await db.transaction(async (tx) =>
+    tx
+      .update(schema.jobs)
+      .set({
+        status: "done",
+        finishedAt: new Date(),
+        error: null,
+        ...(result !== undefined ? { result } : {}),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(schema.jobs.id, job.id),
+          eq(schema.jobs.status, "running"),
+          eq(schema.jobs.attempts, expectedAttempts),
+        ),
+      )
+      .returning({ id: schema.jobs.id }),
+    base.writeTransactionConfig(),
+  );
+  return Boolean(updated);
+}
+
+/**
+ * Put non-exhausted work back into the claimable state after backoff. Both retry
+ * and dead-letter writes are fenced to the exact running attempt, preventing a
+ * late worker from clobbering a newer claim.
  */
 export async function failJob(
-  db: Parameters<typeof base.failJob>[0],
-  job: Parameters<typeof base.failJob>[1],
+  db: QueueDb,
+  job: ClaimedJobIdentity,
   errorMessage: string,
 ): Promise<void> {
-  const exhausted = (job.attempts || 0) >= (job.maxAttempts || base.DEFAULT_MAX_ATTEMPTS);
-  if (exhausted) {
-    await base.failJob(db, job, errorMessage);
-    return;
-  }
+  const attempts = Number(job.attempts || 0);
+  const maxAttempts = Number(job.maxAttempts || base.DEFAULT_MAX_ATTEMPTS);
+  const exhausted = attempts >= maxAttempts;
 
   const [row] = await db
     .select({ type: schema.jobs.type })
@@ -149,36 +172,78 @@ export async function failJob(
     .limit(1);
   const longRunning = row?.type === "post_call_artifact" || row?.type === "scheduled_report";
   const retryDelaySeconds = Math.max(
-    base.backoffSeconds(job.attempts || 0),
+    base.backoffSeconds(attempts),
     longRunning ? 5 * 60 : 0,
   );
 
-  // Mirror base.failJob: declare READ WRITE so the retry reschedule cannot be
-  // rejected by a leaked session-level read-only default on a pooled backend.
-  // Losing this write would strand the row in `running` until the stale-job
-  // sweep 30 minutes later.
-  await db.transaction(async (tx) => {
-    await tx
+  const [updated] = await db.transaction(async (tx) =>
+    tx
       .update(schema.jobs)
       .set({
-        status: "pending",
+        status: exhausted ? "dead" : "pending",
         error: errorMessage.slice(0, 2000),
-        finishedAt: null,
-        runAt: new Date(Date.now() + retryDelaySeconds * 1000),
+        finishedAt: exhausted ? new Date() : null,
+        runAt: exhausted ? new Date() : new Date(Date.now() + retryDelaySeconds * 1000),
         updatedAt: new Date(),
       })
-      .where(eq(schema.jobs.id, job.id));
-  }, base.writeTransactionConfig());
+      .where(
+        and(
+          eq(schema.jobs.id, job.id),
+          eq(schema.jobs.status, "running"),
+          eq(schema.jobs.attempts, attempts),
+        ),
+      )
+      .returning({ id: schema.jobs.id }),
+    base.writeTransactionConfig(),
+  );
+
+  if (exhausted && updated) {
+    reportError(new Error(`Job dead-lettered: ${errorMessage}`), {
+      jobId: job.id,
+      attempts,
+      tags: { source: "job_queue", outcome: "dead_letter" },
+    });
+  }
 }
 
+/**
+ * Worker loop using the same attempt-fenced completion and failure semantics as
+ * the serverless sweep. This intentionally does not use base.startWorker,
+ * whose ID-only completion helper cannot distinguish a recovered retry from a
+ * stale original attempt.
+ */
 export function startWorker(
-  db: Parameters<typeof base.startWorker>[0],
+  db: QueueDb,
   handler: (job: JobRow) => Promise<void>,
   opts: WorkerOptions = {},
 ): () => void {
-  return base.startWorker(
-    db,
-    (job: base.JobRow) => handler(job as JobRow),
-    opts as base.WorkerOptions,
-  );
+  const pollMs = opts.pollIntervalMs ?? 10_000;
+  let stopped = false;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  const sweep = async () => {
+    if (stopped) return;
+    try {
+      for (let i = 0; i < 10 && !stopped; i++) {
+        const job = await claimJob(db, opts.typeFilter);
+        if (!job) break;
+        try {
+          await handler(job as JobRow);
+          await completeClaimedJob(db, job);
+        } catch (error) {
+          await failJob(db, job, error instanceof Error ? error.message : String(error));
+        }
+      }
+    } catch (error) {
+      opts.onError?.(new Error(base.formatJobWorkerSweepError(error)));
+    }
+    if (!stopped) timer = setTimeout(sweep, pollMs);
+  };
+
+  timer = setTimeout(sweep, 0);
+  return () => {
+    stopped = true;
+    if (timer !== null) clearTimeout(timer);
+    timer = null;
+  };
 }
