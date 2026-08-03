@@ -34,8 +34,8 @@ describe("annual billing purchase path", () => {
 
   it("keeps signup outside inherited tenant context", () => {
     const auth = read("src/lib/auth-service.ts");
-    expect(auth).toContain('tenantStore.run(""');
-    expect(auth).toContain("Signup bootstrap must never inherit");
+    expect(auth).toContain('return tenantStore.run("", async () => {');
+    expect(auth).toContain("await drizzle.transaction(async (tx) =>");
   });
 });
 
