@@ -46,7 +46,10 @@ export default function AcceptInvite() {
         }
         setStatus("success");
         setMessage("You now have access to the shared workspace.");
-        window.setTimeout(() => navigate("/overview", { replace: true }), 900);
+        // The acceptance endpoint rotates the session into the shared tenant.
+        // Reload the app so every provider hydrates against that new workspace
+        // instead of retaining personal-workspace caches in memory.
+        window.setTimeout(() => window.location.assign("/overview"), 900);
       })
       .catch((error: unknown) => {
         setStatus("error");
