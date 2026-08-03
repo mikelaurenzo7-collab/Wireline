@@ -4,7 +4,24 @@ import * as schema from "../db/schema";
 import * as base from "./job-queue-base";
 import { reportError } from "./error-reporter";
 
-export * from "./job-queue-base";
+// Public queue consumers must enter through this attempt-fenced facade. Export
+// only the producer/statistics primitives that are safe to share; the base
+// module's ID-only completion and unfenced worker helpers are intentionally not
+// part of the public surface.
+export {
+  backoffSeconds,
+  DEFAULT_MAX_ATTEMPTS,
+  formatJobWorkerSweepError,
+  getQueueStats,
+  writeTransactionConfig,
+} from "./job-queue-base";
+export type {
+  EnqueueResult,
+  JobHandler,
+  JobPayload,
+  JobStatus,
+  QueueStats,
+} from "./job-queue-base";
 
 export type JobType = base.JobType | "post_call_artifact" | "scheduled_report";
 export interface JobRow extends Omit<base.JobRow, "type"> {
