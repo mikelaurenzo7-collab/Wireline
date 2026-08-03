@@ -13,8 +13,27 @@ import {
   type PublicHealthPayload,
 } from "../../src/lib/public-health-probe";
 
-const RESULT_KEY = "wireline:health:public:v3";
-const LOCK_KEY = "wireline:health:public:probe-lock:v3";
+function cacheScope(): string {
+  const environment = String(process.env.VERCEL_ENV || process.env.NODE_ENV || "local")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .slice(0, 24) || "local";
+  if (environment === "production") return "production";
+
+  const deployment = String(
+    process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_URL || "unknown",
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .slice(0, 64) || "unknown";
+  return `${environment}:${deployment}`;
+}
+
+const CACHE_SCOPE = cacheScope();
+const RESULT_KEY = `wireline:health:public:v3:${CACHE_SCOPE}`;
+const LOCK_KEY = `wireline:health:public:probe-lock:v3:${CACHE_SCOPE}`;
 const RESULT_TTL_SECONDS = 120;
 const LOCK_TTL_SECONDS = 12;
 const LOCAL_STALE_TTL_MS = 5 * 60_000;
