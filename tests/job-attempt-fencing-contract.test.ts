@@ -40,7 +40,7 @@ describe("durable job attempt fencing", () => {
     expect(queue).toContain('status: exhausted ? "dead" : "pending"');
   });
 
-  it("claims pending and retryable failed work fairly in one null-safe transaction", () => {
+  it("claims pending and retryable failed work fairly with a narrowed nullable status", () => {
     expect(queue).toContain("async function claimEligibleJob");
     expect(queue).toContain('const CLAIMABLE_STATUSES = ["pending", "failed"] as const');
     expect(queue).toContain("inArray(schema.jobs.status, [...CLAIMABLE_STATUSES])");
