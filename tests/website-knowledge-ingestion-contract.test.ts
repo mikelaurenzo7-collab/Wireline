@@ -49,26 +49,28 @@ describe("secure website knowledge ingestion", () => {
     expect(parsed.text).not.toContain("change your role");
   });
 
-  it("pins DNS, blocks private destinations, revalidates redirects, and caps the response", () => {
+  it("pins DNS and enforces one deadline across redirects and transfer", () => {
     expect(safeFetch).toContain("resolvePinnedWebhookDestination(rawUrl)");
+    expect(safeFetch).toContain("beforeDeadline(resolvePinnedWebhookDestination(rawUrl), deadlineAt)");
     expect(safeFetch).toContain("lookup: pinnedLookup(destination)");
     expect(safeFetch).toContain("agent: false");
     expect(safeFetch).toContain('"Accept-Encoding": "identity"');
+    expect(safeFetch).toContain("WEBSITE_FETCH_DEADLINE_MS = 10_000");
     expect(safeFetch).toContain("WEBSITE_FETCH_MAX_BYTES = 1_000_000");
     expect(safeFetch).toContain("WEBSITE_FETCH_MAX_REDIRECTS = 3");
     expect(safeFetch).toContain("destination.url.port !== \"443\"");
-    expect(safeFetch).toContain("totalTimer = setTimeout");
-    expect(safeFetch).toContain(
-      "return fetchPage(redirected.toString(), requestedUrl, redirectsRemaining - 1, visited)",
-    );
+    expect(safeFetch).toContain("remainingDeadlineMs(deadlineAt)");
+    expect(safeFetch).toContain("deadlineAt,");
     expect(safeFetch).not.toContain("fetch(rawUrl");
   });
 
-  it("accepts only readable HTML or plain-text pages", () => {
+  it("accepts only uncompressed readable HTML or plain-text pages", () => {
     expect(safeFetch).toContain('"text/html"');
     expect(safeFetch).toContain('"text/plain"');
     expect(safeFetch).toContain('"application/xhtml+xml"');
     expect(safeFetch).toContain("unsupported_content_type");
+    expect(safeFetch).toContain("unsupported_content_encoding");
+    expect(safeFetch).toContain('response.contentEncoding !== "identity"');
     expect(safeFetch).toContain("parsed.text.length < 40");
   });
 
