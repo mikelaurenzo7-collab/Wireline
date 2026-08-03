@@ -12,7 +12,6 @@ import {
   WEBHOOK_EVENTS,
   type WebhookEvent,
   attemptWebhookDelivery,
-  dispatchWebhook,
 } from "../lib/webhook-helpers";
 import { encryptSecret, lastFour, isVaultConfigured } from "../lib/secret-vault";
 import { runInBackground } from "../lib/background-work";
@@ -20,6 +19,20 @@ import { webhooksRateLimit } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = express.Router();
+const POSTGRES_BIGINT_MAX = 9_223_372_036_854_775_807n;
+
+function parseDeliveryId(raw: string): bigint {
+  // PostgreSQL bigint is signed 64-bit. Parse the decimal string directly so
+  // IDs above Number.MAX_SAFE_INTEGER are never rounded to another delivery.
+  if (!/^[1-9]\d{0,18}$/.test(raw)) {
+    throw AppError.fromHttpStatus(400, "Invalid delivery id.");
+  }
+  const id = BigInt(raw);
+  if (id > POSTGRES_BIGINT_MAX) {
+    throw AppError.fromHttpStatus(400, "Invalid delivery id.");
+  }
+  return id;
+}
 
 router.get("/", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -224,39 +237,10 @@ router.delete(
   },
 );
 
-router.post(
-  "/:id/test",
-  authenticateUser,
-  requirePermission("webhooks.manage"),
-  webhooksRateLimit,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const [hook] = await drizzle
-        .select({ id: schema.webhooks.id })
-        .from(schema.webhooks)
-        .where(and(eq(schema.webhooks.id, req.params.id), eq(schema.webhooks.userId, req.user.id)))
-        .limit(1);
-      if (!hook) throw AppError.fromHttpStatus(404, "Webhook not found.");
-      await dispatchWebhook(req.user.id, "task.created", {
-        test: true,
-        message: "This is a test ping from Wireline.",
-        at: new Date().toISOString(),
-      });
-      void auditLogger
-        .logWebhook("tested", {
-          userId: req.user.id,
-          webhookId: req.params.id,
-          ip: req.ip,
-        })
-        .catch(() => {});
-      res.json({ success: true, message: "Test dispatched. Check the URL." });
-    } catch (e: any) {
-      if (e instanceof AppError) throw e;
-      log.error("Test failed", { error: getErrorMessage(e) });
-      throw AppError.fromHttpStatus(500, "Test failed");
-    }
-  },
-);
+// The selected-endpoint test route is owned exclusively by
+// webhook-test-routes.ts, which is mounted before this router. Keeping no broad
+// fallback here prevents a future registration-order change from dispatching a
+// test event to every subscribed endpoint.
 
 router.get(
   "/:id/deliveries",
@@ -290,7 +274,12 @@ router.get(
         .orderBy(desc(schema.webhookDeliveries.createdAt))
         .limit(limit);
 
-      res.json({ deliveries: deliveries || [] });
+      res.json({
+        deliveries: (deliveries || []).map((delivery) => ({
+          ...delivery,
+          id: delivery.id.toString(),
+        })),
+      });
     } catch (e: any) {
       if (e instanceof AppError) throw e;
       log.error("Failed to load deliveries", { error: getErrorMessage(e) });
@@ -304,12 +293,11 @@ router.post(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
-      if (!Number.isFinite(id)) throw AppError.fromHttpStatus(400, "Invalid delivery id.");
+      const id = parseDeliveryId(req.params.id);
       const [row] = await drizzle
         .select({ id: schema.webhookDeliveries.id, userId: schema.webhookDeliveries.userId })
         .from(schema.webhookDeliveries)
-        .where(eq(schema.webhookDeliveries.id, BigInt(id)))
+        .where(eq(schema.webhookDeliveries.id, id))
         .limit(1);
       if (!row || row.userId !== req.user.id)
         throw AppError.fromHttpStatus(404, "Delivery not found.");
@@ -322,9 +310,11 @@ router.post(
           lastError: null,
           lastStatusCode: null,
         })
-        .where(eq(schema.webhookDeliveries.id, BigInt(id)));
+        .where(eq(schema.webhookDeliveries.id, id));
 
-      runInBackground(`webhook delivery retry ${id}`, () => attemptWebhookDelivery(id));
+      runInBackground(`webhook delivery retry ${id.toString()}`, () =>
+        attemptWebhookDelivery(id.toString()),
+      );
       res.json({ success: true });
     } catch (e: any) {
       if (e instanceof AppError) throw e;
@@ -339,13 +329,12 @@ router.delete(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
-      if (!Number.isFinite(id)) throw AppError.fromHttpStatus(400, "Invalid delivery id.");
+      const id = parseDeliveryId(req.params.id);
       await drizzle
         .delete(schema.webhookDeliveries)
         .where(
           and(
-            eq(schema.webhookDeliveries.id, BigInt(id)),
+            eq(schema.webhookDeliveries.id, id),
             eq(schema.webhookDeliveries.userId, req.user.id),
           ),
         );
