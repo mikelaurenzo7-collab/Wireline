@@ -69,6 +69,13 @@ export async function resolvePinnedWebhookDestination(
     return { status: "blocked", reason: "invalid_url" };
   }
 
+  // Credentials in a webhook URL are both a disclosure risk and an ambiguous
+  // authentication channel. Signing belongs in Wireline's dedicated HMAC
+  // header; legacy/tampered credential-bearing rows fail closed at delivery.
+  if (url.username || url.password) {
+    return { status: "blocked", reason: "invalid_url" };
+  }
+
   const rawHost = url.hostname.toLowerCase();
   const hostname = rawHost.startsWith("[") ? rawHost.slice(1, -1) : rawHost;
   if (!hostname || hostname === "localhost") {
