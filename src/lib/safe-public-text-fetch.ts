@@ -7,7 +7,7 @@ import {
   type WebhookBlockReason,
 } from "./safe-webhook-delivery";
 
-const WEBSITE_FETCH_TIMEOUT_MS = 10_000;
+const WEBSITE_FETCH_DEADLINE_MS = 10_000;
 const WEBSITE_FETCH_MAX_BYTES = 1_000_000;
 const WEBSITE_FETCH_MAX_REDIRECTS = 3;
 const WEBSITE_USER_AGENT = "WirelineKnowledgeBot/1.0 (+https://trywireline.com)";
@@ -23,6 +23,7 @@ type WebsiteFetchErrorCode =
   | "request_failed"
   | "upstream_status"
   | "unsupported_content_type"
+  | "unsupported_content_encoding"
   | "response_too_large"
   | "empty_content";
 
@@ -51,8 +52,17 @@ type PinnedGetResponse = {
   statusCode: number;
   location: string | null;
   contentType: string;
+  contentEncoding: string;
   body: Buffer;
 };
+
+function timeoutError(): WebsiteFetchError {
+  return new WebsiteFetchError(
+    "request_failed",
+    "The website took too long to respond.",
+    504,
+  );
+}
 
 function blockMessage(reason: WebhookBlockReason): WebsiteFetchError {
   if (reason === "private_destination") {
@@ -84,6 +94,40 @@ function mimeType(value: string): string {
   return value.split(";", 1)[0]?.trim().toLowerCase() || "";
 }
 
+function remainingDeadlineMs(deadlineAt: number): number {
+  const remaining = deadlineAt - Date.now();
+  if (remaining <= 0) throw timeoutError();
+  return remaining;
+}
+
+function beforeDeadline<T>(operation: Promise<T>, deadlineAt: number): Promise<T> {
+  const remaining = remainingDeadlineMs(deadlineAt);
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(timeoutError());
+    }, remaining);
+    if (typeof timer === "object" && "unref" in timer) timer.unref();
+
+    operation.then(
+      (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error: unknown) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 function pinnedLookup(destination: PinnedPublicDestination): NonNullable<https.RequestOptions["lookup"]> {
   return ((
     _hostname: string,
@@ -112,7 +156,7 @@ function pinnedLookup(destination: PinnedPublicDestination): NonNullable<https.R
 
 function getPinnedPage(
   destination: PinnedPublicDestination,
-  timeoutMs = WEBSITE_FETCH_TIMEOUT_MS,
+  timeoutMs: number,
 ): Promise<PinnedGetResponse> {
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -154,6 +198,9 @@ function getPinnedPage(
         const statusCode = response.statusCode || 0;
         const location = headerValue(response.headers.location) || null;
         const contentType = mimeType(headerValue(response.headers["content-type"]));
+        const contentEncoding = headerValue(response.headers["content-encoding"])
+          .trim()
+          .toLowerCase();
         const declaredLength = Number(headerValue(response.headers["content-length"]));
         if (Number.isFinite(declaredLength) && declaredLength > WEBSITE_FETCH_MAX_BYTES) {
           response.destroy(
@@ -192,21 +239,14 @@ function getPinnedPage(
             statusCode,
             location,
             contentType,
+            contentEncoding,
             body: Buffer.concat(chunks),
           });
         });
       },
     );
 
-    totalTimer = setTimeout(() => {
-      request.destroy(
-        new WebsiteFetchError(
-          "request_failed",
-          "The website took too long to respond.",
-          504,
-        ),
-      );
-    }, timeoutMs);
+    totalTimer = setTimeout(() => request.destroy(timeoutError()), timeoutMs);
     if (typeof totalTimer === "object" && "unref" in totalTimer) totalTimer.unref();
     request.setTimeout(timeoutMs, () => {
       request.destroy(
@@ -289,8 +329,9 @@ async function fetchPage(
   requestedUrl: string,
   redirectsRemaining: number,
   visited: Set<string>,
+  deadlineAt: number,
 ): Promise<PublicWebsiteText> {
-  const destination = await resolvePinnedWebhookDestination(rawUrl);
+  const destination = await beforeDeadline(resolvePinnedWebhookDestination(rawUrl), deadlineAt);
   if (destination.status === "blocked") throw blockMessage(destination.reason);
   if (destination.url.port && destination.url.port !== "443") {
     throw new WebsiteFetchError(
@@ -305,7 +346,7 @@ async function fetchPage(
   }
   visited.add(normalizedUrl);
 
-  const response = await getPinnedPage(destination);
+  const response = await getPinnedPage(destination, remainingDeadlineMs(deadlineAt));
   if (response.statusCode >= 300 && response.statusCode < 400) {
     if (!response.location) {
       throw new WebsiteFetchError(
@@ -331,7 +372,13 @@ async function fetchPage(
         422,
       );
     }
-    return fetchPage(redirected.toString(), requestedUrl, redirectsRemaining - 1, visited);
+    return fetchPage(
+      redirected.toString(),
+      requestedUrl,
+      redirectsRemaining - 1,
+      visited,
+      deadlineAt,
+    );
   }
 
   if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -339,6 +386,13 @@ async function fetchPage(
       "upstream_status",
       `The website returned HTTP ${response.statusCode || "error"}.`,
       422,
+    );
+  }
+  if (response.contentEncoding && response.contentEncoding !== "identity") {
+    throw new WebsiteFetchError(
+      "unsupported_content_encoding",
+      "That website ignored Wireline's plain-text transfer request. Try another public page.",
+      415,
     );
   }
   if (!ALLOWED_CONTENT_TYPES.has(response.contentType)) {
@@ -372,8 +426,15 @@ async function fetchPage(
 
 /**
  * Fetch one public HTTPS page with DNS pinning, private-network rejection,
- * redirect revalidation, a hard byte ceiling, and no cookies or credentials.
+ * redirect revalidation, one absolute deadline, a hard byte ceiling, and no
+ * cookies or credentials.
  */
 export async function fetchPublicWebsiteText(rawUrl: string): Promise<PublicWebsiteText> {
-  return fetchPage(rawUrl, rawUrl, WEBSITE_FETCH_MAX_REDIRECTS, new Set());
+  return fetchPage(
+    rawUrl,
+    rawUrl,
+    WEBSITE_FETCH_MAX_REDIRECTS,
+    new Set(),
+    Date.now() + WEBSITE_FETCH_DEADLINE_MS,
+  );
 }
