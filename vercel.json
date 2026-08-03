@@ -66,6 +66,9 @@
       "maxDuration": 600,
       "includeFiles": "dist/server.cjs"
     },
+    "api/health/public.ts": {
+      "maxDuration": 30
+    },
     "api/mcp.ts": {
       "maxDuration": 60,
       "includeFiles": "dist/chatgpt-mcp-api.cjs"
