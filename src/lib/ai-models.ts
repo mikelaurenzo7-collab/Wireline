@@ -72,11 +72,13 @@ export const VAPI_SHOWCASE_PROVIDER = "openai" as const;
 export const VAPI_TENANT_DEFAULT_MODEL = OPENAI_MODELS.GPT_4O;
 export const VAPI_SHOWCASE_MODEL = OPENAI_MODELS.GPT_4O;
 export const VAPI_PREMIUM_MODEL = OPENAI_MODELS.GPT_4O;
-export const VAPI_OPENAI_FALLBACK_MODEL = OPENAI_MODELS.GPT_4O;
-export const VAPI_VOICE_FALLBACK_PROVIDER = "google" as const;
-export const VAPI_VOICE_FALLBACK_MODEL = GEMINI_MODELS.FLASH_3_5;
+/** Same-provider fallback accepted by Vapi's OpenAI model schema. */
+export const VAPI_OPENAI_FALLBACK_MODEL = OPENAI_MODELS.GPT_5_6_LUNA;
+/** Cross-provider retry is performed by Wireline after a rejected Gemini request. */
+export const VAPI_VOICE_FALLBACK_PROVIDER = "openai" as const;
+export const VAPI_VOICE_FALLBACK_MODEL = VAPI_OPENAI_FALLBACK_MODEL;
 export const VAPI_DEFAULT_FALLBACK_MODELS: readonly string[] = [
-  VAPI_VOICE_FALLBACK_MODEL,
+  VAPI_OPENAI_FALLBACK_MODEL,
 ];
 
 export function isOpenAIModelId(value: unknown): value is string {
@@ -105,14 +107,20 @@ export function resolveVapiVoiceModelSelection(input?: {
     return {
       provider: "google",
       model,
-      fallbackModels: [VAPI_TENANT_DEFAULT_MODEL],
+      // Vapi requires fallbackModels to belong to the selected provider. The
+      // existing application-level retry in vapi-client handles Google → OpenAI
+      // after a rejected request, so do not encode a cross-provider fallback in
+      // the provider payload.
       userSelected: true,
     };
   if (provider === "openai" && isOpenAIModelId(model))
     return {
       provider: "openai",
       model,
-      fallbackModels: [...VAPI_DEFAULT_FALLBACK_MODELS],
+      fallbackModels:
+        model === VAPI_OPENAI_FALLBACK_MODEL
+          ? undefined
+          : [...VAPI_DEFAULT_FALLBACK_MODELS],
       userSelected: false,
     };
   return {
@@ -163,7 +171,7 @@ export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
     label: "OpenAI GPT-4o",
     speed: "fast",
     envKey: "OPENAI_API_KEY",
-    note: "Wireline default. Managed calls retry through Gemini if OpenAI is unavailable.",
+    note: "Wireline default. Vapi retries through a same-provider OpenAI fallback.",
   },
   {
     provider: "google",
@@ -171,7 +179,7 @@ export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
     label: "Gemini Flash",
     speed: "fastest",
     envKey: "GEMINI_API_KEY",
-    note: "Native alternative. If selected directly, calls retry through OpenAI if Gemini is unavailable.",
+    note: "Native alternative. A rejected Gemini request is retried by Wireline through OpenAI.",
   },
 ] as const;
 
