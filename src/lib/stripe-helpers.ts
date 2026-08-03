@@ -86,11 +86,44 @@ function basePlanByStripePrice(price: Stripe.Price | null | undefined): StripePl
   return null;
 }
 
+function basePlanByStripePriceId(priceId: string | null | undefined): StripePlan | null {
+  if (!priceId) return null;
+  return (
+    STRIPE_PLANS.find(
+      (plan) => planPriceId(plan, "month") === priceId || planPriceId(plan, "year") === priceId,
+    ) || null
+  );
+}
+
 function isExtraAgentPrice(price: Stripe.Price | null | undefined): boolean {
   if (!price) return false;
   if (price.metadata?.wireline_addon_id === "extra_agent") return true;
   if (price.lookup_key === "extra_agent_monthly_founder_2026_07_v3") return true;
   return STRIPE_PLANS.some((plan) => planExtraAgentPriceId(plan) === price.id);
+}
+
+type StripeInvoiceLineCompat = Stripe.InvoiceLineItem & {
+  /** Present before the Basil invoice-line shape migration. */
+  price?: Stripe.Price | string | null;
+  /** Present on Basil/Dahlia and newer invoice-line payloads. */
+  pricing?:
+    | {
+        type?: string | null;
+        price_details?: {
+          price?: Stripe.Price | string | null;
+        } | null;
+      }
+    | null;
+};
+
+function basePlanFromInvoiceLine(line: Stripe.InvoiceLineItem): StripePlan | null {
+  const compat = line as StripeInvoiceLineCompat;
+  const currentPrice =
+    compat.pricing?.type === "price_details" ? compat.pricing.price_details?.price : null;
+  const candidate = currentPrice ?? compat.price;
+  return typeof candidate === "string"
+    ? basePlanByStripePriceId(candidate)
+    : basePlanByStripePrice(candidate);
 }
 
 /**
@@ -108,7 +141,7 @@ export function basePlanInvoiceShare(invoice: Stripe.Invoice): number | null {
   for (const line of invoice.lines?.data ?? []) {
     const amount = line.amount || 0;
     totalCents += amount;
-    if (basePlanByStripePrice(line.price)) baseCents += amount;
+    if (basePlanFromInvoiceLine(line)) baseCents += amount;
   }
   if (baseCents <= 0 || totalCents <= 0) return null;
   return Math.min(1, baseCents / totalCents);
