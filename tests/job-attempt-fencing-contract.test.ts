@@ -26,37 +26,50 @@ describe("durable job attempt fencing", () => {
     expect(queue).toContain('status: exhausted ? "dead" : "pending"');
   });
 
-  it("never reclaims an exhausted legacy failed row and fences the exact claim", () => {
+  it("routes every pending and failed claim through one budgeted, null-safe helper", () => {
+    expect(queue).toContain("async function claimEligibleJob");
     expect(queue).toContain(
       "coalesce(${schema.jobs.attempts}, 0) < coalesce(${schema.jobs.maxAttempts}",
     );
     expect(queue).toContain("coalesce(${schema.jobs.runAt}, ${claimTime}) <= ${claimTime}");
+    expect(queue).toContain("coalesce(${schema.jobs.attempts}, 0) = ${expectedAttempts}");
+    expect(queue).not.toContain("base.claimJob(");
+    expect(queue).not.toContain("base.claimJobById(");
 
-    const legacyStart = queue.indexOf("async function claimLegacyFailed");
-    const legacyEnd = queue.indexOf("/** New work is claimed first", legacyStart);
-    const legacyClaim = queue.slice(legacyStart, legacyEnd);
-    expect(legacyClaim).toContain("legacyRetryBudgetRemaining");
-    expect(legacyClaim).toContain("legacyRunAtDue(claimTime)");
-    expect(legacyClaim).toContain('eq(schema.jobs.status, "failed")');
-    expect(legacyClaim).toContain("eq(schema.jobs.attempts, expectedAttempts)");
-    expect(legacyClaim).toContain("attempts: expectedAttempts + 1");
+    const helperStart = queue.indexOf("async function claimEligibleJob");
+    const helperEnd = queue.indexOf("/** New pending work is claimed first", helperStart);
+    const claimHelper = queue.slice(helperStart, helperEnd);
+    expect(claimHelper).toContain("retryBudgetRemaining");
+    expect(claimHelper).toContain("runAtDue(claimTime)");
+    expect(claimHelper).toContain("attemptCountEquals(expectedAttempts)");
+    expect(claimHelper).toContain("eq(schema.jobs.status, options.status)");
+    expect(claimHelper).toContain("attempts: expectedAttempts + 1");
+
+    const claimStart = queue.indexOf("export async function claimJob(");
+    const claimEnd = queue.indexOf("export async function claimJobById", claimStart);
+    const claim = queue.slice(claimStart, claimEnd);
+    expect(claim).toContain('status: "pending"');
+    expect(claim).toContain('status: "failed"');
 
     const byIdStart = queue.indexOf("export async function claimJobById");
     const byIdEnd = queue.indexOf("/**\n * Commit completion", byIdStart);
     const byIdClaim = queue.slice(byIdStart, byIdEnd);
-    expect(byIdClaim).toContain("legacyRetryBudgetRemaining");
-    expect(byIdClaim).toContain("legacyRunAtDue(claimTime)");
-    expect(byIdClaim).toContain('eq(schema.jobs.status, "failed")');
-    expect(byIdClaim).toContain("eq(schema.jobs.attempts, expectedAttempts)");
-    expect(byIdClaim).toContain("attempts: expectedAttempts + 1");
+    expect(byIdClaim).toContain('status: "pending"');
+    expect(byIdClaim).toContain('status: "failed"');
+    expect(byIdClaim).toContain("jobId");
+    expect(byIdClaim).toContain("userId");
   });
 
-  it("fences stale recovery to the selected attempt before resetting it", () => {
+  it("fences stale recovery to the selected nullable attempt before resetting it", () => {
     const recovery = queue.slice(queue.indexOf("export async function recoverStaleJobs"));
-    expect(recovery).toContain("const expectedAttempts = Number(job.attempts || 0)");
-    expect(recovery).toContain("eq(schema.jobs.attempts, expectedAttempts)");
+    expect(recovery).toContain("const expectedAttempts = Number(job.attempts ?? 0)");
+    expect(recovery).toContain("attemptCountEquals(expectedAttempts)");
     expect(recovery).toContain("startedAt: null");
     expect(recovery).toContain("finishedAt: exhausted ? new Date() : null");
+  });
+
+  it("uses the documented zero-based retry schedule for one-based claimed attempts", () => {
+    expect(queue).toContain("base.backoffSeconds(Math.max(attempts - 1, 0))");
   });
 
   it("uses fenced semantics in both serverless and persistent workers", () => {
