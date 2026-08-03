@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- job and webhook payloads are stored as Postgres jsonb. */
-import { drizzle, log, fetchWithTimeout } from "./server-context";
+import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, isNull, lte, or, sql } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import { decryptSecret } from "./secret-vault";
-import { resolveWebhookDeliveryHostname } from "./webhook-validators";
+import { postWebhookSafely } from "./safe-webhook-delivery";
 import {
   WEBHOOK_DELIVERY_FAILED,
   WEBHOOK_DELIVERY_PENDING,
@@ -154,6 +154,15 @@ async function claimWebhookDelivery(deliveryId: bigint): Promise<number | null> 
   return claimed?.attempts ?? null;
 }
 
+function blockedDeliveryReason(
+  reason: "invalid_url" | "unsupported_protocol" | "private_destination" | "dns_resolution_failed",
+): string {
+  if (reason === "private_destination") return "blocked_private_destination";
+  if (reason === "unsupported_protocol") return "unsupported_protocol";
+  if (reason === "invalid_url") return "invalid_url";
+  return "dns_resolution_failed";
+}
+
 export async function attemptWebhookDelivery(deliveryId: string | number) {
   const deliveryIdBig = BigInt(deliveryId);
   const nextAttempts = await claimWebhookDelivery(deliveryIdBig);
@@ -234,13 +243,10 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
   let success = false;
   let lastError: string | null = null;
   try {
-    const hostnameResolution = await resolveWebhookDeliveryHostname(hook.url);
-    if (hostnameResolution.status !== "public") {
-      lastError =
-        hostnameResolution.status === "private"
-          ? "blocked_private_destination"
-          : "dns_resolution_failed";
-      log.warn("Webhook delivery blocked — hostname guard", {
+    const response = await postWebhookSafely(hook.url, headers, body, 10_000);
+    if (response.status === "blocked") {
+      lastError = blockedDeliveryReason(response.reason);
+      log.warn("Webhook delivery blocked — destination guard", {
         deliveryId: String(deliveryId),
         webhookId: hook.id,
         reason: lastError,
@@ -258,25 +264,17 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
       return;
     }
 
-    const response = await fetchWithTimeout(
-      hook.url,
-      { method: "POST", headers, body, redirect: "manual" },
-      10_000,
-    );
-    const isRedirect =
-      response.type === "opaqueredirect" || (response.status >= 300 && response.status < 400);
-    if (isRedirect) {
-      statusCode = response.status || null;
+    statusCode = response.statusCode;
+    if (response.redirect) {
       lastError = "redirect_blocked";
       log.warn("Webhook delivery blocked — endpoint attempted a redirect", {
         deliveryId: String(deliveryId),
         webhookId: hook.id,
-        responseType: response.type,
+        statusCode,
       });
     } else {
-      statusCode = response.status;
       success = response.ok;
-      lastError = success ? null : `http_${response.status}`;
+      lastError = success ? null : `http_${response.statusCode}`;
     }
   } catch (err: unknown) {
     lastError = "request_failed";
