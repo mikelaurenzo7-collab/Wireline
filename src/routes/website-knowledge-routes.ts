@@ -7,6 +7,7 @@ import { WebsiteFetchError } from "../lib/safe-public-text-fetch";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { importWebsiteKnowledge } from "../lib/website-knowledge-service";
+import { WebsiteKnowledgeExtractionTimeoutError } from "../lib/website-knowledge-timeout";
 import { authenticateUser } from "../middleware/auth";
 import {
   websiteKnowledgeBurstRateLimit,
@@ -97,6 +98,9 @@ router.post(
     } catch (error) {
       if (error instanceof WebsiteFetchError) {
         throw AppError.fromHttpStatus(error.httpStatus, error.message);
+      }
+      if (error instanceof WebsiteKnowledgeExtractionTimeoutError) {
+        throw AppError.fromHttpStatus(504, error.message);
       }
       if (error instanceof AppError) throw error;
       log.error("Website knowledge import failed", {
