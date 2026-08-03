@@ -29,6 +29,8 @@ function legacyIssuedAtMs(payload: JwtPayload): number | null {
 
 /**
  * Apply Wireline's one canonical database-owned session-generation fence.
+ * Keep every session consumer routed through this helper so OAuth callbacks,
+ * API middleware, and future transports cannot drift on revocation semantics.
  *
  * Every token minted since migration 0127 carries a numeric session_version;
  * the claim must be structurally valid and match exactly. Only tokens where the
