@@ -15,6 +15,7 @@ describe("DNS-pinned webhook delivery", () => {
       status: "public",
       address: "93.184.216.34",
       family: 4,
+      hostname: "example.com",
     });
     expect(lookup).toHaveBeenCalledOnce();
     expect(lookup).toHaveBeenCalledWith("example.com");
@@ -41,6 +42,17 @@ describe("DNS-pinned webhook delivery", () => {
     await expect(
       resolvePinnedWebhookDestination("http://169.254.169.254/latest/meta-data", lookup),
     ).resolves.toEqual({ status: "blocked", reason: "private_destination" });
+    await expect(
+      resolvePinnedWebhookDestination("http://8.8.8.8/hook", lookup),
+    ).resolves.toEqual({ status: "blocked", reason: "unsupported_protocol" });
+    expect(lookup).not.toHaveBeenCalled();
+  });
+
+  it("rejects credential-bearing endpoints before DNS", async () => {
+    const lookup = vi.fn();
+    await expect(
+      resolvePinnedWebhookDestination("https://user:password@example.com/hook", lookup),
+    ).resolves.toEqual({ status: "blocked", reason: "invalid_url" });
     expect(lookup).not.toHaveBeenCalled();
   });
 });
