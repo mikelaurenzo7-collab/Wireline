@@ -27,10 +27,16 @@ describe("durable job attempt fencing", () => {
   });
 
   it("never reclaims an exhausted legacy failed row and fences the exact claim", () => {
+    expect(queue).toContain(
+      "coalesce(${schema.jobs.attempts}, 0) < coalesce(${schema.jobs.maxAttempts}",
+    );
+    expect(queue).toContain("coalesce(${schema.jobs.runAt}, ${claimTime}) <= ${claimTime}");
+
     const legacyStart = queue.indexOf("async function claimLegacyFailed");
     const legacyEnd = queue.indexOf("/** New work is claimed first", legacyStart);
     const legacyClaim = queue.slice(legacyStart, legacyEnd);
     expect(legacyClaim).toContain("legacyRetryBudgetRemaining");
+    expect(legacyClaim).toContain("legacyRunAtDue(claimTime)");
     expect(legacyClaim).toContain('eq(schema.jobs.status, "failed")');
     expect(legacyClaim).toContain("eq(schema.jobs.attempts, expectedAttempts)");
     expect(legacyClaim).toContain("attempts: expectedAttempts + 1");
@@ -39,6 +45,7 @@ describe("durable job attempt fencing", () => {
     const byIdEnd = queue.indexOf("/**\n * Commit completion", byIdStart);
     const byIdClaim = queue.slice(byIdStart, byIdEnd);
     expect(byIdClaim).toContain("legacyRetryBudgetRemaining");
+    expect(byIdClaim).toContain("legacyRunAtDue(claimTime)");
     expect(byIdClaim).toContain('eq(schema.jobs.status, "failed")');
     expect(byIdClaim).toContain("eq(schema.jobs.attempts, expectedAttempts)");
     expect(byIdClaim).toContain("attempts: expectedAttempts + 1");
