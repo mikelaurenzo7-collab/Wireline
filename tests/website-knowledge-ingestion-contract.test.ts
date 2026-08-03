@@ -26,7 +26,7 @@ const registry = readFileSync(
 );
 
 describe("secure website knowledge ingestion", () => {
-  it("extracts visible page text without executable or hidden page content", () => {
+  it("extracts readable page text without executable or non-content elements", () => {
     const parsed = htmlToVisibleText(`
       <html>
         <head>
@@ -110,7 +110,7 @@ describe("secure website knowledge ingestion", () => {
     expect(page).toContain("<WebsiteKnowledgeImport");
     expect(page).toContain("setKnowledgeRevision");
     expect(component).toContain("Paste one public HTTPS page");
-    expect(component).toContain("reads visible text only");
+    expect(component).toContain("reads page text only");
     expect(component).toContain("blocks private networks");
     expect(component).toContain("Import page");
   });
