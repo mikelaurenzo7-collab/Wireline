@@ -10,6 +10,7 @@ const registry = read("src/server/register-api-routes.ts");
 const precedence = [
   ["app.use(authOAuthExchangeAtomicRouter)", "app.use(authOAuthBrowserBindingRouter)"],
   ["app.use(authSessionHardeningRouter)", "app.use(authRouter)"],
+  ["app.use(sharedWorkspaceReadinessRouter)", "app.use(teamRouter)"],
   ["app.use(launchBillingCheckoutAtomicRouter)", "app.use(launchBillingCheckoutRouter)"],
   ["app.use(\"/api/webhooks\", webhookTestRouter)", "app.use(\"/api/webhooks\", webhookRouter)"],
   ["app.use(outboundDialAtomicRouter)", "app.use(outboundRouter)"],
@@ -63,6 +64,20 @@ const contracts = [
       "pending.bridge_state_hash = p_bridge_state_hash",
       "pending.expires_at > clock_timestamp()",
       "GRANT EXECUTE ON FUNCTION public.wireline_consume_oauth_pending_code",
+    ],
+  },
+  {
+    file: "src/lib/shared-workspace-readiness.ts",
+    required: [
+      'SHARED_WORKSPACE_CERTIFICATION = "shared-workspace-data-plane-v1"',
+      "WIRELINE_SHARED_WORKSPACES_CERTIFICATION",
+      "SHARED_WORKSPACES_NOT_CERTIFIED",
+    ],
+  },
+  {
+    file: "src/routes/shared-workspace-readiness-routes.ts",
+    required: [
+      'router.use("/api/team", authenticateUser, requireCertifiedSharedWorkspaces)',
     ],
   },
   {
