@@ -29,6 +29,20 @@ describe("shared workspace readiness posture", () => {
     );
   });
 
+  it("enforces certification inside generic authentication and session rotation", () => {
+    const middleware = read("src/middleware/auth.ts");
+    expect(middleware).toContain('if (!sharedWorkspacesEnabled())');
+    expect(middleware).toContain(
+      '"Ignoring shared tenant selection before data-plane certification"',
+    );
+    expect(middleware).toContain("isNotNull(secureTeamMembers.acceptedAt)");
+    expect(middleware).toContain("attachValidatedTenant(authedReq, tenantId)");
+
+    const sessions = read("src/routes/auth-session-hardening-routes.ts");
+    expect(sessions).toContain("!sharedWorkspacesEnabled()");
+    expect(sessions).toContain("isNotNull(secureTeamMembers.acceptedAt)");
+  });
+
   it("explains the certification state instead of silently disabling collaboration", () => {
     const page = read("src/pages/TeamSettings.tsx");
     expect(page).toContain('payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED"');
