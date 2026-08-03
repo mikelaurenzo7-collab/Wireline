@@ -50,19 +50,23 @@
 .marketing-surface .wl-preserve-case,
 .marketing-surface .wl-preserve-case *,
 .marketing-surface :is(code, kbd, samp, time, [data-value]),
-/* The reset-password card is a functional account-recovery form that reuses the
- * marketing chrome. Its heading, instructions, and status notices read as
- * written so guidance like "uppercase, lowercase, and a number" stays legible
- * and error notices do not shout. Field labels and the submit button keep the
- * cased control/label tier from uppercase-system.css. */
-.marketing-surface .wl-auth-card :is(p, h1, h2, h3, h4, h5, h6) {
+/* Functional auth cards keep instructions, errors, and explanatory prose in
+ * natural sentence case. Their headings remain in the cased title tier, while
+ * field captions and controls remain in the label/control tiers. This preserves
+ * comprehension for guidance such as “uppercase, lowercase, and a number”
+ * without making an auth transition look typographically unrelated to the rest
+ * of Wireline. */
+.marketing-surface .wl-auth-card :is(p, li) {
   text-transform: none;
   letter-spacing: normal;
 }
 
+/* CTAs are controls, not prose. The terminal layer previously reset these to
+ * sentence case after uppercase-system.css had correctly placed them in the
+ * control tier, causing identical buttons to render differently by surface. */
 .marketing-surface :where(.marketing-btn-primary, .marketing-btn-secondary) {
-  letter-spacing: normal;
-  text-transform: none;
+  letter-spacing: var(--wl-caps-control-tracking);
+  text-transform: uppercase;
 }
 
 /* `:where()` contributes no specificity, so this rule lost to the cased body
@@ -107,11 +111,13 @@
   line-height: 1.6;
 }
 
+/* Segmented items are tabs/controls. Keep the compact measure, but use the same
+ * cased control voice and tracking as every other tab and button. */
 .marketing-surface .wl-segmented__item {
   min-height: 2.75rem;
   font-size: 0.875rem;
-  letter-spacing: 0;
-  text-transform: none;
+  letter-spacing: var(--wl-caps-control-tracking);
+  text-transform: uppercase;
 }
 
 .wl-workspace-tabs[data-density="compact"] :where(a, button) {
