@@ -10,10 +10,11 @@ import {
 import { promisify } from "node:util";
 import { drizzle, log, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
-import { and, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, eq, gte, isNull } from "drizzle-orm";
 import { requireInternalJwtSecret } from "./internal-jwt-secret";
 import { verifyInternalJwt, type JwtPayload } from "./auth-utils";
 import { assertPasswordIsSafe, type PasswordBreachCheckContext } from "./breached-passwords";
+import { MAX_PASSWORD_BYTES, passwordFitsByteLimit } from "./password-limits";
 export {
   getOwnerEmails,
   resetOwnerEmailCacheForTests,
@@ -22,7 +23,6 @@ export {
 import { isOwnerEmail } from "./platform-owner-emails";
 
 const scryptAsync = promisify(scrypt);
-export const MAX_PASSWORD_BYTES = 256;
 
 /** Lazy so importing auth-service does not crash the whole API when env is misconfigured. */
 let cachedJwtSecret: string | null = null;
@@ -44,12 +44,8 @@ export class AuthConfigurationError extends Error {
   }
 }
 
-function passwordFitsBound(password: string): boolean {
-  return Buffer.byteLength(password, "utf8") <= MAX_PASSWORD_BYTES;
-}
-
 function requireBoundedPassword(password: string): void {
-  if (!passwordFitsBound(password)) {
+  if (!passwordFitsByteLimit(password)) {
     throw new Error(`PASSWORD_TOO_LONG: passwords are limited to ${MAX_PASSWORD_BYTES} UTF-8 bytes`);
   }
 }
@@ -88,7 +84,7 @@ async function hashPasswordForRequest(password: string): Promise<string> {
 
 /** Compatibility helper; request handlers use verifyPasswordForRequest. */
 export function verifyPassword(password: string, storedHash: string): boolean {
-  if (!passwordFitsBound(password)) return false;
+  if (!passwordFitsByteLimit(password)) return false;
   const [salt, hash] = storedHash.split(":");
   if (!salt || !hash) return false;
   const key = scryptSync(password, salt, 64);
@@ -98,7 +94,7 @@ export function verifyPassword(password: string, storedHash: string): boolean {
 }
 
 async function verifyPasswordForRequest(password: string, storedHash: string): Promise<boolean> {
-  if (!passwordFitsBound(password)) return false;
+  if (!passwordFitsByteLimit(password)) return false;
   const [salt, hash] = storedHash.split(":");
   if (!salt || !hash) return false;
   const key = Buffer.from((await scryptAsync(password, salt, 64)) as Buffer);
@@ -108,9 +104,7 @@ async function verifyPasswordForRequest(password: string, storedHash: string): P
 }
 
 function authUserFlags(user: { id: string; email: string }) {
-  return {
-    is_owner: isOwnerEmail(user.email),
-  };
+  return { is_owner: isOwnerEmail(user.email) };
 }
 
 /**
@@ -141,11 +135,9 @@ export function generateToken(user: {
 
   const base64Header = Buffer.from(JSON.stringify(header)).toString("base64url");
   const base64Payload = Buffer.from(JSON.stringify(payload)).toString("base64url");
-
   const signature = createHmac("sha256", getJwtSecret())
     .update(`${base64Header}.${base64Payload}`)
     .digest("base64url");
-
   return `${base64Header}.${base64Payload}.${signature}`;
 }
 
@@ -173,12 +165,10 @@ export const authService = {
       .from(schema.users)
       .where(eq(schema.users.email, email))
       .limit(1);
-
     if (!user || !user.passwordHash) {
       log.warn("Auth: User not found or no password set", { email });
       return null;
     }
-
     if (!(await verifyPasswordForRequest(password, user.passwordHash))) {
       log.warn("Auth: Invalid password", { email });
       return null;
@@ -189,11 +179,11 @@ export const authService = {
       .from(schema.subscriptions)
       .where(eq(schema.subscriptions.userId, user.id))
       .limit(1);
-
     const { resolveAccountType } = await import("./account-type");
     const { ensureDefaultAccount } = await import("./account-service");
-    const fallbackAccountType = resolveAccountType(sub?.plan);
-    const account_type = (await ensureDefaultAccount(user.id, fallbackAccountType)).type;
+    const account_type = (
+      await ensureDefaultAccount(user.id, resolveAccountType(sub?.plan))
+    ).type;
 
     return {
       user: {
@@ -283,7 +273,6 @@ export const authService = {
     if (!token) return null;
     const tokenHash = createHash("sha256").update(token).digest("hex");
     const now = new Date();
-
     const userId = await drizzle.transaction(async (tx) => {
       const [claimed] = await tx
         .update(schema.emailVerificationTokens)
@@ -297,7 +286,6 @@ export const authService = {
         )
         .returning({ userId: schema.emailVerificationTokens.userId });
       if (!claimed) return null;
-
       const [updated] = await tx
         .update(schema.users)
         .set({ emailVerifiedAt: now, updatedAt: now })
@@ -326,23 +314,19 @@ export const authService = {
     const plaintext = randomBytes(32).toString("base64url");
     const tokenHash = createHash("sha256").update(plaintext).digest("hex");
     const expiresAt = new Date(Date.now() + 60 * 60_000);
-
     await drizzle.insert(schema.passwordResetTokens).values({
       userId: user.id,
       tokenHash,
       expiresAt,
       requestedIp: requestedIp || null,
     });
-
     return { token: plaintext, userId: user.id, expiresAt };
   },
 
   async completePasswordReset(token: string, newPassword: string) {
     if (!token || !newPassword || newPassword.length < 8) return null;
-
     const tokenHash = createHash("sha256").update(token).digest("hex");
     const now = new Date();
-
     await requirePasswordSafety(newPassword, "reset");
     const newHash = await hashPasswordForRequest(newPassword);
 
@@ -360,15 +344,15 @@ export const authService = {
         .returning({ userId: schema.passwordResetTokens.userId });
       if (!claimed) return null;
 
-      const changed = (await tx.execute(sql`
-        UPDATE wireline_users
-        SET password_hash = ${newHash},
-            session_revoked_before = clock_timestamp(),
-            updated_at = ${now}
-        WHERE id = ${claimed.userId}
-        RETURNING id
-      `)) as unknown as { rows?: Array<{ id: string }> };
-      return changed.rows?.[0]?.id ?? null;
+      // Migration 0120 owns revocation as a database invariant: changing the
+      // password_hash fires wireline_users_password_session_revocation. This
+      // means every password writer, not only this route, invalidates sessions.
+      const [changed] = await tx
+        .update(schema.users)
+        .set({ passwordHash: newHash, updatedAt: now })
+        .where(eq(schema.users.id, claimed.userId))
+        .returning({ id: schema.users.id });
+      return changed?.id ?? null;
     });
     if (!userId) return null;
 
@@ -384,11 +368,11 @@ export const authService = {
       .from(schema.subscriptions)
       .where(eq(schema.subscriptions.userId, user.id))
       .limit(1);
-
     const { resolveAccountType } = await import("./account-type");
     const { ensureDefaultAccount } = await import("./account-service");
-    const fallbackAccountType = resolveAccountType(sub?.plan);
-    const account_type = (await ensureDefaultAccount(user.id, fallbackAccountType)).type;
+    const account_type = (
+      await ensureDefaultAccount(user.id, resolveAccountType(sub?.plan))
+    ).type;
 
     return {
       user: {
