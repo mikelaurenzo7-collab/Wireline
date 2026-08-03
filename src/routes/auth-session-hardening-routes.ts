@@ -92,7 +92,7 @@ router.get("/api/auth/session", async (req: Request, res: Response) => {
   }
 
   const tenantId = await validatedTenantId(payload, user.id);
-  return tenantStore.run(tenantId, async () => {
+  const identity = await tenantStore.run(user.id, async () => {
     const [[profile], [sub]] = await Promise.all([
       drizzle
         .select({ fullName: schema.users.fullName })
@@ -107,16 +107,18 @@ router.get("/api/auth/session", async (req: Request, res: Response) => {
     ]);
     const { resolveAccountType } = await import("../lib/account-type");
     const account_type = (await ensureDefaultAccount(user.id, resolveAccountType(sub?.plan))).type;
-    return res.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        full_name: profile?.fullName ?? undefined,
-        is_owner: isOwnerEmail(user.email),
-        account_type,
-        tenant_id: tenantId,
-      },
-    });
+    return { fullName: profile?.fullName, account_type };
+  });
+
+  return res.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      full_name: identity.fullName ?? undefined,
+      is_owner: isOwnerEmail(user.email),
+      account_type: identity.account_type,
+      tenant_id: tenantId,
+    },
   });
 });
 
@@ -178,7 +180,7 @@ router.post("/api/auth/signout", async (req: Request, res: Response) => {
       }
     }
   } catch {
-    // A malformed/expired token still gets its cookie cleared. There is no
+    // A malformed or expired token still gets its cookie cleared. There is no
     // authenticated session left to revoke server-side.
   }
   return res.json({ success: true });
