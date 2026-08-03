@@ -1,32 +1,75 @@
 import type { Request, Response, NextFunction } from "express";
 import type { User } from "../types/auth";
-import { log, auditLogger, tenantStore } from "../lib/server-context";
+import { log, auditLogger, tenantStore, drizzle } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
-import { verifyInternalJwt } from "../lib/auth-utils";
+import { verifyInternalJwt, type JwtPayload } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { getSessionTokenFromRequest, isProductionRuntime } from "../lib/session-cookie";
+import { sessionUsers, secureTeamMembers } from "../db/security-schema";
+import { and, eq, isNull } from "drizzle-orm";
 
-/**
- * Express Request with an attached sovereign User.
- */
 interface AuthedReq extends Request {
   user?: User;
   tenantId?: string;
 }
 
+type ActiveSessionUser = {
+  id: string;
+  email: string;
+  sessionRevokedBefore: Date;
+};
+
+function tokenIssuedAtMs(payload: JwtPayload): number {
+  const precise = Number(payload.iat_ms);
+  if (Number.isFinite(precise) && precise > 0) return precise;
+  return payload.iat * 1000;
+}
+
+async function loadActiveSessionUser(payload: JwtPayload): Promise<ActiveSessionUser | null> {
+  const [user] = await drizzle
+    .select({
+      id: sessionUsers.id,
+      email: sessionUsers.email,
+      sessionRevokedBefore: sessionUsers.sessionRevokedBefore,
+    })
+    .from(sessionUsers)
+    .where(eq(sessionUsers.id, payload.sub))
+    .limit(1);
+  if (!user) return null;
+  if (tokenIssuedAtMs(payload) <= user.sessionRevokedBefore.getTime()) return null;
+  return user;
+}
+
 /**
- * Launch-safe tenant resolution.
- *
- * The RLS layer uses tenantStore to set app.current_user_id. Accepting an
- * arbitrary x-wireline-tenant-id header before team/workspace membership is
- * verified would let a malicious client request another tenant context. Until
- * true org membership checks exist, the only valid tenant is the authenticated
- * user id. A same-id header is harmless and kept for internal compatibility.
+ * Resolve a tenant only after an active membership check. A tenant embedded in
+ * a session token was issued by Wireline after explicit workspace selection;
+ * the compatibility header remains accepted only when it resolves to the same
+ * verified membership.
  */
-function resolveTenantId(req: Request, userId: string): string {
-  const requested = req.get("x-wireline-tenant-id")?.trim();
+async function resolveTenantId(
+  req: Request,
+  userId: string,
+  tokenTenantId?: string,
+): Promise<string> {
+  const headerTenantId = req.get("x-wireline-tenant-id")?.trim();
+  const requested = tokenTenantId?.trim() || headerTenantId;
   if (!requested || requested === userId) return userId;
-  log.warn("Ignoring unverified tenant header", {
+
+  const [membership] = await drizzle
+    .select({ id: secureTeamMembers.id })
+    .from(secureTeamMembers)
+    .where(
+      and(
+        eq(secureTeamMembers.tenantId, requested),
+        eq(secureTeamMembers.userId, userId),
+        isNull(secureTeamMembers.revokedAt),
+      ),
+    )
+    .limit(1);
+
+  if (membership) return requested;
+
+  log.warn("Ignoring unverified tenant selection", {
     userId,
     requestedTenantId: requested,
     path: req.path,
@@ -39,90 +82,101 @@ function runInTenantContext(req: Request, tenantId: string, next: NextFunction) 
   return tenantStore.getStore() ? next() : tenantStore.run(tenantId, () => next());
 }
 
-/**
- * Basic authentication middleware.
- * Verifies the sovereign JWT against the internal secret.
- */
+function authRequired(res: Response, code: "AUTH_INVALID" | "AUTH_REVOKED" = "AUTH_INVALID") {
+  return res.status(401).json({
+    error: code === "AUTH_REVOKED" ? "Session has been revoked" : "Invalid or expired session",
+    code,
+    requestId: res.locals?.requestId,
+  });
+}
+
+async function verifyRequestSession(req: Request, res: Response) {
+  const token = getSessionTokenFromRequest(req);
+  if (!token) {
+    res.status(401).json({
+      error: "No authorization token provided",
+      code: "AUTH_REQUIRED",
+      requestId: res.locals?.requestId,
+    });
+    return null;
+  }
+
+  let secret: string;
+  try {
+    secret = requireInternalJwtSecret();
+  } catch (error) {
+    const message = getErrorMessage(error);
+    if (message.includes("JWT_SECRET_NOT_CONFIGURED") || message.includes("JWT_SECRET_CONFLICT")) {
+      log.error("Auth middleware: JWT secret misconfigured", { error: message });
+      res.status(503).json({
+        error: "Authentication is temporarily unavailable. Platform configuration is incomplete.",
+        code: "AUTH_NOT_CONFIGURED",
+        requestId: res.locals?.requestId,
+      });
+      return null;
+    }
+    throw error;
+  }
+
+  const payload = await verifyInternalJwt(token, secret);
+  if (!payload) {
+    void auditLogger
+      .logAuth("failed_login", {
+        email: req.body?.email,
+        ip: req.ip,
+        userAgent: req.get("user-agent"),
+        reason: "invalid_token",
+        requestId: res.locals?.requestId,
+      })
+      .catch((error: unknown) =>
+        log.warn("audit log failed", { error: getErrorMessage(error) }),
+      );
+    authRequired(res);
+    return null;
+  }
+
+  const activeUser = await loadActiveSessionUser(payload);
+  if (!activeUser) {
+    authRequired(res, "AUTH_REVOKED");
+    return null;
+  }
+
+  return { payload, activeUser };
+}
+
 export async function authenticateUser(req: Request, res: Response, next: NextFunction) {
   try {
     const authedReq = req as AuthedReq;
-
-    // Idempotent check
     if (authedReq.user?.id) {
-      authedReq.tenantId = authedReq.tenantId || resolveTenantId(req, authedReq.user.id);
+      authedReq.tenantId =
+        authedReq.tenantId ||
+        (await resolveTenantId(req, authedReq.user.id, authedReq.user.tenantId));
       return runInTenantContext(req, authedReq.tenantId, next);
     }
 
-    const token = getSessionTokenFromRequest(req);
+    const verified = await verifyRequestSession(req, res);
+    if (!verified) return;
+    const { payload, activeUser } = verified;
 
-    if (!token) {
-      return res.status(401).json({
-        error: "No authorization token provided",
-        code: "AUTH_REQUIRED",
-        requestId: res.locals?.requestId,
-      });
-    }
-
-    let secret: string;
-    try {
-      secret = requireInternalJwtSecret();
-    } catch (e) {
-      const msg = getErrorMessage(e);
-      if (msg.includes("JWT_SECRET_NOT_CONFIGURED") || msg.includes("JWT_SECRET_CONFLICT")) {
-        log.error("Auth middleware: JWT secret misconfigured", { error: msg });
-        return res.status(503).json({
-          error: "Authentication is temporarily unavailable. Platform configuration is incomplete.",
-          code: "AUTH_NOT_CONFIGURED",
-          requestId: res.locals?.requestId,
-        });
-      }
-      throw e;
-    }
-
-    const payload = await verifyInternalJwt(token, secret);
-
-    if (!payload) {
-      // Audit log: invalid/expired token (non-blocking)
-      void auditLogger
-        .logAuth("failed_login", {
-          email: req.body?.email,
-          ip: req.ip,
-          userAgent: req.get("user-agent"),
-          reason: !token ? "missing_token" : "invalid_token",
-          requestId: res.locals?.requestId,
-        })
-        .catch((err: unknown) => log.warn("audit log failed", { error: getErrorMessage(err) }));
-
-      return res.status(401).json({
-        error: "Invalid or expired session",
-        code: "AUTH_INVALID",
-        requestId: res.locals?.requestId,
-      });
-    }
-
-    // Map JWT payload to a compatible User object
     authedReq.user = {
-      id: payload.sub,
-      email: payload.email,
+      id: activeUser.id,
+      email: activeUser.email,
       role: payload.role || "authenticated",
       aud: payload.aud,
+      tenantId: typeof payload.tenant_id === "string" ? payload.tenant_id : undefined,
       app_metadata: {},
       user_metadata: {},
       created_at: new Date(payload.iat * 1000).toISOString(),
     } as User;
 
-    // NOTE: We deliberately do NOT emit a logAuth('login') here.
-    // authenticateUser runs on every authenticated API request — logging
-    // every bearer-token validation as "auth.login" would flood the audit
-    // log with thousands of rows per day, all semantically wrong (a login
-    // is when a new session is *created*, not when an existing JWT is
-    // *verified*). Real sign-in events are emitted by Wireline's auth
-    // system; the audit log captures failed attempts above.
-
-    authedReq.tenantId = resolveTenantId(req, authedReq.user!.id);
+    authedReq.tenantId = await resolveTenantId(
+      req,
+      activeUser.id,
+      typeof payload.tenant_id === "string" ? payload.tenant_id : undefined,
+    );
     return runInTenantContext(req, authedReq.tenantId, next);
-  } catch (e) {
-    log.error("Auth middleware failed", { error: getErrorMessage(e), path: req.path });
+  } catch (error) {
+    log.error("Auth middleware failed", { error: getErrorMessage(error), path: req.path });
     return res.status(500).json({
       error: "Authentication check failed",
       code: "AUTH_CHECK_FAILED",
@@ -131,19 +185,13 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
   }
 }
 
-/**
- * Authentication middleware for Server-Sent Events (EventSource) endpoints.
- *
- * Browser clients should use the httpOnly `wireline_session` cookie (EventSource
- * sends cookies on same-origin requests). In development, `?token=` is still
- * accepted for local debugging. In production, query tokens are rejected.
- */
 export async function authenticateEventStream(req: Request, res: Response, next: NextFunction) {
   try {
     const authedReq = req as AuthedReq;
-
     if (authedReq.user?.id) {
-      authedReq.tenantId = authedReq.tenantId || resolveTenantId(req, authedReq.user.id);
+      authedReq.tenantId =
+        authedReq.tenantId ||
+        (await resolveTenantId(req, authedReq.user.id, authedReq.user.tenantId));
       return runInTenantContext(req, authedReq.tenantId, next);
     }
 
@@ -155,58 +203,33 @@ export async function authenticateEventStream(req: Request, res: Response, next:
       });
     }
 
-    const token =
-      getSessionTokenFromRequest(req) ||
-      (typeof req.query.token === "string" ? req.query.token : undefined);
-
-    if (!token) {
-      return res.status(401).json({
-        error: "No authorization token provided",
-        code: "AUTH_REQUIRED",
-        requestId: res.locals?.requestId,
-      });
+    if (!getSessionTokenFromRequest(req) && typeof req.query.token === "string") {
+      req.headers.authorization = `Bearer ${req.query.token}`;
     }
 
-    let secret: string;
-    try {
-      secret = requireInternalJwtSecret();
-    } catch (e) {
-      const msg = getErrorMessage(e);
-      if (msg.includes("JWT_SECRET_NOT_CONFIGURED") || msg.includes("JWT_SECRET_CONFLICT")) {
-        log.error("SSE auth middleware: JWT secret misconfigured", { error: msg });
-        return res.status(503).json({
-          error: "Authentication is temporarily unavailable. Platform configuration is incomplete.",
-          code: "AUTH_NOT_CONFIGURED",
-          requestId: res.locals?.requestId,
-        });
-      }
-      throw e;
-    }
-
-    const payload = await verifyInternalJwt(token, secret);
-
-    if (!payload) {
-      return res.status(401).json({
-        error: "Invalid or expired session",
-        code: "AUTH_INVALID",
-        requestId: res.locals?.requestId,
-      });
-    }
+    const verified = await verifyRequestSession(req, res);
+    if (!verified) return;
+    const { payload, activeUser } = verified;
 
     authedReq.user = {
-      id: payload.sub,
-      email: payload.email,
+      id: activeUser.id,
+      email: activeUser.email,
       role: payload.role || "authenticated",
       aud: payload.aud,
+      tenantId: typeof payload.tenant_id === "string" ? payload.tenant_id : undefined,
       app_metadata: {},
       user_metadata: {},
       created_at: new Date(payload.iat * 1000).toISOString(),
     } as User;
 
-    authedReq.tenantId = resolveTenantId(req, authedReq.user!.id);
+    authedReq.tenantId = await resolveTenantId(
+      req,
+      activeUser.id,
+      typeof payload.tenant_id === "string" ? payload.tenant_id : undefined,
+    );
     return runInTenantContext(req, authedReq.tenantId, next);
-  } catch (e) {
-    log.error("SSE auth middleware failed", { error: getErrorMessage(e), path: req.path });
+  } catch (error) {
+    log.error("SSE auth middleware failed", { error: getErrorMessage(error), path: req.path });
     return res.status(500).json({
       error: "Authentication check failed",
       code: "AUTH_CHECK_FAILED",
