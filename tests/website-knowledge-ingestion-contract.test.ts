@@ -80,7 +80,8 @@ describe("secure website knowledge ingestion", () => {
     expect(service).not.toContain("schema.personality");
   });
 
-  it("persists only tenant-scoped, deduplicated facts and rules", () => {
+  it("persists only tenant-scoped, serialized, deduplicated facts and rules", () => {
+    expect(service).toContain("pg_advisory_xact_lock(hashtext(${input.agentId}))");
     expect(service).toContain("eq(schema.knowledge.agentId, input.agentId)");
     expect(service).toContain("eq(schema.knowledge.userId, input.userId)");
     expect(service).toContain("eq(schema.directives.agentId, input.agentId)");
