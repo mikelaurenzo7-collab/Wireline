@@ -32,7 +32,17 @@ const contracts = [
       "authenticateUser",
       '"/api/auth/session"',
       "sessionRevokedBefore",
+      "tenantStore.run(payload.sub",
+      "tenantStore.run(userId",
       '"/api/auth/signout"',
+    ],
+  },
+  {
+    file: "src/middleware/auth.ts",
+    required: [
+      "tenantStore.run(payload.sub",
+      "tenantStore.run(userId",
+      "sessionRevokedBefore",
     ],
   },
   {
@@ -74,9 +84,28 @@ const contracts = [
     file: "src/routes/team-routes.ts",
     required: [
       '"/api/team/invitations/accept"',
-      "invitation_token_hash = NULL",
-      "lower(email) = lower(",
+      "wireline_accept_team_invitation",
+      "tenantStore.run(req.user.id",
+      "wireline_list_user_workspaces",
       '"/api/team/workspaces/:tenantId/select"',
+    ],
+  },
+  {
+    file: "drizzle/migrations/0124_team_invitation_claim_function.sql",
+    required: [
+      "SECURITY DEFINER",
+      "wireline_current_user_id() IS DISTINCT FROM p_accepting_user_id",
+      "invitation_token_hash = NULL",
+      "lower(member.email) = lower(p_accepting_email)",
+    ],
+  },
+  {
+    file: "drizzle/migrations/0125_user_workspace_directory_function.sql",
+    required: [
+      "SECURITY DEFINER",
+      "wireline_current_user_id() IS DISTINCT FROM p_user_id",
+      "member.user_id = p_user_id",
+      "member.revoked_at IS NULL",
     ],
   },
 ];
