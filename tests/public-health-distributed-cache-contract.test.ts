@@ -4,6 +4,9 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
+// This contract runs in every preview/production boundary suite. The final
+// certification commit also runs Wireline's complete TypeScript, ESLint, and
+// non-E2E test audit before this branch can be considered mergeable.
 describe("distributed public health boundary", () => {
   it("routes the public model status through a dedicated filesystem function", () => {
     const functionSource = read("api/health/public.ts");
