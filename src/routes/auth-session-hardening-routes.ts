@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from "express";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { drizzle, tenantStore } from "../lib/server-context";
 import { verifyInternalJwt, type JwtPayload } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
@@ -23,6 +23,11 @@ function issuedAtMs(payload: JwtPayload): number {
   return Number.isFinite(precise) && precise > 0 ? precise : payload.iat * 1000;
 }
 
+function payloadSessionVersion(payload: JwtPayload): number | null {
+  const version = Number(payload.session_version);
+  return Number.isSafeInteger(version) && version >= 0 ? version : null;
+}
+
 async function loadValidUser(payload: JwtPayload) {
   return tenantStore.run(payload.sub, async () => {
     const [user] = await drizzle
@@ -30,12 +35,16 @@ async function loadValidUser(payload: JwtPayload) {
         id: sessionUsers.id,
         email: sessionUsers.email,
         sessionRevokedBefore: sessionUsers.sessionRevokedBefore,
+        sessionVersion: sessionUsers.sessionVersion,
       })
       .from(sessionUsers)
       .where(eq(sessionUsers.id, payload.sub))
       .limit(1);
-    if (!user || issuedAtMs(payload) <= user.sessionRevokedBefore.getTime()) return null;
-    return user;
+    if (!user) return null;
+
+    const version = payloadSessionVersion(payload);
+    if (version !== null) return version === user.sessionVersion ? user : null;
+    return issuedAtMs(payload) > user.sessionRevokedBefore.getTime() ? user : null;
   });
 }
 
@@ -62,9 +71,14 @@ router.post(
   "/api/auth/refresh",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
+    const sessionVersion = Number(req.user.sessionVersion);
+    if (!Number.isSafeInteger(sessionVersion) || sessionVersion < 0) {
+      return res.status(401).json({ code: "AUTH_REVOKED", error: "Session state is invalid" });
+    }
     const token = generateToken({
       id: req.user.id,
       email: req.user.email,
+      sessionVersion,
       tenantId: req.tenantId,
     });
     setSessionCookie(res, token);
@@ -152,7 +166,12 @@ router.post(
     if (!user) return res.status(401).json({ code: "AUTH_REVOKED", error: "Session revoked" });
 
     const tenantId = await validatedTenantId(payload, user.id);
-    const rotated = generateToken({ id: user.id, email: user.email, tenantId });
+    const rotated = generateToken({
+      id: user.id,
+      email: user.email,
+      sessionVersion: user.sessionVersion,
+      tenantId,
+    });
     setSessionCookie(res, rotated);
     return res.json({
       user: {
@@ -178,14 +197,16 @@ router.post("/api/auth/signout", async (req: Request, res: Response) => {
         await tenantStore.run(user.id, async () => {
           await drizzle
             .update(sessionUsers)
-            .set({ sessionRevokedBefore: new Date() })
+            .set({
+              sessionVersion: sql`${sessionUsers.sessionVersion} + 1`,
+              sessionRevokedBefore: new Date(),
+            })
             .where(eq(sessionUsers.id, user.id));
         });
       }
     }
   } catch {
-    // A malformed or expired token still gets its cookie cleared. There is no
-    // authenticated session left to revoke server-side.
+    // A malformed or expired token still gets its cookie cleared.
   }
   return res.json({ success: true });
 });
