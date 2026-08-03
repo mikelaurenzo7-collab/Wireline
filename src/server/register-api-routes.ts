@@ -19,6 +19,7 @@ import voicesRouter from "../routes/voices-routes";
 import billingRouter from "../routes/billing-routes";
 import extraAgentBillingAtomicRouter from "../routes/extra-agent-billing-atomic-routes";
 import { stripeRuntimeAllowanceRetryPreflight } from "../middleware/stripe-runtime-allowance-retry";
+import { showcasePromptTruthGuard } from "../lib/showcase-prompt-truth-guard";
 import billingPortalReadinessRouter from "../routes/billing-portal-readiness-routes";
 import launchBillingCheckoutAtomicRouter from "../routes/launch-billing-checkout-atomic-routes";
 import launchBillingCheckoutRouter from "../routes/launch-billing-checkout-routes";
@@ -108,6 +109,9 @@ export function registerApiRoutes(app: Express): void {
   app.use(agentTestRouter);
   app.use(agentWorkspaceRouter);
   app.use(browserHandoffRouter);
+  // Public showcase assistants can be returned dynamically by the webhook.
+  // Sanitize and validate that payload before the Vapi router writes it.
+  app.use("/api/vapi-webhook", showcasePromptTruthGuard);
   app.use(vapiRouter);
   app.use(accountRouter);
   app.use(userPreferenceGuardRouter);
