@@ -22,6 +22,24 @@ describe("webhook delivery truth", () => {
     expect(network).toBeGreaterThan(fetch);
   });
 
+  it("fences every persisted outcome to the exact leased attempt", () => {
+    const persistStart = source.indexOf("async function persistDeliveryOutcome");
+    const claimStart = source.indexOf("async function claimWebhookDelivery", persistStart);
+    const persist = source.slice(persistStart, claimStart);
+
+    expect(persist).toContain("eq(schema.webhookDeliveries.id, outcome.deliveryId)");
+    expect(persist).toContain(
+      "eq(schema.webhookDeliveries.status, WEBHOOK_DELIVERY_PENDING)",
+    );
+    expect(persist).toContain("eq(schema.webhookDeliveries.attempts, outcome.attempts)");
+    expect(persist).toContain(".returning({ id: schema.webhookDeliveries.id })");
+    expect(persist).toContain("if (!updated) return false");
+    expect(persist.indexOf("if (!updated) return false")).toBeLessThan(
+      persist.indexOf(".update(schema.webhooks)"),
+    );
+    expect(source).toContain("Ignored stale webhook delivery outcome after a newer lease");
+  });
+
   it("records delivery timestamps and clears stale errors on success", () => {
     expect(source).toContain("deliveredAt: outcome.deliveredAt");
     expect(source).toContain("const deliveredAt = success ? new Date() : null");
@@ -29,8 +47,8 @@ describe("webhook delivery truth", () => {
     expect(source).toContain("lastError = success ? null : `http_${response.statusCode}`");
   });
 
-  it("updates the selected endpoint summary in the same transaction", () => {
-    expect(source).toContain("await drizzle.transaction(async (tx) =>");
+  it("updates the selected endpoint summary in the same fenced transaction", () => {
+    expect(source).toContain("return drizzle.transaction(async (tx) =>");
     expect(source).toContain("lastTriggeredAt: attemptedAt");
     expect(source).toContain("lastStatus: outcome.statusCode");
     expect(source).toContain("coalesce(${schema.webhooks.deliveryCount}, 0) + 1");

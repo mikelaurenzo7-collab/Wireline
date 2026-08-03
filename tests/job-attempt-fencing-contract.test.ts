@@ -40,7 +40,7 @@ describe("durable job attempt fencing", () => {
     expect(queue).toContain('status: exhausted ? "dead" : "pending"');
   });
 
-  it("claims pending and retryable failed work fairly in one null-safe transaction", () => {
+  it("claims pending and retryable failed work fairly with a narrowed nullable status", () => {
     expect(queue).toContain("async function claimEligibleJob");
     expect(queue).toContain('const CLAIMABLE_STATUSES = ["pending", "failed"] as const');
     expect(queue).toContain("inArray(schema.jobs.status, [...CLAIMABLE_STATUSES])");
@@ -64,8 +64,11 @@ describe("durable job attempt fencing", () => {
     expect(claimHelper).toContain("retryBudgetRemaining");
     expect(claimHelper).toContain("runAtDue(claimTime)");
     expect(claimHelper).toContain("claimOrder(claimTime)");
+    expect(claimHelper).toContain("const expectedStatus = job.status");
+    expect(claimHelper).toContain("if (!expectedStatus) return null");
     expect(claimHelper).toContain("attemptCountEquals(expectedAttempts)");
-    expect(claimHelper).toContain("eq(schema.jobs.status, job.status)");
+    expect(claimHelper).toContain("eq(schema.jobs.status, expectedStatus)");
+    expect(claimHelper).not.toContain("eq(schema.jobs.status, job.status)");
     expect(claimHelper).toContain("attempts: expectedAttempts + 1");
 
     const claimStart = queue.indexOf("export async function claimJob(");

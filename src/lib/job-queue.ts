@@ -107,10 +107,15 @@ async function claimEligibleJob(db: QueueDb, options: ClaimOptions): Promise<any
       .for("update", { skipLocked: true });
     if (!job) return null;
 
+    // The SQL predicate guarantees a claimable non-null status, but the schema
+    // remains nullable for historical rows. Narrow it before building the
+    // optimistic update fence so Drizzle receives a valid scalar operand.
+    const expectedStatus = job.status;
+    if (!expectedStatus) return null;
     const expectedAttempts = Number(job.attempts ?? 0);
     const updateClauses = [
       eq(schema.jobs.id, job.id),
-      eq(schema.jobs.status, job.status),
+      eq(schema.jobs.status, expectedStatus),
       attemptCountEquals(expectedAttempts),
       runAtDue(claimTime),
       retryBudgetRemaining,

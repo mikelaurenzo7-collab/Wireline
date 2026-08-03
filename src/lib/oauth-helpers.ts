@@ -3,13 +3,14 @@ import express from "express";
 import { google } from "googleapis";
 import { randomUUID, createHmac, timingSafeEqual } from "node:crypto";
 import { Redis } from "@upstash/redis";
-import { drizzle, fetchWithTimeout, IS_PROD } from "./server-context";
+import { drizzle, fetchWithTimeout, IS_PROD, tenantStore } from "./server-context";
 import { isProductionRuntime, getSessionTokenFromRequest } from "./session-cookie";
 import * as schema from "../db/schema";
+import { sessionUsers } from "../db/security-schema";
 import { eq } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
-import { verifyInternalJwt } from "./auth-utils";
+import { verifyInternalJwt, type JwtPayload } from "./auth-utils";
 import { getInternalJwtSecret } from "./internal-jwt-secret";
 
 // ────────────────────────────────────────────────────────────────────
@@ -305,12 +306,47 @@ export async function verifyAndClaimOAuthState(
   return verified;
 }
 
+function tokenIssuedAtMs(payload: JwtPayload): number {
+  const precise = Number(payload.iat_ms);
+  if (Number.isFinite(precise) && precise > 0) return precise;
+  return payload.iat * 1000;
+}
+
+function tokenSessionVersion(payload: JwtPayload): number | null {
+  const version = Number(payload.session_version);
+  return Number.isSafeInteger(version) && version >= 0 ? version : null;
+}
+
+/**
+ * OAuth callbacks are not routed through authenticateUser because providers
+ * return a browser navigation rather than an API request. Mirror the canonical
+ * session-generation check here so a token revoked by sign-out, password reset,
+ * or workspace rotation cannot complete an account-linking callback.
+ */
+async function isActiveOAuthSession(payload: JwtPayload): Promise<boolean> {
+  return tenantStore.run(payload.sub, async () => {
+    const [user] = await drizzle
+      .select({
+        sessionRevokedBefore: sessionUsers.sessionRevokedBefore,
+        sessionVersion: sessionUsers.sessionVersion,
+      })
+      .from(sessionUsers)
+      .where(eq(sessionUsers.id, payload.sub))
+      .limit(1);
+    if (!user) return false;
+
+    const version = tokenSessionVersion(payload);
+    if (version !== null) return version === user.sessionVersion;
+    return tokenIssuedAtMs(payload) > user.sessionRevokedBefore.getTime();
+  });
+}
+
 /**
  * Resolve the Wireline account behind an OAuth callback's browser session.
  * Bearer header first, then the HttpOnly session cookie — the provider
  * redirect is a top-level SameSite=Lax navigation, so the completing browser
- * always presents the cookie. This is an identity binding, not a session
- * authorization: the signed state remains the authority for the flow.
+ * always presents the cookie. The token must also pass the database-owned
+ * session-generation fence used by normal authenticated routes.
  */
 export async function resolveUserIdFromOAuthSession(req: express.Request): Promise<string | null> {
   const token = getSessionTokenFromRequest(req);
@@ -318,16 +354,17 @@ export async function resolveUserIdFromOAuthSession(req: express.Request): Promi
 
   const secret = getInternalJwtSecret() || "";
   const payload = await verifyInternalJwt(token, secret);
-  return payload?.sub ?? null;
+  if (!payload || !(await isActiveOAuthSession(payload))) return null;
+  return payload.sub;
 }
 
 /**
  * Integration-link callbacks must be completed by the same Wireline account
  * and browser session that initiated them. The signed state's userId binds
- * the initiator; the completing browser's session proves its account. Without
- * this equality check, a forwarded consent URL would attach the completing
- * user's provider mailbox/tokens to the initiator's Wireline account
- * (account-linking CSRF). Returns the linked user id, or null when the
+ * the initiator; the completing browser's active session proves its account.
+ * Without this equality check, a forwarded consent URL would attach the
+ * completing user's provider mailbox/tokens to the initiator's Wireline
+ * account (account-linking CSRF). Returns the linked user id, or null when the
  * completing browser is not signed in as the initiating account — callers
  * must reject the callback.
  */
