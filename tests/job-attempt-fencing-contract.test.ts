@@ -26,6 +26,24 @@ describe("durable job attempt fencing", () => {
     expect(queue).toContain('status: exhausted ? "dead" : "pending"');
   });
 
+  it("never reclaims an exhausted legacy failed row and fences the exact claim", () => {
+    const legacyStart = queue.indexOf("async function claimLegacyFailed");
+    const legacyEnd = queue.indexOf("/** New work is claimed first", legacyStart);
+    const legacyClaim = queue.slice(legacyStart, legacyEnd);
+    expect(legacyClaim).toContain("legacyRetryBudgetRemaining");
+    expect(legacyClaim).toContain('eq(schema.jobs.status, "failed")');
+    expect(legacyClaim).toContain("eq(schema.jobs.attempts, expectedAttempts)");
+    expect(legacyClaim).toContain("attempts: expectedAttempts + 1");
+
+    const byIdStart = queue.indexOf("export async function claimJobById");
+    const byIdEnd = queue.indexOf("/**\n * Commit completion", byIdStart);
+    const byIdClaim = queue.slice(byIdStart, byIdEnd);
+    expect(byIdClaim).toContain("legacyRetryBudgetRemaining");
+    expect(byIdClaim).toContain('eq(schema.jobs.status, "failed")');
+    expect(byIdClaim).toContain("eq(schema.jobs.attempts, expectedAttempts)");
+    expect(byIdClaim).toContain("attempts: expectedAttempts + 1");
+  });
+
   it("fences stale recovery to the selected attempt before resetting it", () => {
     const recovery = queue.slice(queue.indexOf("export async function recoverStaleJobs"));
     expect(recovery).toContain("const expectedAttempts = Number(job.attempts || 0)");
