@@ -31,6 +31,20 @@ function promptFrom(payload: Record<string, unknown>): string {
   return typeof system?.content === "string" ? system.content : "";
 }
 
+function markedPayload(model: ModelConfig): Record<string, unknown> {
+  return {
+    model: {
+      ...model,
+      messages: [
+        {
+          role: "system",
+          content: "You are Ria, the Demo Concierge showcase demo built by Wireline.",
+        },
+      ],
+    },
+  };
+}
+
 describe("public showcase truth guard", () => {
   const publicAgents = [
     ...WIRELINE_CONTACT_AGENTS.map((agent) => ({ agent, kind: "cs" as const })),
@@ -51,7 +65,7 @@ describe("public showcase truth guard", () => {
       expect(prompt).toContain("Pricing:");
       expect(prompt).toContain("when connected and currently available");
       expect(prompt).not.toMatch(
-        /auditor engaged|target Q4 2026|on request \(~30 day onboarding\)/i,
+        /auditor engaged|target Q4 2026|on request \(~30 day onboarding\)|BAA available on the Enterprise roadmap/i,
       );
       expect(prompt).not.toMatch(/14-day free trial|Personal \$49|Starter \$149|Pro \$499/i);
       expect(prompt).not.toContain("HIPAA-aware tone");
@@ -59,6 +73,7 @@ describe("public showcase truth guard", () => {
       expect(model.provider).toBe("openai");
       expect(model.fallbackModels).toEqual(["gpt-5.6-luna"]);
       expect(model.fallbackModels?.every((candidate) => /^gpt-/i.test(candidate))).toBe(true);
+      expect(model.fallbackModels).not.toContain(model.model);
 
       if (kind === "demo") {
         expect(prompt).not.toMatch(/have someone follow up/i);
@@ -78,6 +93,9 @@ describe("public showcase truth guard", () => {
     expect(roadmap).toContain("not SOC 2 certified today");
     expect(roadmap).toContain("not currently available");
     expect(roadmap).not.toMatch(/auditor engaged|target Q4|on request|30 day onboarding/i);
+    expect(WIRELINE_DEMO_AGENTS.find((agent) => agent.name === "Marcus")?.scope).not.toMatch(
+      /BAA available|Enterprise roadmap/i,
+    );
   });
 
   it("rewrites stale truth and cross-provider fallback values", () => {
@@ -94,6 +112,7 @@ describe("public showcase truth guard", () => {
               "- Integrations: everything, and more.\n" +
               "SOC 2 Type II - auditor engaged, target Q4 2026\n" +
               "HIPAA BAA - Enterprise tier only, on request (~30 day onboarding)\n" +
+              "Healthcare-style demo; not currently HIPAA-certified (BAA available on the Enterprise roadmap).\n" +
               "- If something goes wrong with a tool or action, never say 'error' or any technical term. Just say 'Let me note that and have someone follow up' and move on.",
           },
         ],
@@ -106,8 +125,30 @@ describe("public showcase truth guard", () => {
     expect(prompt).toContain("not SOC 2 certified today");
     expect(prompt).toContain("not currently available");
     expect(prompt).toContain("never promise human follow-up from a demo line");
-    expect(prompt).not.toMatch(/auditor engaged|have someone follow up/i);
+    expect(prompt).not.toMatch(/auditor engaged|have someone follow up|BAA available/i);
     expect(model.fallbackModels).toEqual(["gpt-5.6-luna"]);
+  });
+
+  it("never inserts an OpenAI primary model as its own fallback", () => {
+    const guarded = sanitizeShowcaseAssistantPayload(
+      markedPayload({
+        provider: "openai",
+        model: "gpt-5.6-luna",
+        fallbackModels: ["gpt-5.6-luna", "gemini-3.5-flash"],
+      }),
+    );
+    expect(modelFrom(guarded).fallbackModels).toBeUndefined();
+  });
+
+  it("never inserts a Google primary model as its own fallback", () => {
+    const guarded = sanitizeShowcaseAssistantPayload(
+      markedPayload({
+        provider: "google",
+        model: "gemini-2.5-flash",
+        fallbackModels: ["gemini-2.5-flash", "gpt-4o"],
+      }),
+    );
+    expect(modelFrom(guarded).fallbackModels).toBeUndefined();
   });
 });
 
