@@ -93,39 +93,23 @@ run("npx", [
   "tests/product-voice-contract.test.ts",
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
-  // Generated launch media must identify the deployed source commit and reject
-  // auth-wall/shared-error captures before any edit is called release-current.
   "tests/launch-completeness-contract.test.ts",
-  // Calling setup is a primary activation surface: keep its self-service entry,
-  // agent/area-code choice, recovery path, and routing behavior in every build.
   "tests/phone-settings-attach-contract.test.ts",
   "tests/phone-self-serve-setup-contract.test.ts",
   "tests/auth-journey-hardening-contract.test.ts",
-  // Recovery-token atomicity and expiry cleanup are account-security boundaries.
   "tests/auth-token-atomicity-contract.test.ts",
-  // Provider-host binding, browser-bound bridge state, verified identity, key
-  // rotation, and one-check throttling protect account-session integrity.
   "tests/auth-oauth-browser-binding-contract.test.ts",
   "tests/oauth-rate-limit-middleware.test.ts",
   "tests/oauth-provider-identity-integrity-contract.test.ts",
   "tests/yahoo-openid-security.test.ts",
   "tests/yahoo-jwks-rotation.test.ts",
-  // Missing or malformed spend controls and partial signup bootstrap are
-  // provider-cost and entitlement-integrity failures.
   "tests/spend-guard-integrity-contract.test.ts",
-  // Public launch claims, customer-controlled spend provenance, and reversible
-  // subscription deletion are release boundaries, not optional regression tests.
   "tests/launch-truth-contract.test.ts",
-  // Launch status and billing-status pool headroom must stay fail-closed.
   "tests/double-pass-launch-honesty-contract.test.ts",
   "tests/ai-cost-protection-contract.test.ts",
   "tests/billing-proof-contract.test.ts",
-  // Pricing capacity must reserve Payments, Billing, and future Tax fees on
-  // both intervals; do not let catalog metadata drift from entitlements.
   "src/lib/plan-catalog.test.ts",
   "tests/round6-margin-capacity-contract.test.ts",
-  // Live Video must remain launch-paused and economically bounded until its
-  // curated catalog and paid lifecycle are proven.
   "src/lib/video-presenter/live-video-policy.test.ts",
   "tests/live-video-economics-contract.test.ts",
   "tests/signup-bootstrap-integrity-contract.test.ts",
@@ -136,24 +120,24 @@ run("npx", [
   "tests/mailbox-and-daily-brief-hardening-contract.test.ts",
   "tests/managed-vapi-runtime-contract.test.ts",
   "tests/vapi-modern-payload-contract.test.ts",
-  // End-of-call cost, duration, transcript, and recording evidence must remain
-  // compatible with both current report and call-object payload shapes.
   "src/lib/vapi-report-normalization.test.ts",
   "tests/twilio-webhook-privacy.test.ts",
-  // Recipient addresses, bearer links, and provider error bodies must stay out of logs.
   "tests/email-observability-privacy-contract.test.ts",
-  // GDPR carrier cleanup and compliance ledgers are cost and deletion-integrity
-  // boundaries; keep their migration/runtime contracts in every build.
   "tests/platform-ledger-integrity-contract.test.ts",
   "tests/carrier-release-integrity.test.ts",
-  // Paid/free capacity and purchased-capacity mutations must agree across web,
-  // mobile, MCP, Stripe settlement, and legacy entitlement mirrors.
   "tests/capacity-and-carrier-double-pass.test.ts",
-  // Purchased capacity must settle atomically with its immediate Stripe invoice.
   "tests/extra-agent-payment-atomicity.test.ts",
-  // Durable persistence failures are financial/runtime integrity failures, so
-  // this contract belongs in every preview and production-equivalent build.
   "tests/durable-enqueue-contract.test.ts",
+  // These are direct financial, tenant, external-delivery, and durable-work
+  // boundaries. They must run on every preview and production-equivalent build,
+  // not only in the one-shot full suite.
+  "tests/checkout-customer-recovery-contract.test.ts",
+  "tests/shared-workspace-readiness-contract.test.ts",
+  "tests/webhook-delivery-literal-ssrf-contract.test.ts",
+  "tests/webhook-dns-pinning-contract.test.ts",
+  "tests/webhook-management-hardening-contract.test.ts",
+  "tests/webhook-signing-contract.test.ts",
+  "tests/job-attempt-fencing-contract.test.ts",
 ]);
 runLiveVapiSchemaAuditIfRequested();
 configurePreviewEnvironment();
