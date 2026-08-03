@@ -12,7 +12,7 @@ export const WIRELINE_ONE_LINER =
   "Wireline runs calls, texts, follow-up, browser context, email, and integrations through trained agents that stay on your playbook.";
 
 export const WIRELINE_VOICE_STACK =
-  "Live calls run through the Wireline voice bridge with low-latency speech-to-text and Wireline voice synthesis. Wireline uses fast voice models for the phone runtime and deeper reasoning models for coaching, written review, and higher-reasoning workflows.";
+  "Live calls run through the managed Wireline voice bridge with low-latency transcription, speech, and an OpenAI-first conversation runtime. Provider routing and fallbacks are managed by Wireline and can change without changing the customer workflow.";
 
 export const WIRELINE_PLANS = [
   {
@@ -153,43 +153,50 @@ export const WIRELINE_PAIN_SOLUTIONS = [
   },
 ] as const;
 
+/**
+ * Connector names are examples, not unconditional availability promises. Every
+ * public prompt must retain the "when connected" qualifier because OAuth app
+ * configuration, provider authorization, and provider-side limits vary.
+ */
 export const WIRELINE_INTEGRATIONS = [
-  "HubSpot",
-  "Salesforce",
-  "Apollo",
-  "Slack",
-  "Microsoft Teams",
-  "DocuSign",
-  "Google Calendar",
-  "Google Sheets",
-  "Microsoft 365 (Outlook + Excel)",
-  "Shopify",
-  "Square",
-  "Zoom",
-  "Meta (Facebook + Instagram Ads)",
-  "X (Twitter)",
-  "Stripe",
-  "Bring-your-own carrier",
+  "HubSpot when connected",
+  "Salesforce when connected",
+  "Apollo when configured",
+  "Slack when connected",
+  "Microsoft Teams when connected",
+  "DocuSign when configured",
+  "Google Calendar when connected",
+  "Google Sheets when connected",
+  "Microsoft 365 (Outlook + Excel) when connected",
+  "Shopify when connected",
+  "Square when connected",
+  "Zoom when connected",
+  "Meta (Facebook + Instagram Ads) when connected",
+  "X (Twitter) when connected",
+  "Stripe for Wireline billing",
+  "bring-your-own carrier where supported",
 ] as const;
 
 /**
- * What Wireline has done and is planning for compliance. Updated honestly so
- * agents never over-promise on a sales call.
+ * Current compliance posture. Keep this deliberately conservative: public
+ * assistants may describe controls that are live, but must never imply a
+ * certification, BAA, audit schedule, or regional deployment that has not been
+ * completed and independently verified.
  */
 export const WIRELINE_COMPLIANCE_STATUS = {
   done: [
-    "Encryption at rest (Postgres + Vercel)",
-    "TLS 1.2+ in transit",
-    "Per-tenant data isolation enforced in application queries",
-    "Append-only audit log on every state change",
-    "TCPA opt-in and opt-out ledger with state-by-state jurisdiction rules in code",
-    "DNC list honored automatically on outbound dialing",
-    "Account deletion plus 30-day retention queue (GDPR-style)",
+    "Encryption at rest through the managed database and hosting providers",
+    "TLS in transit",
+    "Per-tenant data isolation in the application and database policy layers",
+    "Audit logging for protected state changes",
+    "TCPA consent and opt-out records for outbound workflows",
+    "DNC enforcement on outbound dialing",
+    "Account deletion with a delayed hard-delete workflow",
   ],
   inProgress: [
-    "SOC 2 Type II - auditor engaged, target Q4 2026",
-    "HIPAA BAA - Enterprise tier only, on request (~30 day onboarding)",
-    "Supabase RLS policy coverage and GraphQL exposure cleanup for all tenant tables",
-    "EU data residency - planned for the EU launch",
+    "SOC 2 readiness work is in progress; Wireline is not SOC 2 certified today",
+    "HIPAA and BAA support are not currently available; do not present Wireline as HIPAA-certified",
+    "Database policy and exposure reviews continue as the product surface expands",
+    "EU data residency is not currently available",
   ],
 } as const;
