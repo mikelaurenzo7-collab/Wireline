@@ -5,18 +5,17 @@ import {
   passwordSchema as basePasswordSchema,
   signupSchema as baseSignupSchema,
 } from "./api-validation-base";
-import { MAX_PASSWORD_BYTES } from "./auth-service";
+import { MAX_PASSWORD_BYTES, passwordFitsByteLimit } from "./password-limits";
 
 export * from "./api-validation-base";
 
-const passwordByteBound = (value: string) => Buffer.byteLength(value, "utf8") <= MAX_PASSWORD_BYTES;
-const boundedPasswordSchema = basePasswordSchema.refine(passwordByteBound, {
+const boundedPasswordSchema = basePasswordSchema.refine(passwordFitsByteLimit, {
   message: `Password must be ${MAX_PASSWORD_BYTES} UTF-8 bytes or fewer`,
 });
 const boundedSigninPasswordSchema = z
   .string()
   .min(1, "Password is required")
-  .refine(passwordByteBound, {
+  .refine(passwordFitsByteLimit, {
     message: `Password must be ${MAX_PASSWORD_BYTES} UTF-8 bytes or fewer`,
   });
 
