@@ -95,7 +95,7 @@ describe("security and external-operation atomicity", () => {
   it("creates resumable Stripe Checkout Sessions with durable idempotency keys", () => {
     const source = read("src/routes/launch-billing-checkout-atomic-routes.ts");
     const operation = source.indexOf(".insert(checkoutOperations)");
-    const customerCall = source.indexOf("const customerId = await ensureStripeCustomer");
+    const customerCall = source.indexOf("customerId = await ensureStripeCustomer");
     const sessionCall = source.indexOf("const session = await stripe.checkout.sessions.create");
 
     expect(operation).toBeGreaterThan(-1);
