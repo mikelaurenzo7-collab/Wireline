@@ -5,8 +5,9 @@ import { getErrorMessage } from "../lib/server-utils";
 import { verifyInternalJwt, type JwtPayload } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { getSessionTokenFromRequest, isProductionRuntime } from "../lib/session-cookie";
+import { sharedWorkspacesEnabled } from "../lib/shared-workspace-readiness";
 import { sessionUsers, secureTeamMembers } from "../db/security-schema";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 
 interface AuthedReq extends Request {
   user?: User;
@@ -66,6 +67,19 @@ async function resolveTenantId(
   const requested = tokenTenantId?.trim() || headerTenantId;
   if (!requested || requested === userId) return userId;
 
+  // Certification is a data-plane boundary, not merely a UI/team-route flag.
+  // Ignore every shared-tenant claim and header across the entire API until
+  // the actor-id/tenant-id audit has been explicitly certified.
+  if (!sharedWorkspacesEnabled()) {
+    log.warn("Ignoring shared tenant selection before data-plane certification", {
+      userId,
+      requestedTenantId: requested,
+      path: req.path,
+      requestId: (req.res as Response | undefined)?.locals?.requestId,
+    });
+    return userId;
+  }
+
   const [membership] = await tenantStore.run(userId, () =>
     drizzle
       .select({ id: secureTeamMembers.id })
@@ -74,6 +88,7 @@ async function resolveTenantId(
         and(
           eq(secureTeamMembers.tenantId, requested),
           eq(secureTeamMembers.userId, userId),
+          isNotNull(secureTeamMembers.acceptedAt),
           isNull(secureTeamMembers.revokedAt),
         ),
       )
@@ -162,33 +177,44 @@ function attachUser(authedReq: AuthedReq, payload: JwtPayload, activeUser: Activ
     role: payload.role || "authenticated",
     aud: payload.aud,
     sessionVersion: activeUser.sessionVersion,
-    tenantId: typeof payload.tenant_id === "string" ? payload.tenant_id : undefined,
+    // Start from the actor's own tenant. Authentication replaces this only
+    // after certification and membership validation succeed.
+    tenantId: activeUser.id,
     app_metadata: {},
     user_metadata: {},
     created_at: new Date(payload.iat * 1000).toISOString(),
   } as User;
 }
 
+function attachValidatedTenant(authedReq: AuthedReq, tenantId: string): void {
+  authedReq.tenantId = tenantId;
+  if (authedReq.user) authedReq.user.tenantId = tenantId;
+}
+
 export async function authenticateUser(req: Request, res: Response, next: NextFunction) {
   try {
     const authedReq = req as AuthedReq;
     if (authedReq.user?.id) {
-      authedReq.tenantId =
-        authedReq.tenantId ||
-        (await resolveTenantId(req, authedReq.user.id, authedReq.user.tenantId));
-      return runInTenantContext(req, authedReq.tenantId, next);
+      const tenantId = await resolveTenantId(
+        req,
+        authedReq.user.id,
+        authedReq.tenantId || authedReq.user.tenantId,
+      );
+      attachValidatedTenant(authedReq, tenantId);
+      return runInTenantContext(req, tenantId, next);
     }
 
     const verified = await verifyRequestSession(req, res);
     if (!verified) return;
     const { payload, activeUser } = verified;
     attachUser(authedReq, payload, activeUser);
-    authedReq.tenantId = await resolveTenantId(
+    const tenantId = await resolveTenantId(
       req,
       activeUser.id,
       typeof payload.tenant_id === "string" ? payload.tenant_id : undefined,
     );
-    return runInTenantContext(req, authedReq.tenantId, next);
+    attachValidatedTenant(authedReq, tenantId);
+    return runInTenantContext(req, tenantId, next);
   } catch (error) {
     log.error("Auth middleware failed", { error: getErrorMessage(error), path: req.path });
     return res.status(500).json({
@@ -203,10 +229,13 @@ export async function authenticateEventStream(req: Request, res: Response, next:
   try {
     const authedReq = req as AuthedReq;
     if (authedReq.user?.id) {
-      authedReq.tenantId =
-        authedReq.tenantId ||
-        (await resolveTenantId(req, authedReq.user.id, authedReq.user.tenantId));
-      return runInTenantContext(req, authedReq.tenantId, next);
+      const tenantId = await resolveTenantId(
+        req,
+        authedReq.user.id,
+        authedReq.tenantId || authedReq.user.tenantId,
+      );
+      attachValidatedTenant(authedReq, tenantId);
+      return runInTenantContext(req, tenantId, next);
     }
 
     if (isProductionRuntime() && typeof req.query.token === "string" && req.query.token) {
@@ -224,12 +253,13 @@ export async function authenticateEventStream(req: Request, res: Response, next:
     if (!verified) return;
     const { payload, activeUser } = verified;
     attachUser(authedReq, payload, activeUser);
-    authedReq.tenantId = await resolveTenantId(
+    const tenantId = await resolveTenantId(
       req,
       activeUser.id,
       typeof payload.tenant_id === "string" ? payload.tenant_id : undefined,
     );
-    return runInTenantContext(req, authedReq.tenantId, next);
+    attachValidatedTenant(authedReq, tenantId);
+    return runInTenantContext(req, tenantId, next);
   } catch (error) {
     log.error("SSE auth middleware failed", { error: getErrorMessage(error), path: req.path });
     return res.status(500).json({
