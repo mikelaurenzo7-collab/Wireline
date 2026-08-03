@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- job and webhook payloads are stored as Postgres jsonb. */
 import { drizzle, log, fetchWithTimeout } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, lte } from "drizzle-orm";
+import { eq, and, lte, sql } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import { decryptSecret } from "./secret-vault";
 import { resolveWebhookDeliveryHostname } from "./webhook-validators";
@@ -83,8 +83,49 @@ export function buildCallCompletedOutcome(
   };
 }
 
+type DeliveryAttemptOutcome = {
+  deliveryId: bigint;
+  webhookId: string;
+  status: WebhookDeliveryStatus;
+  statusCode: number | null;
+  attempts: number;
+  nextAttemptAt: Date | null;
+  deliveredAt: Date | null;
+  lastError: string | null;
+};
+
+/** Keep delivery history and the endpoint summary synchronized in one commit. */
+async function persistDeliveryOutcome(outcome: DeliveryAttemptOutcome): Promise<void> {
+  const attemptedAt = new Date();
+  await drizzle.transaction(async (tx) => {
+    await tx
+      .update(schema.webhookDeliveries)
+      .set({
+        status: outcome.status,
+        lastStatusCode: outcome.statusCode,
+        lastError: outcome.lastError,
+        attempts: outcome.attempts,
+        nextAttemptAt: outcome.nextAttemptAt,
+        deliveredAt: outcome.deliveredAt,
+      })
+      .where(eq(schema.webhookDeliveries.id, outcome.deliveryId));
+
+    await tx
+      .update(schema.webhooks)
+      .set({
+        lastTriggeredAt: attemptedAt,
+        lastStatus: outcome.statusCode,
+        lastError: outcome.lastError,
+        ...(outcome.status === WEBHOOK_DELIVERY_SUCCESS
+          ? { deliveryCount: sql`coalesce(${schema.webhooks.deliveryCount}, 0) + 1` }
+          : {}),
+      })
+      .where(eq(schema.webhooks.id, outcome.webhookId));
+  });
+}
+
 export async function attemptWebhookDelivery(deliveryId: string | number) {
-  const deliveryIdBig = typeof deliveryId === "string" ? BigInt(deliveryId) : BigInt(deliveryId);
+  const deliveryIdBig = BigInt(deliveryId);
 
   const deliveryWithHook = await drizzle.query.webhookDeliveries.findFirst({
     where: eq(schema.webhookDeliveries.id, deliveryIdBig),
@@ -109,20 +150,23 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
       webhook?: DeliveryHook | DeliveryHook[];
     }
   ).webhook;
-  // Drizzle `with` relations may infer as array; normalize to single object.
   const hook = Array.isArray(hookRaw) ? hookRaw[0] : hookRaw;
+  const nextAttempts = (deliveryWithHook.attempts || 0) + 1;
+
   if (!hook?.url) {
-    await drizzle
-      .update(schema.webhookDeliveries)
-      .set({ status: WEBHOOK_DELIVERY_FAILED, nextAttemptAt: null })
-      .where(eq(schema.webhookDeliveries.id, deliveryIdBig));
+    await persistDeliveryOutcome({
+      deliveryId: deliveryIdBig,
+      webhookId: deliveryWithHook.webhookId,
+      status: WEBHOOK_DELIVERY_FAILED,
+      statusCode: null,
+      attempts: nextAttempts,
+      nextAttemptAt: null,
+      deliveredAt: null,
+      lastError: "webhook_missing",
+    });
     return;
   }
 
-  // Vault-encrypted secrets (secretEncrypted) are how the webhook API stores
-  // secrets today; the plaintext column only survives on legacy rows. If a
-  // configured secret cannot be decrypted, fail the delivery instead of
-  // sending an unsigned request the subscriber cannot verify.
   let signingSecret: string | null = hook.secret;
   if (hook.secretEncrypted) {
     try {
@@ -133,14 +177,16 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
         webhookId: hook.id,
         error: getErrorMessage(err),
       });
-      await drizzle
-        .update(schema.webhookDeliveries)
-        .set({
-          status: WEBHOOK_DELIVERY_FAILED,
-          lastError: "secret_decrypt_failed",
-          nextAttemptAt: null,
-        })
-        .where(eq(schema.webhookDeliveries.id, deliveryIdBig));
+      await persistDeliveryOutcome({
+        deliveryId: deliveryIdBig,
+        webhookId: hook.id,
+        status: WEBHOOK_DELIVERY_FAILED,
+        statusCode: null,
+        attempts: nextAttempts,
+        nextAttemptAt: null,
+        deliveredAt: null,
+        lastError: "secret_decrypt_failed",
+      });
       return;
     }
   }
@@ -155,10 +201,11 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
 
   let statusCode: number | null = null;
   let success = false;
+  let lastError: string | null = null;
   try {
     const hostnameResolution = await resolveWebhookDeliveryHostname(hook.url);
     if (hostnameResolution.status !== "public") {
-      const lastError =
+      lastError =
         hostnameResolution.status === "private"
           ? "blocked_private_destination"
           : "dns_resolution_failed";
@@ -167,74 +214,70 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
         webhookId: hook.id,
         reason: lastError,
       });
-      await drizzle
-        .update(schema.webhookDeliveries)
-        .set({
-          status: WEBHOOK_DELIVERY_FAILED,
-          lastError,
-          nextAttemptAt: null,
-        })
-        .where(eq(schema.webhookDeliveries.id, deliveryIdBig));
+      await persistDeliveryOutcome({
+        deliveryId: deliveryIdBig,
+        webhookId: hook.id,
+        status: WEBHOOK_DELIVERY_FAILED,
+        statusCode: null,
+        attempts: nextAttempts,
+        nextAttemptAt: null,
+        deliveredAt: null,
+        lastError,
+      });
       return;
     }
 
-    // redirect: "manual" closes the SSRF redirect bypass: the hostname guard
-    // above validated hook.url, but undici follows 3xx by default to a target
-    // that was never validated (a public host can 302 to 169.254.169.254 or
-    // an internal address). A redirected webhook is treated as a failed
-    // attempt — endpoints that legitimately move should update their URL.
-    const res = await fetchWithTimeout(
+    const response = await fetchWithTimeout(
       hook.url,
       { method: "POST", headers, body, redirect: "manual" },
       10_000,
     );
-    // undici surfaces a blocked 3xx as an *opaque-redirect* response
-    // (`type: "opaqueredirect"`, `status: 0`, `ok: false`) — not a 300-399
-    // status — so detect it by type as well as status range.
-    const isRedirect = res.type === "opaqueredirect" || (res.status >= 300 && res.status < 400);
+    const isRedirect =
+      response.type === "opaqueredirect" || (response.status >= 300 && response.status < 400);
     if (isRedirect) {
-      success = false;
-      // status is 0 for an opaque redirect; record null rather than a bogus 0.
-      statusCode = res.status || null;
+      statusCode = response.status || null;
+      lastError = "redirect_blocked";
       log.warn("Webhook delivery blocked — endpoint attempted a redirect", {
         deliveryId: String(deliveryId),
         webhookId: hook.id,
-        responseType: res.type,
+        responseType: response.type,
       });
     } else {
-      statusCode = res.status;
-      success = res.ok;
+      statusCode = response.status;
+      success = response.ok;
+      lastError = success ? null : `http_${response.status}`;
     }
   } catch (err: unknown) {
+    lastError = "request_failed";
     log.warn("Webhook delivery attempt failed", { deliveryId, error: getErrorMessage(err) });
   }
 
-  const newAttempts = (deliveryWithHook.attempts || 0) + 1;
   const maxAttempts = deliveryWithHook.maxAttempts || 5;
-  const reachedDead = !success && newAttempts >= maxAttempts;
+  const reachedDead = !success && nextAttempts >= maxAttempts;
   const nextAttemptAt =
-    success || reachedDead ? null : new Date(Date.now() + Math.pow(2, newAttempts) * 60_000);
-
+    success || reachedDead ? null : new Date(Date.now() + Math.pow(2, nextAttempts) * 60_000);
   const nextStatus: WebhookDeliveryStatus = success
     ? WEBHOOK_DELIVERY_SUCCESS
     : reachedDead
       ? WEBHOOK_DELIVERY_FAILED
       : WEBHOOK_DELIVERY_PENDING;
+  const deliveredAt = success ? new Date() : null;
 
-  await drizzle
-    .update(schema.webhookDeliveries)
-    .set({
-      status: nextStatus,
-      lastStatusCode: statusCode,
-      attempts: newAttempts,
-      nextAttemptAt: nextAttemptAt,
-    })
-    .where(eq(schema.webhookDeliveries.id, deliveryIdBig));
+  await persistDeliveryOutcome({
+    deliveryId: deliveryIdBig,
+    webhookId: hook.id,
+    status: nextStatus,
+    statusCode,
+    attempts: nextAttempts,
+    nextAttemptAt,
+    deliveredAt,
+    lastError,
+  });
 
   if (reachedDead) {
     SentryEvents.webhookDeliveryFailed({
       webhook_id: deliveryWithHook.webhookId,
-      attempt: newAttempts,
+      attempt: nextAttempts,
       status_code: statusCode || undefined,
     });
   }
@@ -266,7 +309,7 @@ export async function dispatchWebhook(userId: string, event: WebhookEvent, data:
       .values(values)
       .returning({ id: schema.webhookDeliveries.id });
 
-    await Promise.all((inserted || []).map((d: any) => attemptWebhookDelivery(Number(d.id))));
+    await Promise.all((inserted || []).map((delivery: any) => attemptWebhookDelivery(delivery.id)));
   } catch (err: any) {
     log.error("Webhook dispatch failed", { error: getErrorMessage(err) });
   }
@@ -288,8 +331,8 @@ export async function processWebhookRetries() {
       )
       .limit(25);
 
-    if (due && due.length > 0) {
-      await Promise.all(due.map((d) => attemptWebhookDelivery(Number(d.id))));
+    if (due.length > 0) {
+      await Promise.all(due.map((delivery) => attemptWebhookDelivery(delivery.id.toString())));
     }
   } catch (err: any) {
     log.error("Webhook retry cycle failed", { error: getErrorMessage(err) });
