@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 const root = path.resolve(process.cwd());
 const read = (relative: string) => fs.readFileSync(path.join(root, relative), "utf8");
 
+// Release contracts intentionally assert execution order and security outcomes, not local declaration style.
 describe("security and external-operation atomicity", () => {
   it("revokes issued sessions through a monotonic database generation", () => {
     const baseMigration = read("drizzle/migrations/0120_security_atomicity_team_sessions.sql");
