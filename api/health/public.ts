@@ -16,11 +16,12 @@ const RESULT_KEY = "wireline:health:public:v2";
 const LOCK_KEY = "wireline:health:public:probe-lock:v2";
 const RESULT_TTL_SECONDS = 120;
 const LOCK_TTL_SECONDS = 12;
+const LOCAL_STALE_TTL_MS = 5 * 60_000;
 const CACHE_CONTROL = "public, max-age=30, s-maxage=60, stale-while-revalidate=120";
 const LEVELS = new Set<PublicHealthLevel>(["operational", "degraded", "outage"]);
 
 let redis: Redis | null = null;
-let localCache: PublicHealthPayload | null = null;
+let localCache: { payload: PublicHealthPayload; expiresAt: number } | null = null;
 
 function redisClient(): Redis | null {
   if (redis) return redis;
@@ -45,6 +46,19 @@ function validPayload(value: unknown): value is PublicHealthPayload {
   );
 }
 
+function remember(payload: PublicHealthPayload): void {
+  localCache = { payload, expiresAt: Date.now() + LOCAL_STALE_TTL_MS };
+}
+
+function freshLocalCache(): PublicHealthPayload | null {
+  if (!localCache) return null;
+  if (localCache.expiresAt <= Date.now()) {
+    localCache = null;
+    return null;
+  }
+  return localCache.payload;
+}
+
 function setCommonHeaders(res: ServerResponse): void {
   res.setHeader("Cache-Control", CACHE_CONTROL);
   res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -58,8 +72,10 @@ function sendJson(
   res: ServerResponse,
   statusCode: number,
   payload: PublicHealthPayload | Record<string, unknown>,
+  cacheSource?: "redis" | "probe" | "stale-local",
 ): void {
   setCommonHeaders(res);
+  if (cacheSource) res.setHeader("X-Wireline-Health-Source", cacheSource);
   res.statusCode = statusCode;
   res.end(req.method === "HEAD" ? undefined : JSON.stringify(payload));
 }
@@ -80,7 +96,7 @@ function unavailablePayload(code: string): PublicHealthPayload & { code: string 
 async function readCached(client: Redis): Promise<PublicHealthPayload | null> {
   const cached = await client.get<PublicHealthPayload>(RESULT_KEY);
   if (!validPayload(cached)) return null;
-  localCache = cached;
+  remember(cached);
   return cached;
 }
 
@@ -116,7 +132,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   try {
     const cached = await readCached(client);
     if (cached) {
-      sendJson(req, res, 200, cached);
+      sendJson(req, res, 200, cached, "redis");
       return;
     }
 
@@ -127,11 +143,12 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     if (lock !== "OK") {
       const concurrent = await waitForConcurrentProbe(client);
       if (concurrent) {
-        sendJson(req, res, 200, concurrent);
+        sendJson(req, res, 200, concurrent, "redis");
         return;
       }
-      if (localCache) {
-        sendJson(req, res, 200, localCache);
+      const stale = freshLocalCache();
+      if (stale) {
+        sendJson(req, res, 200, stale, "stale-local");
         return;
       }
       sendJson(req, res, 503, unavailablePayload("PROBE_REFRESH_IN_PROGRESS"));
@@ -147,15 +164,16 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       reasoning,
       voiceFallbackConfigured: !!process.env.GEMINI_API_KEY,
     });
-    localCache = payload;
+    remember(payload);
     await client.set(RESULT_KEY, payload, { ex: RESULT_TTL_SECONDS });
-    sendJson(req, res, 200, payload);
+    sendJson(req, res, 200, payload, "probe");
   } catch (error) {
     console.warn("Public health distributed cache unavailable; refusing metered probe", {
       error: error instanceof Error ? error.message : String(error),
     });
-    if (localCache) {
-      sendJson(req, res, 200, localCache);
+    const stale = freshLocalCache();
+    if (stale) {
+      sendJson(req, res, 200, stale, "stale-local");
       return;
     }
     sendJson(req, res, 503, unavailablePayload("DISTRIBUTED_CACHE_UNAVAILABLE"));
