@@ -7,8 +7,11 @@ import { WebsiteFetchError } from "../lib/safe-public-text-fetch";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { importWebsiteKnowledge } from "../lib/website-knowledge-service";
-import { agentMutationRateLimit } from "../middleware/api-rate-limits";
 import { authenticateUser } from "../middleware/auth";
+import {
+  websiteKnowledgeBurstRateLimit,
+  websiteKnowledgeDailyRateLimit,
+} from "../middleware/website-knowledge-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -36,7 +39,8 @@ function importSummary(result: { factsAdded: number; rulesAdded: number; truncat
 router.post(
   "/api/agent-config/:id/website",
   authenticateUser,
-  agentMutationRateLimit,
+  websiteKnowledgeBurstRateLimit,
+  websiteKnowledgeDailyRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     const rawUrl = typeof req.body?.url === "string" ? req.body.url.trim() : "";
     if (!rawUrl || rawUrl.length > WEBSITE_URL_MAX_CHARS) {
