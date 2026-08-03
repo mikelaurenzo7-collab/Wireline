@@ -93,9 +93,9 @@ describe("public showcase truth guard", () => {
     expect(roadmap).toContain("not SOC 2 certified today");
     expect(roadmap).toContain("not currently available");
     expect(roadmap).not.toMatch(/auditor engaged|target Q4|on request|30 day onboarding/i);
-    expect(WIRELINE_DEMO_AGENTS.find((agent) => agent.name === "Marcus")?.scope).not.toMatch(
-      /BAA available|Enterprise roadmap/i,
-    );
+    const marcusScope = WIRELINE_DEMO_AGENTS.find((agent) => agent.name === "Marcus")?.scope || "";
+    expect(marcusScope).toContain("HIPAA and BAA support are not currently available");
+    expect(marcusScope).not.toMatch(/BAA available|Enterprise roadmap/i);
   });
 
   it("rewrites stale truth and cross-provider fallback values", () => {
