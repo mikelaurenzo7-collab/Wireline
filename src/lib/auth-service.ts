@@ -10,6 +10,7 @@ import {
 import { promisify } from "node:util";
 import { drizzle, log, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
+import { sessionUsers } from "../db/security-schema";
 import { and, eq, gte, isNull } from "drizzle-orm";
 import { requireInternalJwtSecret } from "./internal-jwt-secret";
 import { verifyInternalJwt, type JwtPayload } from "./auth-utils";
@@ -24,7 +25,6 @@ import { isOwnerEmail } from "./platform-owner-emails";
 
 const scryptAsync = promisify(scrypt);
 
-/** Lazy so importing auth-service does not crash the whole API when env is misconfigured. */
 let cachedJwtSecret: string | null = null;
 
 function getJwtSecret(): string {
@@ -64,10 +64,7 @@ async function requirePasswordSafety(
   }
 }
 
-/**
- * Compatibility helper for tests and offline scripts. Public authentication
- * paths use the asynchronous variant below so scrypt never blocks the event loop.
- */
+/** Compatibility helper for tests and offline scripts. */
 export function hashPassword(password: string): string {
   requireBoundedPassword(password);
   const salt = randomBytes(16).toString("hex");
@@ -108,14 +105,14 @@ function authUserFlags(user: { id: string; email: string }) {
 }
 
 /**
- * Generate a short-lived Wireline JWT. `iat_ms` gives session revocation
- * millisecond precision while preserving standard integer `iat` semantics.
- * `tenant_id` is present only when the user deliberately selected a shared
- * workspace whose membership was verified server-side.
+ * Generate a short-lived Wireline JWT. `session_version` is database-owned and
+ * makes global revocation exact across hosts without relying on clock ordering.
+ * `iat_ms` remains for compatibility with tokens minted before migration 0127.
  */
 export function generateToken(user: {
   id: string;
   email: string;
+  sessionVersion: number;
   tenantId?: string | null;
 }): string {
   const header = { alg: "HS256", typ: "JWT" };
@@ -126,6 +123,7 @@ export function generateToken(user: {
     email: user.email,
     iat: now,
     iat_ms: nowMs,
+    session_version: user.sessionVersion,
     exp: now + 60 * 60 * 2,
     aud: "authenticated",
     role: "authenticated",
@@ -174,16 +172,23 @@ export const authService = {
       return null;
     }
 
-    const [sub] = await drizzle
-      .select({ plan: schema.subscriptions.plan })
-      .from(schema.subscriptions)
-      .where(eq(schema.subscriptions.userId, user.id))
-      .limit(1);
+    const [[session], [sub]] = await Promise.all([
+      drizzle
+        .select({ sessionVersion: sessionUsers.sessionVersion })
+        .from(sessionUsers)
+        .where(eq(sessionUsers.id, user.id))
+        .limit(1),
+      drizzle
+        .select({ plan: schema.subscriptions.plan })
+        .from(schema.subscriptions)
+        .where(eq(schema.subscriptions.userId, user.id))
+        .limit(1),
+    ]);
+    if (!session) throw new Error("Authenticated user session state is unavailable");
+
     const { resolveAccountType } = await import("./account-type");
     const { ensureDefaultAccount } = await import("./account-service");
-    const account_type = (
-      await ensureDefaultAccount(user.id, resolveAccountType(sub?.plan))
-    ).type;
+    const account_type = (await ensureDefaultAccount(user.id, resolveAccountType(sub?.plan))).type;
 
     return {
       user: {
@@ -193,7 +198,11 @@ export const authService = {
         ...authUserFlags(user),
         account_type,
       },
-      token: generateToken({ id: user.id, email: user.email }),
+      token: generateToken({
+        id: user.id,
+        email: user.email,
+        sessionVersion: session.sessionVersion,
+      }),
     };
   },
 
@@ -251,7 +260,7 @@ export const authService = {
               ...authUserFlags(user),
               account_type,
             },
-            token: generateToken({ id: user.id, email: user.email }),
+            token: generateToken({ id: user.id, email: user.email, sessionVersion: 0 }),
           };
         });
       } catch (err: any) {
@@ -330,7 +339,7 @@ export const authService = {
     await requirePasswordSafety(newPassword, "reset");
     const newHash = await hashPasswordForRequest(newPassword);
 
-    const userId = await drizzle.transaction(async (tx) => {
+    const reset = await drizzle.transaction(async (tx) => {
       const [claimed] = await tx
         .update(schema.passwordResetTokens)
         .set({ usedAt: now })
@@ -344,22 +353,27 @@ export const authService = {
         .returning({ userId: schema.passwordResetTokens.userId });
       if (!claimed) return null;
 
-      // Migration 0120 owns revocation as a database invariant: changing the
-      // password_hash fires wireline_users_password_session_revocation. This
-      // means every password writer, not only this route, invalidates sessions.
       const [changed] = await tx
         .update(schema.users)
         .set({ passwordHash: newHash, updatedAt: now })
         .where(eq(schema.users.id, claimed.userId))
         .returning({ id: schema.users.id });
-      return changed?.id ?? null;
+      if (!changed) return null;
+
+      const [session] = await tx
+        .select({ sessionVersion: sessionUsers.sessionVersion })
+        .from(sessionUsers)
+        .where(eq(sessionUsers.id, changed.id))
+        .limit(1);
+      if (!session) throw new Error("Reset user session state is unavailable");
+      return { userId: changed.id, sessionVersion: session.sessionVersion };
     });
-    if (!userId) return null;
+    if (!reset) return null;
 
     const [user] = await drizzle
       .select()
       .from(schema.users)
-      .where(eq(schema.users.id, userId))
+      .where(eq(schema.users.id, reset.userId))
       .limit(1);
     if (!user) return null;
 
@@ -370,9 +384,7 @@ export const authService = {
       .limit(1);
     const { resolveAccountType } = await import("./account-type");
     const { ensureDefaultAccount } = await import("./account-service");
-    const account_type = (
-      await ensureDefaultAccount(user.id, resolveAccountType(sub?.plan))
-    ).type;
+    const account_type = (await ensureDefaultAccount(user.id, resolveAccountType(sub?.plan))).type;
 
     return {
       user: {
@@ -382,7 +394,11 @@ export const authService = {
         ...authUserFlags(user),
         account_type,
       },
-      token: generateToken({ id: user.id, email: user.email }),
+      token: generateToken({
+        id: user.id,
+        email: user.email,
+        sessionVersion: reset.sessionVersion,
+      }),
     };
   },
 };
