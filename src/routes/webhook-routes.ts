@@ -35,22 +35,39 @@ function parseDeliveryId(raw: string): bigint {
 }
 
 function publicWebhookRecord(row: any) {
-  // Never return either the legacy plaintext secret or encrypted vault blob.
-  // The last four characters are sufficient for an Account Holder to identify
-  // which signing secret is active.
+  // This API is consumed by the established snake_case admin client. Keep the
+  // response explicit so Drizzle's camelCase field names never leak encrypted
+  // or legacy plaintext secret columns and never silently break the UI.
   return {
     id: row.id,
-    userId: row.userId,
+    user_id: row.userId,
     name: row.name,
     url: row.url,
     events: row.events,
     active: row.active,
-    lastTriggeredAt: row.lastTriggeredAt,
-    lastStatus: row.lastStatus,
-    lastError: row.lastError,
-    deliveryCount: row.deliveryCount,
-    createdAt: row.createdAt,
-    secretLastFour: row.secretLastFour,
+    last_triggered_at: row.lastTriggeredAt,
+    last_status: row.lastStatus,
+    last_error: row.lastError,
+    delivery_count: row.deliveryCount,
+    created_at: row.createdAt,
+    secret_last_four: row.secretLastFour,
+  };
+}
+
+function publicDeliveryRecord(row: any) {
+  return {
+    id: row.id.toString(),
+    event: row.event,
+    attempts: row.attempts,
+    max_attempts: row.maxAttempts,
+    // The admin client historically calls the terminal state "dead". Preserve
+    // that public contract while the canonical database state remains failed.
+    status: row.status === "failed" ? "dead" : row.status,
+    last_status_code: row.lastStatusCode,
+    last_error: row.lastError,
+    next_attempt_at: row.nextAttemptAt,
+    delivered_at: row.deliveredAt,
+    created_at: row.createdAt,
   };
 }
 
@@ -75,7 +92,10 @@ router.get("/", authenticateUser, async (req: AuthenticatedRequest, res: Respons
       .where(eq(schema.webhooks.userId, req.user.id))
       .orderBy(desc(schema.webhooks.createdAt));
 
-    res.json({ webhooks: webhooks || [], available_events: WEBHOOK_EVENTS });
+    res.json({
+      webhooks: (webhooks || []).map(publicWebhookRecord),
+      available_events: WEBHOOK_EVENTS,
+    });
   } catch (e: any) {
     if (e instanceof AppError) throw e;
     log.error("Failed to load webhooks", { error: getErrorMessage(e) });
@@ -296,12 +316,7 @@ router.get(
         .orderBy(desc(schema.webhookDeliveries.createdAt))
         .limit(limit);
 
-      res.json({
-        deliveries: (deliveries || []).map((delivery) => ({
-          ...delivery,
-          id: delivery.id.toString(),
-        })),
-      });
+      res.json({ deliveries: (deliveries || []).map(publicDeliveryRecord) });
     } catch (e: any) {
       if (e instanceof AppError) throw e;
       log.error("Failed to load deliveries", { error: getErrorMessage(e) });
@@ -348,12 +363,16 @@ router.post(
           )
           .limit(1);
         if (!owned) throw AppError.fromHttpStatus(404, "Delivery not found.");
+        if (owned.status === "pending") {
+          return res.status(202).json({
+            success: true,
+            pending: true,
+            message: "This delivery is already pending or in progress.",
+          });
+        }
         return res.status(409).json({
           code: "DELIVERY_NOT_FAILED",
-          error:
-            owned.status === "pending"
-              ? "This delivery is already pending or in progress."
-              : "Only failed deliveries can be retried.",
+          error: "Only failed deliveries can be retried.",
         });
       }
 
