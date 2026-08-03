@@ -1,7 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { log } from "./server-context";
-
 export type ShowcasePromptKind = "cs" | "demo";
 
 type VapiMessage = {
@@ -134,7 +132,7 @@ export function showcasePromptTruthGuard(
       sanitizeShowcaseAssistantPayload(body.assistant);
       return originalJson(body);
     } catch (error) {
-      log.error("Showcase prompt truth guard rejected assistant payload", {
+      console.error("Showcase prompt truth guard rejected assistant payload", {
         path: req.path,
         error: error instanceof Error ? error.message : String(error),
       });
