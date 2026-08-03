@@ -26,18 +26,24 @@ function tokenIssuedAtMs(payload: JwtPayload): number {
 }
 
 async function loadActiveSessionUser(payload: JwtPayload): Promise<ActiveSessionUser | null> {
-  const [user] = await drizzle
-    .select({
-      id: sessionUsers.id,
-      email: sessionUsers.email,
-      sessionRevokedBefore: sessionUsers.sessionRevokedBefore,
-    })
-    .from(sessionUsers)
-    .where(eq(sessionUsers.id, payload.sub))
-    .limit(1);
-  if (!user) return null;
-  if (tokenIssuedAtMs(payload) <= user.sessionRevokedBefore.getTime()) return null;
-  return user;
+  // The signed JWT subject is the only tenant identity available before auth
+  // middleware establishes AsyncLocalStorage. Enter that exact RLS context for
+  // the revocation lookup; querying with no GUC would hide the user row and
+  // incorrectly reject every otherwise-valid session.
+  return tenantStore.run(payload.sub, async () => {
+    const [user] = await drizzle
+      .select({
+        id: sessionUsers.id,
+        email: sessionUsers.email,
+        sessionRevokedBefore: sessionUsers.sessionRevokedBefore,
+      })
+      .from(sessionUsers)
+      .where(eq(sessionUsers.id, payload.sub))
+      .limit(1);
+    if (!user) return null;
+    if (tokenIssuedAtMs(payload) <= user.sessionRevokedBefore.getTime()) return null;
+    return user;
+  });
 }
 
 /**
@@ -55,17 +61,21 @@ async function resolveTenantId(
   const requested = tokenTenantId?.trim() || headerTenantId;
   if (!requested || requested === userId) return userId;
 
-  const [membership] = await drizzle
-    .select({ id: secureTeamMembers.id })
-    .from(secureTeamMembers)
-    .where(
-      and(
-        eq(secureTeamMembers.tenantId, requested),
-        eq(secureTeamMembers.userId, userId),
-        isNull(secureTeamMembers.revokedAt),
-      ),
-    )
-    .limit(1);
+  // Membership self-read is deliberately available only in the member's own
+  // context. Do not query before setting the GUC or RLS will return no row.
+  const [membership] = await tenantStore.run(userId, () =>
+    drizzle
+      .select({ id: secureTeamMembers.id })
+      .from(secureTeamMembers)
+      .where(
+        and(
+          eq(secureTeamMembers.tenantId, requested),
+          eq(secureTeamMembers.userId, userId),
+          isNull(secureTeamMembers.revokedAt),
+        ),
+      )
+      .limit(1),
+  );
 
   if (membership) return requested;
 
