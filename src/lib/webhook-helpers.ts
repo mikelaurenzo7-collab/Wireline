@@ -98,11 +98,16 @@ type DeliveryAttemptOutcome = {
   lastError: string | null;
 };
 
-/** Keep delivery history and the endpoint summary synchronized in one commit. */
-async function persistDeliveryOutcome(outcome: DeliveryAttemptOutcome): Promise<void> {
+/**
+ * Keep delivery history and the endpoint summary synchronized in one commit,
+ * but only while the row still represents the exact leased attempt that
+ * produced this outcome. A worker that outlives its lease must never overwrite
+ * a newer retry or increment endpoint delivery totals for a stale success.
+ */
+async function persistDeliveryOutcome(outcome: DeliveryAttemptOutcome): Promise<boolean> {
   const attemptedAt = new Date();
-  await drizzle.transaction(async (tx) => {
-    await tx
+  return drizzle.transaction(async (tx) => {
+    const [updated] = await tx
       .update(schema.webhookDeliveries)
       .set({
         status: outcome.status,
@@ -112,7 +117,16 @@ async function persistDeliveryOutcome(outcome: DeliveryAttemptOutcome): Promise<
         nextAttemptAt: outcome.nextAttemptAt,
         deliveredAt: outcome.deliveredAt,
       })
-      .where(eq(schema.webhookDeliveries.id, outcome.deliveryId));
+      .where(
+        and(
+          eq(schema.webhookDeliveries.id, outcome.deliveryId),
+          eq(schema.webhookDeliveries.status, WEBHOOK_DELIVERY_PENDING),
+          eq(schema.webhookDeliveries.attempts, outcome.attempts),
+        ),
+      )
+      .returning({ id: schema.webhookDeliveries.id });
+
+    if (!updated) return false;
 
     await tx
       .update(schema.webhooks)
@@ -125,6 +139,7 @@ async function persistDeliveryOutcome(outcome: DeliveryAttemptOutcome): Promise<
           : {}),
       })
       .where(eq(schema.webhooks.id, outcome.webhookId));
+    return true;
   });
 }
 
@@ -308,7 +323,7 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
       : WEBHOOK_DELIVERY_PENDING;
   const deliveredAt = success ? new Date() : null;
 
-  await persistDeliveryOutcome({
+  const persisted = await persistDeliveryOutcome({
     deliveryId: deliveryIdBig,
     webhookId: hook.id,
     status: nextStatus,
@@ -318,6 +333,13 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
     deliveredAt,
     lastError,
   });
+  if (!persisted) {
+    log.info("Ignored stale webhook delivery outcome after a newer lease", {
+      deliveryId: deliveryIdBig.toString(),
+      attempt: nextAttempts,
+    });
+    return;
+  }
 
   if (reachedDead) {
     SentryEvents.webhookDeliveryFailed({
