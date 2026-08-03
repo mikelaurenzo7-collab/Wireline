@@ -5,6 +5,7 @@ import { buildCSP } from "../src/lib/csp";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
+// Exact-head release gate: assertions describe security semantics, not incidental local names.
 describe("security hardening contract", () => {
   it("auth limiters refuse when no distributed limiter is configured", () => {
     const mw = read("src/middleware/rate-limit-middleware.ts");
