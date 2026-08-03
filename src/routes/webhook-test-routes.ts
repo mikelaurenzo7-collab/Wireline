@@ -64,11 +64,6 @@ router.post(
         userId: req.user.id,
         webhookId: hook.id,
         ip: req.ip,
-        metadata: {
-          delivery_id: delivery.id.toString(),
-          delivery_status: result?.status || "unknown",
-          status_code: result?.lastStatusCode || null,
-        },
       })
       .catch(() => {});
 
