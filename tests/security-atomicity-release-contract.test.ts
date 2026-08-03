@@ -6,10 +6,11 @@ const root = path.resolve(process.cwd());
 const read = (relative: string) => fs.readFileSync(path.join(root, relative), "utf8");
 
 describe("security and external-operation atomicity", () => {
-  it("revokes issued sessions through a database-owned password invariant", () => {
+  it("revokes issued sessions and performs pre-auth reads inside the signed user context", () => {
     const migration = read("drizzle/migrations/0120_security_atomicity_team_sessions.sql");
     const auth = read("src/lib/auth-service.ts");
     const middleware = read("src/middleware/auth.ts");
+    const sessionRoutes = read("src/routes/auth-session-hardening-routes.ts");
 
     expect(migration).toContain("wireline_revoke_sessions_on_password_change");
     expect(migration).toContain("BEFORE UPDATE OF password_hash");
@@ -17,19 +18,27 @@ describe("security and external-operation atomicity", () => {
     expect(auth).toContain("await scryptAsync");
     expect(middleware).toContain("sessionRevokedBefore");
     expect(middleware).toContain("tokenIssuedAtMs(payload) <= user.sessionRevokedBefore.getTime()");
+    expect(middleware).toContain("tenantStore.run(payload.sub");
+    expect(middleware).toContain("tenantStore.run(userId");
+    expect(sessionRoutes).toContain("tenantStore.run(payload.sub");
+    expect(sessionRoutes).toContain("tenantStore.run(userId");
   });
 
-  it("claims invitations only for the bound email and issues verified workspace sessions", () => {
+  it("claims invitations only for the bound identity and lists verified workspaces", () => {
     const source = read("src/routes/team-routes.ts");
     const page = read("src/pages/AcceptInvite.tsx");
     const baseRls = read("drizzle/migrations/0122_team_workspace_rls.sql");
     const consolidatedRls = read(
       "drizzle/migrations/0123_team_workspace_rls_policy_consolidation.sql",
     );
+    const claimFunction = read("drizzle/migrations/0124_team_invitation_claim_function.sql");
+    const directoryFunction = read(
+      "drizzle/migrations/0125_user_workspace_directory_function.sql",
+    );
 
-    expect(source).toContain("invitation_token_hash = ${tokenHash}");
-    expect(source).toContain("lower(email) = lower(${req.user.email})");
-    expect(source).toContain("invitation_token_hash = NULL");
+    expect(source).toContain("wireline_accept_team_invitation");
+    expect(source).toContain("wireline_list_user_workspaces");
+    expect(source).toContain("tenantStore.run(req.user.id");
     expect(source).toContain("tenantId: accepted.tenant_id");
     expect(source).toContain('"/api/team/workspaces/:tenantId/select"');
     expect(source).toContain("/accept-invite#token=");
@@ -46,6 +55,15 @@ describe("security and external-operation atomicity", () => {
     expect(consolidatedRls).toContain("CREATE POLICY workspace_insert");
     expect(consolidatedRls).toContain("CREATE POLICY workspace_update");
     expect(consolidatedRls).toContain("CREATE POLICY workspace_delete");
+    expect(claimFunction).toContain("SECURITY DEFINER");
+    expect(claimFunction).toContain(
+      "wireline_current_user_id() IS DISTINCT FROM p_accepting_user_id",
+    );
+    expect(claimFunction).toContain("invitation_token_hash = NULL");
+    expect(claimFunction).toContain("lower(member.email) = lower(p_accepting_email)");
+    expect(directoryFunction).toContain("SECURITY DEFINER");
+    expect(directoryFunction).toContain("wireline_current_user_id() IS DISTINCT FROM p_user_id");
+    expect(directoryFunction).toContain("member.user_id = p_user_id");
   });
 
   it("reserves each number before dialing and preserves the lock after uncertain outcomes", () => {
