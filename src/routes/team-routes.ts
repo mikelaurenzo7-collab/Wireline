@@ -1,5 +1,4 @@
 import { AppError } from "../lib/api-error";
-/* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Response } from "express";
 import { createHash, randomBytes } from "node:crypto";
 import { log, drizzle, requirePermission, tenantStore } from "../lib/server-context";
