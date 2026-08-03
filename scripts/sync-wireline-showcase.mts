@@ -1,7 +1,12 @@
 #!/usr/bin/env tsx
 /**
- * Push showcase prompts + Liam-identical Flux STT to every Wireline
- * public line (employees + demo agents).
+ * Push the source-controlled public showcase prompts and speech pipeline to all
+ * Wireline public lines.
+ *
+ * The script preflights every number and assistant before performing any PATCH.
+ * It is deterministic and idempotent, but external APIs are not transactional;
+ * a failed PATCH exits non-zero so the production deployment does not certify a
+ * partially synchronized public fleet.
  *
  * Usage:
  *   VAPI_PRIVATE_KEY=… VAPI_WEBHOOK_SECRET=… npx tsx scripts/sync-wireline-showcase.mts
@@ -16,6 +21,7 @@ import {
   buildShowcaseAssistantPayload,
   SHOWCASE_WEBHOOK_URL,
 } from "../src/lib/showcase-assistant.ts";
+import { sanitizeShowcaseAssistantPayload } from "../src/lib/showcase-prompt-truth-guard.ts";
 import { sanitizePhone } from "../src/lib/vapi-helpers.ts";
 import { VAPI_OPENAI_FALLBACK_MODEL } from "../src/lib/ai-models.ts";
 
@@ -23,14 +29,29 @@ const VAPI_BASE = "https://api.vapi.ai";
 const PATCH_DELAY_MS = 600;
 
 function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+type VapiNumber = {
+  id: string;
+  number?: string | null;
+  assistantId?: string | null;
+};
+
+type SyncTarget = {
+  agent: ContactAgent;
+  kind: "cs" | "demo";
+  tel: string;
+  numberId: string;
+  assistantId: string;
+  payload: Record<string, unknown>;
+};
 
 type SyncResult = {
   agent: string;
   tel: string;
-  status: "patched" | "skipped" | "failed";
-  assistantId?: string;
+  status: "patched" | "failed";
+  assistantId: string;
   transcriber?: string;
   reason?: string;
 };
@@ -38,7 +59,7 @@ type SyncResult = {
 async function vapiFetch(path: string, init?: RequestInit): Promise<any> {
   const key = process.env.VAPI_PRIVATE_KEY?.trim();
   if (!key) throw new Error("VAPI_PRIVATE_KEY not set");
-  const res = await fetch(`${VAPI_BASE}${path}`, {
+  const response = await fetch(`${VAPI_BASE}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${key}`,
@@ -46,20 +67,20 @@ async function vapiFetch(path: string, init?: RequestInit): Promise<any> {
       ...(init?.headers || {}),
     },
   });
-  const body = await res.text();
+  const body = await response.text();
   let parsed: any = null;
   try {
     parsed = body ? JSON.parse(body) : null;
   } catch {
-    /* ignore */
+    // Error reporting below includes the bounded raw body.
   }
-  if (!res.ok) {
-    const msg = parsed?.message
+  if (!response.ok) {
+    const message = parsed?.message
       ? Array.isArray(parsed.message)
         ? parsed.message.join("; ")
         : parsed.message
       : body.slice(0, 300);
-    throw new Error(`Vapi ${res.status}: ${msg}`);
+    throw new Error(`Vapi ${response.status}: ${message}`);
   }
   return parsed;
 }
@@ -89,95 +110,132 @@ async function patchAssistant(assistantId: string, payload: Record<string, unkno
   }
 }
 
-async function syncOne(
-  agent: ContactAgent,
-  kind: "cs" | "demo",
-  lookup: Map<string, { id: string; assistantId?: string | null }>,
-): Promise<SyncResult> {
-  const e164 = sanitizePhone(agent.tel) || agent.tel;
-  const num = lookup.get(e164);
-  if (!num) {
-    return { agent: agent.name, tel: agent.tel, status: "skipped", reason: "no Vapi number" };
-  }
-  if (!num.assistantId) {
-    return {
-      agent: agent.name,
-      tel: agent.tel,
-      status: "skipped",
-      reason: "number has no assistantId",
-    };
+function publicCatalog(): Array<{ agent: ContactAgent; kind: "cs" | "demo" }> {
+  return [
+    ...WIRELINE_CONTACT_AGENTS.map((agent) => ({ agent, kind: "cs" as const })),
+    ...WIRELINE_DEMO_AGENTS.map((agent) => ({ agent, kind: "demo" as const })),
+  ];
+}
+
+function preflightTargets(numbers: VapiNumber[], webhookSecret: string): SyncTarget[] {
+  const lookup = new Map<string, VapiNumber>();
+  for (const number of numbers) {
+    const normalized = number.number ? sanitizePhone(number.number) || number.number : "";
+    if (normalized) lookup.set(normalized, number);
   }
 
-  try {
-    const payload = buildShowcaseAssistantPayload(agent, kind, {
-      serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET,
-    });
-    await patchAssistant(num.assistantId, payload);
-
-    const numberPayload: Record<string, unknown> = {
-      server: { url: SHOWCASE_WEBHOOK_URL },
-    };
-    if (process.env.VAPI_WEBHOOK_SECRET) {
-      (numberPayload.server as any).secret = process.env.VAPI_WEBHOOK_SECRET;
+  const missing: string[] = [];
+  const targets: SyncTarget[] = [];
+  for (const { agent, kind } of publicCatalog()) {
+    const tel = sanitizePhone(agent.tel) || agent.tel;
+    const number = lookup.get(tel);
+    if (!number) {
+      missing.push(`${agent.name} ${agent.tel}: no Vapi number`);
+      continue;
     }
-    await vapiFetch(`/phone-number/${num.id}`, {
+    if (!number.assistantId) {
+      missing.push(`${agent.name} ${agent.tel}: number has no assistantId`);
+      continue;
+    }
+
+    const payload = sanitizeShowcaseAssistantPayload(
+      buildShowcaseAssistantPayload(agent, kind, {
+        webhookSecret,
+      }) as Record<string, unknown>,
+    );
+    targets.push({
+      agent,
+      kind,
+      tel,
+      numberId: number.id,
+      assistantId: number.assistantId,
+      payload,
+    });
+  }
+
+  if (missing.length) {
+    throw new Error(`Showcase preflight failed before provider mutation:\n- ${missing.join("\n- ")}`);
+  }
+  if (targets.length !== publicCatalog().length) {
+    throw new Error(
+      `Showcase preflight expected ${publicCatalog().length} targets and built ${targets.length}.`,
+    );
+  }
+  if (new Set(targets.map((target) => target.numberId)).size !== targets.length) {
+    throw new Error("Showcase preflight found duplicate Vapi number assignments.");
+  }
+  if (new Set(targets.map((target) => target.assistantId)).size !== targets.length) {
+    throw new Error("Showcase preflight found duplicate assistant assignments.");
+  }
+
+  return targets;
+}
+
+async function syncOne(target: SyncTarget, webhookSecret: string): Promise<SyncResult> {
+  try {
+    await patchAssistant(target.assistantId, target.payload);
+
+    await vapiFetch(`/phone-number/${target.numberId}`, {
       method: "PATCH",
-      body: JSON.stringify(numberPayload),
+      body: JSON.stringify({
+        server: {
+          url: SHOWCASE_WEBHOOK_URL,
+          secret: webhookSecret,
+        },
+      }),
     });
 
     return {
-      agent: agent.name,
-      tel: agent.tel,
+      agent: target.agent.name,
+      tel: target.agent.tel,
       status: "patched",
-      assistantId: num.assistantId,
-      transcriber: (payload.transcriber as any)?.model,
+      assistantId: target.assistantId,
+      transcriber: (target.payload.transcriber as any)?.model,
     };
-  } catch (e: any) {
+  } catch (error) {
     return {
-      agent: agent.name,
-      tel: agent.tel,
+      agent: target.agent.name,
+      tel: target.agent.tel,
       status: "failed",
-      assistantId: num.assistantId ?? undefined,
-      reason: e?.message || String(e),
+      assistantId: target.assistantId,
+      reason: error instanceof Error ? error.message : String(error),
     };
   }
 }
 
 async function main() {
-  const numbers = await vapiFetch("/phone-number?limit=100");
-  const lookup = new Map<string, { id: string; assistantId?: string | null }>();
-  for (const n of numbers) {
-    if (n.number) lookup.set(n.number, { id: n.id, assistantId: n.assistantId });
-  }
+  const webhookSecret = process.env.VAPI_WEBHOOK_SECRET?.trim();
+  if (!webhookSecret) throw new Error("VAPI_WEBHOOK_SECRET not set");
 
+  const response = await vapiFetch("/phone-number?limit=100");
+  if (!Array.isArray(response)) throw new Error("Vapi phone-number response was not an array.");
+  const targets = preflightTargets(response as VapiNumber[], webhookSecret);
+
+  console.log(`Showcase preflight passed for ${targets.length} public lines.`);
   const results: SyncResult[] = [];
-  for (const a of WIRELINE_CONTACT_AGENTS) {
-    results.push(await syncOne(a, "cs", lookup));
-    await sleep(PATCH_DELAY_MS);
-  }
-  for (const a of WIRELINE_DEMO_AGENTS) {
-    results.push(await syncOne(a, "demo", lookup));
+  for (const target of targets) {
+    results.push(await syncOne(target, webhookSecret));
     await sleep(PATCH_DELAY_MS);
   }
 
-  const counts = { patched: 0, skipped: 0, failed: 0 };
-  for (const r of results) {
-    counts[r.status]++;
-    const icon = r.status === "patched" ? "✓" : r.status === "skipped" ? "○" : "✗";
+  const counts = { patched: 0, failed: 0 };
+  for (const result of results) {
+    counts[result.status]++;
+    const icon = result.status === "patched" ? "✓" : "✗";
     const extra =
-      r.status === "patched"
-        ? ` → ${r.transcriber}`
-        : r.reason
-          ? ` (${r.reason})`
+      result.status === "patched"
+        ? ` → ${result.transcriber || "transcriber configured"}`
+        : result.reason
+          ? ` (${result.reason})`
           : "";
-    console.log(`  ${icon} ${r.agent} ${r.tel}${extra}`);
+    console.log(`  ${icon} ${result.agent} ${result.tel}${extra}`);
   }
 
   console.log("\nSummary:", counts);
-  if (counts.failed > 0) process.exit(1);
+  if (counts.failed > 0 || counts.patched !== targets.length) process.exit(1);
 }
 
-main().catch((e) => {
-  console.error(e?.message || e);
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : error);
   process.exit(1);
 });
