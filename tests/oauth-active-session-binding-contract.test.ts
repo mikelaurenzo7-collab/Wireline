@@ -8,6 +8,10 @@ import { isSessionGenerationActive } from "../src/lib/session-generation";
 
 const oauthHelpers = readFileSync(resolve(process.cwd(), "src/lib/oauth-helpers.ts"), "utf8");
 const authMiddleware = readFileSync(resolve(process.cwd(), "src/middleware/auth.ts"), "utf8");
+const sessionRoutes = readFileSync(
+  resolve(process.cwd(), "src/routes/auth-session-hardening-routes.ts"),
+  "utf8",
+);
 
 const basePayload: JwtPayload = {
   aud: "authenticated",
@@ -32,10 +36,14 @@ describe("canonical active-session generation fence", () => {
   });
 
   it("rejects malformed present generation claims instead of downgrading them to legacy", () => {
-    for (const session_version of ["7", null, undefined, -1, 7.5]) {
+    for (const malformedVersion of ["7", null, undefined, -1, 7.5]) {
       expect(
         isSessionGenerationActive(
-          { ...basePayload, iat_ms: 1_700_000_001_000, session_version },
+          {
+            ...basePayload,
+            iat_ms: 1_700_000_001_000,
+            session_version: malformedVersion,
+          },
           sessionState,
         ),
       ).toBe(false);
@@ -76,19 +84,26 @@ describe("canonical active-session generation fence", () => {
   });
 });
 
-describe("OAuth integration active-session binding", () => {
-  it("shares the same executable generation fence as normal authentication", () => {
+describe("active-session consumer wiring", () => {
+  it("shares one executable generation fence across every session consumer", () => {
     expect(oauthHelpers).toContain('import { isSessionGenerationActive } from "./session-generation"');
     expect(authMiddleware).toContain(
       'import { isSessionGenerationActive } from "../lib/session-generation"',
     );
-    expect(oauthHelpers).toContain("isSessionGenerationActive(payload, user)");
-    expect(authMiddleware).toContain("isSessionGenerationActive(payload, user)");
-    expect(oauthHelpers).not.toContain("function tokenSessionVersion");
-    expect(authMiddleware).not.toContain("function tokenSessionVersion");
+    expect(sessionRoutes).toContain(
+      'import { isSessionGenerationActive } from "../lib/session-generation"',
+    );
+
+    for (const consumer of [oauthHelpers, authMiddleware, sessionRoutes]) {
+      expect(consumer).toContain("isSessionGenerationActive(payload, user)");
+      expect(consumer).not.toContain("function tokenSessionVersion");
+      expect(consumer).not.toContain("function payloadSessionVersion");
+      expect(consumer).not.toContain("function tokenIssuedAtMs");
+      expect(consumer).not.toContain("function issuedAtMs");
+    }
   });
 
-  it("still binds the active session user to the signed initiating account", () => {
+  it("still binds the active OAuth session user to the signed initiating account", () => {
     expect(oauthHelpers).toContain("sessionUserId === state.userId");
     expect(oauthHelpers).toContain(
       "if (!payload || !(await isActiveOAuthSession(payload))) return null",
