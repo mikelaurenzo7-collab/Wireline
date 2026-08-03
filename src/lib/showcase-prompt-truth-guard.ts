@@ -103,7 +103,10 @@ export function sanitizeShowcaseAssistantPayload<T extends ShowcaseAssistantPayl
   if (forbidden) {
     throw new Error(`Showcase prompt contains forbidden claim: ${forbidden}`);
   }
-  if (kind === "demo" && /have someone follow up|someone will reach out/i.test(prompt)) {
+  // The prompt deliberately contains a negative rule stating that the agent
+  // must never say "someone will reach out". Reject the affirmative fallback
+  // phrase that caused the defect without rejecting that prohibition itself.
+  if (kind === "demo" && /have someone follow up/i.test(prompt)) {
     throw new Error("Demo showcase prompt promises an unavailable human follow-up.");
   }
 
