@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+import { basePlanInvoiceShare } from "../src/lib/stripe-helpers";
+import { STRIPE_PLANS, planPriceId } from "../src/lib/plan-catalog";
+
 const routes = readFileSync(new URL("../src/routes/job-routes.ts", import.meta.url), "utf8");
 const queue = readFileSync(new URL("../src/lib/job-queue.ts", import.meta.url), "utf8");
 
@@ -23,9 +26,79 @@ describe("durable job attempt fencing", () => {
     expect(queue).toContain('status: exhausted ? "dead" : "pending"');
   });
 
+  it("fences stale recovery to the selected attempt before resetting it", () => {
+    const recovery = queue.slice(queue.indexOf("export async function recoverStaleJobs"));
+    expect(recovery).toContain("const expectedAttempts = Number(job.attempts || 0)");
+    expect(recovery).toContain("eq(schema.jobs.attempts, expectedAttempts)");
+    expect(recovery).toContain("startedAt: null");
+    expect(recovery).toContain("finishedAt: exhausted ? new Date() : null");
+  });
+
   it("uses fenced semantics in both serverless and persistent workers", () => {
     expect(routes).toContain("completeClaimedJob");
     expect(queue).toContain("await completeClaimedJob(db, job)");
     expect(queue).not.toContain("return base.startWorker(");
+  });
+});
+
+const starter = STRIPE_PLANS.find((plan) => plan.id === "starter");
+if (!starter) throw new Error("Starter plan is missing from the Stripe catalog");
+const starterPriceId = planPriceId(starter, "month");
+
+function invoiceWithLines(lines: Array<Record<string, unknown>>) {
+  return {
+    lines: { data: lines },
+  } as unknown as Parameters<typeof basePlanInvoiceShare>[0];
+}
+
+describe("Stripe invoice-line runtime shape", () => {
+  it("recognizes the current Basil/Dahlia pricing.price_details shape", () => {
+    expect(starterPriceId).toBeTruthy();
+    const invoice = invoiceWithLines([
+      {
+        amount: 1500,
+        pricing: {
+          type: "price_details",
+          price_details: { price: starterPriceId },
+        },
+      },
+      {
+        amount: 500,
+        pricing: {
+          type: "price_details",
+          price_details: { price: "price_unmapped_addon" },
+        },
+      },
+    ]);
+
+    expect(basePlanInvoiceShare(invoice)).toBe(0.75);
+  });
+
+  it("keeps compatibility with legacy expanded invoice-line prices", () => {
+    const invoice = invoiceWithLines([
+      {
+        amount: 1900,
+        price: {
+          id: "price_legacy_expanded",
+          metadata: { wireline_plan_id: "starter" },
+        },
+      },
+    ]);
+
+    expect(basePlanInvoiceShare(invoice)).toBe(1);
+  });
+
+  it("does not reverse subscription allowance for an add-on-only invoice", () => {
+    const invoice = invoiceWithLines([
+      {
+        amount: 1500,
+        pricing: {
+          type: "price_details",
+          price_details: { price: "price_unmapped_addon" },
+        },
+      },
+    ]);
+
+    expect(basePlanInvoiceShare(invoice)).toBeNull();
   });
 });
