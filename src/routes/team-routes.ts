@@ -42,6 +42,14 @@ function requireUuid(value: string, label: string): string {
   return value.toLowerCase();
 }
 
+function requireSessionVersion(req: AuthenticatedRequest): number {
+  const version = Number(req.user.sessionVersion);
+  if (!Number.isSafeInteger(version) || version < 0) {
+    throw AppError.fromHttpStatus(401, "Session state is invalid.");
+  }
+  return version;
+}
+
 router.get(
   "/api/team",
   authenticateUser,
@@ -141,9 +149,6 @@ router.post(
       });
 
       const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
-      // Fragments never reach access logs or referrer headers. AcceptInvite stores
-      // the token in sessionStorage before sending an unauthenticated recipient
-      // through signup, then removes it immediately after acceptance.
       const acceptPath = `/accept-invite#token=${encodeURIComponent(plaintextToken)}`;
       const inviteUrl = `${appUrl}${acceptPath}`;
       const invitedBy = req.user.email || "A colleague";
@@ -225,6 +230,7 @@ router.post(
       const sessionToken = generateToken({
         id: req.user.id,
         email: req.user.email,
+        sessionVersion: requireSessionVersion(req),
         tenantId: accepted.tenant_id,
       });
       setSessionCookie(res, sessionToken);
@@ -308,7 +314,12 @@ router.post(
       );
       if (!membership) throw AppError.fromHttpStatus(404, "Workspace not found.");
     }
-    const token = generateToken({ id: req.user.id, email: req.user.email, tenantId });
+    const token = generateToken({
+      id: req.user.id,
+      email: req.user.email,
+      sessionVersion: requireSessionVersion(req),
+      tenantId,
+    });
     setSessionCookie(res, token);
     return res.json({ success: true, tenant_id: tenantId });
   },
