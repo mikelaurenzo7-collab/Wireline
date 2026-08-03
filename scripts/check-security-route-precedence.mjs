@@ -51,6 +51,8 @@ const contracts = [
       "outboundDialReservations",
       ".onConflictDoNothing()",
       "wireline_dial_operation_id",
+      "provider_outcome_ambiguous",
+      "post_provider_persistence_failed",
     ],
   },
   {
@@ -60,6 +62,8 @@ const contracts = [
       "checkoutOperations",
       "idempotencyKey: `wireline-customer-",
       "idempotencyKey: `wireline-checkout-",
+      "stripe_checkout_outcome_unknown",
+      "post_stripe_persistence_failed",
     ],
   },
   {
@@ -84,18 +88,37 @@ for (const contract of contracts) {
   }
 }
 
-const authSource = read("src/routes/auth-routes.ts");
-for (const sensitivePath of ["/api/auth/signup-intent", "/api/auth/resend-verification"]) {
-  const pathIndex = authSource.indexOf(`"${sensitivePath}"`);
+function requireRouteMiddleware(file, routePath, middleware) {
+  const source = read(file);
+  const pathIndex = source.indexOf(`"${routePath}"`);
   if (pathIndex === -1) {
-    failures.push(`Missing expected auth route ${sensitivePath}`);
-    continue;
+    failures.push(`Missing expected auth route ${routePath} in ${file}`);
+    return;
   }
-  const routeWindow = authSource.slice(pathIndex, pathIndex + 900);
-  if (!routeWindow.includes("authenticateUser")) {
-    failures.push(`${sensitivePath} must remain authenticated even though /api/auth has public routes`);
+  const routeWindow = source.slice(pathIndex, pathIndex + 1200);
+  if (!routeWindow.includes(middleware)) {
+    failures.push(
+      `${routePath} must include ${middleware}; the /api/auth namespace contains public routes and cannot be trusted as an allowlist`,
+    );
   }
 }
+
+// The authorization matrix deliberately contains public auth endpoints, but
+// these routes mutate tenant state or mint a new session and must remain
+// independently default-denied. This guard catches middleware removal even if
+// the broad namespace classifier would otherwise label the route public.
+for (const sensitivePath of [
+  "/api/auth/signup-intent",
+  "/api/auth/resend-verification",
+  "/api/auth/bootstrap",
+]) {
+  requireRouteMiddleware("src/routes/auth-routes.ts", sensitivePath, "authenticateUser");
+}
+requireRouteMiddleware(
+  "src/routes/auth-session-hardening-routes.ts",
+  "/api/auth/refresh",
+  "authenticateUser",
+);
 
 if (failures.length) {
   console.error("Security route precedence contract failed:\n- " + failures.join("\n- "));
