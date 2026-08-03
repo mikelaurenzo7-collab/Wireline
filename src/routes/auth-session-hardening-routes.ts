@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from "express";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { drizzle, tenantStore } from "../lib/server-context";
 import { verifyInternalJwt, type JwtPayload } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
@@ -9,6 +9,7 @@ import {
   setSessionCookie,
 } from "../lib/session-cookie";
 import { generateToken, isOwnerEmail } from "../lib/auth-service";
+import { sharedWorkspacesEnabled } from "../lib/shared-workspace-readiness";
 import { authenticateUser } from "../middleware/auth";
 import { migrateSessionRateLimiter } from "../middleware/rate-limit-middleware";
 import { sessionUsers, secureTeamMembers } from "../db/security-schema";
@@ -50,7 +51,7 @@ async function loadValidUser(payload: JwtPayload) {
 
 async function validatedTenantId(payload: JwtPayload, userId: string): Promise<string> {
   const requested = typeof payload.tenant_id === "string" ? payload.tenant_id : "";
-  if (!requested || requested === userId) return userId;
+  if (!requested || requested === userId || !sharedWorkspacesEnabled()) return userId;
   const [membership] = await tenantStore.run(userId, () =>
     drizzle
       .select({ id: secureTeamMembers.id })
@@ -59,6 +60,7 @@ async function validatedTenantId(payload: JwtPayload, userId: string): Promise<s
         and(
           eq(secureTeamMembers.tenantId, requested),
           eq(secureTeamMembers.userId, userId),
+          isNotNull(secureTeamMembers.acceptedAt),
           isNull(secureTeamMembers.revokedAt),
         ),
       )
