@@ -57,6 +57,8 @@ describe("distributed public health boundary", () => {
 
     expect(functionSource).toContain("VAPI_VOICE_FALLBACK_MODEL");
     expect(functionSource).toContain("voiceFallbackPromise");
+    expect(functionSource).toContain("const primaryVoiceModel: string");
+    expect(functionSource).toContain("const fallbackVoiceModel: string");
     expect(functionSource).not.toContain("GEMINI_API_KEY");
     expect(probeSource).toContain("/v1/models/${encodeURIComponent(model)}");
     expect(probeSource).toContain('method: "GET"');
