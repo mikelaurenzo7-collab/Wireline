@@ -62,18 +62,18 @@ describe("spend guard integrity", () => {
     expect(route).not.toContain("hard_cap: false,");
   });
 
-  it("keeps AI spend telemetry provider-neutral with backward-compatible aliases", () => {
+  it("keeps AI spend telemetry provider-neutral with exact legacy behavior", () => {
     expect(
       resolveAiDailySpendAlertUsd({
         WIRELINE_AI_DAILY_ALERT_USD: "12.5",
-        CLAUDE_DAILY_ALERT_USD: "9",
+        CLAUDE_DAILY_ALERT_USD: "900",
         CLAUDE_MONTHLY_BUDGET_USD: "400",
       }),
     ).toBe(12.5);
     expect(
       resolveAiDailySpendAlertUsd({
         WIRELINE_AI_DAILY_ALERT_USD: undefined,
-        CLAUDE_DAILY_ALERT_USD: "9",
+        CLAUDE_DAILY_ALERT_USD: "900",
         CLAUDE_MONTHLY_BUDGET_USD: "400",
       }),
     ).toBe(9);
@@ -87,7 +87,7 @@ describe("spend guard integrity", () => {
     expect(
       resolveAiDailySpendAlertUsd({
         WIRELINE_AI_DAILY_ALERT_USD: "not-a-number",
-        CLAUDE_DAILY_ALERT_USD: "8",
+        CLAUDE_DAILY_ALERT_USD: "800",
         CLAUDE_MONTHLY_BUDGET_USD: "400",
       }),
     ).toBe(0);
