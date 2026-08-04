@@ -32,10 +32,10 @@ describe("AI cost-protection contract", () => {
   it("signup and OAuth reconciliation seed the correct AI spend budget transactionally", () => {
     const trialGate = read("src/lib/trial-gate.ts");
     expect(trialGate).toContain("ensureDefaultAiSpendBudget");
-    expect(trialGate).toContain("schema.subscriptions.plan");
-    expect(trialGate).toContain(
-      "ensureDefaultAiSpendBudget(userId, subscription?.plan ?? null, tx)",
-    );
+    expect(trialGate).toContain("schema.subscriptions.status");
+    expect(trialGate).toContain('subscription?.status === "active"');
+    expect(trialGate).toContain('subscription?.status === "trialing"');
+    expect(trialGate).toContain("ensureDefaultAiSpendBudget(userId, fundedPlanId, tx)");
     const snapshot = read("src/lib/workspace-usage-snapshot.ts");
     expect(snapshot).toMatch(/executor:\s*any\s*=\s*drizzle/);
     expect(snapshot).toMatch(/await executor\s*\.insert\(schema\.spendBudgets\)/);
