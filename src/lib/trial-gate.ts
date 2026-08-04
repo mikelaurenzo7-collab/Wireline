@@ -61,8 +61,8 @@ interface TrialCheck {
  * This is required bootstrap state, not best-effort setup. Callers pass their
  * open transaction so a settings or spend-budget failure aborts user creation
  * before any authenticated session can be issued. Existing OAuth identities
- * also call this routine; derive the budget from the actual subscription row
- * rather than signup intent so reconciliation cannot downgrade a paid tenant.
+ * also call this routine; derive the budget from an active/trialing subscription
+ * rather than signup intent or a stale canceled plan.
  */
 export async function startTrialForUser(
   userId: string,
@@ -87,13 +87,20 @@ export async function startTrialForUser(
     .onConflictDoNothing();
 
   const [subscription] = await tx
-    .select({ plan: schema.subscriptions.plan })
+    .select({
+      plan: schema.subscriptions.plan,
+      status: schema.subscriptions.status,
+    })
     .from(schema.subscriptions)
     .where(eq(schema.subscriptions.userId, userId))
     .limit(1);
+  const fundedPlanId =
+    subscription?.status === "active" || subscription?.status === "trialing"
+      ? subscription.plan
+      : null;
 
   const { ensureDefaultAiSpendBudget } = await import("./workspace-usage-snapshot");
-  await ensureDefaultAiSpendBudget(userId, subscription?.plan ?? null, tx);
+  await ensureDefaultAiSpendBudget(userId, fundedPlanId, tx);
 }
 
 export async function saveSignupAttribution(
