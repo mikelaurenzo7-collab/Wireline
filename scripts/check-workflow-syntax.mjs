@@ -12,6 +12,15 @@ if (workflowFiles.length === 0) {
 
 const failures = [];
 const mutableNpmInstallPattern = /^\s*(?:-\s*)?run:\s*npm install(?:\s|$)/m;
+const publicModelStatusReadinessPattern = /curl[^\n]*\/api\/health\/public\b/;
+const actionRefPattern =
+  /^\s*(?:-\s*)?uses:\s*(actions\/checkout|actions\/setup-node|actions\/github-script|github\/codeql-action\/(?:init|analyze|upload-sarif))@v(\d+)\s*$/gm;
+const minimumActionMajors = new Map([
+  ["actions/checkout", 7],
+  ["actions/setup-node", 7],
+  ["actions/github-script", 9],
+  ["github/codeql-action", 4],
+]);
 
 for (const name of workflowFiles) {
   const path = resolve(workflowsDir, name);
@@ -27,6 +36,44 @@ for (const name of workflowFiles) {
         name,
         message: "workflow dependency installs must use npm ci with the committed lockfile",
       });
+    }
+
+    if (publicModelStatusReadinessPattern.test(source)) {
+      failures.push({
+        name,
+        message:
+          "process readiness must not call /api/health/public; probe the local application surface instead",
+      });
+    }
+
+    for (const match of source.matchAll(actionRefPattern)) {
+      const action = match[1];
+      const canonicalAction = action.startsWith("github/codeql-action/")
+        ? "github/codeql-action"
+        : action;
+      const major = Number.parseInt(match[2], 10);
+      const minimum = minimumActionMajors.get(canonicalAction);
+      if (minimum != null && major < minimum) {
+        failures.push({
+          name,
+          message: `${canonicalAction}@v${major} is below the supported v${minimum} minimum`,
+        });
+      }
+    }
+
+    if (source.includes("actions/github-script@v9")) {
+      if (/require\(["']@actions\/github["']\)/.test(source)) {
+        failures.push({
+          name,
+          message: "github-script v9 workflows must use the injected GitHub client",
+        });
+      }
+      if (/^\s*(?:const|let)\s+getOctokit\b/m.test(source)) {
+        failures.push({
+          name,
+          message: "github-script v9 injects getOctokit; const/let redeclaration is invalid",
+        });
+      }
     }
   } catch (error) {
     failures.push({
