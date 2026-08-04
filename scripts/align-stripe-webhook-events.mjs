@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Keep the production Stripe webhook endpoint's enabled_events aligned with
- * the events src/routes/billing-routes.ts actually handles.
+ * every event handled by the canonical billing router or its exact-path
+ * financial-integrity preflight.
  *
  * Default mode is read-only: it reports drift and exits 1 so it can gate a
  * release. Pass --apply to update the endpoint in place (URL and signing
@@ -24,18 +25,30 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const apply = process.argv.includes("--apply");
 
-// Source of truth: the `case "<event>"` arms of the webhook switch in
-// billing-routes.ts. Parsing the route keeps this script from drifting when a
-// handler is added or removed.
+function extractHandledEvents(source) {
+  return [
+    ...source.matchAll(/(?:case\s+|event(?:Type|\.type)\s*===\s*)"([a-z_]+(?:\.[a-z_]+)+)"/g),
+  ].map((match) => match[1]);
+}
+
+// Source of truth: the switch arms in the canonical router plus exact event
+// comparisons in the preflight mounted before it. Parsing both owners prevents
+// an event implemented at the stricter boundary from being silently omitted
+// from Stripe's endpoint subscription.
 const billingRoutes = readFileSync(join(ROOT, "src/routes/billing-routes.ts"), "utf8");
+const financialPreflight = readFileSync(
+  join(ROOT, "src/middleware/stripe-runtime-allowance-retry.ts"),
+  "utf8",
+);
 const handledEvents = [
-  ...new Set(
-    [...billingRoutes.matchAll(/case "([a-z_]+(?:\.[a-z_]+)+)":/g)].map((match) => match[1]),
-  ),
+  ...new Set([
+    ...extractHandledEvents(billingRoutes),
+    ...extractHandledEvents(financialPreflight),
+  ]),
 ].sort();
 
 if (!handledEvents.length) {
-  console.error("Could not extract any handled webhook events from billing-routes.ts.");
+  console.error("Could not extract any handled Stripe webhook events.");
   process.exit(1);
 }
 
