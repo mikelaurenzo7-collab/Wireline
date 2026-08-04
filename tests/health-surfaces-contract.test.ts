@@ -76,5 +76,6 @@ describe("health surfaces contract", () => {
     expect(source).toContain('controller.abort(new Error("model probe timed out"))');
     expect(source).toContain("signal: controller.signal");
     expect(source).toContain("clearTimeout(timeout)");
+    expect(source).toMatch(/router\.get\(\s*"\/models",\s*healthRateLimiter,\s*authenticateUser/);
   });
 });
