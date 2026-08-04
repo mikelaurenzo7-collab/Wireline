@@ -36,6 +36,7 @@ import { Router, Request, Response } from "express";
 import { google } from "googleapis";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
+import { sessionUsers } from "../db/security-schema";
 import { eq, lt } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { generateToken, isOwnerEmail } from "../lib/auth-service";
@@ -686,20 +687,35 @@ router.post("/api/auth/oauth/exchange", oauthRateLimiter, async (req: Request, r
   ) {
     throw AppError.fromHttpStatus(400, "Invalid or expired code");
   }
-  clearOAuthBridgeStateCookie(res);
-  const sessionToken = generateToken({ id: entry.user.id, email: entry.user.email });
-  setSessionCookie(res, sessionToken);
 
-  const [sub] = await drizzle
-    .select({ plan: schema.subscriptions.plan })
-    .from(schema.subscriptions)
-    .where(eq(schema.subscriptions.userId, entry.user.id))
-    .limit(1);
+  const [[session], [sub]] = await Promise.all([
+    drizzle
+      .select({ sessionVersion: sessionUsers.sessionVersion })
+      .from(sessionUsers)
+      .where(eq(sessionUsers.id, entry.user.id))
+      .limit(1),
+    drizzle
+      .select({ plan: schema.subscriptions.plan })
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.userId, entry.user.id))
+      .limit(1),
+  ]);
+  if (!session) {
+    throw AppError.fromHttpStatus(503, "OAuth user session state is unavailable.");
+  }
 
   const { resolveAccountType } = await import("../lib/account-type");
   const { ensureDefaultAccount } = await import("../lib/account-service");
   const fallbackAccountType = resolveAccountType(sub?.plan);
   const account_type = (await ensureDefaultAccount(entry.user.id, fallbackAccountType)).type;
+
+  const sessionToken = generateToken({
+    id: entry.user.id,
+    email: entry.user.email,
+    sessionVersion: session.sessionVersion,
+  });
+  clearOAuthBridgeStateCookie(res);
+  setSessionCookie(res, sessionToken);
 
   return res.json({
     ...authSuccessBody({
