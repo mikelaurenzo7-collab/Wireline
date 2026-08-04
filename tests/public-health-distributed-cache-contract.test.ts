@@ -11,6 +11,7 @@ describe("distributed public health boundary", () => {
   it("routes through a dedicated filesystem function backed by a bundled artifact", () => {
     const bridge = read("api/health/public.ts");
     const implementation = read("src/entrypoints/public-health-api.ts");
+    const smoke = read("scripts/smoke-public-health-bundle.mjs");
     const vercelConfig = JSON.parse(read("vercel.json")) as {
       buildCommand?: string;
       functions?: Record<string, { includeFiles?: string }>;
@@ -26,6 +27,9 @@ describe("distributed public health boundary", () => {
     );
     expect(vercelConfig.buildCommand).toContain("src/entrypoints/public-health-api.ts");
     expect(vercelConfig.buildCommand).toContain("--outfile=dist/public-health-api.cjs");
+    expect(vercelConfig.buildCommand).toContain("scripts/smoke-public-health-bundle.mjs");
+    expect(smoke).toContain('require("../dist/public-health-api.cjs")');
+    expect(smoke).toContain('typeof handler !== "function"');
     expect(vercelConfig.rewrites).toContainEqual({
       source: "/api/:path*",
       destination: "/api/index.ts",
