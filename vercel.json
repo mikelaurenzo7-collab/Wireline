@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run build:vercel",
+  "buildCommand": "npm run build:vercel && npx esbuild src/entrypoints/public-health-api.ts --platform=node --bundle --format=cjs --outfile=dist/public-health-api.cjs",
   "regions": [
     "cle1"
   ],
