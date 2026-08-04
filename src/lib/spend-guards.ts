@@ -13,6 +13,7 @@ import { eq, and, gte, sql } from "drizzle-orm";
 import { recordDailySpendUsd, getDailySpendUsd } from "./daily-spend-accumulator";
 import { getErrorMessage } from "./server-utils";
 import { resolveHardSpendCapStatus } from "./spend-budget-policy";
+import { resolveAiDailySpendAlertUsd } from "./ai-spend-alert";
 
 interface BudgetRow {
   monthly_limit_usd: number;
@@ -227,22 +228,19 @@ export async function enforceSpendCap(req: AuthedRequest, res: Response, next: N
 }
 
 /** Ops telemetry only — optional alert threshold (USD / rolling 24h). */
-const CLAUDE_DAILY_ALERT_USD = Math.max(
-  0,
-  Number(process.env.CLAUDE_DAILY_ALERT_USD ?? process.env.CLAUDE_MONTHLY_BUDGET_USD ?? 0) * 0.01,
-);
+const AI_DAILY_ALERT_USD = resolveAiDailySpendAlertUsd();
 
 /** @deprecated Blocking removed — kept for tests/metrics that referenced the old 1% valve. */
 export const DAILY_SPEND_LIMIT_USD = 0;
 
-/** Call this after every Claude API round trip to track cumulative 24h spend. */
+/** Call this after every managed-model round trip to track cumulative 24h spend. */
 export function recordDailySpend(usd: number): void {
   void recordDailySpendUsd(usd)
     .then(() => getDailySpendUsd())
     .then((accumulated) => {
-      if (CLAUDE_DAILY_ALERT_USD > 0 && accumulated >= CLAUDE_DAILY_ALERT_USD) {
-        log.warn("Daily Claude spend alert threshold crossed (telemetry only)", {
-          alert_threshold_usd: CLAUDE_DAILY_ALERT_USD,
+      if (AI_DAILY_ALERT_USD > 0 && accumulated >= AI_DAILY_ALERT_USD) {
+        log.warn("Daily AI spend alert threshold crossed (telemetry only)", {
+          alert_threshold_usd: AI_DAILY_ALERT_USD,
           accumulated_usd: Number(accumulated.toFixed(4)),
         });
       }
