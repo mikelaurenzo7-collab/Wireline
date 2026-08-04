@@ -149,6 +149,21 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     expect(middleware).toContain("reinstatement arrived before its top-up withdrawal");
   });
 
+  it("resolves late disputes through stable customer ownership and historical plan truth", () => {
+    const subscriptionLookup = middleware.indexOf(
+      "schema.subscriptions.stripeSubscriptionId, subscriptionId",
+    );
+    const customerFallback = middleware.indexOf(
+      "schema.subscriptions.stripeCustomerId, customerId",
+    );
+    expect(subscriptionLookup).toBeGreaterThan(-1);
+    expect(customerFallback).toBeGreaterThan(subscriptionLookup);
+    expect(middleware).toContain("planByStripePrice(item.price)");
+    expect(middleware).toContain("planId: disputedPlan.id");
+    expect(middleware).not.toContain("planId: row.plan");
+    expect(middleware).toContain("historical plan is not mapped");
+  });
+
   it("fails closed when a subscription-funded charge has no resolvable Wireline owner", () => {
     expect(middleware).toContain("funded Runtime Allowance but its Wireline owner is unresolved");
   });
