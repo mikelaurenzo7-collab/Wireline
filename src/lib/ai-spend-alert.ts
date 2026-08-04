@@ -13,10 +13,10 @@ function nonNegativeUsd(value: string | undefined): number | null {
 /**
  * Resolve the rolling 24-hour AI spend telemetry threshold.
  *
- * `WIRELINE_AI_DAILY_ALERT_USD` is the provider-neutral canonical setting.
- * The Claude-prefixed settings remain read-only compatibility aliases:
- * `CLAUDE_DAILY_ALERT_USD` is a direct threshold, while the older
- * `CLAUDE_MONTHLY_BUDGET_USD` preserves its historical one-percent conversion.
+ * `WIRELINE_AI_DAILY_ALERT_USD` is the provider-neutral canonical setting and
+ * is interpreted directly in USD. Both Claude-prefixed settings remain exact
+ * compatibility aliases for the former implementation, which applied the same
+ * historical one-percent conversion after selecting either legacy value.
  */
 export function resolveAiDailySpendAlertUsd(
   env: SpendAlertEnvironment = process.env,
@@ -24,9 +24,8 @@ export function resolveAiDailySpendAlertUsd(
   const canonical = nonNegativeUsd(env.WIRELINE_AI_DAILY_ALERT_USD);
   if (canonical != null) return canonical;
 
-  const legacyDaily = nonNegativeUsd(env.CLAUDE_DAILY_ALERT_USD);
-  if (legacyDaily != null) return legacyDaily;
-
-  const legacyMonthly = nonNegativeUsd(env.CLAUDE_MONTHLY_BUDGET_USD);
-  return legacyMonthly == null ? 0 : legacyMonthly * 0.01;
+  const legacySelected = nonNegativeUsd(
+    env.CLAUDE_DAILY_ALERT_USD ?? env.CLAUDE_MONTHLY_BUDGET_USD,
+  );
+  return legacySelected == null ? 0 : legacySelected * 0.01;
 }
