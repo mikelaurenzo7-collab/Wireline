@@ -25,6 +25,7 @@ const auditScripts = [
   "audit-stripe-account-identity-live.mjs",
   "audit-stripe-catalog-live.mjs",
 ];
+let failed = false;
 
 for (const auditScript of auditScripts) {
   const result = spawnSync("node", [join(ROOT, "scripts", auditScript)], {
@@ -33,5 +34,7 @@ for (const auditScript of auditScripts) {
     stdio: "inherit",
   });
   if (result.error) throw result.error;
-  if (result.status !== 0) process.exit(result.status ?? 1);
+  if (result.status !== 0) failed = true;
 }
+
+if (failed) process.exit(1);
