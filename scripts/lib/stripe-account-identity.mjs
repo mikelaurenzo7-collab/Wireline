@@ -91,11 +91,11 @@ export function stripeAccountIdentityFindings(account) {
     );
   }
 
-  if (paymentDescriptor && !hasWirelineDescriptor(paymentDescriptor)) {
+  if (!hasWirelineDescriptor(paymentDescriptor)) {
     findings.push(
       finding("error", "Stripe payment statement descriptor is not Wireline-branded.", {
         expected_prefix: STRIPE_STATEMENT_DESCRIPTOR_PREFIX,
-        actual: paymentDescriptor,
+        actual: paymentDescriptor || null,
       }),
     );
   }
