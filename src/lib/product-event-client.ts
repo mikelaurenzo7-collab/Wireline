@@ -1,6 +1,7 @@
 import {
   makeProductEvent,
   type ProductEventName,
+  type ProductEventPayload,
   type ProductEventSurface,
 } from "./product-events";
 
@@ -24,6 +25,28 @@ const GTM_EVENT_ALIASES: Partial<Record<ProductEventName, string>> = {
 };
 
 const PRODUCT_EVENT_ONCE_PREFIX = "wireline:product-event-once:";
+
+/**
+ * Keep activation milestones semantically strict at the final client boundary.
+ * The setup wizard may be deferred or skipped; those navigation actions must
+ * not be persisted as launch readiness or a completed launch.
+ */
+export function shouldDispatchProductEvent(
+  input: Pick<ProductEventPayload, "event" | "metadata">,
+): boolean {
+  if (
+    input.event === "launch_readiness_reached" &&
+    input.metadata?.source === "wizard_train_step"
+  ) {
+    return false;
+  }
+
+  if (input.event === "agent_launch_completed") {
+    return input.metadata?.has_line === true && input.metadata?.test_started === true;
+  }
+
+  return true;
+}
 
 function createCorrelationId(event: ProductEventName): string {
   const random =
@@ -55,6 +78,7 @@ export function emitProductEvent(
   },
 ): boolean {
   if (typeof window === "undefined") return false;
+  if (!shouldDispatchProductEvent(input)) return false;
 
   const event = makeProductEvent({
     ...input,
