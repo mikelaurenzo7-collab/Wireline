@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { detectOptOut } from "../src/lib/tcpa-consent";
+
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("agent runtime performance and action integrity", () => {
@@ -72,5 +74,34 @@ describe("agent runtime performance and action integrity", () => {
     expect(idempotency).toContain("add_to_dnc is deliberately excluded");
     expect(dncMigration).toContain("wireline_dnc_list_user_phone_unique");
     expect(dncMigration).toContain("PARTITION BY user_id, phone");
+  });
+
+  it("recognizes common explicit future-contact revocations", () => {
+    for (const transcript of [
+      "Don't call me again.",
+      "Stop calling me.",
+      "Do not contact this number.",
+      "Take me off your list.",
+      "Remove me from the call list.",
+      "Put me on the do-not-call list.",
+      "No more calls.",
+    ]) {
+      expect(detectOptOut(transcript)).toMatchObject({ found: true, kind: "dnc" });
+    }
+  });
+
+  it("gives future-contact revocation precedence over recording-only language", () => {
+    expect(
+      detectOptOut("Stop recording this call. Also, don't call me again."),
+    ).toMatchObject({ found: true, kind: "dnc" });
+    expect(detectOptOut("Please stop recording, but email me tomorrow.")).toMatchObject({
+      found: true,
+      kind: "recording",
+    });
+  });
+
+  it("does not convert ordinary sales rejection into a legal DNC request", () => {
+    expect(detectOptOut("I'm not interested right now.")).toEqual({ found: false });
+    expect(detectOptOut("Maybe call me next quarter.")).toEqual({ found: false });
   });
 });
