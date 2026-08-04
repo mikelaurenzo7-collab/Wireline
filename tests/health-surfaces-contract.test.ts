@@ -52,4 +52,17 @@ describe("health surfaces contract", () => {
     expect(source).toContain("reportError(new Error(message)");
     expect(source).toContain("body.stack.slice(0, 4_000)");
   });
+
+  it("routes standalone public health through the certified shared handler first", () => {
+    const registration = read("src/server/register-api-routes.ts");
+    const sharedImport =
+      'import publicHealthHandler from "../entrypoints/public-health-api";';
+    const exactRoute = 'app.all("/api/health/public"';
+    const broadRouter = 'app.use("/api/health", healthRouter)';
+
+    expect(registration).toContain(sharedImport);
+    expect(registration).toContain(exactRoute);
+    expect(registration).toContain("publicHealthHandler(req, res).catch(next)");
+    expect(registration.indexOf(exactRoute)).toBeLessThan(registration.indexOf(broadRouter));
+  });
 });
