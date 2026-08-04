@@ -65,4 +65,16 @@ describe("health surfaces contract", () => {
     expect(registration).toContain("publicHealthHandler(req, res).catch(next)");
     expect(registration.indexOf(exactRoute)).toBeLessThan(registration.indexOf(broadRouter));
   });
+
+  it("keeps public status single-owned and aborts timed-out authenticated model probes", () => {
+    const source = read("src/routes/health-routes.ts");
+
+    expect(source).not.toContain('router.get("/public"');
+    expect(source).not.toContain("PUBLIC_PROBE_TTL_MS");
+    expect(source).not.toContain("computePublicHealth");
+    expect(source).toContain("const controller = new AbortController()");
+    expect(source).toContain('controller.abort(new Error("model probe timed out"))');
+    expect(source).toContain("signal: controller.signal");
+    expect(source).toContain("clearTimeout(timeout)");
+  });
 });
