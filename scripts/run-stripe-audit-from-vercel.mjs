@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Pull STRIPE_SECRET_KEY from Vercel (decrypt) and run the read-only live
- * account-identity and catalog audits.
+ * account-identity, product-copy, and catalog audits.
  *
  * Usage: VERCEL_TOKEN=... node scripts/run-stripe-audit-from-vercel.mjs
  */
@@ -23,6 +23,7 @@ if (!stripeKey) throw new Error("STRIPE_SECRET_KEY not found on Vercel project")
 
 const auditScripts = [
   "audit-stripe-account-identity-live.mjs",
+  "audit-stripe-product-copy-live.mjs",
   "audit-stripe-catalog-live.mjs",
 ];
 let failed = false;
