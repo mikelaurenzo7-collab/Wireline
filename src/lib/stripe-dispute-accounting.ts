@@ -27,8 +27,9 @@ export function subscriptionDisputeAllowancePortion(
 }
 
 /**
- * Round a purchased Runtime Balance amount to the cents represented by a
- * disputed share of its PaymentIntent.
+ * Return the purchased Runtime Balance represented by a disputed share of its
+ * PaymentIntent. Match the canonical top-up reversal's downward-cent rounding
+ * so restoration can never return a cent more than the dispute removed.
  */
 export function proportionalTopUpCreditUsd(
   disputeAmountCents: number,
@@ -40,7 +41,7 @@ export function proportionalTopUpCreditUsd(
     paymentIntentAmountCents > 0
       ? clampUnitInterval(disputeAmountCents / paymentIntentAmountCents)
       : 1;
-  return Math.round(purchasedCreditUsd * portion * 100) / 100;
+  return Math.floor(purchasedCreditUsd * portion * 100) / 100;
 }
 
 /**
@@ -49,10 +50,7 @@ export function proportionalTopUpCreditUsd(
  */
 export function runtimeAllowanceMovementUsd(totalAllowanceUsd: number, portion: number): number {
   if (!(totalAllowanceUsd > 0)) return 0;
-  return (
-    Math.floor(totalAllowanceUsd * clampUnitInterval(portion) * 100) /
-    100
-  );
+  return Math.floor(totalAllowanceUsd * clampUnitInterval(portion) * 100) / 100;
 }
 
 /**
