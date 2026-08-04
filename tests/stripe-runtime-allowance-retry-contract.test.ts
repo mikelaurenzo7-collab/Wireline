@@ -79,15 +79,25 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     ).toBe(0);
   });
 
-  it("rejects incomparable settlement currencies instead of guessing", () => {
-    expect(() =>
+  it("normalizes settlement-currency movements through Stripe's exchange rate", () => {
+    expect(
       disputeBalanceMovementCents({
-        disputeAmountCents: 10_000,
-        disputeCurrency: "usd",
-        balanceTransactions: [{ amount: -9_000, currency: "eur" }],
+        disputeAmountCents: 1_000,
+        disputeCurrency: "eur",
+        balanceTransactions: [
+          { amount: -1_234, currency: "usd", exchange_rate: 1.234 },
+        ],
         direction: "withdrawn",
       }),
-    ).toThrow(/currency eur does not match usd/);
+    ).toBe(1_000);
+    expect(() =>
+      disputeBalanceMovementCents({
+        disputeAmountCents: 1_000,
+        disputeCurrency: "eur",
+        balanceTransactions: [{ amount: -1_234, currency: "usd" }],
+        direction: "withdrawn",
+      }),
+    ).toThrow(/has no usable exchange rate/);
   });
 
   it("scales allowance by both movement share and base-plan share", () => {
@@ -105,6 +115,7 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     expect(runtimeAllowanceMovementUsd(10, 0.333)).toBe(3.33);
     expect(runtimeAllowanceMovementUsd(10, 2)).toBe(10);
     expect(proportionalTopUpCreditUsd(3_335, 10_000, 10)).toBe(3.33);
+    expect(proportionalTopUpCreditUsd(Number.NaN, 10_000, 10)).toBe(0);
   });
 
   it("owns both subscription and top-up dispute movements", () => {
