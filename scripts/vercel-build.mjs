@@ -128,6 +128,7 @@ run("npx", [
   "tests/double-pass-launch-honesty-contract.test.ts",
   "tests/ai-cost-protection-contract.test.ts",
   "tests/public-health-probe.test.ts",
+  "tests/public-health-function.test.ts",
   "tests/public-health-distributed-cache-contract.test.ts",
   "tests/billing-proof-contract.test.ts",
   "src/lib/plan-catalog.test.ts",
