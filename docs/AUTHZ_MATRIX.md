@@ -4,15 +4,16 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 357
-**Protected:** 293
-**Public (allowlisted):** 64
+**Routes scanned:** 368
+**Protected:** 301
+**Public (allowlisted):** 67
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
 
 | Path | Reason |
 |------|--------|
+| `POST /api/auth/oauth/exchange` | Signup/login/refresh (public by definition) |
 | `GET /api/auth/google/callback` | Signup/login/refresh (public by definition) |
 | `GET /api/auth/google/url` | Signup/login/refresh (public by definition) |
 | `GET /api/auth/microsoft/callback` | Signup/login/refresh (public by definition) |
@@ -28,6 +29,9 @@
 | `POST /api/auth/signout` | Signup/login/refresh (public by definition) |
 | `POST /api/auth/signup` | Signup/login/refresh (public by definition) |
 | `GET /api/auth/verify-email/:token` | Signup/login/refresh (public by definition) |
+| `POST /api/auth/migrate-session` | Signup/login/refresh (public by definition) |
+| `GET /api/auth/session` | Signup/login/refresh (public by definition) |
+| `POST /api/auth/signout` | Signup/login/refresh (public by definition) |
 | `GET /api/billing/plans` | Public plan/price comparison table |
 | `POST /api/stripe-webhook` | Stripe signature verification + idempotency |
 | `POST /api/daily-brief/schedule` | Vercel cron; Bearer CRON_SECRET (timing-safe) |
@@ -35,7 +39,6 @@
 | `GET /api/email/unsubscribe` | CAN-SPAM one-click unsubscribe; token-scoped + rate-limited |
 | `POST /api/escalate` | Vapi X-Vapi-Secret (timing-safe) + rate limit |
 | `GET /api/health` | Public liveness probe; DB ping only, rate-limited |
-| `GET /api/health/public` | Public component status; rate-limited, no tenant data |
 | `POST /api/health/report` | Browser client-error reports (pre-auth by design); rate-limited, size-bounded input, no data returned |
 | `GET /api/health/slos` | Monitor token OR authenticated platform admin; enforced in handler |
 | `POST /api/intake/lead` | API-key auth via X-Wireline-Key + rate limit |
@@ -121,6 +124,7 @@
 | audit-routes.ts | GET | `/api/audit/stats` | inline | — | — | Protected |
 | audit-routes.ts | GET | `/api/audit/summary` | inline | — | — | Protected |
 | audit-routes.ts | GET | `/api/spend/budget` | inline | — | — | Protected |
+| auth-oauth-exchange-atomic-routes.ts | POST | `/api/auth/oauth/exchange` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | GET | `/api/auth/google/callback` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | GET | `/api/auth/google/url` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | GET | `/api/auth/microsoft/callback` | — | — | yes | Public (allowlisted) |
@@ -140,6 +144,10 @@
 | auth-routes.ts | POST | `/api/auth/signup` | — | — | yes | Public (allowlisted) |
 | auth-routes.ts | POST | `/api/auth/signup-intent` | inline | — | yes | Protected |
 | auth-routes.ts | GET | `/api/auth/verify-email/:token` | — | — | yes | Public (allowlisted) |
+| auth-session-hardening-routes.ts | POST | `/api/auth/migrate-session` | — | — | yes | Public (allowlisted) |
+| auth-session-hardening-routes.ts | POST | `/api/auth/refresh` | inline | — | yes | Protected |
+| auth-session-hardening-routes.ts | GET | `/api/auth/session` | — | — | yes | Public (allowlisted) |
+| auth-session-hardening-routes.ts | POST | `/api/auth/signout` | — | — | yes | Public (allowlisted) |
 | billing-portal-readiness-routes.ts | POST | `/api/billing/portal` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/admin/stripe-customer-audit` | inline | platform_admin | — | Protected |
 | billing-routes.ts | GET | `/api/billing/extra-agents` | inline | — | — | Protected |
@@ -244,7 +252,6 @@
 | health-routes.ts | GET | `/api/health/internal` | inline | — | — | Protected |
 | health-routes.ts | GET | `/api/health/launch-readiness` | inline | — | — | Protected |
 | health-routes.ts | GET | `/api/health/models` | inline | — | — | Protected |
-| health-routes.ts | GET | `/api/health/public` | — | — | yes | Public (allowlisted) |
 | health-routes.ts | GET | `/api/health/ready` | inline | — | — | Protected |
 | health-routes.ts | POST | `/api/health/report` | — | — | yes | Public (allowlisted) |
 | health-routes.ts | GET | `/api/health/slos` | — | — | yes | Public (allowlisted) |
@@ -274,9 +281,11 @@
 | knowledge-routes.ts | POST | `/api/knowledge` | inline | — | — | Protected |
 | knowledge-routes.ts | PATCH | `/api/knowledge/:id` | inline | — | — | Protected |
 | knowledge-routes.ts | DELETE | `/api/knowledge/:id` | inline | — | — | Protected |
+| launch-billing-checkout-atomic-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
 | launch-billing-checkout-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
 | learning-routes.ts | GET | `/api/agents/:id/learning-digest` | inline | — | — | Protected |
 | learning-routes.ts | POST | `/api/agents/lessons/review` | inline | — | — | Protected |
+| legacy-knowledge-crawl-routes.ts | POST | `/api/jobs/knowledge-crawl` | inline | — | — | Protected |
 | marketing-runtime-routes.ts | GET | `/api/public/assistant/:agentName` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | GET | `/api/public/stats` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | POST | `/api/webhooks/meta/deletion` | — | — | yes | Public (allowlisted) |
@@ -352,6 +361,7 @@
 | openai-realtime-routes.ts | POST | `/api/voice/openai/session` | inline | — | — | Protected |
 | openai-realtime-routes.ts | GET | `/api/voice/openai/status` | inline | — | — | Protected |
 | openapi-routes.ts | GET | `/api/openapi.json` | — | — | yes | Public (allowlisted) |
+| outbound-dial-atomic-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/callbacks` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/outbound` | inline | — | — | Protected |
 | outbound-routes.ts | DELETE | `/api/outbound/:id` | inline | — | — | Protected |
@@ -398,7 +408,10 @@
 | support-routes.ts | POST | `/api/support/ticket` | — | — | yes | Public (allowlisted) |
 | team-routes.ts | GET | `/api/team` | inline | permission | — | Protected |
 | team-routes.ts | DELETE | `/api/team/:id` | inline | permission | — | Protected |
+| team-routes.ts | POST | `/api/team/invitations/accept` | inline | — | — | Protected |
 | team-routes.ts | POST | `/api/team/invite` | inline | permission | — | Protected |
+| team-routes.ts | GET | `/api/team/workspaces` | inline | — | — | Protected |
+| team-routes.ts | POST | `/api/team/workspaces/:tenantId/select` | inline | — | — | Protected |
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/singing-receptionist` | — | — | yes | Public (allowlisted) |
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/sms` | — | — | yes | Public (allowlisted) |
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/voice-fallback` | — | — | yes | Public (allowlisted) |
@@ -435,7 +448,8 @@
 | webhook-routes.ts | PATCH | `/api/webhooks/:id` | inline | permission | — | Protected |
 | webhook-routes.ts | DELETE | `/api/webhooks/:id` | inline | permission | — | Protected |
 | webhook-routes.ts | GET | `/api/webhooks/:id/deliveries` | inline | — | — | Protected |
-| webhook-routes.ts | POST | `/api/webhooks/:id/test` | inline | permission | — | Protected |
-| webhook-routes.ts | DELETE | `/api/webhooks/deliveries/:id` | inline | — | — | Protected |
-| webhook-routes.ts | POST | `/api/webhooks/deliveries/:id/retry` | inline | — | — | Protected |
+| webhook-routes.ts | DELETE | `/api/webhooks/deliveries/:id` | inline | permission | — | Protected |
+| webhook-routes.ts | POST | `/api/webhooks/deliveries/:id/retry` | inline | permission | — | Protected |
+| webhook-test-routes.ts | POST | `/api/webhooks/:id/test` | inline | permission | — | Protected |
+| website-knowledge-routes.ts | POST | `/api/agent-config/:id/website` | inline | — | — | Protected |
 | workspace-knowledge-routes.ts | POST | `/api/workspace-knowledge/google-drive` | inline | — | — | Protected |

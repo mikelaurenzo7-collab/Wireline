@@ -96,7 +96,12 @@ const contracts = [
     required: [
       '"/api/billing/checkout"',
       "checkoutOperations",
-      "idempotencyKey: `wireline-customer-",
+      // Customer creation keys idempotency deterministically per user, with a
+      // recovery variant when a prior customer id must be replaced. The key
+      // is computed once and passed to every Stripe call in this flow.
+      "`wireline-customer-${userId}`",
+      "`wireline-customer-recovery-${userId}-${existingCustomerId}`",
+      "{ idempotencyKey }",
       "idempotencyKey: `wireline-checkout-",
       "stripe_checkout_outcome_unknown",
       "post_stripe_persistence_failed",
