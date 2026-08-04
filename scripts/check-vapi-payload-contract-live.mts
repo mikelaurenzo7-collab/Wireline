@@ -1,10 +1,17 @@
 #!/usr/bin/env node
 
 /**
- * Non-billable live contract audit for Vapi's transient assistant payload.
- * Creates one inert assistant, verifies the current model.tools + server shape,
- * and always deletes it. It never places a call or sends a message.
+ * Non-billable live contract audit for Wireline's transient Vapi assistant.
+ *
+ * Creates one inert assistant using the exact managed primary + fallback model
+ * policy, reads the saved configuration back, and always deletes it. It never
+ * places a call, creates a chat, or generates model output.
  */
+import {
+  VAPI_DEFAULT_FALLBACK_MODELS,
+  VAPI_TENANT_DEFAULT_MODEL,
+  VAPI_TENANT_DEFAULT_PROVIDER,
+} from "../src/lib/ai-models";
 
 const key = process.env.VAPI_PRIVATE_KEY?.trim();
 const secret = process.env.VAPI_WEBHOOK_SECRET?.trim();
@@ -20,7 +27,7 @@ const headers = {
 };
 let assistantId = "";
 
-async function request(path, init = {}) {
+async function request(path: string, init: RequestInit = {}): Promise<Response> {
   return fetch(`${baseUrl}${path}`, {
     ...init,
     headers: { ...headers, ...(init.headers || {}) },
@@ -28,15 +35,25 @@ async function request(path, init = {}) {
   });
 }
 
+function sameStringArray(actual: unknown, expected: readonly string[]): boolean {
+  return (
+    Array.isArray(actual) &&
+    actual.length === expected.length &&
+    actual.every((value, index) => value === expected[index])
+  );
+}
+
 try {
+  const expectedFallbackModels = [...VAPI_DEFAULT_FALLBACK_MODELS];
   const response = await request("/assistant", {
     method: "POST",
     body: JSON.stringify({
       name: "Wireline Launch Schema Probe",
       firstMessage: "This assistant is an inert configuration probe.",
       model: {
-        provider: "openai",
-        model: "gpt-4o",
+        provider: VAPI_TENANT_DEFAULT_PROVIDER,
+        model: VAPI_TENANT_DEFAULT_MODEL,
+        fallbackModels: expectedFallbackModels,
         systemPrompt: "Never place or answer a call. This assistant validates configuration only.",
         tools: [
           {
@@ -69,16 +86,43 @@ try {
   });
 
   if (!response.ok) {
-    console.error(`Vapi rejected the current assistant payload (HTTP ${response.status}).`);
+    const body = await response.text().catch(() => "");
+    console.error(
+      `Vapi rejected the managed assistant policy (HTTP ${response.status}): ${body.slice(0, 500)}`,
+    );
     process.exitCode = 1;
   } else {
-    const assistant = await response.json();
+    const assistant = (await response.json()) as {
+      id?: string;
+      model?: { provider?: string; model?: string; fallbackModels?: string[] };
+    };
     assistantId = String(assistant?.id || "");
     if (!assistantId) {
       console.error("Vapi accepted the payload but returned no assistant id.");
       process.exitCode = 1;
     } else {
-      console.log("Vapi accepted current model.tools, nested server auth, and Vapi Voice v2.");
+      const readBack = await request(`/assistant/${encodeURIComponent(assistantId)}`);
+      if (!readBack.ok) {
+        console.error(`Vapi could not read back the inert assistant (HTTP ${readBack.status}).`);
+        process.exitCode = 1;
+      } else {
+        const saved = (await readBack.json()) as {
+          model?: { provider?: string; model?: string; fallbackModels?: string[] };
+        };
+        const model = saved.model;
+        const exact =
+          model?.provider === VAPI_TENANT_DEFAULT_PROVIDER &&
+          model?.model === VAPI_TENANT_DEFAULT_MODEL &&
+          sameStringArray(model?.fallbackModels, expectedFallbackModels);
+        if (!exact) {
+          console.error("Vapi changed or omitted the managed primary/fallback model policy.");
+          process.exitCode = 1;
+        } else {
+          console.log(
+            `Vapi certified ${VAPI_TENANT_DEFAULT_PROVIDER}/${VAPI_TENANT_DEFAULT_MODEL} with fallback ${expectedFallbackModels.join(", ")}.`,
+          );
+        }
+      }
     }
   }
 } finally {

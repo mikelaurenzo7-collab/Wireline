@@ -2,14 +2,11 @@ import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { Redis } from "@upstash/redis";
 
-import {
-  OPENAI_STRUCTURED_PRIMARY_MODEL,
-  VAPI_TENANT_DEFAULT_MODEL,
-  VAPI_VOICE_FALLBACK_MODEL,
-} from "../lib/ai-models";
+import { OPENAI_STRUCTURED_PRIMARY_MODEL } from "../lib/ai-models";
 import {
   buildPublicHealthPayload,
   probeOpenAIModel,
+  probeVapiManagedVoice,
   type PublicHealthLevel,
   type PublicHealthPayload,
 } from "../lib/public-health-probe";
@@ -33,8 +30,8 @@ function cacheScope(): string {
 }
 
 const CACHE_SCOPE = cacheScope();
-const RESULT_KEY = `wireline:health:public:v3:${CACHE_SCOPE}`;
-const LOCK_KEY = `wireline:health:public:probe-lock:v3:${CACHE_SCOPE}`;
+const RESULT_KEY = `wireline:health:public:v4:${CACHE_SCOPE}`;
+const LOCK_KEY = `wireline:health:public:probe-lock:v4:${CACHE_SCOPE}`;
 const RESULT_TTL_SECONDS = 120;
 const LOCK_TTL_SECONDS = 12;
 const LOCAL_STALE_TTL_MS = 5 * 60_000;
@@ -180,21 +177,21 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    // Keep the exported policy constants narrow; widen only these local values
-    // so this defensive deduplication remains valid if the policy converges later.
-    const primaryVoiceModel: string = VAPI_TENANT_DEFAULT_MODEL;
-    const fallbackVoiceModel: string = VAPI_VOICE_FALLBACK_MODEL;
-    const voicePromise = probeOpenAIModel(primaryVoiceModel, process.env.OPENAI_API_KEY);
-    const voiceFallbackPromise =
-      fallbackVoiceModel === primaryVoiceModel
-        ? voicePromise
-        : probeOpenAIModel(fallbackVoiceModel, process.env.OPENAI_API_KEY);
-    const [voice, voiceFallback, reasoning] = await Promise.all([
-      voicePromise,
-      voiceFallbackPromise,
+    // Vapi owns the managed call runtime and its same-provider model fallback.
+    // Runtime health therefore probes Vapi's authenticated control plane rather
+    // than incorrectly asking Wireline's direct OpenAI key to resolve a model
+    // that Vapi serves. A separate credentialed diagnostic can create, read,
+    // verify, and delete one inert assistant when those credentials are supplied.
+    const managedVoicePromise = probeVapiManagedVoice(process.env.VAPI_PRIVATE_KEY);
+    const [voice, reasoning] = await Promise.all([
+      managedVoicePromise,
       probeOpenAIModel(OPENAI_STRUCTURED_PRIMARY_MODEL, process.env.OPENAI_API_KEY),
     ]);
-    const payload = buildPublicHealthPayload({ voice, voiceFallback, reasoning });
+    const payload = buildPublicHealthPayload({
+      voice,
+      voiceFallback: voice,
+      reasoning,
+    });
     remember(payload);
     await client.set(RESULT_KEY, payload, { ex: RESULT_TTL_SECONDS });
     sendJson(req, res, 200, payload, "probe");

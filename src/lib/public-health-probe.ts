@@ -38,15 +38,19 @@ export function buildPublicHealthPayload(input: {
     voice_fallback: probeLevel(input.voiceFallback),
     reasoning: probeLevel(input.reasoning),
   };
-  const severity: Record<PublicHealthLevel, number> = {
-    operational: 0,
-    degraded: 1,
-    outage: 2,
-  };
-  const overall = Object.values(components).reduce<PublicHealthLevel>(
-    (worst, current) => (severity[current] > severity[worst] ? current : worst),
-    "operational",
-  );
+
+  // Losing a redundant fallback reduces resilience but does not make the live
+  // platform unavailable while both primary voice and reasoning remain usable.
+  // A hard outage in either primary execution path is still a platform outage.
+  const primaryOutage =
+    components.voice_runtime === "outage" || components.reasoning === "outage";
+  const anyDegradation = Object.values(components).some((level) => level !== "operational");
+  const overall: PublicHealthLevel = primaryOutage
+    ? "outage"
+    : anyDegradation
+      ? "degraded"
+      : "operational";
+
   return {
     overall,
     components,
@@ -54,49 +58,94 @@ export function buildPublicHealthPayload(input: {
   };
 }
 
-/**
- * Check that the configured key can resolve a specific OpenAI model without
- * generating output. The model metadata endpoint validates connectivity,
- * authentication, and model access while consuming no inference tokens.
- */
-export async function probeOpenAIModel(
-  model: string,
-  apiKey: string | undefined,
-  timeoutMs = PUBLIC_HEALTH_PROBE_TIMEOUT_MS,
-): Promise<PublicModelProbe> {
+async function probeMetadataEndpoint(input: {
+  url: string;
+  apiKey: string | undefined;
+  keyName: string;
+  label: string;
+  failurePrefix: string;
+  timeoutMs: number;
+}): Promise<PublicModelProbe> {
   const started = Date.now();
-  if (!apiKey) {
-    return { ok: false, latency_ms: 0, model, error: "OPENAI_API_KEY not configured" };
+  if (!input.apiKey) {
+    return {
+      ok: false,
+      latency_ms: 0,
+      model: input.label,
+      error: `${input.keyName} not configured`,
+    };
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(new Error("model probe timed out")), timeoutMs);
+  const timeout = setTimeout(
+    () => controller.abort(new Error("provider probe timed out")),
+    input.timeoutMs,
+  );
   timeout.unref?.();
   try {
-    const response = await fetch(
-      `https://api.openai.com/v1/models/${encodeURIComponent(model)}`,
-      {
-        method: "GET",
-        headers: { Authorization: `Bearer ${apiKey}` },
-        signal: controller.signal,
+    const response = await fetch(input.url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${input.apiKey}`,
+        Accept: "application/json",
       },
-    );
+      signal: controller.signal,
+    });
     await response.body?.cancel().catch(() => undefined);
-    if (!response.ok) throw new Error(`OpenAI model probe failed (${response.status})`);
-    return { ok: true, latency_ms: Date.now() - started, model };
+    if (!response.ok) throw new Error(`${input.failurePrefix} (${response.status})`);
+    return { ok: true, latency_ms: Date.now() - started, model: input.label };
   } catch (error) {
     const message = controller.signal.aborted
-      ? "model probe timed out"
+      ? "provider probe timed out"
       : error instanceof Error
         ? error.message
         : String(error);
     return {
       ok: false,
       latency_ms: Date.now() - started,
-      model,
+      model: input.label,
       error: message.slice(0, 240),
     };
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/**
+ * Check the managed Vapi control plane without creating a call, chat, or model
+ * output. The exact primary/fallback assistant schema is certified separately
+ * during preview builds by creating and deleting one inert assistant.
+ */
+export function probeVapiManagedVoice(
+  apiKey: string | undefined,
+  timeoutMs = PUBLIC_HEALTH_PROBE_TIMEOUT_MS,
+): Promise<PublicModelProbe> {
+  return probeMetadataEndpoint({
+    url: "https://api.vapi.ai/assistant?limit=1",
+    apiKey,
+    keyName: "VAPI_PRIVATE_KEY",
+    label: "vapi-managed-voice",
+    failurePrefix: "Vapi control-plane probe failed",
+    timeoutMs,
+  });
+}
+
+/**
+ * Check that the configured key can resolve a specific OpenAI model without
+ * generating output. The model metadata endpoint validates connectivity,
+ * authentication, and model access while consuming no inference tokens.
+ */
+export function probeOpenAIModel(
+  model: string,
+  apiKey: string | undefined,
+  timeoutMs = PUBLIC_HEALTH_PROBE_TIMEOUT_MS,
+): Promise<PublicModelProbe> {
+  return probeMetadataEndpoint({
+    url: `https://api.openai.com/v1/models/${encodeURIComponent(model)}`,
+    apiKey,
+    keyName: "OPENAI_API_KEY",
+    label: model,
+    failurePrefix: "OpenAI model probe failed",
+    timeoutMs,
+  });
 }

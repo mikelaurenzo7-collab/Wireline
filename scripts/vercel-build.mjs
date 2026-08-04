@@ -37,7 +37,7 @@ function runLiveVapiSchemaAuditIfRequested() {
   }
 
   console.log("Running one-shot non-billable Vapi payload schema audit.");
-  run("node", ["scripts/check-vapi-payload-contract-live.mjs"]);
+  run("npx", ["tsx", "scripts/check-vapi-payload-contract-live.mts"]);
 }
 
 function runDeepLaunchAuditIfRequested() {
