@@ -16,6 +16,7 @@ describe("subscription entitlement provenance", () => {
   const migration = read("drizzle/migrations/0130_subscription_entitlement_provenance.sql");
   const audit = read("ops/reconciliation/subscription_entitlement_provenance.sql");
   const journal = read("drizzle/migrations/meta/_journal.json");
+  const securitySchema = read("src/db/security-schema.ts");
 
   it("reproduces the live provenance columns idempotently", () => {
     expect(migration).toContain("ADD COLUMN IF NOT EXISTS entitlement_source text");
@@ -31,6 +32,23 @@ describe("subscription entitlement provenance", () => {
     expect(migration).toContain("ELSE 'migration'");
     expect(migration).toContain("WHERE entitlement_source IS NULL");
     expect(migration).toContain("'stripe', 'demo', 'manual', 'migration'");
+  });
+
+  it("classifies future Stripe-backed writes before commit", () => {
+    expect(migration).toContain("CREATE OR REPLACE FUNCTION public.wireline_set_subscription_entitlement_source()");
+    expect(migration).toContain("IF NEW.stripe_subscription_id IS NOT NULL THEN");
+    expect(migration).toContain("NEW.entitlement_source := 'stripe'");
+    expect(migration).toContain("NEW.grant_reason := NULL");
+    expect(migration).toContain("BEFORE INSERT OR UPDATE OF stripe_subscription_id, entitlement_source");
+    expect(migration).toContain("EXECUTE FUNCTION public.wireline_set_subscription_entitlement_source()");
+  });
+
+  it("exposes a narrow typed provenance mirror", () => {
+    expect(securitySchema).toContain('export const subscriptionEntitlements = pgTable("wireline_subscriptions"');
+    expect(securitySchema).toContain('stripePriceId: text("stripe_price_id")');
+    expect(securitySchema).toContain('entitlementSource: text("entitlement_source"');
+    expect(securitySchema).toContain('["stripe", "demo", "manual", "migration"]');
+    expect(securitySchema).toContain('grantReason: text("grant_reason")');
   });
 
   it("registers the canonical migration", () => {
