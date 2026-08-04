@@ -52,6 +52,7 @@ describe("subscription Runtime Allowance refunds fail closed", () => {
 
   it("restores only the disputed share of a purchased Runtime Balance", () => {
     expect(proportionalTopUpCreditUsd(2_500, 10_000, 40)).toBe(10);
+    expect(proportionalTopUpCreditUsd(3_335, 10_000, 10)).toBe(3.33);
     expect(proportionalTopUpCreditUsd(10_000, 10_000, 40)).toBe(40);
     expect(proportionalTopUpCreditUsd(20_000, 10_000, 40)).toBe(40);
     expect(proportionalTopUpCreditUsd(0, 10_000, 40)).toBe(0);
