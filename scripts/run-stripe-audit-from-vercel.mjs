@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /**
- * Pull STRIPE_SECRET_KEY from Vercel (decrypt) and run read-only live catalog audit.
+ * Pull STRIPE_SECRET_KEY from Vercel (decrypt) and run the read-only live
+ * account-identity and catalog audits.
+ *
  * Usage: VERCEL_TOKEN=... node scripts/run-stripe-audit-from-vercel.mjs
  */
 import { spawnSync } from "node:child_process";
@@ -19,9 +21,17 @@ if (!token) {
 const stripeKey = await getVercelEnvValue(token, "STRIPE_SECRET_KEY");
 if (!stripeKey) throw new Error("STRIPE_SECRET_KEY not found on Vercel project");
 
-const result = spawnSync("node", [join(ROOT, "scripts", "audit-stripe-catalog-live.mjs")], {
-  cwd: ROOT,
-  env: { ...process.env, STRIPE_SECRET_KEY: stripeKey },
-  stdio: "inherit",
-});
-process.exit(result.status ?? 1);
+const auditScripts = [
+  "audit-stripe-account-identity-live.mjs",
+  "audit-stripe-catalog-live.mjs",
+];
+
+for (const auditScript of auditScripts) {
+  const result = spawnSync("node", [join(ROOT, "scripts", auditScript)], {
+    cwd: ROOT,
+    env: { ...process.env, STRIPE_SECRET_KEY: stripeKey },
+    stdio: "inherit",
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0) process.exit(result.status ?? 1);
+}
