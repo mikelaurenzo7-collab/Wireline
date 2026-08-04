@@ -46,7 +46,7 @@ function request(method = "GET"): IncomingMessage {
 }
 
 async function loadHandler() {
-  const module = await import("../api/health/public");
+  const module = await import("../src/entrypoints/public-health-api");
   return module.default;
 }
 
