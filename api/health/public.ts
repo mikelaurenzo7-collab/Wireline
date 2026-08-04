@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { Redis } from "@upstash/redis";
 
@@ -80,7 +81,6 @@ function freshLocalCache(): PublicHealthPayload | null {
 }
 
 function setCommonHeaders(res: ServerResponse): void {
-  res.setHeader("Cache-Control", CACHE_CONTROL);
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
@@ -95,6 +95,7 @@ function sendJson(
   cacheSource?: "redis" | "probe" | "stale-local",
 ): void {
   setCommonHeaders(res);
+  res.setHeader("Cache-Control", statusCode === 200 ? CACHE_CONTROL : "no-store");
   if (cacheSource) res.setHeader("X-Wireline-Health-Source", cacheSource);
   res.statusCode = statusCode;
   res.end(req.method === "HEAD" ? undefined : JSON.stringify(payload));
@@ -130,9 +131,13 @@ async function waitForConcurrentProbe(client: Redis): Promise<PublicHealthPayloa
 }
 
 export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const requestId = randomUUID();
+  res.setHeader("X-Request-Id", requestId);
+
   const method = req.method || "GET";
   if (method === "OPTIONS") {
     setCommonHeaders(res);
+    res.setHeader("Cache-Control", "no-store");
     res.statusCode = 204;
     res.end();
     return;
@@ -194,6 +199,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     sendJson(req, res, 200, payload, "probe");
   } catch (error) {
     console.warn("Public health distributed cache unavailable; refusing external probe fan-out", {
+      requestId,
+      cacheScope: CACHE_SCOPE,
       error: error instanceof Error ? error.message : String(error),
     });
     const stale = freshLocalCache();
