@@ -1,7 +1,6 @@
 export type DisputeBalanceMovement = {
   amount?: number | null;
   currency?: string | null;
-  exchange_rate?: number | null;
 };
 
 /** Clamp an arbitrary value to a finite 0..1 proportion. */
@@ -16,10 +15,15 @@ export function clampUnitInterval(value: number, fallback = 0): number {
  * `charge.dispute.created` can represent an inquiry with no funds withdrawn.
  * Wallet accounting therefore follows Stripe's balance transactions instead:
  * negative transactions are withdrawals, positive transactions are
- * reinstatements. Stripe balance movements can use the account settlement
- * currency; when they do, `exchange_rate` converts the dispute currency into
- * the balance-transaction currency, so dividing restores comparable minor
- * units before computing the wallet proportion.
+ * reinstatements.
+ *
+ * Balance transactions can use the account settlement currency and therefore
+ * different minor-unit exponents from the dispute currency. A direct exchange-
+ * rate conversion of integer minor units is error-prone (for example JPY→USD).
+ * Stripe exposes at most the withdrawal and reinstatement transactions on the
+ * Dispute, so use their same-currency ratio: any withdrawal moves the full
+ * disputed amount; a reinstatement moves the disputed amount multiplied by
+ * `reinstated / withdrawn`. This remains exact across currencies and exponents.
  */
 export function disputeBalanceMovementCents(input: {
   disputeAmountCents: number;
@@ -27,39 +31,39 @@ export function disputeBalanceMovementCents(input: {
   balanceTransactions: readonly DisputeBalanceMovement[];
   direction: "withdrawn" | "reinstated";
 }): number {
-  const expectedCurrency = input.disputeCurrency.trim().toLowerCase();
-  if (!expectedCurrency) throw new Error("Stripe dispute currency is missing.");
+  const disputeCurrency = input.disputeCurrency.trim().toLowerCase();
+  if (!disputeCurrency) throw new Error("Stripe dispute currency is missing.");
 
-  let movement = 0;
+  let withdrawn = 0;
+  let reinstated = 0;
+  let settlementCurrency: string | null = null;
+
   for (const transaction of input.balanceTransactions) {
     const rawAmount = Number(transaction.amount ?? 0);
     if (!Number.isFinite(rawAmount) || rawAmount === 0) continue;
-    const relevant = input.direction === "withdrawn" ? rawAmount < 0 : rawAmount > 0;
-    if (!relevant) continue;
-
     const currency = String(transaction.currency || "")
       .trim()
       .toLowerCase();
     if (!currency) throw new Error("Stripe dispute balance movement currency is missing.");
-
-    let comparableAmount = Math.abs(rawAmount);
-    if (currency !== expectedCurrency) {
-      const exchangeRate = Number(transaction.exchange_rate);
-      if (!(Number.isFinite(exchangeRate) && exchangeRate > 0)) {
-        throw new Error(
-          `Stripe dispute balance movement currency ${currency} does not match ${expectedCurrency} and has no usable exchange rate.`,
-        );
-      }
-      comparableAmount = comparableAmount / exchangeRate;
+    if (settlementCurrency && settlementCurrency !== currency) {
+      throw new Error(
+        `Stripe dispute balance movements use inconsistent settlement currencies (${settlementCurrency}, ${currency}).`,
+      );
     }
-    movement += Math.round(comparableAmount);
+    settlementCurrency = currency;
+    if (rawAmount < 0) withdrawn += Math.abs(rawAmount);
+    else reinstated += rawAmount;
   }
 
   const rawDisputeAmount = Number(input.disputeAmountCents);
   const disputeAmount = Number.isFinite(rawDisputeAmount)
     ? Math.max(0, Math.trunc(rawDisputeAmount))
     : 0;
-  return disputeAmount > 0 ? Math.min(disputeAmount, movement) : movement;
+  if (!(disputeAmount > 0)) return 0;
+
+  if (input.direction === "withdrawn") return withdrawn > 0 ? disputeAmount : 0;
+  if (!(withdrawn > 0) || !(reinstated > 0)) return 0;
+  return Math.round(disputeAmount * clampUnitInterval(reinstated / withdrawn));
 }
 
 /**
