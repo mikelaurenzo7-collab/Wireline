@@ -81,7 +81,28 @@ describe("AI cost-protection contract", () => {
   it("deep completion-grace debt routes inbound to a durable bounded take-a-message assistant", () => {
     const webhook = read("src/routes/vapi-v2.ts");
     expect(webhook).toContain("INBOUND_TAKE_MESSAGE_GRACE_USD");
-    expect(webhook).toContain("buildTakeMessageAssistant");
-    expect(webhook).toContain("take_message_debt_guard");
+    expect(webhook).toContain("getVoiceWalletSnapshot");
+    // The fallback answers the same tenant line as the full assistant, so it
+    // must receive that agent's compliance posture and business identity.
+    expect(webhook).toMatch(
+      /buildDurableTakeMessageAssistant\(\s*webhookAgentId,\s*agentVoiceName,\s*agentComplianceMode,\s*userSettings\?\.businessName,\s*\)/,
+    );
+
+    const helperStart = webhook.indexOf("function buildDurableTakeMessageAssistant");
+    const routeStart = webhook.indexOf('router.post("/api/vapi-webhook"');
+    const helper = webhook.slice(helperStart, routeStart);
+    expect(helper).toContain("maxDurationSeconds: 300");
+    // Vapi records by default: HIPAA agents must stay unrecorded here too, and
+    // any recorded call must open with the same spoken disclosure.
+    expect(helper).toContain('const recordingEnabled = complianceMode !== "hipaa";');
+    expect(helper).toContain("recordingEnabled,");
+    expect(helper).toContain("complianceFirstMessagePrefix(");
+    expect(helper).toContain("firstMessage: `${disclosurePrefix}");
+    expect(helper).toContain('name: "create_followup_task"');
+    expect(helper).toContain(
+      "Promise follow-up only if the result explicitly confirms the task was created",
+    );
+    expect(helper).toContain("promise follow-up only if the tool explicitly confirms creation");
+    expect(helper).not.toContain("book_appointment");
   });
 });
