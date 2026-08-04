@@ -1,11 +1,5 @@
-const EXCLUDED_CONTAINER_TAGS = new Set([
-  "head",
-  "noscript",
-  "script",
-  "style",
-  "svg",
-  "template",
-]);
+const RAW_TEXT_TAGS = new Set(["script", "style"]);
+const NON_CONTENT_CONTAINER_TAGS = new Set(["head", "noscript", "svg", "template"]);
 
 const VOID_TAGS = new Set([
   "area",
@@ -157,12 +151,12 @@ function hasExplicitHiddenState(rawAttributes: string): boolean {
 
   const style = (attributes.get("style") || "").replace(/\/\*[\s\S]*?\*\//g, "");
   return (
-    /(?:^|;)\s*display\s*:\s*none\b/i.test(style) ||
-    /(?:^|;)\s*visibility\s*:\s*hidden\b/i.test(style)
+    /(?:^|;)\s*display\s*:\s*none(?:\s*!important)?\s*(?:;|$)/i.test(style) ||
+    /(?:^|;)\s*visibility\s*:\s*hidden(?:\s*!important)?\s*(?:;|$)/i.test(style)
   );
 }
 
-function findExcludedContainerEnd(html: string, tagName: string, start: number): number {
+function findRawTextEnd(html: string, tagName: string, start: number): number {
   const closePattern = new RegExp(`<\\/\\s*${tagName}\\b`, "gi");
   closePattern.lastIndex = start;
   const closeMatch = closePattern.exec(html);
@@ -171,7 +165,10 @@ function findExcludedContainerEnd(html: string, tagName: string, start: number):
   return closeEnd === -1 ? html.length : closeEnd + 1;
 }
 
-function closeElement(stack: OpenElement[], tagName: string): { visible: boolean } | null {
+function closeElement(
+  stack: OpenElement[],
+  tagName: string,
+): { visible: boolean; hiddenRemoved: number } | null {
   let matchIndex = -1;
   for (let index = stack.length - 1; index >= 0; index -= 1) {
     if (stack[index].tagName === tagName) {
@@ -182,8 +179,12 @@ function closeElement(stack: OpenElement[], tagName: string): { visible: boolean
   if (matchIndex === -1) return null;
 
   const matching = stack[matchIndex];
-  stack.splice(matchIndex);
-  return { visible: !matching.hidden };
+  const removed = stack.splice(matchIndex);
+  let hiddenRemoved = 0;
+  for (const element of removed) {
+    if (element.hidden) hiddenRemoved += 1;
+  }
+  return { visible: !matching.hidden, hiddenRemoved };
 }
 
 /**
@@ -232,24 +233,30 @@ export function extractVisibleHtmlText(html: string): string {
 
     if (parsed.closing) {
       const closed = closeElement(stack, parsed.tagName);
-      hiddenDepth = stack.reduce((count, element) => count + (element.hidden ? 1 : 0), 0);
-      if (closed?.visible && hiddenDepth === 0 && BLOCK_TAGS.has(parsed.tagName)) {
-        output.push("\n");
+      if (closed) hiddenDepth = Math.max(0, hiddenDepth - closed.hiddenRemoved);
+      if (closed?.visible && hiddenDepth === 0) {
+        output.push(BLOCK_TAGS.has(parsed.tagName) ? "\n" : " ");
       }
       index = tagEnd + 1;
       continue;
     }
 
-    if (EXCLUDED_CONTAINER_TAGS.has(parsed.tagName)) {
-      index = findExcludedContainerEnd(html, parsed.tagName, tagEnd + 1);
+    if (RAW_TEXT_TAGS.has(parsed.tagName)) {
+      if (hiddenDepth === 0) output.push(" ");
+      index = findRawTextEnd(html, parsed.tagName, tagEnd + 1);
       continue;
     }
 
     const inheritedHidden = hiddenDepth > 0;
-    const hidden = inheritedHidden || hasExplicitHiddenState(parsed.attributes);
+    const hidden =
+      inheritedHidden ||
+      NON_CONTENT_CONTAINER_TAGS.has(parsed.tagName) ||
+      hasExplicitHiddenState(parsed.attributes);
     const voidElement = parsed.selfClosing || VOID_TAGS.has(parsed.tagName);
 
-    if ((parsed.tagName === "br" || parsed.tagName === "hr") && !hidden) output.push("\n");
+    if (!hidden) {
+      output.push(parsed.tagName === "br" || parsed.tagName === "hr" ? "\n" : " ");
+    }
     if (!voidElement) {
       stack.push({ tagName: parsed.tagName, hidden });
       if (hidden) hiddenDepth += 1;
