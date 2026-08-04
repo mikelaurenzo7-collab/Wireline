@@ -131,6 +131,8 @@ run("npx", [
   "tests/public-health-probe.test.ts",
   "tests/public-health-function.test.ts",
   "tests/public-health-distributed-cache-contract.test.ts",
+  "tests/health-surfaces-contract.test.ts",
+  "tests/integration/api-health.test.ts",
   "tests/billing-proof-contract.test.ts",
   "src/lib/plan-catalog.test.ts",
   "tests/round6-margin-capacity-contract.test.ts",
