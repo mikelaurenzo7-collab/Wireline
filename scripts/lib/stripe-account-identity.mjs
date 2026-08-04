@@ -12,18 +12,20 @@ function normalizedBrand(value) {
   return normalizeText(value).toLowerCase();
 }
 
-function publicHostname(value) {
+function publicUrlIdentity(value) {
   const raw = normalizeText(value);
-  if (!raw) return "";
+  if (!raw) return { hostname: "", protocol: "" };
   try {
-    return new URL(raw).hostname.toLowerCase();
+    const url = new URL(raw);
+    return { hostname: url.hostname.toLowerCase(), protocol: url.protocol.toLowerCase() };
   } catch {
-    return "";
+    return { hostname: "", protocol: "" };
   }
 }
 
 function hasWirelineDescriptor(value) {
-  return normalizeText(value).toUpperCase().startsWith(STRIPE_STATEMENT_DESCRIPTOR_PREFIX);
+  const normalized = normalizeText(value).toUpperCase();
+  return /^WIRELINE(?:$|[\s*-])/.test(normalized);
 }
 
 function finding(level, message, metadata = {}) {
@@ -41,7 +43,7 @@ export function stripeAccountIdentityFindings(account) {
   const findings = [];
   const profileName = normalizeText(account?.business_profile?.name);
   const profileUrl = normalizeText(account?.business_profile?.url);
-  const profileHost = publicHostname(profileUrl);
+  const profileIdentity = publicUrlIdentity(profileUrl);
   const dashboardName = normalizeText(account?.settings?.dashboard?.display_name);
   const cardDescriptor = normalizeText(
     account?.settings?.card_payments?.statement_descriptor_prefix,
@@ -57,11 +59,16 @@ export function stripeAccountIdentityFindings(account) {
     );
   }
 
-  if (!STRIPE_PUBLIC_HOSTS.has(profileHost)) {
+  if (
+    profileIdentity.protocol !== "https:" ||
+    !STRIPE_PUBLIC_HOSTS.has(profileIdentity.hostname)
+  ) {
     findings.push(
       finding("error", "Stripe business profile URL is not the canonical Wireline domain.", {
         expected_hosts: [...STRIPE_PUBLIC_HOSTS],
-        actual_host: profileHost || null,
+        expected_protocol: "https:",
+        actual_host: profileIdentity.hostname || null,
+        actual_protocol: profileIdentity.protocol || null,
       }),
     );
   }
@@ -104,9 +111,11 @@ export function stripeAccountIdentityFindings(account) {
 }
 
 export function stripeAccountIdentitySummary(account) {
+  const profileIdentity = publicUrlIdentity(account?.business_profile?.url);
   return {
     business_profile_name: normalizeText(account?.business_profile?.name) || null,
-    business_profile_host: publicHostname(account?.business_profile?.url) || null,
+    business_profile_host: profileIdentity.hostname || null,
+    business_profile_protocol: profileIdentity.protocol || null,
     dashboard_display_name: normalizeText(account?.settings?.dashboard?.display_name) || null,
     card_statement_descriptor_prefix:
       normalizeText(account?.settings?.card_payments?.statement_descriptor_prefix) || null,
