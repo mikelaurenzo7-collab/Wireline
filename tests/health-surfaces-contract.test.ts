@@ -2,7 +2,16 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { getHealthModelTiering } from "../src/lib/health-model-policy";
 import { probeOpenAIModelDiagnostic } from "../src/lib/health-model-probe";
+import {
+  GEMINI_STRUCTURED_FALLBACK_MODEL,
+  STRUCTURED_PRIMARY_MODEL,
+  VAPI_TENANT_DEFAULT_MODEL,
+  VAPI_TENANT_DEFAULT_PROVIDER,
+  VAPI_VOICE_FALLBACK_MODEL,
+  VAPI_VOICE_FALLBACK_PROVIDER,
+} from "../src/lib/ai-models";
 import { evaluatePlatformOperationalSlos } from "../src/lib/platform-operational-slos";
 
 const root = process.cwd();
@@ -92,6 +101,30 @@ describe("health surfaces contract", () => {
     expect(probeSource).toContain('controller.abort(new Error("model probe timed out"))');
     expect(probeSource).toContain("signal: controller.signal");
     expect(probeSource).toContain("clearTimeout(timeout)");
+  });
+
+  it("derives authenticated model/provider health from canonical runtime policy", () => {
+    const tiering = getHealthModelTiering();
+    expect(tiering.voice_runtime).toMatchObject({
+      provider: VAPI_TENANT_DEFAULT_PROVIDER,
+      model: VAPI_TENANT_DEFAULT_MODEL,
+    });
+    expect(tiering.voice_fallback).toMatchObject({
+      provider: VAPI_VOICE_FALLBACK_PROVIDER,
+      model: VAPI_VOICE_FALLBACK_MODEL,
+    });
+    expect(tiering.reasoning_layer).toMatchObject({
+      provider: "openai",
+      model: STRUCTURED_PRIMARY_MODEL,
+    });
+    expect(tiering.reasoning_fallback).toMatchObject({
+      provider: "google",
+      model: GEMINI_STRUCTURED_FALLBACK_MODEL,
+    });
+
+    const routeSource = read("src/routes/health-routes.ts");
+    expect(routeSource).toContain("llm_tiering: getHealthModelTiering()");
+    expect(routeSource).not.toMatch(/voice_fallback:\s*\{\s*provider:\s*"google"/);
   });
 
   it("does not call OpenAI when the diagnostic key is absent", async () => {
