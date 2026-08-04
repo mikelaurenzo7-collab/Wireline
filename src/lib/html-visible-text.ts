@@ -1,5 +1,6 @@
 const RAW_TEXT_TAGS = new Set(["script", "style"]);
 const NON_CONTENT_CONTAINER_TAGS = new Set(["head", "noscript", "svg", "template"]);
+const MAX_HTML_NESTING_DEPTH = 512;
 
 const VOID_TAGS = new Set([
   "area",
@@ -187,6 +188,10 @@ function closeElement(
   return { visible: !matching.hidden, hiddenRemoved };
 }
 
+function isMarkupDeclaration(rawTag: string): boolean {
+  return /^<\s*[!?]/.test(rawTag);
+}
+
 /**
  * Extract page-readable text from bounded HTML without executing or rendering it.
  *
@@ -227,6 +232,7 @@ export function extractVisibleHtmlText(html: string): string {
     const rawTag = html.slice(index, tagEnd + 1);
     const parsed = parseTag(rawTag);
     if (!parsed) {
+      if (hiddenDepth === 0 && !isMarkupDeclaration(rawTag)) output.push(rawTag);
       index = tagEnd + 1;
       continue;
     }
@@ -258,6 +264,7 @@ export function extractVisibleHtmlText(html: string): string {
       output.push(parsed.tagName === "br" || parsed.tagName === "hr" ? "\n" : " ");
     }
     if (!voidElement) {
+      if (stack.length >= MAX_HTML_NESTING_DEPTH) return output.join("");
       stack.push({ tagName: parsed.tagName, hidden });
       if (hidden) hiddenDepth += 1;
     }
