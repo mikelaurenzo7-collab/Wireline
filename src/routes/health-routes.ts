@@ -19,6 +19,7 @@ import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_VOICE_FALLBACK_MODEL,
 } from "../lib/ai-models";
+import { probeOpenAIModelDiagnostic } from "../lib/health-model-probe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { reportError } from "../lib/error-reporter";
@@ -113,44 +114,6 @@ async function probeDatabase(
     return { ok: true, latency_ms: Date.now() - started };
   } catch (error) {
     return { ok: false, latency_ms: Date.now() - started, error: getErrorMessage(error) };
-  }
-}
-async function probeOpenAI(
-  model: string,
-  timeoutMs = 8000,
-): Promise<{ ok: boolean; latency_ms: number; error?: string; model: string }> {
-  const started = Date.now();
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) return { ok: false, latency_ms: 0, model, error: "OPENAI_API_KEY not configured" };
-
-  const controller = new AbortController();
-  const timeout = setTimeout(
-    () => controller.abort(new Error("model probe timed out")),
-    timeoutMs,
-  );
-  try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      // Responses API requires max_output_tokens >= 16; a smaller probe value
-      // returns HTTP 400 and falsely marks production as an outage.
-      body: JSON.stringify({ model, input: "ping", max_output_tokens: 16 }),
-      signal: controller.signal,
-    });
-    if (!response.ok) throw new Error(`OpenAI probe failed (${response.status})`);
-    return { ok: true, latency_ms: Date.now() - started, model };
-  } catch (error) {
-    return {
-      ok: false,
-      latency_ms: Date.now() - started,
-      model,
-      error: (controller.signal.aborted ? "model probe timed out" : getErrorMessage(error)).slice(
-        0,
-        240,
-      ),
-    };
-  } finally {
-    clearTimeout(timeout);
   }
 }
 router.get("/", healthRateLimiter, async (_req, res) => {
@@ -340,11 +303,11 @@ router.get(
 router.get("/models", healthRateLimiter, authenticateUser, async (_req, res) => {
   const started = Date.now();
   const [voice, premium, reasoning] = await Promise.all([
-    probeOpenAI(VAPI_TENANT_DEFAULT_MODEL),
+    probeOpenAIModelDiagnostic(VAPI_TENANT_DEFAULT_MODEL),
     VAPI_PREMIUM_MODEL === VAPI_TENANT_DEFAULT_MODEL
       ? Promise.resolve(null)
-      : probeOpenAI(VAPI_PREMIUM_MODEL),
-    probeOpenAI(OPENAI_STRUCTURED_PRIMARY_MODEL),
+      : probeOpenAIModelDiagnostic(VAPI_PREMIUM_MODEL),
+    probeOpenAIModelDiagnostic(OPENAI_STRUCTURED_PRIMARY_MODEL),
   ]);
   const ok = voice.ok && reasoning.ok && (premium?.ok ?? true);
   res.status(ok ? 200 : 503).json({
