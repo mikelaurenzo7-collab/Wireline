@@ -150,14 +150,16 @@ async function reverseRuntimeAllowanceForCharge(
       );
     });
   } catch (error) {
-    // Never fail the webhook on this path: the money movement Stripe cares
-    // about has already been recorded, and throwing here would force a
-    // redelivery that re-runs the primary handler.
+    // The reversal is a required financial side effect. A transient Stripe,
+    // database, tenant-context, or ledger failure must escape to the outer
+    // webhook handler so it releases the idempotency claim and returns a
+    // retryable 5xx. Ledger reference keys make the retry idempotent.
     log.error("subscription runtime allowance reversal failed", {
       chargeId: charge.id,
       reason,
       error: getErrorMessage(error),
     });
+    throw error;
   }
 }
 
