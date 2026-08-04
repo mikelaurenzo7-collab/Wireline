@@ -12,7 +12,7 @@ describe("OAuth exchange session integrity", () => {
     expect(oauth).toContain('import { sessionUsers } from "../db/security-schema"');
 
     const exchange = oauth.slice(oauth.indexOf('router.post("/api/auth/oauth/exchange"'));
-    const sessionLookup = exchange.indexOf("schema: sessionUsers.sessionVersion");
+    const sessionLookup = exchange.indexOf("sessionVersion: sessionUsers.sessionVersion");
     const accountBootstrap = exchange.indexOf("ensureDefaultAccount(entry.user.id");
     const tokenMint = exchange.indexOf("const sessionToken = generateToken({");
     const cookieWrite = exchange.indexOf("setSessionCookie(res, sessionToken)");
