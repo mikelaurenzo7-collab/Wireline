@@ -39,11 +39,11 @@ Optional compatibility/add-on variables:
   are not the Founder launch billing path
 - `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID` only if the live video add-on is sold
 
-Do not run catalog writes against production casually. Use the read-only catalog audit first.
+Do not run catalog writes against production casually. Run the static contract and the complete read-only live audit first. `stripe:audit-live` pulls the production Stripe key from Vercel, then validates customer-facing account identity, product descriptions and managed metadata, and catalog/price topology. It performs no Stripe writes and deliberately excludes legal-entity, representative, bank, address, tax, and verification data from output.
 
 ```bash
 npm run stripe:catalog:check
-node scripts/audit-stripe-catalog-live.mjs
+VERCEL_TOKEN=... npm run stripe:audit-live
 ```
 
 ## Proof checklist
@@ -81,6 +81,16 @@ The production endpoint's `enabled_events` must exactly match the `case` arms of
 - `npm run stripe:webhook:align` — sets `enabled_events` to exactly the handled set; endpoint URL and signing secret are untouched.
 
 If a claimed event fails after side effects begin, the handler deletes the idempotency claim so Stripe can retry. Wallet mutations remain additionally idempotent through `(user, ref_type, ref_id)` / idempotency-key ledger semantics.
+
+### 3b. Stripe-hosted customer identity and product copy remain canonical
+
+Run `VERCEL_TOKEN=... npm run stripe:audit-live` and require all three read-only audit sections to complete:
+
+1. **Account identity:** business profile and Dashboard display names are `Wireline`; the public URL is HTTPS on `trywireline.com`; card and payment statement descriptors are Wireline-prefixed. Missing account logo/icon is a warning; name, domain, and descriptor drift are errors.
+2. **Product copy:** every active canonical product has the exact repository description, catalog version, and managed metadata from `scripts/lib/stripe-founder-catalog.mjs`.
+3. **Catalog topology:** active products/prices, amounts, recurring intervals, product ownership, subscriptions, payment links, and open Checkout sessions use canonical objects.
+
+Account-identity remediation is limited to customer-facing/public branding. Do not modify legal-entity, representative, bank, tax, address, or verification data while resolving an identity-audit failure.
 
 ### 4. Cancellation or downgrade is reflected in the app
 
@@ -128,6 +138,12 @@ Run these after touching billing logic:
 npm run test:run -- src/lib/plan-catalog.test.ts src/lib/conversation-balance.test.ts tests/voice-wallet-guard.test.ts tests/voice-pricing-display.test.ts tests/billing-proof-contract.test.ts
 npm run stripe:catalog:check
 npm run lint:eslint
+```
+
+Run the read-only production truth audit before a billing release:
+
+```bash
+VERCEL_TOKEN=... npm run stripe:audit-live
 ```
 
 Run full verification before a release candidate:
