@@ -48,7 +48,7 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     expect(middleware).not.toContain('eventType === "charge.dispute.closed"');
   });
 
-  it("extracts actual withdrawn and reinstated cents from Stripe balance transactions", () => {
+  it("extracts actual withdrawn and reinstated proportions from balance movements", () => {
     const transactions = [
       { amount: -10_000, currency: "usd" },
       { amount: 8_000, currency: "usd" },
@@ -79,25 +79,41 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     ).toBe(0);
   });
 
-  it("normalizes settlement-currency movements through Stripe's exchange rate", () => {
+  it("uses settlement-currency ratios instead of converting incompatible minor units", () => {
+    // A 1,000 JPY dispute can settle as a 700-cent USD withdrawal. A later
+    // 350-cent reinstatement is half of the withdrawn balance, so restore 500
+    // JPY regardless of JPY's zero-decimal and USD's two-decimal exponent.
+    const fxTransactions = [
+      { amount: -700, currency: "usd" },
+      { amount: 350, currency: "usd" },
+    ];
     expect(
       disputeBalanceMovementCents({
         disputeAmountCents: 1_000,
-        disputeCurrency: "eur",
-        balanceTransactions: [
-          { amount: -1_234, currency: "usd", exchange_rate: 1.234 },
-        ],
+        disputeCurrency: "jpy",
+        balanceTransactions: fxTransactions,
         direction: "withdrawn",
       }),
     ).toBe(1_000);
+    expect(
+      disputeBalanceMovementCents({
+        disputeAmountCents: 1_000,
+        disputeCurrency: "jpy",
+        balanceTransactions: fxTransactions,
+        direction: "reinstated",
+      }),
+    ).toBe(500);
     expect(() =>
       disputeBalanceMovementCents({
         disputeAmountCents: 1_000,
-        disputeCurrency: "eur",
-        balanceTransactions: [{ amount: -1_234, currency: "usd" }],
-        direction: "withdrawn",
+        disputeCurrency: "jpy",
+        balanceTransactions: [
+          { amount: -700, currency: "usd" },
+          { amount: 350, currency: "eur" },
+        ],
+        direction: "reinstated",
       }),
-    ).toThrow(/has no usable exchange rate/);
+    ).toThrow(/inconsistent settlement currencies/);
   });
 
   it("scales allowance by both movement share and base-plan share", () => {
