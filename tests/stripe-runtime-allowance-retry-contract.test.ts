@@ -8,6 +8,11 @@ import {
   runtimeAllowanceMovementUsd,
   subscriptionDisputeAllowancePortion,
 } from "../src/lib/stripe-dispute-accounting";
+import { basePlanFromStripeSubscription } from "../src/lib/stripe-base-plan";
+import {
+  EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID,
+  STRIPE_PLANS,
+} from "../src/lib/plan-catalog";
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
@@ -149,6 +154,25 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     expect(middleware).toContain("reinstatement arrived before its top-up withdrawal");
   });
 
+  it("resolves base plans without mistaking an add-on-first item for the plan", () => {
+    const business = STRIPE_PLANS.find((plan) => plan.id === "business");
+    expect(business?.fallbackPriceId).toBeTruthy();
+    const resolved = basePlanFromStripeSubscription({
+      items: {
+        data: [
+          {
+            price: {
+              id: EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID,
+              metadata: { wireline_addon_id: "extra_agent" },
+            },
+          },
+          { price: { id: business?.fallbackPriceId } },
+        ],
+      },
+    });
+    expect(resolved?.id).toBe("business");
+  });
+
   it("resolves late disputes through stable customer ownership and historical plan truth", () => {
     const subscriptionLookup = middleware.indexOf(
       "schema.subscriptions.stripeSubscriptionId, subscriptionId",
@@ -158,7 +182,7 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     );
     expect(subscriptionLookup).toBeGreaterThan(-1);
     expect(customerFallback).toBeGreaterThan(subscriptionLookup);
-    expect(middleware).toContain("planByStripePrice(item.price)");
+    expect(middleware).toContain("basePlanFromStripeSubscription(subscription)");
     expect(middleware).toContain("planId: disputedPlan.id");
     expect(middleware).not.toContain("planId: row.plan");
     expect(middleware).toContain("historical plan is not mapped");
