@@ -161,12 +161,15 @@ describe("managed phone voice runtime policy", () => {
     expect(liveFloor).not.toMatch(/AgentPresencePstnBridge|Live presenter/);
   });
 
-  it("keeps model and carrier complexity managed instead of user-tuned", () => {
-    expect(carrier).toMatch(/Vapi handles the phone conversation runtime/);
-    expect(carrier).toMatch(/OpenAI is the primary call model/);
-    expect(carrier).toMatch(/Gemini is the automatic fallback/);
+  it("keeps model and carrier complexity managed and provider-neutral", () => {
     expect(carrier).toMatch(
-      /Twilio supplies phone and messaging infrastructure/,
+      /Wireline manages the phone conversation runtime, voice selection, intelligence routing, and continuity/,
+    );
+    expect(carrier).toMatch(/Phone runtime", "Wireline managed/);
+    expect(carrier).toMatch(/Call intelligence", "Managed automatically/);
+    expect(carrier).toMatch(/Continuity", "Automatic failover/);
+    expect(carrier).not.toMatch(
+      /Gemini is the automatic fallback|Primary intelligence", "OpenAI|Automatic fallback", "Gemini/,
     );
     expect(carrier).not.toMatch(
       /Advanced Cognitive Routing|Custom Model Selection|Model Revision Override/,
