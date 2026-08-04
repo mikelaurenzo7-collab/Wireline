@@ -1,6 +1,7 @@
 import { isIP } from "node:net";
 import * as https from "node:https";
 
+import { extractVisibleHtmlText } from "./html-visible-text";
 import {
   resolvePinnedWebhookDestination,
   type PinnedWebhookDestination,
@@ -333,14 +334,7 @@ export function htmlToVisibleText(html: string): { title: string | null; text: s
     ? decodeHtmlEntities(titleMatch[1].replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim()
     : null;
   const text = stripUnsafeControlCharacters(
-    decodeHtmlEntities(
-      html
-        .replace(/<!--[\s\S]*?-->/g, " ")
-        .replace(/<(script|style|noscript|template|svg)\b[^>]*>[\s\S]*?<\/\1>/gi, " ")
-        .replace(/<(br|hr)\b[^>]*\/?\s*>/gi, "\n")
-        .replace(/<\/(p|div|section|article|main|header|footer|nav|aside|h[1-6]|li|tr|table|ul|ol)>/gi, "\n")
-        .replace(/<[^>]+>/g, " "),
-    ),
+    decodeHtmlEntities(extractVisibleHtmlText(html)),
   )
     .replace(/\r/g, "")
     .replace(/[\t\f\v ]+/g, " ")
