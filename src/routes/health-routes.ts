@@ -17,8 +17,8 @@ import {
   GEMINI_STRUCTURED_FALLBACK_MODEL,
   VAPI_PREMIUM_MODEL,
   VAPI_TENANT_DEFAULT_MODEL,
-  VAPI_VOICE_FALLBACK_MODEL,
 } from "../lib/ai-models";
+import { getHealthModelTiering } from "../lib/health-model-policy";
 import { probeOpenAIModelDiagnostic } from "../lib/health-model-probe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
@@ -175,29 +175,7 @@ router.get(
       app_model: STRUCTURED_PRIMARY_MODEL,
       voice_agent_model: VAPI_TENANT_DEFAULT_MODEL,
       voice_agent_premium_model: VAPI_PREMIUM_MODEL,
-      llm_tiering: {
-        voice_runtime: {
-          provider: "openai",
-          model: VAPI_TENANT_DEFAULT_MODEL,
-          reason: "Managed low-latency Vapi model.",
-        },
-        voice_fallback: {
-          provider: "google",
-          model: VAPI_VOICE_FALLBACK_MODEL,
-          reason: "Automatic failure fallback.",
-        },
-        reasoning_layer: {
-          provider: "openai",
-          model: STRUCTURED_PRIMARY_MODEL,
-          reason:
-            "Managed OpenAI Responses primary for training, QA, insights, and post-call work.",
-        },
-        reasoning_fallback: {
-          provider: "google",
-          model: GEMINI_STRUCTURED_FALLBACK_MODEL,
-          reason: "First automatic fallback; the AI Gateway follows.",
-        },
-      },
+      llm_tiering: getHealthModelTiering(),
       timestamp: new Date().toISOString(),
     });
   },
