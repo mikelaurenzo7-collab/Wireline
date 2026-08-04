@@ -89,6 +89,7 @@ function configurePreviewEnvironment() {
 
 run("node", ["scripts/check-deployment-boundaries.mjs"]);
 run("node", ["scripts/check-source-control-hygiene.mjs"]);
+run("node", ["scripts/check-workflow-syntax.mjs"]);
 run("node", ["scripts/check-docs-index.mjs"]);
 run("node", ["scripts/check-wireline-clear-system.mjs"]);
 run("node", ["scripts/check-native-release-horizon.mjs"]);
