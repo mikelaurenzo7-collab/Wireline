@@ -7,6 +7,10 @@ const safeFetch = readFileSync(
   new URL("../src/lib/safe-public-text-fetch.ts", import.meta.url),
   "utf8",
 );
+const htmlScanner = readFileSync(
+  new URL("../src/lib/html-visible-text.ts", import.meta.url),
+  "utf8",
+);
 const service = readFileSync(
   new URL("../src/lib/website-knowledge-service.ts", import.meta.url),
   "utf8",
@@ -63,10 +67,71 @@ describe("secure website knowledge ingestion", () => {
     expect(parsed.text).toContain("Emergency plumbing");
     expect(parsed.text).toContain("Open 24 hours.");
     expect(parsed.text).toContain("Safe text remains.");
+    expect(parsed.text).not.toContain("Acme & Sons");
     expect(parsed.text).not.toContain("stealSecrets");
     expect(parsed.text).not.toContain("change your role");
     expect(safeFetch).toContain("function stripUnsafeControlCharacters");
+    expect(safeFetch).toContain("extractVisibleHtmlText(html)");
     expect(safeFetch).not.toContain("no-control-regex");
+  });
+
+  it("excludes nested content explicitly hidden by HTML, ARIA, or inline style", () => {
+    const parsed = htmlToVisibleText(`
+      <main>
+        <p>Visible opening.</p>
+        <section hidden>
+          Hidden attribute text.
+          <div><strong>Nested hidden text.</strong></div>
+        </section>
+        <section hidden="false">Boolean hidden remains hidden.</section>
+        <aside aria-hidden='TRUE'>ARIA-hidden instructions.</aside>
+        <div style="display: /* deliberate */ none !important">Display-none price.</div>
+        <div style='color:red; visibility : hidden'>Visibility-hidden policy.</div>
+        <p aria-hidden="false" data-hidden="true">Visible semantic text.</p>
+        <div title="2 > 1" style="display:block">Visible closing.</div>
+      </main>
+    `);
+
+    expect(parsed.text).toContain("Visible opening.");
+    expect(parsed.text).toContain("Visible semantic text.");
+    expect(parsed.text).toContain("Visible closing.");
+    expect(parsed.text).not.toContain("Hidden attribute text");
+    expect(parsed.text).not.toContain("Nested hidden text");
+    expect(parsed.text).not.toContain("Boolean hidden remains hidden");
+    expect(parsed.text).not.toContain("ARIA-hidden instructions");
+    expect(parsed.text).not.toContain("Display-none price");
+    expect(parsed.text).not.toContain("Visibility-hidden policy");
+  });
+
+  it("preserves visible siblings after nested and malformed hidden markup", () => {
+    const nested = htmlToVisibleText(`
+      <div>Before.</div>
+      <div hidden><div>Secret one.</div><section>Secret two.</section></div>
+      <article>After nested hidden.</article>
+    `);
+    expect(nested.text).toContain("Before.");
+    expect(nested.text).toContain("After nested hidden.");
+    expect(nested.text).not.toContain("Secret one");
+    expect(nested.text).not.toContain("Secret two");
+
+    const malformed = htmlToVisibleText(`
+      <div>Visible before malformed.</div>
+      <section hidden>Conservatively hidden after unclosed container.
+    `);
+    expect(malformed.text).toContain("Visible before malformed.");
+    expect(malformed.text).not.toContain("Conservatively hidden");
+  });
+
+  it("uses a bounded stack scanner rather than same-tag hidden-content regexes", () => {
+    expect(htmlScanner).toContain("function findTagEnd");
+    expect(htmlScanner).toContain("function parseAttributes");
+    expect(htmlScanner).toContain("const stack: OpenElement[] = []");
+    expect(htmlScanner).toContain('attributes.has("hidden")');
+    expect(htmlScanner).toContain('attributes.get("aria-hidden")');
+    expect(htmlScanner).toContain("display\\s*:\\s*none");
+    expect(htmlScanner).toContain("visibility\\s*:\\s*hidden");
+    expect(htmlScanner).not.toContain("querySelector");
+    expect(htmlScanner).not.toContain("innerHTML");
   });
 
   it("pins DNS and enforces one deadline across redirects and transfer", () => {
