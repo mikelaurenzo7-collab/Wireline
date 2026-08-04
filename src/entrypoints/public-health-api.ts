@@ -178,10 +178,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
 
     // Vapi owns the managed call runtime and its same-provider model fallback.
-    // The exact primary/fallback payload is certified at preview build time by
-    // creating and deleting one inert assistant. Runtime health therefore
-    // probes Vapi's authenticated control plane rather than incorrectly asking
-    // Wireline's direct OpenAI key to resolve a model that Vapi serves.
+    // Runtime health therefore probes Vapi's authenticated control plane rather
+    // than incorrectly asking Wireline's direct OpenAI key to resolve a model
+    // that Vapi serves. A separate credentialed diagnostic can create, read,
+    // verify, and delete one inert assistant when those credentials are supplied.
     const managedVoicePromise = probeVapiManagedVoice(process.env.VAPI_PRIVATE_KEY);
     const [voice, reasoning] = await Promise.all([
       managedVoicePromise,
