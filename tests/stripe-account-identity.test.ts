@@ -68,6 +68,30 @@ describe("Stripe account identity guard", () => {
     expect(findings).toEqual([]);
   });
 
+  it("rejects insecure canonical-domain URLs and descriptor lookalikes", () => {
+    const findings = stripeAccountIdentityFindings({
+      business_profile: {
+        name: "Wireline",
+        url: "http://trywireline.com",
+      },
+      settings: {
+        dashboard: { display_name: "Wireline" },
+        card_payments: { statement_descriptor_prefix: "WIRELINEFAKE" },
+        payments: { statement_descriptor: "WIRELINEPAY" },
+        branding: { logo: "file_logo", icon: null },
+      },
+    });
+
+    expect(findings.filter((finding) => finding.level === "error")).toHaveLength(3);
+    expect(findings.map((finding) => finding.message)).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/canonical Wireline domain/i),
+        expect.stringMatching(/card statement descriptor/i),
+        expect.stringMatching(/payment statement descriptor/i),
+      ]),
+    );
+  });
+
   it("returns only sanitized customer-facing identity fields", () => {
     const summary = stripeAccountIdentitySummary({
       email: "private@example.com",
@@ -85,6 +109,7 @@ describe("Stripe account identity guard", () => {
     expect(summary).toEqual({
       business_profile_name: "Wireline",
       business_profile_host: null,
+      business_profile_protocol: null,
       dashboard_display_name: "Wireline",
       card_statement_descriptor_prefix: "WIRELINE",
       payment_statement_descriptor: null,
