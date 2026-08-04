@@ -14,6 +14,21 @@ describe("signup bootstrap integrity", () => {
     expect(passwordAuth).toContain("await startTrialForUser(user.id, signupAttribution, tx)");
     expect(oauthAuth).toContain("return drizzle.transaction(async (tx) =>");
     expect(oauthAuth).toContain("await startTrialForUser(created.id, {}, tx)");
+    expect(oauthAuth).toContain("await startTrialForUser(existing.id, {}, tx)");
+  });
+
+  it("treats settings and spend-budget initialization as required", () => {
+    const bootstrap = read("src/lib/trial-gate.ts");
+    const start = bootstrap.slice(
+      bootstrap.indexOf("export async function startTrialForUser"),
+      bootstrap.indexOf("export async function saveSignupAttribution"),
+    );
+
+    expect(start).toContain("await tx");
+    expect(start).toContain("schema.subscriptions.plan");
+    expect(start).toContain("ensureDefaultAiSpendBudget(userId, subscription?.plan ?? null, tx)");
+    expect(start).not.toContain("continuing signup");
+    expect(start).not.toContain("catch (");
   });
 
   it("backfills missing settings without inventing paid entitlement", () => {
