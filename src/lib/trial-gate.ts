@@ -57,55 +57,50 @@ interface TrialCheck {
 /**
  * Historical name retained because password and OAuth signup paths import it.
  * New users no longer receive a trial.
+ *
+ * This is required bootstrap state, not best-effort setup. Callers pass their
+ * open transaction so a settings or spend-budget failure aborts user creation
+ * before any authenticated session can be issued. Existing OAuth identities
+ * also call this routine; derive the budget from an active/trialing subscription
+ * rather than signup intent or a stale canceled plan.
  */
 export async function startTrialForUser(
   userId: string,
   attribution: SignupAttribution = {},
   tx: any = drizzle,
 ): Promise<void> {
-  try {
-    await tx
-      .insert(schema.settings)
-      .values({
-        id: userId,
-        userId,
-        subscriptionStatus: "pending_activation",
-        trialEndsAt: null,
-        trialOutboundCount: 0,
-        signupPlanInterest: attribution.preferredPlanId || null,
-        signupBillingInterval: attribution.preferredBillingInterval || null,
-        signupWedge: attribution.signupWedge || null,
-        acquisitionSource: attribution.utmSource || null,
-        acquisitionMedium: attribution.utmMedium || null,
-        acquisitionCampaign: attribution.utmCampaign || null,
-      })
-      .onConflictDoNothing();
-  } catch (error: any) {
-    log.warn("startTrialForUser activation setup failed (continuing signup)", {
+  await tx
+    .insert(schema.settings)
+    .values({
+      id: userId,
       userId,
-      error: error?.message ?? String(error),
-    });
-  }
-  // Seed the free-tier AI hard-cap budget at signup. Without this, a
-  // pending-activation tenant has NO spendBudgets row, enforceSpendCap
-  // passes everything through, and the usage snapshot still displays a
-  // "hard cap" that doesn't exist. Paid checkout later raises the limit via
-  // the same helper in syncSubscriptionFromStripe.
-  //
-  // Pass the SAME executor (`tx`) so the seed runs inside the signup
-  // transaction — the spend_budgets → users FK references the user row this
-  // tx just inserted, which is not yet visible on a separate pooled
-  // connection. Seeding on the module `drizzle` would throw 23503 and be
-  // swallowed below, leaving password signups permanently unmetered.
-  try {
-    const { ensureDefaultAiSpendBudget } = await import("./workspace-usage-snapshot");
-    await ensureDefaultAiSpendBudget(userId, null, tx);
-  } catch (error: any) {
-    log.warn("startTrialForUser budget seed failed (continuing signup)", {
-      userId,
-      error: error?.message ?? String(error),
-    });
-  }
+      subscriptionStatus: "pending_activation",
+      trialEndsAt: null,
+      trialOutboundCount: 0,
+      signupPlanInterest: attribution.preferredPlanId || null,
+      signupBillingInterval: attribution.preferredBillingInterval || null,
+      signupWedge: attribution.signupWedge || null,
+      acquisitionSource: attribution.utmSource || null,
+      acquisitionMedium: attribution.utmMedium || null,
+      acquisitionCampaign: attribution.utmCampaign || null,
+    })
+    .onConflictDoNothing();
+
+  const [subscription] = await tx
+    .select({
+      plan: schema.subscriptions.plan,
+      status: schema.subscriptions.status,
+    })
+    .from(schema.subscriptions)
+    .where(eq(schema.subscriptions.userId, userId))
+    .limit(1);
+  const fundedPlanId =
+    subscription?.status === "active" || subscription?.status === "trialing"
+      ? subscription.plan
+      : null;
+
+  const { ensureDefaultAiSpendBudget } = await import("./workspace-usage-snapshot");
+  await ensureDefaultAiSpendBudget(userId, fundedPlanId, tx);
 }
 
 export async function saveSignupAttribution(

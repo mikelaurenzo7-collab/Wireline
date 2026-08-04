@@ -155,6 +155,9 @@ async function findOrCreateUserByEmail(email: string, fullName: string | null): 
         .where(eq(schema.users.id, existing.id));
     }
 
+    const { startTrialForUser } = await import("../lib/trial-gate");
+    await startTrialForUser(existing.id, {}, tx);
+
     return { id: existing.id, email: existing.email, fullName: resolvedName };
   });
 }
