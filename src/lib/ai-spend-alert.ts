@@ -1,7 +1,8 @@
-type SpendAlertEnvironment = Pick<
-  NodeJS.ProcessEnv,
-  "WIRELINE_AI_DAILY_ALERT_USD" | "CLAUDE_DAILY_ALERT_USD" | "CLAUDE_MONTHLY_BUDGET_USD"
->;
+type SpendAlertEnvironment = {
+  WIRELINE_AI_DAILY_ALERT_USD?: string;
+  CLAUDE_DAILY_ALERT_USD?: string;
+  CLAUDE_MONTHLY_BUDGET_USD?: string;
+};
 
 function nonNegativeUsd(value: string | undefined): number | null {
   if (value == null || value.trim() === "") return null;
