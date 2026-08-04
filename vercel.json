@@ -67,7 +67,8 @@
       "includeFiles": "dist/server.cjs"
     },
     "api/health/public.ts": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "dist/public-health-api.cjs"
     },
     "api/mcp.ts": {
       "maxDuration": 60,
