@@ -1,8 +1,10 @@
 -- Canonical subscription-entitlement provenance.
 --
--- Production received these columns through an out-of-band launch hardening
--- apply. Keep this migration idempotent so existing production is a no-op while
--- fresh/preview databases reproduce the same auditable billing contract.
+-- Production received the provenance columns through an out-of-band launch
+-- hardening apply. This migration remains idempotent while adding one durable
+-- write invariant: a row carrying a Stripe subscription ID is classified as
+-- Stripe-backed before commit, even when older application code omits the
+-- provenance fields.
 
 ALTER TABLE public.wireline_subscriptions
   ADD COLUMN IF NOT EXISTS entitlement_source text,
@@ -39,3 +41,27 @@ END $$;
 
 CREATE INDEX IF NOT EXISTS idx_wireline_subscriptions_entitlement_source
   ON public.wireline_subscriptions USING btree (entitlement_source);
+
+CREATE OR REPLACE FUNCTION public.wireline_set_subscription_entitlement_source()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF NEW.stripe_subscription_id IS NOT NULL THEN
+    NEW.entitlement_source := 'stripe';
+    NEW.grant_reason := NULL;
+  ELSIF NEW.entitlement_source IS NULL THEN
+    NEW.entitlement_source := 'manual';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS wireline_subscriptions_set_entitlement_source
+  ON public.wireline_subscriptions;
+CREATE TRIGGER wireline_subscriptions_set_entitlement_source
+BEFORE INSERT OR UPDATE OF stripe_subscription_id, entitlement_source
+ON public.wireline_subscriptions
+FOR EACH ROW
+EXECUTE FUNCTION public.wireline_set_subscription_entitlement_source();
