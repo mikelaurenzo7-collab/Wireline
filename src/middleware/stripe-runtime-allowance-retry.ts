@@ -13,6 +13,7 @@ import {
   subscriptionBillingInterval,
   basePlanInvoiceShare,
 } from "../lib/stripe-helpers";
+import { planByStripePrice, type StripePlan } from "../lib/plan-catalog";
 import {
   reverseSubscriptionRuntimeAllowance,
   runtimeAllowanceUsdForPlan,
@@ -59,16 +60,21 @@ async function listSucceededRefunds(chargeId: string): Promise<Stripe.Refund[]> 
 
 type SubscriptionAllowanceContext = {
   userId: string;
-  planId: string | null;
+  planId: string;
   interval: SubscriptionBillingInterval;
   allowanceShare: number;
   chargeCents: number;
 };
 
 /**
- * Resolve the subscription-funded portion of a charge. A charge that did not
- * fund a base plan is legitimately not applicable; a subscription charge whose
- * local owner cannot be resolved is an integrity failure and must be retried.
+ * Resolve the subscription-funded portion of a charge from the historical
+ * Stripe objects that actually funded it.
+ *
+ * A dispute can arrive months after cancellation and resubscription, so the
+ * tenant's current subscription row may hold a different subscription id and
+ * plan. Prefer the exact historical subscription id, fall back to the stable
+ * Stripe customer id for tenant ownership, and always derive the allowance plan
+ * and interval from the disputed subscription itself.
  */
 async function resolveSubscriptionAllowanceContext(
   charge: Stripe.Charge,
@@ -109,21 +115,41 @@ async function resolveSubscriptionAllowanceContext(
     return null;
   }
 
-  const [row] = await drizzle
-    .select({ userId: schema.subscriptions.userId, plan: schema.subscriptions.plan })
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const disputedPlan = subscription.items.data
+    .map((item) => planByStripePrice(item.price))
+    .find((candidate): candidate is StripePlan => !!candidate);
+  if (!disputedPlan) {
+    throw new Error(
+      `Stripe subscription ${subscriptionId} funded Runtime Allowance but its historical plan is not mapped.`,
+    );
+  }
+
+  const customerId =
+    typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+  const [bySubscription] = await drizzle
+    .select({ userId: schema.subscriptions.userId })
     .from(schema.subscriptions)
     .where(eq(schema.subscriptions.stripeSubscriptionId, subscriptionId))
     .limit(1);
-  if (!row?.userId) {
+  let owner = bySubscription;
+  if (!owner?.userId && customerId) {
+    const [byCustomer] = await drizzle
+      .select({ userId: schema.subscriptions.userId })
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.stripeCustomerId, customerId))
+      .limit(1);
+    owner = byCustomer;
+  }
+  if (!owner?.userId) {
     throw new Error(
       `Stripe subscription ${subscriptionId} funded Runtime Allowance but its Wireline owner is unresolved.`,
     );
   }
 
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   return {
-    userId: row.userId,
-    planId: row.plan,
+    userId: owner.userId,
+    planId: disputedPlan.id,
     interval: subscriptionBillingInterval(subscription),
     allowanceShare,
     chargeCents: charge.amount || 0,
