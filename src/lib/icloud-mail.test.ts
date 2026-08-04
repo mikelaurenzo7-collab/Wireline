@@ -68,8 +68,15 @@ describe("icloud-mail", () => {
     expect(mockLogout).toHaveBeenCalled();
   });
 
-  it("maps inbox envelopes to unified messages", async () => {
+  it("maps inbox envelopes using UID search and UID fetch semantics", async () => {
     const messages = await fetchIcloudInbox("you@icloud.com", "app-pass", { limit: 5 });
+
+    expect(mockSearch).toHaveBeenCalledWith({ all: true }, { uid: true });
+    expect(mockFetch).toHaveBeenCalledWith(
+      [102, 101],
+      { envelope: true, source: false },
+      { uid: true },
+    );
     expect(messages).toHaveLength(1);
     expect(messages[0]).toMatchObject({
       messageId: "<test@icloud.com>",

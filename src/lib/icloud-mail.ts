@@ -81,7 +81,11 @@ export async function fetchIcloudInbox(
       const recentUids = uids.slice(-limit).reverse();
       const messages: IcloudInboxMessage[] = [];
 
-      for await (const msg of client.fetch(recentUids, { envelope: true, source: false })) {
+      for await (const msg of client.fetch(
+        recentUids,
+        { envelope: true, source: false },
+        { uid: true },
+      )) {
         const envelope = msg.envelope;
         if (!envelope) continue;
         const messageId =
