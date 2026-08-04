@@ -40,11 +40,11 @@ describe("distributed public health boundary", () => {
     const source = read("src/entrypoints/public-health-api.ts");
     const clientGuard = source.indexOf("if (!client)");
     const lock = source.indexOf("nx: true");
-    const probes = source.indexOf("const [voice, voiceFallback, reasoning]");
+    const probes = source.indexOf("const [voice, reasoning]");
 
     expect(source).toContain("const CACHE_SCOPE = cacheScope()");
-    expect(source).toContain("wireline:health:public:v3:${CACHE_SCOPE}");
-    expect(source).toContain("wireline:health:public:probe-lock:v3:${CACHE_SCOPE}");
+    expect(source).toContain("wireline:health:public:v4:${CACHE_SCOPE}");
+    expect(source).toContain("wireline:health:public:probe-lock:v4:${CACHE_SCOPE}");
     expect(source).toContain('unavailablePayload("DISTRIBUTED_CACHE_REQUIRED")');
     expect(source).toContain('unavailablePayload("DISTRIBUTED_CACHE_UNAVAILABLE")');
     expect(source).toContain("LOCAL_STALE_TTL_MS");
@@ -64,19 +64,37 @@ describe("distributed public health boundary", () => {
     expect(source).toContain("return `${environment}:${deployment}`");
   });
 
-  it("checks the declared OpenAI voice fallback instead of inferring Gemini readiness", () => {
+  it("probes each runtime through its owning provider without generating output", () => {
     const functionSource = read("src/entrypoints/public-health-api.ts");
     const probeSource = read("src/lib/public-health-probe.ts");
 
-    expect(functionSource).toContain("VAPI_VOICE_FALLBACK_MODEL");
-    expect(functionSource).toContain("voiceFallbackPromise");
-    expect(functionSource).toContain("const primaryVoiceModel: string");
-    expect(functionSource).toContain("const fallbackVoiceModel: string");
-    expect(functionSource).not.toContain("GEMINI_API_KEY");
+    expect(functionSource).toContain("probeVapiManagedVoice(process.env.VAPI_PRIVATE_KEY)");
+    expect(functionSource).toContain("voiceFallback: voice");
+    expect(functionSource).toContain(
+      "probeOpenAIModel(OPENAI_STRUCTURED_PRIMARY_MODEL, process.env.OPENAI_API_KEY)",
+    );
+    expect(functionSource).not.toContain("VAPI_VOICE_FALLBACK_MODEL");
+    expect(probeSource).toContain('url: "https://api.vapi.ai/assistant?limit=1"');
     expect(probeSource).toContain("/v1/models/${encodeURIComponent(model)}");
     expect(probeSource).toContain('method: "GET"');
     expect(probeSource).not.toContain("/v1/responses");
     expect(probeSource).not.toContain("max_output_tokens");
+  });
+
+  it("certifies the exact Vapi primary and fallback schema in deep previews", () => {
+    const build = read("scripts/vercel-build.mjs");
+    const audit = read("scripts/check-vapi-payload-contract-live.mts");
+
+    expect(build).toContain('run("npx", ["tsx", "scripts/check-vapi-payload-contract-live.mts"])');
+    expect(build).not.toContain("check-vapi-payload-contract-live.mjs");
+    expect(audit).toContain("VAPI_TENANT_DEFAULT_PROVIDER");
+    expect(audit).toContain("VAPI_TENANT_DEFAULT_MODEL");
+    expect(audit).toContain("VAPI_DEFAULT_FALLBACK_MODELS");
+    expect(audit).toContain("fallbackModels: expectedFallbackModels");
+    expect(audit).toContain("sameStringArray(model?.fallbackModels, expectedFallbackModels)");
+    expect(audit).toContain('method: "DELETE"');
+    expect(audit).not.toContain("/call");
+    expect(audit).not.toContain("/chat");
   });
 
   it("does not cache failures and preserves request correlation outside Express", () => {
@@ -97,6 +115,7 @@ describe("distributed public health boundary", () => {
     const expressHealth = read("src/routes/health-routes.ts");
     const registration = read("src/server/register-api-routes.ts");
 
+    expect(directFunction).toContain("probeVapiManagedVoice");
     expect(directFunction).toContain("probeOpenAIModel");
     expect(directFunction).toContain("RESULT_TTL_SECONDS");
     expect(directFunction).not.toContain("publicProbeCache");
