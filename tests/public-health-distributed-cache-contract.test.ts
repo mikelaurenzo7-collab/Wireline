@@ -64,6 +64,17 @@ describe("distributed public health boundary", () => {
     expect(probeSource).not.toContain("max_output_tokens");
   });
 
+  it("does not cache failures and preserves request correlation outside Express", () => {
+    const source = read("api/health/public.ts");
+
+    expect(source).toContain('import { randomUUID } from "node:crypto"');
+    expect(source).toContain('res.setHeader("X-Request-Id", requestId)');
+    expect(source).toContain('statusCode === 200 ? CACHE_CONTROL : "no-store"');
+    expect(source).toContain('res.setHeader("Cache-Control", "no-store")');
+    expect(source).toContain("requestId,");
+    expect(source).toContain("cacheScope: CACHE_SCOPE");
+  });
+
   it("keeps the Express fallback from being the production public status implementation", () => {
     const directFunction = read("api/health/public.ts");
     const expressHealth = read("src/routes/health-routes.ts");
