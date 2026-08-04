@@ -39,17 +39,21 @@ describe("subscription Runtime Allowance refunds fail closed", () => {
     expect(subscriptionDisputeAllowancePortion(5_000, 10_000, 1)).toBeCloseTo(0.5);
     expect(subscriptionDisputeAllowancePortion(10_000, 10_000, 1)).toBe(1);
     expect(subscriptionDisputeAllowancePortion(10_000, 10_000, 0)).toBe(0);
+    expect(subscriptionDisputeAllowancePortion(12_000, 10_000, 0.75)).toBe(0.75);
+    expect(subscriptionDisputeAllowancePortion(-1, 10_000, 1)).toBe(0);
   });
 
   it("keeps reversal and restoration rounding exactly symmetric", () => {
     expect(runtimeAllowanceMovementUsd(144, 0.25)).toBe(36);
     expect(runtimeAllowanceMovementUsd(12, 1 / 3)).toBe(4);
     expect(runtimeAllowanceMovementUsd(10, 0.333)).toBe(3.33);
+    expect(runtimeAllowanceMovementUsd(10, 2)).toBe(10);
   });
 
   it("restores only the disputed share of a purchased Runtime Balance", () => {
     expect(proportionalTopUpCreditUsd(2_500, 10_000, 40)).toBe(10);
     expect(proportionalTopUpCreditUsd(10_000, 10_000, 40)).toBe(40);
+    expect(proportionalTopUpCreditUsd(20_000, 10_000, 40)).toBe(40);
     expect(proportionalTopUpCreditUsd(0, 10_000, 40)).toBe(0);
   });
 
@@ -59,6 +63,7 @@ describe("subscription Runtime Allowance refunds fail closed", () => {
     expect(disputeRestorationRequired("charge.dispute.funds_reinstated", "warning_closed")).toBe(
       true,
     );
+    expect(disputeRestorationRequired("charge.dispute.updated", "won")).toBe(false);
   });
 
   it("lets credit top-ups retain the canonical wallet-refund and dispute-creation paths", () => {
