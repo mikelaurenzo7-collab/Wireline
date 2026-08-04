@@ -131,8 +131,11 @@ describe("round-9 subscription allowance reversal", () => {
     expect(helper).toContain("export async function reverseSubscriptionRuntimeAllowance");
     expect(helper).toContain('type: "subscription_runtime_allowance_reversal"');
     expect(helper).toContain("id: reversalReference");
-    // Reversal basis is the grant scaled by the refunded portion, so cumulative
-    // partial reversals can never exceed the granted allowance.
-    expect(helper).toContain("runtimeAllowanceUsdForPlan(planId, interval) * clampedPortion");
+    // The shared movement helper owns downward-cent rounding for both
+    // withdrawals and reinstatements; the grant and clamped portion remain the
+    // exact inputs, so cumulative partial movements cannot exceed the grant.
+    expect(helper).toContain("runtimeAllowanceMovementUsd(");
+    expect(helper).toContain("runtimeAllowanceUsdForPlan(planId, interval)");
+    expect(helper).toContain("clampedPortion");
   });
 });

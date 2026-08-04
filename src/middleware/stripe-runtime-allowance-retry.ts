@@ -2,17 +2,29 @@ import type { NextFunction, Request, Response } from "express";
 import Stripe from "stripe";
 
 import { AppError } from "../lib/api-error";
+import { addCredit, reverseCredit } from "../lib/credit-wallet";
 import { getErrorMessage } from "../lib/server-utils";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
   stripe,
   stripeAvailable,
   subscriptionBillingInterval,
   basePlanInvoiceShare,
 } from "../lib/stripe-helpers";
-import { reverseSubscriptionRuntimeAllowance } from "../lib/subscription-welcome-credit";
+import { basePlanFromStripeSubscription } from "../lib/stripe-base-plan";
+import {
+  reverseSubscriptionRuntimeAllowance,
+  runtimeAllowanceUsdForPlan,
+  type SubscriptionBillingInterval,
+} from "../lib/subscription-welcome-credit";
+import {
+  disputeBalanceMovementCents,
+  proportionalTopUpCreditUsd,
+  runtimeAllowanceMovementUsd,
+  subscriptionDisputeAllowancePortion,
+} from "../lib/stripe-dispute-accounting";
 
 /**
  * Stripe can omit the expanded `charge.refunds` list from webhook payloads.
@@ -46,25 +58,35 @@ async function listSucceededRefunds(chargeId: string): Promise<Stripe.Refund[]> 
   return refunds;
 }
 
+type SubscriptionAllowanceContext = {
+  userId: string;
+  planId: string;
+  interval: SubscriptionBillingInterval;
+  allowanceShare: number;
+  chargeCents: number;
+};
+
 /**
- * Strict subscription Runtime Allowance reversal.
+ * Resolve the subscription-funded portion of a charge from the historical
+ * Stripe objects that actually funded it.
  *
- * Unlike the legacy helper embedded in billing-routes, this function never
- * swallows persistence/provider failures. The public webhook middleware returns
- * 5xx so Stripe redelivers until the idempotent ledger writes complete.
+ * A dispute can arrive months after cancellation and resubscription, so the
+ * tenant's current subscription row may hold a different subscription id and
+ * plan. Prefer the exact historical subscription id, fall back to the stable
+ * Stripe customer id for tenant ownership, and always derive the allowance plan
+ * and interval from the disputed subscription itself.
  */
-export async function reverseSubscriptionRuntimeAllowanceForChargeStrict(
+async function resolveSubscriptionAllowanceContext(
   charge: Stripe.Charge,
-  reason: "refund" | "dispute",
-  explicitReference?: string,
-): Promise<boolean> {
+  operation: "refund" | "dispute_withdrawal" | "dispute_reinstatement",
+): Promise<SubscriptionAllowanceContext | null> {
   const invoiceId = typeof charge.invoice === "string" ? charge.invoice : charge.invoice?.id;
   if (!invoiceId) {
-    log.warn("subscription allowance reversal skipped: charge has no invoice", {
+    log.info("subscription allowance operation skipped: charge has no invoice", {
       chargeId: charge.id,
-      reason,
+      operation,
     });
-    return false;
+    return null;
   }
 
   const invoice = await stripe.invoices.retrieve(invoiceId);
@@ -74,57 +96,143 @@ export async function reverseSubscriptionRuntimeAllowanceForChargeStrict(
   const subscriptionId =
     typeof subscriptionField === "string" ? subscriptionField : subscriptionField?.id;
   if (!subscriptionId) {
-    log.warn("subscription allowance reversal skipped: invoice has no subscription", {
+    log.info("subscription allowance operation skipped: invoice has no subscription", {
       chargeId: charge.id,
       invoiceId,
-      reason,
+      operation,
     });
-    return false;
+    return null;
   }
 
-  const [row] = await drizzle
-    .select({ userId: schema.subscriptions.userId, plan: schema.subscriptions.plan })
-    .from(schema.subscriptions)
-    .where(eq(schema.subscriptions.stripeSubscriptionId, subscriptionId))
-    .limit(1);
-  if (!row?.userId) {
-    log.warn("subscription allowance reversal skipped: subscription owner not found", {
+  const allowanceShare = basePlanInvoiceShare(invoice);
+  if (allowanceShare === null) {
+    log.info("subscription allowance operation skipped: invoice funded no base plan", {
       chargeId: charge.id,
+      invoiceId,
       subscriptionId,
-      reason,
+      operation,
     });
-    return false;
+    return null;
   }
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  const interval = subscriptionBillingInterval(subscription);
-  const chargeCents = charge.amount || 0;
-
-  // Scale every reversal by the share of the invoice that funded the base
-  // plan. A separate add-on invoice (e.g. a monthly extra-agent charge on an
-  // annual plan) never funded the Runtime Allowance, so refunding or
-  // disputing it must not claw the allowance back; a null share means this
-  // charge funded no allowance at all and there is nothing to reverse.
-  const allowanceShare = basePlanInvoiceShare(invoice);
-  if (allowanceShare === null) {
-    log.warn("subscription allowance reversal skipped: invoice funded no base plan", {
-      chargeId: charge.id,
-      invoiceId,
-      reason,
-    });
-    return false;
+  const disputedPlan = basePlanFromStripeSubscription(subscription);
+  if (!disputedPlan) {
+    throw new Error(
+      `Stripe subscription ${subscriptionId} funded Runtime Allowance but its historical plan is not mapped.`,
+    );
   }
+
+  const customerId =
+    typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+  const [bySubscription] = await drizzle
+    .select({ userId: schema.subscriptions.userId })
+    .from(schema.subscriptions)
+    .where(eq(schema.subscriptions.stripeSubscriptionId, subscriptionId))
+    .limit(1);
+  let owner = bySubscription;
+  if (!owner?.userId && customerId) {
+    const [byCustomer] = await drizzle
+      .select({ userId: schema.subscriptions.userId })
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.stripeCustomerId, customerId))
+      .limit(1);
+    owner = byCustomer;
+  }
+  if (!owner?.userId) {
+    throw new Error(
+      `Stripe subscription ${subscriptionId} funded Runtime Allowance but its Wireline owner is unresolved.`,
+    );
+  }
+
+  return {
+    userId: owner.userId,
+    planId: disputedPlan.id,
+    interval: subscriptionBillingInterval(subscription),
+    allowanceShare,
+    chargeCents: charge.amount || 0,
+  };
+}
+
+async function ledgerMovementAmountUsd(
+  userId: string,
+  refType: string,
+  refId: string,
+): Promise<number | null> {
+  const [row] = await drizzle
+    .select({ deltaUsd: schema.creditLedger.deltaUsd })
+    .from(schema.creditLedger)
+    .where(
+      and(
+        eq(schema.creditLedger.userId, userId),
+        eq(schema.creditLedger.refType, refType),
+        eq(schema.creditLedger.refId, refId),
+      ),
+    )
+    .limit(1);
+  if (row?.deltaUsd == null) return null;
+  const amount = Math.abs(Number(row.deltaUsd));
+  return Number.isFinite(amount) ? amount : null;
+}
+
+async function retrieveAuthoritativeDispute(disputeId: string): Promise<Stripe.Dispute> {
+  return stripe.disputes.retrieve(disputeId, {
+    expand: ["balance_transactions"],
+  });
+}
+
+function disputeMovementCents(
+  dispute: Stripe.Dispute,
+  direction: "withdrawn" | "reinstated",
+): number {
+  const transactions = (dispute.balance_transactions ?? []).filter(
+    (transaction): transaction is Stripe.BalanceTransaction =>
+      !!transaction && typeof transaction !== "string",
+  );
+  return disputeBalanceMovementCents({
+    disputeAmountCents: dispute.amount,
+    disputeCurrency: dispute.currency,
+    balanceTransactions: transactions,
+    direction,
+  });
+}
+
+async function resolvePaymentIntent(
+  dispute: Stripe.Dispute,
+  charge: Stripe.Charge,
+): Promise<Stripe.PaymentIntent | null> {
+  const field = dispute.payment_intent ?? charge.payment_intent;
+  const id = typeof field === "string" ? field : field?.id;
+  return id ? stripe.paymentIntents.retrieve(id) : null;
+}
+
+/** Strict subscription Runtime Allowance reversal for refunds and withdrawals. */
+export async function reverseSubscriptionRuntimeAllowanceForChargeStrict(
+  charge: Stripe.Charge,
+  reason: "refund" | "dispute",
+  explicitReference?: string,
+  movementAmountCents?: number,
+): Promise<boolean> {
+  const operation = reason === "refund" ? "refund" : "dispute_withdrawal";
+  const context = await resolveSubscriptionAllowanceContext(charge, operation);
+  if (!context) return false;
 
   if (reason === "dispute") {
     const reference = explicitReference || charge.id;
-    await tenantStore.run(row.userId, () =>
+    const portion = subscriptionDisputeAllowancePortion(
+      movementAmountCents ?? 0,
+      context.chargeCents,
+      context.allowanceShare,
+    );
+    if (!(portion > 0)) return false;
+    await tenantStore.run(context.userId, () =>
       reverseSubscriptionRuntimeAllowance(
-        row.userId,
+        context.userId,
         reference,
-        row.plan,
-        interval,
+        context.planId,
+        context.interval,
         "dispute",
-        allowanceShare,
+        portion,
       ),
     );
     return true;
@@ -133,23 +241,23 @@ export async function reverseSubscriptionRuntimeAllowanceForChargeStrict(
   if ((charge.amount_refunded || 0) <= 0) return false;
   const refunds = await listSucceededRefunds(charge.id);
   if (refunds.length === 0) {
-    // Do not acknowledge a cumulative amount under charge.id. That key would
-    // collide on a later partial-refund event and silently strand refunded
-    // allowance. A retry is safer than an ambiguous financial mutation.
     throw new Error(
       `Stripe charge ${charge.id} reports refunded funds but no succeeded refund objects.`,
     );
   }
 
-  await tenantStore.run(row.userId, async () => {
+  await tenantStore.run(context.userId, async () => {
     for (const refund of refunds) {
-      const portion =
-        chargeCents > 0 ? Math.min(1, refund.amount / chargeCents) * allowanceShare : allowanceShare;
+      const portion = subscriptionDisputeAllowancePortion(
+        refund.amount,
+        context.chargeCents,
+        context.allowanceShare,
+      );
       await reverseSubscriptionRuntimeAllowance(
-        row.userId,
+        context.userId,
         refund.id,
-        row.plan,
-        interval,
+        context.planId,
+        context.interval,
         "refund",
         portion,
       );
@@ -158,13 +266,184 @@ export async function reverseSubscriptionRuntimeAllowanceForChargeStrict(
   return true;
 }
 
+async function reverseTopUpDisputeStrict(
+  paymentIntent: Stripe.PaymentIntent,
+  dispute: Stripe.Dispute,
+  withdrawnCents: number,
+  providerEventId: string,
+): Promise<boolean> {
+  const userId = String(paymentIntent.metadata?.wireline_user_id || "").trim();
+  const purchasedCreditUsd = Number(paymentIntent.metadata?.credit_usd);
+  if (!userId || !(purchasedCreditUsd > 0)) {
+    throw new Error(
+      `Stripe top-up dispute ${dispute.id} is missing Wireline owner or purchased-credit metadata.`,
+    );
+  }
+
+  const amountUsd = proportionalTopUpCreditUsd(
+    withdrawnCents,
+    paymentIntent.amount || 0,
+    purchasedCreditUsd,
+  );
+  if (!(amountUsd > 0)) return false;
+
+  await tenantStore.run(userId, () =>
+    reverseCredit(userId, amountUsd, "web_topup_dispute", {
+      type: "stripe_dispute",
+      id: dispute.id,
+      entryKind: "reversal",
+      source: "stripe",
+      provider: "stripe",
+      providerEventId,
+      providerObjectId: dispute.id,
+      customerReason: "Runtime Balance dispute reversal",
+      metadata: {
+        payment_intent_id: paymentIntent.id,
+        stripe_withdrawn_cents: withdrawnCents,
+      },
+    }),
+  );
+  return true;
+}
+
+async function restoreSubscriptionRuntimeAllowanceForDisputeStrict(
+  charge: Stripe.Charge,
+  dispute: Stripe.Dispute,
+  reinstatedCents: number,
+  providerEventId: string,
+): Promise<boolean> {
+  const context = await resolveSubscriptionAllowanceContext(
+    charge,
+    "dispute_reinstatement",
+  );
+  if (!context) return false;
+
+  const portion = subscriptionDisputeAllowancePortion(
+    reinstatedCents,
+    context.chargeCents,
+    context.allowanceShare,
+  );
+  const calculatedAmountUsd = runtimeAllowanceMovementUsd(
+    runtimeAllowanceUsdForPlan(context.planId, context.interval),
+    portion,
+  );
+  if (!(calculatedAmountUsd > 0)) return false;
+
+  await tenantStore.run(context.userId, async () => {
+    const reversedAmountUsd = await ledgerMovementAmountUsd(
+      context.userId,
+      "subscription_runtime_allowance_reversal",
+      dispute.id,
+    );
+    if (!(reversedAmountUsd && reversedAmountUsd > 0)) {
+      throw new Error(
+        `Stripe dispute ${dispute.id} reinstatement arrived before its subscription allowance withdrawal.`,
+      );
+    }
+    const amountUsd = Math.min(calculatedAmountUsd, reversedAmountUsd);
+
+    await addCredit(
+      context.userId,
+      amountUsd,
+      "subscription_runtime_allowance_dispute_restored",
+      {
+        type: "subscription_runtime_allowance_dispute_restoration",
+        id: dispute.id,
+        entryKind: "adjustment",
+        source: "stripe",
+        provider: "stripe",
+        providerEventId,
+        providerObjectId: dispute.id,
+        customerReason: "Runtime Allowance restored after dispute funds were reinstated",
+        metadata: {
+          plan_id: context.planId,
+          billing_interval: context.interval,
+          runtime_allowance_usd: amountUsd,
+          restoration_portion: portion,
+          stripe_reinstated_cents: reinstatedCents,
+          dispute_status: dispute.status,
+        },
+      },
+    );
+  });
+  return true;
+}
+
+async function restoreTopUpDisputeStrict(
+  paymentIntent: Stripe.PaymentIntent,
+  dispute: Stripe.Dispute,
+  reinstatedCents: number,
+  providerEventId: string,
+): Promise<boolean> {
+  const userId = String(paymentIntent.metadata?.wireline_user_id || "").trim();
+  const purchasedCreditUsd = Number(paymentIntent.metadata?.credit_usd);
+  if (!userId || !(purchasedCreditUsd > 0)) {
+    throw new Error(
+      `Stripe top-up dispute ${dispute.id} is missing Wireline owner or purchased-credit metadata.`,
+    );
+  }
+
+  const calculatedAmountUsd = proportionalTopUpCreditUsd(
+    reinstatedCents,
+    paymentIntent.amount || 0,
+    purchasedCreditUsd,
+  );
+  if (!(calculatedAmountUsd > 0)) return false;
+
+  await tenantStore.run(userId, async () => {
+    const reversedAmountUsd = await ledgerMovementAmountUsd(userId, "stripe_dispute", dispute.id);
+    if (!(reversedAmountUsd && reversedAmountUsd > 0)) {
+      throw new Error(
+        `Stripe dispute ${dispute.id} reinstatement arrived before its top-up withdrawal.`,
+      );
+    }
+    const amountUsd = Math.min(calculatedAmountUsd, reversedAmountUsd);
+
+    await addCredit(userId, amountUsd, "web_topup_dispute_restored", {
+      type: "stripe_dispute_restoration",
+      id: dispute.id,
+      entryKind: "adjustment",
+      source: "stripe",
+      provider: "stripe",
+      providerEventId,
+      providerObjectId: dispute.id,
+      customerReason: "Runtime Balance restored after dispute funds were reinstated",
+      metadata: {
+        payment_intent_id: paymentIntent.id,
+        stripe_reinstated_cents: reinstatedCents,
+        dispute_status: dispute.status,
+        restored_usd: amountUsd,
+      },
+    });
+  });
+  return true;
+}
+
+async function claimOrRespondDuplicate(
+  event: Stripe.Event,
+  res: Response,
+  next: NextFunction,
+): Promise<"claimed" | "responded"> {
+  const claimed = await claimStripeEventForPreflight(event);
+  if (claimed === "already_processed") {
+    res.json({ received: true, duplicate: true });
+    return "responded";
+  }
+  if (claimed === "in_flight") {
+    next(AppError.fromHttpStatus(503, "Webhook still processing. Retry."));
+    return "responded";
+  }
+  return "claimed";
+}
+
 /**
- * Financial-integrity preflight for subscription refunds/disputes.
+ * Financial-integrity preflight for refunds and dispute balance movements.
  *
- * It is mounted on the exact raw-body Stripe webhook path before the legacy
- * billing router. Credit top-ups and unrelated events fall through unchanged.
- * Subscription reversals are fully handled here and acknowledged only after
- * the idempotent allowance ledger mutation succeeds.
+ * `charge.dispute.created` is notification-only: it can represent an inquiry
+ * where no money moved. Wallet debits and credits follow Stripe's exact
+ * `funds_withdrawn` and `funds_reinstated` events and their balance
+ * transactions. The preflight owns these paths before the legacy billing
+ * router and acknowledges them only after idempotent ledger mutations succeed.
  */
 export async function stripeRuntimeAllowanceRetryPreflight(
   req: Request,
@@ -185,8 +464,6 @@ export async function stripeRuntimeAllowanceRetryPreflight(
       process.env.STRIPE_WEBHOOK_SECRET,
     );
   } catch {
-    // The canonical billing route owns signature-error logging and its 400
-    // response. Falling through avoids two divergent public error contracts.
     return next();
   }
 
@@ -201,21 +478,15 @@ export async function stripeRuntimeAllowanceRetryPreflight(
 
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       if (paymentIntent.metadata?.purpose === "credit_topup") return next();
-
-      const claimed = await claimStripeEventForPreflight(event);
-      if (claimed === "already_processed") {
-        res.json({ received: true, runtime_allowance_reversal: true, duplicate: true });
-        return;
-      }
-      if (claimed === "in_flight") {
-        next(AppError.fromHttpStatus(503, "Webhook still processing. Retry."));
-        return;
-      }
+      if ((await claimOrRespondDuplicate(event, res, next)) === "responded") return;
 
       try {
-        await reverseSubscriptionRuntimeAllowanceForChargeStrict(charge, "refund");
+        const reversed = await reverseSubscriptionRuntimeAllowanceForChargeStrict(
+          charge,
+          "refund",
+        );
         await markStripeEventProcessed(event.id);
-        res.json({ received: true, runtime_allowance_reversal: true });
+        res.json({ received: true, runtime_allowance_reversal: reversed });
       } catch (error) {
         await releaseStripeEventClaim(event.id);
         throw error;
@@ -224,33 +495,83 @@ export async function stripeRuntimeAllowanceRetryPreflight(
     }
 
     if (event.type === "charge.dispute.created") {
-      const dispute = event.data.object as Stripe.Dispute;
-      const paymentIntentId =
-        typeof dispute.payment_intent === "string"
-          ? dispute.payment_intent
-          : dispute.payment_intent?.id;
-      if (!paymentIntentId) return next();
-
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      if (paymentIntent.metadata?.purpose === "credit_topup" || !dispute.charge) return next();
-
-      const claimed = await claimStripeEventForPreflight(event);
-      if (claimed === "already_processed") {
-        res.json({ received: true, runtime_allowance_reversal: true, duplicate: true });
-        return;
+      if ((await claimOrRespondDuplicate(event, res, next)) === "responded") return;
+      try {
+        // Creation can be a no-funds inquiry. Consume it here so the historical
+        // billing route cannot reverse customer balance before Stripe reports
+        // an actual withdrawal.
+        await markStripeEventProcessed(event.id);
+        res.json({ received: true, dispute_financial_movement: false });
+      } catch (error) {
+        await releaseStripeEventClaim(event.id);
+        throw error;
       }
-      if (claimed === "in_flight") {
-        next(AppError.fromHttpStatus(503, "Webhook still processing. Retry."));
-        return;
-      }
+      return;
+    }
+
+    const eventType = event.type as string;
+    if (
+      eventType === "charge.dispute.funds_withdrawn" ||
+      eventType === "charge.dispute.funds_reinstated"
+    ) {
+      const eventDispute = event.data.object as Stripe.Dispute;
+      if ((await claimOrRespondDuplicate(event, res, next)) === "responded") return;
 
       try {
+        const dispute = await retrieveAuthoritativeDispute(eventDispute.id);
+        const direction =
+          eventType === "charge.dispute.funds_withdrawn" ? "withdrawn" : "reinstated";
+        const movementCents = disputeMovementCents(dispute, direction);
+        if (!(movementCents > 0)) {
+          throw new Error(
+            `Stripe ${eventType} ${event.id} contains no ${direction} balance movement.`,
+          );
+        }
+        if (!dispute.charge) {
+          throw new Error(`Stripe dispute ${dispute.id} is missing charge linkage.`);
+        }
+
         const charge = await stripe.charges.retrieve(
           typeof dispute.charge === "string" ? dispute.charge : dispute.charge.id,
         );
-        await reverseSubscriptionRuntimeAllowanceForChargeStrict(charge, "dispute", dispute.id);
+        const paymentIntent = await resolvePaymentIntent(dispute, charge);
+        const topUp = paymentIntent?.metadata?.purpose === "credit_topup";
+
+        const mutated =
+          direction === "withdrawn"
+            ? topUp && paymentIntent
+              ? await reverseTopUpDisputeStrict(
+                  paymentIntent,
+                  dispute,
+                  movementCents,
+                  event.id,
+                )
+              : await reverseSubscriptionRuntimeAllowanceForChargeStrict(
+                  charge,
+                  "dispute",
+                  dispute.id,
+                  movementCents,
+                )
+            : topUp && paymentIntent
+              ? await restoreTopUpDisputeStrict(
+                  paymentIntent,
+                  dispute,
+                  movementCents,
+                  event.id,
+                )
+              : await restoreSubscriptionRuntimeAllowanceForDisputeStrict(
+                  charge,
+                  dispute,
+                  movementCents,
+                  event.id,
+                );
+
         await markStripeEventProcessed(event.id);
-        res.json({ received: true, runtime_allowance_reversal: true });
+        res.json({
+          received: true,
+          dispute_financial_movement: direction,
+          runtime_balance_mutated: mutated,
+        });
       } catch (error) {
         await releaseStripeEventClaim(event.id);
         throw error;
@@ -260,7 +581,7 @@ export async function stripeRuntimeAllowanceRetryPreflight(
 
     next();
   } catch (error) {
-    log.error("subscription Runtime Allowance reversal failed; Stripe must retry", {
+    log.error("Stripe Runtime Balance integrity preflight failed; Stripe must retry", {
       eventId: event.id,
       eventType: event.type,
       error: getErrorMessage(error),

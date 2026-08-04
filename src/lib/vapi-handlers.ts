@@ -63,6 +63,88 @@ export interface CallReportPayload {
   };
 }
 
+async function persistTranscriptDncSuppression(input: {
+  userId: string;
+  callId: string | null;
+  rawCallerNumber: string;
+  matchedPattern: string | undefined;
+}): Promise<void> {
+  const normalizedCallerNumber = normalizeDncPhone(input.rawCallerNumber);
+  if (!normalizedCallerNumber) {
+    const error = new Error("Transcript contained a DNC request without a suppressible caller number");
+    log.error("transcript DNC suppression missing caller number", {
+      userId: input.userId,
+      callId: input.callId,
+    });
+    reportError(error, {
+      userId: input.userId,
+      callId: input.callId,
+      tags: { compliance: "dnc_suppression_missing_number" },
+    });
+    return;
+  }
+
+  try {
+    const inserted = await drizzle
+      .insert(schema.dncList)
+      .values({
+        userId: input.userId,
+        phone: normalizedCallerNumber,
+        phoneRaw: input.rawCallerNumber,
+        reason: "spoken opt-out on call",
+        source: "call_transcript",
+      })
+      .onConflictDoNothing({
+        target: [schema.dncList.userId, schema.dncList.phone],
+      })
+      .returning({ id: schema.dncList.id });
+
+    if (inserted.length === 0) return;
+
+    void auditLogger
+      .logDnc("added", {
+        userId: input.userId,
+        count: 1,
+        metadata: {
+          phone: input.rawCallerNumber,
+          source: "call_transcript",
+          matched_pattern: input.matchedPattern || null,
+        },
+      })
+      .catch((err) =>
+        log.warn("audit logDnc(call_transcript) failed", {
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      );
+
+    const { SentinelService } = await import("../services/sentinel");
+    const sentinel = new SentinelService();
+    void sentinel.terminateActiveCallsForNumber(normalizedCallerNumber).catch((err) =>
+      log.error("sentinel terminate-on-transcript-DNC failed", {
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    );
+  } catch (dncErr) {
+    log.error("transcript DNC suppression failed", {
+      userId: input.userId,
+      callId: input.callId,
+      error: getErrorMessage(dncErr),
+    });
+    reportError(
+      dncErr instanceof Error ? dncErr : new Error("transcript DNC suppression failed"),
+      {
+        userId: input.userId,
+        callId: input.callId,
+        tags: { compliance: "dnc_suppression_failed" },
+      },
+    );
+    // This runs before the duplicate-call early return. Throwing makes Vapi
+    // redeliver, and the duplicate retry reaches this suppression boundary
+    // again even though the call log is already present.
+    throw dncErr;
+  }
+}
+
 export async function handleEndOfCallReport({ message, agent }: CallReportPayload) {
   const { call, analysis } = message;
   const webhookAgentId = agent.id;
@@ -200,11 +282,21 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     }
   }
 
+  const optOut = detectOptOut(transcript || "");
+  if (optOut.kind === "dnc") {
+    await persistTranscriptDncSuppression({
+      userId,
+      callId: call?.id || null,
+      rawCallerNumber: call?.customer?.number || "",
+      matchedPattern: optOut.matched_pattern,
+    });
+  }
+
   if (!insertedFresh) {
     // A duplicate Vapi retry is acknowledged only after optional evidence
-    // backfill above. All downstream side effects (usage, customer webhooks,
-    // compliance ledger, enrichment, notifications) are intentionally skipped
-    // so retries cannot double-meter, double-alert, or duplicate audit rows.
+    // backfill and the legally significant DNC suppression boundary above.
+    // All other downstream side effects are skipped so retries cannot
+    // double-meter, double-alert, or duplicate audit rows.
     return;
   }
 
@@ -524,7 +616,6 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       });
     }
 
-    const optOut = detectOptOut(transcript || "");
     if (optOut.found) {
       const optOutRow = buildConsentLedgerRow({
         user_id: userId,
@@ -547,71 +638,10 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         state: optOutRow.state,
         metadata: optOutRow.metadata,
       });
-
-      // A spoken do-not-call request is a legal revocation; it cannot depend
-      // on the LLM having chosen to invoke the add_to_dnc tool mid-call.
-      // Suppress the number deterministically (idempotent per user+phone) so
-      // every later outbound path blocks, and end any other in-flight call to
-      // it. Recording-only revocations ("stop recording") govern the current
-      // call's recording, not future contact, so they stay ledger-only.
-      if (optOut.kind === "dnc") {
-        const rawCallerNumber = call?.customer?.number || "";
-        const normalizedCallerNumber = normalizeDncPhone(rawCallerNumber);
-        if (normalizedCallerNumber) {
-          try {
-            await drizzle
-              .insert(schema.dncList)
-              .values({
-                userId,
-                phone: normalizedCallerNumber,
-                phoneRaw: rawCallerNumber,
-                reason: "spoken opt-out on call",
-                source: "call_transcript",
-              })
-              .onConflictDoNothing({
-                target: [schema.dncList.userId, schema.dncList.phone],
-              });
-
-            void auditLogger
-              .logDnc("added", {
-                userId,
-                count: 1,
-                metadata: {
-                  phone: rawCallerNumber,
-                  source: "call_transcript",
-                  matched_pattern: optOut.matched_pattern || null,
-                },
-              })
-              .catch((err) =>
-                log.warn("audit logDnc(call_transcript) failed", {
-                  error: err instanceof Error ? err.message : String(err),
-                }),
-              );
-
-            const { SentinelService } = await import("../services/sentinel");
-            const sentinel = new SentinelService();
-            void sentinel.terminateActiveCallsForNumber(normalizedCallerNumber).catch((err) =>
-              log.error("sentinel terminate-on-transcript-DNC failed", {
-                error: err instanceof Error ? err.message : String(err),
-              }),
-            );
-          } catch (dncErr) {
-            // The suppression write is the legally significant act; surface it
-            // to ops instead of letting it vanish into the ledger catch.
-            log.error("transcript DNC suppression failed", {
-              userId,
-              callId: call?.id,
-              error: getErrorMessage(dncErr),
-            });
-            reportError(
-              dncErr instanceof Error ? dncErr : new Error("transcript DNC suppression failed"),
-              { userId, callId: call?.id, tags: { compliance: "dnc_suppression_failed" } },
-            );
-          }
-        }
-      }
     }
   } catch (compErr) {
+    // DNC suppression has already completed before this best-effort evidence
+    // writer. A consent-ledger outage therefore cannot strand a legal opt-out.
     log.error("Compliance ledger writer failed", { error: getErrorMessage(compErr) });
   }
 

@@ -614,40 +614,75 @@ export function buildConsentLedgerRow(entry: ConsentLedgerEntry): ConsentLedgerR
   };
 }
 
+type OptOutKind = "dnc" | "recording";
+type OptOutPattern = { pattern: RegExp; kind: OptOutKind };
+
 /**
- * Detect explicit opt-out language in a transcript. Conservative: only
- * matches phrases that unambiguously revoke consent. Soft phrases like
- * "I'm not interested" do NOT count as recording opt-out.
- *
- * Each match is classified so callers can act correctly: "dnc" patterns
- * revoke future contact (suppress the number deterministically), while
- * "recording" patterns revoke consent for the current call's recording only
- * and must not suppress future calls on their own.
+ * Future-contact revocations are intentionally evaluated before recording-only
+ * revocations. A caller can say both in one call; DNC must win regardless of
+ * where either phrase appears or how this list is ordered.
  */
-const OPT_OUT_PATTERNS: { pattern: RegExp; kind: "dnc" | "recording" }[] = [
+const DNC_OPT_OUT_PATTERNS: OptOutPattern[] = [
+  {
+    pattern:
+      /\b(?:do\s+not|don['’]?t|never)\s+(?:call|contact)\s+(?:me|us|this\s+number|my\s+number)(?:\s+again)?\b/i,
+    kind: "dnc",
+  },
+  {
+    pattern:
+      /\bstop\s+(?:calling|contacting)\s+(?:me|us|this\s+number|my\s+number)\b/i,
+    kind: "dnc",
+  },
+  {
+    pattern:
+      /\b(?:take|remove)\s+me\s+(?:off|from)\s+(?:(?:your|the)\s+)?(?:(?:call|calling|contact)\s+)?list\b/i,
+    kind: "dnc",
+  },
+  {
+    pattern: /\bput\s+me\s+on\s+(?:(?:your|the)\s+)?do[- ]not[- ]call\s+list\b/i,
+    kind: "dnc",
+  },
+  { pattern: /\bno\s+more\s+(?:calls?|calling|contact)\b/i, kind: "dnc" },
+];
+
+const RECORDING_OPT_OUT_PATTERNS: OptOutPattern[] = [
   { pattern: /\bdo\s+not\s+record\b/i, kind: "recording" },
-  { pattern: /\bdon'?t\s+record\b/i, kind: "recording" },
+  { pattern: /\bdon['’]?t\s+record\b/i, kind: "recording" },
   { pattern: /\bstop\s+recording\b/i, kind: "recording" },
   { pattern: /\bturn\s+off\s+(the\s+)?recording\b/i, kind: "recording" },
   {
     pattern: /\bi\s+do\s+not\s+consent\s+to\s+(the\s+|this\s+)?recording\b/i,
     kind: "recording",
   },
-  { pattern: /\bremove\s+me\s+from\s+(your|the)\s+(call\s+)?list\b/i, kind: "dnc" },
-  { pattern: /\bput\s+me\s+on\s+(your|the)\s+do[- ]not[- ]call\s+list\b/i, kind: "dnc" },
 ];
 
+function firstOptOutMatch(
+  transcript: string,
+  patterns: OptOutPattern[],
+): { found: true; matched_pattern: string; kind: OptOutKind } | null {
+  for (const { pattern, kind } of patterns) {
+    const match = transcript.match(pattern);
+    if (match) return { found: true, matched_pattern: match[0], kind };
+  }
+  return null;
+}
+
+/**
+ * Detect explicit opt-out language in a transcript. Conservative: only
+ * unambiguous future-contact or recording revocations match; soft rejection
+ * such as "I'm not interested" does not.
+ */
 export function detectOptOut(transcript: string | null | undefined): {
   found: boolean;
   matched_pattern?: string;
-  kind?: "dnc" | "recording";
+  kind?: OptOutKind;
 } {
   if (!transcript) return { found: false };
-  for (const { pattern, kind } of OPT_OUT_PATTERNS) {
-    const m = transcript.match(pattern);
-    if (m) return { found: true, matched_pattern: m[0], kind };
-  }
-  return { found: false };
+  return (
+    firstOptOutMatch(transcript, DNC_OPT_OUT_PATTERNS) ||
+    firstOptOutMatch(transcript, RECORDING_OPT_OUT_PATTERNS) ||
+    { found: false }
+  );
 }
 
 /**
