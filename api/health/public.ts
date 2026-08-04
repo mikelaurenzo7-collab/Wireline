@@ -199,7 +199,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     await client.set(RESULT_KEY, payload, { ex: RESULT_TTL_SECONDS });
     sendJson(req, res, 200, payload, "probe");
   } catch (error) {
-    console.warn("Public health distributed cache unavailable; refusing external probe fan-out", {
+    console.error("Public health distributed cache unavailable; refusing external probe fan-out", {
       requestId,
       cacheScope: CACHE_SCOPE,
       error: error instanceof Error ? error.message : String(error),
