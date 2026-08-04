@@ -13,7 +13,7 @@ import {
   subscriptionBillingInterval,
   basePlanInvoiceShare,
 } from "../lib/stripe-helpers";
-import { planByStripePrice, type StripePlan } from "../lib/plan-catalog";
+import { basePlanFromStripeSubscription } from "../lib/stripe-base-plan";
 import {
   reverseSubscriptionRuntimeAllowance,
   runtimeAllowanceUsdForPlan,
@@ -116,9 +116,7 @@ async function resolveSubscriptionAllowanceContext(
   }
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  const disputedPlan = subscription.items.data
-    .map((item) => planByStripePrice(item.price))
-    .find((candidate): candidate is StripePlan => !!candidate);
+  const disputedPlan = basePlanFromStripeSubscription(subscription);
   if (!disputedPlan) {
     throw new Error(
       `Stripe subscription ${subscriptionId} funded Runtime Allowance but its historical plan is not mapped.`,
