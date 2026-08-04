@@ -148,16 +148,16 @@ export function CarrierPanel({
           <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
             <p className="text-sm font-semibold text-foreground">Wireline manages the live-call stack</p>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              Vapi handles the phone conversation runtime, OpenAI is the primary call model, Gemini is the automatic fallback, and Twilio supplies phone and messaging infrastructure.
+              Wireline manages the phone conversation runtime, voice selection, intelligence routing, and continuity. Carrier and messaging infrastructure stay configured behind the scenes.
             </p>
           </div>
 
           <dl className="grid gap-2 sm:grid-cols-2">
             {[
-              ["Phone runtime", "Vapi"],
-              ["Phone voices", "Managed Vapi voices"],
-              ["Primary intelligence", "OpenAI"],
-              ["Automatic fallback", "Gemini"],
+              ["Phone runtime", "Wireline managed"],
+              ["Phone voices", "Managed voice library"],
+              ["Call intelligence", "Managed automatically"],
+              ["Continuity", "Automatic failover"],
             ].map(([label, value]) => (
               <div key={label} className="rounded-lg border border-border bg-background p-3">
                 <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
