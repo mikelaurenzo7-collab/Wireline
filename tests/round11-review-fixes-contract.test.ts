@@ -91,9 +91,9 @@ describe("round-11 review fixes", () => {
   it("scales the Runtime Allowance reversal to the refunded portion", () => {
     const credit = read("src/lib/subscription-welcome-credit.ts");
     expect(credit).toContain("portion = 1");
-    expect(credit).toContain(
-      "runtimeAllowanceUsdForPlan(planId, interval) * clampedPortion",
-    );
+    expect(credit).toContain("runtimeAllowanceMovementUsd(");
+    expect(credit).toContain("runtimeAllowanceUsdForPlan(planId, interval)");
+    expect(credit).toContain("clampedPortion");
     const billing = read("src/routes/billing-routes.ts");
     // Interval resolved the same way the grant did, not off items.data[0].
     expect(billing).toContain("subscriptionBillingInterval(sub)");
