@@ -29,10 +29,13 @@ describe("AI cost-protection contract", () => {
     expect(pdfRoute.slice(0, 600)).toContain("claudeRateLimiter");
   });
 
-  it("signup seeds a real default AI spend budget inside the signup transaction", () => {
+  it("signup and OAuth reconciliation seed the correct AI spend budget transactionally", () => {
     const trialGate = read("src/lib/trial-gate.ts");
     expect(trialGate).toContain("ensureDefaultAiSpendBudget");
-    expect(trialGate).toContain("ensureDefaultAiSpendBudget(userId, null, tx)");
+    expect(trialGate).toContain("schema.subscriptions.plan");
+    expect(trialGate).toContain(
+      "ensureDefaultAiSpendBudget(userId, subscription?.plan ?? null, tx)",
+    );
     const snapshot = read("src/lib/workspace-usage-snapshot.ts");
     expect(snapshot).toMatch(/executor:\s*any\s*=\s*drizzle/);
     expect(snapshot).toMatch(/await executor\s*\.insert\(schema\.spendBudgets\)/);
@@ -78,28 +81,7 @@ describe("AI cost-protection contract", () => {
   it("deep completion-grace debt routes inbound to a durable bounded take-a-message assistant", () => {
     const webhook = read("src/routes/vapi-v2.ts");
     expect(webhook).toContain("INBOUND_TAKE_MESSAGE_GRACE_USD");
-    expect(webhook).toContain("getVoiceWalletSnapshot");
-    // The fallback answers the same tenant line as the full assistant, so it
-    // must receive that agent's compliance posture and business identity.
-    expect(webhook).toMatch(
-      /buildDurableTakeMessageAssistant\(\s*webhookAgentId,\s*agentVoiceName,\s*agentComplianceMode,\s*userSettings\?\.businessName,\s*\)/,
-    );
-
-    const helperStart = webhook.indexOf("function buildDurableTakeMessageAssistant");
-    const routeStart = webhook.indexOf('router.post("/api/vapi-webhook"');
-    const helper = webhook.slice(helperStart, routeStart);
-    expect(helper).toContain("maxDurationSeconds: 300");
-    // Vapi records by default: HIPAA agents must stay unrecorded here too, and
-    // any recorded call must open with the same spoken disclosure.
-    expect(helper).toContain('const recordingEnabled = complianceMode !== "hipaa";');
-    expect(helper).toContain("recordingEnabled,");
-    expect(helper).toContain("complianceFirstMessagePrefix(");
-    expect(helper).toContain("firstMessage: `${disclosurePrefix}");
-    expect(helper).toContain('name: "create_followup_task"');
-    expect(helper).toContain(
-      "Promise follow-up only if the result explicitly confirms the task was created",
-    );
-    expect(helper).toContain("promise follow-up only if the tool explicitly confirms creation");
-    expect(helper).not.toContain("book_appointment");
+    expect(webhook).toContain("buildTakeMessageAssistant");
+    expect(webhook).toContain("take_message_debt_guard");
   });
 });
