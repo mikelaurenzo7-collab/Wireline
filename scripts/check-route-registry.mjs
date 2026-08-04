@@ -225,7 +225,12 @@ for (const { line } of appUseLines) {
 }
 // "/api" is a deliberate shared prefix: several feature routers (billing,
 // OpenAPI, and others) define their own sub-paths and mount under it.
-const allowedDuplicateMounts = new Set(["/api"]);
+// "/api/webhooks" is deliberately mounted twice in register-api-routes.ts:
+// the target-specific test-delivery router owns POST /:id/test ahead of the
+// broad webhook router, and both routers are authenticated and
+// permission-gated, so the ordering is a security-preserving precedence
+// decision rather than an accidental duplicate.
+const allowedDuplicateMounts = new Set(["/api", "/api/webhooks"]);
 for (const [mount, count] of duplicateMounts) {
   if (count > 1 && !allowedDuplicateMounts.has(mount)) {
     problems.push(

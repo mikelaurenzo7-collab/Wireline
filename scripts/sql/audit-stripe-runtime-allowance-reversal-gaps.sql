@@ -2,9 +2,10 @@
 --
 -- Purpose:
 --   Surface processed Stripe refund/dispute money-movement events that have no
---   provider-event-linked Runtime Balance ledger movement. This is an operator
---   review queue, not an automatic correction. A row can be legitimate when a
---   charge funded no Wireline Runtime Allowance or resolved to no tenant.
+--   provider-event-linked Runtime Balance ledger movement.
+--   This is an operator review queue, not an automatic correction.
+--   A row can be legitimate when a charge funded no Wireline Runtime
+--   Allowance or resolved to no tenant.
 --
 -- Scope:
 --   - recent processed financial events only (90 days by default)
@@ -13,8 +14,8 @@
 --
 -- Before correcting a candidate, verify the Stripe charge, invoice,
 -- subscription, tenant owner, base-plan share, refund/dispute amount, and any
--- older ledger row keyed by ref_type/ref_id. Never insert an ad hoc debit from
--- this report alone.
+-- older ledger row keyed by ref_type/ref_id.
+-- Never insert an ad hoc debit from this report alone.
 
 WITH financial_events AS (
   SELECT
