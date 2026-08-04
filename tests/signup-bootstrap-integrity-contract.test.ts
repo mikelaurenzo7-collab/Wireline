@@ -25,8 +25,10 @@ describe("signup bootstrap integrity", () => {
     );
 
     expect(start).toContain("await tx");
-    expect(start).toContain("schema.subscriptions.plan");
-    expect(start).toContain("ensureDefaultAiSpendBudget(userId, subscription?.plan ?? null, tx)");
+    expect(start).toContain("schema.subscriptions.status");
+    expect(start).toContain('subscription?.status === "active"');
+    expect(start).toContain('subscription?.status === "trialing"');
+    expect(start).toContain("ensureDefaultAiSpendBudget(userId, fundedPlanId, tx)");
     expect(start).not.toContain("continuing signup");
     expect(start).not.toContain("catch (");
   });
