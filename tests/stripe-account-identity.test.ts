@@ -92,6 +92,28 @@ describe("Stripe account identity guard", () => {
     );
   });
 
+  it("treats a missing general payment descriptor as identity drift", () => {
+    const findings = stripeAccountIdentityFindings({
+      business_profile: {
+        name: "Wireline",
+        url: "https://trywireline.com",
+      },
+      settings: {
+        dashboard: { display_name: "Wireline" },
+        card_payments: { statement_descriptor_prefix: "WIRELINE" },
+        payments: { statement_descriptor: null },
+        branding: { logo: "file_logo", icon: null },
+      },
+    });
+
+    expect(findings).toEqual([
+      expect.objectContaining({
+        level: "error",
+        message: expect.stringMatching(/payment statement descriptor/i),
+      }),
+    ]);
+  });
+
   it("returns only sanitized customer-facing identity fields", () => {
     const summary = stripeAccountIdentitySummary({
       email: "private@example.com",
