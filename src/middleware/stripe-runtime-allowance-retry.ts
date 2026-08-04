@@ -212,6 +212,7 @@ export async function reverseSubscriptionRuntimeAllowanceForChargeStrict(
   reason: "refund" | "dispute",
   explicitReference?: string,
   movementAmountCents?: number,
+  providerEventId?: string,
 ): Promise<boolean> {
   const operation = reason === "refund" ? "refund" : "dispute_withdrawal";
   const context = await resolveSubscriptionAllowanceContext(charge, operation);
@@ -233,6 +234,7 @@ export async function reverseSubscriptionRuntimeAllowanceForChargeStrict(
         context.interval,
         "dispute",
         portion,
+        { providerEventId, providerObjectId: reference },
       ),
     );
     return true;
@@ -260,6 +262,7 @@ export async function reverseSubscriptionRuntimeAllowanceForChargeStrict(
         context.interval,
         "refund",
         portion,
+        { providerEventId, providerObjectId: refund.id },
       );
     }
   });
@@ -484,6 +487,9 @@ export async function stripeRuntimeAllowanceRetryPreflight(
         const reversed = await reverseSubscriptionRuntimeAllowanceForChargeStrict(
           charge,
           "refund",
+          undefined,
+          undefined,
+          event.id,
         );
         await markStripeEventProcessed(event.id);
         res.json({ received: true, runtime_allowance_reversal: reversed });
@@ -551,6 +557,7 @@ export async function stripeRuntimeAllowanceRetryPreflight(
                   "dispute",
                   dispute.id,
                   movementCents,
+                  event.id,
                 )
             : topUp && paymentIntent
               ? await restoreTopUpDisputeStrict(
