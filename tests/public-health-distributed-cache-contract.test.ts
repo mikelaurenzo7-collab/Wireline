@@ -8,15 +8,28 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 // certification commit also runs Wireline's complete TypeScript, ESLint, and
 // non-E2E test audit before this branch can be considered mergeable.
 describe("distributed public health boundary", () => {
-  it("routes the public model status through a dedicated filesystem function", () => {
-    const functionSource = read("api/health/public.ts");
+  it("routes through a dedicated filesystem function backed by a bundled artifact", () => {
+    const bridge = read("api/health/public.ts");
+    const implementation = read("src/entrypoints/public-health-api.ts");
+    const smoke = read("scripts/smoke-public-health-bundle.mjs");
     const vercelConfig = JSON.parse(read("vercel.json")) as {
-      functions?: Record<string, unknown>;
+      buildCommand?: string;
+      functions?: Record<string, { includeFiles?: string }>;
       rewrites?: Array<{ source?: string; destination?: string }>;
     };
 
-    expect(functionSource).toContain('from "@upstash/redis"');
-    expect(vercelConfig.functions).toHaveProperty("api/health/public.ts");
+    expect(bridge).toContain('import { createRequire } from "node:module"');
+    expect(bridge).toContain('require("../../dist/public-health-api.cjs")');
+    expect(bridge).not.toContain("../../src/");
+    expect(implementation).toContain('from "@upstash/redis"');
+    expect(vercelConfig.functions?.["api/health/public.ts"]?.includeFiles).toBe(
+      "dist/public-health-api.cjs",
+    );
+    expect(vercelConfig.buildCommand).toContain("src/entrypoints/public-health-api.ts");
+    expect(vercelConfig.buildCommand).toContain("--outfile=dist/public-health-api.cjs");
+    expect(vercelConfig.buildCommand).toContain("scripts/smoke-public-health-bundle.mjs");
+    expect(smoke).toContain('require("../dist/public-health-api.cjs")');
+    expect(smoke).toContain('typeof handler !== "function"');
     expect(vercelConfig.rewrites).toContainEqual({
       source: "/api/:path*",
       destination: "/api/index.ts",
@@ -24,7 +37,7 @@ describe("distributed public health boundary", () => {
   });
 
   it("requires a global cache and lock before any external provider probe", () => {
-    const source = read("api/health/public.ts");
+    const source = read("src/entrypoints/public-health-api.ts");
     const clientGuard = source.indexOf("if (!client)");
     const lock = source.indexOf("nx: true");
     const probes = source.indexOf("const [voice, voiceFallback, reasoning]");
@@ -43,7 +56,7 @@ describe("distributed public health boundary", () => {
   });
 
   it("isolates production status from previews and other deployments", () => {
-    const source = read("api/health/public.ts");
+    const source = read("src/entrypoints/public-health-api.ts");
 
     expect(source).toContain("process.env.VERCEL_ENV || process.env.NODE_ENV");
     expect(source).toContain('if (environment === "production") return "production"');
@@ -52,7 +65,7 @@ describe("distributed public health boundary", () => {
   });
 
   it("checks the declared OpenAI voice fallback instead of inferring Gemini readiness", () => {
-    const functionSource = read("api/health/public.ts");
+    const functionSource = read("src/entrypoints/public-health-api.ts");
     const probeSource = read("src/lib/public-health-probe.ts");
 
     expect(functionSource).toContain("VAPI_VOICE_FALLBACK_MODEL");
@@ -67,7 +80,7 @@ describe("distributed public health boundary", () => {
   });
 
   it("does not cache failures and preserves request correlation outside Express", () => {
-    const source = read("api/health/public.ts");
+    const source = read("src/entrypoints/public-health-api.ts");
 
     expect(source).toContain('import { randomUUID } from "node:crypto"');
     expect(source).toContain('res.setHeader("X-Request-Id", requestId)');
@@ -80,7 +93,7 @@ describe("distributed public health boundary", () => {
   });
 
   it("keeps the Express fallback from being the production public status implementation", () => {
-    const directFunction = read("api/health/public.ts");
+    const directFunction = read("src/entrypoints/public-health-api.ts");
     const expressHealth = read("src/routes/health-routes.ts");
 
     expect(directFunction).toContain("probeOpenAIModel");
