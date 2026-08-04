@@ -13,6 +13,7 @@ import agentWorkspaceRouter from "../routes/agent-workspace-routes";
 import qaV2Router from "../routes/qa-routes-v2";
 import vapiRouter from "../routes/vapi-v2";
 import healthRouter from "../routes/health-routes";
+import publicHealthHandler from "../entrypoints/public-health-api";
 import aiStatusRouter from "../routes/ai-status-routes";
 import openaiRealtimeRouter from "../routes/openai-realtime-routes";
 import grokVoiceRouter from "../routes/grok-voice-routes";
@@ -87,6 +88,13 @@ import gatewayCatalogRouter from "../routes/gateway-catalog-routes";
 
 /** Canonical API route order. Express resolves routes in registration order. */
 export function registerApiRoutes(app: Express): void {
+  // Standalone/server deployments must use the same distributed, zero-inference
+  // public status implementation as the dedicated Vercel function. Register the
+  // exact path before the broader legacy health router so its historical
+  // process-local implementation is unreachable.
+  app.all("/api/health/public", (req, res, next) => {
+    void publicHealthHandler(req, res).catch(next);
+  });
   app.use("/api/health", healthRouter);
   app.use(aiStatusRouter);
   app.use(openaiRealtimeRouter);
