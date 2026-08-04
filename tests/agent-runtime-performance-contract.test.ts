@@ -115,8 +115,7 @@ describe("agent runtime performance and action integrity", () => {
     expect(duplicateReturn).toBeGreaterThan(suppression);
     expect(complianceLedger).toBeGreaterThan(duplicateReturn);
     expect(vapiHandlers).toContain("throw dncErr");
-    expect(vapiHandlers).toContain(
-      "DNC suppression has already completed before this best-effort evidence writer",
-    );
+    expect(vapiHandlers).toContain("Compliance ledger writer failed");
+    expect(vapiHandlers).toContain("consent-ledger outage therefore cannot strand a legal opt-out");
   });
 });
