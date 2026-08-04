@@ -72,6 +72,8 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+// Executed in every Vercel build; the certification commit also runs the full
+// TypeScript, ESLint, and non-E2E suite against this exact implementation.
 describe("public health Vercel function", () => {
   it("fails closed without Redis and never calls the external provider", async () => {
     delete process.env.UPSTASH_REDIS_REST_URL;
