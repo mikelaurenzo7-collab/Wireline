@@ -29,8 +29,9 @@ describe("distributed public health boundary", () => {
     const lock = source.indexOf("nx: true");
     const probes = source.indexOf("const [voice, voiceFallback, reasoning]");
 
-    expect(source).toContain('const RESULT_KEY = "wireline:health:public:v3"');
-    expect(source).toContain('const LOCK_KEY = "wireline:health:public:probe-lock:v3"');
+    expect(source).toContain("const CACHE_SCOPE = cacheScope()");
+    expect(source).toContain("wireline:health:public:v3:${CACHE_SCOPE}");
+    expect(source).toContain("wireline:health:public:probe-lock:v3:${CACHE_SCOPE}");
     expect(source).toContain('unavailablePayload("DISTRIBUTED_CACHE_REQUIRED")');
     expect(source).toContain('unavailablePayload("DISTRIBUTED_CACHE_UNAVAILABLE")');
     expect(source).toContain("LOCAL_STALE_TTL_MS");
@@ -39,6 +40,15 @@ describe("distributed public health boundary", () => {
     expect(clientGuard).toBeGreaterThan(-1);
     expect(lock).toBeGreaterThan(clientGuard);
     expect(probes).toBeGreaterThan(lock);
+  });
+
+  it("isolates production status from previews and other deployments", () => {
+    const source = read("api/health/public.ts");
+
+    expect(source).toContain("process.env.VERCEL_ENV || process.env.NODE_ENV");
+    expect(source).toContain('if (environment === "production") return "production"');
+    expect(source).toContain("process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_URL");
+    expect(source).toContain("return `${environment}:${deployment}`");
   });
 
   it("checks the declared OpenAI voice fallback instead of inferring Gemini readiness", () => {
