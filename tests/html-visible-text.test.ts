@@ -53,6 +53,21 @@ describe("HTML visible-text scanner", () => {
     expect(parsed.text).not.toContain("Hidden after quoted delimiters.");
   });
 
+  it("preserves comparison text that only resembles malformed markup", () => {
+    const parsed = htmlToVisibleText(
+      "<p>Plan A supports 2 < 3 agents and margin stays 4 > 1.</p>",
+    );
+    expect(parsed.text).toContain("2 < 3 agents");
+    expect(parsed.text).toContain("4 > 1");
+  });
+
+  it("caps adversarial nesting before work can grow without bound", () => {
+    const deeplyNested = `${"<div>".repeat(600)}Visible before the cap.${"</div>".repeat(600)}`;
+    const parsed = htmlToVisibleText(deeplyNested);
+    expect(parsed.text.length).toBeLessThan(5_000);
+    expect(scannerSource).toContain("MAX_HTML_NESTING_DEPTH = 512");
+  });
+
   it("keeps closure work incremental instead of rescanning the full stack", () => {
     expect(scannerSource).toContain("hiddenRemoved");
     expect(scannerSource).not.toContain("stack.reduce");
