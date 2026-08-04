@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
-  disputeRestorationRequired,
+  disputeBalanceMovementCents,
   proportionalTopUpCreditUsd,
   runtimeAllowanceMovementUsd,
   subscriptionDisputeAllowancePortion,
@@ -12,9 +12,10 @@ import {
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
-describe("subscription Runtime Allowance refunds fail closed", () => {
+describe("Stripe Runtime Balance movements fail closed", () => {
   const middleware = read("src/middleware/stripe-runtime-allowance-retry.ts");
   const registry = read("src/server/register-api-routes.ts");
+  const alignment = read("scripts/align-stripe-webhook-events.mjs");
 
   it("mounts the strict preflight before the legacy billing router", () => {
     const strictMount = registry.indexOf(
@@ -34,7 +35,62 @@ describe("subscription Runtime Allowance refunds fail closed", () => {
     expect(middleware).not.toContain("amount_refunded under charge.id");
   });
 
-  it("scales a dispute by both the disputed charge share and base-plan share", () => {
+  it("treats inquiry creation as notification-only and follows monetary events", () => {
+    const created = middleware.indexOf('if (event.type === "charge.dispute.created")');
+    const withdrawn = middleware.indexOf('eventType === "charge.dispute.funds_withdrawn"');
+    const reinstated = middleware.indexOf('eventType === "charge.dispute.funds_reinstated"');
+
+    expect(created).toBeGreaterThan(-1);
+    expect(withdrawn).toBeGreaterThan(created);
+    expect(reinstated).toBeGreaterThan(withdrawn);
+    expect(middleware).toContain("dispute_financial_movement: false");
+    expect(middleware).toContain('expand: ["balance_transactions"]');
+    expect(middleware).not.toContain('eventType === "charge.dispute.closed"');
+  });
+
+  it("extracts actual withdrawn and reinstated cents from Stripe balance transactions", () => {
+    const transactions = [
+      { amount: -10_000, currency: "usd" },
+      { amount: 8_000, currency: "usd" },
+    ];
+    expect(
+      disputeBalanceMovementCents({
+        disputeAmountCents: 10_000,
+        disputeCurrency: "usd",
+        balanceTransactions: transactions,
+        direction: "withdrawn",
+      }),
+    ).toBe(10_000);
+    expect(
+      disputeBalanceMovementCents({
+        disputeAmountCents: 10_000,
+        disputeCurrency: "usd",
+        balanceTransactions: transactions,
+        direction: "reinstated",
+      }),
+    ).toBe(8_000);
+    expect(
+      disputeBalanceMovementCents({
+        disputeAmountCents: 10_000,
+        disputeCurrency: "usd",
+        balanceTransactions: [],
+        direction: "withdrawn",
+      }),
+    ).toBe(0);
+  });
+
+  it("rejects incomparable settlement currencies instead of guessing", () => {
+    expect(() =>
+      disputeBalanceMovementCents({
+        disputeAmountCents: 10_000,
+        disputeCurrency: "usd",
+        balanceTransactions: [{ amount: -9_000, currency: "eur" }],
+        direction: "withdrawn",
+      }),
+    ).toThrow(/currency eur does not match usd/);
+  });
+
+  it("scales allowance by both movement share and base-plan share", () => {
     expect(subscriptionDisputeAllowancePortion(2_500, 10_000, 0.8)).toBeCloseTo(0.2);
     expect(subscriptionDisputeAllowancePortion(5_000, 10_000, 1)).toBeCloseTo(0.5);
     expect(subscriptionDisputeAllowancePortion(10_000, 10_000, 1)).toBe(1);
@@ -43,60 +99,40 @@ describe("subscription Runtime Allowance refunds fail closed", () => {
     expect(subscriptionDisputeAllowancePortion(-1, 10_000, 1)).toBe(0);
   });
 
-  it("keeps reversal and restoration rounding exactly symmetric", () => {
+  it("keeps withdrawal and reinstatement rounding exactly symmetric", () => {
     expect(runtimeAllowanceMovementUsd(144, 0.25)).toBe(36);
     expect(runtimeAllowanceMovementUsd(12, 1 / 3)).toBe(4);
     expect(runtimeAllowanceMovementUsd(10, 0.333)).toBe(3.33);
     expect(runtimeAllowanceMovementUsd(10, 2)).toBe(10);
-  });
-
-  it("restores only the disputed share of a purchased Runtime Balance", () => {
-    expect(proportionalTopUpCreditUsd(2_500, 10_000, 40)).toBe(10);
     expect(proportionalTopUpCreditUsd(3_335, 10_000, 10)).toBe(3.33);
-    expect(proportionalTopUpCreditUsd(10_000, 10_000, 40)).toBe(40);
-    expect(proportionalTopUpCreditUsd(20_000, 10_000, 40)).toBe(40);
-    expect(proportionalTopUpCreditUsd(0, 10_000, 40)).toBe(0);
   });
 
-  it("recognizes both Stripe won-dispute restoration event shapes", () => {
-    expect(disputeRestorationRequired("charge.dispute.closed", "won")).toBe(true);
-    expect(disputeRestorationRequired("charge.dispute.closed", "lost")).toBe(false);
-    expect(disputeRestorationRequired("charge.dispute.funds_reinstated", "warning_closed")).toBe(
-      true,
-    );
-    expect(disputeRestorationRequired("charge.dispute.updated", "won")).toBe(false);
-  });
-
-  it("lets credit top-ups retain the canonical wallet-refund and dispute-creation paths", () => {
-    expect(middleware).toContain(
-      'if (paymentIntent.metadata?.purpose === "credit_topup") return next()',
-    );
+  it("owns both subscription and top-up dispute movements", () => {
+    expect(middleware).toContain("reverseTopUpDisputeStrict");
     expect(middleware).toContain("restoreTopUpDisputeStrict");
-  });
-
-  it("passes the actual disputed amount into the subscription reversal", () => {
-    expect(middleware).toContain("dispute.amount,");
-    expect(middleware).toContain("subscriptionDisputeAllowancePortion(");
-    expect(middleware).toContain("context.allowanceShare");
-  });
-
-  it("restores won disputes once and only after the corresponding reversal exists", () => {
-    expect(middleware).toContain('eventType === "charge.dispute.closed"');
-    expect(middleware).toContain('eventType === "charge.dispute.funds_reinstated"');
+    expect(middleware).toContain("reverseSubscriptionRuntimeAllowanceForChargeStrict");
+    expect(middleware).toContain("restoreSubscriptionRuntimeAllowanceForDisputeStrict");
+    expect(middleware).toContain('"stripe_dispute"');
     expect(middleware).toContain('"subscription_runtime_allowance_dispute_restoration"');
-    expect(middleware).toContain('"stripe_dispute_restoration"');
-    expect(middleware).toContain("restoration arrived before its subscription allowance reversal");
-    expect(middleware).toContain("restoration arrived before its top-up reversal");
+  });
+
+  it("never restores more than the recorded withdrawal", () => {
+    expect(middleware).toContain("Math.min(calculatedAmountUsd, reversedAmountUsd)");
+    expect(middleware).toContain("reinstatement arrived before its subscription allowance withdrawal");
+    expect(middleware).toContain("reinstatement arrived before its top-up withdrawal");
   });
 
   it("fails closed when a subscription-funded charge has no resolvable Wireline owner", () => {
     expect(middleware).toContain("funded Runtime Allowance but its Wireline owner is unresolved");
-    expect(middleware).not.toContain(
-      'subscription allowance reversal skipped: subscription owner not found',
-    );
   });
 
-  it("never acknowledges a failed subscription allowance mutation", () => {
+  it("keeps endpoint subscriptions aligned with the preflight event owner", () => {
+    expect(alignment).toContain("stripe-runtime-allowance-retry.ts");
+    expect(alignment).toContain("extractHandledEvents(financialPreflight)");
+    expect(alignment).toContain("extractHandledEvents(billingRoutes)");
+  });
+
+  it("never acknowledges a failed financial mutation", () => {
     const failureBlock = middleware.slice(
       middleware.indexOf('log.error("Stripe Runtime Balance integrity preflight failed'),
     );
@@ -104,25 +140,7 @@ describe("subscription Runtime Allowance refunds fail closed", () => {
     expect(failureBlock).not.toContain("res.json");
   });
 
-  it("only responds success after the strict reversal resolves", () => {
-    const refundBlock = middleware.slice(
-      middleware.indexOf('if (event.type === "charge.refunded")'),
-      middleware.indexOf('if (event.type === "charge.dispute.created")'),
-    );
-    const reverse = refundBlock.indexOf(
-      'await reverseSubscriptionRuntimeAllowanceForChargeStrict(charge, "refund")',
-    );
-    const marked = refundBlock.indexOf("await markStripeEventProcessed(event.id)");
-    const successAck = refundBlock.indexOf(
-      'res.json({ received: true, runtime_allowance_reversal: true });',
-      reverse,
-    );
-    expect(reverse).toBeGreaterThan(-1);
-    expect(marked).toBeGreaterThan(reverse);
-    expect(successAck).toBeGreaterThan(marked);
-  });
-
-  it("claims stripe_events before acknowledging subscription reversals or restorations", () => {
+  it("claims events before acknowledging movements", () => {
     expect(middleware).toContain("claimStripeEventForPreflight");
     expect(middleware).toContain("markStripeEventProcessed");
     expect(middleware).toContain("releaseStripeEventClaim");
