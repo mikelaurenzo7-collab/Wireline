@@ -75,6 +75,8 @@ describe("distributed public health boundary", () => {
     expect(source).toContain('res.setHeader("Cache-Control", "no-store")');
     expect(source).toContain("requestId,");
     expect(source).toContain("cacheScope: CACHE_SCOPE");
+    expect(source).toContain("console.error(");
+    expect(source).not.toContain("console.warn(");
   });
 
   it("keeps the Express fallback from being the production public status implementation", () => {
