@@ -90,6 +90,10 @@ export async function reverseSubscriptionRuntimeAllowance(
   reason: "refund" | "dispute" = "refund",
   /** Fraction of the charge actually refunded/disputed (0–1). */
   portion = 1,
+  provenance?: {
+    providerEventId?: string;
+    providerObjectId?: string;
+  },
 ): Promise<void> {
   if (!userId || !reversalReference) return;
   const clampedPortion = clampUnitInterval(portion, 1);
@@ -110,6 +114,8 @@ export async function reverseSubscriptionRuntimeAllowance(
       entryKind: "reversal",
       source: "stripe",
       provider: "stripe",
+      providerEventId: provenance?.providerEventId,
+      providerObjectId: provenance?.providerObjectId ?? reversalReference,
       customerReason:
         reason === "dispute"
           ? "Runtime Allowance reversed after a payment dispute"
