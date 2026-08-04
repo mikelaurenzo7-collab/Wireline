@@ -19,6 +19,7 @@ import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_VOICE_FALLBACK_MODEL,
 } from "../lib/ai-models";
+import { probeOpenAIModelDiagnostic } from "../lib/health-model-probe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { reportError } from "../lib/error-reporter";
@@ -113,37 +114,6 @@ async function probeDatabase(
     return { ok: true, latency_ms: Date.now() - started };
   } catch (error) {
     return { ok: false, latency_ms: Date.now() - started, error: getErrorMessage(error) };
-  }
-}
-async function probeOpenAI(
-  model: string,
-  timeoutMs = 8000,
-): Promise<{ ok: boolean; latency_ms: number; error?: string; model: string }> {
-  const started = Date.now();
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) return { ok: false, latency_ms: 0, model, error: "OPENAI_API_KEY not configured" };
-  try {
-    const response = await Promise.race([
-      fetch("https://api.openai.com/v1/responses", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-        // Responses API requires max_output_tokens >= 16; a smaller probe value
-        // returns HTTP 400 and falsely marks production as an outage.
-        body: JSON.stringify({ model, input: "ping", max_output_tokens: 16 }),
-      }),
-      new Promise<never>((_resolve, reject) =>
-        setTimeout(() => reject(new Error("model probe timed out")), timeoutMs),
-      ),
-    ]);
-    if (!response.ok) throw new Error(`OpenAI probe failed (${response.status})`);
-    return { ok: true, latency_ms: Date.now() - started, model };
-  } catch (error) {
-    return {
-      ok: false,
-      latency_ms: Date.now() - started,
-      model,
-      error: getErrorMessage(error).slice(0, 240),
-    };
   }
 }
 router.get("/", healthRateLimiter, async (_req, res) => {
@@ -330,65 +300,14 @@ router.get(
     });
   },
 );
-// Memoize the unauthenticated public probe so a burst of requests (or a
-// rotating-IP flood that slips past the per-IP limiter, which itself fails
-// open) cannot translate 1:1 into billed OpenAI Responses calls. One probe
-// pair per PUBLIC_PROBE_TTL_MS is shared by every caller in that window.
-const PUBLIC_PROBE_TTL_MS = 60_000;
-let publicProbeCache: {
-  expiresAt: number;
-  promise: Promise<{ overall: string; components: Record<string, string>; last_checked: string }>;
-} | null = null;
-
-async function computePublicHealth() {
-  const [voice, reasoning] = await Promise.all([
-    probeOpenAI(VAPI_TENANT_DEFAULT_MODEL),
-    probeOpenAI(OPENAI_STRUCTURED_PRIMARY_MODEL),
-  ]);
-  const level = (probe: { ok: boolean; error?: string }) => {
-    if (probe.ok) return "operational";
-    if (/not configured|missing|timed out|429|500|502|503|504/i.test(probe.error || "")) {
-      return "degraded";
-    }
-    return "outage";
-  };
-  const components = {
-    voice_runtime: level(voice),
-    voice_fallback: process.env.GEMINI_API_KEY ? "operational" : "degraded",
-    reasoning: level(reasoning),
-  };
-  const order: Record<string, number> = { operational: 0, degraded: 1, outage: 2 };
-  const worst = Object.values(components).reduce(
-    (current, value) => (order[value] > order[current] ? value : current),
-    "operational",
-  );
-  return { overall: worst, components, last_checked: new Date().toISOString() };
-}
-
-router.get("/public", healthRateLimiter, async (_req, res) => {
-  const now = Date.now();
-  if (!publicProbeCache || publicProbeCache.expiresAt <= now) {
-    publicProbeCache = { expiresAt: now + PUBLIC_PROBE_TTL_MS, promise: computePublicHealth() };
-    // A rejected probe pair must not be cached as a poison promise.
-    publicProbeCache.promise.catch(() => {
-      publicProbeCache = null;
-    });
-  }
-  const payload = await publicProbeCache.promise;
-  // s-maxage lets the shared edge cache absorb distributed/rotating-IP traffic
-  // that the per-IP limiter (which fails open) cannot, so origin only ever runs
-  // one probe pair per TTL regardless of caller count.
-  res.setHeader("Cache-Control", "public, max-age=60, s-maxage=60, stale-while-revalidate=30");
-  res.json(payload);
-});
 router.get("/models", healthRateLimiter, authenticateUser, async (_req, res) => {
   const started = Date.now();
   const [voice, premium, reasoning] = await Promise.all([
-    probeOpenAI(VAPI_TENANT_DEFAULT_MODEL),
+    probeOpenAIModelDiagnostic(VAPI_TENANT_DEFAULT_MODEL),
     VAPI_PREMIUM_MODEL === VAPI_TENANT_DEFAULT_MODEL
       ? Promise.resolve(null)
-      : probeOpenAI(VAPI_PREMIUM_MODEL),
-    probeOpenAI(OPENAI_STRUCTURED_PRIMARY_MODEL),
+      : probeOpenAIModelDiagnostic(VAPI_PREMIUM_MODEL),
+    probeOpenAIModelDiagnostic(OPENAI_STRUCTURED_PRIMARY_MODEL),
   ]);
   const ok = voice.ok && reasoning.ok && (premium?.ok ?? true);
   res.status(ok ? 200 : 503).json({

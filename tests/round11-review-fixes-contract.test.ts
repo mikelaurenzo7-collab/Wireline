@@ -73,13 +73,19 @@ describe("round-11 review fixes", () => {
     expect(fn).toContain("403");
   });
 
-  it("memoizes the unauthenticated public health probe and marks it shared-cacheable", () => {
-    const health = read("src/routes/health-routes.ts");
-    expect(health).toContain("publicProbeCache");
-    expect(health).toContain("PUBLIC_PROBE_TTL_MS");
-    expect(health).toContain("s-maxage=60");
-    // A rejected probe pair must not stick as a poison cache entry.
-    expect(health).toContain("publicProbeCache = null");
+  it("keeps public health globally coordinated and shared-cacheable", () => {
+    const health = read("src/entrypoints/public-health-api.ts");
+    const routes = read("src/routes/health-routes.ts");
+    const registration = read("src/server/register-api-routes.ts");
+
+    expect(health).toContain("RESULT_TTL_SECONDS");
+    expect(health).toContain("LOCK_TTL_SECONDS");
+    expect(health).toContain("nx: true");
+    expect(health).toContain("public, max-age=30");
+    expect(health).toContain('"redis"');
+    expect(routes).not.toContain('router.get("/public"');
+    expect(routes).not.toContain("publicProbeCache");
+    expect(registration).toContain('app.all("/api/health/public"');
   });
 
   it("scales the Runtime Allowance reversal to the refunded portion", () => {

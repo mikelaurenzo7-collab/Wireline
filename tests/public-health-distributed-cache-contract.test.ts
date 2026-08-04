@@ -92,14 +92,20 @@ describe("distributed public health boundary", () => {
     expect(source).not.toContain("console.warn(");
   });
 
-  it("keeps the Express fallback from being the production public status implementation", () => {
+  it("keeps the certified shared handler as the only public status implementation", () => {
     const directFunction = read("src/entrypoints/public-health-api.ts");
     const expressHealth = read("src/routes/health-routes.ts");
+    const registration = read("src/server/register-api-routes.ts");
 
     expect(directFunction).toContain("probeOpenAIModel");
     expect(directFunction).toContain("RESULT_TTL_SECONDS");
-    expect(expressHealth).toContain('router.get("/public"');
-    expect(expressHealth).toContain("publicProbeCache");
     expect(directFunction).not.toContain("publicProbeCache");
+    expect(expressHealth).not.toContain('router.get("/public"');
+    expect(expressHealth).not.toContain("publicProbeCache");
+    expect(expressHealth).not.toContain("computePublicHealth");
+    expect(registration).toContain(
+      'import publicHealthHandler from "../entrypoints/public-health-api";',
+    );
+    expect(registration).toContain('app.all("/api/health/public"');
   });
 });
