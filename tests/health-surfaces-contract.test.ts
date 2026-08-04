@@ -1,11 +1,20 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { probeOpenAIModelDiagnostic } from "../src/lib/health-model-probe";
 import { evaluatePlatformOperationalSlos } from "../src/lib/platform-operational-slos";
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
+const originalOpenAiKey = process.env.OPENAI_API_KEY;
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+  if (originalOpenAiKey === undefined) delete process.env.OPENAI_API_KEY;
+  else process.env.OPENAI_API_KEY = originalOpenAiKey;
+});
 
 describe("health surfaces contract", () => {
   it("requires platform admin for integrations health", () => {
@@ -66,16 +75,70 @@ describe("health surfaces contract", () => {
     expect(registration.indexOf(exactRoute)).toBeLessThan(registration.indexOf(broadRouter));
   });
 
-  it("keeps public status single-owned and aborts timed-out authenticated model probes", () => {
-    const source = read("src/routes/health-routes.ts");
+  it("keeps public status single-owned and authenticated diagnostics cancellable", () => {
+    const routeSource = read("src/routes/health-routes.ts");
+    const probeSource = read("src/lib/health-model-probe.ts");
 
-    expect(source).not.toContain('router.get("/public"');
-    expect(source).not.toContain("PUBLIC_PROBE_TTL_MS");
-    expect(source).not.toContain("computePublicHealth");
-    expect(source).toContain("const controller = new AbortController()");
-    expect(source).toContain('controller.abort(new Error("model probe timed out"))');
-    expect(source).toContain("signal: controller.signal");
-    expect(source).toContain("clearTimeout(timeout)");
-    expect(source).toMatch(/router\.get\(\s*"\/models",\s*healthRateLimiter,\s*authenticateUser/);
+    expect(routeSource).not.toContain('router.get("/public"');
+    expect(routeSource).not.toContain("PUBLIC_PROBE_TTL_MS");
+    expect(routeSource).not.toContain("computePublicHealth");
+    expect(routeSource).toContain(
+      'import { probeOpenAIModelDiagnostic } from "../lib/health-model-probe";',
+    );
+    expect(routeSource).toMatch(
+      /router\.get\(\s*"\/models",\s*healthRateLimiter,\s*authenticateUser/,
+    );
+    expect(probeSource).toContain("const controller = new AbortController()");
+    expect(probeSource).toContain('controller.abort(new Error("model probe timed out"))');
+    expect(probeSource).toContain("signal: controller.signal");
+    expect(probeSource).toContain("clearTimeout(timeout)");
+  });
+
+  it("does not call OpenAI when the diagnostic key is absent", async () => {
+    delete process.env.OPENAI_API_KEY;
+    const fetchImpl = vi.fn() as unknown as typeof fetch;
+
+    await expect(probeOpenAIModelDiagnostic("test-model", 25, fetchImpl)).resolves.toMatchObject({
+      ok: false,
+      model: "test-model",
+      error: "OPENAI_API_KEY not configured",
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("clears the diagnostic deadline after a successful provider response", async () => {
+    process.env.OPENAI_API_KEY = "test-openai-key";
+    vi.useFakeTimers();
+    const fetchImpl = vi.fn(async () => new Response(null, { status: 200 })) as unknown as typeof fetch;
+
+    await expect(probeOpenAIModelDiagnostic("test-model", 50, fetchImpl)).resolves.toMatchObject({
+      ok: true,
+      model: "test-model",
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("aborts the underlying diagnostic request at the hard deadline", async () => {
+    process.env.OPENAI_API_KEY = "test-openai-key";
+    vi.useFakeTimers();
+    let signal: AbortSignal | undefined;
+    const fetchImpl = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+      signal = init?.signal ?? undefined;
+      return new Promise<Response>((_resolve, reject) => {
+        signal?.addEventListener("abort", () => reject(signal?.reason), { once: true });
+      });
+    }) as unknown as typeof fetch;
+
+    const pending = probeOpenAIModelDiagnostic("test-model", 50, fetchImpl);
+    await vi.advanceTimersByTimeAsync(50);
+
+    await expect(pending).resolves.toMatchObject({
+      ok: false,
+      model: "test-model",
+      error: "model probe timed out",
+    });
+    expect(signal?.aborted).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
   });
 });
