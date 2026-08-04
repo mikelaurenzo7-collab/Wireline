@@ -49,8 +49,15 @@ describe("structured runtime policy", () => {
     expect(adminSettings).toContain("VAPI_TENANT_DEFAULT_MODEL");
     expect(adminSettings).not.toContain('"anthropic"');
     expect(adminSettings).not.toContain('"claude-sonnet-4-6"');
-    expect(carrierPanel).toContain("OpenAI is the primary call model");
-    expect(carrierPanel).toContain("Gemini is the automatic fallback");
+    expect(carrierPanel).toContain(
+      "Wireline manages the phone conversation runtime, voice selection, intelligence routing, and continuity.",
+    );
+    expect(carrierPanel).toContain('["Phone runtime", "Wireline managed"]');
+    expect(carrierPanel).toContain('["Call intelligence", "Managed automatically"]');
+    expect(carrierPanel).toContain('["Continuity", "Automatic failover"]');
+    expect(carrierPanel).not.toContain("Gemini is the automatic fallback");
+    expect(carrierPanel).not.toContain('["Primary intelligence", "OpenAI"]');
+    expect(carrierPanel).not.toContain('["Automatic fallback", "Gemini"]');
     expect(carrierPanel).not.toContain("Claude Sonnet 4.6");
     expect(carrierPanel).not.toContain("Anthropic voice disruptions");
     expect(carrierPanel).not.toContain('v: "anthropic"');
