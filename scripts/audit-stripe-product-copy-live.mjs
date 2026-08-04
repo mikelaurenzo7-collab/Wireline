@@ -22,12 +22,19 @@ try {
   const products = [];
   for await (const product of stripe.products.list({ limit: 100 })) products.push(product);
 
-  const findings = stripeProductCopyFindings(products, FOUNDER_PRODUCTS);
+  const expectedProducts = FOUNDER_PRODUCTS.map((product) => ({
+    ...product,
+    metadata: {
+      ...product.metadata,
+      wireline_catalog_version: FOUNDER_CATALOG_VERSION,
+    },
+  }));
+  const findings = stripeProductCopyFindings(products, expectedProducts);
   console.log(
     JSON.stringify(
       {
         catalog_version: FOUNDER_CATALOG_VERSION,
-        expected_product_count: FOUNDER_PRODUCTS.length,
+        expected_product_count: expectedProducts.length,
         active_product_count: products.filter((product) => product.active).length,
         findings,
       },
