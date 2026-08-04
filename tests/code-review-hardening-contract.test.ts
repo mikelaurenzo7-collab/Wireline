@@ -103,23 +103,24 @@ describe("code review hardening contracts", () => {
     expect(vapi).toContain("res.status(500).json({ success: false })");
   });
 
-  it("keeps duplicate end-of-call retries side-effect free after transcript backfill", () => {
+  it("keeps duplicate end-of-call retries side-effect free after mandatory DNC suppression", () => {
     const handlers = read("src/lib/vapi-handlers.ts");
     expect(handlers).toContain(
       "Duplicate end-of-call-report ignored after retry-safe evidence patch",
     );
-    expect(handlers).toContain(
-      "All downstream side effects (usage, customer webhooks,\n    // compliance ledger, enrichment, notifications) are intentionally skipped",
-    );
-    const duplicateReturn = handlers.indexOf(
-      "return;\n  }",
-      handlers.indexOf("if (!insertedFresh)"),
-    );
+    const suppression = handlers.indexOf("await persistTranscriptDncSuppression({");
+    const duplicateGuard = handlers.indexOf("if (!insertedFresh)", suppression);
+    const duplicateReturn = handlers.indexOf("return;", duplicateGuard);
     const firstCallMilestone = handlers.indexOf('event: "first_call_completed"');
     const usageTracking = handlers.indexOf("// Fire-and-forget monthly voice-minute tracking");
-    expect(duplicateReturn).toBeGreaterThan(-1);
+    expect(suppression).toBeGreaterThan(-1);
+    expect(duplicateGuard).toBeGreaterThan(suppression);
+    expect(duplicateReturn).toBeGreaterThan(duplicateGuard);
     expect(firstCallMilestone).toBeGreaterThan(duplicateReturn);
     expect(usageTracking).toBeGreaterThan(firstCallMilestone);
+    expect(handlers.slice(duplicateGuard, duplicateReturn)).toContain(
+      "All other downstream side effects are skipped",
+    );
   });
 
   it("tracks post-create roleplay starts only from a connected live voice test", () => {
