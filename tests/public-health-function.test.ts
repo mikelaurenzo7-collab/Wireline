@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   get: vi.fn(),
   set: vi.fn(),
-  probe: vi.fn(),
+  openaiProbe: vi.fn(),
+  vapiProbe: vi.fn(),
 }));
 
 vi.mock("@upstash/redis", () => ({
@@ -16,13 +17,15 @@ vi.mock("@upstash/redis", () => ({
 
 vi.mock("../src/lib/public-health-probe", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../src/lib/public-health-probe")>();
-  return { ...actual, probeOpenAIModel: mocks.probe };
+  return {
+    ...actual,
+    probeOpenAIModel: mocks.openaiProbe,
+    probeVapiManagedVoice: mocks.vapiProbe,
+  };
 });
 
 vi.mock("../src/lib/ai-models", () => ({
   OPENAI_STRUCTURED_PRIMARY_MODEL: "reasoning-model",
-  VAPI_TENANT_DEFAULT_MODEL: "voice-model",
-  VAPI_VOICE_FALLBACK_MODEL: "voice-fallback-model",
 }));
 
 class MockResponse {
@@ -56,10 +59,12 @@ beforeEach(() => {
   vi.resetModules();
   mocks.get.mockReset();
   mocks.set.mockReset();
-  mocks.probe.mockReset();
+  mocks.openaiProbe.mockReset();
+  mocks.vapiProbe.mockReset();
   process.env = {
     ...originalEnv,
     OPENAI_API_KEY: "test-openai-key",
+    VAPI_PRIVATE_KEY: "test-vapi-key",
     UPSTASH_REDIS_REST_TOKEN: "test-upstash-token",
     UPSTASH_REDIS_REST_URL: "https://test-upstash.example.com",
     VERCEL_ENV: "preview",
@@ -75,7 +80,7 @@ afterEach(() => {
 // Executed in every Vercel build; the certification commit also runs the full
 // TypeScript, ESLint, and non-E2E suite against this exact implementation.
 describe("public health Vercel function", () => {
-  it("fails closed without Redis and never calls the external provider", async () => {
+  it("fails closed without Redis and never calls an external provider", async () => {
     delete process.env.UPSTASH_REDIS_REST_URL;
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
     const handler = await loadHandler();
@@ -87,10 +92,11 @@ describe("public health Vercel function", () => {
     expect(JSON.parse(res.body)).toMatchObject({ code: "DISTRIBUTED_CACHE_REQUIRED" });
     expect(res.headers.get("cache-control")).toBe("no-store");
     expect(res.headers.get("x-request-id")).toMatch(/^[0-9a-f-]{36}$/i);
-    expect(mocks.probe).not.toHaveBeenCalled();
+    expect(mocks.openaiProbe).not.toHaveBeenCalled();
+    expect(mocks.vapiProbe).not.toHaveBeenCalled();
   });
 
-  it("serves a production-scoped Redis result without probing models", async () => {
+  it("serves a production-scoped Redis result without probing providers", async () => {
     process.env.VERCEL_ENV = "production";
     const cached = {
       overall: "operational",
@@ -107,18 +113,24 @@ describe("public health Vercel function", () => {
 
     await handler(request(), res as unknown as ServerResponse);
 
-    expect(mocks.get).toHaveBeenCalledWith("wireline:health:public:v3:production");
+    expect(mocks.get).toHaveBeenCalledWith("wireline:health:public:v4:production");
     expect(mocks.set).not.toHaveBeenCalled();
-    expect(mocks.probe).not.toHaveBeenCalled();
+    expect(mocks.openaiProbe).not.toHaveBeenCalled();
+    expect(mocks.vapiProbe).not.toHaveBeenCalled();
     expect(res.statusCode).toBe(200);
     expect(res.headers.get("x-wireline-health-source")).toBe("redis");
     expect(JSON.parse(res.body)).toEqual(cached);
   });
 
-  it("lets one preview-scoped lock owner probe each declared model and cache the result", async () => {
+  it("lets one preview-scoped lock owner probe each owning provider and cache the result", async () => {
     mocks.get.mockResolvedValue(null);
     mocks.set.mockResolvedValueOnce("OK").mockResolvedValueOnce("OK");
-    mocks.probe.mockImplementation(async (model: string) => ({
+    mocks.vapiProbe.mockResolvedValue({
+      ok: true,
+      latency_ms: 5,
+      model: "vapi-managed-voice",
+    });
+    mocks.openaiProbe.mockImplementation(async (model: string) => ({
       ok: true,
       latency_ms: 5,
       model,
@@ -131,18 +143,25 @@ describe("public health Vercel function", () => {
     const scope = "preview:abcdef1234567890";
     expect(mocks.set).toHaveBeenNthCalledWith(
       1,
-      `wireline:health:public:probe-lock:v3:${scope}`,
+      `wireline:health:public:probe-lock:v4:${scope}`,
       expect.any(Number),
       { nx: true, ex: 12 },
     );
-    expect(mocks.probe).toHaveBeenCalledTimes(3);
-    expect(mocks.probe).toHaveBeenCalledWith("voice-model", "test-openai-key");
-    expect(mocks.probe).toHaveBeenCalledWith("voice-fallback-model", "test-openai-key");
-    expect(mocks.probe).toHaveBeenCalledWith("reasoning-model", "test-openai-key");
+    expect(mocks.vapiProbe).toHaveBeenCalledTimes(1);
+    expect(mocks.vapiProbe).toHaveBeenCalledWith("test-vapi-key");
+    expect(mocks.openaiProbe).toHaveBeenCalledTimes(1);
+    expect(mocks.openaiProbe).toHaveBeenCalledWith("reasoning-model", "test-openai-key");
     expect(mocks.set).toHaveBeenNthCalledWith(
       2,
-      `wireline:health:public:v3:${scope}`,
-      expect.objectContaining({ overall: "operational" }),
+      `wireline:health:public:v4:${scope}`,
+      expect.objectContaining({
+        overall: "operational",
+        components: {
+          voice_runtime: "operational",
+          voice_fallback: "operational",
+          reasoning: "operational",
+        },
+      }),
       { ex: 120 },
     );
     expect(res.statusCode).toBe(200);
