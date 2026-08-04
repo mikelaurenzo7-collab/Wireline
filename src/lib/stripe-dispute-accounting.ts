@@ -1,6 +1,7 @@
 export type DisputeBalanceMovement = {
   amount?: number | null;
   currency?: string | null;
+  exchange_rate?: number | null;
 };
 
 /** Clamp an arbitrary value to a finite 0..1 proportion. */
@@ -10,13 +11,15 @@ export function clampUnitInterval(value: number, fallback = 0): number {
 }
 
 /**
- * Resolve an actual dispute balance movement in the charge currency.
+ * Resolve an actual dispute balance movement in the dispute currency.
  *
  * `charge.dispute.created` can represent an inquiry with no funds withdrawn.
  * Wallet accounting therefore follows Stripe's balance transactions instead:
  * negative transactions are withdrawals, positive transactions are
- * reinstatements. Mismatched settlement currencies fail closed because their
- * cents are not comparable to the charge or PaymentIntent amount.
+ * reinstatements. Stripe balance movements can use the account settlement
+ * currency; when they do, `exchange_rate` converts the dispute currency into
+ * the balance-transaction currency, so dividing restores comparable minor
+ * units before computing the wallet proportion.
  */
 export function disputeBalanceMovementCents(input: {
   disputeAmountCents: number;
@@ -25,8 +28,9 @@ export function disputeBalanceMovementCents(input: {
   direction: "withdrawn" | "reinstated";
 }): number {
   const expectedCurrency = input.disputeCurrency.trim().toLowerCase();
-  let movement = 0;
+  if (!expectedCurrency) throw new Error("Stripe dispute currency is missing.");
 
+  let movement = 0;
   for (const transaction of input.balanceTransactions) {
     const rawAmount = Number(transaction.amount ?? 0);
     if (!Number.isFinite(rawAmount) || rawAmount === 0) continue;
@@ -36,15 +40,25 @@ export function disputeBalanceMovementCents(input: {
     const currency = String(transaction.currency || "")
       .trim()
       .toLowerCase();
-    if (!currency || currency !== expectedCurrency) {
-      throw new Error(
-        `Stripe dispute balance movement currency ${currency || "unknown"} does not match ${expectedCurrency || "unknown"}.`,
-      );
+    if (!currency) throw new Error("Stripe dispute balance movement currency is missing.");
+
+    let comparableAmount = Math.abs(rawAmount);
+    if (currency !== expectedCurrency) {
+      const exchangeRate = Number(transaction.exchange_rate);
+      if (!(Number.isFinite(exchangeRate) && exchangeRate > 0)) {
+        throw new Error(
+          `Stripe dispute balance movement currency ${currency} does not match ${expectedCurrency} and has no usable exchange rate.`,
+        );
+      }
+      comparableAmount = comparableAmount / exchangeRate;
     }
-    movement += Math.abs(rawAmount);
+    movement += Math.round(comparableAmount);
   }
 
-  const disputeAmount = Math.max(0, Math.trunc(input.disputeAmountCents || 0));
+  const rawDisputeAmount = Number(input.disputeAmountCents);
+  const disputeAmount = Number.isFinite(rawDisputeAmount)
+    ? Math.max(0, Math.trunc(rawDisputeAmount))
+    : 0;
   return disputeAmount > 0 ? Math.min(disputeAmount, movement) : movement;
 }
 
@@ -78,9 +92,16 @@ export function proportionalTopUpCreditUsd(
   paymentIntentAmountCents: number,
   purchasedCreditUsd: number,
 ): number {
-  if (!(purchasedCreditUsd > 0) || !(movementAmountCents > 0)) return 0;
+  if (
+    !Number.isFinite(purchasedCreditUsd) ||
+    !(purchasedCreditUsd > 0) ||
+    !Number.isFinite(movementAmountCents) ||
+    !(movementAmountCents > 0)
+  ) {
+    return 0;
+  }
   const portion =
-    paymentIntentAmountCents > 0
+    Number.isFinite(paymentIntentAmountCents) && paymentIntentAmountCents > 0
       ? clampUnitInterval(movementAmountCents / paymentIntentAmountCents)
       : 1;
   return Math.floor(purchasedCreditUsd * portion * 100) / 100;
@@ -91,6 +112,6 @@ export function proportionalTopUpCreditUsd(
  * so reinstatement cannot return more than its corresponding withdrawal.
  */
 export function runtimeAllowanceMovementUsd(totalAllowanceUsd: number, portion: number): number {
-  if (!(totalAllowanceUsd > 0)) return 0;
+  if (!Number.isFinite(totalAllowanceUsd) || !(totalAllowanceUsd > 0)) return 0;
   return Math.floor(totalAllowanceUsd * clampUnitInterval(portion) * 100) / 100;
 }
