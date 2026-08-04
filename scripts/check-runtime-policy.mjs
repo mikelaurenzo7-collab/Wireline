@@ -82,10 +82,20 @@ if (
 if (adminSettings.includes('"anthropic"') || adminSettings.includes('"claude-sonnet-4-6"'))
   fail("Admin settings still contains legacy Claude voice defaults");
 if (
-  !carrierPanel.includes("OpenAI is the primary call model") ||
-  !carrierPanel.includes("Gemini is the automatic fallback")
+  !carrierPanel.includes(
+    "Wireline manages the phone conversation runtime, voice selection, intelligence routing, and continuity.",
+  ) ||
+  !carrierPanel.includes('["Phone runtime", "Wireline managed"]') ||
+  !carrierPanel.includes('["Call intelligence", "Managed automatically"]') ||
+  !carrierPanel.includes('["Continuity", "Automatic failover"]')
 )
-  fail("carrier cognitive routing does not expose the managed call model default");
+  fail("carrier runtime does not present the managed provider-neutral contract");
+if (
+  carrierPanel.includes("Gemini is the automatic fallback") ||
+  carrierPanel.includes('["Primary intelligence", "OpenAI"]') ||
+  carrierPanel.includes('["Automatic fallback", "Gemini"]')
+)
+  fail("carrier runtime leaks internal provider or fallback details");
 if (carrierPanel.includes("Claude Sonnet") || carrierPanel.includes('v: "anthropic"'))
   fail("carrier cognitive routing still presents Claude as the managed default");
 
