@@ -180,14 +180,15 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    const voicePromise = probeOpenAIModel(
-      VAPI_TENANT_DEFAULT_MODEL,
-      process.env.OPENAI_API_KEY,
-    );
+    // Keep the exported policy constants narrow; widen only these local values
+    // so this defensive deduplication remains valid if the policy converges later.
+    const primaryVoiceModel: string = VAPI_TENANT_DEFAULT_MODEL;
+    const fallbackVoiceModel: string = VAPI_VOICE_FALLBACK_MODEL;
+    const voicePromise = probeOpenAIModel(primaryVoiceModel, process.env.OPENAI_API_KEY);
     const voiceFallbackPromise =
-      VAPI_VOICE_FALLBACK_MODEL === VAPI_TENANT_DEFAULT_MODEL
+      fallbackVoiceModel === primaryVoiceModel
         ? voicePromise
-        : probeOpenAIModel(VAPI_VOICE_FALLBACK_MODEL, process.env.OPENAI_API_KEY);
+        : probeOpenAIModel(fallbackVoiceModel, process.env.OPENAI_API_KEY);
     const [voice, voiceFallback, reasoning] = await Promise.all([
       voicePromise,
       voiceFallbackPromise,
