@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { resolveAiDailySpendAlertUsd } from "../src/lib/ai-spend-alert";
 import { resolveHardSpendCapStatus } from "../src/lib/spend-budget-policy";
 
 const root = process.cwd();
@@ -59,6 +60,56 @@ describe("spend guard integrity", () => {
     expect(route).toContain("Spend guard is temporarily unavailable.");
     expect(route).not.toContain("monthly_limit_usd: 0,");
     expect(route).not.toContain("hard_cap: false,");
+  });
+
+  it("keeps AI spend telemetry provider-neutral with backward-compatible aliases", () => {
+    expect(
+      resolveAiDailySpendAlertUsd({
+        WIRELINE_AI_DAILY_ALERT_USD: "12.5",
+        CLAUDE_DAILY_ALERT_USD: "9",
+        CLAUDE_MONTHLY_BUDGET_USD: "400",
+      }),
+    ).toBe(12.5);
+    expect(
+      resolveAiDailySpendAlertUsd({
+        WIRELINE_AI_DAILY_ALERT_USD: undefined,
+        CLAUDE_DAILY_ALERT_USD: "9",
+        CLAUDE_MONTHLY_BUDGET_USD: "400",
+      }),
+    ).toBe(9);
+    expect(
+      resolveAiDailySpendAlertUsd({
+        WIRELINE_AI_DAILY_ALERT_USD: undefined,
+        CLAUDE_DAILY_ALERT_USD: undefined,
+        CLAUDE_MONTHLY_BUDGET_USD: "400",
+      }),
+    ).toBe(4);
+    expect(
+      resolveAiDailySpendAlertUsd({
+        WIRELINE_AI_DAILY_ALERT_USD: "not-a-number",
+        CLAUDE_DAILY_ALERT_USD: "8",
+        CLAUDE_MONTHLY_BUDGET_USD: "400",
+      }),
+    ).toBe(0);
+    expect(
+      resolveAiDailySpendAlertUsd({
+        WIRELINE_AI_DAILY_ALERT_USD: "-10",
+        CLAUDE_DAILY_ALERT_USD: undefined,
+        CLAUDE_MONTHLY_BUDGET_USD: undefined,
+      }),
+    ).toBe(0);
+    expect(
+      resolveAiDailySpendAlertUsd({
+        WIRELINE_AI_DAILY_ALERT_USD: " ",
+        CLAUDE_DAILY_ALERT_USD: "",
+        CLAUDE_MONTHLY_BUDGET_USD: undefined,
+      }),
+    ).toBe(0);
+
+    const guard = read("src/lib/spend-guards.ts");
+    expect(guard).toContain("resolveAiDailySpendAlertUsd()");
+    expect(guard).toContain("Daily AI spend alert threshold crossed");
+    expect(guard).not.toContain("Daily Claude spend alert threshold crossed");
   });
 
   it("backfills only missing budgets and constrains malformed active hard caps", () => {
