@@ -10,6 +10,23 @@ export const sessionUsers = pgTable("wireline_users", {
   sessionVersion: bigint("session_version", { mode: "number" }).notNull().default(0),
 });
 
+/**
+ * Narrow typed mirror for billing-provenance columns that were introduced by
+ * launch hardening outside the original monolithic Drizzle schema. Keeping the
+ * mirror here lets security/billing code read or update provenance without
+ * duplicating the complete subscription table definition.
+ */
+export const subscriptionEntitlements = pgTable("wireline_subscriptions", {
+  userId: uuid("user_id").primaryKey(),
+  stripePriceId: text("stripe_price_id"),
+  entitlementSource: text("entitlement_source", {
+    enum: ["stripe", "demo", "manual", "migration"],
+  })
+    .notNull()
+    .default("manual"),
+  grantReason: text("grant_reason"),
+});
+
 export const secureTeamMembers = pgTable("wireline_team_members", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id"),
