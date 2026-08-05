@@ -3,6 +3,10 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { resolveAiDailySpendAlertUsd } from "../src/lib/ai-spend-alert";
+import {
+  defaultAiSpendBudgetUsdForTier,
+  subscriptionPlanToTier,
+} from "../src/lib/plan-entitlements";
 import { resolveHardSpendCapStatus } from "../src/lib/spend-budget-policy";
 
 const root = process.cwd();
@@ -60,6 +64,23 @@ describe("spend guard integrity", () => {
     expect(route).toContain("Spend guard is temporarily unavailable.");
     expect(route).not.toContain("monthly_limit_usd: 0,");
     expect(route).not.toContain("hard_cap: false,");
+  });
+
+  it("separates the Free Builder emergency circuit breaker from paid plan envelopes", () => {
+    expect(defaultAiSpendBudgetUsdForTier("free")).toBe(0.5);
+    expect(defaultAiSpendBudgetUsdForTier("personal")).toBe(8.68);
+    expect(defaultAiSpendBudgetUsdForTier("team")).toBe(18.36);
+    expect(defaultAiSpendBudgetUsdForTier("business")).toBe(37.36);
+    expect(defaultAiSpendBudgetUsdForTier("enterprise")).toBe(69.6);
+    expect(subscriptionPlanToTier("definitely-not-a-plan")).toBe("free");
+
+    const route = read("src/routes/spend-control-routes.ts");
+    expect(route).toContain('type SpendGuardScope = "plan_funded" | "free_builder_emergency"');
+    expect(route).toContain("monthly_limit_usd: providerWorkEnabled ? budget.monthlyLimitUsd : null");
+    expect(route).toContain("displayLimit = providerWorkEnabled ? persistedLimit : 0");
+    expect(route).toContain("customer_editable: providerWorkEnabled");
+    expect(route).toContain("Free Builder does not fund live provider work");
+    expect(route).toContain("Wireline could not resolve the active plan");
   });
 
   it("keeps AI spend telemetry provider-neutral with exact legacy behavior", () => {
