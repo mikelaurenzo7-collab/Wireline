@@ -34,6 +34,28 @@ html.light {
   resize: block;
 }
 
+/* ARIA permits `grammar` and `spelling` in addition to boolean invalid state.
+ * Apply one visual contract to native fields and Radix select triggers. */
+:is(
+    [data-slot="input"],
+    [data-slot="textarea"],
+    [data-slot="native-select"],
+    [data-slot="select-trigger"]
+  )[aria-invalid]:not([aria-invalid="false"]) {
+  border-color: var(--wireline-color-status-error);
+}
+
+:is(
+    [data-slot="input"],
+    [data-slot="textarea"],
+    [data-slot="native-select"],
+    [data-slot="select-trigger"]
+  )[aria-invalid]:not([aria-invalid="false"]):focus-visible {
+  outline-color: var(--wireline-color-status-error);
+  box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth, 4px)
+    color-mix(in srgb, var(--wireline-color-status-error) 22%, transparent);
+}
+
 /* Horizontal tab rails should feel deliberate on touch devices, remain
  * keyboard-scrollable, allow the surrounding page to pan vertically, and stop
  * horizontal scroll chaining into the page. */
