@@ -49,6 +49,11 @@ html.light {
 }
 
 @media (pointer: coarse) {
+  [data-slot="button"][data-size="icon"] {
+    min-width: var(--wireline-interaction-target-comfortable, 44px);
+    min-height: var(--wireline-interaction-target-comfortable, 44px);
+  }
+
   :where([role="tablist"].tab-strip-scroll, .app-tab-strip) {
     scroll-snap-type: inline proximity;
   }
