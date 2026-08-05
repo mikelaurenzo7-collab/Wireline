@@ -1,0 +1,100 @@
+/*
+ * Wireline system refinement — second-pass interaction and layout invariants.
+ *
+ * This layer is intentionally narrow. It closes gaps left by route-specific
+ * shells without redefining brand tokens or component appearance.
+ */
+
+:root {
+  color-scheme: dark;
+}
+
+html.light {
+  color-scheme: light;
+}
+
+:where(input[type="checkbox"], input[type="radio"], input[type="range"], progress) {
+  accent-color: var(--wireline-color-action-primary-default);
+}
+
+/* Long customer data, URLs, identifiers, and generated copy must not widen a
+ * card or route shell. Code and preformatted output retain their own scrolling
+ * contract rather than being broken character-by-character. */
+:where(.wl-ui-caps, .marketing-surface)
+  :where(p, li, dd, dt, td, th, figcaption, blockquote, a:not([class])) {
+  overflow-wrap: anywhere;
+}
+
+:where(.wl-ui-caps, .marketing-surface) :where(input, select, textarea) {
+  min-width: 0;
+}
+
+:where(.wl-ui-caps, .marketing-surface) textarea:not([data-resize="none"]) {
+  resize: block;
+}
+
+/* Horizontal tab rails should feel deliberate on touch devices, remain
+ * keyboard-scrollable, and stop scroll chaining into the page. */
+:where([role="tablist"].tab-strip-scroll, .app-tab-strip) {
+  overscroll-behavior-inline: contain;
+  scroll-padding-inline: 0.5rem;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+
+:where([role="tablist"].tab-strip-scroll, .app-tab-strip)::-webkit-scrollbar {
+  display: none;
+}
+
+:where([role="tablist"].tab-strip-scroll, .app-tab-strip) > [role="tab"] {
+  scroll-snap-align: nearest;
+}
+
+/* PageShell's custom mobile action trigger predates the shared target-size
+ * contract and opts out of its utility rule. Restore the 44px target here. */
+@media (max-width: 767px) {
+  .wl-ui-caps button[aria-label="Page actions"] {
+    min-width: var(--wireline-interaction-target-comfortable, 44px);
+    min-height: var(--wireline-interaction-target-comfortable, 44px);
+  }
+
+  :where([role="tablist"].tab-strip-scroll) > [role="tab"] {
+    min-height: var(--wireline-interaction-target-comfortable, 44px);
+  }
+}
+
+/* PageShell owns a bespoke bottom sheet rather than the Radix sheet primitive.
+ * Give it the same semantic scrim, dynamic viewport, safe-area, and bounded
+ * scrolling behavior as every other floating surface. */
+[aria-hidden="true"]:has(+ [role="dialog"][aria-label="Page actions"]) {
+  background: var(--wireline-color-overlay-scrim);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+[role="dialog"][aria-label="Page actions"] {
+  max-height: calc(100dvh - max(0.75rem, env(safe-area-inset-top)));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-start-start-radius: var(--wireline-radius-xl);
+  border-start-end-radius: var(--wireline-radius-xl);
+  scrollbar-gutter: stable;
+}
+
+[role="dialog"][aria-label="Page actions"] > :last-child {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  [aria-hidden="true"]:has(+ [role="dialog"][aria-label="Page actions"]) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  [role="dialog"][aria-label="Page actions"] {
+    border: 1px solid CanvasText;
+  }
+}
