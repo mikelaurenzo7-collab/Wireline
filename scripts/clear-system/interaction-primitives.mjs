@@ -8,6 +8,8 @@ export function checkInteractionPrimitives({ read, mustInclude }) {
   const button = read("src/components/atoms/Button.tsx");
   const switchSource = read("src/components/atoms/Switch.tsx");
   const formField = read("src/components/molecules/FormField.tsx");
+  const select = read("src/components/ui/shadcn/Select.tsx");
+  const pageShell = read("src/components/PageShell.tsx");
 
   mustInclude(
     "src/components/atoms/Switch.tsx",
@@ -53,10 +55,10 @@ export function checkInteractionPrimitives({ read, mustInclude }) {
     "legacy recipe modal must use the dynamic viewport contract",
   );
   mustInclude(
-    "src/styles/system-hardening.css",
-    systemHardening,
-    /aria-invalid="true"[\s\S]*wireline-color-status-error/,
-    "shared fields must style standards-based aria-invalid state",
+    "src/styles/system-refinement-pass-two.css",
+    systemRefinement,
+    /select-trigger[\s\S]*aria-invalid[\s\S]*not\(\[aria-invalid="false"\]\)[\s\S]*wireline-color-status-error/,
+    "native and Radix fields must style every standards-based invalid value",
   );
   mustInclude(
     "src/styles/system-hardening.css",
@@ -84,10 +86,29 @@ export function checkInteractionPrimitives({ read, mustInclude }) {
     "button atom must expose resolved size metadata for pointer-specific geometry",
   );
   mustInclude(
+    "src/components/atoms/Button.tsx",
+    button,
+    /function resolvesAriaDisabled[\s\S]*if \(ariaDisabled\)[\s\S]*event\.preventDefault\(\)[\s\S]*event\.stopPropagation\(\)/,
+    "aria-disabled buttons must suppress click activation rather than only changing appearance",
+  );
+  mustInclude(
+    "src/components/atoms/Button.tsx",
+    button,
+    /ariaDisabled && \(event\.key === "Enter" \|\| event\.key === " "\)[\s\S]*disabled=\{asChild \? undefined : disabled\}/,
+    "aria-disabled slotted controls must suppress keyboard activation without invalid native attributes",
+  );
+  mustInclude(
     "src/styles/system-refinement-pass-two.css",
     systemRefinement,
-    /@media \(pointer: coarse\)[\s\S]*data-slot="button"\]\[data-size="icon"\][\s\S]*min-width:[\s\S]*44px[\s\S]*min-height:[\s\S]*44px/,
-    "icon buttons must use real 44px geometry on coarse pointers",
+    /@media \(any-pointer: coarse\)[\s\S]*data-slot="button"\]\[data-size="icon"\][\s\S]*min-width:[\s\S]*44px[\s\S]*min-height:[\s\S]*44px/,
+    "icon buttons must use real 44px geometry on every coarse-capable pointer",
+  );
+
+  mustInclude(
+    "src/components/ui/shadcn/Select.tsx",
+    select,
+    /data-slot="select-trigger"/,
+    "Radix select triggers must expose a stable state-styling slot",
   );
 
   mustInclude(
@@ -105,14 +126,14 @@ export function checkInteractionPrimitives({ read, mustInclude }) {
   mustInclude(
     "src/components/molecules/FormField.tsx",
     formField,
-    /existingDescribedBy[\s\S]*descriptionId[\s\S]*errorId/,
-    "form fields must preserve caller-provided descriptions while adding help and errors",
+    /existingDescribedBy[\s\S]*new Set[\s\S]*descriptionId[\s\S]*errorId/,
+    "form fields must preserve and deduplicate caller descriptions while adding help and errors",
   );
   mustInclude(
     "src/components/molecules/FormField.tsx",
     formField,
-    /const isRequired = required \|\| child\?\.props\.required === true[\s\S]*required:\s*isRequired \? true : undefined[\s\S]*aria-required/,
-    "form fields must keep native and ARIA required state consistent",
+    /const nativeRequired = required \|\| child\?\.props\.required === true[\s\S]*const isRequired = nativeRequired \|\| isAriaTrue[\s\S]*required:\s*nativeRequired \? true : child\.props\.required[\s\S]*aria-required/,
+    "form fields must keep native, ARIA, label, and wrapper required state coherent",
   );
   mustInclude(
     "src/components/molecules/FormField.tsx",
@@ -123,7 +144,32 @@ export function checkInteractionPrimitives({ read, mustInclude }) {
   mustInclude(
     "src/components/molecules/FormField.tsx",
     formField,
-    /const isInvalid = ariaInvalid === true \|\| ariaInvalid === "true"[\s\S]*data-invalid=\{isInvalid \|\| undefined\}/,
-    "form fields must reflect caller-provided invalid state on the wrapper",
+    /function isAriaInvalid[\s\S]*value !== false[\s\S]*value !== "false"[\s\S]*data-invalid=\{isInvalid \|\| undefined\}/,
+    "form fields must reflect boolean, grammar, and spelling invalid state on the wrapper",
+  );
+
+  mustInclude(
+    "src/components/PageShell.tsx",
+    pageShell,
+    /const shellId = useId\(\)[\s\S]*tabDomId[\s\S]*panelDomId/,
+    "route shells must scope tab and panel identifiers per component instance",
+  );
+  mustInclude(
+    "src/components/PageShell.tsx",
+    pageShell,
+    /TAB_SWIPE_EXCLUSION_SELECTOR[\s\S]*shouldSuppressTabSwipe[\s\S]*max-width: 767px[\s\S]*pointerId/,
+    "route-shell swipe navigation must remain mobile-only and avoid interactive descendants",
+  );
+  mustInclude(
+    "src/components/PageShell.tsx",
+    pageShell,
+    /matchMedia\("\(min-width: 768px\)"\)[\s\S]*setMobileActionsOpen\(false\)[\s\S]*removeEventListener/,
+    "responsive layout changes must close hidden mobile action dialogs and release lifecycle locks",
+  );
+  mustInclude(
+    "src/components/PageShell.tsx",
+    pageShell,
+    /data-slot="page-actions-dialog"[\s\S]*dragControls=\{sheetDragControls\}[\s\S]*dragListener=\{false\}[\s\S]*page-actions-drag-handle/,
+    "custom action sheets must use stable slots and handle-only drag initiation",
   );
 }

@@ -55,13 +55,47 @@ export interface ButtonProps
   disableAnimations?: boolean;
 }
 
+function resolvesAriaDisabled(value: React.AriaAttributes["aria-disabled"]): boolean {
+  return value === true || value === "true";
+}
+
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    { className, variant, size, asChild = false, disableAnimations: _disableAnimations, ...props },
+    {
+      className,
+      variant,
+      size,
+      asChild = false,
+      disableAnimations: _disableAnimations,
+      disabled,
+      onClick,
+      onKeyDown,
+      "aria-disabled": ariaDisabledProp,
+      ...props
+    },
     ref,
   ) => {
     const Comp = asChild ? Slot : "button";
     const resolvedSize = size ?? "default";
+    const ariaDisabled = resolvesAriaDisabled(ariaDisabledProp) || (asChild && disabled === true);
+
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      if (ariaDisabled) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      onClick?.(event);
+    };
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (ariaDisabled && (event.key === "Enter" || event.key === " ")) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      onKeyDown?.(event);
+    };
 
     return (
       <Comp
@@ -69,6 +103,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         data-size={resolvedSize}
         className={cn(buttonVariants({ variant, size: resolvedSize, className }))}
         ref={ref}
+        disabled={asChild ? undefined : disabled}
+        aria-disabled={ariaDisabled || ariaDisabledProp || undefined}
+        onClick={ariaDisabled || onClick ? handleClick : undefined}
+        onKeyDown={ariaDisabled || onKeyDown ? handleKeyDown : undefined}
         {...props}
       />
     );

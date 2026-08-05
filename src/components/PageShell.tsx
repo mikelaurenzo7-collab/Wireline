@@ -1,5 +1,12 @@
-import React, { ReactNode, useCallback, useState, useRef } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import React, {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
+import { AnimatePresence, motion, useDragControls, useReducedMotion } from "motion/react";
 import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "../lib/utils";
 import { resolveBrandAccent } from "../lib/brand-token";
@@ -35,6 +42,46 @@ import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
        ]}
      />
    ────────────────────────────────────────────────────────────────────────── */
+
+const TAB_SWIPE_EXCLUSION_SELECTOR = [
+  "a",
+  "button",
+  "input",
+  "select",
+  "textarea",
+  "label",
+  "summary",
+  "[contenteditable='true']",
+  "[draggable='true']",
+  "[role='button']",
+  "[role='combobox']",
+  "[role='link']",
+  "[role='menuitem']",
+  "[role='option']",
+  "[role='slider']",
+  "[role='spinbutton']",
+  "[role='switch']",
+  "[role='tablist']",
+  "[data-no-tab-swipe='true']",
+  "[data-radix-scroll-area-viewport]",
+].join(", ");
+
+function shouldSuppressTabSwipe(target: EventTarget | null, boundary: HTMLElement): boolean {
+  if (!(target instanceof Element) || !boundary.contains(target)) return true;
+  if (target.closest(TAB_SWIPE_EXCLUSION_SELECTOR)) return true;
+
+  let node: HTMLElement | null = target instanceof HTMLElement ? target : target.parentElement;
+  while (node && node !== boundary) {
+    const style = window.getComputedStyle(node);
+    const scrollsHorizontally =
+      node.scrollWidth > node.clientWidth &&
+      (style.overflowX === "auto" || style.overflowX === "scroll");
+    if (scrollsHorizontally) return true;
+    node = node.parentElement;
+  }
+
+  return false;
+}
 
 export type PageShellTab = {
   id: string;
@@ -77,19 +124,27 @@ export default function PageShell({
   scrollable = false,
 }: PageShellProps) {
   const showPageHeader = Boolean(title || subtitle || eyebrow);
+  const shellId = useId();
+  const actionsDialogId = `${shellId}-page-actions`;
+  const actionsTitleId = `${shellId}-page-actions-title`;
   const [activeId, setActiveId] = useState<string>(
     defaultTab ?? (tabs && tabs.length > 0 ? tabs[0].id : ""),
   );
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const reduceMotion = useReducedMotion();
-  // Tracks start point of a horizontal swipe to switch tabs on touch devices.
-  const tabSwipe = useRef<{ x: number; y: number } | null>(null);
+  const sheetDragControls = useDragControls();
+  // Tracks start point of a deliberate mobile content swipe between tabs.
+  const tabSwipe = useRef<{ x: number; y: number; pointerId: number } | null>(null);
   const desktopTabListRef = useRef<HTMLDivElement>(null);
   const mobileTabListRef = useRef<HTMLDivElement>(null);
   // Ref for focus trap inside the bottom sheet dialog.
   const sheetRef = useRef<HTMLDivElement>(null);
   const activeTab = tabs?.find((t) => t.id === activeId) ?? tabs?.[0];
   const selectedTabId = activeTab?.id ?? "";
+  const selectedTabIndex = tabs?.findIndex((tab) => tab.id === selectedTabId) ?? -1;
+  const tabDomId = (viewport: "desktop" | "mobile", index: number) =>
+    `${shellId}-tab-${viewport}-${index}`;
+  const panelDomId = (index: number) => `${shellId}-panel-${index}`;
 
   const activateTabFromKeyboard = useCallback(
     (
@@ -116,11 +171,29 @@ export default function PageShell({
     [tabs],
   );
 
+  useEffect(() => {
+    if (!mobileActionsOpen) return;
+    const desktopQuery = window.matchMedia("(min-width: 768px)");
+    const closeWhenHidden = () => {
+      if (desktopQuery.matches || !actions) setMobileActionsOpen(false);
+    };
+
+    closeWhenHidden();
+    desktopQuery.addEventListener("change", closeWhenHidden);
+    return () => desktopQuery.removeEventListener("change", closeWhenHidden);
+  }, [actions, mobileActionsOpen]);
+
   useBodyScrollLock(mobileActionsOpen);
   useModalFocusTrap(sheetRef, {
     active: mobileActionsOpen,
     onEscape: () => setMobileActionsOpen(false),
   });
+
+  const pageActionTriggerProps = {
+    "aria-controls": mobileActionsOpen ? actionsDialogId : undefined,
+    "aria-expanded": mobileActionsOpen,
+    "aria-haspopup": "dialog" as const,
+  };
 
   return (
     <div
@@ -164,6 +237,7 @@ export default function PageShell({
                   disableAnimations
                   onClick={() => setMobileActionsOpen(true)}
                   aria-label="Page actions"
+                  {...pageActionTriggerProps}
                   className="touch-press hover:scale-[1.05] md:hidden w-11 h-11 text-muted wl-panel"
                 >
                   <MoreHorizontal className="w-5 h-5" />
@@ -186,6 +260,7 @@ export default function PageShell({
               disableAnimations
               onClick={() => setMobileActionsOpen(true)}
               aria-label="Page actions"
+              {...pageActionTriggerProps}
               className="touch-press hover:scale-[1.05] md:hidden w-11 h-11 text-muted wl-panel"
             >
               <MoreHorizontal className="w-5 h-5" />
@@ -214,9 +289,9 @@ export default function PageShell({
                   variant="ghost"
                   disableAnimations
                   role="tab"
-                  id={`pageshell-tab-desktop-${tab.id}`}
+                  id={tabDomId("desktop", i)}
                   aria-selected={active}
-                  aria-controls={`pageshell-panel-${tab.id}`}
+                  aria-controls={active ? panelDomId(i) : undefined}
                   tabIndex={active ? 0 : -1}
                   onClick={() => setActiveId(tab.id)}
                   onKeyDown={(event) =>
@@ -229,7 +304,7 @@ export default function PageShell({
                 >
                   {active && (
                     <motion.div
-                      layoutId="tab-active-bg"
+                      layoutId={`${shellId}-tab-active-bg`}
                       className="app-tab-active-bg absolute inset-0"
                       transition={
                         reduceMotion
@@ -279,9 +354,9 @@ export default function PageShell({
                   variant="ghost"
                   disableAnimations
                   role="tab"
-                  id={`pageshell-tab-mobile-${tab.id}`}
+                  id={tabDomId("mobile", i)}
                   aria-selected={active}
-                  aria-controls={`pageshell-panel-${tab.id}`}
+                  aria-controls={active ? panelDomId(i) : undefined}
                   tabIndex={active ? 0 : -1}
                   onClick={() => setActiveId(tab.id)}
                   onKeyDown={(event) =>
@@ -294,7 +369,7 @@ export default function PageShell({
                 >
                   {active && (
                     <motion.div
-                      layoutId="mobile-tab-active-bg"
+                      layoutId={`${shellId}-mobile-tab-active-bg`}
                       className="app-tab-active-bg absolute inset-0"
                       transition={
                         reduceMotion
@@ -329,6 +404,7 @@ export default function PageShell({
               disableAnimations
               onClick={() => setMobileActionsOpen(true)}
               aria-label="Page actions"
+              {...pageActionTriggerProps}
               className="touch-press hover:scale-[1.05] shrink-0 w-11 h-11 rounded-md text-muted wl-panel"
             >
               <MoreHorizontal className="w-5 h-5" />
@@ -345,20 +421,34 @@ export default function PageShell({
             : "flex-1 min-h-0 overflow-hidden max-md:overflow-y-auto max-md:overscroll-contain max-md:min-h-0",
           bodyClassName,
         )}
-        onPointerDown={(e) => {
-          // N4: don't initiate swipe when the actions sheet is open.
-          if (mobileActionsOpen) return;
-          if (e.pointerType !== "touch" || !tabs || tabs.length < 2) return;
-          tabSwipe.current = { x: e.clientX, y: e.clientY };
-        }}
-        onPointerUp={(e) => {
-          if (!tabSwipe.current || !tabs || tabs.length < 2) return;
-          const dx = e.clientX - tabSwipe.current.x;
-          const dy = Math.abs(e.clientY - tabSwipe.current.y);
+        onPointerDown={(event) => {
           tabSwipe.current = null;
+          if (
+            mobileActionsOpen ||
+            !event.isPrimary ||
+            event.pointerType !== "touch" ||
+            !tabs ||
+            tabs.length < 2 ||
+            !window.matchMedia("(max-width: 767px)").matches ||
+            shouldSuppressTabSwipe(event.target, event.currentTarget)
+          ) {
+            return;
+          }
+          tabSwipe.current = {
+            x: event.clientX,
+            y: event.clientY,
+            pointerId: event.pointerId,
+          };
+        }}
+        onPointerUp={(event) => {
+          const swipe = tabSwipe.current;
+          tabSwipe.current = null;
+          if (!swipe || swipe.pointerId !== event.pointerId || !tabs || tabs.length < 2) return;
+          const dx = event.clientX - swipe.x;
+          const dy = Math.abs(event.clientY - swipe.y);
           // Require ≥60px horizontal, <20px vertical — deliberate swipe only.
           if (Math.abs(dx) < 60 || dy > 20) return;
-          const idx = tabs.findIndex((t) => t.id === selectedTabId);
+          const idx = tabs.findIndex((tab) => tab.id === selectedTabId);
           if (dx < 0 && idx < tabs.length - 1) setActiveId(tabs[idx + 1].id);
           else if (dx > 0 && idx > 0) setActiveId(tabs[idx - 1].id);
         }}
@@ -370,7 +460,7 @@ export default function PageShell({
           <motion.div
             key={activeTab.id}
             role="tabpanel"
-            id={`pageshell-panel-${activeTab.id}`}
+            id={panelDomId(selectedTabIndex)}
             aria-label={activeTab.label}
             initial={
               reduceMotion ? false : { opacity: 0, transform: "translate3d(0, 4px, 0)" }
@@ -395,21 +485,24 @@ export default function PageShell({
 
       {/* ── Mobile actions bottom sheet ─────────────────────────────────── */}
       <AnimatePresence>
-        {mobileActionsOpen && (
+        {mobileActionsOpen && actions && (
           <>
             {/* Backdrop */}
             <motion.div
+              data-slot="page-actions-overlay"
               initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: reduceMotion ? 0.01 : 0.18 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] md:hidden"
+              className="fixed inset-0 z-[200] md:hidden"
               onClick={() => setMobileActionsOpen(false)}
               aria-hidden="true"
             />
             {/* Sheet */}
             <motion.div
               ref={sheetRef}
+              id={actionsDialogId}
+              data-slot="page-actions-dialog"
               initial={reduceMotion ? false : { y: "100%" }}
               animate={{ y: 0 }}
               exit={reduceMotion ? { opacity: 0 } : { y: "100%" }}
@@ -418,24 +511,34 @@ export default function PageShell({
                   ? { duration: 0.01 }
                   : { type: "spring", stiffness: 360, damping: 32 }
               }
-              className="fixed bottom-0 left-0 right-0 z-[201] wl-panel-elevated border-t border-border md:hidden select-none pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-24px_48px_-20px_rgba(17,17,17,0.18),0_1px_0_rgba(255,255,255,0.75)_inset]"
+              className="fixed bottom-0 left-0 right-0 z-[201] wl-panel-elevated border-t border-border md:hidden shadow-[0_-24px_48px_-20px_rgba(17,17,17,0.18),0_1px_0_rgba(255,255,255,0.75)_inset]"
               drag="y"
-              dragConstraints={{ top: 0 }}
+              dragControls={sheetDragControls}
+              dragListener={false}
+              dragConstraints={{ top: 0, bottom: 0 }}
               dragElastic={{ top: 0, bottom: 0.35 }}
+              dragMomentum={false}
               onDragEnd={(_, { offset, velocity }) => {
                 if (offset.y > 80 || velocity.y > 400) setMobileActionsOpen(false);
               }}
               role="dialog"
-              aria-label="Page actions"
+              aria-labelledby={actionsTitleId}
               aria-modal="true"
             >
-              {/* Grab handle */}
-              <div className="flex justify-center pt-3 pb-2">
-                <div className="w-10 h-1 rounded-full bg-brand/25" aria-hidden="true" />
+              {/* Grab handle — the only drag initiation surface, preserving dialog scrolling. */}
+              <div
+                data-slot="page-actions-drag-handle"
+                className="flex touch-none select-none cursor-grab justify-center pt-3 pb-2 active:cursor-grabbing"
+                onPointerDown={(event) => sheetDragControls.start(event)}
+                aria-hidden="true"
+              >
+                <div className="w-10 h-1 rounded-full bg-brand/25" />
               </div>
               {/* Header */}
               <div className="flex items-center justify-between px-4 pb-3">
-                <p className="text-eyebrow">Actions</p>
+                <p id={actionsTitleId} className="text-eyebrow">
+                  Actions
+                </p>
                 <ShadButton
                   type="button"
                   variant="ghost"

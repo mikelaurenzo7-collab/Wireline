@@ -34,13 +34,36 @@ html.light {
   resize: block;
 }
 
+/* ARIA permits `grammar` and `spelling` in addition to boolean invalid state.
+ * Apply one visual contract to native fields and Radix select triggers. */
+:is(
+    [data-slot="input"],
+    [data-slot="textarea"],
+    [data-slot="native-select"],
+    [data-slot="select-trigger"]
+  )[aria-invalid]:not([aria-invalid="false"]) {
+  border-color: var(--wireline-color-status-error);
+}
+
+:is(
+    [data-slot="input"],
+    [data-slot="textarea"],
+    [data-slot="native-select"],
+    [data-slot="select-trigger"]
+  )[aria-invalid]:not([aria-invalid="false"]):focus-visible {
+  outline-color: var(--wireline-color-status-error);
+  box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth, 4px)
+    color-mix(in srgb, var(--wireline-color-status-error) 22%, transparent);
+}
+
 /* Horizontal tab rails should feel deliberate on touch devices, remain
- * keyboard-scrollable, and stop scroll chaining into the page. */
+ * keyboard-scrollable, allow the surrounding page to pan vertically, and stop
+ * horizontal scroll chaining into the page. */
 :where([role="tablist"].tab-strip-scroll, .app-tab-strip) {
   overscroll-behavior-inline: contain;
   scroll-padding-inline: 0.5rem;
   scrollbar-width: none;
-  touch-action: pan-x;
+  touch-action: pan-x pan-y pinch-zoom;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -48,7 +71,9 @@ html.light {
   display: none;
 }
 
-@media (pointer: coarse) {
+/* `any-pointer` includes hybrid laptops whose primary mouse is fine but whose
+ * touchscreen still needs comfortable geometry and deliberate scroll snapping. */
+@media (any-pointer: coarse) {
   [data-slot="button"][data-size="icon"] {
     min-width: var(--wireline-interaction-target-comfortable, 44px);
     min-height: var(--wireline-interaction-target-comfortable, 44px);
@@ -77,37 +102,33 @@ html.light {
 }
 
 /* PageShell owns a bespoke bottom sheet rather than the Radix sheet primitive.
- * Give it the same semantic scrim, dynamic viewport, safe-area, and bounded
- * scrolling behavior as every other floating surface. */
-[aria-hidden="true"]:has(+ [role="dialog"][aria-label="Page actions"]) {
+ * Stable slots avoid coupling visual behavior to localized accessible names. */
+[data-slot="page-actions-overlay"] {
   background: var(--wireline-color-overlay-scrim);
   -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
 }
 
-[role="dialog"][aria-label="Page actions"] {
+[data-slot="page-actions-dialog"] {
   max-height: calc(100dvh - max(0.75rem, env(safe-area-inset-top)));
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
   border-start-start-radius: var(--wireline-radius-xl);
   border-start-end-radius: var(--wireline-radius-xl);
   scrollbar-gutter: stable;
 }
 
-[role="dialog"][aria-label="Page actions"] > :last-child {
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-}
-
 @media (prefers-reduced-transparency: reduce) {
-  [aria-hidden="true"]:has(+ [role="dialog"][aria-label="Page actions"]) {
+  [data-slot="page-actions-overlay"] {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
 }
 
 @media (forced-colors: active) {
-  [role="dialog"][aria-label="Page actions"] {
+  [data-slot="page-actions-dialog"] {
     border: 1px solid CanvasText;
   }
 }
