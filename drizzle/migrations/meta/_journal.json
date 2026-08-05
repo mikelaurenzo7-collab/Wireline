@@ -225,6 +225,13 @@
       "when": 1785904200000,
       "tag": "0133_restore_spend_guard_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1785909900000,
+      "tag": "0134_free_builder_simulation_allowance",
+      "breakpoints": true
     }
   ]
 }
