@@ -35,6 +35,7 @@ describe("Stripe stale webhook claim preflight", () => {
     expect(signatureVerification).toBeGreaterThan(-1);
     expect(claimDelete).toBeGreaterThan(signatureVerification);
     expect(source).toContain('eq(schema.stripeEvents.status, "processing")');
+    expect(source).toContain("isNull(schema.stripeEvents.processedAt)");
     expect(source).toContain("lt(schema.stripeEvents.processedAt, cutoff)");
     expect(source).toContain("ABANDONED_STRIPE_CLAIM_AFTER_MS = 5 * 60 * 1000");
   });
