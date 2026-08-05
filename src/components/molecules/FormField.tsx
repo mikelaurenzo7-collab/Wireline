@@ -30,6 +30,7 @@ type FieldControlProps = {
   disabled?: boolean;
   required?: boolean;
   "aria-describedby"?: string;
+  "aria-disabled"?: React.AriaAttributes["aria-disabled"];
   "aria-invalid"?: React.AriaAttributes["aria-invalid"];
   "aria-required"?: React.AriaAttributes["aria-required"];
 };
@@ -58,17 +59,21 @@ export function FormField({
   ]
     .filter(Boolean)
     .join(" ");
-  const isDisabled = child?.props.disabled === true;
+  const isDisabled =
+    child?.props.disabled === true ||
+    child?.props["aria-disabled"] === true ||
+    child?.props["aria-disabled"] === "true";
   const isRequired = required || child?.props.required === true;
   const ariaInvalid = error ? true : child?.props["aria-invalid"];
+  const isInvalid = ariaInvalid === true || ariaInvalid === "true";
 
   const control = child
     ? React.cloneElement(child, {
         id: controlId,
-        required: child.props.required ?? (isRequired ? true : undefined),
+        required: isRequired ? true : undefined,
         "aria-describedby": describedBy || undefined,
         "aria-invalid": ariaInvalid,
-        "aria-required": child.props["aria-required"] ?? (isRequired ? true : undefined),
+        "aria-required": isRequired ? true : child.props["aria-required"],
       })
     : children;
 
@@ -76,7 +81,7 @@ export function FormField({
     <div
       data-slot="form-field"
       data-disabled={isDisabled || undefined}
-      data-invalid={Boolean(error) || undefined}
+      data-invalid={isInvalid || undefined}
       className={cn(formFieldVariants({ density }), className)}
       {...props}
     >

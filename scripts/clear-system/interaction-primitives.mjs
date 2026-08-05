@@ -4,6 +4,7 @@
  */
 export function checkInteractionPrimitives({ read, mustInclude }) {
   const systemHardening = read("src/styles/system-hardening.css");
+  const systemRefinement = read("src/styles/system-refinement-pass-two.css");
   const button = read("src/components/atoms/Button.tsx");
   const switchSource = read("src/components/atoms/Switch.tsx");
   const formField = read("src/components/molecules/FormField.tsx");
@@ -76,6 +77,18 @@ export function checkInteractionPrimitives({ read, mustInclude }) {
     /focus-visible:ring-offset-\[var\(--wireline-color-canvas-default\)\]/,
     "button focus halo must use the active canvas as its offset",
   );
+  mustInclude(
+    "src/components/atoms/Button.tsx",
+    button,
+    /const resolvedSize = size \?\? "default"[\s\S]*data-size=\{resolvedSize\}/,
+    "button atom must expose resolved size metadata for pointer-specific geometry",
+  );
+  mustInclude(
+    "src/styles/system-refinement-pass-two.css",
+    systemRefinement,
+    /@media \(pointer: coarse\)[\s\S]*data-slot="button"\]\[data-size="icon"\][\s\S]*min-width:[\s\S]*44px[\s\S]*min-height:[\s\S]*44px/,
+    "icon buttons must use real 44px geometry on coarse pointers",
+  );
 
   mustInclude(
     "src/components/molecules/FormField.tsx",
@@ -98,7 +111,19 @@ export function checkInteractionPrimitives({ read, mustInclude }) {
   mustInclude(
     "src/components/molecules/FormField.tsx",
     formField,
-    /required:\s*child\.props\.required\s*\?\?[\s\S]*aria-required/,
-    "form fields must propagate required semantics to the control",
+    /const isRequired = required \|\| child\?\.props\.required === true[\s\S]*required:\s*isRequired \? true : undefined[\s\S]*aria-required/,
+    "form fields must keep native and ARIA required state consistent",
+  );
+  mustInclude(
+    "src/components/molecules/FormField.tsx",
+    formField,
+    /aria-disabled[\s\S]*const isDisabled[\s\S]*data-disabled=\{isDisabled \|\| undefined\}/,
+    "form fields must reflect native and ARIA disabled state in their label treatment",
+  );
+  mustInclude(
+    "src/components/molecules/FormField.tsx",
+    formField,
+    /const isInvalid = ariaInvalid === true \|\| ariaInvalid === "true"[\s\S]*data-invalid=\{isInvalid \|\| undefined\}/,
+    "form fields must reflect caller-provided invalid state on the wrapper",
   );
 }

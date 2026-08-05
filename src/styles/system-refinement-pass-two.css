@@ -30,6 +30,7 @@ html.light {
 }
 
 :where(.wl-ui-caps, .marketing-surface) textarea:not([data-resize="none"]) {
+  resize: vertical;
   resize: block;
 }
 
@@ -40,18 +41,30 @@ html.light {
   scroll-padding-inline: 0.5rem;
   scrollbar-width: none;
   touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
 }
 
 :where([role="tablist"].tab-strip-scroll, .app-tab-strip)::-webkit-scrollbar {
   display: none;
 }
 
-:where([role="tablist"].tab-strip-scroll, .app-tab-strip) > [role="tab"] {
-  scroll-snap-align: nearest;
+@media (pointer: coarse) {
+  [data-slot="button"][data-size="icon"] {
+    min-width: var(--wireline-interaction-target-comfortable, 44px);
+    min-height: var(--wireline-interaction-target-comfortable, 44px);
+  }
+
+  :where([role="tablist"].tab-strip-scroll, .app-tab-strip) {
+    scroll-snap-type: inline proximity;
+  }
+
+  :where([role="tablist"].tab-strip-scroll, .app-tab-strip) > [role="tab"] {
+    scroll-snap-align: start;
+  }
 }
 
-/* PageShell's custom mobile action trigger predates the shared target-size
- * contract and opts out of its utility rule. Restore the 44px target here. */
+/* PageShell actions use explicit 44px source geometry. Keep a defensive
+ * semantic minimum for future route-shell variants and mobile tab controls. */
 @media (max-width: 767px) {
   .wl-ui-caps button[aria-label="Page actions"] {
     min-width: var(--wireline-interaction-target-comfortable, 44px);
