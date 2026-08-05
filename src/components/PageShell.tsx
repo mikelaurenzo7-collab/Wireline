@@ -1,4 +1,4 @@
-import React, { ReactNode, useState, useRef } from "react";
+import React, { ReactNode, useCallback, useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -83,9 +83,36 @@ export default function PageShell({
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   // Tracks start point of a horizontal swipe to switch tabs on touch devices.
   const tabSwipe = useRef<{ x: number; y: number } | null>(null);
+  const desktopTabListRef = useRef<HTMLDivElement>(null);
+  const mobileTabListRef = useRef<HTMLDivElement>(null);
   // Ref for focus trap inside the bottom sheet dialog.
   const sheetRef = useRef<HTMLDivElement>(null);
   const activeTab = tabs?.find((t) => t.id === activeId) ?? tabs?.[0];
+
+  const activateTabFromKeyboard = useCallback(
+    (
+      event: React.KeyboardEvent<HTMLButtonElement>,
+      index: number,
+      tabList: HTMLDivElement | null,
+    ) => {
+      if (!tabs?.length) return;
+
+      let nextIndex: number | null = null;
+      if (event.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+      else if (event.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
+      else if (event.key === "Home") nextIndex = 0;
+      else if (event.key === "End") nextIndex = tabs.length - 1;
+
+      if (nextIndex === null) return;
+      event.preventDefault();
+
+      setActiveId(tabs[nextIndex].id);
+      const nextButton = tabList?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[nextIndex];
+      nextButton?.focus();
+      nextButton?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    },
+    [tabs],
+  );
 
   useBodyScrollLock(mobileActionsOpen);
   useModalFocusTrap(sheetRef, {
@@ -135,7 +162,7 @@ export default function PageShell({
                   disableAnimations
                   onClick={() => setMobileActionsOpen(true)}
                   aria-label="Page actions"
-                  className="touch-press hover:scale-[1.05] md:hidden w-9 h-9 text-muted wl-panel"
+                  className="touch-press hover:scale-[1.05] md:hidden w-11 h-11 text-muted wl-panel"
                 >
                   <MoreHorizontal className="w-5 h-5" />
                 </ShadButton>
@@ -157,7 +184,7 @@ export default function PageShell({
               disableAnimations
               onClick={() => setMobileActionsOpen(true)}
               aria-label="Page actions"
-              className="touch-press hover:scale-[1.05] md:hidden w-9 h-9 text-muted wl-panel"
+              className="touch-press hover:scale-[1.05] md:hidden w-11 h-11 text-muted wl-panel"
             >
               <MoreHorizontal className="w-5 h-5" />
             </ShadButton>
@@ -169,6 +196,7 @@ export default function PageShell({
       {tabs && tabs.length > 0 && (
         <div className="shrink-0 md:mb-2 hidden md:flex items-center justify-center gap-1 overflow-x-auto scrollbar-hide relative">
           <div
+            ref={desktopTabListRef}
             role="tablist"
             aria-label="Page sub-navigation"
             className="app-tab-strip flex items-center gap-0.5 p-0.5 wl-panel"
@@ -183,20 +211,16 @@ export default function PageShell({
                   variant="ghost"
                   disableAnimations
                   role="tab"
-                  id={`pageshell-tab-${tab.id}`}
+                  id={`pageshell-tab-desktop-${tab.id}`}
                   aria-selected={active}
                   aria-controls={`pageshell-panel-${tab.id}`}
                   tabIndex={active ? 0 : -1}
                   onClick={() => setActiveId(tab.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "ArrowRight") setActiveId(tabs[(i + 1) % tabs.length].id);
-                    else if (e.key === "ArrowLeft")
-                      setActiveId(tabs[(i - 1 + tabs.length) % tabs.length].id);
-                    else if (e.key === "Home") setActiveId(tabs[0].id);
-                    else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
-                  }}
+                  onKeyDown={(event) =>
+                    activateTabFromKeyboard(event, i, desktopTabListRef.current)
+                  }
                   className={cn(
-                    "touch-press hover:scale-[1.02] relative shrink-0 inline-flex min-h-9 sm:min-h-10 h-auto items-center gap-1.5 px-3 py-1.5 transition-all text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.1em] font-medium rounded-none",
+                    "touch-press hover:scale-[1.02] relative shrink-0 inline-flex min-h-9 sm:min-h-10 h-auto items-center gap-1.5 px-3 py-1.5 transition-[background-color,border-color,color,box-shadow,transform] text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.1em] font-medium rounded-none",
                     active ? "app-tab-active" : "text-muted hover:text-foreground hover:bg-black/4",
                   )}
                 >
@@ -232,7 +256,9 @@ export default function PageShell({
       {tabs && tabs.length > 0 && (
         <div className="md:hidden shrink-0 flex items-center gap-2 min-h-0">
           <div
+            ref={mobileTabListRef}
             role="tablist"
+            aria-label="Page sub-navigation"
             className="tab-toggle-surface flex-1 min-w-0 flex items-center gap-0.5 overflow-x-auto tab-strip-scroll max-sm:tab-strip-scroll--fade py-0.5"
           >
             {tabs.map((tab, i) => {
@@ -245,19 +271,16 @@ export default function PageShell({
                   variant="ghost"
                   disableAnimations
                   role="tab"
+                  id={`pageshell-tab-mobile-${tab.id}`}
                   aria-selected={active}
                   aria-controls={`pageshell-panel-${tab.id}`}
                   tabIndex={active ? 0 : -1}
                   onClick={() => setActiveId(tab.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "ArrowRight") setActiveId(tabs[(i + 1) % tabs.length].id);
-                    else if (e.key === "ArrowLeft")
-                      setActiveId(tabs[(i - 1 + tabs.length) % tabs.length].id);
-                    else if (e.key === "Home") setActiveId(tabs[0].id);
-                    else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
-                  }}
+                  onKeyDown={(event) =>
+                    activateTabFromKeyboard(event, i, mobileTabListRef.current)
+                  }
                   className={cn(
-                    "touch-press hover:scale-[1.02] relative shrink-0 inline-flex min-h-9 h-auto items-center gap-1.5 px-2.5 py-1.5 transition-all wl-label font-medium whitespace-nowrap rounded-none",
+                    "touch-press hover:scale-[1.02] relative shrink-0 inline-flex min-h-9 h-auto items-center gap-1.5 px-2.5 py-1.5 transition-[background-color,border-color,color,box-shadow,transform] wl-label font-medium whitespace-nowrap rounded-none",
                     active ? "app-tab-active" : "text-muted",
                   )}
                 >
@@ -294,8 +317,7 @@ export default function PageShell({
               disableAnimations
               onClick={() => setMobileActionsOpen(true)}
               aria-label="Page actions"
-              data-no-min-touch
-              className="touch-press hover:scale-[1.05] shrink-0 w-9 h-9 rounded-md text-muted wl-panel"
+              className="touch-press hover:scale-[1.05] shrink-0 w-11 h-11 rounded-md text-muted wl-panel"
             >
               <MoreHorizontal className="w-5 h-5" />
             </ShadButton>
@@ -337,7 +359,7 @@ export default function PageShell({
             key={activeTab.id}
             role="tabpanel"
             id={`pageshell-panel-${activeTab.id}`}
-            aria-labelledby={`pageshell-tab-${activeTab.id}`}
+            aria-label={activeTab.label}
             initial={{ opacity: 0, transform: "translate3d(0, 4px, 0)" }}
             animate={{ opacity: 1, transform: "translate3d(0, 0, 0)" }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
