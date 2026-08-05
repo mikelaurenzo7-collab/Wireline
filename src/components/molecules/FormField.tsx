@@ -43,6 +43,10 @@ function isAriaInvalid(value: React.AriaAttributes["aria-invalid"]): boolean {
   return value !== undefined && value !== false && value !== "false";
 }
 
+function splitIdRefs(value: string | undefined): string[] {
+  return value?.trim().split(/\s+/).filter(Boolean) ?? [];
+}
+
 export function FormField({
   label,
   htmlFor,
@@ -59,13 +63,13 @@ export function FormField({
   const errorId = React.useId();
   const child = React.isValidElement<FieldControlProps>(children) ? children : null;
   const controlId = child?.props.id ?? htmlFor ?? generatedControlId;
-  const existingDescribedBy = child?.props["aria-describedby"]?.trim();
+  const existingDescriptionIds = splitIdRefs(child?.props["aria-describedby"]);
   const describedBy = Array.from(
-    new Set(
-      [existingDescribedBy || null, description ? descriptionId : null, error ? errorId : null].filter(
-        (value): value is string => Boolean(value),
-      ),
-    ),
+    new Set([
+      ...existingDescriptionIds,
+      ...(description ? [descriptionId] : []),
+      ...(error ? [errorId] : []),
+    ]),
   ).join(" ");
   const isDisabled =
     child?.props.disabled === true || isAriaTrue(child?.props["aria-disabled"]);

@@ -88,14 +88,20 @@ export function checkInteractionPrimitives({ read, mustInclude }) {
   mustInclude(
     "src/components/atoms/Button.tsx",
     button,
-    /function resolvesAriaDisabled[\s\S]*if \(ariaDisabled\)[\s\S]*event\.preventDefault\(\)[\s\S]*event\.stopPropagation\(\)/,
-    "aria-disabled buttons must suppress click activation rather than only changing appearance",
+    /function stopDisabledActivation[\s\S]*event\.preventDefault\(\)[\s\S]*event\.stopPropagation\(\)/,
+    "aria-disabled controls must suppress activation rather than only changing appearance",
   );
   mustInclude(
     "src/components/atoms/Button.tsx",
     button,
-    /ariaDisabled && \(event\.key === "Enter" \|\| event\.key === " "\)[\s\S]*disabled=\{asChild \? undefined : disabled\}/,
-    "aria-disabled slotted controls must suppress keyboard activation without invalid native attributes",
+    /const guardedChildren[\s\S]*React\.cloneElement\(children[\s\S]*onClick:\s*stopDisabledActivation[\s\S]*onClickCapture:\s*stopDisabledActivation[\s\S]*onKeyDownCapture/,
+    "aria-disabled slotted controls must block child activation before Radix Slot handler composition",
+  );
+  mustInclude(
+    "src/components/atoms/Button.tsx",
+    button,
+    /disabled=\{asChild \? undefined : disabled\}[\s\S]*onClickCapture=\{ariaDisabled \|\| onClickCapture[\s\S]*onKeyDownCapture=\{ariaDisabled \|\| onKeyDownCapture/,
+    "disabled activation guards must cover capture and bubble phases without invalid native attributes",
   );
   mustInclude(
     "src/styles/system-refinement-pass-two.css",
@@ -126,8 +132,8 @@ export function checkInteractionPrimitives({ read, mustInclude }) {
   mustInclude(
     "src/components/molecules/FormField.tsx",
     formField,
-    /existingDescribedBy[\s\S]*new Set[\s\S]*descriptionId[\s\S]*errorId/,
-    "form fields must preserve and deduplicate caller descriptions while adding help and errors",
+    /function splitIdRefs[\s\S]*split\(\/\\s\+\/[\s\S]*existingDescriptionIds[\s\S]*new Set\(\[[\s\S]*\.\.\.existingDescriptionIds[\s\S]*descriptionId[\s\S]*errorId/,
+    "form fields must normalize and deduplicate every caller-provided description IDREF",
   );
   mustInclude(
     "src/components/molecules/FormField.tsx",
