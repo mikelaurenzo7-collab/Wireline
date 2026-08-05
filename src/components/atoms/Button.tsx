@@ -55,8 +55,24 @@ export interface ButtonProps
   disableAnimations?: boolean;
 }
 
+type SlottedInteractionProps = {
+  onClick?: React.MouseEventHandler<HTMLElement>;
+  onClickCapture?: React.MouseEventHandler<HTMLElement>;
+  onKeyDown?: React.KeyboardEventHandler<HTMLElement>;
+  onKeyDownCapture?: React.KeyboardEventHandler<HTMLElement>;
+};
+
 function resolvesAriaDisabled(value: React.AriaAttributes["aria-disabled"]): boolean {
   return value === true || value === "true";
+}
+
+function stopDisabledActivation(event: React.SyntheticEvent<HTMLElement>): void {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+function isActivationKey(event: React.KeyboardEvent<HTMLElement>): boolean {
+  return event.key === "Enter" || event.key === " ";
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -69,8 +85,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       disableAnimations: _disableAnimations,
       disabled,
       onClick,
+      onClickCapture,
       onKeyDown,
+      onKeyDownCapture,
       "aria-disabled": ariaDisabledProp,
+      children,
       ...props
     },
     ref,
@@ -81,21 +100,58 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
       if (ariaDisabled) {
-        event.preventDefault();
-        event.stopPropagation();
+        stopDisabledActivation(event);
         return;
       }
       onClick?.(event);
     };
 
+    const handleClickCapture = (event: React.MouseEvent<HTMLButtonElement>) => {
+      if (ariaDisabled) {
+        stopDisabledActivation(event);
+        return;
+      }
+      onClickCapture?.(event);
+    };
+
     const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
-      if (ariaDisabled && (event.key === "Enter" || event.key === " ")) {
-        event.preventDefault();
-        event.stopPropagation();
+      if (ariaDisabled && isActivationKey(event)) {
+        stopDisabledActivation(event);
         return;
       }
       onKeyDown?.(event);
     };
+
+    const handleKeyDownCapture = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (ariaDisabled && isActivationKey(event)) {
+        stopDisabledActivation(event);
+        return;
+      }
+      onKeyDownCapture?.(event);
+    };
+
+    /*
+     * Radix Slot composes child handlers before slot handlers. For a disabled
+     * slotted link, guarding only the wrapper's bubble handler is therefore too
+     * late: the child's own navigation handler may already have run. Replace
+     * the slotted child's activation handlers while disabled, including capture
+     * handlers, so disabled means inert regardless of composition order.
+     */
+    const guardedChildren =
+      asChild && ariaDisabled && React.isValidElement<SlottedInteractionProps>(children)
+        ? React.cloneElement(children, {
+            onClick: stopDisabledActivation,
+            onClickCapture: stopDisabledActivation,
+            onKeyDown: (event) => {
+              if (isActivationKey(event)) stopDisabledActivation(event);
+              else children.props.onKeyDown?.(event);
+            },
+            onKeyDownCapture: (event) => {
+              if (isActivationKey(event)) stopDisabledActivation(event);
+              else children.props.onKeyDownCapture?.(event);
+            },
+          })
+        : children;
 
     return (
       <Comp
@@ -106,9 +162,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={asChild ? undefined : disabled}
         aria-disabled={ariaDisabled || ariaDisabledProp || undefined}
         onClick={ariaDisabled || onClick ? handleClick : undefined}
+        onClickCapture={ariaDisabled || onClickCapture ? handleClickCapture : undefined}
         onKeyDown={ariaDisabled || onKeyDown ? handleKeyDown : undefined}
+        onKeyDownCapture={ariaDisabled || onKeyDownCapture ? handleKeyDownCapture : undefined}
         {...props}
-      />
+      >
+        {guardedChildren}
+      </Comp>
     );
   },
 );
