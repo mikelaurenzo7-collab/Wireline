@@ -1,5 +1,5 @@
 import React, { ReactNode, useCallback, useState, useRef } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "../lib/utils";
 import { resolveBrandAccent } from "../lib/brand-token";
@@ -81,6 +81,7 @@ export default function PageShell({
     defaultTab ?? (tabs && tabs.length > 0 ? tabs[0].id : ""),
   );
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
   // Tracks start point of a horizontal swipe to switch tabs on touch devices.
   const tabSwipe = useRef<{ x: number; y: number } | null>(null);
   const desktopTabListRef = useRef<HTMLDivElement>(null);
@@ -88,6 +89,7 @@ export default function PageShell({
   // Ref for focus trap inside the bottom sheet dialog.
   const sheetRef = useRef<HTMLDivElement>(null);
   const activeTab = tabs?.find((t) => t.id === activeId) ?? tabs?.[0];
+  const selectedTabId = activeTab?.id ?? "";
 
   const activateTabFromKeyboard = useCallback(
     (
@@ -199,11 +201,12 @@ export default function PageShell({
             ref={desktopTabListRef}
             role="tablist"
             aria-label="Page sub-navigation"
+            aria-orientation="horizontal"
             className="app-tab-strip flex items-center gap-0.5 p-0.5 wl-panel"
           >
             {tabs.map((tab, i) => {
               const Icon = tab.icon;
-              const active = tab.id === activeId;
+              const active = tab.id === selectedTabId;
               return (
                 <ShadButton
                   key={tab.id}
@@ -228,7 +231,11 @@ export default function PageShell({
                     <motion.div
                       layoutId="tab-active-bg"
                       className="app-tab-active-bg absolute inset-0"
-                      transition={{ type: "spring", stiffness: 420, damping: 36 }}
+                      transition={
+                        reduceMotion
+                          ? { duration: 0.01 }
+                          : { type: "spring", stiffness: 420, damping: 36 }
+                      }
                     />
                   )}
                   <span className="relative z-10 flex items-center gap-1.5">
@@ -259,11 +266,12 @@ export default function PageShell({
             ref={mobileTabListRef}
             role="tablist"
             aria-label="Page sub-navigation"
+            aria-orientation="horizontal"
             className="tab-toggle-surface flex-1 min-w-0 flex items-center gap-0.5 overflow-x-auto tab-strip-scroll max-sm:tab-strip-scroll--fade py-0.5"
           >
             {tabs.map((tab, i) => {
               const Icon = tab.icon;
-              const active = tab.id === activeId;
+              const active = tab.id === selectedTabId;
               return (
                 <ShadButton
                   key={tab.id}
@@ -288,7 +296,11 @@ export default function PageShell({
                     <motion.div
                       layoutId="mobile-tab-active-bg"
                       className="app-tab-active-bg absolute inset-0"
-                      transition={{ type: "spring", stiffness: 420, damping: 36 }}
+                      transition={
+                        reduceMotion
+                          ? { duration: 0.01 }
+                          : { type: "spring", stiffness: 420, damping: 36 }
+                      }
                     />
                   )}
                   <span className="relative z-10 flex items-center gap-1.5">
@@ -346,7 +358,7 @@ export default function PageShell({
           tabSwipe.current = null;
           // Require ≥60px horizontal, <20px vertical — deliberate swipe only.
           if (Math.abs(dx) < 60 || dy > 20) return;
-          const idx = tabs.findIndex((t) => t.id === activeId);
+          const idx = tabs.findIndex((t) => t.id === selectedTabId);
           if (dx < 0 && idx < tabs.length - 1) setActiveId(tabs[idx + 1].id);
           else if (dx > 0 && idx > 0) setActiveId(tabs[idx - 1].id);
         }}
@@ -360,10 +372,19 @@ export default function PageShell({
             role="tabpanel"
             id={`pageshell-panel-${activeTab.id}`}
             aria-label={activeTab.label}
-            initial={{ opacity: 0, transform: "translate3d(0, 4px, 0)" }}
+            initial={
+              reduceMotion ? false : { opacity: 0, transform: "translate3d(0, 4px, 0)" }
+            }
             animate={{ opacity: 1, transform: "translate3d(0, 0, 0)" }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="h-full w-full will-change-[transform,opacity]"
+            transition={
+              reduceMotion
+                ? { duration: 0.01 }
+                : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }
+            }
+            className={cn(
+              "h-full w-full",
+              !reduceMotion && "will-change-[transform,opacity]",
+            )}
           >
             {activeTab.content}
           </motion.div>
@@ -378,10 +399,10 @@ export default function PageShell({
           <>
             {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0 }}
+              initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
+              transition={{ duration: reduceMotion ? 0.01 : 0.18 }}
               className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] md:hidden"
               onClick={() => setMobileActionsOpen(false)}
               aria-hidden="true"
@@ -389,10 +410,14 @@ export default function PageShell({
             {/* Sheet */}
             <motion.div
               ref={sheetRef}
-              initial={{ y: "100%" }}
+              initial={reduceMotion ? false : { y: "100%" }}
               animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", stiffness: 360, damping: 32 }}
+              exit={reduceMotion ? { opacity: 0 } : { y: "100%" }}
+              transition={
+                reduceMotion
+                  ? { duration: 0.01 }
+                  : { type: "spring", stiffness: 360, damping: 32 }
+              }
               className="fixed bottom-0 left-0 right-0 z-[201] wl-panel-elevated border-t border-border md:hidden select-none pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-24px_48px_-20px_rgba(17,17,17,0.18),0_1px_0_rgba(255,255,255,0.75)_inset]"
               drag="y"
               dragConstraints={{ top: 0 }}
