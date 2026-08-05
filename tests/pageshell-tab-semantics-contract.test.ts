@@ -5,18 +5,35 @@ import { describe, expect, it } from "vitest";
 const source = readFileSync("src/components/PageShell.tsx", "utf8").replace(/\r\n/g, "\n");
 
 describe("PageShell tab semantics and keyboard contract", () => {
-  it("gives desktop and mobile tabs unique, viewport-specific identifiers", () => {
-    expect(source).toContain('id={`pageshell-tab-desktop-${tab.id}`}');
-    expect(source).toContain('id={`pageshell-tab-mobile-${tab.id}`}');
-    expect(source).not.toContain('id={`pageshell-tab-${tab.id}`}');
+  it("scopes tab, panel, dialog, and motion identifiers to each shell instance", () => {
+    expect(source).toContain("const shellId = useId()");
+    expect(source).toContain('const actionsDialogId = `${shellId}-page-actions`');
+    expect(source).toContain('const actionsTitleId = `${shellId}-page-actions-title`');
+    expect(source).toContain('`${shellId}-tab-${viewport}-${index}`');
+    expect(source).toContain('`${shellId}-panel-${index}`');
+    expect(source).toContain('id={tabDomId("desktop", i)}');
+    expect(source).toContain('id={tabDomId("mobile", i)}');
+    expect(source).toContain("id={panelDomId(selectedTabIndex)}");
+    expect(source).toContain('layoutId={`${shellId}-tab-active-bg`}');
+    expect(source).toContain('layoutId={`${shellId}-mobile-tab-active-bg`}');
+    expect(source).not.toContain('id={`pageshell-tab-desktop-${tab.id}`}');
+    expect(source).not.toContain('id={`pageshell-tab-mobile-${tab.id}`}');
+    expect(source).not.toContain('id={`pageshell-panel-${activeTab.id}`}');
   });
 
   it("keeps fallback panel rendering and selected tab semantics synchronized", () => {
     expect(source).toContain('const selectedTabId = activeTab?.id ?? ""');
+    expect(source).toContain(
+      "const selectedTabIndex = tabs?.findIndex((tab) => tab.id === selectedTabId) ?? -1",
+    );
     expect(source.match(/const active = tab\.id === selectedTabId/g)).toHaveLength(2);
-    expect(source).toContain("tabs.findIndex((t) => t.id === selectedTabId)");
+    expect(source).toContain("tabs.findIndex((tab) => tab.id === selectedTabId)");
     expect(source).toContain('aria-label={activeTab.label}');
-    expect(source).not.toContain('aria-labelledby={`pageshell-tab-${activeTab.id}`}');
+  });
+
+  it("only points active tabs at the mounted panel", () => {
+    expect(source.match(/aria-controls=\{active \? panelDomId\(i\) : undefined\}/g)).toHaveLength(2);
+    expect(source).not.toContain('aria-controls={`pageshell-panel-${tab.id}`}');
   });
 
   it("moves focus and visibility with keyboard tab selection", () => {
@@ -32,12 +49,50 @@ describe("PageShell tab semantics and keyboard contract", () => {
     expect(source).toContain("activateTabFromKeyboard(event, i, mobileTabListRef.current)");
   });
 
-  it("labels both horizontal tablists and keeps action triggers comfortably touchable", () => {
+  it("keeps action triggers semantically connected to the dialog", () => {
     expect(source.match(/aria-label="Page sub-navigation"/g)).toHaveLength(2);
     expect(source.match(/aria-orientation="horizontal"/g)).toHaveLength(2);
-    expect(source).not.toContain("data-no-min-touch");
-    expect(source.match(/aria-label="Page actions"/g)).toHaveLength(4);
-    expect(source.match(/w-11 h-11/g)?.length).toBeGreaterThanOrEqual(4);
+    expect(source.match(/aria-label="Page actions"/g)).toHaveLength(3);
+    expect(source.match(/\.\.\.pageActionTriggerProps/g)).toHaveLength(3);
+    expect(source).toContain('"aria-controls": mobileActionsOpen ? actionsDialogId : undefined');
+    expect(source).toContain('"aria-expanded": mobileActionsOpen');
+    expect(source).toContain('"aria-haspopup": "dialog" as const');
+    expect(source).toContain("id={actionsDialogId}");
+    expect(source).toContain("aria-labelledby={actionsTitleId}");
+  });
+
+  it("closes the mobile dialog if responsive layout or actions make it hidden", () => {
+    expect(source).toContain('window.matchMedia("(min-width: 768px)")');
+    expect(source).toContain("if (desktopQuery.matches || !actions) setMobileActionsOpen(false)");
+    expect(source).toContain('desktopQuery.addEventListener("change", closeWhenHidden)');
+    expect(source).toContain('desktopQuery.removeEventListener("change", closeWhenHidden)');
+    expect(source).toContain("mobileActionsOpen && actions && (");
+  });
+
+  it("does not steal horizontal gestures from controls or scrollable descendants", () => {
+    expect(source).toContain("const TAB_SWIPE_EXCLUSION_SELECTOR");
+    expect(source).toContain('"[role=\'slider\']"');
+    expect(source).toContain('"[role=\'switch\']"');
+    expect(source).toContain('"[data-no-tab-swipe=\'true\']"');
+    expect(source).toContain("function shouldSuppressTabSwipe(");
+    expect(source).toContain("node.scrollWidth > node.clientWidth");
+    expect(source).toContain('window.matchMedia("(max-width: 767px)").matches');
+    expect(source).toContain("shouldSuppressTabSwipe(event.target, event.currentTarget)");
+    expect(source).toContain("pointerId: event.pointerId");
+    expect(source).toContain("swipe.pointerId !== event.pointerId");
+  });
+
+  it("limits sheet dragging to the handle and preserves scrollable selectable content", () => {
+    expect(source).toContain('data-slot="page-actions-overlay"');
+    expect(source).toContain('data-slot="page-actions-dialog"');
+    expect(source).toContain('data-slot="page-actions-drag-handle"');
+    expect(source).toContain("const sheetDragControls = useDragControls()");
+    expect(source).toContain("dragControls={sheetDragControls}");
+    expect(source).toContain("dragListener={false}");
+    expect(source).toContain("dragMomentum={false}");
+    expect(source).toContain("onPointerDown={(event) => sheetDragControls.start(event)}");
+    expect(source).not.toContain("md:hidden select-none");
+    expect(source).not.toContain("pb-[max(1rem,env(safe-area-inset-bottom))]");
   });
 
   it("uses bounded transitions on stable tab controls", () => {
