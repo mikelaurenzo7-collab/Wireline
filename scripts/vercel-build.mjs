@@ -87,6 +87,12 @@ function configurePreviewEnvironment() {
   }
 }
 
+function validateProductionEnvironment() {
+  if (environment !== "production" || isDuplicateV0Project) return;
+  console.log("Validating required production environment variables before migration and build.");
+  run("node", ["scripts/check-prod-env.mjs"]);
+}
+
 run("node", ["scripts/check-deployment-boundaries.mjs"]);
 run("node", ["scripts/check-source-control-hygiene.mjs"]);
 run("node", ["scripts/check-workflow-syntax.mjs"]);
@@ -108,6 +114,7 @@ run("npx", [
   "tests/vendor-readiness-contract.test.ts",
   "tests/runtime-integrations-registry-contract.test.ts",
   "tests/production-env-policy-contract.test.ts",
+  "tests/production-build-env-gate-contract.test.ts",
   "tests/database-connection.test.ts",
   "tests/product-voice-contract.test.ts",
   "tests/design-brand-polish-contract.test.ts",
@@ -173,6 +180,7 @@ run("npx", [
 ]);
 runLiveVapiSchemaAuditIfRequested();
 configurePreviewEnvironment();
+validateProductionEnvironment();
 runDeepLaunchAuditIfRequested();
 run("node", ["scripts/check-operational-core.mjs"]);
 run("node", ["scripts/build-design-tokens.mjs"]);
