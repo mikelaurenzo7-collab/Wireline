@@ -31,5 +31,6 @@ describe("production build environment gate", () => {
 
     expect(build).toContain('if (environment !== "production" || isDuplicateV0Project) return;');
     expect(build).toContain("configurePreviewEnvironment();\nvalidateProductionEnvironment();");
+    expect(build).not.toContain("PRODUCTION_CHECK=1");
   });
 });
