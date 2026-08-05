@@ -287,3 +287,155 @@ summary {
     border: 1px solid CanvasText;
   }
 }
+
+/*
+ * Interaction geometry and state parity.
+ *
+ * Compact visual controls must keep their intended silhouette while still
+ * providing a 44px hit region. Portalled menus and dialogs also need the same
+ * typography, focus, overlay, and dynamic-viewport behavior as the app shell.
+ */
+button[data-slot="switch"],
+button[data-slot="switch"]:not(.wl-compact-control):not([data-compact="true"]) {
+  position: relative;
+  min-height: 0;
+  overflow: visible;
+  touch-action: manipulation;
+}
+
+button[data-slot="switch"]::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(44px, 100%);
+  height: max(44px, 100%);
+  border-radius: 999px;
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+:is([data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"]) {
+  scrollbar-gutter: stable;
+}
+
+:is([data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"])
+  :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]) {
+  min-height: var(--wireline-interaction-target-comfortable, 44px);
+  padding-block: 0.5rem;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+:is([data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"])
+  :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"])[data-highlighted] {
+  background: var(--wireline-color-surface-subtle);
+  color: var(--wireline-color-text-primary);
+}
+
+:is(
+    [data-slot="dialog-overlay"],
+    [data-slot="sheet-overlay"],
+    [data-slot="alert-dialog-overlay"]
+  ) {
+  background: var(--wireline-color-overlay-scrim);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+:is(
+    [data-slot="dialog-content"],
+    [data-slot="sheet-content"],
+    [data-slot="alert-dialog-content"],
+    [data-slot="select-content"],
+    [data-slot="dropdown-menu-content"],
+    [data-slot="dropdown-menu-sub-content"]
+  ) {
+  scrollbar-gutter: stable;
+}
+
+:is([data-slot="input"], [data-slot="textarea"], [data-slot="native-select"])[aria-invalid="true"] {
+  border-color: var(--wireline-color-status-error);
+}
+
+:is([data-slot="input"], [data-slot="textarea"], [data-slot="native-select"])[aria-invalid="true"]:focus-visible {
+  outline-color: var(--wireline-color-status-error);
+  box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth, 4px)
+    color-mix(in srgb, var(--wireline-color-status-error) 22%, transparent);
+}
+
+:is(input[data-slot="input"], textarea[data-slot="textarea"])[readonly] {
+  background: var(--wireline-color-surface-subtle);
+  color: var(--wireline-color-text-secondary);
+  box-shadow: none;
+}
+
+:is(input[data-slot="input"], textarea[data-slot="textarea"]):-webkit-autofill {
+  caret-color: var(--wireline-color-action-primary-default);
+  -webkit-text-fill-color: var(--wireline-color-text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--wireline-color-surface-default) inset;
+}
+
+::selection {
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 34%,
+    transparent
+  );
+  color: var(--wireline-color-text-primary);
+}
+
+[role="dialog"][aria-labelledby="recipe-modal-title"] {
+  max-height: calc(100dvh - 2rem);
+  overscroll-behavior: contain;
+  border-radius: var(--wireline-radius-xl);
+  scrollbar-gutter: stable;
+}
+
+[aria-hidden="true"]:has(+ [role="dialog"][aria-labelledby="recipe-modal-title"]) {
+  background: var(--wireline-color-overlay-scrim);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+@media (min-width: 768px) {
+  :is([data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"])
+    :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]) {
+    min-height: 2.25rem;
+    padding-block: 0.375rem;
+    font-size: 0.875rem;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :is([data-slot="input"], [data-slot="textarea"], [data-slot="native-select"]) {
+    border-color: var(--wireline-color-border-strong);
+  }
+
+  :is([data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"])
+    :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"])[data-highlighted] {
+    outline: 2px solid var(--wireline-color-focus-default);
+    outline-offset: -2px;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :is(
+      [data-slot="dialog-overlay"],
+      [data-slot="sheet-overlay"],
+      [data-slot="alert-dialog-overlay"]
+    ),
+  [aria-hidden="true"]:has(+ [role="dialog"][aria-labelledby="recipe-modal-title"]) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  button[data-slot="switch"] {
+    border-color: ButtonText;
+  }
+
+  button[data-slot="switch"][data-state="checked"] {
+    background: Highlight;
+  }
+}
