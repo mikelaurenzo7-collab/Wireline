@@ -59,19 +59,22 @@ function ConnectionSummary({ connection }: { connection: SalesforceConnection | 
 
   return (
     <section className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <span className="grid size-11 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
+      {/* The 340px rail cannot hold icon + title + badge on one line; let the
+          badge drop below the title block cleanly instead of the title and
+          badge wrapping into each other. */}
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
             <Cloud size={21} />
           </span>
-          <div>
+          <div className="min-w-0">
             <h2 className="text-lg font-semibold tracking-[-.02em] text-foreground">
               Salesforce connection
             </h2>
             <p className="mt-0.5 text-sm text-muted-foreground">{detail}</p>
           </div>
         </div>
-        <Badge variant={connected ? "success" : "warning"}>
+        <Badge variant={connected ? "success" : "warning"} className="shrink-0">
           {connected ? "Connected" : "Not connected"}
         </Badge>
       </div>
@@ -231,14 +234,18 @@ export default function SalesforceIntegrationPage() {
               </div>
 
               <div className="mt-6 flex items-center justify-between gap-4 rounded-lg border border-border bg-muted/20 p-4">
+                {/* min-w-0 lets the label wrap instead of overflowing the row;
+                    the switch never shrinks (flagged by visual QA as a visible
+                    internal overflow in a narrow intermediate state). */}
                 <label
                   htmlFor="salesforce-call-activity-sync"
-                  className="font-medium text-foreground"
+                  className="min-w-0 font-medium text-foreground"
                 >
                   Log completed calls to Salesforce
                 </label>
                 <Switch
                   id="salesforce-call-activity-sync"
+                  className="shrink-0"
                   checked={Boolean(isConnected && callActivitySyncEnabled)}
                   onCheckedChange={(checked) => void updateCallActivityPreference(checked)}
                   disabled={!isConnected || saveState === "saving"}

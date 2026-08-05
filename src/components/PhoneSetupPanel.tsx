@@ -239,7 +239,7 @@ export default function PhoneSetupPanel() {
         </div>
 
         {!activeNumber ? (
-          <div className="mt-6 grid gap-3 rounded-xl border border-primary-foreground/15 bg-black/10 p-4 sm:grid-cols-[minmax(0,1fr)_160px_auto] sm:items-end">
+          <div className="mt-6 grid gap-3 rounded-xl border border-primary-foreground/15 bg-black/10 p-4 sm:grid-cols-[minmax(0,1fr)_180px_auto] sm:items-end">
             <label className="block min-w-0">
               <span className="mb-1.5 block text-xs font-semibold text-primary-foreground/80">
                 Voice agent
@@ -284,7 +284,10 @@ export default function PhoneSetupPanel() {
             </label>
 
             <label className="block">
-              <span className="mb-1.5 block text-xs font-semibold text-primary-foreground/80">
+              {/* Cased, this label measures ~165px — wider than its old 160px
+                  column — and wrapped to two lines, breaking the row's
+                  baseline. The column is 180px now; nowrap is the guard. */}
+              <span className="mb-1.5 block whitespace-nowrap text-xs font-semibold text-primary-foreground/80">
                 Preferred area code
               </span>
               <span className="relative block">

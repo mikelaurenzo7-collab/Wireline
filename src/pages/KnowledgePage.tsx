@@ -113,7 +113,10 @@ export default function KnowledgePage() {
             <div>
               <WorkspacePageIntro title="Knowledge" />
             </div>
-            <div className="flex flex-col gap-2 sm:items-end">
+            {/* One control row: section tabs, the Studio test action, and the
+                agent picker share a baseline instead of stacking into three
+                right-aligned rows under the title. */}
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
               <WorkspaceTabStrip
                 ariaLabel="Knowledge sections"
                 tabs={knowledgeTabs}
@@ -122,7 +125,7 @@ export default function KnowledgePage() {
                 density="compact"
                 align="start"
                 wrap
-                className="mb-0 w-full border-b-0 pb-0 sm:w-auto"
+                className="mb-0 border-b-0 pb-0"
               />
               <Button asChild variant="secondary" size="sm" className="justify-center">
                 <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=test`}>
@@ -130,35 +133,32 @@ export default function KnowledgePage() {
                   Test in Studio
                 </Link>
               </Button>
+              {populated && activeTab === "knowledge" ? (
+                <NativeSelect
+                  value={agentId}
+                  onChange={(event) =>
+                    setParams(
+                      (current) => {
+                        const updated = new URLSearchParams(current);
+                        updated.set("agent", event.target.value);
+                        updated.set("tab", activeTab);
+                        return updated;
+                      },
+                      { replace: true },
+                    )
+                  }
+                  aria-label="Choose voice agent"
+                  className="min-w-[180px] sm:w-auto"
+                >
+                  {agents.map((agent) => (
+                    <option key={agent.id} value={agent.id}>
+                      {agent.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              ) : null}
             </div>
           </div>
-
-          {populated && activeTab === "knowledge" ? (
-            <div className="mb-2 flex justify-end sm:-mt-2">
-              <NativeSelect
-                value={agentId}
-                onChange={(event) =>
-                  setParams(
-                    (current) => {
-                      const updated = new URLSearchParams(current);
-                      updated.set("agent", event.target.value);
-                      updated.set("tab", activeTab);
-                      return updated;
-                    },
-                    { replace: true },
-                  )
-                }
-                aria-label="Choose voice agent"
-                className="w-full min-w-[220px] sm:w-auto"
-              >
-                {agents.map((agent) => (
-                  <option key={agent.id} value={agent.id}>
-                    {agent.name}
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
-          ) : null}
 
           {activeTab === "knowledge" ? (
             <div className="space-y-5">
