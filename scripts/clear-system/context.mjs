@@ -22,7 +22,20 @@ export function createCheckContext(root = process.cwd()) {
       cache.set(relativePath, "");
       return "";
     }
-    const source = readFileSync(path, "utf8");
+    let source = readFileSync(path, "utf8");
+
+    // Contract checks operate on a module's public source surface. When a
+    // canonical TypeScript entrypoint delegates unchanged definitions to a
+    // sibling `*-base.ts` module, include that source so integrity checks do
+    // not become blind to the re-exported table graph.
+    if (source.includes('export * from "./schema-base";')) {
+      const baseRelativePath = relativePath.replace(/\.ts$/, "-base.ts");
+      const basePath = pathFor(baseRelativePath);
+      if (baseRelativePath !== relativePath && existsSync(basePath)) {
+        source = `${source}\n${readFileSync(basePath, "utf8")}`;
+      }
+    }
+
     cache.set(relativePath, source);
     return source;
   }

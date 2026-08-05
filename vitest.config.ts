@@ -14,6 +14,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    setupFiles: ["./tests/setup/canonical-schema-source.ts"],
     // forks trades a little speed for process-level isolation. vmThreads had
     // non-deterministic module-mock leakage across test files (e.g. mocked
     // DB/imap modules executing real queries), which is unacceptable for a
