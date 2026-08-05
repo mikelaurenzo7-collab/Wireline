@@ -23,37 +23,81 @@ describe("UI/UX double-pass system contract", () => {
     expect(css).toContain("accent-color: var(--wireline-color-action-primary-default)");
   });
 
-  it("hardens custom PageShell tabs and mobile actions with valid touch-scroll CSS", () => {
+  it("hardens custom PageShell tabs and mobile actions across touch-capable devices", () => {
     const css = read("src/styles/system-refinement-pass-two.css");
 
     expect(css).toContain('[role="tablist"].tab-strip-scroll');
     expect(css).toContain("overscroll-behavior-inline: contain");
     expect(css).toContain("scrollbar-width: none");
-    expect(css).toContain("@media (pointer: coarse)");
+    expect(css).toContain("touch-action: pan-x pan-y pinch-zoom");
+    expect(css).toContain("@media (any-pointer: coarse)");
+    expect(css).not.toContain("@media (pointer: coarse)");
     expect(css).toContain("scroll-snap-type: inline proximity");
     expect(css).toContain("scroll-snap-align: start");
     expect(css).not.toContain("scroll-snap-align: nearest");
     expect(css).toContain('.wl-ui-caps button[aria-label="Page actions"]');
     expect(css).toContain("--wireline-interaction-target-comfortable, 44px");
-    expect(css).toContain('[role="dialog"][aria-label="Page actions"]');
+    expect(css).toContain('[data-slot="page-actions-overlay"]');
+    expect(css).toContain('[data-slot="page-actions-dialog"]');
     expect(css).toContain("max-height: calc(100dvh");
+    expect(css).toContain("padding-bottom: max(1rem, env(safe-area-inset-bottom))");
     expect(css).toContain("overscroll-behavior: contain");
     expect(css).toContain("var(--wireline-color-overlay-scrim)");
     expect(css).toContain("@media (prefers-reduced-transparency: reduce)");
     expect(css).toContain("@media (forced-colors: active)");
+    expect(css).not.toContain('[role="dialog"][aria-label="Page actions"]');
   });
 
-  it("uses actual coarse-pointer geometry for icon buttons", () => {
+  it("uses actual hybrid-touch geometry for icon buttons", () => {
     const button = read("src/components/atoms/Button.tsx");
     const css = read("src/styles/system-refinement-pass-two.css");
 
     expect(button).toContain("const resolvedSize = size ?? \"default\"");
     expect(button).toContain("data-size={resolvedSize}");
     expect(button).not.toContain("after:pointer-events-none");
+    expect(css).toContain('@media (any-pointer: coarse)');
     expect(css).toContain('[data-slot="button"][data-size="icon"]');
     expect(css).toMatch(
       /data-size="icon"[\s\S]*min-width:\s*var\(--wireline-interaction-target-comfortable, 44px\)[\s\S]*min-height:\s*var\(--wireline-interaction-target-comfortable, 44px\)/,
     );
+  });
+
+  it("enforces aria-disabled behavior instead of styling alone", () => {
+    const button = read("src/components/atoms/Button.tsx");
+
+    expect(button).toContain("function resolvesAriaDisabled(");
+    expect(button).toContain("const ariaDisabled = resolvesAriaDisabled(ariaDisabledProp)");
+    expect(button).toContain("if (ariaDisabled) {");
+    expect(button).toContain("event.preventDefault()");
+    expect(button).toContain("event.stopPropagation()");
+    expect(button).toContain('ariaDisabled && (event.key === "Enter" || event.key === " ")');
+    expect(button).toContain("disabled={asChild ? undefined : disabled}");
+    expect(button).toContain("aria-disabled={ariaDisabled || ariaDisabledProp || undefined}");
+  });
+
+  it("styles every standards-based invalid value across native and Radix controls", () => {
+    const css = read("src/styles/system-refinement-pass-two.css");
+    const select = read("src/components/ui/shadcn/Select.tsx");
+    const formField = read("src/components/molecules/FormField.tsx");
+
+    expect(select).toContain('data-slot="select-trigger"');
+    expect(css).toContain('[data-slot="select-trigger"]');
+    expect(css).toContain('[aria-invalid]:not([aria-invalid="false"])');
+    expect(formField).toContain("function isAriaInvalid(");
+    expect(formField).toContain('value !== undefined && value !== false && value !== "false"');
+  });
+
+  it("keeps native, ARIA, wrapper, and label required state coherent", () => {
+    const formField = read("src/components/molecules/FormField.tsx");
+
+    expect(formField).toContain("const nativeRequired = required || child?.props.required === true");
+    expect(formField).toContain(
+      'const isRequired = nativeRequired || isAriaTrue(child?.props["aria-required"])',
+    );
+    expect(formField).toContain("required: nativeRequired ? true : child.props.required");
+    expect(formField).toContain('"aria-required": isRequired ? true : child.props["aria-required"]');
+    expect(formField).toContain("data-required={isRequired || undefined}");
+    expect(formField).toContain("new Set(");
   });
 
   it("does not animate every CSS property on stable shared surfaces", () => {
