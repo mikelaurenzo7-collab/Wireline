@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Drizzle table callbacks use the upstream generic escape hatch. */
 /**
  * Canonical Drizzle/runtime schema entrypoint.
  * Latest committed migration: `drizzle/migrations/0134_free_builder_simulation_allowance.sql`.
