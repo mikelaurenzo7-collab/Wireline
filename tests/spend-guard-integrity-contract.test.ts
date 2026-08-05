@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { resolveAiDailySpendAlertUsd } from "../src/lib/ai-spend-alert";
 import {
   defaultAiSpendBudgetUsdForTier,
+  FREE_BUILDER_SIMULATION_ALLOWANCE_USD,
   subscriptionPlanToTier,
 } from "../src/lib/plan-entitlements";
 import { resolveHardSpendCapStatus } from "../src/lib/spend-budget-policy";
@@ -66,8 +67,9 @@ describe("spend guard integrity", () => {
     expect(route).not.toContain("hard_cap: false,");
   });
 
-  it("separates the Free Builder emergency circuit breaker from paid plan envelopes", () => {
-    expect(defaultAiSpendBudgetUsdForTier("free")).toBe(0.5);
+  it("funds a deliberate Free Builder simulation allowance without changing paid envelopes", () => {
+    expect(FREE_BUILDER_SIMULATION_ALLOWANCE_USD).toBe(1.5);
+    expect(defaultAiSpendBudgetUsdForTier("free")).toBe(1.5);
     expect(defaultAiSpendBudgetUsdForTier("personal")).toBe(8.68);
     expect(defaultAiSpendBudgetUsdForTier("team")).toBe(18.36);
     expect(defaultAiSpendBudgetUsdForTier("business")).toBe(37.36);
@@ -75,12 +77,19 @@ describe("spend guard integrity", () => {
     expect(subscriptionPlanToTier("definitely-not-a-plan")).toBe("free");
 
     const route = read("src/routes/spend-control-routes.ts");
-    expect(route).toContain('type SpendGuardScope = "plan_funded" | "free_builder_emergency"');
-    expect(route).toContain("monthly_limit_usd: providerWorkEnabled ? budget.monthlyLimitUsd : null");
-    expect(route).toContain("displayLimit = providerWorkEnabled ? persistedLimit : 0");
-    expect(route).toContain("customer_editable: providerWorkEnabled");
-    expect(route).toContain("Free Builder does not fund live provider work");
+    expect(route).toContain('type SpendGuardScope = "plan_funded" | "free_simulation_allowance"');
+    expect(route).toContain('guardScope === "free_simulation_allowance"');
+    expect(route).toContain("live_provider_work_enabled: liveProviderWorkEnabled");
     expect(route).toContain("Wireline could not resolve the active plan");
+
+    const migration = read("drizzle/migrations/0134_free_builder_simulation_allowance.sql");
+    const journal = read("drizzle/migrations/meta/_journal.json");
+    expect(migration).toContain("ALTER COLUMN monthly_limit_usd SET DEFAULT 1.50");
+    expect(migration).toContain("managed_default = true");
+    expect(migration).toContain("monthly_limit_usd = 0.50");
+    expect(migration).toContain("monthly_limit_usd = 1.50");
+    expect(migration).toContain("NOT EXISTS");
+    expect(journal).toContain('"tag": "0134_free_builder_simulation_allowance"');
   });
 
   it("keeps AI spend telemetry provider-neutral with exact legacy behavior", () => {
