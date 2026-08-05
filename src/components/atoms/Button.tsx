@@ -4,9 +4,6 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
-const touchTarget =
-  "after:pointer-events-none after:absolute after:inset-x-0 after:top-1/2 after:h-full after:min-h-[44px] after:-translate-y-1/2 after:content-['']";
-
 export const buttonVariants = cva(
   "relative inline-flex min-w-0 max-w-full items-center justify-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap rounded-[var(--wireline-radius-md)] text-sm font-semibold tracking-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] disabled:pointer-events-none disabled:opacity-60 aria-disabled:pointer-events-none aria-disabled:opacity-60 aria-busy:cursor-wait aria-busy:opacity-80 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
   {
@@ -34,11 +31,11 @@ export const buttonVariants = cva(
           "border border-[var(--wireline-color-action-primary-default)]/80 bg-[var(--wireline-color-action-primary-default)] text-[var(--wireline-color-text-onAction)] shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_2px_0_rgba(17,17,17,1),0_8px_18px_rgba(17,17,17,0.18)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.25),0_1px_0_rgba(17,17,17,1)]",
       },
       size: {
-        default: `h-9 px-4 py-2 ${touchTarget}`,
-        md: `h-9 px-4 py-2 ${touchTarget}`,
-        sm: `h-8 px-3 text-xs ${touchTarget}`,
-        lg: `h-10 px-8 ${touchTarget}`,
-        icon: "h-9 w-9 px-0 [&_svg]:size-5 after:pointer-events-none after:absolute after:left-1/2 after:top-1/2 after:min-h-[44px] after:min-w-[44px] after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']",
+        default: "h-9 px-4 py-2",
+        md: "h-9 px-4 py-2",
+        sm: "h-8 px-3 text-xs",
+        lg: "h-10 px-8",
+        icon: "h-9 w-9 px-0 [&_svg]:size-5",
       },
     },
     defaultVariants: {
@@ -64,11 +61,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref,
   ) => {
     const Comp = asChild ? Slot : "button";
+    const resolvedSize = size ?? "default";
 
     return (
       <Comp
         data-slot="button"
-        className={cn(buttonVariants({ variant, size, className }))}
+        data-size={resolvedSize}
+        className={cn(buttonVariants({ variant, size: resolvedSize, className }))}
         ref={ref}
         {...props}
       />
