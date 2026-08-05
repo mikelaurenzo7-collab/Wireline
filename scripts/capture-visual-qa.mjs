@@ -265,8 +265,16 @@ async function auditResponsiveLayout(page, viewportName, route, issues) {
           scrollerStyle?.overflowX === "auto" || scrollerStyle?.overflowX === "scroll";
         const escapesViewport =
           !intentionallyScrollable && (rect.left < -1 || rect.right > viewportWidth + 1);
+        /* Switch roots measure "internal overflow" (42>40, 32>20 on a 44x24
+         * control) because system-hardening.css gives them an invisible 44px
+         * `::after` hit disc for the WCAG minimum target size. Nothing visible
+         * escapes — the pseudo-element is content:"" with no paint — so this
+         * inflation is intentional geometry, the same carve-out as the
+         * intentional scrollers above. */
+        const intentionalHitRegion = element.matches('[data-slot="switch"]');
         const hasVisibleInternalOverflow =
           !intentionallyScrollable &&
+          !intentionalHitRegion &&
           element.scrollWidth > element.clientWidth + 1 &&
           style.overflowX === "visible" &&
           !element.classList.contains("tab-strip-scroll");

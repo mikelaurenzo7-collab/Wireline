@@ -4,7 +4,10 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 export const badgeVariants = cva(
-  "inline-flex w-fit items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold leading-5",
+  // A badge is counts and one-word states; it never wraps internally. The
+  // "Not connected" state wrapped to two lines inside the 340px Salesforce
+  // summary card and collided with the card title.
+  "inline-flex w-fit items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold leading-5",
   {
     variants: {
       variant: {

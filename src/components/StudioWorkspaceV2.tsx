@@ -252,8 +252,11 @@ export default function StudioWorkspaceV2() {
         className="shrink-0 border-b border-border bg-card/70 px-3 py-3 sm:px-5"
         aria-label="Studio steps"
       >
+        {/* max-w-4xl: at 3xl the per-step description ("Job, greeting, facts,
+            and voice") truncated with an ellipsis at desktop width and read as
+            broken text; 4xl gives every step's description room to render. */}
         <div
-          className="mx-auto grid w-full max-w-3xl grid-cols-3 gap-1.5 sm:gap-2"
+          className="mx-auto grid w-full max-w-4xl grid-cols-3 gap-1.5 sm:gap-2"
           role="tablist"
           aria-label={`${activeLanguage.singular} setup steps`}
         >

@@ -311,7 +311,10 @@ function AuthShell({ children, compact = false }: { children: ReactNode; compact
           >
             {children}
           </div>
-          <div
+          {/* A <footer> puts these wayfinding links inside the control tier
+              (`footer a` under .wl-ui-caps): cased like every other nav-level
+              link in the product instead of reading as loose prose. */}
+          <footer
             className={cn(
               "flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center text-sm text-muted-foreground",
               compact ? "mt-3 sm:mt-4" : "mt-6",
@@ -326,7 +329,7 @@ function AuthShell({ children, compact = false }: { children: ReactNode; compact
             <Link to="/pricing" className="hover:text-primary hover:underline">
               View pricing
             </Link>
-          </div>
+          </footer>
         </div>
       </main>
     </div>
@@ -641,7 +644,10 @@ export default function AuthPortal() {
       />
       <AuthShell compact={isSignUp}>
         <div className={cn("wl-auth-heading text-center", isSignUp ? "mb-4" : "mb-6")}>
-          <h1 className="text-xl font-semibold tracking-[-.02em]">{pageTitle}</h1>
+          {/* A card title is a title: it sits above cased tabs, cased OAuth
+              buttons, and a cased divider, so it joins the title tier
+              (presentation-only transform — the copy string never changes). */}
+          <h1 className="text-xl font-semibold tracking-[-.02em] uppercase">{pageTitle}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{pageDescription}</p>
           {isSignUp && intentLabel ? (
             <p className="wl-stitch-label mt-3 inline-flex rounded-full border border-border bg-muted px-3 py-1">
