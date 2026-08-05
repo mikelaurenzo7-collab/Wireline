@@ -14,6 +14,7 @@
  *   authenticated-surfaces  routes, Studio canvas, auth flow, Training IA
  *   billing-integrity       Conversation Balance ledger + catalog knowledge
  *   structure-hygiene       CSS foundations, package guards, tombstones
+ *   interaction-primitives  controls, menus, dialogs, and shared form semantics
  *
  * Tracked by #718: keep every module free of retired positioning while
  * preserving the full verification breadth.
@@ -27,6 +28,7 @@ import { checkNativeSurfaces } from "./clear-system/native-surfaces.mjs";
 import { checkAuthenticatedSurfaces } from "./clear-system/authenticated-surfaces.mjs";
 import { checkBillingIntegrity } from "./clear-system/billing-integrity.mjs";
 import { checkStructureHygiene } from "./clear-system/structure-hygiene.mjs";
+import { checkInteractionPrimitives } from "./clear-system/interaction-primitives.mjs";
 
 const modules = [
   ["launch story", checkLaunchStory],
@@ -37,6 +39,7 @@ const modules = [
   ["authenticated surfaces", checkAuthenticatedSurfaces],
   ["billing integrity", checkBillingIntegrity],
   ["structure hygiene", checkStructureHygiene],
+  ["interaction primitives", checkInteractionPrimitives],
 ];
 
 const context = createCheckContext();
