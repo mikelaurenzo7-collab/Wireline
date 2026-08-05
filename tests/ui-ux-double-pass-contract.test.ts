@@ -62,17 +62,23 @@ describe("UI/UX double-pass system contract", () => {
     );
   });
 
-  it("enforces aria-disabled behavior instead of styling alone", () => {
+  it("enforces aria-disabled behavior before slotted child activation", () => {
     const button = read("src/components/atoms/Button.tsx");
 
     expect(button).toContain("function resolvesAriaDisabled(");
+    expect(button).toContain("function stopDisabledActivation(");
     expect(button).toContain("const ariaDisabled = resolvesAriaDisabled(ariaDisabledProp)");
-    expect(button).toContain("if (ariaDisabled) {");
-    expect(button).toContain("event.preventDefault()");
-    expect(button).toContain("event.stopPropagation()");
-    expect(button).toContain('ariaDisabled && (event.key === "Enter" || event.key === " ")');
+    expect(button).toContain("onClickCapture={ariaDisabled || onClickCapture");
+    expect(button).toContain("onKeyDownCapture={ariaDisabled || onKeyDownCapture");
+    expect(button).toContain("const guardedChildren =");
+    expect(button).toContain("React.isValidElement<SlottedInteractionProps>(children)");
+    expect(button).toContain("React.cloneElement(children");
+    expect(button).toContain("onClick: stopDisabledActivation");
+    expect(button).toContain("onClickCapture: stopDisabledActivation");
+    expect(button).toContain("if (isActivationKey(event)) stopDisabledActivation(event)");
     expect(button).toContain("disabled={asChild ? undefined : disabled}");
     expect(button).toContain("aria-disabled={ariaDisabled || ariaDisabledProp || undefined}");
+    expect(button).toContain("{guardedChildren}");
   });
 
   it("styles every standards-based invalid value across native and Radix controls", () => {
@@ -97,7 +103,16 @@ describe("UI/UX double-pass system contract", () => {
     expect(formField).toContain("required: nativeRequired ? true : child.props.required");
     expect(formField).toContain('"aria-required": isRequired ? true : child.props["aria-required"]');
     expect(formField).toContain("data-required={isRequired || undefined}");
-    expect(formField).toContain("new Set(");
+  });
+
+  it("normalizes and deduplicates every aria-describedby IDREF", () => {
+    const formField = read("src/components/molecules/FormField.tsx");
+
+    expect(formField).toContain("function splitIdRefs(");
+    expect(formField).toContain(".split(/\\s+/)");
+    expect(formField).toContain("const existingDescriptionIds = splitIdRefs(");
+    expect(formField).toContain("...existingDescriptionIds");
+    expect(formField).toContain("new Set([");
   });
 
   it("does not animate every CSS property on stable shared surfaces", () => {
