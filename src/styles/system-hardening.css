@@ -295,7 +295,8 @@ summary {
  * providing a 44px hit region. Portalled menus and dialogs also need the same
  * typography, focus, overlay, and dynamic-viewport behavior as the app shell.
  */
-button[data-slot="switch"] {
+button[data-slot="switch"],
+button[data-slot="switch"]:not(.wl-compact-control):not([data-compact="true"]) {
   position: relative;
   min-height: 0;
   overflow: visible;
