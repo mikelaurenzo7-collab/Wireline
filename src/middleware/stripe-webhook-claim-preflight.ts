@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import { and, eq, lt } from "drizzle-orm";
+import { and, eq, isNull, lt, or } from "drizzle-orm";
 import type Stripe from "stripe";
 
 import * as schema from "../db/schema";
@@ -50,7 +50,14 @@ export const reclaimAbandonedStripeWebhookClaim: RequestHandler = async (req, _r
         and(
           eq(schema.stripeEvents.eventId, event.id),
           eq(schema.stripeEvents.status, "processing"),
-          lt(schema.stripeEvents.processedAt, cutoff),
+          // `processed_at` currently defaults to now(), but the live column is
+          // nullable. A legacy or manually repaired processing row with NULL
+          // has no credible active lease and must remain recoverable rather than
+          // livelocking every provider redelivery forever.
+          or(
+            isNull(schema.stripeEvents.processedAt),
+            lt(schema.stripeEvents.processedAt, cutoff),
+          ),
         ),
       )
       .returning({ eventId: schema.stripeEvents.eventId });
