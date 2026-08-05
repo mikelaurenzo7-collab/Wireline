@@ -100,7 +100,7 @@ export function checkInteractionPrimitives({ read, mustInclude }) {
   mustInclude(
     "src/components/atoms/Button.tsx",
     button,
-    /onClickCapture=\{ariaDisabled \|\| onClickCapture[\s\S]*onKeyDownCapture=\{ariaDisabled \|\| onKeyDownCapture[\s\S]*disabled=\{asChild \? undefined : disabled\}/,
+    /disabled=\{asChild \? undefined : disabled\}[\s\S]*onClickCapture=\{ariaDisabled \|\| onClickCapture[\s\S]*onKeyDownCapture=\{ariaDisabled \|\| onKeyDownCapture/,
     "disabled activation guards must cover capture and bubble phases without invalid native attributes",
   );
   mustInclude(
