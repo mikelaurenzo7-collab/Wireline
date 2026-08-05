@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link2, Unlink, Loader2, ExternalLink, CheckCircle2, Settings } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { toolIntegrationForProvider, PROVIDER_ACCENT } from "../lib/integration-playbooks";

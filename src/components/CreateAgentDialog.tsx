@@ -1,6 +1,6 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Check, Loader2, WandSparkles, X, Zap } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 
 import { Button, Input, Textarea } from "./atoms";
 import { StatusNotice } from "./molecules";

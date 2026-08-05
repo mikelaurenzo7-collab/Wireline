@@ -1,5 +1,5 @@
 import { ArrowRight, CircleDollarSign, FileCheck2, LockKeyhole, Route } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 const TRUST_POINTS = [
   {

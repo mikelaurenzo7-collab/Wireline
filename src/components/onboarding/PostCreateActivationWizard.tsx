@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Cable, Loader2, MessageSquare, Phone, Sparkles, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useModalFocusTrap } from "../../lib/use-modal-focus-trap";
 import { useBodyScrollLock } from "../../lib/use-body-scroll-lock";
 

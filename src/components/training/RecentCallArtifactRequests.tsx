@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ExternalLink, FilePlus2, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { authFetch } from "../../lib/api";
 import { Button } from "../atoms";

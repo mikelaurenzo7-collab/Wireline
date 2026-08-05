@@ -2,7 +2,7 @@ import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- vendor webhook payloads are JSON envelopes with provider-specific shapes. */
 import express, { Request, Response } from "express";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { and, eq, sql } from "drizzle-orm";
@@ -469,7 +469,7 @@ router.post("/api/webhooks/meta/deletion", async (req: Request, res: Response) =
   const confirmationCode =
     "WLN-" +
     Array.from({ length: 8 })
-      .map(() => "ABCDEFGHJKMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 31)])
+      .map(() => "ABCDEFGHJKMNPQRSTUVWXYZ23456789"[randomInt(31)])
       .join("");
 
   // Mark every Meta connection with this Facebook user_id as

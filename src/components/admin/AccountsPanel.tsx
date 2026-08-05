@@ -3,7 +3,7 @@
  * Lives under Settings > Accounts tab.
  */
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { Building, Check, Loader2, Plus, User } from "lucide-react";
 import { useAccount, type Account } from "../../contexts/AccountContext";
 import { cn } from "../../lib/utils";

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- support telemetry is intentionally optional. */
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
   Phone,
   Mail,

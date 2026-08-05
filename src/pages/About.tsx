@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { ArrowRight, Check, Mail, ShieldCheck } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";

@@ -3,7 +3,7 @@ import { AppError } from "../lib/api-error";
 import express, { Request, Response } from "express";
 import { drizzle, log, tenantStore, auditLogger } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, count } from "drizzle-orm";
+import { and, eq, lt, count } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { getErrorMessage } from "../lib/server-utils";
@@ -223,39 +223,74 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
       // (top-ups, entitlement sync) even when the first attempt died.
       if (isProcessing) {
         if (stale) {
-          log.warn("Releasing abandoned Stripe webhook claim for redelivery", {
-            eventId: idempotencyKey,
-            eventType: event.type,
-          });
-          await drizzle
+          // Atomically reclaim the abandoned claim: the conditional DELETE
+          // matches only a row that is still "processing" and still past the
+          // abandonment cutoff, so exactly one concurrent delivery can win it.
+          // The winner re-claims and processes the event inline instead of
+          // waiting out another Stripe redelivery cycle; losers (and any fresh
+          // redelivery that lands between our delete and re-claim) hit the
+          // duplicate path and 503, so the event is still processed exactly
+          // once end to end.
+          const cutoff = new Date(Date.now() - abandonedAfterMs);
+          const [reclaimed] = await drizzle
             .delete(schema.stripeEvents)
-            .where(eq(schema.stripeEvents.eventId, idempotencyKey))
-            .catch(() => {});
+            .where(
+              and(
+                eq(schema.stripeEvents.eventId, idempotencyKey),
+                eq(schema.stripeEvents.status, "processing"),
+                lt(schema.stripeEvents.processedAt, cutoff),
+              ),
+            )
+            .returning({ eventId: schema.stripeEvents.eventId })
+            .catch(() => [] as Array<{ eventId: string }>);
+          if (reclaimed) {
+            log.warn("Reclaimed abandoned Stripe webhook claim; processing inline", {
+              eventId: idempotencyKey,
+              eventType: event.type,
+            });
+            await drizzle.insert(schema.stripeEvents).values({
+              eventId: idempotencyKey,
+              eventType: event.type,
+              status: "processing",
+            });
+            claimed = true;
+          } else {
+            log.warn("Stripe webhook still processing — asking Stripe to retry", {
+              eventId: idempotencyKey,
+              eventType: event.type,
+            });
+            throw AppError.fromHttpStatus(503, "Prior delivery did not complete. Retry.");
+          }
         } else {
           log.warn("Stripe webhook still processing — asking Stripe to retry", {
             eventId: idempotencyKey,
             eventType: event.type,
           });
+          throw AppError.fromHttpStatus(503, "Prior delivery did not complete. Retry.");
         }
-        throw AppError.fromHttpStatus(503, "Prior delivery did not complete. Retry.");
       }
 
-      if (prior?.status === "processed") {
-        log.info("Stripe webhook duplicate event ignored", {
+      // A successful stale-claim reclaim above sets claimed=true and must fall
+      // through to the handler; the branches below only apply to duplicates we
+      // did not reclaim.
+      if (!claimed) {
+        if (prior?.status === "processed") {
+          log.info("Stripe webhook duplicate event ignored", {
+            eventId: idempotencyKey,
+            eventType: event.type,
+            priorStatus: prior.status,
+          });
+          return res.json({ received: true, duplicate: true });
+        }
+
+        // Unknown/missing prior status — refuse to ack so Stripe retries.
+        log.warn("Stripe webhook duplicate with unexpected prior status", {
           eventId: idempotencyKey,
           eventType: event.type,
-          priorStatus: prior.status,
+          priorStatus: prior?.status ?? "unknown",
         });
-        return res.json({ received: true, duplicate: true });
+        throw AppError.fromHttpStatus(503, "Webhook claim state unclear. Retry.");
       }
-
-      // Unknown/missing prior status — refuse to ack so Stripe retries.
-      log.warn("Stripe webhook duplicate with unexpected prior status", {
-        eventId: idempotencyKey,
-        eventType: event.type,
-        priorStatus: prior?.status ?? "unknown",
-      });
-      throw AppError.fromHttpStatus(503, "Webhook claim state unclear. Retry.");
     }
     log.warn("Stripe idempotency claim failed — refusing to process event", {
       error: getErrorMessage(err),

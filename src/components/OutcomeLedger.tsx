@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { ArrowRight, ClipboardList } from "lucide-react";
 
 import { authFetch } from "../lib/api";
@@ -121,8 +121,7 @@ export default function OutcomeLedger({
           const pending_task_count = pending.length;
           const completed_task_count = completed.length;
           const last_action_type = (lastAction?.task_type || lastAction?.taskType || null) as
-            | string
-            | null;
+            string | null;
           const last_action_status = (lastAction?.status || null) as string | null;
           const lifecycle_status = deriveLifecycleStatus({
             outcomeTag: row.outcome_tag,

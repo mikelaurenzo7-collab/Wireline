@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import WorkspaceShell from "../components/WorkspaceShell";
 import PhoneSetupPanel from "../components/PhoneSetupPanel";
 import PhoneCallHistoryPanel from "../components/PhoneCallHistoryPanel";

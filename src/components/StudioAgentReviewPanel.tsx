@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, MessageCircle, PhoneCall, Settings2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { Button, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";

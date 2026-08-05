@@ -1,5 +1,5 @@
 import { Check, MessageSquare, PhoneCall, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import { Button } from "../components/atoms";

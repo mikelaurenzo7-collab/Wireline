@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Loader2, Plus, Users, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { Badge, Button, Input, NativeSelect } from "../components/atoms";
 import { FormField, StatusNotice } from "../components/molecules";
@@ -92,22 +92,19 @@ export default function TeamSettings() {
     try {
       const response = await authFetch("/api/team");
       const payload = (await response.json().catch(() => null)) as
-        | ({ members?: TeamMemberRecord[] } & TeamErrorPayload)
-        | null;
+        ({ members?: TeamMemberRecord[] } & TeamErrorPayload) | null;
       if (response.status === 403) {
         setTeamAccess("restricted");
         setMembers([]);
         return;
       }
-      if (
-        response.status === 503 &&
-        payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED"
-      ) {
+      if (response.status === 503 && payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED") {
         setTeamAccess("certifying");
         setMembers([]);
         return;
       }
-      if (!response.ok) throw new Error(payload?.error || payload?.message || String(response.status));
+      if (!response.ok)
+        throw new Error(payload?.error || payload?.message || String(response.status));
       setMembers(Array.isArray(payload?.members) ? payload.members : []);
     } catch {
       setTeamAccess("error");
@@ -174,9 +171,9 @@ export default function TeamSettings() {
 
         {teamAccess === "certifying" ? (
           <StatusNotice tone="info" title="Shared workspaces are being certified">
-            Your workspace remains fully available for solo use. Invitations stay off until
-            Wireline completes the tenant-isolation and permission certification required for
-            safe multi-user access.
+            Your workspace remains fully available for solo use. Invitations stay off until Wireline
+            completes the tenant-isolation and permission certification required for safe multi-user
+            access.
           </StatusNotice>
         ) : null}
 

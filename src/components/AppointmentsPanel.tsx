@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { CalendarDays, Clock3 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
 import { Badge, Button, EmptyState, Skeleton } from "./atoms";

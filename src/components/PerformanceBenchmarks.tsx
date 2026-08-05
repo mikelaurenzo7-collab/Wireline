@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { ChevronDown, ChevronUp, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";

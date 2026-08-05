@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowLeft,

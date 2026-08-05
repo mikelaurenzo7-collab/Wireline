@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { KeyRound, LogOut, Mail, ShieldCheck, Trash2, UserRound } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";

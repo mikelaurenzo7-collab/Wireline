@@ -1,6 +1,6 @@
 import { Fragment, useEffect, type ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { MARKETING_VOICE } from "../../lib/product-copy";

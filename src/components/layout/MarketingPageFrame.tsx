@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import PrecisionPublicHeader from "../marketing/PrecisionPublicHeader";
 import MarketingFooter from "../marketing/MarketingFooter";
 import MarketingStickyCta from "../marketing/MarketingStickyCta";

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Download, ExternalLink, Loader2, Shield } from "lucide-react";
 
 import DncManager from "./DncManager";

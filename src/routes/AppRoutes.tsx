@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router";
 import RouteFallback from "../components/layout/RouteFallback";
 import WorkspaceShell from "../components/WorkspaceShell";
 import NotFound from "../components/layout/NotFound";

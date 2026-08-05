@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Cookie, X } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { cn } from "../lib/utils";
 import { isMarketingStickyCtaRoute } from "../lib/marketing-mobile";

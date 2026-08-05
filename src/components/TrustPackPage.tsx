@@ -1,7 +1,7 @@
 /**
  * Vertical trust packs — review-ready evidence and boundaries for regulated buyers.
  */
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router";
 import { ArrowLeft, ArrowRight, Check, FileCheck2, ShieldAlert, ShieldCheck } from "lucide-react";
 import MarketingChrome from "./marketing/MarketingChrome";
 import { PageMeta } from "../lib/page-meta";

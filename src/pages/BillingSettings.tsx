@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ExternalLink, Loader2, Plus, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { Badge, Button, Skeleton } from "../components/atoms";
 import UsageMeter from "../components/UsageMeter";

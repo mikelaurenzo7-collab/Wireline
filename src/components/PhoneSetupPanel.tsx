@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, MapPin, Phone, Plus } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 
 import { useAgents } from "../contexts/AgentsContext";
 import { resolveStudioActiveAgentId } from "../lib/studio-agent-preference";

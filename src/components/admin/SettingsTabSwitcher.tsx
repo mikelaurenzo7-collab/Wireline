@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, type KeyboardEvent } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 

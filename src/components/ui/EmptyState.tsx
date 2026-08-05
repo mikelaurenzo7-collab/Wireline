@@ -2,7 +2,7 @@ import { isValidElement } from "react";
 import type { ElementType, ReactNode } from "react";
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { motion, useReducedMotion } from "motion/react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { cn } from "../../lib/utils";
 import { Medallion } from "./Medallion";
 import { SectionHeader } from "./SectionHeader";

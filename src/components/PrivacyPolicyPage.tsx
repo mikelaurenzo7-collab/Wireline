@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft, Cookie, Shield } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { PageMeta } from "../lib/page-meta";
 import MarketingChrome from "./marketing/MarketingChrome";
 import { ShadButton } from "./ui/shadcn/ShadButton";
