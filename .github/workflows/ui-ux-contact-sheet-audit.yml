@@ -1,0 +1,108 @@
+name: UI UX contact-sheet audit
+
+on:
+  push:
+    branches:
+      - audit/ui-ux-e2e-20260805
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ui-ux-contact-sheet-audit
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CI: true
+      WIRELINE_VISUAL_BASE_URL: https://trywireline.com
+      WIRELINE_VISUAL_OUTPUT_DIR: artifacts/ui-ux-contact-sheet-audit
+      WIRELINE_VISUAL_VIEWPORTS: phone,desktop
+      WIRELINE_QA_FOCUS: full
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: audit/ui-ux-e2e-20260805
+          fetch-depth: 1
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Capture production route matrix
+        run: node scripts/capture-prod-visual-qa.mjs
+
+      - name: Build review contact sheets
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq imagemagick
+          latest="$(find "$WIRELINE_VISUAL_OUTPUT_DIR" -mindepth 1 -maxdepth 1 -type d | sort | tail -1)"
+          test -n "$latest"
+          out="public/qa-contact-sheets"
+          rm -rf "$out"
+          mkdir -p "$out"
+          cp "$latest/manifest.json" "$out/manifest.json"
+          printf '%s\n' "$latest" > "$out/source.txt"
+
+          shopt -s nullglob
+          build_sheet() {
+            local output="$1"
+            local geometry="$2"
+            shift 2
+            local files=("$@")
+            if (( ${#files[@]} == 0 )); then
+              printf 'No files matched for %s\n' "$output" >&2
+              return 1
+            fi
+            montage "${files[@]}" \
+              -auto-orient \
+              -thumbnail "$geometry" \
+              -gravity south \
+              -background '#101114' \
+              -fill '#f5f5f4' \
+              -pointsize 10 \
+              -set label '%t' \
+              -tile 4x \
+              -geometry '+6+18' \
+              -strip \
+              -quality 42 \
+              "$output"
+          }
+
+          phone_public=("$latest"/phone-public-*-viewport.png)
+          phone_auth=("$latest"/phone-authenticated-*-viewport.png)
+          desktop_public=("$latest"/desktop-public-*-viewport.png)
+          desktop_auth=("$latest"/desktop-authenticated-*-viewport.png)
+
+          build_sheet "$out/phone-public.jpg" '150x180>' "${phone_public[@]}"
+          build_sheet "$out/phone-authenticated.jpg" '150x180>' "${phone_auth[@]}"
+          build_sheet "$out/desktop-public.jpg" '220x170>' "${desktop_public[@]}"
+          build_sheet "$out/desktop-authenticated.jpg" '220x170>' "${desktop_auth[@]}"
+
+          identify "$out"/*.jpg
+          du -h "$out"/*
+
+      - name: Persist review evidence on audit branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'wireline-visual-qa[bot]'
+          git config user.email 'wireline-visual-qa[bot]@users.noreply.github.com'
+          git add public/qa-contact-sheets
+          git commit -m 'chore(qa): persist production contact sheets [skip ci]'
+          git push origin HEAD:audit/ui-ux-e2e-20260805
