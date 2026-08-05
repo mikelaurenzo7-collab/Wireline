@@ -23,12 +23,16 @@ describe("UI/UX double-pass system contract", () => {
     expect(css).toContain("accent-color: var(--wireline-color-action-primary-default)");
   });
 
-  it("hardens custom PageShell tabs and mobile actions", () => {
+  it("hardens custom PageShell tabs and mobile actions with valid touch-scroll CSS", () => {
     const css = read("src/styles/system-refinement-pass-two.css");
 
     expect(css).toContain('[role="tablist"].tab-strip-scroll');
     expect(css).toContain("overscroll-behavior-inline: contain");
     expect(css).toContain("scrollbar-width: none");
+    expect(css).toContain("@media (pointer: coarse)");
+    expect(css).toContain("scroll-snap-type: inline proximity");
+    expect(css).toContain("scroll-snap-align: start");
+    expect(css).not.toContain("scroll-snap-align: nearest");
     expect(css).toContain('.wl-ui-caps button[aria-label="Page actions"]');
     expect(css).toContain("--wireline-interaction-target-comfortable, 44px");
     expect(css).toContain('[role="dialog"][aria-label="Page actions"]');
@@ -37,6 +41,19 @@ describe("UI/UX double-pass system contract", () => {
     expect(css).toContain("var(--wireline-color-overlay-scrim)");
     expect(css).toContain("@media (prefers-reduced-transparency: reduce)");
     expect(css).toContain("@media (forced-colors: active)");
+  });
+
+  it("uses actual coarse-pointer geometry for icon buttons", () => {
+    const button = read("src/components/atoms/Button.tsx");
+    const css = read("src/styles/system-refinement-pass-two.css");
+
+    expect(button).toContain("const resolvedSize = size ?? \"default\"");
+    expect(button).toContain("data-size={resolvedSize}");
+    expect(button).not.toContain("after:pointer-events-none");
+    expect(css).toContain('[data-slot="button"][data-size="icon"]');
+    expect(css).toMatch(
+      /data-size="icon"[\s\S]*min-width:\s*var\(--wireline-interaction-target-comfortable, 44px\)[\s\S]*min-height:\s*var\(--wireline-interaction-target-comfortable, 44px\)/,
+    );
   });
 
   it("does not animate every CSS property on stable shared surfaces", () => {
@@ -71,6 +88,7 @@ describe("UI/UX double-pass system contract", () => {
     expect(css).toContain("overflow-wrap: anywhere");
     expect(css).toContain(":where(input, select, textarea) {\n  min-width: 0;");
     expect(css).toContain("textarea:not([data-resize=\"none\"])");
+    expect(css).toContain("resize: vertical");
     expect(css).toContain("resize: block");
   });
 });
