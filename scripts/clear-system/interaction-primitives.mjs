@@ -17,8 +17,8 @@ export function checkInteractionPrimitives({ read, mustInclude }) {
   mustInclude(
     "src/styles/system-hardening.css",
     systemHardening,
-    /button\[data-slot="switch"\]\s*\{[\s\S]*min-height:\s*0/,
-    "switch visual geometry must not inherit the global 44px button height",
+    /button\[data-slot="switch"\]:not\(\.wl-compact-control\):not\(\[data-compact="true"\]\)[\s\S]*min-height:\s*0/,
+    "switch visual geometry must override the global 44px button height with sufficient specificity",
   );
   mustInclude(
     "src/styles/system-hardening.css",
@@ -80,8 +80,14 @@ export function checkInteractionPrimitives({ read, mustInclude }) {
   mustInclude(
     "src/components/molecules/FormField.tsx",
     formField,
-    /generatedControlId[\s\S]*controlId/,
-    "form fields must associate labels even when callers omit an id",
+    /const controlId = child\?\.props\.id \?\? htmlFor \?\? generatedControlId/,
+    "form field label and child control must resolve one atomic identifier",
+  );
+  mustInclude(
+    "src/components/molecules/FormField.tsx",
+    formField,
+    /React\.cloneElement\(child,[\s\S]*id:\s*controlId/,
+    "form fields must apply the resolved identifier to the child control",
   );
   mustInclude(
     "src/components/molecules/FormField.tsx",
