@@ -5,48 +5,58 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
-describe("Stripe stale webhook claim preflight", () => {
-  it("runs after raw parsing and before the canonical billing router", () => {
+const migrationPath =
+  "drizzle/migrations/0132_reclaim_abandoned_stripe_event_claims.sql";
+
+describe("Stripe abandoned claim recovery", () => {
+  it("owns recovery at the table INSERT boundary without a second HTTP preflight", () => {
+    const migration = read(migrationPath);
     const parsers = read("src/lib/body-parsers.ts");
-    const server = read("server.ts");
+    const billing = read("src/routes/billing-routes.ts");
 
-    expect(parsers).toContain(
-      'import { reclaimAbandonedStripeWebhookClaim } from "../middleware/stripe-webhook-claim-preflight";',
+    expect(migration).toContain(
+      "CREATE TRIGGER wireline_reclaim_abandoned_stripe_event_claim_before_insert",
     );
-
-    const rawParser = parsers.indexOf('express.raw({ type: "application/json"');
-    const preflight = parsers.indexOf(
-      'app.use("/api/stripe-webhook", reclaimAbandonedStripeWebhookClaim);',
+    expect(migration).toContain("BEFORE INSERT ON public.wireline_stripe_events");
+    expect(migration).toContain(
+      "EXECUTE FUNCTION public.wireline_reclaim_abandoned_stripe_event_claim()",
     );
-    expect(rawParser).toBeGreaterThan(-1);
-    expect(preflight).toBeGreaterThan(rawParser);
-
-    const parserInstall = server.indexOf("installWebhookBodyParsers(app)");
-    const routeInstall = server.indexOf("registerApiRoutes(app)");
-    expect(parserInstall).toBeGreaterThan(-1);
-    expect(routeInstall).toBeGreaterThan(parserInstall);
+    expect(parsers).not.toContain("stripe-webhook-claim-preflight");
+    expect(parsers).not.toContain("reclaimAbandonedStripeWebhookClaim");
+    expect(billing).toContain(
+      '.values({ eventId: idempotencyKey, eventType: event.type, status: "processing" })',
+    );
   });
 
-  it("mutates claim state only after Stripe signature verification", () => {
-    const source = read("src/middleware/stripe-webhook-claim-preflight.ts");
+  it("reclaims only the exact abandoned processing lease", () => {
+    const migration = read(migrationPath);
 
-    const signatureVerification = source.indexOf("stripe.webhooks.constructEvent(");
-    const claimDelete = source.indexOf(".delete(schema.stripeEvents)");
-    expect(signatureVerification).toBeGreaterThan(-1);
-    expect(claimDelete).toBeGreaterThan(signatureVerification);
-    expect(source).toContain('eq(schema.stripeEvents.status, "processing")');
-    expect(source).toContain("isNull(schema.stripeEvents.processedAt)");
-    expect(source).toContain("lt(schema.stripeEvents.processedAt, cutoff)");
-    expect(source).toContain("ABANDONED_STRIPE_CLAIM_AFTER_MS = 5 * 60 * 1000");
+    expect(migration).toContain("IF NEW.status <> 'processing' THEN");
+    expect(migration).toContain("WHERE event_id = NEW.event_id");
+    expect(migration).toContain("AND status = 'processing'");
+    expect(migration).toContain("processed_at IS NULL");
+    expect(migration).toContain(
+      "processed_at < clock_timestamp() - INTERVAL '5 minutes'",
+    );
+    expect(migration).not.toMatch(/DELETE FROM public\.wireline_stripe_events\s*;/);
   });
 
-  it("fails closed when the idempotency store cannot complete the preflight", () => {
-    const source = read("src/middleware/stripe-webhook-claim-preflight.ts");
+  it("is idempotent, invoker-scoped, and registered in the migration journal", () => {
+    const migration = read(migrationPath);
+    const journal = JSON.parse(
+      read("drizzle/migrations/meta/_journal.json"),
+    ) as { entries: Array<{ tag: string }> };
 
-    expect(source).toContain('log.error("Stripe stale-claim preflight failed closed"');
-    expect(source).toContain(
-      'AppError.fromHttpStatus(503, "Webhook idempotency store unavailable. Retry later.")',
+    expect(migration).toContain(
+      "CREATE OR REPLACE FUNCTION public.wireline_reclaim_abandoned_stripe_event_claim()",
     );
-    expect(source).not.toContain(".catch(() => []");
+    expect(migration).toContain(
+      "DROP TRIGGER IF EXISTS wireline_reclaim_abandoned_stripe_event_claim_before_insert",
+    );
+    expect(migration).toContain("SET search_path = public, pg_temp");
+    expect(migration).not.toContain("SECURITY DEFINER");
+    expect(journal.entries.at(-1)?.tag).toBe(
+      "0132_reclaim_abandoned_stripe_event_claims",
+    );
   });
 });
