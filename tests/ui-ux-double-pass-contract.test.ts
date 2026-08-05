@@ -35,6 +35,8 @@ describe("UI/UX double-pass system contract", () => {
     expect(css).toContain("max-height: calc(100dvh");
     expect(css).toContain("overscroll-behavior: contain");
     expect(css).toContain("var(--wireline-color-overlay-scrim)");
+    expect(css).toContain("@media (prefers-reduced-transparency: reduce)");
+    expect(css).toContain("@media (forced-colors: active)");
   });
 
   it("does not animate every CSS property on stable shared surfaces", () => {
