@@ -41,8 +41,14 @@ describe("Stripe abandoned claim recovery", () => {
     expect(migration).not.toMatch(/DELETE FROM public\.wireline_stripe_events\s*;/);
   });
 
-  it("is idempotent, invoker-scoped, and registered in the migration journal", () => {
+  it("is idempotent, invoker-scoped, and restores recent migration reproducibility", () => {
     const migration = read(migrationPath);
+    const accountClassification = read(
+      "drizzle/migrations/0130_classify_nonproduction_traffic.sql",
+    );
+    const accountOperator = read(
+      "drizzle/migrations/0131_manage_account_environment.sql",
+    );
     const journal = JSON.parse(
       read("drizzle/migrations/meta/_journal.json"),
     ) as { entries: Array<{ tag: string }> };
@@ -55,8 +61,12 @@ describe("Stripe abandoned claim recovery", () => {
     );
     expect(migration).toContain("SET search_path = public, pg_temp");
     expect(migration).not.toContain("SECURITY DEFINER");
-    expect(journal.entries.at(-1)?.tag).toBe(
+    expect(accountClassification).toContain("account_environment");
+    expect(accountOperator).toContain("wireline_set_account_environment");
+    expect(journal.entries.slice(-3).map(({ tag }) => tag)).toEqual([
+      "0130_classify_nonproduction_traffic",
+      "0131_manage_account_environment",
       "0132_reclaim_abandoned_stripe_event_claims",
-    );
+    ]);
   });
 });
