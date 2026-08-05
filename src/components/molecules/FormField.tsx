@@ -49,7 +49,7 @@ export function FormField({
   const descriptionId = React.useId();
   const errorId = React.useId();
   const child = React.isValidElement<FieldControlProps>(children) ? children : null;
-  const controlId = htmlFor ?? child?.props.id ?? generatedControlId;
+  const controlId = child?.props.id ?? htmlFor ?? generatedControlId;
   const existingDescribedBy = child?.props["aria-describedby"]?.trim();
   const describedBy = [
     existingDescribedBy || null,
@@ -64,7 +64,7 @@ export function FormField({
 
   const control = child
     ? React.cloneElement(child, {
-        id: child.props.id ?? controlId,
+        id: controlId,
         required: child.props.required ?? (isRequired ? true : undefined),
         "aria-describedby": describedBy || undefined,
         "aria-invalid": ariaInvalid,
