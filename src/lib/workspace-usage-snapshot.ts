@@ -122,8 +122,9 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
  * Safety rule: the account holder may lower this guard, but cannot raise it
  * above the provider-cost envelope funded by the active plan. A provenance
  * flag lets Wireline move its own default after an upgrade or downgrade while
- * preserving every customer-selected limit, including an explicit $0.50 cap.
- * Hard-cap enforcement is repaired if an older row was disabled.
+ * preserving every customer-selected limit, including one that exactly equals
+ * a former or current managed default. Hard-cap enforcement is repaired if an
+ * older row was disabled.
  *
  * `executor` lets a caller pass an open transaction so the seed participates
  * in the same tx as the user insert — without it, seeding during signup runs
