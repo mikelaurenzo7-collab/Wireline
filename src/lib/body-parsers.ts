@@ -8,6 +8,8 @@
  */
 import express from "express";
 
+import { reclaimAbandonedStripeWebhookClaim } from "../middleware/stripe-webhook-claim-preflight";
+
 /** Express app surface used by the parser installer. */
 type ExpressApp = ReturnType<typeof express>;
 
@@ -21,11 +23,14 @@ const TWILIO_WEBHOOK_LIMIT = "256kb";
  * stay reviewable in one place.
  */
 export function installWebhookBodyParsers(app: ExpressApp): void {
-  // Stripe — raw JSON, signed with Stripe-Signature.
+  // Stripe — raw JSON, signed with Stripe-Signature. The stale-claim preflight
+  // must run after raw parsing and before the canonical billing router so a
+  // verified abandoned event can win a normal idempotency insert and continue.
   app.use(
     "/api/stripe-webhook",
     express.raw({ type: "application/json", limit: RAW_WEBHOOK_LIMIT }),
   );
+  app.use("/api/stripe-webhook", reclaimAbandonedStripeWebhookClaim);
 
   // Meta Lead Ads and data-deletion callbacks — raw bytes for HMAC validation.
   app.use("/api/webhooks/meta/leads", express.raw({ type: "*/*", limit: RAW_WEBHOOK_LIMIT }));
