@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Loader2, PlugZap, Save } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
 import { composeSetupPersonality } from "../lib/compose-setup-personality";

@@ -2,7 +2,7 @@
  * Fetches a LiveAvatar session and renders the live stream or SVG fallback.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Loader2, Play, Volume2 } from "lucide-react";
 
 import { authFetch } from "../lib/api";

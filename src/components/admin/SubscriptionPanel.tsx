@@ -2,7 +2,7 @@ import React from "react";
 import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
 import { Panel } from "../PageShell";
 import StripeBillingCard from "../StripeBillingCard";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { useLocation, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router";
 import {
   isAdminHubPath,
   resolveAppPageSecondaryRoute,
@@ -74,7 +74,8 @@ export function useAppChromeTabs():
     if (!route) return null;
     const tabParam = searchParams.get("tab");
     const viewParam = searchParams.get("view");
-    const inferredGroup = route.pathname === "/insights" ? resolveInsightsGroupForView(viewParam) : null;
+    const inferredGroup =
+      route.pathname === "/insights" ? resolveInsightsGroupForView(viewParam) : null;
     const primaryId = inferredGroup ?? resolveAppPageSubTabId(route, tabParam);
     const secondaryRoute = resolveAppPageSecondaryRoute(pathname, primaryId);
     if (!secondaryRoute) return null;
@@ -89,7 +90,8 @@ export function useAppChromeTabs():
   if (route) {
     const tabParam = searchParams.get("tab");
     const viewParam = searchParams.get("view");
-    const inferredGroup = route.pathname === "/insights" ? resolveInsightsGroupForView(viewParam) : null;
+    const inferredGroup =
+      route.pathname === "/insights" ? resolveInsightsGroupForView(viewParam) : null;
     const activeId = inferredGroup ?? resolveAppPageSubTabId(route, tabParam);
     return { ...route, activeId, setActiveId, showAdminTabs: false as const, secondary };
   }

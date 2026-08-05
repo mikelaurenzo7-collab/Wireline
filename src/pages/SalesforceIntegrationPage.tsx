@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Cloud, ExternalLink, FileText, Loader2, RefreshCcw, Send } from "lucide-react";
 
 import { Badge, Button, Skeleton, Switch } from "../components/atoms";

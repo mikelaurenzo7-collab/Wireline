@@ -9,7 +9,7 @@
  * contractual safeguard, or delivery date until it is verified and signed.
  */
 import { motion } from "motion/react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import {
   Lock,
   ShieldCheck,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 
 function labelFromPath(pathname: string) {
   const segment = pathname.split("/").filter(Boolean)[0];

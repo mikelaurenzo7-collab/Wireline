@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { History, Loader2 } from "lucide-react";
 
 import { authFetch } from "../lib/api";

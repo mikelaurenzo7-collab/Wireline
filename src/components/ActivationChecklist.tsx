@@ -10,7 +10,7 @@ import {
   Inbox,
   Trophy,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useAccount } from "../contexts/AccountContext";
 import { useAuth } from "../contexts/AuthContext";
 

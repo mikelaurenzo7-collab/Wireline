@@ -1,5 +1,5 @@
 import { CheckCircle2, MessageCircle, Plus, Settings2, Sparkles, Users } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button, Skeleton } from "../components/atoms";

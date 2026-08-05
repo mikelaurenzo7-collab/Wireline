@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileChartColumn, FileText, Presentation, Sheet, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { Button, NativeSelect } from "../atoms";
 import { StatusNotice } from "../molecules";

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { BookOpen, MessageCircle, WandSparkles } from "lucide-react";
 
 import { Button, EmptyState, NativeSelect } from "../components/atoms";
@@ -166,10 +166,7 @@ export default function KnowledgePage() {
                 agentId={agentId}
                 onImported={() => setKnowledgeRevision((value) => value + 1)}
               />
-              <KnowledgeBaseClaude
-                key={`${agentId}:${knowledgeRevision}`}
-                agentId={agentId}
-              />
+              <KnowledgeBaseClaude key={`${agentId}:${knowledgeRevision}`} agentId={agentId} />
             </div>
           ) : null}
           {activeTab === "reports" ? (

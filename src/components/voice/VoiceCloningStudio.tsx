@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Check, Loader2, Mic2, Pause, Play, ShieldCheck, Trash2, Upload } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { authFetch } from "../../lib/api";
 import {

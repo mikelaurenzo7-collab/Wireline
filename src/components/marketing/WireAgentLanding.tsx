@@ -1,6 +1,6 @@
 import { useState, type KeyboardEvent } from "react";
 import { ArrowRight, Check, Volume2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import MarketingFooter from "./MarketingFooter";
 import MarketingHero from "./MarketingHero";

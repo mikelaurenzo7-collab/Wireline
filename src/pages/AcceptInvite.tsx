@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router";
 import { CheckCircle2, Loader2, TriangleAlert } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import MarketingChrome from "../components/marketing/MarketingChrome";
@@ -75,7 +75,9 @@ export default function AcceptInvite() {
       .catch((error: unknown) => {
         sessionStorage.removeItem(PENDING_INVITE_KEY);
         setStatus("error");
-        setMessage(error instanceof Error ? error.message : "The invitation could not be accepted.");
+        setMessage(
+          error instanceof Error ? error.message : "The invitation could not be accepted.",
+        );
       });
   }, [loading, navigate, token, user]);
 

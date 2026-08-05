@@ -23,7 +23,7 @@ import {
   ClipboardList,
   Receipt,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { authFetch, safeJson, isApiErrorBody } from "../lib/api";
 import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
 import { cn } from "../lib/utils";

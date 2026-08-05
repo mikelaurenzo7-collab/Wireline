@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { ArrowRight, Building2, Mic2, Phone, PlugZap, ShieldCheck, Target } from "lucide-react";
 
 import AppearanceSettings from "../components/settings/AppearanceSettings";

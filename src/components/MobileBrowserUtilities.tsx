@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { Cable, CreditCard, MonitorDown, Settings, UsersRound } from "lucide-react";
 import { PAGE_TITLES } from "../constants/navigation";
 

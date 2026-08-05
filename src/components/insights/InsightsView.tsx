@@ -5,7 +5,7 @@
  * This shell renders the active view body only.
  */
 import { Suspense, lazy, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import CsvExportButton from "../CsvExportButton";
 import GoalsView from "../GoalsView";
 import WidgetBoundary from "../WidgetBoundary";

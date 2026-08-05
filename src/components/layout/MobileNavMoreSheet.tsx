@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { MOBILE_MORE_NAV, isNavActive, type ShellNavItem } from "../../constants/navigation";
 import { useAccount } from "../../contexts/AccountContext";

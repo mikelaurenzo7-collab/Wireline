@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ShieldCheck, Download, ExternalLink } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { authFetch } from "../../lib/api";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { cn } from "../../lib/utils";

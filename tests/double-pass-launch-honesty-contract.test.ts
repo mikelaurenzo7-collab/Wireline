@@ -1,6 +1,29 @@
-import { globSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { globSync, readdirSync, readFileSync } from "node:fs";
+import { join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+
+/**
+ * `fs.globSync` only exists on Node ≥22 (the repo's pinned runtime). Walk the
+ * tree manually on older versions so this contract stays runnable in any
+ * maintainer environment without changing what it asserts.
+ */
+function listSourceTsFiles(): string[] {
+  if (typeof globSync === "function") {
+    return globSync("src/**/*.ts", { cwd: process.cwd() });
+  }
+  const root = resolve(process.cwd(), "src");
+  const out: string[] = [];
+  const stack = [root];
+  while (stack.length) {
+    const dir = stack.pop()!;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) stack.push(full);
+      else if (entry.name.endsWith(".ts")) out.push(relative(process.cwd(), full));
+    }
+  }
+  return out;
+}
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
@@ -224,9 +247,7 @@ describe("double-pass launch honesty", () => {
     // company-identity-mutation reconcile, phone-provisioning release) were
     // live while this test passed. Sweep every source file instead and judge
     // by what the Promise.all actually awaits.
-    const files = globSync("src/**/*.ts", { cwd: process.cwd() }).filter(
-      (file) => !file.endsWith(".test.ts"),
-    );
+    const files = listSourceTsFiles().filter((file) => !file.endsWith(".test.ts"));
     expect(files.length).toBeGreaterThan(50);
 
     const offenders: string[] = [];

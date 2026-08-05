@@ -54,7 +54,7 @@ describe("current-state UI contract", () => {
     expect(apps).toContain('href: "/settings/apps#chatgpt-mcp"');
     expect(apps).toContain('id="chatgpt-mcp"');
     expect(apps).toContain("https://trywireline.com/mcp");
-    expect(apps).toContain('from "react-router-dom"');
+    expect(apps).toContain('from "react-router"');
     expect(apps).not.toContain(
       "mailto:support@trywireline.com?subject=Wireline%20Command%20install%20guide",
     );

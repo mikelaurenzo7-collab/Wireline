@@ -11,7 +11,7 @@ import {
   PlugZap,
   Sparkles,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import ActivationChecklist from "../components/ActivationChecklist";
 import OutcomeLedger from "../components/OutcomeLedger";

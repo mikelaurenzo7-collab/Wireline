@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { ArrowRight, Check, Phone, Volume2 } from "lucide-react";
 import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import { PageMeta } from "../lib/page-meta";
