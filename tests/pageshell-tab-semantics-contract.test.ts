@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+// Final review contract for the shared route-shell behavior changed in today's design passes.
 const source = readFileSync("src/components/PageShell.tsx", "utf8").replace(/\r\n/g, "\n");
 
 describe("PageShell tab semantics and keyboard contract", () => {
