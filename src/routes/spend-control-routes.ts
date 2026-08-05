@@ -13,10 +13,21 @@ import {
   getEffectiveSubscriptionPlanId,
   subscriptionPlanToTier,
 } from "../lib/plan-entitlements";
+import { planById } from "../lib/plan-catalog";
 
 const router = express.Router();
 
 type PersistedSpendBudget = typeof schema.spendBudgets.$inferSelect;
+type SpendGuardScope = "plan_funded" | "free_builder_emergency";
+
+type PersistedSpendBudgetContext = {
+  budget: PersistedSpendBudget;
+  maximumLimitUsd: number;
+  planId: string | null;
+  planName: string;
+  providerWorkEnabled: boolean;
+  guardScope: SpendGuardScope;
+};
 
 async function readPersistedSpendBudget(userId: string): Promise<PersistedSpendBudget | null> {
   const [budget] = await drizzle
@@ -31,13 +42,37 @@ async function readPersistedSpendBudget(userId: string): Promise<PersistedSpendB
  * Repair legacy/demo accounts that predate spend-budget seeding. Runtime
  * provider work still fails closed independently; this read path restores the
  * plan default so the Account Holder can view and edit a real persisted guard.
+ *
+ * Free Builder keeps a small internal emergency circuit breaker for defense in
+ * depth, but it is not a customer allowance and is not editable. Paid plans
+ * expose their catalog-funded provider envelope. An unknown active plan fails
+ * closed instead of silently inheriting the Free Builder fallback.
  */
 async function ensurePersistedSpendBudget(
   userId: string,
   email?: string | null,
-): Promise<{ budget: PersistedSpendBudget; maximumLimitUsd: number }> {
+): Promise<PersistedSpendBudgetContext> {
   const planId = await getEffectiveSubscriptionPlanId(userId, email);
-  const maximumLimitUsd = defaultAiSpendBudgetUsdForTier(subscriptionPlanToTier(planId));
+  const resolvedPlan = planById(planId);
+  const tier = subscriptionPlanToTier(planId);
+  const isKnownFreeBuilder = !planId || resolvedPlan?.id === "personal";
+
+  if (planId && tier === "free" && !isKnownFreeBuilder) {
+    log.error("Spend guard could not resolve active plan", { userId, planId });
+    throw AppError.fromHttpStatus(
+      503,
+      "Wireline could not resolve the active plan for provider spend controls.",
+    );
+  }
+
+  const providerWorkEnabled = tier !== "free";
+  const maximumLimitUsd = providerWorkEnabled ? defaultAiSpendBudgetUsdForTier(tier) : 0;
+  const planName =
+    resolvedPlan?.name ?? (providerWorkEnabled ? "Wireline Business" : "Wireline Free Builder");
+  const guardScope: SpendGuardScope = providerWorkEnabled
+    ? "plan_funded"
+    : "free_builder_emergency";
+
   const { ensureDefaultAiSpendBudget } = await import("../lib/workspace-usage-snapshot");
   await ensureDefaultAiSpendBudget(userId, planId);
   clearBudgetCache(userId);
@@ -46,7 +81,14 @@ async function ensurePersistedSpendBudget(
   if (!budget) {
     throw AppError.fromHttpStatus(503, "Spend guard is temporarily unavailable.");
   }
-  return { budget, maximumLimitUsd };
+  return {
+    budget,
+    maximumLimitUsd,
+    planId,
+    planName,
+    providerWorkEnabled,
+    guardScope,
+  };
 }
 
 /**
@@ -59,18 +101,22 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { budget, maximumLimitUsd } = await ensurePersistedSpendBudget(
-        req.user.id,
-        req.user.email,
-      );
+      const context = await ensurePersistedSpendBudget(req.user.id, req.user.email);
+      const { budget, maximumLimitUsd, planId, planName, providerWorkEnabled, guardScope } =
+        context;
       res.json({
         budget: {
-          monthly_limit_usd: budget.monthlyLimitUsd,
+          monthly_limit_usd: providerWorkEnabled ? budget.monthlyLimitUsd : null,
           maximum_limit_usd: maximumLimitUsd,
-          hard_cap: budget.hardCap,
+          hard_cap: providerWorkEnabled ? budget.hardCap : true,
           warn_threshold_pct: budget.warnThresholdPct,
-          enabled: budget.enabled,
+          enabled: providerWorkEnabled ? budget.enabled : false,
           updated_at: budget.updatedAt,
+          plan_id: planId,
+          plan_name: planName,
+          provider_work_enabled: providerWorkEnabled,
+          customer_editable: providerWorkEnabled,
+          guard_scope: guardScope,
         },
       });
     } catch (err) {
@@ -87,7 +133,15 @@ router.put(
   validateBody(spendBudgetSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { maximumLimitUsd } = await ensurePersistedSpendBudget(req.user.id, req.user.email);
+      const context = await ensurePersistedSpendBudget(req.user.id, req.user.email);
+      const { maximumLimitUsd, providerWorkEnabled } = context;
+      if (!providerWorkEnabled) {
+        throw AppError.fromHttpStatus(
+          403,
+          "Free Builder does not fund live provider work. Activate a paid plan before editing this guard.",
+        );
+      }
+
       const limit = Number(req.body.monthly_limit_usd ?? 0);
       const warn = Math.round(Number(req.body.warn_threshold_pct ?? 80));
       const hardCap = true;
@@ -148,7 +202,8 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { maximumLimitUsd } = await ensurePersistedSpendBudget(req.user.id, req.user.email);
+      const context = await ensurePersistedSpendBudget(req.user.id, req.user.email);
+      const { maximumLimitUsd, planId, planName, providerWorkEnabled, guardScope } = context;
       const snap = await getBudgetSnapshot(req.user.id, true);
       const alerts = await drizzle
         .select({
@@ -164,21 +219,31 @@ router.get(
         )
         .orderBy(schema.spendAlerts.thresholdPct);
 
-      const limit = snap.budget?.monthly_limit_usd ? Number(snap.budget.monthly_limit_usd) : 0;
-      const percentUsed = limit > 0 ? (snap.mtdCost / limit) * 100 : 0;
-      const hardCappedNow = await isHardSpendCapExceeded(req.user.id);
+      const persistedLimit = snap.budget?.monthly_limit_usd
+        ? Number(snap.budget.monthly_limit_usd)
+        : 0;
+      const displayLimit = providerWorkEnabled ? persistedLimit : 0;
+      const percentUsed = displayLimit > 0 ? (snap.mtdCost / displayLimit) * 100 : 0;
+      const hardCappedNow = providerWorkEnabled
+        ? await isHardSpendCapExceeded(req.user.id)
+        : false;
 
       res.json({
         period: snap.period,
         month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
-        monthly_limit_usd: limit,
+        monthly_limit_usd: displayLimit,
         maximum_limit_usd: maximumLimitUsd,
         percent_used: Number(percentUsed.toFixed(1)),
-        hard_cap: snap.budget?.hard_cap ?? false,
-        enabled: snap.budget?.enabled ?? true,
+        hard_cap: providerWorkEnabled ? (snap.budget?.hard_cap ?? true) : true,
+        enabled: providerWorkEnabled ? (snap.budget?.enabled ?? true) : false,
         warn_threshold_pct: snap.budget?.warn_threshold_pct ?? 80,
         hard_capped_now: hardCappedNow,
         alerts_fired: alerts,
+        plan_id: planId,
+        plan_name: planName,
+        provider_work_enabled: providerWorkEnabled,
+        customer_editable: providerWorkEnabled,
+        guard_scope: guardScope,
       });
     } catch (err) {
       if (err instanceof AppError) throw err;
