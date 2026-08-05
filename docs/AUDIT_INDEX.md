@@ -8,6 +8,7 @@ This index preserves dated audits, launch passes, QA records, and superseded dec
 
 | Evidence | Scope |
 | --- | --- |
+| [audits/2026-08-04-e2e-audit-findings.md](./audits/2026-08-04-e2e-audit-findings.md) | August 4 repository, deployment, database, billing, vendor, entitlement, and launch-sequencing audit evidence. |
 | [reviews/README.md](./reviews/README.md) | Directory index for dated engineering review evidence. |
 | [reviews/2026-08-02-launch-security-design-final.md](./reviews/2026-08-02-launch-security-design-final.md) | Final August 2 launch security, billing, runtime, tenant-boundary, and presentation review evidence for PR #966. |
 | [REPO_CLEANUP_PASS_2026-08-02.md](./REPO_CLEANUP_PASS_2026-08-02.md) | August 2 full-repository reachability, dead-code, dependency, asset, and source-control hygiene pass. |
