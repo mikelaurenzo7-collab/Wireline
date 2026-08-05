@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Drizzle table callbacks use the upstream generic escape hatch. */
 /**
  * Canonical Drizzle/runtime schema entrypoint.
+ * Latest committed migration: `drizzle/migrations/0134_free_builder_simulation_allowance.sql`.
  *
  * `schema-base.ts` preserves the existing table graph. The two tables below are
  * declared explicitly here because migrations 0130, 0133, and 0134 changed
@@ -11,6 +12,7 @@
 export * from "./schema-base";
 
 import {
+  bigint,
   boolean,
   decimal,
   integer,
@@ -149,6 +151,8 @@ export const settings = pgTable("wireline_settings", {
     .notNull(),
 });
 
+// 1.0.1 SHAREABLE RECAP ARTIFACTS are defined in schema-base.ts.
+
 export const spendBudgets = pgTable("wireline_spend_budgets", {
   userId: uuid("user_id")
     .primaryKey()
@@ -167,3 +171,5 @@ export const spendBudgets = pgTable("wireline_spend_budgets", {
     .defaultNow()
     .notNull(),
 });
+
+// 1.2.1 SPEND ALERTS are defined in schema-base.ts.
