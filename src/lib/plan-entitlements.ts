@@ -12,6 +12,17 @@ import type { PlanTier } from "./tenant-quotas";
 /** Platform owners dogfood on enterprise entitlements without a Stripe row. */
 export const FOUNDER_EFFECTIVE_PLAN_ID: StripePlanId = "enterprise";
 
+/**
+ * Free Builder funds private setup, training, and simulation only. This is a
+ * deliberate monthly acquisition allowance, not a live-voice allowance and
+ * not an arbitrary database fallback.
+ *
+ * Production audit evidence through 2026-08-05 measured 158 Director/workspace
+ * turns at $0.062143 average cost. A $1.50 hard cap therefore covers roughly
+ * 24 observed average turns while keeping free-account exposure bounded.
+ */
+export const FREE_BUILDER_SIMULATION_ALLOWANCE_USD = 1.5;
+
 /** Map wireline_subscriptions.plan → runtime quota tier. */
 export function subscriptionPlanToTier(planId: string | null | undefined): PlanTier {
   switch (planId) {
@@ -82,16 +93,17 @@ const PLAN_ID_FOR_TIER: Partial<Record<PlanTier, StripePlanId>> = {
 /**
  * Default account-level provider-spend envelope.
  *
- * This is not an additional customer allowance. It is a fail-safe around the
- * provider COGS already funded by guaranteed voice plus the plan's Runtime
- * Allowance. Deriving it from the commercial catalog prevents a low-price plan
- * from silently inheriting an unrelated $20–$500 legacy spend ceiling.
+ * Paid tiers derive their hard cap from provider COGS already funded by
+ * guaranteed voice plus the plan's Runtime Allowance. Free Builder receives a
+ * small, explicit simulation allowance so setup and private training remain
+ * useful without enabling live-provider work.
  */
 export function defaultAiSpendBudgetUsdForTier(tier: PlanTier): number {
+  if (tier === "free") return FREE_BUILDER_SIMULATION_ALLOWANCE_USD;
   const planId = PLAN_ID_FOR_TIER[tier];
-  if (!planId) return 0.5;
+  if (!planId) return FREE_BUILDER_SIMULATION_ALLOWANCE_USD;
   const plan = planById(planId);
-  if (!plan) return 0.5;
+  if (!plan) return FREE_BUILDER_SIMULATION_ALLOWANCE_USD;
   const fundedProviderEnvelope =
     plan.voice_minutes_monthly * VOICE_VARIABLE_COST_PER_MIN_USD +
     plan.runtime_allowance_usd_monthly;

@@ -13,10 +13,21 @@ import {
   getEffectiveSubscriptionPlanId,
   subscriptionPlanToTier,
 } from "../lib/plan-entitlements";
+import { planById } from "../lib/plan-catalog";
 
 const router = express.Router();
 
 type PersistedSpendBudget = typeof schema.spendBudgets.$inferSelect;
+type SpendGuardScope = "plan_funded" | "free_simulation_allowance";
+
+type PersistedSpendBudgetContext = {
+  budget: PersistedSpendBudget;
+  maximumLimitUsd: number;
+  planId: string | null;
+  planName: string;
+  liveProviderWorkEnabled: boolean;
+  guardScope: SpendGuardScope;
+};
 
 async function readPersistedSpendBudget(userId: string): Promise<PersistedSpendBudget | null> {
   const [budget] = await drizzle
@@ -31,13 +42,37 @@ async function readPersistedSpendBudget(userId: string): Promise<PersistedSpendB
  * Repair legacy/demo accounts that predate spend-budget seeding. Runtime
  * provider work still fails closed independently; this read path restores the
  * plan default so the Account Holder can view and edit a real persisted guard.
+ *
+ * Free Builder receives an explicit private-simulation allowance but no live
+ * voice or external paid-provider work. Paid plans expose their catalog-funded
+ * provider envelope. An unknown active plan fails closed instead of silently
+ * inheriting the Free Builder allowance.
  */
 async function ensurePersistedSpendBudget(
   userId: string,
   email?: string | null,
-): Promise<{ budget: PersistedSpendBudget; maximumLimitUsd: number }> {
+): Promise<PersistedSpendBudgetContext> {
   const planId = await getEffectiveSubscriptionPlanId(userId, email);
-  const maximumLimitUsd = defaultAiSpendBudgetUsdForTier(subscriptionPlanToTier(planId));
+  const resolvedPlan = planById(planId);
+  const tier = subscriptionPlanToTier(planId);
+  const isKnownFreeBuilder = !planId || resolvedPlan?.id === "personal";
+
+  if (planId && tier === "free" && !isKnownFreeBuilder) {
+    log.error("Spend guard could not resolve active plan", { userId, planId });
+    throw AppError.fromHttpStatus(
+      503,
+      "Wireline could not resolve the active plan for provider spend controls.",
+    );
+  }
+
+  const liveProviderWorkEnabled = tier !== "free";
+  const maximumLimitUsd = defaultAiSpendBudgetUsdForTier(tier);
+  const planName =
+    resolvedPlan?.name ?? (liveProviderWorkEnabled ? "Wireline Business" : "Wireline Free Builder");
+  const guardScope: SpendGuardScope = liveProviderWorkEnabled
+    ? "plan_funded"
+    : "free_simulation_allowance";
+
   const { ensureDefaultAiSpendBudget } = await import("../lib/workspace-usage-snapshot");
   await ensureDefaultAiSpendBudget(userId, planId);
   clearBudgetCache(userId);
@@ -46,23 +81,29 @@ async function ensurePersistedSpendBudget(
   if (!budget) {
     throw AppError.fromHttpStatus(503, "Spend guard is temporarily unavailable.");
   }
-  return { budget, maximumLimitUsd };
+  return {
+    budget,
+    maximumLimitUsd,
+    planId,
+    planName,
+    liveProviderWorkEnabled,
+    guardScope,
+  };
 }
 
 /**
  * This router intentionally mounts before the legacy billing router. It keeps
  * the request shape compatible while making a user-selected hard cap real for
- * new outbound work instead of silently coercing it to false.
+ * new provider-funded work instead of silently coercing it to false.
  */
 router.get(
   "/api/spend/budget",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { budget, maximumLimitUsd } = await ensurePersistedSpendBudget(
-        req.user.id,
-        req.user.email,
-      );
+      const context = await ensurePersistedSpendBudget(req.user.id, req.user.email);
+      const { budget, maximumLimitUsd, planId, planName, liveProviderWorkEnabled, guardScope } =
+        context;
       res.json({
         budget: {
           monthly_limit_usd: budget.monthlyLimitUsd,
@@ -71,6 +112,12 @@ router.get(
           warn_threshold_pct: budget.warnThresholdPct,
           enabled: budget.enabled,
           updated_at: budget.updatedAt,
+          plan_id: planId,
+          plan_name: planName,
+          live_provider_work_enabled: liveProviderWorkEnabled,
+          simulation_allowance_enabled: guardScope === "free_simulation_allowance",
+          customer_editable: true,
+          guard_scope: guardScope,
         },
       });
     } catch (err) {
@@ -148,7 +195,8 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { maximumLimitUsd } = await ensurePersistedSpendBudget(req.user.id, req.user.email);
+      const context = await ensurePersistedSpendBudget(req.user.id, req.user.email);
+      const { maximumLimitUsd, planId, planName, liveProviderWorkEnabled, guardScope } = context;
       const snap = await getBudgetSnapshot(req.user.id, true);
       const alerts = await drizzle
         .select({
@@ -174,11 +222,17 @@ router.get(
         monthly_limit_usd: limit,
         maximum_limit_usd: maximumLimitUsd,
         percent_used: Number(percentUsed.toFixed(1)),
-        hard_cap: snap.budget?.hard_cap ?? false,
+        hard_cap: snap.budget?.hard_cap ?? true,
         enabled: snap.budget?.enabled ?? true,
         warn_threshold_pct: snap.budget?.warn_threshold_pct ?? 80,
         hard_capped_now: hardCappedNow,
         alerts_fired: alerts,
+        plan_id: planId,
+        plan_name: planName,
+        live_provider_work_enabled: liveProviderWorkEnabled,
+        simulation_allowance_enabled: guardScope === "free_simulation_allowance",
+        customer_editable: true,
+        guard_scope: guardScope,
       });
     } catch (err) {
       if (err instanceof AppError) throw err;
