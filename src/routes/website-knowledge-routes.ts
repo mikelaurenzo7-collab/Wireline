@@ -13,22 +13,24 @@ import {
   websiteKnowledgeBurstRateLimit,
   websiteKnowledgeDailyRateLimit,
 } from "../middleware/website-knowledge-rate-limits";
+import { enforceSpendCap } from "../lib/spend-guards";
+import { withAudit } from "../middleware/audit-middleware";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 const WEBSITE_URL_MAX_CHARS = 2048;
 
-function importSummary(result: { factsAdded: number; rulesAdded: number; truncated: boolean }): string {
+function importSummary(result: {
+  factsAdded: number;
+  rulesAdded: number;
+  truncated: boolean;
+}): string {
   const parts: string[] = [];
   if (result.factsAdded) {
-    parts.push(
-      `Saved ${result.factsAdded} business fact${result.factsAdded === 1 ? "" : "s"}.`,
-    );
+    parts.push(`Saved ${result.factsAdded} business fact${result.factsAdded === 1 ? "" : "s"}.`);
   }
   if (result.rulesAdded) {
-    parts.push(
-      `Saved ${result.rulesAdded} operating rule${result.rulesAdded === 1 ? "" : "s"}.`,
-    );
+    parts.push(`Saved ${result.rulesAdded} operating rule${result.rulesAdded === 1 ? "" : "s"}.`);
   }
   if (!parts.length) parts.push("No new explicit facts or operating rules were found.");
   if (result.truncated) {
@@ -42,6 +44,9 @@ router.post(
   authenticateUser,
   websiteKnowledgeBurstRateLimit,
   websiteKnowledgeDailyRateLimit,
+  // Website import runs a paid structured extraction; meter and cap it.
+  enforceSpendCap,
+  withAudit("website-import"),
   async (req: AuthenticatedRequest, res: Response) => {
     const rawUrl = typeof req.body?.url === "string" ? req.body.url.trim() : "";
     if (!rawUrl || rawUrl.length > WEBSITE_URL_MAX_CHARS) {

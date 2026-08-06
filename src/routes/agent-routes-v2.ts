@@ -5,6 +5,8 @@ import { AppError } from "../lib/api-error";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser } from "../middleware/auth";
 import { agentMutationRateLimit } from "../middleware/api-rate-limits";
+import { enforceSpendCap } from "../lib/spend-guards";
+import { withAudit } from "../middleware/audit-middleware";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
@@ -753,6 +755,9 @@ router.post(
   "/api/agent-config/:id/assets",
   authenticateUser,
   agentMutationRateLimit,
+  // Asset extraction reaches paid text/vision models; meter and cap it.
+  enforceSpendCap,
+  withAudit("asset-extract"),
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
@@ -849,6 +854,9 @@ router.post(
   "/api/train/extract",
   authenticateUser,
   agentMutationRateLimit,
+  // Training extraction reaches a paid structured model; meter and cap it.
+  enforceSpendCap,
+  withAudit("train-extract"),
   async (req: AuthenticatedRequest, res: Response) => {
     const agentId = cleanText(req.body?.agentId, 200);
     const message = cleanText(req.body?.message, 12000);

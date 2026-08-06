@@ -29,6 +29,37 @@ describe("AI cost-protection contract", () => {
     expect(pdfRoute.slice(0, 600)).toContain("claudeRateLimiter");
   });
 
+  it("agent-test, training, asset, and website AI routes are metered and capped", () => {
+    // These setup/training surfaces reach paid models. Each must carry both a
+    // spend cap and an audit wrapper so the simulation allowance is enforceable
+    // and the cost lands in auditLog.costUsd (visible to enforceSpendCap, the
+    // 24h alert, and margin analytics) — not silently discarded by push()'s
+    // no-op when no audit context is active.
+    const agentTest = read("src/routes/agent-test-routes.ts");
+    const testRoute = agentTest.slice(agentTest.indexOf('"/api/agents/:id/test/stream"'));
+    expect(testRoute).toContain("enforceSpendCap");
+    expect(testRoute).toContain('withAudit("agent-test")');
+
+    const agentRoutes = read("src/routes/agent-routes-v2.ts");
+    const trainRoute = agentRoutes.slice(
+      agentRoutes.indexOf('"/api/train/extract"'),
+      agentRoutes.indexOf('"/api/train/extract"') + 400,
+    );
+    expect(trainRoute).toContain("enforceSpendCap");
+    expect(trainRoute).toContain('withAudit("train-extract")');
+    const assetRoute = agentRoutes.slice(
+      agentRoutes.indexOf('"/api/agent-config/:id/assets"'),
+      agentRoutes.indexOf('"/api/agent-config/:id/assets"') + 400,
+    );
+    expect(assetRoute).toContain("enforceSpendCap");
+    expect(assetRoute).toContain('withAudit("asset-extract")');
+
+    const website = read("src/routes/website-knowledge-routes.ts");
+    const websiteRoute = website.slice(website.indexOf('"/api/agent-config/:id/website"'));
+    expect(websiteRoute).toContain("enforceSpendCap");
+    expect(websiteRoute).toContain('withAudit("website-import")');
+  });
+
   it("signup and OAuth reconciliation seed the correct AI spend budget transactionally", () => {
     const trialGate = read("src/lib/trial-gate.ts");
     expect(trialGate).toContain("ensureDefaultAiSpendBudget");

@@ -76,6 +76,12 @@ export default function ActivationNudge({ className }: { className?: string }) {
   }, [activationScope]);
 
   useEffect(() => {
+    // Once the Account Holder dismisses the nudge (or it was already dismissed
+    // this scope), stop polling entirely. Without this the 30s interval keeps
+    // firing ~7 authenticated requests/cycle for the life of the tab until the
+    // tenant activates, even though the banner is hidden.
+    if (dismissed) return;
+
     let cancelled = false;
     let stopped = false;
     let interval: ReturnType<typeof setInterval> | undefined;
@@ -144,7 +150,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
       cancelled = true;
       if (interval) clearInterval(interval);
     };
-  }, [activationScope, activeAccount?.id]);
+  }, [activationScope, activeAccount?.id, dismissed]);
 
   const dismiss = () => {
     writeDismissed(activationScope);
