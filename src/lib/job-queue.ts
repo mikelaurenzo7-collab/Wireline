@@ -54,6 +54,10 @@ const CLAIMABLE_STATUSES = ["pending", "failed"] as const;
 const retryBudgetRemaining = sql`coalesce(${schema.jobs.attempts}, 0) < coalesce(${schema.jobs.maxAttempts}, ${base.DEFAULT_MAX_ATTEMPTS})`;
 const runAtDue = (claimTime: Date) =>
   sql`coalesce(${schema.jobs.runAt}, ${claimTime}) <= ${claimTime}`;
+// Daily retention creates one purge job per account. Keep that maintenance
+// fan-out behind all other due work so the bounded serverless sweep cannot
+// delay cadence, callback, campaign, notification, or customer-triggered jobs.
+const claimPriority = sql`case when ${schema.jobs.type} = 'purge_old_data' then 1 else 0 end`;
 const claimOrder = (claimTime: Date) =>
   sql`coalesce(${schema.jobs.runAt}, ${schema.jobs.createdAt}, ${claimTime})`;
 const attemptCountEquals = (expectedAttempts: number) =>
@@ -79,9 +83,9 @@ export async function enqueue(db: QueueDb, opts: EnqueueOptions): Promise<base.E
  * the retry budget.
  *
  * Pending and failed rows compete in the same transaction by effective run
- * time. This preserves retry fairness under sustained new-work load and avoids
- * a second claim transaction. Historical rows with a null run_at are eligible
- * immediately and ordered by creation time instead of being left at NULLS LAST.
+ * time. Non-maintenance work is claimed before the daily retention fan-out;
+ * within each class, effective run time preserves retry fairness. Historical
+ * rows with a null run_at are eligible immediately and ordered by creation time.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle rows remain camelCase.
 async function claimEligibleJob(db: QueueDb, options: ClaimOptions): Promise<any | null> {
@@ -102,7 +106,7 @@ async function claimEligibleJob(db: QueueDb, options: ClaimOptions): Promise<any
       .select()
       .from(schema.jobs)
       .where(and(...clauses))
-      .orderBy(claimOrder(claimTime), schema.jobs.id)
+      .orderBy(claimPriority, claimOrder(claimTime), schema.jobs.id)
       .limit(1)
       .for("update", { skipLocked: true });
     if (!job) return null;
