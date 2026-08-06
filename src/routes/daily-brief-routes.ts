@@ -8,6 +8,7 @@ import { and, eq } from "drizzle-orm";
 import { isOwnerEmail } from "../lib/auth-service";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
+import { withAudit } from "../middleware/audit-middleware";
 import { sendDailyBriefEmail } from "../lib/daily-brief";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -127,6 +128,9 @@ router.post(
   "/api/daily-brief/send-now",
   authenticateUser,
   sendNowRateLimit,
+  // Composes the brief through a paid model; record the spend against the
+  // Account Holder like every other user-triggered AI surface.
+  withAudit("daily-brief"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const result = await sendDailyBriefEmail(req.user.id, { force: true });

@@ -10,6 +10,7 @@ import * as insightsAi from "../lib/insights-ai";
 import { aiErr } from "../lib/ai-response-helpers";
 import { cachedInsight, setCachedInsight } from "../lib/insights-cache";
 import { enforceSpendCap, enforce24hSpendCap } from "../lib/spend-guards";
+import { withAudit } from "../middleware/audit-middleware";
 import type { NextFunction, Request, RequestHandler, Response as ExpressResponse } from "express";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -390,6 +391,9 @@ router.get(
   insightsAiRateLimit,
   enforce24hSpendCap,
   enforceSpendCap,
+  // enforceSpendCap above reads auditLog.costUsd, so without recording this
+  // route's own spend the cap could never be tripped by Insights usage.
+  withAudit("insights"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const force = req.query.refresh === "1";
@@ -439,6 +443,9 @@ router.get(
   insightsAiRateLimit,
   deepAnalysisOnly(enforce24hSpendCap),
   deepAnalysisOnly(enforceSpendCap),
+  // Unconditional: a cached response records nothing, so this is a no-op unless
+  // the deep-analysis refresh actually reaches the model.
+  withAudit("insights"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const force = req.query.refresh === "1";
@@ -514,6 +521,7 @@ router.get(
   insightsAiRateLimit,
   enforce24hSpendCap,
   enforceSpendCap,
+  withAudit("insights"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { payload, cached } = await computeDailyBrief(req.user.id, {
