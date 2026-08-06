@@ -51,10 +51,13 @@ WHERE jobs.id = ranked.id
   AND ranked.active_rank > 1
   AND jobs.status IN ('pending', 'failed');
 
-CREATE UNIQUE INDEX IF NOT EXISTS uq_jobs_active_scheduler_tick
+-- The historical application constant uses "queued" in this index name. The
+-- predicate deliberately covers the full active lifecycle so a running tick can
+-- retry to pending without colliding with a separately queued successor.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_jobs_queued_scheduler_tick
   ON public.wireline_jobs USING btree (user_id, type)
   WHERE type IN ('cadence_tick', 'callback_tick')
     AND status IN ('pending', 'running', 'failed');
 
-COMMENT ON INDEX public.uq_jobs_active_scheduler_tick IS
+COMMENT ON INDEX public.uq_jobs_queued_scheduler_tick IS
   'At most one claimable/running cadence or callback scheduler tick per owner and type.';
