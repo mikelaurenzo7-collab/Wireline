@@ -232,6 +232,13 @@
       "when": 1785909900000,
       "tag": "0134_free_builder_simulation_allowance",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1785985800000,
+      "tag": "0135_scheduler_tick_singletons",
+      "breakpoints": true
     }
   ]
 }
