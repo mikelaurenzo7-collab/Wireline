@@ -14,11 +14,11 @@ describe("durable enqueue failure contract", () => {
     expect(queue).toContain("throw new Error(result.error || `Failed to enqueue ${opts.type} job`)");
   });
 
-  it("treats only the named singleton scheduler conflict as a durable no-op", () => {
+  it("treats only the named queued-scheduler conflict as a durable no-op", () => {
     const duplicate = {
       ok: false,
       error:
-        'duplicate key value violates unique constraint "uq_jobs_active_scheduler_tick"',
+        'duplicate key value violates unique constraint "uq_jobs_queued_scheduler_tick"',
     };
 
     expect(enforceDurableEnqueueResult({ type: "cadence_tick" }, duplicate)).toEqual({
@@ -34,22 +34,22 @@ describe("durable enqueue failure contract", () => {
       }),
     ).toThrow("database unavailable");
     expect(() => enforceDurableEnqueueResult({ type: "purge_old_data" }, duplicate)).toThrow(
-      "uq_jobs_active_scheduler_tick",
+      "uq_jobs_queued_scheduler_tick",
     );
   });
 
-  it("enforces and journals one active scheduler tick per owner and type", () => {
+  it("enforces and journals one queued successor without rewriting running work", () => {
     const migration = read("drizzle/migrations/0135_scheduler_tick_singletons.sql");
     const journal = read("drizzle/migrations/meta/_journal.json");
 
-    expect(migration).toContain("CREATE UNIQUE INDEX IF NOT EXISTS uq_jobs_active_scheduler_tick");
+    expect(migration).toContain("CREATE UNIQUE INDEX IF NOT EXISTS uq_jobs_queued_scheduler_tick");
     expect(migration).toContain("ON public.wireline_jobs USING btree (user_id, type)");
     expect(migration).toContain("type IN ('cadence_tick', 'callback_tick')");
-    expect(migration).toContain("status IN ('pending', 'running', 'failed')");
+    expect(migration).toContain("status IN ('pending', 'failed')");
     expect(migration).toContain("PARTITION BY user_id, type");
-    expect(migration).toContain("CASE WHEN status = 'running' THEN 0 ELSE 1 END");
-    expect(migration).toContain("ranked.active_rank > 1");
-    expect(migration).toContain("jobs.status IN ('pending', 'running', 'failed')");
+    expect(migration).toContain("ranked.queued_rank > 1");
+    expect(migration).toContain("jobs.status IN ('pending', 'failed')");
+    expect(migration).not.toContain("jobs.status IN ('pending', 'running', 'failed')");
 
     const previous = journal.indexOf('"tag": "0134_free_builder_simulation_allowance"');
     const singleton = journal.indexOf('"tag": "0135_scheduler_tick_singletons"');
