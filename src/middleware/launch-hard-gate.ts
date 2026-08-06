@@ -1,13 +1,20 @@
 /**
- * Hard launch gate — when LAUNCH_HARD_GATE=true, blocks spend paths if
- * evaluateLaunchReadiness() reports any launch blockers (core / billing / voice).
+ * Hard launch gate — blocks self-serve checkout unless billing has been
+ * explicitly released, then optionally blocks other spend paths when
+ * LAUNCH_HARD_GATE=true and readiness reports launch blockers.
  * Federal DNC / compliance is deferred from the GO score and does not hard-block.
- * Opt-in only; unset/false leaves soft-launch spend paths open.
  */
 import type { Request, Response, NextFunction } from "express";
+import { selfServeBillingEnabled } from "../lib/billing-release";
 import { isLaunchHardBlocked, launchBlockResponse } from "../lib/launch-readiness";
 
-export function enforceLaunchHardGate(_req: Request, res: Response, next: NextFunction) {
+export function enforceLaunchHardGate(req: Request, res: Response, next: NextFunction) {
+  if (req.path === "/api/billing/checkout" && !selfServeBillingEnabled()) {
+    return res.status(503).json({
+      code: "BILLING_LAUNCH_NOT_APPROVED",
+      error: "Self-serve billing is temporarily unavailable while launch certification is completed.",
+    });
+  }
   if (!isLaunchHardBlocked()) return next();
   return res.status(503).json(launchBlockResponse());
 }
