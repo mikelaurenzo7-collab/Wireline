@@ -141,6 +141,7 @@ run("npx", [
   "tests/health-surfaces-contract.test.ts",
   "tests/integration/api-health.test.ts",
   "tests/billing-proof-contract.test.ts",
+  "tests/billing-release-gate-contract.test.ts",
   "src/lib/plan-catalog.test.ts",
   "tests/round6-margin-capacity-contract.test.ts",
   "src/lib/video-presenter/live-video-policy.test.ts",
@@ -161,6 +162,7 @@ run("npx", [
   "tests/capacity-and-carrier-double-pass.test.ts",
   "tests/extra-agent-payment-atomicity.test.ts",
   "tests/durable-enqueue-contract.test.ts",
+  "tests/job-queue-priority-contract.test.ts",
   "tests/showcase-truth-sync-contract.test.ts",
   // These are direct financial, tenant, external-delivery, secure-ingestion,
   // and durable-work boundaries. They must run on every preview and
