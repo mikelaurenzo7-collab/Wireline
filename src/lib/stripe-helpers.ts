@@ -216,6 +216,15 @@ function subscriptionPeriodReference(sub: Stripe.Subscription): string {
 }
 
 /** Sync a Stripe subscription into wireline_subscriptions + wireline_settings. */
+/**
+ * Stripe subscription statuses that mean the subscription is finished for good.
+ * Everything else — including `incomplete` (payment still pending, e.g. SCA)
+ * and `paused` — is pending or live, so it must never be read as a supersession
+ * signal. Deriving this set by complement of the "live" statuses silently
+ * misclassifies both.
+ */
+const TERMINAL_SUBSCRIPTION_STATUSES = new Set<string>(["canceled", "incomplete_expired"]);
+
 export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
@@ -241,9 +250,17 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   // to `canceled` and hard-block a paying customer. Ignore a terminal event
   // whose subscription id no longer matches the mirrored one; the active
   // subscription's own events remain authoritative.
-  const incomingIsTerminal = !["active", "trialing", "past_due", "unpaid"].includes(sub.status);
+  //
+  // The mirror must still be live to earn that protection. If it already points
+  // at a dead subscription, a terminal event for a different id is allowed
+  // through so the row can self-heal — otherwise a single out-of-order
+  // non-terminal event could pin the mirror to a stale id and make every later
+  // cancellation a no-op, leaving paid entitlements on forever.
+  const incomingIsTerminal = TERMINAL_SUBSCRIPTION_STATUSES.has(sub.status);
+  const mirrorIsLive = !!existing.status && !TERMINAL_SUBSCRIPTION_STATUSES.has(existing.status);
   if (
     incomingIsTerminal &&
+    mirrorIsLive &&
     existing.stripeSubscriptionId &&
     existing.stripeSubscriptionId !== sub.id
   ) {

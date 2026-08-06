@@ -5,8 +5,8 @@ import { AppError } from "../lib/api-error";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser } from "../middleware/auth";
 import { agentMutationRateLimit } from "../middleware/api-rate-limits";
-import { enforceSpendCap } from "../lib/spend-guards";
 import { withAudit } from "../middleware/audit-middleware";
+import { recordUsage } from "../lib/ai-audit";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
@@ -212,6 +212,7 @@ async function extractImageAsset(fileName: string, dataUrl: string): Promise<Ext
     },
     required: ["directives", "knowledge", "personality"],
   };
+  const startedAt = Date.now();
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
@@ -246,7 +247,17 @@ async function extractImageAsset(fileName: string, dataUrl: string): Promise<Ext
     }),
   });
   if (!response.ok) throw AppError.fromHttpStatus(502, `Image intake failed (${response.status}).`);
-  const output = responseText((await response.json()) as Record<string, unknown>);
+  const payload = (await response.json()) as Record<string, unknown>;
+  // This path calls the Responses API through raw fetch rather than
+  // runStructured, so it never passes through ai-structured's recordUsage.
+  // Without this the vision spend is invisible to the audit ledger and the
+  // route's withAudit wrapper captures nothing.
+  recordUsage(
+    OPENAI_STRUCTURED_PRIMARY_MODEL,
+    payload as { model?: string; usage?: unknown },
+    Date.now() - startedAt,
+  );
+  const output = responseText(payload);
   try {
     return normalizeExtraction(JSON.parse(output));
   } catch {
@@ -755,8 +766,12 @@ router.post(
   "/api/agent-config/:id/assets",
   authenticateUser,
   agentMutationRateLimit,
-  // Asset extraction reaches paid text/vision models; meter and cap it.
-  enforceSpendCap,
+  // Asset extraction reaches paid text/vision models, so its spend must be
+  // recorded. It is deliberately NOT behind the hard spend cap: the Free Builder
+  // budget is a private-simulation allowance (migration 0134), and hard-capping
+  // configuration work would leave an Account Holder who spent their allowance
+  // on Director turns unable to finish setting their agent up. Recording keeps
+  // the cost visible and accruing; the simulation surfaces stay capped.
   withAudit("asset-extract"),
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
@@ -854,8 +869,8 @@ router.post(
   "/api/train/extract",
   authenticateUser,
   agentMutationRateLimit,
-  // Training extraction reaches a paid structured model; meter and cap it.
-  enforceSpendCap,
+  // Metered, not capped — see the asset route above: configuration work must not
+  // be hard-blocked by the private-simulation allowance.
   withAudit("train-extract"),
   async (req: AuthenticatedRequest, res: Response) => {
     const agentId = cleanText(req.body?.agentId, 200);

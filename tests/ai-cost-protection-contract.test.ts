@@ -29,35 +29,64 @@ describe("AI cost-protection contract", () => {
     expect(pdfRoute.slice(0, 600)).toContain("claudeRateLimiter");
   });
 
-  it("agent-test, training, asset, and website AI routes are metered and capped", () => {
-    // These setup/training surfaces reach paid models. Each must carry both a
-    // spend cap and an audit wrapper so the simulation allowance is enforceable
-    // and the cost lands in auditLog.costUsd (visible to enforceSpendCap, the
-    // 24h alert, and margin analytics) — not silently discarded by push()'s
-    // no-op when no audit context is active.
+  it("meters every AI setup surface and caps the simulation one", () => {
+    // Policy: RECORD cost everywhere a paid model is reached, but only HARD CAP
+    // the simulation surface. The Free Builder budget is a private-simulation
+    // allowance (migration 0134); capping configuration work would strand an
+    // Account Holder mid-onboarding once the allowance is spent.
+    //
+    // withAudit must also sit AFTER the authenticating middleware: it keys the
+    // persisted row on req.user.id at "finish", so mounting it earlier silently
+    // drops every record.
     const agentTest = read("src/routes/agent-test-routes.ts");
-    const testRoute = agentTest.slice(agentTest.indexOf('"/api/agents/:id/test/stream"'));
+    const testRoute = agentTest.slice(
+      agentTest.indexOf('"/api/agents/:id/test/stream"'),
+      agentTest.indexOf("async (req: AuthenticatedRequest"),
+    );
     expect(testRoute).toContain("enforceSpendCap");
     expect(testRoute).toContain('withAudit("agent-test")');
+    expect(testRoute.indexOf("authenticateEventStream")).toBeLessThan(
+      testRoute.indexOf('withAudit("agent-test")'),
+    );
 
     const agentRoutes = read("src/routes/agent-routes-v2.ts");
-    const trainRoute = agentRoutes.slice(
-      agentRoutes.indexOf('"/api/train/extract"'),
-      agentRoutes.indexOf('"/api/train/extract"') + 400,
-    );
-    expect(trainRoute).toContain("enforceSpendCap");
-    expect(trainRoute).toContain('withAudit("train-extract")');
-    const assetRoute = agentRoutes.slice(
-      agentRoutes.indexOf('"/api/agent-config/:id/assets"'),
-      agentRoutes.indexOf('"/api/agent-config/:id/assets"') + 400,
-    );
-    expect(assetRoute).toContain("enforceSpendCap");
-    expect(assetRoute).toContain('withAudit("asset-extract")');
+    for (const [path, label] of [
+      ["/api/train/extract", "train-extract"],
+      ["/api/agent-config/:id/assets", "asset-extract"],
+    ] as const) {
+      const start = agentRoutes.indexOf(`"${path}"`);
+      const block = agentRoutes.slice(start, agentRoutes.indexOf("async (req", start));
+      expect(block, path).toContain(`withAudit("${label}")`);
+      expect(block.indexOf("authenticateUser")).toBeLessThan(
+        block.indexOf(`withAudit("${label}")`),
+      );
+      // Configuration work is measured, never hard-blocked.
+      expect(block, path).not.toContain("enforceSpendCap");
+    }
 
     const website = read("src/routes/website-knowledge-routes.ts");
-    const websiteRoute = website.slice(website.indexOf('"/api/agent-config/:id/website"'));
-    expect(websiteRoute).toContain("enforceSpendCap");
+    const websiteRoute = website.slice(
+      website.indexOf('"/api/agent-config/:id/website"'),
+      website.indexOf("async (req: AuthenticatedRequest"),
+    );
     expect(websiteRoute).toContain('withAudit("website-import")');
+    expect(websiteRoute).not.toContain("enforceSpendCap");
+    expect(websiteRoute.indexOf("authenticateUser")).toBeLessThan(
+      websiteRoute.indexOf('withAudit("website-import")'),
+    );
+  });
+
+  it("records vision-asset usage that bypasses the structured runtime", () => {
+    // extractImageAsset calls the Responses API through raw fetch, so it never
+    // passes through ai-structured's recordUsage. Without an explicit call the
+    // route's withAudit wrapper captures nothing and vision COGS is invisible.
+    const agentRoutes = read("src/routes/agent-routes-v2.ts");
+    const imagePath = agentRoutes.slice(
+      agentRoutes.indexOf("async function extractImageAsset"),
+      agentRoutes.indexOf('router.get("/api/agents"'),
+    );
+    expect(imagePath).toContain("recordUsage(");
+    expect(imagePath).toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
   });
 
   it("signup and OAuth reconciliation seed the correct AI spend budget transactionally", () => {

@@ -87,11 +87,31 @@ describe("billing proof contract", () => {
     // and hard-block a paying customer. syncSubscriptionFromStripe carries an
     // identity guard keyed on the mirrored stripeSubscriptionId.
     const stripeHelpers = read("src/lib/stripe-helpers.ts");
-    expect(stripeHelpers).toContain(
-      'const incomingIsTerminal = !["active", "trialing", "past_due", "unpaid"].includes(sub.status)',
+
+    // Terminal statuses are enumerated explicitly. Deriving them by complement
+    // of the live set silently classifies `incomplete` (SCA pending) and
+    // `paused` as terminal and drops their events.
+    expect(stripeHelpers).toMatch(
+      /TERMINAL_SUBSCRIPTION_STATUSES = new Set<string>\(\[\s*"canceled",\s*"incomplete_expired",?\s*\]\)/,
     );
+    expect(stripeHelpers).toContain("TERMINAL_SUBSCRIPTION_STATUSES.has(sub.status)");
     expect(stripeHelpers).toContain("existing.stripeSubscriptionId !== sub.id");
-    expect(stripeHelpers).toContain("ignoring stale terminal event for a superseded subscription");
+
+    // The guard must protect only a LIVE mirror, or one out-of-order event can
+    // pin the row to a dead id and make every later cancellation a no-op.
+    expect(stripeHelpers).toContain("mirrorIsLive");
+    expect(stripeHelpers).toMatch(
+      /!!existing\.status && !TERMINAL_SUBSCRIPTION_STATUSES\.has\(existing\.status\)/,
+    );
+
+    // The guard must actually skip the sync — asserting only the log would pass
+    // with the body gutted.
+    const guard = stripeHelpers.slice(
+      stripeHelpers.indexOf("const incomingIsTerminal"),
+      stripeHelpers.indexOf("const userId = existing.userId"),
+    );
+    expect(guard).toContain("ignoring stale terminal event for a superseded subscription");
+    expect(guard).toMatch(/\breturn;/);
   });
 
   it("stops future renewal for both deletion APIs and resumes it after cancellation", () => {

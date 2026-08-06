@@ -52,7 +52,10 @@ jobs:
           npm run lint:audit-modules
 
       # Security and route-integrity gates. Source-reading contract checks with
-      # no database or browser dependency; keep them on the fast PR path.
+      # no database, network, or browser dependency; keep them on the fast PR
+      # path. `security:audit` is deliberately NOT here — it queries the npm
+      # registry, so a newly published advisory would redden every PR regardless
+      # of its contents. It stays in the verify-full ladder.
       - name: Security and route gates
         run: |
           npm run route-registry:check
@@ -63,7 +66,6 @@ jobs:
           npm run csp:check
           npm run runtime:policy:check
           npm run api-error:check
-          npm run security:audit
 
       - name: Contract and docs gates
         run: |

@@ -13,7 +13,6 @@ import {
   websiteKnowledgeBurstRateLimit,
   websiteKnowledgeDailyRateLimit,
 } from "../middleware/website-knowledge-rate-limits";
-import { enforceSpendCap } from "../lib/spend-guards";
 import { withAudit } from "../middleware/audit-middleware";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -44,8 +43,10 @@ router.post(
   authenticateUser,
   websiteKnowledgeBurstRateLimit,
   websiteKnowledgeDailyRateLimit,
-  // Website import runs a paid structured extraction; meter and cap it.
-  enforceSpendCap,
+  // Metered, not capped: website import is configuration work, and the Free
+  // Builder budget is a private-simulation allowance (migration 0134). Hard
+  // capping setup would strand an Account Holder mid-onboarding; the burst and
+  // daily limiters above already bound this route.
   withAudit("website-import"),
   async (req: AuthenticatedRequest, res: Response) => {
     const rawUrl = typeof req.body?.url === "string" ? req.body.url.trim() : "";
