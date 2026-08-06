@@ -7,10 +7,7 @@
  * founder completes business registration with DNCScrub. Marketing outbound
  * still fails closed at runtime via `assertFederalDncForMarketing()`.
  */
-import {
-  selfServeBillingEnabled,
-  selfServeBillingReleaseBlockers,
-} from "./billing-release";
+import { selfServeBillingReleaseBlockers } from "./billing-release";
 import { getIntegrationsStatus } from "./integrations-registry";
 import { validateEnv } from "./env-validator";
 import { assertPlanMarginFloors } from "./tenant-economics";
@@ -59,7 +56,7 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   const byId = new Map(integrations.map((integration) => [integration.id, integration]));
   const envValidation = validateEnv();
   const billingReleaseBlockers = selfServeBillingReleaseBlockers();
-  const billingReleased = selfServeBillingEnabled();
+  const billingReleased = billingReleaseBlockers.length === 0;
 
   const voiceBlockers: string[] = [];
   if (byId.get("openai")?.status !== "configured") voiceBlockers.push("OPENAI_API_KEY");
