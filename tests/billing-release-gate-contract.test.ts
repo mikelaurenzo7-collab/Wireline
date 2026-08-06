@@ -5,6 +5,7 @@ import {
   selfServeBillingEnabled,
   selfServeBillingReleaseBlockers,
 } from "../src/lib/billing-release";
+import { evaluateLaunchReadiness } from "../src/lib/launch-readiness";
 import {
   enforceLaunchHardGate,
   isSelfServeCheckoutRequest,
@@ -54,6 +55,31 @@ describe("self-serve billing release gate", () => {
       code: "BILLING_LAUNCH_NOT_APPROVED",
       error: SELF_SERVE_BILLING_BLOCK.error,
     });
+  });
+
+  it("surfaces the release state and exact blockers in launch readiness", () => {
+    delete process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED;
+    process.env.WIRELINE_LAUNCH_DEMO_MODE = "true";
+
+    const blocked = evaluateLaunchReadiness();
+    const blockedBilling = blocked.capabilities.find((capability) => capability.id === "billing_ready");
+    expect(blocked.self_serve_billing_enabled).toBe(false);
+    expect(blockedBilling?.blockers).toEqual(
+      expect.arrayContaining([
+        "WIRELINE_SELF_SERVE_BILLING_ENABLED=true",
+        "WIRELINE_LAUNCH_DEMO_MODE=false",
+      ]),
+    );
+
+    process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED = "true";
+    process.env.WIRELINE_LAUNCH_DEMO_MODE = "false";
+    const released = evaluateLaunchReadiness();
+    const releasedBilling = released.capabilities.find(
+      (capability) => capability.id === "billing_ready",
+    );
+    expect(released.self_serve_billing_enabled).toBe(true);
+    expect(releasedBilling?.blockers).not.toContain("WIRELINE_SELF_SERVE_BILLING_ENABLED=true");
+    expect(releasedBilling?.blockers).not.toContain("WIRELINE_LAUNCH_DEMO_MODE=false");
   });
 
   it("normalizes query strings, trailing slashes, and path case before gating", () => {
