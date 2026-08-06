@@ -5,7 +5,10 @@ import {
   selfServeBillingEnabled,
   selfServeBillingReleaseBlockers,
 } from "../src/lib/billing-release";
-import { enforceLaunchHardGate } from "../src/middleware/launch-hard-gate";
+import {
+  enforceLaunchHardGate,
+  isSelfServeCheckoutRequest,
+} from "../src/middleware/launch-hard-gate";
 
 const originalBillingRelease = process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED;
 const originalDemoMode = process.env.WIRELINE_LAUNCH_DEMO_MODE;
@@ -53,6 +56,19 @@ describe("self-serve billing release gate", () => {
     });
   });
 
+  it("normalizes query strings, trailing slashes, and path case before gating", () => {
+    for (const request of [
+      { path: "/api/billing/checkout" },
+      { originalUrl: "/api/billing/checkout/?source=settings" },
+      { url: "/API/BILLING/CHECKOUT" },
+    ]) {
+      expect(isSelfServeCheckoutRequest(request as never)).toBe(true);
+    }
+    expect(isSelfServeCheckoutRequest({ originalUrl: "/api/billing/portal" } as never)).toBe(
+      false,
+    );
+  });
+
   it("blocks checkout independently of the optional global launch gate", () => {
     delete process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED;
     process.env.WIRELINE_LAUNCH_DEMO_MODE = "true";
@@ -63,7 +79,7 @@ describe("self-serve billing release gate", () => {
     const status = vi.fn(() => ({ json }));
 
     enforceLaunchHardGate(
-      { path: "/api/billing/checkout" } as never,
+      { originalUrl: "/api/billing/checkout/?source=settings" } as never,
       { status } as never,
       next,
     );
