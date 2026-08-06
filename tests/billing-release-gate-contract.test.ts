@@ -8,10 +8,7 @@ import {
   selfServeBillingReleaseBlockers,
 } from "../src/lib/billing-release";
 import { evaluateLaunchReadiness } from "../src/lib/launch-readiness";
-import {
-  enforceLaunchHardGate,
-  isSelfServeBillingRequest,
-} from "../src/middleware/launch-hard-gate";
+import { enforceSelfServeBillingRelease } from "../src/middleware/launch-hard-gate";
 
 const originalBillingRelease = process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED;
 const originalDemoMode = process.env.WIRELINE_LAUNCH_DEMO_MODE;
@@ -84,62 +81,58 @@ describe("self-serve billing release gate", () => {
     expect(releasedBilling?.blockers).not.toContain("WIRELINE_LAUNCH_DEMO_MODE=false");
   });
 
-  it("recognizes every Stripe session-creation path after URL normalization", () => {
-    for (const request of [
-      { path: "/api/billing/checkout" },
-      { originalUrl: "/api/billing/checkout/?source=settings" },
-      { url: "/API/BILLING/CHECKOUT" },
-      { path: "/api/conversation-balance/checkout" },
-      { originalUrl: "/api/billing/live-video-checkout/?source=settings" },
-    ]) {
-      expect(isSelfServeBillingRequest(request as never)).toBe(true);
-    }
-    for (const request of [
-      { originalUrl: "/api/billing/portal" },
-      { originalUrl: "/api/conversation-balance" },
-      { originalUrl: "/api/billing/extra-agents" },
-    ]) {
-      expect(isSelfServeBillingRequest(request as never)).toBe(false);
-    }
-  });
-
-  it("blocks every checkout independently of the optional global launch gate", () => {
+  it("blocks a paid route independently of URL shape and the optional global launch gate", () => {
     delete process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED;
     process.env.WIRELINE_LAUNCH_DEMO_MODE = "true";
     delete process.env.LAUNCH_HARD_GATE;
 
-    for (const originalUrl of [
-      "/api/billing/checkout/?source=settings",
-      "/api/conversation-balance/checkout",
-      "/api/billing/live-video-checkout",
-    ]) {
-      const next = vi.fn();
-      const json = vi.fn();
-      const status = vi.fn(() => ({ json }));
+    const next = vi.fn();
+    const json = vi.fn();
+    const status = vi.fn(() => ({ json }));
 
-      enforceLaunchHardGate({ originalUrl } as never, { status } as never, next);
+    enforceSelfServeBillingRelease({} as never, { status } as never, next);
 
-      expect(status).toHaveBeenCalledWith(503);
-      expect(json).toHaveBeenCalledWith(selfServeBillingBlockResponse());
-      expect(next).not.toHaveBeenCalled();
-    }
+    expect(status).toHaveBeenCalledWith(503);
+    expect(json).toHaveBeenCalledWith(selfServeBillingBlockResponse());
+    expect(next).not.toHaveBeenCalled();
   });
 
-  it("allows checkout to reach the next gate only after both release controls align", () => {
+  it("allows a paid route only after both release controls align", () => {
     process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED = "true";
     process.env.WIRELINE_LAUNCH_DEMO_MODE = "false";
-    delete process.env.LAUNCH_HARD_GATE;
 
     const next = vi.fn();
     const status = vi.fn();
-    enforceLaunchHardGate(
-      { path: "/api/billing/checkout" } as never,
-      { status } as never,
-      next,
-    );
+    enforceSelfServeBillingRelease({} as never, { status } as never, next);
 
     expect(next).toHaveBeenCalledOnce();
     expect(status).not.toHaveBeenCalled();
+  });
+
+  it("mounts the release middleware explicitly before every Stripe session route", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "src/server/register-api-routes.ts"),
+      "utf8",
+    );
+    const routeContracts = [
+      [
+        'app.post("/api/conversation-balance/checkout", enforceSelfServeBillingRelease);',
+        "app.use(conversationBalanceRouter);",
+      ],
+      [
+        'app.post("/api/billing/checkout", enforceSelfServeBillingRelease);',
+        "app.use(launchBillingCheckoutAtomicRouter);",
+      ],
+      [
+        'app.post("/api/billing/live-video-checkout", enforceSelfServeBillingRelease);',
+        'app.use("/api", billingRouter);',
+      ],
+    ] as const;
+
+    for (const [guard, router] of routeContracts) {
+      expect(source).toContain(guard);
+      expect(source.indexOf(guard)).toBeLessThan(source.indexOf(router));
+    }
   });
 
   it("gates only extra-agent increases so decreases and reconciliation remain available", () => {
