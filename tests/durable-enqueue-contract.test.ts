@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { enforceDurableEnqueueResult } from "../src/lib/job-queue";
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
@@ -11,6 +12,30 @@ describe("durable enqueue failure contract", () => {
     expect(queue).toContain("enforceDurableEnqueueResult");
     expect(queue).toContain("if (!result.ok && !CALLER_MANAGED_ENQUEUE_FAILURE_TYPES.has(opts.type))");
     expect(queue).toContain("throw new Error(result.error || `Failed to enqueue ${opts.type} job`)");
+  });
+
+  it("treats only the named singleton scheduler conflict as a durable no-op", () => {
+    const duplicate = {
+      ok: false,
+      error:
+        'duplicate key value violates unique constraint "uq_jobs_active_scheduler_tick"',
+    };
+
+    expect(enforceDurableEnqueueResult({ type: "cadence_tick" }, duplicate)).toEqual({
+      ok: true,
+    });
+    expect(enforceDurableEnqueueResult({ type: "callback_tick" }, duplicate)).toEqual({
+      ok: true,
+    });
+    expect(() =>
+      enforceDurableEnqueueResult({ type: "cadence_tick" }, {
+        ok: false,
+        error: "database unavailable",
+      }),
+    ).toThrow("database unavailable");
+    expect(() => enforceDurableEnqueueResult({ type: "purge_old_data" }, duplicate)).toThrow(
+      "uq_jobs_active_scheduler_tick",
+    );
   });
 
   it("preserves the campaign launch rollback result contract", () => {
