@@ -1,6 +1,10 @@
-import { AppError } from "./api-error";
-
 const ENABLED_VALUES = new Set(["1", "true", "yes", "on"]);
+
+export const SELF_SERVE_BILLING_BLOCK = Object.freeze({
+  status: 503,
+  code: "BILLING_LAUNCH_NOT_APPROVED",
+  error: "Self-serve billing is temporarily unavailable while launch certification is completed.",
+});
 
 export function selfServeBillingEnabled(): boolean {
   const raw = String(process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED || "")
@@ -14,10 +18,9 @@ export function selfServeBillingEnabled(): boolean {
  * lifecycle, and refund/cancellation certification are explicitly approved.
  * Valid Stripe credentials are necessary but never sufficient to open sales.
  */
-export function enforceSelfServeBillingRelease(): void {
-  if (selfServeBillingEnabled()) return;
-  throw AppError.fromHttpStatus(
-    503,
-    "Self-serve billing is temporarily unavailable while launch certification is completed.",
-  );
+export function selfServeBillingBlockResponse() {
+  return {
+    code: SELF_SERVE_BILLING_BLOCK.code,
+    error: SELF_SERVE_BILLING_BLOCK.error,
+  };
 }
