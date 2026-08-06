@@ -6,11 +6,26 @@ export const SELF_SERVE_BILLING_BLOCK = Object.freeze({
   error: "Self-serve billing is temporarily unavailable while launch certification is completed.",
 });
 
+function normalizedEnv(name: string): string {
+  return String(process.env[name] || "").trim().toLowerCase();
+}
+
+export function selfServeBillingReleaseBlockers(): string[] {
+  const blockers: string[] = [];
+  if (!ENABLED_VALUES.has(normalizedEnv("WIRELINE_SELF_SERVE_BILLING_ENABLED"))) {
+    blockers.push("WIRELINE_SELF_SERVE_BILLING_ENABLED=true");
+  }
+  // Paid acquisition must never open while production events are still marked
+  // as demo/test evidence. Require an explicit false rather than treating an
+  // omitted value as safe, so release remains fail-closed across env drift.
+  if (normalizedEnv("WIRELINE_LAUNCH_DEMO_MODE") !== "false") {
+    blockers.push("WIRELINE_LAUNCH_DEMO_MODE=false");
+  }
+  return blockers;
+}
+
 export function selfServeBillingEnabled(): boolean {
-  const raw = String(process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED || "")
-    .trim()
-    .toLowerCase();
-  return ENABLED_VALUES.has(raw);
+  return selfServeBillingReleaseBlockers().length === 0;
 }
 
 /**
