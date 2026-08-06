@@ -13,6 +13,22 @@ Wireline uses Supabase-hosted PostgreSQL through Drizzle and the transaction poo
 - Apply urgent production migrations only after the exact branch head is green, and commit the same migration in the repository before merge.
 - Backfill existing rows before adding constraints that assume the backfill.
 - Use idempotent DDL when a migration may be replayed safely.
+- A new migration is not live because the `.sql` file exists. Add it to `drizzle/migrations/meta/_journal.json` in the same change, or it never runs on the production path.
+
+## The migration journal is not the whole history
+
+`npm run db:migrate` is `drizzle-kit migrate`, and drizzle-kit executes the **journal** (`drizzle/migrations/meta/_journal.json`), not the directory listing. Production runs exactly that, from `scripts/vercel-build.mjs`.
+
+The two are not the same set. 138 `.sql` files are committed; 33 are journalled. The other 105 were applied out of band through the authenticated Supabase migration tool — the urgent path above — and the journal was never back-filled. This includes migrations the application treats as guaranteed, notably `0127_monotonic_session_version`, which installs the `BEFORE UPDATE OF password_hash` trigger that makes session revocation on password change database-owned rather than best-effort application code.
+
+Two consequences to work from, not around:
+
+- **Reading the journal does not tell you what a live database contains, and reading the directory does not either.** Inspect the live schema when it matters, as the verification section below already requires.
+- **Do not back-fill the historical backlog to "tidy" the journal.** Those tags would schedule already-applied DDL to replay on the next production build, and much of it is not idempotent. Reconciling any of it needs live verification per migration and its own change.
+
+Numeric prefixes are reused (`0108`, `0118`, `0120` and others each name two unrelated migrations), so a filename does not establish ordering. The journal does, for the migrations it carries.
+
+`tests/migration-journal-integrity-contract.test.ts` pins this: every journalled tag must have a file, everything authored at or above the newest journalled migration must itself be journalled, and the size of the out-of-band backlog is fixed so movement in either direction has to be deliberate.
 
 ## Connection selection
 
