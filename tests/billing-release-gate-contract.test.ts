@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   SELF_SERVE_BILLING_BLOCK,
@@ -8,7 +10,7 @@ import {
 import { evaluateLaunchReadiness } from "../src/lib/launch-readiness";
 import {
   enforceLaunchHardGate,
-  isSelfServeCheckoutRequest,
+  isSelfServeBillingRequest,
 } from "../src/middleware/launch-hard-gate";
 
 const originalBillingRelease = process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED;
@@ -82,37 +84,45 @@ describe("self-serve billing release gate", () => {
     expect(releasedBilling?.blockers).not.toContain("WIRELINE_LAUNCH_DEMO_MODE=false");
   });
 
-  it("normalizes query strings, trailing slashes, and path case before gating", () => {
+  it("recognizes every Stripe session-creation path after URL normalization", () => {
     for (const request of [
       { path: "/api/billing/checkout" },
       { originalUrl: "/api/billing/checkout/?source=settings" },
       { url: "/API/BILLING/CHECKOUT" },
+      { path: "/api/conversation-balance/checkout" },
+      { originalUrl: "/api/billing/live-video-checkout/?source=settings" },
     ]) {
-      expect(isSelfServeCheckoutRequest(request as never)).toBe(true);
+      expect(isSelfServeBillingRequest(request as never)).toBe(true);
     }
-    expect(isSelfServeCheckoutRequest({ originalUrl: "/api/billing/portal" } as never)).toBe(
-      false,
-    );
+    for (const request of [
+      { originalUrl: "/api/billing/portal" },
+      { originalUrl: "/api/conversation-balance" },
+      { originalUrl: "/api/billing/extra-agents" },
+    ]) {
+      expect(isSelfServeBillingRequest(request as never)).toBe(false);
+    }
   });
 
-  it("blocks checkout independently of the optional global launch gate", () => {
+  it("blocks every checkout independently of the optional global launch gate", () => {
     delete process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED;
     process.env.WIRELINE_LAUNCH_DEMO_MODE = "true";
     delete process.env.LAUNCH_HARD_GATE;
 
-    const next = vi.fn();
-    const json = vi.fn();
-    const status = vi.fn(() => ({ json }));
+    for (const originalUrl of [
+      "/api/billing/checkout/?source=settings",
+      "/api/conversation-balance/checkout",
+      "/api/billing/live-video-checkout",
+    ]) {
+      const next = vi.fn();
+      const json = vi.fn();
+      const status = vi.fn(() => ({ json }));
 
-    enforceLaunchHardGate(
-      { originalUrl: "/api/billing/checkout/?source=settings" } as never,
-      { status } as never,
-      next,
-    );
+      enforceLaunchHardGate({ originalUrl } as never, { status } as never, next);
 
-    expect(status).toHaveBeenCalledWith(503);
-    expect(json).toHaveBeenCalledWith(selfServeBillingBlockResponse());
-    expect(next).not.toHaveBeenCalled();
+      expect(status).toHaveBeenCalledWith(503);
+      expect(json).toHaveBeenCalledWith(selfServeBillingBlockResponse());
+      expect(next).not.toHaveBeenCalled();
+    }
   });
 
   it("allows checkout to reach the next gate only after both release controls align", () => {
@@ -130,5 +140,15 @@ describe("self-serve billing release gate", () => {
 
     expect(next).toHaveBeenCalledOnce();
     expect(status).not.toHaveBeenCalled();
+  });
+
+  it("gates only extra-agent increases so decreases and reconciliation remain available", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "src/routes/extra-agent-billing-atomic-routes.ts"),
+      "utf8",
+    );
+    expect(source).toContain("if (isIncrease && !selfServeBillingEnabled())");
+    expect(source).toContain("status: SELF_SERVE_BILLING_BLOCK.status");
+    expect(source).toContain("body: selfServeBillingBlockResponse()");
   });
 });
