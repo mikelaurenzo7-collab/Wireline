@@ -166,30 +166,50 @@ describe("code review hardening contracts", () => {
     }
   });
 
-  it("cancels a superseded email thread fetch instead of racing it onto the pane", () => {
-    // Selecting thread A then B fires overlapping requests. Without abort, an
-    // A-resolves-last ordering wins the state write and renders one
-    // conversation's messages under another conversation's header.
-    const inbox = read("src/components/EmailInbox.tsx");
-    expect(inbox).toContain("async (threadId: string, signal?: AbortSignal)");
-    expect(inbox).toContain("{ signal }");
-    expect(inbox).toContain("const controller = new AbortController();");
-    expect(inbox).toContain("return () => controller.abort();");
-    // Every write path must respect the abort — the result, the error banner,
-    // and the loading flag the newer request already owns. Asserting the guard
-    // exists once is not enough: the catch-path copy alone satisfies that while
-    // the stale result still lands on the pane.
-    const detailFn = inbox.slice(
-      inbox.indexOf("const loadThreadDetail = useCallback("),
-      inbox.indexOf("const controller = new AbortController();"),
-    );
-    expect(
-      (detailFn.match(/if \(signal\?\.aborted\) return;/g) || []).length,
-    ).toBeGreaterThanOrEqual(2);
-    expect(detailFn.indexOf("if (signal?.aborted) return;")).toBeLessThan(
-      detailFn.indexOf("setDetail({"),
-    );
-    expect(detailFn).toContain("if (!signal?.aborted) setDetailLoading(false);");
+  it("cancels a superseded thread fetch instead of racing it onto the reading pane", () => {
+    // Both inboxes load a detail pane from a selected id. Selecting thread A
+    // then B fires overlapping requests, and last-writer-wins means an
+    // A-resolves-last ordering renders one conversation's messages under
+    // another conversation's header.
+    const panes = [
+      {
+        path: "src/components/EmailInbox.tsx",
+        loader: "const loadThreadDetail = useCallback(",
+        write: "setDetail({",
+        loading: "if (!signal?.aborted) setDetailLoading(false);",
+      },
+      {
+        path: "src/components/SmsThreads.tsx",
+        loader: "const fetchMessages = useCallback(",
+        write: "setMessages(",
+        loading: "if (!signal?.aborted) setMessagesLoading(false);",
+      },
+    ] as const;
+
+    for (const pane of panes) {
+      const source = read(pane.path);
+      expect(source, pane.path).toContain("signal?: AbortSignal");
+      expect(source, pane.path).toContain("{ signal }");
+      expect(source, pane.path).toContain("const controller = new AbortController();");
+      expect(source, pane.path).toContain("return () => controller.abort();");
+
+      // Every write path must respect the abort — the result, the error banner,
+      // and the loading flag the newer request already owns. Asserting the guard
+      // exists once is not enough: the catch-path copy alone satisfies that
+      // while the stale result still lands on the pane.
+      const loader = source.slice(
+        source.indexOf(pane.loader),
+        source.indexOf("const controller = new AbortController();"),
+      );
+      expect(
+        (loader.match(/if \(signal\?\.aborted\) return;/g) || []).length,
+        pane.path,
+      ).toBeGreaterThanOrEqual(2);
+      expect(loader.indexOf("if (signal?.aborted) return;"), pane.path).toBeLessThan(
+        loader.indexOf(pane.write),
+      );
+      expect(loader, pane.path).toContain(pane.loading);
+    }
   });
 
   it("keeps public purchase, consent, and sticky-CTA promises internally consistent", () => {

@@ -123,15 +123,20 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
     }
   }, [toastError]);
 
+  // Same race the email inbox carried: switching threads fires overlapping
+  // requests, and last-writer-wins means an older response can paint its
+  // messages under the newer thread's header. The signal makes a superseded
+  // request drop its result instead.
   const fetchMessages = useCallback(
-    async (threadId: string) => {
+    async (threadId: string, signal?: AbortSignal) => {
       setMessagesLoading(true);
       setThreadErr(null);
       try {
-        const response = await authFetch(`/api/sms/threads/${threadId}/messages`);
+        const response = await authFetch(`/api/sms/threads/${threadId}/messages`, { signal });
         const body = await response.json();
         if (!response.ok) throw new Error(body.error || "Could not load this conversation.");
         const rows = (body.messages || []) as Record<string, unknown>[];
+        if (signal?.aborted) return;
         setMessages(
           rows.map((row) => ({
             id: String(apiField(row, "id") ?? ""),
@@ -150,11 +155,15 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
           ),
         );
       } catch (error: any) {
+        // A superseded request rejects with AbortError; surfacing it would put an
+        // error banner and a toast over the thread the reader actually opened.
+        if (signal?.aborted) return;
         const message = error?.message || "Could not load this conversation.";
         setThreadErr(message);
         toastError("Failed to load thread", message);
       } finally {
-        setMessagesLoading(false);
+        // The newer request already set this true.
+        if (!signal?.aborted) setMessagesLoading(false);
       }
     },
     [toastError],
@@ -173,7 +182,10 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
 
   useEffect(() => {
     setMessages([]);
-    if (activeId) void fetchMessages(activeId);
+    if (!activeId) return;
+    const controller = new AbortController();
+    void fetchMessages(activeId, controller.signal);
+    return () => controller.abort();
   }, [activeId, fetchMessages]);
 
   useEffect(() => {
