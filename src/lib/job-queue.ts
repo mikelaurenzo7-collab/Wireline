@@ -50,7 +50,7 @@ type ClaimOptions = {
 
 const CALLER_MANAGED_ENQUEUE_FAILURE_TYPES = new Set<JobType>(["campaign_dial"]);
 const SINGLETON_SCHEDULER_TYPES = new Set<JobType>(["cadence_tick", "callback_tick"]);
-const SINGLETON_SCHEDULER_INDEX = "uq_jobs_active_scheduler_tick";
+const SINGLETON_SCHEDULER_INDEX = "uq_jobs_queued_scheduler_tick";
 const STALE_RECOVERY_BATCH = 200;
 const CLAIMABLE_STATUSES = ["pending", "failed"] as const;
 const retryBudgetRemaining = sql`coalesce(${schema.jobs.attempts}, 0) < coalesce(${schema.jobs.maxAttempts}, ${base.DEFAULT_MAX_ATTEMPTS})`;
@@ -80,9 +80,9 @@ export function enforceDurableEnqueueResult(
   opts: Pick<EnqueueOptions, "type">,
   result: base.EnqueueResult,
 ): base.EnqueueResult {
-  // The database singleton is the concurrency boundary for global scheduler
-  // ticks. A named unique conflict means equivalent work is already claimable
-  // or running, so report a durable no-op rather than an operational failure.
+  // The database singleton is the concurrency boundary for waiting scheduler
+  // ticks. A named unique conflict means an equivalent successor is already
+  // claimable, so report a durable no-op while leaving any running tick intact.
   if (isExpectedSingletonSchedulerConflict(opts, result)) return { ok: true };
   if (!result.ok && !CALLER_MANAGED_ENQUEUE_FAILURE_TYPES.has(opts.type)) {
     throw new Error(result.error || `Failed to enqueue ${opts.type} job`);
