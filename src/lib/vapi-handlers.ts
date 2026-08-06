@@ -71,7 +71,9 @@ async function persistTranscriptDncSuppression(input: {
 }): Promise<void> {
   const normalizedCallerNumber = normalizeDncPhone(input.rawCallerNumber);
   if (!normalizedCallerNumber) {
-    const error = new Error("Transcript contained a DNC request without a suppressible caller number");
+    const error = new Error(
+      "Transcript contained a DNC request without a suppressible caller number",
+    );
     log.error("transcript DNC suppression missing caller number", {
       userId: input.userId,
       callId: input.callId,
@@ -130,14 +132,11 @@ async function persistTranscriptDncSuppression(input: {
       callId: input.callId,
       error: getErrorMessage(dncErr),
     });
-    reportError(
-      dncErr instanceof Error ? dncErr : new Error("transcript DNC suppression failed"),
-      {
-        userId: input.userId,
-        callId: input.callId,
-        tags: { compliance: "dnc_suppression_failed" },
-      },
-    );
+    reportError(dncErr instanceof Error ? dncErr : new Error("transcript DNC suppression failed"), {
+      userId: input.userId,
+      callId: input.callId,
+      tags: { compliance: "dnc_suppression_failed" },
+    });
     // This runs before the duplicate-call early return. Throwing makes Vapi
     // redeliver, and the duplicate retry reaches this suppression boundary
     // again even though the call log is already present.
@@ -319,10 +318,15 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     },
   });
 
-  // Fire-and-forget monthly voice-minute tracking + Stripe overage emission.
-  // Gated on a successful fresh insert/finalization so Vapi retries don't double-bill.
+  // Monthly voice-minute tracking + overage debit. AWAITED (not fire-and-forget):
+  // both callers await handleEndOfCallReport, so awaiting here makes the debit
+  // part of the job's committed work. Otherwise a serverless freeze between the
+  // job completing and this promise settling permanently drops the charge — the
+  // duplicate-retry branch above returns before re-driving it. trackVoiceMinutes
+  // swallows its own errors (ledger key voice_completion:callId is idempotent),
+  // so awaiting cannot throw into the remaining side effects.
   if (insertedFresh) {
-    void trackVoiceMinutes({
+    await trackVoiceMinutes({
       userId,
       durationSeconds: duration,
       vapiCallId: call?.id || "unknown",

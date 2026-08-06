@@ -112,7 +112,7 @@ describe("code review hardening contracts", () => {
     const duplicateGuard = handlers.indexOf("if (!insertedFresh)", suppression);
     const duplicateReturn = handlers.indexOf("return;", duplicateGuard);
     const firstCallMilestone = handlers.indexOf('event: "first_call_completed"');
-    const usageTracking = handlers.indexOf("// Fire-and-forget monthly voice-minute tracking");
+    const usageTracking = handlers.indexOf("await trackVoiceMinutes({");
     expect(suppression).toBeGreaterThan(-1);
     expect(duplicateGuard).toBeGreaterThan(suppression);
     expect(duplicateReturn).toBeGreaterThan(duplicateGuard);

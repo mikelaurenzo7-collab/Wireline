@@ -106,14 +106,12 @@ type StripeInvoiceLineCompat = Stripe.InvoiceLineItem & {
   /** Present before the Basil invoice-line shape migration. */
   price?: Stripe.Price | string | null;
   /** Present on Basil/Dahlia and newer invoice-line payloads. */
-  pricing?:
-    | {
-        type?: string | null;
-        price_details?: {
-          price?: Stripe.Price | string | null;
-        } | null;
-      }
-    | null;
+  pricing?: {
+    type?: string | null;
+    price_details?: {
+      price?: Stripe.Price | string | null;
+    } | null;
+  } | null;
 };
 
 function basePlanFromInvoiceLine(line: Stripe.InvoiceLineItem): StripePlan | null {
@@ -222,13 +220,39 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
   const [existing] = await drizzle
-    .select({ userId: schema.subscriptions.userId, status: schema.subscriptions.status })
+    .select({
+      userId: schema.subscriptions.userId,
+      status: schema.subscriptions.status,
+      stripeSubscriptionId: schema.subscriptions.stripeSubscriptionId,
+    })
     .from(schema.subscriptions)
     .where(eq(schema.subscriptions.stripeCustomerId, customerId))
     .limit(1);
 
   if (!existing?.userId) {
     log.warn("Stripe sync: no subscription row for customer — skipping mirror", { customerId });
+    return;
+  }
+
+  // Stale-terminal identity guard. The mirror row is keyed by user (one row per
+  // customer), so a delayed/out-of-order `customer.subscription.deleted` for a
+  // subscription the customer already replaced — cancel-then-resubscribe reusing
+  // the same Stripe customer — would overwrite the NEW active subscription's row
+  // to `canceled` and hard-block a paying customer. Ignore a terminal event
+  // whose subscription id no longer matches the mirrored one; the active
+  // subscription's own events remain authoritative.
+  const incomingIsTerminal = !["active", "trialing", "past_due", "unpaid"].includes(sub.status);
+  if (
+    incomingIsTerminal &&
+    existing.stripeSubscriptionId &&
+    existing.stripeSubscriptionId !== sub.id
+  ) {
+    log.warn("Stripe sync: ignoring stale terminal event for a superseded subscription", {
+      customerId,
+      eventSubscriptionId: sub.id,
+      mirroredSubscriptionId: existing.stripeSubscriptionId,
+      eventStatus: sub.status,
+    });
     return;
   }
 
@@ -243,14 +267,17 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   // Active/trialing Stripe status with an unmapped price must not wipe a
   // known-good plan down to null / maxAgents=1 (catalog/env drift footgun).
   if ((stripeStatus === "active" || stripeStatus === "trialing") && !plan) {
-    log.error("Stripe sync: active subscription price did not map to a catalog plan — refusing overwrite", {
-      userId,
-      customerId,
-      subscriptionId: sub.id,
-      priceIds: (sub.items?.data || []).map((item) =>
-        typeof item.price === "string" ? item.price : item.price?.id,
-      ),
-    });
+    log.error(
+      "Stripe sync: active subscription price did not map to a catalog plan — refusing overwrite",
+      {
+        userId,
+        customerId,
+        subscriptionId: sub.id,
+        priceIds: (sub.items?.data || []).map((item) =>
+          typeof item.price === "string" ? item.price : item.price?.id,
+        ),
+      },
+    );
     throw new Error("Stripe subscription price is not mapped to a Wireline plan catalog entry");
   }
 

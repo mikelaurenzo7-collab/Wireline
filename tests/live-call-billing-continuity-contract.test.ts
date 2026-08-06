@@ -37,6 +37,17 @@ describe("live-call billing continuity contract", () => {
     expect(grace).toContain('entryKind: "burn"');
   });
 
+  it("awaits the voice overage debit so a serverless freeze cannot drop it", () => {
+    // handleEndOfCallReport is awaited by both the queue and sync-fallback
+    // callers. The overage debit must be awaited (not fire-and-forget) so it is
+    // part of the job's committed work — otherwise an invocation freeze after
+    // the job completes permanently loses the charge and the duplicate-retry
+    // branch never re-drives it.
+    const handlers = read("src/lib/vapi-handlers.ts");
+    expect(handlers).toContain("await trackVoiceMinutes({");
+    expect(handlers).not.toContain("void trackVoiceMinutes({");
+  });
+
   it("requires prepaid coverage on every public paid plan", () => {
     const wallet = read("src/lib/voice-wallet-guard.ts");
     const workspace = read("src/lib/workspace-usage-snapshot.ts");
