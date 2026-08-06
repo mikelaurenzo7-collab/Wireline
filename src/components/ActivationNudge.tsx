@@ -80,7 +80,11 @@ export default function ActivationNudge({ className }: { className?: string }) {
     // this scope), stop polling entirely. Without this the 30s interval keeps
     // firing ~7 authenticated requests/cycle for the life of the tab until the
     // tenant activates, even though the banner is hidden.
-    if (dismissed) return;
+    // Read storage directly rather than trusting the `dismissed` state: the
+    // effect that seeds it runs in the same commit, so on mount this closure
+    // still sees `false` and would fire one full request burst before the state
+    // lands — on every mount, forever, for someone who dismissed long ago.
+    if (dismissed || readDismissed(activationScope)) return;
 
     let cancelled = false;
     let stopped = false;

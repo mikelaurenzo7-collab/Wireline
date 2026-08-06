@@ -8,7 +8,9 @@ import { and, eq } from "drizzle-orm";
 import { isOwnerEmail } from "../lib/auth-service";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
-import { withAudit } from "../middleware/audit-middleware";
+import { withAudit, persistRuntimeAuditRecords } from "../middleware/audit-middleware";
+import { withAuditCapture } from "../lib/ai-audit";
+import { enforceSpendCap } from "../lib/spend-guards";
 import { sendDailyBriefEmail } from "../lib/daily-brief";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -128,8 +130,11 @@ router.post(
   "/api/daily-brief/send-now",
   authenticateUser,
   sendNowRateLimit,
-  // Composes the brief through a paid model; record the spend against the
-  // Account Holder like every other user-triggered AI surface.
+  // Composes the brief through a paid model. This is the same computeDailyBrief
+  // call GET /api/insights/daily-brief makes, so it carries the same cap —
+  // metering it without capping would leave a forced-compose bypass for a tenant
+  // already over its hard limit.
+  enforceSpendCap,
   withAudit("daily-brief"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -177,7 +182,23 @@ router.post("/api/daily-brief/schedule", async (req: Request, res: Response) => 
       const uid = row.userId;
       if (!uid) continue;
       try {
-        await sendDailyBriefEmail(uid, { force: false });
+        // Cron has no req.user, so withAudit cannot attribute this spend. Capture
+        // the runtime records per tenant and persist them against that tenant, the
+        // same shape job-worker-base and vapi-handlers use for background work.
+        // Without this the daily brief — one paid model call per enabled tenant
+        // per day — never reaches auditLog.costUsd at all.
+        const capture = await withAuditCapture(() => sendDailyBriefEmail(uid, { force: false }));
+        await persistRuntimeAuditRecords({
+          userId: uid,
+          action: "daily-brief.cron",
+          records: capture.records,
+          requestMeta: { source: "daily_brief_schedule" },
+        }).catch((persistError: unknown) =>
+          log.error("daily brief cron audit persist failed", {
+            userId: uid,
+            error: getErrorMessage(persistError),
+          }),
+        );
         sent++;
       } catch (e: unknown) {
         const msg = getErrorMessage(e);

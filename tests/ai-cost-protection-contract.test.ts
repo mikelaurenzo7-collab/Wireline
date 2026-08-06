@@ -76,6 +76,29 @@ describe("AI cost-protection contract", () => {
     );
   });
 
+  it("caps forced daily-brief composes and meters the cron sweep per tenant", () => {
+    const dailyBrief = read("src/routes/daily-brief-routes.ts");
+
+    // send-now runs the same computeDailyBrief model call as
+    // GET /api/insights/daily-brief, so it must carry the same cap — metering
+    // without capping leaves a forced-compose bypass for a tenant over its limit.
+    const sendNowStart = dailyBrief.indexOf('"/api/daily-brief/send-now"');
+    const sendNow = dailyBrief.slice(
+      sendNowStart,
+      dailyBrief.indexOf("async (req: AuthenticatedRequest", sendNowStart),
+    );
+    expect(sendNow).toContain("enforceSpendCap");
+    expect(sendNow).toContain('withAudit("daily-brief")');
+
+    // The cron sweep has no req.user, so withAudit cannot attribute it. It must
+    // capture records per tenant and persist them against that tenant, or the
+    // highest-volume paid path in the product records nothing at all.
+    const cron = dailyBrief.slice(dailyBrief.indexOf('"/api/daily-brief/schedule"'));
+    expect(cron).toContain("withAuditCapture(");
+    expect(cron).toContain("persistRuntimeAuditRecords({");
+    expect(cron).toContain("userId: uid");
+  });
+
   it("records vision-asset usage that bypasses the structured runtime", () => {
     // extractImageAsset calls the Responses API through raw fetch, so it never
     // passes through ai-structured's recordUsage. Without an explicit call the

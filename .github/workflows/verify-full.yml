@@ -1,9 +1,12 @@
 name: Verify full
 
+# Runs the heavy ladder (all gates + coverage + a second build + Playwright e2e)
+# on main and on demand. It deliberately does NOT run on pull_request: verify:full
+# is a superset of ci.yml, so firing both on every PR to main ran the same ~16
+# gates twice — real waste against this repository's Actions billing limit. PRs
+# get the fast hermetic gates from ci.yml plus the dedicated e2e workflows.
 on:
   push:
-    branches: [main]
-  pull_request:
     branches: [main]
   workflow_dispatch:
 
