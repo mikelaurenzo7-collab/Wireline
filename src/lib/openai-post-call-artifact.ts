@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
+import { recordUsage } from "./ai-audit";
 import { OPENAI_STRUCTURED_PRIMARY_MODEL } from "./ai-models";
 import {
   uploadArtifactToConnectedStorage,
@@ -176,14 +177,16 @@ export async function generateAndStorePostCallArtifact(
     .where(eq(schema.settings.userId, input.userId))
     .limit(1);
 
+  const artifactModel =
+    process.env.WIRELINE_OPENAI_ARTIFACT_MODEL?.trim() || OPENAI_STRUCTURED_PRIMARY_MODEL;
+  const startedAt = Date.now();
   const response = await fetchWithTimeout(
     "https://api.openai.com/v1/responses",
     {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model:
-          process.env.WIRELINE_OPENAI_ARTIFACT_MODEL?.trim() || OPENAI_STRUCTURED_PRIMARY_MODEL,
+        model: artifactModel,
         tools: [{ type: "code_interpreter", container: { type: "auto", memory_limit: "1g" } }],
         tool_choice: "required",
         max_output_tokens: 8_000,
@@ -196,6 +199,18 @@ export async function generateAndStorePostCallArtifact(
     id?: string;
     error?: { message?: string };
   };
+  // Raw fetch, so nothing here passes through ai-structured's recordUsage. The
+  // artifact is sold at a FIXED reserve per format, which makes measurement more
+  // important rather than less: code_interpreter plus 8k output tokens is the
+  // most expensive single call in the product, and without a cost record there
+  // is no way to notice the flat price has stopped covering it.
+  //
+  // Recorded before the ok-check so a failed-but-billed response still lands.
+  recordUsage(
+    artifactModel,
+    payload as { model?: string; usage?: unknown },
+    Date.now() - startedAt,
+  );
   if (!response.ok) {
     throw new Error(
       payload.error?.message || `OpenAI artifact request failed (${response.status})`,

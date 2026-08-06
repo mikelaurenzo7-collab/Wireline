@@ -5,13 +5,29 @@ const source = readFileSync(
   new URL("../src/routes/launch-billing-checkout-atomic-routes.ts", import.meta.url),
   "utf8",
 );
+const stripeHelpers = readFileSync(
+  new URL("../src/lib/stripe-helpers.ts", import.meta.url),
+  "utf8",
+);
 
 describe("checkout Stripe-customer recovery contract", () => {
   it("validates stored customer ownership and treats deleted or missing resources as stale", () => {
     expect(source).toContain("stripe.customers.retrieve(customerId)");
-    expect(source).toContain('customer.metadata?.wireline_user_id');
-    expect(source).toContain('candidate?.code === "resource_missing"');
+    expect(source).toContain("customer.metadata?.wireline_user_id");
     expect(source).toContain('"deleted" in customer && customer.deleted');
+
+    // The missing-resource test now lives in stripe-helpers so every Stripe
+    // re-fetch shares one retry posture. This route used to carry a private
+    // copy that read only the top-level `code`/`statusCode`; the Node SDK puts
+    // the API error code on `raw.code` for StripeInvalidRequestError, so that
+    // copy missed real resource_missing responses and threw where it should
+    // have treated the stored customer as stale.
+    expect(source).toContain("isMissingStripeResource");
+    expect(source).not.toContain("function isMissingStripeResource");
+    expect(stripeHelpers).toContain("export function isMissingStripeResource(error: unknown)");
+    expect(stripeHelpers).toContain('stripeError?.code === "resource_missing"');
+    expect(stripeHelpers).toContain('stripeError?.raw?.code === "resource_missing"');
+    expect(stripeHelpers).toContain("stripeError?.statusCode === 404");
   });
 
   it("uses deterministic recovery and initial-customer idempotency keys", () => {
@@ -20,8 +36,12 @@ describe("checkout Stripe-customer recovery contract", () => {
   });
 
   it("persists the durable operation before the subscription projection", () => {
-    const operationWrite = source.indexOf("await markCheckoutOperation(operationId, {\n        status: \"creating\"");
-    const projectionWrite = source.indexOf("await persistStripeCustomerId(req.user.id, customerId)");
+    const operationWrite = source.indexOf(
+      'await markCheckoutOperation(operationId, {\n        status: "creating"',
+    );
+    const projectionWrite = source.indexOf(
+      "await persistStripeCustomerId(req.user.id, customerId)",
+    );
     expect(operationWrite).toBeGreaterThan(-1);
     expect(projectionWrite).toBeGreaterThan(operationWrite);
   });

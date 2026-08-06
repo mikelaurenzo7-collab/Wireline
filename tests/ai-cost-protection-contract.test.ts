@@ -112,6 +112,44 @@ describe("AI cost-protection contract", () => {
     expect(imagePath).toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
   });
 
+  it("records the fixed-price business artifact against the tenant that ordered it", () => {
+    // The artifact/scheduled-report jobs run the single most expensive call in
+    // the product — Responses + code_interpreter, 8k max output tokens — from a
+    // queue worker with no request, so neither withAudit nor ai-structured's
+    // recordUsage was ever in the path and the cost reached no audit row.
+    //
+    // These are sold at a FIXED reserve per format, so the failure mode is not
+    // an unbilled call but an unmeasured one: nothing can detect the flat price
+    // no longer covering the model.
+    const artifact = read("src/lib/openai-post-call-artifact.ts");
+    expect(artifact).toContain('import { recordUsage } from "./ai-audit"');
+    // Recorded before the ok-check, so a billed-then-rejected response still lands.
+    const call = artifact.slice(
+      artifact.indexOf("const artifactModel ="),
+      artifact.indexOf("if (!response.ok)"),
+    );
+    expect(call).toContain("recordUsage(");
+    expect(call).toContain("artifactModel");
+
+    const worker = read("src/lib/job-worker.ts");
+    const reservation = worker.slice(
+      worker.indexOf("async function withRuntimeReservation"),
+      worker.indexOf("async function handlePostCallArtifact"),
+    );
+    // A queue worker has no req.user, so the records must be captured and
+    // persisted against the job's tenant explicitly.
+    expect(reservation).toContain("runInAuditContext(auditContext, () => operation())");
+    expect(reservation).toContain("persistRuntimeAuditRecords({");
+    expect(reservation).toContain("userId,");
+    // withAuditCapture drops its records when the operation throws, and the
+    // billed-then-failed response is exactly the case worth recording — so the
+    // context is held directly and flushed in a finally.
+    expect(reservation).not.toMatch(/withAuditCapture\(/);
+    expect(reservation).toMatch(/\}\s*finally\s*\{[\s\S]*persistRuntimeAuditRecords/);
+    // An audit write must never mask the job's own outcome.
+    expect(reservation).toMatch(/persistRuntimeAuditRecords\(\{[\s\S]*?\}\)\.catch\(/);
+  });
+
   it("signup and OAuth reconciliation seed the correct AI spend budget transactionally", () => {
     const trialGate = read("src/lib/trial-gate.ts");
     expect(trialGate).toContain("ensureDefaultAiSpendBudget");

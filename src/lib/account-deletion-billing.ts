@@ -1,6 +1,11 @@
 import type Stripe from "stripe";
 import { eq } from "drizzle-orm";
-import { stripe, stripeAvailable, syncSubscriptionFromStripe } from "./stripe-helpers";
+import {
+  isMissingStripeResource,
+  stripe,
+  stripeAvailable,
+  syncSubscriptionFromStripe,
+} from "./stripe-helpers";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "./server-utils";
@@ -35,19 +40,6 @@ async function readSubscription(userId: string): Promise<SubscriptionSnapshot | 
     .where(eq(schema.subscriptions.userId, userId))
     .limit(1);
   return subscription ?? null;
-}
-
-function isMissingStripeResource(error: unknown): boolean {
-  const stripeError = error as {
-    code?: string;
-    statusCode?: number;
-    raw?: { code?: string };
-  };
-  return (
-    stripeError.statusCode === 404 ||
-    stripeError.code === "resource_missing" ||
-    stripeError.raw?.code === "resource_missing"
-  );
 }
 
 function isTerminalSubscription(subscription: Stripe.Subscription): boolean {

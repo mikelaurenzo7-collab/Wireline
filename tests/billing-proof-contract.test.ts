@@ -114,6 +114,73 @@ describe("billing proof contract", () => {
     expect(guard).toMatch(/\breturn;/);
   });
 
+  it("ignores an out-of-order non-terminal webhook for a superseded subscription", () => {
+    // The terminal guard above only recognises a stale cancellation. A late
+    // `customer.subscription.updated` for the replaced subscription arriving
+    // after the replacement's `created` passes it and re-pins the one-row mirror
+    // to the dead id — dragging that subscription's plan, status, and period end
+    // onto a customer whose live subscription is something else entirely.
+    //
+    // Stripe does not guarantee delivery order and the mirror stores no event
+    // sequence, so ordering has to be re-established from Stripe itself:
+    // `created` is immutable and strictly increasing across a customer's
+    // successive subscriptions.
+    const stripeHelpers = read("src/lib/stripe-helpers.ts");
+
+    const oracle = stripeHelpers.slice(
+      stripeHelpers.indexOf("async function mirrorPointsAtNewerSubscription"),
+      stripeHelpers.indexOf("export async function syncSubscriptionFromStripe"),
+    );
+    expect(oracle).toContain("await stripe.subscriptions.retrieve(mirroredSubscriptionId)");
+    expect(oracle).toContain("return mirrored.created > sub.created");
+
+    // A missing mirrored subscription cannot outrank anything, so the incoming
+    // event must be allowed to repair the row. Retrying that forever would
+    // poison the webhook.
+    expect(oracle).toContain("if (isMissingStripeResource(error)) {");
+
+    // Every other failure is transient. Swallowing it would force a guess in
+    // exactly the case the guard exists to decide, so it must escape — the
+    // webhook handler releases its idempotency claim and Stripe redelivers.
+    expect(oracle).toMatch(/log\.error\([\s\S]*?\n\s*throw error;\n\s*\}/);
+
+    // The guard must run on any id mismatch (not only terminal events) and must
+    // actually skip the write.
+    const guard = stripeHelpers.slice(
+      stripeHelpers.indexOf("const incomingIsTerminal"),
+      stripeHelpers.indexOf("const userId = existing.userId"),
+    );
+    expect(guard).toContain(
+      "if (await mirrorPointsAtNewerSubscription(sub, existing.stripeSubscriptionId)) {",
+    );
+    expect(guard).toContain("ignoring out-of-order event for a superseded subscription");
+    // Ordering is only ever consulted when the two ids disagree — a re-fetch on
+    // every subscription webhook would be a needless Stripe call per event.
+    expect(guard.indexOf("existing.stripeSubscriptionId !== sub.id")).toBeLessThan(
+      guard.indexOf("mirrorPointsAtNewerSubscription(sub"),
+    );
+  });
+
+  it("keeps one definition of the Stripe missing-resource test", () => {
+    // Two copies had drifted: the account-deletion one read `raw.code`, the
+    // checkout one did not. The Node SDK puts the API error code on `raw.code`
+    // for StripeInvalidRequestError, so the weaker copy missed real
+    // resource_missing responses and threw where it should have handled —
+    // exactly the retry-posture decision this predicate exists to make.
+    const stripeHelpers = read("src/lib/stripe-helpers.ts");
+    expect(stripeHelpers).toContain("export function isMissingStripeResource(error: unknown)");
+    expect(stripeHelpers).toContain('stripeError?.raw?.code === "resource_missing"');
+
+    for (const path of [
+      "src/lib/account-deletion-billing.ts",
+      "src/routes/launch-billing-checkout-atomic-routes.ts",
+    ] as const) {
+      const source = read(path);
+      expect(source, path).toContain("isMissingStripeResource");
+      expect(source, path).not.toContain("function isMissingStripeResource");
+    }
+  });
+
   it("stops future renewal for both deletion APIs and resumes it after cancellation", () => {
     const accountRoutes = read("src/routes/account-routes.ts");
     const settingsRoutes = read("src/routes/settings-routes.ts");

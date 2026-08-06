@@ -5,7 +5,7 @@ import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { FOUNDER_CATALOG_VERSION, planById, planLookupKey } from "../lib/plan-catalog";
 import { drizzle, auditLogger, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
-import { stripe, stripeAvailable } from "../lib/stripe-helpers";
+import { isMissingStripeResource, stripe, stripeAvailable } from "../lib/stripe-helpers";
 import { authenticateUser } from "../middleware/auth";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { checkoutOperations } from "../db/security-schema";
@@ -99,11 +99,6 @@ async function failCheckoutOperation(
     .update(checkoutOperations)
     .set({ status: "failed", ...values, updatedAt: new Date() })
     .where(and(eq(checkoutOperations.id, id), eq(checkoutOperations.status, "creating")));
-}
-
-function isMissingStripeResource(error: unknown): boolean {
-  const candidate = error as { code?: unknown; statusCode?: unknown };
-  return candidate?.code === "resource_missing" || candidate?.statusCode === 404;
 }
 
 async function reusableStripeCustomerId(
@@ -253,9 +248,7 @@ router.post(
             status: "all",
             limit: 20,
           });
-          const liveRemote = remote.data.find((sub) =>
-            LIVE_SUBSCRIPTION_STATUSES.has(sub.status),
-          );
+          const liveRemote = remote.data.find((sub) => LIVE_SUBSCRIPTION_STATUSES.has(sub.status));
           if (liveRemote) {
             return res.status(409).json({
               code: "ALREADY_SUBSCRIBED",
