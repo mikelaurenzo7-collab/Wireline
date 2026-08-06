@@ -12,8 +12,14 @@ import {
 } from "../lib/billing-release";
 import { isLaunchHardBlocked, launchBlockResponse } from "../lib/launch-readiness";
 
+export function isSelfServeCheckoutRequest(req: Request): boolean {
+  const rawPath = String(req.originalUrl || req.url || req.path || "").split("?", 1)[0];
+  const normalizedPath = rawPath.replace(/\/+$/, "").toLowerCase();
+  return normalizedPath === "/api/billing/checkout";
+}
+
 export function enforceLaunchHardGate(req: Request, res: Response, next: NextFunction) {
-  if (req.path === "/api/billing/checkout" && !selfServeBillingEnabled()) {
+  if (isSelfServeCheckoutRequest(req) && !selfServeBillingEnabled()) {
     return res
       .status(SELF_SERVE_BILLING_BLOCK.status)
       .json(selfServeBillingBlockResponse());
