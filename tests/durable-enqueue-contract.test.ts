@@ -49,7 +49,7 @@ describe("durable enqueue failure contract", () => {
     expect(migration).toContain("PARTITION BY user_id, type");
     expect(migration).toContain("CASE WHEN status = 'running' THEN 0 ELSE 1 END");
     expect(migration).toContain("ranked.active_rank > 1");
-    expect(migration).toContain("jobs.status IN ('pending', 'failed')");
+    expect(migration).toContain("jobs.status IN ('pending', 'running', 'failed')");
 
     const previous = journal.indexOf('"tag": "0134_free_builder_simulation_allowance"');
     const singleton = journal.indexOf('"tag": "0135_scheduler_tick_singletons"');
