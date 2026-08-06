@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link2, Unlink, Loader2, ExternalLink, CheckCircle2, Settings } from "lucide-react";
 import { Link } from "react-router";
@@ -202,6 +202,18 @@ export default function CrmConnectionCard() {
     fetchStatus();
   }, [fetchStatus]);
 
+  // Started from a click handler, so nothing else tears it down: left alone the
+  // popup-close poll outlives unmount and keeps firing every 500ms for the life
+  // of the tab, holding a reference to the popup window with it.
+  const popupPollRef = useRef<number | null>(null);
+  const stopPopupPoll = useCallback(() => {
+    if (popupPollRef.current !== null) {
+      window.clearInterval(popupPollRef.current);
+      popupPollRef.current = null;
+    }
+  }, []);
+  useEffect(() => stopPopupPoll, [stopPopupPoll]);
+
   useEffect(() => {
     if (!state?.slack?.connected) {
       setSlackChannels([]);
@@ -252,13 +264,16 @@ export default function CrmConnectionCard() {
     const handler = (e: MessageEvent) => {
       if (e.origin !== window.location.origin) return;
       if (e.data?.type === "CRM_OAUTH_SUCCESS") {
+        // Consent already succeeded, so the close poll has nothing left to
+        // detect and would otherwise run until the user closes the popup.
+        stopPopupPoll();
         setConnecting(null);
         fetchStatus();
       }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [fetchStatus]);
+  }, [fetchStatus, stopPopupPoll]);
 
   const connect = (provider: ProviderKey) => async () => {
     // Shopify needs the merchant's myshopify domain appended as a
@@ -291,10 +306,14 @@ export default function CrmConnectionCard() {
         setConnecting(null);
         return;
       }
-      // OAuth popups often close without postMessage — re-enable Connect when dismissed.
-      const poll = window.setInterval(() => {
+      // OAuth popups often close without postMessage — re-enable Connect when
+      // dismissed. Clear any previous poll first: connecting a second provider
+      // (or retrying the same one) would otherwise stack intervals that only
+      // their own popup's close can stop.
+      stopPopupPoll();
+      popupPollRef.current = window.setInterval(() => {
         if (popup.closed) {
-          window.clearInterval(poll);
+          stopPopupPoll();
           setConnecting(null);
         }
       }, 500);

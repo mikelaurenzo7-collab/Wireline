@@ -144,6 +144,54 @@ describe("code review hardening contracts", () => {
     expect(nudge).toContain("catch");
   });
 
+  it("tears down OAuth popup-close polls on unmount instead of leaking them", () => {
+    // Both cards start a 500ms popup-close poll from a click handler, so nothing
+    // else tears it down. Unmounting mid-consent left it running for the life of
+    // the tab — and the mailbox card's callback calls loadAccounts(), so a dead
+    // component kept issuing authenticated requests.
+    for (const path of [
+      "src/components/CrmConnectionCard.tsx",
+      "src/components/MailboxConnectionCard.tsx",
+    ] as const) {
+      const source = read(path);
+      expect(source, path).toContain("const popupPollRef = useRef<number | null>(null)");
+      expect(source, path).toContain("popupPollRef.current = window.setInterval(");
+      // The unmount cleanup is the whole point; asserting only the ref would
+      // pass with the teardown deleted.
+      expect(source, path).toContain("useEffect(() => stopPopupPoll, [stopPopupPoll])");
+      // Cleared before starting, so retrying or switching providers cannot stack
+      // intervals that only their own popup's close can stop.
+      const startIndex = source.indexOf("popupPollRef.current = window.setInterval(");
+      expect(source.lastIndexOf("stopPopupPoll();", startIndex), path).toBeGreaterThan(-1);
+    }
+  });
+
+  it("cancels a superseded email thread fetch instead of racing it onto the pane", () => {
+    // Selecting thread A then B fires overlapping requests. Without abort, an
+    // A-resolves-last ordering wins the state write and renders one
+    // conversation's messages under another conversation's header.
+    const inbox = read("src/components/EmailInbox.tsx");
+    expect(inbox).toContain("async (threadId: string, signal?: AbortSignal)");
+    expect(inbox).toContain("{ signal }");
+    expect(inbox).toContain("const controller = new AbortController();");
+    expect(inbox).toContain("return () => controller.abort();");
+    // Every write path must respect the abort — the result, the error banner,
+    // and the loading flag the newer request already owns. Asserting the guard
+    // exists once is not enough: the catch-path copy alone satisfies that while
+    // the stale result still lands on the pane.
+    const detailFn = inbox.slice(
+      inbox.indexOf("const loadThreadDetail = useCallback("),
+      inbox.indexOf("const controller = new AbortController();"),
+    );
+    expect(
+      (detailFn.match(/if \(signal\?\.aborted\) return;/g) || []).length,
+    ).toBeGreaterThanOrEqual(2);
+    expect(detailFn.indexOf("if (signal?.aborted) return;")).toBeLessThan(
+      detailFn.indexOf("setDetail({"),
+    );
+    expect(detailFn).toContain("if (!signal?.aborted) setDetailLoading(false);");
+  });
+
   it("keeps public purchase, consent, and sticky-CTA promises internally consistent", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const terms = read("src/components/LegalPage.tsx");

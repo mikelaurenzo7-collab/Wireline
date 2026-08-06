@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Mail, Trash2 } from "lucide-react";
 
 import { authFetch, safeJson } from "../lib/api";
@@ -67,12 +67,29 @@ export default function MailboxConnectionCard() {
     void loadAccounts();
   }, [loadAccounts]);
 
+  // The popup-close poll is started from a click handler, so nothing else tears
+  // it down. Left alone it survives unmount and keeps firing every 500ms for the
+  // life of the tab — and its callback calls loadAccounts(), so navigating away
+  // mid-consent leaves a dead component issuing authenticated requests forever.
+  const popupPollRef = useRef<number | null>(null);
+  const stopPopupPoll = useCallback(() => {
+    if (popupPollRef.current !== null) {
+      window.clearInterval(popupPollRef.current);
+      popupPollRef.current = null;
+    }
+  }, []);
+  useEffect(() => stopPopupPoll, [stopPopupPoll]);
+
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       if (event.data?.type !== "OAUTH_AUTH_SUCCESS" && event.data?.type !== "EMAIL_OAUTH_SUCCESS") {
         return;
       }
+      // Consent already succeeded, so the close poll has nothing left to detect —
+      // without this it survives until the user closes the popup and then
+      // reloads accounts a second time.
+      stopPopupPoll();
       setBusy(null);
       void loadAccounts().then(() => {
         void authFetch("/api/emails/sync", { method: "POST" }).catch(() => undefined);
@@ -80,7 +97,7 @@ export default function MailboxConnectionCard() {
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [loadAccounts]);
+  }, [loadAccounts, stopPopupPoll]);
 
   async function connect(provider: MailboxProvider) {
     if (provider === "icloud") {
@@ -104,9 +121,12 @@ export default function MailboxConnectionCard() {
         "width=600,height=720,popup=yes",
       );
       if (!popup) throw new Error("Allow popups, then try connecting again.");
-      const poll = window.setInterval(() => {
+      // Retrying, or switching providers, would otherwise stack a second poll
+      // that only the first popup's close can clear.
+      stopPopupPoll();
+      popupPollRef.current = window.setInterval(() => {
         if (!popup.closed) return;
-        window.clearInterval(poll);
+        stopPopupPoll();
         setBusy(null);
         void loadAccounts();
       }, 500);
