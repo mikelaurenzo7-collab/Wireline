@@ -23,6 +23,6 @@ Set the billing switch to `true` in Production only after all of the following h
 - Production telemetry is deliberately switched from demo evidence to live-customer evidence with `WIRELINE_LAUNCH_DEMO_MODE=false`.
 - The exact production deployment SHA and launch-readiness response are recorded. `billing_ready` must list neither billing release control after release.
 
-Valid Stripe credentials alone never authorize opening checkout. Roll back paid acquisition immediately by setting the billing switch to `false`; no redeploy is required after the environment change propagates.
+Valid Stripe credentials alone never authorize opening checkout. To close paid acquisition, set the billing switch to `false`, create a production redeployment so the new environment value is embedded, and verify the resulting deployment SHA and checkout 503 response before considering the rollback complete.
 
 Use the canonical runbook for the complete release, environment, provider-verification, and rollback procedure.
