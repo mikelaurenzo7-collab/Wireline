@@ -7,7 +7,10 @@
  * founder completes business registration with DNCScrub. Marketing outbound
  * still fails closed at runtime via `assertFederalDncForMarketing()`.
  */
-import { selfServeBillingEnabled } from "./billing-release";
+import {
+  selfServeBillingEnabled,
+  selfServeBillingReleaseBlockers,
+} from "./billing-release";
 import { getIntegrationsStatus } from "./integrations-registry";
 import { validateEnv } from "./env-validator";
 import { assertPlanMarginFloors } from "./tenant-economics";
@@ -55,6 +58,7 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   const integrations = getIntegrationsStatus();
   const byId = new Map(integrations.map((integration) => [integration.id, integration]));
   const envValidation = validateEnv();
+  const billingReleaseBlockers = selfServeBillingReleaseBlockers();
   const billingReleased = selfServeBillingEnabled();
 
   const voiceBlockers: string[] = [];
@@ -68,7 +72,7 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   const billingBlockers: string[] = [];
   if (byId.get("stripe")?.status !== "configured") billingBlockers.push("STRIPE_SECRET_KEY");
   else if (!envPresent("STRIPE_WEBHOOK_SECRET")) billingBlockers.push("STRIPE_WEBHOOK_SECRET");
-  if (!billingReleased) billingBlockers.push("WIRELINE_SELF_SERVE_BILLING_ENABLED");
+  billingBlockers.push(...billingReleaseBlockers);
   const marginCheck = assertPlanMarginFloors();
   if (!marginCheck.ok) billingBlockers.push(...marginCheck.violations);
 
