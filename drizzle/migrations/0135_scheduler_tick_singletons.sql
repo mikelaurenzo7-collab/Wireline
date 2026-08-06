@@ -32,7 +32,7 @@ SET
 FROM ranked_active_ticks AS ranked
 WHERE jobs.id = ranked.id
   AND ranked.active_rank > 1
-  AND jobs.status IN ('pending', 'failed');
+  AND jobs.status IN ('pending', 'running', 'failed');
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_jobs_active_scheduler_tick
   ON public.wireline_jobs USING btree (user_id, type)
