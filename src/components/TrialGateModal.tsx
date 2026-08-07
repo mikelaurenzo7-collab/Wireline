@@ -332,7 +332,15 @@ export default function TrialGateModal() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/55 px-0 pt-[env(safe-area-inset-top,0)] pb-[env(safe-area-inset-bottom,0)] backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
+          // Above --wireline-zIndex-modal (1050), below popover (1060) so
+          // popovers and tooltips raised from inside this dialog still sit on
+          // top of it. The paywall is the app's highest-priority interrupt: at
+          // the old z-[100] it painted UNDER the first-run activation wizard
+          // (z-1050), so a brand-new user who tripped the 402 while
+          // provisioning a number had focus moved into a checkout dialog
+          // hidden behind an opaque backdrop — the upgrade moment with the
+          // most intent in the whole funnel, invisible.
+          className="fixed inset-0 z-[1055] flex items-end justify-center bg-black/55 px-0 pt-[env(safe-area-inset-top,0)] pb-[env(safe-area-inset-bottom,0)] backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
           ref={dialogRef}
           role="dialog"
           aria-modal="true"

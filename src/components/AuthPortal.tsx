@@ -195,6 +195,17 @@ function OAuthSignInButtons({
       if (!isAllowedOAuthUrl(url)) {
         throw new Error("Received invalid sign-in URL from server.");
       }
+      if (isSignUp) {
+        // Carry signup intent across the provider round-trip. The OAuth bridge
+        // returns through OAuthComplete, which resolves the post-auth
+        // destination with no knowledge of how the session started — so
+        // without this, everyone arriving via Google/Microsoft/Yahoo (the top
+        // three buttons on the signup card) skipped Fast Start and the
+        // activation wizard entirely and landed on a bare dashboard. Marking
+        // here rather than on return keeps it a statement of intent: the user
+        // pressed a button on the signup card.
+        markFreshSignupSession();
+      }
       window.location.assign(url);
     } catch (e: unknown) {
       setPending(null);
