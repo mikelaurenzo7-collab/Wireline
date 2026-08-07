@@ -1,6 +1,6 @@
 /**
  * Canonical Drizzle/runtime schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0135_voice_usage_event_idempotency.sql`.
+ * Latest committed migration: `drizzle/migrations/0136_consent_evidence_uniqueness.sql`.
  *
  * `schema-base.ts` preserves the existing table graph. The two tables below are
  * declared explicitly here because migrations 0130, 0133, and 0134 changed

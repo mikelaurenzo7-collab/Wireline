@@ -221,19 +221,32 @@ async function persistComplianceEvidence(input: {
         },
       });
 
-      await drizzle.insert(schema.consentLog).values({
-        userId: ledgerRow.user_id,
-        callId: ledgerRow.call_id,
-        customerNumber: ledgerRow.customer_number,
-        event: ledgerRow.event,
-        ruleVersion: ledgerRow.rule_version,
-        rule: ledgerRow.rule,
-        state: ledgerRow.state,
-        metadata: ledgerRow.metadata,
-      });
+      // onConflictDoNothing + the 0136 partial unique indexes are the race
+      // backstop the pre-SELECT cannot provide: two workers claiming two
+      // redelivery jobs for the same call both pass the check above, so only
+      // the row that actually lands may fire the unverified-disclosure alert.
+      const insertedDisclosure = await drizzle
+        .insert(schema.consentLog)
+        .values({
+          userId: ledgerRow.user_id,
+          callId: ledgerRow.call_id,
+          customerNumber: ledgerRow.customer_number,
+          event: ledgerRow.event,
+          ruleVersion: ledgerRow.rule_version,
+          rule: ledgerRow.rule,
+          state: ledgerRow.state,
+          metadata: ledgerRow.metadata,
+        })
+        .onConflictDoNothing()
+        .returning({ id: schema.consentLog.id });
 
       const carriedConversation = hasTranscript || duration > 0;
-      if (disclosureEvent !== "disclosure_played" && rule === "two_party" && carriedConversation) {
+      if (
+        insertedDisclosure.length > 0 &&
+        disclosureEvent !== "disclosure_played" &&
+        rule === "two_party" &&
+        carriedConversation
+      ) {
         log.warn("TCPA: recording disclosure could not be verified on two-party-state call", {
           userId,
           callId,
@@ -280,16 +293,19 @@ async function persistComplianceEvidence(input: {
           metadata: { matched_pattern: optOut.matched_pattern, kind: optOut.kind },
         });
 
-        await drizzle.insert(schema.consentLog).values({
-          userId: optOutRow.user_id,
-          callId: optOutRow.call_id,
-          customerNumber: optOutRow.customer_number,
-          event: optOutRow.event,
-          ruleVersion: optOutRow.rule_version,
-          rule: optOutRow.rule,
-          state: optOutRow.state,
-          metadata: optOutRow.metadata,
-        });
+        await drizzle
+          .insert(schema.consentLog)
+          .values({
+            userId: optOutRow.user_id,
+            callId: optOutRow.call_id,
+            customerNumber: optOutRow.customer_number,
+            event: optOutRow.event,
+            ruleVersion: optOutRow.rule_version,
+            rule: optOutRow.rule,
+            state: optOutRow.state,
+            metadata: optOutRow.metadata,
+          })
+          .onConflictDoNothing();
       }
     }
   } catch (compErr) {
