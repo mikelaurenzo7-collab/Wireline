@@ -39,51 +39,44 @@ describe("live-call billing continuity contract", () => {
     expect(grace).toContain('entryKind: "burn"');
   });
 
-  it("awaits the voice overage debit so a serverless freeze cannot drop it", () => {
-    // handleEndOfCallReport is awaited by both the queue and sync-fallback
-    // callers. The overage debit must be awaited (not fire-and-forget) so it is
-    // part of the job's committed work — otherwise an invocation freeze after
-    // the job completes permanently loses the charge and the duplicate-retry
-    // branch never re-drives it.
+  it("awaits voice metering so a serverless freeze cannot drop it", () => {
     const handlers = read("src/lib/vapi-handlers.ts");
     expect(handlers).toContain("await trackVoiceMinutes({");
     expect(handlers).not.toContain("void trackVoiceMinutes({");
   });
 
-  it("never re-drives voice metering from the duplicate-retry branch", () => {
+  it("re-drives idempotent voice metering before the duplicate early return", () => {
     /**
-     * There is a real gap here: the callLogs INSERT claims the idempotency
-     * boundary, but metering runs ~130 lines later, so anything throwing in
-     * between drops the charge for good — the retry finds the claim taken and
-     * returns early.
-     *
-     * The obvious fix — re-drive trackVoiceMinutes from the duplicate branch —
-     * is WRONG, and this gate exists to stop it. Its idempotency is partial:
-     * `voice_completion:<callId>` keys the Runtime Balance charge only, while
-     * the monthly counter upserts `used + minutes` with no per-call guard. A
-     * second call for the same provider id therefore inflates quota minutes and
-     * pushes the tenant into overage they never used — trading a lost charge
-     * for a wrong one. Closing the gap needs the counter keyed per call too,
-     * which is a schema change.
+     * The monthly counter now has its own durable per-provider-call checkpoint,
+     * so duplicate Vapi delivery is the recovery mechanism for a failure after
+     * the call-log claim. Metering MUST run before the call-log duplicate return:
+     * a DNC write can intentionally throw first, and the retry must still finish
+     * the count/debit without re-running downstream notifications or enrichment.
      */
     const handlers = stripComments(read("src/lib/vapi-handlers.ts"));
     const duplicateReturn = handlers.indexOf("if (!insertedFresh) {");
     const metering = handlers.indexOf("await trackVoiceMinutes({");
 
     expect(duplicateReturn).toBeGreaterThan(-1);
-    expect(metering).toBeGreaterThan(duplicateReturn);
-    // One call site only: a second one is how the duplicate branch would
-    // acquire its own re-drive without this position check ever noticing.
+    expect(metering).toBeGreaterThan(-1);
+    expect(metering).toBeLessThan(duplicateReturn);
     expect(handlers.split("trackVoiceMinutes(").length - 1).toBe(1);
   });
 
-  it("keeps the per-call idempotency key on the charge, not the monthly counter", () => {
-    // Pins the asymmetry the gate above depends on. If the counter is ever made
-    // per-call idempotent, this test is the place that says so — and only then
-    // does re-driving metering become safe.
+  it("keys the monthly counter checkpoint by tenant and provider call", () => {
     const usage = stripComments(read("src/lib/voice-usage.ts"));
-    expect(usage).toContain("${schema.quotaUsage.used} + ${BigInt(minutes)}");
-    expect(usage).not.toContain("voice_completion:");
+    const schema = stripComments(read("src/db/voice-usage-schema.ts"));
+    const migration = read("drizzle/migrations/0135_voice_usage_event_idempotency.sql");
+
+    expect(usage).toContain("voiceUsageEvents");
+    expect(usage).toContain("onConflictDoNothing");
+    expect(usage).toContain("providerCallId");
+    expect(usage).toContain("chargedAt");
+    expect(usage).toContain("throw error;");
+    expect(schema).toContain('"wireline_voice_usage_events"');
+    expect(schema).toContain("primaryKey({ columns: [table.userId, table.providerCallId] })");
+    expect(migration).toContain("PRIMARY KEY (user_id, provider_call_id)");
+    expect(migration).toContain("CREATE POLICY tenant_isolation");
     expect(stripComments(read("src/lib/voice-completion-grace.ts"))).toContain(
       "idempotencyKey: `voice_completion:${opts.providerCallId}`",
     );
