@@ -60,7 +60,7 @@ export const CAMPAIGN_VO = [
     // fill it. Rendered at natural pace: slowing a short script to pad a slot is
     // how narration starts sounding like an announcer.
     speed: 1.0,
-    text: "Your agent picks up, books the next step, texts the confirmation, and logs the outcome. Build free. Go live from nineteen dollars a month.",
+    text: "Every call answered the way you trained it, and logged where you can check the work. Build free. Go live from nineteen dollars a month.",
   },
   {
     id: "founder-60s",

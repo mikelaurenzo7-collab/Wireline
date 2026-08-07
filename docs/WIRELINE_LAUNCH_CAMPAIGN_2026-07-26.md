@@ -295,12 +295,23 @@ the job of a paid social cut.
 | 20.0-26.0 | Studio: the conversation and its transcript sitting where the owner can check the work. | — | Voiceover enters here, for the first and only time |
 | 26.0-30.0 | End card | Nobody went to voicemail. / Build your Voice Agent / Build free. Go live from $19/mo. / trywireline.com | Music resolves |
 
-Voiceover (24 words, ~10s, entering at 0:20 — deliberately the shortest script in the pack):
+Voiceover (25 words, measured 8.0s at natural pace, entering at 0:20 into a ten-second tail —
+deliberately the shortest script in the pack):
 
-> "Your agent picks up, books the next step, texts the confirmation, and logs the outcome. Build free. Go live from nineteen dollars a month."
+> "Every call answered the way you trained it, and logged where you can check the work. Build free. Go live from nineteen dollars a month."
 
-Delivery: the voiceover arrives after the viewer has already heard the agent work, so it
-narrates nothing they have not seen. Read it like a receipt, not a pitch.
+Delivery: read it like a receipt, not a pitch.
+
+Why this line and not a list of what just happened: the overlay at 0:15 already says
+**Answered. Booked. Confirmed. Logged.** A voiceover that then recites "picks up, books the
+next step, texts the confirmation, logs the outcome" is the same four beats a third time —
+once in picture, once in text, once in narration. Never say what you are showing.
+
+So the narration spends its eight seconds on the two things the picture cannot say, which are
+also the only two objections left at 0:20: **"the way you trained it"** answers *will it go
+off-script in front of my customer?*, and **"where you can check the work"** answers *how do
+I know what it actually did?* Everything else has already been proved on screen. It finishes
+around 0:28, which is correct — the last two seconds belong to the end card, not to us.
 
 Casting the captured call: use a real booking exchange with an ordinary interruption in it —
 a caller who talks over the greeting, or changes the day once. A frictionless scripted
