@@ -323,8 +323,27 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   // part of the job's committed work. Otherwise a serverless freeze between the
   // job completing and this promise settling permanently drops the charge — the
   // duplicate-retry branch above returns before re-driving it. trackVoiceMinutes
-  // swallows its own errors (ledger key voice_completion:callId is idempotent),
-  // so awaiting cannot throw into the remaining side effects.
+  // swallows its own errors, so awaiting cannot throw into the remaining side
+  // effects.
+  //
+  // MUST stay below the `!insertedFresh` return, and trackVoiceMinutes must not
+  // be re-driven from the duplicate branch. Its idempotency is PARTIAL: the
+  // per-call key `voice_completion:<callId>` guards the Runtime Balance *charge*
+  // only. The monthly counter above it upserts `used = used + minutes`
+  // unconditionally, with no per-call guard — vapiCallId never reaches it. So a
+  // second call for the same provider id inflates quota minutes and pushes the
+  // tenant into overage they never used.
+  //
+  // That leaves a known, accepted gap: anything throwing between the INSERT
+  // (which claims the idempotency boundary) and this line drops the charge for
+  // good, because the retry sees the claim taken and returns early. This is not
+  // hypothetical — persistTranscriptDncSuppression above throws deliberately, to
+  // make Vapi redeliver so the suppression boundary is retried. Correct for the
+  // compliance row, and it costs the voice charge on every such call.
+  //
+  // Closing it properly means making the counter per-call idempotent too, which
+  // needs a schema change — not a re-drive from the duplicate branch, which
+  // trades a lost charge for a wrong one.
   if (insertedFresh) {
     await trackVoiceMinutes({
       userId,
