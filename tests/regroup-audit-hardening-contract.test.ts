@@ -32,7 +32,8 @@ describe("outbound engine hardening", () => {
     expect(dial).toContain("status: LEAD_STATUS.DIALING");
     expect(dial).toContain("LEAD_PROCESSABLE_STATUSES");
     expect(dial).toContain("if (claimed.length === 0)");
-    expect(dial).toContain("LEAD_STATUS.MAX_ATTEMPTS : LEAD_STATUS.RETRYING");
+    // Whitespace-tolerant: prettier wraps the ternary across lines.
+    expect(dial).toMatch(/LEAD_STATUS\.MAX_ATTEMPTS\s*:\s*LEAD_STATUS\.RETRYING/);
     expect(dial).not.toContain("status: LEAD_STATUS.ERROR");
     // A failed placement must not stamp lastCalledAt (no call happened) —
     // the 24h window would otherwise suppress the retry for a day.
