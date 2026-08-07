@@ -208,6 +208,27 @@ ElevenLabs VO laid over the delivered reel videos; audio levels verified (mean �
 
 QA note: the "15s" cut runs 16.80s — trim to ≤15.0s before strict-length paid placements. The 46s Descript master is not yet re-cut; the founder-60s VO (54.65s) is ready for it.
 
+### Where the media actually lives (verified 2026-08-07)
+
+Recorded because "trim the 15s cut" reads like a one-command job and is not one — the source
+file is not reachable from any tooling that could perform the trim.
+
+| Asset | Where it is | Usable as an edit source? |
+| --- | --- | --- |
+| 46s master `reel-video.webm` (46.08s) + mixed sequence | Descript, *Wireline — Product Walkthrough Reel* | Yes — the only processed video source |
+| `wireline-hero-30s-VO.mp3` (7.97s), `wireline-missed-call-15s-VO.mp3` (13.24s) | Same project, `VO 2026-08-07/` | Yes |
+| The five cuts in the table above | Delivered files only. Not in Descript, and `official-assets/` is gitignored so they are not in the repo | **No** — must be uploaded before anything can trim them |
+| *Promotional Video Mastering*, *First Launch Reel* | Descript | **No** — uploads never processed: every composition reports 6s and every file types as `other` |
+
+Editing tools wired and what each is actually good for: **Descript** is the authoritative one
+(agentic trim, rearrange, caption, publish) and holds the master. **Adobe `video_render`** takes a
+JSON timeline plus asset ids with per-clip gain and scale — a real programmatic cutter, and the
+better fit for exact-length trims and aspect reframes once a source is uploaded. **Adobe
+`video_create_quick_cut`** selects moments by visual engagement, not speech, so it is wrong for
+these cuts: every one of them is scripted to the frame. **ElevenLabs** covers voiceover only.
+
+None of them generates footage. The hero cut's blocker below is unaffected by any of this.
+
 Outstanding against the reel doctrine, in priority order:
 
 1. **No delivered cut yet plays the agent at full level.** Every one of the five mixes the
