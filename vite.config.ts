@@ -29,7 +29,19 @@ export default defineConfig(({ mode }) => {
       esbuildOptions: { target: "es2022" },
     },
     build: {
-      sourcemap: "hidden",
+      // No client sourcemaps. "hidden" still WROTE all 159 maps (8.5 MB) into
+      // dist/assets and only suppressed the //# sourceMappingURL comment, and
+      // vercel.json's SPA rewrite excludes assets/ — so every map stayed
+      // fetchable at a guessable /assets/<chunk>.js.map, publishing the whole
+      // first-party client source.
+      //
+      // Nothing consumed them: there is no @sentry/* dependency and no
+      // client-side error reporting at all (error-reporter.ts is a
+      // server-only custom Sentry transport, and the browser SDK was removed
+      // pre-launch — see src/lib/sentry.ts). If client error reporting is ever
+      // added, restore "hidden" AND upload the maps to the reporter instead of
+      // serving them from the CDN.
+      sourcemap: false,
       target: "es2022",
       cssTarget: "chrome111",
       chunkSizeWarningLimit: 600,
