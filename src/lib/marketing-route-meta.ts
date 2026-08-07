@@ -83,8 +83,7 @@ const STATIC_ROUTE_META: Record<string, { title: string; description: string }> 
   },
   "/support": {
     title: "Support | Wireline",
-    description:
-      "Get help with Wireline for personal call support or business call coverage.",
+    description: "Get help with Wireline for personal call support or business call coverage.",
   },
   "/contact": {
     title: "Contact Wireline",
@@ -105,6 +104,32 @@ const STATIC_ROUTE_META: Record<string, { title: string; description: string }> 
     title: "Trust Center | Wireline",
     description:
       "How Wireline handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and honest security proof.",
+  },
+  // The four vertical trust packs are submitted in sitemap.xml and are the
+  // pages regulated buyers get sent to. Without their own prerendered meta
+  // they fell through to dist/index.html, whose canonical is the homepage —
+  // so Google saw four submitted URLs that self-canonicalized away as
+  // duplicates, and every share of one unfurled as the generic homepage card.
+  // Keep in sync with PACKS in src/components/TrustPackPage.tsx.
+  "/trust/medical": {
+    title: "Trust Pack: Healthcare-sensitive workflows | Wireline",
+    description:
+      "Controls before credentials. A practical review of the safeguards available today, with explicit boundaries for protected health information.",
+  },
+  "/trust/legal": {
+    title: "Trust Pack: Legal and professional services | Wireline",
+    description:
+      "Confidentiality-aware, never presumptive. Controls for structured intake and client communication without pretending software can determine privilege, conflicts, or legal advice.",
+  },
+  "/trust/insurance": {
+    title: "Trust Pack: Insurance agencies | Wireline",
+    description:
+      "Logged work, licensed decisions. Operational controls for policyholder communication while keeping regulated advice and carrier-specific decisions with qualified people.",
+  },
+  "/trust/enterprise": {
+    title: "Trust Pack: Enterprise review | Wireline",
+    description:
+      "Proof that matches the product. A concise starting point for security, procurement, and operations teams evaluating Wireline today.",
   },
   "/developers": {
     title: "Developer Portal | Wireline",
