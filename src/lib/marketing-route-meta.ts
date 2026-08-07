@@ -112,19 +112,19 @@ const STATIC_ROUTE_META: Record<string, { title: string; description: string }> 
   // duplicates, and every share of one unfurled as the generic homepage card.
   // Keep in sync with PACKS in src/components/TrustPackPage.tsx.
   "/trust/medical": {
-    title: "Trust Pack: Healthcare-sensitive workflows | Wireline",
+    title: "Trust Pack: Healthcare sensitive workflows | Wireline",
     description:
       "Controls before credentials. A practical review of the safeguards available today, with explicit boundaries for protected health information.",
   },
   "/trust/legal": {
     title: "Trust Pack: Legal and professional services | Wireline",
     description:
-      "Confidentiality-aware, never presumptive. Controls for structured intake and client communication without pretending software can determine privilege, conflicts, or legal advice.",
+      "Confidentiality aware, never presumptive. Controls for structured intake and client communication without pretending software can determine privilege, conflicts, or legal advice.",
   },
   "/trust/insurance": {
     title: "Trust Pack: Insurance agencies | Wireline",
     description:
-      "Logged work, licensed decisions. Operational controls for policyholder communication while keeping regulated advice and carrier-specific decisions with qualified people.",
+      "Logged work, licensed decisions. Operational controls for policyholder communication while keeping regulated advice and carrier specific decisions with qualified people.",
   },
   "/trust/enterprise": {
     title: "Trust Pack: Enterprise review | Wireline",
