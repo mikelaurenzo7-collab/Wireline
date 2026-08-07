@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
-import { google } from "googleapis";
+import { googleApis } from "../lib/google-apis";
 import { encryptSecret, decryptSecret } from "../lib/secret-vault";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -30,6 +30,7 @@ export async function syncGoogleCalendar(userId: string) {
   for (const account of accounts) {
     if (!account.accessToken) continue;
     try {
+      const google = await googleApis();
       const oauth2Client = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET,

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
 import { AppError } from "../../lib/api-error";
-import { google } from "googleapis";
+import { googleApis } from "../../lib/google-apis";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { encryptSecret } from "../../lib/secret-vault";
@@ -85,11 +85,12 @@ router.get(
       }
 
       // Fetch user's email to store as connected email
-      const oauth2Client = getGoogleOAuthClient(req as express.Request);
+      const oauth2Client = await getGoogleOAuthClient(req as express.Request);
       oauth2Client.setCredentials({
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
       });
+      const google = await googleApis();
       const oauth2 = google.oauth2({ auth: oauth2Client, version: "v2" });
       const userInfo = await oauth2.userinfo.get();
       const emailAddress = userInfo.data.email || "";

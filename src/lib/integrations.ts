@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
-import { google } from "googleapis";
+import { googleApis } from "./google-apis";
 import { drizzle, log, fetchWithTimeout } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
@@ -221,6 +221,7 @@ export class IntegrationService {
 
   private async fetchGoogleInbox(account: any, opts: { limit: number; sinceIso?: string }) {
     const auth = await this.getGoogleClient(account);
+    const google = await googleApis();
     const gmail = google.gmail({ version: "v1", auth });
     // `q` filters by Gmail search syntax. We always exclude category:promotions
     // and category:social so agent inboxes aren't flooded with newsletters.
@@ -395,6 +396,7 @@ export class IntegrationService {
   }
 
   private async getGoogleClient(account: any) {
+    const google = await googleApis();
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
@@ -414,6 +416,7 @@ export class IntegrationService {
     timeZone: string,
   ): Promise<string[]> {
     const auth = await this.getGoogleClient(account);
+    const google = await googleApis();
     const calendar = google.calendar({ version: "v3", auth });
     const events: any[] = [];
     let pageToken: string | undefined;
@@ -456,6 +459,7 @@ export class IntegrationService {
 
   private async createGoogleEvent(account: any, params: any): Promise<boolean> {
     const auth = await this.getGoogleClient(account);
+    const google = await googleApis();
     const calendar = google.calendar({ version: "v3", auth });
 
     const requestBody: any = {
@@ -491,6 +495,7 @@ export class IntegrationService {
 
   private async sendGoogleEmail(account: any, params: any): Promise<boolean> {
     const auth = await this.getGoogleClient(account);
+    const google = await googleApis();
     const gmail = google.gmail({ version: "v1", auth });
     const utf8Subject = `=?utf-8?B?${Buffer.from(params.subject).toString("base64")}?=`;
     const messageParts = [

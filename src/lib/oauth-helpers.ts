@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 import express from "express";
-import { google } from "googleapis";
+import { googleApis } from "./google-apis";
 import { randomUUID, createHmac, timingSafeEqual } from "node:crypto";
 import { Redis } from "@upstash/redis";
 import { drizzle, fetchWithTimeout, IS_PROD, tenantStore } from "./server-context";
@@ -40,8 +40,9 @@ function getOAuthStateSecret(): string {
   return "wireline-dev-oauth-state-secret-at-least-32-bytes";
 }
 
-export function getGoogleOAuthClient(req: express.Request) {
+export async function getGoogleOAuthClient(req: express.Request) {
   const baseUrl = getAppOrigin(req);
+  const google = await googleApis();
 
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -50,7 +51,8 @@ export function getGoogleOAuthClient(req: express.Request) {
   );
 }
 
-export function buildOAuthClient() {
+export async function buildOAuthClient() {
+  const google = await googleApis();
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
