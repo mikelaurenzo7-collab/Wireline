@@ -151,7 +151,10 @@ async function resolveFailoverCompliance(to: string | null): Promise<FailoverCom
       .from(schema.phoneNumbers)
       .leftJoin(schema.agents, eq(schema.agents.id, schema.phoneNumbers.agentId))
       .leftJoin(schema.settings, eq(schema.settings.userId, schema.phoneNumbers.userId))
-      .where(eq(schema.phoneNumbers.phoneNumber, to))
+      // Match lookupTenant's normalization: a To variant that resolves the
+      // tenant but missed this lookup would fail closed and refuse voicemail
+      // for a non-HIPAA tenant during every failover.
+      .where(eq(schema.phoneNumbers.phoneNumber, sanitizePhone(to)))
       .limit(1);
     return {
       complianceMode: row?.complianceMode ?? null,
@@ -292,17 +295,19 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
 
     if (matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS)) {
       try {
-        await drizzle.delete(schema.dncList).where(
-          and(
-            eq(schema.dncList.userId, tenantUserId),
-            inArray(schema.dncList.phone, dncPhoneCandidates(from)),
-            eq(schema.dncList.reason, "opt-out"),
-            or(
-              eq(schema.dncList.source, "twilio_advanced_opt_out"),
-              eq(schema.dncList.source, "sms_opt_out"),
+        await drizzle
+          .delete(schema.dncList)
+          .where(
+            and(
+              eq(schema.dncList.userId, tenantUserId),
+              inArray(schema.dncList.phone, dncPhoneCandidates(from)),
+              eq(schema.dncList.reason, "opt-out"),
+              or(
+                eq(schema.dncList.source, "twilio_advanced_opt_out"),
+                eq(schema.dncList.source, "sms_opt_out"),
+              ),
             ),
-          ),
-        );
+          );
 
         await drizzle.insert(schema.consentLog).values({
           userId: tenantUserId,
@@ -503,7 +508,9 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
   const from = typeof req.body?.From === "string" ? req.body.From : "";
   const to = typeof req.body?.To === "string" ? req.body.To : "";
   const durationRaw = Number(req.body?.RecordingDuration);
-  const durationSeconds = Number.isFinite(durationRaw) ? Math.max(0, Math.round(durationRaw)) : null;
+  const durationSeconds = Number.isFinite(durationRaw)
+    ? Math.max(0, Math.round(durationRaw))
+    : null;
 
   if (!recordingUrl) {
     log.warn("Voicemail complete missing RecordingUrl", {
@@ -524,7 +531,9 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
     }
 
     const persisted = await tenantStore.run(tenantUserId, async () => {
-      const recordingKey = createHash("sha256").update(recordingSid || recordingUrl).digest("hex");
+      const recordingKey = createHash("sha256")
+        .update(recordingSid || recordingUrl)
+        .digest("hex");
       const [inserted] = await drizzle
         .insert(schema.callLogs)
         .values({
@@ -639,14 +648,23 @@ router.post("/api/twilio-webhook/voicemail-transcription", async (req: Request, 
     if (!tenantUserId) {
       return res.status(200).send('<?xml version="1.0" encoding="UTF-8"?><Response/>');
     }
-    const recordingKey = createHash("sha256").update(recordingSid).digest("hex");
-    const vapiCallId = `twilio-voicemail:${recordingKey}`;
+    // The recording-complete handler keys the call log on RecordingSid when
+    // present, else RecordingUrl. Match both candidates so a sid-less recording
+    // callback followed by a sid-bearing transcription callback still lands.
+    const recordingUrl =
+      typeof req.body?.RecordingUrl === "string" ? req.body.RecordingUrl.trim() : "";
+    const candidateCallIds = [...new Set([recordingSid, recordingUrl].filter(Boolean))].map(
+      (value) => `twilio-voicemail:${createHash("sha256").update(value).digest("hex")}`,
+    );
     await tenantStore.run(tenantUserId, async () => {
       await drizzle
         .update(schema.callLogs)
         .set({ transcript: transcription })
         .where(
-          and(eq(schema.callLogs.vapiCallId, vapiCallId), eq(schema.callLogs.userId, tenantUserId)),
+          and(
+            inArray(schema.callLogs.vapiCallId, candidateCallIds),
+            eq(schema.callLogs.userId, tenantUserId),
+          ),
         );
     });
     log.info("Failover voicemail transcript persisted", {

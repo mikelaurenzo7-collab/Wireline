@@ -90,6 +90,7 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_consent_log", userColumns: ["user_id"] },
   { table: "wireline_goals", userColumns: ["user_id"] },
   { table: "wireline_quota_usage", userColumns: ["user_id"] },
+  { table: "wireline_voice_usage_events", userColumns: ["user_id"] },
   { table: "wireline_quota_limits", userColumns: ["user_id"] },
   { table: "wireline_spend_alerts", userColumns: ["user_id"] },
   { table: "wireline_spend_budgets", userColumns: ["user_id"] },

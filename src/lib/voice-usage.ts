@@ -74,8 +74,7 @@ export function includedVoiceMinutes(
   const plan = planById(planId ?? "personal");
   const safeExtraAgents = Math.max(0, Number(extraAgents ?? 0));
   const baseIncluded = Math.max(0, plan?.voice_minutes_monthly ?? 0);
-  const extraIncluded =
-    safeExtraAgents * Math.max(0, plan?.extra_agent_voice_minutes_monthly ?? 0);
+  const extraIncluded = safeExtraAgents * Math.max(0, plan?.extra_agent_voice_minutes_monthly ?? 0);
   return { plan, included: baseIncluded + extraIncluded };
 }
 
@@ -232,7 +231,10 @@ export async function trackVoiceMinutes(opts: {
   vapiCallId: string;
 }): Promise<void> {
   const { userId, durationSeconds, vapiCallId } = opts;
-  if (!userId || !vapiCallId) return;
+  // "unknown" is the call-log fallback id, not a provider call id. Metering on
+  // it would collapse every id-less call for a tenant onto one checkpoint row
+  // and silently skip billing for all but the first. Refuse it like a missing id.
+  if (!userId || !vapiCallId || vapiCallId === "unknown") return;
 
   const minutes = billableVoiceMinutes(durationSeconds);
   const periodKey = monthlyPeriodKey();
@@ -279,10 +281,7 @@ export async function trackVoiceMinutes(opts: {
       .update(voiceUsageEvents)
       .set({ chargedAt: new Date(), updatedAt: new Date() })
       .where(
-        and(
-          eq(voiceUsageEvents.userId, userId),
-          eq(voiceUsageEvents.providerCallId, vapiCallId),
-        ),
+        and(eq(voiceUsageEvents.userId, userId), eq(voiceUsageEvents.providerCallId, vapiCallId)),
       );
 
     if (charge.used_completion_grace) {

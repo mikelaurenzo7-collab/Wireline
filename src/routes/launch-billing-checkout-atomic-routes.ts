@@ -22,6 +22,12 @@ const LIVE_SUBSCRIPTION_STATUSES = new Set([
   "past_due",
   "incomplete",
   "unpaid",
+  // A paused subscription (trial ended without a payment method) is still a
+  // current subscription to webhook reconciliation. Omitting it here let
+  // checkout create a second subscription for the same customer, after which
+  // currentPlanSubscriptionForCustomer threw on every webhook and the paying
+  // customer never received entitlements.
+  "paused",
 ]);
 
 async function resolveLaunchPriceId(

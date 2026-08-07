@@ -1,4 +1,14 @@
-import { decimal, integer, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  decimal,
+  index,
+  integer,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
+import { users } from "./schema-base";
 
 /**
  * Durable per-provider-call accounting checkpoint.
@@ -12,7 +22,9 @@ import { decimal, integer, pgTable, primaryKey, text, timestamp, uuid } from "dr
 export const voiceUsageEvents = pgTable(
   "wireline_voice_usage_events",
   {
-    userId: uuid("user_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     providerCallId: text("provider_call_id").notNull(),
     periodKey: text("period_key").notNull(),
     billableMinutes: integer("billable_minutes").notNull(),
@@ -24,5 +36,6 @@ export const voiceUsageEvents = pgTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.userId, table.providerCallId] }),
+    userPeriodIdx: index("idx_voice_usage_events_user_period").on(table.userId, table.periodKey),
   }),
 );
