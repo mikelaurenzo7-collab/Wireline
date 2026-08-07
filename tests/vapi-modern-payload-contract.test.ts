@@ -60,9 +60,7 @@ describe("current Vapi assistant payload contract", () => {
 
   it("acknowledges slow live tools without claiming success", () => {
     expect(vapiToolRequestStartMessage("send_email")).toBe("Let me prepare that email.");
-    expect(vapiToolRequestStartMessage("shopify_lookup_order")).toBe(
-      "Let me take care of that.",
-    );
+    expect(vapiToolRequestStartMessage("shopify_lookup_order")).toBe("Let me take care of that.");
     expect(vapiToolRequestStartMessage("create_followup_task")).toBeUndefined();
     expect(vapiToolMessages("send_email")).toHaveLength(3);
     expect(vapiToolMessages("create_followup_task")).toBeUndefined();
@@ -70,14 +68,23 @@ describe("current Vapi assistant payload contract", () => {
 
   it("requires truthful confirmation and prerequisites around sensitive live actions", () => {
     expect(vapiToolExecutionGuidance("send_email")).toContain("Confirm the recipient address");
-    expect(vapiToolExecutionGuidance("shopify_cancel_order")).toContain(
-      "Look up the order first",
-    );
+    expect(vapiToolExecutionGuidance("shopify_cancel_order")).toContain("Look up the order first");
     expect(vapiToolExecutionGuidance("shopify_cancel_order")).toContain(
       "never invent queueing or completion",
     );
     expect(vapiToolExecutionGuidance("add_to_dnc")).toContain("Execute immediately");
     expect(vapiToolExecutionGuidance("search_knowledge_base")).toBeUndefined();
+  });
+
+  it("pins the verbal SMS consent script quoted in the Twilio toll-free verification", () => {
+    // The toll-free verification submitted to Twilio quotes this script as the
+    // product's verbal opt-in flow. If the script drifts, the compliance
+    // attestation silently stops describing what agents actually say.
+    const sms = vapiToolExecutionGuidance("send_text_message");
+    expect(sms).toContain(
+      '"Want me to text that to you at this number? Message and data rates may apply, and you can reply STOP at any time to opt out."',
+    );
+    expect(sms).toContain("only after the caller clearly agrees");
   });
 
   it("prefers a Vapi Custom Credential and retains the supported migration fallback", () => {
