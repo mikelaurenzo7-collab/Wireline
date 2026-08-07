@@ -63,18 +63,32 @@ Launch remains blocked until the following are cleared:
    compliant portal by exercising Wireline's managed bootstrap (or configuring a Dashboard default).
 2. **Complete one controlled Stripe lifecycle.** Prove checkout → webhook → entitlement → portal →
    cancellation/refund on a real test customer before inviting paid self-serve users.
-3. ~~**Restore full GitHub Actions execution.**~~ **Cleared 2026-08-01.** Workflow runs execute
-   again: PR #952 head `e9278fc` completed the whole matrix green, including the Full verification
-   ladder (3m 8s), build-smoke, the P0 route-capture gate (5m 59s), the Playwright axe WCAG gate,
-   and the static/metadata contract jobs — real durations and retrievable logs, not the
-   `startup_failure` billing pattern that produced two-second jobs with no logs. Treat a single
-   green matrix as recovery evidence, not a permanent guarantee: if `startup_failure` returns, the
-   repository billing limit is back and Vercel exact-head builds are again the compensating gate.
+3. **GitHub Actions is back on the billing limit — compensating gate active.** The 2026-08-01
+   recovery did not hold: runs from 2026-08-04 onward show the `startup_failure` billing pattern
+   again (two-to-twelve-second jobs, no logs). Owner direction 2026-08-07: treat these failures as
+   billing noise, not code signal. Per this item's own standing rule, Vercel exact-head builds plus
+   the local full verification ladder are again the compensating release gate. The contract gates
+   added since 2026-08-06 still have never executed on a runner; their first real run remains their
+   first true test once billing is restored.
 4. **Rotate every Vercel personal token pasted into chat** after this pass; revoke each after
    redeploying any values changed with that credential.
 5. **Configure and prove Federal DNCScrub with a live JSON scrub** before scaled marketing
    outbound. Set a valid endpoint/loginId in each intended environment; variable presence alone does
    not prove vendor authentication or disposition semantics.
+   **Registration package (prepared 2026-08-07 from the live Stripe account record; owner must
+   submit — the FTC certification and payment are legal attestations):**
+   - Entity: sole proprietorship — Michael Laurenzo d/b/a Wireline (Stripe `business_type:
+     individual`, identity verified; no EIN on file). Recommended first step: obtain a free IRS EIN
+     online so no SSN appears on registry or vendor forms.
+   - Profile data: Wireline, 914 West Van Buren Street, Chicago, IL 60607, US ·
+     +1 (561) 727-0142 · https://trywireline.com · owner Gmail as contact.
+   - Step 1 — FTC Telemarketer Account Profile at telemarketing.donotcall.gov → organization ID +
+     password (shown once on screen, never emailed).
+   - Step 2 — Subscribe and certify to receive the SAN. First five area codes are free; each
+     additional area code is $82 in FY 2026. Start with the area codes of the first campaign lists.
+   - Step 3 — Open the DNCScrub account at dnc.com keyed to that SAN; the issued `loginId` is the
+     `FEDERAL_DNC_API_KEY`. Set it with `FEDERAL_DNC_API_URL` on the production target only (the
+     preview boundary gate intentionally excludes it), then prove semantics with `npm run dnc:probe`.
 6. **Complete the controlled live channel matrix.** Account probes do not prove call transfer,
    `gemini_ground`, SMS STOP/HELP, real transactional email delivery, or provider redelivery.
 7. **Complete fresh visual QA.** Use the approved cloud browser at exact desktop and mobile
@@ -89,6 +103,10 @@ Launch remains blocked until the following are cleared:
     name and valid physical postal/notice address. Set `WIRELINE_POSTAL_ADDRESS` in production,
     verify it appears in every commercial email, and update Terms/Privacy contact language before
     admitting customers. The lifecycle-email path must stay fail-closed while this is unresolved.
+    **Value prepared 2026-08-07** from the live Stripe records (tax head office and support address
+    agree): `Wireline, 914 West Van Buren Street, Chicago, IL 60607`. One command applies it:
+    `vercel env add WIRELINE_POSTAL_ADDRESS production` (repeat for `development`; keep it out of
+    preview per the boundary policy).
     External Sentry is not a launch gate. Structured Vercel/runtime logs and the bounded
     `/api/health/report` browser reporter are the launch observability boundary; adopt Sentry later
     only after its SDK, project, alert policy, and browser/backend receipt are explicitly tested.

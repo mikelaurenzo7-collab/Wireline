@@ -37,6 +37,39 @@ Verified with evidence, not vibes:
 - **GitHub Actions:** red from account billing, not code — owner deferred; commit statuses (Vercel, GitGuardian) are green.
 - **Open:** cloud-browser dogfood (extension not connected), Twilio prepaid top-up, Federal DNC registration, `launch:status` re-run from `main` post-merge with full env.
 
+### 2026-08-07 — Launch readiness perfection pass (post-#1023 main)
+
+Verified live via connectors and local gates, not inferred:
+
+- **Main was red as merged:** 6 contract tests in 5 files still pinned pre-#1023 text
+  (`round6/7/8`, `code-review-hardening`, `call-recording-security`). Each invariant was verified
+  intact — several strengthened (per-call claim ledger, resumable debits, fail-closed failover
+  compliance) — and the contracts now pin the new form. Full non-e2e suite green after the fix.
+- **Launch env gates were mutually unsatisfiable:** `launch:status` demanded three-target coverage
+  and `vercel:env:health` demanded preview coverage for keys the build-time
+  `check-deployment-boundaries.mjs` gate deliberately forbids in preview. Both audits now require
+  production coverage only (`tests/vercel-env-target-policy-contract.test.ts` pins this), and
+  `vercel:env:health` reports **CORE READY** against the live project.
+- **Production:** deployed at exact `main` head `41a63af`; Vercel runtime errors over 7 days are
+  two groups only — the pg deprecation warning (silent since 2026-08-02, matching the K3 fix) and
+  one demo-line canary timeout for Marcus/+16173134469 at 2026-08-07 04:00 UTC (single probe,
+  10s abort, no retry by design). **Re-check the Marcus line in daylight** via
+  `GET /api/health/canary` or the Vapi dashboard before demo traffic.
+- **Sentry:** `revaluate/wireline-backend` receives events; zero production-relevant unresolved
+  issues in 14 days. The `mikelaurenzo7gmailcom` org's two auto-named projects are unused —
+  consolidate or delete to keep one observability home.
+- **Supabase:** ACTIVE_HEALTHY; security advisors show only the leaked-password-protection notice,
+  which is not the active control (custom-auth HIBP screening is, per Compliance and trust below).
+- **Resend:** `trywireline.com` verified, sending enabled, us-east-1; delivery proof still pending
+  (Red item unchanged).
+- **Stripe identity:** confirmed not correctable from this session — the account API rejects
+  self-identity writes and the session permission layer blocks them; the Dashboard actions in
+  `docs/VENDOR_LAUNCH_MAP.md` remain the path. Business records read live 2026-08-07 for the DNC
+  registration package (see vendor map item 5) and the prepared `WIRELINE_POSTAL_ADDRESS` value
+  (item 10).
+- **Token hygiene:** another Vercel personal token was pasted into chat for this pass — rotate it
+  with the rest per the standing Red item.
+
 ## Current go/no-go
 
 ### Red — resolve before taking live customers
