@@ -12,9 +12,12 @@
  *   prepaid coverage, completion grace records the amount due and the next live
  *   action is blocked until the balance is restored.
  * - No Stripe meter event is emitted and no automatic overage invoice is created.
+ * - A provider call contributes to the monthly counter exactly once, while an
+ *   unfinished Runtime Balance debit can be resumed safely on webhook retry.
  */
 
 import { and, eq, sql } from "drizzle-orm";
+import { voiceUsageEvents } from "../db/voice-usage-schema";
 import { chargeCompletedVoiceUsage } from "./voice-completion-grace";
 import { FLAT_OVERAGE_PER_MIN_USD, planById } from "./plan-catalog";
 import { drizzle, log, quotaTracker } from "./server-context";
@@ -45,11 +48,19 @@ export interface VoiceUsageSnapshot {
   stripe_metered: boolean;
 }
 
+interface PreparedVoiceUsage {
+  newlyCounted: boolean;
+  minutes: number;
+  incrementalOverageMinutes: number;
+  overageCostUsd: number;
+  overageRateUsd: number;
+  planId: string | null;
+  chargedAt: Date | null;
+}
+
 /** Count one minimum billable minute per completed provider attempt. */
 export function billableVoiceMinutes(durationSeconds: number): number {
-  const safeSeconds = Number.isFinite(durationSeconds)
-    ? Math.max(0, durationSeconds)
-    : 0;
+  const safeSeconds = Number.isFinite(durationSeconds) ? Math.max(0, durationSeconds) : 0;
   return Math.max(1, Math.ceil(safeSeconds / 60));
 }
 
@@ -68,19 +79,83 @@ export function includedVoiceMinutes(
   return { plan, included: baseIncluded + extraIncluded };
 }
 
-export async function trackVoiceMinutes(opts: {
+/**
+ * Claim and count one provider call in a single transaction.
+ *
+ * The per-call row is inserted before the aggregate increment. PostgreSQL's
+ * composite primary key serializes concurrent deliveries for the same provider
+ * call: exactly one transaction receives `inserted`, and only that transaction
+ * increments `wireline_quota_usage`. The event row and aggregate commit or roll
+ * back together, so a retry never observes a claim without its corresponding
+ * monthly minutes.
+ */
+async function prepareVoiceUsage(opts: {
   userId: string;
-  durationSeconds: number;
-  vapiCallId: string;
-}): Promise<void> {
-  const { userId, durationSeconds, vapiCallId } = opts;
-  if (!userId || !vapiCallId) return;
+  providerCallId: string;
+  minutes: number;
+  periodKey: string;
+}): Promise<PreparedVoiceUsage> {
+  const { userId, providerCallId, minutes, periodKey } = opts;
 
-  const minutes = billableVoiceMinutes(durationSeconds);
-  const periodKey = monthlyPeriodKey();
+  return drizzle.transaction(async (tx) => {
+    const [inserted] = await tx
+      .insert(voiceUsageEvents)
+      .values({
+        userId,
+        providerCallId,
+        periodKey,
+        billableMinutes: minutes,
+        updatedAt: new Date(),
+      })
+      .onConflictDoNothing({
+        target: [voiceUsageEvents.userId, voiceUsageEvents.providerCallId],
+      })
+      .returning({ providerCallId: voiceUsageEvents.providerCallId });
 
-  try {
-    const upsertRows = (await drizzle
+    if (!inserted) {
+      const [existing] = await tx
+        .select({
+          billableMinutes: voiceUsageEvents.billableMinutes,
+          incrementalOverageMinutes: voiceUsageEvents.incrementalOverageMinutes,
+          overageCostUsd: voiceUsageEvents.overageCostUsd,
+          chargedAt: voiceUsageEvents.chargedAt,
+        })
+        .from(voiceUsageEvents)
+        .where(
+          and(
+            eq(voiceUsageEvents.userId, userId),
+            eq(voiceUsageEvents.providerCallId, providerCallId),
+          ),
+        )
+        .limit(1);
+
+      if (!existing) {
+        throw new Error("Voice usage event claim exists but could not be re-read");
+      }
+
+      const [billing] = await tx
+        .select({
+          plan: schema.subscriptions.plan,
+          extraAgents: schema.settings.extraAgents,
+        })
+        .from(schema.settings)
+        .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+        .where(eq(schema.settings.userId, userId))
+        .limit(1);
+      const { plan } = includedVoiceMinutes(billing?.plan ?? null, billing?.extraAgents);
+
+      return {
+        newlyCounted: false,
+        minutes: Number(existing.billableMinutes || minutes),
+        incrementalOverageMinutes: Number(existing.incrementalOverageMinutes || 0),
+        overageCostUsd: Number(existing.overageCostUsd || 0),
+        overageRateUsd: plan?.overage_per_min_usd ?? FLAT_OVERAGE_PER_MIN_USD,
+        planId: plan?.id ?? null,
+        chargedAt: existing.chargedAt ?? null,
+      };
+    }
+
+    const upsertRows = (await tx
       .insert(schema.quotaUsage)
       .values({
         userId,
@@ -105,131 +180,138 @@ export async function trackVoiceMinutes(opts: {
     const newUsed = Number(upsertRows[0]?.used ?? minutes);
     const previousUsed = Math.max(0, newUsed - minutes);
 
-    // Settle the per-day burst cap with the minutes actually consumed. The
-    // pre-dial gate calls checkAndIncrement("voice_minutes_daily", units) with
-    // units 0 at every single call site, so without this the counter never
-    // leaves zero and VOICE_BURST_DAILY — the only per-day ceiling on voice
-    // COGS — can never fire. Settling after the call (rather than reserving a
-    // guess before it) keeps a legitimate long call from being refused, while
-    // still stopping the NEXT dial once the day's real usage is spent.
-    await quotaTracker
-      .checkAndIncrement(userId, "voice_minutes_daily", minutes)
-      .catch((error: unknown) => {
-        log.error("voice daily quota settle failed", {
-          userId,
-          minutes,
-          error: getErrorMessage(error),
-        });
-      });
-
-    const [billing] = await drizzle
+    const [billing] = await tx
       .select({
         plan: schema.subscriptions.plan,
         extraAgents: schema.settings.extraAgents,
       })
       .from(schema.settings)
-      .leftJoin(
-        schema.subscriptions,
-        eq(schema.subscriptions.userId, schema.settings.userId),
-      )
+      .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
       .where(eq(schema.settings.userId, userId))
       .limit(1);
 
     const planId = billing?.plan ?? null;
-    const { plan, included } = includedVoiceMinutes(
-      planId,
-      billing?.extraAgents,
-    );
-    if (!plan) return;
-
+    const { plan, included } = includedVoiceMinutes(planId, billing?.extraAgents);
     const previousOverage = Math.max(0, previousUsed - included);
     const newOverageTotal = Math.max(0, newUsed - included);
-    const incrementalOverageMinutes = Math.max(
-      0,
-      newOverageTotal - previousOverage,
-    );
-    if (incrementalOverageMinutes <= 0) return;
+    const incrementalOverageMinutes = Math.max(0, newOverageTotal - previousOverage);
+    const overageRateUsd = plan?.overage_per_min_usd ?? FLAT_OVERAGE_PER_MIN_USD;
+    const overageCostUsd = plan
+      ? Math.round(incrementalOverageMinutes * overageRateUsd * 100) / 100
+      : 0;
 
-    const overageCostUsd =
-      Math.round(incrementalOverageMinutes * plan.overage_per_min_usd * 100) /
-      100;
-    if (overageCostUsd <= 0) return;
-
-    let charge;
-    try {
-      charge = await chargeCompletedVoiceUsage({
-        userId,
-        costUsd: overageCostUsd,
-        providerCallId: vapiCallId,
-        billableMinutes: incrementalOverageMinutes,
-        rateUsd: plan.overage_per_min_usd,
-      });
-    } catch (chargeError) {
-      // The counter has already committed, and the overage band is derived
-      // from it (previousUsed -> newUsed). If the charge fails here and we
-      // leave the counter inflated, the next call recomputes previousOverage
-      // from the higher number, so this band's incremental minutes become 0
-      // forever: never charged, never retried, and completion-grace debt never
-      // recorded — so the pre-call solvency gate keeps authorising calls
-      // against coverage that was already spent.
-      //
-      // Rolling the counter back by exactly the minutes just added makes the
-      // same band re-derivable, so the next call retries the charge (the
-      // ledger key is per-call and idempotent, so a late success cannot double
-      // charge). The trade-off is that monthly usage under-reports until that
-      // next call — billability is the more important of the two to preserve.
-      await drizzle
-        .update(schema.quotaUsage)
-        .set({
-          used: sql`GREATEST(0, ${schema.quotaUsage.used} - ${BigInt(minutes)})`,
-        })
-        .where(
-          and(
-            eq(schema.quotaUsage.userId, userId),
-            eq(schema.quotaUsage.dimension, DIMENSION),
-            eq(schema.quotaUsage.periodKey, periodKey),
-          ),
-        )
-        .catch(() => {});
-      log.error(
-        "Voice overage charge failed — usage counter rolled back for retry",
-        {
-          userId,
-          callId: vapiCallId,
-          minutes,
-          incrementalOverageMinutes,
-          overageCostUsd,
-          error: getErrorMessage(chargeError),
-        },
+    await tx
+      .update(voiceUsageEvents)
+      .set({
+        incrementalOverageMinutes,
+        overageCostUsd: String(overageCostUsd),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(voiceUsageEvents.userId, userId),
+          eq(voiceUsageEvents.providerCallId, providerCallId),
+        ),
       );
-      return;
+
+    return {
+      newlyCounted: true,
+      minutes,
+      incrementalOverageMinutes,
+      overageCostUsd,
+      overageRateUsd,
+      planId: plan?.id ?? null,
+      chargedAt: null,
+    };
+  });
+}
+
+export async function trackVoiceMinutes(opts: {
+  userId: string;
+  durationSeconds: number;
+  vapiCallId: string;
+}): Promise<void> {
+  const { userId, durationSeconds, vapiCallId } = opts;
+  if (!userId || !vapiCallId) return;
+
+  const minutes = billableVoiceMinutes(durationSeconds);
+  const periodKey = monthlyPeriodKey();
+
+  try {
+    const prepared = await prepareVoiceUsage({
+      userId,
+      providerCallId: vapiCallId,
+      minutes,
+      periodKey,
+    });
+
+    // Settle the per-day burst cap only when this provider call was newly
+    // counted. A duplicate end-of-call delivery must not consume the daily cap
+    // twice even though it is allowed to resume an unfinished balance debit.
+    if (prepared.newlyCounted) {
+      await quotaTracker
+        .checkAndIncrement(userId, "voice_minutes_daily", prepared.minutes)
+        .catch((error: unknown) => {
+          log.error("voice daily quota settle failed", {
+            userId,
+            minutes: prepared.minutes,
+            error: getErrorMessage(error),
+          });
+        });
     }
+
+    if (prepared.incrementalOverageMinutes <= 0 || prepared.overageCostUsd <= 0) return;
+    if (prepared.chargedAt) return;
+
+    // The ledger debit is itself idempotent on voice_completion:<providerCallId>.
+    // If this succeeds but the charged_at checkpoint update fails, a retry may
+    // call it again safely; reverseCredit returns the already-applied ledger
+    // entry rather than debiting twice.
+    const charge = await chargeCompletedVoiceUsage({
+      userId,
+      costUsd: prepared.overageCostUsd,
+      providerCallId: vapiCallId,
+      billableMinutes: prepared.incrementalOverageMinutes,
+      rateUsd: prepared.overageRateUsd,
+    });
+
+    await drizzle
+      .update(voiceUsageEvents)
+      .set({ chargedAt: new Date(), updatedAt: new Date() })
+      .where(
+        and(
+          eq(voiceUsageEvents.userId, userId),
+          eq(voiceUsageEvents.providerCallId, vapiCallId),
+        ),
+      );
 
     if (charge.used_completion_grace) {
       log.warn("Completed call used voice completion grace", {
         userId,
-        planId: plan.id,
+        planId: prepared.planId,
         callId: vapiCallId,
-        billableMinutes: minutes,
-        incrementalOverageMinutes,
-        chargedUsd: overageCostUsd,
+        billableMinutes: prepared.minutes,
+        incrementalOverageMinutes: prepared.incrementalOverageMinutes,
+        chargedUsd: prepared.overageCostUsd,
         balanceUsd: charge.balance_usd,
         completionGraceDueUsd: charge.completion_grace_due_usd,
         policy: "finish_current_block_next",
       });
     }
   } catch (error: any) {
-    log.error("trackVoiceMinutes failed", {
+    log.error("trackVoiceMinutes failed — provider retry required", {
       userId,
       callId: vapiCallId,
       error: error?.message,
     });
+    // Do not swallow revenue-integrity failures. The Vapi end-of-call handler
+    // is retryable and this function is now idempotent per provider call, so a
+    // failed count/debit must escape and be resumed by redelivery.
+    throw error;
   }
 }
 
-export async function getVoiceUsageSnapshot(
-  userId: string,
-): Promise<VoiceUsageSnapshot> {
+export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageSnapshot> {
   const periodKey = monthlyPeriodKey();
 
   const [[usageRow], [billing]] = await Promise.all([
@@ -250,10 +332,7 @@ export async function getVoiceUsageSnapshot(
         extraAgents: schema.settings.extraAgents,
       })
       .from(schema.settings)
-      .leftJoin(
-        schema.subscriptions,
-        eq(schema.subscriptions.userId, schema.settings.userId),
-      )
+      .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
       .where(eq(schema.settings.userId, userId))
       .limit(1),
   ]);
