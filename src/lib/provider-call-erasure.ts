@@ -150,8 +150,13 @@ async function eraseTwilioRecording(
   const { recordingSid } = parseTwilioRecordingRef(recordingUrl, accountSid);
   const auth = twilioAuthHeader(accountSid, authToken);
   const recordingResource = twilioResourceUrl(accountSid, `Recordings/${recordingSid}.json`);
+  // Twilio keeps deleted Recording metadata for 40 days, but only returns it
+  // when IncludeSoftDeleted is requested. The Call SID lives in that metadata.
+  // Retaining access to it makes retries safe when media deletion succeeded but
+  // the later Call-record deletion failed on the previous purge attempt.
+  const recordingMetadataResource = `${recordingResource}?IncludeSoftDeleted=true`;
 
-  const metadataResponse = await fetchFn(recordingResource, {
+  const metadataResponse = await fetchFn(recordingMetadataResource, {
     headers: { Authorization: auth },
     signal: AbortSignal.timeout(15_000),
   });
