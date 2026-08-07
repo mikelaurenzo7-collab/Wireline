@@ -22,8 +22,10 @@ import {
   revokeMcpAccessTokensForClient,
 } from "../lib/mcp-oauth-security";
 import { rateLimit } from "../lib/rate-limit";
-import { drizzle, fetchWithTimeout, log } from "../lib/server-context";
+import { drizzle, fetchWithTimeout, log, tenantStore } from "../lib/server-context";
 import { getSessionTokenFromRequest } from "../lib/session-cookie";
+import { isSessionGenerationActive } from "../lib/session-generation";
+import { sessionUsers } from "../db/security-schema";
 import * as schema from "../db/schema";
 
 const router = express.Router();
@@ -351,6 +353,26 @@ async function sessionPrincipal(req: Request): Promise<{ userId: string; email: 
   if (!token) return null;
   const payload = await verifyInternalJwt(token, requireInternalJwtSecret());
   if (!payload?.sub || !payload.email) return null;
+
+  // The signature+exp check alone is not enough to authorize the MCP resource
+  // owner: sign-out and password reset bump the DB-owned session generation but
+  // cannot revoke an already-issued JWT before its ≤2h expiry. Without the fence
+  // a revoked-but-unexpired session could still mint a 30-day MCP refresh token,
+  // defeating sign-out/password-reset as remediation. Apply the same canonical
+  // fence loadActiveSessionUser and resolveUserIdFromOAuthSession use.
+  const active = await tenantStore.run(payload.sub, async () => {
+    const [user] = await drizzle
+      .select({
+        sessionRevokedBefore: sessionUsers.sessionRevokedBefore,
+        sessionVersion: sessionUsers.sessionVersion,
+      })
+      .from(sessionUsers)
+      .where(eq(sessionUsers.id, payload.sub))
+      .limit(1);
+    return Boolean(user && isSessionGenerationActive(payload, user));
+  });
+  if (!active) return null;
+
   return { userId: payload.sub, email: payload.email };
 }
 

@@ -53,5 +53,45 @@ describe("checkout guard matches webhook reconciliation's current-subscription s
     expect(checkout).toContain('"paused"');
     const helpers = read("src/lib/stripe-helpers.ts");
     expect(helpers).toContain('"paused"');
+    // The legacy checkout route carries a shadowed copy of the same set; it
+    // must not drift, or a future reorder resurrects the double-subscription bug.
+    const legacyCheckout = read("src/routes/launch-billing-checkout-routes.ts");
+    expect(legacyCheckout).toContain('"paused"');
+  });
+});
+
+describe("per-call TCPA evidence is race-safe, not just check-then-insert", () => {
+  it("backs the disclosure and opt-out writes with partial unique indexes", () => {
+    const migration = read("drizzle/migrations/0136_consent_evidence_uniqueness.sql");
+    expect(migration).toContain("uq_consent_log_call_disclosure");
+    expect(migration).toContain("uq_consent_log_call_opt_out");
+    expect(migration).toContain("WHERE call_id IS NOT NULL");
+    const journal = read("drizzle/migrations/meta/_journal.json");
+    expect(journal).toContain("0136_consent_evidence_uniqueness");
+  });
+
+  it("inserts with onConflictDoNothing and only alerts on the row that lands", () => {
+    const handlers = read("src/lib/vapi-handlers.ts");
+    expect(handlers).toContain(".onConflictDoNothing()");
+    // The unverified-two-party alert must fire only for the delivery that
+    // actually inserted the disclosure row, so a concurrent duplicate cannot
+    // double-page ops.
+    expect(handlers).toContain("insertedDisclosure.length > 0");
+  });
+});
+
+describe("MCP OAuth authorize applies the session-revocation fence", () => {
+  it("runs sessionPrincipal through isSessionGenerationActive like every other consumer", () => {
+    // Sign-out and password reset bump the DB session generation but cannot
+    // revoke an already-issued JWT before its expiry; without the fence a
+    // revoked-but-unexpired session could still mint a 30-day MCP refresh token.
+    const route = read("src/routes/chatgpt-mcp-routes.ts");
+    const principal = route.slice(
+      route.indexOf("async function sessionPrincipal("),
+      route.indexOf("async function issueTokens("),
+    );
+    expect(principal).toContain("isSessionGenerationActive(payload, user)");
+    expect(principal).toContain("tenantStore.run(payload.sub");
+    expect(principal).toContain("if (!active) return null;");
   });
 });
