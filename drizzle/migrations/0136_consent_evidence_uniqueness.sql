@@ -14,8 +14,9 @@
 -- disclosure row and an opt-out row for the same call do not collide.
 --
 -- Idempotent and safe to replay. Existing production data was written one row
--- per fresh delivery by the pre-0136 handler, so no duplicates exist to block
--- index creation.
+-- per fresh delivery by the pre-0136 handler. Verified against the live
+-- database 2026-08-07: zero duplicate (user_id, call_id) pairs for either event
+-- family across the consent log, so both unique indexes create cleanly.
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_consent_log_call_disclosure
   ON public.wireline_consent_log (user_id, call_id)
