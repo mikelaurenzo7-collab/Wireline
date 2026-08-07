@@ -333,7 +333,7 @@ router.get("/api/phone-numbers/area-codes", authenticateUser, (_req: Request, re
  * phone number, nothing that reaches a response body — and the result is used
  * solely to EXCLUDE, so it can only ever narrow what the caller sees.
  */
-function selectPlatformClaimedVapiIds(): Promise<Array<{ vapiId: string | null }>> {
+function selectClaimedVapiIdsOutsideTenantContext(): Promise<Array<{ vapiId: string | null }>> {
   return tenantStore.exit(() =>
     drizzle.select({ vapiId: schema.phoneNumbers.vapiNumberId }).from(schema.phoneNumbers),
   );
@@ -354,7 +354,7 @@ router.get(
     try {
       const [poolNumbers, claimedRows] = await Promise.all([
         listVapiNumbers(),
-        selectPlatformClaimedVapiIds(),
+        selectClaimedVapiIdsOutsideTenantContext(),
       ]);
       const claimed = new Set(claimedRows.map((r) => r.vapiId).filter(Boolean));
       const available = poolNumbers
@@ -465,7 +465,7 @@ router.post(
       // violation on phone_number, the other will succeed cleanly).
       const [poolNumbers, claimedRows] = await Promise.all([
         listVapiNumbers(),
-        selectPlatformClaimedVapiIds(),
+        selectClaimedVapiIdsOutsideTenantContext(),
       ]);
       const match = poolNumbers.find((n) => n.number === phoneNumber && n.provider === "vapi");
       if (!match) {

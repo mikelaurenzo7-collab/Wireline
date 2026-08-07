@@ -17,12 +17,12 @@ describe("shared number pool is read platform-wide", () => {
   it("reads the claimed set outside the tenant context, and only the opaque id", () => {
     const routes = read("src/routes/carrier-routes.ts");
 
-    expect(routes).toContain("function selectPlatformClaimedVapiIds()");
+    expect(routes).toContain("function selectClaimedVapiIdsOutsideTenantContext()");
     expect(routes).toContain("tenantStore.exit(");
     // Only the provider id may cross the RLS boundary. Selecting the phone
     // number or the owning user here would put tenant data back in reach.
     const helper = routes.slice(
-      routes.indexOf("function selectPlatformClaimedVapiIds()"),
+      routes.indexOf("function selectClaimedVapiIdsOutsideTenantContext()"),
       routes.indexOf("* Available numbers in the pool"),
     );
     expect(helper).toContain("select({ vapiId: schema.phoneNumbers.vapiNumberId })");
@@ -31,7 +31,7 @@ describe("shared number pool is read platform-wide", () => {
 
     // Both call sites must use it — the picker AND the claim guard. A blinded
     // read left in either place reopens the leak or the double-claim race.
-    const uses = routes.match(/selectPlatformClaimedVapiIds\(\)/g) || [];
+    const uses = routes.match(/selectClaimedVapiIdsOutsideTenantContext\(\)/g) || [];
     expect(uses.length).toBeGreaterThanOrEqual(3); // definition + 2 call sites
 
     // The query itself must exist exactly ONCE, and inside the helper. A second
