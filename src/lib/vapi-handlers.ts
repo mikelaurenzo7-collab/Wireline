@@ -17,6 +17,7 @@ import {
   buildConsentLedgerRow,
   detectOptOut,
   detectRecordingDisclosure,
+  detectAiDisclosure,
   CONSENT_RULE_VERSION,
 } from "./tcpa-consent";
 import { normalizeDncPhone } from "./compliance";
@@ -151,6 +152,12 @@ const DISCLOSURE_EVENTS = [
   "disclosure_unverifiable",
 ];
 
+const AI_DISCLOSURE_EVENTS = [
+  "ai_disclosure_played",
+  "ai_disclosure_not_detected",
+  "ai_disclosure_unverifiable",
+];
+
 /**
  * Idempotent TCPA evidence writer: one recording-disclosure row and, when the
  * transcript requested it, one opt-out row per call. Runs on every delivery so
@@ -160,6 +167,105 @@ const DISCLOSURE_EVENTS = [
  * best-effort: DNC suppression before it is the legal boundary, and a
  * consent-ledger outage must not block voice accounting after it.
  */
+/**
+ * One AI-identity-disclosure row per outbound call, idempotent across Vapi
+ * redeliveries the same way the recording-disclosure row is (pre-SELECT plus
+ * the 0138 partial unique index as the concurrency backstop). Written as its
+ * own event family so an AI-disclosure row and a recording-disclosure row for
+ * the same call do not contend for a single per-call slot.
+ */
+async function persistAiDisclosureEvidence(input: {
+  userId: string;
+  callId: string | null;
+  customerNumber: string;
+  transcript: string;
+  hasTranscript: boolean;
+  duration: number;
+  rule: ReturnType<typeof getConsentRuleForPhone>["rule"];
+  state: ReturnType<typeof getConsentRuleForPhone>["state"];
+}): Promise<void> {
+  const { userId, callId, customerNumber, transcript, hasTranscript, duration, rule, state } =
+    input;
+
+  if (callId) {
+    const [existing] = await drizzle
+      .select({ id: schema.consentLog.id })
+      .from(schema.consentLog)
+      .where(
+        and(
+          eq(schema.consentLog.userId, userId),
+          eq(schema.consentLog.callId, callId),
+          inArray(schema.consentLog.event, AI_DISCLOSURE_EVENTS),
+        ),
+      )
+      .limit(1);
+    if (existing) return;
+  }
+
+  const aiDisclosure = detectAiDisclosure(transcript);
+  const event = aiDisclosure.found
+    ? "ai_disclosure_played"
+    : hasTranscript
+      ? "ai_disclosure_not_detected"
+      : "ai_disclosure_unverifiable";
+  const delivery = aiDisclosure.found
+    ? "verified"
+    : hasTranscript
+      ? "not_detected"
+      : "unverifiable";
+
+  const ledgerRow = buildConsentLedgerRow({
+    user_id: userId,
+    call_id: callId,
+    customer_number: customerNumber,
+    event,
+    rule_version: CONSENT_RULE_VERSION,
+    rule,
+    state,
+    metadata: {
+      delivery,
+      disclosure_kind: "ai_identity",
+      ...(aiDisclosure.found ? { evidence: aiDisclosure.excerpt } : {}),
+    },
+  });
+
+  const inserted = await drizzle
+    .insert(schema.consentLog)
+    .values({
+      userId: ledgerRow.user_id,
+      callId: ledgerRow.call_id,
+      customerNumber: ledgerRow.customer_number,
+      event: ledgerRow.event,
+      ruleVersion: ledgerRow.rule_version,
+      rule: ledgerRow.rule,
+      state: ledgerRow.state,
+      metadata: ledgerRow.metadata,
+    })
+    .onConflictDoNothing()
+    .returning({ id: schema.consentLog.id });
+
+  // Only the row that actually landed may alert, so a redelivery race cannot
+  // double-page. A call that carried no conversation at all (no transcript and
+  // no duration) is not evidence of a missed disclosure.
+  const carriedConversation = hasTranscript || duration > 0;
+  if (inserted.length > 0 && event !== "ai_disclosure_played" && carriedConversation) {
+    log.warn("TCPA: AI-identity disclosure could not be verified on an outbound AI call", {
+      userId,
+      callId,
+      state,
+      delivery,
+    });
+    reportError(new Error("TCPA AI-identity disclosure unverified on outbound AI call"), {
+      userId,
+      callId,
+      state,
+      rule,
+      delivery,
+      tags: { compliance: "tcpa_ai_disclosure_unverified" },
+    });
+  }
+}
+
 async function persistComplianceEvidence(input: {
   userId: string;
   call: any;
@@ -262,6 +368,23 @@ async function persistComplianceEvidence(input: {
           tags: { compliance: "tcpa_disclosure_unverified" },
         });
       }
+    }
+
+    // AI-identity disclosure (FCC 24-17). Outbound only: the obligation
+    // attaches to the AI-voice call we placed, not to a consumer who dialed in.
+    // Unlike the recording disclosure this is federal and applies in every
+    // state, so an undetected one is a broader exposure, not a narrower one.
+    if (call?.type === "outboundPhoneCall") {
+      await persistAiDisclosureEvidence({
+        userId,
+        callId,
+        customerNumber: call?.customer?.number || "unknown",
+        transcript,
+        hasTranscript,
+        duration,
+        rule,
+        state,
+      });
     }
 
     if (optOut.found) {

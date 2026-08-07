@@ -1,6 +1,6 @@
 /**
  * Canonical Drizzle/runtime schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0137_per_tenant_sync_keys_and_reenrollment.sql`.
+ * Latest committed migration: `drizzle/migrations/0138_ai_disclosure_evidence_uniqueness.sql`.
  *
  * `schema-base.ts` preserves the existing table graph. The two tables below are
  * declared explicitly here because migrations 0130, 0133, and 0134 changed

@@ -253,6 +253,13 @@
       "when": 1786118400000,
       "tag": "0137_per_tenant_sync_keys_and_reenrollment",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1786132800000,
+      "tag": "0138_ai_disclosure_evidence_uniqueness",
+      "breakpoints": true
     }
   ]
 }

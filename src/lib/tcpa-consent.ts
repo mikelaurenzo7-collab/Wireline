@@ -566,6 +566,14 @@ export type ConsentLedgerEvent =
   | "disclosure_not_detected"
   // No transcript/evidence was available, so delivery cannot be asserted either way.
   | "disclosure_unverifiable"
+  // AI-identity disclosure (FCC 24-17: an AI-generated voice is an "artificial
+  // or prerecorded voice" under the TCPA). This obligation is federal and
+  // applies to every outbound AI call in every state — unlike the recording
+  // disclosure, which only binds in two-party states — so its delivery is
+  // evidenced on the same append-only ledger.
+  | "ai_disclosure_played"
+  | "ai_disclosure_not_detected"
+  | "ai_disclosure_unverifiable"
   | "consent_granted"
   | "consent_revoked"
   | "opt_out_requested"
@@ -629,8 +637,7 @@ const DNC_OPT_OUT_PATTERNS: OptOutPattern[] = [
     kind: "dnc",
   },
   {
-    pattern:
-      /\bstop\s+(?:calling|contacting)\s+(?:me|us|this\s+number|my\s+number)\b/i,
+    pattern: /\bstop\s+(?:calling|contacting)\s+(?:me|us|this\s+number|my\s+number)\b/i,
     kind: "dnc",
   },
   {
@@ -680,8 +687,7 @@ export function detectOptOut(transcript: string | null | undefined): {
   if (!transcript) return { found: false };
   return (
     firstOptOutMatch(transcript, DNC_OPT_OUT_PATTERNS) ||
-    firstOptOutMatch(transcript, RECORDING_OPT_OUT_PATTERNS) ||
-    { found: false }
+    firstOptOutMatch(transcript, RECORDING_OPT_OUT_PATTERNS) || { found: false }
   );
 }
 
@@ -714,8 +720,52 @@ export function detectRecordingDisclosure(transcript: string | null | undefined)
   excerpt?: string;
   matched_pattern?: string;
 } {
+  return matchDisclosure(transcript, RECORDING_DISCLOSURE_PATTERNS);
+}
+
+/**
+ * Detect that the AI-identity disclosure was actually spoken on the call.
+ *
+ * complianceFirstMessagePrefix() prepends "This call uses an automated AI
+ * assistant on behalf of <business>." to every outbound AI call, but injecting
+ * a first message is not proof it was delivered: the model can be reconfigured,
+ * the prefix can regress, and a paraphrase is still compliant. Under FCC 24-17
+ * an AI-generated voice is an "artificial or prerecorded voice" for TCPA
+ * purposes, with statutory damages per call, so the ledger needs per-call
+ * evidence of delivery — not an assumption — exactly as it does for recording.
+ *
+ * Only DECLARATIVE agent phrasing matches ("I'm an AI assistant", "this call
+ * uses an automated..."). A consumer asking "am I talking to a real person?"
+ * must not be mistaken for the agent having disclosed.
+ */
+const AI_DISCLOSURE_PATTERNS: RegExp[] = [
+  // The exact injected prefix and close variants.
+  /\bthis call uses an automated\b/i,
+  /\bthis (?:is|call is) an automated (?:call|assistant|voice|system)\b/i,
+  // First-person declarations by the agent.
+  /\b(?:i'm|i am)\s+an?\s+(?:automated|virtual|digital)\s+(?:ai\s+)?(?:assistant|agent|voice)\b/i,
+  /\b(?:i'm|i am)\s+an\s+(?:a\.?i\.?|artificial intelligence)\b/i,
+  /\b(?:i'm|i am)\s+an?\s+ai\s+(?:assistant|agent|voice)\b/i,
+  /\b(?:i'm|i am)\s+not\s+a\s+(?:real\s+)?human\b/i,
+  // Third-person agent framing ("you're speaking with an AI assistant").
+  /\byou(?:'re| are)\s+(?:speaking|talking)\s+(?:with|to)\s+an?\s+(?:ai|automated|virtual)\b/i,
+];
+
+export function detectAiDisclosure(transcript: string | null | undefined): {
+  found: boolean;
+  excerpt?: string;
+  matched_pattern?: string;
+} {
+  return matchDisclosure(transcript, AI_DISCLOSURE_PATTERNS);
+}
+
+/** Shared matcher: first hit wins, with a short excerpt for ledger evidence. */
+function matchDisclosure(
+  transcript: string | null | undefined,
+  patterns: RegExp[],
+): { found: boolean; excerpt?: string; matched_pattern?: string } {
   if (!transcript) return { found: false };
-  for (const pat of RECORDING_DISCLOSURE_PATTERNS) {
+  for (const pat of patterns) {
     const m = transcript.match(pat);
     if (m && typeof m.index === "number") {
       const start = Math.max(0, m.index - 24);
