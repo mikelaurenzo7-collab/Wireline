@@ -3,13 +3,6 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
-
-/**
- * Source with comments removed. Negative assertions ("this shape must not
- * appear") belong here: a comment describing the defect being fixed contains
- * the same literal as the defect, and would otherwise fail the gate that
- * documents it.
- */
 const stripComments = (source: string) =>
   source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
@@ -43,29 +36,17 @@ describe("Twilio voice failover contract", () => {
     expect(routes).toContain('method="POST"');
   });
 
-  it("never records or transcribes a HIPAA line on the failover path", () => {
-    // The failover answers the same tenant line as the full assistant, so it
-    // inherits the same obligations. It emitted <Record transcribe="true">
-    // unconditionally, so a HIPAA agent's caller was recorded and machine-
-    // transcribed — and the audio URL plus transcript were persisted to
-    // wireline_call_logs — while HIPAA mode's entire behavioural effect
-    // everywhere else in the product is recording suppression.
+  it("never records or transcribes a HIPAA or unresolved line on the failover path", () => {
     const builder = routes.slice(
       routes.indexOf("function failoverVoicemailTwiml("),
       routes.indexOf("async function resolveFailoverCompliance("),
     );
-    expect(builder).toContain('const recordingEnabled = compliance.complianceMode !== "hipaa";');
-    // The suppressed branch must return BEFORE any <Record> is emitted.
-    //
-    // Anchor both slice bounds first. Without this, deleting the early return
-    // makes the start indexOf return -1, String.slice coerces that to length-1,
-    // and `suppressed` becomes "" — so both not.toContain assertions below pass
-    // VACUOUSLY against an empty string. The mutation died only because of the
-    // trailing positive assertion, which made the kill incidental rather than
-    // intentional and one "redundant line" cleanup away from toothless.
+    expect(builder).toMatch(
+      /const recordingEnabled =\s*compliance\.complianceMode !== null && compliance\.complianceMode !== "hipaa";/,
+    );
     const guardStart = builder.indexOf("if (!recordingEnabled) {");
     const guardEnd = builder.indexOf("const disclosure =");
-    expect(guardStart, "HIPAA suppression branch must exist").toBeGreaterThan(-1);
+    expect(guardStart, "recording suppression branch must exist").toBeGreaterThan(-1);
     expect(guardEnd, "disclosure branch must follow it").toBeGreaterThan(guardStart);
 
     const suppressed = builder.slice(guardStart, guardEnd);
@@ -80,29 +61,18 @@ describe("Twilio voice failover contract", () => {
       routes.indexOf("function failoverVoicemailTwiml("),
       routes.indexOf("async function resolveFailoverCompliance("),
     );
-    // Same helper the assistant paths use, so the wording cannot drift apart.
     expect(builder).toContain("complianceFirstMessagePrefix(");
     expect(builder).toContain("recordingEnabled: true");
-    // Spoken before the prompt, and escaped like every other dynamic TwiML value.
     expect(builder).toContain("escapeTwimlValue(");
     expect(builder).toMatch(/\$\{disclosure\}Please leave your name/);
   });
 
-  it("resolves compliance for both failover entry points", () => {
-    // The transfer-complete callback previously called the builder with no
-    // tenant context at all, so an unrecorded-by-policy line would still have
-    // been recorded there even once the primary path was fixed.
-    // Both entry points, named explicitly: the primary voice-fallback (which
-    // speaks the outage context) and the unanswered-transfer fallthrough.
+  it("resolves compliance for both failover entry points and keeps lookup failures unknown", () => {
     expect(routes).toContain("failoverVoicemailTwiml(true, await resolveFailoverCompliance(to))");
     expect(routes).toContain("failoverVoicemailTwiml(false, await resolveFailoverCompliance(to))");
-    // No call site may omit the posture. Run this against CODE only: a comment
-    // explaining the old `failoverVoicemailTwiml()` shape would otherwise fail
-    // the very gate that documents it.
     expect(codeOnly).not.toMatch(/failoverVoicemailTwiml\(\)/);
     expect(codeOnly).not.toMatch(/failoverVoicemailTwiml\((?:true|false)\)/);
-    // Resolution walks the same chain inbound routing uses, and degrades rather
-    // than throwing — this runs when things are already broken.
+
     const resolver = routes.slice(
       routes.indexOf("async function resolveFailoverCompliance("),
       routes.indexOf("function publicAssetUrl("),
@@ -111,6 +81,8 @@ describe("Twilio voice failover contract", () => {
     expect(resolver).toContain("eq(schema.phoneNumbers.phoneNumber, to)");
     expect(resolver).toContain("catch (error)");
     expect(resolver).toContain("return unknown;");
+    expect(resolver).toContain('complianceMode: null');
+    expect(resolver).toContain("recording disabled");
   });
 
   it("validates transfer destinations and escapes dynamic TwiML values", () => {
@@ -134,10 +106,6 @@ describe("Twilio voice failover contract", () => {
   });
 
   it("captures the voicemail transcript via a dedicated transcribeCallback", () => {
-    // Twilio delivers <Record transcribe> results to transcribeCallback, never
-    // on the recording action callback, so a missing callback silently drops
-    // every failover transcript. The Record element must name the callback and
-    // a matching route must persist it onto the same voicemail row.
     expect(routes).toContain('transcribeCallback="/api/twilio-webhook/voicemail-transcription"');
     expect(routes).toContain('"/api/twilio-webhook/voicemail-transcription"');
     expect(routes).toMatch(
