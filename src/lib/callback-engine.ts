@@ -19,6 +19,7 @@ import * as schema from "../db/schema";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
 import { assertOutboundVoiceAllowed } from "./voice-spend-control";
 import { placeOutboundCall } from "./vapi-client";
+import { OUTBOUND_CONSENT_VERSION } from "./outbound-call-purpose";
 
 /** Deferrals (quiet hours or tenant insolvency) push the callback forward
  *  instead of dropping it, up to MAX_DEFERRALS so a permanently-blocked lead
@@ -128,13 +129,16 @@ export async function tickDueCallbacks({
       // concurrent or retried tick (the sweep kills a tick at 30s but a JS
       // promise keeps running) can't re-select the same row and dial the
       // caller twice. If nothing comes back, another tick already claimed it.
+      // Fenced on the exact timestamp this tick read: a bare isNotNull match
+      // would let a stale tick claim (and erase) a FUTURE callback the
+      // consumer booked during a concurrent call, dialing them immediately.
       const claimed = await drizzle
         .update(schema.outboundLeads)
         .set({ callbackScheduledAt: null })
         .where(
           and(
             eq(schema.outboundLeads.id, lead.id),
-            isNotNull(schema.outboundLeads.callbackScheduledAt),
+            eq(schema.outboundLeads.callbackScheduledAt, lead.callbackScheduledAt!),
           ),
         )
         .returning({ id: schema.outboundLeads.id });
@@ -219,6 +223,26 @@ export async function tickDueCallbacks({
 
       if (res.ok) {
         placed++;
+        // Stamp the dial so the shared gate's 24h duplicate window sees it
+        // (cadence/campaign engines must not also call this lead today) and
+        // record the consent-ledger evidence for the placed call.
+        await drizzle
+          .update(schema.outboundLeads)
+          .set({ lastCalledAt: new Date(), callId: res.callId })
+          .where(eq(schema.outboundLeads.id, lead.id));
+        await drizzle.insert(schema.consentLog).values({
+          userId: lead.userId,
+          customerNumber: lead.customerNumber,
+          callId: res.callId,
+          event: "outbound_call_placed",
+          state: "initiated",
+          metadata: {
+            leadId: String(lead.id),
+            call_purpose: "callback",
+            consent_version: OUTBOUND_CONSENT_VERSION,
+            source: "callback",
+          },
+        });
         await finish({
           callbackScheduledAt: null,
           summary: "Requested callback placed automatically.",

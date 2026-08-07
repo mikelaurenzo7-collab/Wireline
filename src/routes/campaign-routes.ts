@@ -5,7 +5,7 @@ import type { AuthenticatedRequest } from "../types/auth";
 
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc, inArray, isNotNull } from "drizzle-orm";
+import { eq, and, ne, sql, desc, inArray, isNotNull } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { CampaignCreateSchema, CampaignUpdateSchema } from "../lib/form-validators";
@@ -367,6 +367,9 @@ router.post(
           ),
         );
 
+      // Retrying leads (voicemail/no-answer outcomes) are launchable work too;
+      // selecting only Queued would 400 a re-launch whose remaining leads all
+      // sit in Retrying and strand them permanently.
       const queued = await drizzle
         .select({
           id: schema.outboundLeads.id,
@@ -381,7 +384,7 @@ router.post(
           and(
             eq(schema.outboundLeads.campaignId, campaignId),
             eq(schema.outboundLeads.userId, req.user.id),
-            eq(schema.outboundLeads.status, LEAD_STATUS.QUEUED),
+            inArray(schema.outboundLeads.status, [LEAD_STATUS.QUEUED, LEAD_STATUS.RETRYING]),
           ),
         );
 
@@ -399,15 +402,24 @@ router.post(
 
       const previousStatus = campaign.status;
 
-      await drizzle
+      // Guarded transition: the read-then-check above cannot stop two
+      // concurrent launches (double-clicked button), and two campaign_dial
+      // jobs dial overlapping batches. Only the request that actually flips
+      // the row to running proceeds to enqueue.
+      const transitioned = await drizzle
         .update(schema.outboundCampaigns)
         .set({ status: CAMPAIGN_STATUS.RUNNING, updatedAt: new Date() })
         .where(
           and(
             eq(schema.outboundCampaigns.id, campaignId),
             eq(schema.outboundCampaigns.userId, req.user.id),
+            ne(schema.outboundCampaigns.status, CAMPAIGN_STATUS.RUNNING),
           ),
-        );
+        )
+        .returning({ id: schema.outboundCampaigns.id });
+      if (transitioned.length === 0) {
+        throw AppError.fromHttpStatus(409, "Campaign is already running.");
+      }
 
       const enq = await enqueue(drizzle, {
         userId: req.user.id,
@@ -463,6 +475,9 @@ router.post(
 
       if (!campaign) throw AppError.fromHttpStatus(404, "Campaign not found.");
 
+      // "Failed" is the webhook-outcome status; "Error" is the dial-path
+      // status. Retrying only the former leaves provider-errored leads
+      // unreachable even by this explicit user action.
       const failed = await drizzle
         .select({ id: schema.outboundLeads.id })
         .from(schema.outboundLeads)
@@ -470,7 +485,7 @@ router.post(
           and(
             eq(schema.outboundLeads.campaignId, campaignId),
             eq(schema.outboundLeads.userId, req.user.id),
-            eq(schema.outboundLeads.status, "Failed"),
+            inArray(schema.outboundLeads.status, [LEAD_STATUS.FAILED, LEAD_STATUS.ERROR]),
           ),
         );
 
@@ -480,9 +495,12 @@ router.post(
 
       const failedIds = failed.map((l) => l.id);
 
+      // An explicit retry restarts the attempt budget; without this, leads at
+      // max attempts go back to Queued but the dial batch filter never
+      // selects them.
       await drizzle
         .update(schema.outboundLeads)
-        .set({ status: "Queued" })
+        .set({ status: LEAD_STATUS.QUEUED, attempts: 0 })
         .where(
           and(
             inArray(schema.outboundLeads.id, failedIds),
@@ -490,8 +508,56 @@ router.post(
           ),
         );
 
+      // Reset leads are only dialed if a campaign_dial job runs: revive a
+      // completed campaign and make sure a dial job exists for a running one.
+      let dialJobId: string | null = null;
+      if (
+        campaign.status === CAMPAIGN_STATUS.RUNNING ||
+        campaign.status === CAMPAIGN_STATUS.COMPLETED
+      ) {
+        if (campaign.status === CAMPAIGN_STATUS.COMPLETED) {
+          await drizzle
+            .update(schema.outboundCampaigns)
+            .set({ status: CAMPAIGN_STATUS.RUNNING, updatedAt: new Date() })
+            .where(
+              and(
+                eq(schema.outboundCampaigns.id, campaignId),
+                eq(schema.outboundCampaigns.userId, req.user.id),
+              ),
+            );
+        }
+        const [pendingDial] = await drizzle
+          .select({ id: schema.jobs.id })
+          .from(schema.jobs)
+          .where(
+            and(
+              eq(schema.jobs.userId, req.user.id),
+              eq(schema.jobs.type, "campaign_dial"),
+              eq(schema.jobs.status, "pending"),
+              sql`${schema.jobs.payload}->>'campaignId' = ${campaignId}`,
+            ),
+          )
+          .limit(1);
+        if (pendingDial) {
+          dialJobId = pendingDial.id;
+        } else {
+          const enq = await enqueue(drizzle, {
+            userId: req.user.id,
+            type: "campaign_dial",
+            payload: { userId: req.user.id, campaignId },
+          });
+          if (enq.ok) dialJobId = enq.jobId ?? null;
+          else {
+            log.error("retry-failed: could not enqueue campaign_dial", {
+              campaignId,
+              error: enq.error,
+            });
+          }
+        }
+      }
+
       touchNavCounts(req.user.id);
-      res.json({ success: true, reset: failed.length });
+      res.json({ success: true, reset: failed.length, jobId: dialJobId });
     } catch (error: any) {
       // The handler above throws its own 404 for an unknown campaign; without
       // this that is caught here and reported as a server fault.

@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "./server-utils";
@@ -155,6 +155,17 @@ export async function updateLeadStatusOnCallEnd(
       .set({
         status: newStatus,
         attempts: currentAttempts,
+        // "followup" can be inferred from summary text alone ("call me back
+        // next week") with no schedule_callback tool call, so the lead enters
+        // the terminal Callback-Scheduled status with a NULL timestamp — a
+        // callback no engine will ever place and no UI pane shows. Default to
+        // tomorrow (COALESCE keeps a real in-call booking); the callback
+        // engine re-checks quiet hours at dial time.
+        ...(newStatus === LEAD_STATUS.CALLBACK_SCHEDULED
+          ? {
+              callbackScheduledAt: sql`COALESCE(${schema.outboundLeads.callbackScheduledAt}, ${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()}::timestamptz)`,
+            }
+          : {}),
       })
       .where(eq(schema.outboundLeads.id, lead.id));
 

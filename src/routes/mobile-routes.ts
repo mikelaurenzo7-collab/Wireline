@@ -16,7 +16,7 @@
  */
 import { Router, Response } from "express";
 import { randomUUID } from "node:crypto";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { AppError } from "../lib/api-error";
 import { log, drizzle, serialQueryBatch } from "../lib/server-context";
@@ -31,6 +31,8 @@ import { resolveAccountType } from "../lib/account-type";
 import { ensureDefaultAccount } from "../lib/account-service";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
+import { normalizeOutboundNumber } from "../lib/dialer-compliance";
+import { outboundDialReservations } from "../db/security-schema";
 import {
   OUTBOUND_CALL_PURPOSES,
   isMarketingCallPurpose,
@@ -720,14 +722,69 @@ router.post(
         });
       }
 
+      // Same double-dial reservation the web dial route takes: without it two
+      // rapid taps (or a mobile+web race on a brand-new number) both pass the
+      // gate — no lead row exists yet for the 24h window — and place two
+      // simultaneous calls. The partial unique index on active reservations
+      // arbitrates; the loser gets a 409 instead of a second call.
+      const normalizedNumber = normalizeOutboundNumber(customerNumber);
+      const phoneE164 = normalizedNumber.startsWith("+")
+        ? normalizedNumber
+        : `+${normalizedNumber.replace(/\D/g, "")}`;
+      if (!/^\+[1-9]\d{6,14}$/.test(phoneE164)) {
+        return res.status(400).json({
+          code: "VALIDATION_ERROR",
+          error: "Invalid phone number. Use E.164 format like +14155551234.",
+        });
+      }
+
+      await drizzle
+        .update(outboundDialReservations)
+        .set({ status: "expired", updatedAt: new Date() })
+        .where(
+          and(
+            eq(outboundDialReservations.userId, req.user.id),
+            inArray(outboundDialReservations.status, ["reserved", "dialing"]),
+            sql`${outboundDialReservations.expiresAt} < clock_timestamp()`,
+          ),
+        );
+
+      const operationKey = randomUUID();
+      const [reservation] = await drizzle
+        .insert(outboundDialReservations)
+        .values({
+          userId: req.user.id,
+          phoneE164,
+          operationKey,
+          status: "dialing",
+          expiresAt: new Date(Date.now() + 30 * 60_000),
+        })
+        .onConflictDoNothing()
+        .returning({ id: outboundDialReservations.id });
+      if (!reservation) {
+        return res.status(409).json({
+          code: "DIAL_ALREADY_IN_PROGRESS",
+          error:
+            "A call to this number is already being prepared. Check Phone before trying again.",
+        });
+      }
+
       const result = await placeOutboundCall({
         userId: req.user.id,
         agentId,
         customerName,
-        customerNumber,
+        customerNumber: phoneE164,
         context,
       });
       if (!result.ok) {
+        await drizzle
+          .update(outboundDialReservations)
+          .set({
+            status: "failed",
+            failureCode: `provider_${result.status || 500}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(outboundDialReservations.operationKey, operationKey));
         return res.status(result.status).json({ code: "ERROR", error: result.error });
       }
 
@@ -735,20 +792,28 @@ router.post(
         userId: req.user.id,
         agentId,
         customerName,
-        customerNumber,
+        customerNumber: phoneE164,
         context,
         callId: result.callId,
         status: "Dialing",
         attempts: 1,
         lastCalledAt: new Date(),
-        metadata: outboundConsentMetadata({
-          callPurpose,
-          hasExpressWrittenConsent,
-          source: "mobile",
-          consentSource,
-          consentLeadId,
-        }),
+        metadata: {
+          ...outboundConsentMetadata({
+            callPurpose,
+            hasExpressWrittenConsent,
+            source: "mobile",
+            consentSource,
+            consentLeadId,
+          }),
+          wireline_dial_operation_id: operationKey,
+        },
       });
+
+      await drizzle
+        .update(outboundDialReservations)
+        .set({ status: "completed", callId: result.callId, updatedAt: new Date() })
+        .where(eq(outboundDialReservations.operationKey, operationKey));
 
       if (consentSource) {
         emitServerProductEventOnce({
@@ -968,9 +1033,7 @@ router.get(
         call: {
           ...call,
           id: String(call.id),
-          recordingUrl: call.recordingUrl
-            ? `/api/calls/${String(call.id)}/recording`
-            : null,
+          recordingUrl: call.recordingUrl ? `/api/calls/${String(call.id)}/recording` : null,
         },
       });
     } catch (err) {

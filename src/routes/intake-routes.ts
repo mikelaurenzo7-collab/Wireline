@@ -298,6 +298,28 @@ async function processIntakeLead(
         });
 
         if (!gate.allowed) {
+          if (gate.reason === "outside_permitted_calling_hours") {
+            // Peak intake time IS quiet hours (evening form fills). Writing
+            // the gate's "AutoDialFailed" here would retire the lead to a
+            // status no engine processes — the consumer who asked for a call
+            // never gets one. Hand it to the callback engine instead: it
+            // rolls the schedule forward hourly (bounded) until the lead's
+            // local window opens and re-runs this same gate at dial time.
+            await drizzle
+              .update(schema.outboundLeads)
+              .set({
+                callbackScheduledAt: new Date(Date.now() + 60 * 60 * 1000),
+                metadata: toJsonbSafe({
+                  ...((gate.metadataPatch || metadata || {}) as Record<string, unknown>),
+                  auto_dial_status: "deferred_quiet_hours",
+                }) as any,
+              })
+              .where(eq(schema.outboundLeads.id, insertedId!));
+            log.info("Auto-dial deferred to next permitted window", {
+              leadId: String(insertedId),
+            });
+            return;
+          }
           await drizzle
             .update(schema.outboundLeads)
             .set({
