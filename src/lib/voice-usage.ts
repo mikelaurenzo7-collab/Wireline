@@ -231,10 +231,18 @@ export async function trackVoiceMinutes(opts: {
   vapiCallId: string;
 }): Promise<void> {
   const { userId, durationSeconds, vapiCallId } = opts;
+  if (!userId) return;
   // "unknown" is the call-log fallback id, not a provider call id. Metering on
   // it would collapse every id-less call for a tenant onto one checkpoint row
-  // and silently skip billing for all but the first. Refuse it like a missing id.
-  if (!userId || !vapiCallId || vapiCallId === "unknown") return;
+  // and silently skip billing for all but the first. Refuse it like a missing
+  // id — but make the revenue skip observable rather than a silent return.
+  if (!vapiCallId || vapiCallId === "unknown") {
+    log.warn("Voice metering skipped: provider call id missing", {
+      userId,
+      durationSeconds,
+    });
+    return;
+  }
 
   const minutes = billableVoiceMinutes(durationSeconds);
   const periodKey = monthlyPeriodKey();
