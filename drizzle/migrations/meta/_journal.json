@@ -246,6 +246,13 @@
       "when": 1786080000000,
       "tag": "0136_consent_evidence_uniqueness",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1786118400000,
+      "tag": "0137_per_tenant_sync_keys_and_reenrollment",
+      "breakpoints": true
     }
   ]
 }

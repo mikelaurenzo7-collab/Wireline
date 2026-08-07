@@ -138,6 +138,8 @@ export async function sendEmail(opts: {
   subject: string;
   text: string;
   html: string;
+  /** Extra SMTP headers (e.g. RFC 8058 List-Unsubscribe) for bulk/marketing mail. */
+  headers?: Record<string, string>;
 }): Promise<SendResult> {
   if (!process.env.RESEND_API_KEY) {
     return { ok: false, provider: "no-transport", error: "RESEND_API_KEY not set" };

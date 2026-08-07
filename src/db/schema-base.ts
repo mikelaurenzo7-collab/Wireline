@@ -94,17 +94,14 @@ export const passwordResetTokens = pgTable("wireline_password_reset_tokens", {
  * Resend is rate-limited (1 token per minute per user) at the route
  * layer to prevent abuse.
  */
-export const emailVerificationTokens = pgTable(
-  "wireline_email_verification_tokens",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id").notNull(),
-    tokenHash: text("token_hash").notNull().unique(),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-    usedAt: timestamp("used_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  },
-);
+export const emailVerificationTokens = pgTable("wireline_email_verification_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
 
 // 1. SETTINGS & BILLING
 export const settings = pgTable("wireline_settings", {
@@ -142,9 +139,7 @@ export const settings = pgTable("wireline_settings", {
   // subscription item quantity for billing. Defaults to 0.
   extraAgents: integer("extra_agents").default(0).notNull(),
   /** Explicit ops/enterprise grant for photoreal live video streaming. */
-  liveVideoAddonEnabled: boolean("live_video_addon_enabled")
-    .default(false)
-    .notNull(),
+  liveVideoAddonEnabled: boolean("live_video_addon_enabled").default(false).notNull(),
   vapiPrivateKey: text("vapi_private_key"),
   vapiPhoneNumberId: text("vapi_phone_number_id"),
   retentionDays: integer("retention_days").default(365),
@@ -168,9 +163,7 @@ export const settings = pgTable("wireline_settings", {
   crmType: text("crm_type"),
   twilioMessagingEnabled: boolean("twilio_messaging_enabled").default(false),
   twilioLookupEnabled: boolean("twilio_lookup_enabled").default(false),
-  twilioManagerAlertsEnabled: boolean("twilio_manager_alerts_enabled").default(
-    false,
-  ),
+  twilioManagerAlertsEnabled: boolean("twilio_manager_alerts_enabled").default(false),
   twilioMessagingServiceSid: text("twilio_messaging_service_sid"),
   twilioSmsFromNumber: text("twilio_sms_from_number"),
   twilioWhatsappFromNumber: text("twilio_whatsapp_from_number"),
@@ -243,9 +236,7 @@ export const recapArtifacts = pgTable("wireline_recap_artifacts", {
   slug: text("slug").notNull().unique(),
   tokenHash: text("token_hash").notNull(),
   content: jsonb("content").notNull(),
-  publishedAt: timestamp("published_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  publishedAt: timestamp("published_at", { withTimezone: true }).defaultNow().notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   viewCount: integer("view_count").default(0).notNull(),
   lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
@@ -286,9 +277,7 @@ export const spendBudgets = pgTable("wireline_spend_budgets", {
 export const spendAlerts = pgTable(
   "wireline_spend_alerts",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     thresholdPct: integer("threshold_pct"),
     period: text("period"),
@@ -436,9 +425,7 @@ export const agents = pgTable(
      * just queueing an async SMS/email alert. The product-defining
      * "AI receptionist that warm-transfers to a human" promise.
      */
-    escalationHandoffEnabled: boolean("escalation_handoff_enabled").default(
-      false,
-    ),
+    escalationHandoffEnabled: boolean("escalation_handoff_enabled").default(false),
     businessVariables: jsonb("business_variables"),
     flowConfig: jsonb("flow_config"),
     outOfHoursMessage: text("out_of_hours_message"),
@@ -457,9 +444,7 @@ export const agents = pgTable(
      * Stored as numeric (Postgres `numeric`) for exact arithmetic; the
      * voice factory coerces via Number() before passing to Vapi.
      */
-    voiceSpeed: decimal("voice_speed", { precision: 3, scale: 2 }).default(
-      "1.0",
-    ),
+    voiceSpeed: decimal("voice_speed", { precision: 3, scale: 2 }).default("1.0"),
     /**
      * Per-agent reasoning-model override (customization-first Agent Studio).
      *
@@ -501,9 +486,7 @@ export const agents = pgTable(
       precision: 3,
       scale: 2,
     }).default("0.75"),
-    voiceStyle: decimal("voice_style", { precision: 3, scale: 2 }).default(
-      "0.0",
-    ),
+    voiceStyle: decimal("voice_style", { precision: 3, scale: 2 }).default("0.0"),
     voiceSpeakerBoost: boolean("voice_speaker_boost").default(true),
     /**
      * Live video presenter (LiveAvatar LITE). Provider stays internal; UI reads
@@ -512,9 +495,7 @@ export const agents = pgTable(
      */
     videoPresenterProvider: text("video_presenter_provider"),
     videoPresenterAvatarId: text("video_presenter_avatar_id"),
-    videoPresenterConsentStatus: text("video_presenter_consent_status").default(
-      "not_started",
-    ),
+    videoPresenterConsentStatus: text("video_presenter_consent_status").default("not_started"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   () => ({
@@ -545,9 +526,7 @@ export const clonedVoices = pgTable(
     sourceMimeType: text("source_mime_type").notNull(),
     sourceDurationSeconds: integer("source_duration_seconds").notNull(),
     intendedUse: text("intended_use").notNull().default("wireline-agents"),
-    sourceAudioRetained: boolean("source_audio_retained")
-      .notNull()
-      .default(false),
+    sourceAudioRetained: boolean("source_audio_retained").notNull().default(false),
     isolationApplied: boolean("isolation_applied").notNull().default(false),
     providerVerificationRequired: boolean("provider_verification_required")
       .notNull()
@@ -561,12 +540,8 @@ export const clonedVoices = pgTable(
       onDelete: "restrict",
     }),
     rejectionReason: text("rejection_reason"),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   () => ({
     userStatusCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_cloned_voices_user_status_created ON wireline_cloned_voices USING btree (user_id, status, created_at DESC)`,
@@ -580,9 +555,7 @@ export const clonedVoices = pgTable(
 export const directives = pgTable(
   "wireline_directives",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     agentId: text("agent_id").references(() => agents.id, {
       onDelete: "cascade",
@@ -599,9 +572,7 @@ export const directives = pgTable(
 export const knowledge = pgTable(
   "wireline_knowledge",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     agentId: text("agent_id").references(() => agents.id, {
       onDelete: "cascade",
@@ -632,9 +603,7 @@ export const personality = pgTable(
 export const agentLessons = pgTable(
   "wireline_agent_lessons",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     agentId: text("agent_id").references(() => agents.id, {
       onDelete: "cascade",
@@ -667,9 +636,7 @@ export const agentLessons = pgTable(
 export const agentConversationMessages = pgTable(
   "wireline_agent_conversation_messages",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     agentId: text("agent_id")
       .references(() => agents.id, { onDelete: "cascade" })
@@ -680,9 +647,7 @@ export const agentConversationMessages = pgTable(
     content: text("content").notNull(),
     /** Claude's adaptive thinking/reasoning text for this message (nullable). */
     reasoning: text("reasoning"),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   () => ({
     userAgentIdx: sql`CREATE INDEX IF NOT EXISTS idx_agent_conv_user_agent ON wireline_agent_conversation_messages USING btree (user_id, agent_id, created_at DESC)`,
@@ -699,9 +664,7 @@ export const agentConversationMessages = pgTable(
 export const directorConversationMessages = pgTable(
   "wireline_director_conversation_messages",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     /** Conversation thread key. "director" = the Assistants chat. */
     threadKey: text("thread_key").notNull().default("director"),
@@ -713,9 +676,7 @@ export const directorConversationMessages = pgTable(
     reasoning: text("reasoning"),
     /** Structured reply payload — proposals, suggestions, creative approvals, etc. */
     metadata: jsonb("metadata"),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   () => ({
     userIdx: sql`CREATE INDEX IF NOT EXISTS idx_director_conv_user ON wireline_director_conversation_messages USING btree (user_id, created_at DESC)`,
@@ -738,9 +699,7 @@ export const directorArtifactObjects = pgTable(
     mimeType: text("mime_type").notNull(),
     base64Data: text("base64_data").notNull(),
     sizeBytes: integer("size_bytes").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   () => ({
     userIdx: sql`CREATE INDEX IF NOT EXISTS idx_director_artifact_objects_user_created ON wireline_director_artifact_objects USING btree (user_id, created_at DESC)`,
@@ -750,9 +709,7 @@ export const directorArtifactObjects = pgTable(
 export const directorArtifacts = pgTable(
   "wireline_director_artifacts",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     threadKey: text("thread_key").notNull().default("director"),
     messageId: bigint("message_id", { mode: "bigint" }),
@@ -761,9 +718,7 @@ export const directorArtifacts = pgTable(
     name: text("name").notNull(),
     objectKey: text("object_key").notNull(),
     metadata: jsonb("metadata").default({}),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   () => ({
     userThreadIdx: sql`CREATE INDEX IF NOT EXISTS idx_director_artifacts_user_thread_created ON wireline_director_artifacts USING btree (user_id, thread_key, created_at DESC)`,
@@ -806,9 +761,7 @@ export const appointments = pgTable(
 export const callLogs = pgTable(
   "wireline_call_logs",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     vapiCallId: text("vapi_call_id").unique(),
     agentId: text("agent_id").references(() => agents.id),
@@ -882,12 +835,8 @@ export const callReliabilityStaging = pgTable(
     userId: uuid("user_id").notNull(),
     toolCallsTotal: integer("tool_calls_total").default(0).notNull(),
     toolCallsFailed: integer("tool_calls_failed").default(0).notNull(),
-    escalationAttempted: boolean("escalation_attempted")
-      .default(false)
-      .notNull(),
-    escalationSucceeded: boolean("escalation_succeeded")
-      .default(false)
-      .notNull(),
+    escalationAttempted: boolean("escalation_attempted").default(false).notNull(),
+    escalationSucceeded: boolean("escalation_succeeded").default(false).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
   () => ({
@@ -899,9 +848,7 @@ export const callReliabilityStaging = pgTable(
 export const webhookHealth = pgTable(
   "wireline_webhook_health",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id"),
     provider: text("provider").notNull(),
     eventType: text("event_type").notNull(),
@@ -960,9 +907,10 @@ export const calendarAccounts = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t: any) => ({
-    userEmailUniq: unique(
-      "wireline_calendar_accounts_user_id_email_address_key",
-    ).on(t.userId, t.emailAddress),
+    userEmailUniq: unique("wireline_calendar_accounts_user_id_email_address_key").on(
+      t.userId,
+      t.emailAddress,
+    ),
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_calendar_accounts_user_id ON wireline_calendar_accounts USING btree (user_id)`,
   }),
 );
@@ -1000,7 +948,10 @@ export const emailThreads = pgTable(
     agentId: text("agent_id").references(() => agents.id, {
       onDelete: "set null",
     }),
-    threadId: text("thread_id").unique(),
+    // Per-tenant external key (see uq_email_threads_user_thread below):
+    // provider/sender-chosen thread ids repeat across tenants' mailboxes, so a
+    // global unique made one tenant's sync collide with another's row.
+    threadId: text("thread_id"),
     customerEmail: text("customer_email"),
     subject: text("subject"),
     status: text("status").default("open"),
@@ -1014,6 +965,7 @@ export const emailThreads = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   () => ({
+    userThreadUnique: sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_email_threads_user_thread ON wireline_email_threads USING btree (user_id, thread_id)`,
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_threads_user_id ON wireline_email_threads USING btree (user_id)`,
     leadScoreIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_threads_lead_score ON wireline_email_threads USING btree (lead_score)`,
     userLeadScoreIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_threads_user_lead_score ON wireline_email_threads USING btree (user_id, lead_score)`,
@@ -1025,19 +977,20 @@ export const emailThreads = pgTable(
 export const emailMessages = pgTable(
   "wireline_email_messages",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     threadId: uuid("thread_id").references(() => emailThreads.id, {
       onDelete: "cascade",
     }),
-    googleMessageId: text("google_message_id").unique(),
+    // Per-tenant provider id (see uq_email_messages_user_google_message):
+    // the same message delivered to two tenants carries the same provider id.
+    googleMessageId: text("google_message_id"),
     role: text("role"), // 'user' or 'ai'
     content: text("content"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   () => ({
+    userGoogleMessageUnique: sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_email_messages_user_google_message ON wireline_email_messages USING btree (user_id, google_message_id)`,
     threadIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_messages_thread_id ON wireline_email_messages USING btree (thread_id)`,
     threadCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_email_messages_thread_created ON wireline_email_messages USING btree (thread_id, created_at DESC)`,
   }),
@@ -1075,9 +1028,7 @@ export const smsThreads = pgTable(
 export const smsMessages = pgTable(
   "wireline_sms_messages",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     threadId: uuid("thread_id").references(() => smsThreads.id, {
       onDelete: "cascade",
@@ -1123,9 +1074,7 @@ export const agentTeams = pgTable(
 export const agentTeamMembers = pgTable(
   "wireline_agent_team_members",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     // Tenant scoping. agent_team_members was historically scoped only via the
     // team_id FK, but as soon as a route queries it directly (without joining
     // through wireline_agent_teams) RLS has nothing to enforce. Carry the
@@ -1226,7 +1175,9 @@ export const cadenceRuns = pgTable(
   () => ({
     dueIdx: sql`CREATE INDEX IF NOT EXISTS idx_cadence_runs_due ON wireline_cadence_runs (status, next_due_at) WHERE status = 'active'`,
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_cadence_runs_user_id ON wireline_cadence_runs (user_id)`,
-    leadIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_cadence_runs_lead_unique ON wireline_cadence_runs (lead_id, cadence_id)`,
+    // Scoped to active runs: a full unique here means a lead whose run
+    // completed can never be re-enrolled in the same cadence (409 forever).
+    leadIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_cadence_runs_lead_unique ON wireline_cadence_runs (lead_id, cadence_id) WHERE status = 'active'`,
   }),
 );
 
@@ -1239,9 +1190,7 @@ export const cadenceRuns = pgTable(
 export const supervisorSubscriptions = pgTable(
   "wireline_supervisor_subscriptions",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     callId: text("call_id").notNull(),
     mode: text("mode").default("listen"),
@@ -1293,9 +1242,7 @@ export const followUpTasks = pgTable(
 export const phoneNumbers = pgTable(
   "wireline_phone_numbers",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     phoneNumber: text("phone_number").unique().notNull(),
     vapiNumberId: text("vapi_number_id"),
@@ -1351,9 +1298,7 @@ export const outboundCampaigns = pgTable(
 export const outboundLeads = pgTable(
   "wireline_outbound_leads",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     agentId: text("agent_id").references(() => agents.id),
     campaignId: uuid("campaign_id").references(() => outboundCampaigns.id, {
@@ -1496,10 +1441,7 @@ export const mobileDevices = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
   (t: any) => ({
-    userDeviceUnique: unique("wireline_mobile_devices_user_device_key").on(
-      t.userId,
-      t.deviceId,
-    ),
+    userDeviceUnique: unique("wireline_mobile_devices_user_device_key").on(t.userId, t.deviceId),
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_mobile_devices_user_id ON wireline_mobile_devices USING btree (user_id)`,
   }),
 );
@@ -1545,11 +1487,7 @@ export const creditLedger = pgTable(
     idempotencyIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS wireline_credit_ledger_idempotency_key ON wireline_credit_ledger (user_id, idempotency_key) WHERE idempotency_key IS NOT NULL`,
     providerIdx: sql`CREATE INDEX IF NOT EXISTS idx_credit_ledger_provider ON wireline_credit_ledger (provider, provider_event_id, provider_object_id) WHERE provider IS NOT NULL`,
     // Idempotent top-ups/debits: a given (user, ref_type, ref_id) lands once.
-    refUnique: unique("wireline_credit_ledger_ref_key").on(
-      t.userId,
-      t.refType,
-      t.refId,
-    ),
+    refUnique: unique("wireline_credit_ledger_ref_key").on(t.userId, t.refType, t.refId),
   }),
 );
 
@@ -1557,9 +1495,7 @@ export const creditLedger = pgTable(
 export const auditLog = pgTable(
   "wireline_audit_log",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     // Nullable in the DB (see migration 0075): system security events —
     // failed logins, unauthenticated rate-limit hits, cron auth rejections —
     // legitimately carry no user id. `actor_email` captures the pre-auth
@@ -1622,9 +1558,7 @@ export const webhooks = pgTable(
 export const webhookDeliveries = pgTable(
   "wireline_webhook_deliveries",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     webhookId: uuid("webhook_id")
       .notNull()
@@ -1675,9 +1609,7 @@ export const dncList = pgTable(
 export const consentLog = pgTable(
   "wireline_consent_log",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     callId: text("call_id"),
     customerNumber: text("customer_number"),
@@ -1707,9 +1639,7 @@ export const emailSuppressions = pgTable("wireline_email_suppressions", {
 export const demoCallEvents = pgTable(
   "wireline_demo_call_events",
   {
-    id: bigint("id", { mode: "bigint" })
-      .primaryKey()
-      .generatedByDefaultAsIdentity(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     dialedNumber: text("dialed_number").notNull(),
     showcaseAgent: text("showcase_agent"),
     callerNumberHash: text("caller_number_hash"),
@@ -1850,9 +1780,10 @@ export const crmConnections = pgTable(
      * existing row, not create a duplicate. The OAuth callbacks pass
      * `(user_id, provider)` as the conflict target on every upsert.
      */
-    userProviderUniq: unique(
-      "wireline_crm_connections_user_id_provider_key",
-    ).on(t.userId, t.provider),
+    userProviderUniq: unique("wireline_crm_connections_user_id_provider_key").on(
+      t.userId,
+      t.provider,
+    ),
   }),
 );
 
@@ -1892,12 +1823,9 @@ export const leadDossiers = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id").notNull(),
-    leadId: bigint("lead_id", { mode: "bigint" }).references(
-      () => outboundLeads.id,
-      {
-        onDelete: "cascade",
-      },
-    ),
+    leadId: bigint("lead_id", { mode: "bigint" }).references(() => outboundLeads.id, {
+      onDelete: "cascade",
+    }),
     customerNumber: text("customer_number"),
     /**
      * Best-known email for the customer. Used by `/api/contacts/:number` to
@@ -1939,19 +1867,12 @@ export const goals = pgTable(
     target: integer("target").notNull(),
     // Optional Account Holder label shown above the goal card.
     label: text("label"),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t: any) => ({
     // One goal per metric per tenant — the POST upsert conflict target.
-    userMetricUniq: unique("wireline_goals_user_id_metric_key").on(
-      t.userId,
-      t.metric,
-    ),
+    userMetricUniq: unique("wireline_goals_user_id_metric_key").on(t.userId, t.metric),
     userIdx: sql`CREATE INDEX IF NOT EXISTS idx_goals_user ON wireline_goals USING btree (user_id)`,
   }),
 );
@@ -1973,9 +1894,7 @@ export const designProfiles = pgTable("wireline_design_profiles", {
   styleNotes: text("style_notes").notNull().default(""),
   assetManifest: jsonb("asset_manifest").notNull().default([]),
   tokenManifest: jsonb("token_manifest").notNull().default({}),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export type DesignProfile = typeof designProfiles.$inferSelect;
@@ -1993,17 +1912,14 @@ export const designIntegrations = pgTable(
     connectedAccount: text("connected_account"),
     metadata: jsonb("metadata").notNull().default({}),
     active: boolean("active").notNull().default(true),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t: any) => ({
-    userProviderUniq: unique(
-      "wireline_design_integrations_user_id_provider_key",
-    ).on(t.userId, t.provider),
+    userProviderUniq: unique("wireline_design_integrations_user_id_provider_key").on(
+      t.userId,
+      t.provider,
+    ),
   }),
 );
 
@@ -2018,9 +1934,7 @@ export const oauthPendingCodes = pgTable("wireline_oauth_pending_codes", {
   /** HMAC of the browser bridge-state cookie; plaintext is never stored. */
   bridgeStateHash: text("bridge_state_hash").notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 // Relations

@@ -7,11 +7,7 @@ import { decryptSecret, encryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 import { createMeeting as createZoomMeeting } from "./zoom-service";
 import { fetchIcloudInbox, sendIcloudMail } from "./icloud-mail";
-import {
-  formatIsoInTimeZone,
-  localDateWindowToUtc,
-  normalizeIanaTimeZone,
-} from "./calendar-time";
+import { formatIsoInTimeZone, localDateWindowToUtc, normalizeIanaTimeZone } from "./calendar-time";
 
 const MAX_CALENDAR_PAGES = 20;
 
@@ -329,17 +325,36 @@ export class IntegrationService {
 
       // No OAuth mailbox — fall back to platform Resend so live voice
       // agents can still deliver follow-ups when RESEND_API_KEY is set.
+      // These sends leave from Wireline's own verified domain (the same one
+      // that carries password resets and billing mail), so they must respect
+      // the platform suppression list and carry unsubscribe headers and a
+      // CAN-SPAM footer — a tenant cadence without a connected mailbox is
+      // recurring commercial mail, not transactional.
       const { sendEmail: sendPlatformEmail } = await import("./email-service");
+      const {
+        isEmailSuppressed,
+        buildListUnsubscribeHeaders,
+        buildComplianceFooterText,
+        buildComplianceFooterHtml,
+      } = await import("./email-compliance");
+      if (await isEmailSuppressed(params.to)) {
+        log.info("Platform-fallback email skipped — recipient is suppressed", {
+          userId: this.userId,
+          to: params.to,
+        });
+        return false;
+      }
       const escaped = params.body
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
-      const html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.55; white-space: pre-wrap;">${escaped}</div>`;
+      const html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.55; white-space: pre-wrap;">${escaped}${buildComplianceFooterHtml(params.to)}</div>`;
       const result = await sendPlatformEmail({
         to: params.to,
         subject: params.subject,
-        text: params.body,
+        text: params.body + buildComplianceFooterText(params.to),
         html,
+        headers: buildListUnsubscribeHeaders(params.to),
       });
       if (!result.ok) {
         log.warn("Platform Resend fallback failed for tenant email", {
@@ -512,7 +527,8 @@ export class IntegrationService {
       $select: "subject,start,end,isAllDay",
       $orderby: "start/dateTime",
     });
-    let nextUrl: string | null = `https://graph.microsoft.com/v1.0/me/calendarView?${query.toString()}`;
+    let nextUrl: string | null =
+      `https://graph.microsoft.com/v1.0/me/calendarView?${query.toString()}`;
     const events: any[] = [];
     let exhausted = false;
 

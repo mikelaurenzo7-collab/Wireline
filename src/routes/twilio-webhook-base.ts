@@ -397,11 +397,30 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
           })
           .where(eq(schema.smsThreads.id, existingThread.id));
       } else {
+        // First-contact race: a concurrent inbound webhook or in-flight
+        // outbound send can create this (user, customer) thread between our
+        // select and insert. Tolerate the unique collision and re-select
+        // instead of aborting the whole persist (which dropped the message).
         const [created] = await drizzle
           .insert(schema.smsThreads)
           .values({ userId: tenantUserId, customerNumber: fromNormalized, unreadCount: 1 })
+          .onConflictDoNothing()
           .returning({ id: schema.smsThreads.id });
-        threadId = (created?.id as unknown as string) || "";
+        if (created?.id) {
+          threadId = created.id as unknown as string;
+        } else {
+          const [won] = await drizzle
+            .select({ id: schema.smsThreads.id })
+            .from(schema.smsThreads)
+            .where(
+              and(
+                eq(schema.smsThreads.userId, tenantUserId),
+                eq(schema.smsThreads.customerNumber, fromNormalized),
+              ),
+            )
+            .limit(1);
+          threadId = (won?.id as unknown as string) || "";
+        }
       }
 
       if (threadId) {
@@ -414,7 +433,14 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         });
       }
     } catch (e: any) {
-      log.warn("SMS thread persist skipped (migration may be pending)", { error: e?.message });
+      // A transient persistence failure must not answer 200: Twilio treats
+      // that as delivered and never redelivers, so the customer's message
+      // silently vanishes from the inbox. 503 makes Twilio retry; the
+      // (userId, twilioSid) duplicate check above keeps the retry idempotent.
+      log.error("Inbound SMS persist failed — requesting Twilio redelivery", {
+        error: e?.message,
+      });
+      return res.status(503).send(twimlEmpty());
     }
 
     return res.status(200).send(twimlEmpty());

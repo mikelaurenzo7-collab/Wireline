@@ -54,14 +54,9 @@ const EVENT_DESCRIPTIONS: Record<string, string> = {
   "slack.message_sent":
     "A notification was posted to your connected Slack workspace (includes booking alerts when configured)",
   "task.created": "Agent task created (follow-up, outreach, compliance, etc.)",
-  "compliance.flagged": "Call flagged for human compliance review",
-  knowledge_updated: "Training entry created, updated, or deleted",
   "spend.warning": "Month-to-date AI spend crossed your warning threshold",
   "spend.exceeded": "Month-to-date AI spend hit 100% of monthly limit",
   "subscription.changed": "Subscription status, plan, or renewal date changed",
-  "slo.jobs.critical": "Job queue backlog exceeded critical threshold (>200 pending)",
-  "slo.webhooks.degraded": "Webhook delivery success rate dropped below target",
-  "slo.enrichment.dead": "Post-call enrichment jobs reached dead-letter status",
 };
 
 export default function WebhooksManager() {

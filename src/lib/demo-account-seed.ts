@@ -570,7 +570,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
             lastMessageAt: randomCreatedAt(10),
             createdAt: randomCreatedAt(14),
           })
-          .onConflictDoNothing({ target: emailThreads.threadId })
+          .onConflictDoNothing({ target: [emailThreads.userId, emailThreads.threadId] })
           .returning({ id: emailThreads.id });
 
         if (thread?.id) {

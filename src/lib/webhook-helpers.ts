@@ -4,10 +4,7 @@ import * as schema from "../db/schema";
 import { eq, and, isNull, lte, or, sql } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import { decryptSecret } from "./secret-vault";
-import {
-  postWebhookSafely,
-  type WebhookBlockReason,
-} from "./safe-webhook-delivery";
+import { postWebhookSafely, type WebhookBlockReason } from "./safe-webhook-delivery";
 import {
   WEBHOOK_DELIVERY_FAILED,
   WEBHOOK_DELIVERY_PENDING,
@@ -36,13 +33,18 @@ export type WebhookEvent =
   | "slo.enrichment.dead"
   | "voice.degradation";
 
-/** All webhook event identifiers that can be subscribed to. Keep in sync with WebhookEvent. */
+/**
+ * All webhook event identifiers that can be subscribed to. Keep in sync with
+ * WebhookEvent. Every entry here MUST have a real dispatchWebhook producer —
+ * an advertised event with no producer is a customer integration that waits
+ * forever with nothing to debug. compliance.flagged, knowledge_updated, and
+ * the slo.* trio were removed from the subscribable catalog for exactly that
+ * reason; restore them only alongside their producers.
+ */
 export const WEBHOOK_EVENTS: WebhookEvent[] = [
   "call.completed",
   "lead.hot",
   "call.escalated",
-  "compliance.flagged",
-  "knowledge_updated",
   "spend.exceeded",
   "spend.warning",
   "task.created",
@@ -51,9 +53,6 @@ export const WEBHOOK_EVENTS: WebhookEvent[] = [
   "email.received",
   "appointment.booked",
   "slack.message_sent",
-  "slo.jobs.critical",
-  "slo.webhooks.degraded",
-  "slo.enrichment.dead",
   "voice.degradation",
 ];
 

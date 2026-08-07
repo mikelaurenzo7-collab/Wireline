@@ -19,6 +19,8 @@ import { getErrorMessage } from "./server-utils";
 import { drizzle, log } from "./server-context";
 import { postAgentNotification, getDefaultChannel } from "./slack-service";
 import { superviseClientCommunication } from "./ai-supervisor";
+import { dispatchWebhook } from "./webhook-helpers";
+import { runInBackground } from "./background-work";
 import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
 import { sendTenantMessage } from "./twilio-service";
 
@@ -27,6 +29,31 @@ import { sendTenantMessage } from "./twilio-service";
  * Everything else — including unknown roles and missing agentId — fails
  * closed as marketing so federal DNC + express consent apply.
  */
+/**
+ * Insert a follow-up task and emit the advertised `task.created` webhook.
+ * Every task producer in this engine funnels through here so the event the
+ * webhook catalog promises actually fires (it previously had no producer).
+ */
+async function insertFollowUpTask(values: typeof schema.followUpTasks.$inferInsert): Promise<void> {
+  const [created] = await drizzle
+    .insert(schema.followUpTasks)
+    .values(values)
+    .returning({ id: schema.followUpTasks.id });
+  runInBackground("task.created webhook dispatch", () =>
+    dispatchWebhook(values.userId, "task.created", {
+      task_id: created?.id != null ? Number(created.id) : undefined,
+      task_type: values.taskType,
+      description: values.description,
+      priority: values.priority,
+      status: values.status,
+      target_channel: values.targetChannel ?? null,
+      source_type: values.sourceType ?? null,
+      source_id: values.sourceId ?? null,
+      agent_id: values.agentId ?? null,
+    }),
+  );
+}
+
 const NON_MARKETING_SMS_ROLES = new Set([
   "customer_service",
   "technical_support",
@@ -353,7 +380,7 @@ async function handleSendEmail(
   context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
   const description = `Email draft to ${action.payload.to || "recipient"}: ${action.payload.subject || "No subject"}`;
-  await drizzle.insert(schema.followUpTasks).values({
+  await insertFollowUpTask({
     userId,
     agentId: action.agentId,
     taskType: "send_email",
@@ -441,7 +468,7 @@ async function handleDraftSendTextMessage(
   action: ActionItem,
   context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
-  await drizzle.insert(schema.followUpTasks).values({
+  await insertFollowUpTask({
     userId,
     agentId: action.agentId,
     taskType: "send_text_message",
@@ -462,7 +489,7 @@ async function handleScheduleCalendar(
   action: ActionItem,
   context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
-  await drizzle.insert(schema.followUpTasks).values({
+  await insertFollowUpTask({
     userId,
     agentId: action.agentId,
     taskType: "schedule_calendar",
@@ -498,7 +525,7 @@ async function queueCrmAction(
       ? `CRM call log: ${payload.subject || "Post-call note"}`
       : "CRM lead update");
 
-  await drizzle.insert(schema.followUpTasks).values({
+  await insertFollowUpTask({
     userId,
     agentId: action.agentId,
     taskType: "update_crm_lead",
@@ -542,7 +569,7 @@ async function handleCreateInternalTask(
   action: ActionItem,
   context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
-  await drizzle.insert(schema.followUpTasks).values({
+  await insertFollowUpTask({
     userId,
     agentId: action.agentId,
     taskType: "internal_task",
@@ -564,7 +591,7 @@ async function queueSideEffectAction(
   taskType: string,
   targetChannel: string,
 ): Promise<ActionResult> {
-  await drizzle.insert(schema.followUpTasks).values({
+  await insertFollowUpTask({
     userId,
     agentId: action.agentId,
     taskType,
