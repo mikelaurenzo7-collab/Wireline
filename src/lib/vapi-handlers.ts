@@ -159,15 +159,6 @@ const AI_DISCLOSURE_EVENTS = [
 ];
 
 /**
- * Idempotent TCPA evidence writer: one recording-disclosure row and, when the
- * transcript requested it, one opt-out row per call. Runs on every delivery so
- * a redelivery can restore evidence that a failed first delivery never wrote —
- * the call-log insert alone used to consume the one-time claim, which lost
- * these rows permanently whenever the handler threw after the insert. Stays
- * best-effort: DNC suppression before it is the legal boundary, and a
- * consent-ledger outage must not block voice accounting after it.
- */
-/**
  * One AI-identity-disclosure row per outbound call, idempotent across Vapi
  * redeliveries the same way the recording-disclosure row is (pre-SELECT plus
  * the 0138 partial unique index as the concurrency backstop). Written as its
