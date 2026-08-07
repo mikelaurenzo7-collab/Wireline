@@ -239,45 +239,94 @@ function subscriptionPeriodReference(sub: Stripe.Subscription): string {
   return `${sub.id}:${periodStart}`;
 }
 
-/** Sync a Stripe subscription into wireline_subscriptions + wireline_settings. */
-/**
- * Stripe subscription statuses that mean the subscription is finished for good.
- * Everything else — including `incomplete` (payment still pending, e.g. SCA)
- * and `paused` — is pending or live, so it must never be read as a supersession
- * signal. Deriving this set by complement of the "live" statuses silently
- * misclassifies both.
- */
+/** Stripe statuses that represent an entitlement-bearing or recoverable plan. */
+const CURRENT_PLAN_SUBSCRIPTION_STATUSES = new Set<string>([
+  "active",
+  "trialing",
+  "past_due",
+  "unpaid",
+  "paused",
+]);
+
+/** Stripe subscription statuses that are finished for good. */
 const TERMINAL_SUBSCRIPTION_STATUSES = new Set<string>(["canceled", "incomplete_expired"]);
 
+function isWirelinePlanSubscription(sub: Stripe.Subscription): boolean {
+  if (sub.metadata?.purpose === "live_video_addon") return false;
+  return sub.items?.data?.some((item) => !!basePlanByStripePrice(item.price)) ?? false;
+}
+
 /**
- * Ordering oracle for the one-row-per-customer mirror.
+ * Read the customer's CURRENT plan-subscription state from Stripe.
  *
- * Stripe does not guarantee webhook delivery order, and the mirror keeps no
- * event sequence, so an event for a subscription the customer already replaced
- * is indistinguishable from a current one by shape alone. A subscription's
- * `created` stamp is immutable and strictly increasing across a customer's
- * successive subscriptions, so re-fetching the mirrored subscription answers
- * "is the row already pointing at something newer than this event?" — the one
- * fact needed to drop a stale write. This is the same authoritative-re-fetch
- * move `checkout.session.completed` already makes, and it needs no schema
- * column of its own.
+ * Webhook event delivery order is explicitly not guaranteed. Therefore an event
+ * payload is evidence that something happened, not an ordering oracle for the
+ * current one-row entitlement mirror. On every configured Stripe sync we list
+ * the customer's subscriptions and select the single authoritative Wireline
+ * plan object in its current state. This also fixes same-subscription reordering:
+ * a delayed `updated(active)` payload cannot restore service after Stripe already
+ * reports that same subscription as canceled.
  *
- * Costs one API call, and only when the ids actually disagree — which happens
- * solely around cancel-then-resubscribe on a reused customer.
+ * Multiple simultaneous live plan subscriptions are an invariant violation. Do
+ * not guess which paying contract owns entitlements; throw so the webhook claim
+ * is released and ops can repair the duplicate instead of silently choosing one.
+ */
+async function currentPlanSubscriptionForCustomer(
+  customerId: string,
+): Promise<Stripe.Subscription | null> {
+  const candidates: Stripe.Subscription[] = [];
+  for await (const candidate of stripe.subscriptions.list({
+    customer: customerId,
+    status: "all",
+    limit: 100,
+  })) {
+    if (isWirelinePlanSubscription(candidate)) candidates.push(candidate);
+  }
+
+  const current = candidates.filter((candidate) =>
+    CURRENT_PLAN_SUBSCRIPTION_STATUSES.has(candidate.status),
+  );
+  if (current.length > 1) {
+    log.error("Stripe sync: multiple current Wireline plan subscriptions for one customer", {
+      customerId,
+      subscriptionIds: current.map((candidate) => candidate.id),
+      statuses: current.map((candidate) => candidate.status),
+    });
+    throw new Error("Multiple current Stripe plan subscriptions require reconciliation");
+  }
+  if (current.length === 1) return current[0];
+
+  const incomplete = candidates.filter((candidate) => candidate.status === "incomplete");
+  if (incomplete.length > 1) {
+    log.error("Stripe sync: multiple incomplete Wireline plan subscriptions for one customer", {
+      customerId,
+      subscriptionIds: incomplete.map((candidate) => candidate.id),
+    });
+    throw new Error("Multiple incomplete Stripe plan subscriptions require reconciliation");
+  }
+  if (incomplete.length === 1) return incomplete[0];
+
+  // With no live/pending plan, all remaining candidates are terminal. Their
+  // list order is sufficient because entitlement outcome is the same (closed),
+  // and any future live subscription will outrank this terminal fallback.
+  return candidates[0] ?? null;
+}
+
+/**
+ * Legacy ordering fallback retained only for environments without Stripe
+ * credentials (unit tests/local import smoke). Production never depends on the
+ * timestamp comparison: configured syncs reconcile against the current customer
+ * subscription collection above.
  */
 async function mirrorPointsAtNewerSubscription(
   sub: Stripe.Subscription,
   mirroredSubscriptionId: string,
 ): Promise<boolean> {
-  // Without credentials there is nothing authoritative to ask; fall through to
-  // the write rather than silently dropping events in unconfigured environments.
   if (!stripeAvailable()) return false;
   try {
     const mirrored = await stripe.subscriptions.retrieve(mirroredSubscriptionId);
     return mirrored.created > sub.created;
   } catch (error) {
-    // The mirror points at a subscription Stripe has never heard of, so it
-    // cannot outrank anything — let the incoming event repair the row.
     if (isMissingStripeResource(error)) {
       log.warn("Stripe sync: mirrored subscription is missing in Stripe — allowing repair", {
         mirroredSubscriptionId,
@@ -285,11 +334,7 @@ async function mirrorPointsAtNewerSubscription(
       });
       return false;
     }
-    // Anything else is transient. Guessing here either drops a real
-    // subscription or re-pins the mirror to a dead one, so escape instead: the
-    // webhook handler releases its idempotency claim and Stripe redelivers,
-    // with the ordering question still answerable.
-    log.error("Stripe sync: could not establish subscription ordering", {
+    log.error("Stripe sync: could not establish fallback subscription ordering", {
       mirroredSubscriptionId,
       eventSubscriptionId: sub.id,
       error: getErrorMessage(error),
@@ -298,8 +343,10 @@ async function mirrorPointsAtNewerSubscription(
   }
 }
 
-export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
-  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+/** Sync a Stripe subscription into wireline_subscriptions + wireline_settings. */
+export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscription) {
+  const customerId =
+    typeof incomingSub.customer === "string" ? incomingSub.customer : incomingSub.customer.id;
 
   const [existing] = await drizzle
     .select({
@@ -316,45 +363,51 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
     return;
   }
 
-  // Stale-terminal identity guard. The mirror row is keyed by user (one row per
-  // customer), so a delayed/out-of-order `customer.subscription.deleted` for a
-  // subscription the customer already replaced — cancel-then-resubscribe reusing
-  // the same Stripe customer — would overwrite the NEW active subscription's row
-  // to `canceled` and hard-block a paying customer. Ignore a terminal event
-  // whose subscription id no longer matches the mirrored one; the active
-  // subscription's own events remain authoritative.
-  //
-  // The mirror must still be live to earn that protection. If it already points
-  // at a dead subscription, a terminal event for a different id is allowed
-  // through so the row can self-heal — otherwise a single out-of-order
-  // non-terminal event could pin the mirror to a stale id and make every later
-  // cancellation a no-op, leaving paid entitlements on forever.
-  const incomingIsTerminal = TERMINAL_SUBSCRIPTION_STATUSES.has(sub.status);
-  const mirrorIsLive = !!existing.status && !TERMINAL_SUBSCRIPTION_STATUSES.has(existing.status);
-  if (existing.stripeSubscriptionId && existing.stripeSubscriptionId !== sub.id) {
-    if (incomingIsTerminal && mirrorIsLive) {
-      log.warn("Stripe sync: ignoring stale terminal event for a superseded subscription", {
-        customerId,
-        eventSubscriptionId: sub.id,
-        mirroredSubscriptionId: existing.stripeSubscriptionId,
-        eventStatus: sub.status,
-      });
-      return;
-    }
+  let sub = incomingSub;
 
-    // The check above only recognises a stale *cancellation*. A late
-    // non-terminal event — an `updated` for the old subscription arriving after
-    // the replacement's `created` — passes it and re-pins the mirror to the
-    // dead id, taking the live subscription's plan, period end, and status with
-    // it. Ask Stripe which of the two is actually newer before writing.
-    if (await mirrorPointsAtNewerSubscription(sub, existing.stripeSubscriptionId)) {
-      log.warn("Stripe sync: ignoring out-of-order event for a superseded subscription", {
-        customerId,
-        eventSubscriptionId: sub.id,
-        mirroredSubscriptionId: existing.stripeSubscriptionId,
-        eventStatus: sub.status,
-      });
-      return;
+  if (stripeAvailable()) {
+    // Always reconcile from current Stripe state, not merely on an id mismatch.
+    // This makes both cross-subscription and same-subscription webhook reordering
+    // harmless. Any transient list error escapes so the outer webhook releases
+    // its idempotency claim and Stripe redelivers.
+    const authoritative = await currentPlanSubscriptionForCustomer(customerId);
+    if (authoritative) {
+      if (authoritative.id !== incomingSub.id) {
+        log.warn("Stripe sync: ignoring non-authoritative subscription event", {
+          customerId,
+          eventSubscriptionId: incomingSub.id,
+          authoritativeSubscriptionId: authoritative.id,
+          eventStatus: incomingSub.status,
+          authoritativeStatus: authoritative.status,
+        });
+        return;
+      }
+      sub = authoritative;
+    }
+  } else {
+    // Offline/local compatibility only. Production reaches the authoritative
+    // collection reconciliation above and does not rely on created timestamps.
+    const incomingIsTerminal = TERMINAL_SUBSCRIPTION_STATUSES.has(sub.status);
+    const mirrorIsLive = !!existing.status && !TERMINAL_SUBSCRIPTION_STATUSES.has(existing.status);
+    if (existing.stripeSubscriptionId && existing.stripeSubscriptionId !== sub.id) {
+      if (incomingIsTerminal && mirrorIsLive) {
+        log.warn("Stripe sync: ignoring stale terminal event for a superseded subscription", {
+          customerId,
+          eventSubscriptionId: sub.id,
+          mirroredSubscriptionId: existing.stripeSubscriptionId,
+          eventStatus: sub.status,
+        });
+        return;
+      }
+      if (await mirrorPointsAtNewerSubscription(sub, existing.stripeSubscriptionId)) {
+        log.warn("Stripe sync: ignoring out-of-order event for a superseded subscription", {
+          customerId,
+          eventSubscriptionId: sub.id,
+          mirroredSubscriptionId: existing.stripeSubscriptionId,
+          eventStatus: sub.status,
+        });
+        return;
+      }
     }
   }
 
@@ -469,7 +522,7 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   const billingAction: "subscription_created" | "subscription_updated" | "subscription_cancelled" =
     stripeStatus === "canceled" || stripeStatus === "incomplete_expired"
       ? "subscription_cancelled"
-      : (sub as Stripe.Subscription & { _auditCreate?: boolean })._auditCreate
+      : (incomingSub as Stripe.Subscription & { _auditCreate?: boolean })._auditCreate
         ? "subscription_created"
         : "subscription_updated";
 
