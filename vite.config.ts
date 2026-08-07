@@ -13,7 +13,9 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
-      ...(process.env.VISUALIZE ? [visualizer({ open: false, filename: "stats.html", gzipSize: true })] : []),
+      ...(process.env.VISUALIZE
+        ? [visualizer({ open: false, filename: "stats.html", gzipSize: true })]
+        : []),
     ],
     resolve: {
       alias: [
@@ -37,8 +39,15 @@ export default defineConfig(({ mode }) => {
             // @vapi-ai/web is now loaded through a route-level dynamic import.
             // Let Rollup own that async chunk; forcing the old vendor name emits
             // an empty artifact and obscures whether the lazy boundary works.
-            if (id.includes("node_modules/motion") || id.includes("node_modules/framer-motion")) return "vendor-motion";
-            if (id.includes("node_modules/lucide-react")) return "vendor-lucide";
+            if (id.includes("node_modules/motion") || id.includes("node_modules/framer-motion"))
+              return "vendor-motion";
+            // lucide-react is deliberately NOT forced into a vendor chunk. It
+            // ships one ESM module per icon, so Rollup places each icon in the
+            // chunk that uses it. Naming a shared chunk instead collapsed all
+            // ~160 icons into one artifact that index.html modulepreloads, so
+            // the marketing homepage — which renders 22 of them — eagerly
+            // fetched every dashboard-only icon. Same reasoning as @vapi-ai/web
+            // above.
             if (/node_modules\/(react|react-dom)\//.test(id)) return "vendor-react";
           },
         },
