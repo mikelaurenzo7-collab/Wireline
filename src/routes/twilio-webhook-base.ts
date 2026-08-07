@@ -58,7 +58,6 @@ const OPT_IN_KEYWORDS = new Set(["start", "unstop", "yes", "optin", "opt-in", "o
 const HELP_KEYWORDS = new Set(["help", "info", "support"]);
 
 function twimlReply(body: string): string {
-  // Minimal TwiML — escape XML special chars in the body.
   const escaped = body
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -95,25 +94,11 @@ type FailoverCompliance = {
  * Take-a-message TwiML for the Vapi-outage path.
  *
  * This answers the same tenant line as the full assistant, so it inherits the
- * same obligations. It previously did neither: it emitted
- * `<Record transcribe="true">` unconditionally and spoke no recording notice,
- * so a HIPAA agent's caller was recorded and machine-transcribed — with the
- * audio URL and transcript persisted to wireline_call_logs — while HIPAA mode's
- * entire behavioural effect everywhere else in the product is recording
- * suppression.
- *
- * Two rules, mirroring buildDurableTakeMessageAssistant on the Vapi side:
- *  - A HIPAA line is never recorded or transcribed. There is no TwiML way to
- *    capture a message without recording it, so the call closes with a spoken
- *    callback instruction instead. Losing a voicemail during an outage is the
- *    right trade against capturing PHI the tenant configured us not to hold.
- *  - Any call we DO record opens with the spoken disclosure, from the same
- *    helper the assistant paths use.
- *
- * When the mode cannot be resolved (lookup failed mid-outage) the line is
- * recorded WITH the disclosure rather than dropped: that is strictly better
- * than today's silent recording, and it keeps voicemail working for the
- * non-HIPAA majority when the database is already struggling.
+ * same obligations. A HIPAA line is never recorded or transcribed. When the
+ * compliance posture cannot be resolved, recording also fails closed: losing a
+ * voicemail during an outage is preferable to capturing PHI under an unknown
+ * policy. Calls that are explicitly known to be non-HIPAA may record only after
+ * the same spoken disclosure used by the managed assistant paths.
  */
 function failoverVoicemailTwiml(
   includeOutageContext = false,
@@ -123,7 +108,8 @@ function failoverVoicemailTwiml(
     ? `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a Wireline agent line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`
     : "";
 
-  const recordingEnabled = compliance.complianceMode !== "hipaa";
+  const recordingEnabled =
+    compliance.complianceMode !== null && compliance.complianceMode !== "hipaa";
   if (!recordingEnabled) {
     return (
       `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n` +
@@ -150,8 +136,8 @@ function failoverVoicemailTwiml(
 /**
  * Compliance posture for the line a failover call arrived on. Resolved through
  * wireline_phone_numbers.agent_id -> wireline_agents.compliance_mode, the same
- * chain inbound routing uses. Degrades to unknown rather than throwing: this
- * runs when things are already broken.
+ * chain inbound routing uses. Unknown stays unknown so the TwiML builder can
+ * fail closed rather than silently assuming recording is allowed.
  */
 async function resolveFailoverCompliance(to: string | null): Promise<FailoverCompliance> {
   const unknown: FailoverCompliance = { complianceMode: null, businessName: null };
@@ -172,7 +158,7 @@ async function resolveFailoverCompliance(to: string | null): Promise<FailoverCom
       businessName: row?.businessName ?? null,
     };
   } catch (error) {
-    log.error("Failover compliance lookup failed; recording with disclosure", {
+    log.error("Failover compliance lookup failed; recording disabled", {
       error: error instanceof Error ? error.message : String(error),
       to_suffix: phoneSuffixForLog(to),
     });
@@ -195,20 +181,8 @@ function verifyTwilioSignature(req: Request): boolean {
   return evaluateTwilioWebhookAuth(req).ok;
 }
 
-/**
- * Reverse-lookup the user (tenant) for a Twilio "To" number.
- *
- * Twilio's inbound webhook fires on the number the customer texted.
- * We need to know which Wireline tenant owns that number so we can
- * write opt-outs to the right user's DNC list.
- *
- * Strategy: match the To number against wireline_phone_numbers.phone_number.
- * If not found (shared sender), match against settings.twilio_sms_from_number.
- */
 async function lookupTenant(toNumber: string): Promise<string | null> {
   const normalized = sanitizePhone(toNumber);
-
-  // Per-tenant phone number registration (preferred).
   const [byPhone] = await drizzle
     .select({ userId: schema.phoneNumbers.userId })
     .from(schema.phoneNumbers)
@@ -216,7 +190,6 @@ async function lookupTenant(toNumber: string): Promise<string | null> {
     .limit(1);
   if (byPhone?.userId) return byPhone.userId as string;
 
-  // Per-tenant Twilio sender (also a tenant's number).
   const [bySender] = await drizzle
     .select({ userId: schema.settings.userId })
     .from(schema.settings)
@@ -236,15 +209,11 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
     ) {
       log.error("TWILIO_AUTH_TOKEN not configured in production — rejecting webhook");
     } else {
-      log.warn("Twilio webhook signature verification failed", {
-        path: req.path,
-      });
+      log.warn("Twilio webhook signature verification failed", { path: req.path });
     }
     return res.status(403).send(twimlEmpty());
   }
 
-  // Twilio posts as form-urlencoded; Express needs body-parser registered
-  // upstream. The server-context entry point already mounts urlencoded.
   const from = (req.body?.From as string | undefined) || "";
   const to = (req.body?.To as string | undefined) || "";
   const body = (req.body?.Body as string | undefined) || "";
@@ -259,43 +228,30 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
   });
 
   res.setHeader("Content-Type", "text/xml");
-
-  if (!from || !to) {
-    return res.status(400).send(twimlEmpty());
-  }
+  if (!from || !to) return res.status(400).send(twimlEmpty());
 
   const tenantUserId = await lookupTenant(to);
   if (!tenantUserId) {
-    // We received an SMS at a number we don't recognize. Log + drop.
-    log.warn("Twilio webhook: unknown To-number", {
-      to_suffix: phoneSuffixForLog(to),
-    });
+    log.warn("Twilio webhook: unknown To-number", { to_suffix: phoneSuffixForLog(to) });
     return res.status(200).send(twimlEmpty());
   }
 
   const fromNormalized = sanitizePhone(from);
 
   return tenantStore.run(tenantUserId, async () => {
-    // ─── OPT-OUT FLOW ──────────────────────────────────────────────
     if (matchesCarrierKeyword(trimmed, OPT_OUT_KEYWORDS)) {
       try {
-        // Add to DNC (idempotent — onConflictDoNothing on user_id+phone)
         await drizzle
           .insert(schema.dncList)
           .values({
             userId: tenantUserId,
-            // Canonical digits-only key so the outbound-call gate (isDncBlocked)
-            // matches this opt-out. phoneRaw keeps the original for audit.
             phone: normalizeDncPhone(from),
             phoneRaw: from,
             reason: "opt-out",
             source: "sms_opt_out",
           })
-          .onConflictDoNothing({
-            target: [schema.dncList.userId, schema.dncList.phone],
-          });
+          .onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] });
 
-        // Audit trail in consent log
         await drizzle.insert(schema.consentLog).values({
           userId: tenantUserId,
           customerNumber: fromNormalized,
@@ -310,9 +266,6 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
           from_suffix: phoneSuffixForLog(fromNormalized),
         });
       } catch (e: any) {
-        // The suppression row never landed — do NOT confirm an opt-out that
-        // does not exist. Tell the consumer to retry and page ops: an
-        // unhonored STOP is a compliance incident, not telemetry.
         log.error("SMS opt-out write failed", { error: e?.message });
         reportError(e instanceof Error ? e : new Error(String(e?.message || e)), {
           route: "/api/twilio-webhook/sms",
@@ -337,18 +290,11 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         );
     }
 
-    // ─── OPT-IN FLOW (resubscribe) ─────────────────────────────────
     if (matchesCarrierKeyword(trimmed, OPT_IN_KEYWORDS)) {
       try {
-        // A customer SMS opt-in can reverse only an SMS-created suppression.
-        // Manual, federal, voice, legal, complaint, and workspace DNC entries
-        // remain intact until an authorized account holder removes them —
-        // "yes please" to an appointment text must never clear a legal record.
         await drizzle.delete(schema.dncList).where(
           and(
             eq(schema.dncList.userId, tenantUserId),
-            // Remove every stored variant so resubscribe clears legacy
-            // "+"-prefixed and 10/11-digit rows too.
             inArray(schema.dncList.phone, dncPhoneCandidates(from)),
             eq(schema.dncList.reason, "opt-out"),
             or(
@@ -372,8 +318,6 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
           from_suffix: phoneSuffixForLog(fromNormalized),
         });
       } catch (e: any) {
-        // The DNC rows are still in place; a "resubscribed" confirmation
-        // would be false (outbound stays blocked). Be honest instead.
         log.error("SMS opt-in write failed", { error: e?.message });
         return res
           .status(200)
@@ -387,7 +331,6 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
       return res.status(200).send(twimlReply("You have been resubscribed. Welcome back."));
     }
 
-    // ─── HELP FLOW ─────────────────────────────────────────────────
     if (matchesCarrierKeyword(trimmed, HELP_KEYWORDS)) {
       return res
         .status(200)
@@ -398,13 +341,6 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         );
     }
 
-    // ─── CSAT REPLY DETECTION ─────────────────────────────────────
-    // If the inbound body is a bare digit 1–5, treat it as a CSAT
-    // response to the most recent post-call satisfaction SMS we sent.
-    // processCsatReply finds the caller's latest call log and writes
-    // the score. Best-effort — never blocks or throws. We still fall
-    // through to thread storage below so the Account Holder can see the
-    // reply in /inbox.
     if (/^\s*[1-5]\s*$/.test(body)) {
       try {
         const { processCsatReply } = await import("../lib/csat-service");
@@ -416,16 +352,8 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
       } catch (e: any) {
         log.warn("CSAT reply processing failed", { error: e?.message });
       }
-      // Don't auto-reply — the CSAT SMS already told them what to do.
-      // Fall through to persist the message in the SMS thread below.
     }
 
-    // ─── TWO-WAY THREAD STORAGE ────────────────────────────────────
-    // Persist the inbound message into the SMS inbox so account holders can
-    // see + reply from /inbox. Idempotent thread upsert keyed by
-    // (user_id, customer_number). If the sms tables haven't been
-    // migrated yet, the catch just logs and we still return 200 to
-    // Twilio so the network doesn't retry.
     try {
       if (messageSid) {
         const [duplicate] = await drizzle
@@ -438,16 +366,11 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
             ),
           )
           .limit(1);
-        if (duplicate) {
-          return res.status(200).send(twimlEmpty());
-        }
+        if (duplicate) return res.status(200).send(twimlEmpty());
       }
 
       const [existingThread] = await drizzle
-        .select({
-          id: schema.smsThreads.id,
-          unreadCount: schema.smsThreads.unreadCount,
-        })
+        .select({ id: schema.smsThreads.id, unreadCount: schema.smsThreads.unreadCount })
         .from(schema.smsThreads)
         .where(
           and(
@@ -471,11 +394,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
       } else {
         const [created] = await drizzle
           .insert(schema.smsThreads)
-          .values({
-            userId: tenantUserId,
-            customerNumber: fromNormalized,
-            unreadCount: 1,
-          })
+          .values({ userId: tenantUserId, customerNumber: fromNormalized, unreadCount: 1 })
           .returning({ id: schema.smsThreads.id });
         threadId = (created?.id as unknown as string) || "";
       }
@@ -490,28 +409,17 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         });
       }
     } catch (e: any) {
-      log.warn("SMS thread persist skipped (migration may be pending)", {
-        error: e?.message,
-      });
+      log.warn("SMS thread persist skipped (migration may be pending)", { error: e?.message });
     }
 
-    // No auto-reply for non-keyword messages — Account Holder answers via /inbox.
     return res.status(200).send(twimlEmpty());
   });
 });
 
-/**
- * VOICE FALLBACK WEBHOOK (Vapi Resilience)
- * Twilio hits this if Vapi's SIP trunk or webhook fails (e.g. Vapi goes down).
- * We play an emergency degraded-mode message and offer voicemail or forward
- * to the business's human fallback number.
- */
 router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Response) => {
   res.setHeader("Content-Type", "text/xml");
   if (!verifyTwilioSignature(req)) {
-    log.warn("Twilio webhook signature verification failed", {
-      path: req.path,
-    });
+    log.warn("Twilio webhook signature verification failed", { path: req.path });
     return res.status(403).send(twimlEmpty());
   }
 
@@ -522,19 +430,12 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
     from_suffix: phoneSuffixForLog(from),
   });
 
-  // If we can't find the tenant or they don't have a human fallback number,
-  // we just take a voicemail. This route exists for the moment things are
-  // already broken, so a database failure here must degrade to the voicemail
-  // branch too — a thrown 500 would leave the caller with Twilio's own error
-  // announcement instead of a professional close.
   let fallbackNumber: string | null = null;
   try {
     const tenantUserId = await lookupTenant(to);
     if (tenantUserId) {
       const [settings] = await drizzle
-        .select({
-          humanFallbackNumber: schema.settings.twilioManagerAlertNumber,
-        })
+        .select({ humanFallbackNumber: schema.settings.twilioManagerAlertNumber })
         .from(schema.settings)
         .where(eq(schema.settings.userId, tenantUserId))
         .limit(1);
@@ -552,20 +453,12 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
     });
   }
 
-  // Absolute URL to the brand transfer chime — Twilio's <Play> needs a
-  // full public URL because it fetches the media file itself. The committed
-  // asset is regenerated by scripts/generate-transfer-chime.mjs and checked
-  // by launch readiness before this callback is enabled.
   const transferChimeUrl = publicAssetUrl("/sounds/wireline-transfer-chime.wav");
 
   if (fallbackNumber) {
     let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
     twiml += `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a Wireline agent line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`;
     twiml += `  <Say voice="Polly.Matthew-Neural">Please hold while we transfer you to an available team member.</Say>\n`;
-    // Brand transfer chime — only plays on the failover path (Vapi
-    // down). Vapi's own transfer flow can't inject MP3s; see
-    // vapi-assistant-factory-v2.ts for the spoken-message workaround used
-    // during normal-runtime transfers.
     twiml += `  <Play>${escapeTwimlValue(transferChimeUrl)}</Play>\n`;
     twiml += `  <Dial answerOnBridge="true" action="/api/twilio-webhook/voice-fallback-complete" method="POST">${escapeTwimlValue(fallbackNumber)}</Dial>\n`;
     twiml += `</Response>`;
@@ -578,9 +471,7 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
 router.post("/api/twilio-webhook/voice-fallback-complete", async (req: Request, res: Response) => {
   res.setHeader("Content-Type", "text/xml");
   if (!verifyTwilioSignature(req)) {
-    log.warn("Twilio webhook signature verification failed", {
-      path: req.path,
-    });
+    log.warn("Twilio webhook signature verification failed", { path: req.path });
     return res.status(403).send(twimlHangup());
   }
 
@@ -592,11 +483,6 @@ router.post("/api/twilio-webhook/voice-fallback-complete", async (req: Request, 
 
   if (dialStatus === "completed") return res.status(200).send(twimlHangup());
 
-  // The human transfer did not connect, so this falls through to the same
-  // take-a-message flow — and therefore needs the same compliance posture. It
-  // reached failoverVoicemailTwiml() with no tenant context at all, which meant
-  // an unrecorded-by-policy line got recorded here even once the primary path
-  // was fixed.
   const to = typeof req.body?.To === "string" ? req.body.To : "";
   return res.status(200).send(failoverVoicemailTwiml(false, await resolveFailoverCompliance(to)));
 });
@@ -604,9 +490,7 @@ router.post("/api/twilio-webhook/voice-fallback-complete", async (req: Request, 
 router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: Response) => {
   res.setHeader("Content-Type", "text/xml");
   if (!verifyTwilioSignature(req)) {
-    log.warn("Twilio webhook signature verification failed", {
-      path: req.path,
-    });
+    log.warn("Twilio webhook signature verification failed", { path: req.path });
     return res.status(403).send(twimlHangup());
   }
 
@@ -619,9 +503,7 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
   const from = typeof req.body?.From === "string" ? req.body.From : "";
   const to = typeof req.body?.To === "string" ? req.body.To : "";
   const durationRaw = Number(req.body?.RecordingDuration);
-  const durationSeconds = Number.isFinite(durationRaw)
-    ? Math.max(0, Math.round(durationRaw))
-    : null;
+  const durationSeconds = Number.isFinite(durationRaw) ? Math.max(0, Math.round(durationRaw)) : null;
 
   if (!recordingUrl) {
     log.warn("Voicemail complete missing RecordingUrl", {
@@ -642,9 +524,7 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
     }
 
     const persisted = await tenantStore.run(tenantUserId, async () => {
-      const recordingKey = createHash("sha256")
-        .update(recordingSid || recordingUrl)
-        .digest("hex");
+      const recordingKey = createHash("sha256").update(recordingSid || recordingUrl).digest("hex");
       const [inserted] = await drizzle
         .insert(schema.callLogs)
         .values({
@@ -669,10 +549,6 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
         return false;
       }
 
-      // Best-effort owner notify via Resend. The call log is already durable,
-      // and Twilio expects callback responses within 15 seconds, so bound the
-      // nonessential notification wait instead of letting Resend's broader
-      // 10-second transport timeout consume the entire webhook budget.
       try {
         const [owner] = await drizzle
           .select({ email: schema.users.email })
@@ -685,8 +561,6 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
             from,
             to,
             durationSeconds,
-            // Never email the persistent Twilio media URL. The recipient
-            // re-enters Wireline's authenticated, tenant-owned boundary.
             recordingUrl: publicAssetUrl(`/api/calls/${String(inserted.id)}/recording`),
             transcription,
           });
@@ -735,25 +609,14 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
       to_suffix: phoneSuffixForLog(to),
       has_recording: Boolean(recordingUrl),
     });
-    // A non-2xx response asks Twilio to retry. The recording key makes that
-    // retry idempotent if the first database write actually committed.
     return res.status(503).send(twimlHangup());
   }
 });
 
-/**
- * Twilio delivers <Record transcribe="true"> results to a separate
- * transcribeCallback, never on the recording `action` callback above. This
- * upserts the transcript onto the voicemail row the action callback already
- * persisted, keyed by the same RecordingSid hash so the two callbacks converge
- * regardless of arrival order.
- */
 router.post("/api/twilio-webhook/voicemail-transcription", async (req: Request, res: Response) => {
   res.setHeader("Content-Type", "text/xml");
   if (!verifyTwilioSignature(req)) {
-    log.warn("Twilio webhook signature verification failed", {
-      path: req.path,
-    });
+    log.warn("Twilio webhook signature verification failed", { path: req.path });
     return res.status(403).send(twimlHangup());
   }
 
@@ -767,9 +630,6 @@ router.post("/api/twilio-webhook/voicemail-transcription", async (req: Request, 
     typeof req.body?.TranscriptionText === "string" ? req.body.TranscriptionText.trim() : "";
   const to = typeof req.body?.To === "string" ? req.body.To : "";
 
-  // Nothing to persist unless a completed transcript arrived for a known
-  // recording on a resolvable tenant number. Always acknowledge so Twilio
-  // does not retry a callback that carries no actionable payload.
   if (status !== "completed" || !transcription || !recordingSid || !to) {
     return res.status(200).send('<?xml version="1.0" encoding="UTF-8"?><Response/>');
   }
@@ -802,66 +662,23 @@ router.post("/api/twilio-webhook/voicemail-transcription", async (req: Request, 
   return res.status(200).send('<?xml version="1.0" encoding="UTF-8"?><Response/>');
 });
 
-/**
- * SINGING RECEPTIONIST PRE-ROLL (Fun Demo)
- *
- * Twilio Voice webhook that plays the pre-baked jingle
- * (Mira's intro), then bridges the call to the Vapi-routed
- * receptionist assistant. Wire this URL as the Voice webhook on the
- * Twilio number that backs the showcase demo:
- *   POST https://trywireline.com/api/twilio-webhook/singing-receptionist
- *
- * Why this layer exists:
- *   Vapi's `firstMessage` is text-only — it can't play an MP3 before
- *   the LLM starts speaking. To get a pre-roll jingle on a real
- *   inbound call, we have to intercept at the carrier layer (Twilio)
- *   with TwiML <Play>, then bridge the audio to Vapi via SIP.
- *
- * Configuration:
- *   1. The committed jingle at /public/sounds/wireline-jingle.mp3 is
- *      served at /sounds/wireline-jingle.mp3 by Vite's static handler.
- *      Regenerate locally with scripts/generate-jingle.mjs (ElevenLabs);
- *      do not rely on an ephemeral production filesystem for this
- *      static asset.
- *   2. SINGING_VAPI_SIP_URI env var holds the Vapi SIP endpoint for
- *      the showcase assistant (Vapi Dashboard → Phone Numbers → SIP
- *      URI). Format: sip:<assistant-id>@sip.vapi.ai
- *   3. In Twilio, set the Voice URL on the Singing Receptionist
- *      number to POST this endpoint.
- *
- * If SINGING_VAPI_SIP_URI is unset (dev or pre-wire), we fall back
- * to a graceful spoken message instead of leaving the caller in
- * silence — Twilio numbers are real money + real customers.
- */
 router.post("/api/twilio-webhook/singing-receptionist", (req: Request, res: Response) => {
   res.setHeader("Content-Type", "text/xml");
   if (!verifyTwilioSignature(req)) {
-    log.warn("Twilio webhook signature verification failed", {
-      path: req.path,
-    });
+    log.warn("Twilio webhook signature verification failed", { path: req.path });
     return res.status(403).send(twimlEmpty());
   }
   const from = (req.body?.From as string | undefined) || "";
-  log.info("Singing receptionist demo line hit", {
-    from_suffix: phoneSuffixForLog(from),
-  });
+  log.info("Singing receptionist demo line hit", { from_suffix: phoneSuffixForLog(from) });
 
-  // Absolute URL for Twilio <Play> — Twilio's media fetcher needs a
-  // public origin. Falls back to the prod host when APP_URL isn't set.
   const jingleUrl = publicAssetUrl("/sounds/wireline-jingle.mp3");
   const sipUri = process.env.SINGING_VAPI_SIP_URI || "";
 
   let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
   twiml += `  <Play>${escapeTwimlValue(jingleUrl)}</Play>\n`;
   if (sipUri) {
-    // Bridge to Vapi via SIP. answerOnBridge defers Twilio's billing
-    // start until Vapi actually answers, so the caller isn't billed for
-    // the jingle-only window if Vapi's down. Caller hears:
-    //   jingle → Mira's "Haha sorry about that!" → conversation.
     twiml += `  <Dial answerOnBridge="true"><Sip>${escapeTwimlValue(sipUri)}</Sip></Dial>\n`;
   } else {
-    // Dev / unconfigured fallback. Lets a curl smoke-test the route
-    // return clean TwiML even before Vapi is wired up.
     twiml += `  <Say voice="Polly.Joanna-Neural">Haha, sorry about that. We like to have fun at Wireline sometimes. To finish setting up this demo, configure the SINGING_VAPI_SIP_URI environment variable. Goodbye.</Say>\n`;
     twiml += `  <Hangup/>\n`;
   }
