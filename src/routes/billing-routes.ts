@@ -292,12 +292,24 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         throw AppError.fromHttpStatus(503, "Webhook claim state unclear. Retry.");
       }
     }
-    log.warn("Stripe idempotency claim failed — refusing to process event", {
-      error: getErrorMessage(err),
-      eventId: idempotencyKey,
-      eventType: event.type,
-    });
-    throw AppError.fromHttpStatus(503, "Webhook idempotency store unavailable. Retry later.");
+    // Guarded on !claimed, and that guard is load-bearing. A successful
+    // stale-claim reclaim above sets claimed=true intending to fall through to
+    // the handler, but this catch block previously ended in an unconditional
+    // throw — so the reclaim could never process anything. Worse, it had
+    // already DELETEd and re-INSERTed the row, and processedAt defaults to
+    // now(), so every reclaim reset the 5-minute abandonment clock immediately
+    // before 503-ing. The next redelivery then found a fresh claim, 503'd
+    // again, and the cycle could repeat until Stripe stopped retrying — losing
+    // a paid top-up outright. Returning normally here lets execution reach the
+    // handler `try` below, which is what the reclaim was written to do.
+    if (!claimed) {
+      log.warn("Stripe idempotency claim failed — refusing to process event", {
+        error: getErrorMessage(err),
+        eventId: idempotencyKey,
+        eventType: event.type,
+      });
+      throw AppError.fromHttpStatus(503, "Webhook idempotency store unavailable. Retry later.");
+    }
   }
 
   try {
