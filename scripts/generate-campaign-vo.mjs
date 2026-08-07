@@ -55,8 +55,12 @@ export const CAMPAIGN_VO = [
     id: "ai-voice-agent-30s",
     file: "wireline-ai-voice-agent-30s.mp3",
     targetSeconds: 30,
-    speed: 0.9,
-    text: "This is Wireline. Create an agent for your personal line or your front desk. Train it on your facts, your tone, your rules, and what it must never say. Wire it to a real number, texts, and email. Then run it: every call answered, every follow-up sent, every outcome logged where you can check it. Build free. Test it privately. Go live from nineteen dollars a month.",
+    // The hero cut hands eight seconds to real captured agent audio and holds a
+    // beat of silence, so the narration only has ~10s at the end and must not
+    // fill it. Rendered at natural pace: slowing a short script to pad a slot is
+    // how narration starts sounding like an announcer.
+    speed: 1.0,
+    text: "Your agent picks up, books the next step, texts the confirmation, and logs the outcome. Build free. Go live from nineteen dollars a month.",
   },
   {
     id: "founder-60s",

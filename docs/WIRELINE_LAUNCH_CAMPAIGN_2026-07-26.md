@@ -54,7 +54,11 @@ Avoid:
 ## Primary 30-Second Ad
 
 **Hook**  
-"Missed calls should not become lost revenue."
+"Every missed call is someone trying the next name on the list."
+
+Retired hook: "Missed calls should not become lost revenue." It is a principle, not a
+moment — it states a business truism the viewer already agrees with and gives them nothing
+to picture. The replacement names the person walking away, which is the actual fear.
 
 **Script**  
 "Wireline helps you build voice agents for personal tasks and business conversations. Start with one agent, train it on your rules, connect calls, texts, and email, and let it handle the next conversation with every outcome logged. Build free. Go live from $19 a month at trywireline.com."
@@ -76,7 +80,11 @@ Canonical voiceover masters were re-rendered with ElevenLabs on 2026-08-01 (clea
 
 - `wireline-missed-call-15s.mp3` (14.39s) — 15-second reel VO
 - `wireline-voice-agent-fit25.mp3` (24.24s) — walkthrough/final reel VO
-- `wireline-ai-voice-agent-30s.mp3` (27.12s) — primary 30-second ad VO
+- `wireline-ai-voice-agent-30s.mp3` (27.12s) — **STALE. Re-render required.** This master
+  reads the retired four-verb walkthrough script. The 30-second slot is now the "Second Ring"
+  hero cut, whose narration is 24 words and enters at 0:20; the rest of the spot is captured
+  agent audio and silence. Re-render from `CAMPAIGN_VO` (`npm run campaign:vo`) before this
+  cut runs anywhere paid. Do not lay the 27.12s file over the new picture edit.
 - `wireline-founder-60s.mp3` (54.65s) — founder explainer VO, reserved for the 46s Descript master cut
 
 Earlier AI Voice Generator previews below are superseded; keep them for reference only. All regenerated audio remains marketing/reference use only — never a production phone-call runtime voice without provider rights, latency, fallback, and telephony verification.
@@ -172,6 +180,19 @@ Reel doctrine, applied to every cut below:
 - Keep burned-in words scarce: **Create. Train. Wire. Run.** when useful, then one end card.
 - Ship accurate platform captions for accessibility; do not cover legible product UI with persistent subtitles.
 - Reframe every derivative around the active UI. Never scale an entire desktop screen into an unreadable vertical frame.
+- **The agent's own voice is the proof, so let it be heard.** We sell a voice product; the
+  buyer's real objection is "my customers will know it's a bot and hate it." Nothing in a
+  deck answers that — hearing the agent answer well does. Every cut must contain at least
+  one stretch of real captured agent audio playing **at full level with no voiceover and no
+  music underneath it**. Mixing the agent low, under narration, throws away the single most
+  persuasive asset we own.
+- **Silence is a shot.** A phone that stops ringing, and then nothing, is the entire problem
+  stated without a word. Budget for it; do not let music paper over it.
+- **Never say the product's name first.** The first two seconds buy attention with a moment
+  the viewer recognises. The name lands once the moment has earned it.
+- **Show the finished work, not just the answered call.** Anyone can claim pickup. The
+  confirmation text arriving and the outcome landing where the owner can check it is what
+  separates this from an answering service.
 
 ### Produced cuts (scored 2026-08-01)
 
@@ -186,6 +207,16 @@ ElevenLabs VO laid over the delivered reel videos; audio levels verified (mean �
 | `wirelinelaunchreelalt.mp4` | 20.43s | missed-call (14.39s) |
 
 QA note: the "15s" cut runs 16.80s — trim to ≤15.0s before strict-length paid placements. The 46s Descript master is not yet re-cut; the founder-60s VO (54.65s) is ready for it.
+
+Outstanding against the reel doctrine, in priority order:
+
+1. **No delivered cut yet plays the agent at full level.** Every one of the five mixes the
+   agent under narration, which the doctrine now forbids — it is the proof, and we are
+   hiding it. The "Second Ring" hero cut needs a genuine captured booking call, mixed
+   forward, before it can ship. This is a capture task, not an edit task.
+2. **The 30s master is stale** (see above) and must be re-rendered.
+3. The 15s cut still carries "Agent voice, low in the mix" from its original shot list.
+   Corrected in the table below; the delivered file has not been re-mixed.
 
 ### 46-Second Launch Reel — Master
 
@@ -203,7 +234,7 @@ Use this as the paid-social cutdown. The hinge is "You cannot pick up. / Your ag
 | --- | --- | --- | --- |
 | 0.0-2.5 | Phone face-down on a workbench, screen lighting up | — | Ring tone, room ambience |
 | 2.5-5.0 | Lock screen stacking missed calls | You cannot pick up. | Ring cuts to silence |
-| 5.0-8.0 | Wireline call card answering live | Your agent can. | Agent voice, low in the mix |
+| 5.0-8.0 | Wireline call card answering live | Your agent can. | **Agent voice forward, at full level** — the narration ducks under it, not the reverse |
 | 8.0-11.5 | Outcome card + SMS follow-up | — | Three soft UI ticks |
 | 11.5-15.0 | End card | Build free. Go live from $19/mo. / trywireline.com | Music resolves |
 
@@ -213,7 +244,76 @@ Voiceover (34 words, ~14s at a relaxed pace):
 
 Delivery: matter-of-fact through "pick up", then a beat of silence, then lean on "can". The contrast is the ad.
 
-### 30-Second Product Walkthrough
+### 6-Second Bumper — "Two Rings" (no voiceover)
+
+The pack had nothing under fifteen seconds, which leaves YouTube bumpers and the
+scroll-stopping slot on Reels and TikTok unserved. Six seconds cannot carry an explanation,
+so this one does not attempt any: it is the before and after, in sound, with no narration at
+all. It is the cheapest cut to produce and probably the highest-performing.
+
+| Time | Shot | Overlay | Sound |
+| --- | --- | --- | --- |
+| 0.0-2.0 | Phone lights up, rings once, stops. `Voicemail`. | — | One ring, then a hard cut to silence |
+| 2.0-5.0 | Same phone, same ring — the Wireline card answers and the agent speaks one line. | — | **Agent, full level, alone in the mix** |
+| 5.0-6.0 | End card | Nobody went to voicemail. / trywireline.com | Single resolving note |
+
+No voiceover, no music bed under the agent, no burned words until the end card. If the six
+seconds do not work on the strength of that contrast, adding words will not save them.
+
+### Sound-off variants — required, not optional
+
+The hero and bumper cuts both stake everything on audio, and most paid social plays muted.
+That is a real weakness in the approach above, and it is solved with the product rather than
+around it: during any full-level agent segment, show the **live transcript surface in Studio
+writing the agent's words as it speaks them.**
+
+This is honest — it is a real screen, not a caption bar bolted on in post — and it means the
+muted viewer watches the agent work rather than reading a subtitle about it. Set the
+transcript type large enough to read at 9:16 on a phone held at arm's length, and never let
+a platform's auto-caption track cover it.
+
+Deliver every paid cut in two mixes: sound-on as specified, and sound-off with the transcript
+segment extended by roughly a second so the words can actually be read.
+
+### 30-Second Hero — "The Second Ring" (primary paid cut)
+
+The structure is repetition with variation: play the same five seconds twice, and change
+only the ending. The first pass is the problem the viewer already lives; the second is the
+product, and it needs no explanation because they just watched the alternative.
+
+This replaced a four-verb feature tour that opened by saying our own name. The tour is
+retained below for sales and onboarding, where explaining the loop is the job. It is not
+the job of a paid social cut.
+
+| Time | Shot | Overlay | Sound |
+| --- | --- | --- | --- |
+| 0.0-3.5 | Phone face-down on a workbench, lighting up. Hands stay on the actual work and never mime it. | — | One ring. Room tone. No music yet. |
+| 3.5-5.0 | Ringing stops. `Missed call`. Then `Voicemail`. | — | **Nothing. Hold the silence a full beat — this is the setup, and music would erase it.** |
+| 5.0-7.5 | Black. | Every missed call is someone trying the next name on the list. | Room tone only |
+| 7.5-15.5 | **The same shot and the same ring — this time the Wireline call card answers.** Real captured product audio: the agent greets, the caller replies, a time is agreed. | — | **Agent at full level. No voiceover. No music bed. Eight seconds of the product doing the thing.** |
+| 15.5-20.0 | One continuous move through the work that follows: outcome card writes itself, the confirmation text lands on the caller's phone, the calendar fills. | Answered. Booked. Confirmed. Logged. | Three soft ticks, then quiet |
+| 20.0-26.0 | Studio: the conversation and its transcript sitting where the owner can check the work. | — | Voiceover enters here, for the first and only time |
+| 26.0-30.0 | End card | Nobody went to voicemail. / Build your Voice Agent / Build free. Go live from $19/mo. / trywireline.com | Music resolves |
+
+Voiceover (24 words, ~10s, entering at 0:20 — deliberately the shortest script in the pack):
+
+> "Your agent picks up, books the next step, texts the confirmation, and logs the outcome. Build free. Go live from nineteen dollars a month."
+
+Delivery: the voiceover arrives after the viewer has already heard the agent work, so it
+narrates nothing they have not seen. Read it like a receipt, not a pitch.
+
+Casting the captured call: use a real booking exchange with an ordinary interruption in it —
+a caller who talks over the greeting, or changes the day once. A frictionless scripted
+exchange reads as fake and undoes the whole point of playing it.
+
+End line: **"Nobody went to voicemail."** It states the customer's experience rather than the
+technology, it is literally true of the call just shown, and it does not imply a human
+answered — which "someone picked up" would, and which we will not claim.
+
+### 30-Second Product Walkthrough (alternate — sales and onboarding)
+
+Retained for surfaces where explaining the loop is the job: sales calls, onboarding, and the
+docs site. Not for paid social, and it no longer carries a rendered voiceover master.
 
 Four verbs, four screens, no filler. Overlay each stage word as a full-frame chapter card for sound-off viewers.
 
