@@ -299,29 +299,42 @@ record(
   },
 );
 
-const curatedElevenLabsVoiceIds = new Set([
-  "21m00Tcm4TlvDq8ikWAM",
+// Core studio voices the runtime hard-requires (mirror of
+// ELEVENLABS_CORE_VOICE_IDS in src/lib/voice-catalog.ts). Verified present
+// 2026-08-07. The broader ELEVENLABS_CURATED_VOICES catalog is intentionally
+// best-effort: each of its voices carries a Vapi fallback in
+// buildManagedVoiceRuntime, so a library rotation degrades one voice rather
+// than blocking launch. The gate therefore requires only the core set and
+// reports how much of the studio catalog the account can currently serve.
+const coreElevenLabsVoiceIds = new Set([
+  "EXAVITQu4vr4xnSDxMaL",
+  "cgSgspJ2msm6clMCkdW9",
   "pNInz6obpgDQGcFmaJgB",
   "JBFqnCBsd6RMkjVDRZzb",
+  "nPczCjzI2devNBz1zQrb",
 ]);
 const elevenLabsVoiceInventory = arrayAt(elevenlabsVoices?.body, "voices");
 const availableElevenLabsVoiceIds = new Set(
   elevenLabsVoiceInventory.map((voice) => String(voice?.voice_id || "")).filter(Boolean),
 );
-const curatedElevenLabsVoicesReady = [...curatedElevenLabsVoiceIds].every((voiceId) =>
-  availableElevenLabsVoiceIds.has(voiceId),
+const premadeVoiceCount = elevenLabsVoiceInventory.filter(
+  (voice) => String(voice?.category || "") === "premade",
+).length;
+const missingCoreVoices = [...coreElevenLabsVoiceIds].filter(
+  (voiceId) => !availableElevenLabsVoiceIds.has(voiceId),
 );
+const coreElevenLabsVoicesReady = missingCoreVoices.length === 0;
 const elevenLabsReady = Boolean(
-  elevenlabs?.ok && elevenlabsVoices?.ok && curatedElevenLabsVoicesReady,
+  elevenlabs?.ok && elevenlabsVoices?.ok && coreElevenLabsVoicesReady,
 );
 record(
   "elevenlabs",
   true,
   elevenLabsReady ? "ready" : "blocked",
   elevenLabsReady
-    ? `ElevenLabs key accepted (${elevenlabs.body?.tier || "unknown"} tier); all curated studio voices are reachable.`
+    ? `ElevenLabs key accepted (${elevenlabs.body?.tier || "unknown"} tier); all core studio voices reachable, ${premadeVoiceCount} premade voices available for the studio catalog.`
     : elevenlabs?.ok && elevenlabsVoices?.ok
-      ? "ElevenLabs key accepted, but one or more curated studio voices are unavailable."
+      ? `ElevenLabs key accepted, but core studio voices are unavailable: ${missingCoreVoices.join(", ")}.`
       : "ElevenLabs managed voice credential missing, rejected, or voice inventory unavailable.",
   "Keep provider billing and usage alerts active; confirm the ElevenLabs key in Vapi Integrations and prove one fallback call before GA.",
   elevenlabs?.ok
@@ -329,7 +342,8 @@ record(
         character_count: elevenlabs.body?.character_count ?? null,
         character_limit: elevenlabs.body?.character_limit ?? null,
         voice_count: elevenLabsVoiceInventory.length,
-        curated_voice_count: [...curatedElevenLabsVoiceIds].filter((id) =>
+        premade_voice_count: premadeVoiceCount,
+        core_voice_count: [...coreElevenLabsVoiceIds].filter((id) =>
           availableElevenLabsVoiceIds.has(id),
         ).length,
         runtime_model: "eleven_flash_v2_5",

@@ -200,8 +200,9 @@ ${HOUSE_STYLE_BLOCK}`,
     id: "onboarding",
     name: "Maya",
     role: "wireline_onboarding",
-    // Rachel Upbeat — energetic welcome, distinct from Mira's softer tone.
-    voiceId: "21m00Tcm4TlvDq8ikWAM",
+    // Jessica — bright, playful welcome, distinct from Mira's softer tone.
+    // (Verified present in the ElevenLabs account; the prior Rachel id was not.)
+    voiceId: "cgSgspJ2msm6clMCkdW9",
     firstMessage: "Hi, thanks for calling Wireline — this is Maya. Who am I speaking with?",
     endCallMessage: "So glad you're getting started — you're going to love it. Talk soon!",
     systemPrompt: `You are Maya, the onboarding specialist at Wireline. You make sure new + evaluating customers get to their first working agent fast - the whole promise is "live in under 10 minutes."

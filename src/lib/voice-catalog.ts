@@ -108,29 +108,154 @@ export const VAPI_CURATED_VOICES: readonly VoiceOption[] = [
 ] as const;
 
 /**
- * Deliberately small low-latency studio catalog. Wireline never mirrors the
- * founder provider account: professional, generated, and unrelated private
- * voices stay out of customer-facing responses.
+ * Curated low-latency studio catalog of ElevenLabs *premade* voices — a broad
+ * set of professional options for tenants who want a distinct studio voice,
+ * each auto-paired with a Wireline Phone (Vapi) fallback in
+ * `buildManagedVoiceRuntime`. The curation rule is unchanged in spirit: only
+ * vetted premade voices are offered. Wireline never mirrors the founder
+ * provider account — generated, cloned, or unrelated private voices stay out
+ * of customer-facing responses, and a tenant's own clone reaches the runtime
+ * only through the approved-clone path, never this list.
+ *
+ * `ELEVENLABS_CORE_VOICE_IDS` below is the subset the launch readiness gate
+ * hard-requires; the rest are best-effort — if a given account's library has
+ * rotated one out, the picker simply omits it and any live call falls back to
+ * the paired Vapi voice, so a broad catalog never becomes a launch blocker.
  */
 export const ELEVENLABS_CURATED_VOICES: readonly VoiceOption[] = [
+  // Core — verified present in the connected account; the readiness gate
+  // requires these (ids in ELEVENLABS_CORE_VOICE_IDS).
   {
-    id: "21m00Tcm4TlvDq8ikWAM",
-    name: "Rachel — Calm & Clear",
+    id: "EXAVITQu4vr4xnSDxMaL",
+    name: "Sarah — Mature & Reassuring",
+    provider: "11labs",
+    gender: "female",
+  },
+  {
+    id: "cgSgspJ2msm6clMCkdW9",
+    name: "Jessica — Bright & Playful",
     provider: "11labs",
     gender: "female",
   },
   {
     id: "pNInz6obpgDQGcFmaJgB",
-    name: "Adam — Deep",
+    name: "Adam — Firm & Confident",
     provider: "11labs",
     gender: "male",
   },
   {
     id: "JBFqnCBsd6RMkjVDRZzb",
-    name: "George — Warm & Polished",
+    name: "George — Warm & Captivating",
     provider: "11labs",
     gender: "male",
   },
+  {
+    id: "nPczCjzI2devNBz1zQrb",
+    name: "Brian — Deep & Comforting",
+    provider: "11labs",
+    gender: "male",
+  },
+  // Extended — all verified premade voices in the account; any that a future
+  // library rotation drops simply degrade to the paired Vapi fallback.
+  {
+    id: "hpp4J3VqNfWAUOO0d1Us",
+    name: "Bella — Professional & Warm",
+    provider: "11labs",
+    gender: "female",
+  },
+  {
+    id: "Xb7hH8MSUJpSbSDYk0k2",
+    name: "Alice — Clear & Engaging",
+    provider: "11labs",
+    gender: "female",
+  },
+  {
+    id: "FGY2WhTYpPnrIDTdsKH5",
+    name: "Laura — Upbeat & Spirited",
+    provider: "11labs",
+    gender: "female",
+  },
+  {
+    id: "pFZP5JQG7iQjIQuC4Bku",
+    name: "Lily — Smooth & Confident",
+    provider: "11labs",
+    gender: "female",
+  },
+  {
+    id: "XrExE9yKIg1WjnnlVkGX",
+    name: "Matilda — Warm & Professional",
+    provider: "11labs",
+    gender: "female",
+  },
+  { id: "SAz9YHcvj6GT2YYXdXww", name: "River — Relaxed & Neutral", provider: "11labs" },
+  {
+    id: "onwK4e9ZLuTAKqWW03F9",
+    name: "Daniel — Steady Broadcaster",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "cjVigY5qzO86Huf0OWal",
+    name: "Eric — Smooth & Trustworthy",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "iP95p4xoKVk53GoZ742B",
+    name: "Chris — Charming & Down-to-Earth",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "CwhRBWXzGAHq8TQ4Fs17",
+    name: "Roger — Laid-Back & Resonant",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "bIHbv24MWmeRgasZH58o",
+    name: "Will — Relaxed & Optimistic",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "pqHfZKP75CvOlQylNhV4",
+    name: "Bill — Wise & Balanced",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "IKne3meq5aSn9XLyUdCD",
+    name: "Charlie — Confident & Energetic",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "N2lVS1w4EtoT3dr4eOWO",
+    name: "Callum — Characterful & Husky",
+    provider: "11labs",
+    gender: "male",
+  },
+  {
+    id: "TX3LPaxmHKxFdv7VOQHJ",
+    name: "Liam — Energetic & Confident",
+    provider: "11labs",
+    gender: "male",
+  },
+] as const;
+
+/**
+ * The studio voices the launch readiness gate must find in the connected
+ * ElevenLabs account. Verified present 2026-08-07 against the account's premade
+ * library; every other entry in `ELEVENLABS_CURATED_VOICES` is best-effort with
+ * a Vapi fallback, so the broad catalog can never become a launch blocker.
+ */
+export const ELEVENLABS_CORE_VOICE_IDS: readonly string[] = [
+  "EXAVITQu4vr4xnSDxMaL",
+  "cgSgspJ2msm6clMCkdW9",
+  "pNInz6obpgDQGcFmaJgB",
+  "JBFqnCBsd6RMkjVDRZzb",
+  "nPczCjzI2devNBz1zQrb",
 ] as const;
 
 /** Default PSTN voice when presenter lip-sync is the Studio voice. */
@@ -143,14 +268,10 @@ export const MANAGED_VOICE_BY_GENDER = {
 } as const;
 
 const VAPI_V2_VOICE_IDS = new Set(
-  VAPI_CURATED_VOICES.filter((voice) => voice.id !== "Rohan").map(
-    (voice) => voice.id,
-  ),
+  VAPI_CURATED_VOICES.filter((voice) => voice.id !== "Rohan").map((voice) => voice.id),
 );
 
-export function vapiVoiceVersion(
-  voiceId: string | null | undefined,
-): 2 | undefined {
+export function vapiVoiceVersion(voiceId: string | null | undefined): 2 | undefined {
   return voiceId && VAPI_V2_VOICE_IDS.has(voiceId) ? 2 : undefined;
 }
 
@@ -220,15 +341,10 @@ export type VoiceCatalogProviders = {
 
 export function resolveVoiceLabel(voiceId: string | null | undefined): string {
   if (!voiceId) return "Not selected";
-  const pools = [
-    ...WIRELINE_LIVE_VOICES,
-    ...VAPI_CURATED_VOICES,
-    ...ELEVENLABS_CURATED_VOICES,
-  ];
+  const pools = [...WIRELINE_LIVE_VOICES, ...VAPI_CURATED_VOICES, ...ELEVENLABS_CURATED_VOICES];
   const normalizedId = voiceId.toLowerCase();
   const match = pools.find((voice) => voice.id.toLowerCase() === normalizedId);
   if (match) return match.name;
-  if (normalizedId === "pninz6obpgdqgcfmajgb") return "Adam — Deep";
   return "Custom voice";
 }
 
