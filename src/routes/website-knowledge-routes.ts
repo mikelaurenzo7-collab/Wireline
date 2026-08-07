@@ -13,22 +13,23 @@ import {
   websiteKnowledgeBurstRateLimit,
   websiteKnowledgeDailyRateLimit,
 } from "../middleware/website-knowledge-rate-limits";
+import { withAudit } from "../middleware/audit-middleware";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 const WEBSITE_URL_MAX_CHARS = 2048;
 
-function importSummary(result: { factsAdded: number; rulesAdded: number; truncated: boolean }): string {
+function importSummary(result: {
+  factsAdded: number;
+  rulesAdded: number;
+  truncated: boolean;
+}): string {
   const parts: string[] = [];
   if (result.factsAdded) {
-    parts.push(
-      `Saved ${result.factsAdded} business fact${result.factsAdded === 1 ? "" : "s"}.`,
-    );
+    parts.push(`Saved ${result.factsAdded} business fact${result.factsAdded === 1 ? "" : "s"}.`);
   }
   if (result.rulesAdded) {
-    parts.push(
-      `Saved ${result.rulesAdded} operating rule${result.rulesAdded === 1 ? "" : "s"}.`,
-    );
+    parts.push(`Saved ${result.rulesAdded} operating rule${result.rulesAdded === 1 ? "" : "s"}.`);
   }
   if (!parts.length) parts.push("No new explicit facts or operating rules were found.");
   if (result.truncated) {
@@ -42,6 +43,11 @@ router.post(
   authenticateUser,
   websiteKnowledgeBurstRateLimit,
   websiteKnowledgeDailyRateLimit,
+  // Metered, not capped: website import is configuration work, and the Free
+  // Builder budget is a private-simulation allowance (migration 0134). Hard
+  // capping setup would strand an Account Holder mid-onboarding; the burst and
+  // daily limiters above already bound this route.
+  withAudit("website-import"),
   async (req: AuthenticatedRequest, res: Response) => {
     const rawUrl = typeof req.body?.url === "string" ? req.body.url.trim() : "";
     if (!rawUrl || rawUrl.length > WEBSITE_URL_MAX_CHARS) {

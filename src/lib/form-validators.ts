@@ -266,17 +266,42 @@ export type EmailDraft = z.infer<typeof EmailDraftSchema>;
 // Outbound lead — single contact submitted to /api/outbound/dial.
 // Phone number format kept liberal (E.164 with optional formatting)
 // because Vapi handles normalization downstream.
+const outboundDialNumber = z
+  .string()
+  .min(7, "Phone number is required")
+  .max(32, "Phone number must be 32 characters or less")
+  .regex(/^[+\-()\s\d]+$/, "Phone number contains invalid characters");
+
 export const OutboundLeadSchema = z
   .object({
-    phone_number: z
-      .string()
-      .min(7, "Phone number is required")
-      .max(32, "Phone number must be 32 characters or less")
-      .regex(/^[+\-()\s\d]+$/, "Phone number contains invalid characters"),
+    phone_number: outboundDialNumber,
     name: z.string().max(200, "Name must be 200 characters or less").optional().nullable(),
     email: z.string().email("Invalid email address").optional().nullable(),
     notes: z.string().max(2000, "Notes must be 2000 characters or less").optional().nullable(),
     status: z.string().max(50, "Status must be 50 characters or less").optional(),
+
+    // The keys the bulk importer actually persists. They were undeclared, and
+    // `.passthrough()` below let them reach the database with NO validation at
+    // all — while the declared fields above validated keys the importer never
+    // reads. `customer_number` matters most: the importer PREFERS it over
+    // `phone_number` as the dial target, so the regex above was bypassable for
+    // the one field that gets dialled.
+    // NOT `.uuid()`. `wireline_agents.id` is a TEXT primary key holding prefixed
+    // keys — `agent-<uuid>` from the create routes, `agent-<hex>` from the draft
+    // service — so a uuid rule rejects every real agent id and makes the field
+    // unusable. FollowUpTaskCreateSchema below carries the same note because the
+    // same mistake was already made and fixed there once.
+    agent_id: z.string().max(120, "Invalid agent ID").optional().nullable(),
+    customer_number: outboundDialNumber.optional().nullable(),
+    customer_name: z
+      .string()
+      .max(200, "Customer name must be 200 characters or less")
+      .optional()
+      .nullable(),
+    context: z.string().max(2000, "Context must be 2000 characters or less").optional().nullable(),
+    // Typed as an object so a string cannot be spread into the metadata column
+    // one indexed character at a time.
+    metadata: z.record(z.string(), z.unknown()).optional().nullable(),
   })
   .passthrough(); // Allow extra fields (custom CRM data) to flow through
 

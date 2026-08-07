@@ -43,6 +43,39 @@ jobs:
       - name: Type check
         run: npm run lint
 
+      # Server-graph and audit-module type safety are not covered by `lint`
+      # (client graph only). These are fast and hermetic — run them on every PR
+      # rather than only inside the heavier verify-full ladder.
+      - name: Server + audit-module type check
+        run: |
+          npm run lint:server
+          npm run lint:audit-modules
+
+      # Security and route-integrity gates. Source-reading contract checks with
+      # no database, network, or browser dependency; keep them on the fast PR
+      # path. `security:audit` is deliberately NOT here — it queries the npm
+      # registry, so a newly published advisory would redden every PR regardless
+      # of its contents. It stays in the verify-full ladder.
+      - name: Security and route gates
+        run: |
+          npm run route-registry:check
+          npm run security:routes:check
+          npm run authz:check
+          npm run tenant-insert:check
+          npm run server:bootstrap:check
+          npm run csp:check
+          npm run runtime:policy:check
+          npm run api-error:check
+
+      - name: Contract and docs gates
+        run: |
+          npm run source-control:check
+          npm run docs:check
+          npm run workflow:syntax:check
+          npm run openapi:check
+          npm run design:tokens:check
+          npm run stripe:catalog:check
+
       - name: Build
         run: npm run build
 

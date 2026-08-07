@@ -24,7 +24,10 @@ import { log } from "../lib/server-context";
 import {
   ROLE_PERMISSIONS,
   ROLE_HIERARCHY,
+  ALL_ROLES,
+  FALLBACK_ACCESS_ROLE,
   hasPermission,
+  resolveStoredRole,
   type AccessRole,
 } from "../lib/soc2-controls";
 
@@ -90,14 +93,37 @@ export async function getCallerRole(
     .orderBy(desc(schema.teamMembers.createdAt))
     .limit(1);
 
-  if (!data && tenantId !== userId) {
-    throw new Error("No active membership for tenant");
+  if (!data) {
+    // No membership row at all. That is only legitimate when the caller IS the
+    // tenant — the fresh-install / self-hosted case documented at the top of
+    // this file, where the authenticated user owns their data by definition.
+    if (tenantId !== userId) {
+      throw new Error("No active membership for tenant");
+    }
+    roleCache.set(cacheKey, { role: "owner", cached_at: Date.now() });
+    return "owner";
   }
 
-  let role: AccessRole = "owner";
-  const r = data?.role;
-  if (r && r in ROLE_HIERARCHY) {
-    role = r as AccessRole;
+  // A membership row EXISTS, so the stored role decides — the own-tenant owner
+  // default must not survive into this branch.
+  //
+  // It used to. The resolution initialised the role variable to the owner
+  // default and narrowed it only when the stored string was a ROLE_HIERARCHY
+  // key — and "member" is not one. It is the invite enum's default and its
+  // least-privileged intended seat, yet it fell through to full owner privilege
+  // on every requirePermission/requireRole route. Inviting someone as "admin"
+  // or "viewer" was enforced correctly, so the ordering was inverted: only the
+  // safe-looking default escalated.
+  const role = resolveStoredRole(data.role);
+  if (data.role && !ALL_ROLES.includes(data.role as AccessRole) && role === FALLBACK_ACCESS_ROLE) {
+    // Unknown vocabulary is a data problem worth seeing rather than silently
+    // read-only-ing someone who should have had more.
+    log.warn("Unrecognised team member role resolved to least privilege", {
+      tenantId,
+      userId,
+      storedRole: data.role,
+      resolvedRole: role,
+    });
   }
   roleCache.set(cacheKey, { role, cached_at: Date.now() });
   return role;

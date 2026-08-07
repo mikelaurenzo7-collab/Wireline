@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { billableVoiceMinutes } from "../src/lib/voice-usage";
 
 const read = (path: string) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
+const stripComments = (source: string) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
 describe("live-call billing continuity contract", () => {
   it("counts every provider attempt without under-billing sub-minute calls", () => {
@@ -35,6 +37,49 @@ describe("live-call billing continuity contract", () => {
     expect(grace).toContain("temporary negative Runtime Balance");
     expect(grace).toContain("idempotencyKey: `voice_completion:${opts.providerCallId}`");
     expect(grace).toContain('entryKind: "burn"');
+  });
+
+  it("awaits voice metering so a serverless freeze cannot drop it", () => {
+    const handlers = read("src/lib/vapi-handlers.ts");
+    expect(handlers).toContain("await trackVoiceMinutes({");
+    expect(handlers).not.toContain("void trackVoiceMinutes({");
+  });
+
+  it("re-drives idempotent voice metering before the duplicate early return", () => {
+    /**
+     * The monthly counter now has its own durable per-provider-call checkpoint,
+     * so duplicate Vapi delivery is the recovery mechanism for a failure after
+     * the call-log claim. Metering MUST run before the call-log duplicate return:
+     * a DNC write can intentionally throw first, and the retry must still finish
+     * the count/debit without re-running downstream notifications or enrichment.
+     */
+    const handlers = stripComments(read("src/lib/vapi-handlers.ts"));
+    const duplicateReturn = handlers.indexOf("if (!insertedFresh) {");
+    const metering = handlers.indexOf("await trackVoiceMinutes({");
+
+    expect(duplicateReturn).toBeGreaterThan(-1);
+    expect(metering).toBeGreaterThan(-1);
+    expect(metering).toBeLessThan(duplicateReturn);
+    expect(handlers.split("trackVoiceMinutes(").length - 1).toBe(1);
+  });
+
+  it("keys the monthly counter checkpoint by tenant and provider call", () => {
+    const usage = stripComments(read("src/lib/voice-usage.ts"));
+    const schema = stripComments(read("src/db/voice-usage-schema.ts"));
+    const migration = read("drizzle/migrations/0135_voice_usage_event_idempotency.sql");
+
+    expect(usage).toContain("voiceUsageEvents");
+    expect(usage).toContain("onConflictDoNothing");
+    expect(usage).toContain("providerCallId");
+    expect(usage).toContain("chargedAt");
+    expect(usage).toContain("throw error;");
+    expect(schema).toContain('"wireline_voice_usage_events"');
+    expect(schema).toContain("primaryKey({ columns: [table.userId, table.providerCallId] })");
+    expect(migration).toContain("PRIMARY KEY (user_id, provider_call_id)");
+    expect(migration).toContain("CREATE POLICY tenant_isolation");
+    expect(stripComments(read("src/lib/voice-completion-grace.ts"))).toContain(
+      "idempotencyKey: `voice_completion:${opts.providerCallId}`",
+    );
   });
 
   it("requires prepaid coverage on every public paid plan", () => {

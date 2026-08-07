@@ -158,7 +158,7 @@ compatibility fallback until it is rotated.
 | Vercel              | Hosting, functions, cron                        | project/build path healthy                                  | Rotate exposed token; keep payment method and spend alerts active              |
 | Vercel AI Gateway   | Governed final AI route                         | credential/model catalog ready                              | Set per-key budget, alerts, and reserve before scale                           |
 | Supabase            | Postgres data plane                             | ACTIVE_HEALTHY; RLS/grants reviewed                         | Keep migrations and custom-auth password controls healthy                      |
-| Stripe              | Customer billing                                | **blocked: Cadence AI identity; portal bootstrap unproved** | Rebrand; prove managed portal; run checkout lifecycle                          |
+| Stripe              | Customer billing                                | **blocked: Cadence AI identity (verified live 2026-08-07)** | Apply the Dashboard rebrand below; run one live checkout-to-portal lifecycle   |
 | xAI                 | Optional experiment only                        | credential ready; not launch-default                        | Fund only if explicitly opting into structured fallback; alert if enabled      |
 | OpenAI              | Primary structured + Realtime + Vapi call model | credential ready                                            | Maintain budget, payment method, alerts, and scoped keys                       |
 | Gemini              | Direct AI continuity                            | credential ready                                            | Retain quota/billing fallback                                                  |
@@ -228,6 +228,90 @@ Then complete the controlled launch matrix:
    and out-of-window approved-template delivery.
 
 Never commit `.env.production`; delete it after the audit.
+
+## Stripe merchant identity — verified red, Dashboard-only
+
+Read live from `acct_1TkyXL8e6If87QKm` on 2026-08-07. The **catalog is correct**:
+all eight products are active, named `Wireline …`, and carry
+`wireline_catalog_version=founder_early_access_2026_07_v6` with plan ids that
+match `src/lib/plan-catalog.ts`. The account **identity around that catalog is
+not**, and `stripeBrandReady` in `scripts/check-vendor-readiness.mjs` is
+currently false on all four of its conditions.
+
+| Stripe setting                                | Live value                     | Required                         | Where the customer sees it |
+| --------------------------------------------- | ------------------------------ | -------------------------------- | -------------------------- |
+| `settings.payments.statement_descriptor`       | `CADENCE AI`                   | `WIRELINE`                       | Card statement             |
+| `settings.card_payments.statement_descriptor_prefix` | `CADENCE AI`             | `WIRELINE`                       | Card statement             |
+| `business_profile.name`                        | `Cadence AI`                   | `Wireline`                       | Receipts, invoices         |
+| `settings.dashboard.display_name`              | `Cadence AI`                   | `Wireline`                       | Portal, Stripe emails      |
+| `business_profile.url`                         | `https://wireline-chi.vercel.app` | `https://trywireline.com`     | Receipts                   |
+| `business_profile.support_url`                 | `null`                         | `https://trywireline.com`        | Receipts, portal           |
+| `business_profile.support_email`               | `null`                         | a monitored address              | Receipts, portal           |
+| `settings.branding.logo` / `icon` / colors     | all `null`                     | Wireline mark + brand colors     | Checkout, portal           |
+
+A subscriber to "Wireline" currently sees `CADENCE AI` on their card statement.
+That is the single highest-yield chargeback trigger in the billing surface, and
+it is the reason this row blocks launch rather than merely being untidy.
+
+These are Dashboard settings on a `type: standard` account; they are not
+writable from the application. Apply them at:
+
+1. **Public details** — <https://dashboard.stripe.com/settings/account>
+   Set business name, dashboard display name, website
+   (`https://trywireline.com`), support email, and support URL.
+2. **Card statement** — <https://dashboard.stripe.com/settings/payments>
+   Set the statement descriptor and the shortened/prefix form to `WIRELINE`.
+   Changes apply to new charges; existing disputes keep the old descriptor.
+3. **Branding** — <https://dashboard.stripe.com/settings/branding>
+   Upload the Wireline mark and set the brand colors so Checkout and the
+   customer portal stop rendering unbranded.
+
+Then verify — this is the gate, not the Dashboard:
+
+```bash
+node --env-file=.env.production scripts/check-vendor-readiness.mjs
+```
+
+`stripeBrandReady` requires all of: `business_profile.name` matching
+`/wireline/i`, `statement_descriptor` starting with `WIRELINE`, and both
+`business_profile.url` and `business_profile.support_url` equal to
+`https://trywireline.com`.
+
+**Portal bootstrap is no longer unproved.** `POST /billing/portal`
+(`src/routes/billing-portal-readiness-routes.ts`) calls
+`ensureManagedPortalConfiguration` before `billingPortal.sessions.create` and
+passes the configuration explicitly, so the managed configuration is created on
+first use. The live account currently lists zero configurations because no
+customer has opened the portal yet — that is the expected pre-launch state, not
+a defect. What remains genuinely unproved is the live checkout-to-portal
+lifecycle having been exercised end to end at least once.
+
+## Launch economics — verified against the live catalog
+
+Computed from `src/lib/plan-catalog.ts` at `EXPECTED_INCLUDED_UTILIZATION = 0.7`
+against `LAUNCH_CONTRIBUTION_MARGIN_FLOOR = 0.45`:
+
+| Plan          | $/mo | Included min | Revenue/min | Contribution margin |
+| ------------- | ---- | ------------ | ----------- | ------------------- |
+| Starter       | 19   | 60           | $0.317      | 56.3%               |
+| Starter Plus  | 39   | 120          | $0.325      | 56.3%               |
+| Pro           | 79   | 245          | $0.322      | 55.1%               |
+| Business      | 159  | 450          | $0.353      | 54.2%               |
+
+Every tier clears the floor, and the model already reserves carrier, voice
+runtime, model variance, number rental, Stripe processing, Stripe Billing, and a
+Stripe Tax transaction rate that is not yet live. That is a conservative model,
+not an optimistic one.
+
+The one asymmetry worth pricing attention: **prepaid Runtime Balance is the
+least profitable revenue in the business.** At `FLAT_OVERAGE_PER_MIN_USD = 0.22`
+against `VOICE_VARIABLE_COST_PER_MIN_USD = 0.128`, overage runs ~41.8% before
+payment fees, and a minimum $10 top-up carries 5.9% in Stripe fees on top —
+landing near 36% against 54–56% on subscription minutes. The `$10` floor
+(`CONVERSATION_BALANCE_MIN_USD`) is doing real work here; a `$5` tier would
+carry 8.9% in fees. The commercial implication is that a tenant repeatedly
+topping up is worth less than the same tenant one plan higher, so balance-low
+moments should lead with an upgrade path rather than a top-up button.
 
 ## Stripe catalog discipline
 

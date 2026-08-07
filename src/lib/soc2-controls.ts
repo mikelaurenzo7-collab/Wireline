@@ -29,6 +29,48 @@ export const ROLE_HIERARCHY: Record<AccessRole, number> = {
 
 export const ALL_ROLES: AccessRole[] = ["owner", "admin", "Account Holder", "viewer", "auditor"];
 
+const CANONICAL_ROLES = new Set<string>(ALL_ROLES);
+
+/**
+ * Team invitations persist a DIFFERENT vocabulary than authorization speaks.
+ * The invite enum is admin | member | viewer (`inviteTeamMemberSchema`) and the
+ * column default is "member", while this file's hierarchy speaks owner | admin |
+ * Account Holder | viewer | auditor. "member" has no hierarchy entry, so any
+ * caller testing `stored in ROLE_HIERARCHY` fails to recognise the single most
+ * common stored role — and whatever that caller initialised its variable to
+ * stands instead.
+ *
+ * This is the one place the two vocabularies meet, and the mapping is TOTAL:
+ * every input resolves to a real role, and anything unrecognised resolves DOWN.
+ */
+const STORED_ROLE_ALIASES = new Map<string, AccessRole>([
+  // The invite UI's "Member" is the mid-tier seat — work the calls and leads,
+  // no team, billing, settings, or agent management. That is Account Holder.
+  ["member", "Account Holder"],
+  // Pre-0108 name for the same tier, in case any row still carries it.
+  ["operator", "Account Holder"],
+]);
+
+/**
+ * Least privilege that still resolves to a usable role. An unrecognised stored
+ * role means the row is unknown to this code, which must never be a reason to
+ * grant more — read-only is the floor.
+ */
+export const FALLBACK_ACCESS_ROLE: AccessRole = "viewer";
+
+/**
+ * Translate a persisted `wireline_team_members.role` into an AccessRole.
+ *
+ * Set/Map lookups rather than `in` and index access: `"constructor" in
+ * ROLE_HIERARCHY` is true via Object.prototype, so a plain `in` test treats
+ * inherited keys as real roles.
+ */
+export function resolveStoredRole(stored: string | null | undefined): AccessRole {
+  if (!stored) return FALLBACK_ACCESS_ROLE;
+  if (CANONICAL_ROLES.has(stored)) return stored as AccessRole;
+  return STORED_ROLE_ALIASES.get(stored) ?? FALLBACK_ACCESS_ROLE;
+}
+
 /** Permissions granted to each role (additive). */
 export const ROLE_PERMISSIONS: Record<AccessRole, string[]> = {
   owner: [

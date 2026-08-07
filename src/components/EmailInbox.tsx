@@ -154,11 +154,15 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
     }
   }, []);
 
-  const loadThreadDetail = useCallback(async (threadId: string) => {
+  // The signal is what keeps the pane honest. Selecting thread A and then B
+  // fires two overlapping requests, and if A resolves last it wins the state
+  // write — rendering one conversation's messages under another conversation's
+  // header. Abort makes the stale response drop its result instead of racing.
+  const loadThreadDetail = useCallback(async (threadId: string, signal?: AbortSignal) => {
     setDetailLoading(true);
     setDetailError(null);
     try {
-      const response = await authFetch(`/api/emails/threads/${threadId}/outcome`);
+      const response = await authFetch(`/api/emails/threads/${threadId}/outcome`, { signal });
       const body = (await response.json().catch(() => null)) as {
         thread?: Record<string, unknown>;
         messages?: Array<Record<string, unknown>>;
@@ -167,15 +171,21 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
       } | null;
       if (!response.ok || !body?.thread)
         throw new Error(body?.error || "Could not load this conversation.");
+      if (signal?.aborted) return;
       setDetail({
         thread: normalizeThread(body.thread),
         messages: Array.isArray(body.messages) ? body.messages.map(normalizeMessage) : [],
         handoff: body.handoff || null,
       });
     } catch (cause) {
+      // A superseded request rejects with AbortError. Surfacing that would put a
+      // failure banner over the conversation the reader actually asked for.
+      if (signal?.aborted) return;
       setDetailError(cause instanceof Error ? cause.message : "Could not load this conversation.");
     } finally {
-      setDetailLoading(false);
+      // The newer request already set this true; clearing it here would flash
+      // the loaded pane over a fetch that is still running.
+      if (!signal?.aborted) setDetailLoading(false);
     }
   }, []);
 
@@ -189,7 +199,9 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
       setDetailError(null);
       return;
     }
-    void loadThreadDetail(selectedId);
+    const controller = new AbortController();
+    void loadThreadDetail(selectedId, controller.signal);
+    return () => controller.abort();
   }, [loadThreadDetail, selectedId]);
 
   const syncInbox = async () => {

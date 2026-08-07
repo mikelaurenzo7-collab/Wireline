@@ -10,6 +10,8 @@ import { getErrorMessage } from "../lib/server-utils";
 import { drizzle, log, serialQueryBatch } from "../lib/server-context";
 import { authenticateEventStream } from "../middleware/auth";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
+import { enforceSpendCap } from "../lib/spend-guards";
+import { withAudit } from "../middleware/audit-middleware";
 import { validateBody } from "../lib/api-validation";
 import type { AuthenticatedRequest } from "../types/auth";
 import * as schema from "../db/schema";
@@ -40,6 +42,11 @@ router.post(
   "/api/agents/:id/test/stream",
   authenticateEventStream,
   claudeRateLimiter,
+  // The test stream reaches a paid model. Respect the tenant's hard spend cap
+  // and record its cost in auditLog.costUsd like every other AI surface, or the
+  // simulation allowance is invisible COGS the spend guards cannot see.
+  enforceSpendCap,
+  withAudit("agent-test"),
   validateBody(customerTestMessageSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {

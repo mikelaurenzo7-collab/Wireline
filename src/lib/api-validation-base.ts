@@ -273,11 +273,18 @@ export const addLeadSchema = z.object({
 // Webhook Route Schemas
 // ============================================================================
 
+// `name` is required, not optional: wireline_webhooks.name is NOT NULL and the
+// handler rejects a body without it. Omitting it here made POST /api/webhooks
+// unsatisfiable — validateBody replaces req.body with the parsed result, so zod
+// stripped the name the client sent and the handler 400'd every request.
+// `active` (not `isActive`) is what the handler and updateWebhookSchema read;
+// the mismatched name was silently dropped and masked by an `?? true` default.
 export const createWebhookSchema = z.object({
+  name: z.string().min(1).max(120),
   url: urlSchema,
   events: z.array(z.string().min(1)).min(1, "At least one event is required"),
   secret: z.string().min(16, "Secret must be at least 16 characters").optional(),
-  isActive: z.boolean().default(true),
+  active: z.boolean().default(true),
 });
 
 export const updateWebhookSchema = z.object({

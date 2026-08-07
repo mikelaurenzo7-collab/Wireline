@@ -45,6 +45,25 @@ describe("monotonic session revocation", () => {
     expect(sessions).toContain("sessionVersion: sql`${sessionUsers.sessionVersion} + 1`");
   });
 
+  it("fences the supervisor websocket upgrade on the same generation check", () => {
+    // The websocket transport does not pass through authenticateUser, so it has
+    // to run the fence itself. Without it, a signed-out or password-changed
+    // session could still open live-call listen/whisper for the token's TTL.
+    const supervisorWs = read("src/services/supervisor-websocket-service.ts");
+
+    expect(supervisorWs).toContain(
+      'import { isSessionGenerationActive } from "../lib/session-generation"',
+    );
+    expect(supervisorWs).toContain("isSessionGenerationActive(payload, user)");
+    expect(supervisorWs).toContain("tenantStore.run(payload.sub");
+    expect(supervisorWs).toContain('ws.close(4001, "Session has been revoked")');
+    expect(supervisorWs).not.toContain("Number(payload.session_version)");
+    // The fence must gate the connection before userId is trusted.
+    expect(supervisorWs.indexOf("isActiveSupervisorSession(payload)")).toBeLessThan(
+      supervisorWs.indexOf("userId = payload.sub"),
+    );
+  });
+
   it("fails closed when a shadowed legacy issuer omits the generation", () => {
     const auth = read("src/lib/auth-service.ts");
     const unit = read("src/lib/auth-service.test.ts");

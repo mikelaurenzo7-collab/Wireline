@@ -71,7 +71,9 @@ async function persistTranscriptDncSuppression(input: {
 }): Promise<void> {
   const normalizedCallerNumber = normalizeDncPhone(input.rawCallerNumber);
   if (!normalizedCallerNumber) {
-    const error = new Error("Transcript contained a DNC request without a suppressible caller number");
+    const error = new Error(
+      "Transcript contained a DNC request without a suppressible caller number",
+    );
     log.error("transcript DNC suppression missing caller number", {
       userId: input.userId,
       callId: input.callId,
@@ -130,17 +132,15 @@ async function persistTranscriptDncSuppression(input: {
       callId: input.callId,
       error: getErrorMessage(dncErr),
     });
-    reportError(
-      dncErr instanceof Error ? dncErr : new Error("transcript DNC suppression failed"),
-      {
-        userId: input.userId,
-        callId: input.callId,
-        tags: { compliance: "dnc_suppression_failed" },
-      },
-    );
-    // This runs before the duplicate-call early return. Throwing makes Vapi
-    // redeliver, and the duplicate retry reaches this suppression boundary
-    // again even though the call log is already present.
+    reportError(dncErr instanceof Error ? dncErr : new Error("transcript DNC suppression failed"), {
+      userId: input.userId,
+      callId: input.callId,
+      tags: { compliance: "dnc_suppression_failed" },
+    });
+    // This runs before both the retry-safe metering boundary and the duplicate
+    // call-log early return. Throwing makes Vapi redeliver so the legal
+    // suppression is retried first; once it succeeds the same redelivery can
+    // safely resume per-call-idempotent voice accounting.
     throw dncErr;
   }
 }
@@ -160,19 +160,14 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         ? call.endedReason
         : null;
 
-  // 1. Persist base call log. The unique constraint on vapi_call_id is the
-  //    idempotency boundary for the whole handler — duplicate Vapi retries
-  //    fail-fast here, and the rest of the pipeline (usage tracking, Stripe
-  //    overage, webhooks) is gated on `insertedFresh` to avoid double-counting.
+  // 1. Persist base call log. callLogs.vapiCallId is the idempotency boundary
+  // for one-time post-call side effects (notifications, enrichment, webhooks,
+  // compliance evidence). Voice accounting has its own durable per-provider-call
+  // checkpoint and is intentionally re-driven on duplicate delivery below.
   // Concurrency note: callLogs.vapiCallId has a UNIQUE index. Postgres
-  // serializes concurrent INSERTs to the same key via that index — one
-  // succeeds, the other throws 23505 unique_violation. So the duplicate-
-  // protection here is atomic even when the async-queue path AND the
-  // sync-fallback path (vapi-v2.ts) both fire `handleEndOfCallReport`
-  // for the same call (e.g., Vapi retried before the first handler returned
-  // success). No row-level SELECT FOR UPDATE needed — the unique index is
-  // the lock. `insertedFresh` only flips true when this INSERT genuinely
-  // wrote a new row, so post-call LLM analysis (line 84+) runs exactly once.
+  // serializes concurrent INSERTs to the same key via that index — one succeeds,
+  // the other throws 23505 unique_violation. The winning/finalizing delivery is
+  // the only one allowed past the post-metering duplicate return.
   let insertedFresh = false;
   let insertedCallLogId: bigint | null = null;
   const vapiCallId = call?.id || "unknown";
@@ -202,21 +197,15 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     insertedCallLogId = inserted[0]?.id ?? null;
   } catch (logErr: any) {
     if (logErr?.code === "23505" || /duplicate key/i.test(logErr?.message || "")) {
-      const vapiCallId = call?.id;
-      if (vapiCallId) {
-        const existing = await findCallLogByVapiCallId(vapiCallId);
+      const duplicateCallId = call?.id;
+      if (duplicateCallId) {
+        const existing = await findCallLogByVapiCallId(duplicateCallId);
         if (existing && isOutboundCallPlaceholder(existing)) {
           // Atomic finalize-claim: the WHERE re-checks the placeholder markers
           // and the SET clears both (summary replaced, pipelineError nulled),
-          // so when two workers process duplicate end-of-call jobs
-          // concurrently (cron sweep + manual sweep, or worker + sweep on
-          // self-hosted), Postgres serializes the row UPDATEs and exactly one
-          // RETURNING comes back non-empty. Only that winner sets
-          // insertedFresh and fires the side effects (usage metering, the
-          // call.completed webhook, the TCPA consent-log row); the loser falls
-          // through to the side-effect-free duplicate branch. A plain
-          // read-then-update here re-opened the double-metering window the
-          // unique-index idempotency boundary is meant to close.
+          // so when two workers process duplicate end-of-call jobs concurrently
+          // exactly one RETURNING comes back non-empty. Only that winner fires
+          // one-time downstream side effects after metering.
           const finalized = await drizzle
             .update(schema.callLogs)
             .set({
@@ -233,18 +222,18 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
               pipelineError: null,
             })
             .where(
-              sql`${schema.callLogs.vapiCallId} = ${vapiCallId} AND (${schema.callLogs.pipelineError} = ${OUTBOUND_CALL_DIALING_MARKER} OR ${schema.callLogs.summary} = ${OUTBOUND_CALL_PLACEHOLDER_SUMMARY})`,
+              sql`${schema.callLogs.vapiCallId} = ${duplicateCallId} AND (${schema.callLogs.pipelineError} = ${OUTBOUND_CALL_DIALING_MARKER} OR ${schema.callLogs.summary} = ${OUTBOUND_CALL_PLACEHOLDER_SUMMARY})`,
             )
             .returning({ id: schema.callLogs.id });
           if (finalized.length) {
             insertedFresh = true;
             insertedCallLogId = finalized[0].id;
             log.info("Outbound placeholder call log finalized from end-of-call-report", {
-              callId: vapiCallId,
+              callId: duplicateCallId,
             });
           } else {
             log.info("Outbound placeholder already finalized by a concurrent worker", {
-              callId: vapiCallId,
+              callId: duplicateCallId,
             });
           }
         } else {
@@ -253,7 +242,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
               .update(schema.callLogs)
               .set({ transcript })
               .where(
-                sql`${schema.callLogs.vapiCallId} = ${vapiCallId} AND (${schema.callLogs.transcript} IS NULL OR ${schema.callLogs.transcript} = '')`,
+                sql`${schema.callLogs.vapiCallId} = ${duplicateCallId} AND (${schema.callLogs.transcript} IS NULL OR ${schema.callLogs.transcript} = '')`,
               );
           }
           if (recordingUrl) {
@@ -261,7 +250,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
               .update(schema.callLogs)
               .set({ recordingUrl })
               .where(
-                sql`${schema.callLogs.vapiCallId} = ${vapiCallId} AND (${schema.callLogs.recordingUrl} IS NULL OR ${schema.callLogs.recordingUrl} = '')`,
+                sql`${schema.callLogs.vapiCallId} = ${duplicateCallId} AND (${schema.callLogs.recordingUrl} IS NULL OR ${schema.callLogs.recordingUrl} = '')`,
               );
           }
           if (callCostUsd != null) {
@@ -269,16 +258,17 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
               .update(schema.callLogs)
               .set({ cost: String(callCostUsd) })
               .where(
-                sql`${schema.callLogs.vapiCallId} = ${vapiCallId} AND ${schema.callLogs.cost} IS NULL`,
+                sql`${schema.callLogs.vapiCallId} = ${duplicateCallId} AND ${schema.callLogs.cost} IS NULL`,
               );
           }
-          log.info("Duplicate end-of-call-report ignored after retry-safe evidence patch", {
-            callId: vapiCallId,
+          log.info("Duplicate end-of-call-report reached retry-safe evidence patch", {
+            callId: duplicateCallId,
           });
         }
       }
     } else {
       log.error("Failed to insert call log", { callId: call?.id, error: getErrorMessage(logErr) });
+      throw logErr;
     }
   }
 
@@ -292,11 +282,19 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     });
   }
 
+  // Voice metering is intentionally BEFORE the call-log duplicate return. Its
+  // own tenant+provider-call checkpoint makes both the monthly increment and
+  // balance debit retry-safe, so a redelivery can finish revenue accounting
+  // after a DNC or provider failure without duplicating any one-time side effect.
+  await trackVoiceMinutes({
+    userId,
+    durationSeconds: duration,
+    vapiCallId,
+  });
+
   if (!insertedFresh) {
-    // A duplicate Vapi retry is acknowledged only after optional evidence
-    // backfill and the legally significant DNC suppression boundary above.
-    // All other downstream side effects are skipped so retries cannot
-    // double-meter, double-alert, or duplicate audit rows.
+    // Duplicate delivery has now repaired optional evidence, legal DNC state,
+    // and any unfinished voice accounting. Everything below is one-time work.
     return;
   }
 
@@ -319,49 +317,39 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     },
   });
 
-  // Fire-and-forget monthly voice-minute tracking + Stripe overage emission.
-  // Gated on a successful fresh insert/finalization so Vapi retries don't double-bill.
-  if (insertedFresh) {
-    void trackVoiceMinutes({
+  // Ping the Account Holder's Wireline devices with a tap-to-open recap.
+  // Best-effort and env-gated (no-op without APNs creds); never blocks webhook.
+  void notifyCallRecap(userId, {
+    callId: vapiCallId,
+    agentName: call?.assistant?.name || null,
+    fromNumber: call?.customer?.number || null,
+    summary: analysis?.summary || null,
+  });
+
+  // Post-call digest — classify outcome, log to CRM, email the Account Holder.
+  // Fire-and-forget; never blocks the webhook response.
+  if (insertedCallLogId !== null) {
+    void runPostCallDigest({
       userId,
-      durationSeconds: duration,
-      vapiCallId: call?.id || "unknown",
-    });
-
-    // Ping the Account Holder's Wireline devices with a tap-to-open recap. Best-effort
-    // and env-gated (no-op without APNs creds); never blocks the webhook.
-    void notifyCallRecap(userId, {
-      callId: vapiCallId,
+      callLogId: insertedCallLogId,
+      agentId: webhookAgentId || null,
+      dialedNumber: call?.phoneNumber?.number || call?.phoneNumber || null,
+      customerNumber: call?.customer?.number || null,
+      customerName: call?.customer?.name || null,
       agentName: call?.assistant?.name || null,
-      fromNumber: call?.customer?.number || null,
+      direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
+      durationSeconds: duration,
       summary: analysis?.summary || null,
-    });
-
-    // Post-call digest — classify outcome, log to CRM, email the Account Holder.
-    // Fire-and-forget; never blocks the webhook response.
-    if (insertedCallLogId !== null) {
-      void runPostCallDigest({
-        userId,
-        callLogId: insertedCallLogId,
-        agentId: webhookAgentId || null,
-        dialedNumber: call?.phoneNumber?.number || call?.phoneNumber || null,
-        customerNumber: call?.customer?.number || null,
-        customerName: call?.customer?.name || null,
-        agentName: call?.assistant?.name || null,
-        direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
-        durationSeconds: duration,
-        summary: analysis?.summary || null,
-        transcript: transcript || null,
-        sentiment: null,
-        intentLabel: null,
-        endedReason,
-        vapiCallType: call?.type || null,
-        demo: false,
-        vapiCallId: vapiCallId,
-      }).catch((err: any) =>
-        log.warn("runPostCallDigest unhandled rejection", { error: err?.message }),
-      );
-    }
+      transcript: transcript || null,
+      sentiment: null,
+      intentLabel: null,
+      endedReason,
+      vapiCallType: call?.type || null,
+      demo: false,
+      vapiCallId,
+    }).catch((err: any) =>
+      log.warn("runPostCallDigest unhandled rejection", { error: err?.message }),
+    );
   }
 
   SentryEvents.callCompleted({
@@ -414,12 +402,6 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       // burn another LLM round-trip per call. Surfaced on CallLogs as
       // a colored score badge so account holders see at a glance which calls
       // need coaching review.
-      //
-      //   baseScore = 60 (neutral)
-      //   +20 if positive sentiment, -20 if negative
-      //   +10 if intent was high (agent moved the customer forward)
-      //   -10 if coaching_note flags a miss
-      //   clamp 0..100
       const baseScore = 60;
       const sentimentDelta =
         result.sentiment === "positive" ? 20 : result.sentiment === "negative" ? -20 : 0;
@@ -499,11 +481,6 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       lead_score: score,
       customer_number: baseOutcome.customer_number,
     });
-    // Account Holder SMS alert — hot lead detected. Same opt-in plumbing
-    // as the escalation alerts. We only alert ≥80 (vs the webhook
-    // ≥70 threshold) so the SMS pager doesn't fire on borderline
-    // warm leads; the webhook is fine-grained, the SMS should be
-    // can't-miss only.
     if (score >= 80) {
       try {
         const { NotificationService } = await import("./notifications");
@@ -541,15 +518,6 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   // 4. Compliance Ledger (TCPA)
   try {
     const { rule, state } = getConsentRuleForPhone(call?.customer?.number);
-
-    // Evidence-based disclosure logging. We do NOT blindly assert
-    // "disclosure_played" for every call — a ledger row claiming a
-    // disclosure the transcript contradicts is a falsified business record
-    // and worse than no record in TCPA litigation. Instead we verify the
-    // disclosure language is present in the transcript:
-    //   - found            → disclosure_played, with the matched line as evidence
-    //   - transcript, none → disclosure_not_detected (a real compliance signal)
-    //   - no transcript    → disclosure_unverifiable (never assert delivery)
     const disclosure = detectRecordingDisclosure(transcript);
     const hasTranscript = transcript.trim().length > 0;
 
@@ -589,15 +557,6 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       metadata: ledgerRow.metadata,
     });
 
-    // A two-party-state call that completed without a detectable disclosure
-    // is a genuine compliance exposure ($500–$5,000/call). Surface it loudly
-    // so the Account Holder can act, rather than burying it as a silent ledger row.
-    //
-    // A report with neither transcript nor measurable duration is a call that
-    // never carried a conversation (no answer, immediate hangup, failed dial).
-    // There is nothing to disclose into and nothing recorded, so alerting on it
-    // would bury the real exposures under every unanswered dial. The ledger row
-    // above still records `disclosure_unverifiable` either way.
     const carriedConversation = hasTranscript || duration > 0;
     if (disclosureEvent !== "disclosure_played" && rule === "two_party" && carriedConversation) {
       log.warn("TCPA: recording disclosure could not be verified on two-party-state call", {
@@ -677,6 +636,5 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     }
   }
 
-  // Invalidate cache so dashboard immediately reflects the new call log and enrichment.
   invalidateDashboard(userId);
 }

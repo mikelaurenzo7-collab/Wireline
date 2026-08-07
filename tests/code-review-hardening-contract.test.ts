@@ -112,7 +112,7 @@ describe("code review hardening contracts", () => {
     const duplicateGuard = handlers.indexOf("if (!insertedFresh)", suppression);
     const duplicateReturn = handlers.indexOf("return;", duplicateGuard);
     const firstCallMilestone = handlers.indexOf('event: "first_call_completed"');
-    const usageTracking = handlers.indexOf("// Fire-and-forget monthly voice-minute tracking");
+    const usageTracking = handlers.indexOf("await trackVoiceMinutes({");
     expect(suppression).toBeGreaterThan(-1);
     expect(duplicateGuard).toBeGreaterThan(suppression);
     expect(duplicateReturn).toBeGreaterThan(duplicateGuard);
@@ -142,6 +142,82 @@ describe("code review hardening contracts", () => {
     expect(nudge).toContain("function readDismissed(scopeId: string | null)");
     expect(nudge).toContain("function writeDismissed(scopeId: string | null)");
     expect(nudge).toContain("catch");
+  });
+
+  it("tears down OAuth popup-close polls on unmount instead of leaking them", () => {
+    // Both cards start a 500ms popup-close poll from a click handler, so nothing
+    // else tears it down. Unmounting mid-consent left it running for the life of
+    // the tab — and the mailbox card's callback calls loadAccounts(), so a dead
+    // component kept issuing authenticated requests.
+    for (const path of [
+      "src/components/CrmConnectionCard.tsx",
+      "src/components/MailboxConnectionCard.tsx",
+    ] as const) {
+      const source = read(path);
+      expect(source, path).toContain("const popupPollRef = useRef<number | null>(null)");
+      expect(source, path).toContain("popupPollRef.current = window.setInterval(");
+      // The unmount cleanup is the whole point; asserting only the ref would
+      // pass with the teardown deleted.
+      expect(source, path).toContain("useEffect(() => stopPopupPoll, [stopPopupPoll])");
+      // Cleared before starting, so retrying or switching providers cannot stack
+      // intervals that only their own popup's close can stop.
+      //
+      // Assert ADJACENCY, not position. The previous check was
+      // `lastIndexOf("stopPopupPoll();", startIndex) > -1`, which scans backwards
+      // over the whole file — and both components already call stopPopupPoll()
+      // in their OAuth-success message handler, above connect(). Deleting the
+      // clear-before-start call left the gate green because the search simply
+      // resolved to that earlier occurrence.
+      expect(source, path).toMatch(
+        /stopPopupPoll\(\);\s*popupPollRef\.current = window\.setInterval\(/,
+      );
+    }
+  });
+
+  it("cancels a superseded thread fetch instead of racing it onto the reading pane", () => {
+    // Both inboxes load a detail pane from a selected id. Selecting thread A
+    // then B fires overlapping requests, and last-writer-wins means an
+    // A-resolves-last ordering renders one conversation's messages under
+    // another conversation's header.
+    const panes = [
+      {
+        path: "src/components/EmailInbox.tsx",
+        loader: "const loadThreadDetail = useCallback(",
+        write: "setDetail({",
+        loading: "if (!signal?.aborted) setDetailLoading(false);",
+      },
+      {
+        path: "src/components/SmsThreads.tsx",
+        loader: "const fetchMessages = useCallback(",
+        write: "setMessages(",
+        loading: "if (!signal?.aborted) setMessagesLoading(false);",
+      },
+    ] as const;
+
+    for (const pane of panes) {
+      const source = read(pane.path);
+      expect(source, pane.path).toContain("signal?: AbortSignal");
+      expect(source, pane.path).toContain("{ signal }");
+      expect(source, pane.path).toContain("const controller = new AbortController();");
+      expect(source, pane.path).toContain("return () => controller.abort();");
+
+      // Every write path must respect the abort — the result, the error banner,
+      // and the loading flag the newer request already owns. Asserting the guard
+      // exists once is not enough: the catch-path copy alone satisfies that
+      // while the stale result still lands on the pane.
+      const loader = source.slice(
+        source.indexOf(pane.loader),
+        source.indexOf("const controller = new AbortController();"),
+      );
+      expect(
+        (loader.match(/if \(signal\?\.aborted\) return;/g) || []).length,
+        pane.path,
+      ).toBeGreaterThanOrEqual(2);
+      expect(loader.indexOf("if (signal?.aborted) return;"), pane.path).toBeLessThan(
+        loader.indexOf(pane.write),
+      );
+      expect(loader, pane.path).toContain(pane.loading);
+    }
   });
 
   it("keeps public purchase, consent, and sticky-CTA promises internally consistent", () => {

@@ -8,8 +8,10 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { parse as parseUrl } from "node:url";
 import { IncomingMessage } from "node:http";
-import { log, drizzle } from "../lib/server-context";
-import { verifyInternalJwt } from "../lib/auth-utils";
+import { log, drizzle, tenantStore } from "../lib/server-context";
+import { verifyInternalJwt, type JwtPayload } from "../lib/auth-utils";
+import { isSessionGenerationActive } from "../lib/session-generation";
+import { sessionUsers } from "../db/security-schema";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { parseCookieHeader, SESSION_COOKIE_NAME, isProductionRuntime } from "../lib/session-cookie";
 import { isAllowedVapiListenUrl } from "../lib/vapi-monitor-url";
@@ -21,6 +23,31 @@ import {
 } from "../lib/vapi-listen-gate";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
+
+/**
+ * The supervisor socket is not routed through `authenticateUser`, so it must
+ * apply the same database-owned session-generation fence itself. Signature-only
+ * verification would keep listen/whisper alive for the full token TTL after a
+ * sign-out or password change already bumped session_version — exactly the
+ * drift `session-generation.ts` exists to prevent.
+ *
+ * The tenant scope stays tight to this one lookup: the rest of the connection
+ * handler queries signal_presence / call_logs unscoped, and widening the scope
+ * here would change their RLS behavior.
+ */
+async function isActiveSupervisorSession(payload: JwtPayload): Promise<boolean> {
+  return tenantStore.run(payload.sub, async () => {
+    const [user] = await drizzle
+      .select({
+        sessionRevokedBefore: sessionUsers.sessionRevokedBefore,
+        sessionVersion: sessionUsers.sessionVersion,
+      })
+      .from(sessionUsers)
+      .where(eq(sessionUsers.id, payload.sub))
+      .limit(1);
+    return Boolean(user && isSessionGenerationActive(payload, user));
+  });
+}
 
 export function initSupervisorWebSocketServer(server: any) {
   const wss = new WebSocketServer({ noServer: true });
@@ -89,6 +116,13 @@ export function initSupervisorWebSocketServer(server: any) {
       const payload = await verifyInternalJwt(token, secret);
       if (!payload?.sub) {
         ws.close(4001, "Invalid or expired token");
+        return;
+      }
+      // Fails closed: a throw here (DB down, pool exhausted) is caught below and
+      // closes the socket before userId is ever assigned.
+      if (!(await isActiveSupervisorSession(payload))) {
+        log.warn("Supervisor WebSocket: revoked session rejected", { callId, mode });
+        ws.close(4001, "Session has been revoked");
         return;
       }
       userId = payload.sub;

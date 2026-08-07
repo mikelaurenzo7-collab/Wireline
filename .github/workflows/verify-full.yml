@@ -1,9 +1,12 @@
 name: Verify full
 
+# Runs the heavy ladder (all gates + coverage + a second build + Playwright e2e)
+# on main and on demand. It deliberately does NOT run on pull_request: verify:full
+# is a superset of ci.yml, so firing both on every PR to main ran the same ~16
+# gates twice — real waste against this repository's Actions billing limit. PRs
+# get the fast hermetic gates from ci.yml plus the dedicated e2e workflows.
 on:
   push:
-    branches: [main]
-  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -18,7 +21,7 @@ jobs:
   verify-full:
     name: Full verification ladder
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
 
@@ -29,6 +32,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # verify:full ends in `npm run test:e2e` (Playwright). Without the browser
+      # binary the whole ladder fails at the e2e step on a clean runner, which
+      # silently drops every verify-full-only gate (lint:server, the security
+      # and route gates, coverage) from CI. Install the browser Playwright needs
+      # so the ladder can actually pass.
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
 
       - name: verify:full
         run: npm run verify:full

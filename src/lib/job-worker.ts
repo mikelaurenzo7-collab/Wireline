@@ -2,6 +2,8 @@ import { eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { handleJob as handleBaseJob } from "./job-worker-base";
+import { createAuditContext, runInAuditContext } from "./ai-audit";
+import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
 import {
   ARTIFACT_RUNTIME_RESERVE_USD,
   refundRuntimeUsage,
@@ -102,8 +104,19 @@ async function withRuntimeReservation<T>(
     );
   }
 
+  // Artifact and scheduled-report jobs both reach the OpenAI Responses API, and
+  // both do it from a queue worker with no request and no `withAudit` around it,
+  // so their cost reached no audit row at all. These are sold at a FIXED reserve
+  // per format, so an unmeasured call is a silent margin risk rather than a
+  // silent bill — the flat price can quietly stop covering the model.
+  //
+  // createAuditContext rather than withAuditCapture: the capture helper drops
+  // its records when the operation throws, and the failure that matters most
+  // here is a provider response that was billed and then rejected. Holding the
+  // context lets the `finally` persist either way.
+  const auditContext = createAuditContext();
   try {
-    const result = await operation();
+    const result = await runInAuditContext(auditContext, () => operation());
     if (refundWhen?.(result) && !reservation.alreadyReserved) {
       await refundRuntimeUsage({
         userId,
@@ -140,6 +153,22 @@ async function withRuntimeReservation<T>(
       });
     }
     throw error;
+  } finally {
+    if (auditContext.records.length) {
+      // Best-effort: an audit write must never mask the job's own outcome.
+      await persistRuntimeAuditRecords({
+        userId,
+        action: `jobs.${job.type}`,
+        records: auditContext.records,
+        requestMeta: { job_id: job.id, format, attempt: attemptNumber(job) },
+      }).catch((auditError: unknown) =>
+        log.warn("runtime artifact audit persist failed", {
+          jobId: job.id,
+          userId,
+          error: getErrorMessage(auditError),
+        }),
+      );
+    }
   }
 }
 

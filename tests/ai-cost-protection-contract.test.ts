@@ -29,6 +29,127 @@ describe("AI cost-protection contract", () => {
     expect(pdfRoute.slice(0, 600)).toContain("claudeRateLimiter");
   });
 
+  it("meters every AI setup surface and caps the simulation one", () => {
+    // Policy: RECORD cost everywhere a paid model is reached, but only HARD CAP
+    // the simulation surface. The Free Builder budget is a private-simulation
+    // allowance (migration 0134); capping configuration work would strand an
+    // Account Holder mid-onboarding once the allowance is spent.
+    //
+    // withAudit must also sit AFTER the authenticating middleware: it keys the
+    // persisted row on req.user.id at "finish", so mounting it earlier silently
+    // drops every record.
+    const agentTest = read("src/routes/agent-test-routes.ts");
+    const testRoute = agentTest.slice(
+      agentTest.indexOf('"/api/agents/:id/test/stream"'),
+      agentTest.indexOf("async (req: AuthenticatedRequest"),
+    );
+    expect(testRoute).toContain("enforceSpendCap");
+    expect(testRoute).toContain('withAudit("agent-test")');
+    expect(testRoute.indexOf("authenticateEventStream")).toBeLessThan(
+      testRoute.indexOf('withAudit("agent-test")'),
+    );
+
+    const agentRoutes = read("src/routes/agent-routes-v2.ts");
+    for (const [path, label] of [
+      ["/api/train/extract", "train-extract"],
+      ["/api/agent-config/:id/assets", "asset-extract"],
+    ] as const) {
+      const start = agentRoutes.indexOf(`"${path}"`);
+      const block = agentRoutes.slice(start, agentRoutes.indexOf("async (req", start));
+      expect(block, path).toContain(`withAudit("${label}")`);
+      expect(block.indexOf("authenticateUser")).toBeLessThan(
+        block.indexOf(`withAudit("${label}")`),
+      );
+      // Configuration work is measured, never hard-blocked.
+      expect(block, path).not.toContain("enforceSpendCap");
+    }
+
+    const website = read("src/routes/website-knowledge-routes.ts");
+    const websiteRoute = website.slice(
+      website.indexOf('"/api/agent-config/:id/website"'),
+      website.indexOf("async (req: AuthenticatedRequest"),
+    );
+    expect(websiteRoute).toContain('withAudit("website-import")');
+    expect(websiteRoute).not.toContain("enforceSpendCap");
+    expect(websiteRoute.indexOf("authenticateUser")).toBeLessThan(
+      websiteRoute.indexOf('withAudit("website-import")'),
+    );
+  });
+
+  it("caps forced daily-brief composes and meters the cron sweep per tenant", () => {
+    const dailyBrief = read("src/routes/daily-brief-routes.ts");
+
+    // send-now runs the same computeDailyBrief model call as
+    // GET /api/insights/daily-brief, so it must carry the same cap — metering
+    // without capping leaves a forced-compose bypass for a tenant over its limit.
+    const sendNowStart = dailyBrief.indexOf('"/api/daily-brief/send-now"');
+    const sendNow = dailyBrief.slice(
+      sendNowStart,
+      dailyBrief.indexOf("async (req: AuthenticatedRequest", sendNowStart),
+    );
+    expect(sendNow).toContain("enforceSpendCap");
+    expect(sendNow).toContain('withAudit("daily-brief")');
+
+    // The cron sweep has no req.user, so withAudit cannot attribute it. It must
+    // capture records per tenant and persist them against that tenant, or the
+    // highest-volume paid path in the product records nothing at all.
+    const cron = dailyBrief.slice(dailyBrief.indexOf('"/api/daily-brief/schedule"'));
+    expect(cron).toContain("withAuditCapture(");
+    expect(cron).toContain("persistRuntimeAuditRecords({");
+    expect(cron).toContain("userId: uid");
+  });
+
+  it("records vision-asset usage that bypasses the structured runtime", () => {
+    // extractImageAsset calls the Responses API through raw fetch, so it never
+    // passes through ai-structured's recordUsage. Without an explicit call the
+    // route's withAudit wrapper captures nothing and vision COGS is invisible.
+    const agentRoutes = read("src/routes/agent-routes-v2.ts");
+    const imagePath = agentRoutes.slice(
+      agentRoutes.indexOf("async function extractImageAsset"),
+      agentRoutes.indexOf('router.get("/api/agents"'),
+    );
+    expect(imagePath).toContain("recordUsage(");
+    expect(imagePath).toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
+  });
+
+  it("records the fixed-price business artifact against the tenant that ordered it", () => {
+    // The artifact/scheduled-report jobs run the single most expensive call in
+    // the product — Responses + code_interpreter, 8k max output tokens — from a
+    // queue worker with no request, so neither withAudit nor ai-structured's
+    // recordUsage was ever in the path and the cost reached no audit row.
+    //
+    // These are sold at a FIXED reserve per format, so the failure mode is not
+    // an unbilled call but an unmeasured one: nothing can detect the flat price
+    // no longer covering the model.
+    const artifact = read("src/lib/openai-post-call-artifact.ts");
+    expect(artifact).toContain('import { recordUsage } from "./ai-audit"');
+    // Recorded before the ok-check, so a billed-then-rejected response still lands.
+    const call = artifact.slice(
+      artifact.indexOf("const artifactModel ="),
+      artifact.indexOf("if (!response.ok)"),
+    );
+    expect(call).toContain("recordUsage(");
+    expect(call).toContain("artifactModel");
+
+    const worker = read("src/lib/job-worker.ts");
+    const reservation = worker.slice(
+      worker.indexOf("async function withRuntimeReservation"),
+      worker.indexOf("async function handlePostCallArtifact"),
+    );
+    // A queue worker has no req.user, so the records must be captured and
+    // persisted against the job's tenant explicitly.
+    expect(reservation).toContain("runInAuditContext(auditContext, () => operation())");
+    expect(reservation).toContain("persistRuntimeAuditRecords({");
+    expect(reservation).toContain("userId,");
+    // withAuditCapture drops its records when the operation throws, and the
+    // billed-then-failed response is exactly the case worth recording — so the
+    // context is held directly and flushed in a finally.
+    expect(reservation).not.toMatch(/withAuditCapture\(/);
+    expect(reservation).toMatch(/\}\s*finally\s*\{[\s\S]*persistRuntimeAuditRecords/);
+    // An audit write must never mask the job's own outcome.
+    expect(reservation).toMatch(/persistRuntimeAuditRecords\(\{[\s\S]*?\}\)\.catch\(/);
+  });
+
   it("signup and OAuth reconciliation seed the correct AI spend budget transactionally", () => {
     const trialGate = read("src/lib/trial-gate.ts");
     expect(trialGate).toContain("ensureDefaultAiSpendBudget");

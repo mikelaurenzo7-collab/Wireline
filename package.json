@@ -85,6 +85,7 @@
     "workflow:syntax:check": "node scripts/check-workflow-syntax.mjs",
     "route-registry:check": "node scripts/check-route-registry.mjs",
     "docs:check": "node scripts/check-docs-index.mjs",
+    "campaign:vo": "node scripts/generate-campaign-vo.mjs",
     "design:tokens:check": "node scripts/check-design-token-parity.mjs",
     "openapi:check": "node scripts/check-openapi-implementation.mjs",
     "stripe:balance:audit": "node scripts/check-stripe-balance-cause.mjs",

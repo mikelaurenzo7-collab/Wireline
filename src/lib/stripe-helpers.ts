@@ -48,6 +48,30 @@ export function stripeAvailable(): boolean {
 }
 
 /**
+ * True when Stripe reports the object simply does not exist, as opposed to a
+ * transient failure. The distinction decides retry posture everywhere we
+ * re-fetch: a missing object is a permanent answer to act on, while any other
+ * error must escape so the caller (or Stripe's webhook retry) tries again.
+ *
+ * `raw.code` is not optional detail — the Node SDK surfaces the API error code
+ * there on StripeInvalidRequestError, and a copy that only reads the top-level
+ * `code`/`statusCode` misses real resource_missing responses and throws where
+ * it should have handled.
+ */
+export function isMissingStripeResource(error: unknown): boolean {
+  const stripeError = error as {
+    code?: string;
+    statusCode?: number;
+    raw?: { code?: string };
+  };
+  return (
+    stripeError?.statusCode === 404 ||
+    stripeError?.code === "resource_missing" ||
+    stripeError?.raw?.code === "resource_missing"
+  );
+}
+
+/**
  * Postpaid metered overage is intentionally retired. Variable voice, SMS,
  * enrichment, and other provider-funded work must be covered by prepaid
  * Runtime Balance instead of appearing as an unexpected invoice item.
@@ -106,14 +130,12 @@ type StripeInvoiceLineCompat = Stripe.InvoiceLineItem & {
   /** Present before the Basil invoice-line shape migration. */
   price?: Stripe.Price | string | null;
   /** Present on Basil/Dahlia and newer invoice-line payloads. */
-  pricing?:
-    | {
-        type?: string | null;
-        price_details?: {
-          price?: Stripe.Price | string | null;
-        } | null;
-      }
-    | null;
+  pricing?: {
+    type?: string | null;
+    price_details?: {
+      price?: Stripe.Price | string | null;
+    } | null;
+  } | null;
 };
 
 function basePlanFromInvoiceLine(line: Stripe.InvoiceLineItem): StripePlan | null {
@@ -217,12 +239,121 @@ function subscriptionPeriodReference(sub: Stripe.Subscription): string {
   return `${sub.id}:${periodStart}`;
 }
 
+/** Stripe statuses that represent an entitlement-bearing or recoverable plan. */
+const CURRENT_PLAN_SUBSCRIPTION_STATUSES = new Set<string>([
+  "active",
+  "trialing",
+  "past_due",
+  "unpaid",
+  "paused",
+]);
+
+/** Stripe subscription statuses that are finished for good. */
+const TERMINAL_SUBSCRIPTION_STATUSES = new Set<string>(["canceled", "incomplete_expired"]);
+
+function isWirelinePlanSubscription(sub: Stripe.Subscription): boolean {
+  if (sub.metadata?.purpose === "live_video_addon") return false;
+  return sub.items?.data?.some((item) => !!basePlanByStripePrice(item.price)) ?? false;
+}
+
+/**
+ * Read the customer's CURRENT plan-subscription state from Stripe.
+ *
+ * Webhook event delivery order is explicitly not guaranteed. Therefore an event
+ * payload is evidence that something happened, not an ordering oracle for the
+ * current one-row entitlement mirror. On every configured Stripe sync we list
+ * the customer's subscriptions and select the single authoritative Wireline
+ * plan object in its current state. This also fixes same-subscription reordering:
+ * a delayed `updated(active)` payload cannot restore service after Stripe already
+ * reports that same subscription as canceled.
+ *
+ * Multiple simultaneous live plan subscriptions are an invariant violation. Do
+ * not guess which paying contract owns entitlements; throw so the webhook claim
+ * is released and ops can repair the duplicate instead of silently choosing one.
+ */
+async function currentPlanSubscriptionForCustomer(
+  customerId: string,
+): Promise<Stripe.Subscription | null> {
+  const candidates: Stripe.Subscription[] = [];
+  for await (const candidate of stripe.subscriptions.list({
+    customer: customerId,
+    status: "all",
+    limit: 100,
+  })) {
+    if (isWirelinePlanSubscription(candidate)) candidates.push(candidate);
+  }
+
+  const current = candidates.filter((candidate) =>
+    CURRENT_PLAN_SUBSCRIPTION_STATUSES.has(candidate.status),
+  );
+  if (current.length > 1) {
+    log.error("Stripe sync: multiple current Wireline plan subscriptions for one customer", {
+      customerId,
+      subscriptionIds: current.map((candidate) => candidate.id),
+      statuses: current.map((candidate) => candidate.status),
+    });
+    throw new Error("Multiple current Stripe plan subscriptions require reconciliation");
+  }
+  if (current.length === 1) return current[0];
+
+  const incomplete = candidates.filter((candidate) => candidate.status === "incomplete");
+  if (incomplete.length > 1) {
+    log.error("Stripe sync: multiple incomplete Wireline plan subscriptions for one customer", {
+      customerId,
+      subscriptionIds: incomplete.map((candidate) => candidate.id),
+    });
+    throw new Error("Multiple incomplete Stripe plan subscriptions require reconciliation");
+  }
+  if (incomplete.length === 1) return incomplete[0];
+
+  // With no live/pending plan, all remaining candidates are terminal. Their
+  // list order is sufficient because entitlement outcome is the same (closed),
+  // and any future live subscription will outrank this terminal fallback.
+  return candidates[0] ?? null;
+}
+
+/**
+ * Legacy ordering fallback retained only for environments without Stripe
+ * credentials (unit tests/local import smoke). Production never depends on the
+ * timestamp comparison: configured syncs reconcile against the current customer
+ * subscription collection above.
+ */
+async function mirrorPointsAtNewerSubscription(
+  sub: Stripe.Subscription,
+  mirroredSubscriptionId: string,
+): Promise<boolean> {
+  if (!stripeAvailable()) return false;
+  try {
+    const mirrored = await stripe.subscriptions.retrieve(mirroredSubscriptionId);
+    return mirrored.created > sub.created;
+  } catch (error) {
+    if (isMissingStripeResource(error)) {
+      log.warn("Stripe sync: mirrored subscription is missing in Stripe — allowing repair", {
+        mirroredSubscriptionId,
+        eventSubscriptionId: sub.id,
+      });
+      return false;
+    }
+    log.error("Stripe sync: could not establish fallback subscription ordering", {
+      mirroredSubscriptionId,
+      eventSubscriptionId: sub.id,
+      error: getErrorMessage(error),
+    });
+    throw error;
+  }
+}
+
 /** Sync a Stripe subscription into wireline_subscriptions + wireline_settings. */
-export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
-  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscription) {
+  const customerId =
+    typeof incomingSub.customer === "string" ? incomingSub.customer : incomingSub.customer.id;
 
   const [existing] = await drizzle
-    .select({ userId: schema.subscriptions.userId, status: schema.subscriptions.status })
+    .select({
+      userId: schema.subscriptions.userId,
+      status: schema.subscriptions.status,
+      stripeSubscriptionId: schema.subscriptions.stripeSubscriptionId,
+    })
     .from(schema.subscriptions)
     .where(eq(schema.subscriptions.stripeCustomerId, customerId))
     .limit(1);
@@ -230,6 +361,54 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   if (!existing?.userId) {
     log.warn("Stripe sync: no subscription row for customer — skipping mirror", { customerId });
     return;
+  }
+
+  let sub = incomingSub;
+
+  if (stripeAvailable()) {
+    // Always reconcile from current Stripe state, not merely on an id mismatch.
+    // This makes both cross-subscription and same-subscription webhook reordering
+    // harmless. Any transient list error escapes so the outer webhook releases
+    // its idempotency claim and Stripe redelivers.
+    const authoritative = await currentPlanSubscriptionForCustomer(customerId);
+    if (authoritative) {
+      if (authoritative.id !== incomingSub.id) {
+        log.warn("Stripe sync: ignoring non-authoritative subscription event", {
+          customerId,
+          eventSubscriptionId: incomingSub.id,
+          authoritativeSubscriptionId: authoritative.id,
+          eventStatus: incomingSub.status,
+          authoritativeStatus: authoritative.status,
+        });
+        return;
+      }
+      sub = authoritative;
+    }
+  } else {
+    // Offline/local compatibility only. Production reaches the authoritative
+    // collection reconciliation above and does not rely on created timestamps.
+    const incomingIsTerminal = TERMINAL_SUBSCRIPTION_STATUSES.has(sub.status);
+    const mirrorIsLive = !!existing.status && !TERMINAL_SUBSCRIPTION_STATUSES.has(existing.status);
+    if (existing.stripeSubscriptionId && existing.stripeSubscriptionId !== sub.id) {
+      if (incomingIsTerminal && mirrorIsLive) {
+        log.warn("Stripe sync: ignoring stale terminal event for a superseded subscription", {
+          customerId,
+          eventSubscriptionId: sub.id,
+          mirroredSubscriptionId: existing.stripeSubscriptionId,
+          eventStatus: sub.status,
+        });
+        return;
+      }
+      if (await mirrorPointsAtNewerSubscription(sub, existing.stripeSubscriptionId)) {
+        log.warn("Stripe sync: ignoring out-of-order event for a superseded subscription", {
+          customerId,
+          eventSubscriptionId: sub.id,
+          mirroredSubscriptionId: existing.stripeSubscriptionId,
+          eventStatus: sub.status,
+        });
+        return;
+      }
+    }
   }
 
   const userId = existing.userId;
@@ -243,14 +422,17 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   // Active/trialing Stripe status with an unmapped price must not wipe a
   // known-good plan down to null / maxAgents=1 (catalog/env drift footgun).
   if ((stripeStatus === "active" || stripeStatus === "trialing") && !plan) {
-    log.error("Stripe sync: active subscription price did not map to a catalog plan — refusing overwrite", {
-      userId,
-      customerId,
-      subscriptionId: sub.id,
-      priceIds: (sub.items?.data || []).map((item) =>
-        typeof item.price === "string" ? item.price : item.price?.id,
-      ),
-    });
+    log.error(
+      "Stripe sync: active subscription price did not map to a catalog plan — refusing overwrite",
+      {
+        userId,
+        customerId,
+        subscriptionId: sub.id,
+        priceIds: (sub.items?.data || []).map((item) =>
+          typeof item.price === "string" ? item.price : item.price?.id,
+        ),
+      },
+    );
     throw new Error("Stripe subscription price is not mapped to a Wireline plan catalog entry");
   }
 
@@ -340,7 +522,7 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   const billingAction: "subscription_created" | "subscription_updated" | "subscription_cancelled" =
     stripeStatus === "canceled" || stripeStatus === "incomplete_expired"
       ? "subscription_cancelled"
-      : (sub as Stripe.Subscription & { _auditCreate?: boolean })._auditCreate
+      : (incomingSub as Stripe.Subscription & { _auditCreate?: boolean })._auditCreate
         ? "subscription_created"
         : "subscription_updated";
 
