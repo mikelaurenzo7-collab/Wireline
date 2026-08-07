@@ -987,13 +987,18 @@ const PATHS: Record<string, PathItem> = {
         content: {
           "application/json": {
             schema: {
+              // Must mirror createWebhookSchema and the handler. This block
+              // previously advertised `description` and `enabled`, which no
+              // layer reads, and omitted the required `name` — so a client
+              // following the published contract could only ever get a 400.
               type: "object",
-              required: ["url", "events"],
+              required: ["name", "url", "events"],
               properties: {
+                name: { type: "string", description: "1-120 characters. Required." },
                 url: { type: "string", format: "uri" },
                 events: { type: "array", items: { type: "string", enum: [...WEBHOOK_EVENTS] } },
-                description: { type: "string" },
-                enabled: { type: "boolean", default: true },
+                secret: { type: "string", description: "At least 16 characters." },
+                active: { type: "boolean", default: true },
               },
             },
           },

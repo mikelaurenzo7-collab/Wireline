@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Request, Response } from "express";
 import { AppError, rethrowIfAppError } from "../lib/api-error";
-import { log, fetchWithTimeout, drizzle } from "../lib/server-context";
+import { log, fetchWithTimeout, drizzle, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
@@ -314,6 +314,32 @@ router.get("/api/phone-numbers/area-codes", authenticateUser, (_req: Request, re
 });
 
 /**
+ * Every Vapi id claimed by ANY tenant.
+ *
+ * "Claimed" is a platform-wide fact, and this is the only place it can be read.
+ * Vapi cannot answer it — the claim path deliberately does not push an
+ * assistantId onto the number, so an assigned line is indistinguishable
+ * upstream from a spare one. The database can, but not from inside a request:
+ * authenticated handlers run in `tenantStore`, where this query executes as
+ * `wireline_server` with `app.current_user_id` set and the tenant_isolation
+ * policy narrows it to the CALLER's rows.
+ *
+ * Subtracting that per-tenant set from the platform-wide Vapi listing is what
+ * reported every OTHER tenant's live business number to the caller as
+ * "available", and left the anti-double-claim guard checking the wrong set.
+ *
+ * Reading it outside the tenant context is deliberate and kept as narrow as the
+ * question: only the opaque provider id is selected — no tenant identity, no
+ * phone number, nothing that reaches a response body — and the result is used
+ * solely to EXCLUDE, so it can only ever narrow what the caller sees.
+ */
+function selectPlatformClaimedVapiIds(): Promise<Array<{ vapiId: string | null }>> {
+  return tenantStore.exit(() =>
+    drizzle.select({ vapiId: schema.phoneNumbers.vapiNumberId }).from(schema.phoneNumbers),
+  );
+}
+
+/**
  * Available numbers in the pool — Vapi-provisioned numbers that haven't
  * been claimed by any wireline user yet (no row in wireline_phone_numbers).
  *
@@ -328,7 +354,7 @@ router.get(
     try {
       const [poolNumbers, claimedRows] = await Promise.all([
         listVapiNumbers(),
-        drizzle.select({ vapiId: schema.phoneNumbers.vapiNumberId }).from(schema.phoneNumbers),
+        selectPlatformClaimedVapiIds(),
       ]);
       const claimed = new Set(claimedRows.map((r) => r.vapiId).filter(Boolean));
       const available = poolNumbers
@@ -439,7 +465,7 @@ router.post(
       // violation on phone_number, the other will succeed cleanly).
       const [poolNumbers, claimedRows] = await Promise.all([
         listVapiNumbers(),
-        drizzle.select({ vapiId: schema.phoneNumbers.vapiNumberId }).from(schema.phoneNumbers),
+        selectPlatformClaimedVapiIds(),
       ]);
       const match = poolNumbers.find((n) => n.number === phoneNumber && n.provider === "vapi");
       if (!match) {
