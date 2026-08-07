@@ -107,9 +107,11 @@ Launch remains blocked until the following are cleared:
     agree): `Wireline, 914 West Van Buren Street, Chicago, IL 60607`. One command applies it:
     `vercel env add WIRELINE_POSTAL_ADDRESS production` (repeat for `development`; keep it out of
     preview per the boundary policy).
-    External Sentry is not a launch gate. Structured Vercel/runtime logs and the bounded
-    `/api/health/report` browser reporter are the launch observability boundary; adopt Sentry later
-    only after its SDK, project, alert policy, and browser/backend receipt are explicitly tested.
+    Server-side Sentry is now live (verified 2026-08-07): `SENTRY_DSN` is set on all targets and
+    `src/lib/error-reporter.ts` posts exceptions to the Sentry store endpoint over native fetch with
+    no SDK, so backend receipt is proven (`revaluate/wireline-backend` is receiving events). The
+    remaining Sentry work is an explicit P0 alert policy; the browser reporter stays the bounded
+    `/api/health/report` path and browser-side Sentry remains optional.
     Ads Manager is intentionally out of scope by founder direction.
 
 WhatsApp is not a core-launch blocker, but it remains **private beta** until an
@@ -183,10 +185,10 @@ compatibility fallback until it is rotated.
 | Vapi                | PSTN orchestration                              | credential ready; 18 numbers reachable                      | Confirm billing/auto-reload and complete live call matrix                      |
 | Twilio              | Carrier, numbers, SMS, WhatsApp                 | active; ~$23.66; 9 voice/SMS; API key pair installed        | Rotate Auth Token when convenient; Usage Triggers; channel E2E                 |
 | ElevenLabs          | Managed Studio TTS + private clones             | Creator; API/catalog ready; Vapi live proof pending         | Install Vapi BYOK; disable provider training; prove voice + fallback           |
-| Resend              | Transactional + lifecycle email                 | configured; delivery/address proof pending                  | Set postal address; test real verification/reset and one commercial footer     |
+| Resend              | Transactional + lifecycle email                 | domain verified (DKIM+SPF+DMARC p=none); `WIRELINE_POSTAL_ADDRESS` set 2026-08-07; delivery proof pending | Prove one real verification/reset + commercial footer; add DMARC `rua` reporting, then move to `p=quarantine` |
 | Upstash             | Distributed rate limits                         | credentials ready                                           | Maintain production database and billing                                       |
 | Federal DNC vendor  | Marketing scrub                                 | **unconfigured; marketing fails closed**                    | Configure valid loginId; prove live JSON semantics; maintain scrub credits     |
-| Sentry              | Error alerts                                    | not connected/certified in this audit                       | Add SDK/project/DSN and prove browser+backend receipt, or keep it non-required |
+| Sentry              | Error alerts                                    | **live**: `SENTRY_DSN` set on all targets; server `reportError` posts to the store endpoint (no SDK); `revaluate/wireline-backend` receiving events | Set an alert policy on P0 tags; browser receipt still optional (bounded `/api/health/report` covers the client) |
 | LiveAvatar / HeyGen | Video add-on                                    | launch-paused; 60-min cap implemented                       | Fund only after consent, catalog, paid-lifecycle, and demand gates pass        |
 | Apollo              | Enrichment                                      | optional                                                    | Add capped budget only when Lead Hunt is sold                                  |
 | Perplexity          | Live public research (PSTN tool)                | optional; Gemini grounded already covers                    | Set `PERPLEXITY_API_KEY` (+ `PERPLEXITY_MODEL=sonar`) for fresher answers      |
