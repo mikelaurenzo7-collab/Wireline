@@ -257,6 +257,16 @@ async function persistAiDisclosureEvidence(input: {
   }
 }
 
+/**
+ * Idempotent TCPA evidence writer: one recording-disclosure row, one
+ * AI-identity-disclosure row on outbound calls, and, when the transcript
+ * requested it, one opt-out row per call. Runs on every delivery so a
+ * redelivery can restore evidence that a failed first delivery never wrote —
+ * the call-log insert alone used to consume the one-time claim, which lost
+ * these rows permanently whenever the handler threw after the insert. Stays
+ * best-effort: DNC suppression before it is the legal boundary, and a
+ * consent-ledger outage must not block voice accounting after it.
+ */
 async function persistComplianceEvidence(input: {
   userId: string;
   call: any;
