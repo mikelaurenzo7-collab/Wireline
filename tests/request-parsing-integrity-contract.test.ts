@@ -83,6 +83,34 @@ describe("bulk outbound validates the fields it actually persists", () => {
     ).toBe(false);
   });
 
+  it("accepts the prefixed agent ids the database actually stores", () => {
+    /**
+     * `wireline_agents.id` is a TEXT primary key (verified against production)
+     * holding `agent-<uuid>` from the create routes and `agent-<hex>` from the
+     * draft service. Tightening this field to `.uuid()` rejected every real
+     * agent id, so /api/outbound/bulk answered "Invalid agent ID" for any import
+     * that assigned an agent — which is the normal case. Before it was declared
+     * at all, `.passthrough()` let it by, so the tightening was a regression.
+     */
+    for (const agentId of [
+      `agent-${"a".repeat(8)}-1111-4111-8111-${"b".repeat(12)}`,
+      `agent-${"0123456789abcdef".repeat(2)}`,
+      "wireline-receptionist",
+    ]) {
+      const parsed = OutboundBulkSchema.safeParse({
+        leads: [{ phone_number: "+15551234567", agent_id: agentId }],
+      });
+      expect(parsed.success, agentId).toBe(true);
+    }
+
+    // Still bounded — the column is text, not unbounded free text.
+    expect(
+      OutboundBulkSchema.safeParse({
+        leads: [{ phone_number: "+15551234567", agent_id: "x".repeat(500) }],
+      }).success,
+    ).toBe(false);
+  });
+
   it("still lets genuine custom CRM fields through", () => {
     // .passthrough() is deliberate — tightening the persisted keys must not
     // turn this into a closed schema.

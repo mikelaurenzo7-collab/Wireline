@@ -286,7 +286,12 @@ export const OutboundLeadSchema = z
     // reads. `customer_number` matters most: the importer PREFERS it over
     // `phone_number` as the dial target, so the regex above was bypassable for
     // the one field that gets dialled.
-    agent_id: z.string().uuid("Invalid agent ID").optional().nullable(),
+    // NOT `.uuid()`. `wireline_agents.id` is a TEXT primary key holding prefixed
+    // keys — `agent-<uuid>` from the create routes, `agent-<hex>` from the draft
+    // service — so a uuid rule rejects every real agent id and makes the field
+    // unusable. FollowUpTaskCreateSchema below carries the same note because the
+    // same mistake was already made and fixed there once.
+    agent_id: z.string().max(120, "Invalid agent ID").optional().nullable(),
     customer_number: outboundDialNumber.optional().nullable(),
     customer_name: z
       .string()

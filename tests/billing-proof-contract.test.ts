@@ -106,12 +106,30 @@ describe("billing proof contract", () => {
 
     // The guard must actually skip the sync — asserting only the log would pass
     // with the body gutted.
+    //
+    // This slice spans BOTH supersession branches, and `toMatch(/\breturn;/)` is
+    // neither global nor anchored, so a single surviving `return;` anywhere in it
+    // satisfied the assertion: deleting the out-of-order branch's `return;` left
+    // the gate green while a late `updated` re-pinned the mirror to the dead id.
+    // Count them instead, so losing either one fails.
     const guard = stripeHelpers.slice(
       stripeHelpers.indexOf("const incomingIsTerminal"),
       stripeHelpers.indexOf("const userId = existing.userId"),
     );
     expect(guard).toContain("ignoring stale terminal event for a superseded subscription");
-    expect(guard).toMatch(/\breturn;/);
+    expect((guard.match(/\breturn;/g) || []).length).toBe(2);
+
+    // And bind each `return;` to its own branch, so two returns in one branch
+    // cannot cover for a branch that has none.
+    const terminalBranch = guard.slice(
+      guard.indexOf("if (incomingIsTerminal && mirrorIsLive)"),
+      guard.indexOf("if (await mirrorPointsAtNewerSubscription"),
+    );
+    const outOfOrderBranch = guard.slice(
+      guard.indexOf("if (await mirrorPointsAtNewerSubscription"),
+    );
+    expect(terminalBranch, "terminal branch must return").toMatch(/\breturn;/);
+    expect(outOfOrderBranch, "out-of-order branch must return").toMatch(/\breturn;/);
   });
 
   it("ignores an out-of-order non-terminal webhook for a superseded subscription", () => {

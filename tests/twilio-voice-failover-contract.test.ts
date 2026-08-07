@@ -56,10 +56,20 @@ describe("Twilio voice failover contract", () => {
     );
     expect(builder).toContain('const recordingEnabled = compliance.complianceMode !== "hipaa";');
     // The suppressed branch must return BEFORE any <Record> is emitted.
-    const suppressed = builder.slice(
-      builder.indexOf("if (!recordingEnabled) {"),
-      builder.indexOf("const disclosure ="),
-    );
+    //
+    // Anchor both slice bounds first. Without this, deleting the early return
+    // makes the start indexOf return -1, String.slice coerces that to length-1,
+    // and `suppressed` becomes "" — so both not.toContain assertions below pass
+    // VACUOUSLY against an empty string. The mutation died only because of the
+    // trailing positive assertion, which made the kill incidental rather than
+    // intentional and one "redundant line" cleanup away from toothless.
+    const guardStart = builder.indexOf("if (!recordingEnabled) {");
+    const guardEnd = builder.indexOf("const disclosure =");
+    expect(guardStart, "HIPAA suppression branch must exist").toBeGreaterThan(-1);
+    expect(guardEnd, "disclosure branch must follow it").toBeGreaterThan(guardStart);
+
+    const suppressed = builder.slice(guardStart, guardEnd);
+    expect(suppressed.length).toBeGreaterThan(0);
     expect(suppressed).not.toContain("<Record");
     expect(suppressed).not.toContain("transcribe");
     expect(suppressed).toContain("return (");

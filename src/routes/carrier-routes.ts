@@ -334,8 +334,21 @@ router.get("/api/phone-numbers/area-codes", authenticateUser, (_req: Request, re
  * solely to EXCLUDE, so it can only ever narrow what the caller sees.
  */
 function selectClaimedVapiIdsOutsideTenantContext(): Promise<Array<{ vapiId: string | null }>> {
+  // `.execute()` INSIDE the exit callback is load-bearing, not stylistic.
+  // AsyncLocalStorage.exit() only suspends the store for the synchronous body of
+  // its callback, and a Drizzle builder is lazy — QueryPromise.then() is what
+  // calls execute(). Returning the bare builder therefore issues no query inside
+  // the exit scope; the SQL runs when the CALLER awaits it, back inside
+  // tenantStore, so RLS narrows the result to the caller's own rows and this
+  // helper silently becomes a no-op that reintroduces the leak it exists to fix.
+  // Verified: exit(() => builder) observes the tenant store at execution time,
+  // exit(() => builder.execute()) does not. The same laziness is why
+  // serialQueryBatch in server-context.ts resolves builders explicitly.
   return tenantStore.exit(() =>
-    drizzle.select({ vapiId: schema.phoneNumbers.vapiNumberId }).from(schema.phoneNumbers),
+    drizzle
+      .select({ vapiId: schema.phoneNumbers.vapiNumberId })
+      .from(schema.phoneNumbers)
+      .execute(),
   );
 }
 

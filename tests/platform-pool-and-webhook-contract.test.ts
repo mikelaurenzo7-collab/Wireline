@@ -40,6 +40,51 @@ describe("shared number pool is read platform-wide", () => {
     const reads = routes.match(/select\(\{ vapiId: schema\.phoneNumbers\.vapiNumberId \}\)/g) || [];
     expect(reads.length).toBe(1);
     expect(helper).toContain("select({ vapiId: schema.phoneNumbers.vapiNumberId })");
+
+    // The query must be EXECUTED inside the exit callback. Without this the
+    // assertions above all still pass while the helper does nothing — see the
+    // behavioural test below for why.
+    expect(helper).toMatch(/tenantStore\.exit\(\(\) =>[\s\S]*\.execute\(\),?\s*\)/);
+  });
+
+  it("proves why the escape needs .execute() inside the exit callback", async () => {
+    /**
+     * This is the assertion that would have caught the original mistake, which
+     * the source-text checks above did not: the helper returned a bare Drizzle
+     * builder from inside tenantStore.exit(). AsyncLocalStorage.exit() only
+     * suspends the store for the SYNCHRONOUS body of its callback, and a Drizzle
+     * builder is lazy — QueryPromise.then() is what calls execute(). So no query
+     * ran inside the exit scope; it ran when the caller awaited, back inside the
+     * request's tenant context, where RLS narrowed the "claimed" set to the
+     * caller's own rows. The helper looked right, read right, passed its gate,
+     * and changed nothing.
+     *
+     * Modelled with the same laziness contract rather than a live database, so
+     * this runs offline and still fails if the pattern regresses.
+     */
+    const { AsyncLocalStorage } = await import("node:async_hooks");
+    const als = new AsyncLocalStorage<string>();
+    const seen: Array<string | null> = [];
+
+    class LazyBuilder {
+      execute() {
+        seen.push(als.getStore() ?? null);
+        return Promise.resolve([] as unknown[]);
+      }
+      then(onFulfilled?: (v: unknown[]) => unknown, onRejected?: (e: unknown) => unknown) {
+        return this.execute().then(onFulfilled, onRejected);
+      }
+    }
+
+    await als.run("tenant-b", async () => {
+      seen.length = 0;
+      await als.exit(() => new LazyBuilder());
+      expect(seen[0], "bare builder must NOT escape — this was the bug").toBe("tenant-b");
+
+      seen.length = 0;
+      await als.exit(() => new LazyBuilder().execute());
+      expect(seen[0], ".execute() inside exit must escape the tenant store").toBeNull();
+    });
   });
 
   it("keeps the sibling carrier listing scoped to owned lines", () => {

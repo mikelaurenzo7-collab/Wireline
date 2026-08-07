@@ -161,8 +161,16 @@ describe("code review hardening contracts", () => {
       expect(source, path).toContain("useEffect(() => stopPopupPoll, [stopPopupPoll])");
       // Cleared before starting, so retrying or switching providers cannot stack
       // intervals that only their own popup's close can stop.
-      const startIndex = source.indexOf("popupPollRef.current = window.setInterval(");
-      expect(source.lastIndexOf("stopPopupPoll();", startIndex), path).toBeGreaterThan(-1);
+      //
+      // Assert ADJACENCY, not position. The previous check was
+      // `lastIndexOf("stopPopupPoll();", startIndex) > -1`, which scans backwards
+      // over the whole file — and both components already call stopPopupPoll()
+      // in their OAuth-success message handler, above connect(). Deleting the
+      // clear-before-start call left the gate green because the search simply
+      // resolved to that earlier occurrence.
+      expect(source, path).toMatch(
+        /stopPopupPoll\(\);\s*popupPollRef\.current = window\.setInterval\(/,
+      );
     }
   });
 
