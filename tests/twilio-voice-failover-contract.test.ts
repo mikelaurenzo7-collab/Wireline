@@ -4,8 +4,18 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
+/**
+ * Source with comments removed. Negative assertions ("this shape must not
+ * appear") belong here: a comment describing the defect being fixed contains
+ * the same literal as the defect, and would otherwise fail the gate that
+ * documents it.
+ */
+const stripComments = (source: string) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+
 describe("Twilio voice failover contract", () => {
   const routes = read("src/routes/twilio-webhook-base.ts");
+  const codeOnly = stripComments(routes);
   const auth = read("src/lib/twilio-webhook-auth.ts");
 
   it("fails production callbacks closed through Twilio's official signature verifier", () => {
@@ -24,13 +34,73 @@ describe("Twilio voice failover contract", () => {
     );
   });
 
-  it("falls through an unanswered human transfer to recorded voicemail", () => {
+  it("falls through an unanswered human transfer to voicemail", () => {
     expect(routes).toContain('action="/api/twilio-webhook/voice-fallback-complete"');
-    expect(routes).toMatch(
-      /dialStatus === "completed" \? twimlHangup\(\) : failoverVoicemailTwiml\(\)/,
+    expect(routes).toContain(
+      'if (dialStatus === "completed") return res.status(200).send(twimlHangup());',
     );
     expect(routes).toContain('action="/api/twilio-webhook/voicemail-complete"');
     expect(routes).toContain('method="POST"');
+  });
+
+  it("never records or transcribes a HIPAA line on the failover path", () => {
+    // The failover answers the same tenant line as the full assistant, so it
+    // inherits the same obligations. It emitted <Record transcribe="true">
+    // unconditionally, so a HIPAA agent's caller was recorded and machine-
+    // transcribed — and the audio URL plus transcript were persisted to
+    // wireline_call_logs — while HIPAA mode's entire behavioural effect
+    // everywhere else in the product is recording suppression.
+    const builder = routes.slice(
+      routes.indexOf("function failoverVoicemailTwiml("),
+      routes.indexOf("async function resolveFailoverCompliance("),
+    );
+    expect(builder).toContain('const recordingEnabled = compliance.complianceMode !== "hipaa";');
+    // The suppressed branch must return BEFORE any <Record> is emitted.
+    const suppressed = builder.slice(
+      builder.indexOf("if (!recordingEnabled) {"),
+      builder.indexOf("const disclosure ="),
+    );
+    expect(suppressed).not.toContain("<Record");
+    expect(suppressed).not.toContain("transcribe");
+    expect(suppressed).toContain("return (");
+  });
+
+  it("speaks the recording disclosure on every call it does record", () => {
+    const builder = routes.slice(
+      routes.indexOf("function failoverVoicemailTwiml("),
+      routes.indexOf("async function resolveFailoverCompliance("),
+    );
+    // Same helper the assistant paths use, so the wording cannot drift apart.
+    expect(builder).toContain("complianceFirstMessagePrefix(");
+    expect(builder).toContain("recordingEnabled: true");
+    // Spoken before the prompt, and escaped like every other dynamic TwiML value.
+    expect(builder).toContain("escapeTwimlValue(");
+    expect(builder).toMatch(/\$\{disclosure\}Please leave your name/);
+  });
+
+  it("resolves compliance for both failover entry points", () => {
+    // The transfer-complete callback previously called the builder with no
+    // tenant context at all, so an unrecorded-by-policy line would still have
+    // been recorded there even once the primary path was fixed.
+    // Both entry points, named explicitly: the primary voice-fallback (which
+    // speaks the outage context) and the unanswered-transfer fallthrough.
+    expect(routes).toContain("failoverVoicemailTwiml(true, await resolveFailoverCompliance(to))");
+    expect(routes).toContain("failoverVoicemailTwiml(false, await resolveFailoverCompliance(to))");
+    // No call site may omit the posture. Run this against CODE only: a comment
+    // explaining the old `failoverVoicemailTwiml()` shape would otherwise fail
+    // the very gate that documents it.
+    expect(codeOnly).not.toMatch(/failoverVoicemailTwiml\(\)/);
+    expect(codeOnly).not.toMatch(/failoverVoicemailTwiml\((?:true|false)\)/);
+    // Resolution walks the same chain inbound routing uses, and degrades rather
+    // than throwing — this runs when things are already broken.
+    const resolver = routes.slice(
+      routes.indexOf("async function resolveFailoverCompliance("),
+      routes.indexOf("function publicAssetUrl("),
+    );
+    expect(resolver).toContain("schema.agents.complianceMode");
+    expect(resolver).toContain("eq(schema.phoneNumbers.phoneNumber, to)");
+    expect(resolver).toContain("catch (error)");
+    expect(resolver).toContain("return unknown;");
   });
 
   it("validates transfer destinations and escapes dynamic TwiML values", () => {

@@ -37,6 +37,7 @@ import {
   opaqueIdSuffixForLog,
   phoneSuffixForLog,
 } from "../lib/twilio-webhook-privacy";
+import { complianceFirstMessagePrefix } from "../lib/agent-runtime";
 
 const router = Router();
 
@@ -84,17 +85,99 @@ function twimlHangup(): string {
   return `<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`;
 }
 
-function failoverVoicemailTwiml(includeOutageContext = false): string {
+type FailoverCompliance = {
+  /** Resolved compliance mode of the agent answering this line, if known. */
+  complianceMode: string | null;
+  businessName: string | null;
+};
+
+/**
+ * Take-a-message TwiML for the Vapi-outage path.
+ *
+ * This answers the same tenant line as the full assistant, so it inherits the
+ * same obligations. It previously did neither: it emitted
+ * `<Record transcribe="true">` unconditionally and spoke no recording notice,
+ * so a HIPAA agent's caller was recorded and machine-transcribed — with the
+ * audio URL and transcript persisted to wireline_call_logs — while HIPAA mode's
+ * entire behavioural effect everywhere else in the product is recording
+ * suppression.
+ *
+ * Two rules, mirroring buildDurableTakeMessageAssistant on the Vapi side:
+ *  - A HIPAA line is never recorded or transcribed. There is no TwiML way to
+ *    capture a message without recording it, so the call closes with a spoken
+ *    callback instruction instead. Losing a voicemail during an outage is the
+ *    right trade against capturing PHI the tenant configured us not to hold.
+ *  - Any call we DO record opens with the spoken disclosure, from the same
+ *    helper the assistant paths use.
+ *
+ * When the mode cannot be resolved (lookup failed mid-outage) the line is
+ * recorded WITH the disclosure rather than dropped: that is strictly better
+ * than today's silent recording, and it keeps voicemail working for the
+ * non-HIPAA majority when the database is already struggling.
+ */
+function failoverVoicemailTwiml(
+  includeOutageContext = false,
+  compliance: FailoverCompliance = { complianceMode: null, businessName: null },
+): string {
   const context = includeOutageContext
     ? `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a Wireline agent line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`
     : "";
+
+  const recordingEnabled = compliance.complianceMode !== "hipaa";
+  if (!recordingEnabled) {
+    return (
+      `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n` +
+      context +
+      `  <Say voice="Polly.Matthew-Neural">We are unable to take a message on this line right now. Please call back shortly and a member of the team will assist you. Thank you.</Say>\n` +
+      `</Response>`
+    );
+  }
+
+  const disclosure = escapeTwimlValue(
+    complianceFirstMessagePrefix(compliance.complianceMode, compliance.businessName, {
+      recordingEnabled: true,
+    }),
+  );
   return (
     `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n` +
     context +
-    `  <Say voice="Polly.Matthew-Neural">Please leave your name, number, and a brief message, and a human agent will return your call as soon as possible. Thank you.</Say>\n` +
+    `  <Say voice="Polly.Matthew-Neural">${disclosure}Please leave your name, number, and a brief message, and a human agent will return your call as soon as possible. Thank you.</Say>\n` +
     `  <Record maxLength="120" action="/api/twilio-webhook/voicemail-complete" method="POST" transcribe="true" transcribeCallback="/api/twilio-webhook/voicemail-transcription" />\n` +
     `</Response>`
   );
+}
+
+/**
+ * Compliance posture for the line a failover call arrived on. Resolved through
+ * wireline_phone_numbers.agent_id -> wireline_agents.compliance_mode, the same
+ * chain inbound routing uses. Degrades to unknown rather than throwing: this
+ * runs when things are already broken.
+ */
+async function resolveFailoverCompliance(to: string | null): Promise<FailoverCompliance> {
+  const unknown: FailoverCompliance = { complianceMode: null, businessName: null };
+  if (!to) return unknown;
+  try {
+    const [row] = await drizzle
+      .select({
+        complianceMode: schema.agents.complianceMode,
+        businessName: schema.settings.businessName,
+      })
+      .from(schema.phoneNumbers)
+      .leftJoin(schema.agents, eq(schema.agents.id, schema.phoneNumbers.agentId))
+      .leftJoin(schema.settings, eq(schema.settings.userId, schema.phoneNumbers.userId))
+      .where(eq(schema.phoneNumbers.phoneNumber, to))
+      .limit(1);
+    return {
+      complianceMode: row?.complianceMode ?? null,
+      businessName: row?.businessName ?? null,
+    };
+  } catch (error) {
+    log.error("Failover compliance lookup failed; recording with disclosure", {
+      error: error instanceof Error ? error.message : String(error),
+      to_suffix: phoneSuffixForLog(to),
+    });
+    return unknown;
+  }
 }
 
 function publicAssetUrl(pathname: string): string {
@@ -489,10 +572,10 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
     return res.status(200).send(twiml);
   }
 
-  return res.status(200).send(failoverVoicemailTwiml(true));
+  return res.status(200).send(failoverVoicemailTwiml(true, await resolveFailoverCompliance(to)));
 });
 
-router.post("/api/twilio-webhook/voice-fallback-complete", (req: Request, res: Response) => {
+router.post("/api/twilio-webhook/voice-fallback-complete", async (req: Request, res: Response) => {
   res.setHeader("Content-Type", "text/xml");
   if (!verifyTwilioSignature(req)) {
     log.warn("Twilio webhook signature verification failed", {
@@ -507,9 +590,15 @@ router.post("/api/twilio-webhook/voice-fallback-complete", (req: Request, res: R
       : "unknown";
   log.info("Voice failover transfer completed", { dial_status: dialStatus });
 
-  return res
-    .status(200)
-    .send(dialStatus === "completed" ? twimlHangup() : failoverVoicemailTwiml());
+  if (dialStatus === "completed") return res.status(200).send(twimlHangup());
+
+  // The human transfer did not connect, so this falls through to the same
+  // take-a-message flow — and therefore needs the same compliance posture. It
+  // reached failoverVoicemailTwiml() with no tenant context at all, which meant
+  // an unrecorded-by-policy line got recorded here even once the primary path
+  // was fixed.
+  const to = typeof req.body?.To === "string" ? req.body.To : "";
+  return res.status(200).send(failoverVoicemailTwiml(false, await resolveFailoverCompliance(to)));
 });
 
 router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: Response) => {
