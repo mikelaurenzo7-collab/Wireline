@@ -13,9 +13,7 @@ describe("round-8 billing integrity", () => {
     // includedVoiceMinutes grants the minutes immediately — buy 100, burn the
     // ~5,000 minutes, drop to 0 for a credit, and none of the consumed minutes
     // is ever re-priced.
-    expect(extraAgentBilling).toContain(
-      "const isIncrease = target > currentStripeQuantity",
-    );
+    expect(extraAgentBilling).toContain("const isIncrease = target > currentStripeQuantity");
     expect(extraAgentBilling).toContain(
       'proration_behavior: isIncrease ? "always_invoice" : "create_prorations"',
     );
@@ -24,13 +22,9 @@ describe("round-8 billing integrity", () => {
 
   it("fails closed when Stripe could not collect for the increase", () => {
     expect(extraAgentBilling).toContain("PAYMENT_REQUIRED");
-    expect(extraAgentBilling).toContain(
-      "isIncrease && isStripePaymentRequiredError(error)",
-    );
+    expect(extraAgentBilling).toContain("isIncrease && isStripePaymentRequiredError(error)");
     expect(extraAgentBilling).toContain("return paymentRequiredOutcome()");
-    const stripeMutation = extraAgentBilling.indexOf(
-      "await stripe.subscriptionItems.update(",
-    );
+    const stripeMutation = extraAgentBilling.indexOf("await stripe.subscriptionItems.update(");
     const paymentFailureHandler = extraAgentBilling.indexOf(
       "isIncrease && isStripePaymentRequiredError(error)",
     );
@@ -40,9 +34,7 @@ describe("round-8 billing integrity", () => {
     const verifiedQuantity = extraAgentBilling.indexOf(
       "const verifiedQuantity = extraAgentQuantity(verifiedItems)",
     );
-    const finalPersistence = extraAgentBilling.lastIndexOf(
-      "return persistQuantity(target",
-    );
+    const finalPersistence = extraAgentBilling.lastIndexOf("return persistQuantity(target");
 
     expect(stripeMutation).toBeGreaterThan(-1);
     expect(paymentFailureHandler).toBeGreaterThan(stripeMutation);
@@ -76,14 +68,17 @@ describe("round-8 billing integrity", () => {
     );
   });
 
-  it("rolls the usage counter back when a voice overage charge fails", () => {
-    // The overage band is derived from the counter, so leaving it inflated
-    // after a failed charge makes those minutes permanently unbillable and
-    // leaves the pre-call solvency gate open on spent coverage.
+  it("keeps a failed voice overage charge billable for provider retry", () => {
+    // The overage band is derived from the per-call event claim, not a
+    // reversible aggregate. A failed Runtime Balance debit leaves charged_at
+    // unset and rethrows so the provider redelivers; the idempotent claim
+    // prevents double counting while the unfinished debit resumes on retry.
     const usage = read("src/lib/voice-usage.ts");
-    expect(usage).toContain("catch (chargeError)");
-    expect(usage).toContain("GREATEST(0,");
-    expect(usage).toContain("usage counter rolled back for retry");
+    expect(usage).toContain(".onConflictDoNothing({");
+    expect(usage).toContain("if (prepared.chargedAt) return;");
+    expect(usage).toContain(".set({ chargedAt: new Date(), updatedAt: new Date() })");
+    expect(usage).toContain("trackVoiceMinutes failed — provider retry required");
+    expect(usage).toContain("throw error;");
   });
 });
 
