@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { drizzle, log, auditLogger } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { invalidateDashboard } from "./dashboard-cache";
 import * as claudeBrain from "./ai-brains";
 import { getErrorMessage } from "./server-utils";
@@ -145,6 +145,160 @@ async function persistTranscriptDncSuppression(input: {
   }
 }
 
+const DISCLOSURE_EVENTS = [
+  "disclosure_played",
+  "disclosure_not_detected",
+  "disclosure_unverifiable",
+];
+
+/**
+ * Idempotent TCPA evidence writer: one recording-disclosure row and, when the
+ * transcript requested it, one opt-out row per call. Runs on every delivery so
+ * a redelivery can restore evidence that a failed first delivery never wrote —
+ * the call-log insert alone used to consume the one-time claim, which lost
+ * these rows permanently whenever the handler threw after the insert. Stays
+ * best-effort: DNC suppression before it is the legal boundary, and a
+ * consent-ledger outage must not block voice accounting after it.
+ */
+async function persistComplianceEvidence(input: {
+  userId: string;
+  call: any;
+  transcript: string;
+  duration: number;
+  optOut: ReturnType<typeof detectOptOut>;
+  insertedFresh: boolean;
+}): Promise<void> {
+  const { userId, call, transcript, duration, optOut, insertedFresh } = input;
+  try {
+    const callId: string | null = call?.id || null;
+    // Without a call id the rows cannot be deduplicated across deliveries, so
+    // only the first (fresh) delivery may write them.
+    if (!callId && !insertedFresh) return;
+
+    const { rule, state } = getConsentRuleForPhone(call?.customer?.number);
+    const disclosure = detectRecordingDisclosure(transcript);
+    const hasTranscript = transcript.trim().length > 0;
+
+    const disclosureEvent = disclosure.found
+      ? "disclosure_played"
+      : hasTranscript
+        ? "disclosure_not_detected"
+        : "disclosure_unverifiable";
+    const delivery = disclosure.found
+      ? "verified"
+      : hasTranscript
+        ? "not_detected"
+        : "unverifiable";
+
+    let disclosureAlreadyRecorded = false;
+    if (callId) {
+      const [existing] = await drizzle
+        .select({ id: schema.consentLog.id })
+        .from(schema.consentLog)
+        .where(
+          and(
+            eq(schema.consentLog.userId, userId),
+            eq(schema.consentLog.callId, callId),
+            inArray(schema.consentLog.event, DISCLOSURE_EVENTS),
+          ),
+        )
+        .limit(1);
+      disclosureAlreadyRecorded = Boolean(existing);
+    }
+
+    if (!disclosureAlreadyRecorded) {
+      const ledgerRow = buildConsentLedgerRow({
+        user_id: userId,
+        call_id: callId,
+        customer_number: call?.customer?.number || "unknown",
+        event: disclosureEvent,
+        rule_version: CONSENT_RULE_VERSION,
+        rule,
+        state,
+        metadata: {
+          delivery,
+          ...(disclosure.found ? { evidence: disclosure.excerpt } : {}),
+        },
+      });
+
+      await drizzle.insert(schema.consentLog).values({
+        userId: ledgerRow.user_id,
+        callId: ledgerRow.call_id,
+        customerNumber: ledgerRow.customer_number,
+        event: ledgerRow.event,
+        ruleVersion: ledgerRow.rule_version,
+        rule: ledgerRow.rule,
+        state: ledgerRow.state,
+        metadata: ledgerRow.metadata,
+      });
+
+      const carriedConversation = hasTranscript || duration > 0;
+      if (disclosureEvent !== "disclosure_played" && rule === "two_party" && carriedConversation) {
+        log.warn("TCPA: recording disclosure could not be verified on two-party-state call", {
+          userId,
+          callId,
+          state,
+          delivery,
+        });
+        reportError(new Error("TCPA recording disclosure unverified on two-party call"), {
+          userId,
+          callId,
+          state,
+          rule,
+          delivery,
+          tags: { compliance: "tcpa_disclosure_unverified" },
+        });
+      }
+    }
+
+    if (optOut.found) {
+      let optOutAlreadyRecorded = false;
+      if (callId) {
+        const [existing] = await drizzle
+          .select({ id: schema.consentLog.id })
+          .from(schema.consentLog)
+          .where(
+            and(
+              eq(schema.consentLog.userId, userId),
+              eq(schema.consentLog.callId, callId),
+              eq(schema.consentLog.event, "opt_out_requested"),
+            ),
+          )
+          .limit(1);
+        optOutAlreadyRecorded = Boolean(existing);
+      }
+
+      if (!optOutAlreadyRecorded) {
+        const optOutRow = buildConsentLedgerRow({
+          user_id: userId,
+          call_id: callId,
+          customer_number: call?.customer?.number || "unknown",
+          event: "opt_out_requested",
+          rule_version: CONSENT_RULE_VERSION,
+          rule,
+          state,
+          metadata: { matched_pattern: optOut.matched_pattern, kind: optOut.kind },
+        });
+
+        await drizzle.insert(schema.consentLog).values({
+          userId: optOutRow.user_id,
+          callId: optOutRow.call_id,
+          customerNumber: optOutRow.customer_number,
+          event: optOutRow.event,
+          ruleVersion: optOutRow.rule_version,
+          rule: optOutRow.rule,
+          state: optOutRow.state,
+          metadata: optOutRow.metadata,
+        });
+      }
+    }
+  } catch (compErr) {
+    // DNC suppression has already completed before this best-effort evidence
+    // writer. A consent-ledger outage therefore cannot strand a legal opt-out.
+    log.error("Compliance ledger writer failed", { error: getErrorMessage(compErr) });
+  }
+}
+
 export async function handleEndOfCallReport({ message, agent }: CallReportPayload) {
   const { call, analysis } = message;
   const webhookAgentId = agent.id;
@@ -281,6 +435,19 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       matchedPattern: optOut.matched_pattern,
     });
   }
+
+  // TCPA evidence (disclosure + opt-out ledger rows) is retry-safe and
+  // idempotent per call, so a redelivery restores evidence a failed first
+  // delivery never wrote. It runs after the legal DNC boundary and stays
+  // best-effort so a ledger outage cannot block voice accounting below.
+  await persistComplianceEvidence({
+    userId,
+    call,
+    transcript: transcript || "",
+    duration,
+    optOut,
+    insertedFresh,
+  });
 
   // Voice metering is intentionally BEFORE the call-log duplicate return. Its
   // own tenant+provider-call checkpoint makes both the monthly increment and
@@ -515,94 +682,9 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     })();
   }
 
-  // 4. Compliance Ledger (TCPA)
-  try {
-    const { rule, state } = getConsentRuleForPhone(call?.customer?.number);
-    const disclosure = detectRecordingDisclosure(transcript);
-    const hasTranscript = transcript.trim().length > 0;
-
-    const disclosureEvent = disclosure.found
-      ? "disclosure_played"
-      : hasTranscript
-        ? "disclosure_not_detected"
-        : "disclosure_unverifiable";
-    const delivery = disclosure.found
-      ? "verified"
-      : hasTranscript
-        ? "not_detected"
-        : "unverifiable";
-
-    const ledgerRow = buildConsentLedgerRow({
-      user_id: userId,
-      call_id: call?.id,
-      customer_number: call?.customer?.number || "unknown",
-      event: disclosureEvent,
-      rule_version: CONSENT_RULE_VERSION,
-      rule,
-      state,
-      metadata: {
-        delivery,
-        ...(disclosure.found ? { evidence: disclosure.excerpt } : {}),
-      },
-    });
-
-    await drizzle.insert(schema.consentLog).values({
-      userId: ledgerRow.user_id,
-      callId: ledgerRow.call_id,
-      customerNumber: ledgerRow.customer_number,
-      event: ledgerRow.event,
-      ruleVersion: ledgerRow.rule_version,
-      rule: ledgerRow.rule,
-      state: ledgerRow.state,
-      metadata: ledgerRow.metadata,
-    });
-
-    const carriedConversation = hasTranscript || duration > 0;
-    if (disclosureEvent !== "disclosure_played" && rule === "two_party" && carriedConversation) {
-      log.warn("TCPA: recording disclosure could not be verified on two-party-state call", {
-        userId,
-        callId: call?.id,
-        state,
-        delivery,
-      });
-      reportError(new Error("TCPA recording disclosure unverified on two-party call"), {
-        userId,
-        callId: call?.id,
-        state,
-        rule,
-        delivery,
-        tags: { compliance: "tcpa_disclosure_unverified" },
-      });
-    }
-
-    if (optOut.found) {
-      const optOutRow = buildConsentLedgerRow({
-        user_id: userId,
-        call_id: call?.id,
-        customer_number: call?.customer?.number || "unknown",
-        event: "opt_out_requested",
-        rule_version: CONSENT_RULE_VERSION,
-        rule,
-        state,
-        metadata: { matched_pattern: optOut.matched_pattern, kind: optOut.kind },
-      });
-
-      await drizzle.insert(schema.consentLog).values({
-        userId: optOutRow.user_id,
-        callId: optOutRow.call_id,
-        customerNumber: optOutRow.customer_number,
-        event: optOutRow.event,
-        ruleVersion: optOutRow.rule_version,
-        rule: optOutRow.rule,
-        state: optOutRow.state,
-        metadata: optOutRow.metadata,
-      });
-    }
-  } catch (compErr) {
-    // DNC suppression has already completed before this best-effort evidence
-    // writer. A consent-ledger outage therefore cannot strand a legal opt-out.
-    log.error("Compliance ledger writer failed", { error: getErrorMessage(compErr) });
-  }
+  // 4. Compliance evidence (TCPA disclosure + opt-out ledger rows) is written
+  // in the retry-safe section above the duplicate return, so it survives a
+  // failed first delivery. See persistComplianceEvidence.
 
   // 5. Gemini Fallback
   if (!enrichment && transcript) {

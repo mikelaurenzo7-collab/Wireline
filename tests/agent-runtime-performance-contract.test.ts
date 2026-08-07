@@ -92,9 +92,10 @@ describe("agent runtime performance and action integrity", () => {
   });
 
   it("gives future-contact revocation precedence over recording-only language", () => {
-    expect(
-      detectOptOut("Stop recording this call. Also, don't call me again."),
-    ).toMatchObject({ found: true, kind: "dnc" });
+    expect(detectOptOut("Stop recording this call. Also, don't call me again.")).toMatchObject({
+      found: true,
+      kind: "dnc",
+    });
     expect(detectOptOut("Please stop recording, but email me tomorrow.")).toMatchObject({
       found: true,
       kind: "recording",
@@ -108,12 +109,19 @@ describe("agent runtime performance and action integrity", () => {
 
   it("persists transcript DNC before duplicate short-circuit and best-effort evidence", () => {
     const suppression = vapiHandlers.indexOf("await persistTranscriptDncSuppression({");
-    const duplicateReturn = vapiHandlers.indexOf("if (!insertedFresh) {", suppression);
-    const complianceLedger = vapiHandlers.indexOf("// 4. Compliance Ledger (TCPA)");
+    // TCPA evidence is idempotent per call and deliberately sits between the
+    // legal DNC boundary and the duplicate return: a redelivery restores the
+    // consent-ledger rows a failed first delivery never wrote, instead of the
+    // call-log insert consuming the only chance to write them.
+    const complianceEvidence = vapiHandlers.indexOf(
+      "await persistComplianceEvidence({",
+      suppression,
+    );
+    const duplicateReturn = vapiHandlers.indexOf("if (!insertedFresh) {", complianceEvidence);
 
     expect(suppression).toBeGreaterThan(-1);
-    expect(duplicateReturn).toBeGreaterThan(suppression);
-    expect(complianceLedger).toBeGreaterThan(duplicateReturn);
+    expect(complianceEvidence).toBeGreaterThan(suppression);
+    expect(duplicateReturn).toBeGreaterThan(complianceEvidence);
     expect(vapiHandlers).toContain("throw dncErr");
     expect(vapiHandlers).toContain("Compliance ledger writer failed");
     expect(vapiHandlers).toContain("consent-ledger outage therefore cannot strand a legal opt-out");
