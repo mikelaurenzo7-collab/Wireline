@@ -41,16 +41,18 @@ Verified with evidence, not vibes:
 
 ### Red — resolve before taking live customers
 
+- [ ] **Stripe merchant identity — subscribers currently see `CADENCE AI` on their card statement.** Verified live on `acct_1TkyXL8e6If87QKm` 2026-08-07. The catalog is correct; the identity around it is not. Dashboard-only — not writable from the application. Full field-by-field table and the three Dashboard pages are in `docs/VENDOR_LAUNCH_MAP.md` → *Stripe merchant identity*. The gate is `node --env-file=.env.production scripts/check-vendor-readiness.mjs`, not the Dashboard looking right. Highest-yield chargeback trigger in the billing surface.
 - [ ] Top Twilio prepaid to at least **$150** (Usage Triggers daily $25 / monthly $200 are already live).
 - [ ] Complete controlled live launch matrix (inbound/outbound call + tools, SMS STOP/HELP, Resend verify/reset, Stripe checkout→webhook→portal).
 - [ ] Rotate any Vercel personal tokens pasted into chat; revoke after redeploy.
-- [ ] Restore GitHub Actions execution and required checks; escalate the documented startup failure if repository configuration is sound.
+- [ ] Restore GitHub Actions execution and required checks; escalate the documented startup failure if repository configuration is sound. **This is now load-bearing:** the contract gates added since 2026-08-06 have never executed on a runner, so their first real run is also their first true test. Until then every claim of "gates green" is a local claim.
 - [ ] Re-run `npm run launch:status` and `npm run vendor:readiness` until required launch gates are green.
-- [ ] Rotate/set `HEALTH_MONITOR_TOKEN`; point uptime monitor at `/api/health/launch-readiness`.
+- [ ] Rotate/set `HEALTH_MONITOR_TOKEN`; point uptime monitor at `/api/health/launch-readiness` (the route is token-gated by `requireMonitorToken`, so an unset token makes the probe useless rather than merely unauthenticated).
 
 ### Yellow — launch with caps (not GO blockers)
 
 - [ ] **Federal DNCScrub** — register the business, obtain a real `loginId`, set `FEDERAL_DNC_*` on all Vercel targets, run `npm run dnc:probe`. Marketing outbound stays fail-closed until then; Studio non-marketing dials still use tenant DNC + TCPA.
+- [ ] **105 of 138 migrations are not in the drizzle journal** — re-verified 2026-08-07: 138 `.sql` files on disk, 33 journal entries. `db:migrate` executes `drizzle/migrations/meta/_journal.json`, *not* the directory, so those 105 never run from the migration command; among them is `0127_monotonic_session_version`, the trigger behind password-change session revocation. Production is believed correct because the DDL was applied by other means, which is exactly why this cannot be back-filled blind: replaying non-idempotent DDL on the next build would break the deploy. Needs per-migration verification against live schema by someone with database access. A contract test pins the current state so it cannot drift silently.
 - [ ] Confirm Vapi / OpenAI / Gemini / Gateway / xAI budgets and alerts.
 - [ ] Flip `WIRELINE_LAUNCH_DEMO_MODE` to `false` when first real customer is admitted.
 
