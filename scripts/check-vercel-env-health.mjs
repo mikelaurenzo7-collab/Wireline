@@ -9,7 +9,6 @@
  */
 import { TEAM_ID, PROJECT_ID } from "./lib/vercel-project.mjs";
 
-const TARGETS = ["production", "preview", "development"];
 const token = process.env.VERCEL_TOKEN?.trim();
 
 if (!token) {
@@ -82,10 +81,14 @@ async function main() {
       // covering many targets. Coverage is correct as long as the UNION of
       // every entry's targets covers the required targets — not the per-entry
       // missing set, which unions false negatives when entries are split.
+      //
+      // Production is the only required target: scripts/check-deployment-boundaries.mjs
+      // fails preview builds that can see credential-like configuration, so a
+      // credential absent from preview is the boundary policy working, not a gap.
       const covered = new Set(
         entries.flatMap((entry) => (Array.isArray(entry.target) ? entry.target : [])),
       );
-      const missingTargets = TARGETS.filter((t) => t !== "development" && !covered.has(t));
+      const missingTargets = ["production"].filter((t) => !covered.has(t));
       const types = [...new Set(entries.map((entry) => entry.type || "plain"))].join(", ");
       console.log(
         `  ${missingTargets.length ? "△" : "✓"} ${key} — ${types}${
@@ -108,7 +111,7 @@ async function main() {
 
   console.log("\nDECISION");
   if (missingCore) {
-    console.log("  BLOCKED — configure the missing core variables across every deployment target.");
+    console.log("  BLOCKED — configure the missing core variables for the production target.");
     process.exitCode = 2;
   } else {
     console.log("  CORE READY — no required platform variable is missing.");

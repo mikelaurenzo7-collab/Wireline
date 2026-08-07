@@ -315,7 +315,11 @@ async function vercelStatus() {
     "STRIPE_STARTER_9_ANNUAL_PRICE_ID",
     "HEALTH_MONITOR_TOKEN",
   ];
-  const requiredTargets = ["production", "preview", "development"];
+  // Production is the only required target. scripts/check-deployment-boundaries.mjs
+  // fails every preview build that can see credential-like configuration or the
+  // production Stripe catalog, so demanding preview/development coverage here
+  // made this gate and the build-time boundary gate mutually unsatisfiable.
+  const requiredTargets = ["production"];
   const parityGaps = requiredParityKeys.flatMap((key) => {
     const targets = new Set((keyRecords.get(key) || []).flatMap((item) => item.target || []));
     return requiredTargets
