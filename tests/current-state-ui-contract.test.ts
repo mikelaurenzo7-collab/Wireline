@@ -121,7 +121,13 @@ describe("current-state UI contract", () => {
     expect(auth).toContain("plan.price_usd_annual");
     expect(auth).toContain("plan.price_usd_monthly");
     expect(auth).not.toContain('starter: "Starter · $9/month"');
-    expect(auth).toContain(': "starter";');
+    // A Business workspace with no stated plan still lands on Starter.
+    expect(auth).toContain('?? "starter"');
+    // And a plan the visitor explicitly asked for (?plan=…) survives the
+    // workspace-shape question. Choosing "Personal" used to overwrite it with
+    // the free tier, discarding the purchase intent that brought them here.
+    expect(auth).toContain("statedPaidPlan");
+    expect(auth).toContain('nextMode === "personal" ? (statedPaidPlan ?? "personal")');
     expect(auth).not.toContain('nextMode === "business" ? "business" : "personal"');
   });
 

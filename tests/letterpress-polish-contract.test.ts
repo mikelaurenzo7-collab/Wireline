@@ -111,15 +111,11 @@ describe("Wireline Letterpress polish layer", () => {
 
   it("does not reintroduce the retired purple/blue palette", () => {
     const polish = read("src/styles/letterpress-polish.css");
-    expect(polish).not.toMatch(
-      /#5D3FD3|#451EBB|#C77DFF|#F8F9FF|#EFF4FF|#E5EEFF/i,
-    );
+    expect(polish).not.toMatch(/#5D3FD3|#451EBB|#C77DFF|#F8F9FF|#EFF4FF|#E5EEFF/i);
   });
 
   it("exposes the refined motion vocabulary in the design vision manifest", () => {
-    expect(WIRELINE_DESIGN_VISION.motion.durations).toContain(
-      "deliberate 440ms",
-    );
+    expect(WIRELINE_DESIGN_VISION.motion.durations).toContain("deliberate 440ms");
     expect(WIRELINE_DESIGN_VISION.motion.easings).toEqual(
       expect.arrayContaining(["standard", "spring", "wireline", "emphasized"]),
     );
@@ -237,9 +233,7 @@ describe("Wireline Letterpress polish layer", () => {
     expect(button).toMatch(/wire:\s*"/);
     expect(button).toContain("var(--wireline-color-action-secondary-default)");
     expect(button).toContain("var(--wireline-elevation-wireGlow)");
-    expect(button).toContain(
-      "var(--wireline-color-action-secondary-container)",
-    );
+    expect(button).toContain("var(--wireline-color-action-secondary-container)");
 
     // Card adopts the new inset shadow + the paper/recessed/wire elevation variants.
     expect(card).toContain("var(--wireline-elevation-inset)");
@@ -260,9 +254,7 @@ describe("Wireline Letterpress polish layer", () => {
   it("registers the new tokens in the generated artifact", () => {
     const tokens = read("src/styles/tokens.generated.css");
     expect(tokens).toContain("--wireline-color-action-primary-hover: #C4B5FD");
-    expect(tokens).toContain(
-      "--wireline-color-action-secondary-hover: #DEE1E8",
-    );
+    expect(tokens).toContain("--wireline-color-action-secondary-hover: #DEE1E8");
     expect(tokens).toContain("--wireline-color-canvas-deeper: #050508");
     expect(tokens).toContain("--wireline-color-canvas-warmer: #101018");
     expect(tokens).toContain("--wireline-color-surface-recessed: #08070B");
@@ -291,9 +283,7 @@ describe("Wireline Letterpress polish layer", () => {
     expect(index).toContain('export * from "./Paper"');
     expect(index).toContain('export * from "./Reveal"');
     for (const atom of ["Chip", "MetricTile", "Eyebrow", "Paper", "Reveal"]) {
-      expect(
-        existsSync(resolve(root, `src/components/atoms/${atom}.tsx`)),
-      ).toBe(true);
+      expect(existsSync(resolve(root, `src/components/atoms/${atom}.tsx`))).toBe(true);
     }
   });
 
@@ -317,18 +307,14 @@ describe("Wireline Letterpress polish layer", () => {
     expect(auth).toMatch(
       /\.wl-stitch-oauth-btn:focus-visible[\s\S]*var\(--wireline-color-focus-default\)/,
     );
-    expect(auth).toMatch(
-      /box-shadow:[\s\S]*var\(--wireline-color-glow-primary\)/,
-    );
+    expect(auth).toMatch(/box-shadow:[\s\S]*var\(--wireline-color-glow-primary\)/);
     expect(auth).toMatch(/var\(--wireline-color-glow-wire\)/);
   });
 
   it("keeps account entry centered instead of splitting the viewport", () => {
     const auth = read("src/styles/precision-auth.css");
     const portal = read("src/components/AuthPortal.tsx");
-    expect(auth).toMatch(
-      /\.wl-stitch-auth-shell[\s\S]*grid-template-columns: minmax\(0, 1fr\)/,
-    );
+    expect(auth).toMatch(/\.wl-stitch-auth-shell[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
     expect(auth).toContain(".wl-auth-entry-mark");
     expect(portal).toContain("max-w-[520px]");
     expect(portal).not.toContain("AuthBrandPanel");
@@ -338,14 +324,14 @@ describe("Wireline Letterpress polish layer", () => {
     const portal = read("src/components/AuthPortal.tsx");
     const statusNotice = read("src/components/molecules/StatusNotice.tsx");
     expect(portal).not.toMatch(/border-rose-500|bg-rose-500|text-rose-600/);
-    expect(portal).toContain('<StatusNotice tone="destructive" title={error} />');
+    // Matched without the self-closing slash: the notice now carries a
+    // "Sign in instead" action for the duplicate-signup case, so it has
+    // children. What matters is that the shared primitive owns the tone and
+    // title, not whether the element happens to be self-closing.
+    expect(portal).toContain('<StatusNotice tone="destructive" title={error}');
     expect(portal).toContain('<StatusNotice tone="success" title={message} />');
-    expect(statusNotice).toContain(
-      "var(--wireline-color-feedback-error-border)",
-    );
-    expect(statusNotice).toContain(
-      "var(--wireline-color-feedback-success-surface)",
-    );
+    expect(statusNotice).toContain("var(--wireline-color-feedback-error-border)");
+    expect(statusNotice).toContain("var(--wireline-color-feedback-success-surface)");
   });
 
   it("adopts the MetricTile atom in the Knowledge surface", () => {
@@ -355,11 +341,7 @@ describe("Wireline Letterpress polish layer", () => {
   });
 
   it("does not add a parallel palette or non-durable CSS module", () => {
-    expect(existsSync(resolve(root, "src/styles/letterpress-polish.css"))).toBe(
-      true,
-    );
-    expect(
-      existsSync(resolve(root, "src/styles/zip-platform-tokens.css")),
-    ).toBe(false);
+    expect(existsSync(resolve(root, "src/styles/letterpress-polish.css"))).toBe(true);
+    expect(existsSync(resolve(root, "src/styles/zip-platform-tokens.css"))).toBe(false);
   });
 });

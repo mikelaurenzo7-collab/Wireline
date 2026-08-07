@@ -100,3 +100,40 @@ describe("OAuth signups get the same onboarding as email signups", () => {
     expect(assignIdx).toBeGreaterThan(markIdx);
   });
 });
+
+describe("signup states the whole password policy up front", () => {
+  it("mirrors every rule getPasswordPolicyError enforces", () => {
+    // getPasswordPolicyError returns only the FIRST failure, so without a
+    // checklist the only way to discover the rules was to submit repeatedly:
+    // "mypassword" is rejected for the uppercase, then again for the digit.
+    // A rule added to the policy but not to the checklist silently
+    // reintroduces that loop, so the two are pinned together.
+    const policy = read("src/lib/password-policy.ts");
+    const portal = read("src/components/AuthPortal.tsx");
+
+    const policyChecks = [
+      { policy: "password.length < 8", label: "8+ characters" },
+      { policy: "/[A-Z]/.test(password)", label: "uppercase" },
+      { policy: "/[a-z]/.test(password)", label: "lowercase" },
+      { policy: "/[0-9]/.test(password)", label: "number" },
+    ];
+    for (const { policy: check, label } of policyChecks) {
+      expect(policy, `policy should enforce ${label}`).toContain(check);
+      expect(portal, `signup should surface ${label}`).toContain(`"${label}"`);
+    }
+
+    // The placeholder must not understate the policy either.
+    expect(portal).not.toContain('"At least 8 characters"');
+    expect(portal).toContain("PASSWORD_RULES");
+  });
+
+  it("offers a way out of a duplicate-email signup", () => {
+    // The server copy says "Try signing in instead" — the UI has to provide it.
+    expect(read("src/routes/auth-routes.ts")).toContain(
+      "An account with this email already exists. Try signing in instead.",
+    );
+    const portal = read("src/components/AuthPortal.tsx");
+    expect(portal).toContain("Sign in instead");
+    expect(portal).toMatch(/already exists\/i\.test\(error\)/);
+  });
+});

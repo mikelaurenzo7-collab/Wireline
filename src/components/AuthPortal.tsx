@@ -125,6 +125,18 @@ function signupIntentLabel(intent: SignupIntent | null): string | null {
   return parts.join(" · ");
 }
 
+/**
+ * The four rules getPasswordPolicyError enforces, surfaced together. Kept in
+ * lockstep with src/lib/password-policy.ts by a contract test — a rule added
+ * there but not here silently reintroduces the guess-and-resubmit loop.
+ */
+const PASSWORD_RULES: ReadonlyArray<{ label: string; test: (value: string) => boolean }> = [
+  { label: "8+ characters", test: (v) => v.length >= 8 },
+  { label: "uppercase", test: (v) => /[A-Z]/.test(v) },
+  { label: "lowercase", test: (v) => /[a-z]/.test(v) },
+  { label: "number", test: (v) => /[0-9]/.test(v) },
+];
+
 function getPasswordStrengthLabel(password: string): string | null {
   if (!password) return null;
   // Never label a password Fair/Good/Strong until it meets the server policy.
@@ -481,12 +493,19 @@ export default function AuthPortal() {
     setWorkspaceMode(nextMode);
     persistWorkspaceMode(nextMode);
     setSignupIntent((current) => {
+      // Choosing "Personal" describes the WORKSPACE, not the wallet. A visitor
+      // who arrived from a "Start for $19" CTA carries ?plan=starter, and the
+      // selector defaults to Business — so a solo operator answering
+      // accurately used to have their stated purchase intent overwritten with
+      // the free tier, losing the plan badge, the modal's recommendation, and
+      // the checkout attribution. Keep an explicitly chosen paid plan; only
+      // fall back to the free tier when no plan was ever stated.
+      const statedPaidPlan =
+        current?.preferredPlanId && current.preferredPlanId !== "personal"
+          ? current.preferredPlanId
+          : null;
       const preferredPlanId =
-        nextMode === "personal"
-          ? "personal"
-          : current?.preferredPlanId && current.preferredPlanId !== "personal"
-            ? current.preferredPlanId
-            : "starter";
+        nextMode === "personal" ? (statedPaidPlan ?? "personal") : (statedPaidPlan ?? "starter");
 
       return persistSignupIntent(
         sanitizeSignupIntent({
@@ -814,7 +833,9 @@ export default function AuthPortal() {
                       disabled={loading}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder={isSignUp ? "At least 8 characters" : "Your password"}
+                      placeholder={
+                        isSignUp ? "8+ characters, upper, lower, number" : "Your password"
+                      }
                       className="wl-stitch-input h-11"
                       style={{ paddingLeft: "2.5rem", paddingRight: "2.75rem" }}
                       aria-label="Password"
@@ -833,6 +854,36 @@ export default function AuthPortal() {
                       )}
                     </button>
                   </div>
+                  {/*
+                   * Live checklist of the full policy. getPasswordPolicyError
+                   * returns only the FIRST failure, so submitting was the only
+                   * way to discover each rule in turn: a user typing
+                   * "mypassword" was rejected for the uppercase, fixed it, and
+                   * was rejected again for the digit. Showing all four up front
+                   * turns three round trips at the last step of signup into
+                   * zero.
+                   */}
+                  {isSignUp && password.length > 0 && (
+                    <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-foreground/55">
+                      {PASSWORD_RULES.map((rule) => {
+                        const met = rule.test(password);
+                        return (
+                          <li key={rule.label} className="inline-flex items-center gap-1">
+                            <span
+                              aria-hidden="true"
+                              className={met ? "text-emerald-500" : "text-foreground/40"}
+                            >
+                              {met ? "✓" : "•"}
+                            </span>
+                            <span className={met ? "text-foreground/70" : undefined}>
+                              {rule.label}
+                            </span>
+                            <span className="sr-only">{met ? " met" : " not met yet"}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                   {isSignUp && strengthLabel && (
                     <p className="text-xs text-foreground/55">
                       Password strength:{" "}
@@ -857,7 +908,28 @@ export default function AuthPortal() {
                 </button>
               )}
 
-              {error ? <StatusNotice tone="destructive" title={error} /> : null}
+              {error ? (
+                <StatusNotice tone="destructive" title={error}>
+                  {/*
+                   * The server's copy for a duplicate signup says "Try signing
+                   * in instead", but the sign-in tab is a separate control the
+                   * user has to find — on mobile it can be off-screen. Name the
+                   * action and provide it, carrying the typed email across.
+                   */}
+                  {isSignUp && /already exists/i.test(error) ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSignUp(false);
+                        setError(null);
+                      }}
+                      className="mt-1 inline-flex min-h-11 items-center font-semibold underline underline-offset-4"
+                    >
+                      Sign in instead
+                    </button>
+                  ) : null}
+                </StatusNotice>
+              ) : null}
               {message ? <StatusNotice tone="success" title={message} /> : null}
 
               <button
