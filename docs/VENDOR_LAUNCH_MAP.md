@@ -26,11 +26,22 @@ immediately before GA:
   voice default; `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK` remains the explicit
   opt-in for appending direct xAI after the AI Gateway.
 - Vapi credentials are accepted, with 18 reachable phone numbers and assistant inventory access.
-- Twilio is active (~`$23.66` balance); **9/9** incoming numbers are voice+SMS capable and now
-  point SMS at `https://trywireline.com/api/twilio-webhook/sms` (stale `coordinagents.com`
-  toll-free webhook remediated). Messaging Service
-  `MG92d5225d0c71519d74bc1c1f2f083287` (`Wireline Messaging`) has delivery
-  `StatusCallback` set to `/api/twilio-webhook/message-status`.
+- Twilio is active (`$20.76` balance, re-verified live 2026-08-07); **7/7** incoming numbers are
+  voice+SMS capable and point voice at Vapi inbound, SMS at
+  `https://trywireline.com/api/twilio-webhook/sms`, and status callbacks at Vapi. Messaging Service
+  `MG92d5225d0c71519d74bc1c1f2f083287` (`Wireline Messaging`) holds the toll-free number and
+  defers inbound to the number's webhook (`use_inbound_webhook_on_number: true`).
+- **Toll-free SMS verification for `+1 (855) 542-7828` was TWILIO_REJECTED** ("Verbal Consent
+  Script Must Be Provided") under the stale coordinAGENTS identity. Resubmitted live 2026-08-07
+  (verification `HH720c68ae28f83278466af8226c2eba53`, now `PENDING_REVIEW`) under the Wireline
+  identity with the verbal consent script that is pinned into the agent runtime
+  (`vapi-tool-format.ts` → `send_text_message` guidance; contract-tested). Until Twilio approves,
+  US toll-free SMS from this number is subject to carrier blocking — watch for the review outcome
+  at `mikelaurenzo7@gmail.com`.
+- **No A2P 10DLC brand/campaign exists** for the six local tenant numbers; unregistered US 10DLC
+  traffic is heavily filtered. The Trust Hub profile `coordinAGENTS` is twilio-approved, so a
+  standard brand registration can proceed from it, but it incurs one-time/recurring carrier fees —
+  owner decision before tenant SMS at volume.
 - Scoped Twilio REST credentials `TWILIO_API_KEY` + `TWILIO_API_SECRET` are installed on
   Vercel production/preview (Standard key verified against IncomingPhoneNumbers). Keep
   `TWILIO_AUTH_TOKEN` for webhook-signature validation; rotate it out-of-band when convenient.

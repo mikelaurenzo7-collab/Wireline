@@ -25,11 +25,6 @@ import { loadTenantIntegrationConnections } from "./tenant-integration-connectio
 import { sendTenantMessage } from "./twilio-service";
 
 /**
- * Roles whose auto SMS is treated as non-marketing (service / ops).
- * Everything else — including unknown roles and missing agentId — fails
- * closed as marketing so federal DNC + express consent apply.
- */
-/**
  * Insert a follow-up task and emit the advertised `task.created` webhook.
  * Every task producer in this engine funnels through here so the event the
  * webhook catalog promises actually fires (it previously had no producer).
@@ -54,6 +49,11 @@ async function insertFollowUpTask(values: typeof schema.followUpTasks.$inferInse
   );
 }
 
+/**
+ * Roles whose auto SMS is treated as non-marketing (service / ops).
+ * Everything else — including unknown roles and missing agentId — fails
+ * closed as marketing so federal DNC + express consent apply.
+ */
 const NON_MARKETING_SMS_ROLES = new Set([
   "customer_service",
   "technical_support",
