@@ -93,10 +93,17 @@ describe("AI cost-protection contract", () => {
     // The cron sweep has no req.user, so withAudit cannot attribute it. It must
     // capture records per tenant and persist them against that tenant, or the
     // highest-volume paid path in the product records nothing at all.
-    const cron = dailyBrief.slice(dailyBrief.indexOf('"/api/daily-brief/schedule"'));
-    expect(cron).toContain("withAuditCapture(");
+    const cronStart = dailyBrief.indexOf("async function runDailyBriefSchedule");
+    const cron = dailyBrief.slice(
+      cronStart,
+      dailyBrief.indexOf('router.get("/api/daily-brief/schedule"', cronStart),
+    );
+    expect(cron).toContain("createAuditContext()");
+    expect(cron).toContain("runInAuditContext(auditContext");
     expect(cron).toContain("persistRuntimeAuditRecords({");
     expect(cron).toContain("userId: uid");
+    // Paid model records survive a downstream Gmail/send failure.
+    expect(cron).toMatch(/finally\\s*\\{[\\s\\S]*persistRuntimeAuditRecords/);
   });
 
   it("records vision-asset usage that bypasses the structured runtime", () => {
