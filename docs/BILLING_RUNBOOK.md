@@ -86,7 +86,7 @@ If a claimed event fails after side effects begin, the handler deletes the idemp
 
 Run `VERCEL_TOKEN=... npm run stripe:audit-live` and require all three read-only audit sections to complete:
 
-1. **Account identity:** business profile and Dashboard display names are `Wireline`; the public URL is HTTPS on `trywireline.com`; card and payment statement descriptors are Wireline-prefixed. Missing account logo/icon is a warning; name, domain, and descriptor drift are errors.
+1. **Account identity:** the customer-facing business profile name is `Wireline`; the public URL is HTTPS on `trywireline.com`; card and payment statement descriptors are Wireline-prefixed. Missing account logo/icon is a warning; name, domain, and descriptor drift are errors. Stripe Dashboard `display_name` is an internal account label and is not a launch-identity gate.
 2. **Product copy:** every active canonical product has the exact repository description, catalog version, and managed metadata from `scripts/lib/stripe-founder-catalog.mjs`.
 3. **Catalog topology:** active products/prices, amounts, recurring intervals, product ownership, subscriptions, payment links, and open Checkout sessions use canonical objects.
 
