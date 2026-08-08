@@ -23,7 +23,7 @@ describe("Stripe account identity guard", () => {
     expect(findings).toEqual([]);
   });
 
-  it("fails on a stale company name, domain, dashboard name, and descriptors", () => {
+  it("fails on a stale company name, domain, and descriptors", () => {
     const findings = stripeAccountIdentityFindings({
       business_profile: {
         name: "Cadence AI",
@@ -37,18 +37,34 @@ describe("Stripe account identity guard", () => {
       },
     });
 
-    expect(findings.filter((finding) => finding.level === "error")).toHaveLength(5);
+    expect(findings.filter((finding) => finding.level === "error")).toHaveLength(4);
     expect(findings.filter((finding) => finding.level === "warning")).toHaveLength(1);
     expect(findings.map((finding) => finding.message)).toEqual(
       expect.arrayContaining([
         expect.stringMatching(/business profile name/i),
         expect.stringMatching(/canonical Wireline domain/i),
-        expect.stringMatching(/dashboard display name/i),
         expect.stringMatching(/card statement descriptor/i),
         expect.stringMatching(/payment statement descriptor/i),
         expect.stringMatching(/no account logo or icon/i),
       ]),
     );
+  });
+
+  it("allows a distinct internal Stripe Dashboard label", () => {
+    const findings = stripeAccountIdentityFindings({
+      business_profile: {
+        name: "Wireline",
+        url: "https://trywireline.com",
+      },
+      settings: {
+        dashboard: { display_name: "Try Wireline" },
+        card_payments: { statement_descriptor_prefix: "WIRELINE" },
+        payments: { statement_descriptor: "WIRELINE" },
+        branding: { logo: "file_logo", icon: null },
+      },
+    });
+
+    expect(findings).toEqual([]);
   });
 
   it("accepts the www domain and a Wireline-prefixed dynamic descriptor", () => {
@@ -132,7 +148,6 @@ describe("Stripe account identity guard", () => {
       business_profile_name: "Wireline",
       business_profile_host: null,
       business_profile_protocol: null,
-      dashboard_display_name: "Wireline",
       card_statement_descriptor_prefix: "WIRELINE",
       payment_statement_descriptor: null,
       branding_logo_configured: false,
