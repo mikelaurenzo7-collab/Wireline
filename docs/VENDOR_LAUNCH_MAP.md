@@ -33,11 +33,14 @@ immediately before GA:
   defers inbound to the number's webhook (`use_inbound_webhook_on_number: true`).
 - **Toll-free SMS verification for `+1 (855) 542-7828` was TWILIO_REJECTED** ("Verbal Consent
   Script Must Be Provided") under the stale coordinAGENTS identity. Resubmitted live 2026-08-07
-  (verification `HH720c68ae28f83278466af8226c2eba53`, now `PENDING_REVIEW`) under the Wireline
-  identity with the verbal consent script that is pinned into the agent runtime
-  (`vapi-tool-format.ts` → `send_text_message` guidance; contract-tested). Until Twilio approves,
-  US toll-free SMS from this number is subject to carrier blocking — watch for the review outcome
-  at `mikelaurenzo7@gmail.com`.
+  (verification `HH720c68ae28f83278466af8226c2eba53`) under the Wireline identity with the verbal
+  consent script that is pinned into the agent runtime (`vapi-tool-format.ts` →
+  `send_text_message` guidance; contract-tested). Re-checked live 2026-08-08: status `IN_REVIEW`,
+  no rejection reason. Until Twilio approves, US toll-free SMS from this number is subject to
+  carrier blocking — watch for the review outcome at `mikelaurenzo7@gmail.com`. Note the runtime
+  script gained two carrier elements (frequency + message type) after resubmission; the four
+  originally attested elements are unchanged, so no re-attestation is needed — the script only
+  got stricter.
 - **No A2P 10DLC brand/campaign exists** for the six local tenant numbers; unregistered US 10DLC
   traffic is heavily filtered. The Trust Hub profile `coordinAGENTS` is twilio-approved, so a
   standard brand registration can proceed from it, but it incurs one-time/recurring carrier fees —
