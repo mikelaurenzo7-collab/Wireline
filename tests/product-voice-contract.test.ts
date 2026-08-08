@@ -304,6 +304,17 @@ describe("product voice cohesion", () => {
     expect(footer).toContain('to: "/for/personal", label: "Personal"');
     expect(publicHeader).not.toContain('label: "Home services"');
     expect(footer).not.toContain('label: "Home services"');
+
+    // Generic acquisition promises "free", so they must override any paid
+    // signup intent left in local storage from a previous pricing visit.
+    const landing = read("src/components/marketing/WireAgentLanding.tsx");
+    const sticky = read("src/components/marketing/MarketingStickyCta.tsx");
+    expect(precisionHeader.match(/to="\/signup\?plan=personal"/g)).toHaveLength(2);
+    expect(landing).toContain('to: "/signup?plan=personal"');
+    expect(landing).toContain('to="/signup?plan=personal"');
+    expect(sticky).toContain('href = "/signup?plan=personal"');
+    expect(landing).not.toContain('to: "/signup"');
+    expect(landing).not.toContain('to="/signup"');
   });
 
   it("keeps every public top-level surface session optional", () => {
