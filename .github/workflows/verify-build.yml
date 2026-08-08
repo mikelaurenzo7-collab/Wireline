@@ -1,10 +1,8 @@
 name: Verify build
 
+# Manual diagnostic only. ci.yml owns PR build/smoke coverage and verify-full.yml
+# owns the same bundle gate on main; automatic runs here duplicated both.
 on:
-  pull_request:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
