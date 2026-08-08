@@ -63,7 +63,7 @@ describe("email unsubscribe endpoints honor the write result", () => {
   it("one-click POST returns 503 (retryable) when the suppression write fails", () => {
     const routes = read("src/routes/email-unsubscribe-routes.ts");
     expect(routes).toContain(
-      'const recorded = await recordEmailSuppression(email, "one_click_unsubscribe")',
+      'const recorded = await recordTarget(target, "one_click_unsubscribe")',
     );
     expect(routes).toContain("res.status(503).json({ ok: false, unsubscribed: false })");
   });
@@ -71,7 +71,7 @@ describe("email unsubscribe endpoints honor the write result", () => {
   it("the human GET page never renders success over a failed write", () => {
     const routes = read("src/routes/email-unsubscribe-routes.ts");
     expect(routes).toContain(
-      'const recorded = await recordEmailSuppression(email, "link_unsubscribe")',
+      'const recorded = await recordTarget(target, "link_unsubscribe")',
     );
     expect(routes).toContain("We couldn't process that just now");
   });

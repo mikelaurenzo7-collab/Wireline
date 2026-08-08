@@ -40,8 +40,11 @@ describe("code review hardening contracts", () => {
 
   it("deduplicates inbound Twilio SMS by MessageSid before thread writes", () => {
     const twilio = read("src/routes/twilio-webhook-base.ts");
-    expect(twilio).toContain("schema.smsMessages.twilioSid");
+    expect(twilio).toContain("twilioSid: messageSid || null");
+    expect(twilio).toContain(".onConflictDoNothing()");
+    expect(twilio).toContain("if (!insertedMessage) return;");
     expect(twilio).toContain("tenantStore.run(tenantUserId");
+    expect(read("src/db/schema-base.ts")).toContain("idx_sms_messages_user_twilio_sid");
   });
 
   it("never lets an SMS START reply remove manual or legal DNC records", () => {

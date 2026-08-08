@@ -2,14 +2,13 @@
  * SSRF guards for Vapi live-call monitor URLs (control + listen).
  * Both are externally issued capabilities and must stay on the TLS-only vapi.ai host allowlist.
  */
-import { isSsrfUrl } from "./webhook-validators";
-
 function parseVapiMonitorUrl(raw: string, protocols: Set<string>): URL | null {
-  if (!raw || isSsrfUrl(raw)) return null;
+  if (!raw) return null;
   try {
     const parsed = new URL(raw);
     if (!protocols.has(parsed.protocol)) return null;
-    const host = parsed.hostname;
+    if (parsed.username || parsed.password) return null;
+    const host = parsed.hostname.toLowerCase();
     if (host !== "vapi.ai" && !host.endsWith(".vapi.ai")) return null;
     return parsed;
   } catch {

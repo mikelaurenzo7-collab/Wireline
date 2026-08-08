@@ -133,7 +133,7 @@ describe("comms hardening", () => {
     expect(webhook).toContain("res.status(503).send(twimlEmpty())");
     expect(webhook).not.toContain("SMS thread persist skipped");
     // First-contact thread creation tolerates the unique race on both paths.
-    const persistBlock = webhook.slice(webhook.indexOf("const [existingThread]"));
+    const persistBlock = webhook.slice(webhook.indexOf("const [createdThread]"));
     expect(persistBlock).toContain("onConflictDoNothing()");
     expect(read("src/lib/twilio-service.ts")).toContain("onConflictDoNothing()");
   });
