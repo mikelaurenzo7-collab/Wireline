@@ -1,9 +1,8 @@
 name: Product contracts
 
+# Manual targeted diagnostic only. CI's full Vitest run includes these tests on
+# PRs, and verify-full.yml runs verify:contracts on main.
 "on":
-  pull_request: {}
-  push:
-    branches: [main]
   workflow_dispatch: {}
 
 permissions:
