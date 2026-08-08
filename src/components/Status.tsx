@@ -351,14 +351,9 @@ export default function Status() {
                 Security practices
               </Link>
               <span className="text-muted/70">·</span>
-              <a
-                href="https://twitter.com/intent/tweet?text=%40trywireline+status"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition-colors hover:text-foreground"
-              >
+              <Link to="/support" className="transition-colors hover:text-foreground">
                 Report an issue
-              </a>
+              </Link>
             </div>
           </div>
         </div>
