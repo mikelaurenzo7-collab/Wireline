@@ -69,6 +69,12 @@ describe("managed PSTN voice model policy", () => {
   it("retries rejected Gemini outbound models through OpenAI at the application layer", () => {
     const vapi = readFileSync(resolve(process.cwd(), "src/lib/vapi-client.ts"), "utf8");
     expect(vapi).toContain("retrying with OpenAI voice fallback");
+    // Cross-provider retry is only safe for a definitive model-validation
+    // rejection. Transient/ambiguous responses must never create a second call.
+    expect(vapi).toContain("isDefinitiveVoiceModelRejection(");
+    expect(vapi).toContain("status !== 400 && status !== 422");
+    expect(vapi).toContain("await vapiResponse.clone().text()");
+    expect(vapi).toContain("!retryTransportErrors");
     // Whitespace-tolerant: prettier may wrap the fallback expression across lines.
     expect(vapi).toMatch(/\|\|\s+VAPI_TENANT_DEFAULT_MODEL/);
     expect(vapi).toContain("delete fallbackPayload.assistant.model.fallbackModels");
