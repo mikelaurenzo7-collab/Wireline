@@ -25,7 +25,7 @@ import { Router, Request, Response } from "express";
 import { createHash } from "node:crypto";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, inArray, or } from "drizzle-orm";
+import { eq, and, inArray, or, sql } from "drizzle-orm";
 import { sanitizePhone } from "../lib/vapi-helpers";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
 import { reportError } from "../lib/error-reporter";
@@ -360,83 +360,64 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
     }
 
     try {
-      if (messageSid) {
-        const [duplicate] = await drizzle
-          .select({ id: schema.smsMessages.id })
-          .from(schema.smsMessages)
-          .where(
-            and(
-              eq(schema.smsMessages.userId, tenantUserId),
-              eq(schema.smsMessages.twilioSid, messageSid),
-            ),
-          )
-          .limit(1);
-        if (duplicate) return res.status(200).send(twimlEmpty());
-      }
+      await drizzle.transaction(async (tx) => {
+        // Establish the conversation row without racing another first message.
+        // A conflicting insert is expected when two messages arrive together;
+        // the unique (user_id, customer_number) index selects the canonical row.
+        const [createdThread] = await tx
+          .insert(schema.smsThreads)
+          .values({ userId: tenantUserId, customerNumber: fromNormalized, unreadCount: 0 })
+          .onConflictDoNothing({ target: [schema.smsThreads.userId, schema.smsThreads.customerNumber] })
+          .returning({ id: schema.smsThreads.id });
 
-      const [existingThread] = await drizzle
-        .select({ id: schema.smsThreads.id, unreadCount: schema.smsThreads.unreadCount })
-        .from(schema.smsThreads)
-        .where(
-          and(
-            eq(schema.smsThreads.userId, tenantUserId),
-            eq(schema.smsThreads.customerNumber, fromNormalized),
-          ),
-        )
-        .limit(1);
+        const [thread] = createdThread
+          ? [createdThread]
+          : await tx
+              .select({ id: schema.smsThreads.id })
+              .from(schema.smsThreads)
+              .where(
+                and(
+                  eq(schema.smsThreads.userId, tenantUserId),
+                  eq(schema.smsThreads.customerNumber, fromNormalized),
+                ),
+              )
+              .limit(1);
+        if (!thread?.id) throw new Error("SMS thread could not be resolved after insert conflict");
 
-      let threadId: string;
-      if (existingThread) {
-        threadId = existingThread.id as unknown as string;
-        await drizzle
+        // Let the provider SID unique index arbitrate concurrent webhook retries.
+        // Only the transaction that actually persists the message increments the
+        // unread counter, preventing both duplicate over-counts and lost updates.
+        const [insertedMessage] = await tx
+          .insert(schema.smsMessages)
+          .values({
+            userId: tenantUserId,
+            threadId: thread.id,
+            direction: "in",
+            body,
+            twilioSid: messageSid || null,
+          })
+          .onConflictDoNothing()
+          .returning({ id: schema.smsMessages.id });
+        if (!insertedMessage) return;
+
+        await tx
           .update(schema.smsThreads)
           .set({
             lastMessageAt: new Date(),
-            unreadCount: (existingThread.unreadCount ?? 0) + 1,
+            unreadCount: sql`coalesce(${schema.smsThreads.unreadCount}, 0) + 1`,
             status: "open",
           })
-          .where(eq(schema.smsThreads.id, existingThread.id));
-      } else {
-        // First-contact race: a concurrent inbound webhook or in-flight
-        // outbound send can create this (user, customer) thread between our
-        // select and insert. Tolerate the unique collision and re-select
-        // instead of aborting the whole persist (which dropped the message).
-        const [created] = await drizzle
-          .insert(schema.smsThreads)
-          .values({ userId: tenantUserId, customerNumber: fromNormalized, unreadCount: 1 })
-          .onConflictDoNothing()
-          .returning({ id: schema.smsThreads.id });
-        if (created?.id) {
-          threadId = created.id as unknown as string;
-        } else {
-          const [won] = await drizzle
-            .select({ id: schema.smsThreads.id })
-            .from(schema.smsThreads)
-            .where(
-              and(
-                eq(schema.smsThreads.userId, tenantUserId),
-                eq(schema.smsThreads.customerNumber, fromNormalized),
-              ),
-            )
-            .limit(1);
-          threadId = (won?.id as unknown as string) || "";
-        }
-      }
-
-      if (threadId) {
-        await drizzle.insert(schema.smsMessages).values({
-          userId: tenantUserId,
-          threadId,
-          direction: "in",
-          body,
-          twilioSid: messageSid || null,
-        });
-      }
+          .where(
+            and(
+              eq(schema.smsThreads.id, thread.id),
+              eq(schema.smsThreads.userId, tenantUserId),
+            ),
+          );
+      });
     } catch (e: any) {
-      // A transient persistence failure must not answer 200: Twilio treats
-      // that as delivered and never redelivers, so the customer's message
-      // silently vanishes from the inbox. 503 makes Twilio retry; the
-      // (userId, twilioSid) duplicate check above keeps the retry idempotent.
+      // Provisioned Messaging URLs opt into 5xx retries. Combined with the
+      // provider-SID unique index above, a transient database failure becomes
+      // retry-safe at-least-once delivery instead of an acknowledged data loss.
       log.error("Inbound SMS persist failed — requesting Twilio redelivery", {
         error: e?.message,
       });
