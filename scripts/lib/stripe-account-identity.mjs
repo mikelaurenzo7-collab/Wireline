@@ -44,7 +44,6 @@ export function stripeAccountIdentityFindings(account) {
   const profileName = normalizeText(account?.business_profile?.name);
   const profileUrl = normalizeText(account?.business_profile?.url);
   const profileIdentity = publicUrlIdentity(profileUrl);
-  const dashboardName = normalizeText(account?.settings?.dashboard?.display_name);
   const cardDescriptor = normalizeText(
     account?.settings?.card_payments?.statement_descriptor_prefix,
   );
@@ -69,15 +68,6 @@ export function stripeAccountIdentityFindings(account) {
         expected_protocol: "https:",
         actual_host: profileIdentity.hostname || null,
         actual_protocol: profileIdentity.protocol || null,
-      }),
-    );
-  }
-
-  if (normalizedBrand(dashboardName) !== normalizedBrand(STRIPE_PUBLIC_BRAND)) {
-    findings.push(
-      finding("error", "Stripe dashboard display name does not match the Wireline brand.", {
-        expected: STRIPE_PUBLIC_BRAND,
-        actual: dashboardName || null,
       }),
     );
   }
@@ -116,7 +106,6 @@ export function stripeAccountIdentitySummary(account) {
     business_profile_name: normalizeText(account?.business_profile?.name) || null,
     business_profile_host: profileIdentity.hostname || null,
     business_profile_protocol: profileIdentity.protocol || null,
-    dashboard_display_name: normalizeText(account?.settings?.dashboard?.display_name) || null,
     card_statement_descriptor_prefix:
       normalizeText(account?.settings?.card_payments?.statement_descriptor_prefix) || null,
     payment_statement_descriptor:
