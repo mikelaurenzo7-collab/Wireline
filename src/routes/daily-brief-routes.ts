@@ -9,7 +9,7 @@ import { isOwnerEmail } from "../lib/auth-service";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import { withAudit, persistRuntimeAuditRecords } from "../middleware/audit-middleware";
-import { withAuditCapture } from "../lib/ai-audit";
+import { createAuditContext, runInAuditContext } from "../lib/ai-audit";
 import { enforceSpendCap } from "../lib/spend-guards";
 import { sendDailyBriefEmail } from "../lib/daily-brief";
 import { getErrorMessage } from "../lib/server-utils";
@@ -202,6 +202,7 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
         userId: schema.settings.userId,
         sendAt: schema.settings.dailyBriefSendAt,
         lastSentAt: schema.settings.dailyBriefLastSentAt,
+        lastAttemptAt: schema.settings.dailyBriefLastAttemptAt,
       })
       .from(schema.settings)
       .where(eq(schema.settings.dailyBriefEnabled, true));
@@ -211,6 +212,7 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
     let sent = 0;
     let notDue = 0;
     let alreadySent = 0;
+    let alreadyAttempted = 0;
     let contended = 0;
     let skipped = 0;
     let deferred = 0;
@@ -235,11 +237,22 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
         alreadySent++;
         continue;
       }
+      // lastAttemptAt is an at-most-once latch for this scheduled delivery.
+      // A process crash around the non-idempotent Gmail send therefore misses
+      // one brief rather than risking a duplicate message. Known pre-acceptance
+      // failures explicitly release the latch below so they can retry.
+      if (row.lastAttemptAt && row.lastAttemptAt >= scheduledAt) {
+        alreadyAttempted++;
+        continue;
+      }
 
       const claimAt = new Date();
       const [claimed] = await drizzle
         .update(schema.settings)
-        .set({ dailyBriefDispatchClaimedAt: claimAt })
+        .set({
+          dailyBriefDispatchClaimedAt: claimAt,
+          dailyBriefLastAttemptAt: claimAt,
+        })
         .where(
           and(
             eq(schema.settings.userId, uid),
@@ -247,6 +260,10 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
             or(
               isNull(schema.settings.dailyBriefLastSentAt),
               lt(schema.settings.dailyBriefLastSentAt, scheduledAt),
+            ),
+            or(
+              isNull(schema.settings.dailyBriefLastAttemptAt),
+              lt(schema.settings.dailyBriefLastAttemptAt, scheduledAt),
             ),
             or(
               isNull(schema.settings.dailyBriefDispatchClaimedAt),
@@ -261,21 +278,15 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
         continue;
       }
 
+      const auditContext = createAuditContext();
+      let providerAccepted = false;
       try {
-        // Cron has no req.user, so withAudit cannot attribute this spend. Capture
-        // the runtime records per tenant and persist them against that tenant.
-        const capture = await withAuditCapture(() => sendDailyBriefEmail(uid, { force: false }));
-        await persistRuntimeAuditRecords({
-          userId: uid,
-          action: "daily-brief.cron",
-          records: capture.records,
-          requestMeta: { source: "daily_brief_schedule" },
-        }).catch((persistError: unknown) =>
-          log.error("daily brief cron audit persist failed", {
-            userId: uid,
-            error: getErrorMessage(persistError),
-          }),
+        // Keep the context directly instead of withAuditCapture: if model work
+        // succeeds but Gmail fails, the paid model records still need flushing.
+        await runInAuditContext(auditContext, () =>
+          sendDailyBriefEmail(uid, { force: false }),
         );
+        providerAccepted = true;
 
         await drizzle
           .update(schema.settings)
@@ -305,12 +316,15 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
           msg.includes("AI runtime required") ||
           msg.includes("Claude required");
 
-        // Release only our lease. The next reconciliation can retry a failure,
-        // while last_sent_at remains an honest delivery timestamp.
+        // A known failure before Gmail acceptance is retryable: release our
+        // lease and restore the previous attempt marker. If Gmail already
+        // accepted the message but DB finalization failed, preserve lastAttemptAt
+        // so reconciliation cannot send a duplicate brief that day.
         await drizzle
           .update(schema.settings)
           .set({
             dailyBriefDispatchClaimedAt: null,
+            ...(providerAccepted ? {} : { dailyBriefLastAttemptAt: row.lastAttemptAt || null }),
             dailyBriefLastError: msg.slice(0, 1000),
           })
           .where(
@@ -326,13 +340,37 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
             }),
           );
 
-        if (configurationSkip) skipped++;
+        if (providerAccepted) {
+          failed++;
+          if (errors.length < 5) {
+            errors.push(`${uid}: delivery accepted but finalization failed`);
+          }
+        } else if (configurationSkip) skipped++;
         else if (transientAi) deferred++;
         else {
           failed++;
           if (errors.length < 5) errors.push(`${uid}: ${msg}`);
         }
-        log.warn("Daily brief cron: user skipped or failed", { userId: uid, error: msg, code });
+        log.warn("Daily brief cron: user skipped or failed", {
+          userId: uid,
+          error: msg,
+          code,
+          providerAccepted,
+        });
+      } finally {
+        if (auditContext.records.length) {
+          await persistRuntimeAuditRecords({
+            userId: uid,
+            action: "daily-brief.cron",
+            records: auditContext.records,
+            requestMeta: { source: "daily_brief_schedule" },
+          }).catch((persistError: unknown) =>
+            log.error("daily brief cron audit persist failed", {
+              userId: uid,
+              error: getErrorMessage(persistError),
+            }),
+          );
+        }
       }
     }
 
@@ -342,6 +380,7 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
       sent,
       not_due: notDue,
       already_sent: alreadySent,
+      already_attempted: alreadyAttempted,
       contended,
       skipped,
       deferred,
