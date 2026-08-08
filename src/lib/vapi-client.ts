@@ -92,8 +92,14 @@ async function fetchWithRetry(
     try {
       const response = await fetchWithTimeout(url, options, timeoutMs);
 
-      // If response is ok or not a transient error, return immediately
-      if (response.ok || !TRANSIENT_ERROR_CODES.has(response.status)) {
+      // Non-idempotent call creation disables BOTH response-status and
+      // transport retries. A 5xx/429 can still be ambiguous after the provider
+      // accepted a POST, so replaying it can dial the same consumer twice.
+      if (
+        response.ok ||
+        !TRANSIENT_ERROR_CODES.has(response.status) ||
+        !retryTransportErrors
+      ) {
         return response;
       }
 
@@ -140,6 +146,21 @@ async function fetchWithRetry(
 
   // All retries exhausted
   throw lastError || new Error(`${operationName}: Failed after ${MAX_RETRIES} attempts`);
+}
+
+function isDefinitiveVoiceModelRejection(status: number, body: string): boolean {
+  if (status !== 400 && status !== 422) return false;
+  const detail = body.toLowerCase();
+  const namesModelField = detail.includes("model") || detail.includes("provider");
+  const isValidationRejection =
+    detail.includes("invalid") ||
+    detail.includes("unsupported") ||
+    detail.includes("not supported") ||
+    detail.includes("not found") ||
+    detail.includes("unknown") ||
+    detail.includes("unrecognized") ||
+    detail.includes("does not exist");
+  return namesModelField && isValidationRejection;
 }
 
 export type PlaceCallResult = {
@@ -713,7 +734,14 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
       false,
     );
 
-    if (!vapiResponse.ok && voiceSelection.provider === "google") {
+    if (
+      !vapiResponse.ok &&
+      voiceSelection.provider === "google" &&
+      isDefinitiveVoiceModelRejection(
+        vapiResponse.status,
+        await vapiResponse.clone().text(),
+      )
+    ) {
       const geminiErrorBody = await vapiResponse.text();
       const retryModel =
         voiceSelection.fallbackModels?.find((model) => isOpenAIModelId(model)) ||
