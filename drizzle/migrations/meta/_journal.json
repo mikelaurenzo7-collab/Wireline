@@ -260,6 +260,13 @@
       "when": 1786132800000,
       "tag": "0138_ai_disclosure_evidence_uniqueness",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1786219200000,
+      "tag": "0139_tenant_email_suppressions",
+      "breakpoints": true
     }
   ]
 }
