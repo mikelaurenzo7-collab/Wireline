@@ -439,42 +439,22 @@ export async function enforceTrialOutboundCap(req: Request, res: Response, next:
   const state = await verifyLiveWorkAccount(req, res);
   if (!state) return;
 
-  const userId = (req as any)?.user?.id as string | undefined;
-  if (state.status === "trialing" && userId) {
-    if (state.trialOutboundCount >= TRIAL_MAX_OUTBOUND) {
-      block(
-        res,
-        402,
-        "TRIAL_LIMIT_HIT",
-        `Legacy trial accounts are capped at ${TRIAL_MAX_OUTBOUND} outbound calls. Upgrade to keep dialing.`,
-        {
-          limit: TRIAL_MAX_OUTBOUND,
-          current: state.trialOutboundCount,
-          days_left: state.daysLeft,
-          recovery_path: "/settings/billing",
-        },
-      );
-      return;
-    }
-    try {
-      await drizzle
-        .update(schema.settings)
-        .set({ trialOutboundCount: sql`${schema.settings.trialOutboundCount} + 1` })
-        .where(eq(schema.settings.userId, userId));
-    } catch (error: any) {
-      log.error("trial outbound reservation failed — blocking dial", {
-        userId,
-        error: error?.message ?? String(error),
-      });
-      block(
-        res,
-        503,
-        "BILLING_STATE_UNAVAILABLE",
-        "Wireline could not reserve this live call. No provider call was started; try again shortly.",
-        { retryable: true },
-      );
-      return;
-    }
+  if (state.status === "trialing") {
+    // Legacy-only status: nothing writes "trialing" anymore (Stripe trialing
+    // maps to "active" in syncSubscriptionFromStripe; signup writes
+    // pending_activation). Every dial path downstream — placeOutboundCall and
+    // /api/outbound/bulk — denies any status other than "active", so the old
+    // capped-and-counted admit here only burned trialOutboundCount on dials
+    // that were always refused. Block up front with the same recovery the
+    // dial layer implies.
+    block(
+      res,
+      402,
+      "SUBSCRIPTION_REQUIRED",
+      "Legacy trial outbound has ended — choose a plan to start dialing.",
+      { recovery_path: "/settings/billing" },
+    );
+    return;
   }
 
   next();

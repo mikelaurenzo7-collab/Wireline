@@ -129,6 +129,13 @@ router.post(
         customer: customerId,
         customer_update: { address: "auto" },
         automatic_tax: { enabled: true },
+        // Instant-notification methods only. The webhook credits the wallet
+        // solely on checkout.session.completed with payment_status "paid" —
+        // there is no async_payment_succeeded handler — so a delayed method
+        // (ACH debit, bank transfer) would complete unpaid and the money that
+        // lands days later would never become credit. Widen only together
+        // with async event handling.
+        payment_method_types: ["card", "link"],
         line_items: [
           {
             quantity: 1,

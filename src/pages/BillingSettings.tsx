@@ -57,6 +57,21 @@ export default function BillingSettings() {
       setLoading(true);
       setLoadError(null);
       try {
+        // Returning from a successful Stripe checkout: prove the session
+        // server-side BEFORE reading billing status, so entitlements are
+        // synced even when webhook delivery is late, misconfigured, or
+        // dropped. Best-effort — the webhook remains the primary writer and
+        // the verify endpoint is idempotent against it.
+        const params = new URLSearchParams(window.location.search);
+        const returnedSessionId = params.get("session_id");
+        if (params.get("billing") === "success" && returnedSessionId) {
+          await authFetch("/api/billing/checkout/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: returnedSessionId }),
+          }).catch(() => {});
+        }
+
         const [statusRes, balanceRes] = await Promise.all([
           authFetch("/api/billing/status"),
           authFetch("/api/conversation-balance"),

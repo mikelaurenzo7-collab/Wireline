@@ -3,7 +3,8 @@ import { AppError } from "../lib/api-error";
 import express, { Request, Response } from "express";
 import { drizzle, log, tenantStore, auditLogger } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { and, eq, lt, count } from "drizzle-orm";
+import { and, eq, inArray, lt, count } from "drizzle-orm";
+import { checkoutOperations } from "../db/security-schema";
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { getErrorMessage } from "../lib/server-utils";
@@ -338,6 +339,23 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
               : session.subscription.id;
           const sub = await stripe.subscriptions.retrieve(subId);
           await syncSubscriptionFromStripe(sub);
+          // Close the durable checkout operation. Nothing else transitions an
+          // op past "open", so without this the per-user active-op uniqueness
+          // 409-bricked plan selection for the 24h TTL after a completed
+          // purchase, and the reuse path could hand back the consumed
+          // session's dead URL.
+          const operationId = session.metadata?.wireline_checkout_operation_id;
+          if (operationId && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(operationId)) {
+            await drizzle
+              .update(checkoutOperations)
+              .set({ status: "completed", updatedAt: new Date() })
+              .where(
+                and(
+                  eq(checkoutOperations.id, operationId),
+                  inArray(checkoutOperations.status, ["creating", "open"]),
+                ),
+              );
+          }
         } else if (
           session.mode === "payment" &&
           session.payment_status === "paid" &&
@@ -1110,6 +1128,9 @@ router.post(
         customer_update: { address: "auto", name: "auto" },
         // Parity with the plan checkout — promo codes work on add-ons too.
         allow_promotion_codes: true,
+        // Instant-notification methods only — same reasoning as the plan and
+        // top-up checkouts: no async_payment_succeeded handling exists.
+        payment_method_types: ["card", "link"],
         success_url: `${base}/settings/billing?live_video=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${base}/settings/billing?live_video=canceled`,
         metadata: addonMeta,

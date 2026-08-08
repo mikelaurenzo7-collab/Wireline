@@ -348,7 +348,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
   const customerId =
     typeof incomingSub.customer === "string" ? incomingSub.customer : incomingSub.customer.id;
 
-  const [existing] = await drizzle
+  let [existing] = await drizzle
     .select({
       userId: schema.subscriptions.userId,
       status: schema.subscriptions.status,
@@ -359,8 +359,37 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
     .limit(1);
 
   if (!existing?.userId) {
-    log.warn("Stripe sync: no subscription row for customer — skipping mirror", { customerId });
-    return;
+    // Checkout stamps wireline_user_id on every subscription it creates, so a
+    // missing mapping row (overwritten by the checkout customer-recovery
+    // upsert, deleted, or created out-of-band) is repairable from the event
+    // itself. Without the repair, the webhook acks the event as processed and
+    // a paying customer's entitlements are silently never granted — Stripe
+    // will not redeliver an acked event.
+    const metadataUserId = incomingSub.metadata?.wireline_user_id?.trim();
+    if (!metadataUserId) {
+      // Not attributable to any tenant (foreign object, or events for an
+      // account deleted after cancellation). Returning — not throwing — is
+      // deliberate: this state can never resolve, so a retry loop would only
+      // poison the webhook endpoint's delivery health.
+      log.error(
+        "Stripe sync: no subscription row and no wireline_user_id metadata — cannot attribute",
+        { customerId, subscriptionId: incomingSub.id },
+      );
+      return;
+    }
+    log.warn("Stripe sync: repairing missing customer mapping from subscription metadata", {
+      customerId,
+      subscriptionId: incomingSub.id,
+      userId: metadataUserId,
+    });
+    await drizzle
+      .insert(schema.subscriptions)
+      .values({ userId: metadataUserId, stripeCustomerId: customerId, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: schema.subscriptions.userId,
+        set: { stripeCustomerId: customerId, updatedAt: new Date() },
+      });
+    existing = { userId: metadataUserId, status: null, stripeSubscriptionId: null };
   }
 
   let sub = incomingSub;

@@ -89,6 +89,17 @@ immediately before GA:
   Wireline can create a catalog-fingerprinted managed configuration on first use, but that path
   must be proven before paid self-serve checkout.
 - Twilio has no ONLINE WhatsApp sender (private beta).
+- **Before flipping `WIRELINE_LIVE_VIDEO_CATALOG_READY=true`** (2026-08-08 billing-chain audit,
+  verified in source): the checkout `ALREADY_SUBSCRIBED` guard counts ANY live subscription on the
+  customer with no base-plan filter, and nothing cancels the add-on subscription when the base plan
+  is canceled. Enabled as-is, a customer who cancels their base plan keeps paying for an add-on the
+  entitlement layer denies, and the orphaned add-on subscription permanently 409s them out of
+  re-subscribing. Fix both (filter the guard to base-plan prices; cascade add-on cancellation on
+  base-plan terminal states) before enabling the add-on catalog. Two audited-and-accepted design
+  notes, recorded so they are not rediscovered as bugs: the renewal runtime allowance is granted at
+  period start before the renewal invoice settles (bounded — past_due blocks live actions), and
+  mid-cycle portal upgrades do not top up the current period's allowance (the dedupe key is the
+  period, by design).
 
 Launch remains blocked until the following are cleared:
 
