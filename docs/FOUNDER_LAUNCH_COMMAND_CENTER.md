@@ -76,6 +76,7 @@ Verified live via connectors and local gates, not inferred:
 
 - [ ] **Stripe merchant identity — subscribers currently see `CADENCE AI` on their card statement.** Verified live on `acct_1TkyXL8e6If87QKm` 2026-08-07. The catalog is correct; the identity around it is not. Dashboard-only — not writable from the application. Full field-by-field table and the three Dashboard pages are in `docs/VENDOR_LAUNCH_MAP.md` → *Stripe merchant identity*. The gate is `node --env-file=.env.production scripts/check-vendor-readiness.mjs`, not the Dashboard looking right. Highest-yield chargeback trigger in the billing surface.
 - [ ] Top Twilio prepaid to at least **$150** — balance re-verified `$15.01` live 2026-08-08, **now below the $25 daily usage trigger**; a single active day can exhaust it (Usage Triggers daily $25 / monthly $200 are already live).
+- [ ] **Require `twilio_sms_webhook_retries=ready` before paid SMS.** New Wireline numbers now provision with bounded Twilio connection overrides that retry transient 5xx/connection/read failures. Existing IncomingPhoneNumber `SmsUrl` values must carry the same `#rc=2&rp=5xx,ct,rt&ct=3000&rt=5000&tt=15000` fragment; the vendor-readiness probe is now a hard gate so a database blip cannot turn a provider-acknowledged inbound text into silent message loss.
 - [ ] **Watch the toll-free SMS verification outcome** for `+1 (855) 542-7828` — the rejected coordinAGENTS-era submission was resubmitted live 2026-08-07 under the Wireline identity with the runtime-pinned verbal consent script; re-checked live 2026-08-08: status advanced to `IN_REVIEW`, no rejection reason (notifications go to `mikelaurenzo7@gmail.com`). US toll-free SMS is subject to carrier blocking until approved. Details in `docs/VENDOR_LAUNCH_MAP.md`.
 - [ ] Complete controlled live launch matrix (inbound/outbound call + tools, SMS STOP/HELP, Resend verify/reset, Stripe checkout→webhook→portal).
 - [ ] **Exercise the repaired purchase path end to end — this is the highest-priority item in the matrix.** On 2026-08-07 no signed-in customer could buy anything: three independent breaks, all of which had to work for a single dollar to arrive. (1) Settings → Billing offered "Choose a paid plan" linking to the public `/pricing` page, whose plan cards point at `/signup?plan=…`, which redirects an authenticated visitor to `/overview` — every in-product intent to pay looped back to the dashboard. The working checkout card existed but was mounted only under `/admin`, which nothing links to. (2) `TrialGateModal` rendered at `z-[100]` beneath the first-run wizard's opaque backdrop at `z-1050`, so the 402 paywall was invisible while focus moved into it. (3) `authFetch` filtered 402s through a stale code allowlist, so six real paywalls — including the agent cap and the `+$15` extra-agent add-on — produced a dead-end string with nothing to click. All three are fixed and contract-pinned, but the repaired path is **new code that has never taken a live payment**. Verify by hand, signed in as a Free Builder: Settings → Billing → choose a plan → Stripe → webhook → entitlement flips → portal opens. Then repeat from a 402 (create an agent past the plan cap) and confirm the modal appears *above* the wizard and reaches checkout.
@@ -95,29 +96,30 @@ Verified live via connectors and local gates, not inferred:
   - Treat the 105 as archive. `schema.ts` plus the 33 journalled migrations are the forward-looking contract. A contract test pins the counts so the backlog cannot grow silently.
 - [ ] Confirm Vapi / OpenAI / Gemini / Gateway / xAI budgets and alerts.
 - [ ] Flip `WIRELINE_LAUNCH_DEMO_MODE` to `false` when first real customer is admitted.
-- [ ] **Six-angle subsystem audit (2026-08-08) — verified findings fixed vs. deferred.** Fixed and
-  merged this pass: runtime prompt clamp preserving the whole compliance/escalation guardrail block
-  (was dropping everything but VOICE CONSISTENCY on long prompts); cadence/OAuth marketing email now
-  honoring the suppression list and carrying an unsubscribe footer on every transport; voice
-  send_email/send_text_message and the action engine recording a real follow-up task on a supervisor
-  block instead of fabricating a promise; the inbound Vapi webhook keeping the tenant binding from a
-  resolved line and rejecting an unresolvable phoneNumberId in prod; account-purge no longer
-  deferring forever on an already-canceled Stripe subscription; the job sweep per-tick ceiling raised
-  10 → 40 (budget-bounded); knowledge snippets whitespace-collapsed so an uploaded doc can't inject a
-  fake guardrail header. **Deferred (verified, not yet fixed — need larger or riskier changes):**
-  (1) job continuation chains — a `campaign_dial`/`scheduled_report`/`callback` job that dies before
-  re-arming leaves the campaign RUNNING / report unscheduled / callback undelivered with no reconciler
-  (needs a periodic re-scan); (2) daily-brief cron never fires in the shipped config (POST-only route,
-  no cron entry, no per-day dedup — a naive fix would spam); (3) Google OAuth token revocation is
-  never detected or surfaced (contrast Microsoft), so a revoked Gmail grant fails silently; (4) signup
-  verification-email failure is invisible to the user (returns 200 with no delivery flag while the UI
-  claims "we sent you a link"); (5) `post_call_enrichment` pipeline is dead and its SLO reads
-  vacuously healthy; (6) the singing-receptionist demo DID bridges any caller to a Vapi SIP URI with
-  no rate/duration cap (platform-cost exposure, signature-gated only by dialing the number); (7)
-  intake endpoints don't rate-limit invalid keys (key-validity oracle + DB load, no provider spend);
-  (8) IP-keyed public limiters degrade open without Redis while auth/intake/spend limiters fail
-  closed. Full evidence in the round-3 audit report on Drive. None are launch-blocking on their own;
-  items 1–4 are the highest-value follow-ups.
+- [x] **Six-angle subsystem audit + primary-source hardening (2026-08-08).** Fixed and
+  contract-pinned this pass: runtime prompt clamp preserving the compliance/escalation block; marketing
+  email suppression + unsubscribe on every transport; voice/action follow-up promises backed by durable
+  tasks; inbound Vapi tenant binding; terminal Stripe subscription deletion; 10 → 40 budget-bounded job
+  sweep; knowledge-header injection collapse; concurrency-safe inbound SMS persistence combined with
+  retryable 503 responses; bounded Twilio 5xx webhook redelivery for newly provisioned numbers plus a
+  readiness gate for existing numbers; FCC opt-outs that durably suppress first and then await Vapi's
+  current TLS-only `monitor.controlUrl` end-call command; public singing-demo per-caller rate limits plus
+  a five-minute paid bridge ceiling; public intake rate limiting before database key resolution; the
+  daily brief wired to Vercel GET cron with per-day due checks and a crash-safe DB dispatch lease; and
+  terminal Google refresh failures clearing stale credentials so integration health asks for reconnect.
+  The DNC control capability rejects redirects and non-TLS monitor URLs.
+
+  Re-review also removed two stale findings: callback continuity already has a five-minute
+  `callback_tick` reconciler, and the current verification UI does not falsely claim a signup email was
+  delivered (resend surfaces transport failure). Scheduled reports re-arm before external work and the
+  queue retries/reclaims stale jobs; campaigns also re-arm while leads or calls remain. Do **not** add an
+  automatic "resurrect every dead job forever" loop — retry exhaustion is an operator-visible fault, not
+  permission to repeat external side effects indefinitely.
+
+  Still deferred by design, not mistaken for green: `post_call_enrichment` remains a dead/vacuous SLO
+  path that should be removed or rebuilt before anyone relies on that metric; broad IP-keyed public
+  limiters still favor availability when Redis is absent, while auth/intake/spend/provider-cost gates
+  fail closed. These are pre-scale architecture follow-ups, not reasons to weaken the launch gates above.
 
 ### Green at audit
 
