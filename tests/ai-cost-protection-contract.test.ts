@@ -103,7 +103,7 @@ describe("AI cost-protection contract", () => {
     expect(cron).toContain("persistRuntimeAuditRecords({");
     expect(cron).toContain("userId: uid");
     // Paid model records survive a downstream Gmail/send failure.
-    expect(cron).toMatch(/finally\\s*\\{[\\s\\S]*persistRuntimeAuditRecords/);
+    expect(cron).toMatch(/finally\s*\{[\s\S]*persistRuntimeAuditRecords/);
   });
 
   it("records vision-asset usage that bypasses the structured runtime", () => {
