@@ -120,7 +120,7 @@ async function purchaseTwilioLocalNumber(
   const client = getTwilioClient();
   if (!client) return null;
 
-  const smsUrl = `${appBaseUrl()}/api/twilio-webhook/sms`;
+  const smsUrl = `${appBaseUrl()}/api/twilio-webhook/sms#rc=2&rp=5xx,ct,rt`;
   // Vapi owns the primary voice webhook after import; Twilio still needs a
   // voiceFallbackUrl so carrier-side Vapi SIP/webhook failures reach our
   // degraded-mode handler instead of a silent hangup.
