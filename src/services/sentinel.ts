@@ -108,6 +108,7 @@ export class SentinelService {
           headers: {
             Authorization: `Bearer ${apiKey}`,
           },
+          redirect: "error",
         },
         5000,
       );
@@ -136,6 +137,7 @@ export class SentinelService {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ type: "end-call" }),
+          redirect: "error",
         },
         5000,
       );
