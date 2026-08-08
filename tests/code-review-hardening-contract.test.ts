@@ -29,9 +29,13 @@ describe("code review hardening contracts", () => {
     expect(routes).toContain("drizzle.transaction");
   });
 
-  it("rejects production Vapi routing by bare ?agentId= without phoneNumberId", () => {
+  it("rejects production Vapi routing that did not resolve a tenant from a provisioned number", () => {
+    // Strengthened from the original `IS_PROD && !phoneNumberId` presence check:
+    // a present-but-unregistered phoneNumberId also fails to establish a tenant,
+    // and must not fall back to trusting a bare ?agentId= under no tenant fence.
     const resolver = read("src/lib/vapi-webhook-agent.ts");
-    expect(resolver).toContain("IS_PROD && !phoneNumberId");
+    expect(resolver).toContain("IS_PROD && !enforceTenantUserId");
+    expect(resolver).not.toContain("IS_PROD && !phoneNumberId");
   });
 
   it("deduplicates inbound Twilio SMS by MessageSid before thread writes", () => {

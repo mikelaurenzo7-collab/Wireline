@@ -34,7 +34,12 @@ export const MAX_RUNTIME_SNIPPET_CHARS = 360;
 export const MAX_CONTEXT_PREVIEW_LENGTH = 200;
 
 export function truncateRuntimeSnippet(text: string, max = MAX_RUNTIME_SNIPPET_CHARS): string {
-  const t = (text || "").trim();
+  // Collapse whitespace runs (including newlines) to single spaces so a
+  // tenant-ingested knowledge/directive snippet cannot embed "\n\n## …" and
+  // masquerade as a system-authored guardrail section in the composed prompt —
+  // the prompt is assembled from newline-delimited "## " headers, and the
+  // overflow clamp locates the guardrail block by those markers.
+  const t = (text || "").replace(/\s+/g, " ").trim();
   if (t.length <= max) return t;
   return `${t.slice(0, max)}…`;
 }
@@ -44,20 +49,38 @@ export function clampRuntimePrompt(text: string, max = MAX_RUNTIME_PROMPT_CHARS)
   return `${text.slice(0, max)}\n\n[Context trimmed for voice latency — use tools for account-specific detail.]`;
 }
 
-/** Runtime guardrail sections appended by buildAgentRuntimeContext — never truncate these. */
+/**
+ * Runtime guardrail section headers appended by buildAgentRuntimeContext, in
+ * the order they appear in the composed prompt: COMPLIANCE first, VOICE
+ * CONSISTENCY always last. Each string MUST be a prefix of the real header
+ * emitted by complianceDisclosure / disallowedTopicsBlock /
+ * escalationKeywordsBlock and the inline VOICE CONSISTENCY push — a marker
+ * that never matches its section silently forfeits that guardrail's
+ * protection during a clamp.
+ */
 const RUNTIME_GUARDRAIL_MARKERS = [
-  "\n\n## VOICE CONSISTENCY",
   "\n\n## COMPLIANCE",
-  "\n\n## ESCALATION",
-  "\n\n## DO NOT DISCUSS",
+  "\n\n## DO-NOT-DISCUSS TOPICS",
+  "\n\n## IMMEDIATE-ESCALATION TRIGGERS",
+  "\n\n## VOICE CONSISTENCY",
 ] as const;
 
 const RUNTIME_TRIM_NOTICE =
   "\n\n[Context trimmed for voice latency — use tools for account-specific detail.]";
 
 /**
- * Clamp an assembled runtime prompt without dropping compliance / escalation /
- * voice-consistency guardrails appended at the tail by buildAgentRuntimeContext.
+ * Clamp an assembled runtime prompt without dropping the compliance /
+ * do-not-discuss / escalation / voice-consistency guardrails that
+ * buildAgentRuntimeContext appends at the tail.
+ *
+ * The guardrail block runs from the EARLIEST guardrail marker to the end of
+ * the prompt, so preservation must slice from that earliest marker and
+ * truncate the head (base prompt + knowledge + directives) instead. Preserving
+ * from a later marker keeps only that section and silently discards every
+ * guardrail before it — which is exactly how HIPAA/TCPA conduct rules and
+ * escalation triggers used to vanish on long prompts. If even the guardrail
+ * block alone cannot fit (pathological — the per-item caps bound it to a few
+ * kB), fall back through later markers and finally to a plain head clamp.
  */
 export function clampRuntimePromptPreservingTail(
   text: string,
@@ -65,9 +88,11 @@ export function clampRuntimePromptPreservingTail(
 ): string {
   if (text.length <= max) return text;
 
-  for (const marker of RUNTIME_GUARDRAIL_MARKERS) {
-    const idx = text.lastIndexOf(marker);
-    if (idx <= 0) continue;
+  const indices = RUNTIME_GUARDRAIL_MARKERS.map((marker) => text.indexOf(marker))
+    .filter((idx) => idx > 0)
+    .sort((a, b) => a - b);
+
+  for (const idx of indices) {
     const tail = text.slice(idx);
     const headBudget = max - tail.length - RUNTIME_TRIM_NOTICE.length;
     if (headBudget < 500) continue;

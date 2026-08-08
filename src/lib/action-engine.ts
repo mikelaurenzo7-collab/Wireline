@@ -18,7 +18,7 @@ import { searchLeads } from "./apollo-service";
 import { getErrorMessage } from "./server-utils";
 import { drizzle, log } from "./server-context";
 import { postAgentNotification, getDefaultChannel } from "./slack-service";
-import { superviseClientCommunication } from "./ai-supervisor";
+import { ClientCommunicationBlockedError, superviseClientCommunication } from "./ai-supervisor";
 import { dispatchWebhook } from "./webhook-helpers";
 import { runInBackground } from "./background-work";
 import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
@@ -270,30 +270,34 @@ async function executeAutonomousAction(
   const service = new IntegrationService(userId);
   switch (action.type) {
     case "send_email": {
-      const reviewed = await superviseClientCommunication({
-        channel: "email",
-        agentName: action.agentId,
-        source: "action_engine",
-        purpose: action.reasoning || "autonomous follow-up",
-        recipient: action.payload.to,
-        subject: action.payload.subject,
-        body: action.payload.body,
-        context: `Autonomy mode: auto. Source type: ${context.sourceType}.`,
-      });
-      if (!reviewed.approved) {
-        return handleSendEmail(
-          userId,
-          {
-            ...action,
-            payload: {
-              ...action.payload,
-              subject: reviewed.subject || action.payload.subject,
-              body: reviewed.body,
+      let reviewed;
+      try {
+        reviewed = await superviseClientCommunication({
+          channel: "email",
+          agentName: action.agentId,
+          source: "action_engine",
+          purpose: action.reasoning || "autonomous follow-up",
+          recipient: action.payload.to,
+          subject: action.payload.subject,
+          body: action.payload.body,
+          context: `Autonomy mode: auto. Source type: ${context.sourceType}.`,
+        });
+      } catch (err) {
+        // The supervisor THROWS on a block — it never returns approved:false —
+        // so the old `if (!reviewed.approved)` draft fallback was dead code and
+        // blocked autonomous emails were dropped entirely. Convert a block into
+        // the intended pending draft task so a human can review and send it.
+        if (err instanceof ClientCommunicationBlockedError) {
+          return handleSendEmail(
+            userId,
+            {
+              ...action,
+              reasoning: `${action.reasoning || ""}\nBlocked by supervisor: ${err.message}`.trim(),
             },
-            reasoning: `${action.reasoning || ""}\nSupervisor note: ${reviewed.rationale}`.trim(),
-          },
-          context,
-        );
+            context,
+          );
+        }
+        throw err;
       }
       const emailOk = await service.sendEmail({
         to: action.payload.to,

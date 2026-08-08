@@ -302,25 +302,70 @@ export class IntegrationService {
     }));
   }
 
-  async sendEmail(params: { to: string; subject: string; body: string }): Promise<boolean> {
+  async sendEmail(params: {
+    to: string;
+    subject: string;
+    body: string;
+    /**
+     * True for recurring/unsolicited commercial mail (cadence email steps).
+     * Marketing sends must honor the platform suppression list and carry a
+     * CAN-SPAM footer + unsubscribe affordance on EVERY transport — not only
+     * the platform-Resend fallback. A recorded opt-out that a tenant's own
+     * Gmail/Microsoft mailbox ignored is the same CAN-SPAM violation as one
+     * the platform ignored.
+     */
+    marketing?: boolean;
+  }): Promise<boolean> {
     try {
       const accounts = await this.getAccounts("mail");
       // Fallback: If no mail account, try calendar accounts (many have mail too)
       const mailAccounts = accounts.length > 0 ? accounts : await this.getAccounts("calendar");
 
       if (mailAccounts.length > 0) {
+        // Marketing compliance for the tenant's OWN mailbox transports. The
+        // platform-Resend fallback below applies its own suppression/footer/
+        // unsubscribe, so this only guards the OAuth paths that used to skip
+        // them entirely. Honoring the suppression list here is what makes a
+        // recorded opt-out binding no matter which mailbox sends.
+        let sendParams: {
+          to: string;
+          subject: string;
+          body: string;
+          marketing?: boolean;
+          unsubscribeHeaders?: Record<string, string>;
+        } = params;
+        if (params.marketing) {
+          const { isEmailSuppressed, buildComplianceFooterHtml, buildListUnsubscribeHeaders } =
+            await import("./email-compliance");
+          if (await isEmailSuppressed(params.to)) {
+            log.info("Marketing email skipped — recipient is suppressed", {
+              userId: this.userId,
+              to: params.to,
+            });
+            return false;
+          }
+          // Both OAuth transports send text/html, so the HTML footer (which
+          // carries the working unsubscribe link) appends to the body; the
+          // one-click List-Unsubscribe header rides along where supported.
+          sendParams = {
+            ...params,
+            body: `${params.body}${buildComplianceFooterHtml(params.to)}`,
+            unsubscribeHeaders: buildListUnsubscribeHeaders(params.to),
+          };
+        }
+
         const account = mailAccounts[0];
         if (account.provider === "google") {
-          return await this.sendGoogleEmail(account, params);
+          return await this.sendGoogleEmail(account, sendParams);
         }
         if (account.provider === "microsoft") {
-          return await this.sendMicrosoftEmail(account, params);
+          return await this.sendMicrosoftEmail(account, sendParams);
         }
         if (account.provider === "icloud") {
           if (!account.accessToken || !account.emailAddress) return false;
           const email = account.emailAddress as string;
           const appPassword = decryptSecret(account.accessToken);
-          return sendIcloudMail(email, appPassword, params);
+          return sendIcloudMail(email, appPassword, sendParams);
         }
       }
 
@@ -498,11 +543,17 @@ export class IntegrationService {
     const google = await googleApis();
     const gmail = google.gmail({ version: "v1", auth });
     const utf8Subject = `=?utf-8?B?${Buffer.from(params.subject).toString("base64")}?=`;
+    // Standard RFC 8058 opt-out headers Gmail honors, for marketing sends only
+    // (transactional sends pass none). Values are HMAC-token URLs from
+    // buildListUnsubscribeHeaders — no recipient-controlled text — so they
+    // cannot inject additional headers.
+    const unsubscribeHeaders: Record<string, string> = params.unsubscribeHeaders || {};
     const messageParts = [
       `To: ${params.to}`,
       "Content-Type: text/html; charset=utf-8",
       "MIME-Version: 1.0",
       `Subject: ${utf8Subject}`,
+      ...Object.entries(unsubscribeHeaders).map(([name, value]) => `${name}: ${value}`),
       "",
       params.body,
     ];

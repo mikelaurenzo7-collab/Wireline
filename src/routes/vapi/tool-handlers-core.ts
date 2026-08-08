@@ -138,6 +138,44 @@ async function searchAgentKnowledge(
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Persist a real follow-up task so a caller-facing promise ("someone will send
+ * that to you") is backed by a record a human can act on. The client-comms
+ * supervisor THROWS on a block (it never returns approved:false), so a blocked
+ * or failed send lands in a catch — where the agent used to tell the caller a
+ * human would follow up while writing nothing at all. Best-effort: never let a
+ * task-write failure turn into an unhandled tool error.
+ */
+async function recordCommsFollowUpTask(
+  drizzle: any,
+  values: {
+    userId: string;
+    agentId?: string | null;
+    channel: "email" | "sms";
+    recipient: string | null | undefined;
+    payload: Record<string, unknown>;
+  },
+): Promise<boolean> {
+  try {
+    await drizzle.insert(schema.followUpTasks).values({
+      userId: values.userId,
+      agentId: values.agentId ?? null,
+      taskType: values.channel === "email" ? "send_email" : "send_text_message",
+      description: `${values.channel === "email" ? "Email" : "Text"} follow-up to ${
+        values.recipient || "caller"
+      } — flagged for human review from a live call`,
+      status: "pending",
+      priority: "high",
+      targetChannel: values.channel,
+      sourceType: "voice_tool",
+      payload: values.payload,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function handleCoreToolCall(
   fn: string,
   args: any,
@@ -294,8 +332,11 @@ export async function handleCoreToolCall(
   }
 
   if (fn === "send_email") {
+    const { to_email, subject, body } = args || {};
     try {
-      const { to_email, subject, body } = args || {};
+      // Throws ClientCommunicationBlockedError on a block — there is no
+      // approved:false return, so a blocked send falls through to the catch,
+      // which records a real task instead of fabricating a follow-up.
       const reviewed = await superviseClientCommunication({
         channel: "email",
         agentName: webhookAgentId,
@@ -306,29 +347,43 @@ export async function handleCoreToolCall(
         body,
         context: "Outbound email generated from a Vapi tool call during a customer conversation.",
       });
-      if (!reviewed.approved) {
-        return {
-          toolCallId,
-          result: "I've queued that email up for you. It should arrive shortly.",
-        };
-      }
       const service = new IntegrationService(agent?.user_id);
       const success = await service.sendEmail({
         to: to_email,
         subject: reviewed.subject || subject,
         body: reviewed.body,
       });
+      if (success) {
+        return { toolCallId, result: "Email sent." };
+      }
+      const recorded = await recordCommsFollowUpTask(drizzle, {
+        userId: agent?.user_id,
+        agentId: agent?.id,
+        channel: "email",
+        recipient: to_email,
+        payload: { to: to_email, subject: reviewed.subject || subject, body: reviewed.body },
+      });
       return {
         toolCallId,
-        result: success
-          ? "Email sent."
-          : "I wasn't able to send that right now, but I've noted your request. Someone from our team will follow up.",
+        result: recorded
+          ? "I wasn't able to send that right now, but I've logged it for our team to send you directly."
+          : "I wasn't able to send that right now. Please reach out to us directly and we'll get it to you.",
       };
     } catch {
+      // Blocked by the supervisor or an unexpected failure. Log a real task so
+      // the promised follow-up actually reaches a human.
+      const recorded = await recordCommsFollowUpTask(drizzle, {
+        userId: agent?.user_id,
+        agentId: agent?.id,
+        channel: "email",
+        recipient: to_email,
+        payload: { to: to_email, subject, body },
+      });
       return {
         toolCallId,
-        result:
-          "I ran into a hiccup sending that email. Let me note your address and have someone send it to you directly.",
+        result: recorded
+          ? "I've logged your request so our team can send that to you directly."
+          : "I couldn't complete that right now — please reach out to us directly and we'll get it to you.",
       };
     }
   }
@@ -440,6 +495,9 @@ export async function handleCoreToolCall(
         };
       }
 
+      // Throws ClientCommunicationBlockedError on a block (no approved:false
+      // return), so a blocked text falls to the catch below, which records a
+      // real task rather than claiming it was queued.
       const reviewed = await superviseClientCommunication({
         channel: "sms",
         agentName: webhookAgentId,
@@ -449,12 +507,6 @@ export async function handleCoreToolCall(
         body: message_body,
         context: `Requested channel: ${channel === "whatsapp" ? "whatsapp" : "sms"}.`,
       });
-      if (!reviewed.approved) {
-        return {
-          toolCallId,
-          result: "I've queued that message for you. It should go out shortly.",
-        };
-      }
       const outcome = await sendTenantMessage(agent.user_id, {
         to: targetNumber,
         body: reviewed.body,
@@ -529,10 +581,28 @@ export async function handleCoreToolCall(
           : outcome.reason || "Message send failed.",
       };
     } catch {
+      // Supervisor block or unexpected failure — record a real task so the
+      // "have someone follow up" promise is backed by something a human sees.
+      const targetForTask =
+        sanitizePhone(
+          (args?.to_number as string | undefined) ||
+            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
+            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number,
+        ) || null;
+      const recorded = agent?.user_id
+        ? await recordCommsFollowUpTask(drizzle, {
+            userId: agent.user_id,
+            agentId: agent?.id,
+            channel: "sms",
+            recipient: targetForTask,
+            payload: { to: targetForTask, body: args?.message_body },
+          })
+        : false;
       return {
         toolCallId,
-        result:
-          "I wasn't able to send that text right now. Let me note that and have someone follow up.",
+        result: recorded
+          ? "I've logged that text for our team to follow up on."
+          : "I wasn't able to send that text right now — please reach out to us directly.",
       };
     }
   }

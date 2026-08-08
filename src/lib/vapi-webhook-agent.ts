@@ -110,7 +110,12 @@ export async function resolveVapiWebhookAgent(opts: {
   }
 
   if (!resolvedAgentId && queryRaw) {
-    if (IS_PROD && !phoneNumberId) {
+    // A production request that carries a phoneNumberId we could NOT resolve to
+    // a tenant (fake/unregistered id → enforceTenantUserId still null) must be
+    // rejected, not silently downgraded to trusting the caller-supplied
+    // ?agentId under no tenant fence. Checking `!phoneNumberId` alone let a
+    // bogus phoneNumberId open the unfenced query-agent path.
+    if (IS_PROD && !enforceTenantUserId) {
       return {
         ok: false,
         status: 403,
@@ -122,7 +127,11 @@ export async function resolveVapiWebhookAgent(opts: {
       };
     }
     resolvedAgentId = queryRaw;
-    enforceTenantUserId = null;
+    // Do NOT discard a tenant binding already established from a resolved line.
+    // When a provisioned number identified the tenant but had no agent yet, the
+    // binding must survive so the mismatch check below rejects a query agentId
+    // belonging to a different tenant. It is only null here when no line
+    // resolved at all (dev/local convenience path).
   }
 
   if (!resolvedAgentId) {

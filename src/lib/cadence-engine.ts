@@ -177,12 +177,16 @@ async function executeStep(
     if (!lead.email) return { ok: false, result: "no email on lead" };
     const body = applyVars(step.template || `Hi {{name}},\n\nFollowing up — Wireline`, lead);
     const integ = new IntegrationService(cadence.userId);
+    // Cadence email is recurring commercial mail: honor the suppression list
+    // and carry an unsubscribe affordance on every transport, including the
+    // tenant's own connected mailbox.
     const ok = await integ.sendEmail({
       to: lead.email,
       subject: `Following up — ${cadence.name}`,
       body,
+      marketing: true,
     });
-    return { ok, result: ok ? "email sent" : "email failed (no connected mailbox?)" };
+    return { ok, result: ok ? "email sent" : "email failed (suppressed or no connected mailbox?)" };
   }
 
   return { ok: false, result: `unknown step type ${step.type}` };

@@ -191,11 +191,21 @@ export interface ExternalReleaseSummary {
   clonedVoicesDeleted: number;
 }
 
-/** Stripe "already gone" errors — treat as success, not a reason to retry. */
+/**
+ * Stripe "already gone / nothing to do" errors — treat as success, not a reason
+ * to retry. Besides a missing resource (404), canceling a subscription that is
+ * already canceled returns a 400 invalid_request_error ("A canceled
+ * subscription can only update its cancellation_details."). That is the desired
+ * end state, so it must not throw and permanently defer the account purge.
+ */
 function isStripeAlreadyGone(err: unknown): boolean {
-  const code = (err as { code?: string; statusCode?: number } | null)?.code;
-  const status = (err as { statusCode?: number } | null)?.statusCode;
-  return code === "resource_missing" || status === 404;
+  const e = err as { code?: string; statusCode?: number; message?: string } | null;
+  if (e?.code === "resource_missing" || e?.statusCode === 404) return true;
+  if (e?.statusCode === 400 && typeof e?.message === "string") {
+    const m = e.message.toLowerCase();
+    if (m.includes("canceled") || m.includes("cancelled")) return true;
+  }
+  return false;
 }
 
 /**
@@ -271,11 +281,23 @@ async function releaseExternalResourcesOutsideTenantContext(
         status: "all",
         limit: 100,
       });
+      const terminal = new Set<string>();
       for (const s of all.data) {
-        if (s.status !== "canceled" && s.status !== "incomplete_expired") ids.add(s.id);
+        if (s.status === "canceled" || s.status === "incomplete_expired") terminal.add(s.id);
+        else ids.add(s.id);
       }
+      // The locally-stored id is retained on the row even after the webhook
+      // marks the subscription canceled, so re-adding it unconditionally would
+      // cancel an already-canceled subscription on the COMMON deletion flow
+      // (cancel_at_period_end → period ends → canceled). Skip it when the live
+      // list already observed it terminal; isStripeAlreadyGone still covers the
+      // case where the list didn't include it.
+      if (sub.stripeSubscriptionId && !terminal.has(sub.stripeSubscriptionId)) {
+        ids.add(sub.stripeSubscriptionId);
+      }
+    } else if (sub.stripeSubscriptionId) {
+      ids.add(sub.stripeSubscriptionId);
     }
-    if (sub.stripeSubscriptionId) ids.add(sub.stripeSubscriptionId);
     for (const id of ids) {
       try {
         await stripe.subscriptions.cancel(id);

@@ -95,6 +95,29 @@ Verified live via connectors and local gates, not inferred:
   - Treat the 105 as archive. `schema.ts` plus the 33 journalled migrations are the forward-looking contract. A contract test pins the counts so the backlog cannot grow silently.
 - [ ] Confirm Vapi / OpenAI / Gemini / Gateway / xAI budgets and alerts.
 - [ ] Flip `WIRELINE_LAUNCH_DEMO_MODE` to `false` when first real customer is admitted.
+- [ ] **Six-angle subsystem audit (2026-08-08) — verified findings fixed vs. deferred.** Fixed and
+  merged this pass: runtime prompt clamp preserving the whole compliance/escalation guardrail block
+  (was dropping everything but VOICE CONSISTENCY on long prompts); cadence/OAuth marketing email now
+  honoring the suppression list and carrying an unsubscribe footer on every transport; voice
+  send_email/send_text_message and the action engine recording a real follow-up task on a supervisor
+  block instead of fabricating a promise; the inbound Vapi webhook keeping the tenant binding from a
+  resolved line and rejecting an unresolvable phoneNumberId in prod; account-purge no longer
+  deferring forever on an already-canceled Stripe subscription; the job sweep per-tick ceiling raised
+  10 → 40 (budget-bounded); knowledge snippets whitespace-collapsed so an uploaded doc can't inject a
+  fake guardrail header. **Deferred (verified, not yet fixed — need larger or riskier changes):**
+  (1) job continuation chains — a `campaign_dial`/`scheduled_report`/`callback` job that dies before
+  re-arming leaves the campaign RUNNING / report unscheduled / callback undelivered with no reconciler
+  (needs a periodic re-scan); (2) daily-brief cron never fires in the shipped config (POST-only route,
+  no cron entry, no per-day dedup — a naive fix would spam); (3) Google OAuth token revocation is
+  never detected or surfaced (contrast Microsoft), so a revoked Gmail grant fails silently; (4) signup
+  verification-email failure is invisible to the user (returns 200 with no delivery flag while the UI
+  claims "we sent you a link"); (5) `post_call_enrichment` pipeline is dead and its SLO reads
+  vacuously healthy; (6) the singing-receptionist demo DID bridges any caller to a Vapi SIP URI with
+  no rate/duration cap (platform-cost exposure, signature-gated only by dialing the number); (7)
+  intake endpoints don't rate-limit invalid keys (key-validity oracle + DB load, no provider spend);
+  (8) IP-keyed public limiters degrade open without Redis while auth/intake/spend limiters fail
+  closed. Full evidence in the round-3 audit report on Drive. None are launch-blocking on their own;
+  items 1–4 are the highest-value follow-ups.
 
 ### Green at audit
 
