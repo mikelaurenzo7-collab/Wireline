@@ -2,27 +2,43 @@ import { AppError } from "../lib/api-error";
 /**
  * Public email unsubscribe endpoints (CAN-SPAM + RFC 8058 one-click).
  *
- * Kept separate from the authenticated Account Holder inbox routes in
- * email-routes.ts: these are PUBLIC by design — no auth. The signed token IS
- * the credential (it encodes the recipient address and is HMAC-verified), so
- * only someone who received the email can unsubscribe it. Two entry points:
- *
- *   POST /api/email/unsubscribe?token=…   ← mailbox-provider one-click button
- *   GET  /api/email/unsubscribe?token=…   ← the human link in the footer
- *
- * The POST must return 2xx promptly on success (Gmail/Yahoo penalize senders
- * whose one-click endpoint errors), so the IP limiter is generous. When the
- * suppression write itself fails, both handlers answer 503 — a 2xx would end
- * provider retries while the opt-out was never recorded.
+ * Wireline product/billing marketing uses a global recipient suppression.
+ * Tenant campaign marketing uses a (tenant, recipient) suppression so an
+ * opt-out from one business never silences an unrelated business.
  */
 
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { rateLimit } from "../lib/rate-limit";
-import { verifyUnsubscribeToken, recordEmailSuppression } from "../lib/email-compliance";
+import {
+  verifyUnsubscribeToken,
+  recordEmailSuppression,
+  verifyTenantUnsubscribeToken,
+  recordTenantEmailSuppression,
+} from "../lib/email-compliance";
 
 const router = Router();
+
+type UnsubscribeTarget =
+  | { scope: "wireline"; email: string }
+  | { scope: "tenant"; userId: string; email: string };
+
+function targetFromToken(token: string): UnsubscribeTarget | null {
+  const tenant = verifyTenantUnsubscribeToken(token);
+  if (tenant) return { scope: "tenant", ...tenant };
+  const email = verifyUnsubscribeToken(token);
+  return email ? { scope: "wireline", email } : null;
+}
+
+async function recordTarget(
+  target: UnsubscribeTarget,
+  reason: "one_click_unsubscribe" | "link_unsubscribe",
+): Promise<boolean> {
+  return target.scope === "tenant"
+    ? recordTenantEmailSuppression(target.userId, target.email, reason)
+    : recordEmailSuppression(target.email, reason);
+}
 
 // Generous IP-keyed limiter: high enough that a mailbox provider batching
 // one-click POSTs is never blocked, low enough to bound abuse. Fails OPEN.
@@ -47,25 +63,20 @@ async function unsubscribeRateLimit(req: Request, res: Response, next: NextFunct
 
 router.post("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request, res: Response) => {
   try {
-    const email = verifyUnsubscribeToken(String(req.query.token || ""));
-    if (!email) {
+    const target = targetFromToken(String(req.query.token || ""));
+    if (!target) {
       log.warn("Invalid or missing unsubscribe token on POST");
       res.status(200).json({ ok: true, unsubscribed: false });
       return;
     }
-    // recordEmailSuppression never throws — it returns false on failure. A
-    // 200 here would tell Gmail/Yahoo the opt-out was honored and stop their
-    // retries while the suppression row never landed (CAN-SPAM's 10-day
-    // obligation silently broken). 503 is the honest, retryable answer; a
-    // transient outage's occasional 503 is recoverable, a dropped opt-out
-    // is not.
-    const recorded = await recordEmailSuppression(email, "one_click_unsubscribe");
+    const recorded = await recordTarget(target, "one_click_unsubscribe");
     if (!recorded) {
       res.setHeader("Retry-After", "300");
       res.status(503).json({ ok: false, unsubscribed: false });
       return;
     }
-    log.info("Email one-click unsubscribe recorded", { email });
+    // Never put the recipient or signed token in logs.
+    log.info("Email one-click unsubscribe recorded", { scope: target.scope });
     res.status(200).json({ ok: true, unsubscribed: true });
   } catch (err) {
     if (err instanceof AppError) throw err;
@@ -76,43 +87,37 @@ router.post("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request,
 });
 
 router.get("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request, res: Response) => {
-  const email = verifyUnsubscribeToken(String(req.query.token || ""));
-  if (!email) {
+  const target = targetFromToken(String(req.query.token || ""));
+  if (!target) {
     res
       .status(400)
       .type("html")
       .send(renderPage("Invalid unsubscribe link", "This unsubscribe link is invalid or expired."));
     return;
   }
-  // recordEmailSuppression returns false instead of throwing. Rendering
-  // "You're unsubscribed" over a failed write hands the visitor a screenshot
-  // of an opt-out that doesn't exist — show an honest retry page instead.
-  const recorded = await recordEmailSuppression(email, "link_unsubscribe");
+
+  const recorded = await recordTarget(target, "link_unsubscribe");
   if (!recorded) {
-    log.error("GET /api/email/unsubscribe failed to record suppression", { email });
+    log.error("GET /api/email/unsubscribe failed to record suppression", { scope: target.scope });
     res
       .status(503)
       .type("html")
       .send(
         renderPage(
           "We couldn't process that just now",
-          `Your unsubscribe request for <strong>${escapeHtml(email)}</strong> didn't go through. ` +
+          `Your unsubscribe request for <strong>${escapeHtml(target.email)}</strong> didn't go through. ` +
             `Please refresh this page in a few minutes to try again, or email support@trywireline.com and we'll remove you manually.`,
         ),
       );
     return;
   }
-  log.info("Email unsubscribe (link) recorded", { email });
-  res
-    .status(200)
-    .type("html")
-    .send(
-      renderPage(
-        "You're unsubscribed",
-        `<strong>${escapeHtml(email)}</strong> will no longer receive Wireline product &amp; billing reminders. ` +
-          `You'll still get essential account email (security and billing receipts).`,
-      ),
-    );
+
+  log.info("Email unsubscribe link recorded", { scope: target.scope });
+  const body =
+    target.scope === "tenant"
+      ? `<strong>${escapeHtml(target.email)}</strong> will no longer receive marketing email from this sender.`
+      : `<strong>${escapeHtml(target.email)}</strong> will no longer receive Wireline product &amp; billing reminders. You'll still get essential account email (security and billing receipts).`;
+  res.status(200).type("html").send(renderPage("You're unsubscribed", body));
 });
 
 function renderPage(title: string, body: string): string {
