@@ -7,6 +7,7 @@
  * founder completes business registration with DNCScrub. Marketing outbound
  * still fails closed at runtime via `assertFederalDncForMarketing()`.
  */
+import { selfServeBillingReleaseBlockers } from "./billing-release";
 import { getIntegrationsStatus } from "./integrations-registry";
 import { validateEnv } from "./env-validator";
 import { assertPlanMarginFloors } from "./tenant-economics";
@@ -23,6 +24,7 @@ export type LaunchReadinessReport = {
   overall_score: number;
   campaign_ready: boolean;
   hard_gate_enabled: boolean;
+  self_serve_billing_enabled: boolean;
   capabilities: CapabilityReadiness[];
   launch_blockers: string[];
   /** Ops checklist items that do not fail GO / score / hard-gate. */
@@ -53,6 +55,8 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   const integrations = getIntegrationsStatus();
   const byId = new Map(integrations.map((integration) => [integration.id, integration]));
   const envValidation = validateEnv();
+  const billingReleaseBlockers = selfServeBillingReleaseBlockers();
+  const billingReleased = billingReleaseBlockers.length === 0;
 
   const voiceBlockers: string[] = [];
   if (byId.get("openai")?.status !== "configured") voiceBlockers.push("OPENAI_API_KEY");
@@ -65,6 +69,7 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   const billingBlockers: string[] = [];
   if (byId.get("stripe")?.status !== "configured") billingBlockers.push("STRIPE_SECRET_KEY");
   else if (!envPresent("STRIPE_WEBHOOK_SECRET")) billingBlockers.push("STRIPE_WEBHOOK_SECRET");
+  billingBlockers.push(...billingReleaseBlockers);
   const marginCheck = assertPlanMarginFloors();
   if (!marginCheck.ok) billingBlockers.push(...marginCheck.violations);
 
@@ -128,6 +133,7 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
     overall_score: Math.round((readyCount / scored.length) * 100),
     campaign_ready: launch_blockers.length === 0,
     hard_gate_enabled: process.env.LAUNCH_HARD_GATE === "true",
+    self_serve_billing_enabled: billingReleased,
     capabilities,
     launch_blockers,
     deferred_checklist,
