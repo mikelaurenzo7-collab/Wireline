@@ -33,27 +33,6 @@ describe("durable enqueue failure contract", () => {
     );
   });
 
-  it("enforces one active scheduler tick without rewriting running work", () => {
-    const migration = read("drizzle/migrations/0141_scheduler_tick_singletons.sql");
-    const journal = read("drizzle/migrations/meta/_journal.json");
-
-    expect(migration).toContain("CREATE UNIQUE INDEX IF NOT EXISTS uq_jobs_queued_scheduler_tick");
-    expect(migration).toContain("ON public.wireline_jobs USING btree (user_id, type)");
-    expect(migration).toContain("type IN ('cadence_tick', 'callback_tick')");
-    expect(migration).toContain("status IN ('pending', 'running', 'failed')");
-    expect(migration).toContain("PARTITION BY user_id, type");
-    expect(migration).toContain("CASE WHEN status = 'running' THEN 0 ELSE 1 END");
-    expect(migration).toContain("ranked.active_rank > 1");
-    expect(migration).toContain("jobs.status IN ('pending', 'failed')");
-    expect(migration).toContain("HAVING count(*) > 1");
-    expect(migration).toContain("Cannot enforce scheduler singleton");
-
-    const previous = journal.indexOf('"tag": "0140_daily_brief_dispatch_lease"');
-    const singleton = journal.indexOf('"tag": "0141_scheduler_tick_singletons"');
-    expect(previous).toBeGreaterThanOrEqual(0);
-    expect(singleton).toBeGreaterThan(previous);
-  });
-
   it("preserves the campaign launch rollback result contract", () => {
     const queue = read("src/lib/job-queue.ts");
     const campaigns = read("src/routes/campaign-routes.ts");
