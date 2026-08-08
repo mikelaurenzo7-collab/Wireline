@@ -28,6 +28,7 @@ import * as schema from "../db/schema";
 import { eq, and, inArray, or, sql } from "drizzle-orm";
 import { sanitizePhone } from "../lib/vapi-helpers";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
+import { rateLimit, distributedLimiterStatus } from "../lib/rate-limit";
 import { reportError } from "../lib/error-reporter";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { matchesCarrierKeyword } from "../lib/carrier-keywords";
@@ -687,7 +688,7 @@ router.post("/api/twilio-webhook/voicemail-transcription", async (req: Request, 
   return res.status(200).send('<?xml version="1.0" encoding="UTF-8"?><Response/>');
 });
 
-router.post("/api/twilio-webhook/singing-receptionist", (req: Request, res: Response) => {
+router.post("/api/twilio-webhook/singing-receptionist", async (req: Request, res: Response) => {
   res.setHeader("Content-Type", "text/xml");
   if (!verifyTwilioSignature(req)) {
     log.warn("Twilio webhook signature verification failed", { path: req.path });
@@ -696,13 +697,46 @@ router.post("/api/twilio-webhook/singing-receptionist", (req: Request, res: Resp
   const from = (req.body?.From as string | undefined) || "";
   log.info("Singing receptionist demo line hit", { from_suffix: phoneSuffixForLog(from) });
 
+  // This is a public, provider-billed showcase number. Cap repeat callers before
+  // bridging to Vapi and fail closed when the distributed limiter is unhealthy;
+  // returning TwiML 200 avoids carrier webhook retries while still protecting spend.
+  const limiter = distributedLimiterStatus();
+  if (!limiter.ok) {
+    log.error("Singing receptionist disabled: distributed rate limiter unavailable", {
+      reason: limiter.reason,
+    });
+    return res.status(200).send(twimlHangup());
+  }
+  try {
+    const demoRate = await rateLimit(sanitizePhone(from) || from || "unknown", {
+      bucket: "public_singing_demo",
+      windowMs: 60 * 60 * 1000,
+      max: 3,
+      failClosedOnError: true,
+    });
+    if (!demoRate.allowed) {
+      log.warn("Singing receptionist caller rate-limited", {
+        from_suffix: phoneSuffixForLog(from),
+      });
+      return res.status(200).send(twimlHangup());
+    }
+  } catch (error) {
+    log.error("Singing receptionist rate limiter failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(200).send(twimlHangup());
+  }
+
   const jingleUrl = publicAssetUrl("/sounds/wireline-jingle.mp3");
   const sipUri = process.env.SINGING_VAPI_SIP_URI || "";
 
   let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
   twiml += `  <Play>${escapeTwimlValue(jingleUrl)}</Play>\n`;
   if (sipUri) {
-    twiml += `  <Dial answerOnBridge="true"><Sip>${escapeTwimlValue(sipUri)}</Sip></Dial>\n`;
+    // Twilio <Dial> defaults to a four-hour maximum. A five-minute demo cap and
+    // short ring timeout prevent a forgotten/abusive public call from turning
+    // into an unbounded Twilio + Vapi session.
+    twiml += `  <Dial answerOnBridge="true" timeout="20" timeLimit="300"><Sip>${escapeTwimlValue(sipUri)}</Sip></Dial>\n`;
   } else {
     twiml += `  <Say voice="Polly.Joanna-Neural">Haha, sorry about that. We like to have fun at Wireline sometimes. To finish setting up this demo, configure the SINGING_VAPI_SIP_URI environment variable. Goodbye.</Say>\n`;
     twiml += `  <Hangup/>\n`;
