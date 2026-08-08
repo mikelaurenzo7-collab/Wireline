@@ -21,6 +21,7 @@ export type CompanyIdentityPreferences = {
   callerIdName: string | null;
   website: string | null;
   supportEmail: string | null;
+  physicalPostalAddress: string | null;
   defaultCallReason: string | null;
   requestedChannels: CompanyIdentityChannel[];
   reviewRequestedAt: string | null;
@@ -35,6 +36,7 @@ export type CompanyIdentityProfile = {
   callerIdName: string | null;
   website: string | null;
   supportEmail: string | null;
+  physicalPostalAddress: string | null;
   defaultCallReason: string | null;
   requestedChannels: CompanyIdentityChannel[];
   reviewRequestedAt: string | null;
@@ -62,6 +64,7 @@ export function defaultCompanyIdentityPreferences(): CompanyIdentityPreferences 
     callerIdName: null,
     website: null,
     supportEmail: null,
+    physicalPostalAddress: null,
     defaultCallReason: null,
     requestedChannels: [...COMPANY_IDENTITY_CHANNELS],
     reviewRequestedAt: null,
@@ -103,6 +106,7 @@ export function readCompanyIdentityPreferences(value: unknown): CompanyIdentityP
     callerIdName: nullableString(raw.callerIdName),
     website: nullableString(raw.website),
     supportEmail: nullableString(raw.supportEmail),
+    physicalPostalAddress: nullableString(raw.physicalPostalAddress),
     defaultCallReason: nullableString(raw.defaultCallReason),
     // An explicitly empty or corrupt stored selection must fail closed. It must
     // never silently broaden review scope back to all channels.
@@ -132,6 +136,7 @@ export function buildCompanyIdentityProfile(args: {
     callerIdName: args.preferences.callerIdName,
     website: args.preferences.website,
     supportEmail: args.preferences.supportEmail,
+    physicalPostalAddress: args.preferences.physicalPostalAddress,
     defaultCallReason: args.preferences.defaultCallReason,
     requestedChannels: args.preferences.requestedChannels,
     reviewRequestedAt: args.preferences.reviewRequestedAt,
@@ -154,6 +159,7 @@ export function companyIdentityFingerprint(value: {
   callerIdName: string | null;
   website: string | null;
   supportEmail: string | null;
+  physicalPostalAddress: string | null;
   defaultCallReason: string | null;
   phoneNumber: string | null;
 }): string {
@@ -164,6 +170,7 @@ export function companyIdentityFingerprint(value: {
     callerIdName: nullableString(value.callerIdName),
     website: nullableString(value.website),
     supportEmail: nullableString(value.supportEmail)?.toLowerCase() ?? null,
+    physicalPostalAddress: nullableString(value.physicalPostalAddress),
     defaultCallReason: nullableString(value.defaultCallReason),
     phoneNumber: nullableString(value.phoneNumber),
   });
@@ -194,6 +201,7 @@ export function buildCompanyIdentityReadiness(args: {
   const hasName = Boolean(args.profile.brandName || args.profile.businessName);
   const hasWebsite = Boolean(args.profile.website);
   const hasSupportEmail = Boolean(args.profile.supportEmail);
+  const hasPhysicalPostalAddress = Boolean(args.profile.physicalPostalAddress);
   const hasBrandedSupportEmail = supportEmailMatchesWebsite(
     args.profile.website,
     args.profile.supportEmail,
@@ -218,6 +226,7 @@ export function buildCompanyIdentityReadiness(args: {
     !hasName ? "company display name" : null,
     !hasWebsite ? "company website" : null,
     !hasBrandedSupportEmail ? "support email on the company domain" : null,
+    !hasPhysicalPostalAddress ? "valid physical postal address for commercial email" : null,
   ].filter((value): value is string => Boolean(value));
 
   return {
