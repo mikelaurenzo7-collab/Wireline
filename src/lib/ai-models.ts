@@ -95,6 +95,21 @@ export function isGeminiModelId(value: unknown): value is string {
   );
 }
 
+/**
+ * Cross-provider call creation is non-idempotent, so fallback is allowed only
+ * when Vapi definitively rejected the selected model/provider before dialing.
+ * Do not treat unrelated 400s, throttles, or provider 5xx responses as safe.
+ */
+export function isDefinitiveVapiVoiceModelRejection(status: number, body: string): boolean {
+  if (status !== 400 && status !== 422) return false;
+  const detail = body.toLowerCase();
+  const directRejection =
+    /\b(?:invalid|unsupported|unknown|unrecognized)\s+(?:voice\s+)?(?:model|provider)\b/i;
+  const namedRejection =
+    /\b(?:model|provider)\b[^\r\n.!?]{0,64}\b(?:is\s+)?(?:invalid|unsupported|not\s+supported|not\s+found|unknown|unrecognized|does\s+not\s+exist|must\s+be\s+one\s+of)\b/i;
+  return directRejection.test(detail) || namedRejection.test(detail);
+}
+
 export function resolveVapiVoiceModelSelection(input?: {
   provider?: string | null;
   model?: string | null;
