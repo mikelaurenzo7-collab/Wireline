@@ -4,6 +4,7 @@ import * as schema from "../db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { dncPhoneCandidates, isDncBlocked, normalizeDncPhone } from "../lib/compliance";
 import { fetchWithTimeout } from "../lib/server-context";
+import { isAllowedVapiControlUrl } from "../lib/vapi-monitor-url";
 
 export interface SentinelResult {
   allowed: boolean;
@@ -63,58 +64,98 @@ export class SentinelService {
 
   /**
    * Terminate active calls if a number is added to DNC mid-call.
+   *
+   * Vapi's current live-call control API exposes a per-call monitor.controlUrl.
+   * We resolve and validate that URL, then issue the documented end-call command.
+   * The result is returned to callers so a compliance tool never claims that a
+   * live call was terminated before the provider confirms it.
    */
-  async terminateActiveCallsForNumber(phoneNumber: string) {
-    // Presence rows store the number exactly as Vapi sent it (E.164 "+1...")
-    // while DNC paths normalize to digits-only — match every stored variant
-    // (same posture as isDncBlocked) or a live call is never found and the
-    // mid-call termination silently does nothing. Presence rows are deleted
-    // at call end, so every match is a live call.
+  async terminateActiveCallsForNumber(
+    phoneNumber: string,
+  ): Promise<{ attempted: number; terminated: number; failed: number }> {
     const candidates = dncPhoneCandidates(phoneNumber);
-    if (!candidates.length) return;
+    if (!candidates.length) return { attempted: 0, terminated: 0, failed: 0 };
+
     const activeCalls = await drizzle
       .select({ id: schema.signalPresence.id })
       .from(schema.signalPresence)
       .where(inArray(schema.signalPresence.customerNumber, candidates));
 
+    let terminated = 0;
     for (const call of activeCalls) {
-      await this.killCall(call.id, "DNC_UPDATE_DURING_CALL");
+      if (await this.killCall(call.id, "DNC_UPDATE_DURING_CALL")) terminated++;
     }
+
+    return {
+      attempted: activeCalls.length,
+      terminated,
+      failed: activeCalls.length - terminated,
+    };
   }
 
-  private async killCall(callId: string, reason: string) {
+  private async killCall(callId: string, reason: string): Promise<boolean> {
     log.info(`Terminating call ${callId} due to ${reason}`);
+    const apiKey = process.env.VAPI_PRIVATE_KEY?.trim();
+    if (!apiKey) {
+      log.error("Cannot terminate Vapi call: VAPI_PRIVATE_KEY is not configured", { callId, reason });
+      return false;
+    }
+
     try {
-      const response = await fetchWithTimeout(
-        `https://api.vapi.ai/call/${callId}/terminate`,
+      const callResponse = await fetchWithTimeout(
+        `https://api.vapi.ai/call/${encodeURIComponent(callId)}`,
         {
-          method: "POST",
           headers: {
-            Authorization: `Bearer ${process.env.VAPI_PRIVATE_KEY}`,
+            Authorization: `Bearer ${apiKey}`,
           },
         },
         5000,
       );
+      if (!callResponse.ok) {
+        log.error(`Vapi call lookup rejected for call ${callId}`, {
+          reason,
+          status: callResponse.status,
+        });
+        return false;
+      }
 
-      // fetchWithTimeout does not throw on non-2xx. If Vapi refused the
-      // terminate, the agent is still talking — recording the presence row as
-      // "terminated" would falsify the ops audit trail for a call that keeps
-      // running (e.g. right after the consumer asked for DNC).
+      const call = (await callResponse.json()) as { monitor?: { controlUrl?: unknown } };
+      const controlUrl =
+        typeof call.monitor?.controlUrl === "string" ? call.monitor.controlUrl.trim() : "";
+      if (!controlUrl || !isAllowedVapiControlUrl(controlUrl)) {
+        log.error(`Vapi call ${callId} returned no trusted live control URL`, { reason });
+        return false;
+      }
+
+      // Do not forward the Vapi API credential to the provider-issued control
+      // URL. The control URL itself is the capability; only send the documented
+      // live-call command after the host allowlist check above.
+      const response = await fetchWithTimeout(
+        controlUrl,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "end-call" }),
+        },
+        5000,
+      );
+
       if (!response.ok) {
-        log.error(`Vapi terminate rejected for call ${callId}`, {
+        log.error(`Vapi end-call rejected for call ${callId}`, {
           reason,
           status: response.status,
         });
-        return;
+        return false;
       }
 
-      // Update presence
       await drizzle
         .update(schema.signalPresence)
         .set({ status: "terminated" })
         .where(eq(schema.signalPresence.id, callId));
+      return true;
     } catch (err: any) {
       log.error(`Failed to terminate call ${callId}`, { error: err.message });
+      return false;
     }
   }
 
