@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { enforceDurableEnqueueResult } from "../src/lib/job-queue";
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
@@ -11,6 +12,46 @@ describe("durable enqueue failure contract", () => {
     expect(queue).toContain("enforceDurableEnqueueResult");
     expect(queue).toContain("if (!result.ok && !CALLER_MANAGED_ENQUEUE_FAILURE_TYPES.has(opts.type))");
     expect(queue).toContain("throw new Error(result.error || `Failed to enqueue ${opts.type} job`)");
+  });
+
+  it("treats only the named scheduler-singleton conflict as a durable no-op", () => {
+    const duplicate = {
+      ok: false,
+      error: 'duplicate key value violates unique constraint "uq_jobs_queued_scheduler_tick"',
+    };
+
+    expect(enforceDurableEnqueueResult({ type: "cadence_tick" }, duplicate)).toEqual({ ok: true });
+    expect(enforceDurableEnqueueResult({ type: "callback_tick" }, duplicate)).toEqual({ ok: true });
+    expect(() =>
+      enforceDurableEnqueueResult({ type: "cadence_tick" }, {
+        ok: false,
+        error: "database unavailable",
+      }),
+    ).toThrow("database unavailable");
+    expect(() => enforceDurableEnqueueResult({ type: "purge_old_data" }, duplicate)).toThrow(
+      "uq_jobs_queued_scheduler_tick",
+    );
+  });
+
+  it("enforces one active scheduler tick without rewriting running work", () => {
+    const migration = read("drizzle/migrations/0141_scheduler_tick_singletons.sql");
+    const journal = read("drizzle/migrations/meta/_journal.json");
+
+    expect(migration).toContain("CREATE UNIQUE INDEX IF NOT EXISTS uq_jobs_queued_scheduler_tick");
+    expect(migration).toContain("ON public.wireline_jobs USING btree (user_id, type)");
+    expect(migration).toContain("type IN ('cadence_tick', 'callback_tick')");
+    expect(migration).toContain("status IN ('pending', 'running', 'failed')");
+    expect(migration).toContain("PARTITION BY user_id, type");
+    expect(migration).toContain("CASE WHEN status = 'running' THEN 0 ELSE 1 END");
+    expect(migration).toContain("ranked.active_rank > 1");
+    expect(migration).toContain("jobs.status IN ('pending', 'failed')");
+    expect(migration).toContain("HAVING count(*) > 1");
+    expect(migration).toContain("Cannot enforce scheduler singleton");
+
+    const previous = journal.indexOf('"tag": "0140_daily_brief_dispatch_lease"');
+    const singleton = journal.indexOf('"tag": "0141_scheduler_tick_singletons"');
+    expect(previous).toBeGreaterThanOrEqual(0);
+    expect(singleton).toBeGreaterThan(previous);
   });
 
   it("preserves the campaign launch rollback result contract", () => {
