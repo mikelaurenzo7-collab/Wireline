@@ -378,7 +378,31 @@ async function releaseExternalResourcesOutsideTenantContext(
     }
   }
 
-  // 2.5 Delete cloned voice models at ElevenLabs while the local rows still
+  // 2.5 Erase provider-owned call data while the local call rows still retain
+  //     the identifiers required to address it. If provider cleanup fails, the
+  //     purge must retry rather than destroy the only remaining cleanup pointers.
+  const callArtifactPointers = await db
+    .select({
+      vapiCallId: schema.callLogs.vapiCallId,
+      recordingUrl: schema.callLogs.recordingUrl,
+    })
+    .from(schema.callLogs)
+    .where(eq(schema.callLogs.userId, userId));
+
+  if (callArtifactPointers.length) {
+    const { eraseProviderCallArtifacts } = await import("./provider-call-erasure");
+    try {
+      await eraseProviderCallArtifacts(callArtifactPointers);
+    } catch (err) {
+      log.error("provider call-data deletion failed — deferring account purge", {
+        userId,
+        error: getErrorMessage(err),
+      });
+      throw err;
+    }
+  }
+
+  // 2.75 Delete cloned voice models at ElevenLabs while the local rows still
   //     map voice_id -> tenant. This is the only such mapping: once the purge
   //     removes wireline_cloned_voices, the model would stay live in Wireline's
   //     provider account forever, still synthesizable, still billed, and no
