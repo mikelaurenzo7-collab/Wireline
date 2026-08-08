@@ -279,14 +279,18 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
       }
 
       const auditContext = createAuditContext();
-      let providerAccepted = false;
+      let providerSendAttempted = false;
       try {
         // Keep the context directly instead of withAuditCapture: if model work
         // succeeds but Gmail fails, the paid model records still need flushing.
         await runInAuditContext(auditContext, () =>
-          sendDailyBriefEmail(uid, { force: false }),
+          sendDailyBriefEmail(uid, {
+            force: false,
+            onProviderSendAttempt: () => {
+              providerSendAttempted = true;
+            },
+          }),
         );
-        providerAccepted = true;
 
         await drizzle
           .update(schema.settings)
@@ -316,15 +320,15 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
           msg.includes("AI runtime required") ||
           msg.includes("Claude required");
 
-        // A known failure before Gmail acceptance is retryable: release our
-        // lease and restore the previous attempt marker. If Gmail already
-        // accepted the message but DB finalization failed, preserve lastAttemptAt
-        // so reconciliation cannot send a duplicate brief that day.
+        // Failures before the Gmail POST begins are retryable: release our
+        // lease and restore the previous attempt marker. Once the provider send
+        // starts, its outcome can be ambiguous (for example, a lost response),
+        // so preserve lastAttemptAt and never risk a duplicate brief that day.
         await drizzle
           .update(schema.settings)
           .set({
             dailyBriefDispatchClaimedAt: null,
-            ...(providerAccepted ? {} : { dailyBriefLastAttemptAt: row.lastAttemptAt || null }),
+            ...(providerSendAttempted ? {} : { dailyBriefLastAttemptAt: row.lastAttemptAt || null }),
             dailyBriefLastError: msg.slice(0, 1000),
           })
           .where(
@@ -340,10 +344,10 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
             }),
           );
 
-        if (providerAccepted) {
+        if (providerSendAttempted) {
           failed++;
           if (errors.length < 5) {
-            errors.push(`${uid}: delivery accepted but finalization failed`);
+            errors.push(`${uid}: delivery attempt may have been accepted but finalization failed`);
           }
         } else if (configurationSkip) skipped++;
         else if (transientAi) deferred++;
@@ -355,7 +359,7 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
           userId: uid,
           error: msg,
           code,
-          providerAccepted,
+          providerSendAttempted,
         });
       } finally {
         if (auditContext.records.length) {
