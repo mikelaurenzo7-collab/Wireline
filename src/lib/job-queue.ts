@@ -49,20 +49,39 @@ type ClaimOptions = {
 };
 
 const CALLER_MANAGED_ENQUEUE_FAILURE_TYPES = new Set<JobType>(["campaign_dial"]);
+const SINGLETON_SCHEDULER_TYPES = new Set<JobType>(["cadence_tick", "callback_tick"]);
+const SINGLETON_SCHEDULER_INDEX = "uq_jobs_queued_scheduler_tick";
 const STALE_RECOVERY_BATCH = 200;
 const CLAIMABLE_STATUSES = ["pending", "failed"] as const;
 const retryBudgetRemaining = sql`coalesce(${schema.jobs.attempts}, 0) < coalesce(${schema.jobs.maxAttempts}, ${base.DEFAULT_MAX_ATTEMPTS})`;
 const runAtDue = (claimTime: Date) =>
   sql`coalesce(${schema.jobs.runAt}, ${claimTime}) <= ${claimTime}`;
+// Daily retention creates one purge job per account. Keep maintenance fan-out
+// behind due customer/scheduler work so bounded serverless sweeps stay responsive.
+const claimPriority = sql`case when ${schema.jobs.type} = 'purge_old_data' then 1 else 0 end`;
 const claimOrder = (claimTime: Date) =>
   sql`coalesce(${schema.jobs.runAt}, ${schema.jobs.createdAt}, ${claimTime})`;
 const attemptCountEquals = (expectedAttempts: number) =>
   sql`coalesce(${schema.jobs.attempts}, 0) = ${expectedAttempts}`;
 
+function isExpectedSingletonSchedulerConflict(
+  opts: Pick<EnqueueOptions, "type">,
+  result: base.EnqueueResult,
+): boolean {
+  return (
+    !result.ok &&
+    SINGLETON_SCHEDULER_TYPES.has(opts.type) &&
+    String(result.error || "").includes(SINGLETON_SCHEDULER_INDEX)
+  );
+}
+
 export function enforceDurableEnqueueResult(
   opts: Pick<EnqueueOptions, "type">,
   result: base.EnqueueResult,
 ): base.EnqueueResult {
+  // The partial unique index is the concurrency boundary for waiting scheduler
+  // ticks. Only that named conflict is an intentional durable no-op.
+  if (isExpectedSingletonSchedulerConflict(opts, result)) return { ok: true };
   if (!result.ok && !CALLER_MANAGED_ENQUEUE_FAILURE_TYPES.has(opts.type)) {
     throw new Error(result.error || `Failed to enqueue ${opts.type} job`);
   }
@@ -102,7 +121,7 @@ async function claimEligibleJob(db: QueueDb, options: ClaimOptions): Promise<any
       .select()
       .from(schema.jobs)
       .where(and(...clauses))
-      .orderBy(claimOrder(claimTime), schema.jobs.id)
+      .orderBy(claimPriority, claimOrder(claimTime), schema.jobs.id)
       .limit(1)
       .for("update", { skipLocked: true });
     if (!job) return null;

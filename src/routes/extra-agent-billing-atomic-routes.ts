@@ -5,6 +5,11 @@ import type Stripe from "stripe";
 import * as schema from "../db/schema";
 import { AppError } from "../lib/api-error";
 import {
+  SELF_SERVE_BILLING_BLOCK,
+  selfServeBillingBlockResponse,
+  selfServeBillingEnabled,
+} from "../lib/billing-release";
+import {
   extraAgentItems,
   extraAgentMutationIdempotencyKey,
   extraAgentQuantity,
@@ -200,6 +205,15 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
       const existing = matchingItems[0];
       const currentStripeQuantity = extraAgentQuantity(matchingItems);
       const isIncrease = target > currentStripeQuantity;
+
+      // Release control blocks only provider-authoritative increases. Existing
+      // customers can still decrease, cancel, and reconcile while launch is closed.
+      if (isIncrease && !selfServeBillingEnabled()) {
+        return {
+          status: SELF_SERVE_BILLING_BLOCK.status,
+          body: selfServeBillingBlockResponse(),
+        };
+      }
 
       // Launch blockers stop only a Stripe-authoritative increase. Do not gate
       // on `target > currentDbQuantity && isLaunchHardBlocked()`: a stale low

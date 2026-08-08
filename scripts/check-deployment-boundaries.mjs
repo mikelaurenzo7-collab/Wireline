@@ -6,6 +6,7 @@ const isPreview = environment === "preview";
 const failures = [];
 
 const value = (name) => String(process.env[name] || "").trim();
+const affirmative = (name) => ["1", "true", "yes", "on"].includes(value(name).toLowerCase());
 const requireValue = (name, reason) => {
   if (!value(name)) failures.push(`${name}: ${reason}`);
 };
@@ -60,6 +61,14 @@ if (isProduction) {
   }
   if (value("VITE_STRIPE_PUBLIC_KEY") && !value("VITE_STRIPE_PUBLIC_KEY").startsWith("pk_live_")) {
     failures.push("VITE_STRIPE_PUBLIC_KEY: production must use a live-mode key");
+  }
+  if (
+    affirmative("WIRELINE_SELF_SERVE_BILLING_ENABLED") &&
+    value("WIRELINE_LAUNCH_DEMO_MODE").toLowerCase() !== "false"
+  ) {
+    failures.push(
+      "WIRELINE_SELF_SERVE_BILLING_ENABLED: production checkout requires WIRELINE_LAUNCH_DEMO_MODE=false so paid activity is not classified as demo evidence",
+    );
   }
 }
 
@@ -136,6 +145,12 @@ if (isPreview) {
         `${name}: the production Stripe catalog must not be available to preview builds or runtime`,
       );
     }
+  }
+
+  if (affirmative("WIRELINE_SELF_SERVE_BILLING_ENABLED")) {
+    failures.push(
+      "WIRELINE_SELF_SERVE_BILLING_ENABLED: preview deployments must never expose self-serve paid checkout",
+    );
   }
 
   if (

@@ -93,6 +93,7 @@ describe("production environment launch policy", () => {
       ["VAPI_PRIVATE_KEY", "configured"],
       ["VITE_VAPI_PUBLIC_KEY", "configured"],
       ["APP_URL", "https://trywireline.com"],
+      ["WIRELINE_SELF_SERVE_BILLING_ENABLED", "true"],
     ]) {
       const result = runPreviewBoundary({ [name]: configuredValue });
       expect(result.status).toBe(1);
@@ -103,6 +104,7 @@ describe("production environment launch policy", () => {
     expect(cleanPreview.status).toBe(0);
     expect(deploymentBoundary).toContain("production-only configuration");
     expect(deploymentBoundary).toContain("credential-like project configuration");
+    expect(deploymentBoundary).toContain("WIRELINE_LAUNCH_DEMO_MODE=false");
     expect(deploymentBoundary).not.toContain("WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW");
     expect(vercelBuild).toContain("configurePreviewEnvironment");
     expect(vercelBuild).not.toContain("runtime will disable");
