@@ -1635,6 +1635,28 @@ export const emailSuppressions = pgTable("wireline_email_suppressions", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+// Tenant-owned campaign suppression list. Unlike Wireline's product-email
+// suppression above, CAN-SPAM opt-outs scope to the business sender.
+export const tenantEmailSuppressions = pgTable(
+  "wireline_tenant_email_suppressions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    reason: text("reason"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t: any) => ({
+    userEmailUniq: unique("wireline_tenant_email_suppressions_user_email_key").on(
+      t.userId,
+      t.email,
+    ),
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_tenant_email_suppressions_user ON wireline_tenant_email_suppressions USING btree (user_id)`,
+  }),
+);
+
 /** Public demo-line acquisition funnel events (showcase calls → recap → signup). */
 export const demoCallEvents = pgTable(
   "wireline_demo_call_events",
