@@ -6,6 +6,7 @@ import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
   VAPI_VOICE_FALLBACK_MODEL,
+  isDefinitiveVapiVoiceModelRejection,
   resolveVapiVoiceModelSelection,
 } from "../src/lib/ai-models";
 
@@ -66,13 +67,35 @@ describe("managed PSTN voice model policy", () => {
     expect(selection.fallbackModels).toEqual([VAPI_VOICE_FALLBACK_MODEL]);
   });
 
+  it("classifies only definitive model/provider validation failures as safe to retry", () => {
+    expect(isDefinitiveVapiVoiceModelRejection(400, "Invalid model: gemini-retired")).toBe(true);
+    expect(
+      isDefinitiveVapiVoiceModelRejection(
+        422,
+        "model gemini-retired is not supported for this provider",
+      ),
+    ).toBe(true);
+
+    // A transient response is ambiguous even if its text mentions a model.
+    expect(isDefinitiveVapiVoiceModelRejection(503, "invalid model")).toBe(false);
+    expect(isDefinitiveVapiVoiceModelRejection(429, "unsupported provider")).toBe(false);
+    // An unrelated validation failure must not become safe just because the
+    // response echoes the requested model/provider elsewhere in its payload.
+    expect(
+      isDefinitiveVapiVoiceModelRejection(
+        400,
+        '{"message":"Invalid customer phone number","request":{"provider":"google","model":"gemini-3.5-flash"}}',
+      ),
+    ).toBe(false);
+    expect(isDefinitiveVapiVoiceModelRejection(400, "provider rate limit exceeded")).toBe(false);
+  });
+
   it("retries rejected Gemini outbound models through OpenAI at the application layer", () => {
     const vapi = readFileSync(resolve(process.cwd(), "src/lib/vapi-client.ts"), "utf8");
     expect(vapi).toContain("retrying with OpenAI voice fallback");
     // Cross-provider retry is only safe for a definitive model-validation
     // rejection. Transient/ambiguous responses must never create a second call.
-    expect(vapi).toContain("isDefinitiveVoiceModelRejection(");
-    expect(vapi).toContain("status !== 400 && status !== 422");
+    expect(vapi).toContain("isDefinitiveVapiVoiceModelRejection(");
     expect(vapi).toContain("await vapiResponse.clone().text()");
     expect(vapi).toContain("!retryTransportErrors");
     // Whitespace-tolerant: prettier may wrap the fallback expression across lines.
