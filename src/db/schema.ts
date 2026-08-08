@@ -1,6 +1,6 @@
 /**
  * Canonical Drizzle/runtime schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0141_scheduler_tick_singletons.sql`.
+ * Latest committed migration: `drizzle/migrations/0140_daily_brief_dispatch_lease.sql`.
  *
  * `schema-base.ts` preserves the existing table graph. The two tables below are
  * declared explicitly here because migrations 0130, 0133, and 0134 changed
