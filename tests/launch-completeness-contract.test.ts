@@ -107,6 +107,7 @@ describe("launch completeness contracts", () => {
     const status = source("src/components/Status.tsx");
 
     expect(status).toContain("const STATUS_REFRESH_MS = 60_000;");
+    expect(status).toContain('cache: "no-store"');
     expect(status).toMatch(/window\.setInterval\([\s\S]*STATUS_REFRESH_MS\)/);
     expect(status).toContain("Updated every 60 seconds.");
     expect(status).toContain("refreshes every 60s.");
