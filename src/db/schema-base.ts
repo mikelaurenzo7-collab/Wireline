@@ -161,6 +161,10 @@ export const settings = pgTable("wireline_settings", {
   dailyBriefDispatchClaimedAt: timestamp("daily_brief_dispatch_claimed_at", {
     withTimezone: true,
   }),
+  /** At-most-once latch for the current day's non-idempotent Gmail delivery. */
+  dailyBriefLastAttemptAt: timestamp("daily_brief_last_attempt_at", {
+    withTimezone: true,
+  }),
   businessName: text("business_name"),
   /** Industry / vertical label for template overlays and Director context. */
   businessType: text("business_type"),
