@@ -56,6 +56,7 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_personality", userColumns: ["user_id"] },
   { table: "wireline_email_messages", userColumns: ["user_id"] },
   { table: "wireline_email_threads", userColumns: ["user_id"] },
+  { table: "wireline_tenant_email_suppressions", userColumns: ["user_id"] },
   { table: "wireline_email_accounts", userColumns: ["user_id"] },
   { table: "wireline_sms_messages", userColumns: ["user_id"] },
   { table: "wireline_sms_threads", userColumns: ["user_id"] },
