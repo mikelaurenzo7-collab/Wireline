@@ -308,11 +308,10 @@ export class IntegrationService {
     body: string;
     /**
      * True for recurring/unsolicited commercial mail (cadence email steps).
-     * Marketing sends must honor the platform suppression list and carry a
-     * CAN-SPAM footer + unsubscribe affordance on EVERY transport — not only
-     * the platform-Resend fallback. A recorded opt-out that a tenant's own
-     * Gmail/Microsoft mailbox ignored is the same CAN-SPAM violation as one
-     * the platform ignored.
+     * Marketing sends honor a sender-scoped suppression list and carry the
+     * tenant's business identity, postal address, and unsubscribe affordance.
+     * They must leave from the tenant's connected mailbox so the RFC headers
+     * and commercial sender identity agree.
      */
     marketing?: boolean;
   }): Promise<boolean> {
