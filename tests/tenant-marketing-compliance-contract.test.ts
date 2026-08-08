@@ -15,7 +15,7 @@ describe("tenant marketing email compliance contract", () => {
   it("scopes campaign opt-outs to the tenant sender", () => {
     expect(schema).toContain('"wireline_tenant_email_suppressions"');
     expect(schema).toContain('"wireline_tenant_email_suppressions_user_email_key"');
-    expect(compliance).toContain("isTenantEmailSuppressed(this.userId");
+    expect(compliance).toContain("export async function isTenantEmailSuppressed");
     expect(integrations).toContain("isTenantEmailSuppressed(this.userId, params.to)");
     expect(routes).toContain('scope: "tenant"');
     expect(routes).toContain("recordTenantEmailSuppression");
