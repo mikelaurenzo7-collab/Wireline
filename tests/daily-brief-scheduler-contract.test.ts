@@ -5,6 +5,7 @@ const read = (path: string) => readFileSync(path, "utf8");
 
 describe("daily brief scheduler launch contract", () => {
   const routes = read("src/routes/daily-brief-routes.ts");
+  const brief = read("src/lib/daily-brief.ts");
   const schema = read("src/db/schema-base.ts");
   const canonicalSchema = read("src/db/schema.ts");
   const migration = read("drizzle/migrations/0140_daily_brief_dispatch_lease.sql");
@@ -29,7 +30,7 @@ describe("daily brief scheduler launch contract", () => {
     expect(routes).toContain("already_sent");
   });
 
-  it("uses a durable lease and records delivery only after the send resolves", () => {
+  it("uses a durable lease and latches an ambiguous provider send before Gmail is called", () => {
     expect(schema).toContain("dailyBriefDispatchClaimedAt");
     // src/db/schema.ts intentionally re-declares settings and overrides the
     // schema-base export. Keep scheduler-only columns on the canonical table
@@ -42,9 +43,13 @@ describe("daily brief scheduler launch contract", () => {
     expect(routes).toContain("dailyBriefLastAttemptAt: claimAt");
     expect(routes).toContain("lt(schema.settings.dailyBriefDispatchClaimedAt, staleClaimBefore)");
     expect(routes).toContain("await runInAuditContext(auditContext");
-    expect(routes).toContain("providerAccepted = true");
+    expect(brief).toContain("opts?.onProviderSendAttempt?.()");
+    expect(brief.indexOf("opts?.onProviderSendAttempt?.()")).toBeLessThan(
+      brief.indexOf("await gmail.users.messages.send"),
+    );
+    expect(routes).toContain("providerSendAttempted = true");
     expect(routes).toContain("dailyBriefLastSentAt: new Date()");
     expect(routes).toContain("dailyBriefDispatchClaimedAt: null");
-    expect(routes).toContain("providerAccepted ? {} : { dailyBriefLastAttemptAt");
+    expect(routes).toContain("providerSendAttempted ? {} : { dailyBriefLastAttemptAt");
   });
 });
