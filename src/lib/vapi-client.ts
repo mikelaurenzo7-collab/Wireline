@@ -648,7 +648,11 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
     maxDurationSeconds: VAPI_MAX_OUTBOUND_CALL_SECONDS,
     voicemailDetection: VAPI_VOICEMAIL_DETECTION_PLAN,
-    voicemailMessage: buildOutboundVoicemailMessage(agentConfig.name || "your representative"),
+    voicemailMessage: buildOutboundVoicemailMessage(
+      agentConfig.name || "your representative",
+      settings?.businessName,
+      callbackNumberSpoken,
+    ),
     responseDelaySeconds: 0,
     numWordsToInterruptAssistant: 2,
     backgroundDenoisingEnabled: false,
