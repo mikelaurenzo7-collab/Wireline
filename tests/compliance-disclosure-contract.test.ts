@@ -98,6 +98,34 @@ describe("complianceDisclosure", () => {
       expect(prefix.match(/may be recorded/g)).toHaveLength(1);
       expect(prefix.endsWith(" ")).toBe(true);
     });
+
+    it("announces the opt-out mechanism on telemarketing calls, right after the identity sentence", () => {
+      // 47 CFR 64.1200(b)(3) requires telemarketing artificial/prerecorded
+      // calls to explain the automated opt-out mechanism within two seconds of
+      // the (b)(1) identification — so the announcement must directly follow
+      // the identity sentence, ahead of the recording notice.
+      const prefix = complianceFirstMessagePrefix("none", "Acme Plumbing", {
+        outboundAiCall: true,
+        recordingEnabled: true,
+        telemarketing: true,
+      });
+      expect(prefix).toContain("stop calling");
+      expect(prefix).toContain("do not call list");
+      const identity = prefix.indexOf("automated AI assistant");
+      const optOut = prefix.indexOf("stop calling");
+      const recording = prefix.indexOf("may be recorded");
+      expect(identity).toBeGreaterThan(-1);
+      expect(optOut).toBeGreaterThan(identity);
+      expect(recording).toBeGreaterThan(optOut);
+    });
+
+    it("keeps non-telemarketing outbound calls free of the opt-out announcement", () => {
+      const prefix = complianceFirstMessagePrefix("none", "Acme Plumbing", {
+        outboundAiCall: true,
+        recordingEnabled: true,
+      });
+      expect(prefix).not.toContain("stop calling");
+    });
   });
 
   it("ComplianceModeSchema accepts tcpa and rejects unknown modes", () => {

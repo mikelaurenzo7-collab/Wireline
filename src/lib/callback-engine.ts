@@ -219,6 +219,7 @@ export async function tickDueCallbacks({
         customerName: lead.customerName,
         customerNumber: lead.customerNumber,
         context: `Returning the callback this contact requested (scheduled for ${requestedFor}). Open by acknowledging you're calling back as promised.`,
+        callPurpose: "callback",
       });
 
       if (res.ok) {

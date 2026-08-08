@@ -775,6 +775,7 @@ router.post(
         customerName,
         customerNumber: phoneE164,
         context,
+        callPurpose,
       });
       if (!result.ok) {
         await drizzle

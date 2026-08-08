@@ -144,6 +144,15 @@ export function TermsOfService() {
             Send unsolicited commercial messages (spam) in violation of CAN-SPAM, CASL, or similar
             laws
           </li>
+          <li>
+            Call or text contacts from purchased, rented, or third-party lead lists, or on the basis
+            of consent collected by anyone other than your own registered brand — messaging consent
+            cannot be bought, sold, or shared across brands
+          </li>
+          <li>
+            Run affiliate-marketing or third-party lead-generation campaigns over SMS or MMS, which
+            US and Canadian carriers categorically forbid
+          </li>
           <li>Impersonate any person or organization</li>
           <li>
             Violate any telemarketing law including the TCPA (US), CASL (Canada), or applicable

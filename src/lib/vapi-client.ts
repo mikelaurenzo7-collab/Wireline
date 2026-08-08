@@ -30,6 +30,7 @@ import {
 import { toVapiFunctionTools } from "./vapi-tool-format";
 import { buildVapiServerConfig } from "./vapi-server-config";
 import { normalizeOutboundNumber } from "./dialer-compliance";
+import { isMarketingCallPurpose, type OutboundCallPurpose } from "./outbound-call-purpose";
 import {
   buildAgentRuntimeContext,
   complianceFirstMessagePrefix,
@@ -38,10 +39,7 @@ import {
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
 import { resolvePstnVoiceCandidate } from "../data/voice-roster";
-import {
-  buildManagedVoiceRuntime,
-  isCuratedElevenLabsVoiceId,
-} from "./managed-voice-runtime";
+import { buildManagedVoiceRuntime, isCuratedElevenLabsVoiceId } from "./managed-voice-runtime";
 import { sanitizeAmbientNoise } from "./workspace-planner";
 import {
   buildOutboundVoicemailMessage,
@@ -141,10 +139,7 @@ async function fetchWithRetry(
   }
 
   // All retries exhausted
-  throw (
-    lastError ||
-    new Error(`${operationName}: Failed after ${MAX_RETRIES} attempts`)
-  );
+  throw lastError || new Error(`${operationName}: Failed after ${MAX_RETRIES} attempts`);
 }
 
 export type PlaceCallResult = {
@@ -157,8 +152,7 @@ export type PlaceCallResult = {
 /** Turn raw Vapi error JSON into a short Account Holder-facing message. */
 export function formatVapiCallError(errBody: string): string {
   const trimmed = errBody.trim();
-  if (!trimmed)
-    return "Voice carrier rejected the call. Try again in a moment.";
+  if (!trimmed) return "Voice carrier rejected the call. Try again in a moment.";
 
   try {
     const parsed = JSON.parse(trimmed) as {
@@ -170,9 +164,7 @@ export function formatVapiCallError(errBody: string): string {
     if (typeof parsed.message === "string" && parsed.message.trim()) {
       parts.push(parsed.message.trim());
     } else if (Array.isArray(parsed.message)) {
-      parts.push(
-        ...parsed.message.map((m) => String(m).trim()).filter(Boolean),
-      );
+      parts.push(...parsed.message.map((m) => String(m).trim()).filter(Boolean));
     }
     if (parsed.error?.trim()) parts.push(parsed.error.trim());
     if (Array.isArray(parsed.errors)) {
@@ -194,9 +186,7 @@ function buildOutboundFirstMessage(
   customerName?: string | null,
 ): string {
   const name = agentName || "your representative";
-  const firstName = customerName?.trim()
-    ? customerName.trim().split(" ")[0]
-    : null;
+  const firstName = customerName?.trim() ? customerName.trim().split(" ")[0] : null;
   const customer = firstName || "there";
   const hasName = !!firstName;
   switch (role) {
@@ -220,14 +210,40 @@ function buildOutboundFirstMessage(
   }
 }
 
+/**
+ * Render an E.164 line as a TTS-friendly callback number. US/CA numbers read
+ * as grouped digits ("415-555-0134"); anything else falls back to spaced
+ * digits so the voice reads them individually.
+ */
+function formatCallbackNumberForSpeech(e164: string | null | undefined): string | null {
+  const digits = String(e164 || "").replace(/\D/g, "");
+  if (!digits) return null;
+  if (digits.length === 11 && digits.startsWith("1")) {
+    return `${digits.slice(1, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  if (digits.length === 10) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return digits.split("").join(" ");
+}
+
 export async function placeOutboundCall(opts: {
   userId: string;
   agentId: string;
   customerName?: string | null;
   customerNumber: string;
   context?: string | null;
+  /**
+   * Regulatory purpose of this dial. Required so every caller states it
+   * explicitly: marketing_or_sales calls get the 47 CFR 64.1200(b)(3)
+   * opt-out announcement appended to the spoken opening disclosure, which
+   * silently defaulting could omit — an FCC violation with per-call
+   * statutory damages, not a UX nit.
+   */
+  callPurpose: OutboundCallPurpose;
 }): Promise<PlaceCallResult> {
-  const { userId, agentId, customerName, customerNumber, context } = opts;
+  const { userId, agentId, customerName, customerNumber, context, callPurpose } = opts;
+  const telemarketing = isMarketingCallPurpose(callPurpose);
 
   const [ownedAgent] = await drizzle
     .select({ id: schema.agents.id })
@@ -245,14 +261,12 @@ export async function placeOutboundCall(opts: {
     .where(eq(schema.settings.userId, userId))
     .limit(1);
 
-  const subscriptionStatus =
-    userSettings?.subscriptionStatus ?? "pending_activation";
+  const subscriptionStatus = userSettings?.subscriptionStatus ?? "pending_activation";
   if (subscriptionStatus !== "active") {
     return {
       ok: false,
       status: 403,
-      error:
-        "Access Denied: Please upgrade your billing plan to access outbound dialing.",
+      error: "Access Denied: Please upgrade your billing plan to access outbound dialing.",
     };
   }
 
@@ -285,11 +299,8 @@ export async function placeOutboundCall(opts: {
     };
   }
 
-  const { resolveAgentVapiPhoneNumberId } = await import("./agent-phone-lines");
-  const outboundPhoneNumberId = await resolveAgentVapiPhoneNumberId(
-    userId,
-    agentId,
-  );
+  const { resolveAgentVapiPhoneNumberId, findAgentPhoneLine } = await import("./agent-phone-lines");
+  const outboundPhoneNumberId = await resolveAgentVapiPhoneNumberId(userId, agentId);
   if (!outboundPhoneNumberId) {
     return {
       ok: false,
@@ -298,6 +309,16 @@ export async function placeOutboundCall(opts: {
         "No voice line is configured for this agent. Provision a dedicated number in Settings → Carrier to wire this agent for calls.",
     };
   }
+  // 47 CFR 64.1200(b)(2): artificial/prerecorded-voice messages must state a
+  // telephone number for the responsible business during or after the message,
+  // and for telemarketing that number must accept do-not-call requests. The
+  // agent's own line is that number here — it is two-way and answered by the
+  // tenant's AI (with add_to_dnc available), so it is a real callback/DNC
+  // channel rather than a dead-end dialer number. Absent a mapped line (the
+  // settings-level vapiPhoneNumberId fallback), the prompt omits the number
+  // instead of inventing one.
+  const agentLine = await findAgentPhoneLine(userId, agentId);
+  const callbackNumberSpoken = formatCallbackNumberForSpeech(agentLine?.phoneNumber);
 
   const safeOutboundPhone = sanitizePhone(customerNumber);
   const [
@@ -399,25 +420,16 @@ export async function placeOutboundCall(opts: {
   const lessons = (lessonsRes || [])
     .filter(
       (l: any) =>
-        l.lesson &&
-        typeof l.lesson === "string" &&
-        !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX),
+        l.lesson && typeof l.lesson === "string" && !l.lesson.startsWith(KNOWLEDGE_GAP_PREFIX),
     )
     .map((l: any) => l.lesson)
     .join("\n");
 
   const outboundPastCalls: any[] = outboundCallerHistoryRes || [];
-  const outboundCallerProfile = buildCallerProfileBlock(
-    outboundPastCalls,
-    true,
-  );
+  const outboundCallerProfile = buildCallerProfileBlock(outboundPastCalls, true);
 
-  const outboundRawProfileDesc =
-    outboundCapturedProfileRes[0]?.description || "";
-  const outboundCustomerIntelBlock = buildCustomerIntelBlock(
-    outboundRawProfileDesc,
-    true,
-  );
+  const outboundRawProfileDesc = outboundCapturedProfileRes[0]?.description || "";
+  const outboundCustomerIntelBlock = buildCustomerIntelBlock(outboundRawProfileDesc, true);
 
   const outboundTimeZone = agentConfig.timezone || "America/New_York";
   const currentDateTime = new Date().toLocaleString("en-US", {
@@ -430,17 +442,11 @@ export async function placeOutboundCall(opts: {
     minute: "2-digit",
     timeZoneName: "short",
   });
-  const outboundAgentRole = mapOutboundVoiceRole(
-    agentConfig.role || DEFAULT_AGENT_ROLE,
-  );
+  const outboundAgentRole = mapOutboundVoiceRole(agentConfig.role || DEFAULT_AGENT_ROLE);
   const archetype =
-    OUTBOUND_ARCHETYPE_BY_ROLE[outboundAgentRole] ||
-    agentConfig.archetype ||
-    "The Closer";
-  const { rules: archetypeRules, temp: llmTemp } =
-    getArchetypeConfig(archetype);
-  const ambientNoiseActive =
-    agentConfig.ambientNoise && agentConfig.ambientNoise !== "off";
+    OUTBOUND_ARCHETYPE_BY_ROLE[outboundAgentRole] || agentConfig.archetype || "The Closer";
+  const { rules: archetypeRules, temp: llmTemp } = getArchetypeConfig(archetype);
+  const ambientNoiseActive = agentConfig.ambientNoise && agentConfig.ambientNoise !== "off";
   const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[outboundAgentRole] || "";
   // Per-agent brain first (mirrors the inbound factory), tenant default second
   // — resolved as a coherent pair so a partially-configured agent can't cross
@@ -487,7 +493,7 @@ ${roleProtocol}
 ## VOICEMAIL PROTOCOL
 If you detect you have reached a voicemail or answering machine (recorded greeting, beep, or "please leave a message"):
 1. IMMEDIATELY call the leave_voicemail tool before speaking.
-2. After the tool responds, deliver a clear, professional voicemail: identify yourself and your company, state the reason for your call in ONE sentence, leave a callback number if available, and close with "I look forward to connecting with you."
+2. After the tool responds, deliver a clear, professional voicemail: identify yourself and your company, state the reason for your call in ONE sentence, ${callbackNumberSpoken ? `leave the callback number ${callbackNumberSpoken} (say it slowly, digit groups with pauses), ` : "leave a callback number if you know one, "}and close with "I look forward to connecting with you."
 3. Keep the voicemail under 20 seconds total.
 4. Say goodbye naturally to end the call.
 
@@ -523,6 +529,9 @@ Today is ${currentDateTime} in the agent's local timezone (${outboundTimeZone}).
 - Scheduling: Always check_calendar_availability BEFORE confirming any appointment slot. Never promise a time from memory.
 - Customer intel: Use capture_customer_profile whenever you learn something meaningful — budget, pain points, timeline, decision authority, objections, or agreed next steps. Capture it in the moment, not at the end. This data travels with the contact across all future calls.
 
+## OUTBOUND COMPLIANCE (FEDERAL — NON-NEGOTIABLE)
+${callbackNumberSpoken ? `- Callback number: whenever the contact asks how to reach the business, and in every voicemail you leave, state the callback number ${callbackNumberSpoken}. Do-not-call requests are honored at that number too.\n` : ""}- The moment the contact asks to stop calls in any words ("stop calling", "take me off your list", "do not call me"): use the add_to_dnc tool immediately, confirm the removal in one sentence, and end the call politely. Never argue, delay, or pitch again first.${telemarketing ? `\n- Your opening line announced that saying stop calling places them on the do not call list. That promise is binding — treat any variation of it as an immediate add_to_dnc.` : ""}
+
 ## CALL CLOSING STANDARD
 Never end an outbound call without:
 - A confirmed next step (specific date/time) or an explicit reason why no next step applies
@@ -542,13 +551,11 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
 
   const runtimeProfile: AgentRuntimeProfile = {
     timezone: agentConfig.timezone,
-    business_hours:
-      agentConfig.businessHours as AgentRuntimeProfile["business_hours"],
+    business_hours: agentConfig.businessHours as AgentRuntimeProfile["business_hours"],
     compliance_mode: agentConfig.complianceMode,
     disallowed_topics: agentConfig.disallowedTopics,
     escalation_keywords: agentConfig.escalationKeywords,
-    business_variables:
-      agentConfig.businessVariables as AgentRuntimeProfile["business_variables"],
+    business_variables: agentConfig.businessVariables as AgentRuntimeProfile["business_variables"],
     out_of_hours_message: agentConfig.outOfHoursMessage,
     kpi_focus: agentConfig.kpiFocus,
     personality_vibe: agentConfig.personalityVibe,
@@ -594,7 +601,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
   const disclosurePrefix = complianceFirstMessagePrefix(
     agentConfig.complianceMode,
     settings?.businessName || agentConfig.name,
-    { outboundAiCall: true, recordingEnabled },
+    { outboundAiCall: true, recordingEnabled, telemarketing },
   );
   const outboundVoiceId = agentConfig.voiceIdOutbound || agentConfig.voiceId;
   // A selected ElevenLabs voice already runs on PSTN through Vapi. Reserve the
@@ -641,9 +648,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
     maxDurationSeconds: VAPI_MAX_OUTBOUND_CALL_SECONDS,
     voicemailDetection: VAPI_VOICEMAIL_DETECTION_PLAN,
-    voicemailMessage: buildOutboundVoicemailMessage(
-      agentConfig.name || "your representative",
-    ),
+    voicemailMessage: buildOutboundVoicemailMessage(agentConfig.name || "your representative"),
     responseDelaySeconds: 0,
     numWordsToInterruptAssistant: 2,
     backgroundDenoisingEnabled: false,
@@ -707,24 +712,20 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     if (!vapiResponse.ok && voiceSelection.provider === "google") {
       const geminiErrorBody = await vapiResponse.text();
       const retryModel =
-        voiceSelection.fallbackModels?.find((model) =>
-          isOpenAIModelId(model),
-        ) || VAPI_TENANT_DEFAULT_MODEL;
+        voiceSelection.fallbackModels?.find((model) => isOpenAIModelId(model)) ||
+        VAPI_TENANT_DEFAULT_MODEL;
       const retryProvider = isGeminiModelId(retryModel)
         ? VAPI_VOICE_FALLBACK_PROVIDER
         : VAPI_TENANT_DEFAULT_PROVIDER;
-      log.warn(
-        "Vapi rejected Gemini outbound model; retrying with OpenAI voice fallback",
-        {
-          userId,
-          agentId,
-          customerNumber,
-          model: voiceSelection.model,
-          retryProvider,
-          retryModel,
-          error: geminiErrorBody.slice(0, 500),
-        },
-      );
+      log.warn("Vapi rejected Gemini outbound model; retrying with OpenAI voice fallback", {
+        userId,
+        agentId,
+        customerNumber,
+        model: voiceSelection.model,
+        retryProvider,
+        retryModel,
+        error: geminiErrorBody.slice(0, 500),
+      });
 
       const fallbackPayload = {
         ...vapiPayload,
@@ -768,8 +769,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     }
     const vapiData = await vapiResponse.json();
     if (vapiData?.id) {
-      const { recordOutboundCallPlaced } =
-        await import("./outbound-call-tracking");
+      const { recordOutboundCallPlaced } = await import("./outbound-call-tracking");
       void recordOutboundCallPlaced({
         userId,
         agentId,

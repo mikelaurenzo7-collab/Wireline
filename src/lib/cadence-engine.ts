@@ -113,6 +113,7 @@ async function executeStep(
       customerName: lead.customerName,
       customerNumber: lead.customerNumber,
       context: `Cadence "${cadence.name}" — step type call`,
+      callPurpose: "marketing_or_sales",
     });
     if (res.ok) {
       // Mirror the campaign dialer: stamp the dial on the lead so the shared

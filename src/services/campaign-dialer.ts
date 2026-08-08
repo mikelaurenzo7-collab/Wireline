@@ -406,6 +406,7 @@ export class CampaignDialerService {
         customerNumber: lead.customerNumber!,
         customerName: lead.customerName,
         context: lead.context || campaign.goal,
+        callPurpose: "marketing_or_sales",
       });
 
       if (result.ok) {

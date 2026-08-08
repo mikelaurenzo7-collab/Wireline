@@ -79,12 +79,19 @@ describe("current Vapi assistant payload contract", () => {
   it("pins the verbal SMS consent script quoted in the Twilio toll-free verification", () => {
     // The toll-free verification submitted to Twilio quotes this script as the
     // product's verbal opt-in flow. If the script drifts, the compliance
-    // attestation silently stops describing what agents actually say.
+    // attestation silently stops describing what agents actually say. The
+    // script must carry all four carrier-required consent elements (Twilio
+    // campaign-rejection code 30924): message type, frequency, rate
+    // disclosure, and opt-out instructions.
     const sms = vapiToolExecutionGuidance("send_text_message");
     expect(sms).toContain(
-      '"Want me to text that to you at this number? Message and data rates may apply, and you can reply STOP at any time to opt out."',
+      '"Want me to text that to you at this number? It will be one message with the info you asked for. Message and data rates may apply, and you can reply STOP at any time to opt out."',
     );
     expect(sms).toContain("only after the caller clearly agrees");
+    // 30923/30931: consent is refusable, never a condition of service, and a
+    // declined ask is not repeated.
+    expect(sms).toContain("do not ask again");
+    expect(sms).toContain("never a condition of service");
   });
 
   it("prefers a Vapi Custom Credential and retains the supported migration fallback", () => {

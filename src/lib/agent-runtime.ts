@@ -231,6 +231,17 @@ export function complianceDisclosure(mode: ComplianceMode | string | null | unde
  * responsible entity regardless of a tenant-selected preset. Any call that
  * Wireline records also receives a compact recording notice. The `tcpa`
  * preset keeps its legacy AI disclosure behavior for inbound calls.
+ *
+ * Telemarketing calls additionally announce the voice-activated opt-out
+ * mechanism immediately after the identity sentence. 47 CFR 64.1200(b)(3)
+ * requires telemarketing artificial/prerecorded-voice calls — which FCC 24-17
+ * confirms includes AI-generated voices — to provide an automated, interactive
+ * voice- and/or keypress-activated opt-out mechanism WITH a brief explanation
+ * of how to use it, within two seconds of the 64.1200(b)(1) identification.
+ * The conversational agent itself is the voice-activated mechanism (backed by
+ * the add_to_dnc tool and the post-call transcript DNC failsafe); this
+ * sentence is the required explanation, so it must directly follow the
+ * identity sentence, ahead of the recording notice.
  */
 export function complianceFirstMessagePrefix(
   mode: ComplianceMode | string | null | undefined,
@@ -238,17 +249,23 @@ export function complianceFirstMessagePrefix(
   options?: {
     outboundAiCall?: boolean;
     recordingEnabled?: boolean;
+    /** True for marketing_or_sales calls — appends the 64.1200(b)(3) opt-out announcement. */
+    telemarketing?: boolean;
   },
 ): string {
   const shouldDiscloseAi = mode === "tcpa" || options?.outboundAiCall === true;
   const shouldDiscloseRecording = options?.recordingEnabled === true;
-  if (!shouldDiscloseAi && !shouldDiscloseRecording) return "";
+  const shouldAnnounceOptOut = options?.telemarketing === true;
+  if (!shouldDiscloseAi && !shouldDiscloseRecording && !shouldAnnounceOptOut) return "";
 
   const name = (businessName ?? "").trim().replace(/\s+/g, " ").slice(0, 120);
   const sentences: string[] = [];
   if (shouldDiscloseAi) {
     const onBehalf = name ? ` on behalf of ${name}` : "";
     sentences.push(`This call uses an automated AI assistant${onBehalf}.`);
+  }
+  if (shouldAnnounceOptOut) {
+    sentences.push("You can say stop calling at any time to be placed on the do not call list.");
   }
   if (shouldDiscloseRecording) {
     sentences.push("This call may be recorded for quality and compliance.");

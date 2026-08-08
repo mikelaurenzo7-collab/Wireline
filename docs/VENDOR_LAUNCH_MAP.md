@@ -41,7 +41,27 @@ immediately before GA:
 - **No A2P 10DLC brand/campaign exists** for the six local tenant numbers; unregistered US 10DLC
   traffic is heavily filtered. The Trust Hub profile `coordinAGENTS` is twilio-approved, so a
   standard brand registration can proceed from it, but it incurs one-time/recurring carrier fees —
-  owner decision before tenant SMS at volume.
+  owner decision before tenant SMS at volume. Adversarially verified constraints (2026-08-08,
+  Twilio primary docs) that shape this decision:
+  - **ISV model requires per-tenant registration.** Twilio's ISV onboarding requires a Primary
+    Customer Profile for Wireline plus a Secondary Customer Profile and its own Brand for every
+    end customer, populated with that customer's business details. There is no lawful shortcut of
+    one Wireline brand sending all tenant SMS — tenant onboarding must collect legal business
+    name, EIN, address, and an authorized contact before tenant SMS, and per-tenant registration
+    fees plus approval lag belong in plan unit economics.
+  - **Subaccount isolation is a suspension firewall.** Twilio states that when subaccounts are not
+    mapped to individual customers, one customer's noncompliant traffic can force suspension of
+    the primary Account — platform-wide SMS loss. Per-tenant subaccounts are business continuity,
+    not bookkeeping.
+  - **Sole Proprietor caps.** A Sole Proprietor campaign carries exactly one 10DLC number, and its
+    OTP verification number must be a real US/CA mobile — not a Twilio/CPaaS number. Any
+    multi-number tenant (separate inbound and campaign numbers) is forced onto Standard brand
+    registration.
+  - **One-to-one consent is NOT required (for now).** The Eleventh Circuit vacated Part III.D of
+    the FCC's 2023 order (both one-to-one consent and the logically-and-topically-associated
+    rule) as exceeding statutory authority; neither is in force. Do not market per-seller consent
+    capture as a legal requirement, but keep the capability — the case was remanded and the FCC
+    may re-promulgate.
 - Scoped Twilio REST credentials `TWILIO_API_KEY` + `TWILIO_API_SECRET` are installed on
   Vercel production/preview (Standard key verified against IncomingPhoneNumbers). Keep
   `TWILIO_AUTH_TOKEN` for webhook-signature validation; rotate it out-of-band when convenient.

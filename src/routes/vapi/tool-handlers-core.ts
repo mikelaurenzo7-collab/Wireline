@@ -5,6 +5,11 @@ import { superviseClientCommunication } from "../../lib/ai-supervisor";
 import * as schema from "../../db/schema";
 import { auditLogger } from "../../lib/server-context";
 import { normalizeDncPhone } from "../../lib/compliance";
+import {
+  CONSENT_RULE_VERSION,
+  buildConsentLedgerRow,
+  getConsentRuleForPhone,
+} from "../../lib/tcpa-consent";
 import { IntegrationService } from "../../lib/integrations";
 import { lookupTenantPhoneNumber, sendTenantMessage } from "../../lib/twilio-service";
 import { PRESERVED_LEAD_STATUSES, sanitizePhone } from "../../lib/vapi-helpers";
@@ -456,6 +461,67 @@ export async function handleCoreToolCall(
         channel: channel === "whatsapp" ? "whatsapp" : "sms",
         agentId: agent?.id,
       });
+      if (outcome.ok && isLiveCounterpart) {
+        // Per-recipient consent record (carrier requirement: "keep records of
+        // consent for each recipient"). A live-counterpart send is only
+        // reachable after the agent captured the verbal opt-in this tool's
+        // guidance mandates, so the send is the consent-capture event — the
+        // call recording/transcript behind call_id is the artifact. Cold
+        // sends to other numbers rely on pre-existing consent and do not
+        // fabricate a grant here. Best-effort: a ledger outage must not fail
+        // a message that already left.
+        try {
+          const consentCallId =
+            (message.call as { id?: string } | undefined)?.id ||
+            (payload.call as { id?: string } | undefined)?.id ||
+            null;
+          const { rule, state } = getConsentRuleForPhone(targetNumber);
+          const row = buildConsentLedgerRow({
+            user_id: agent.user_id,
+            call_id: consentCallId,
+            customer_number: targetNumber,
+            event: "consent_granted",
+            rule_version: CONSENT_RULE_VERSION,
+            rule,
+            state,
+            metadata: {
+              channel: outcome.channel === "whatsapp" ? "whatsapp" : "sms",
+              consent_kind: "sms_verbal_optin",
+              source: "send_text_message_tool",
+            },
+          });
+          const existing = consentCallId
+            ? await drizzle
+                .select({ id: schema.consentLog.id })
+                .from(schema.consentLog)
+                .where(
+                  and(
+                    eq(schema.consentLog.userId, row.user_id),
+                    eq(schema.consentLog.callId, consentCallId),
+                    eq(schema.consentLog.event, "consent_granted"),
+                    eq(schema.consentLog.customerNumber, targetNumber),
+                  ),
+                )
+                .limit(1)
+            : [];
+          if (!existing[0]) {
+            await drizzle.insert(schema.consentLog).values({
+              userId: row.user_id,
+              callId: row.call_id,
+              customerNumber: row.customer_number,
+              event: row.event,
+              ruleVersion: row.rule_version,
+              rule: row.rule,
+              state: row.state,
+              metadata: row.metadata,
+            });
+          }
+        } catch (ledgerErr) {
+          log.warn("SMS consent ledger write failed (message already sent)", {
+            error: ledgerErr instanceof Error ? ledgerErr.message : String(ledgerErr),
+          });
+        }
+      }
       return {
         toolCallId,
         result: outcome.ok

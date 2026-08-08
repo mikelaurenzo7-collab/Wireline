@@ -225,6 +225,7 @@ router.post(
         customerName,
         customerNumber,
         context,
+        callPurpose,
       });
       if (!result.ok)
         return res.status(result.status).json({

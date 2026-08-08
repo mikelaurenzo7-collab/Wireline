@@ -367,12 +367,18 @@ async function processIntakeLead(
           return;
         }
 
+        // The shared gate classifies intake auto-dials as marketing unless the
+        // lead metadata proves otherwise (isMarketingCall defaults true), so
+        // the spoken disclosure carries the same classification: an extra
+        // opt-out announcement on a requested call is harmless; the reverse on
+        // a marketing call is a 64.1200(b)(3) violation.
         const result = await placeOutboundCall({
           userId: key.user_id,
           agentId: agent_id,
           customerName: customer_name || null,
           customerNumber: customer_number,
           context: context || `Inbound lead via ${key.name}`,
+          callPurpose: "marketing_or_sales",
         });
         if (result.ok) {
           await drizzle

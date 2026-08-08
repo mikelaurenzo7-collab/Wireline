@@ -97,8 +97,13 @@ const MATERIAL_WRITE_TOOLS = new Set([
 const TOOL_PREREQUISITE_GUIDANCE: Readonly<Record<string, string>> = {
   send_email:
     "Confirm the recipient address and what the caller wants sent. Never guess an address.",
+  // The verbal opt-in script carries all four carrier-required consent
+  // elements (Twilio campaign-rejection code 30924): message type, frequency,
+  // rate disclosure, and opt-out instructions. The decline handling mirrors
+  // codes 30923/30931 — consent must be refusable and never a condition of
+  // service, and a declined ask is not re-asked.
   send_text_message:
-    'Before any text, capture verbal consent with exactly: "Want me to text that to you at this number? Message and data rates may apply, and you can reply STOP at any time to opt out." Send only after the caller clearly agrees, only to the number the caller approved, and confirm the requested content.',
+    'Before any text, capture verbal consent with exactly: "Want me to text that to you at this number? It will be one message with the info you asked for. Message and data rates may apply, and you can reply STOP at any time to opt out." Send only after the caller clearly agrees, only to the number the caller approved, and confirm the requested content. If the caller declines, continue helping them normally and do not ask again on this call — texting is never a condition of service.',
   book_appointment:
     "Call check_calendar_availability first, then confirm the exact date, time, IANA timezone, attendee name, and service.",
   schedule_callback:
