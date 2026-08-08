@@ -11,6 +11,83 @@ import { formatIsoInTimeZone, localDateWindowToUtc, normalizeIanaTimeZone } from
 
 const MAX_CALENDAR_PAGES = 20;
 
+type ConnectedMailboxSendParams = {
+  to: string;
+  subject: string;
+  body: string;
+  marketing?: boolean;
+  textBody?: string;
+  htmlBody?: string;
+  unsubscribeHeaders?: Record<string, string>;
+};
+
+function plainTextEmailBodyHtml(body: string): string {
+  const escaped = body
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+  return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.55; white-space: pre-wrap;">${escaped}</div>`;
+}
+
+function safeMimeHeaderValue(value: string): string {
+  return value.replace(/[\r\n]+/g, " ").trim();
+}
+
+function mimeBase64(value: string): string {
+  const encoded = Buffer.from(value, "utf8").toString("base64");
+  return encoded.match(/.{1,76}/g)?.join("\r\n") || "";
+}
+
+/**
+ * Build one standards-compliant message for connected mailbox transports.
+ * Promotional messages use multipart/alternative plus RFC 8058 headers so
+ * Gmail raw sends and Microsoft Graph MIME sends carry identical semantics.
+ */
+function buildConnectedMailboxMime(params: ConnectedMailboxSendParams): string {
+  const subject = `=?utf-8?B?${Buffer.from(params.subject, "utf8").toString("base64")}?=`;
+  const unsubscribeHeaders = Object.entries(params.unsubscribeHeaders || {}).map(
+    ([name, value]) => `${name}: ${safeMimeHeaderValue(value)}`,
+  );
+  const headers = [
+    `To: ${safeMimeHeaderValue(params.to)}`,
+    `Subject: ${subject}`,
+    "MIME-Version: 1.0",
+    ...unsubscribeHeaders,
+  ];
+
+  if (params.textBody && params.htmlBody) {
+    const boundary = `wireline-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    return [
+      ...headers,
+      `Content-Type: multipart/alternative; boundary="${boundary}"`,
+      "",
+      `--${boundary}`,
+      'Content-Type: text/plain; charset="utf-8"',
+      "Content-Transfer-Encoding: base64",
+      "",
+      mimeBase64(params.textBody),
+      "",
+      `--${boundary}`,
+      'Content-Type: text/html; charset="utf-8"',
+      "Content-Transfer-Encoding: base64",
+      "",
+      mimeBase64(params.htmlBody),
+      "",
+      `--${boundary}--`,
+    ].join("\r\n");
+  }
+
+  return [
+    ...headers,
+    'Content-Type: text/html; charset="utf-8"',
+    "Content-Transfer-Encoding: base64",
+    "",
+    mimeBase64(params.htmlBody ?? params.body),
+  ].join("\r\n");
+}
+
 /**
  * Unified interface for Calendar and Mail integrations.
  */
@@ -326,17 +403,12 @@ export class IntegrationService {
         // unsubscribe, so this only guards the OAuth paths that used to skip
         // them entirely. Honoring the suppression list here is what makes a
         // recorded opt-out binding no matter which mailbox sends.
-        let sendParams: {
-          to: string;
-          subject: string;
-          body: string;
-          marketing?: boolean;
-          unsubscribeHeaders?: Record<string, string>;
-        } = params;
+        let sendParams: ConnectedMailboxSendParams = params;
         if (params.marketing) {
           const {
             getTenantMarketingIdentity,
             isTenantEmailSuppressed,
+            buildTenantComplianceFooterText,
             buildTenantComplianceFooterHtml,
             buildTenantListUnsubscribeHeaders,
           } = await import("./email-compliance");
@@ -354,13 +426,17 @@ export class IntegrationService {
             });
             return false;
           }
+          const complianceArgs = {
+            userId: this.userId,
+            email: params.to,
+            identity,
+          };
           sendParams = {
             ...params,
-            body: `${params.body}${buildTenantComplianceFooterHtml({
-              userId: this.userId,
-              email: params.to,
-              identity,
-            })}`,
+            textBody: `${params.body}${buildTenantComplianceFooterText(complianceArgs)}`,
+            htmlBody: `${plainTextEmailBodyHtml(params.body)}${buildTenantComplianceFooterHtml(
+              complianceArgs,
+            )}`,
             unsubscribeHeaders: buildTenantListUnsubscribeHeaders(this.userId, params.to),
           };
         }
@@ -605,31 +681,12 @@ export class IntegrationService {
     return true;
   }
 
-  private async sendGoogleEmail(account: any, params: any): Promise<boolean> {
+  private async sendGoogleEmail(account: any, params: ConnectedMailboxSendParams): Promise<boolean> {
     const auth = await this.getGoogleClient(account);
     const google = await googleApis();
     const gmail = google.gmail({ version: "v1", auth });
-    const utf8Subject = `=?utf-8?B?${Buffer.from(params.subject).toString("base64")}?=`;
-    // Standard RFC 8058 opt-out headers Gmail honors, for marketing sends only
-    // (transactional sends pass none). Values are HMAC-token URLs from
-    // buildListUnsubscribeHeaders — no recipient-controlled text — so they
-    // cannot inject additional headers.
-    const unsubscribeHeaders: Record<string, string> = params.unsubscribeHeaders || {};
-    const messageParts = [
-      `To: ${params.to}`,
-      "Content-Type: text/html; charset=utf-8",
-      "MIME-Version: 1.0",
-      `Subject: ${utf8Subject}`,
-      ...Object.entries(unsubscribeHeaders).map(([name, value]) => `${name}: ${value}`),
-      "",
-      params.body,
-    ];
-    const message = messageParts.join("\n");
-    const encodedMessage = Buffer.from(message)
-      .toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
+    const message = buildConnectedMailboxMime(params);
+    const encodedMessage = Buffer.from(message, "utf8").toString("base64url");
     await gmail.users.messages.send({
       userId: "me",
       requestBody: { raw: encodedMessage },
@@ -733,8 +790,30 @@ export class IntegrationService {
     return res.ok;
   }
 
-  private async sendMicrosoftEmail(account: any, params: any): Promise<boolean> {
+  private async sendMicrosoftEmail(
+    account: any,
+    params: ConnectedMailboxSendParams,
+  ): Promise<boolean> {
     const token = await this.getMicrosoftToken(account);
+
+    // Graph JSON only accepts custom Internet headers beginning with "x-".
+    // Marketing needs the standard List-Unsubscribe / List-Unsubscribe-Post
+    // names, so send the provider-independent MIME message when those headers
+    // are present. Microsoft documents text/plain + base64 MIME for sendMail.
+    if (params.unsubscribeHeaders) {
+      const message = buildConnectedMailboxMime(params);
+      const res = await fetchWithTimeout(
+        "https://graph.microsoft.com/v1.0/me/sendMail",
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "text/plain" },
+          body: Buffer.from(message, "utf8").toString("base64"),
+        },
+        15_000,
+      );
+      return res.ok;
+    }
+
     const res = await fetchWithTimeout(
       "https://graph.microsoft.com/v1.0/me/sendMail",
       {
