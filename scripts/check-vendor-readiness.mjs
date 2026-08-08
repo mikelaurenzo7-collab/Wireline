@@ -74,6 +74,25 @@ function validHttpsUrl(name) {
   }
 }
 
+function hasWirelineSmsRetryPolicy(value) {
+  if (typeof value !== "string" || !value.trim()) return false;
+  try {
+    const url = new URL(value);
+    if (!url.pathname.endsWith("/api/twilio-webhook/sms")) return false;
+    const params = new URLSearchParams(url.hash.replace(/^#/, ""));
+    const policies = new Set(
+      (params.get("rp") || "")
+        .split(",")
+        .map((part) => part.trim().toLowerCase())
+        .filter(Boolean),
+    );
+    const retryCount = Number(params.get("rc") || 0);
+    return policies.has("5xx") && policies.has("ct") && policies.has("rt") && retryCount >= 1;
+  } catch {
+    return false;
+  }
+}
+
 function httpsOrigin(value) {
   if (typeof value !== "string" || !value.trim()) return null;
   try {
@@ -421,6 +440,30 @@ record(
     messaging_service_count: twilioServices.length,
   },
 );
+const wirelineDirectSmsNumbers = smsCapableNumbers.filter(
+  (number) =>
+    typeof number?.sms_url === "string" &&
+    number.sms_url.includes("/api/twilio-webhook/sms"),
+);
+const wirelineSmsRetryReady =
+  wirelineDirectSmsNumbers.length > 0 &&
+  wirelineDirectSmsNumbers.every((number) => hasWirelineSmsRetryPolicy(number.sms_url));
+record(
+  "twilio_sms_webhook_retries",
+  true,
+  wirelineSmsRetryReady ? "ready" : "blocked",
+  `${wirelineDirectSmsNumbers.filter((number) => hasWirelineSmsRetryPolicy(number.sms_url)).length}/${wirelineDirectSmsNumbers.length} direct Wireline SMS number(s) explicitly retry transient 5xx webhook failures.`,
+  wirelineSmsRetryReady
+    ? null
+    : "Update every Wireline IncomingPhoneNumber SmsUrl to include #rc=2&rp=5xx,ct,rt&ct=3000&rt=5000&tt=15000 before paid launch.",
+  {
+    direct_wireline_sms_number_count: wirelineDirectSmsNumbers.length,
+    retry_ready_count: wirelineDirectSmsNumbers.filter((number) =>
+      hasWirelineSmsRetryPolicy(number.sms_url),
+    ).length,
+  },
+);
+
 record(
   "twilio_whatsapp",
   false,
