@@ -1,6 +1,6 @@
 /**
  * Canonical Drizzle/runtime schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0138_ai_disclosure_evidence_uniqueness.sql`.
+ * Latest committed migration: `drizzle/migrations/0140_daily_brief_dispatch_lease.sql`.
  *
  * `schema-base.ts` preserves the existing table graph. The two tables below are
  * declared explicitly here because migrations 0130, 0133, and 0134 changed
@@ -80,6 +80,14 @@ export const settings = pgTable("wireline_settings", {
     withTimezone: true,
   }),
   dailyBriefLastError: text("daily_brief_last_error"),
+  /** Durable cron lease; see migration 0140. */
+  dailyBriefDispatchClaimedAt: timestamp("daily_brief_dispatch_claimed_at", {
+    withTimezone: true,
+  }),
+  /** At-most-once latch for the current day's non-idempotent Gmail delivery. */
+  dailyBriefLastAttemptAt: timestamp("daily_brief_last_attempt_at", {
+    withTimezone: true,
+  }),
   businessName: text("business_name"),
   /** Industry / vertical label for template overlays and Director context. */
   businessType: text("business_type"),

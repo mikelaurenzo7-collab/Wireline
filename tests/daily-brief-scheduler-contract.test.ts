@@ -6,6 +6,7 @@ const read = (path: string) => readFileSync(path, "utf8");
 describe("daily brief scheduler launch contract", () => {
   const routes = read("src/routes/daily-brief-routes.ts");
   const schema = read("src/db/schema-base.ts");
+  const canonicalSchema = read("src/db/schema.ts");
   const migration = read("drizzle/migrations/0140_daily_brief_dispatch_lease.sql");
   const vercel = JSON.parse(read("vercel.json")) as {
     crons?: Array<{ path: string; schedule: string }>;
@@ -30,6 +31,11 @@ describe("daily brief scheduler launch contract", () => {
 
   it("uses a durable lease and records delivery only after the send resolves", () => {
     expect(schema).toContain("dailyBriefDispatchClaimedAt");
+    // src/db/schema.ts intentionally re-declares settings and overrides the
+    // schema-base export. Keep scheduler-only columns on the canonical table
+    // too, or Drizzle receives undefined columns and the cron 500s at SELECT.
+    expect(canonicalSchema).toContain("dailyBriefDispatchClaimedAt");
+    expect(canonicalSchema).toContain("dailyBriefLastAttemptAt");
     expect(migration).toContain("daily_brief_dispatch_claimed_at timestamptz");
     expect(migration).toContain("daily_brief_last_attempt_at timestamptz");
     expect(routes).toContain("dailyBriefDispatchClaimedAt: claimAt");
