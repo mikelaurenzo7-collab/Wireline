@@ -55,6 +55,7 @@ import {
   VAPI_TENANT_DEFAULT_PROVIDER,
   VAPI_VOICE_FALLBACK_PROVIDER,
   clampVoiceTemperature,
+  isDefinitiveVapiVoiceModelRejection,
   isGeminiModelId,
   isOpenAIModelId,
   resolveCoherentVoiceModel,
@@ -146,21 +147,6 @@ async function fetchWithRetry(
 
   // All retries exhausted
   throw lastError || new Error(`${operationName}: Failed after ${MAX_RETRIES} attempts`);
-}
-
-function isDefinitiveVoiceModelRejection(status: number, body: string): boolean {
-  if (status !== 400 && status !== 422) return false;
-  const detail = body.toLowerCase();
-  const namesModelField = detail.includes("model") || detail.includes("provider");
-  const isValidationRejection =
-    detail.includes("invalid") ||
-    detail.includes("unsupported") ||
-    detail.includes("not supported") ||
-    detail.includes("not found") ||
-    detail.includes("unknown") ||
-    detail.includes("unrecognized") ||
-    detail.includes("does not exist");
-  return namesModelField && isValidationRejection;
 }
 
 export type PlaceCallResult = {
@@ -737,7 +723,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     if (
       !vapiResponse.ok &&
       voiceSelection.provider === "google" &&
-      isDefinitiveVoiceModelRejection(
+      isDefinitiveVapiVoiceModelRejection(
         vapiResponse.status,
         await vapiResponse.clone().text(),
       )
