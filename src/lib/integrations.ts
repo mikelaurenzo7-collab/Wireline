@@ -450,11 +450,74 @@ export class IntegrationService {
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
     );
+    const accessToken = account.accessToken ? decryptSecret(account.accessToken) : null;
+    const refreshToken = account.refreshToken ? decryptSecret(account.refreshToken) : null;
+    const expiryDate = account.expiresAt ? Number(account.expiresAt) : null;
     oauth2Client.setCredentials({
-      access_token: decryptSecret(account.accessToken),
-      refresh_token: account.refreshToken ? decryptSecret(account.refreshToken) : null,
-      expiry_date: account.expiresAt ? Number(account.expiresAt) : null,
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expiry_date: expiryDate,
     });
+
+    const table =
+      account.__accountTable === "calendar"
+        ? schema.calendarAccounts
+        : account.__accountTable === "mail"
+          ? schema.emailAccounts
+          : account.emailAddress
+            ? schema.emailAccounts
+            : schema.calendarAccounts;
+
+    if (!accessToken) {
+      throw new Error("Google connection needs reconnect: access token is missing.");
+    }
+
+    // Google documents that revoked credentials surface as 400/401 OAuth
+    // failures. Refresh just before expiry so a terminal invalid_grant becomes
+    // durable reconnect state instead of leaving a row that looks connected
+    // forever. Successful refreshes are persisted for the next invocation.
+    if (expiryDate && Date.now() >= expiryDate - 60_000) {
+      if (!refreshToken) {
+        await drizzle
+          .update(table as any)
+          .set({ accessToken: null, refreshToken: null, expiresAt: BigInt(0) })
+          .where(eq((table as any).id, account.id));
+        throw new Error("Google connection needs reconnect: refresh token is missing.");
+      }
+
+      try {
+        const refreshed = await oauth2Client.getAccessToken();
+        const token = refreshed?.token;
+        if (!token) throw new Error("Google token refresh returned no access token.");
+        const credentials = oauth2Client.credentials;
+        await drizzle
+          .update(table as any)
+          .set({
+            accessToken: encryptSecret(token),
+            ...(credentials.refresh_token
+              ? { refreshToken: encryptSecret(credentials.refresh_token) }
+              : {}),
+            ...(credentials.expiry_date ? { expiresAt: BigInt(credentials.expiry_date) } : {}),
+          })
+          .where(eq((table as any).id, account.id));
+      } catch (error: any) {
+        const oauthCode = String(error?.response?.data?.error || error?.code || "").toLowerCase();
+        const message = getErrorMessage(error).toLowerCase();
+        const terminal =
+          oauthCode === "invalid_grant" ||
+          message.includes("invalid_grant") ||
+          message.includes("token has been expired or revoked") ||
+          message.includes("token has been revoked");
+        if (terminal) {
+          await drizzle
+            .update(table as any)
+            .set({ accessToken: null, refreshToken: null, expiresAt: BigInt(0) })
+            .where(eq((table as any).id, account.id));
+        }
+        throw error;
+      }
+    }
+
     return oauth2Client;
   }
 
