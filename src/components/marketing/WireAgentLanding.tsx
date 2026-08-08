@@ -198,7 +198,7 @@ export default function WireAgentLanding() {
         <MarketingHero
           eyebrow={MARKETING_VOICE.eyebrow}
           title={MARKETING_VOICE.headline}
-          primaryAction={{ label: MARKETING_VOICE.primaryCta, to: "/signup" }}
+          primaryAction={{ label: MARKETING_VOICE.primaryCta, to: "/signup?plan=personal" }}
           secondaryAction={{ label: "Hear it live", to: "#hear-a-demo", tone: "secondary" }}
           proof={HERO_CAPABILITIES}
           visual={
@@ -485,7 +485,7 @@ export default function WireAgentLanding() {
                 </p>
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                   <Link
-                    to="/signup"
+                    to="/signup?plan=personal"
                     className="marketing-btn-primary min-h-12 w-full justify-center px-7 text-[15px] font-semibold sm:w-auto"
                   >
                     Build your voice agent
