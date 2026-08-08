@@ -335,22 +335,34 @@ export class IntegrationService {
           unsubscribeHeaders?: Record<string, string>;
         } = params;
         if (params.marketing) {
-          const { isEmailSuppressed, buildComplianceFooterHtml, buildListUnsubscribeHeaders } =
-            await import("./email-compliance");
-          if (await isEmailSuppressed(params.to)) {
-            log.info("Marketing email skipped — recipient is suppressed", {
+          const {
+            getTenantMarketingIdentity,
+            isTenantEmailSuppressed,
+            buildTenantComplianceFooterHtml,
+            buildTenantListUnsubscribeHeaders,
+          } = await import("./email-compliance");
+          const identity = await getTenantMarketingIdentity(this.userId);
+          if (!identity) {
+            log.warn("Marketing email skipped — tenant sender identity is incomplete", {
+              userId: this.userId,
+            });
+            return false;
+          }
+          if (await isTenantEmailSuppressed(this.userId, params.to)) {
+            log.info("Marketing email skipped — recipient opted out of this sender", {
               userId: this.userId,
               to: params.to,
             });
             return false;
           }
-          // Both OAuth transports send text/html, so the HTML footer (which
-          // carries the working unsubscribe link) appends to the body; the
-          // one-click List-Unsubscribe header rides along where supported.
           sendParams = {
             ...params,
-            body: `${params.body}${buildComplianceFooterHtml(params.to)}`,
-            unsubscribeHeaders: buildListUnsubscribeHeaders(params.to),
+            body: `${params.body}${buildTenantComplianceFooterHtml({
+              userId: this.userId,
+              email: params.to,
+              identity,
+            })}`,
+            unsubscribeHeaders: buildTenantListUnsubscribeHeaders(this.userId, params.to),
           };
         }
 
@@ -369,38 +381,31 @@ export class IntegrationService {
         }
       }
 
-      // No OAuth mailbox — fall back to platform Resend so live voice
-      // agents can still deliver follow-ups when RESEND_API_KEY is set.
-      // These sends leave from Wireline's own verified domain (the same one
-      // that carries password resets and billing mail), so they must respect
-      // the platform suppression list and carry unsubscribe headers and a
-      // CAN-SPAM footer — a tenant cadence without a connected mailbox is
-      // recurring commercial mail, not transactional.
-      const { sendEmail: sendPlatformEmail } = await import("./email-service");
-      const {
-        isEmailSuppressed,
-        buildListUnsubscribeHeaders,
-        buildComplianceFooterText,
-        buildComplianceFooterHtml,
-      } = await import("./email-compliance");
-      if (await isEmailSuppressed(params.to)) {
-        log.info("Platform-fallback email skipped — recipient is suppressed", {
+      // A tenant cadence must leave from the tenant's own mailbox. Sending a
+      // customer's marketing campaign through Wireline's transactional Resend
+      // identity would misidentify the commercial sender and blur opt-out scope.
+      if (params.marketing) {
+        log.warn("Marketing email skipped — connect a tenant mailbox before sending cadences", {
           userId: this.userId,
-          to: params.to,
         });
         return false;
       }
+
+      // Non-marketing messages here are transactional/relationship mail: team
+      // invitations, account-holder digests, or one-off follow-ups requested
+      // during an active customer conversation. Do not gate those on a marketing
+      // opt-out and do not append a misleading commercial unsubscribe footer.
+      const { sendEmail: sendPlatformEmail } = await import("./email-service");
       const escaped = params.body
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
-      const html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.55; white-space: pre-wrap;">${escaped}${buildComplianceFooterHtml(params.to)}</div>`;
+      const html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.55; white-space: pre-wrap;">${escaped}</div>`;
       const result = await sendPlatformEmail({
         to: params.to,
         subject: params.subject,
-        text: params.body + buildComplianceFooterText(params.to),
+        text: params.body,
         html,
-        headers: buildListUnsubscribeHeaders(params.to),
       });
       if (!result.ok) {
         log.warn("Platform Resend fallback failed for tenant email", {
