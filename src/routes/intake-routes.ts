@@ -74,6 +74,7 @@ async function resolveIntakeKey(provided: string | undefined): Promise<IntakeKey
 // Rolling window: ≤ 60 requests per 60s per intake key.
 const INTAKE_RATE_WINDOW_MS = 60_000;
 const INTAKE_RATE_MAX = 60;
+const INTAKE_PREAUTH_RATE_MAX = 120;
 
 type IntakeRateCheck =
   | { ok: true }
@@ -123,6 +124,51 @@ async function checkIntakeRate(keyId: string, cost = 1): Promise<IntakeRateCheck
       code: "RATE_LIMITER_UNAVAILABLE",
       error:
         "Distributed rate limiter is unavailable for intake traffic. Configure Upstash Redis or enable WIRELINE_ALLOW_INMEMORY_RATE_LIMIT for single-node deployments.",
+    };
+  }
+}
+
+/**
+ * Cap unauthenticated requests before hashing/looking up the supplied intake
+ * key. Without this gate, invalid-key traffic can hammer the database without
+ * ever reaching the existing per-key limiter. Fail closed just like valid-key
+ * traffic when the distributed limiter is unavailable.
+ */
+async function checkIntakePreAuthRate(req: Request): Promise<IntakeRateCheck> {
+  const limiter = distributedLimiterStatus();
+  if (!limiter.ok) {
+    return {
+      ok: false,
+      status: 503,
+      code: "RATE_LIMITER_UNAVAILABLE",
+      error: limiter.reason || "Distributed rate limiter is unavailable.",
+    };
+  }
+
+  const clientKey = req.ip || req.socket.remoteAddress || "unknown";
+  try {
+    const result = await rateLimit(clientKey, {
+      bucket: "public_intake_pre_auth",
+      windowMs: INTAKE_RATE_WINDOW_MS,
+      max: INTAKE_PREAUTH_RATE_MAX,
+      failClosedOnError: true,
+    });
+    if (result.allowed) return { ok: true };
+    const retryAfter = Math.max(1, Math.ceil(result.resetMs / 1000));
+    return {
+      ok: false,
+      status: 429,
+      retry_after_s: retryAfter,
+      code: "INTAKE_RATE_LIMIT",
+      error: `Too many intake requests from this client. Retry in ${retryAfter}s.`,
+    };
+  } catch (err) {
+    log.error("Intake pre-auth rate limiter failed", { error: getErrorMessage(err) });
+    return {
+      ok: false,
+      status: 503,
+      code: "RATE_LIMITER_UNAVAILABLE",
+      error: "Distributed rate limiter is unavailable for intake traffic.",
     };
   }
 }
@@ -437,6 +483,15 @@ async function processIntakeLead(
 // POST /lead — public, authenticated by X-Wireline-Key header
 router.post("/lead", async (req: Request, res: Response) => {
   try {
+    const preAuthRate = await checkIntakePreAuthRate(req);
+    if (isIntakeRateFailure(preAuthRate)) {
+      if (preAuthRate.status === 429) res.set("Retry-After", String(preAuthRate.retry_after_s));
+      return res.status(preAuthRate.status).json({
+        error: preAuthRate.error,
+        code: preAuthRate.code,
+        ...(preAuthRate.status === 429 ? { retry_after_s: preAuthRate.retry_after_s } : {}),
+      });
+    }
     const provided = req.headers["x-wireline-key"] as string | undefined;
     const key = await resolveIntakeKey(provided);
     if (!key) throw AppError.fromHttpStatus(401, "Invalid or missing X-Wireline-Key.");
@@ -490,6 +545,15 @@ const INTAKE_BULK_MAX = 100;
 
 router.post("/leads", async (req: Request, res: Response) => {
   try {
+    const preAuthRate = await checkIntakePreAuthRate(req);
+    if (isIntakeRateFailure(preAuthRate)) {
+      if (preAuthRate.status === 429) res.set("Retry-After", String(preAuthRate.retry_after_s));
+      return res.status(preAuthRate.status).json({
+        error: preAuthRate.error,
+        code: preAuthRate.code,
+        ...(preAuthRate.status === 429 ? { retry_after_s: preAuthRate.retry_after_s } : {}),
+      });
+    }
     const provided = req.headers["x-wireline-key"] as string | undefined;
     const key = await resolveIntakeKey(provided);
     if (!key) throw AppError.fromHttpStatus(401, "Invalid or missing X-Wireline-Key.");
