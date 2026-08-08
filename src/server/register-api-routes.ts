@@ -21,6 +21,7 @@ import voicesRouter from "../routes/voices-routes";
 import billingRouter from "../routes/billing-routes";
 import extraAgentBillingAtomicRouter from "../routes/extra-agent-billing-atomic-routes";
 import { stripeRuntimeAllowanceRetryPreflight } from "../middleware/stripe-runtime-allowance-retry";
+import { enforceSelfServeBillingRelease } from "../middleware/launch-hard-gate";
 import { showcasePromptTruthGuard } from "../lib/showcase-prompt-truth-guard";
 import billingPortalReadinessRouter from "../routes/billing-portal-readiness-routes";
 import launchBillingCheckoutAtomicRouter from "../routes/launch-billing-checkout-atomic-routes";
@@ -140,16 +141,21 @@ export function registerApiRoutes(app: Express): void {
   app.use(teamRouter);
   app.use(spendControlRouter);
   app.use(auditRouter);
+  app.post("/api/conversation-balance/checkout", enforceSelfServeBillingRelease);
   app.use(conversationBalanceRouter);
   app.use(emailOutcomeRouter);
   app.use(emailSyncRouter);
 
+  // Default-closed release guard owns the exact paid endpoint before either
+  // checkout implementation can create a Stripe session.
+  app.post("/api/billing/checkout", enforceSelfServeBillingRelease);
   // Durable idempotent Checkout owner precedes the prior canonical implementation.
   app.use(launchBillingCheckoutAtomicRouter);
   app.use(launchBillingCheckoutRouter);
   app.use(billingPortalReadinessRouter);
   app.use("/api/stripe-webhook", stripeRuntimeAllowanceRetryPreflight);
   app.use("/api/billing/extra-agents", extraAgentBillingAtomicRouter);
+  app.post("/api/billing/live-video-checkout", enforceSelfServeBillingRelease);
   app.use("/api", billingRouter);
 
   app.use(emailRouter);
