@@ -31,10 +31,14 @@ describe("daily brief scheduler launch contract", () => {
   it("uses a durable lease and records delivery only after the send resolves", () => {
     expect(schema).toContain("dailyBriefDispatchClaimedAt");
     expect(migration).toContain("daily_brief_dispatch_claimed_at timestamptz");
+    expect(migration).toContain("daily_brief_last_attempt_at timestamptz");
     expect(routes).toContain("dailyBriefDispatchClaimedAt: claimAt");
+    expect(routes).toContain("dailyBriefLastAttemptAt: claimAt");
     expect(routes).toContain("lt(schema.settings.dailyBriefDispatchClaimedAt, staleClaimBefore)");
-    expect(routes).toContain("await withAuditCapture(() => sendDailyBriefEmail");
+    expect(routes).toContain("await runInAuditContext(auditContext");
+    expect(routes).toContain("providerAccepted = true");
     expect(routes).toContain("dailyBriefLastSentAt: new Date()");
     expect(routes).toContain("dailyBriefDispatchClaimedAt: null");
+    expect(routes).toContain("providerAccepted ? {} : { dailyBriefLastAttemptAt");
   });
 });
