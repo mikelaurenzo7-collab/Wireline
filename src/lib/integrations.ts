@@ -398,11 +398,10 @@ export class IntegrationService {
       const mailAccounts = accounts.length > 0 ? accounts : await this.getAccounts("calendar");
 
       if (mailAccounts.length > 0) {
-        // Marketing compliance for the tenant's OWN mailbox transports. The
-        // platform-Resend fallback below applies its own suppression/footer/
-        // unsubscribe, so this only guards the OAuth paths that used to skip
-        // them entirely. Honoring the suppression list here is what makes a
-        // recorded opt-out binding no matter which mailbox sends.
+        // Marketing compliance for the tenant's OWN mailbox transports.
+        // Cadence marketing never falls through to Wireline's transactional
+        // sender: honoring suppression and sender identity here is what makes a
+        // recorded opt-out binding no matter which connected mailbox sends.
         let sendParams: ConnectedMailboxSendParams = params;
         if (params.marketing) {
           const {
