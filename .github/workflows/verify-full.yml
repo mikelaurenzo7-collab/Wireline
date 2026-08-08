@@ -38,6 +38,9 @@ jobs:
       # silently drops every verify-full-only gate (lint:server, the security
       # and route gates, coverage) from CI. Install the browser Playwright needs
       # so the ladder can actually pass.
+      - name: Accessibility contract
+        run: node scripts/check-accessibility-contract.mjs
+
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 

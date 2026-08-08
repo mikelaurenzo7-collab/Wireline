@@ -1,9 +1,9 @@
 name: Marketing e2e
 
+# The full browser suite runs here on PRs and inside verify-full.yml on main.
+# Do not pay for the same Playwright suite again after merge.
 "on":
   pull_request: {}
-  push:
-    branches: [main]
   workflow_dispatch: {}
 
 permissions:

@@ -1,10 +1,8 @@
 name: Accessibility E2E
 
+# Manual focused diagnostic only. marketing-e2e.yml runs the full Playwright
+# suite on PRs; verify-full.yml runs that same suite on main.
 on:
-  pull_request:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:

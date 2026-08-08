@@ -1,8 +1,8 @@
 name: CI
 
+# PR verification lives here; main runs the superset in verify-full.yml.
+# Avoid rerunning the same unit/build ladder after every merge.
 on:
-  push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -75,6 +75,14 @@ jobs:
           npm run openapi:check
           npm run design:tokens:check
           npm run stripe:catalog:check
+
+      - name: Accessibility contract
+        run: node scripts/check-accessibility-contract.mjs
+
+      - name: Browser extension build
+        run: |
+          node apps/browser-extension/scripts/build.mjs --check
+          node apps/browser-extension/scripts/build.mjs
 
       - name: Build
         run: npm run build

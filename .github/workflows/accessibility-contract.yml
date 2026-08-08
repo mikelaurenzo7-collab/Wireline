@@ -1,10 +1,8 @@
 name: Accessibility Contract
 
+# Manual focused diagnostic only. The contract is folded into ci.yml on PRs
+# and verify-full.yml on main so it does not need a separate runner/install.
 on:
-  pull_request:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
