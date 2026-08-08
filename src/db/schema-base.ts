@@ -153,6 +153,14 @@ export const settings = pgTable("wireline_settings", {
     withTimezone: true,
   }),
   dailyBriefLastError: text("daily_brief_last_error"),
+  /**
+   * Short-lived durable lease for the cron dispatcher. This is never a
+   * delivery signal; dailyBriefLastSentAt is updated only after Gmail accepts
+   * the message. Stale leases are reclaimed by the scheduler.
+   */
+  dailyBriefDispatchClaimedAt: timestamp("daily_brief_dispatch_claimed_at", {
+    withTimezone: true,
+  }),
   businessName: text("business_name"),
   /** Industry / vertical label for template overlays and Director context. */
   businessType: text("business_type"),
