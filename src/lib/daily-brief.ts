@@ -437,6 +437,9 @@ export async function sendDailyBriefEmail(
     refresh_token: account.refreshToken ? decryptSecret(account.refreshToken) : null,
     expiry_date: account.expiresAt ? Number(account.expiresAt) : null,
   });
+  // Resolve/refresh OAuth before latching the non-idempotent Gmail send. A
+  // rejected refresh is definitively pre-send and must remain retryable.
+  await oauth2Client.getAccessToken();
   const google = await googleApis();
   const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 

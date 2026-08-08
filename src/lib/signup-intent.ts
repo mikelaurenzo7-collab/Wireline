@@ -228,10 +228,35 @@ export function persistSignupIntent(intent: SignupIntent | null): SignupIntent |
   return safe;
 }
 
+export function mergeSignupIntent(
+  previous: SignupIntent | null | undefined,
+  incoming: SignupIntent | null | undefined,
+): SignupIntent | null {
+  const next = sanitizeSignupIntent(incoming);
+  if (!next) return sanitizeSignupIntent(previous);
+  const prior = sanitizeSignupIntent(previous);
+  const merged: SignupIntent = {
+    ...(prior || {}),
+    ...next,
+    capturedAt: next.capturedAt,
+  };
+  return sanitizeSignupIntent(merged);
+}
+
 export function captureSignupIntentFromLocation(): SignupIntent | null {
   if (typeof window === "undefined") return null;
   const fromUrl = parseSignupIntent(window.location.search);
-  if (fromUrl) return persistSignupIntent(fromUrl);
+  if (fromUrl) {
+    // Explicit plan CTAs (including generic Start free -> Free Builder) are
+    // selection overrides, not attribution resets. Preserve the wedge, billing
+    // interval, and campaign that brought the visitor here while letting the
+    // URL's plan win. Other URL-only intents keep the historical replacement
+    // behavior so a new wedge/UTM-only visit cannot resurrect a stale plan.
+    const next = fromUrl.preferredPlanId
+      ? mergeSignupIntent(getStoredSignupIntent(), fromUrl)
+      : fromUrl;
+    return persistSignupIntent(next);
+  }
   return getStoredSignupIntent();
 }
 

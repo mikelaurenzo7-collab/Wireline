@@ -43,13 +43,20 @@ describe("daily brief scheduler launch contract", () => {
     expect(routes).toContain("dailyBriefLastAttemptAt: claimAt");
     expect(routes).toContain("lt(schema.settings.dailyBriefDispatchClaimedAt, staleClaimBefore)");
     expect(routes).toContain("await runInAuditContext(auditContext");
+    expect(brief).toContain("await oauth2Client.getAccessToken()");
     expect(brief).toContain("opts?.onProviderSendAttempt?.()");
+    expect(brief.indexOf("await oauth2Client.getAccessToken()")).toBeLessThan(
+      brief.indexOf("opts?.onProviderSendAttempt?.()"),
+    );
     expect(brief.indexOf("opts?.onProviderSendAttempt?.()")).toBeLessThan(
       brief.indexOf("await gmail.users.messages.send"),
     );
     expect(routes).toContain("providerSendAttempted = true");
+    expect(routes).toContain("providerSendAccepted = true");
+    expect(routes).toContain("providerHttpResponseStatus(e)");
+    expect(routes).toContain("providerSendAttempted && providerResponseStatus === null");
     expect(routes).toContain("dailyBriefLastSentAt: new Date()");
     expect(routes).toContain("dailyBriefDispatchClaimedAt: null");
-    expect(routes).toContain("providerSendAttempted ? {} : { dailyBriefLastAttemptAt");
+    expect(routes).toContain("preserveAttemptLatch ? {} : { dailyBriefLastAttemptAt");
   });
 });

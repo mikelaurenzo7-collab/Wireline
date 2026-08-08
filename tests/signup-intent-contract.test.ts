@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  mergeSignupIntent,
   parseSignupIntent,
   recommendedPlanFromIntent,
   sanitizeSignupIntent,
@@ -88,6 +89,32 @@ describe("signup intent contract", () => {
     expect(recommendedPlanFromIntent(parseSignupIntent("?wedge=sales"))).toBe("business");
     expect(recommendedPlanFromIntent(parseSignupIntent("?wedge=home-services"))).toBe("team");
     expect(recommendedPlanFromIntent(parseSignupIntent("?wedge=support"))).toBe("starter");
+  });
+
+  it("merges an explicit plan override without erasing acquisition context", () => {
+    expect(
+      mergeSignupIntent(
+        {
+          preferredPlanId: "starter",
+          signupWedge: "support",
+          utmSource: "newsletter",
+          utmCampaign: "launch",
+          capturedAt: "2026-08-01T00:00:00.000Z",
+        },
+        {
+          preferredPlanId: "personal",
+          capturedAt: "2026-08-08T00:00:00.000Z",
+        },
+      ),
+    ).toMatchObject({
+      preferredPlanId: "personal",
+      signupWedge: "support",
+      utmSource: "newsletter",
+      utmCampaign: "launch",
+    });
+
+    const signupIntent = read("src/lib/signup-intent.ts");
+    expect(signupIntent).toContain("mergeSignupIntent(getStoredSignupIntent(), fromUrl)");
   });
 
   it("captures paid landing attribution before an internal CTA can drop query parameters", () => {
