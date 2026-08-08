@@ -20,8 +20,8 @@ import { and, eq, sql } from "drizzle-orm";
 import { voiceUsageEvents } from "../db/voice-usage-schema";
 import { chargeCompletedVoiceUsage } from "./voice-completion-grace";
 import { FLAT_OVERAGE_PER_MIN_USD, planById } from "./plan-catalog";
-import { drizzle, log, quotaTracker } from "./server-context";
-import { getErrorMessage } from "./server-utils";
+import { drizzle, log } from "./server-context";
+import { dailyPeriodKey } from "./tenant-quotas";
 import * as schema from "../db/schema";
 
 const DIMENSION = "voice_minutes_monthly";
@@ -86,15 +86,16 @@ export function includedVoiceMinutes(
  * call: exactly one transaction receives `inserted`, and only that transaction
  * increments `wireline_quota_usage`. The event row and aggregate commit or roll
  * back together, so a retry never observes a claim without its corresponding
- * monthly minutes.
+ * monthly and daily minutes.
  */
 async function prepareVoiceUsage(opts: {
   userId: string;
   providerCallId: string;
   minutes: number;
   periodKey: string;
+  dailyKey: string;
 }): Promise<PreparedVoiceUsage> {
-  const { userId, providerCallId, minutes, periodKey } = opts;
+  const { userId, providerCallId, minutes, periodKey, dailyKey } = opts;
 
   return drizzle.transaction(async (tx) => {
     const [inserted] = await tx
@@ -176,6 +177,31 @@ async function prepareVoiceUsage(opts: {
       })
       .returning()) as Array<{ used: bigint | number | null }>;
 
+    // Keep the daily burst counter in the same transaction as the per-call
+    // idempotency claim and monthly aggregate. If this transaction commits,
+    // both quota windows contain the call; if it rolls back, a provider retry
+    // can safely settle all three records together.
+    await tx
+      .insert(schema.quotaUsage)
+      .values({
+        userId,
+        dimension: "voice_minutes_daily",
+        periodKey: dailyKey,
+        used: BigInt(minutes),
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [
+          schema.quotaUsage.userId,
+          schema.quotaUsage.dimension,
+          schema.quotaUsage.periodKey,
+        ],
+        set: {
+          used: sql`${schema.quotaUsage.used} + ${BigInt(minutes)}`,
+          updatedAt: new Date(),
+        },
+      });
+
     const newUsed = Number(upsertRows[0]?.used ?? minutes);
     const previousUsed = Math.max(0, newUsed - minutes);
 
@@ -245,7 +271,9 @@ export async function trackVoiceMinutes(opts: {
   }
 
   const minutes = billableVoiceMinutes(durationSeconds);
-  const periodKey = monthlyPeriodKey();
+  const now = new Date();
+  const periodKey = monthlyPeriodKey(now);
+  const dailyKey = dailyPeriodKey(now);
 
   try {
     const prepared = await prepareVoiceUsage({
@@ -253,22 +281,8 @@ export async function trackVoiceMinutes(opts: {
       providerCallId: vapiCallId,
       minutes,
       periodKey,
+      dailyKey,
     });
-
-    // Settle the per-day burst cap only when this provider call was newly
-    // counted. A duplicate end-of-call delivery must not consume the daily cap
-    // twice even though it is allowed to resume an unfinished balance debit.
-    if (prepared.newlyCounted) {
-      await quotaTracker
-        .checkAndIncrement(userId, "voice_minutes_daily", prepared.minutes)
-        .catch((error: unknown) => {
-          log.error("voice daily quota settle failed", {
-            userId,
-            minutes: prepared.minutes,
-            error: getErrorMessage(error),
-          });
-        });
-    }
 
     if (prepared.incrementalOverageMinutes <= 0 || prepared.overageCostUsd <= 0) return;
     if (prepared.chargedAt) return;
