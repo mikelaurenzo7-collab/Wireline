@@ -234,8 +234,8 @@ export default function Security() {
               gap.
             </p>
             <p className="mt-4 inline-flex flex-wrap justify-center gap-x-3 gap-y-1 text-eyebrow !text-[0.625rem]">
-              <span className="whitespace-nowrap">Last updated · July 28, 2026</span>
-              <span className="whitespace-nowrap">Reviewed for launch · July 28, 2026</span>
+              <span className="whitespace-nowrap">Last updated · August 8, 2026</span>
+              <span className="whitespace-nowrap">Reviewed for launch · August 8, 2026</span>
             </p>
           </motion.div>
 
