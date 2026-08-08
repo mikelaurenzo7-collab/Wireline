@@ -4,7 +4,7 @@ import { AppError, rethrowIfAppError } from "../lib/api-error";
 import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, lt, or } from "drizzle-orm";
 import { isOwnerEmail } from "../lib/auth-service";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
@@ -154,39 +154,116 @@ router.post(
   },
 );
 
-/** Vercel cron: send daily briefs for all account holders with the feature enabled (Bearer CRON_SECRET). */
-router.post("/api/daily-brief/schedule", async (req: Request, res: Response) => {
+/**
+ * Vercel cron: reconcile due daily briefs.
+ *
+ * Vercel Cron invokes configured paths with GET. We keep POST as a
+ * backwards-compatible ops hook, but both methods share the same
+ * CRON_SECRET authentication and reconciliation path.
+ *
+ * Each enabled tenant gets one durable DB lease before any model/email work.
+ * The lease is deliberately separate from dailyBriefLastSentAt so a crashed
+ * send cannot be reported as delivered. A lease older than 20 minutes is
+ * reclaimable; Vercel's function ceiling is 10 minutes, so a live invocation
+ * will never be stolen while still allowed to run.
+ */
+const DAILY_BRIEF_LEASE_MS = 20 * 60 * 1000;
+
+function cronAuthorized(req: Request): boolean {
   const expected = process.env.CRON_SECRET || "";
   const authz = String(req.headers.authorization || "");
   const token = authz.startsWith("Bearer ") ? authz.slice(7) : "";
-  const ok =
+  return (
     expected.length >= 16 &&
     token.length === expected.length &&
-    cryptoTimingSafeEqual(Buffer.from(token, "utf8"), Buffer.from(expected, "utf8"));
-  if (!ok) {
+    cryptoTimingSafeEqual(Buffer.from(token, "utf8"), Buffer.from(expected, "utf8"))
+  );
+}
+
+function scheduledAtUtc(now: Date, sendAt: string): Date | null {
+  const match = /^(\d{2}):(\d{2})$/.exec(sendAt);
+  if (!match) return null;
+  const hh = Number(match[1]);
+  const mm = Number(match[2]);
+  if (hh > 23 || mm > 59) return null;
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hh, mm, 0, 0),
+  );
+}
+
+async function runDailyBriefSchedule(req: Request, res: Response) {
+  if (!cronAuthorized(req)) {
     throw AppError.fromHttpStatus(401, "Unauthorized");
   }
 
   try {
     const rows = await drizzle
-      .select({ userId: schema.settings.userId })
+      .select({
+        userId: schema.settings.userId,
+        sendAt: schema.settings.dailyBriefSendAt,
+        lastSentAt: schema.settings.dailyBriefLastSentAt,
+      })
       .from(schema.settings)
       .where(eq(schema.settings.dailyBriefEnabled, true));
 
+    const now = new Date();
+    const staleClaimBefore = new Date(now.getTime() - DAILY_BRIEF_LEASE_MS);
     let sent = 0;
+    let notDue = 0;
+    let alreadySent = 0;
+    let contended = 0;
     let skipped = 0;
+    let deferred = 0;
     let failed = 0;
     const errors: string[] = [];
 
     for (const row of rows) {
       const uid = row.userId;
       if (!uid) continue;
+
+      const scheduledAt = scheduledAtUtc(now, row.sendAt || "13:00");
+      if (!scheduledAt) {
+        failed++;
+        if (errors.length < 5) errors.push(`${uid}: invalid daily brief send time`);
+        continue;
+      }
+      if (now < scheduledAt) {
+        notDue++;
+        continue;
+      }
+      if (row.lastSentAt && row.lastSentAt >= scheduledAt) {
+        alreadySent++;
+        continue;
+      }
+
+      const claimAt = new Date();
+      const [claimed] = await drizzle
+        .update(schema.settings)
+        .set({ dailyBriefDispatchClaimedAt: claimAt })
+        .where(
+          and(
+            eq(schema.settings.userId, uid),
+            eq(schema.settings.dailyBriefEnabled, true),
+            or(
+              isNull(schema.settings.dailyBriefLastSentAt),
+              lt(schema.settings.dailyBriefLastSentAt, scheduledAt),
+            ),
+            or(
+              isNull(schema.settings.dailyBriefDispatchClaimedAt),
+              lt(schema.settings.dailyBriefDispatchClaimedAt, staleClaimBefore),
+            ),
+          ),
+        )
+        .returning({ userId: schema.settings.userId });
+
+      if (!claimed?.userId) {
+        contended++;
+        continue;
+      }
+
       try {
         // Cron has no req.user, so withAudit cannot attribute this spend. Capture
-        // the runtime records per tenant and persist them against that tenant, the
-        // same shape job-worker-base and vapi-handlers use for background work.
-        // Without this the daily brief — one paid model call per enabled tenant
-        // per day — never reaches auditLog.costUsd at all.
+        // the runtime records per tenant and persist them against that tenant.
         const capture = await withAuditCapture(() => sendDailyBriefEmail(uid, { force: false }));
         await persistRuntimeAuditRecords({
           userId: uid,
@@ -199,6 +276,20 @@ router.post("/api/daily-brief/schedule", async (req: Request, res: Response) => 
             error: getErrorMessage(persistError),
           }),
         );
+
+        await drizzle
+          .update(schema.settings)
+          .set({
+            dailyBriefLastSentAt: new Date(),
+            dailyBriefLastError: null,
+            dailyBriefDispatchClaimedAt: null,
+          })
+          .where(
+            and(
+              eq(schema.settings.userId, uid),
+              eq(schema.settings.dailyBriefDispatchClaimedAt, claimAt),
+            ),
+          );
         sent++;
       } catch (e: unknown) {
         const msg = getErrorMessage(e);
@@ -206,16 +297,38 @@ router.post("/api/daily-brief/schedule", async (req: Request, res: Response) => 
           e && typeof e === "object" && "code" in e
             ? String((e as { code?: unknown }).code || "")
             : "";
-        if (
-          msg.includes("No recipient") ||
-          msg.includes("No connected Gmail") ||
+        const configurationSkip =
+          msg.includes("No recipient") || msg.includes("No connected Gmail");
+        const transientAi =
           code === "AI_RUNTIME_OFFLINE" ||
           code === "CLAUDE_OFFLINE" ||
           msg.includes("AI runtime required") ||
-          msg.includes("Claude required")
-        ) {
-          skipped++;
-        } else {
+          msg.includes("Claude required");
+
+        // Release only our lease. The next reconciliation can retry a failure,
+        // while last_sent_at remains an honest delivery timestamp.
+        await drizzle
+          .update(schema.settings)
+          .set({
+            dailyBriefDispatchClaimedAt: null,
+            dailyBriefLastError: msg.slice(0, 1000),
+          })
+          .where(
+            and(
+              eq(schema.settings.userId, uid),
+              eq(schema.settings.dailyBriefDispatchClaimedAt, claimAt),
+            ),
+          )
+          .catch((releaseError: unknown) =>
+            log.error("daily brief cron lease release failed", {
+              userId: uid,
+              error: getErrorMessage(releaseError),
+            }),
+          );
+
+        if (configurationSkip) skipped++;
+        else if (transientAi) deferred++;
+        else {
           failed++;
           if (errors.length < 5) errors.push(`${uid}: ${msg}`);
         }
@@ -223,11 +336,25 @@ router.post("/api/daily-brief/schedule", async (req: Request, res: Response) => 
       }
     }
 
-    res.json({ ok: true, enabled_users: rows.length, sent, skipped, failed, errors });
+    res.json({
+      ok: true,
+      enabled_users: rows.length,
+      sent,
+      not_due: notDue,
+      already_sent: alreadySent,
+      contended,
+      skipped,
+      deferred,
+      failed,
+      errors,
+    });
   } catch (e: unknown) {
     log.error("Daily brief schedule failed", { error: getErrorMessage(e) });
     throw AppError.fromHttpStatus(500, "Schedule run failed");
   }
-});
+}
+
+router.get("/api/daily-brief/schedule", runDailyBriefSchedule);
+router.post("/api/daily-brief/schedule", runDailyBriefSchedule);
 
 export default router;
