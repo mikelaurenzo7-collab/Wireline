@@ -699,9 +699,23 @@ export async function handleCoreToolCall(
       // A spoken opt-out must stop the active call, not merely suppress future
       // calls. Await the provider control command so the tool result cannot race
       // ahead of the required termination attempt.
-      const { SentinelService } = await import("../../services/sentinel");
-      const sentinel = new SentinelService();
-      const termination = await sentinel.terminateActiveCallsForNumber(normalizedPhone);
+      let termination = { attempted: 0, terminated: 0, failed: 0 };
+      try {
+        const { SentinelService } = await import("../../services/sentinel");
+        const sentinel = new SentinelService();
+        termination = await sentinel.terminateActiveCallsForNumber(normalizedPhone);
+      } catch (terminationError) {
+        // The DNC row is already durable. A provider/control-plane failure must
+        // never fall through to the outer "opt-out was not saved" response.
+        termination = { attempted: 0, terminated: 0, failed: 1 };
+        log.error("sentinel failed after DNC suppression was persisted", {
+          phone: normalizedPhone,
+          error:
+            terminationError instanceof Error
+              ? terminationError.message
+              : String(terminationError),
+        });
+      }
 
       if (termination.failed > 0) {
         log.error("sentinel could not confirm every DNC call termination", {
