@@ -161,7 +161,12 @@ export default function Status() {
     let cancelled = false;
     const fetchHealth = async () => {
       try {
-        const res = await fetch("/api/health/public", { headers: { Accept: "application/json" } });
+        const res = await fetch("/api/health/public", {
+        headers: { Accept: "application/json" },
+        // The server already owns a bounded distributed probe cache. Do not let
+        // the browser retain an older degraded payload across later 60s polls.
+        cache: "no-store",
+      });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = normalizeHealth(await res.json());
         if (!json) throw new Error("Unrecognised status payload");
