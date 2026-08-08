@@ -29,9 +29,13 @@ describe("code review hardening contracts", () => {
     expect(routes).toContain("drizzle.transaction");
   });
 
-  it("rejects production Vapi routing by bare ?agentId= without phoneNumberId", () => {
+  it("rejects production Vapi routing that did not resolve a tenant from a provisioned number", () => {
+    // Strengthened from the original `IS_PROD && !phoneNumberId` presence check:
+    // a present-but-unregistered phoneNumberId also fails to establish a tenant,
+    // and must not fall back to trusting a bare ?agentId= under no tenant fence.
     const resolver = read("src/lib/vapi-webhook-agent.ts");
-    expect(resolver).toContain("IS_PROD && !phoneNumberId");
+    expect(resolver).toContain("IS_PROD && !enforceTenantUserId");
+    expect(resolver).not.toContain("IS_PROD && !phoneNumberId");
   });
 
   it("deduplicates inbound Twilio SMS by MessageSid before thread writes", () => {
@@ -105,21 +109,28 @@ describe("code review hardening contracts", () => {
 
   it("keeps duplicate end-of-call retries side-effect free after mandatory DNC suppression", () => {
     const handlers = read("src/lib/vapi-handlers.ts");
-    expect(handlers).toContain(
-      "Duplicate end-of-call-report ignored after retry-safe evidence patch",
-    );
+    expect(handlers).toContain("Duplicate end-of-call-report reached retry-safe evidence patch");
     const suppression = handlers.indexOf("await persistTranscriptDncSuppression({");
-    const duplicateGuard = handlers.indexOf("if (!insertedFresh)", suppression);
+    // Voice metering intentionally sits between DNC suppression and the
+    // duplicate return: its own tenant+provider-call checkpoint makes it
+    // idempotent, so a redelivery can resume unfinished revenue accounting
+    // without duplicating any one-time side effect below the guard.
+    const complianceEvidence = handlers.indexOf("await persistComplianceEvidence({", suppression);
+    const usageTracking = handlers.indexOf("await trackVoiceMinutes({", suppression);
+    const duplicateGuard = handlers.indexOf("if (!insertedFresh)", usageTracking);
     const duplicateReturn = handlers.indexOf("return;", duplicateGuard);
     const firstCallMilestone = handlers.indexOf('event: "first_call_completed"');
-    const usageTracking = handlers.indexOf("await trackVoiceMinutes({");
     expect(suppression).toBeGreaterThan(-1);
-    expect(duplicateGuard).toBeGreaterThan(suppression);
+    // TCPA evidence is idempotent per call and runs before the duplicate
+    // return so a redelivery restores rows a failed first delivery lost.
+    expect(complianceEvidence).toBeGreaterThan(suppression);
+    expect(usageTracking).toBeGreaterThan(complianceEvidence);
+    expect(usageTracking).toBeGreaterThan(suppression);
+    expect(duplicateGuard).toBeGreaterThan(usageTracking);
     expect(duplicateReturn).toBeGreaterThan(duplicateGuard);
     expect(firstCallMilestone).toBeGreaterThan(duplicateReturn);
-    expect(usageTracking).toBeGreaterThan(firstCallMilestone);
     expect(handlers.slice(duplicateGuard, duplicateReturn)).toContain(
-      "All other downstream side effects are skipped",
+      "Everything below is one-time work.",
     );
   });
 

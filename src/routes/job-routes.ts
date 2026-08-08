@@ -202,7 +202,11 @@ router.post(
       }
 
       const [done] = await drizzle
-        .select({ status: schema.jobs.status, result: schema.jobs.result, error: schema.jobs.error })
+        .select({
+          status: schema.jobs.status,
+          result: schema.jobs.result,
+          error: schema.jobs.error,
+        })
         .from(schema.jobs)
         .where(eq(schema.jobs.id, jobId))
         .limit(1);
@@ -441,9 +445,19 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
     // running. External clients already enforce their own timeouts; the sweep
     // now awaits one claimed handler and fences its outcome to that attempt.
     const SWEEP_BUDGET_MS = 55_000;
+    // Per-tick job ceiling. Jobs run sequentially (each iteration awaits before
+    // claiming the next), so this uses one pooled connection at a time and the
+    // 55s wall-clock budget below is the real safety bound — raising the count
+    // only lets a tick drain more of the backlog when jobs are fast (webhook
+    // processing, QA scoring). At 10 the count, not the budget, was the
+    // bottleneck: two slots are spent every tick on the self-enqueued
+    // cadence/callback ticks, and each completed call fans out several jobs, so
+    // sustained call volume outran a 5-minute cron. The budget still caps a
+    // tick that hits slow jobs.
+    const SWEEP_MAX_JOBS = 40;
     const sweepStart = Date.now();
     let processed = 0;
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < SWEEP_MAX_JOBS; i++) {
       if (Date.now() - sweepStart > SWEEP_BUDGET_MS) break;
       const job = await claim(drizzle);
       if (!job) break;

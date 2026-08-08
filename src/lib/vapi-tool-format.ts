@@ -97,8 +97,13 @@ const MATERIAL_WRITE_TOOLS = new Set([
 const TOOL_PREREQUISITE_GUIDANCE: Readonly<Record<string, string>> = {
   send_email:
     "Confirm the recipient address and what the caller wants sent. Never guess an address.",
+  // The verbal opt-in script carries all four carrier-required consent
+  // elements (Twilio campaign-rejection code 30924): message type, frequency,
+  // rate disclosure, and opt-out instructions. The decline handling mirrors
+  // codes 30923/30931 — consent must be refusable and never a condition of
+  // service, and a declined ask is not re-asked.
   send_text_message:
-    "Use only a caller-approved number and channel. Confirm the destination and requested content.",
+    'Before any text, capture verbal consent with exactly: "Want me to text that to you at this number? It will be one message with the info you asked for. Message and data rates may apply, and you can reply STOP at any time to opt out." Send only after the caller clearly agrees, only to the number the caller approved, and confirm the requested content. If the caller declines, continue helping them normally and do not ask again on this call — texting is never a condition of service.',
   book_appointment:
     "Call check_calendar_availability first, then confirm the exact date, time, IANA timezone, attendee name, and service.",
   schedule_callback:
@@ -131,7 +136,8 @@ const TOOL_PREREQUISITE_GUIDANCE: Readonly<Record<string, string>> = {
   send_x_dm: "Confirm the recipient and final private message before sending.",
   crm_create_opportunity:
     "Confirm the contact, opportunity name, stage, and any amount before creating the deal.",
-  crm_update_deal_stage: "Confirm the exact deal and intended stage before changing pipeline state.",
+  crm_update_deal_stage:
+    "Confirm the exact deal and intended stage before changing pipeline state.",
   route_to_business_unit:
     "Confirm the caller's need and destination, then preserve the reason and relevant context for the receiving team.",
 };
@@ -165,7 +171,9 @@ export function vapiToolMessages(name: string): VapiToolMessage[] | undefined {
 export function vapiToolExecutionGuidance(name: string): string | undefined {
   const specific = TOOL_PREREQUISITE_GUIDANCE[name];
   const completionRule =
-    DESTINATION_CONFIRMATION_TOOLS.has(name) || MATERIAL_WRITE_TOOLS.has(name) || name === "add_to_dnc"
+    DESTINATION_CONFIRMATION_TOOLS.has(name) ||
+    MATERIAL_WRITE_TOOLS.has(name) ||
+    name === "add_to_dnc"
       ? "After the result, say the action completed only when the result explicitly confirms success. If it fails, times out, or remains uncertain, state that plainly and offer a safe follow-up; never invent queueing or completion."
       : "";
   const genericConfirmation =
@@ -226,7 +234,14 @@ function calendarSafeParameters(
     ...parameters,
     type: "object",
     properties,
-    required: [...new Set([...existingRequired, "date", "timezone", ...(name === "book_appointment" ? ["time"] : [])])],
+    required: [
+      ...new Set([
+        ...existingRequired,
+        "date",
+        "timezone",
+        ...(name === "book_appointment" ? ["time"] : []),
+      ]),
+    ],
   };
 }
 

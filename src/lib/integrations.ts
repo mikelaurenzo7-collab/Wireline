@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
-import { google } from "googleapis";
+import { googleApis } from "./google-apis";
 import { drizzle, log, fetchWithTimeout } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
@@ -7,11 +7,7 @@ import { decryptSecret, encryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 import { createMeeting as createZoomMeeting } from "./zoom-service";
 import { fetchIcloudInbox, sendIcloudMail } from "./icloud-mail";
-import {
-  formatIsoInTimeZone,
-  localDateWindowToUtc,
-  normalizeIanaTimeZone,
-} from "./calendar-time";
+import { formatIsoInTimeZone, localDateWindowToUtc, normalizeIanaTimeZone } from "./calendar-time";
 
 const MAX_CALENDAR_PAGES = 20;
 
@@ -225,6 +221,7 @@ export class IntegrationService {
 
   private async fetchGoogleInbox(account: any, opts: { limit: number; sinceIso?: string }) {
     const auth = await this.getGoogleClient(account);
+    const google = await googleApis();
     const gmail = google.gmail({ version: "v1", auth });
     // `q` filters by Gmail search syntax. We always exclude category:promotions
     // and category:social so agent inboxes aren't flooded with newsletters.
@@ -305,30 +302,98 @@ export class IntegrationService {
     }));
   }
 
-  async sendEmail(params: { to: string; subject: string; body: string }): Promise<boolean> {
+  async sendEmail(params: {
+    to: string;
+    subject: string;
+    body: string;
+    /**
+     * True for recurring/unsolicited commercial mail (cadence email steps).
+     * Marketing sends honor a sender-scoped suppression list and carry the
+     * tenant's business identity, postal address, and unsubscribe affordance.
+     * They must leave from the tenant's connected mailbox so the RFC headers
+     * and commercial sender identity agree.
+     */
+    marketing?: boolean;
+  }): Promise<boolean> {
     try {
       const accounts = await this.getAccounts("mail");
       // Fallback: If no mail account, try calendar accounts (many have mail too)
       const mailAccounts = accounts.length > 0 ? accounts : await this.getAccounts("calendar");
 
       if (mailAccounts.length > 0) {
+        // Marketing compliance for the tenant's OWN mailbox transports. The
+        // platform-Resend fallback below applies its own suppression/footer/
+        // unsubscribe, so this only guards the OAuth paths that used to skip
+        // them entirely. Honoring the suppression list here is what makes a
+        // recorded opt-out binding no matter which mailbox sends.
+        let sendParams: {
+          to: string;
+          subject: string;
+          body: string;
+          marketing?: boolean;
+          unsubscribeHeaders?: Record<string, string>;
+        } = params;
+        if (params.marketing) {
+          const {
+            getTenantMarketingIdentity,
+            isTenantEmailSuppressed,
+            buildTenantComplianceFooterHtml,
+            buildTenantListUnsubscribeHeaders,
+          } = await import("./email-compliance");
+          const identity = await getTenantMarketingIdentity(this.userId);
+          if (!identity) {
+            log.warn("Marketing email skipped — tenant sender identity is incomplete", {
+              userId: this.userId,
+            });
+            return false;
+          }
+          if (await isTenantEmailSuppressed(this.userId, params.to)) {
+            log.info("Marketing email skipped — recipient opted out of this sender", {
+              userId: this.userId,
+              to: params.to,
+            });
+            return false;
+          }
+          sendParams = {
+            ...params,
+            body: `${params.body}${buildTenantComplianceFooterHtml({
+              userId: this.userId,
+              email: params.to,
+              identity,
+            })}`,
+            unsubscribeHeaders: buildTenantListUnsubscribeHeaders(this.userId, params.to),
+          };
+        }
+
         const account = mailAccounts[0];
         if (account.provider === "google") {
-          return await this.sendGoogleEmail(account, params);
+          return await this.sendGoogleEmail(account, sendParams);
         }
         if (account.provider === "microsoft") {
-          return await this.sendMicrosoftEmail(account, params);
+          return await this.sendMicrosoftEmail(account, sendParams);
         }
         if (account.provider === "icloud") {
           if (!account.accessToken || !account.emailAddress) return false;
           const email = account.emailAddress as string;
           const appPassword = decryptSecret(account.accessToken);
-          return sendIcloudMail(email, appPassword, params);
+          return sendIcloudMail(email, appPassword, sendParams);
         }
       }
 
-      // No OAuth mailbox — fall back to platform Resend so live voice
-      // agents can still deliver follow-ups when RESEND_API_KEY is set.
+      // A tenant cadence must leave from the tenant's own mailbox. Sending a
+      // customer's marketing campaign through Wireline's transactional Resend
+      // identity would misidentify the commercial sender and blur opt-out scope.
+      if (params.marketing) {
+        log.warn("Marketing email skipped — connect a tenant mailbox before sending cadences", {
+          userId: this.userId,
+        });
+        return false;
+      }
+
+      // Non-marketing messages here are transactional/relationship mail: team
+      // invitations, account-holder digests, or one-off follow-ups requested
+      // during an active customer conversation. Do not gate those on a marketing
+      // opt-out and do not append a misleading commercial unsubscribe footer.
       const { sendEmail: sendPlatformEmail } = await import("./email-service");
       const escaped = params.body
         .replace(/&/g, "&amp;")
@@ -380,15 +445,79 @@ export class IntegrationService {
   }
 
   private async getGoogleClient(account: any) {
+    const google = await googleApis();
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
     );
+    const accessToken = account.accessToken ? decryptSecret(account.accessToken) : null;
+    const refreshToken = account.refreshToken ? decryptSecret(account.refreshToken) : null;
+    const expiryDate = account.expiresAt ? Number(account.expiresAt) : null;
     oauth2Client.setCredentials({
-      access_token: decryptSecret(account.accessToken),
-      refresh_token: account.refreshToken ? decryptSecret(account.refreshToken) : null,
-      expiry_date: account.expiresAt ? Number(account.expiresAt) : null,
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expiry_date: expiryDate,
     });
+
+    const table =
+      account.__accountTable === "calendar"
+        ? schema.calendarAccounts
+        : account.__accountTable === "mail"
+          ? schema.emailAccounts
+          : account.emailAddress
+            ? schema.emailAccounts
+            : schema.calendarAccounts;
+
+    if (!accessToken) {
+      throw new Error("Google connection needs reconnect: access token is missing.");
+    }
+
+    // Google documents that revoked credentials surface as 400/401 OAuth
+    // failures. Refresh just before expiry so a terminal invalid_grant becomes
+    // durable reconnect state instead of leaving a row that looks connected
+    // forever. Successful refreshes are persisted for the next invocation.
+    if (expiryDate && Date.now() >= expiryDate - 60_000) {
+      if (!refreshToken) {
+        await drizzle
+          .update(table as any)
+          .set({ accessToken: null, refreshToken: null, expiresAt: BigInt(0) })
+          .where(eq((table as any).id, account.id));
+        throw new Error("Google connection needs reconnect: refresh token is missing.");
+      }
+
+      try {
+        const refreshed = await oauth2Client.getAccessToken();
+        const token = refreshed?.token;
+        if (!token) throw new Error("Google token refresh returned no access token.");
+        const credentials = oauth2Client.credentials;
+        await drizzle
+          .update(table as any)
+          .set({
+            accessToken: encryptSecret(token),
+            ...(credentials.refresh_token
+              ? { refreshToken: encryptSecret(credentials.refresh_token) }
+              : {}),
+            ...(credentials.expiry_date ? { expiresAt: BigInt(credentials.expiry_date) } : {}),
+          })
+          .where(eq((table as any).id, account.id));
+      } catch (error: any) {
+        const oauthCode = String(error?.response?.data?.error || error?.code || "").toLowerCase();
+        const message = getErrorMessage(error).toLowerCase();
+        const terminal =
+          oauthCode === "invalid_grant" ||
+          message.includes("invalid_grant") ||
+          message.includes("token has been expired or revoked") ||
+          message.includes("token has been revoked");
+        if (terminal) {
+          await drizzle
+            .update(table as any)
+            .set({ accessToken: null, refreshToken: null, expiresAt: BigInt(0) })
+            .where(eq((table as any).id, account.id));
+        }
+        throw error;
+      }
+    }
+
     return oauth2Client;
   }
 
@@ -399,6 +528,7 @@ export class IntegrationService {
     timeZone: string,
   ): Promise<string[]> {
     const auth = await this.getGoogleClient(account);
+    const google = await googleApis();
     const calendar = google.calendar({ version: "v3", auth });
     const events: any[] = [];
     let pageToken: string | undefined;
@@ -441,6 +571,7 @@ export class IntegrationService {
 
   private async createGoogleEvent(account: any, params: any): Promise<boolean> {
     const auth = await this.getGoogleClient(account);
+    const google = await googleApis();
     const calendar = google.calendar({ version: "v3", auth });
 
     const requestBody: any = {
@@ -476,13 +607,20 @@ export class IntegrationService {
 
   private async sendGoogleEmail(account: any, params: any): Promise<boolean> {
     const auth = await this.getGoogleClient(account);
+    const google = await googleApis();
     const gmail = google.gmail({ version: "v1", auth });
     const utf8Subject = `=?utf-8?B?${Buffer.from(params.subject).toString("base64")}?=`;
+    // Standard RFC 8058 opt-out headers Gmail honors, for marketing sends only
+    // (transactional sends pass none). Values are HMAC-token URLs from
+    // buildListUnsubscribeHeaders — no recipient-controlled text — so they
+    // cannot inject additional headers.
+    const unsubscribeHeaders: Record<string, string> = params.unsubscribeHeaders || {};
     const messageParts = [
       `To: ${params.to}`,
       "Content-Type: text/html; charset=utf-8",
       "MIME-Version: 1.0",
       `Subject: ${utf8Subject}`,
+      ...Object.entries(unsubscribeHeaders).map(([name, value]) => `${name}: ${value}`),
       "",
       params.body,
     ];
@@ -512,7 +650,8 @@ export class IntegrationService {
       $select: "subject,start,end,isAllDay",
       $orderby: "start/dateTime",
     });
-    let nextUrl: string | null = `https://graph.microsoft.com/v1.0/me/calendarView?${query.toString()}`;
+    let nextUrl: string | null =
+      `https://graph.microsoft.com/v1.0/me/calendarView?${query.toString()}`;
     const events: any[] = [];
     let exhausted = false;
 

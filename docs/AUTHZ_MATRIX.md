@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 368
-**Protected:** 301
+**Routes scanned:** 369
+**Protected:** 302
 **Public (allowlisted):** 67
 **Violations:** 0
 
@@ -282,6 +282,7 @@
 | knowledge-routes.ts | PATCH | `/api/knowledge/:id` | inline | — | — | Protected |
 | knowledge-routes.ts | DELETE | `/api/knowledge/:id` | inline | — | — | Protected |
 | launch-billing-checkout-atomic-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
+| launch-billing-checkout-atomic-routes.ts | POST | `/api/billing/checkout/verify` | inline | — | — | Protected |
 | launch-billing-checkout-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
 | learning-routes.ts | GET | `/api/agents/:id/learning-digest` | inline | — | — | Protected |
 | learning-routes.ts | POST | `/api/agents/lessons/review` | inline | — | — | Protected |

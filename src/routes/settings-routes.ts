@@ -324,35 +324,36 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user.id;
-      const [[agentRow], [callLogRow], [settingsRow], [prefsRow], [phoneRow]] = await drizzle.transaction((tx) =>
-        serialQueryBatch([
-          tx
-            .select({ count: sql<number>`count(*)` })
-            .from(agents)
-            .where(eq(agents.userId, userId)),
-          tx
-            .select({ count: sql<number>`count(*)` })
-            .from(callLogs)
-            .where(eq(callLogs.userId, userId)),
-          tx
-            .select({
-              subscriptionStatus: settings.subscriptionStatus,
-              vapiPhoneNumberId: settings.vapiPhoneNumberId,
-            })
-            .from(settings)
-            .where(eq(settings.userId, userId))
-            .limit(1),
-          tx
-            .select({ onboardingCompleted: userPreferences.onboardingCompleted })
-            .from(userPreferences)
-            .where(eq(userPreferences.userId, userId))
-            .limit(1),
-          tx
-            .select({ count: sql<number>`count(*)` })
-            .from(schema.phoneNumbers)
-            .where(eq(schema.phoneNumbers.userId, userId)),
-        ]),
-      );
+      const [[agentRow], [callLogRow], [settingsRow], [prefsRow], [phoneRow]] =
+        await drizzle.transaction((tx) =>
+          serialQueryBatch([
+            tx
+              .select({ count: sql<number>`count(*)` })
+              .from(agents)
+              .where(eq(agents.userId, userId)),
+            tx
+              .select({ count: sql<number>`count(*)` })
+              .from(callLogs)
+              .where(eq(callLogs.userId, userId)),
+            tx
+              .select({
+                subscriptionStatus: settings.subscriptionStatus,
+                vapiPhoneNumberId: settings.vapiPhoneNumberId,
+              })
+              .from(settings)
+              .where(eq(settings.userId, userId))
+              .limit(1),
+            tx
+              .select({ onboardingCompleted: userPreferences.onboardingCompleted })
+              .from(userPreferences)
+              .where(eq(userPreferences.userId, userId))
+              .limit(1),
+            tx
+              .select({ count: sql<number>`count(*)` })
+              .from(schema.phoneNumbers)
+              .where(eq(schema.phoneNumbers.userId, userId)),
+          ]),
+        );
 
       const platformVoiceReady = Boolean(process.env.VAPI_PRIVATE_KEY?.trim());
       const tenantHasNumber =
@@ -423,6 +424,13 @@ router.post(
         { key: "team_members", table: schema.teamMembers, useTenant: true },
       ];
 
+      // Columns that are secret material, not account data: hashed invite
+      // tokens serve only to authenticate a pending invite and don't belong
+      // in a data export.
+      const exportOmitColumns: Record<string, readonly string[]> = {
+        team_members: ["invitationTokenHash", "invitation_token_hash"],
+      };
+
       for (const item of tablesToExport) {
         const col = (item as any).useTenant
           ? (item.table as any).tenantId
@@ -432,7 +440,14 @@ router.post(
           .from(item.table as any)
           .where(eq(col, uid));
 
-        exportData[item.key] = rows;
+        const omit = exportOmitColumns[item.key];
+        exportData[item.key] = omit
+          ? rows.map((row: Record<string, unknown>) => {
+              const clean = { ...row };
+              for (const key of omit) delete clean[key];
+              return clean;
+            })
+          : rows;
         totalRows += rows.length;
       }
 

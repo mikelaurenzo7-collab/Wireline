@@ -17,12 +17,14 @@
 
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, lte, asc, inArray } from "drizzle-orm";
+import { eq, and, lte, asc, inArray, sql } from "drizzle-orm";
 import { placeOutboundCall } from "./vapi-client";
 import { assertOutboundVoiceAllowed } from "./voice-spend-control";
 import { sendTenantMessage } from "./twilio-service";
 import { IntegrationService } from "./integrations";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
+import { OUTBOUND_CONSENT_VERSION } from "./outbound-call-purpose";
+import { jsonSafeId, toJsonbSafe } from "./server-utils";
 
 interface CadenceStep {
   type: "call" | "sms" | "email";
@@ -61,7 +63,7 @@ async function executeStep(
   step: CadenceStep,
   cadence: CadenceRow,
   lead: LeadRow,
-): Promise<{ ok: boolean; result: string }> {
+): Promise<{ ok: boolean; result: string; defer?: boolean }> {
   const agentId = step.agentId || cadence.agentId || lead.agentId;
 
   // TCPA/federal DNC/express-written-consent: a cadence step is marketing
@@ -80,7 +82,14 @@ async function executeStep(
         metadata: lead.metadata || {},
       });
       if (!gate.allowed) {
-        return { ok: false, result: `skipped — ${gate.reason}` };
+        // Temporal denials (quiet hours, the lead's own 24h window) resolve on
+        // their own within a day — defer the step instead of skipping it, or a
+        // call step that comes due at 9pm lead-local simply never happens.
+        // Hard denials (DNC, lost consent) still skip: the touch must not run.
+        const temporal =
+          gate.reason === "outside_permitted_calling_hours" ||
+          gate.reason === "self_recent_call_scheduled";
+        return { ok: false, result: `skipped — ${gate.reason}`, defer: temporal };
       }
     } catch (err: any) {
       log.warn("cadence outbound compliance gate failed — failing closed", {
@@ -104,7 +113,46 @@ async function executeStep(
       customerName: lead.customerName,
       customerNumber: lead.customerNumber,
       context: `Cadence "${cadence.name}" — step type call`,
+      callPurpose: "marketing_or_sales",
     });
+    if (res.ok) {
+      // Mirror the campaign dialer: stamp the dial on the lead so the shared
+      // gate's 24h duplicate window sees it (a lead enrolled in a cadence AND
+      // a campaign must not get both calls the same morning), and write the
+      // consent-ledger evidence row for the marketing dial.
+      try {
+        await Promise.all([
+          drizzle
+            .update(schema.outboundLeads)
+            .set({
+              lastCalledAt: new Date(),
+              attempts: sql`${schema.outboundLeads.attempts} + 1`,
+              callId: res.callId,
+            })
+            .where(eq(schema.outboundLeads.id, lead.id)),
+          drizzle.insert(schema.consentLog).values({
+            userId: cadence.userId,
+            customerNumber: lead.customerNumber,
+            callId: res.callId,
+            event: "outbound_call_placed",
+            state: "initiated",
+            metadata: toJsonbSafe({
+              leadId: jsonSafeId(lead.id),
+              cadenceId: cadence.id,
+              call_purpose: "marketing_or_sales",
+              consent_version: OUTBOUND_CONSENT_VERSION,
+              source: "cadence",
+            }),
+          }),
+        ]);
+      } catch (recordErr: any) {
+        log.error("cadence call placed but dial evidence write failed", {
+          leadId: jsonSafeId(lead.id),
+          cadenceId: cadence.id,
+          error: recordErr?.message,
+        });
+      }
+    }
     return {
       ok: res.ok,
       result: res.ok ? `call placed ${res.callId}` : `call failed: ${res.error}`,
@@ -129,12 +177,16 @@ async function executeStep(
     if (!lead.email) return { ok: false, result: "no email on lead" };
     const body = applyVars(step.template || `Hi {{name}},\n\nFollowing up — Wireline`, lead);
     const integ = new IntegrationService(cadence.userId);
+    // Cadence email is recurring commercial mail: honor the suppression list
+    // and carry an unsubscribe affordance on every transport, including the
+    // tenant's own connected mailbox.
     const ok = await integ.sendEmail({
       to: lead.email,
       subject: `Following up — ${cadence.name}`,
       body,
+      marketing: true,
     });
-    return { ok, result: ok ? "email sent" : "email failed (no connected mailbox?)" };
+    return { ok, result: ok ? "email sent" : "email failed (suppressed or no connected mailbox?)" };
   }
 
   return { ok: false, result: `unknown step type ${step.type}` };
@@ -149,11 +201,19 @@ async function executeStep(
  */
 const CADENCE_STEP_LEASE_MS = 15 * 60 * 1000;
 
-export async function tickDueCadenceRuns({
-  limit = 50,
-}: {
-  limit?: number;
-}): Promise<{ processed: number; advanced: number; completed: number; failed: number }> {
+/** Retry delay when a step is deferred by a temporal gate (quiet hours). */
+const CADENCE_TEMPORAL_DEFER_MS = 60 * 60 * 1000;
+/** Retry delay after a step exception; one retry before the run fails. */
+const CADENCE_EXCEPTION_RETRY_MS = 15 * 60 * 1000;
+const STEP_EXCEPTION_RETRY_PREFIX = "step exception (will retry): ";
+
+export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Promise<{
+  processed: number;
+  advanced: number;
+  completed: number;
+  failed: number;
+  deferred: number;
+}> {
   const now = new Date();
   const dueRuns = await drizzle
     .select()
@@ -165,6 +225,7 @@ export async function tickDueCadenceRuns({
   let advanced = 0;
   let completed = 0;
   let failed = 0;
+  let deferred = 0;
 
   const cadenceIds = [...new Set(dueRuns.map((r) => r.cadenceId).filter(Boolean))] as string[];
   const leadIds = [...new Set(dueRuns.map((r) => r.leadId).filter((v): v is bigint => v != null))];
@@ -250,6 +311,23 @@ export async function tickDueCadenceRuns({
 
       const stepResult = await executeStep(step, cadenceRow as any, leadRow as any);
 
+      if (stepResult.defer) {
+        // Temporal gate denial: hold the run at this step and retry when the
+        // window can plausibly be open. Quiet hours re-open daily, so the
+        // deferral is self-limiting; advancing instead would silently drop
+        // the touch.
+        await drizzle
+          .update(schema.cadenceRuns)
+          .set({
+            nextDueAt: new Date(Date.now() + CADENCE_TEMPORAL_DEFER_MS),
+            lastResult: stepResult.result,
+            updatedAt: now,
+          })
+          .where(eq(schema.cadenceRuns.id, run.id));
+        deferred++;
+        continue;
+      }
+
       const nextIdx = currentIdx + 1;
       const nextStep = steps[nextIdx];
       if (!nextStep) {
@@ -278,13 +356,25 @@ export async function tickDueCadenceRuns({
       }
     } catch (err: any) {
       log.error("cadence tick run failed", { runId: run.id, error: err?.message });
+      // One transient exception (SMS provider hiccup, DB blip) must not kill a
+      // multi-week cadence. Grant a single retry, marked in lastResult; a
+      // second consecutive exception is treated as real and fails the run.
+      const alreadyRetried = (run.lastResult || "").startsWith(STEP_EXCEPTION_RETRY_PREFIX);
       await drizzle
         .update(schema.cadenceRuns)
-        .set({ status: "failed", lastResult: err?.message || "step exception", updatedAt: now })
+        .set(
+          alreadyRetried
+            ? { status: "failed", lastResult: err?.message || "step exception", updatedAt: now }
+            : {
+                nextDueAt: new Date(Date.now() + CADENCE_EXCEPTION_RETRY_MS),
+                lastResult: `${STEP_EXCEPTION_RETRY_PREFIX}${err?.message || "step exception"}`,
+                updatedAt: now,
+              },
+        )
         .where(eq(schema.cadenceRuns.id, run.id));
-      failed++;
+      if (alreadyRetried) failed++;
     }
   }
 
-  return { processed: dueRuns.length, advanced, completed, failed };
+  return { processed: dueRuns.length, advanced, completed, failed, deferred };
 }

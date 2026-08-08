@@ -120,7 +120,12 @@ async function purchaseTwilioLocalNumber(
   const client = getTwilioClient();
   if (!client) return null;
 
-  const smsUrl = `${appBaseUrl()}/api/twilio-webhook/sms`;
+  // Twilio retries 5xx responses only when the webhook URL explicitly opts
+  // into the 5xx retry policy. The bounded connection/read/total timers keep
+  // retries useful without tying up the carrier request budget indefinitely.
+  // URL fragments are connection-policy metadata and are excluded from Twilio's
+  // signature URL, so webhook verification still sees the canonical endpoint.
+  const smsUrl = `${appBaseUrl()}/api/twilio-webhook/sms#rc=2&rp=5xx,ct,rt&ct=3000&rt=5000&tt=15000`;
   // Vapi owns the primary voice webhook after import; Twilio still needs a
   // voiceFallbackUrl so carrier-side Vapi SIP/webhook failures reach our
   // degraded-mode handler instead of a silent hangup.

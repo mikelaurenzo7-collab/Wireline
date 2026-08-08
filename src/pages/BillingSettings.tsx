@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { ExternalLink, Loader2, Plus, ShieldCheck } from "lucide-react";
-import { Link } from "react-router";
 
 import { Badge, Button, Skeleton } from "../components/atoms";
-import UsageMeter from "../components/UsageMeter";
+import StripeBillingCard from "../components/StripeBillingCard";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -58,6 +57,21 @@ export default function BillingSettings() {
       setLoading(true);
       setLoadError(null);
       try {
+        // Returning from a successful Stripe checkout: prove the session
+        // server-side BEFORE reading billing status, so entitlements are
+        // synced even when webhook delivery is late, misconfigured, or
+        // dropped. Best-effort — the webhook remains the primary writer and
+        // the verify endpoint is idempotent against it.
+        const params = new URLSearchParams(window.location.search);
+        const returnedSessionId = params.get("session_id");
+        if (params.get("billing") === "success" && returnedSessionId) {
+          await authFetch("/api/billing/checkout/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: returnedSessionId }),
+          }).catch(() => {});
+        }
+
         const [statusRes, balanceRes] = await Promise.all([
           authFetch("/api/billing/status"),
           authFetch("/api/conversation-balance"),
@@ -215,11 +229,6 @@ export default function BillingSettings() {
 
             {!loading ? (
               <div className="flex flex-wrap gap-2">
-                {!paidPlan ? (
-                  <Button asChild disableAnimations>
-                    <Link to="/pricing">Choose a paid plan</Link>
-                  </Button>
-                ) : null}
                 {hasSubscription ? (
                   <Button
                     type="button"
@@ -242,7 +251,18 @@ export default function BillingSettings() {
           </div>
         </section>
 
-        {paidPlan ? <UsageMeter onUpgrade={() => (window.location.href = "/pricing")} /> : null}
+        {/*
+         * Plan selection + Stripe checkout, and the usage meter for anyone
+         * already on a paid plan. This card owns POST /api/billing/checkout.
+         *
+         * It used to be mounted only under /admin, which nothing in the app
+         * links to, while this page offered a "Choose a paid plan" link to the
+         * PUBLIC /pricing page. Every plan card there points at
+         * /signup?plan=..., and an already-authenticated visitor to /signup is
+         * redirected straight to /overview — so every in-product intent to pay
+         * landed back on the dashboard without ever reaching Stripe.
+         */}
+        {!loading ? <StripeBillingCard /> : null}
 
         <section className="grid gap-4 lg:grid-cols-2">
           <article className="wl-paper wl-paper-elevated flex min-h-[250px] flex-col p-5 sm:p-6">

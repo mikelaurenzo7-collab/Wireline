@@ -69,7 +69,8 @@ describe("managed PSTN voice model policy", () => {
   it("retries rejected Gemini outbound models through OpenAI at the application layer", () => {
     const vapi = readFileSync(resolve(process.cwd(), "src/lib/vapi-client.ts"), "utf8");
     expect(vapi).toContain("retrying with OpenAI voice fallback");
-    expect(vapi).toContain("|| VAPI_TENANT_DEFAULT_MODEL");
+    // Whitespace-tolerant: prettier may wrap the fallback expression across lines.
+    expect(vapi).toMatch(/\|\|\s+VAPI_TENANT_DEFAULT_MODEL/);
     expect(vapi).toContain("delete fallbackPayload.assistant.model.fallbackModels");
   });
 });

@@ -28,6 +28,7 @@ type IdentityResponse = {
     caller_id_name: string | null;
     website: string | null;
     support_email: string | null;
+    physical_postal_address: string | null;
     default_call_reason: string | null;
     requested_channels: Channel[];
     review_requested_at: string | null;
@@ -56,6 +57,7 @@ type IdentityForm = {
   caller_id_name: string;
   website: string;
   support_email: string;
+  physical_postal_address: string;
   default_call_reason: string;
   requested_channels: Channel[];
 };
@@ -67,6 +69,7 @@ const EMPTY_FORM: IdentityForm = {
   caller_id_name: "",
   website: "",
   support_email: "",
+  physical_postal_address: "",
   default_call_reason: "",
   requested_channels: [...CHANNELS],
 };
@@ -101,6 +104,7 @@ function formFromIdentity(identity: IdentityResponse): IdentityForm {
     caller_id_name: identity.profile.caller_id_name ?? "",
     website: identity.profile.website ?? "",
     support_email: identity.profile.support_email ?? "",
+    physical_postal_address: identity.profile.physical_postal_address ?? "",
     default_call_reason: identity.profile.default_call_reason ?? "",
     // The only non-string field, and the only one a missing value throws on
     // rather than blanking: spreading `undefined` is a TypeError.
@@ -119,6 +123,7 @@ function formFingerprint(form: IdentityForm): string {
     caller_id_name: form.caller_id_name.trim(),
     website: form.website.trim(),
     support_email: form.support_email.trim().toLowerCase(),
+    physical_postal_address: form.physical_postal_address.trim(),
     default_call_reason: form.default_call_reason.trim(),
     requested_channels: [...form.requested_channels].sort(),
   });
@@ -512,6 +517,21 @@ export default function CompanyIdentityPack() {
                 />
                 <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
                   Email identity review requires this address to match the company website domain.
+                </span>
+              </label>
+              <label className="text-xs font-medium text-foreground sm:col-span-2">
+                Physical postal address for commercial email
+                <input
+                  value={form.physical_postal_address}
+                  onChange={(event) => updateField("physical_postal_address", event.target.value)}
+                  className={FIELD_CLASS}
+                  maxLength={240}
+                  placeholder="123 Main St, Suite 200, Chicago, IL 60601"
+                  autoComplete="street-address"
+                />
+                <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
+                  Required for commercial email. Use your current street address or a registered
+                  PO/private mailbox that identifies your business.
                 </span>
               </label>
               <label className="text-xs font-medium text-foreground">

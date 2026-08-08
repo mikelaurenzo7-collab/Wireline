@@ -9,6 +9,8 @@ import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
+import { dispatchWebhook } from "../lib/webhook-helpers";
+import { runInBackground } from "../lib/background-work";
 
 const router = Router();
 
@@ -109,13 +111,18 @@ router.post(
               .insert(schema.emailThreads)
               .values(threadRows)
               .onConflictDoUpdate({
-                target: schema.emailThreads.threadId,
+                // Composite per-tenant key: provider/sender-chosen thread ids
+                // repeat across tenants' mailboxes, so a global thread_id
+                // target collided with another tenant's row and failed the
+                // whole sync. setWhere is belt-and-suspenders alongside RLS.
+                target: [schema.emailThreads.userId, schema.emailThreads.threadId],
                 set: {
                   subject: sql`excluded.subject`,
                   customerEmail: sql`excluded.customer_email`,
                   summary: sql`excluded.summary`,
                   lastMessageAt: sql`excluded.last_message_at`,
                 },
+                setWhere: sql`${schema.emailThreads.userId} = ${req.user.id}`,
               })
               .returning({ id: schema.emailThreads.id, threadId: schema.emailThreads.threadId });
 
@@ -144,13 +151,28 @@ router.post(
           const saved = await tx
             .insert(schema.emailMessages)
             .values(persistedMessageRows)
-            .onConflictDoNothing({ target: schema.emailMessages.googleMessageId })
+            .onConflictDoNothing({
+              target: [schema.emailMessages.userId, schema.emailMessages.googleMessageId],
+            })
             .returning({ id: schema.emailMessages.id });
           return saved.length;
         });
       }
 
       if (threadRows.length > 0 || messagesSaved > 0) touchNavCounts(req.user.id);
+      if (messagesSaved > 0) {
+        // The webhook catalog advertises email.received ("Inbound email synced
+        // from a connected mailbox"); this sync is its natural producer.
+        const savedCount = messagesSaved;
+        runInBackground("email.received webhook dispatch", () =>
+          dispatchWebhook(req.user.id, "email.received", {
+            messages_saved: savedCount,
+            threads_upserted: threadRows.length,
+            providers: Array.from(new Set(messages.map((message) => message.provider))),
+            at: new Date().toISOString(),
+          }),
+        );
+      }
       res.json({
         ok: true,
         fetched: messages.length,

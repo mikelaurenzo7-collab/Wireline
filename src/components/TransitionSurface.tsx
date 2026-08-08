@@ -1,7 +1,11 @@
 import { Loader2 } from "lucide-react";
 import { Link } from "react-router";
 
-import { Button } from "./atoms";
+// Deep import, not the ./atoms barrel. This component is in the eager entry
+// graph, and the barrel re-exports the Radix overlay stack (Dialog, DropdownMenu,
+// Tooltip, Switch …) which does not tree-shake — pulling ~94 KB of dialog code
+// into the marketing homepage, which renders none of it.
+import { Button } from "./atoms/Button";
 import WirelineMark from "./brand/WirelineMark";
 
 type TransitionDetail = {

@@ -22,19 +22,17 @@ describe("managed phone voice runtime policy", () => {
   const carrier = read("src/components/admin/CarrierPanel.tsx");
   const csp = read("src/lib/csp.ts");
   const vercel = read("vercel.json");
-  const migration = read(
-    "drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql",
-  );
+  const migration = read("drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql");
 
   it("streams curated studio speech with an independent Vapi fallback", () => {
     const voice = buildManagedVoiceRuntime({
       voiceProvider: "11labs",
-      voiceId: "21m00Tcm4TlvDq8ikWAM",
+      voiceId: "cgSgspJ2msm6clMCkdW9",
       fallbackVoiceId: "Elliot",
     });
     expect(voice).toMatchObject({
       provider: "11labs",
-      voiceId: "21m00Tcm4TlvDq8ikWAM",
+      voiceId: "cgSgspJ2msm6clMCkdW9",
       model: ELEVENLABS_REALTIME_MODEL,
       fallbackPlan: { voices: [{ provider: "vapi", voiceId: "Elliot" }] },
     });
@@ -101,28 +99,20 @@ describe("managed phone voice runtime policy", () => {
   });
 
   it("enforces approval and tenant isolation in Postgres", () => {
-    expect(migration).toMatch(
-      /CREATE TABLE IF NOT EXISTS public\.wireline_cloned_voices/,
-    );
+    expect(migration).toMatch(/CREATE TABLE IF NOT EXISTS public\.wireline_cloned_voices/);
     expect(migration).toMatch(/source_audio_retained = false/);
     expect(migration).toMatch(/quality_sample_model = 'eleven_flash_v2_5'/);
     expect(migration).toMatch(/ENABLE ROW LEVEL SECURITY/);
-    expect(migration).toMatch(
-      /REVOKE ALL ON TABLE[\s\S]*FROM anon, authenticated, service_role/,
-    );
+    expect(migration).toMatch(/REVOKE ALL ON TABLE[\s\S]*FROM anon, authenticated, service_role/);
     expect(migration).toMatch(/CREATE POLICY tenant_isolation/);
     expect(migration).toMatch(/voice\.status = 'approved'/);
     expect(migration).toMatch(/wireline_cloned_voice_revocation/);
     expect(migration).toMatch(/provider_verification_required = false/);
-    expect(migration).toMatch(
-      /quality_check_version = 'voice-quality-v1-2026-08-01'/,
-    );
+    expect(migration).toMatch(/quality_check_version = 'voice-quality-v1-2026-08-01'/);
   });
 
   it("preserves governed presenter mappings without coupling video state to phone voice", () => {
-    expect(migration).toMatch(
-      /lower\(coalesce\(NEW\.phone_voice_provider, ''\)\) = 'vapi'/,
-    );
+    expect(migration).toMatch(/lower\(coalesce\(NEW\.phone_voice_provider, ''\)\) = 'vapi'/);
     expect(migration).not.toMatch(/NEW\.video_presenter_[a-z_]+\s*:=/);
   });
 
@@ -137,21 +127,15 @@ describe("managed phone voice runtime policy", () => {
 
   it("makes after-hours follow-up durable and truthful", () => {
     expect(factory).toContain("Use create_followup_task before closing");
-    expect(factory).toContain(
-      "Promise follow-up only if that tool explicitly confirms",
-    );
-    expect(factory).toContain(
-      "Promise a relay only if that tool explicitly confirms",
-    );
+    expect(factory).toContain("Promise follow-up only if that tool explicitly confirms");
+    expect(factory).toContain("Promise a relay only if that tool explicitly confirms");
     expect(factory).toContain("I can take a message for the team");
     expect(factory).not.toContain("make sure the right person follows up");
   });
 
   it("keeps unrelated avatar experiments out of active authenticated pages", () => {
     expect(studio).toMatch(/SimpleVoicePicker/);
-    expect(studio).not.toMatch(
-      /AgentPresenceLivePreview|VoiceGallery|video presenter/,
-    );
+    expect(studio).not.toMatch(/AgentPresenceLivePreview|VoiceGallery|video presenter/);
     expect(knowledge).toMatch(/Business knowledge/);
     expect(knowledge).toMatch(/Test in Studio/);
     expect(knowledge).not.toMatch(

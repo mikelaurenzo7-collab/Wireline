@@ -120,7 +120,12 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/AuthPortal.tsx",
     authPortal,
-    /current\?\.preferredPlanId[\s\S]*current\.preferredPlanId !== "personal"[\s\S]*:\s*"starter"/,
+    // Matches the named-intermediate form: a plan the visitor explicitly asked
+    // for is hoisted into `statedPaidPlan`, and the business branch falls back
+    // to Starter when none was stated. The personal branch now reuses the same
+    // value instead of overwriting it with the free tier, so the old inline
+    // ternary this used to pin no longer exists.
+    /current\?\.preferredPlanId[\s\S]*current\.preferredPlanId !== "personal"[\s\S]*statedPaidPlan \?\? "starter"/,
     "business workspace selection must preserve paid intent or default to Starter",
   );
   mustInclude(

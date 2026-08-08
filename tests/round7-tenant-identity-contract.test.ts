@@ -47,7 +47,10 @@ describe("round-7 shared-provider tenant identity", () => {
     // pre-dial checkAndIncrement never advances the counter and
     // VOICE_BURST_DAILY could not fire. The settle happens post-call instead.
     const usage = read("src/lib/voice-usage.ts");
-    expect(usage).toContain('checkAndIncrement(userId, "voice_minutes_daily", minutes)');
+    expect(usage).toContain('checkAndIncrement(userId, "voice_minutes_daily", prepared.minutes)');
+    // A duplicate end-of-call delivery may resume an unfinished balance debit,
+    // but it must never consume the daily burst cap a second time.
+    expect(usage).toContain("if (prepared.newlyCounted) {");
 
     const control = read("src/lib/voice-spend-control.ts");
     expect(control).toContain('"voice_minutes_daily"');

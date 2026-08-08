@@ -10,7 +10,7 @@ import { drizzle, serialQueryBatch } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, gte, lt, desc } from "drizzle-orm";
 import * as insightsAi from "./insights-ai";
-import { google } from "googleapis";
+import { googleApis } from "./google-apis";
 import { buildOAuthClient } from "./oauth-helpers";
 import { decryptSecret } from "./secret-vault";
 import { cachedInsight, setCachedInsight } from "./insights-cache";
@@ -428,12 +428,13 @@ export async function sendDailyBriefEmail(userId: string, opts?: { force?: boole
     appUrl: process.env.APP_URL,
   });
 
-  const oauth2Client = buildOAuthClient();
+  const oauth2Client = await buildOAuthClient();
   oauth2Client.setCredentials({
     access_token: decryptSecret(account.accessToken),
     refresh_token: account.refreshToken ? decryptSecret(account.refreshToken) : null,
     expiry_date: account.expiresAt ? Number(account.expiresAt) : null,
   });
+  const google = await googleApis();
   const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
   // Multipart/alternative — text part first, then HTML, per RFC 2046.

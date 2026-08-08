@@ -287,25 +287,37 @@ router.post(
  * Magic-link landing for the email-verification flow. The link in
  * the email points here; we look up the token by sha256 hash,
  * validate TTL + unused state, flip users.emailVerifiedAt, then
- * redirect the browser to "/?verified=1" so the SPA can show a
- * brief success toast.
+ * redirect into the workspace with "?verified=..." so the SPA can show
+ * a brief success toast.
+ *
+ * The landing path must be an authenticated route. EmailVerifyBanner is
+ * the only reader of this param and it is mounted inside WorkspaceShell,
+ * which never renders on the public marketing homepage — so redirecting
+ * to "/" dropped the confirmation entirely: the user clicked the link,
+ * got the marketing page with a stale query string, and no feedback that
+ * the verification (a hard gate on every paid action) had succeeded. On
+ * the expired path they also lost the resend affordance the banner
+ * offers.
  */
+const VERIFY_EMAIL_LANDING_PATH = "/overview";
+
 router.get("/api/auth/verify-email/:token", async (req: Request, res: Response) => {
   const token = String(req.params.token || "");
+  const baseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+  const landing = (state: string) =>
+    `${baseUrl}${VERIFY_EMAIL_LANDING_PATH}?verified=${encodeURIComponent(state)}`;
   try {
     const user = await authService.completeEmailVerification(token);
-    const baseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
     if (!user) {
       // Generic message — never leak which case (expired / used /
       // bad hash) so an attacker can't enumerate tokens.
-      return res.redirect(`${baseUrl}/?verified=expired`);
+      return res.redirect(landing("expired"));
     }
     log.info("Email verified", { userId: user.id });
-    return res.redirect(`${baseUrl}/?verified=1`);
+    return res.redirect(landing("1"));
   } catch (err: any) {
     log.error("verify-email endpoint failed", { error: err?.message ?? String(err) });
-    const baseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
-    return res.redirect(`${baseUrl}/?verified=error`);
+    return res.redirect(landing("error"));
   }
 });
 

@@ -64,8 +64,22 @@ describe("inbound/outbound runtime parity contract", () => {
     const message = buildOutboundVoicemailMessage("Riley");
     expect(message).toContain("Riley");
     expect(message).not.toMatch(/debt|invoice|balance|payment|collection/i);
-    // Signature stays context-free: identity + callback only.
-    expect(buildOutboundVoicemailMessage.length).toBe(1);
+    // Signature stays context-free: identity + callback inputs only (agent
+    // name, business name, callback number) — never WHY we called.
+    expect(buildOutboundVoicemailMessage.length).toBe(3);
+  });
+
+  it("voicemail fallback states the responsible business and callback number when known", () => {
+    // 64.1200(b)(1)/(b)(2): an artificial-voice answering-machine message must
+    // identify the responsible business and state a callback number — caller
+    // ID is not a statement. Degrades to identity-only when unconfigured.
+    const full = buildOutboundVoicemailMessage("Riley", "Acme Plumbing", "415-555-0134");
+    expect(full).toContain("Riley with Acme Plumbing");
+    expect(full).toContain("reach us at 415-555-0134");
+    // No duplicate naming when the agent is named after the business.
+    const dedup = buildOutboundVoicemailMessage("Acme Plumbing", "Acme Plumbing", null);
+    expect(dedup).not.toContain("with Acme Plumbing");
+    expect(dedup).toContain("reach us back at this number");
   });
 
   it("call analysis includes success evaluation on BOTH call directions", () => {

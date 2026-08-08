@@ -33,7 +33,7 @@ import { verifyYahooIdToken } from "../lib/yahoo-openid";
 
 import { createHmac, randomBytes } from "node:crypto";
 import { Router, Request, Response } from "express";
-import { google } from "googleapis";
+import { googleApis } from "../lib/google-apis";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { sessionUsers } from "../db/security-schema";
@@ -393,7 +393,7 @@ async function bridgeRedirect(
 
 /* ─────────────────────────  Google  ─────────────────────── */
 
-router.get("/api/auth/google/url", oauthRateLimiter, (req: Request, res: Response) => {
+router.get("/api/auth/google/url", oauthRateLimiter, async (req: Request, res: Response) => {
   try {
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
       throw AppError.fromHttpStatus(503, "Google sign-in is not configured.");
@@ -401,6 +401,7 @@ router.get("/api/auth/google/url", oauthRateLimiter, (req: Request, res: Respons
     beginOAuthSignIn(res);
     const baseUrl = oauthAppBaseUrl();
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
+    const google = await googleApis();
     const client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
@@ -437,6 +438,7 @@ router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
   }
   try {
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
+    const google = await googleApis();
     const client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,

@@ -27,6 +27,7 @@ describe("company identity pack", () => {
         callerIdName: "ACME SERVICES",
         website: "https://example.com/",
         supportEmail: "support@example.com",
+        physicalPostalAddress: "123 Main St, Chicago, IL 60601",
         defaultCallReason: "Appointment confirmation",
       },
     });
@@ -53,6 +54,7 @@ describe("company identity pack", () => {
     expect(readiness.voice.missing).toContain("15-character caller ID fallback name");
     expect(readiness.sms.missing).toContain("support email");
     expect(readiness.email.missing).toContain("support email on the company domain");
+    expect(readiness.email.missing).toContain("valid physical postal address for commercial email");
     expect(
       canRequestCompanyIdentityReview({ readiness, requestedChannels: ["voice", "sms", "email"] }),
     ).toBe(false);
@@ -90,6 +92,7 @@ describe("company identity pack", () => {
       callerIdName: "ACME",
       website: "https://example.com/",
       supportEmail: "support@example.com",
+      physicalPostalAddress: "123 Main St, Chicago, IL 60601",
       defaultCallReason: "Scheduling",
       phoneNumber: "+13125550123",
     };
@@ -105,6 +108,7 @@ describe("company identity pack", () => {
 
     expect(first).toMatch(/^[a-f0-9]{64}$/);
     expect(first).not.toContain(base.supportEmail);
+    expect(first).not.toContain(base.physicalPostalAddress);
     expect(first).not.toContain(base.phoneNumber);
     expect(first).not.toBe(renamed);
     expect(first).not.toBe(renumbered);

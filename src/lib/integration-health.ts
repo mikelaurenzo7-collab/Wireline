@@ -71,6 +71,18 @@ export async function computeIntegrationHealth(userId: string): Promise<Integrat
   let reconnect_microsoft_mailbox = false;
 
   if (hasGoogle) {
+    const googleRows = [...emails, ...cals].filter((r: any) => r.provider === "google");
+    if (
+      googleRows.some(
+        (r: any) =>
+          !r.accessToken || !r.refreshToken || r.accessToken === null || r.refreshToken === null,
+      )
+    ) {
+      reconnect_google_calendar = true;
+      reasons.push(
+        "Google mailbox/calendar tokens were revoked, expired, or cannot refresh. Reconnect Google in Connections.",
+      );
+    }
     if (googleScopeStrings.length === 0) {
       calendar_scope_unknown_google = true;
       reconnect_google_calendar = true;

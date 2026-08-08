@@ -16,9 +16,15 @@ const section = (start: string, end: string) => {
 
 describe("Drizzle source schema parity", () => {
   it("tracks the latest committed migration", () => {
-    expect(schema).toContain(
-      "`drizzle/migrations/0134_free_builder_simulation_allowance.sql`",
-    );
+    // Derived from the journal rather than a literal: this header drifted at
+    // 0129 (2026-08-04 audit) and again at 0134 (PR #1023) because nothing
+    // recomputed the expectation when a migration landed.
+    const journal = JSON.parse(
+      readFileSync(resolve(process.cwd(), "drizzle/migrations/meta/_journal.json"), "utf8"),
+    ) as { entries: Array<{ tag: string }> };
+    const latestTag = journal.entries[journal.entries.length - 1]?.tag;
+    expect(latestTag).toBeTruthy();
+    expect(schema).toContain(`\`drizzle/migrations/${latestTag}.sql\``);
   });
 
   it("mirrors the server-owned account environment classification", () => {
@@ -38,9 +44,7 @@ describe("Drizzle source schema parity", () => {
       "// 1.2.1 SPEND ALERTS",
     );
 
-    expect(spendBudgets).toMatch(
-      /monthlyLimitUsd:[\s\S]*?\.default\("1\.50"\)\s*\.notNull\(\)/,
-    );
+    expect(spendBudgets).toMatch(/monthlyLimitUsd:[\s\S]*?\.default\("1\.50"\)\s*\.notNull\(\)/);
     expect(spendBudgets).toMatch(
       /hardCap:\s*boolean\("hard_cap"\)\s*\.default\(true\)\s*\.notNull\(\)/,
     );
@@ -54,6 +58,6 @@ describe("Drizzle source schema parity", () => {
       /updatedAt:\s*timestamp\("updated_at",\s*\{\s*withTimezone:\s*true\s*\}\)\s*\.defaultNow\(\)\s*\.notNull\(\)/,
     );
     expect(spendBudgets).not.toContain('.default("0")');
-    expect(spendBudgets).not.toContain("hardCap: boolean(\"hard_cap\").default(false)");
+    expect(spendBudgets).not.toContain('hardCap: boolean("hard_cap").default(false)');
   });
 });

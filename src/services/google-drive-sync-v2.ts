@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { google } from "googleapis";
+import { googleApis } from "../lib/google-apis";
 import { and, eq } from "drizzle-orm";
 import { decryptSecret, encryptSecret } from "../lib/secret-vault";
 import { drizzle } from "../lib/server-context";
@@ -28,6 +28,7 @@ export async function syncGoogleDriveToKnowledge(userId: string, agentId: string
       message: "No Google Workspace account is connected.",
       ingestedCount: 0,
     };
+  const google = await googleApis();
   const oauth = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,

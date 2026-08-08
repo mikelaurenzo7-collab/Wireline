@@ -114,6 +114,7 @@ function fingerprintProfile(profile: {
   callerIdName: string | null;
   website: string | null;
   supportEmail: string | null;
+  physicalPostalAddress: string | null;
   defaultCallReason: string | null;
   phoneNumber: string | null;
 }): string {
@@ -251,6 +252,7 @@ function publicPayload(state: Awaited<ReturnType<typeof loadIdentityState>>) {
       caller_id_name: state.profile.callerIdName,
       website: state.profile.website,
       support_email: state.profile.supportEmail,
+      physical_postal_address: state.profile.physicalPostalAddress,
       default_call_reason: state.profile.defaultCallReason,
       requested_channels: state.profile.requestedChannels,
       review_requested_at: state.profile.reviewRequestedAt,
@@ -315,6 +317,11 @@ router.post(
       const nextCallerIdName = callerIdName(req.body?.caller_id_name);
       const website = httpsUrl(req.body?.website, "Website");
       const nextSupportEmail = supportEmail(req.body?.support_email);
+      const physicalPostalAddress = nullableText(
+        req.body?.physical_postal_address,
+        "Physical postal address",
+        240,
+      );
       const defaultCallReason = nullableText(
         req.body?.default_call_reason,
         "Default call reason",
@@ -343,6 +350,10 @@ router.post(
           website: website === undefined ? current.preferences.website : website,
           supportEmail:
             nextSupportEmail === undefined ? current.preferences.supportEmail : nextSupportEmail,
+          physicalPostalAddress:
+            physicalPostalAddress === undefined
+              ? current.preferences.physicalPostalAddress
+              : physicalPostalAddress,
           defaultCallReason:
             defaultCallReason === undefined
               ? current.preferences.defaultCallReason
@@ -361,6 +372,7 @@ router.post(
           callerIdName: nextIdentityValues.callerIdName,
           website: nextIdentityValues.website,
           supportEmail: nextIdentityValues.supportEmail,
+          physicalPostalAddress: nextIdentityValues.physicalPostalAddress,
           defaultCallReason: nextIdentityValues.defaultCallReason,
           requestedChannels: requestedChannelSelection,
           reviewRequestedAt: identityChanged ? null : current.preferences.reviewRequestedAt,

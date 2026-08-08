@@ -239,6 +239,41 @@
       "when": 1786077600000,
       "tag": "0135_voice_usage_event_idempotency",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1786080000000,
+      "tag": "0136_consent_evidence_uniqueness",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1786118400000,
+      "tag": "0137_per_tenant_sync_keys_and_reenrollment",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1786132800000,
+      "tag": "0138_ai_disclosure_evidence_uniqueness",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1786219200000,
+      "tag": "0139_tenant_email_suppressions",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1786221000000,
+      "tag": "0140_daily_brief_dispatch_lease",
+      "breakpoints": true
     }
   ]
 }

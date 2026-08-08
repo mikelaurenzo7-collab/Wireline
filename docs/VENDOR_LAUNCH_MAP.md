@@ -26,11 +26,45 @@ immediately before GA:
   voice default; `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK` remains the explicit
   opt-in for appending direct xAI after the AI Gateway.
 - Vapi credentials are accepted, with 18 reachable phone numbers and assistant inventory access.
-- Twilio is active (~`$23.66` balance); **9/9** incoming numbers are voice+SMS capable and now
-  point SMS at `https://trywireline.com/api/twilio-webhook/sms` (stale `coordinagents.com`
-  toll-free webhook remediated). Messaging Service
-  `MG92d5225d0c71519d74bc1c1f2f083287` (`Wireline Messaging`) has delivery
-  `StatusCallback` set to `/api/twilio-webhook/message-status`.
+- Twilio is active (`$20.76` balance, re-verified live 2026-08-07); **7/7** incoming numbers are
+  voice+SMS capable and point voice at Vapi inbound, SMS at
+  `https://trywireline.com/api/twilio-webhook/sms`, and status callbacks at Vapi. Messaging Service
+  `MG92d5225d0c71519d74bc1c1f2f083287` (`Wireline Messaging`) holds the toll-free number and
+  defers inbound to the number's webhook (`use_inbound_webhook_on_number: true`).
+- **Toll-free SMS verification for `+1 (855) 542-7828` was TWILIO_REJECTED** ("Verbal Consent
+  Script Must Be Provided") under the stale coordinAGENTS identity. Resubmitted live 2026-08-07
+  (verification `HH720c68ae28f83278466af8226c2eba53`) under the Wireline identity with the verbal
+  consent script that is pinned into the agent runtime (`vapi-tool-format.ts` →
+  `send_text_message` guidance; contract-tested). Re-checked live 2026-08-08: status `IN_REVIEW`,
+  no rejection reason. Until Twilio approves, US toll-free SMS from this number is subject to
+  carrier blocking — watch for the review outcome at `mikelaurenzo7@gmail.com`. Note the runtime
+  script gained two carrier elements (frequency + message type) after resubmission; the four
+  originally attested elements are unchanged, so no re-attestation is needed — the script only
+  got stricter.
+- **No A2P 10DLC brand/campaign exists** for the six local tenant numbers; unregistered US 10DLC
+  traffic is heavily filtered. The Trust Hub profile `coordinAGENTS` is twilio-approved, so a
+  standard brand registration can proceed from it, but it incurs one-time/recurring carrier fees —
+  owner decision before tenant SMS at volume. Adversarially verified constraints (2026-08-08,
+  Twilio primary docs) that shape this decision:
+  - **ISV model requires per-tenant registration.** Twilio's ISV onboarding requires a Primary
+    Customer Profile for Wireline plus a Secondary Customer Profile and its own Brand for every
+    end customer, populated with that customer's business details. There is no lawful shortcut of
+    one Wireline brand sending all tenant SMS — tenant onboarding must collect legal business
+    name, EIN, address, and an authorized contact before tenant SMS, and per-tenant registration
+    fees plus approval lag belong in plan unit economics.
+  - **Subaccount isolation is a suspension firewall.** Twilio states that when subaccounts are not
+    mapped to individual customers, one customer's noncompliant traffic can force suspension of
+    the primary Account — platform-wide SMS loss. Per-tenant subaccounts are business continuity,
+    not bookkeeping.
+  - **Sole Proprietor caps.** A Sole Proprietor campaign carries exactly one 10DLC number, and its
+    OTP verification number must be a real US/CA mobile — not a Twilio/CPaaS number. Any
+    multi-number tenant (separate inbound and campaign numbers) is forced onto Standard brand
+    registration.
+  - **One-to-one consent is NOT required (for now).** The Eleventh Circuit vacated Part III.D of
+    the FCC's 2023 order (both one-to-one consent and the logically-and-topically-associated
+    rule) as exceeding statutory authority; neither is in force. Do not market per-seller consent
+    capture as a legal requirement, but keep the capability — the case was remanded and the FCC
+    may re-promulgate.
 - Scoped Twilio REST credentials `TWILIO_API_KEY` + `TWILIO_API_SECRET` are installed on
   Vercel production/preview (Standard key verified against IncomingPhoneNumbers). Keep
   `TWILIO_AUTH_TOKEN` for webhook-signature validation; rotate it out-of-band when convenient.
@@ -55,6 +89,17 @@ immediately before GA:
   Wireline can create a catalog-fingerprinted managed configuration on first use, but that path
   must be proven before paid self-serve checkout.
 - Twilio has no ONLINE WhatsApp sender (private beta).
+- **Before flipping `WIRELINE_LIVE_VIDEO_CATALOG_READY=true`** (2026-08-08 billing-chain audit,
+  verified in source): the checkout `ALREADY_SUBSCRIBED` guard counts ANY live subscription on the
+  customer with no base-plan filter, and nothing cancels the add-on subscription when the base plan
+  is canceled. Enabled as-is, a customer who cancels their base plan keeps paying for an add-on the
+  entitlement layer denies, and the orphaned add-on subscription permanently 409s them out of
+  re-subscribing. Fix both (filter the guard to base-plan prices; cascade add-on cancellation on
+  base-plan terminal states) before enabling the add-on catalog. Two audited-and-accepted design
+  notes, recorded so they are not rediscovered as bugs: the renewal runtime allowance is granted at
+  period start before the renewal invoice settles (bounded — past_due blocks live actions), and
+  mid-cycle portal upgrades do not top up the current period's allowance (the dedupe key is the
+  period, by design).
 
 Launch remains blocked until the following are cleared:
 
@@ -63,18 +108,32 @@ Launch remains blocked until the following are cleared:
    compliant portal by exercising Wireline's managed bootstrap (or configuring a Dashboard default).
 2. **Complete one controlled Stripe lifecycle.** Prove checkout → webhook → entitlement → portal →
    cancellation/refund on a real test customer before inviting paid self-serve users.
-3. ~~**Restore full GitHub Actions execution.**~~ **Cleared 2026-08-01.** Workflow runs execute
-   again: PR #952 head `e9278fc` completed the whole matrix green, including the Full verification
-   ladder (3m 8s), build-smoke, the P0 route-capture gate (5m 59s), the Playwright axe WCAG gate,
-   and the static/metadata contract jobs — real durations and retrievable logs, not the
-   `startup_failure` billing pattern that produced two-second jobs with no logs. Treat a single
-   green matrix as recovery evidence, not a permanent guarantee: if `startup_failure` returns, the
-   repository billing limit is back and Vercel exact-head builds are again the compensating gate.
+3. **GitHub Actions is back on the billing limit — compensating gate active.** The 2026-08-01
+   recovery did not hold: runs from 2026-08-04 onward show the `startup_failure` billing pattern
+   again (two-to-twelve-second jobs, no logs). Owner direction 2026-08-07: treat these failures as
+   billing noise, not code signal. Per this item's own standing rule, Vercel exact-head builds plus
+   the local full verification ladder are again the compensating release gate. The contract gates
+   added since 2026-08-06 still have never executed on a runner; their first real run remains their
+   first true test once billing is restored.
 4. **Rotate every Vercel personal token pasted into chat** after this pass; revoke each after
    redeploying any values changed with that credential.
 5. **Configure and prove Federal DNCScrub with a live JSON scrub** before scaled marketing
    outbound. Set a valid endpoint/loginId in each intended environment; variable presence alone does
    not prove vendor authentication or disposition semantics.
+   **Registration package (prepared 2026-08-07 from the live Stripe account record; owner must
+   submit — the FTC certification and payment are legal attestations):**
+   - Entity: sole proprietorship — Michael Laurenzo d/b/a Wireline (Stripe `business_type:
+     individual`, identity verified; no EIN on file). Recommended first step: obtain a free IRS EIN
+     online so no SSN appears on registry or vendor forms.
+   - Profile data: Wireline, 914 West Van Buren Street, Chicago, IL 60607, US ·
+     +1 (561) 727-0142 · https://trywireline.com · owner Gmail as contact.
+   - Step 1 — FTC Telemarketer Account Profile at telemarketing.donotcall.gov → organization ID +
+     password (shown once on screen, never emailed).
+   - Step 2 — Subscribe and certify to receive the SAN. First five area codes are free; each
+     additional area code is $82 in FY 2026. Start with the area codes of the first campaign lists.
+   - Step 3 — Open the DNCScrub account at dnc.com keyed to that SAN; the issued `loginId` is the
+     `FEDERAL_DNC_API_KEY`. Set it with `FEDERAL_DNC_API_URL` on the production target only (the
+     preview boundary gate intentionally excludes it), then prove semantics with `npm run dnc:probe`.
 6. **Complete the controlled live channel matrix.** Account probes do not prove call transfer,
    `gemini_ground`, SMS STOP/HELP, real transactional email delivery, or provider redelivery.
 7. **Complete fresh visual QA.** Use the approved cloud browser at exact desktop and mobile
@@ -89,9 +148,15 @@ Launch remains blocked until the following are cleared:
     name and valid physical postal/notice address. Set `WIRELINE_POSTAL_ADDRESS` in production,
     verify it appears in every commercial email, and update Terms/Privacy contact language before
     admitting customers. The lifecycle-email path must stay fail-closed while this is unresolved.
-    External Sentry is not a launch gate. Structured Vercel/runtime logs and the bounded
-    `/api/health/report` browser reporter are the launch observability boundary; adopt Sentry later
-    only after its SDK, project, alert policy, and browser/backend receipt are explicitly tested.
+    **Value prepared 2026-08-07** from the live Stripe records (tax head office and support address
+    agree): `Wireline, 914 West Van Buren Street, Chicago, IL 60607`. One command applies it:
+    `vercel env add WIRELINE_POSTAL_ADDRESS production` (repeat for `development`; keep it out of
+    preview per the boundary policy).
+    Server-side Sentry is now live (verified 2026-08-07): `SENTRY_DSN` is set on all targets and
+    `src/lib/error-reporter.ts` posts exceptions to the Sentry store endpoint over native fetch with
+    no SDK, so backend receipt is proven (`revaluate/wireline-backend` is receiving events). The
+    remaining Sentry work is an explicit P0 alert policy; the browser reporter stays the bounded
+    `/api/health/report` path and browser-side Sentry remains optional.
     Ads Manager is intentionally out of scope by founder direction.
 
 WhatsApp is not a core-launch blocker, but it remains **private beta** until an
@@ -165,10 +230,10 @@ compatibility fallback until it is rotated.
 | Vapi                | PSTN orchestration                              | credential ready; 18 numbers reachable                      | Confirm billing/auto-reload and complete live call matrix                      |
 | Twilio              | Carrier, numbers, SMS, WhatsApp                 | active; ~$23.66; 9 voice/SMS; API key pair installed        | Rotate Auth Token when convenient; Usage Triggers; channel E2E                 |
 | ElevenLabs          | Managed Studio TTS + private clones             | Creator; API/catalog ready; Vapi live proof pending         | Install Vapi BYOK; disable provider training; prove voice + fallback           |
-| Resend              | Transactional + lifecycle email                 | configured; delivery/address proof pending                  | Set postal address; test real verification/reset and one commercial footer     |
+| Resend              | Transactional + lifecycle email                 | domain verified (DKIM+SPF+DMARC p=none); `WIRELINE_POSTAL_ADDRESS` set 2026-08-07; delivery proof pending | Prove one real verification/reset + commercial footer; add DMARC `rua` reporting, then move to `p=quarantine` |
 | Upstash             | Distributed rate limits                         | credentials ready                                           | Maintain production database and billing                                       |
 | Federal DNC vendor  | Marketing scrub                                 | **unconfigured; marketing fails closed**                    | Configure valid loginId; prove live JSON semantics; maintain scrub credits     |
-| Sentry              | Error alerts                                    | not connected/certified in this audit                       | Add SDK/project/DSN and prove browser+backend receipt, or keep it non-required |
+| Sentry              | Error alerts                                    | **live**: `SENTRY_DSN` set on all targets; server `reportError` posts to the store endpoint (no SDK); `revaluate/wireline-backend` receiving events | Set an alert policy on P0 tags; browser receipt still optional (bounded `/api/health/report` covers the client) |
 | LiveAvatar / HeyGen | Video add-on                                    | launch-paused; 60-min cap implemented                       | Fund only after consent, catalog, paid-lifecycle, and demand gates pass        |
 | Apollo              | Enrichment                                      | optional                                                    | Add capped budget only when Lead Hunt is sold                                  |
 | Perplexity          | Live public research (PSTN tool)                | optional; Gemini grounded already covers                    | Set `PERPLEXITY_API_KEY` (+ `PERPLEXITY_MODEL=sonar`) for fresher answers      |

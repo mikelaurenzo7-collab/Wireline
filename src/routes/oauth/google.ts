@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
-import { google } from "googleapis";
+import { googleApis } from "../../lib/google-apis";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { encryptSecret } from "../../lib/secret-vault";
@@ -29,7 +29,7 @@ router.get(
   "/api/oauth/google/url",
   oauthRateLimiter,
   authenticateUser,
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
       return res.status(500).json({
         code: "INTERNAL_ERROR",
@@ -38,7 +38,7 @@ router.get(
     }
 
     const uid = req.user?.id as string | undefined;
-    const oauth2Client = getGoogleOAuthClient(req);
+    const oauth2Client = await getGoogleOAuthClient(req);
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: "offline",
       scope: SCOPES,
@@ -67,9 +67,11 @@ router.get(
     }
 
     try {
-      const oauth2Client = getGoogleOAuthClient(req);
+      const oauth2Client = await getGoogleOAuthClient(req);
       const { tokens } = await oauth2Client.getToken(code);
       oauth2Client.setCredentials(tokens);
+
+      const google = await googleApis();
 
       const oauth2 = google.oauth2({ auth: oauth2Client, version: "v2" });
       const userInfo = await oauth2.userinfo.get();

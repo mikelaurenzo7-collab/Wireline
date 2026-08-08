@@ -5,6 +5,11 @@ import { superviseClientCommunication } from "../../lib/ai-supervisor";
 import * as schema from "../../db/schema";
 import { auditLogger } from "../../lib/server-context";
 import { normalizeDncPhone } from "../../lib/compliance";
+import {
+  CONSENT_RULE_VERSION,
+  buildConsentLedgerRow,
+  getConsentRuleForPhone,
+} from "../../lib/tcpa-consent";
 import { IntegrationService } from "../../lib/integrations";
 import { lookupTenantPhoneNumber, sendTenantMessage } from "../../lib/twilio-service";
 import { PRESERVED_LEAD_STATUSES, sanitizePhone } from "../../lib/vapi-helpers";
@@ -133,6 +138,44 @@ async function searchAgentKnowledge(
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Persist a real follow-up task so a caller-facing promise ("someone will send
+ * that to you") is backed by a record a human can act on. The client-comms
+ * supervisor THROWS on a block (it never returns approved:false), so a blocked
+ * or failed send lands in a catch — where the agent used to tell the caller a
+ * human would follow up while writing nothing at all. Best-effort: never let a
+ * task-write failure turn into an unhandled tool error.
+ */
+async function recordCommsFollowUpTask(
+  drizzle: any,
+  values: {
+    userId: string;
+    agentId?: string | null;
+    channel: "email" | "sms";
+    recipient: string | null | undefined;
+    payload: Record<string, unknown>;
+  },
+): Promise<boolean> {
+  try {
+    await drizzle.insert(schema.followUpTasks).values({
+      userId: values.userId,
+      agentId: values.agentId ?? null,
+      taskType: values.channel === "email" ? "send_email" : "send_text_message",
+      description: `${values.channel === "email" ? "Email" : "Text"} follow-up to ${
+        values.recipient || "caller"
+      } — flagged for human review from a live call`,
+      status: "pending",
+      priority: "high",
+      targetChannel: values.channel,
+      sourceType: "voice_tool",
+      payload: values.payload,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function handleCoreToolCall(
   fn: string,
   args: any,
@@ -196,7 +239,8 @@ export async function handleCoreToolCall(
     } catch {
       return {
         toolCallId,
-        result: "I've noted that down. I'll make sure the team follows up with you.",
+        result:
+          "I couldn't save that follow-up task just now. Please contact the team directly or ask me to try again.",
       };
     }
   }
@@ -289,8 +333,11 @@ export async function handleCoreToolCall(
   }
 
   if (fn === "send_email") {
+    const { to_email, subject, body } = args || {};
     try {
-      const { to_email, subject, body } = args || {};
+      // Throws ClientCommunicationBlockedError on a block — there is no
+      // approved:false return, so a blocked send falls through to the catch,
+      // which records a real task instead of fabricating a follow-up.
       const reviewed = await superviseClientCommunication({
         channel: "email",
         agentName: webhookAgentId,
@@ -301,29 +348,43 @@ export async function handleCoreToolCall(
         body,
         context: "Outbound email generated from a Vapi tool call during a customer conversation.",
       });
-      if (!reviewed.approved) {
-        return {
-          toolCallId,
-          result: "I've queued that email up for you. It should arrive shortly.",
-        };
-      }
       const service = new IntegrationService(agent?.user_id);
       const success = await service.sendEmail({
         to: to_email,
         subject: reviewed.subject || subject,
         body: reviewed.body,
       });
+      if (success) {
+        return { toolCallId, result: "Email sent." };
+      }
+      const recorded = await recordCommsFollowUpTask(drizzle, {
+        userId: agent?.user_id,
+        agentId: agent?.id,
+        channel: "email",
+        recipient: to_email,
+        payload: { to: to_email, subject: reviewed.subject || subject, body: reviewed.body },
+      });
       return {
         toolCallId,
-        result: success
-          ? "Email sent."
-          : "I wasn't able to send that right now, but I've noted your request. Someone from our team will follow up.",
+        result: recorded
+          ? "I wasn't able to send that right now, but I've logged it for our team to send you directly."
+          : "I wasn't able to send that right now. Please reach out to us directly and we'll get it to you.",
       };
     } catch {
+      // Blocked by the supervisor or an unexpected failure. Log a real task so
+      // the promised follow-up actually reaches a human.
+      const recorded = await recordCommsFollowUpTask(drizzle, {
+        userId: agent?.user_id,
+        agentId: agent?.id,
+        channel: "email",
+        recipient: to_email,
+        payload: { to: to_email, subject, body },
+      });
       return {
         toolCallId,
-        result:
-          "I ran into a hiccup sending that email. Let me note your address and have someone send it to you directly.",
+        result: recorded
+          ? "I've logged your request so our team can send that to you directly."
+          : "I couldn't complete that right now — please reach out to us directly and we'll get it to you.",
       };
     }
   }
@@ -403,7 +464,7 @@ export async function handleCoreToolCall(
         return {
           toolCallId,
           result:
-            "I wasn't able to send that text right now. Let me note that and have someone follow up.",
+            "I wasn't able to send that text because I couldn't verify the account. Please reach out to us directly.",
         };
       }
 
@@ -424,17 +485,36 @@ export async function handleCoreToolCall(
         isLiveSessionFollowUp: isLiveCounterpart,
       });
       if (!gate.allowed) {
+        const isDncBlock = gate.reason === "blocked_internal_dnc" || gate.reason === "blocked_tcpa";
+        // Never create a future-send task for a DNC block. For temporary or
+        // operational blocks, persist the human-review task before promising
+        // the caller that anyone will follow up.
+        const recorded =
+          !isDncBlock &&
+          (await recordCommsFollowUpTask(drizzle, {
+            userId: agent.user_id,
+            agentId: agent?.id,
+            channel: "sms",
+            recipient: targetNumber,
+            payload: { to: targetNumber, body: message_body, blocked_reason: gate.reason },
+          }));
         return {
           toolCallId,
-          result:
-            gate.reason === "blocked_internal_dnc" || gate.reason === "blocked_tcpa"
-              ? "I can't text that number — it's on a do-not-contact list."
-              : gate.reason === "outside_permitted_calling_hours"
-                ? "I can't text that number right now — it's outside permitted contact hours. I'll note the request for follow-up."
-                : "I wasn't able to send that text right now. Let me note that and have someone follow up.",
+          result: isDncBlock
+            ? "I can't text that number — it's on a do-not-contact list."
+            : gate.reason === "outside_permitted_calling_hours"
+              ? recorded
+                ? "I can't text that number right now — it's outside permitted contact hours. I've logged the request for human follow-up."
+                : "I can't text that number right now — it's outside permitted contact hours. Please contact us directly."
+              : recorded
+                ? "I wasn't able to send that text, but I've logged it for human follow-up."
+                : "I wasn't able to send that text right now — please reach out to us directly.",
         };
       }
 
+      // Throws ClientCommunicationBlockedError on a block (no approved:false
+      // return), so a blocked text falls to the catch below, which records a
+      // real task rather than claiming it was queued.
       const reviewed = await superviseClientCommunication({
         channel: "sms",
         agentName: webhookAgentId,
@@ -444,18 +524,73 @@ export async function handleCoreToolCall(
         body: message_body,
         context: `Requested channel: ${channel === "whatsapp" ? "whatsapp" : "sms"}.`,
       });
-      if (!reviewed.approved) {
-        return {
-          toolCallId,
-          result: "I've queued that message for you. It should go out shortly.",
-        };
-      }
       const outcome = await sendTenantMessage(agent.user_id, {
         to: targetNumber,
         body: reviewed.body,
         channel: channel === "whatsapp" ? "whatsapp" : "sms",
         agentId: agent?.id,
       });
+      if (outcome.ok && isLiveCounterpart) {
+        // Per-recipient consent record (carrier requirement: "keep records of
+        // consent for each recipient"). A live-counterpart send is only
+        // reachable after the agent captured the verbal opt-in this tool's
+        // guidance mandates, so the send is the consent-capture event — the
+        // call recording/transcript behind call_id is the artifact. Cold
+        // sends to other numbers rely on pre-existing consent and do not
+        // fabricate a grant here. Best-effort: a ledger outage must not fail
+        // a message that already left.
+        try {
+          const consentCallId =
+            (message.call as { id?: string } | undefined)?.id ||
+            (payload.call as { id?: string } | undefined)?.id ||
+            null;
+          const { rule, state } = getConsentRuleForPhone(targetNumber);
+          const row = buildConsentLedgerRow({
+            user_id: agent.user_id,
+            call_id: consentCallId,
+            customer_number: targetNumber,
+            event: "consent_granted",
+            rule_version: CONSENT_RULE_VERSION,
+            rule,
+            state,
+            metadata: {
+              channel: outcome.channel === "whatsapp" ? "whatsapp" : "sms",
+              consent_kind: "sms_verbal_optin",
+              source: "send_text_message_tool",
+            },
+          });
+          const existing = consentCallId
+            ? await drizzle
+                .select({ id: schema.consentLog.id })
+                .from(schema.consentLog)
+                .where(
+                  and(
+                    eq(schema.consentLog.userId, row.user_id),
+                    eq(schema.consentLog.callId, consentCallId),
+                    eq(schema.consentLog.event, "consent_granted"),
+                    eq(schema.consentLog.customerNumber, targetNumber),
+                  ),
+                )
+                .limit(1)
+            : [];
+          if (!existing[0]) {
+            await drizzle.insert(schema.consentLog).values({
+              userId: row.user_id,
+              callId: row.call_id,
+              customerNumber: row.customer_number,
+              event: row.event,
+              ruleVersion: row.rule_version,
+              rule: row.rule,
+              state: row.state,
+              metadata: row.metadata,
+            });
+          }
+        } catch (ledgerErr) {
+          log.warn("SMS consent ledger write failed (message already sent)", {
+            error: ledgerErr instanceof Error ? ledgerErr.message : String(ledgerErr),
+          });
+        }
+      }
       return {
         toolCallId,
         result: outcome.ok
@@ -463,10 +598,28 @@ export async function handleCoreToolCall(
           : outcome.reason || "Message send failed.",
       };
     } catch {
+      // Supervisor block or unexpected failure — record a real task so the
+      // "have someone follow up" promise is backed by something a human sees.
+      const targetForTask =
+        sanitizePhone(
+          (args?.to_number as string | undefined) ||
+            (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
+            (message.call as { customer?: { number?: string } } | undefined)?.customer?.number,
+        ) || null;
+      const recorded = agent?.user_id
+        ? await recordCommsFollowUpTask(drizzle, {
+            userId: agent.user_id,
+            agentId: agent?.id,
+            channel: "sms",
+            recipient: targetForTask,
+            payload: { to: targetForTask, body: args?.message_body },
+          })
+        : false;
       return {
         toolCallId,
-        result:
-          "I wasn't able to send that text right now. Let me note that and have someone follow up.",
+        result: recorded
+          ? "I've logged that text for our team to follow up on."
+          : "I wasn't able to send that text right now — please reach out to us directly.",
       };
     }
   }
@@ -495,7 +648,7 @@ export async function handleCoreToolCall(
     } catch {
       return {
         toolCallId,
-        result: "I wasn't able to verify that number right now, but I've noted it down.",
+        result: "I wasn't able to verify that number right now.",
       };
     }
   }
@@ -543,19 +696,42 @@ export async function handleCoreToolCall(
           }),
         );
 
-      // Real-time termination for the current call if it's the same number
-      const { SentinelService } = await import("../../services/sentinel");
-      const sentinel = new SentinelService();
-      void sentinel.terminateActiveCallsForNumber(normalizedPhone).catch((err) =>
-        log.error("sentinel terminate-on-agent-DNC failed", {
+      // A spoken opt-out must stop the active call, not merely suppress future
+      // calls. Await the provider control command so the tool result cannot race
+      // ahead of the required termination attempt.
+      let termination = { attempted: 0, terminated: 0, failed: 0 };
+      try {
+        const { SentinelService } = await import("../../services/sentinel");
+        const sentinel = new SentinelService();
+        termination = await sentinel.terminateActiveCallsForNumber(normalizedPhone);
+      } catch (terminationError) {
+        // The DNC row is already durable. A provider/control-plane failure must
+        // never fall through to the outer "opt-out was not saved" response.
+        termination = { attempted: 0, terminated: 0, failed: 1 };
+        log.error("sentinel failed after DNC suppression was persisted", {
           phone: normalizedPhone,
-          error: err instanceof Error ? err.message : String(err),
-        }),
-      );
+          error:
+            terminationError instanceof Error
+              ? terminationError.message
+              : String(terminationError),
+        });
+      }
+
+      if (termination.failed > 0) {
+        log.error("sentinel could not confirm every DNC call termination", {
+          phone: normalizedPhone,
+          attempted: termination.attempted,
+          terminated: termination.terminated,
+          failed: termination.failed,
+        });
+      }
 
       return {
         toolCallId,
-        result: `${rawPhone || normalizedPhone} is now on the Do Not Call list.`,
+        result:
+          termination.failed > 0
+            ? `${rawPhone || normalizedPhone} is now on the Do Not Call list. The carrier did not confirm that every active call ended, so stop speaking and end this call immediately.`
+            : `${rawPhone || normalizedPhone} is now on the Do Not Call list. End this conversation immediately.`,
       };
     } catch {
       // The DNC insert failed — nothing was recorded and nothing retries it.

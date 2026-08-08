@@ -1,14 +1,17 @@
 /**
  * Canonical Drizzle/runtime schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0134_free_builder_simulation_allowance.sql`.
+ * Latest committed migration: `drizzle/migrations/0138_ai_disclosure_evidence_uniqueness.sql`.
  *
  * `schema-base.ts` preserves the existing table graph. The two tables below are
  * declared explicitly here because migrations 0130, 0133, and 0134 changed
  * their database-owned defaults and classification fields. Explicit exports
  * override the same names from `export *` so callers and Drizzle Kit observe
- * the current migrated definitions.
+ * the current migrated definitions. `voice-usage-schema.ts` (migration 0135)
+ * is re-exported so Drizzle Kit sees `wireline_voice_usage_events` — without
+ * it, `drizzle-kit generate` would emit a DROP for the idempotency table.
  */
 export * from "./schema-base";
+export * from "./voice-usage-schema";
 
 import {
   bigint,
@@ -63,9 +66,7 @@ export const settings = pgTable("wireline_settings", {
   // subscription item quantity for billing. Defaults to 0.
   extraAgents: integer("extra_agents").default(0).notNull(),
   /** Explicit ops/enterprise grant for photoreal live video streaming. */
-  liveVideoAddonEnabled: boolean("live_video_addon_enabled")
-    .default(false)
-    .notNull(),
+  liveVideoAddonEnabled: boolean("live_video_addon_enabled").default(false).notNull(),
   vapiPrivateKey: text("vapi_private_key"),
   vapiPhoneNumberId: text("vapi_phone_number_id"),
   retentionDays: integer("retention_days").default(365),
@@ -89,9 +90,7 @@ export const settings = pgTable("wireline_settings", {
   crmType: text("crm_type"),
   twilioMessagingEnabled: boolean("twilio_messaging_enabled").default(false),
   twilioLookupEnabled: boolean("twilio_lookup_enabled").default(false),
-  twilioManagerAlertsEnabled: boolean("twilio_manager_alerts_enabled").default(
-    false,
-  ),
+  twilioManagerAlertsEnabled: boolean("twilio_manager_alerts_enabled").default(false),
   twilioMessagingServiceSid: text("twilio_messaging_service_sid"),
   twilioSmsFromNumber: text("twilio_sms_from_number"),
   twilioWhatsappFromNumber: text("twilio_whatsapp_from_number"),
@@ -166,9 +165,7 @@ export const spendBudgets = pgTable("wireline_spend_budgets", {
   warnThresholdPct: integer("warn_threshold_pct").default(80).notNull(),
   enabled: boolean("enabled").default(true).notNull(),
   managedDefault: boolean("managed_default").notNull().default(false),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 // 1.2.1 SPEND ALERTS are defined in schema-base.ts.

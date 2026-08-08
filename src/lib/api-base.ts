@@ -154,13 +154,19 @@ function combineSignals(...signals: AbortSignal[]): AbortSignal {
  * detects these and emits a window event so any mounted checkout modal can
  * give the user a direct, truthful activation path.
  */
-const TRIAL_GATE_CODES = new Set([
+/**
+ * Codes with bespoke copy in <TrialGateModal/>. Every OTHER 402 still opens
+ * the modal — it falls through to the modal's default branch, which renders
+ * the server's own message. This list is for documentation and typing only;
+ * it is deliberately NOT a gate. See maybeDispatchTrialGateEvent.
+ */
+export const TRIAL_GATE_CODES = [
   "ACTIVATION_REQUIRED",
   "TRIAL_EXPIRED",
   "TRIAL_LIMIT_HIT",
   "SUBSCRIPTION_REQUIRED",
   "EMAIL_UNVERIFIED",
-]);
+] as const;
 
 /**
  * Custom event name. Listened to by <TrialGateModal/> mounted in the
@@ -169,12 +175,18 @@ const TRIAL_GATE_CODES = new Set([
 export const TRIAL_GATE_EVENT = "wireline:trial-gate-block";
 
 export interface TrialGateBlockDetail {
+  /**
+   * The 402 body's `code`. The listed values have bespoke copy in the modal;
+   * any other code is carried through and rendered with the server's own
+   * message, so a new paywall does not need a client change to be clickable.
+   */
   code:
     | "ACTIVATION_REQUIRED"
     | "TRIAL_EXPIRED"
     | "TRIAL_LIMIT_HIT"
     | "SUBSCRIPTION_REQUIRED"
-    | "EMAIL_UNVERIFIED";
+    | "EMAIL_UNVERIFIED"
+    | (string & {});
   error: string;
   /** Present on TRIAL_LIMIT_HIT */
   limit?: number;
@@ -196,8 +208,18 @@ async function maybeDispatchTrialGateEvent(response: Response): Promise<void> {
   try {
     const cloned = response.clone();
     const body = (await cloned.json()) as Record<string, any>;
+    // Any 402 opens the gate. 402 Payment Required is definitionally "you must
+    // pay to proceed", which is exactly this modal's trigger — and we already
+    // returned above for every other status.
+    //
+    // This used to filter on a hand-curated allowlist, which had drifted badly:
+    // AGENT_CAPACITY_REACHED, SPEND_CAP_REACHED, LIVE_PLAN_REQUIRED,
+    // LIVE_VIDEO_BASE_PLAN_REQUIRED and the agent-cap 402 (whose code defaults
+    // to "ERROR", since 402 has no entry in HTTP_STATUS_ERROR_CODES) were all
+    // absent. Every one of those paywalls rendered a dead-end string telling
+    // the user to upgrade, with nothing to click. The modal's default branch
+    // already renders the server's message, so unknown codes degrade correctly.
     const code = typeof body?.code === "string" ? body.code : "";
-    if (!TRIAL_GATE_CODES.has(code)) return;
     const detail: TrialGateBlockDetail = {
       code: code as TrialGateBlockDetail["code"],
       error: String(body?.error || "Subscription required"),

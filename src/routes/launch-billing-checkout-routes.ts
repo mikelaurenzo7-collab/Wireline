@@ -20,6 +20,12 @@ const LIVE_SUBSCRIPTION_STATUSES = new Set([
   "past_due",
   "incomplete",
   "unpaid",
+  // Kept in parity with the atomic route and stripe-helpers'
+  // CURRENT_PLAN_SUBSCRIPTION_STATUSES: a paused subscription is still current
+  // to webhook reconciliation, so treating it as not-live here would let a
+  // second subscription be created that makes every later webhook throw. This
+  // route is shadowed by the atomic router today, but the sets must not drift.
+  "paused",
 ]);
 
 async function resolveLaunchPriceId(

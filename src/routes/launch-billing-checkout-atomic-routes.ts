@@ -5,7 +5,13 @@ import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { FOUNDER_CATALOG_VERSION, planById, planLookupKey } from "../lib/plan-catalog";
 import { drizzle, auditLogger, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
-import { isMissingStripeResource, stripe, stripeAvailable } from "../lib/stripe-helpers";
+import {
+  isMissingStripeResource,
+  stripe,
+  stripeAvailable,
+  syncSubscriptionFromStripe,
+} from "../lib/stripe-helpers";
+import type Stripe from "stripe";
 import { authenticateUser } from "../middleware/auth";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { checkoutOperations } from "../db/security-schema";
@@ -22,6 +28,12 @@ const LIVE_SUBSCRIPTION_STATUSES = new Set([
   "past_due",
   "incomplete",
   "unpaid",
+  // A paused subscription (trial ended without a payment method) is still a
+  // current subscription to webhook reconciliation. Omitting it here let
+  // checkout create a second subscription for the same customer, after which
+  // currentPlanSubscriptionForCustomer threw on every webhook and the paying
+  // customer never received entitlements.
+  "paused",
 ]);
 
 async function resolveLaunchPriceId(
@@ -337,6 +349,7 @@ router.post(
           billingInterval: checkoutOperations.billingInterval,
           status: checkoutOperations.status,
           stripeCustomerId: checkoutOperations.stripeCustomerId,
+          stripeCheckoutSessionId: checkoutOperations.stripeCheckoutSessionId,
           checkoutUrl: checkoutOperations.checkoutUrl,
         })
         .from(checkoutOperations)
@@ -347,19 +360,75 @@ router.post(
           ),
         )
         .limit(1);
-      if (
-        active?.status === "open" &&
-        active.checkoutUrl &&
-        active.planId === plan.id &&
-        active.billingInterval === interval
-      ) {
-        return res.json({ url: active.checkoutUrl, reused: true, operation_id: active.id });
-      }
-      if (
-        active?.status === "creating" &&
-        active.planId === plan.id &&
-        active.billingInterval === interval
-      ) {
+      const samePlan = active?.planId === plan.id && active?.billingInterval === interval;
+      if (active?.status === "open" && active.checkoutUrl) {
+        // Ask Stripe whether the cached session is still payable before
+        // deciding anything. The webhook now completes operations, but a
+        // lagging or dropped delivery would otherwise hand back a consumed
+        // session's dead URL (subscribe → cancel → retry within the 24h TTL)
+        // or 409-brick every other plan until the TTL sweep.
+        let remoteStatus: Stripe.Checkout.Session.Status | null = null;
+        if (active.stripeCheckoutSessionId) {
+          try {
+            const remoteSession = await stripe.checkout.sessions.retrieve(
+              active.stripeCheckoutSessionId,
+            );
+            remoteStatus = remoteSession.status;
+          } catch (error) {
+            if (!isMissingStripeResource(error)) throw error;
+          }
+        }
+        if (samePlan && remoteStatus === "open") {
+          return res.json({ url: active.checkoutUrl, reused: true, operation_id: active.id });
+        }
+        if (remoteStatus === "open" && active.stripeCheckoutSessionId) {
+          // Different plan requested while the old session is still payable:
+          // expire it at Stripe FIRST so the superseded URL can never be paid
+          // after the new one exists.
+          try {
+            await stripe.checkout.sessions.expire(active.stripeCheckoutSessionId);
+          } catch {
+            // The session can complete between retrieve and expire. Bail to
+            // the safe answer instead of racing a payment in flight.
+            return res.status(409).json({
+              code: "CHECKOUT_ALREADY_IN_PROGRESS",
+              error:
+                "A different checkout is already open. Complete or cancel it before choosing another plan.",
+              operation_id: active.id,
+            });
+          }
+        }
+        await drizzle
+          .update(checkoutOperations)
+          .set({
+            status: remoteStatus === "complete" ? "completed" : "expired",
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(checkoutOperations.id, active.id),
+              inArray(checkoutOperations.status, ACTIVE_OPERATION_STATES),
+            ),
+          );
+        const [renewed] = await drizzle
+          .insert(checkoutOperations)
+          .values({
+            userId: req.user.id,
+            planId: plan.id,
+            billingInterval: interval,
+            status: "creating",
+            expiresAt: new Date(Date.now() + CHECKOUT_TTL_MS),
+          })
+          .onConflictDoNothing()
+          .returning({ id: checkoutOperations.id });
+        operationId = renewed?.id || null;
+        if (!operationId) {
+          return res.status(409).json({
+            code: "CHECKOUT_ALREADY_IN_PROGRESS",
+            error: "Another checkout request is being prepared. Try again in a moment.",
+          });
+        }
+      } else if (active?.status === "creating" && samePlan) {
         operationId = active.id;
         operationCustomerId = active.stripeCustomerId || null;
         resumed = true;
@@ -367,9 +436,7 @@ router.post(
         return res.status(409).json({
           code: "CHECKOUT_ALREADY_IN_PROGRESS",
           error:
-            active?.status === "open"
-              ? "A different checkout is already open. Complete or cancel it before choosing another plan."
-              : "Checkout is already being prepared for a different plan. Try again after it completes.",
+            "Checkout is already being prepared for a different plan. Try again after it completes.",
           operation_id: active?.id,
         });
       }
@@ -416,6 +483,13 @@ router.post(
           customer: customerId,
           customer_update: { address: "auto" },
           automatic_tax: { enabled: true },
+          // Instant-notification methods only. The webhook credits/syncs on
+          // checkout.session.completed with payment_status "paid" and handles
+          // no async_payment_succeeded event, so a delayed-notification method
+          // (ACH debit, bank transfer) enabled in the Stripe dashboard would
+          // complete unpaid, get acked, and the later payment would never
+          // grant anything. Widen only together with async event handling.
+          payment_method_types: ["card", "link"],
           line_items: [{ price: priceId, quantity: 1 }],
           success_url: `${appUrl.url}/settings/billing?billing=success&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${appUrl.url}/settings/billing?billing=canceled`,
@@ -581,6 +655,73 @@ router.post(
       });
       throw AppError.fromHttpStatus(502, "Checkout could not be prepared. Please try again.");
     }
+  },
+);
+
+/**
+ * Success-redirect reconciliation. Entitlement delivery otherwise depends
+ * entirely on webhook delivery: if the endpoint or secret is misconfigured, or
+ * delivery fails past Stripe's retry window, a customer pays and receives
+ * nothing with no repair path. The success redirect already carries
+ * session_id, so the paying browser proves its own session here and pulls
+ * entitlements synchronously. Every write is shared with (and idempotent
+ * against) the webhook: the same subscription sync and the same operation
+ * completion.
+ */
+router.post(
+  "/api/billing/checkout/verify",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
+    const sessionId = String(req.body?.session_id || "").trim();
+    if (!/^cs_[A-Za-z0-9_]+$/.test(sessionId)) {
+      throw AppError.fromHttpStatus(400, "A Stripe checkout session id is required.");
+    }
+
+    let session: Stripe.Checkout.Session;
+    try {
+      session = await stripe.checkout.sessions.retrieve(sessionId);
+    } catch (error) {
+      if (isMissingStripeResource(error)) {
+        throw AppError.fromHttpStatus(404, "Unknown checkout session.");
+      }
+      throw error;
+    }
+
+    const sessionUserId =
+      session.metadata?.wireline_user_id?.trim() || session.client_reference_id || "";
+    if (sessionUserId !== req.user.id) {
+      // Same shape as a nonexistent id — do not reveal foreign sessions.
+      throw AppError.fromHttpStatus(404, "Unknown checkout session.");
+    }
+
+    let synced = false;
+    if (session.mode === "subscription" && session.subscription) {
+      const subId =
+        typeof session.subscription === "string" ? session.subscription : session.subscription.id;
+      const sub = await stripe.subscriptions.retrieve(subId);
+      await syncSubscriptionFromStripe(sub);
+      synced = true;
+
+      const operationId = session.metadata?.wireline_checkout_operation_id;
+      if (operationId && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(operationId)) {
+        await drizzle
+          .update(checkoutOperations)
+          .set({ status: "completed", updatedAt: new Date() })
+          .where(
+            and(
+              eq(checkoutOperations.id, operationId),
+              inArray(checkoutOperations.status, ACTIVE_OPERATION_STATES),
+            ),
+          );
+      }
+    }
+
+    return res.json({
+      status: session.status,
+      payment_status: session.payment_status,
+      synced,
+    });
   },
 );
 

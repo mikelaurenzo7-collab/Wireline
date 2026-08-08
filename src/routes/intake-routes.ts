@@ -74,6 +74,7 @@ async function resolveIntakeKey(provided: string | undefined): Promise<IntakeKey
 // Rolling window: ≤ 60 requests per 60s per intake key.
 const INTAKE_RATE_WINDOW_MS = 60_000;
 const INTAKE_RATE_MAX = 60;
+const INTAKE_PREAUTH_RATE_MAX = 120;
 
 type IntakeRateCheck =
   | { ok: true }
@@ -123,6 +124,51 @@ async function checkIntakeRate(keyId: string, cost = 1): Promise<IntakeRateCheck
       code: "RATE_LIMITER_UNAVAILABLE",
       error:
         "Distributed rate limiter is unavailable for intake traffic. Configure Upstash Redis or enable WIRELINE_ALLOW_INMEMORY_RATE_LIMIT for single-node deployments.",
+    };
+  }
+}
+
+/**
+ * Cap unauthenticated requests before hashing/looking up the supplied intake
+ * key. Without this gate, invalid-key traffic can hammer the database without
+ * ever reaching the existing per-key limiter. Fail closed just like valid-key
+ * traffic when the distributed limiter is unavailable.
+ */
+async function checkIntakePreAuthRate(req: Request): Promise<IntakeRateCheck> {
+  const limiter = distributedLimiterStatus();
+  if (!limiter.ok) {
+    return {
+      ok: false,
+      status: 503,
+      code: "RATE_LIMITER_UNAVAILABLE",
+      error: limiter.reason || "Distributed rate limiter is unavailable.",
+    };
+  }
+
+  const clientKey = req.ip || req.socket.remoteAddress || "unknown";
+  try {
+    const result = await rateLimit(clientKey, {
+      bucket: "public_intake_pre_auth",
+      windowMs: INTAKE_RATE_WINDOW_MS,
+      max: INTAKE_PREAUTH_RATE_MAX,
+      failClosedOnError: true,
+    });
+    if (result.allowed) return { ok: true };
+    const retryAfter = Math.max(1, Math.ceil(result.resetMs / 1000));
+    return {
+      ok: false,
+      status: 429,
+      retry_after_s: retryAfter,
+      code: "INTAKE_RATE_LIMIT",
+      error: `Too many intake requests from this client. Retry in ${retryAfter}s.`,
+    };
+  } catch (err) {
+    log.error("Intake pre-auth rate limiter failed", { error: getErrorMessage(err) });
+    return {
+      ok: false,
+      status: 503,
+      code: "RATE_LIMITER_UNAVAILABLE",
+      error: "Distributed rate limiter is unavailable for intake traffic.",
     };
   }
 }
@@ -298,6 +344,28 @@ async function processIntakeLead(
         });
 
         if (!gate.allowed) {
+          if (gate.reason === "outside_permitted_calling_hours") {
+            // Peak intake time IS quiet hours (evening form fills). Writing
+            // the gate's "AutoDialFailed" here would retire the lead to a
+            // status no engine processes — the consumer who asked for a call
+            // never gets one. Hand it to the callback engine instead: it
+            // rolls the schedule forward hourly (bounded) until the lead's
+            // local window opens and re-runs this same gate at dial time.
+            await drizzle
+              .update(schema.outboundLeads)
+              .set({
+                callbackScheduledAt: new Date(Date.now() + 60 * 60 * 1000),
+                metadata: toJsonbSafe({
+                  ...((gate.metadataPatch || metadata || {}) as Record<string, unknown>),
+                  auto_dial_status: "deferred_quiet_hours",
+                }) as any,
+              })
+              .where(eq(schema.outboundLeads.id, insertedId!));
+            log.info("Auto-dial deferred to next permitted window", {
+              leadId: String(insertedId),
+            });
+            return;
+          }
           await drizzle
             .update(schema.outboundLeads)
             .set({
@@ -345,12 +413,18 @@ async function processIntakeLead(
           return;
         }
 
+        // The shared gate classifies intake auto-dials as marketing unless the
+        // lead metadata proves otherwise (isMarketingCall defaults true), so
+        // the spoken disclosure carries the same classification: an extra
+        // opt-out announcement on a requested call is harmless; the reverse on
+        // a marketing call is a 64.1200(b)(3) violation.
         const result = await placeOutboundCall({
           userId: key.user_id,
           agentId: agent_id,
           customerName: customer_name || null,
           customerNumber: customer_number,
           context: context || `Inbound lead via ${key.name}`,
+          callPurpose: "marketing_or_sales",
         });
         if (result.ok) {
           await drizzle
@@ -409,6 +483,15 @@ async function processIntakeLead(
 // POST /lead — public, authenticated by X-Wireline-Key header
 router.post("/lead", async (req: Request, res: Response) => {
   try {
+    const preAuthRate = await checkIntakePreAuthRate(req);
+    if (isIntakeRateFailure(preAuthRate)) {
+      if (preAuthRate.status === 429) res.set("Retry-After", String(preAuthRate.retry_after_s));
+      return res.status(preAuthRate.status).json({
+        error: preAuthRate.error,
+        code: preAuthRate.code,
+        ...(preAuthRate.status === 429 ? { retry_after_s: preAuthRate.retry_after_s } : {}),
+      });
+    }
     const provided = req.headers["x-wireline-key"] as string | undefined;
     const key = await resolveIntakeKey(provided);
     if (!key) throw AppError.fromHttpStatus(401, "Invalid or missing X-Wireline-Key.");
@@ -462,6 +545,15 @@ const INTAKE_BULK_MAX = 100;
 
 router.post("/leads", async (req: Request, res: Response) => {
   try {
+    const preAuthRate = await checkIntakePreAuthRate(req);
+    if (isIntakeRateFailure(preAuthRate)) {
+      if (preAuthRate.status === 429) res.set("Retry-After", String(preAuthRate.retry_after_s));
+      return res.status(preAuthRate.status).json({
+        error: preAuthRate.error,
+        code: preAuthRate.code,
+        ...(preAuthRate.status === 429 ? { retry_after_s: preAuthRate.retry_after_s } : {}),
+      });
+    }
     const provided = req.headers["x-wireline-key"] as string | undefined;
     const key = await resolveIntakeKey(provided);
     if (!key) throw AppError.fromHttpStatus(401, "Invalid or missing X-Wireline-Key.");

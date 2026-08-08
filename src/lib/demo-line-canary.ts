@@ -63,31 +63,52 @@ export interface CanaryRunResult {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Vapi API helpers (lightweight — no retry needed for a nightly canary)
+// Vapi API helpers.
+//
+// A nightly canary must not page the owner on a single cold-start timeout. A
+// transient failure (request timeout or network abort) is retried once; a
+// definitive HTTP response — e.g. 404 for a genuinely deleted assistant — is
+// returned immediately and never retried, so a real outage still alerts on the
+// first run while "Assistant unreachable: operation aborted due to timeout"
+// false positives are absorbed.
 // ─────────────────────────────────────────────────────────────────────────────
+
+const VAPI_FETCH_TIMEOUT_MS = 12_000;
+const VAPI_FETCH_TRANSIENT_RETRIES = 1;
 
 async function vapiFetch(path: string): Promise<{ ok: boolean; data?: any; error?: string }> {
   const key = vapiKey();
   if (!key) return { ok: false, error: "VAPI_PRIVATE_KEY not configured" };
 
-  try {
-    const authHeader = "Bearer " + key;
-    const res = await fetch(`${VAPI_BASE}${path}`, {
-      headers: {
-        Authorization: authHeader,
-        "content-type": "application/json",
-      },
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      return { ok: false, error: `Vapi ${res.status}: ${body.slice(0, 200)}` };
+  const authHeader = "Bearer " + key;
+  let lastError = "fetch failed";
+  for (let attempt = 0; attempt <= VAPI_FETCH_TRANSIENT_RETRIES; attempt++) {
+    try {
+      const res = await fetch(`${VAPI_BASE}${path}`, {
+        headers: {
+          Authorization: authHeader,
+          "content-type": "application/json",
+        },
+        signal: AbortSignal.timeout(VAPI_FETCH_TIMEOUT_MS),
+      });
+      if (!res.ok) {
+        // A returned HTTP status is a real answer, not a transient blip — do not
+        // retry it, so a genuine 404/5xx still surfaces on this run.
+        const body = await res.text().catch(() => "");
+        return { ok: false, error: `Vapi ${res.status}: ${body.slice(0, 200)}` };
+      }
+      const data = await res.json();
+      return { ok: true, data };
+    } catch (err: any) {
+      // Timeout or network abort — transient. Retry once with a short backoff so
+      // one cold-start slowness does not alert about an otherwise healthy line.
+      lastError = err?.message || "fetch failed";
+      if (attempt < VAPI_FETCH_TRANSIENT_RETRIES) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
     }
-    const data = await res.json();
-    return { ok: true, data };
-  } catch (err: any) {
-    return { ok: false, error: err?.message || "fetch failed" };
   }
+  return { ok: false, error: lastError };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

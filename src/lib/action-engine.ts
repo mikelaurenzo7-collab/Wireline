@@ -18,9 +18,36 @@ import { searchLeads } from "./apollo-service";
 import { getErrorMessage } from "./server-utils";
 import { drizzle, log } from "./server-context";
 import { postAgentNotification, getDefaultChannel } from "./slack-service";
-import { superviseClientCommunication } from "./ai-supervisor";
+import { ClientCommunicationBlockedError, superviseClientCommunication } from "./ai-supervisor";
+import { dispatchWebhook } from "./webhook-helpers";
+import { runInBackground } from "./background-work";
 import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
 import { sendTenantMessage } from "./twilio-service";
+
+/**
+ * Insert a follow-up task and emit the advertised `task.created` webhook.
+ * Every task producer in this engine funnels through here so the event the
+ * webhook catalog promises actually fires (it previously had no producer).
+ */
+async function insertFollowUpTask(values: typeof schema.followUpTasks.$inferInsert): Promise<void> {
+  const [created] = await drizzle
+    .insert(schema.followUpTasks)
+    .values(values)
+    .returning({ id: schema.followUpTasks.id });
+  runInBackground("task.created webhook dispatch", () =>
+    dispatchWebhook(values.userId, "task.created", {
+      task_id: created?.id != null ? Number(created.id) : undefined,
+      task_type: values.taskType,
+      description: values.description,
+      priority: values.priority,
+      status: values.status,
+      target_channel: values.targetChannel ?? null,
+      source_type: values.sourceType ?? null,
+      source_id: values.sourceId ?? null,
+      agent_id: values.agentId ?? null,
+    }),
+  );
+}
 
 /**
  * Roles whose auto SMS is treated as non-marketing (service / ops).
@@ -243,30 +270,34 @@ async function executeAutonomousAction(
   const service = new IntegrationService(userId);
   switch (action.type) {
     case "send_email": {
-      const reviewed = await superviseClientCommunication({
-        channel: "email",
-        agentName: action.agentId,
-        source: "action_engine",
-        purpose: action.reasoning || "autonomous follow-up",
-        recipient: action.payload.to,
-        subject: action.payload.subject,
-        body: action.payload.body,
-        context: `Autonomy mode: auto. Source type: ${context.sourceType}.`,
-      });
-      if (!reviewed.approved) {
-        return handleSendEmail(
-          userId,
-          {
-            ...action,
-            payload: {
-              ...action.payload,
-              subject: reviewed.subject || action.payload.subject,
-              body: reviewed.body,
+      let reviewed;
+      try {
+        reviewed = await superviseClientCommunication({
+          channel: "email",
+          agentName: action.agentId,
+          source: "action_engine",
+          purpose: action.reasoning || "autonomous follow-up",
+          recipient: action.payload.to,
+          subject: action.payload.subject,
+          body: action.payload.body,
+          context: `Autonomy mode: auto. Source type: ${context.sourceType}.`,
+        });
+      } catch (err) {
+        // The supervisor THROWS on a block — it never returns approved:false —
+        // so the old `if (!reviewed.approved)` draft fallback was dead code and
+        // blocked autonomous emails were dropped entirely. Convert a block into
+        // the intended pending draft task so a human can review and send it.
+        if (err instanceof ClientCommunicationBlockedError) {
+          return handleSendEmail(
+            userId,
+            {
+              ...action,
+              reasoning: `${action.reasoning || ""}\nBlocked by supervisor: ${err.message}`.trim(),
             },
-            reasoning: `${action.reasoning || ""}\nSupervisor note: ${reviewed.rationale}`.trim(),
-          },
-          context,
-        );
+            context,
+          );
+        }
+        throw err;
       }
       const emailOk = await service.sendEmail({
         to: action.payload.to,
@@ -353,7 +384,7 @@ async function handleSendEmail(
   context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
   const description = `Email draft to ${action.payload.to || "recipient"}: ${action.payload.subject || "No subject"}`;
-  await drizzle.insert(schema.followUpTasks).values({
+  await insertFollowUpTask({
     userId,
     agentId: action.agentId,
     taskType: "send_email",
@@ -441,7 +472,7 @@ async function handleDraftSendTextMessage(
   action: ActionItem,
   context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
-  await drizzle.insert(schema.followUpTasks).values({
+  await insertFollowUpTask({
     userId,
     agentId: action.agentId,
     taskType: "send_text_message",
@@ -462,7 +493,7 @@ async function handleScheduleCalendar(
   action: ActionItem,
   context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
-  await drizzle.insert(schema.followUpTasks).values({
+  await insertFollowUpTask({
     userId,
     agentId: action.agentId,
     taskType: "schedule_calendar",
@@ -498,7 +529,7 @@ async function queueCrmAction(
       ? `CRM call log: ${payload.subject || "Post-call note"}`
       : "CRM lead update");
 
-  await drizzle.insert(schema.followUpTasks).values({
+  await insertFollowUpTask({
     userId,
     agentId: action.agentId,
     taskType: "update_crm_lead",
@@ -542,7 +573,7 @@ async function handleCreateInternalTask(
   action: ActionItem,
   context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
-  await drizzle.insert(schema.followUpTasks).values({
+  await insertFollowUpTask({
     userId,
     agentId: action.agentId,
     taskType: "internal_task",
@@ -564,7 +595,7 @@ async function queueSideEffectAction(
   taskType: string,
   targetChannel: string,
 ): Promise<ActionResult> {
-  await drizzle.insert(schema.followUpTasks).values({
+  await insertFollowUpTask({
     userId,
     agentId: action.agentId,
     taskType,

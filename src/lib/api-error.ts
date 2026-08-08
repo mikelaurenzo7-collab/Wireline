@@ -15,6 +15,10 @@ import type { NextFunction, Request, Response } from "express";
 export const HTTP_STATUS_ERROR_CODES: Record<number, string> = {
   400: "BAD_REQUEST",
   401: "UNAUTHORIZED",
+  // 402 always means "pay to proceed" here. Without this entry it fell back to
+  // the generic "ERROR", which told the client nothing — the agent-cap 402 in
+  // particular surfaced as a bare string with no upgrade path.
+  402: "SUBSCRIPTION_REQUIRED",
   403: "FORBIDDEN",
   404: "NOT_FOUND",
   409: "CONFLICT",

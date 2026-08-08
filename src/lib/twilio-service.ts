@@ -152,6 +152,9 @@ async function persistOutbound(input: {
         })
         .where(eq(schema.smsThreads.id, current.id));
     } else {
+      // First-contact race with the inbound webhook: tolerate the
+      // (user, customer) unique collision and adopt the winner's thread so
+      // the outbound message row is still written.
       const [created] = await drizzle
         .insert(schema.smsThreads)
         .values({
@@ -160,8 +163,13 @@ async function persistOutbound(input: {
           agentId: input.agentId || null,
           unreadCount: 0,
         })
+        .onConflictDoNothing()
         .returning({ id: schema.smsThreads.id });
       threadId = created?.id;
+      if (!threadId) {
+        const winner = await existingThread(input.userId, input.customerNumber);
+        threadId = winner?.id;
+      }
     }
     if (threadId) {
       await drizzle.insert(schema.smsMessages).values({

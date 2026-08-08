@@ -78,10 +78,13 @@ describe("Twilio voice failover contract", () => {
       routes.indexOf("function publicAssetUrl("),
     );
     expect(resolver).toContain("schema.agents.complianceMode");
-    expect(resolver).toContain("eq(schema.phoneNumbers.phoneNumber, to)");
+    // Must match lookupTenant's normalization: a To variant that resolves the
+    // tenant but misses this lookup fails closed and refuses voicemail for a
+    // non-HIPAA tenant during every failover.
+    expect(resolver).toContain("eq(schema.phoneNumbers.phoneNumber, sanitizePhone(to))");
     expect(resolver).toContain("catch (error)");
     expect(resolver).toContain("return unknown;");
-    expect(resolver).toContain('complianceMode: null');
+    expect(resolver).toContain("complianceMode: null");
     expect(resolver).toContain("recording disabled");
   });
 

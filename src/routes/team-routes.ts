@@ -12,6 +12,7 @@ import type { AuthenticatedRequest } from "../types/auth";
 import { generateToken } from "../lib/auth-service";
 import { setSessionCookie } from "../lib/session-cookie";
 import { invalidateRoleCache } from "../middleware/require-role";
+import { canGrantRole, resolveStoredRole, type AccessRole } from "../lib/soc2-controls";
 import { getPostgresErrorCode } from "../lib/pg-errors";
 
 const router = Router();
@@ -88,6 +89,16 @@ router.post(
     const { email, role } = req.body;
     if (email === req.user.email.toLowerCase()) {
       throw AppError.fromHttpStatus(400, "You already own this workspace.");
+    }
+
+    // Role-grant hierarchy: the invite enum already caps at admin, but the
+    // SOC2 grant rule (granter strictly above target) was never enforced
+    // here — an admin could mint peer admins. requirePermission cached the
+    // granter's resolved role on req.role.
+    const granterRole = (req as { role?: AccessRole }).role;
+    const targetRole = resolveStoredRole(role || "member");
+    if (!granterRole || !canGrantRole(granterRole, targetRole)) {
+      throw AppError.fromHttpStatus(403, "Your role cannot grant an equal or higher role.");
     }
 
     const plaintextToken = randomBytes(32).toString("base64url");
@@ -174,7 +185,11 @@ router.post(
         if (!result.ok) {
           const { IntegrationService } = await import("../lib/integrations");
           emailSent = Boolean(
-            await new IntegrationService(req.tenantId).sendEmail({ to: email, subject, body: html }),
+            await new IntegrationService(req.tenantId).sendEmail({
+              to: email,
+              subject,
+              body: html,
+            }),
           );
         }
       } catch (mailError) {

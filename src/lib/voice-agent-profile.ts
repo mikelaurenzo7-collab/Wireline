@@ -187,9 +187,28 @@ export const VAPI_ANALYSIS_PLAN = {
  * Deliberately says nothing about WHY we called: voicemails can be heard by
  * third parties, and roles like collections are legally barred (FDCPA) from
  * disclosing call context in a message. Identity + callback only.
+ *
+ * 47 CFR 64.1200(b) applies to this message too — it is an artificial-voice
+ * message left on an answering machine, so it must state the responsible
+ * business (b)(1) and a callback telephone number (b)(2), not merely allude
+ * to caller ID. Both are optional inputs because not every tenant has them
+ * configured; when absent the message degrades to the old identity-only form
+ * rather than inventing details.
  */
-export function buildOutboundVoicemailMessage(agentName: string): string {
-  return `Hi, this is ${agentName}. Sorry I missed you — I'll try you again soon, or you can reach us back at this number. Thank you!`;
+export function buildOutboundVoicemailMessage(
+  agentName: string,
+  businessName?: string | null,
+  callbackNumberSpoken?: string | null,
+): string {
+  const business = (businessName ?? "").trim();
+  const identity =
+    business && business.toLowerCase() !== agentName.trim().toLowerCase()
+      ? `${agentName} with ${business}`
+      : agentName;
+  const callback = callbackNumberSpoken?.trim()
+    ? `you can reach us at ${callbackNumberSpoken.trim()}`
+    : "you can reach us back at this number";
+  return `Hi, this is ${identity}. Sorry I missed you — I'll try you again soon, or ${callback}. Thank you!`;
 }
 
 export function getVoiceLatencyProfile(input: {

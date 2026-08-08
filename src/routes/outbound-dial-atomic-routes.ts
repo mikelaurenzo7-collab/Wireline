@@ -169,7 +169,8 @@ router.post(
       if (!reservation) {
         return res.status(409).json({
           code: "DIAL_ALREADY_IN_PROGRESS",
-          error: "A call to this number is already being prepared. Check Phone before trying again.",
+          error:
+            "A call to this number is already being prepared. Check Phone before trying again.",
         });
       }
 
@@ -195,6 +196,7 @@ router.post(
         customerName,
         customerNumber: phoneE164,
         context,
+        callPurpose,
       });
       if (!result.ok || !result.callId) {
         if (isAmbiguousProviderResult(result)) {
