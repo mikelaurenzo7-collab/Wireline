@@ -26,6 +26,7 @@ const DISMISS_KEY = "wireline_activation_checklist_dismissed";
 type Step = {
   id: string;
   label: string;
+  actionLabel: string;
   detail: string;
   done: boolean;
   href: string;
@@ -46,6 +47,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
     {
       id: "job",
       label: "Job and greeting defined",
+      actionLabel: "Define job and greeting",
       detail: "Give the voice agent one clear customer-facing responsibility.",
       done: p.agents > 0,
       href: "/studio?section=setup",
@@ -54,6 +56,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
     {
       id: "facts",
       label: "Business facts added",
+      actionLabel: "Add business facts",
       detail: "Add pricing, hours, policies, FAQs, or other answers customers need.",
       done: p.knowledge > 0,
       href: "/studio?section=setup",
@@ -62,6 +65,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
     {
       id: "line",
       label: "Phone number connected",
+      actionLabel: "Connect phone number",
       detail:
         "Activate a paid plan, then claim an included Wireline number so customers can call or text.",
       done: p.numbers > 0,
@@ -71,6 +75,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
     {
       id: "live",
       label: "First live customer handled",
+      actionLabel: "Handle first live customer",
       detail: "Confirm the line received a real conversation and logged the outcome.",
       done: p.activated,
       href: "/phone?tab=logs",
@@ -79,6 +84,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
     {
       id: "review",
       label: "First follow-up reviewed",
+      actionLabel: "Review first follow-up",
       detail: "Approve, edit, or decline the next action before it goes out.",
       done: p.approvedAction,
       href: "/approvals",
@@ -244,9 +250,7 @@ export default function ActivationChecklist({ className }: { className?: string 
 
       {next ? (
         <div className="mt-4 flex flex-col gap-2 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground">
-            Do this next: <span className="font-semibold text-foreground">{next.label}</span>
-          </p>
+          <p className="text-xs font-semibold text-foreground">{next.actionLabel}</p>
           <Link to={next.href} className="text-xs font-semibold text-primary hover:underline">
             Continue →
           </Link>
