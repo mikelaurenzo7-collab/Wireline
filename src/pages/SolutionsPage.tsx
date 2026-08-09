@@ -2,7 +2,6 @@ import { Link, useParams } from "react-router";
 import {
   ArrowRight,
   CalendarClock,
-  CircleDot,
   Headphones,
   MessageSquareText,
   PhoneOutgoing,
@@ -24,12 +23,18 @@ const SOLUTIONS = {
     primary: { href: "/signup?wedge=sales", label: "Create a sales agent" },
     secondary: { href: "/showcase", label: "Hear a demo" },
     sequence: [
-      ["A lead reaches out", "A voice agent responds on the channel the lead already chose."],
+      [
+        "A lead reaches out",
+        "A voice agent responds on the channel the lead already chose.",
+      ],
       [
         "It qualifies by your rules",
         "Your offer, criteria, objections, and escalation path guide the conversation.",
       ],
-      ["The next step is clear", "Booked, handed off, or logged with the full context attached."],
+      [
+        "The next step is clear",
+        "Booked, handed off, or logged with the full context attached.",
+      ],
     ],
     capabilities: [
       [
@@ -57,7 +62,10 @@ const SOLUTIONS = {
     // Wedge intent only — preselecting the $79 5-agent Pro plan for a
     // one-agent front-desk buyer mis-tuned the later "Matched from visit"
     // badge in billing; the sales wedge passes intent the same way.
-    primary: { href: "/signup?wedge=support", label: "Create a front desk agent" },
+    primary: {
+      href: "/signup?wedge=support",
+      label: "Create a front desk agent",
+    },
     secondary: { href: "/showcase", label: "Hear a demo" },
     sequence: [
       [
@@ -87,7 +95,8 @@ const SOLUTIONS = {
         "Route exceptions with the customer, history, and requested outcome intact.",
       ],
     ],
-    proof: "Customers get an answer sooner. Your team joins only when its judgment matters.",
+    proof:
+      "Customers get an answer sooner. Your team joins only when its judgment matters.",
   },
 } as const;
 
@@ -107,7 +116,6 @@ export default function SolutionsPage() {
       />
 
       <MarketingHero
-        eyebrow={page.eyebrow}
         title={page.title}
         primaryAction={{ to: page.primary.href, label: page.primary.label }}
         secondaryAction={{
@@ -117,15 +125,10 @@ export default function SolutionsPage() {
         }}
         visual={
           <div className="text-center">
-            <p className="wl-eyebrow wl-eyebrow--no-rule text-primary">Live preview</p>
-            <h2 className="mx-auto mt-4 max-w-[20ch] font-[var(--wireline-font-family-display)] text-[clamp(2rem,3.2vw,3.2rem)] font-semibold leading-[1] tracking-[-.04em] text-foreground">
-              Hear the lane before you build it.
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-[15px] leading-7 text-muted-foreground">
-              Preview the conversation, then add your voice, business truth, and handoff rules.
-            </p>
-            <div className="mt-7 rounded-[16px] border border-border bg-background/70 p-4">
-              <BrowserCallWidget agentName={key === "sales" ? "Jake" : "Jordan"} />
+            <div className="rounded-[16px] border border-border bg-background/70 p-4">
+              <BrowserCallWidget
+                agentName={key === "sales" ? "Jake" : "Jordan"}
+              />
             </div>
           </div>
         }
@@ -133,14 +136,16 @@ export default function SolutionsPage() {
 
       <section className="wl-public-rail mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="wl-marketing-center mx-auto max-w-2xl">
-          <p className="wl-overline text-primary">One clear operating flow</p>
-          <h2 className="wl-stitch-display mt-3 text-balance">
-            The conversation moves. Your team stays in control.
+          <h2 className="wl-stitch-display text-balance">
+            From contact to next step.
           </h2>
         </div>
         <ol className="mt-10 grid gap-4 lg:grid-cols-3">
           {page.sequence.map(([title, copy], index) => (
-            <li key={title} className="wl-stitch-card relative p-6 text-center sm:p-7">
+            <li
+              key={title}
+              className="wl-stitch-card relative p-6 text-center sm:p-7"
+            >
               <span className="mx-auto grid h-9 w-9 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[length:var(--wireline-typography-caption-size)] font-semibold text-primary">
                 0{index + 1}
               </span>
@@ -158,27 +163,28 @@ export default function SolutionsPage() {
       <section className="border-y border-border bg-card px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="wl-public-rail mx-auto">
           <div className="wl-marketing-center mx-auto max-w-3xl">
-            <p className="wl-overline">Built for useful business work</p>
-            <h2 className="wl-stitch-display mt-3 text-balance">
-              The capabilities that make the conversation operational.
-            </h2>
-            <p className="mx-auto mt-4 max-w-lg text-[length:var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
-              Start focused. Add another channel or connected tool only when it improves the
-              outcome.
-            </p>
+            <h2 className="wl-stitch-display text-balance">What it handles.</h2>
           </div>
           <div className="mt-9 grid gap-3 sm:grid-cols-3">
             {page.capabilities.map(([title, copy], index) => {
-              const CapabilityIcon = [MessageSquareText, CalendarClock, ShieldCheck][
-                index
-              ] as LucideIcon;
+              const CapabilityIcon = [
+                MessageSquareText,
+                CalendarClock,
+                ShieldCheck,
+              ][index] as LucideIcon;
               return (
                 <article
                   key={title}
                   className="wl-stitch-card bg-background p-5 text-center sm:p-6"
                 >
-                  <CapabilityIcon size={18} className="mx-auto text-primary" aria-hidden="true" />
-                  <h3 className="wl-card-title mx-auto mt-4 max-w-[18ch]">{title}</h3>
+                  <CapabilityIcon
+                    size={18}
+                    className="mx-auto text-primary"
+                    aria-hidden="true"
+                  />
+                  <h3 className="wl-card-title mx-auto mt-4 max-w-[18ch]">
+                    {title}
+                  </h3>
                   <p className="mx-auto mt-2 max-w-[34ch] text-[length:var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
                     {copy}
                   </p>
@@ -192,11 +198,7 @@ export default function SolutionsPage() {
       <section className="wl-public-rail mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="wl-stitch-card wl-stitch-card-tinted wl-marketing-center grid justify-items-center gap-6 p-6 sm:p-8">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 text-primary">
-              <CircleDot size={16} aria-hidden="true" />
-              <span className="wl-overline text-primary">The Wireline difference</span>
-            </div>
-            <p className="mt-4 text-[clamp(1.35rem,1.1rem+1vw,1.85rem)] font-semibold leading-[1.15] tracking-[-.035em] text-foreground">
+            <p className="text-[clamp(1.35rem,1.1rem+1vw,1.85rem)] font-semibold leading-[1.15] tracking-[-.035em] text-foreground">
               {page.proof}
             </p>
           </div>
