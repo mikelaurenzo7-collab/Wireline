@@ -48,6 +48,8 @@ describe("agent navigation contract", () => {
   const appsPage = read("src/pages/ClientAppsPage.tsx");
   const pricingPage = read("src/pages/Pricing.tsx");
   const connectionsPage = read("src/pages/ConnectionsPage.tsx");
+  const crmConnections = read("src/components/CrmConnectionCard.tsx");
+  const mailboxConnections = read("src/components/MailboxConnectionCard.tsx");
   const trainingPage = read("src/pages/KnowledgePage.tsx");
   const settingsPage = read("src/pages/SettingsPage.tsx");
   const settingsTabs = read("src/components/settings/SettingsTabs.tsx");
@@ -199,6 +201,10 @@ describe("agent navigation contract", () => {
       /Integration map/,
     );
     expect(read("src/lib/wireline-onboarding-copy.ts")).toMatch(/Open Connections/);
+    expect(crmConnections).not.toMatch(/Ready to connect/);
+    expect(mailboxConnections).toContain('detail: "Mail + Calendar"');
+    expect(mailboxConnections).toContain('detail: "App-specific password"');
+    expect(mailboxConnections).not.toMatch(/Mail and (Google|Microsoft) Calendar/);
   });
 
   it("keeps Knowledge tabs compact and resilient across narrow workspaces", () => {

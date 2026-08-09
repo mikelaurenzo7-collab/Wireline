@@ -204,14 +204,13 @@ function DemandReadinessCard({
 }) {
   const state = !hasLiveLine
     ? {
-        eyebrow: "Demand path incomplete",
-        title: "Connect a phone line to start capturing real demand.",
-        detail:
-          "Add it to your site and business listings, or forward missed calls from your current number.",
+        eyebrow: "Phone line",
+        title: "Connect a phone line.",
+        detail: undefined,
         primaryHref: "/settings/phone",
         primaryLabel: "Connect phone",
-        secondaryHref: testHref,
-        secondaryLabel: `Test the ${subjectLabel} first`,
+        secondaryHref: undefined,
+        secondaryLabel: undefined,
       }
     : !hasConversationHistory
       ? {
@@ -282,9 +281,11 @@ function DemandReadinessCard({
           <Button asChild>
             <Link to={state.primaryHref}>{state.primaryLabel}</Link>
           </Button>
-          <Button asChild variant="secondary">
-            <Link to={state.secondaryHref}>{state.secondaryLabel}</Link>
-          </Button>
+          {state.secondaryHref && state.secondaryLabel ? (
+            <Button asChild variant="secondary">
+              <Link to={state.secondaryHref}>{state.secondaryLabel}</Link>
+            </Button>
+          ) : null}
         </div>
       </div>
     </section>

@@ -34,14 +34,14 @@ describe("demand-driven authenticated experience", () => {
     expect(overview).not.toMatch(/Workspace pulse/);
   });
 
-  it("shows how a real customer reaches Wireline", () => {
-    expect(overview).toMatch(/Connect a phone line to start capturing real demand/);
-    expect(overview).toMatch(/Put it where customers already call/);
-    expect(overview).toMatch(/site and business listings/);
-    expect(overview).toMatch(/forward missed calls/);
-    expect(overview).toMatch(/Review follow-ups/);
+  it("keeps the demand path focused on one next action", () => {
+    expect(overview).toContain('title: "Connect a phone line."');
     expect(overview).toContain('primaryHref: "/settings/phone"');
     expect(overview).toContain('primaryLabel: "Connect phone"');
+    expect(overview).toContain("secondaryHref: undefined");
+    expect(overview).toMatch(/Put it where customers already call/);
+    expect(overview).toMatch(/Review follow-ups/);
+    expect(overview).not.toMatch(/capturing real demand|site and business listings|forward missed calls/);
     expect(overview).not.toContain('primaryLabel: "Connect phone and channels"');
   });
 
@@ -78,7 +78,8 @@ describe("demand-driven authenticated experience", () => {
     expect(activation).toMatch(/Phone number connected/);
     expect(activation).toMatch(/First live customer handled/);
     expect(activation).toMatch(/First follow-up reviewed/);
-    expect(activation).toMatch(/Test freely in Studio/);
+    expect(activation).toContain('actionLabel: "Connect phone number"');
+    expect(activation).not.toMatch(/Do this next/);
     expect(activation).toMatch(/\/studio\?section=setup/);
     expect(activation).not.toMatch(/Test conversation completed/);
     expect(activation).not.toMatch(/\/studio\?section=test/);
@@ -90,7 +91,10 @@ describe("demand-driven authenticated experience", () => {
     expect(studioWorkspace).toMatch(/"setup" \| "test" \| "review"/);
     expect(studioWorkspace).toMatch(/StudioAgentReviewPanel/);
     expect(studioWorkspace).not.toMatch(/StudioAgentCanvas/);
+    expect(studioWorkspace).not.toMatch(/description: "Job, greeting, facts, and voice"/);
     expect(studioSetup).not.toMatch(/AgentPresenceLivePreview|VoiceGallery|Advanced options/);
+    expect(studioSetup).not.toContain('text-eyebrow text-primary">Set up');
+    expect(studioSetup).not.toMatch(/Run one realistic customer test/);
     expect(studioTest).toMatch(/\/test\/stream/);
     expect(studioTest).toMatch(/Browser test/);
     expect(studioReview).toMatch(/Next action/);
@@ -123,6 +127,8 @@ describe("demand-driven authenticated experience", () => {
     expect(voicePicker).toMatch(/Browser tests the words/);
     expect(voicePicker).toMatch(/Place a real call to verify the selected audio/);
     expect(voicePicker).toMatch(/Test response/);
+    expect(voicePicker).toMatch(/aria-expanded=\{showStudioVoices\}/);
+    expect(voicePicker).not.toMatch(/Choose how live calls sound/);
     expect(studioSetup).not.toMatch(/Wireline manages the voice runtime/);
     expect(voicePicker).not.toMatch(/Test call|hear it during a test call/);
     expect(studioSetup).not.toMatch(/Hear the selected voice during testing/);

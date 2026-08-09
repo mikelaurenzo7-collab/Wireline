@@ -68,6 +68,7 @@ export default function SimpleVoicePicker({
   const [canManageVoices, setCanManageVoices] = useState(false);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
+  const [showStudioVoices, setShowStudioVoices] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingVoiceId, setSavingVoiceId] = useState<string | null>(null);
   const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(
@@ -280,16 +281,19 @@ export default function SimpleVoicePicker({
     (voice) =>
       voice.id === selectedVoiceId && voice.provider === selectedProvider,
   );
+  const selectedStudioVoice = studioVoices.find(
+    (voice) =>
+      voice.id === selectedVoiceId && voice.provider === selectedProvider,
+  );
+  const visibleStudioVoices = showStudioVoices
+    ? studioVoices
+    : selectedStudioVoice
+      ? [selectedStudioVoice]
+      : [];
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h3 className="text-base font-semibold tracking-tight">Voice</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Choose how live calls sound.
-          </p>
-        </div>
+      <div className="flex justify-end">
         <button
           type="button"
           onClick={onTest}
@@ -333,12 +337,24 @@ export default function SimpleVoicePicker({
 
           {studioVoices.length ? (
             <div className="space-y-2 border-t border-border pt-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Studio
-              </p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {studioVoices.map(renderVoice)}
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Studio
+                </p>
+                <button
+                  type="button"
+                  aria-expanded={showStudioVoices}
+                  onClick={() => setShowStudioVoices((current) => !current)}
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  {showStudioVoices ? "Show less" : `Show ${studioVoices.length} voices`}
+                </button>
               </div>
+              {visibleStudioVoices.length ? (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {visibleStudioVoices.map(renderVoice)}
+                </div>
+              ) : null}
             </div>
           ) : null}
 

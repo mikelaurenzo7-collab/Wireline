@@ -161,8 +161,7 @@ export default function StudioAgentWorkspacePanel({
     <div className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}>
       <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
         <header>
-          <p className="text-eyebrow text-primary">Set up</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             Give <span className="wl-preserve-case">{agentName}</span> one clear job.
           </h2>
         </header>
@@ -304,11 +303,6 @@ export default function StudioAgentWorkspacePanel({
               <h3 className="text-base font-semibold text-foreground">
                 {isBusinessAgent ? "Test before going live" : "Test before connecting a line"}
               </h3>
-              <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
-                {isBusinessAgent
-                  ? "Run one realistic customer test before connecting live channels."
-                  : "Run one private conversation test before connecting a live number."}
-              </p>
             </div>
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               <Button

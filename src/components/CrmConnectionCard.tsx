@@ -485,7 +485,7 @@ export default function CrmConnectionCard() {
                         {apolloPlatformOnly
                           ? `${group} · Platform API active — connecting your workspace is optional`
                           : platformReady && oauthConnectAvailable
-                            ? `${group} · Ready to connect`
+                            ? group
                             : platformReady
                               ? `${group} · Platform configured`
                               : // Customers do not have a mental model for "this deployment", and

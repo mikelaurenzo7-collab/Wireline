@@ -19,17 +19,17 @@ const PROVIDERS: Array<{
   detail: string;
   logo: string;
 }> = [
-  { id: "google", label: "Gmail", detail: "Mail and Google Calendar", logo: "gmail" },
+  { id: "google", label: "Gmail", detail: "Mail + Calendar", logo: "gmail" },
   {
     id: "microsoft",
     label: "Outlook",
-    detail: "Mail and Microsoft Calendar",
+    detail: "Mail + Calendar",
     logo: "microsoft_outlook",
   },
   {
     id: "icloud",
     label: "iCloud Mail",
-    detail: "Apple app-specific password",
+    detail: "App-specific password",
     logo: "icloud",
   },
   // Yahoo OAuth stores tokens today, but inbox fetch/send is not wired

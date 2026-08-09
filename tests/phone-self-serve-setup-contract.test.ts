@@ -28,6 +28,9 @@ describe("self-service calling setup", () => {
     expect(setup).toContain('aria-label="Choose the voice agent for this number"');
     expect(setup).toContain('aria-label="Preferred phone number area code"');
     expect(setup).toContain("Activate number");
+    expect(setup).toContain("Paid plan required for activation.");
+    expect(setup).not.toContain("Set up the complete call experience before going live.");
+    expect(setup).not.toContain('aria-label="Calling setup steps"');
   });
 
   it("turns activation blocks into a recoverable setup path and exposes a real inbound test", () => {
