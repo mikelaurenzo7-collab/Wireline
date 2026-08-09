@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent } from "react";
-import { ArrowRight, Check, Volume2 } from "lucide-react";
+import { ArrowRight, Volume2 } from "lucide-react";
 import { Link } from "react-router";
 
 import MarketingFooter from "./MarketingFooter";
@@ -8,11 +8,7 @@ import MarketingStickyCta from "./MarketingStickyCta";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import TrustSignals from "./TrustSignals";
 import BrowserCallWidget from "./BrowserCallWidget";
-import {
-  AGENT_DIRECTION_MODES,
-  AGENT_NUMBER_PROMISE,
-  MARKETING_VOICE,
-} from "../../lib/product-copy";
+import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
 import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 import { emitProductEvent } from "../../lib/product-event-client";
@@ -20,7 +16,6 @@ import { emitProductEvent } from "../../lib/product-event-client";
 type AgentMode = "outbound" | "inbound" | "hybrid";
 
 type ModeDetail = {
-  eyebrow: string;
   title: string;
   lead: string;
   bestFor: readonly string[];
@@ -29,8 +24,6 @@ type ModeDetail = {
 };
 
 const HERO_LOOP = MARKETING_VOICE.proof;
-const HERO_CAPABILITIES = MARKETING_VOICE.channelProof.slice(0, 3);
-
 const MODE_OPTIONS: { key: AgentMode; label: string }[] = [
   { key: "outbound", label: AGENT_DIRECTION_MODES.outbound.label },
   { key: "inbound", label: AGENT_DIRECTION_MODES.inbound.label },
@@ -39,7 +32,6 @@ const MODE_OPTIONS: { key: AgentMode; label: string }[] = [
 
 const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
   outbound: {
-    eyebrow: "Sales and growth",
     title: "A sales agent that follows through.",
     lead: "Call warm lists, revive leads, promote offers, send the follow up, book the meeting, and log the outcome.",
     bestFor: ["Lead response", "Quote follow up", "Appointment setting"],
@@ -47,7 +39,6 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     ctaPath: "/signup?plan=starter&mode=outbound",
   },
   inbound: {
-    eyebrow: "Front desk and support",
     title: "Answer every valuable call.",
     lead: "Catch the call, qualify the need, schedule the next step, cover after hours, and continue by text or email from one record.",
     bestFor: ["Front desk", "Lead qualifier", "Support triage"],
@@ -55,7 +46,6 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     ctaPath: "/signup?plan=starter&mode=inbound",
   },
   hybrid: {
-    eyebrow: "All purpose agent",
     title: "One agent for the work between conversations.",
     lead: "Keep sales, service, callbacks, scheduling, and CRM updates moving in one visible workflow.",
     bestFor: ["Sales desk", "Collections desk", "Appointment desk"],
@@ -71,18 +61,9 @@ const LOOP_COPY = [
   "Let it answer, sell, support, book, follow up, and log the result.",
 ] as const;
 
-const REASSURANCES = [
-  "Build free. No card.",
-  "Hear it live first",
-  "A number on every paid plan",
-  "Actions stay under your approval",
-  "Cancel anytime",
-] as const;
-
-const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
-  StripePlanId,
-  (typeof STRIPE_PLANS)[number]
->;
+const planCatalog = Object.fromEntries(
+  STRIPE_PLANS.map((plan) => [plan.id, plan]),
+) as Record<StripePlanId, (typeof STRIPE_PLANS)[number]>;
 
 const PLAN_PREVIEW = [
   {
@@ -165,7 +146,9 @@ export default function WireAgentLanding() {
     });
 
     if (focusAfterSelect) {
-      window.requestAnimationFrame(() => document.getElementById(modeTabId(key))?.focus());
+      window.requestAnimationFrame(() =>
+        document.getElementById(modeTabId(key))?.focus(),
+      );
     }
   };
 
@@ -194,23 +177,35 @@ export default function WireAgentLanding() {
     <div className="marketing-surface wl-viewport-frame bg-background text-foreground">
       <PrecisionPublicHeader />
 
-      <main id="main-content" className="wl-viewport-scroll pt-16" tabIndex={-1}>
+      <main
+        id="main-content"
+        className="wl-viewport-scroll pt-16"
+        tabIndex={-1}
+      >
         <MarketingHero
-          eyebrow={MARKETING_VOICE.eyebrow}
           title={MARKETING_VOICE.headline}
-          primaryAction={{ label: MARKETING_VOICE.primaryCta, to: "/signup?plan=personal" }}
-          secondaryAction={{ label: "Hear it live", to: "#hear-a-demo", tone: "secondary" }}
-          proof={HERO_CAPABILITIES}
+          primaryAction={{
+            label: MARKETING_VOICE.primaryCta,
+            to: "/signup?plan=personal",
+          }}
+          secondaryAction={{
+            label: "Hear it live",
+            to: "#hear-a-demo",
+            tone: "secondary",
+          }}
           visual={
-            <div id="hear-a-demo" className="flex flex-col justify-between text-center">
+            <div
+              id="hear-a-demo"
+              className="flex flex-col justify-between text-center"
+            >
               <div>
                 <div className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-foreground">
-                  <Volume2 className="h-4 w-4 text-primary" aria-hidden="true" />
+                  <Volume2
+                    className="h-4 w-4 text-primary"
+                    aria-hidden="true"
+                  />
                   Live browser demo
                 </div>
-                <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-muted-foreground">
-                  Ask out loud. Your microphone turns on only after you start. No signup required.
-                </p>
               </div>
               <div className="mt-6 rounded-[16px] border border-border bg-background/70 p-4 sm:p-5">
                 <BrowserCallWidget
@@ -218,14 +213,11 @@ export default function WireAgentLanding() {
                   buttonLabel="Start the live demo"
                   fallback={
                     <div className="text-center">
-                      <p className="mx-auto text-[15px] leading-6 text-muted-foreground">
-                        Prefer the phone? Call a live demo line.
-                      </p>
                       <a
                         href={`tel:${HERO_DEMO_AGENT.tel}`}
-                        className="marketing-btn-secondary mt-3 inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
+                        className="marketing-btn-secondary inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
                       >
-                        Call {HERO_DEMO_AGENT.display}
+                        Call demo
                       </a>
                     </div>
                   }
@@ -235,61 +227,39 @@ export default function WireAgentLanding() {
           }
         />
 
-        <section className="border-b border-border bg-card/40" aria-label="What to expect">
-          <div className="wl-public-rail py-5">
-            <ul className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm font-medium text-muted-foreground">
-              {REASSURANCES.map((item) => (
-                <li key={item} className="inline-flex items-center gap-2">
-                  <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
-            <div className="mx-auto mb-10 max-w-2xl text-center">
-              <p className="wl-eyebrow wl-eyebrow--wired text-primary">One agent. Every channel.</p>
-              <h2 className="wl-display-2 mt-4">Train once. Work across every channel.</h2>
-              <p className="mt-4 text-[16px] leading-[1.65] text-muted-foreground">
-                Calls start the conversation. Text and email keep it moving. One agent carries the
-                same knowledge, rules, approvals, and history across every channel.
-              </p>
+            <div className="mx-auto mb-8 max-w-2xl text-center">
+              <h2 className="wl-display-2">Every channel. One agent.</h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                ["Voice", "Answers and places calls, qualifies, books, transfers, and recaps."],
-                ["Text messages", "Confirms, nurtures, reminds, and recovers under consent rules."],
-                ["Email", "Drafts, sends approved replies, follows up, and records the result."],
-                ["One record", "Keeps context, coaching, spend controls, and proof together."],
-              ].map(([title, body]) => (
-                <article key={title} className="wl-paper rounded-[16px] p-6 text-center">
-                  <h3 className="wl-display-4">{title}</h3>
-                  <p className="mt-3 text-sm leading-[1.65] text-muted-foreground">{body}</p>
-                </article>
-              ))}
+              {["Voice", "Text messages", "Email", "One record"].map(
+                (title) => (
+                  <article
+                    key={title}
+                    className="wl-paper rounded-[16px] p-6 text-center"
+                  >
+                    <h3 className="wl-display-4">{title}</h3>
+                  </article>
+                ),
+              )}
             </div>
           </div>
         </section>
 
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
-            <div className="mx-auto mb-10 max-w-2xl text-center">
-              <p className="wl-eyebrow wl-eyebrow--wired text-primary">How it works</p>
-              <h2 className="wl-display-2 mt-4">From brief to live agent in four clear steps.</h2>
-              <p className="mt-4 text-[16px] leading-[1.65] text-muted-foreground">
-                Build the agent, train it for the job, activate the right channels, and improve it
-                from a clean record behind every conversation.
-              </p>
+            <div className="mx-auto mb-8 max-w-2xl text-center">
+              <h2 className="wl-display-2">Build. Train. Launch. Improve.</h2>
             </div>
             <div className="grid overflow-hidden rounded-[16px] border border-border bg-card sm:grid-cols-4 sm:divide-x sm:divide-border">
               {HERO_LOOP.map((step, index) => (
                 <article
                   key={step}
                   className={`wl-wire-step p-7 text-center transition-colors hover:bg-muted/40 ${
-                    index === HERO_LOOP.length - 1 ? "wl-wire-step--settled" : ""
+                    index === HERO_LOOP.length - 1
+                      ? "wl-wire-step--settled"
+                      : ""
                   }`}
                 >
                   <div className="wl-wire-step__marker mb-5">
@@ -311,19 +281,11 @@ export default function WireAgentLanding() {
         <section className="wl-public-section border-b border-border bg-card/40">
           <div className="wl-public-rail">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="wl-eyebrow wl-eyebrow--wired text-primary">Work lanes</p>
-              <h2 className="wl-display-2 mx-auto mt-4 max-w-[18ch]">
-                Choose the outcome. It handles the rest.
+              <h2 className="wl-display-2 mx-auto max-w-[18ch]">
+                Choose the outcome.
               </h2>
-              <p className="mx-auto mt-4 max-w-[44rem] text-[16px] leading-[1.65] text-muted-foreground">
-                Start with sales, service, or all purpose follow through. Voice, text, email, and
-                proof stay in one system.
-              </p>
-              <p className="mx-auto mt-3 max-w-[46rem] text-sm leading-6 text-muted-foreground">
-                {AGENT_NUMBER_PROMISE}
-              </p>
               <div
-                className="wl-segmented mx-auto mt-7 flex w-fit max-w-full"
+                className="wl-segmented mx-auto mt-6 flex w-fit max-w-full"
                 role="tablist"
                 aria-label="Agent work lane"
                 onKeyDown={handleModeKeyDown}
@@ -363,17 +325,15 @@ export default function WireAgentLanding() {
                   {mode === key ? (
                     <div className="space-y-6 text-center">
                       <div>
-                        <p className="wl-eyebrow wl-eyebrow--no-rule text-primary">
-                          {detail.eyebrow}
-                        </p>
-                        <h3 className="wl-display-3 mx-auto mt-3 max-w-[20ch]">{detail.title}</h3>
+                        <h3 className="wl-display-3 mx-auto max-w-[20ch]">
+                          {detail.title}
+                        </h3>
                         <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-[1.65] text-muted-foreground">
                           {detail.lead}
                         </p>
                       </div>
                       <div>
-                        <p className="wl-overline text-primary">Best for</p>
-                        <ul className="mt-3 grid gap-2 sm:grid-cols-3">
+                        <ul className="grid gap-2 sm:grid-cols-3">
                           {detail.bestFor.map((item) => (
                             <li
                               key={item}
@@ -401,13 +361,8 @@ export default function WireAgentLanding() {
 
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
-            <div className="mx-auto mb-10 max-w-2xl text-center">
-              <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
-              <h2 className="wl-display-2 mt-4">Build free. Go live from $19 a month.</h2>
-              <p className="mt-4 text-[16px] leading-[1.65] text-muted-foreground">
-                Train privately on Free Builder. Every paid plan includes live voice, a Wireline
-                number, and SMS and email under visible usage controls.
-              </p>
+            <div className="mx-auto mb-8 max-w-2xl text-center">
+              <h2 className="wl-display-2">Build free. Go live from $19.</h2>
             </div>
             <div className="mx-auto grid max-w-[1200px] gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {PLAN_PREVIEW.map((plan) => (
@@ -427,8 +382,12 @@ export default function WireAgentLanding() {
                   ) : null}
                   <h3 className="wl-display-4">{plan.name}</h3>
                   <div className="mt-5 flex items-baseline justify-center gap-1">
-                    <span className="wl-display-2 leading-none">{plan.price}</span>
-                    <span className="text-sm text-muted-foreground">{plan.period}</span>
+                    <span className="wl-display-2 leading-none">
+                      {plan.price}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {plan.period}
+                    </span>
                   </div>
                   <ul
                     className="wl-info-list mx-auto w-full max-w-[30ch] flex-1"
@@ -441,7 +400,9 @@ export default function WireAgentLanding() {
                   <Link
                     to={plan.ctaPath}
                     className={`mt-6 min-h-11 justify-center text-sm font-semibold ${
-                      plan.highlight ? "marketing-btn-primary" : "marketing-btn-secondary"
+                      plan.highlight
+                        ? "marketing-btn-primary"
+                        : "marketing-btn-secondary"
                     }`}
                   >
                     {plan.cta}
@@ -451,8 +412,9 @@ export default function WireAgentLanding() {
             </div>
             <div className="mt-8 text-center">
               <p className="mx-auto max-w-[50ch] text-sm leading-[1.65] text-muted-foreground">
-                Included minutes are used first. Extra voice, SMS, and enrichment draw from prepaid
-                Runtime Balance that you control. There is no surprise postpaid invoice.
+                Included minutes are used first. Extra voice, SMS, and
+                enrichment draw from prepaid Runtime Balance that you control.
+                There is no surprise postpaid invoice.
               </p>
               <Link
                 to="/pricing"
@@ -479,10 +441,6 @@ export default function WireAgentLanding() {
                 <h2 className="wl-display-2 mx-auto max-w-[18ch]">
                   Put your first voice agent to work.
                 </h2>
-                <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-[35rem] text-[16px] leading-[1.65]">
-                  Train free. Choose a paid plan when you are ready to claim the number, connect
-                  channels, and handle the first real conversation.
-                </p>
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                   <Link
                     to="/signup?plan=personal"
@@ -498,9 +456,6 @@ export default function WireAgentLanding() {
                     Hear it live
                   </Link>
                 </div>
-                <p className="marketing-ink-panel__soft mx-auto mt-5 text-sm leading-6 opacity-80">
-                  Build free. Hear it live before you pay. Cancel anytime.
-                </p>
               </div>
             </div>
           </div>
