@@ -11,8 +11,7 @@ import {
 } from "../src/lib/marketing-route-meta";
 import { WEDGES } from "../src/data/vertical-wedges";
 
-const read = (path: string) =>
-  readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 const indexHtml = read("index.html");
 
 describe("marketing route meta prerendering", () => {
@@ -22,12 +21,8 @@ describe("marketing route meta prerendering", () => {
     expect(indexHtml).toContain(`<title>${HOME_TITLE}</title>`);
     expect(indexHtml.split(HOME_TITLE).length - 1).toBe(3); // title, og:title, twitter:title
     expect(indexHtml.split(HOME_DESCRIPTION).length - 1).toBe(3); // desc, og:desc, twitter:desc
-    expect(indexHtml).toContain(
-      '<link rel="canonical" href="https://trywireline.com/" />',
-    );
-    expect(indexHtml).toContain(
-      '<meta property="og:url" content="https://trywireline.com/" />',
-    );
+    expect(indexHtml).toContain('<link rel="canonical" href="https://trywireline.com/" />');
+    expect(indexHtml).toContain('<meta property="og:url" content="https://trywireline.com/" />');
   });
 
   it("prerenders every /for/* wedge plus the inline commercial pages", () => {
@@ -74,9 +69,7 @@ describe("marketing route meta prerendering", () => {
     const solutions = read("src/pages/SolutionsPage.tsx");
 
     expect(pricing).toContain(`title="${resolveRouteMeta("/pricing")!.title}"`);
-    expect(features).toContain(
-      `title="${resolveRouteMeta("/features")!.title}"`,
-    );
+    expect(features).toContain(`title="${resolveRouteMeta("/features")!.title}"`);
     expect(compare).toContain(`title="${resolveRouteMeta("/compare")!.title}"`);
     for (const route of ["/pricing", "/features", "/compare"] as const) {
       const source = {
@@ -114,23 +107,37 @@ describe("marketing route meta prerendering", () => {
       const source = read(path);
       // Titles may carry the PageMeta brand suffix client-side; assert the
       // pre-suffix half the page actually declares.
-      expect(source, `${route} title`).toContain(
-        meta.title.replace(" | Wireline", ""),
-      );
+      expect(source, `${route} title`).toContain(meta.title.replace(" | Wireline", ""));
       expect(source, `${route} description`).toContain(meta.description);
     }
   });
 
+  // The four vertical trust packs were the only prerendered routes with no
+  // gate, and they had already drifted: the build served
+  // "Trust Pack: Healthcare sensitive workflows" to crawlers while hydration
+  // replaced it with "Trust · Healthcare-sensitive workflows" and a shorter
+  // description. They carry no verbatim strings to pin because the page now
+  // reads the registry back, so pin that wiring instead.
+  it("keeps the trust packs' hydrated head sourced from the prerendered registry", () => {
+    const page = read("src/components/TrustPackPage.tsx");
+
+    expect(page).toContain("resolveRouteMeta");
+    expect(page).toContain("resolveRouteMeta(`/trust/${vertical}`)");
+    expect(page).toContain("title={prerendered?.title");
+    expect(page).toContain("description={prerendered?.description");
+
+    for (const vertical of ["medical", "legal", "insurance", "enterprise"]) {
+      const meta = resolveRouteMeta(`/trust/${vertical}`);
+      expect(meta, `/trust/${vertical}`).not.toBeNull();
+      expect(meta!.title.endsWith(" | Wireline")).toBe(true);
+      expect(meta!.canonical).toBe(`https://trywireline.com/trust/${vertical}`);
+    }
+  });
+
   it("normalizes trailing slashes and strips query/hash", () => {
-    expect(resolveRouteMeta("/for/medical/")).toEqual(
-      resolveRouteMeta("/for/medical"),
-    );
-    expect(resolveRouteMeta("/pricing?utm_source=x")).toEqual(
-      resolveRouteMeta("/pricing"),
-    );
-    expect(resolveRouteMeta("/features#top")).toEqual(
-      resolveRouteMeta("/features"),
-    );
+    expect(resolveRouteMeta("/for/medical/")).toEqual(resolveRouteMeta("/for/medical"));
+    expect(resolveRouteMeta("/pricing?utm_source=x")).toEqual(resolveRouteMeta("/pricing"));
+    expect(resolveRouteMeta("/features#top")).toEqual(resolveRouteMeta("/features"));
   });
 
   it("rewrites the static head for a marketing route without touching unrelated markup", () => {
@@ -138,27 +145,17 @@ describe("marketing route meta prerendering", () => {
     const out = injectMarketingMeta(indexHtml, meta);
 
     expect(out).toContain(`<title>${meta.title}</title>`);
-    expect(out).toContain(
-      `<meta property="og:title" content="${meta.title}" />`,
-    );
-    expect(out).toContain(
-      `<meta name="twitter:title" content="${meta.title}" />`,
-    );
+    expect(out).toContain(`<meta property="og:title" content="${meta.title}" />`);
+    expect(out).toContain(`<meta name="twitter:title" content="${meta.title}" />`);
     expect(out).toContain(`content="${meta.description}"`);
     expect(out).toContain(`<link rel="canonical" href="${meta.canonical}" />`);
-    expect(out).toContain(
-      `<meta property="og:url" content="${meta.canonical}" />`,
-    );
+    expect(out).toContain(`<meta property="og:url" content="${meta.canonical}" />`);
 
     // Homepage defaults are gone…
     expect(out).not.toContain(`<title>${HOME_TITLE}</title>`);
-    expect(out).not.toContain(
-      '<link rel="canonical" href="https://trywireline.com/" />',
-    );
+    expect(out).not.toContain('<link rel="canonical" href="https://trywireline.com/" />');
     // …but unrelated head content and the asset shell are preserved.
-    expect(out).toContain(
-      '<meta name="twitter:card" content="summary_large_image" />',
-    );
+    expect(out).toContain('<meta name="twitter:card" content="summary_large_image" />');
     expect(out).toContain('<link rel="manifest" href="/site.webmanifest" />');
     expect(out).toContain('"@type": "WebSite"');
     // The shared OG image is intentionally left as the site default.
@@ -169,19 +166,14 @@ describe("marketing route meta prerendering", () => {
 
   it("is wired into the build pipeline that both local and Vercel builds run", () => {
     const pkg = read("package.json");
-    const buildScript = (JSON.parse(pkg) as { scripts: Record<string, string> })
-      .scripts.build;
+    const buildScript = (JSON.parse(pkg) as { scripts: Record<string, string> }).scripts.build;
     // Prerender must run after vite build (needs dist/index.html) and before
     // anything consumes dist.
-    expect(buildScript).toContain(
-      "vite build && tsx scripts/prerender-marketing-meta.mts",
-    );
+    expect(buildScript).toContain("vite build && tsx scripts/prerender-marketing-meta.mts");
 
     const script = read("scripts/prerender-marketing-meta.mts");
     expect(script).toContain("PRERENDERED_MARKETING_ROUTES");
-    expect(script).toContain(
-      'path.join(dist, ...route.split("/").filter(Boolean))',
-    );
+    expect(script).toContain('path.join(dist, ...route.split("/").filter(Boolean))');
     expect(script).toContain("process.exit(1)"); // drift fails the build loudly
   });
 });

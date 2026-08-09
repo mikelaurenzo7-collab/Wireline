@@ -91,9 +91,9 @@ const STATIC_ROUTE_META: Record<string, { title: string; description: string }> 
       "Talk to Wireline about personal call coverage, team rollout, partnerships, or support.",
   },
   "/status": {
-    title: "System Status | Wireline",
+    title: "Provider Status | Wireline",
     description:
-      "Live operational status of Wireline's voice runtime, fallback path, and reasoning layer. Updated every 60 seconds.",
+      "Live access checks for Wireline's managed voice control plane and reasoning model. Updated every 60 seconds.",
   },
   "/security": {
     title: "Security and Compliance | Wireline",
@@ -110,7 +110,9 @@ const STATIC_ROUTE_META: Record<string, { title: string; description: string }> 
   // they fell through to dist/index.html, whose canonical is the homepage —
   // so Google saw four submitted URLs that self-canonicalized away as
   // duplicates, and every share of one unfurled as the generic homepage card.
-  // Keep in sync with PACKS in src/components/TrustPackPage.tsx.
+  // These are the source: TrustPackPage reads them back through
+  // resolveRouteMeta so the hydrated head cannot drift from the prerendered
+  // one. It previously carried its own wording and drifted.
   "/trust/medical": {
     title: "Trust Pack: Healthcare sensitive workflows | Wireline",
     description:
