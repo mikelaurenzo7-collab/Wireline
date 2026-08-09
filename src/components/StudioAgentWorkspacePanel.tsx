@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, Loader2, PlugZap, Save } from "lucide-react";
 import { Link } from "react-router";
 
@@ -64,14 +64,28 @@ export default function StudioAgentWorkspacePanel({
   const [setupKnowledge, setSetupKnowledge] = useState("");
   const [loadingSetup, setLoadingSetup] = useState(true);
   const [applyingSetup, setApplyingSetup] = useState(false);
+  const [setupLoadError, setSetupLoadError] = useState<string | null>(null);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [setupNotice, setSetupNotice] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const activeAgentIdRef = useRef(agentId);
+
+  useLayoutEffect(() => {
+    activeAgentIdRef.current = agentId;
+  }, [agentId]);
 
   useEffect(() => {
     if (!agentId) return;
     let cancelled = false;
     setLoadingSetup(true);
+    setApplyingSetup(false);
+    setSetupLoadError(null);
     setSetupError(null);
+    setSetupNotice(null);
+    setSetupPersonality("Clear");
+    setSetupGreeting("");
+    setSetupKnowledge("");
+    setLoadedPersonality(null);
     authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`)
       .then(async (response) => {
         if (!response.ok) throw new Error("Current setup could not be loaded.");
@@ -87,7 +101,7 @@ export default function StudioAgentWorkspacePanel({
       })
       .catch((reason) => {
         if (!cancelled) {
-          setSetupError(
+          setSetupLoadError(
             reason instanceof Error
               ? reason.message
               : "Current setup could not be loaded.",
@@ -100,7 +114,7 @@ export default function StudioAgentWorkspacePanel({
     return () => {
       cancelled = true;
     };
-  }, [agentId]);
+  }, [agentId, reloadKey]);
 
   async function saveManual(
     type: "personality" | "directive",
@@ -123,6 +137,8 @@ export default function StudioAgentWorkspacePanel({
 
   async function applySetup() {
     if (!agentId) return;
+    const setupAgentId = agentId;
+    const isCurrentAgent = () => activeAgentIdRef.current === setupAgentId;
     setApplyingSetup(true);
     setSetupError(null);
     setSetupNotice(null);
@@ -136,7 +152,7 @@ export default function StudioAgentWorkspacePanel({
       const knowledgeTrimmed = setupKnowledge.trim();
 
       await saveManual("personality", personalityText);
-      setLoadedPersonality(personalityText);
+      if (isCurrentAgent()) setLoadedPersonality(personalityText);
       if (greetingTrimmed) {
         await saveManual("directive", `Opening greeting: ${greetingTrimmed}`);
       }
@@ -153,20 +169,26 @@ export default function StudioAgentWorkspacePanel({
               : "Personal preferences could not be saved.",
           );
         }
-        setSetupKnowledge("");
+        if (isCurrentAgent()) setSetupKnowledge("");
       }
 
-      setSetupNotice(
-        isBusinessAgent
-          ? "Changes saved. Run a customer test before connecting live traffic."
-          : "Changes saved. Run a private test before connecting a live line.",
-      );
+      if (isCurrentAgent()) {
+        setSetupNotice(
+          isBusinessAgent
+            ? "Changes saved. Run a customer test before connecting live traffic."
+            : "Changes saved. Run a private test before connecting a live line.",
+        );
+      }
     } catch (reason) {
-      setSetupError(
-        reason instanceof Error ? reason.message : "Setup could not be saved.",
-      );
+      if (isCurrentAgent()) {
+        setSetupError(
+          reason instanceof Error
+            ? reason.message
+            : "Setup could not be saved.",
+        );
+      }
     } finally {
-      setApplyingSetup(false);
+      if (isCurrentAgent()) setApplyingSetup(false);
     }
   }
 
@@ -200,6 +222,23 @@ export default function StudioAgentWorkspacePanel({
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
               Loading setup…
             </div>
+          ) : setupLoadError ? (
+            <StatusNotice
+              tone="destructive"
+              title="Setup unavailable"
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setReloadKey((current) => current + 1)}
+                >
+                  Try again
+                </Button>
+              }
+            >
+              {setupLoadError} Your saved setup was not changed.
+            </StatusNotice>
           ) : (
             <div className="space-y-5">
               <fieldset>
@@ -289,7 +328,7 @@ export default function StudioAgentWorkspacePanel({
                 </StatusNotice>
               ) : null}
               {setupError ? (
-                <StatusNotice tone="destructive" title="Changes not saved">
+                <StatusNotice tone="destructive" title="Setup needs attention">
                   {setupError}
                 </StatusNotice>
               ) : null}
