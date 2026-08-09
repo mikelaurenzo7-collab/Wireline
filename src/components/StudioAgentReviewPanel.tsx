@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, MessageCircle, PhoneCall, Settings2 } from "lucide-react";
+import {
+  CheckCircle2,
+  MessageCircle,
+  PhoneCall,
+  Settings2,
+} from "lucide-react";
 import { Link } from "react-router";
 
 import { Button, Skeleton } from "./atoms";
@@ -31,8 +36,13 @@ type StudioAgentReviewPanelProps = {
 };
 
 function openingGreeting(directives: AgentConfigResponse["directives"]) {
-  const match = directives?.find((directive) => directive.content?.startsWith(GREETING_PREFIX));
-  return match?.content?.slice(GREETING_PREFIX.length).trim() || "Uses the standard greeting";
+  const match = directives?.find((directive) =>
+    directive.content?.startsWith(GREETING_PREFIX),
+  );
+  return (
+    match?.content?.slice(GREETING_PREFIX.length).trim() ||
+    "Uses the standard greeting"
+  );
 }
 
 function toneLabel(personality?: string | null) {
@@ -52,7 +62,9 @@ function toneLabel(personality?: string | null) {
   if (knownTone[normalized]) return knownTone[normalized];
 
   const sentence = value.split(/[.\n]/)[0]?.trim() || "Clear and professional";
-  return sentence.length > 80 ? `${sentence.slice(0, 77).trimEnd()}…` : sentence;
+  return sentence.length > 80
+    ? `${sentence.slice(0, 77).trimEnd()}…`
+    : sentence;
 }
 
 export default function StudioAgentReviewPanel({
@@ -82,7 +94,11 @@ export default function StudioAgentReviewPanel({
       })
       .catch((reason) => {
         if (!cancelled) {
-          setError(reason instanceof Error ? reason.message : "Setup summary could not be loaded.");
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : "Setup summary could not be loaded.",
+          );
         }
       })
       .finally(() => {
@@ -99,12 +115,14 @@ export default function StudioAgentReviewPanel({
   const hasPhone = Boolean(phoneNumber);
 
   return (
-    <div className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}>
+    <div
+      className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}
+    >
       <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
         <header>
-          <p className="text-eyebrow text-primary">Review</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Is <span className="wl-preserve-case">{agentName}</span> ready for customers?
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            Is <span className="wl-preserve-case">{agentName}</span> ready for
+            customers?
           </h2>
         </header>
 
@@ -121,7 +139,10 @@ export default function StudioAgentReviewPanel({
           {loading ? (
             <div className="grid gap-4 sm:grid-cols-2" aria-busy="true">
               {Array.from({ length: 4 }, (_, index) => (
-                <div key={index} className="rounded-xl border border-border bg-background p-4">
+                <div
+                  key={index}
+                  className="rounded-xl border border-border bg-background p-4"
+                >
                   <Skeleton shape="text" className="h-3 w-20" />
                   <Skeleton shape="text" className="mt-3 h-5 w-40 max-w-full" />
                 </div>
@@ -132,11 +153,19 @@ export default function StudioAgentReviewPanel({
               {[
                 { label: "Customer-facing job", value: role },
                 { label: "Tone", value: toneLabel(config?.personality) },
-                { label: "Opening greeting", value: openingGreeting(config?.directives) },
+                {
+                  label: "Opening greeting",
+                  value: openingGreeting(config?.directives),
+                },
                 { label: "Managed phone voice", value: voiceName },
               ].map((item) => (
-                <div key={item.label} className="rounded-xl border border-border bg-background p-4">
-                  <dt className="text-xs font-semibold text-muted-foreground">{item.label}</dt>
+                <div
+                  key={item.label}
+                  className="rounded-xl border border-border bg-background p-4"
+                >
+                  <dt className="text-xs font-semibold text-muted-foreground">
+                    {item.label}
+                  </dt>
                   <dd className="mt-2 text-sm font-semibold leading-5 text-foreground">
                     {item.value}
                   </dd>
@@ -149,7 +178,9 @@ export default function StudioAgentReviewPanel({
         <StatusNotice
           tone={hasPhone ? "success" : "warning"}
           title={
-            hasPhone ? "Live customer line connected" : "Browser-ready; live line not connected"
+            hasPhone
+              ? "Live customer line connected"
+              : "Browser-ready; live line not connected"
           }
         >
           {hasPhone
@@ -161,9 +192,11 @@ export default function StudioAgentReviewPanel({
           className="rounded-2xl border border-border bg-card p-5 sm:p-6"
           aria-label="Next actions"
         >
-          <h3 className="text-base font-semibold text-foreground">Next action</h3>
-          <div className="mt-4 flex flex-col gap-3">
-            <Button asChild className="w-full justify-center sm:w-auto sm:self-start">
+          <div className="flex flex-col gap-3">
+            <Button
+              asChild
+              className="w-full justify-center sm:w-auto sm:self-start"
+            >
               <Link to={hasPhone ? "/phone?tab=logs" : "/settings/phone"}>
                 {hasPhone ? (
                   <CheckCircle2 className="size-4" aria-hidden="true" />
@@ -174,11 +207,21 @@ export default function StudioAgentReviewPanel({
               </Link>
             </Button>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="secondary" onClick={onEdit} className="justify-center">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onEdit}
+                className="justify-center"
+              >
                 <Settings2 className="size-4" aria-hidden="true" />
                 Edit setup
               </Button>
-              <Button type="button" variant="secondary" onClick={onTest} className="justify-center">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onTest}
+                className="justify-center"
+              >
                 <MessageCircle className="size-4" aria-hidden="true" />
                 Test conversation
               </Button>
@@ -197,10 +240,16 @@ export default function StudioAgentReviewPanel({
             >
               Add business knowledge
             </Link>
-            <Link to="/connections" className="font-medium text-primary hover:underline">
+            <Link
+              to="/connections"
+              className="font-medium text-primary hover:underline"
+            >
               Open Connections
             </Link>
-            <Link to="/settings/customization" className="font-medium text-primary hover:underline">
+            <Link
+              to="/settings/customization"
+              className="font-medium text-primary hover:underline"
+            >
               Appearance & brand
             </Link>
           </div>
