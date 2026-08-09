@@ -30,7 +30,7 @@ export function QualifyForm({
           <TextArea
             value={transcript}
             onChange={setTranscript}
-            placeholder="Customer: I'm exploring options for our 200-seat team..."
+            placeholder="Customer: I'm exploring options for our 200-seat team…"
             rows={10}
           />
         </Field>
