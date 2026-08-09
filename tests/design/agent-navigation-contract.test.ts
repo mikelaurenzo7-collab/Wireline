@@ -132,7 +132,7 @@ describe("agent navigation contract", () => {
     // The heading shouts with the rest of the workspace, but the agent's name is
     // the operator's own words and reads exactly as they typed it.
     expect(studioPanel).toMatch(
-      /Give <span className="wl-preserve-case">\{agentName\}<\/span> one clear job/,
+      /Give <span className="wl-preserve-case">\{agentName\}<\/span> one clear\s+job/,
     );
     expect(studioPanel).toMatch(/Essentials/);
     expect(studioPanel).toMatch(/Phone voice/);
@@ -218,7 +218,8 @@ describe("agent navigation contract", () => {
       expect(pricingPage).toContain(tier);
     }
     expect(pricingPage).toMatch(/Runtime Balance/);
-    expect(pricingPage).toMatch(/Founder Early Access/);
+    expect(pricingPage).toMatch(/Founder hybrid/);
+    expect(pricingPage).not.toMatch(/Founder Early Access/);
     expect(pricingPage).not.toMatch(/Try 7 days free/);
   });
 
