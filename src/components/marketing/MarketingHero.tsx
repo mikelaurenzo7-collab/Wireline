@@ -1,8 +1,11 @@
-import { Fragment, useEffect, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router";
 
-import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
+import {
+  emitProductEvent,
+  emitProductEventOnce,
+} from "../../lib/product-event-client";
 import { MARKETING_VOICE } from "../../lib/product-copy";
 import { cn } from "../../lib/utils";
 
@@ -37,18 +40,19 @@ function isExternalHref(href: string): boolean {
 }
 
 export default function MarketingHero({
-  eyebrow,
   title,
   primaryAction,
   secondaryAction,
-  proof = [],
   metrics = [],
   visual,
   className,
   compact = false,
 }: MarketingHeroProps) {
-  const actions = [primaryAction, secondaryAction].filter(Boolean) as HeroAction[];
-  const isHomeHero = typeof title === "string" && title === MARKETING_VOICE.headline;
+  const actions = [primaryAction, secondaryAction].filter(
+    Boolean,
+  ) as HeroAction[];
+  const isHomeHero =
+    typeof title === "string" && title === MARKETING_VOICE.headline;
 
   useEffect(() => {
     if (!isHomeHero) return;
@@ -87,36 +91,13 @@ export default function MarketingHero({
             isHomeHero && "wireline-home-hero__content",
           )}
         >
-          {eyebrow ? (
-            <div className="inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 shadow-[var(--wireline-elevation-sm)]">
-              <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" aria-hidden="true" />
-              <span className="wl-eyebrow wl-eyebrow--wired min-w-0 truncate text-muted-foreground">
-                {eyebrow}
-              </span>
-            </div>
-          ) : null}
-
-          {isHomeHero ? (
-            <div
-              aria-label={MARKETING_VOICE.spine.join(", ")}
-              className="inline-flex max-w-full flex-wrap items-center justify-center gap-x-[clamp(.4rem,2.5vw,.75rem)] gap-y-1 rounded-2xl border border-border bg-card px-[clamp(.8rem,4vw,1.25rem)] py-2 font-[var(--wireline-font-family-mono)] text-[clamp(.7rem,3vw,.8rem)] font-semibold uppercase tracking-[.1em] text-muted-foreground shadow-[var(--wireline-elevation-sm)]"
-            >
-              {MARKETING_VOICE.spine.map((item, index) => (
-                <Fragment key={item}>
-                  <span>{item}</span>
-                  {index < MARKETING_VOICE.spine.length - 1 ? (
-                    <ArrowRight className="size-[1em] shrink-0 text-primary" aria-hidden="true" />
-                  ) : null}
-                </Fragment>
-              ))}
-            </div>
-          ) : null}
-
           <h1
-            aria-label={isHomeHero && typeof title === "string" ? title : undefined}
+            aria-label={
+              isHomeHero && typeof title === "string" ? title : undefined
+            }
             className={cn(
               "marketing-hero__title mx-auto max-w-[28ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4.3vw,3.5rem)] font-semibold leading-[1.02] tracking-[-.035em] text-foreground",
-              eyebrow || isHomeHero ? "mt-6" : "mt-0",
+              "mt-0",
               isHomeHero &&
                 "max-w-[19ch] text-[clamp(2.45rem,5vw,4.75rem)] leading-[0.99] tracking-[-.04em]",
             )}
@@ -135,7 +116,9 @@ export default function MarketingHero({
                 const children = (
                   <>
                     {action.label}
-                    {primary ? <ArrowRight size={16} aria-hidden="true" /> : null}
+                    {primary ? (
+                      <ArrowRight size={16} aria-hidden="true" />
+                    ) : null}
                   </>
                 );
 
@@ -144,7 +127,11 @@ export default function MarketingHero({
                     key={`${action.to}-${action.label}`}
                     href={action.to}
                     className={actionClassName}
-                    onClick={primary ? () => trackPrimaryCta(action.label, action.to) : undefined}
+                    onClick={
+                      primary
+                        ? () => trackPrimaryCta(action.label, action.to)
+                        : undefined
+                    }
                   >
                     {children}
                   </a>
@@ -153,35 +140,17 @@ export default function MarketingHero({
                     key={`${action.to}-${action.label}`}
                     to={action.to}
                     className={actionClassName}
-                    onClick={primary ? () => trackPrimaryCta(action.label, action.to) : undefined}
+                    onClick={
+                      primary
+                        ? () => trackPrimaryCta(action.label, action.to)
+                        : undefined
+                    }
                   >
                     {children}
                   </Link>
                 );
               })}
             </div>
-          ) : null}
-
-          {proof.length ? (
-            <ul
-              className="mt-7 grid w-full max-w-[24rem] grid-cols-2 gap-2 sm:flex sm:max-w-3xl sm:flex-wrap sm:justify-center"
-              aria-label="Wireline capabilities"
-            >
-              {proof.map((item, index) => (
-                <li
-                  key={item}
-                  className={cn(
-                    "inline-flex min-h-9 min-w-0 items-center justify-center gap-2 rounded-full border border-border bg-card px-3 text-center text-[13px] font-medium leading-tight text-muted-foreground sm:whitespace-nowrap sm:px-4 sm:text-sm",
-                    proof.length % 2 === 1 && index === proof.length - 1
-                      ? "col-span-2 sm:col-span-1"
-                      : undefined,
-                  )}
-                >
-                  <span className="h-1 w-1 rounded-full bg-primary" aria-hidden="true" />
-                  {item}
-                </li>
-              ))}
-            </ul>
           ) : null}
         </div>
 
