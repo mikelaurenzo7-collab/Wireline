@@ -74,8 +74,8 @@ describe("E2E design and brand polish", () => {
     expect(polish).toContain(".marketing-surface .prose");
     expect(polish).toContain(".wl-preserve-case");
     expect(polish).toContain("text-transform: none");
-    // The Build -> Train -> Launch spine reads as an uppercase mono micro-label.
-    expect(hero).toContain("uppercase tracking-[.1em]");
+    // The hero no longer repeats the operating loop as a micro-label spine.
+    expect(hero).not.toContain("uppercase tracking-[.1em]");
     // Relaxed measure on the hero remains.
     expect(hero).toContain("max-w-[19ch]");
     expect(hero).toContain("leading-[0.99]");
