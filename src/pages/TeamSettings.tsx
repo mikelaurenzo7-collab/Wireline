@@ -170,10 +170,8 @@ export default function TeamSettings() {
         ) : null}
 
         {teamAccess === "certifying" ? (
-          <StatusNotice tone="info" title="Shared workspaces are being certified">
-            Your workspace remains fully available for solo use. Invitations stay off until Wireline
-            completes the tenant-isolation and permission certification required for safe multi-user
-            access.
+          <StatusNotice tone="info" title="Invites unavailable">
+            Invites open after shared-workspace security certification.
           </StatusNotice>
         ) : null}
 
