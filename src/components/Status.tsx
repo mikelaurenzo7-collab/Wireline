@@ -4,7 +4,6 @@ import { motion } from "motion/react";
 import {
   PhoneCall,
   Brain,
-  ShieldCheck,
   CheckCircle2,
   AlertTriangle,
   XCircle,
@@ -26,26 +25,21 @@ interface PublicHealth {
   last_checked: string;
 }
 
-const COMPONENT_META: Record<
-  keyof PublicHealth["components"],
-  { label: string; description: string; icon: typeof PhoneCall }
-> = {
+const COMPONENT_META = {
   voice_runtime: {
-    label: "Voice runtime",
-    description: "Live phone calls, in-the-wire speech-to-text + reply",
+    label: "Managed voice access",
     icon: PhoneCall,
   },
-  voice_fallback: {
-    label: "Voice fallback",
-    description: "Secondary voice path that engages during primary outages",
-    icon: ShieldCheck,
-  },
   reasoning: {
-    label: "Reasoning layer",
-    description: "Pre-call briefs, post-call analysis, daily intelligence",
+    label: "Reasoning model access",
     icon: Brain,
   },
-};
+} satisfies Partial<
+  Record<
+    keyof PublicHealth["components"],
+    { label: string; icon: typeof PhoneCall }
+  >
+>;
 
 const STATUS_REFRESH_MS = 60_000;
 
@@ -93,24 +87,9 @@ const STATE_META: Record<
 function presentationState(
   data: PublicHealth | null,
   loading: boolean,
-  error: string | null,
 ): OverallState {
   if (loading && !data) return "unknown";
-  if (!data) return error ? "unknown" : "operational";
-
-  /*
-   * The public feed currently uses model probes. Those probes can reject a
-   * model while Wireline's configured fallback remains available. Avoid
-   * claiming a complete customer outage until an end-to-end monitor confirms
-   * no serving path is available.
-   */
-  if (
-    data.overall === "outage" &&
-    data.components.voice_fallback === "operational"
-  ) {
-    return "degraded";
-  }
-  return data.overall;
+  return data?.overall ?? "unknown";
 }
 
 const STATES: readonly OverallState[] = [
@@ -196,17 +175,14 @@ export default function Status() {
     };
   }, []);
 
-  const overall = presentationState(data, loading, error);
+  const overall = presentationState(data, loading);
   const OverallIcon = STATE_META[overall].icon;
-  const fallbackCovering =
-    data?.overall === "outage" &&
-    data.components.voice_fallback === "operational";
 
   return (
     <>
       <PageMeta
-        title="System Status | Wireline"
-        description="Live operational status of Wireline's voice runtime, fallback path, and reasoning layer. Updated every 60 seconds."
+        title="Provider Status | Wireline"
+        description="Live access checks for Wireline's managed voice control plane and reasoning model. Updated every 60 seconds."
         path="/status"
       />
       <MarketingChrome stickyCta={false}>
@@ -238,11 +214,11 @@ export default function Status() {
                     {loading
                       ? "Checking…"
                       : overall === "operational"
-                        ? "All systems operational"
+                        ? "Provider checks operational"
                         : overall === "degraded"
-                          ? "Some systems degraded"
+                          ? "Provider checks degraded"
                           : overall === "outage"
-                            ? "Outage in progress"
+                            ? "Provider check failed"
                             : "Status temporarily unavailable"}
                   </h1>
                   <p className="marketing-body">
@@ -266,12 +242,6 @@ export default function Status() {
                       "Probing the live runtime…"
                     )}
                   </p>
-                  {fallbackCovering ? (
-                    <p className="mt-2 text-[length:var(--wireline-typography-overline-size)] leading-5 text-muted">
-                      A primary model probe is unavailable; Wireline&apos;s
-                      configured fallback remains available.
-                    </p>
-                  ) : null}
                   {error ? (
                     <p className="mt-2 text-[length:var(--wireline-typography-overline-size)] text-muted">
                       {error}
@@ -282,11 +252,9 @@ export default function Status() {
             </div>
           </motion.div>
 
-          <div className="mb-8 grid gap-3 sm:grid-cols-3">
+          <div className="mb-8 grid gap-3 sm:grid-cols-2">
             {(
-              Object.keys(COMPONENT_META) as Array<
-                keyof PublicHealth["components"]
-              >
+              Object.keys(COMPONENT_META) as Array<keyof typeof COMPONENT_META>
             ).map((key, idx) => {
               const meta = COMPONENT_META[key];
               const state = data?.components[key] ?? "unknown";
@@ -331,12 +299,11 @@ export default function Status() {
           <div className="marketing-panel-muted p-4 sm:p-5">
             <p className="text-eyebrow mb-2">How we measure</p>
             <p className="marketing-body">
-              Every 60 seconds, Wireline pings each production LLM tier with a
-              minimal 16-token probe. Operational means the model responded
-              within timeout. Degraded means a layer is partially available or a
-              fallback is covering a primary probe. Outage is reserved for a
-              confirmed lack of serving paths. We never store, log, or render
-              the content of these probes.
+              Every 60 seconds, Wireline checks managed voice control-plane
+              access and OpenAI model access without placing a call or
+              generating content. These checks confirm provider reachability and
+              credential access—not an end-to-end customer call. The cards above
+              show which check needs attention.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.32em] text-muted/70">
               <span>Probe interval · 60s</span>
