@@ -184,7 +184,9 @@ router.post(
     } catch (err) {
       if (err instanceof AppError) throw err;
       log.error("email sync failed", { error: getErrorMessage(err) });
-      throw AppError.fromHttpStatus(500, "Inbox refresh failed.");
+      // Rendered as the body of an "Inbox refresh failed" notice, so restating
+      // the failure here just printed it twice. Carry the next step instead.
+      throw AppError.fromHttpStatus(500, "Try again in a moment.");
     }
   },
 );

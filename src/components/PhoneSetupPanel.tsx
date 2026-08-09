@@ -5,13 +5,7 @@ import { Link, useLocation } from "react-router";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import CompanyIdentityPack from "./settings/CompanyIdentityPack";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/shadcn/Select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
@@ -37,8 +31,7 @@ const PHONE_AGENT_UNSET = "__unassigned__";
 function formatPhone(value?: string | null) {
   if (!value) return "No number yet";
   const digits = value.replace(/\D/g, "");
-  const domestic =
-    digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+  const domestic = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
   if (domestic.length !== 10) return value;
   return `(${domestic.slice(0, 3)}) ${domestic.slice(3, 6)}-${domestic.slice(6)}`;
 }
@@ -55,11 +48,7 @@ function formatProvisionedDate(value?: string | null) {
 }
 
 export default function PhoneSetupPanel() {
-  const {
-    agents,
-    loading: agentsLoading,
-    degraded: agentsDegraded,
-  } = useAgents();
+  const { agents, loading: agentsLoading, degraded: agentsDegraded } = useAgents();
   const location = useLocation();
   const [numbers, setNumbers] = useState<PhoneNumberRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,8 +82,7 @@ export default function PhoneSetupPanel() {
       setSelectedAgentId(currentAgentId);
       return;
     }
-    if (selectedAgentId && agents.some((agent) => agent.id === selectedAgentId))
-      return;
+    if (selectedAgentId && agents.some((agent) => agent.id === selectedAgentId)) return;
     setSelectedAgentId(agents[0]?.id || "");
   }, [activeNumber?.agent_id, agents, selectedAgentId]);
 
@@ -104,13 +92,10 @@ export default function PhoneSetupPanel() {
     try {
       const response = await authFetch("/api/phone-numbers");
       const body = await response.json().catch(() => ({}));
-      if (!response.ok)
-        throw new Error(body?.error || "Phone numbers unavailable.");
+      if (!response.ok) throw new Error(body?.error || "Phone numbers unavailable.");
       setNumbers(Array.isArray(body?.numbers) ? body.numbers : []);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Phone numbers unavailable.",
-      );
+      setError(err instanceof Error ? err.message : "Phone numbers unavailable.");
     } finally {
       setLoading(false);
     }
@@ -126,9 +111,7 @@ export default function PhoneSetupPanel() {
     // The carrier route requires exactly three digits. Submitting a partial one
     // bounced back as a raw field-level validation error naming `area_code`.
     if (requestedAreaCode && requestedAreaCode.length !== 3) {
-      setError(
-        "Enter a full 3-digit area code, or leave it blank for any local number.",
-      );
+      setError("Enter a full 3-digit area code, or leave it blank for any local number.");
       return;
     }
     setWorking(true);
@@ -144,14 +127,11 @@ export default function PhoneSetupPanel() {
           ...(requestedAreaCode ? { area_code: requestedAreaCode } : {}),
         }),
       });
-      const body = (await response
-        .json()
-        .catch(() => ({}))) as ProvisionResponse;
+      const body = (await response.json().catch(() => ({}))) as ProvisionResponse;
       if (!response.ok || body.ok === false) {
         setRecoveryPath(
           body.recovery_path ||
-            (body.code === "ACTIVATION_REQUIRED" ||
-            body.code === "SUBSCRIPTION_REQUIRED"
+            (body.code === "ACTIVATION_REQUIRED" || body.code === "SUBSCRIPTION_REQUIRED"
               ? "/settings/billing"
               : null),
         );
@@ -164,9 +144,7 @@ export default function PhoneSetupPanel() {
       );
       await loadNumbers();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not activate a number.",
-      );
+      setError(err instanceof Error ? err.message : "Could not activate a number.");
     } finally {
       setWorking(false);
     }
@@ -179,32 +157,22 @@ export default function PhoneSetupPanel() {
     setError(null);
     setRecoveryPath(null);
     try {
-      const response = await authFetch(
-        `/api/phone-numbers/${activeNumber.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ agent_id: agentId }),
-        },
-      );
+      const response = await authFetch(`/api/phone-numbers/${activeNumber.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agentId }),
+      });
       const body = await response.json().catch(() => ({}));
-      if (!response.ok)
-        throw new Error(body?.error || "Could not attach voice agent.");
+      if (!response.ok) throw new Error(body?.error || "Could not attach voice agent.");
       setNumbers((previous) =>
         previous.map((number) =>
-          number.id === activeNumber.id
-            ? { ...number, agent_id: agentId }
-            : number,
+          number.id === activeNumber.id ? { ...number, agent_id: agentId } : number,
         ),
       );
       setSelectedAgentId(agentId || "");
-      setMessage(
-        agentId ? "Voice agent attached to this line." : "Line unassigned.",
-      );
+      setMessage(agentId ? "Voice agent attached to this line." : "Line unassigned.");
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not attach voice agent.",
-      );
+      setError(err instanceof Error ? err.message : "Could not attach voice agent.");
     } finally {
       setAttaching(false);
     }
@@ -232,9 +200,7 @@ export default function PhoneSetupPanel() {
               {formatPhone(activeNumber?.phone_number)}
             </h2>
             {lineMeta ? (
-              <p className="mt-3 text-sm text-primary-foreground/78">
-                {lineMeta}
-              </p>
+              <p className="mt-3 text-sm text-primary-foreground/78">{lineMeta}</p>
             ) : null}
           </div>
           <span className="inline-flex min-h-[32px] shrink-0 items-center gap-1.5 rounded-lg border border-primary-foreground/20 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-primary-foreground/75">
@@ -257,15 +223,12 @@ export default function PhoneSetupPanel() {
                   Loading agents…
                 </div>
               ) : agents.length ? (
-                <Select
-                  value={selectedAgentId}
-                  onValueChange={setSelectedAgentId}
-                >
+                <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
                   <SelectTrigger
                     aria-label="Choose the voice agent for this number"
                     className="h-11 border-primary-foreground/20 bg-black/5 text-primary-foreground"
                   >
-                    <SelectValue placeholder="Choose agent" />
+                    <SelectValue placeholder="Select voice agent" />
                   </SelectTrigger>
                   <SelectContent>
                     {agents.map((agent) => (
@@ -285,11 +248,7 @@ export default function PhoneSetupPanel() {
                   Agent list unavailable — reload to try again.
                 </div>
               ) : (
-                <Button
-                  asChild
-                  variant="secondary"
-                  className="w-full justify-center"
-                >
+                <Button asChild variant="secondary" className="w-full justify-center">
                   <Link to="/studio?create=1">Create voice agent</Link>
                 </Button>
               )}
@@ -314,9 +273,7 @@ export default function PhoneSetupPanel() {
                   maxLength={3}
                   value={normalizedAreaCode}
                   onChange={(event) =>
-                    setAreaCode(
-                      event.target.value.replace(/\D/g, "").slice(0, 3),
-                    )
+                    setAreaCode(event.target.value.replace(/\D/g, "").slice(0, 3))
                   }
                   placeholder="312"
                   aria-label="Preferred phone number area code"
@@ -369,9 +326,7 @@ export default function PhoneSetupPanel() {
                 className="size-4 shrink-0 text-[var(--wireline-color-status-success)]"
                 aria-hidden="true"
               />
-              <p className="text-sm font-semibold text-foreground">
-                {attachedAgent.name}
-              </p>
+              <p className="text-sm font-semibold text-foreground">{attachedAgent.name}</p>
             </div>
           ) : null}
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -399,9 +354,7 @@ export default function PhoneSetupPanel() {
             </Select>
             {attachedAgent ? (
               <Button asChild size="sm" variant="outline">
-                <Link
-                  to={`/studio?agent=${encodeURIComponent(attachedAgent.id)}`}
-                >
+                <Link to={`/studio?agent=${encodeURIComponent(attachedAgent.id)}`}>
                   Open Studio
                 </Link>
               </Button>

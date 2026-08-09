@@ -11,7 +11,6 @@ import { authFetch } from "../../lib/api";
 import {
   ACTIVATION_PENDING_COPY,
   POST_CREATE_WIZARD_COPY,
-  YOURE_LIVE_COPY,
 } from "../../lib/wireline-onboarding-copy";
 import { setPostSignupFlowActive } from "../../lib/post-signup-onboarding";
 import {
@@ -573,7 +572,9 @@ export default function PostCreateActivationWizard({
                 </p>
               </div>
               {hasLine && phoneNumber ? (
-                <p className="text-xs text-muted-foreground">{YOURE_LIVE_COPY.testCallDetail}</p>
+                <p className="text-xs text-muted-foreground">
+                  {ACTIVATION_PENDING_COPY.browserTestDetail}
+                </p>
               ) : null}
             </section>
           ) : null}

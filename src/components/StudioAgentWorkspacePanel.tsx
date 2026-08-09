@@ -25,17 +25,12 @@ type AgentSetupResponse = {
 
 function inferPersonality(value: string | undefined) {
   const normalized = value?.toLowerCase() ?? "";
-  return (
-    PERSONALITIES.find((option) => normalized.includes(option.toLowerCase())) ??
-    "Clear"
-  );
+  return PERSONALITIES.find((option) => normalized.includes(option.toLowerCase())) ?? "Clear";
 }
 
 function existingGreeting(directives: AgentSetupResponse["directives"]) {
   const prefix = "Opening greeting:";
-  const match = directives?.find((directive) =>
-    directive.content?.startsWith(prefix),
-  );
+  const match = directives?.find((directive) => directive.content?.startsWith(prefix));
   return match?.content?.slice(prefix.length).trim() ?? "";
 }
 
@@ -54,9 +49,7 @@ export default function StudioAgentWorkspacePanel({
     [agentName, isBusinessAgent],
   );
   const [setupPersonality, setSetupPersonality] = useState("Clear");
-  const [loadedPersonality, setLoadedPersonality] = useState<string | null>(
-    null,
-  );
+  const [loadedPersonality, setLoadedPersonality] = useState<string | null>(null);
   // Empty until the saved greeting loads. A generated sentence sitting in the
   // box reads as something the customer already wrote and saved, when nothing
   // has been saved at all; it belongs in the placeholder instead.
@@ -93,8 +86,7 @@ export default function StudioAgentWorkspacePanel({
       })
       .then((data) => {
         if (cancelled) return;
-        const personality =
-          typeof data.personality === "string" ? data.personality : "";
+        const personality = typeof data.personality === "string" ? data.personality : "";
         setLoadedPersonality(personality || null);
         setSetupPersonality(inferPersonality(personality));
         setSetupGreeting(existingGreeting(data.directives));
@@ -102,9 +94,7 @@ export default function StudioAgentWorkspacePanel({
       .catch((reason) => {
         if (!cancelled) {
           setSetupLoadError(
-            reason instanceof Error
-              ? reason.message
-              : "Current setup could not be loaded.",
+            reason instanceof Error ? reason.message : "Current setup could not be loaded.",
           );
         }
       })
@@ -116,22 +106,14 @@ export default function StudioAgentWorkspacePanel({
     };
   }, [agentId, reloadKey]);
 
-  async function saveManual(
-    type: "personality" | "directive",
-    content: string,
-  ) {
-    const response = await authFetch(
-      `/api/agent-config/${encodeURIComponent(agentId)}/manual`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, content }),
-      },
-    );
+  async function saveManual(type: "personality" | "directive", content: string) {
+    const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, content }),
+    });
     if (!response.ok) {
-      throw new Error(
-        `${type === "personality" ? "Tone" : "Greeting"} could not be saved.`,
-      );
+      throw new Error(`${type === "personality" ? "Tone" : "Greeting"} could not be saved.`);
     }
   }
 
@@ -173,19 +155,18 @@ export default function StudioAgentWorkspacePanel({
       }
 
       if (isCurrentAgent()) {
+        // The notice renders under a "Changes saved" title, so saying it again
+        // here read as "Changes saved / Changes saved. Run a customer test…".
+        // The body carries the next step only.
         setSetupNotice(
           isBusinessAgent
-            ? "Changes saved. Run a customer test before connecting live traffic."
-            : "Changes saved. Run a private test before connecting a live line.",
+            ? "Run a customer test before connecting live traffic."
+            : "Run a private test before connecting a live line.",
         );
       }
     } catch (reason) {
       if (isCurrentAgent()) {
-        setSetupError(
-          reason instanceof Error
-            ? reason.message
-            : "Setup could not be saved.",
-        );
+        setSetupError(reason instanceof Error ? reason.message : "Setup could not be saved.");
       }
     } finally {
       if (isCurrentAgent()) setApplyingSetup(false);
@@ -193,14 +174,11 @@ export default function StudioAgentWorkspacePanel({
   }
 
   return (
-    <div
-      className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}
-    >
+    <div className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}>
       <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
         <header>
           <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Give <span className="wl-preserve-case">{agentName}</span> one clear
-            job.
+            Give <span className="wl-preserve-case">{agentName}</span> one clear job.
           </h2>
         </header>
 
@@ -242,9 +220,7 @@ export default function StudioAgentWorkspacePanel({
           ) : (
             <div className="space-y-5">
               <fieldset>
-                <legend className="mb-2 text-sm font-semibold text-foreground">
-                  Tone
-                </legend>
+                <legend className="mb-2 text-sm font-semibold text-foreground">Tone</legend>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {PERSONALITIES.map((option) => {
                     const selected = setupPersonality === option;
@@ -262,10 +238,7 @@ export default function StudioAgentWorkspacePanel({
                       >
                         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
                           {selected ? (
-                            <CheckCircle2
-                              className="size-4 text-primary"
-                              aria-hidden="true"
-                            />
+                            <CheckCircle2 className="size-4 text-primary" aria-hidden="true" />
                           ) : null}
                           {option}
                         </span>
@@ -276,9 +249,7 @@ export default function StudioAgentWorkspacePanel({
               </fieldset>
 
               <label className="grid gap-2" htmlFor="setup-greeting">
-                <span className="text-sm font-semibold text-foreground">
-                  Opening greeting
-                </span>
+                <span className="text-sm font-semibold text-foreground">Opening greeting</span>
                 <textarea
                   id="setup-greeting"
                   value={setupGreeting}
@@ -295,12 +266,8 @@ export default function StudioAgentWorkspacePanel({
                     className="text-sm font-semibold text-foreground"
                     htmlFor="setup-knowledge"
                   >
-                    {isBusinessAgent
-                      ? "Essential business facts"
-                      : "Essential personal facts"}{" "}
-                    <span className="font-normal text-muted-foreground">
-                      (optional)
-                    </span>
+                    {isBusinessAgent ? "Essential business facts" : "Essential personal facts"}{" "}
+                    <span className="font-normal text-muted-foreground">(optional)</span>
                   </label>
                   <Link
                     to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
@@ -333,11 +300,7 @@ export default function StudioAgentWorkspacePanel({
                 </StatusNotice>
               ) : null}
 
-              <Button
-                type="button"
-                onClick={() => void applySetup()}
-                disabled={applyingSetup}
-              >
+              <Button type="button" onClick={() => void applySetup()} disabled={applyingSetup}>
                 {applyingSetup ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 ) : (
@@ -354,18 +317,11 @@ export default function StudioAgentWorkspacePanel({
           aria-labelledby="voice-heading"
         >
           <div className="mb-3">
-            <h3
-              id="voice-heading"
-              className="text-lg font-semibold tracking-tight text-foreground"
-            >
+            <h3 id="voice-heading" className="text-lg font-semibold tracking-tight text-foreground">
               Phone voice
             </h3>
           </div>
-          <SimpleVoicePicker
-            agentId={agentId}
-            agentName={agentName}
-            onTest={onTestVoiceInChat}
-          />
+          <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
         </section>
 
         <section
