@@ -97,8 +97,8 @@ export default function AppointmentsPanel() {
           title={calendarConnected ? "No appointments yet" : "Connect a calendar"}
           description={
             calendarConnected
-              ? "When an employee books during a call, the appointment appears here."
-              : "Sync Google Workspace or Microsoft 365 so employees can book during live calls."
+              ? "Appointments booked during calls appear here."
+              : "Let your agents book during calls."
           }
           action={
             <Button asChild>
