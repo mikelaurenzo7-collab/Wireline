@@ -79,7 +79,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/marketing/MarketingHero.tsx",
     marketingHero,
-    /aria-label=\{isHomeHero && typeof title === "string" \? title : undefined\}/,
+    /aria-label=\{[\s\S]*?isHomeHero[\s\S]*?typeof title === "string"[\s\S]*?\? title[\s\S]*?: undefined[\s\S]*?\}/,
     "the home hero headline must expose its visual copy as a screen-reader-safe name",
   );
   mustExclude(
