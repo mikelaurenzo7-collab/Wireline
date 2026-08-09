@@ -4,10 +4,16 @@
  */
 export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   const claritySystemCss = read("src/styles/clarity-system.css");
-  const marketingPageFrame = read("src/components/layout/MarketingPageFrame.tsx");
+  const marketingPageFrame = read(
+    "src/components/layout/MarketingPageFrame.tsx",
+  );
   const marketingHero = read("src/components/marketing/MarketingHero.tsx");
-  const publicHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
-  const wireAgentLanding = read("src/components/marketing/WireAgentLanding.tsx");
+  const publicHeader = read(
+    "src/components/marketing/PrecisionPublicHeader.tsx",
+  );
+  const wireAgentLanding = read(
+    "src/components/marketing/WireAgentLanding.tsx",
+  );
   const signatureCss = read("src/styles/wireline-signature.css");
   const productCopy = read("src/lib/product-copy.ts");
   const developersPage = read("src/pages/Developers.tsx");
@@ -76,11 +82,11 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     /aria-label=\{isHomeHero && typeof title === "string" \? title : undefined\}/,
     "the home hero headline must expose its visual copy as a screen-reader-safe name",
   );
-  mustInclude(
+  mustExclude(
     "src/components/marketing/MarketingHero.tsx",
     marketingHero,
     /aria-label="Wireline capabilities"/,
-    "hero capability chips must have an accessible list name",
+    "minimal heroes must not reintroduce capability chips",
   );
 
   mustInclude(
@@ -134,11 +140,11 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     /prefers-reduced-motion: reduce/,
     "the Wire pulse must respect reduced motion",
   );
-  mustInclude(
+  mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
     /wl-eyebrow--wired/,
-    "landing section eyebrows must carry the Wire",
+    "landing sections must not reintroduce decorative eyebrows",
   );
   mustInclude(
     "src/styles/wireline-signature.css",
@@ -150,10 +156,16 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/pages/Features.tsx",
     featuresPage,
-    /Build → Train → Launch → Improve/,
+    /Build\. Train\. Launch\. Improve\./,
     "features must preserve the canonical operating loop",
   );
-  for (const tier of ["Free Builder", "Starter", "Starter Plus", "Pro", "Business"]) {
+  for (const tier of [
+    "Free Builder",
+    "Starter",
+    "Starter Plus",
+    "Pro",
+    "Business",
+  ]) {
     mustInclude(
       "src/pages/Pricing.tsx",
       pricingPage,
