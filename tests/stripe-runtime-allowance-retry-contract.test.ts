@@ -9,10 +9,7 @@ import {
   subscriptionDisputeAllowancePortion,
 } from "../src/lib/stripe-dispute-accounting";
 import { basePlanFromStripeSubscription } from "../src/lib/stripe-base-plan";
-import {
-  EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID,
-  STRIPE_PLANS,
-} from "../src/lib/plan-catalog";
+import { EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID, STRIPE_PLANS } from "../src/lib/plan-catalog";
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
@@ -30,6 +27,42 @@ describe("Stripe Runtime Balance movements fail closed", () => {
 
     expect(strictMount).toBeGreaterThan(-1);
     expect(billingMount).toBeGreaterThan(strictMount);
+  });
+
+  /*
+   * The aligner derived the endpoint's event list from source; the launch-status
+   * gate carried its own hardcoded eight and never learned about the two
+   * dispute-funds events implemented in this middleware. A correctly configured
+   * endpoint was therefore reported as carrying two "extra" events, and the
+   * obvious way to clear `stripe_webhook_not_aligned` would have been to delete
+   * them from Stripe — silently stopping the handlers below from ever firing and
+   * leaving tenant allowance un-debited when dispute funds move. Both callers
+   * now read one helper.
+   */
+  it("derives the webhook event list from the handlers, in one place", async () => {
+    const launchStatus = read("scripts/generate-launch-status.mjs");
+    const { getHandledStripeWebhookEvents } =
+      await import("../scripts/lib/stripe-handled-events.mjs");
+
+    expect(alignment).toContain("getHandledStripeWebhookEvents()");
+    expect(launchStatus).toContain("getHandledStripeWebhookEvents()");
+    // Neither may reintroduce a second, hand-maintained copy.
+    expect(launchStatus).not.toMatch(/expectedWebhookEvents = \[/);
+    expect(alignment).not.toContain("function extractHandledEvents");
+
+    const events = getHandledStripeWebhookEvents() as string[];
+    for (const event of [
+      "charge.dispute.created",
+      "charge.dispute.funds_withdrawn",
+      "charge.dispute.funds_reinstated",
+      "checkout.session.completed",
+      "invoice.payment_succeeded",
+    ]) {
+      expect(events, event).toContain(event);
+    }
+    // The money-movement arms this middleware implements must be in the list.
+    expect(middleware).toContain('eventType === "charge.dispute.funds_withdrawn"');
+    expect(middleware).toContain('eventType === "charge.dispute.funds_reinstated"');
   });
 
   it("uses authoritative refund objects and one idempotency key per partial refund", () => {
@@ -150,7 +183,9 @@ describe("Stripe Runtime Balance movements fail closed", () => {
 
   it("never restores more than the recorded withdrawal", () => {
     expect(middleware).toContain("Math.min(calculatedAmountUsd, reversedAmountUsd)");
-    expect(middleware).toContain("reinstatement arrived before its subscription allowance withdrawal");
+    expect(middleware).toContain(
+      "reinstatement arrived before its subscription allowance withdrawal",
+    );
     expect(middleware).toContain("reinstatement arrived before its top-up withdrawal");
   });
 
@@ -192,10 +227,21 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     expect(middleware).toContain("funded Runtime Allowance but its Wireline owner is unresolved");
   });
 
-  it("keeps endpoint subscriptions aligned with the preflight event owner", () => {
-    expect(alignment).toContain("stripe-runtime-allowance-retry.ts");
-    expect(alignment).toContain("extractHandledEvents(financialPreflight)");
-    expect(alignment).toContain("extractHandledEvents(billingRoutes)");
+  // The invariant is unchanged — both owners must be parsed, so an event
+  // implemented at the stricter preflight boundary is never omitted from the
+  // endpoint subscription. The parsing itself moved into the shared helper the
+  // launch-status gate now reads too, so this asserts against that owner.
+  it("keeps endpoint subscriptions aligned with the preflight event owner", async () => {
+    const helper = read("scripts/lib/stripe-handled-events.mjs");
+    const { STRIPE_WEBHOOK_EVENT_OWNERS } =
+      await import("../scripts/lib/stripe-handled-events.mjs");
+
+    expect(alignment).toContain("getHandledStripeWebhookEvents()");
+    expect(helper).toContain("function extractHandledEvents");
+    expect(STRIPE_WEBHOOK_EVENT_OWNERS).toContain(
+      "src/middleware/stripe-runtime-allowance-retry.ts",
+    );
+    expect(STRIPE_WEBHOOK_EVENT_OWNERS).toContain("src/routes/billing-routes.ts");
   });
 
   it("never acknowledges a failed financial mutation", () => {
