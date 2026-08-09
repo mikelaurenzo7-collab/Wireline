@@ -42,7 +42,7 @@ type CommandCategory = "Workspace" | "Create" | "Manage";
 type CommandItem = {
   id: string;
   label: string;
-  description: string;
+  keywords: string;
   icon: LucideIcon;
   href: string;
   category: CommandCategory;
@@ -54,7 +54,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "overview",
     label: "Overview",
-    description: "See the current state of your workspace.",
+    keywords: "home dashboard status state",
     icon: LayoutDashboard,
     href: "/overview",
     category: "Workspace",
@@ -62,7 +62,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "agents",
     label: "Agent Studio",
-    description: "Open Studio and manage your live voice agents.",
+    keywords: "studio agents voice manage live",
     icon: Bot,
     href: "/studio",
     category: "Workspace",
@@ -70,7 +70,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "knowledge",
     label: "Knowledge",
-    description: "Manage the facts, context, sources, and policies each voice agent uses.",
+    keywords: "facts context sources policies",
     icon: Database,
     href: "/knowledge",
     category: "Workspace",
@@ -78,7 +78,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "connections",
     label: "Connections",
-    description: "Choose the accounts, integrations, and actions a voice agent can use.",
+    keywords: "accounts integrations tools actions",
     icon: Cable,
     href: "/connections",
     category: "Workspace",
@@ -86,7 +86,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "inbox",
     label: "Inbox",
-    description: "Review conversations, outcomes, and team handoffs.",
+    keywords: "conversations outcomes handoffs",
     icon: Inbox,
     href: "/inbox",
     category: "Workspace",
@@ -94,7 +94,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "phone",
     label: "Phone",
-    description: "Call history, outbound campaigns, and appointments.",
+    keywords: "calls history outbound campaigns appointments",
     icon: Phone,
     href: "/phone",
     category: "Workspace",
@@ -102,7 +102,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "approvals",
     label: "Approvals",
-    description: "Review proposed post-call actions before they run.",
+    keywords: "review post-call actions",
     icon: CheckSquare,
     href: "/approvals",
     category: "Workspace",
@@ -110,7 +110,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "insights",
     label: "Activity",
-    description: "Insights on performance, quality, and revenue across agents.",
+    keywords: "insights performance quality revenue",
     icon: BarChart3,
     href: "/insights",
     category: "Workspace",
@@ -118,7 +118,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "settings",
     label: "Settings",
-    description: "Manage workspace, billing, team, and connected surfaces.",
+    keywords: "workspace billing team apps",
     icon: Settings,
     href: "/settings",
     category: "Workspace",
@@ -126,7 +126,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "create-personal",
     label: "Create a personal agent",
-    description: "Start with one focused job, then train the rest.",
+    keywords: "create personal focused job train",
     icon: Sparkles,
     href: "/studio?create=1&posture=personal",
     category: "Create",
@@ -134,7 +134,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "create-business",
     label: "Create a business voice agent",
-    description: "Give one customer-facing job to a business-ready voice agent.",
+    keywords: "create business customer job",
     icon: BriefcaseBusiness,
     href: "/studio?create=1&posture=business",
     category: "Create",
@@ -142,7 +142,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "create-brief",
     label: "Open a new Studio brief",
-    description: "Start an agent creation flow in Studio.",
+    keywords: "create new agent setup studio",
     icon: WandSparkles,
     href: "/studio?create=1",
     category: "Create",
@@ -150,7 +150,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "billing",
     label: "Billing and usage",
-    description: "Review plan, Runtime Balance, invoices, and payment details.",
+    keywords: "plan runtime balance invoices payment usage",
     icon: CreditCard,
     href: "/settings/billing",
     category: "Manage",
@@ -158,7 +158,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "team",
     label: "Team",
-    description: "Invite collaborators and manage workspace access.",
+    keywords: "invite collaborators access",
     icon: UsersRound,
     href: "/settings/team",
     category: "Manage",
@@ -166,8 +166,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "client-apps",
     label: "Companion surfaces",
-    description:
-      "Optional early-access Command, MCP, and mobile waitlists — web remains the product.",
+    keywords: "command mcp mobile web waitlist apps",
     icon: MonitorDown,
     href: "/settings/apps",
     category: "Manage",
@@ -222,7 +221,7 @@ export default function CommandBar() {
     const term = query.trim().toLocaleLowerCase();
     if (!term) return WORKSPACE_COMMANDS;
     return WORKSPACE_COMMANDS.filter((command) =>
-      [command.label, command.description, command.category]
+      [command.label, command.keywords, command.category]
         .join(" ")
         .toLocaleLowerCase()
         .includes(term),
@@ -359,7 +358,7 @@ export default function CommandBar() {
                   Wireline command palette
                 </p>
                 <p id="command-palette-description" className="sr-only">
-                  Search workspace destinations and supported actions.
+                  Search destinations and actions.
                 </p>
                 <Input
                   ref={inputRef}
@@ -374,7 +373,7 @@ export default function CommandBar() {
                       : undefined
                   }
                   aria-autocomplete="list"
-                  placeholder="Search workspace, agents, or settings…"
+                  placeholder="Search…"
                   className="h-8 border-none bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -435,7 +434,7 @@ export default function CommandBar() {
                                   onClick={() => execute(command)}
                                   onMouseEnter={() => setSelectedIndex(index)}
                                   className={cn(
-                                    "h-auto w-full justify-start gap-3 rounded-[var(--radius-md)] px-3 py-3 text-left",
+                                    "h-auto min-h-11 w-full justify-start gap-3 rounded-[var(--radius-md)] px-3 py-2 text-left",
                                     selected
                                       ? "bg-primary/10 text-foreground"
                                       : "hover:bg-secondary",
@@ -451,13 +450,8 @@ export default function CommandBar() {
                                   >
                                     <Icon aria-hidden="true" className="size-4" />
                                   </span>
-                                  <span className="min-w-0 flex-1">
-                                    <span className="block text-sm font-semibold leading-5 text-foreground">
-                                      {command.label}
-                                    </span>
-                                    <span className="mt-0.5 block truncate text-xs leading-5 text-muted-foreground">
-                                      {command.description}
-                                    </span>
+                                  <span className="min-w-0 flex-1 truncate text-sm font-semibold leading-5 text-foreground">
+                                    {command.label}
                                   </span>
                                   <ChevronRight
                                     aria-hidden="true"
@@ -479,14 +473,13 @@ export default function CommandBar() {
                     density="compact"
                     className="m-4 min-h-48 border-dashed"
                     icon={<Terminal className="size-5" />}
-                    title="No matching commands."
-                    description="Try an agent, integration, workspace destination, or setting."
+                    title="No matches"
                   />
                 )}
               </ScrollArea>
             </div>
 
-            <footer className="flex items-center justify-between gap-3 border-t border-border bg-secondary/40 px-4 py-2.5 sm:px-5">
+            <footer className="flex items-center border-t border-border bg-secondary/40 px-4 py-2.5 sm:px-5">
               <p className="text-xs text-muted-foreground">
                 <span className="font-mono text-[length:var(--wireline-typography-overline-size)] font-semibold tracking-[0.08em]">
                   ↑↓
@@ -496,9 +489,6 @@ export default function CommandBar() {
                   ↵
                 </span>{" "}
                 Open
-              </p>
-              <p className="font-mono text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                Wireline
               </p>
             </footer>
           </motion.div>
