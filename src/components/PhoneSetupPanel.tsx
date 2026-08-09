@@ -415,8 +415,6 @@ export default function PhoneSetupPanel() {
         </section>
       ) : null}
 
-      <CompanyIdentityPack key={activeNumber?.id ?? "no-number"} />
-
       {message ? (
         <StatusNotice tone="success" title="Calling is ready">
           {message}
@@ -434,6 +432,8 @@ export default function PhoneSetupPanel() {
           </div>
         </StatusNotice>
       ) : null}
+
+      <CompanyIdentityPack key={activeNumber?.id ?? "no-number"} />
     </div>
   );
 }
