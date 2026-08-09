@@ -151,7 +151,7 @@ describe("personal agent parity — presentation and runtime", () => {
       "isBusinessAgent={Boolean(active.is_business_agent)}",
     );
     expect(overview).toContain("Choose one personal job");
-    expect(overview).toContain("First personal-agent workflow");
+    expect(overview).not.toContain("First personal-agent workflow");
     expect(vapi).toContain("a personal Wireline agent for your principal");
     expect(vapi).toContain("## QUIET-HOURS MODE");
     expect(vapi).toContain("Never invent personal facts");
