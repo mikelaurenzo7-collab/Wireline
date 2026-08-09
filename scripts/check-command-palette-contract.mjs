@@ -35,6 +35,30 @@ requirePattern(
 requirePattern(
   "src/components/CommandBar.tsx",
   commandBar,
+  /keywords: string;/,
+  "must keep non-visible search metadata",
+);
+requirePattern(
+  "src/components/CommandBar.tsx",
+  commandBar,
+  /command\.keywords/,
+  "must search command keywords",
+);
+forbidPattern(
+  "src/components/CommandBar.tsx",
+  commandBar,
+  /command\.description/,
+  "must not render redundant command descriptions",
+);
+forbidPattern(
+  "src/components/CommandBar.tsx",
+  commandBar,
+  /See the current state of your workspace|Start with one focused job/,
+  "must keep command rows concise",
+);
+requirePattern(
+  "src/components/CommandBar.tsx",
+  commandBar,
   /function onSearchKeyDown/,
   "must scope command selection to the search field",
 );
