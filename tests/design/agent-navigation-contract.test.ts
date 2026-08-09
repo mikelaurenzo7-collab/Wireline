@@ -136,7 +136,7 @@ describe("agent navigation contract", () => {
     );
     expect(studioPanel).toMatch(/Essentials/);
     expect(studioPanel).toMatch(/Phone voice/);
-    expect(studioPanel).toMatch(/Test before going live/);
+    expect(studioPanel).not.toMatch(/Test before going live/);
     expect(studioPanel).not.toMatch(
       /Advanced options|AgentPresenceLivePreview|VoiceGallery/,
     );
