@@ -20,17 +20,11 @@ type WorkspaceSection = "setup" | "test" | "review";
 const SECTIONS: Array<{
   id: WorkspaceSection;
   label: string;
-  description: string;
   icon: typeof Settings2;
 }> = [
-  { id: "setup", label: "Set up", description: "Job, greeting, facts, and voice", icon: Settings2 },
-  { id: "test", label: "Test", description: "Try a customer conversation", icon: MessageCircle },
-  {
-    id: "review",
-    label: "Review",
-    description: "Confirm readiness and go live",
-    icon: CheckCircle2,
-  },
+  { id: "setup", label: "Set up", icon: Settings2 },
+  { id: "test", label: "Test", icon: MessageCircle },
+  { id: "review", label: "Review", icon: CheckCircle2 },
 ];
 
 function StudioLoadingState() {
@@ -233,18 +227,6 @@ export default function StudioWorkspaceV2() {
 
   const activePosture = active.is_business_agent ? "business" : "personal";
   const activeLanguage = customerAgentLanguage(activePosture);
-  const sectionCopy =
-    activePosture === "personal"
-      ? {
-          setup: "Job, greeting, preferences, and voice",
-          test: "Try a private conversation",
-          review: "Confirm readiness and go live",
-        }
-      : {
-          setup: "Job, greeting, facts, and voice",
-          test: "Try a customer conversation",
-          review: "Confirm readiness and go live",
-        };
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
@@ -252,18 +234,14 @@ export default function StudioWorkspaceV2() {
         className="shrink-0 border-b border-border bg-card/70 px-3 py-3 sm:px-5"
         aria-label="Studio steps"
       >
-        {/* max-w-4xl: at 3xl the per-step description ("Job, greeting, facts,
-            and voice") truncated with an ellipsis at desktop width and read as
-            broken text; 4xl gives every step's description room to render. */}
         <div
-          className="mx-auto grid w-full max-w-4xl grid-cols-3 gap-1.5 sm:gap-2"
+          className="mx-auto grid w-full max-w-2xl grid-cols-3 gap-1.5 sm:gap-2"
           role="tablist"
           aria-label={`${activeLanguage.singular} setup steps`}
         >
           {SECTIONS.map((item, index) => {
             const selected = section === item.id;
             const Icon = item.icon;
-            const description = sectionCopy[item.id];
             return (
               <button
                 key={item.id}
@@ -292,9 +270,6 @@ export default function StudioWorkspaceV2() {
                     aria-hidden="true"
                   />
                   <span className="truncate text-xs font-semibold sm:text-sm">{item.label}</span>
-                </span>
-                <span className="mt-1 hidden truncate pl-8 text-[11px] text-muted-foreground md:block">
-                  {description}
                 </span>
               </button>
             );
