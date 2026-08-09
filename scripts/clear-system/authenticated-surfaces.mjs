@@ -9,7 +9,9 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   const workspaceShell = read("src/components/WorkspaceShell.tsx");
   const responsiveCss = read("src/styles/responsive.css");
   const navigation = read("src/constants/navigation.ts");
-  const mobileBrowserUtilities = read("src/components/MobileBrowserUtilities.tsx");
+  const mobileBrowserUtilities = read(
+    "src/components/MobileBrowserUtilities.tsx",
+  );
   const authPortal = read("src/components/AuthPortal.tsx");
   const authRedirect = read("src/lib/auth-redirect.ts");
   const onboardingFlow = read("src/pages/OnboardingFlow.tsx");
@@ -108,8 +110,8 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/CreateAgentDialog.tsx",
     createDialog,
-    /Fast Start|~3 minutes/,
-    "create flow must retain the fast-start promise",
+    /\{language\.setupPrompt\}/,
+    "create flow must lead with the customer's job",
   );
   mustInclude(
     "src/components/CreateAgentDialog.tsx",
@@ -268,6 +270,11 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "src/pages/BillingSettings.tsx",
     "src/components/StudioWorkroom.tsx",
   ]) {
-    mustExclude(file, read(file), /Â|â|�/, "authenticated surfaces must not expose mojibake");
+    mustExclude(
+      file,
+      read(file),
+      /Â|â|�/,
+      "authenticated surfaces must not expose mojibake",
+    );
   }
 }
