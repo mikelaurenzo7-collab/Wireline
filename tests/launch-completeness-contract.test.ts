@@ -88,9 +88,7 @@ describe("launch completeness contracts", () => {
     expect(appRoutes).toContain('<Route path="/inbox" element={<EmailPage />} />');
     expect(appRoutes).toContain("function EmailToInboxRedirect()");
     expect(appRoutes).toContain("`/inbox${location.search}${location.hash}`");
-    expect(appRoutes).toContain(
-      '<Route path="/email" element={<EmailToInboxRedirect />} />',
-    );
+    expect(appRoutes).toContain('<Route path="/email" element={<EmailToInboxRedirect />} />');
   });
 
   it("does not call an unproven published edit release-current", () => {
@@ -119,5 +117,25 @@ describe("launch completeness contracts", () => {
     expect(status).not.toContain("All systems operational");
     expect(status).not.toContain("pings each production LLM tier");
     expect(status).not.toContain("configured fallback remains available");
+  });
+
+  /*
+   * Found by driving the built page in a browser: /status never reached network
+   * idle. Throwing on `!res.ok` left the response body unread, and an unread
+   * body keeps the request open, so every failed 60s poll leaked another one for
+   * the life of the page. Nothing bounded the request either — `authFetch`
+   * carries a timeout but this page is public and calls `fetch` directly, so a
+   * server that accepted and then stalled left it reading "Checking…" forever.
+   * Both matter most during an incident, which is the only time anyone loads it.
+   */
+  it("keeps the public status poll bounded and leak-free", () => {
+    const status = source("src/components/Status.tsx");
+
+    expect(status).toContain("const STATUS_FETCH_TIMEOUT_MS = 15_000;");
+    expect(status).toContain("AbortSignal.timeout(STATUS_FETCH_TIMEOUT_MS)");
+    expect(status).toContain("await res.body?.cancel().catch(() => undefined);");
+    // The short feed-error line only earns its place next to a "Last checked"
+    // timestamp; with no reading it repeated the heading a third time.
+    expect(status).toContain("{error && data ? (");
   });
 });

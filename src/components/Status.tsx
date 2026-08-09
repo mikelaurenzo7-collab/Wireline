@@ -1,14 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { motion } from "motion/react";
-import {
-  PhoneCall,
-  Brain,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  Loader2,
-} from "lucide-react";
+import { PhoneCall, Brain, CheckCircle2, AlertTriangle, XCircle, Loader2 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingChrome from "./marketing/MarketingChrome";
 
@@ -35,13 +28,12 @@ const COMPONENT_META = {
     icon: Brain,
   },
 } satisfies Partial<
-  Record<
-    keyof PublicHealth["components"],
-    { label: string; icon: typeof PhoneCall }
-  >
+  Record<keyof PublicHealth["components"], { label: string; icon: typeof PhoneCall }>
 >;
 
 const STATUS_REFRESH_MS = 60_000;
+/** Comfortably under the refresh interval so polls can never pile up. */
+const STATUS_FETCH_TIMEOUT_MS = 15_000;
 
 const STATE_META: Record<
   ComponentState | OverallState,
@@ -84,20 +76,12 @@ const STATE_META: Record<
   },
 };
 
-function presentationState(
-  data: PublicHealth | null,
-  loading: boolean,
-): OverallState {
+function presentationState(data: PublicHealth | null, loading: boolean): OverallState {
   if (loading && !data) return "unknown";
   return data?.overall ?? "unknown";
 }
 
-const STATES: readonly OverallState[] = [
-  "operational",
-  "degraded",
-  "outage",
-  "unknown",
-];
+const STATES: readonly OverallState[] = ["operational", "degraded", "outage", "unknown"];
 const isState = (value: unknown): value is ComponentState =>
   typeof value === "string" && (STATES as readonly string[]).includes(value);
 
@@ -122,15 +106,9 @@ function normalizeHealth(payload: unknown): PublicHealth | null {
   return {
     overall: isState(raw.overall) ? raw.overall : "unknown",
     components: {
-      voice_runtime: isState(components.voice_runtime)
-        ? components.voice_runtime
-        : "unknown",
-      voice_fallback: isState(components.voice_fallback)
-        ? components.voice_fallback
-        : "unknown",
-      reasoning: isState(components.reasoning)
-        ? components.reasoning
-        : "unknown",
+      voice_runtime: isState(components.voice_runtime) ? components.voice_runtime : "unknown",
+      voice_fallback: isState(components.voice_fallback) ? components.voice_fallback : "unknown",
+      reasoning: isState(components.reasoning) ? components.reasoning : "unknown",
     },
     last_checked: typeof raw.last_checked === "string" ? raw.last_checked : "",
   };
@@ -150,8 +128,24 @@ export default function Status() {
           // The server already owns a bounded distributed probe cache. Do not let
           // the browser retain an older degraded payload across later 60s polls.
           cache: "no-store",
+          // Nothing else bounds this. `authFetch` carries a timeout, but the
+          // status page is public and calls `fetch` directly, so a server that
+          // accepted the connection and then stalled left the page reading
+          // "Checking…" forever — on the one surface whose job is to still be
+          // standing when something else is not.
+          signal: AbortSignal.timeout(STATUS_FETCH_TIMEOUT_MS),
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+          /*
+           * Release the body before bailing. Throwing on `!res.ok` left the
+           * response stream unread, and an unread body keeps the request open:
+           * every failed 60s poll leaked another one for the life of the page,
+           * and /status never reached network idle. The server-side probes in
+           * public-health-probe.ts already cancel bodies for the same reason.
+           */
+          await res.body?.cancel().catch(() => undefined);
+          throw new Error(`HTTP ${res.status}`);
+        }
         const json = normalizeHealth(await res.json());
         if (!json) throw new Error("Unrecognised status payload");
         if (!cancelled) {
@@ -242,7 +236,15 @@ export default function Status() {
                       "Probing the live runtime…"
                     )}
                   </p>
-                  {error ? (
+                  {/*
+                   * Only once a reading exists. With no data the heading already
+                   * reads "Status temporarily unavailable" and the line above
+                   * explains why, so this printed the same fact a third time.
+                   * Alongside a "Last checked …" timestamp it earns its place:
+                   * it is the only thing saying that timestamp has stopped
+                   * advancing.
+                   */}
+                  {error && data ? (
                     <p className="mt-2 text-[length:var(--wireline-typography-overline-size)] text-muted">
                       {error}
                     </p>
@@ -253,9 +255,7 @@ export default function Status() {
           </motion.div>
 
           <div className="mb-8 grid gap-3 sm:grid-cols-2">
-            {(
-              Object.keys(COMPONENT_META) as Array<keyof typeof COMPONENT_META>
-            ).map((key, idx) => {
+            {(Object.keys(COMPONENT_META) as Array<keyof typeof COMPONENT_META>).map((key, idx) => {
               const meta = COMPONENT_META[key];
               const state = data?.components[key] ?? "unknown";
               const stateMeta = STATE_META[state];
@@ -276,10 +276,7 @@ export default function Status() {
                   />
                   <div className="relative">
                     <div className="mb-2.5 flex items-center justify-between">
-                      <Icon
-                        className="h-4 w-4 text-foreground/75"
-                        strokeWidth={1.75}
-                      />
+                      <Icon className="h-4 w-4 text-foreground/75" strokeWidth={1.75} />
                       <span
                         className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase leading-none tracking-[0.22em] ${stateMeta.pill}`}
                       >
@@ -287,9 +284,7 @@ export default function Status() {
                         {stateMeta.label}
                       </span>
                     </div>
-                    <p className="mb-1 text-sm font-semibold text-foreground">
-                      {meta.label}
-                    </p>
+                    <p className="mb-1 text-sm font-semibold text-foreground">{meta.label}</p>
                   </div>
                 </motion.div>
               );
@@ -299,10 +294,9 @@ export default function Status() {
           <div className="marketing-panel-muted p-4 sm:p-5">
             <p className="text-eyebrow mb-2">How we measure</p>
             <p className="marketing-body">
-              Every 60 seconds, Wireline checks managed voice control-plane
-              access and OpenAI model access without placing a call or
-              generating content. These checks confirm provider reachability and
-              credential access—not an end-to-end customer call. The cards above
+              Every 60 seconds, Wireline checks managed voice control-plane access and OpenAI model
+              access without placing a call or generating content. These checks confirm provider
+              reachability and credential access—not an end-to-end customer call. The cards above
               show which check needs attention.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.32em] text-muted/70">
@@ -310,17 +304,11 @@ export default function Status() {
               <span className="text-muted/70">·</span>
               <span>Public cache · 60s</span>
               <span className="text-muted/70">·</span>
-              <Link
-                to="/security"
-                className="transition-colors hover:text-foreground"
-              >
+              <Link to="/security" className="transition-colors hover:text-foreground">
                 Security practices
               </Link>
               <span className="text-muted/70">·</span>
-              <Link
-                to="/support"
-                className="transition-colors hover:text-foreground"
-              >
+              <Link to="/support" className="transition-colors hover:text-foreground">
                 Report an issue
               </Link>
             </div>
