@@ -189,10 +189,6 @@ export default function ActivationChecklist({ className }: { className?: string 
           <h2 className="mt-1 text-base font-semibold text-foreground">
             {completed} of {steps.length} customer-ready steps complete
           </h2>
-          <p className="mt-1 hidden max-w-2xl text-xs leading-5 text-muted-foreground sm:block">
-            Test freely in Studio. This checklist tracks saved setup, live channels, and real
-            outcomes.
-          </p>
         </div>
         <button
           type="button"

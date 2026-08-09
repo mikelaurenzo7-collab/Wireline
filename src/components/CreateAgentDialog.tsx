@@ -15,7 +15,6 @@ import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { setPostSignupFlowActive } from "../lib/post-signup-onboarding";
 import { emitProductEvent } from "../lib/product-event-client";
-import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 import { customerAgentLanguage } from "../lib/product-copy";
 
 const ROLE_TEMPLATES = [
@@ -342,10 +341,7 @@ export default function CreateAgentDialog({
                 >
                   Fast Start
                 </h2>
-                <p
-                  id="create-agent-description"
-                  className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground"
-                >
+                <p id="create-agent-description" className="sr-only">
                   {language.setupLabel}
                 </p>
               </div>
@@ -365,21 +361,17 @@ export default function CreateAgentDialog({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-          <p className={WL_APP_CLASSES.wiredEyebrow}>One job</p>
-          <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(2rem,4vw,2.5rem)] font-normal uppercase leading-none tracking-[-0.02em] text-foreground">
+          <h3 className="font-[var(--wireline-font-family-display)] text-[clamp(2rem,4vw,2.5rem)] font-normal uppercase leading-none tracking-[-0.02em] text-foreground">
             {language.setupPrompt}
           </h3>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {language.setupDescription} One sentence is enough.
-          </p>
 
           <div className="mt-5 grid gap-2 sm:grid-cols-2" role="group" aria-label="Use case">
             {(
               [
-                ["personal", "Personal", "Calls and appointments"],
-                ["business", "Business", "Sales, support, and scheduling"],
+                ["personal", "Personal"],
+                ["business", "Business"],
               ] as const
-            ).map(([value, label, detail]) => {
+            ).map(([value, label]) => {
               const selected = activePosture === value;
               return (
                 <button
@@ -410,9 +402,6 @@ export default function CreateAgentDialog({
                     >
                       <Check size={12} aria-hidden="true" />
                     </span>
-                  </span>
-                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                    {detail}
                   </span>
                 </button>
               );
@@ -482,7 +471,7 @@ export default function CreateAgentDialog({
               disabled={creating}
               className="text-left text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline disabled:opacity-50"
             >
-              I&apos;ll explore first
+              Not now
             </button>
             <Button type="submit" disabled={creating} className="gap-2 sm:shrink-0">
               {creating ? (

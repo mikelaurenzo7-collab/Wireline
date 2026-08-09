@@ -16,13 +16,13 @@ const customizationLinks = [
   },
   {
     label: "Voice & knowledge",
-    detail: "Facts, documents, and tone that train the employee.",
+    detail: "Facts, documents, and tone for the voice agent.",
     href: "/knowledge",
     icon: Mic2,
   },
   {
     label: "Phone line",
-    detail: "Provision a number and attach the live employee.",
+    detail: "Provision a number and attach the voice agent.",
     href: "/settings/phone",
     icon: Phone,
   },

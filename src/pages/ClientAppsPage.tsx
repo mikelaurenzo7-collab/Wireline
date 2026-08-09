@@ -88,9 +88,6 @@ export default function ClientAppsPage() {
       <WorkspacePageFrame mode="standard">
         {inSettings ? <SettingsTabs /> : null}
         <WorkspacePageIntro title="Apps" titleHidden={inSettings} />
-        <p className="mb-5 max-w-2xl text-sm leading-6 text-muted-foreground">
-          {CLIENT_SURFACE_POSTURE.summary}
-        </p>
         <section
           className="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
           aria-label="Wireline apps and companion surfaces"

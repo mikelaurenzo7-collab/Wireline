@@ -576,10 +576,6 @@ export default function OverviewPage() {
       : "/studio?create=1&posture=business";
   const founderPairLabel =
     personalAgents.length === 0 ? "Create personal agent" : "Add business voice agent";
-  const founderPairDetail =
-    personalAgents.length === 0
-      ? "Add a personal Concierge for screening, booking, and private briefings alongside your business coverage."
-      : "Add a business voice agent for customer calls, texts, and follow-up alongside your personal agent.";
   const primaryAgent = agents[0];
   const hasLiveLine = agents.some((agent) => Boolean(agent.phone_number));
   const hasConversationHistory = recentCalls.length > 0;
@@ -770,18 +766,12 @@ export default function OverviewPage() {
                       phoneLookupDegraded={phoneLookupDegraded}
                     />
                     {missingFounderPairPosture ? (
-                      <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
-                        <p className="text-sm font-semibold text-foreground">
-                          Complete your founder pair
-                        </p>
-                        <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                          {founderPairDetail} Starter Plus and above include both; Starter can add
-                          an Extra Agent (+$15) or upgrade.
-                        </p>
-                        <Button asChild size="sm" className="mt-3">
-                          <Link to={founderPairHref}>{founderPairLabel}</Link>
-                        </Button>
-                      </div>
+                      <Link
+                        to={founderPairHref}
+                        className="grid min-h-[44px] min-w-0 place-items-center rounded-[10px] border border-dashed border-border bg-background/30 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                      >
+                        + {founderPairLabel}
+                      </Link>
                     ) : null}
                   </div>
                 ) : (

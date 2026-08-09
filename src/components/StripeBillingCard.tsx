@@ -19,7 +19,6 @@ import UsageMeter from "./UsageMeter";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
 import { BRAND } from "../constants/brand-colors";
-import { PRODUCT_VERSATILITY } from "../lib/product-copy";
 import { emitProductEvent } from "../lib/product-event-client";
 import {
   CONVERSATION_BALANCE_COPY,
@@ -477,16 +476,7 @@ function PlanPicker({
     <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-8">
       <div className="border-b border-border pb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h3 className="font-semibold tracking-[-.02em] text-3xl text-foreground">
-              Choose operating capacity
-            </h3>
-            <p className="text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
-              {PRODUCT_VERSATILITY.short} Build free, go live from $19/mo with guaranteed voice
-              minutes, and move into shared capacity when you need routing, numbers, approvals, and
-              team operations. Stripe-secured. Cancel anytime.
-            </p>
-          </div>
+          <h3 className="font-semibold tracking-[-.02em] text-3xl text-foreground">Plans</h3>
           <div
             className="inline-flex shrink-0 rounded-full border border-border bg-muted/40 p-1"
             role="group"
@@ -551,21 +541,6 @@ function PlanPicker({
                 )}
                 data-accent={accent}
               >
-                {!isSignupMatch && plan.id === "team" && (
-                  <div className="absolute top-0 left-0 px-3 py-1 wl-label rounded-br-md border border-[color-mix(in_srgb,var(--wireline-color-action-primary-default)_40%,transparent)] bg-[var(--wireline-color-action-primary-default)] text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)]">
-                    First shared tier
-                  </div>
-                )}
-                {!isSignupMatch && plan.id === "business" && (
-                  <div className="absolute top-0 left-0 px-3 py-1 wl-label rounded-br-md border border-[color-mix(in_srgb,var(--wireline-color-action-secondary-default)_40%,transparent)] bg-[var(--wireline-color-action-secondary-container)] text-[var(--wireline-color-action-secondary-default)] shadow-[var(--wireline-elevation-wireGlow)]">
-                    Expanded operations
-                  </div>
-                )}
-                {isSignupMatch && (
-                  <div className="absolute top-0 left-0 px-3 py-1 wl-label rounded-br-md border border-[color-mix(in_srgb,var(--wireline-color-action-primary-default)_40%,transparent)] bg-[var(--wireline-color-action-primary-default)] text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)]">
-                    Matched from visit
-                  </div>
-                )}
                 <div className="flex items-center justify-between">
                   <div className="w-12 h-12 rounded-md flex items-center justify-center wl-accent-surface">
                     <Icon className="w-6 h-6 wl-accent-text" />
