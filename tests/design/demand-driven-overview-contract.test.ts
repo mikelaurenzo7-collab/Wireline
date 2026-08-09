@@ -41,8 +41,12 @@ describe("demand-driven authenticated experience", () => {
     expect(overview).toContain("secondaryHref: undefined");
     expect(overview).toMatch(/Put it where customers already call/);
     expect(overview).toMatch(/Review follow-ups/);
-    expect(overview).not.toMatch(/capturing real demand|site and business listings|forward missed calls/);
-    expect(overview).not.toContain('primaryLabel: "Connect phone and channels"');
+    expect(overview).not.toMatch(
+      /capturing real demand|site and business listings|forward missed calls/,
+    );
+    expect(overview).not.toContain(
+      'primaryLabel: "Connect phone and channels"',
+    );
   });
 
   it("does not offer live calling before a line exists", () => {
@@ -50,7 +54,9 @@ describe("demand-driven authenticated experience", () => {
     expect(overview).toMatch(/Start a call/);
     expect(overview).toMatch(/Test \{language\.navShort\.toLowerCase\(\)\}/);
     expect(overview).toMatch(/hasConversationHistory/);
-    expect(overview).toMatch(/No new conversations today\. Your customer line is still ready/);
+    expect(overview).toMatch(
+      /No new conversations today\. Your customer line is still ready/,
+    );
   });
 
   it("keeps empty-state actions in prerequisite order", () => {
@@ -65,14 +71,18 @@ describe("demand-driven authenticated experience", () => {
     expect(insightEmpty).toContain("agentsDegraded && agents.length === 0");
     expect(insightEmpty).toContain("phoneLookupDegraded && agents.length > 0");
     expect(insightEmpty).toContain("Retry voice agent status");
-    expect(agentsContext).toContain("const phoneLookupDegraded = !numbersResponse?.ok");
-    expect(agentsContext).toContain("setPhoneLookupDegraded(nextPhoneLookupDegraded)");
+    expect(agentsContext).toContain(
+      "const phoneLookupDegraded = !numbersResponse?.ok",
+    );
+    expect(agentsContext).toContain(
+      "setPhoneLookupDegraded(nextPhoneLookupDegraded)",
+    );
     expect(insightEmpty).toContain('label: "Connect phone"');
     expect(insightEmpty).toContain('label: "Test voice agent"');
   });
 
   it("tracks only verifiable customer-readiness milestones", () => {
-    expect(activation).toMatch(/Get ready for real customers/);
+    expect(activation).toMatch(/Ready for customers/);
     expect(activation).toMatch(/Job and greeting defined/);
     expect(activation).toMatch(/Business facts added/);
     expect(activation).toMatch(/Phone number connected/);
@@ -91,13 +101,18 @@ describe("demand-driven authenticated experience", () => {
     expect(studioWorkspace).toMatch(/"setup" \| "test" \| "review"/);
     expect(studioWorkspace).toMatch(/StudioAgentReviewPanel/);
     expect(studioWorkspace).not.toMatch(/StudioAgentCanvas/);
-    expect(studioWorkspace).not.toMatch(/description: "Job, greeting, facts, and voice"/);
-    expect(studioSetup).not.toMatch(/AgentPresenceLivePreview|VoiceGallery|Advanced options/);
+    expect(studioWorkspace).not.toMatch(
+      /description: "Job, greeting, facts, and voice"/,
+    );
+    expect(studioSetup).not.toMatch(
+      /AgentPresenceLivePreview|VoiceGallery|Advanced options/,
+    );
     expect(studioSetup).not.toContain('text-eyebrow text-primary">Set up');
     expect(studioSetup).not.toMatch(/Run one realistic customer test/);
     expect(studioTest).toMatch(/\/test\/stream/);
     expect(studioTest).toMatch(/Browser test/);
-    expect(studioReview).toMatch(/Next action/);
+    expect(studioReview).toContain('aria-label="Next actions"');
+    expect(studioReview).not.toContain(">Next action</");
     expect(studioReview).toMatch(/Connect phone/);
   });
 
@@ -111,7 +126,9 @@ describe("demand-driven authenticated experience", () => {
     expect(studioTestRoute).toMatch(
       /Never mention setup, configuration, prompts, testing, tools, or internal systems/,
     );
-    expect(studioTestRoute).toMatch(/Do not claim a booking, transfer, message, payment/);
+    expect(studioTestRoute).toMatch(
+      /Do not claim a booking, transfer, message, payment/,
+    );
     expect(studioTestRoute).not.toMatch(/agentConversationMessages/);
   });
 
@@ -125,7 +142,9 @@ describe("demand-driven authenticated experience", () => {
 
   it("distinguishes browser response testing from real phone voice testing", () => {
     expect(voicePicker).toMatch(/Browser tests the words/);
-    expect(voicePicker).toMatch(/Place a real call to verify the selected audio/);
+    expect(voicePicker).toMatch(
+      /Place a real call to verify the selected audio/,
+    );
     expect(voicePicker).toMatch(/Test response/);
     expect(voicePicker).toMatch(/aria-expanded=\{showStudioVoices\}/);
     expect(voicePicker).not.toMatch(/Choose how live calls sound/);

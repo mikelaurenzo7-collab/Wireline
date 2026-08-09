@@ -3,7 +3,8 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { TRUST_DISCLOSURE_FAQ } from "../src/lib/product-copy";
 
-const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8");
 
 const PROHIBITED_PATTERNS: { pattern: RegExp; reason: string }[] = [
   {
@@ -14,18 +15,42 @@ const PROHIBITED_PATTERNS: { pattern: RegExp; reason: string }[] = [
     pattern: /Never call the same number twice in 24h/i,
     reason: "unimplemented 24h duplicate-dial claim",
   },
-  { pattern: /pass naturally as human/i, reason: "stealth AI / human-passing claim" },
+  {
+    pattern: /pass naturally as human/i,
+    reason: "stealth AI / human-passing claim",
+  },
   { pattern: /80%\+ of calls/i, reason: "unsourced human-passing statistic" },
-  { pattern: /Disclosure is your call/i, reason: "blanket disclosure opt-out claim" },
-  { pattern: /200 cold leads a day/i, reason: "unsourced cold-call volume claim" },
+  {
+    pattern: /Disclosure is your call/i,
+    reason: "blanket disclosure opt-out claim",
+  },
+  {
+    pattern: /200 cold leads a day/i,
+    reason: "unsourced cold-call volume claim",
+  },
   { pattern: /1,000 dials/i, reason: "unsourced dial-volume claim" },
-  { pattern: /guarantee(?:d|s)?\s+TCPA/i, reason: "guaranteed TCPA compliance claim" },
-  { pattern: /guarantee(?:d|s)?\s+HIPAA/i, reason: "guaranteed HIPAA compliance claim" },
+  {
+    pattern: /guarantee(?:d|s)?\s+TCPA/i,
+    reason: "guaranteed TCPA compliance claim",
+  },
+  {
+    pattern: /guarantee(?:d|s)?\s+HIPAA/i,
+    reason: "guaranteed HIPAA compliance claim",
+  },
   { pattern: /jumps 4-7x/i, reason: "unsourced ROI multiplier" },
-  { pattern: /logged to your CRM in real time/i, reason: "unqualified auto-CRM writeback claim" },
+  {
+    pattern: /logged to your CRM in real time/i,
+    reason: "unqualified auto-CRM writeback claim",
+  },
   { pattern: /out of the box/i, reason: "overbroad integration claim" },
-  { pattern: /homepage now leads with/i, reason: "internal design meta leaked to customer UI" },
-  { pattern: /AI SDR for Outbound/i, reason: "spammy AI SDR positioning in meta title" },
+  {
+    pattern: /homepage now leads with/i,
+    reason: "internal design meta leaked to customer UI",
+  },
+  {
+    pattern: /AI SDR for Outbound/i,
+    reason: "spammy AI SDR positioning in meta title",
+  },
 ];
 
 const SCANNED_FILES = [
@@ -61,7 +86,9 @@ describe("sales trust copy contract", () => {
     expect(wedges).toContain("Profit Recovery Phone Agents");
     expect(wedges).toContain("speed to lead");
     expect(wedges).toContain("Approved actions sync");
-    expect(wedges).toContain('import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy"');
+    expect(wedges).toContain(
+      'import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy"',
+    );
     expect(wedges).toContain("a: TRUST_DISCLOSURE_FAQ,");
   });
 
@@ -76,13 +103,14 @@ describe("sales trust copy contract", () => {
   it("keeps the market comparison dated, sourced, and explicit about unlike products", () => {
     const compare = read("src/pages/Compare.tsx");
 
-    const verified = compare.match(/Verified ([A-Z][a-z]+ \d{1,2}, 20\d{2})/);
     const checked = compare.match(
-      /Public prices were checked on the linked official pages on ([A-Z][a-z]+ \d{1,2}, 20\d{2})/,
+      /Public prices were checked on the linked official pages on\s+([A-Z][a-z]+ \d{1,2},\s+20\d{2})/,
     );
-    if (!verified || !checked) throw new Error("Market comparison verification date is missing.");
-    expect(verified[1]).toBe(checked[1]);
-    const verifiedAt = Date.parse(`${verified[1]} 00:00:00 UTC`);
+    if (!checked)
+      throw new Error("Market comparison verification date is missing.");
+    expect(compare).not.toMatch(/Verified [A-Z][a-z]+ \d{1,2}, 20\d{2}/);
+    const checkedAt = checked[1].replace(/\s+/g, " ");
+    const verifiedAt = Date.parse(`${checkedAt} 00:00:00 UTC`);
     expect(Number.isFinite(verifiedAt)).toBe(true);
     const ageMs = Date.now() - verifiedAt;
     expect(ageMs).toBeGreaterThanOrEqual(-86_400_000);

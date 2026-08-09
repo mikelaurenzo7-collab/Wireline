@@ -8,12 +8,7 @@ import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
 
-const PERSONALITIES = [
-  { id: "Clear", description: "Direct and easy to understand" },
-  { id: "Warm", description: "Friendly and patient" },
-  { id: "Polished", description: "Professional and measured" },
-  { id: "Energetic", description: "Upbeat and proactive" },
-] as const;
+const PERSONALITIES = ["Clear", "Warm", "Polished", "Energetic"] as const;
 
 type StudioAgentWorkspacePanelProps = {
   agentId: string;
@@ -31,13 +26,16 @@ type AgentSetupResponse = {
 function inferPersonality(value: string | undefined) {
   const normalized = value?.toLowerCase() ?? "";
   return (
-    PERSONALITIES.find((option) => normalized.includes(option.id.toLowerCase()))?.id ?? "Clear"
+    PERSONALITIES.find((option) => normalized.includes(option.toLowerCase())) ??
+    "Clear"
   );
 }
 
 function existingGreeting(directives: AgentSetupResponse["directives"]) {
   const prefix = "Opening greeting:";
-  const match = directives?.find((directive) => directive.content?.startsWith(prefix));
+  const match = directives?.find((directive) =>
+    directive.content?.startsWith(prefix),
+  );
   return match?.content?.slice(prefix.length).trim() ?? "";
 }
 
@@ -56,7 +54,9 @@ export default function StudioAgentWorkspacePanel({
     [agentName, isBusinessAgent],
   );
   const [setupPersonality, setSetupPersonality] = useState("Clear");
-  const [loadedPersonality, setLoadedPersonality] = useState<string | null>(null);
+  const [loadedPersonality, setLoadedPersonality] = useState<string | null>(
+    null,
+  );
   // Empty until the saved greeting loads. A generated sentence sitting in the
   // box reads as something the customer already wrote and saved, when nothing
   // has been saved at all; it belongs in the placeholder instead.
@@ -79,7 +79,8 @@ export default function StudioAgentWorkspacePanel({
       })
       .then((data) => {
         if (cancelled) return;
-        const personality = typeof data.personality === "string" ? data.personality : "";
+        const personality =
+          typeof data.personality === "string" ? data.personality : "";
         setLoadedPersonality(personality || null);
         setSetupPersonality(inferPersonality(personality));
         setSetupGreeting(existingGreeting(data.directives));
@@ -87,7 +88,9 @@ export default function StudioAgentWorkspacePanel({
       .catch((reason) => {
         if (!cancelled) {
           setSetupError(
-            reason instanceof Error ? reason.message : "Current setup could not be loaded.",
+            reason instanceof Error
+              ? reason.message
+              : "Current setup could not be loaded.",
           );
         }
       })
@@ -99,14 +102,22 @@ export default function StudioAgentWorkspacePanel({
     };
   }, [agentId]);
 
-  async function saveManual(type: "personality" | "directive", content: string) {
-    const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type, content }),
-    });
+  async function saveManual(
+    type: "personality" | "directive",
+    content: string,
+  ) {
+    const response = await authFetch(
+      `/api/agent-config/${encodeURIComponent(agentId)}/manual`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, content }),
+      },
+    );
     if (!response.ok) {
-      throw new Error(`${type === "personality" ? "Tone" : "Greeting"} could not be saved.`);
+      throw new Error(
+        `${type === "personality" ? "Tone" : "Greeting"} could not be saved.`,
+      );
     }
   }
 
@@ -151,18 +162,23 @@ export default function StudioAgentWorkspacePanel({
           : "Changes saved. Run a private test before connecting a live line.",
       );
     } catch (reason) {
-      setSetupError(reason instanceof Error ? reason.message : "Setup could not be saved.");
+      setSetupError(
+        reason instanceof Error ? reason.message : "Setup could not be saved.",
+      );
     } finally {
       setApplyingSetup(false);
     }
   }
 
   return (
-    <div className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}>
+    <div
+      className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}
+    >
       <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
         <header>
           <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Give <span className="wl-preserve-case">{agentName}</span> one clear job.
+            Give <span className="wl-preserve-case">{agentName}</span> one clear
+            job.
           </h2>
         </header>
 
@@ -187,16 +203,18 @@ export default function StudioAgentWorkspacePanel({
           ) : (
             <div className="space-y-5">
               <fieldset>
-                <legend className="mb-2 text-sm font-semibold text-foreground">Tone</legend>
+                <legend className="mb-2 text-sm font-semibold text-foreground">
+                  Tone
+                </legend>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {PERSONALITIES.map((option) => {
-                    const selected = setupPersonality === option.id;
+                    const selected = setupPersonality === option;
                     return (
                       <button
-                        key={option.id}
+                        key={option}
                         type="button"
                         aria-pressed={selected}
-                        onClick={() => setSetupPersonality(option.id)}
+                        onClick={() => setSetupPersonality(option)}
                         className={`rounded-xl border px-4 py-3 text-left transition-colors ${
                           selected
                             ? "border-primary/40 bg-primary/5"
@@ -205,12 +223,12 @@ export default function StudioAgentWorkspacePanel({
                       >
                         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
                           {selected ? (
-                            <CheckCircle2 className="size-4 text-primary" aria-hidden="true" />
+                            <CheckCircle2
+                              className="size-4 text-primary"
+                              aria-hidden="true"
+                            />
                           ) : null}
-                          {option.id}
-                        </span>
-                        <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                          {option.description}
+                          {option}
                         </span>
                       </button>
                     );
@@ -219,7 +237,9 @@ export default function StudioAgentWorkspacePanel({
               </fieldset>
 
               <label className="grid gap-2" htmlFor="setup-greeting">
-                <span className="text-sm font-semibold text-foreground">Opening greeting</span>
+                <span className="text-sm font-semibold text-foreground">
+                  Opening greeting
+                </span>
                 <textarea
                   id="setup-greeting"
                   value={setupGreeting}
@@ -236,8 +256,12 @@ export default function StudioAgentWorkspacePanel({
                     className="text-sm font-semibold text-foreground"
                     htmlFor="setup-knowledge"
                   >
-                    {isBusinessAgent ? "Essential business facts" : "Essential personal facts"}{" "}
-                    <span className="font-normal text-muted-foreground">(optional)</span>
+                    {isBusinessAgent
+                      ? "Essential business facts"
+                      : "Essential personal facts"}{" "}
+                    <span className="font-normal text-muted-foreground">
+                      (optional)
+                    </span>
                   </label>
                   <Link
                     to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
@@ -270,7 +294,11 @@ export default function StudioAgentWorkspacePanel({
                 </StatusNotice>
               ) : null}
 
-              <Button type="button" onClick={() => void applySetup()} disabled={applyingSetup}>
+              <Button
+                type="button"
+                onClick={() => void applySetup()}
+                disabled={applyingSetup}
+              >
                 {applyingSetup ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 ) : (
@@ -287,23 +315,25 @@ export default function StudioAgentWorkspacePanel({
           aria-labelledby="voice-heading"
         >
           <div className="mb-3">
-            <h3 id="voice-heading" className="text-lg font-semibold tracking-tight text-foreground">
+            <h3
+              id="voice-heading"
+              className="text-lg font-semibold tracking-tight text-foreground"
+            >
               Phone voice
             </h3>
           </div>
-          <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
+          <SimpleVoicePicker
+            agentId={agentId}
+            agentName={agentName}
+            onTest={onTestVoiceInChat}
+          />
         </section>
 
         <section
           className="rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6"
           aria-label="Continue setup"
         >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="text-base font-semibold text-foreground">
-                {isBusinessAgent ? "Test before going live" : "Test before connecting a line"}
-              </h3>
-            </div>
+          <div className="flex justify-end">
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               <Button
                 type="button"

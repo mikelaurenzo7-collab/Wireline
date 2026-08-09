@@ -15,7 +15,10 @@ interface ChangelogEntry {
   body: string;
 }
 
-const TAG_META: Record<EntryTag, { label: string; tone: string; icon: typeof Sparkles }> = {
+const TAG_META: Record<
+  EntryTag,
+  { label: string; tone: string; icon: typeof Sparkles }
+> = {
   launch: {
     label: "Launch",
     tone: "bg-brand/10 text-brand border-brand/25",
@@ -162,16 +165,9 @@ export default function PublicChangelog() {
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="mb-10"
           >
-            <div className="flex items-center gap-2 mb-3">
-              <span className="hero-accent-line bg-brand" />
-              <span className="text-eyebrow">Shipping log</span>
-            </div>
-            <h1 className="marketing-hero-title mb-3 text-3xl sm:text-4xl">
+            <h1 className="marketing-hero-title text-3xl sm:text-4xl">
               Every change we've shipped.
             </h1>
-            <p className="marketing-hero-lead">
-              Customer-visible releases, with the behavior that actually shipped.
-            </p>
           </motion.div>
 
           <ol className="space-y-6">
@@ -184,7 +180,10 @@ export default function PublicChangelog() {
                   initial={{ opacity: 0, y: 8 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.4) }}
+                  transition={{
+                    duration: 0.4,
+                    delay: Math.min(idx * 0.04, 0.4),
+                  }}
                   className="relative pl-4 sm:pl-6 marketing-panel-muted p-4 sm:p-5"
                 >
                   <span
@@ -192,7 +191,9 @@ export default function PublicChangelog() {
                     className="absolute left-0 top-6 w-1.5 h-1.5 rounded-full bg-brand"
                   />
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                    <span className="text-eyebrow !text-[0.625rem]">{entry.date}</span>
+                    <span className="text-eyebrow !text-[0.625rem]">
+                      {entry.date}
+                    </span>
                     <span
                       className={`inline-flex items-center gap-1 text-eyebrow !text-[0.625rem] px-2 py-0.5 rounded-full border leading-none ${meta.tone}`}
                     >
@@ -212,13 +213,22 @@ export default function PublicChangelog() {
           <div className="mt-12 pt-6 border-t border-border">
             <p className="text-eyebrow mb-2">Under active evaluation</p>
             <ul className="marketing-body space-y-1 list-disc pl-5">
-              <li>Mobile controls for monitoring, coaching, and approvals on the go.</li>
-              <li>Reusable workflow recipes with clearer review and publishing controls.</li>
-              <li>Annual performance recaps built from each account's verified activity.</li>
+              <li>
+                Mobile controls for monitoring, coaching, and approvals on the
+                go.
+              </li>
+              <li>
+                Reusable workflow recipes with clearer review and publishing
+                controls.
+              </li>
+              <li>
+                Annual performance recaps built from each account's verified
+                activity.
+              </li>
             </ul>
             <p className="mt-3 text-caption">
-              Roadmap items are not commitments; scope and timing may change as customer evidence
-              improves.
+              Roadmap items are not commitments; scope and timing may change as
+              customer evidence improves.
             </p>
           </div>
         </div>

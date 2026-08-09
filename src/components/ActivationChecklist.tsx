@@ -18,7 +18,10 @@ import {
   fetchAssistantSetupProgress,
   type AssistantSetupProgress,
 } from "../lib/fleet-setup-progress";
-import { isActivationCelebrated, markActivationCelebrated } from "../lib/post-signup-onboarding";
+import {
+  isActivationCelebrated,
+  markActivationCelebrated,
+} from "../lib/post-signup-onboarding";
 import { cn } from "../lib/utils";
 
 const DISMISS_KEY = "wireline_activation_checklist_dismissed";
@@ -57,7 +60,8 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
       id: "facts",
       label: "Business facts added",
       actionLabel: "Add business facts",
-      detail: "Add pricing, hours, policies, FAQs, or other answers customers need.",
+      detail:
+        "Add pricing, hours, policies, FAQs, or other answers customers need.",
       done: p.knowledge > 0,
       href: "/studio?section=setup",
       icon: GraduationCap,
@@ -76,7 +80,8 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
       id: "live",
       label: "First live customer handled",
       actionLabel: "Handle first live customer",
-      detail: "Confirm the line received a real conversation and logged the outcome.",
+      detail:
+        "Confirm the line received a real conversation and logged the outcome.",
       done: p.activated,
       href: "/phone?tab=logs",
       icon: Phone,
@@ -93,11 +98,17 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
   ];
 }
 
-export default function ActivationChecklist({ className }: { className?: string }) {
+export default function ActivationChecklist({
+  className,
+}: {
+  className?: string;
+}) {
   const { user } = useAuth();
   const { activeAccount } = useAccount();
   const activationScope = activeAccount?.id ?? user?.id ?? null;
-  const dismissKey = activationScope ? `${DISMISS_KEY}:${activationScope}` : null;
+  const dismissKey = activationScope
+    ? `${DISMISS_KEY}:${activationScope}`
+    : null;
   const [progress, setProgress] = useState<AssistantSetupProgress | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [celebrationDismissed, setCelebrationDismissed] = useState(false);
@@ -136,7 +147,10 @@ export default function ActivationChecklist({ className }: { className?: string 
     if (celebrationDismissed) return null;
     return (
       <section
-        className={cn("wl-paper wl-paper-elevated relative overflow-hidden p-5 sm:p-6", className)}
+        className={cn(
+          "wl-paper wl-paper-elevated relative overflow-hidden p-5 sm:p-6",
+          className,
+        )}
         aria-label="Your voice agent is live"
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -145,13 +159,9 @@ export default function ActivationChecklist({ className }: { className?: string 
               <Trophy className="size-5" aria-hidden="true" />
             </span>
             <div>
-              <p className="wl-eyebrow wl-eyebrow--primary">Your voice agent is live</p>
-              <h2 className="mt-1 text-base font-semibold text-foreground sm:text-lg">
-                All 5 customer-ready steps are done.
+              <h2 className="text-base font-semibold text-foreground sm:text-lg">
+                Ready for customers
               </h2>
-              <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground sm:text-sm">
-                Review the first outcome, then let Wireline keep the conversation moving.
-              </p>
             </div>
           </div>
           <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
@@ -190,12 +200,9 @@ export default function ActivationChecklist({ className }: { className?: string 
       aria-label="Customer readiness checklist"
     >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="wl-eyebrow wl-eyebrow--primary">Get ready for real customers</p>
-          <h2 className="mt-1 text-base font-semibold text-foreground">
-            {completed} of {steps.length} customer-ready steps complete
-          </h2>
-        </div>
+        <h2 className="text-base font-semibold text-foreground">
+          {completed} of {steps.length} ready
+        </h2>
         <button
           type="button"
           className="self-start text-xs text-muted-foreground hover:text-foreground"
@@ -237,9 +244,8 @@ export default function ActivationChecklist({ className }: { className?: string 
                   <Icon className="size-3.5 opacity-70" aria-hidden="true" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-xs font-semibold text-foreground">{step.label}</span>
-                  <span className="mt-1 hidden text-[11px] leading-4 text-muted-foreground sm:block">
-                    {step.detail}
+                  <span className="block text-xs font-semibold text-foreground">
+                    {step.label}
                   </span>
                 </span>
               </Link>
@@ -249,10 +255,13 @@ export default function ActivationChecklist({ className }: { className?: string 
       </ol>
 
       {next ? (
-        <div className="mt-4 flex flex-col gap-2 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs font-semibold text-foreground">{next.actionLabel}</p>
-          <Link to={next.href} className="text-xs font-semibold text-primary hover:underline">
-            Continue →
+        <div className="mt-4 rounded-xl border border-primary/25 bg-primary/5">
+          <Link
+            to={next.href}
+            className="flex min-h-11 items-center justify-between px-4 text-xs font-semibold text-primary hover:underline"
+          >
+            {next.actionLabel}
+            <ArrowRight className="size-3.5" aria-hidden="true" />
           </Link>
         </div>
       ) : null}

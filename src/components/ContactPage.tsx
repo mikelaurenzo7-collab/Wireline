@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  Clock3,
   Loader2,
   Mail,
   Phone,
@@ -24,12 +23,6 @@ const INQUIRY_TYPES = [
   { value: "general", label: "General" },
 ] as const;
 
-const CONTACT_PROMISES = [
-  ["Fit call", "We route sales and rollout questions to the right operating path."],
-  ["Live issue", "Urgent call coverage problems should use the phone line first."],
-  ["Clear next step", "If Wireline is not the right fit, we will say so directly."],
-] as const;
-
 const STARTER_PRICE = planById("starter")?.price_usd_monthly ?? 19;
 const STARTER_PLUS_PRICE = planById("team")?.price_usd_monthly ?? 39;
 
@@ -40,9 +33,9 @@ export function ContactPage() {
   const startsAsSales = ["sales", "business", "enterprise"].includes(
     initialIntent?.toLowerCase() ?? "",
   );
-  const [inquiryType, setInquiryType] = useState<(typeof INQUIRY_TYPES)[number]["value"]>(
-    startsAsSales ? "sales" : "personal",
-  );
+  const [inquiryType, setInquiryType] = useState<
+    (typeof INQUIRY_TYPES)[number]["value"]
+  >(startsAsSales ? "sales" : "personal");
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [subject, setSubject] = useState(
@@ -94,26 +87,34 @@ export function ContactPage() {
         }),
       });
       if (!response.ok) {
-        const failBody = (await response.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(failBody?.error || `Message could not be sent (${response.status}).`);
+        const failBody = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(
+          failBody?.error || `Message could not be sent (${response.status}).`,
+        );
       }
-      const payload = (await response.json().catch(() => null)) as { sent?: boolean } | null;
+      const payload = (await response.json().catch(() => null)) as {
+        sent?: boolean;
+      } | null;
       if (!payload?.sent) {
         throw new Error("Message was not delivered.");
       }
       setSubmitted(true);
       if (
         typeof window !== "undefined" &&
-        (window as { plausible?: (name: string, options?: unknown) => void }).plausible
+        (window as { plausible?: (name: string, options?: unknown) => void })
+          .plausible
       ) {
-        (window as { plausible: (name: string, options?: unknown) => void }).plausible(
-          "ContactMessageSubmitted",
-          { props: { inquiryType } },
-        );
+        (
+          window as { plausible: (name: string, options?: unknown) => void }
+        ).plausible("ContactMessageSubmitted", { props: { inquiryType } });
       }
     } catch (reason) {
       const message =
-        reason instanceof Error ? reason.message : "The message service did not respond.";
+        reason instanceof Error
+          ? reason.message
+          : "The message service did not respond.";
       // Only fall back to mailto for transport failures — keep validation/API errors inline.
       const isTransport =
         /did not respond|failed to fetch|network|503|502|504|Message was not delivered/i.test(
@@ -133,7 +134,10 @@ export function ContactPage() {
   };
 
   return (
-    <MarketingPageFrame stickyCta={false} mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
+    <MarketingPageFrame
+      stickyCta={false}
+      mainClassName="!px-0 pb-0 pt-20 sm:pt-24"
+    >
       <PageMeta
         title="Contact Wireline"
         description="Talk to Wireline about personal call coverage, team rollout, partnerships, or support."
@@ -148,22 +152,9 @@ export function ContactPage() {
           Back home
         </Link>
         <div className="mx-auto mt-8 max-w-3xl text-center">
-          <p className="wl-stitch-eyebrow">Talk to Wireline</p>
-          <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
+          <h1 className="wl-stitch-marketing-hero text-balance">
             Get the right kind of call coverage.
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
-            Tell us whether you are handing off a personal call, exploring customer coverage for a
-            team, or need help with an existing setup. We will point you to the right next step.
-          </p>
-          <div className="mt-6 grid gap-2 sm:grid-cols-3">
-            {CONTACT_PROMISES.map(([label, detail]) => (
-              <div key={label} className="rounded border border-border bg-card/70 p-3 text-center">
-                <p className="text-sm font-semibold text-foreground">{label}</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</p>
-              </div>
-            ))}
-          </div>
         </div>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-3">
@@ -172,9 +163,11 @@ export function ContactPage() {
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
           >
             <Phone className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 font-semibold text-foreground">Call Wireline</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {salesAgent.display} for fit, demos, and rollout questions.
+            <h2 className="mt-5 font-semibold text-foreground">
+              Call Wireline
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {salesAgent.display}
             </p>
           </a>
           <a
@@ -183,8 +176,8 @@ export function ContactPage() {
           >
             <Mail className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 font-semibold text-foreground">Email us</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Personal questions, business coverage, partnerships, and support.
+            <p className="mt-2 text-sm text-muted-foreground">
+              support@trywireline.com
             </p>
           </a>
           <Link
@@ -194,25 +187,22 @@ export function ContactPage() {
             <Sparkles className="h-5 w-5" />
             <h2 className="mt-5 font-semibold">See plans</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--wireline-color-text-secondary)]">
-              Create and train free. Starter launches at ${STARTER_PRICE}/mo; Starter Plus at $
-              {STARTER_PLUS_PRICE}/mo.
+              Create and train free. Starter launches at ${STARTER_PRICE}/mo;
+              Starter Plus at ${STARTER_PLUS_PRICE}/mo.
             </p>
           </Link>
         </section>
 
         <section className="mt-8 wl-stitch-card p-6 sm:p-8">
-          <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">Send a note</h2>
-          <p className="mt-2 flex items-start gap-2 text-sm leading-6 text-muted-foreground">
-            <Clock3 className="mt-1 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-            <span>
-              Choose the topic and share the call type, team size, current phone setup, and timeline
-              if you know them. We aim to respond within one business day.
-            </span>
-          </p>
+          <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">
+            Send a note
+          </h2>
           {submitted ? (
             <div className="py-10 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
-              <h3 className="mt-4 text-xl font-semibold text-foreground">Message received</h3>
+              <h3 className="mt-4 text-xl font-semibold text-foreground">
+                Message received
+              </h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 We aim to reply within one business day at {email}.
               </p>
@@ -245,7 +235,10 @@ export function ContactPage() {
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-semibold text-foreground">
-                  Company <span className="font-normal text-muted-foreground">(optional)</span>
+                  Company{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (optional)
+                  </span>
                   <Input
                     value={company}
                     onChange={(event) => setCompany(event.target.value)}
@@ -255,7 +248,9 @@ export function ContactPage() {
               </div>
               <label className="grid gap-2 text-sm font-semibold text-foreground">
                 Callback number{" "}
-                <span className="font-normal text-muted-foreground">(optional)</span>
+                <span className="font-normal text-muted-foreground">
+                  (optional)
+                </span>
                 <Input
                   type="tel"
                   autoComplete="tel"
@@ -310,7 +305,10 @@ export function ContactPage() {
         </section>
         <p className="mt-7 text-center text-sm text-muted-foreground">
           Need product help instead?{" "}
-          <Link to="/support" className="font-semibold text-primary underline underline-offset-4">
+          <Link
+            to="/support"
+            className="font-semibold text-primary underline underline-offset-4"
+          >
             Visit support <ArrowRight className="inline h-4 w-4" />
           </Link>
         </p>

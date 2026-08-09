@@ -5,7 +5,13 @@ import { Link, useLocation } from "react-router";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import CompanyIdentityPack from "./settings/CompanyIdentityPack";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/shadcn/Select";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
@@ -31,7 +37,8 @@ const PHONE_AGENT_UNSET = "__unassigned__";
 function formatPhone(value?: string | null) {
   if (!value) return "No number yet";
   const digits = value.replace(/\D/g, "");
-  const domestic = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+  const domestic =
+    digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
   if (domestic.length !== 10) return value;
   return `(${domestic.slice(0, 3)}) ${domestic.slice(3, 6)}-${domestic.slice(6)}`;
 }
@@ -48,7 +55,11 @@ function formatProvisionedDate(value?: string | null) {
 }
 
 export default function PhoneSetupPanel() {
-  const { agents, loading: agentsLoading, degraded: agentsDegraded } = useAgents();
+  const {
+    agents,
+    loading: agentsLoading,
+    degraded: agentsDegraded,
+  } = useAgents();
   const location = useLocation();
   const [numbers, setNumbers] = useState<PhoneNumberRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +93,8 @@ export default function PhoneSetupPanel() {
       setSelectedAgentId(currentAgentId);
       return;
     }
-    if (selectedAgentId && agents.some((agent) => agent.id === selectedAgentId)) return;
+    if (selectedAgentId && agents.some((agent) => agent.id === selectedAgentId))
+      return;
     setSelectedAgentId(agents[0]?.id || "");
   }, [activeNumber?.agent_id, agents, selectedAgentId]);
 
@@ -92,10 +104,13 @@ export default function PhoneSetupPanel() {
     try {
       const response = await authFetch("/api/phone-numbers");
       const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body?.error || "Phone numbers unavailable.");
+      if (!response.ok)
+        throw new Error(body?.error || "Phone numbers unavailable.");
       setNumbers(Array.isArray(body?.numbers) ? body.numbers : []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Phone numbers unavailable.");
+      setError(
+        err instanceof Error ? err.message : "Phone numbers unavailable.",
+      );
     } finally {
       setLoading(false);
     }
@@ -111,7 +126,9 @@ export default function PhoneSetupPanel() {
     // The carrier route requires exactly three digits. Submitting a partial one
     // bounced back as a raw field-level validation error naming `area_code`.
     if (requestedAreaCode && requestedAreaCode.length !== 3) {
-      setError("Enter a full 3-digit area code, or leave it blank for any local number.");
+      setError(
+        "Enter a full 3-digit area code, or leave it blank for any local number.",
+      );
       return;
     }
     setWorking(true);
@@ -127,11 +144,14 @@ export default function PhoneSetupPanel() {
           ...(requestedAreaCode ? { area_code: requestedAreaCode } : {}),
         }),
       });
-      const body = (await response.json().catch(() => ({}))) as ProvisionResponse;
+      const body = (await response
+        .json()
+        .catch(() => ({}))) as ProvisionResponse;
       if (!response.ok || body.ok === false) {
         setRecoveryPath(
           body.recovery_path ||
-            (body.code === "ACTIVATION_REQUIRED" || body.code === "SUBSCRIPTION_REQUIRED"
+            (body.code === "ACTIVATION_REQUIRED" ||
+            body.code === "SUBSCRIPTION_REQUIRED"
               ? "/settings/billing"
               : null),
         );
@@ -144,7 +164,9 @@ export default function PhoneSetupPanel() {
       );
       await loadNumbers();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not activate a number.");
+      setError(
+        err instanceof Error ? err.message : "Could not activate a number.",
+      );
     } finally {
       setWorking(false);
     }
@@ -157,22 +179,32 @@ export default function PhoneSetupPanel() {
     setError(null);
     setRecoveryPath(null);
     try {
-      const response = await authFetch(`/api/phone-numbers/${activeNumber.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agent_id: agentId }),
-      });
+      const response = await authFetch(
+        `/api/phone-numbers/${activeNumber.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ agent_id: agentId }),
+        },
+      );
       const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body?.error || "Could not attach voice agent.");
+      if (!response.ok)
+        throw new Error(body?.error || "Could not attach voice agent.");
       setNumbers((previous) =>
         previous.map((number) =>
-          number.id === activeNumber.id ? { ...number, agent_id: agentId } : number,
+          number.id === activeNumber.id
+            ? { ...number, agent_id: agentId }
+            : number,
         ),
       );
       setSelectedAgentId(agentId || "");
-      setMessage(agentId ? "Voice agent attached to this line." : "Line unassigned.");
+      setMessage(
+        agentId ? "Voice agent attached to this line." : "Line unassigned.",
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not attach voice agent.");
+      setError(
+        err instanceof Error ? err.message : "Could not attach voice agent.",
+      );
     } finally {
       setAttaching(false);
     }
@@ -181,9 +213,7 @@ export default function PhoneSetupPanel() {
   const normalizedAreaCode = areaCode.replace(/\D/g, "").slice(0, 3);
   const lineMeta = activeNumber
     ? `${attachedAgent?.name || "Unassigned"} · ${formatProvisionedDate(activeNumber.created_at)}`
-    : loading
-      ? "Loading carrier status"
-      : "Choose the agent and local area code before activating the line";
+    : null;
 
   return (
     <div className="space-y-5">
@@ -198,13 +228,14 @@ export default function PhoneSetupPanel() {
          */}
         <div className="flex flex-col-reverse items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">
-              Your Wireline number
-            </p>
-            <h2 className="mt-4 truncate font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.2rem+2.5vw,2.5rem)] font-normal leading-none tracking-[-0.035em]">
+            <h2 className="truncate font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.2rem+2.5vw,2.5rem)] font-normal leading-none tracking-[-0.035em]">
               {formatPhone(activeNumber?.phone_number)}
             </h2>
-            <p className="mt-3 text-sm text-primary-foreground/78">{lineMeta}</p>
+            {lineMeta ? (
+              <p className="mt-3 text-sm text-primary-foreground/78">
+                {lineMeta}
+              </p>
+            ) : null}
           </div>
           <span className="inline-flex min-h-[32px] shrink-0 items-center gap-1.5 rounded-lg border border-primary-foreground/20 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-primary-foreground/75">
             <span className="size-1.5 rounded-full bg-primary-foreground/70" />
@@ -226,7 +257,10 @@ export default function PhoneSetupPanel() {
                   Loading agents…
                 </div>
               ) : agents.length ? (
-                <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+                <Select
+                  value={selectedAgentId}
+                  onValueChange={setSelectedAgentId}
+                >
                   <SelectTrigger
                     aria-label="Choose the voice agent for this number"
                     className="h-11 border-primary-foreground/20 bg-black/5 text-primary-foreground"
@@ -251,7 +285,11 @@ export default function PhoneSetupPanel() {
                   Agent list unavailable — reload to try again.
                 </div>
               ) : (
-                <Button asChild variant="secondary" className="w-full justify-center">
+                <Button
+                  asChild
+                  variant="secondary"
+                  className="w-full justify-center"
+                >
                   <Link to="/studio?create=1">Create voice agent</Link>
                 </Button>
               )}
@@ -276,7 +314,9 @@ export default function PhoneSetupPanel() {
                   maxLength={3}
                   value={normalizedAreaCode}
                   onChange={(event) =>
-                    setAreaCode(event.target.value.replace(/\D/g, "").slice(0, 3))
+                    setAreaCode(
+                      event.target.value.replace(/\D/g, "").slice(0, 3),
+                    )
                   }
                   placeholder="312"
                   aria-label="Preferred phone number area code"
@@ -307,9 +347,6 @@ export default function PhoneSetupPanel() {
               </span>
               <div>
                 <p className="text-sm font-semibold">Call this number now</p>
-                <p className="mt-1 text-xs leading-5 text-primary-foreground/80">
-                  Use any phone to test the live greeting, routing, knowledge, and handoff behavior.
-                </p>
               </div>
             </div>
             <Button
@@ -323,23 +360,20 @@ export default function PhoneSetupPanel() {
         )}
       </section>
 
-      <section className="studio-card p-5 sm:p-6">
-        <p className={WL_APP_CLASSES.wiredEyebrow}>Routing</p>
-        {attachedAgent ? (
-          <div className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-3">
-            <Check
-              className="mt-0.5 size-4 shrink-0 text-[var(--wireline-color-status-success)]"
-              aria-hidden="true"
-            />
-            <div>
-              <p className="text-sm font-semibold text-foreground">{attachedAgent.name}</p>
-              <p className="mt-1 text-xs text-muted-foreground">Answers this number</p>
+      {activeNumber ? (
+        <section className="studio-card p-5 sm:p-6">
+          <p className={WL_APP_CLASSES.wiredEyebrow}>Routing</p>
+          {attachedAgent ? (
+            <div className="mt-4 flex items-center gap-3 rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-3">
+              <Check
+                className="size-4 shrink-0 text-[var(--wireline-color-status-success)]"
+                aria-hidden="true"
+              />
+              <p className="text-sm font-semibold text-foreground">
+                {attachedAgent.name}
+              </p>
             </div>
-          </div>
-        ) : (
-          <p className="mt-4 text-sm text-muted-foreground">No voice agent attached yet</p>
-        )}
-        {activeNumber ? (
+          ) : null}
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Select
               value={activeNumber.agent_id || PHONE_AGENT_UNSET}
@@ -365,7 +399,9 @@ export default function PhoneSetupPanel() {
             </Select>
             {attachedAgent ? (
               <Button asChild size="sm" variant="outline">
-                <Link to={`/studio?agent=${encodeURIComponent(attachedAgent.id)}`}>
+                <Link
+                  to={`/studio?agent=${encodeURIComponent(attachedAgent.id)}`}
+                >
                   Open Studio
                 </Link>
               </Button>
@@ -376,12 +412,8 @@ export default function PhoneSetupPanel() {
               </Button>
             ) : null}
           </div>
-        ) : (
-          <p className="mt-4 text-xs leading-5 text-muted-foreground">
-            Routing will be connected automatically when the number is activated.
-          </p>
-        )}
-      </section>
+        </section>
+      ) : null}
 
       <CompanyIdentityPack key={activeNumber?.id ?? "no-number"} />
 

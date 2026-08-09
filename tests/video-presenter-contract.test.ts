@@ -10,7 +10,9 @@ describe("video presenter integration", () => {
     const identity = source("src/lib/agent-identity.ts");
     expect(identity).toContain('"liveavatar"');
     expect(identity).toContain('surfaceLabel: "Live video"');
-    expect(identity).toContain('providerPreference: VideoPresenterProviderId = "synthetic"');
+    expect(identity).toContain(
+      'providerPreference: VideoPresenterProviderId = "synthetic"',
+    );
   });
 
   it("treats synthetic avatars as app identity badges, not video presenters", () => {
@@ -25,8 +27,10 @@ describe("video presenter integration", () => {
 
   it("keeps Fast Start free of avatar and presenter pickers", () => {
     const dialog = source("src/components/CreateAgentDialog.tsx");
-    expect(dialog).toContain("I&apos;ll explore first");
-    expect(dialog).not.toMatch(/CreateAgentCatalogFacePicker|AgentPresenceAvatarPicker|avatar/i);
+    expect(dialog).toContain("Not now");
+    expect(dialog).not.toMatch(
+      /CreateAgentCatalogFacePicker|AgentPresenceAvatarPicker|avatar/i,
+    );
   });
 
   it("starts LiveAvatar LITE sessions on the server", () => {
@@ -62,7 +66,9 @@ describe("video presenter integration", () => {
   });
 
   it("offers live video as an explicit opt-in add-on", () => {
-    const entitlements = source("src/lib/video-presenter/live-video-entitlements.ts");
+    const entitlements = source(
+      "src/lib/video-presenter/live-video-entitlements.ts",
+    );
     expect(entitlements).toContain("WIRELINE_LIVE_VIDEO_CATALOG_READY");
     expect(entitlements).toContain(
       "addonOffered && workspaceFlag && stripeActive && settingsActive && onPaidPlan",
@@ -79,7 +85,9 @@ describe("video presenter integration", () => {
     expect(preview).toContain("live-video-checkout");
     expect(preview).toContain("liveVideoMeteringNote");
     expect(preview).toContain("catalogReadyForLiveVideo");
-    expect(preview).toContain("Checkout stays hidden until Presence Catalog selection returns");
+    expect(preview).toContain(
+      "Checkout stays hidden until Presence Catalog selection returns",
+    );
   });
 
   it("imports catalog listing for the avatar picker route", () => {
@@ -91,7 +99,9 @@ describe("video presenter integration", () => {
     const picker = source("src/components/AgentPresenceAvatarPicker.tsx");
     expect(picker).toContain("Presence catalog paused");
     expect(picker).not.toContain('provider: "liveavatar"');
-    const resolve = source("src/lib/video-presenter/resolve-agent-presenter.ts");
+    const resolve = source(
+      "src/lib/video-presenter/resolve-agent-presenter.ts",
+    );
     expect(resolve).toContain("chosenAvatarId");
   });
 
@@ -121,7 +131,9 @@ describe("video presenter integration", () => {
     expect(source("scripts/lib/stripe-founder-catalog.mjs")).toContain(
       "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
     );
-    expect(source("src/components/StripeBillingCard.tsx")).toContain("live-video-checkout");
+    expect(source("src/components/StripeBillingCard.tsx")).toContain(
+      "live-video-checkout",
+    );
   });
 
   it("streams call-floor presence via SSE with polling fallback", () => {

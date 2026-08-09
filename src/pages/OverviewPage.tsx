@@ -22,25 +22,21 @@ import WorkspaceRecovery from "../components/WorkspaceRecovery";
 import AgentFace from "../components/AgentFace";
 import OutboundDialDialog from "../components/OutboundDialDialog";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
-import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
+import {
+  useAgents,
+  type WorkspaceAgentSummary,
+} from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccount } from "../contexts/AccountContext";
-import { customerAgentLanguage, formatAgentRoleLabel } from "../lib/product-copy";
+import {
+  customerAgentLanguage,
+  formatAgentRoleLabel,
+} from "../lib/product-copy";
 import { workspaceFirstName } from "../lib/user-display";
 import { authFetch } from "../lib/api";
 import { agentReadinessLabel } from "../lib/agent-readiness";
 import { isoToLocalDateKey, localDateKey } from "../lib/date-display";
 import type { CallLog } from "../types/api";
-
-function todayLabel() {
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  })
-    .format(new Date())
-    .replace(",", " ·");
-}
 
 function dayGreeting(date = new Date()) {
   const hour = date.getHours();
@@ -68,7 +64,10 @@ function metricRows(
     {
       label: "Priority leads",
       value: String(hotLeadsCount),
-      detail: hotLeadsCount > 0 ? "Latest high-intent conversations" : "No priority leads yet",
+      detail:
+        hotLeadsCount > 0
+          ? "Latest high-intent conversations"
+          : "No priority leads yet",
       tone: hotLeadsCount > 0 ? ("primary" as const) : ("neutral" as const),
       href: "/insights",
       icon: Flame,
@@ -76,7 +75,10 @@ function metricRows(
     {
       label: "Appointments booked",
       value: String(totalAppointments),
-      detail: totalAppointments > 0 ? "Total appointments on record" : "Connect a calendar to book",
+      detail:
+        totalAppointments > 0
+          ? "Total appointments on record"
+          : "Connect a calendar to book",
       tone: totalAppointments > 0 ? ("wire" as const) : ("neutral" as const),
       href: totalAppointments > 0 ? "/phone?tab=appointments" : "/connections",
       icon: CalendarCheck2,
@@ -84,7 +86,10 @@ function metricRows(
     {
       label: "Follow-ups waiting",
       value: String(pendingFollowUps),
-      detail: pendingFollowUps > 0 ? "Review before they go out" : "Nothing waiting for approval",
+      detail:
+        pendingFollowUps > 0
+          ? "Review before they go out"
+          : "Nothing waiting for approval",
       tone: pendingFollowUps > 0 ? ("warning" as const) : ("success" as const),
       href: "/approvals",
       icon: ListTodo,
@@ -97,7 +102,6 @@ function MetricSkeleton() {
     <div className="wl-metric-tile" aria-hidden="true">
       <Skeleton shape="text" className="h-3 w-28" />
       <Skeleton shape="text" className="mt-5 h-8 w-12" />
-      <Skeleton shape="text" className="mt-4 h-3 w-36" />
     </div>
   );
 }
@@ -106,7 +110,10 @@ function AgentLoadingRows() {
   return (
     <div className="grid gap-2" aria-busy="true" aria-label="Loading agents">
       {Array.from({ length: 3 }, (_, index) => (
-        <div key={index} className="rounded-[10px] border border-border px-3 py-3">
+        <div
+          key={index}
+          className="rounded-[10px] border border-border px-3 py-3"
+        >
           <div className="flex items-center gap-3">
             <Skeleton shape="circle" className="size-8 rounded-lg" />
             <div className="min-w-0 flex-1">
@@ -124,7 +131,9 @@ function AgentLoadingRows() {
 function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
   const language = customerAgentLanguage(posture);
   const steps = [
-    posture === "personal" ? "Choose one personal job" : "Choose one customer job",
+    posture === "personal"
+      ? "Choose one personal job"
+      : "Choose one customer job",
     "Connect your line",
     "Review outcomes",
   ];
@@ -136,7 +145,10 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
     >
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center">
         <div>
-          <h2 id="first-run-title" className="text-xl font-semibold text-foreground sm:text-2xl">
+          <h2
+            id="first-run-title"
+            className="text-xl font-semibold text-foreground sm:text-2xl"
+          >
             Start with one job.
           </h2>
           <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
@@ -166,13 +178,17 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
             <li
               key={step}
               className={`flex items-center gap-3 rounded-[var(--wireline-radius-md)] border px-4 py-3 ${
-                index === 0 ? "border-primary/35 bg-primary/5" : "border-border bg-card"
+                index === 0
+                  ? "border-primary/35 bg-primary/5"
+                  : "border-border bg-card"
               }`}
             >
               <span className="grid size-7 shrink-0 place-items-center rounded-full bg-muted font-mono text-[10px] font-semibold text-muted-foreground">
                 {index + 1}
               </span>
-              <span className="text-sm font-semibold text-foreground">{step}</span>
+              <span className="text-sm font-semibold text-foreground">
+                {step}
+              </span>
             </li>
           ))}
         </ol>
@@ -228,7 +244,8 @@ function DemandReadinessCard({
         ? {
             eyebrow: "Action required",
             title: `${pendingFollowUps} customer follow-up${pendingFollowUps === 1 ? " needs" : "s need"} your decision.`,
-            detail: "Approve, edit, or decline each next step while the context is fresh.",
+            detail:
+              "Approve, edit, or decline each next step while the context is fresh.",
             primaryHref: "/approvals",
             primaryLabel: "Review follow-ups",
             secondaryHref: "/phone?tab=logs",
@@ -265,7 +282,9 @@ function DemandReadinessCard({
             {state.title}
           </h2>
           {state.detail ? (
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{state.detail}</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              {state.detail}
+            </p>
           ) : null}
           {connectionsCount > 0 ? (
             <p
@@ -302,7 +321,9 @@ function CompactAgentRow({
   const live = Boolean(agent.phone_number);
   const readiness = agentReadinessLabel(agent, phoneLookupDegraded);
   const enc = encodeURIComponent(agent.id);
-  const language = customerAgentLanguage(agent.is_business_agent ? "business" : "personal");
+  const language = customerAgentLanguage(
+    agent.is_business_agent ? "business" : "personal",
+  );
   return (
     <Link
       to={`/studio?agent=${enc}`}
@@ -319,9 +340,12 @@ function CompactAgentRow({
         className="shrink-0"
       />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold text-foreground">{agent.name}</span>
+        <span className="block truncate text-sm font-semibold text-foreground">
+          {agent.name}
+        </span>
         <span className="block truncate text-xs text-muted-foreground">
-          {agent.is_business_agent ? "Business" : "Personal"} · {formatAgentRoleLabel(agent.role)}
+          {agent.is_business_agent ? "Business" : "Personal"} ·{" "}
+          {formatAgentRoleLabel(agent.role)}
         </span>
       </span>
       <span
@@ -351,7 +375,9 @@ function AgentSection({
   phoneLookupDegraded: boolean;
 }) {
   const language = customerAgentLanguage(kind);
-  const heading = language.plural.replace(/^./, (letter) => letter.toUpperCase());
+  const heading = language.plural.replace(/^./, (letter) =>
+    letter.toUpperCase(),
+  );
   if (agents.length === 0) return null;
 
   return (
@@ -364,7 +390,11 @@ function AgentSection({
       </div>
       <div className="grid min-w-0 gap-2">
         {agents.map((agent) => (
-          <CompactAgentRow key={agent.id} agent={agent} phoneLookupDegraded={phoneLookupDegraded} />
+          <CompactAgentRow
+            key={agent.id}
+            agent={agent}
+            phoneLookupDegraded={phoneLookupDegraded}
+          />
         ))}
         <Link
           to={`/studio?create=1&posture=${kind}`}
@@ -380,7 +410,10 @@ function AgentSection({
 function formatCallMeta(createdAt: string, durationSeconds?: number | null) {
   if (!createdAt) return "";
   const date = new Date(createdAt);
-  const timeStr = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const timeStr = date.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
   if (durationSeconds) {
     const min = Math.floor(durationSeconds / 60);
     const sec = durationSeconds % 60;
@@ -393,14 +426,19 @@ function formatCallMeta(createdAt: string, durationSeconds?: number | null) {
 export default function OverviewPage() {
   const { user } = useAuth();
   const { accountType } = useAccount();
-  const { agents, loading, degraded, phoneLookupDegraded, refresh } = useAgents();
+  const { agents, loading, degraded, phoneLookupDegraded, refresh } =
+    useAgents();
   const language = customerAgentLanguage(accountType);
   const [showOutboundDial, setShowOutboundDial] = useState(false);
 
   const [callsCount, setCallsCount] = useState(0);
-  const [callsDetail, setCallsDetail] = useState("Waiting for first conversation");
+  const [callsDetail, setCallsDetail] = useState(
+    "Waiting for first conversation",
+  );
   const [connectionsCount, setConnectionsCount] = useState(0);
-  const [connectionsDetail, setConnectionsDetail] = useState("Checking connections…");
+  const [connectionsDetail, setConnectionsDetail] = useState(
+    "Checking connections…",
+  );
   const [hotLeadsCount, setHotLeadsCount] = useState(0);
   const [totalAppointments, setTotalAppointments] = useState(0);
   const [pendingFollowUps, setPendingFollowUps] = useState(0);
@@ -415,33 +453,47 @@ export default function OverviewPage() {
       setLoadingDashboard(true);
       setStatsUnavailable(false);
       try {
-        const [statsRes, crmRes, calendarRes, navCountsRes] = await Promise.all([
-          authFetch("/api/dashboard/stats"),
-          authFetch("/api/oauth/crm/status"),
-          authFetch("/api/calendar/accounts"),
-          authFetch("/api/nav-counts"),
-        ]);
+        const [statsRes, crmRes, calendarRes, navCountsRes] = await Promise.all(
+          [
+            authFetch("/api/dashboard/stats"),
+            authFetch("/api/oauth/crm/status"),
+            authFetch("/api/calendar/accounts"),
+            authFetch("/api/nav-counts"),
+          ],
+        );
 
         if (cancelled) return;
 
         if (statsRes.ok) {
           const data = await statsRes.json();
-          const logs: CallLog[] = Array.isArray(data?.recentLogs) ? data.recentLogs : [];
+          const logs: CallLog[] = Array.isArray(data?.recentLogs)
+            ? data.recentLogs
+            : [];
           setRecentCalls(logs.slice(0, 4));
-          setHotLeadsCount(Array.isArray(data?.hotLeads) ? data.hotLeads.length : 0);
+          setHotLeadsCount(
+            Array.isArray(data?.hotLeads) ? data.hotLeads.length : 0,
+          );
           setTotalAppointments(Number(data?.totalAppointments ?? 0));
 
           const todayStr = localDateKey(new Date());
-          const todayLogs = logs.filter((log) => isoToLocalDateKey(log.created_at) === todayStr);
+          const todayLogs = logs.filter(
+            (log) => isoToLocalDateKey(log.created_at) === todayStr,
+          );
           const count = todayLogs.length;
           setCallsCount(count);
           if (count > 0) {
-            const inbound = todayLogs.filter((log) => log.direction === "inbound").length;
-            const outbound = todayLogs.filter((log) => log.direction === "outbound").length;
+            const inbound = todayLogs.filter(
+              (log) => log.direction === "inbound",
+            ).length;
+            const outbound = todayLogs.filter(
+              (log) => log.direction === "outbound",
+            ).length;
             setCallsDetail(`${inbound} inbound · ${outbound} outbound`);
           } else {
             setCallsDetail(
-              logs.length > 0 ? "No new calls today" : "Waiting for first conversation",
+              logs.length > 0
+                ? "No new calls today"
+                : "Waiting for first conversation",
             );
           }
         } else {
@@ -462,7 +514,9 @@ export default function OverviewPage() {
             ...Object.entries(data as Record<string, { connected?: boolean }>)
               .filter(([, connection]) => connection?.connected)
               .map(([name]) =>
-                name.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
+                name
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (letter) => letter.toUpperCase()),
               ),
           );
         }
@@ -470,16 +524,24 @@ export default function OverviewPage() {
         const coreConnections: string[] = [];
         if (calendarRes.ok) {
           const calendarData = await calendarRes.json().catch(() => null);
-          if (Array.isArray(calendarData?.accounts) && calendarData.accounts.length > 0) {
+          if (
+            Array.isArray(calendarData?.accounts) &&
+            calendarData.accounts.length > 0
+          ) {
             coreConnections.push("Calendar");
           }
         }
-        if (agents.some((agent) => agent.phone_number)) coreConnections.push("Phone");
+        if (agents.some((agent) => agent.phone_number))
+          coreConnections.push("Phone");
 
-        const allConnections = [...new Set([...coreConnections, ...activeProviders])];
+        const allConnections = [
+          ...new Set([...coreConnections, ...activeProviders]),
+        ];
         setConnectionsCount(allConnections.length);
         setConnectionsDetail(
-          allConnections.length ? allConnections.join(" · ") : "Connect tools in Connections",
+          allConnections.length
+            ? allConnections.join(" · ")
+            : "Connect tools in Connections",
         );
       } catch {
         if (!cancelled) {
@@ -510,7 +572,9 @@ export default function OverviewPage() {
       ? "/studio?create=1&posture=personal"
       : "/studio?create=1&posture=business";
   const founderPairLabel =
-    personalAgents.length === 0 ? "Create personal agent" : "Add business voice agent";
+    personalAgents.length === 0
+      ? "Create personal agent"
+      : "Add business voice agent";
   const primaryAgent = agents[0];
   const hasLiveLine = agents.some((agent) => Boolean(agent.phone_number));
   const hasConversationHistory = recentCalls.length > 0;
@@ -531,10 +595,9 @@ export default function OverviewPage() {
         <section
           className={`relative wl-overview-greeting ${hasAgents ? "text-left" : "text-center"}`}
         >
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-            {todayLabel()}
-          </p>
-          <div className={`mt-3 flex flex-col gap-5 ${hasAgents ? "items-start" : "items-center"}`}>
+          <div
+            className={`flex flex-col gap-5 ${hasAgents ? "items-start" : "items-center"}`}
+          >
             <div className="max-w-2xl">
               {/* Warm personal line carrying the operator's own name; the case
                   system must never rewrite someone's words. */}
@@ -549,7 +612,10 @@ export default function OverviewPage() {
             >
               {hasAgents ? (
                 <>
-                  <Button asChild className="shrink-0 justify-center sm:min-w-[170px]">
+                  <Button
+                    asChild
+                    className="shrink-0 justify-center sm:min-w-[170px]"
+                  >
                     <Link to={primaryStudioHref}>
                       <Sparkles aria-hidden="true" size={15} />
                       Manage {language.navLabel.toLowerCase()}
@@ -608,7 +674,9 @@ export default function OverviewPage() {
               aria-label="Customer demand and outcomes"
             >
               {loadingDashboard
-                ? Array.from({ length: 4 }, (_, index) => <MetricSkeleton key={index} />)
+                ? Array.from({ length: 4 }, (_, index) => (
+                    <MetricSkeleton key={index} />
+                  ))
                 : metricRows(
                     callsCount,
                     callsDetail,
@@ -631,8 +699,9 @@ export default function OverviewPage() {
                             aria-hidden="true"
                           />
                         </div>
-                        <div className="wl-metric-tile__value">{item.value}</div>
-                        <p className="wl-metric-tile__detail hidden sm:block">{item.detail}</p>
+                        <div className="wl-metric-tile__value">
+                          {item.value}
+                        </div>
                       </Link>
                     );
                   })}
@@ -648,14 +717,16 @@ export default function OverviewPage() {
                 "Needs setup" with nothing on screen to explain it. */}
             {!degraded && phoneLookupDegraded ? (
               <StatusNotice tone="warning" title="Line status unavailable">
-                We could not check which numbers are attached. Your phone lines are unchanged.
+                We could not check which numbers are attached. Your phone lines
+                are unchanged.
               </StatusNotice>
             ) : null}
 
             {statsUnavailable && !loadingDashboard ? (
               <StatusNotice tone="warning" title="Live metrics unavailable">
-                We couldn&apos;t load your latest calls, appointments, and leads. Refresh to try
-                again — the numbers above may not be current.
+                We couldn&apos;t load your latest calls, appointments, and
+                leads. Refresh to try again — the numbers above may not be
+                current.
               </StatusNotice>
             ) : null}
 
@@ -663,13 +734,6 @@ export default function OverviewPage() {
               className="wl-paper wl-paper-elevated p-5 sm:p-6"
               aria-label="Customer outcomes"
             >
-              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                    Customer outcomes
-                  </p>
-                </div>
-              </div>
               <OutcomeLedger limit={5} showViewAll followUpsHref="/approvals" />
             </section>
 
@@ -682,7 +746,10 @@ export default function OverviewPage() {
                   <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                     Agents
                   </p>
-                  <Link to="/studio" className="text-xs font-semibold text-primary hover:underline">
+                  <Link
+                    to="/studio"
+                    className="text-xs font-semibold text-primary hover:underline"
+                  >
                     Manage →
                   </Link>
                 </div>
@@ -745,11 +812,20 @@ export default function OverviewPage() {
                       aria-label="Loading recent customer conversations"
                     >
                       {Array.from({ length: 3 }, (_, index) => (
-                        <div key={index} className="flex items-center gap-3 py-2">
-                          <Skeleton shape="circle" className="size-2 rounded-full" />
+                        <div
+                          key={index}
+                          className="flex items-center gap-3 py-2"
+                        >
+                          <Skeleton
+                            shape="circle"
+                            className="size-2 rounded-full"
+                          />
                           <div className="min-w-0 flex-1">
                             <Skeleton shape="text" className="h-4 w-48" />
-                            <Skeleton shape="text" className="mt-1.5 h-3 w-32" />
+                            <Skeleton
+                              shape="text"
+                              className="mt-1.5 h-3 w-32"
+                            />
                           </div>
                         </div>
                       ))}
@@ -761,7 +837,10 @@ export default function OverviewPage() {
                         to="/phone?tab=logs"
                         className="wl-data-row wl-data-row--divided group"
                       >
-                        <span className="wl-data-row__leading" aria-hidden="true">
+                        <span
+                          className="wl-data-row__leading"
+                          aria-hidden="true"
+                        >
                           <span className="size-2 rounded-full bg-[var(--wireline-color-action-primary-default)]" />
                         </span>
                         <span className="wl-data-row__main">
@@ -770,8 +849,13 @@ export default function OverviewPage() {
                           </span>
                           <span className="wl-data-row__detail wl-data-row__detail--clamp">
                             {[
-                              call.agent_name || primaryAgent?.name || language.singular,
-                              formatCallMeta(call.created_at, call.duration_seconds),
+                              call.agent_name ||
+                                primaryAgent?.name ||
+                                language.singular,
+                              formatCallMeta(
+                                call.created_at,
+                                call.duration_seconds,
+                              ),
                               call.summary || call.intent_label,
                             ]
                               .filter(Boolean)
@@ -792,17 +876,20 @@ export default function OverviewPage() {
                       titleTone="ui"
                       icon={<Phone aria-hidden="true" />}
                       title={
-                        hasLiveLine ? "No customer calls yet" : "Connect a line to receive calls"
-                      }
-                      description={
                         hasLiveLine
-                          ? "Place one real inbound call, then review the outcome here."
-                          : `Test the ${language.navShort.toLowerCase()} first, then connect a phone number when it is ready.`
+                          ? "No customer calls yet"
+                          : "Connect a line to receive calls"
                       }
                       action={
                         <Button asChild size="sm">
-                          <Link to={hasLiveLine ? primaryTestHref : "/settings/phone"}>
-                            {hasLiveLine ? "Run test conversation" : "Connect phone"}
+                          <Link
+                            to={
+                              hasLiveLine ? primaryTestHref : "/settings/phone"
+                            }
+                          >
+                            {hasLiveLine
+                              ? "Run test conversation"
+                              : "Connect phone"}
                           </Link>
                         </Button>
                       }
@@ -814,7 +901,10 @@ export default function OverviewPage() {
           </>
         )}
       </WorkspacePageFrame>
-      <OutboundDialDialog open={showOutboundDial} onClose={() => setShowOutboundDial(false)} />
+      <OutboundDialDialog
+        open={showOutboundDial}
+        onClose={() => setShowOutboundDial(false)}
+      />
     </WorkspaceShell>
   );
 }

@@ -5,12 +5,10 @@ import {
   Phone,
   Mail,
   MessageSquare,
-  ShieldCheck,
   Send,
   Loader2,
   CheckCircle2,
   ArrowLeft,
-  AlertTriangle,
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import { WIRELINE_FEATURED_TEAM_AGENT } from "../data/contact-agents";
@@ -26,15 +24,10 @@ const ISSUE_TYPES = [
   { value: "other", label: "Something else" },
 ] as const;
 
-const SUPPORT_ROUTING = [
-  ["Service interruption", "Call directly when a live line or active call needs attention."],
-  ["Account and billing", "Use the ticket form so invoices, access, and refunds stay traceable."],
-  ["Agent quality", "Send agent name, call time, expected behavior, and what happened."],
-] as const;
-
 export function SupportPage() {
   const supportAgent = WIRELINE_FEATURED_TEAM_AGENT;
-  const [issueType, setIssueType] = useState<(typeof ISSUE_TYPES)[number]["value"]>("tech");
+  const [issueType, setIssueType] =
+    useState<(typeof ISSUE_TYPES)[number]["value"]>("tech");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -53,25 +46,35 @@ export function SupportPage() {
         body: JSON.stringify({ issueType, email, subject, body }),
       });
       if (!response.ok) {
-        const failBody = (await response.json().catch(() => null)) as { error?: string } | null;
+        const failBody = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
         throw new Error(
-          failBody?.error || `Support ticket could not be sent (${response.status}).`,
+          failBody?.error ||
+            `Support ticket could not be sent (${response.status}).`,
         );
       }
-      const payload = (await response.json().catch(() => null)) as { sent?: boolean } | null;
+      const payload = (await response.json().catch(() => null)) as {
+        sent?: boolean;
+      } | null;
       if (!payload?.sent) {
         throw new Error("Support ticket was not delivered.");
       }
       setSubmitted(true);
       if (typeof window !== "undefined" && (window as any).plausible) {
-        (window as any).plausible("SupportTicketSubmitted", { props: { issueType } });
+        (window as any).plausible("SupportTicketSubmitted", {
+          props: { issueType },
+        });
       }
     } catch (reason) {
       const message =
-        reason instanceof Error ? reason.message : "The ticket service did not respond.";
+        reason instanceof Error
+          ? reason.message
+          : "The ticket service did not respond.";
       const isTransport =
-        /did not respond|failed to fetch|network|503|502|504|was not delivered/i.test(message) ||
-        message.includes("(5");
+        /did not respond|failed to fetch|network|503|502|504|was not delivered/i.test(
+          message,
+        ) || message.includes("(5");
       if (isTransport) {
         const fallback = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[Support / ${issueType}] ${subject || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email}\n\n${body}`)}`;
         window.location.href = fallback;
@@ -87,7 +90,10 @@ export function SupportPage() {
   };
 
   return (
-    <MarketingPageFrame stickyCta={false} mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
+    <MarketingPageFrame
+      stickyCta={false}
+      mainClassName="!px-0 pb-0 pt-20 sm:pt-24"
+    >
       <PageMeta
         title="Support | Wireline"
         description="Get help with Wireline for personal call support or business call coverage."
@@ -102,28 +108,9 @@ export function SupportPage() {
           Back home
         </Link>
         <div className="mx-auto mt-8 max-w-3xl text-center">
-          <p className="wl-stitch-eyebrow">Support</p>
-          <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
+          <h1 className="wl-stitch-marketing-hero text-balance">
             Help with your agent, without the runaround.
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
-            We aim for a first response within one business day. For a service interruption or a
-            live call that needs attention, call us directly.
-          </p>
-          <div className="mt-6 grid gap-2 sm:grid-cols-3">
-            {SUPPORT_ROUTING.map(([label, detail], index) => (
-              <div key={label} className="rounded border border-border bg-card/70 p-3 text-center">
-                {index === 0 ? (
-                  <AlertTriangle
-                    className="mx-auto mb-2 h-4 w-4 text-[var(--wireline-color-status-warning)]"
-                    aria-hidden="true"
-                  />
-                ) : null}
-                <p className="text-sm font-semibold text-foreground">{label}</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</p>
-              </div>
-            ))}
-          </div>
         </div>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-3">
@@ -132,9 +119,11 @@ export function SupportPage() {
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
           >
             <Phone className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 text-sm font-semibold text-foreground">Call Wireline</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {supportAgent.display} for urgent help and call triage.
+            <h2 className="mt-5 text-sm font-semibold text-foreground">
+              Call Wireline
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {supportAgent.display}
             </p>
           </a>
           <a
@@ -142,38 +131,34 @@ export function SupportPage() {
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
           >
             <Mail className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 text-sm font-semibold text-foreground">Email support</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Billing, account access, personal use, and business coverage questions.
+            <h2 className="mt-5 text-sm font-semibold text-foreground">
+              Email support
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              support@trywireline.com
             </p>
           </a>
-          <Link to="/studio" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
+          <Link
+            to="/studio"
+            className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
+          >
             <MessageSquare className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 text-sm font-semibold text-foreground">Open Studio</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Already signed in? Review your agent and live activity in one place.
-            </p>
+            <h2 className="mt-5 text-sm font-semibold text-foreground">
+              Open Studio
+            </h2>
           </Link>
         </section>
 
         <section className="mt-8 wl-stitch-card p-6 sm:p-8">
-          <div className="flex items-start gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded bg-muted text-primary">
-              <ShieldCheck className="h-4 w-4" />
-            </span>
-            <div>
-              <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">
-                Open a ticket
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Pick the closest category. It helps us get your message to the right person faster.
-              </p>
-            </div>
-          </div>
+          <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">
+            Open a ticket
+          </h2>
           {submitted ? (
             <div className="py-10 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
-              <h3 className="mt-4 text-xl font-semibold text-foreground">Ticket received</h3>
+              <h3 className="mt-4 text-xl font-semibold text-foreground">
+                Ticket received
+              </h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 You will hear from us within one business day at{" "}
                 <strong className="text-foreground">{email}</strong>.
@@ -182,7 +167,9 @@ export function SupportPage() {
           ) : (
             <form onSubmit={onSubmit} className="mt-7 space-y-5">
               <div>
-                <label className="block wl-stitch-label mb-2">What is this about?</label>
+                <label className="block wl-stitch-label mb-2">
+                  What is this about?
+                </label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {ISSUE_TYPES.map((item) => (
                     <button
@@ -259,7 +246,10 @@ export function SupportPage() {
         </section>
         <p className="mt-7 text-center text-sm leading-6 text-muted-foreground">
           Tickets are handled according to the{" "}
-          <Link to="/privacy" className="font-semibold text-primary underline underline-offset-4">
+          <Link
+            to="/privacy"
+            className="font-semibold text-primary underline underline-offset-4"
+          >
             Privacy Policy
           </Link>
           . You can request deletion at any time through account settings.
