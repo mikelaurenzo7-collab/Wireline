@@ -39,7 +39,7 @@ import {
 import { getPasswordPolicyError } from "../lib/password-policy";
 import { markFreshSignupSession } from "../lib/post-signup-onboarding";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
-import { CUSTOMER_AGENT_LANGUAGE, customerAgentLanguage } from "../lib/product-copy";
+import { customerAgentLanguage } from "../lib/product-copy";
 import {
   captureDemoSourceFromLocation,
   readDemoSourceCookie,
@@ -369,22 +369,16 @@ function WorkspaceSelector({
   const options: Array<{
     id: WorkspaceMode;
     title: string;
-    shortText: string;
-    text: string;
     icon: ReactNode;
   }> = [
     {
       id: "personal",
       title: "Personal",
-      shortText: "Just me",
-      text: "A private agent for your calls, appointments, and follow-up.",
       icon: <User className="h-4 w-4" />,
     },
     {
       id: "business",
       title: "Business",
-      shortText: "Business setup",
-      text: `Supervised ${CUSTOMER_AGENT_LANGUAGE.business.plural}, numbers, approvals, and integrations.`,
       icon: <Building2 className="h-4 w-4" />,
     },
   ];
@@ -396,7 +390,7 @@ function WorkspaceSelector({
           type="button"
           onClick={() => setMode(option.id)}
           className={cn(
-            "flex items-start gap-3 rounded-xl border p-3 text-left transition",
+            "flex items-center gap-3 rounded-xl border p-3 text-left transition",
             mode === option.id
               ? "border-brand bg-brand/10"
               : "border-border bg-background hover:border-brand/40",
@@ -410,17 +404,9 @@ function WorkspaceSelector({
           >
             {option.icon}
           </span>
-          <span className="flex-1">
-            <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              {option.title}
-              {mode === option.id && <Check className="h-4 w-4 text-brand" />}
-            </span>
-            <span className="mt-0.5 text-[11px] text-muted-foreground sm:hidden">
-              {option.shortText}
-            </span>
-            <span className="mt-1 hidden text-xs leading-5 text-muted-foreground sm:block">
-              {option.text}
-            </span>
+          <span className="flex flex-1 items-center gap-2 text-sm font-semibold text-foreground">
+            {option.title}
+            {mode === option.id && <Check className="h-4 w-4 text-brand" />}
           </span>
         </button>
       ))}
