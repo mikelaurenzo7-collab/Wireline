@@ -21,8 +21,10 @@ describe("activation path contract", () => {
     const overview = read("src/pages/OverviewPage.tsx");
     expect(overview).toContain("ActivationChecklist");
     expect(overview).toContain("FirstRunLaunchpad");
-    expect(overview).toContain("Put one customer-facing job to work today.");
+    expect(overview).toContain("Start with one job.");
     expect(overview).toContain("{language.createCta}");
+    expect(overview).not.toContain("Reliable voice and behavior defaults are already selected.");
+    expect(overview).not.toContain("start the founder pair with personal + business");
     expect(overview).toContain("degraded && !hasAgents");
     expect(overview).toContain("WorkspaceRecovery");
   });
