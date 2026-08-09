@@ -13,7 +13,7 @@ type Props = {
 };
 
 export default function MarketingStickyCta({
-  href = "/signup",
+  href = "/signup?plan=personal",
   label = "Build your agent",
   secondaryHref = "/showcase",
   secondaryLabel = "Hear it live",

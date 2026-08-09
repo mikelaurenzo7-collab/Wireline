@@ -55,6 +55,7 @@ import {
   VAPI_TENANT_DEFAULT_PROVIDER,
   VAPI_VOICE_FALLBACK_PROVIDER,
   clampVoiceTemperature,
+  isDefinitiveVapiVoiceModelRejection,
   isGeminiModelId,
   isOpenAIModelId,
   resolveCoherentVoiceModel,
@@ -92,8 +93,14 @@ async function fetchWithRetry(
     try {
       const response = await fetchWithTimeout(url, options, timeoutMs);
 
-      // If response is ok or not a transient error, return immediately
-      if (response.ok || !TRANSIENT_ERROR_CODES.has(response.status)) {
+      // Non-idempotent call creation disables BOTH response-status and
+      // transport retries. A 5xx/429 can still be ambiguous after the provider
+      // accepted a POST, so replaying it can dial the same consumer twice.
+      if (
+        response.ok ||
+        !TRANSIENT_ERROR_CODES.has(response.status) ||
+        !retryTransportErrors
+      ) {
         return response;
       }
 
@@ -713,7 +720,14 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
       false,
     );
 
-    if (!vapiResponse.ok && voiceSelection.provider === "google") {
+    if (
+      !vapiResponse.ok &&
+      voiceSelection.provider === "google" &&
+      isDefinitiveVapiVoiceModelRejection(
+        vapiResponse.status,
+        await vapiResponse.clone().text(),
+      )
+    ) {
       const geminiErrorBody = await vapiResponse.text();
       const retryModel =
         voiceSelection.fallbackModels?.find((model) => isOpenAIModelId(model)) ||

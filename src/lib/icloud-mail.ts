@@ -117,7 +117,14 @@ export async function fetchIcloudInbox(
 export async function sendIcloudMail(
   email: string,
   appPassword: string,
-  params: { to: string; subject: string; body: string },
+  params: {
+    to: string;
+    subject: string;
+    body: string;
+    textBody?: string;
+    htmlBody?: string;
+    unsubscribeHeaders?: Record<string, string>;
+  },
 ): Promise<boolean> {
   const transporter = nodemailer.createTransport({
     host: ICLOUD_SMTP_HOST,
@@ -136,7 +143,9 @@ export async function sendIcloudMail(
       from: email,
       to: params.to,
       subject: params.subject,
-      text: params.body,
+      text: params.textBody ?? params.body,
+      ...(params.htmlBody ? { html: params.htmlBody } : {}),
+      ...(params.unsubscribeHeaders ? { headers: params.unsubscribeHeaders } : {}),
     });
     return true;
   } catch (err) {

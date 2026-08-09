@@ -387,7 +387,10 @@ function escapeHtml(s: any): string {
     .replace(/'/g, "&#39;");
 }
 
-export async function sendDailyBriefEmail(userId: string, opts?: { force?: boolean }) {
+export async function sendDailyBriefEmail(
+  userId: string,
+  opts?: { force?: boolean; onProviderSendAttempt?: () => void },
+) {
   // Pull settings + the Account Holder's connected Gmail account.
   const [settingsRow, accountRow] = await Promise.all([
     drizzle
@@ -434,6 +437,9 @@ export async function sendDailyBriefEmail(userId: string, opts?: { force?: boole
     refresh_token: account.refreshToken ? decryptSecret(account.refreshToken) : null,
     expiry_date: account.expiresAt ? Number(account.expiresAt) : null,
   });
+  // Resolve/refresh OAuth before latching the non-idempotent Gmail send. A
+  // rejected refresh is definitively pre-send and must remain retryable.
+  await oauth2Client.getAccessToken();
   const google = await googleApis();
   const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
@@ -461,6 +467,12 @@ export async function sendDailyBriefEmail(userId: string, opts?: { force?: boole
     `--${boundary}--`,
   ].join("\r\n");
   const encoded = Buffer.from(messageParts).toString("base64url");
+
+  // Gmail message creation is non-idempotent. Once the provider POST begins,
+  // a timeout or lost response is ambiguous: Gmail may have accepted the
+  // message even though our caller never sees a success response. Let durable
+  // schedulers latch that boundary before the request leaves this process.
+  opts?.onProviderSendAttempt?.();
   await gmail.users.messages.send({ userId: "me", requestBody: { raw: encoded } });
 
   return { recipient, subject };

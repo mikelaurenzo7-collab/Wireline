@@ -71,7 +71,7 @@ export default function PrecisionPublicHeader() {
               Sign in
             </Link>
             <Link
-              to="/signup"
+              to="/signup?plan=personal"
               className="marketing-btn-primary min-h-10 px-4 text-sm font-semibold"
             >
               Start free
@@ -133,7 +133,7 @@ export default function PrecisionPublicHeader() {
           </nav>
           <div className="mt-auto grid gap-2 pt-6">
             <Link
-              to="/signup"
+              to="/signup?plan=personal"
               onClick={() => setOpen(false)}
               className="marketing-btn-primary min-h-12 text-[length:var(--wireline-typography-body-size)] font-semibold"
             >

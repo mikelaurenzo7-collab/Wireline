@@ -34,7 +34,6 @@ const VAPI_BASE_URL = "https://api.vapi.ai";
 const TWILIO_API_ORIGIN = "https://api.twilio.com";
 const TWILIO_VOICEMAIL_PREFIX = "twilio-voicemail:";
 const TWILIO_ACCOUNT_SID_RE = /^AC[0-9a-fA-F]{32}$/;
-const TWILIO_RECORDING_SID_RE = /^RE[0-9a-fA-F]{32}$/;
 const TWILIO_CALL_SID_RE = /^CA[0-9a-fA-F]{32}$/;
 const TWILIO_TRANSCRIPTION_SID_RE = /^TR[0-9a-fA-F]{32}$/;
 

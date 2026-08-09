@@ -13,6 +13,8 @@ describe("Vapi monitor capability URL policy", () => {
 
     expect(isAllowedVapiControlUrl("http://stream.vapi.ai/call/control")).toBe(false);
     expect(isAllowedVapiListenUrl("ws://stream.vapi.ai/call/transport")).toBe(false);
+    expect(isAllowedVapiListenUrl("wss://user:secret@stream.vapi.ai/call/transport")).toBe(false);
+    expect(isAllowedVapiListenUrl("wss://127.0.0.1/call/transport")).toBe(false);
     expect(isAllowedVapiControlUrl("https://vapi.ai.evil.example/control")).toBe(false);
   });
 

@@ -85,6 +85,30 @@ describe("icloud-mail", () => {
     });
   });
 
+  it("preserves text, HTML, and unsubscribe headers on marketing SMTP sends", async () => {
+    const unsubscribeHeaders = {
+      "List-Unsubscribe": "<https://trywireline.com/api/email/unsubscribe?token=test>",
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    };
+    const ok = await sendIcloudMail("you@icloud.com", "app-pass", {
+      to: "lead@example.com",
+      subject: "Offer",
+      body: "Raw body",
+      textBody: "Offer\n\nUnsubscribe",
+      htmlBody: "<p>Offer</p><p>Unsubscribe</p>",
+      unsubscribeHeaders,
+    });
+
+    expect(ok).toBe(true);
+    expect(mockSendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: "Offer\n\nUnsubscribe",
+        html: "<p>Offer</p><p>Unsubscribe</p>",
+        headers: unsubscribeHeaders,
+      }),
+    );
+  });
+
   it("sends mail over SMTP", async () => {
     const ok = await sendIcloudMail("you@icloud.com", "app-pass", {
       to: "lead@example.com",

@@ -191,6 +191,13 @@ function scheduledAtUtc(now: Date, sendAt: string): Date | null {
   );
 }
 
+function providerHttpResponseStatus(error: unknown): number | null {
+  if (!error || typeof error !== "object" || !("response" in error)) return null;
+  const response = (error as { response?: { status?: unknown } }).response;
+  const status = Number(response?.status);
+  return Number.isInteger(status) && status >= 400 && status <= 599 ? status : null;
+}
+
 async function runDailyBriefSchedule(req: Request, res: Response) {
   if (!cronAuthorized(req)) {
     throw AppError.fromHttpStatus(401, "Unauthorized");
@@ -279,14 +286,21 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
       }
 
       const auditContext = createAuditContext();
-      let providerAccepted = false;
+      let providerSendAttempted = false;
+      let providerSendAccepted = false;
       try {
         // Keep the context directly instead of withAuditCapture: if model work
         // succeeds but Gmail fails, the paid model records still need flushing.
-        await runInAuditContext(auditContext, () =>
-          sendDailyBriefEmail(uid, { force: false }),
-        );
-        providerAccepted = true;
+        await runInAuditContext(auditContext, async () => {
+          const result = await sendDailyBriefEmail(uid, {
+            force: false,
+            onProviderSendAttempt: () => {
+              providerSendAttempted = true;
+            },
+          });
+          providerSendAccepted = true;
+          return result;
+        });
 
         await drizzle
           .update(schema.settings)
@@ -308,6 +322,12 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
           e && typeof e === "object" && "code" in e
             ? String((e as { code?: unknown }).code || "")
             : "";
+        const providerResponseStatus = providerHttpResponseStatus(e);
+        // Gmail explicitly recommends retrying failed HTTP responses (including
+        // quota/rate-limit and 5xx failures). Only a successful send or a
+        // transport failure with no HTTP response keeps the at-most-once latch.
+        const preserveAttemptLatch =
+          providerSendAccepted || (providerSendAttempted && providerResponseStatus === null);
         const configurationSkip =
           msg.includes("No recipient") || msg.includes("No connected Gmail");
         const transientAi =
@@ -316,15 +336,15 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
           msg.includes("AI runtime required") ||
           msg.includes("Claude required");
 
-        // A known failure before Gmail acceptance is retryable: release our
-        // lease and restore the previous attempt marker. If Gmail already
-        // accepted the message but DB finalization failed, preserve lastAttemptAt
-        // so reconciliation cannot send a duplicate brief that day.
+        // Pre-send failures and explicit Gmail HTTP failures are retryable:
+        // release the lease and restore the previous attempt marker. Preserve
+        // lastAttemptAt only after confirmed acceptance or when the request left
+        // this process but no provider response came back.
         await drizzle
           .update(schema.settings)
           .set({
             dailyBriefDispatchClaimedAt: null,
-            ...(providerAccepted ? {} : { dailyBriefLastAttemptAt: row.lastAttemptAt || null }),
+            ...(preserveAttemptLatch ? {} : { dailyBriefLastAttemptAt: row.lastAttemptAt || null }),
             dailyBriefLastError: msg.slice(0, 1000),
           })
           .where(
@@ -340,10 +360,10 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
             }),
           );
 
-        if (providerAccepted) {
+        if (preserveAttemptLatch) {
           failed++;
           if (errors.length < 5) {
-            errors.push(`${uid}: delivery accepted but finalization failed`);
+            errors.push(`${uid}: delivery attempt may have been accepted but finalization failed`);
           }
         } else if (configurationSkip) skipped++;
         else if (transientAi) deferred++;
@@ -355,7 +375,10 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
           userId: uid,
           error: msg,
           code,
-          providerAccepted,
+          providerSendAttempted,
+          providerSendAccepted,
+          providerResponseStatus,
+          preserveAttemptLatch,
         });
       } finally {
         if (auditContext.records.length) {

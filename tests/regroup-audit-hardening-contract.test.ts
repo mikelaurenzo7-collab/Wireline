@@ -117,12 +117,13 @@ describe("comms hardening", () => {
     expect(schemaBase).not.toContain('text("google_message_id").unique()');
   });
 
-  it("platform-fallback email respects suppression and carries unsubscribe plumbing", () => {
+  it("tenant mailbox marketing respects sender-scoped suppression and unsubscribe plumbing", () => {
     const integrations = read("src/lib/integrations.ts");
-    expect(integrations).toContain("isEmailSuppressed(params.to)");
-    expect(integrations).toContain("buildListUnsubscribeHeaders(params.to)");
-    expect(integrations).toContain("buildComplianceFooterText(params.to)");
-    expect(integrations).toContain("buildComplianceFooterHtml(params.to)");
+    expect(integrations).toContain("isTenantEmailSuppressed(this.userId, params.to)");
+    expect(integrations).toContain("buildTenantListUnsubscribeHeaders(this.userId, params.to)");
+    expect(integrations).toContain("buildTenantComplianceFooterText(complianceArgs)");
+    expect(integrations).toContain("buildTenantComplianceFooterHtml(");
+    expect(integrations).toContain("plainTextEmailBodyHtml(params.body)");
   });
 
   it("inbound SMS persistence failures ask Twilio to redeliver", () => {
@@ -132,7 +133,7 @@ describe("comms hardening", () => {
     expect(webhook).toContain("res.status(503).send(twimlEmpty())");
     expect(webhook).not.toContain("SMS thread persist skipped");
     // First-contact thread creation tolerates the unique race on both paths.
-    const persistBlock = webhook.slice(webhook.indexOf("const [existingThread]"));
+    const persistBlock = webhook.slice(webhook.indexOf("const [createdThread]"));
     expect(persistBlock).toContain("onConflictDoNothing()");
     expect(read("src/lib/twilio-service.ts")).toContain("onConflictDoNothing()");
   });

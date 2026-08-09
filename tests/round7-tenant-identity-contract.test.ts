@@ -42,22 +42,29 @@ describe("round-7 shared-provider tenant identity", () => {
     expect(fn).toContain("403");
   });
 
-  it("settles the daily voice burst cap with minutes actually consumed", () => {
-    // Every assertOutboundVoiceAllowed call site passes units: 0, so the
-    // pre-dial checkAndIncrement never advances the counter and
-    // VOICE_BURST_DAILY could not fire. The settle happens post-call instead.
+  it("settles the daily voice burst cap atomically with each provider call", () => {
+    // Dial-time authorization reserves zero units. Completed-call settlement
+    // therefore owns the daily counter, and it must share the same transaction
+    // as the provider-call idempotency claim so retries cannot double count.
     const usage = read("src/lib/voice-usage.ts");
-    expect(usage).toContain('checkAndIncrement(userId, "voice_minutes_daily", prepared.minutes)');
-    // A duplicate end-of-call delivery may resume an unfinished balance debit,
-    // but it must never consume the daily burst cap a second time.
-    expect(usage).toContain("if (prepared.newlyCounted) {");
+    const prepare = usage.slice(
+      usage.indexOf("async function prepareVoiceUsage"),
+      usage.indexOf("export async function trackVoiceMinutes"),
+    );
+    expect(prepare).toContain("return drizzle.transaction(async (tx) =>");
+    expect(prepare).toContain(".insert(voiceUsageEvents)");
+    expect(prepare).toContain('dimension: "voice_minutes_daily"');
+    expect(prepare).toContain("periodKey: dailyKey");
+    expect(prepare).toContain("if (!inserted) {");
+    expect(prepare.indexOf("if (!inserted) {")).toBeLessThan(
+      prepare.indexOf('dimension: "voice_minutes_daily"'),
+    );
+    expect(usage).not.toContain('checkAndIncrement(userId, "voice_minutes_daily"');
 
     const control = read("src/lib/voice-spend-control.ts");
     expect(control).toContain('"voice_minutes_daily"');
 
-    // Guard the regression: if a future change starts reserving units at dial
-    // time, this pairing is what keeps the counter honest rather than double
-    // counting. Assert the settle site still derives from billable minutes.
+    // Guard the regression: settlement still derives from billable minutes.
     expect(usage).toContain("const minutes = billableVoiceMinutes(durationSeconds)");
   });
 

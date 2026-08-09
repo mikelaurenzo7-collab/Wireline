@@ -57,20 +57,24 @@ describe("runtime prompt clamp preserves the WHOLE guardrail block", () => {
 describe("marketing email honors suppression and unsubscribe on every transport", () => {
   const integrations = read("src/lib/integrations.ts");
 
-  it("checks suppression and appends the compliance footer inside the OAuth path", () => {
-    // The OAuth (Gmail/Microsoft/iCloud) branches used to return before any
-    // compliance code — recorded opt-outs ignored, no unsubscribe link.
-    expect(integrations).toMatch(
-      /if \(mailAccounts\.length > 0\)[\s\S]{0,700}if \(params\.marketing\)[\s\S]{0,500}isEmailSuppressed/,
+  it("checks sender-scoped suppression and builds compliant text + HTML inside the OAuth path", () => {
+    // Connected Gmail/Microsoft/iCloud transports must all honor the tenant's
+    // own suppression scope and commercial identity before choosing a carrier.
+    const marketingBlock = integrations.slice(
+      integrations.indexOf("if (params.marketing)"),
+      integrations.indexOf("const account = mailAccounts[0]"),
     );
-    expect(integrations).toContain("buildComplianceFooterHtml(params.to)");
-    expect(integrations).toContain("buildListUnsubscribeHeaders(params.to)");
+    expect(marketingBlock).toContain("isTenantEmailSuppressed");
+    expect(marketingBlock).toContain("buildTenantComplianceFooterText");
+    expect(marketingBlock).toContain("buildTenantComplianceFooterHtml");
+    expect(marketingBlock).toContain("buildTenantListUnsubscribeHeaders");
   });
 
-  it("emits the List-Unsubscribe header into the Gmail MIME message", () => {
-    expect(integrations).toMatch(
-      /Object\.entries\(unsubscribeHeaders\)\.map\(\(\[name, value\]\) => `\$\{name\}: \$\{value\}`\)/,
-    );
+  it("carries RFC 8058 headers through Gmail raw MIME and Microsoft Graph MIME", () => {
+    expect(integrations).toContain("buildConnectedMailboxMime(params)");
+    expect(integrations).toContain("Object.entries(params.unsubscribeHeaders || {})");
+    expect(integrations).toContain('"Content-Type": "text/plain"');
+    expect(integrations).toContain('body: Buffer.from(message, "utf8").toString("base64")');
   });
 
   it("routes cadence email steps as marketing mail", () => {

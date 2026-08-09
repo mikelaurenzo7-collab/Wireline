@@ -40,6 +40,14 @@ describe("voice usage event table stays wired into the platform", () => {
     const usage = read("src/lib/voice-usage.ts");
     expect(usage).toContain('vapiCallId === "unknown"');
   });
+
+  it("settles monthly and daily quota aggregates in the same per-call transaction", () => {
+    const usage = read("src/lib/voice-usage.ts");
+    expect(usage).toContain('dimension: "voice_minutes_daily"');
+    expect(usage).toContain("periodKey: dailyKey");
+    expect(usage).toContain("dailyPeriodKey(now)");
+    expect(usage).not.toContain("quotaTracker");
+  });
 });
 
 describe("checkout guard matches webhook reconciliation's current-subscription set", () => {
