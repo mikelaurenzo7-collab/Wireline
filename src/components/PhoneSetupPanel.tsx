@@ -8,6 +8,7 @@ import CompanyIdentityPack from "./settings/CompanyIdentityPack";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
+import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 
 type PhoneNumberRecord = {
   id: string;
