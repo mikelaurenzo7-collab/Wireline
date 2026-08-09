@@ -17,17 +17,6 @@ export default function OnboardingFlow() {
   // to go straight to create in Studio when appropriate for signup or dedicated flows.
   const target =
     workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1";
-  const details = [
-    {
-      label: "Workspace",
-      value: workspaceMode === "business" ? "Business mode ready." : "Personal mode ready.",
-    },
-    {
-      label: "Next",
-      value: `Opening your first ${language.singular} brief.`,
-    },
-  ];
-
   useEffect(() => {
     emitProductEventOnce({
       event: "onboarding_create_redirect",
@@ -45,10 +34,9 @@ export default function OnboardingFlow() {
     <>
       <PageMeta title="Opening create flow - Wireline" noIndex />
       <TransitionSurface
-        eyebrow="Create flow"
+        eyebrow="Create"
         title={`Opening your first ${language.singular}`}
-        busyLabel="Routing now"
-        details={details}
+        busyLabel="Opening"
         actions={
           showFallback
             ? [

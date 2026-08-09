@@ -123,69 +123,22 @@ function AgentLoadingRows() {
 
 function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
   const language = customerAgentLanguage(posture);
-  const steps =
-    posture === "personal"
-      ? [
-          {
-            title: "Choose one personal job",
-            detail:
-              "Start with screening unknown callers, booking appointments, or taking messages for you.",
-            icon: Bot,
-          },
-          {
-            title: "Connect your line",
-            detail:
-              "Activate a paid plan, then claim an included Wireline number so your agent can answer and text you.",
-            icon: Phone,
-          },
-          {
-            title: "Review the first outcome",
-            detail: "See who called, what your agent handled, and what needs your attention.",
-            icon: Sparkles,
-          },
-        ]
-      : [
-          {
-            title: "Choose one real job",
-            detail:
-              "Start with missed calls, appointment booking, lead qualification, or customer support.",
-            icon: Bot,
-          },
-          {
-            title: "Connect the customer line",
-            detail:
-              "Activate a paid plan, then claim an included Wireline number — or route calls customers already make to your business.",
-            icon: Phone,
-          },
-          {
-            title: "Review the first outcome",
-            detail:
-              "See what the customer needed, what Wireline completed, and what needs your approval.",
-            icon: Sparkles,
-          },
-        ];
+  const steps = [
+    posture === "personal" ? "Choose one personal job" : "Choose one customer job",
+    "Connect your line",
+    "Review outcomes",
+  ];
 
   return (
     <section
       className="wl-paper wl-paper-elevated overflow-hidden p-5 sm:p-7"
       aria-labelledby="first-run-title"
     >
-      <div className="grid gap-7 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center">
         <div>
-          <p className="wl-eyebrow wl-eyebrow--primary">
-            {posture === "personal" ? "Start with your calls" : "Start with demand"}
-          </p>
-          <h2
-            id="first-run-title"
-            className="mt-2 text-xl font-semibold text-foreground sm:text-2xl"
-          >
-            {posture === "personal"
-              ? "Put one personal job to work today."
-              : "Put one customer-facing job to work today."}
+          <h2 id="first-run-title" className="text-xl font-semibold text-foreground sm:text-2xl">
+            Start with one job.
           </h2>
-          <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
-            Test it, then connect only the channels the job needs.
-          </p>
           <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
             <Button asChild className="w-full justify-center sm:w-auto">
               <Link
@@ -201,46 +154,27 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
             </Button>
             <Link
               to="/showcase"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-muted-foreground transition hover:text-foreground"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold text-muted-foreground transition hover:text-foreground"
             >
-              See a live demo first
+              View demo
             </Link>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Reliable voice and behavior defaults are already selected.
-          </p>
         </div>
 
-        <ol
-          className="grid gap-2"
-          aria-label={
-            posture === "personal"
-              ? "First personal-agent workflow"
-              : "First customer-demand workflow"
-          }
-        >
-          {steps.map((step, index) => {
-            const Icon = step.icon;
-            return (
-              <li
-                key={step.title}
-                className={`flex items-start gap-3 rounded-[var(--wireline-radius-md)] border px-4 py-3 ${
-                  index === 0 ? "border-primary/35 bg-primary/5" : "border-border bg-card"
-                }`}
-              >
-                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-muted font-mono text-[10px] font-semibold text-muted-foreground">
-                  {index + 1}
-                </span>
-                <Icon className="mt-1 size-4 shrink-0 text-primary" aria-hidden="true" />
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-foreground">{step.title}</span>
-                  <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
-                    {step.detail}
-                  </span>
-                </span>
-              </li>
-            );
-          })}
+        <ol className="grid gap-2" aria-label="Setup steps">
+          {steps.map((step, index) => (
+            <li
+              key={step}
+              className={`flex items-center gap-3 rounded-[var(--wireline-radius-md)] border px-4 py-3 ${
+                index === 0 ? "border-primary/35 bg-primary/5" : "border-border bg-card"
+              }`}
+            >
+              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-muted font-mono text-[10px] font-semibold text-muted-foreground">
+                {index + 1}
+              </span>
+              <span className="text-sm font-semibold text-foreground">{step}</span>
+            </li>
+          ))}
         </ol>
       </div>
     </section>
@@ -780,12 +714,7 @@ export default function OverviewPage() {
                     titleTone="ui"
                     withHalo={false}
                     icon={<Bot aria-hidden="true" />}
-                    title={`No ${language.plural} yet`}
-                    description={
-                      accountType === "business"
-                        ? "Create one for a specific customer-facing job — or start the founder pair with personal + business."
-                        : "Create one for a call, appointment, or personal task."
-                    }
+                    title="No agents yet"
                     action={
                       <Button asChild size="sm">
                         <Link to={emptyStudioHref}>{language.createCta}</Link>
