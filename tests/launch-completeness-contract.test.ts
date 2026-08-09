@@ -103,7 +103,7 @@ describe("launch completeness contracts", () => {
     expect(mediaKit).toContain("Raw output is not release-certified.");
   });
 
-  it("keeps the public status refresh cadence aligned with its 60-second copy", () => {
+  it("keeps public status cadence and claims aligned with the probes", () => {
     const status = source("src/components/Status.tsx");
 
     expect(status).toContain("const STATUS_REFRESH_MS = 60_000;");
@@ -112,5 +112,12 @@ describe("launch completeness contracts", () => {
     expect(status).toContain("Updated every 60 seconds.");
     expect(status).toContain("refreshes every 60s.");
     expect(status).toContain("Probe interval · 60s");
+    expect(status).toContain("Provider checks operational");
+    expect(status).toContain("Managed voice access");
+    expect(status).toContain("Reasoning model access");
+    expect(status).toContain("not an end-to-end customer call");
+    expect(status).not.toContain("All systems operational");
+    expect(status).not.toContain("pings each production LLM tier");
+    expect(status).not.toContain("configured fallback remains available");
   });
 });
