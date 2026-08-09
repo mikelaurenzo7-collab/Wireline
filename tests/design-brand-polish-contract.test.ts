@@ -11,12 +11,16 @@ const read = (path: string) =>
 describe("E2E design and brand polish", () => {
   it("keeps every mobile agent tab visible and readable", () => {
     const compactTabs = read("src/styles/agent-tabs-compact.css");
-    expect(compactTabs).not.toMatch(/button:nth-child\(4\)\s*\{[^}]*display:\s*none/);
+    expect(compactTabs).not.toMatch(
+      /button:nth-child\(4\)\s*\{[^}]*display:\s*none/,
+    );
     expect(compactTabs).toContain("overflow-x: auto");
     expect(compactTabs).toContain("min-height: 2.75rem");
     expect(compactTabs).toContain("font-size: 0.75rem");
     expect(compactTabs).toContain("button:nth-child(4)");
-    expect(compactTabs).toMatch(/button:nth-child\(4\)\s*\{[^}]*display:\s*inline-flex/);
+    expect(compactTabs).toMatch(
+      /button:nth-child\(4\)\s*\{[^}]*display:\s*inline-flex/,
+    );
   });
 
   it("keeps shared workspace tabs comfortable at compact density", () => {
@@ -41,8 +45,12 @@ describe("E2E design and brand polish", () => {
     // Case carries the hierarchy across the whole marketing surface: headings
     // and supporting copy are uppercased in CSS (the copy strings themselves are
     // never changed), so hero, section, and card read as one cased voice.
-    expect(polish).toContain(".marketing-surface :is(h1, h2, h3, h4, h5, h6) {");
-    expect(polish).toContain(":is(p, li, .wl-public-copy, .wl-route-copy, .wl-page-copy) {");
+    expect(polish).toContain(
+      ".marketing-surface :is(h1, h2, h3, h4, h5, h6) {",
+    );
+    expect(polish).toContain(
+      ":is(p, li, .wl-public-copy, .wl-route-copy, .wl-page-copy) {",
+    );
     // The hero-subhead node is gone from the DOM, so it must not survive in the
     // stylesheets either. Six rules across three files still styled it, and
     // pinning one of those selector strings here had made the dead rule
@@ -75,7 +83,9 @@ describe("E2E design and brand polish", () => {
     // longer render a subhead at all — the headline, actions, and proof carry
     // the pitch — so the shape itself is pinned by
     // `marketing-hero-no-subhead-contract` instead of a class on a removed node.
-    expect(hero, "the hero must not regrow a subhead").not.toContain("marketing-hero__description");
+    expect(hero, "the hero must not regrow a subhead").not.toContain(
+      "marketing-hero__description",
+    );
     expect(polish).toContain("white-space: normal");
     expect(polish).toContain("line-height: 1");
   });
@@ -139,11 +149,11 @@ describe("E2E design and brand polish", () => {
 
   it("keeps the landing journey punchy and outcome led", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain("One agent. Every channel.");
-    expect(landing).toContain("Train once. Work across every channel.");
-    expect(landing).toContain("From brief to live agent in four clear steps.");
+    expect(landing).toContain("Every channel. One agent.");
+    expect(landing).toContain("Build. Train. Launch. Improve.");
+    expect(landing).toContain("Choose the outcome.");
     expect(landing).toContain("Put your first voice agent to work.");
-    expect(landing).toContain("Build free. Hear it live before you pay. Cancel anytime.");
+    expect(landing).toContain("Build free. Go live from $19.");
     expect(landing).not.toContain("—");
     expect(landing).not.toContain("·");
   });
@@ -156,8 +166,12 @@ describe("E2E design and brand polish", () => {
     // access — an axe-serious scrollable-region-focusable violation on every
     // authenticated route.
     const foundation = read("src/styles/foundation.css");
-    expect(foundation).toContain(".wl-ui-caps > :not(.wl-workspace-shell, .sr-only) {");
-    expect(foundation).not.toMatch(/\.wl-ui-caps\s*>\s*:not\(\.wl-workspace-shell\)\s*\{/);
+    expect(foundation).toContain(
+      ".wl-ui-caps > :not(.wl-workspace-shell, .sr-only) {",
+    );
+    expect(foundation).not.toMatch(
+      /\.wl-ui-caps\s*>\s*:not\(\.wl-workspace-shell\)\s*\{/,
+    );
 
     // The announcer stays a direct shell child; if it moves, re-audit the rule.
     const app = read("src/App.tsx");
@@ -209,7 +223,10 @@ describe("E2E design and brand polish", () => {
     const files = globSync("src/**/*.tsx", { cwd: root })
       .filter((file) => source(file).includes('role="dialog"'))
       .sort();
-    expect(files.length, "no dialogs found -- the glob or attribute changed").toBeGreaterThan(5);
+    expect(
+      files.length,
+      "no dialogs found -- the glob or attribute changed",
+    ).toBeGreaterThan(5);
 
     const unmarked: string[] = [];
     for (const file of files) {
@@ -218,13 +235,20 @@ describe("E2E design and brand polish", () => {
         const at = text.indexOf(`id="${titleId}"`);
         if (at === -1) continue; // Labelled by an element the primitive owns.
         // Walk out to the opening tag that carries the id.
-        const tag = text.slice(text.lastIndexOf("<", at), text.indexOf(">", at) + 1);
+        const tag = text.slice(
+          text.lastIndexOf("<", at),
+          text.indexOf(">", at) + 1,
+        );
         // An sr-only label has no case to get wrong.
-        if (tag.includes("sr-only") || tag.includes('data-slot="dialog-title"')) continue;
+        if (tag.includes("sr-only") || tag.includes('data-slot="dialog-title"'))
+          continue;
         unmarked.push(`${file} (#${titleId})`);
       }
     }
-    expect(unmarked, `dialog titles outside the case system:\n${unmarked.join("\n")}`).toEqual([]);
+    expect(
+      unmarked,
+      `dialog titles outside the case system:\n${unmarked.join("\n")}`,
+    ).toEqual([]);
   });
 
   it("uppercases field captions without shouting the values beside them", () => {
@@ -247,7 +271,10 @@ describe("E2E design and brand polish", () => {
     const reset = caps.match(
       /:is\(\.wl-ui-caps, \.wl-cased\)\s+:is\(label, legend\)\s+:is\(([^)]*)\)\s*\{[\s\S]*?text-transform: none;/,
     );
-    expect(reset, "labels must reset their nested control and prose").toBeTruthy();
+    expect(
+      reset,
+      "labels must reset their nested control and prose",
+    ).toBeTruthy();
     for (const tag of ["input", "textarea", "select", "p", "span"]) {
       expect(reset?.[1]).toContain(tag);
     }
