@@ -388,6 +388,7 @@ function WorkspaceSelector({
         <button
           key={option.id}
           type="button"
+          aria-pressed={mode === option.id}
           onClick={() => setMode(option.id)}
           className={cn(
             "flex items-center gap-3 rounded-xl border p-3 text-left transition",
