@@ -8,7 +8,6 @@ import CompanyIdentityPack from "./settings/CompanyIdentityPack";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
-import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 
 type PhoneNumberRecord = {
   id: string;
@@ -187,32 +186,6 @@ export default function PhoneSetupPanel() {
 
   return (
     <div className="space-y-5">
-      <section className="studio-card overflow-hidden p-0">
-        <div className="border-b border-border px-5 py-5 sm:px-6">
-          <p className={WL_APP_CLASSES.wiredEyebrow}>Calling setup</p>
-          <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-[-0.03em] text-foreground">
-            Set up the complete call experience before going live.
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            A paid plan is only required when Wireline activates the dedicated number and starts
-            live provider usage.
-          </p>
-        </div>
-        <ol className="grid gap-px bg-border sm:grid-cols-3" aria-label="Calling setup steps">
-          {[
-            ["1", "Train the agent", "Set the greeting, voice, rules, knowledge, and handoffs."],
-            ["2", "Activate the line", "Choose the agent and preferred local area code."],
-            ["3", "Call and refine", "Call the number, review the result, and improve the agent."],
-          ].map(([number, title, description]) => (
-            <li key={number} className="bg-card px-5 py-4">
-              <span className="font-mono text-[10px] font-semibold text-primary">{number}</span>
-              <p className="mt-2 text-sm font-semibold text-foreground">{title}</p>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-
       <section className="rounded-2xl border border-primary/20 bg-primary p-5 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
         {/*
          * The status chip sits above the number on phones rather than beside it.
@@ -321,6 +294,9 @@ export default function PhoneSetupPanel() {
               <Plus size={16} aria-hidden="true" />
               {working ? "Activating…" : "Activate number"}
             </Button>
+            <p className="text-xs text-primary-foreground/72 sm:col-span-3">
+              Paid plan required for activation.
+            </p>
           </div>
         ) : (
           <div className="mt-6 flex flex-col gap-3 rounded-xl border border-primary-foreground/15 bg-black/10 p-4 sm:flex-row sm:items-center sm:justify-between">
