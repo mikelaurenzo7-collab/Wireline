@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { ArrowRight, Check, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, Check, Mail } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import MarketingHero from "../components/marketing/MarketingHero";
@@ -19,11 +19,12 @@ const PRINCIPLES = [
   },
 ] as const;
 
-const ABOUT_HERO_ITEMS = ["Your training", "Your voice", "Your playbook", "Your outcomes"] as const;
-
 export default function About() {
   return (
-    <MarketingPageFrame className="wl-about-page" mainClassName="!px-0 pb-0 pt-16">
+    <MarketingPageFrame
+      className="wl-about-page"
+      mainClassName="!px-0 pb-0 pt-16"
+    >
       <PageMeta
         title="About Wireline | Voice Agents for Calls and Follow up"
         description="Wireline is a customizable agent platform built for calls, texts, follow up, browser context, email, and integrations."
@@ -31,31 +32,26 @@ export default function About() {
       />
 
       <MarketingHero
-        eyebrow="About Wireline"
         title="Agents that run calls like you would."
         primaryAction={{ label: "Get started now", to: "/pricing" }}
-        secondaryAction={{ label: "Contact support", to: "/contact", tone: "secondary" }}
-        proof={ABOUT_HERO_ITEMS}
+        secondaryAction={{
+          label: "Contact support",
+          to: "/contact",
+          tone: "secondary",
+        }}
       />
 
       <section className="wl-public-section border-y border-border bg-card">
         <div className="mx-auto grid max-w-6xl overflow-hidden rounded-[1.05rem] border border-border bg-border lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
           <div className="bg-card px-5 py-9 text-center sm:px-8 sm:py-12 lg:px-10">
-            <p className="wl-stitch-eyebrow">Built with accountability</p>
-            <h2 className="wl-stitch-display mt-3 text-balance">Independent. Direct line to us.</h2>
+            <h2 className="wl-stitch-display text-balance">
+              Independent. Direct line to us.
+            </h2>
           </div>
           <div className="bg-card px-5 py-9 text-center sm:px-8 sm:py-12 lg:px-10">
-            <p className="mx-auto max-w-xl text-base leading-7 text-muted-foreground">
-              Independently built. Every agent is fully customizable to your training, voice, and
-              playbook.
-            </p>
-            <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-muted-foreground">
-              Automate customer conversations, catch hot opportunities, and scale front-desk and
-              sales qualification without losing quality.
-            </p>
             <a
               href="mailto:support@trywireline.com"
-              className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
             >
               <Mail className="h-4 w-4" />
               support@trywireline.com
@@ -68,15 +64,10 @@ export default function About() {
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto grid max-w-4xl gap-6 text-center">
             <div>
-              <p className="wl-stitch-eyebrow">What guides the product</p>
-              <h2 className="wl-stitch-display mt-3 text-balance">
+              <h2 className="wl-stitch-display text-balance">
                 Predictable, trained, brand-safe.
               </h2>
             </div>
-            <p className="mx-auto max-w-xl text-base leading-7 text-muted-foreground">
-              Answer inbound queries, qualify sales opportunities, book calendar invites, and follow
-              your operating playbook consistently.
-            </p>
           </div>
           <div className="mt-10 grid gap-3 md:grid-cols-3">
             {PRINCIPLES.map((principle) => (
@@ -90,7 +81,6 @@ export default function About() {
                 <h3 className="mt-6 text-lg font-semibold tracking-[-.025em] text-foreground">
                   {principle.title}
                 </h3>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">{principle.copy}</p>
               </article>
             ))}
           </div>
@@ -100,11 +90,7 @@ export default function About() {
       <section className="wl-public-section border-t border-border bg-card">
         <div className="mx-auto grid max-w-4xl justify-items-center gap-9 text-center">
           <div>
-            <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <ShieldCheck className="h-4 w-4 text-primary" />
-              Your custom agent begins as a private draft.
-            </p>
-            <h2 className="wl-stitch-display mx-auto mt-4 max-w-2xl text-balance">
+            <h2 className="wl-stitch-display mx-auto max-w-2xl text-balance">
               Create your first voice agent.
             </h2>
           </div>
