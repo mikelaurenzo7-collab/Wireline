@@ -665,7 +665,9 @@ export default function AuthPortal() {
               buttons, and a cased divider, so it joins the title tier
               (presentation-only transform — the copy string never changes). */}
           <h1 className="text-xl font-semibold tracking-[-.02em] uppercase">{pageTitle}</h1>
-          {isReset ? (\n            <p className="mt-2 text-sm text-muted-foreground">{pageDescription}</p>\n          ) : null}
+          {isReset ? (
+            <p className="mt-2 text-sm text-muted-foreground">{pageDescription}</p>
+          ) : null}
           {isSignUp && intentLabel ? (
             <p className="wl-stitch-label mt-3 inline-flex rounded-full border border-border bg-muted px-3 py-1">
               {intentLabel}
