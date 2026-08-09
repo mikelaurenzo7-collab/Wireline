@@ -1,4 +1,10 @@
-import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Check, Loader2, WandSparkles, X, Zap } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 
@@ -23,37 +29,46 @@ const ROLE_TEMPLATES = [
     label: "Concierge",
     personalPrompt:
       "Answer unknown callers, book appointments, take messages, and text me what happened.",
-    businessPrompt: "Handle personal admin for the owner alongside business coverage.",
+    businessPrompt:
+      "Handle personal admin for the owner alongside business coverage.",
     personalOnly: true,
   },
   {
     value: "scheduler",
     label: "Scheduler",
     personalPrompt: "Book, confirm, and reschedule my appointments.",
-    businessPrompt: "Book meetings, confirm appointments, and text every update.",
+    businessPrompt:
+      "Book meetings, confirm appointments, and text every update.",
   },
   {
     value: "receptionist",
     label: "Receptionist",
-    personalPrompt: "Screen unknown callers, take messages, and only interrupt me when needed.",
-    businessPrompt: "Answer the line, capture caller intent, and route each handoff cleanly.",
+    personalPrompt:
+      "Screen unknown callers, take messages, and only interrupt me when needed.",
+    businessPrompt:
+      "Answer the line, capture caller intent, and route each handoff cleanly.",
   },
   {
     value: "customer_service",
     label: "Support",
-    personalPrompt: "Wait on hold, ask for updates, and send me the resolution.",
-    businessPrompt: "Answer support questions, verify context, and escalate urgent work.",
+    personalPrompt:
+      "Wait on hold, ask for updates, and send me the resolution.",
+    businessPrompt:
+      "Answer support questions, verify context, and escalate urgent work.",
   },
   {
     value: "sales",
     label: "Sales",
-    personalPrompt: "Qualify side-hustle inquiries, capture details, and text me the next step.",
-    businessPrompt: "Qualify inbound demand, capture buying context, and route hot opportunities.",
+    personalPrompt:
+      "Qualify side-hustle inquiries, capture details, and text me the next step.",
+    businessPrompt:
+      "Qualify inbound demand, capture buying context, and route hot opportunities.",
   },
   {
     value: "custom",
     label: "Custom",
-    personalPrompt: "Handle a custom personal workflow and text me what happened.",
+    personalPrompt:
+      "Handle a custom personal workflow and text me what happened.",
     businessPrompt: "Handle a custom business workflow and log every outcome.",
   },
 ] as const;
@@ -68,7 +83,9 @@ type Posture = "personal" | "business";
 
 function rolesForPosture(posture: Posture) {
   return ROLE_TEMPLATES.filter((template) =>
-    posture === "personal" ? true : !("personalOnly" in template && template.personalOnly),
+    posture === "personal"
+      ? true
+      : !("personalOnly" in template && template.personalOnly),
   );
 }
 
@@ -101,7 +118,12 @@ function safeCreateAgentError(
   if (status >= 500) {
     return "Wireline is having a hiccup. Try again in a moment — nothing was billed.";
   }
-  if (typeof raw === "string" && raw.trim() && raw.trim().length <= 160 && !/[({]/.test(raw)) {
+  if (
+    typeof raw === "string" &&
+    raw.trim() &&
+    raw.trim().length <= 160 &&
+    !/[({]/.test(raw)
+  ) {
     return raw.trim();
   }
   return `Something got stuck creating this ${noun}. Try again in a moment.`;
@@ -136,9 +158,13 @@ export default function CreateAgentDialog({
   const navigate = useNavigate();
   const [, setParams] = useSearchParams();
   const { refresh } = useAgents();
-  const [posture, setPosture] = useState<Posture>(business ? "business" : "personal");
+  const [posture, setPosture] = useState<Posture>(
+    business ? "business" : "personal",
+  );
   const [name, setName] = useState("");
-  const [role, setRole] = useState<Role>(defaultRole(business ? "business" : "personal"));
+  const [role, setRole] = useState<Role>(
+    defaultRole(business ? "business" : "personal"),
+  );
   const [brief, setBrief] = useState(initialBrief);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
@@ -184,7 +210,11 @@ export default function CreateAgentDialog({
   function onKeyDown(event: KeyboardEvent<HTMLFormElement>) {
     // Escape is handled globally by useModalFocusTrap so it works regardless of
     // where focus sits; this handler owns the submit shortcut only.
-    if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !creating) {
+    if (
+      (event.metaKey || event.ctrlKey) &&
+      event.key === "Enter" &&
+      !creating
+    ) {
       event.preventDefault();
       event.currentTarget.requestSubmit();
     }
@@ -215,7 +245,14 @@ export default function CreateAgentDialog({
         code?: string;
       } | null;
       if (!response.ok || !body?.id) {
-        setError(safeCreateAgentError(response.status, body?.code, body?.error, activePosture));
+        setError(
+          safeCreateAgentError(
+            response.status,
+            body?.code,
+            body?.error,
+            activePosture,
+          ),
+        );
         return;
       }
 
@@ -253,7 +290,11 @@ export default function CreateAgentDialog({
         emitProductEvent({
           event: "training_asset_added",
           agentId: body.id,
-          metadata: { source: "fast_start_brief", role, posture: activePosture },
+          metadata: {
+            source: "fast_start_brief",
+            role,
+            posture: activePosture,
+          },
         });
         emitProductEvent({
           event: "launch_readiness_reached",
@@ -275,8 +316,16 @@ export default function CreateAgentDialog({
         agentId: body.id,
         metadata: { role, posture: activePosture, phone_provisioned: false },
       });
-      const salesRoles = new Set(["sales", "sales_sdr", "sdr", "outbound_sales"]);
-      if (salesRoles.has(role.toLowerCase()) || role.toLowerCase().includes("sales")) {
+      const salesRoles = new Set([
+        "sales",
+        "sales_sdr",
+        "sdr",
+        "outbound_sales",
+      ]);
+      if (
+        salesRoles.has(role.toLowerCase()) ||
+        role.toLowerCase().includes("sales")
+      ) {
         emitProductEvent({
           event: "sales_agent_created",
           audience: "sales",
@@ -339,7 +388,7 @@ export default function CreateAgentDialog({
                   data-slot="dialog-title"
                   className="font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-[-.025em] text-foreground"
                 >
-                  Fast Start
+                  {language.setupPrompt}
                 </h2>
                 <p id="create-agent-description" className="sr-only">
                   {language.setupLabel}
@@ -361,11 +410,11 @@ export default function CreateAgentDialog({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-          <h3 className="font-[var(--wireline-font-family-display)] text-[clamp(2rem,4vw,2.5rem)] font-normal uppercase leading-none tracking-[-0.02em] text-foreground">
-            {language.setupPrompt}
-          </h3>
-
-          <div className="mt-5 grid gap-2 sm:grid-cols-2" role="group" aria-label="Use case">
+          <div
+            className="grid gap-2 sm:grid-cols-2"
+            role="group"
+            aria-label="Use case"
+          >
             {(
               [
                 ["personal", "Personal"],
@@ -392,7 +441,9 @@ export default function CreateAgentDialog({
                   aria-pressed={selected}
                 >
                   <span className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-semibold text-foreground">{label}</span>
+                    <span className="text-sm font-semibold text-foreground">
+                      {label}
+                    </span>
                     <span
                       className={`grid size-5 place-items-center rounded-full border text-[10px] ${
                         selected
@@ -420,10 +471,16 @@ export default function CreateAgentDialog({
             />
           </label>
 
-          <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Quick briefs">
+          <div
+            className="mt-4 flex flex-wrap gap-2"
+            role="group"
+            aria-label="Quick briefs"
+          >
             {rolesForPosture(activePosture).map((item) => {
               const prompt =
-                activePosture === "business" ? item.businessPrompt : item.personalPrompt;
+                activePosture === "business"
+                  ? item.businessPrompt
+                  : item.personalPrompt;
               return (
                 <button
                   key={item.value}
@@ -446,7 +503,9 @@ export default function CreateAgentDialog({
           <label className="mt-6 grid gap-1.5">
             <span className="text-xs font-semibold text-foreground">
               {language.nameLabel}{" "}
-              <span className="font-normal text-muted-foreground">(optional)</span>
+              <span className="font-normal text-muted-foreground">
+                (optional)
+              </span>
             </span>
             <Input
               value={name}
@@ -457,7 +516,11 @@ export default function CreateAgentDialog({
           </label>
 
           {error ? (
-            <StatusNotice tone="destructive" title="Fast Start issue" className="mt-5">
+            <StatusNotice
+              tone="destructive"
+              title="Could not create agent"
+              className="mt-5"
+            >
               {error}
             </StatusNotice>
           ) : null}
@@ -473,7 +536,11 @@ export default function CreateAgentDialog({
             >
               Not now
             </button>
-            <Button type="submit" disabled={creating} className="gap-2 sm:shrink-0">
+            <Button
+              type="submit"
+              disabled={creating}
+              className="gap-2 sm:shrink-0"
+            >
               {creating ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
               ) : (
