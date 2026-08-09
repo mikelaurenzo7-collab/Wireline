@@ -302,7 +302,7 @@ function OAuthSignInButtons({
           Continue with {p.label}
         </button>
       ))}
-      <div className="wl-stitch-auth-divider">or {isSignUp ? "sign up" : "sign in"} with email</div>
+      <div className="wl-stitch-auth-divider">or use email</div>
     </div>
   );
 }
@@ -344,13 +344,13 @@ function AuthShell({ children, compact = false }: { children: ReactNode; compact
             )}
           >
             <Link to="/" className="hover:text-primary hover:underline">
-              Back to home
+              Home
             </Link>
             <Link to="/showcase" className="hover:text-primary hover:underline">
-              Hear a demo
+              Demo
             </Link>
             <Link to="/pricing" className="hover:text-primary hover:underline">
-              View pricing
+              Pricing
             </Link>
           </footer>
         </div>
@@ -646,7 +646,7 @@ export default function AuthPortal() {
 
   const pageTitle = isReset ? "Reset your password" : isSignUp ? "Create your account" : "Sign in";
   const pageDescription = isReset
-    ? "Enter your email and Wireline will send a secure password reset link."
+    ? "Enter your email for a reset link."
     : isSignUp
       ? `Build your first ${customerAgentLanguage(workspaceMode).singular}.`
       : "Welcome back to Wireline.";
@@ -665,7 +665,9 @@ export default function AuthPortal() {
               buttons, and a cased divider, so it joins the title tier
               (presentation-only transform — the copy string never changes). */}
           <h1 className="text-xl font-semibold tracking-[-.02em] uppercase">{pageTitle}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{pageDescription}</p>
+          {isReset ? (
+            <p className="mt-2 text-sm text-muted-foreground">{pageDescription}</p>
+          ) : null}
           {isSignUp && intentLabel ? (
             <p className="wl-stitch-label mt-3 inline-flex rounded-full border border-border bg-muted px-3 py-1">
               {intentLabel}
@@ -725,7 +727,7 @@ export default function AuthPortal() {
                 />
                 <span id="auth-terms-label">
                   <label htmlFor="auth-terms" className="cursor-pointer select-none">
-                    I agree to the Wireline
+                    I agree to the
                   </label>{" "}
                   <Link
                     to="/terms"
