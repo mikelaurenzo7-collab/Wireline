@@ -47,26 +47,17 @@ const COMPONENT_META: Record<
   },
 };
 
-const STATUS_DISCLOSURES = [
-  [
-    "What this proves",
-    "Public probes for voice runtime, fallback coverage, and reasoning availability.",
-  ],
-  [
-    "What stays private",
-    "No tenant data, prompts, transcripts, phone numbers, or provider secrets are exposed.",
-  ],
-  [
-    "How to escalate",
-    "If a live line is affected, contact support so we can inspect tenant-specific telemetry.",
-  ],
-] as const;
-
 const STATUS_REFRESH_MS = 60_000;
 
 const STATE_META: Record<
   ComponentState | OverallState,
-  { label: string; tone: string; pill: string; bgGradient: string; icon: typeof CheckCircle2 }
+  {
+    label: string;
+    tone: string;
+    pill: string;
+    bgGradient: string;
+    icon: typeof CheckCircle2;
+  }
 > = {
   operational: {
     label: "Operational",
@@ -113,13 +104,21 @@ function presentationState(
    * claiming a complete customer outage until an end-to-end monitor confirms
    * no serving path is available.
    */
-  if (data.overall === "outage" && data.components.voice_fallback === "operational") {
+  if (
+    data.overall === "outage" &&
+    data.components.voice_fallback === "operational"
+  ) {
     return "degraded";
   }
   return data.overall;
 }
 
-const STATES: readonly OverallState[] = ["operational", "degraded", "outage", "unknown"];
+const STATES: readonly OverallState[] = [
+  "operational",
+  "degraded",
+  "outage",
+  "unknown",
+];
 const isState = (value: unknown): value is ComponentState =>
   typeof value === "string" && (STATES as readonly string[]).includes(value);
 
@@ -144,9 +143,15 @@ function normalizeHealth(payload: unknown): PublicHealth | null {
   return {
     overall: isState(raw.overall) ? raw.overall : "unknown",
     components: {
-      voice_runtime: isState(components.voice_runtime) ? components.voice_runtime : "unknown",
-      voice_fallback: isState(components.voice_fallback) ? components.voice_fallback : "unknown",
-      reasoning: isState(components.reasoning) ? components.reasoning : "unknown",
+      voice_runtime: isState(components.voice_runtime)
+        ? components.voice_runtime
+        : "unknown",
+      voice_fallback: isState(components.voice_fallback)
+        ? components.voice_fallback
+        : "unknown",
+      reasoning: isState(components.reasoning)
+        ? components.reasoning
+        : "unknown",
     },
     last_checked: typeof raw.last_checked === "string" ? raw.last_checked : "",
   };
@@ -162,11 +167,11 @@ export default function Status() {
     const fetchHealth = async () => {
       try {
         const res = await fetch("/api/health/public", {
-        headers: { Accept: "application/json" },
-        // The server already owns a bounded distributed probe cache. Do not let
-        // the browser retain an older degraded payload across later 60s polls.
-        cache: "no-store",
-      });
+          headers: { Accept: "application/json" },
+          // The server already owns a bounded distributed probe cache. Do not let
+          // the browser retain an older degraded payload across later 60s polls.
+          cache: "no-store",
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = normalizeHealth(await res.json());
         if (!json) throw new Error("Unrecognised status payload");
@@ -194,7 +199,8 @@ export default function Status() {
   const overall = presentationState(data, loading, error);
   const OverallIcon = STATE_META[overall].icon;
   const fallbackCovering =
-    data?.overall === "outage" && data.components.voice_fallback === "operational";
+    data?.overall === "outage" &&
+    data.components.voice_fallback === "operational";
 
   return (
     <>
@@ -217,10 +223,6 @@ export default function Status() {
               className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${STATE_META[overall].bgGradient}`}
             />
             <div className="relative">
-              <div className="mb-4 flex items-center justify-center gap-2">
-                <span className="hero-accent-line bg-brand" />
-                <span className="text-eyebrow">Live system status</span>
-              </div>
               <div className="flex flex-col items-center gap-4 text-center">
                 <div
                   className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${STATE_META[overall].pill}`}
@@ -266,8 +268,8 @@ export default function Status() {
                   </p>
                   {fallbackCovering ? (
                     <p className="mt-2 text-[length:var(--wireline-typography-overline-size)] leading-5 text-muted">
-                      A primary model probe is unavailable; Wireline&apos;s configured fallback
-                      remains available.
+                      A primary model probe is unavailable; Wireline&apos;s
+                      configured fallback remains available.
                     </p>
                   ) : null}
                   {error ? (
@@ -277,81 +279,81 @@ export default function Status() {
                   ) : null}
                 </div>
               </div>
-              <div className="mt-6 grid gap-2 sm:grid-cols-3">
-                {STATUS_DISCLOSURES.map(([label, detail]) => (
-                  <div
-                    key={label}
-                    className="rounded-[var(--wireline-radius-md)] border border-border bg-background/45 p-3"
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">
-                      {label}
-                    </p>
-                    <p className="mt-2 text-xs leading-5 text-muted-foreground">{detail}</p>
-                  </div>
-                ))}
-              </div>
             </div>
           </motion.div>
 
           <div className="mb-8 grid gap-3 sm:grid-cols-3">
-            {(Object.keys(COMPONENT_META) as Array<keyof PublicHealth["components"]>).map(
-              (key, idx) => {
-                const meta = COMPONENT_META[key];
-                const state = data?.components[key] ?? "unknown";
-                const stateMeta = STATE_META[state];
-                const Icon = meta.icon;
-                const StateIcon = stateMeta.icon;
-                return (
-                  <motion.div
-                    key={key}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.1 + idx * 0.05 }}
-                    className="marketing-panel relative overflow-hidden p-4"
-                    data-testid={`status-component-${key}`}
-                  >
-                    <div
-                      aria-hidden="true"
-                      className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${stateMeta.bgGradient}`}
-                    />
-                    <div className="relative">
-                      <div className="mb-2.5 flex items-center justify-between">
-                        <Icon className="h-4 w-4 text-foreground/75" strokeWidth={1.75} />
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase leading-none tracking-[0.22em] ${stateMeta.pill}`}
-                        >
-                          <StateIcon className="h-2.5 w-2.5" />
-                          {stateMeta.label}
-                        </span>
-                      </div>
-                      <p className="mb-1 text-sm font-semibold text-foreground">{meta.label}</p>
-                      <p className="text-caption leading-relaxed">{meta.description}</p>
+            {(
+              Object.keys(COMPONENT_META) as Array<
+                keyof PublicHealth["components"]
+              >
+            ).map((key, idx) => {
+              const meta = COMPONENT_META[key];
+              const state = data?.components[key] ?? "unknown";
+              const stateMeta = STATE_META[state];
+              const Icon = meta.icon;
+              const StateIcon = stateMeta.icon;
+              return (
+                <motion.div
+                  key={key}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 + idx * 0.05 }}
+                  className="marketing-panel relative overflow-hidden p-4"
+                  data-testid={`status-component-${key}`}
+                >
+                  <div
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${stateMeta.bgGradient}`}
+                  />
+                  <div className="relative">
+                    <div className="mb-2.5 flex items-center justify-between">
+                      <Icon
+                        className="h-4 w-4 text-foreground/75"
+                        strokeWidth={1.75}
+                      />
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase leading-none tracking-[0.22em] ${stateMeta.pill}`}
+                      >
+                        <StateIcon className="h-2.5 w-2.5" />
+                        {stateMeta.label}
+                      </span>
                     </div>
-                  </motion.div>
-                );
-              },
-            )}
+                    <p className="mb-1 text-sm font-semibold text-foreground">
+                      {meta.label}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
 
           <div className="marketing-panel-muted p-4 sm:p-5">
             <p className="text-eyebrow mb-2">How we measure</p>
             <p className="marketing-body">
-              Every 60 seconds, Wireline pings each production LLM tier with a minimal 16-token
-              probe. Operational means the model responded within timeout. Degraded means a layer is
-              partially available or a fallback is covering a primary probe. Outage is reserved for
-              a confirmed lack of serving paths. We never store, log, or render the content of these
-              probes.
+              Every 60 seconds, Wireline pings each production LLM tier with a
+              minimal 16-token probe. Operational means the model responded
+              within timeout. Degraded means a layer is partially available or a
+              fallback is covering a primary probe. Outage is reserved for a
+              confirmed lack of serving paths. We never store, log, or render
+              the content of these probes.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.32em] text-muted/70">
               <span>Probe interval · 60s</span>
               <span className="text-muted/70">·</span>
               <span>Public cache · 60s</span>
               <span className="text-muted/70">·</span>
-              <Link to="/security" className="transition-colors hover:text-foreground">
+              <Link
+                to="/security"
+                className="transition-colors hover:text-foreground"
+              >
                 Security practices
               </Link>
               <span className="text-muted/70">·</span>
-              <Link to="/support" className="transition-colors hover:text-foreground">
+              <Link
+                to="/support"
+                className="transition-colors hover:text-foreground"
+              >
                 Report an issue
               </Link>
             </div>
