@@ -158,7 +158,6 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const { phoneLookupDegraded } = useAgents();
   const language = customerAgentLanguage(accountType);
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
-  const planLabel = accountType === "business" ? "Business workspace" : "Personal workspace";
   const matchesPosture = (agent: (typeof agents)[number]) =>
     accountType === "business" ? Boolean(agent.is_business_agent) : !agent.is_business_agent;
   // The agent the workspace is currently on always belongs in its own roster.
@@ -321,9 +320,6 @@ function DesktopRail({ pathname }: { pathname: string }) {
         <span className="min-w-0">
           <span className="block truncate text-[13px] font-medium text-foreground">
             {displayName}
-          </span>
-          <span className="block text-[11px] text-[color:var(--wireline-color-text-secondary)]">
-            {planLabel}
           </span>
         </span>
       </Link>
