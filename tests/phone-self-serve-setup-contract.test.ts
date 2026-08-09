@@ -29,6 +29,8 @@ describe("self-service calling setup", () => {
     expect(setup).toContain('aria-label="Preferred phone number area code"');
     expect(setup).toContain("Activate number");
     expect(setup).toContain("Paid plan required for activation.");
+    expect(setup).toContain('import { WL_APP_CLASSES } from "../lib/wireline-design-system"');
+    expect(setup).toContain("<p className={WL_APP_CLASSES.wiredEyebrow}>Routing</p>");
     expect(setup).not.toContain("Set up the complete call experience before going live.");
     expect(setup).not.toContain('aria-label="Calling setup steps"');
   });
