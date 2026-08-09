@@ -383,8 +383,8 @@ function WorkspaceSelector({
     {
       id: "business",
       title: "Business",
-      shortText: "Team workspace",
-      text: `Shared ${CUSTOMER_AGENT_LANGUAGE.business.plural}, numbers, approvals, and integrations.`,
+      shortText: "Business setup",
+      text: `Supervised ${CUSTOMER_AGENT_LANGUAGE.business.plural}, numbers, approvals, and integrations.`,
       icon: <Building2 className="h-4 w-4" />,
     },
   ];
