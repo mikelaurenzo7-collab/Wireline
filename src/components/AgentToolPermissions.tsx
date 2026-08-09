@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Loader2, Save, Wrench } from "lucide-react";
+import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
 import {
@@ -41,7 +42,11 @@ export default function AgentToolPermissions({
   className = "",
 }: AgentToolPermissionsProps) {
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // Starts true: the fetch is gated on `open`, so the render that follows the
+  // expand click lands before the effect. Starting false painted the whole
+  // editor with every action unchecked and every count at 0/N for that frame,
+  // which reads as "this agent can do nothing" rather than "still loading".
+  const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -53,14 +58,30 @@ export default function AgentToolPermissions({
   const [emailProviders, setEmailProviders] = useState<string[]>([]);
   const [calendarReconnect, setCalendarReconnect] = useState({ google: false, microsoft: false });
   const [reloadKey, setReloadKey] = useState(0);
+  /** Which agent the editor currently holds a loaded selection for. */
+  const loadedAgentRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!open || !agentId) return;
+    /*
+     * Load once per agent. Keying the fetch on `open` meant collapsing the
+     * section and opening it again refetched and overwrote whatever the person
+     * had toggled but not yet saved — their edits vanished with no message.
+     * A different agent, or the retry button, clears the marker below.
+     */
+    if (loadedAgentRef.current === agentId) return;
+
     let cancelled = false;
     setLoading(true);
     setLoadError(null);
     setSaveError(null);
     setNotice(null);
+
+    /** A posture endpoint answering 200 with non-JSON must not blank the editor. */
+    const readJson = async (response: Response | null): Promise<unknown> => {
+      if (!response?.ok) return null;
+      return response.json().catch(() => null);
+    };
 
     const load = async () => {
       try {
@@ -75,6 +96,7 @@ export default function AgentToolPermissions({
          * silent capability wipe.
          */
         setEnabled(resolveAgentTools(undefined, config.enabledTools));
+        loadedAgentRef.current = agentId;
 
         // Connection posture is presentation only; a failure must not block editing.
         const [crm, health, email] = await Promise.all([
@@ -83,18 +105,24 @@ export default function AgentToolPermissions({
           authFetch("/api/emails/accounts").catch(() => null),
         ]);
         if (cancelled) return;
-        if (crm?.ok) setOauthStatus((await crm.json()) ?? {});
-        if (health?.ok) {
-          const body = await health.json();
+        const crmBody = (await readJson(crm)) as Record<
+          string,
+          { connected?: boolean; configured?: boolean } | undefined
+        > | null;
+        if (crmBody) setOauthStatus(crmBody);
+        const healthBody = (await readJson(health)) as Record<string, unknown> | null;
+        if (healthBody) {
           setCalendarReconnect({
-            google: Boolean(body?.reconnect_google_calendar),
-            microsoft: Boolean(body?.reconnect_microsoft_calendar),
+            google: Boolean(healthBody.reconnect_google_calendar),
+            microsoft: Boolean(healthBody.reconnect_microsoft_calendar),
           });
         }
-        if (email?.ok) {
-          const body = await email.json();
+        const emailBody = (await readJson(email)) as {
+          accounts?: Array<{ provider?: string }>;
+        } | null;
+        if (emailBody) {
           setEmailProviders(
-            ((body?.accounts as Array<{ provider?: string }> | undefined) ?? [])
+            (emailBody.accounts ?? [])
               .map((account) => account.provider)
               .filter((provider): provider is string => Boolean(provider)),
           );
@@ -214,7 +242,10 @@ export default function AgentToolPermissions({
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => setReloadKey((current) => current + 1)}
+                  onClick={() => {
+                    loadedAgentRef.current = null;
+                    setReloadKey((current) => current + 1);
+                  }}
                 >
                   Try again
                 </Button>
@@ -225,22 +256,43 @@ export default function AgentToolPermissions({
           ) : (
             <div className="space-y-5">
               <div className="space-y-4">
-                {getAllIntegrationPlaybooks().map((playbook) => (
-                  <IntegrationCapabilityPanel
-                    key={playbook.integration}
-                    integration={playbook.integration}
-                    accentColor="brand"
-                    connected={
-                      resolveTenantToolIntegrationStatus(
-                        playbook.integration,
-                        integrationContext,
-                      ) === "configured"
-                    }
-                    enabledTools={enabled ?? []}
-                    onToggleTool={toggleTool}
-                    onToggleIntegrationGroup={toggleGroup}
-                  />
-                ))}
+                {getAllIntegrationPlaybooks().map((playbook) => {
+                  const configured =
+                    resolveTenantToolIntegrationStatus(playbook.integration, integrationContext) ===
+                    "configured";
+                  return (
+                    <div key={playbook.integration}>
+                      <IntegrationCapabilityPanel
+                        integration={playbook.integration}
+                        accentColor="brand"
+                        connected={configured}
+                        enabledTools={enabled ?? []}
+                        onToggleTool={toggleTool}
+                        onToggleIntegrationGroup={toggleGroup}
+                      />
+                      {/*
+                       * IntegrationCapabilityPanel only shows its own connect
+                       * prompt in compact mode, which this editor never uses.
+                       * Without this, an unconnected integration looked exactly
+                       * like a connected one: you could switch on "log the call
+                       * in Salesforce" with no Salesforce attached and get no
+                       * hint until a live call quietly failed to do it.
+                       */}
+                      {!configured ? (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Not connected — these stay off in live calls until {playbook.label} is
+                          connected.{" "}
+                          <Link
+                            to={playbook.connectPath}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            Connect
+                          </Link>
+                        </p>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
 
               <fieldset>

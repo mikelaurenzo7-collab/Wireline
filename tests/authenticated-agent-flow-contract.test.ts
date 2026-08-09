@@ -43,6 +43,36 @@ describe("authenticated agent flow", () => {
     expect(permissions).toContain("resolveAgentTools(undefined, config.enabledTools)");
   });
 
+  /*
+   * Review findings on the tool editor, each one a way the panel could lie about
+   * or discard the operator's intent.
+   */
+  it("keeps the tool editor from discarding edits or overstating what is live", () => {
+    const permissions = read("src/components/AgentToolPermissions.tsx");
+
+    // Keying the load on `open` meant collapse + reopen refetched and replaced
+    // unsaved toggles with the stored set, silently.
+    expect(permissions).toContain("if (loadedAgentRef.current === agentId) return;");
+    expect(permissions).toContain("loadedAgentRef.current = agentId;");
+    expect(permissions).toContain("loadedAgentRef.current = null;");
+
+    // The fetch is gated on `open`, so the expand render lands first. Starting
+    // `loading` false painted every action unchecked and every count 0/N.
+    expect(permissions).toMatch(/const \[loading, setLoading\] = useState\(true\)/);
+
+    // A posture endpoint answering 200 with non-JSON must not blank the editor.
+    expect(permissions).toContain("return response.json().catch(() => null);");
+
+    /*
+     * Live assistants are built through buildRoleToolDefsForTenant, which drops
+     * tools whose integration the tenant has not connected. Without this hint an
+     * unconnected integration looked identical to a connected one.
+     */
+    expect(permissions).toContain("Not connected — these stay off in live calls until");
+    expect(permissions).toContain("to={playbook.connectPath}");
+    expect(read("src/lib/vapi-helpers.ts")).toContain("filterToolsByTenantConnections");
+  });
+
   it("routes fresh signups into the real create flow", () => {
     const authPortal = read("src/components/AuthPortal.tsx");
     const authRedirect = read("src/lib/auth-redirect.ts");
