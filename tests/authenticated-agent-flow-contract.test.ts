@@ -3,13 +3,46 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 function read(relativePath: string) {
-  return readFileSync(resolve(process.cwd(), relativePath), "utf8").replace(
-    /\r\n/g,
-    "\n",
-  );
+  return readFileSync(resolve(process.cwd(), relativePath), "utf8").replace(/\r\n/g, "\n");
 }
 
 describe("authenticated agent flow", () => {
+  /*
+   * Agent tools reach live calls through `resolveAgentTools`, and until now only
+   * `POST /api/mobile/agents/:id/tools` could change them — an owner on the web
+   * could see what their agent was permitted to do and had no way to alter it.
+   * The web route must not become a second, laxer door onto the same column, so
+   * it is pinned to the mobile route's guards.
+   */
+  it("lets the web edit agent tools under the same guards as mobile", () => {
+    const agentRoutes = read("src/routes/agent-routes-v2.ts");
+    const mobileRoutes = read("src/routes/mobile-routes.ts");
+    const permissions = read("src/components/AgentToolPermissions.tsx");
+
+    for (const source of [agentRoutes, mobileRoutes]) {
+      expect(source).toContain(
+        'throw AppError.fromHttpStatus(400, "enabled_tools must contain known agent tools");',
+      );
+      expect(source).toContain("normalizeEnabledTools(raw as AgentToolName[])");
+      expect(source).toContain("eq(schema.agents.userId, req.user.id)");
+    }
+
+    const web = agentRoutes.slice(agentRoutes.indexOf('"/api/agents/:id/tools"'));
+    expect(web).toContain("authenticateUser");
+    expect(web).toContain("agentMutationRateLimit");
+    // Ownership is checked before anything is written, and a miss is a 404 so
+    // the route cannot be used to probe which agent ids exist.
+    expect(web.indexOf("owned(req.params.id, req.user.id)")).toBeLessThan(web.indexOf("drizzle"));
+    expect(web).toContain('throw AppError.fromHttpStatus(404, "Agent not found");');
+
+    /*
+     * A null selection is not an empty one: the server resolves null to the full
+     * catalog, so seeding the editor with [] would make the first save a silent
+     * capability wipe. The UI must seed from the same resolver the runtime uses.
+     */
+    expect(permissions).toContain("resolveAgentTools(undefined, config.enabledTools)");
+  });
+
   it("routes fresh signups into the real create flow", () => {
     const authPortal = read("src/components/AuthPortal.tsx");
     const authRedirect = read("src/lib/auth-redirect.ts");
@@ -25,24 +58,16 @@ describe("authenticated agent flow", () => {
     expect(authPortal).toContain("plan.price_usd_monthly");
     expect(authPortal).not.toContain("const SIGNUP_PLAN_LABELS");
     expect(authPortal).toContain('nextMode === "personal"');
-    expect(authPortal).toContain(
-      'import WirelineMark from "./brand/WirelineMark"',
-    );
+    expect(authPortal).toContain('import WirelineMark from "./brand/WirelineMark"');
     // The auth funnel stays minimal (PR #738): product promise, not a decorative loop grid.
     expect(authPortal).toContain("customerAgentLanguage(workspaceMode)");
-    expect(authPortal).not.toContain(
-      '<span className="wl-auth-brand-badge">W</span>',
-    );
-    expect(workspaceShell).toContain(
-      'import WirelineMark from "./brand/WirelineMark"',
-    );
+    expect(authPortal).not.toContain('<span className="wl-auth-brand-badge">W</span>');
+    expect(workspaceShell).toContain('import WirelineMark from "./brand/WirelineMark"');
     expect(workspaceShell).not.toMatch(/>\s*W\s*<\/span>/);
     expect(authRedirect).toContain(
       'workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1"',
     );
-    expect(
-      authPortal.match(/navigate\(resolvePostAuthDestination/g),
-    ).toHaveLength(1);
+    expect(authPortal.match(/navigate\(resolvePostAuthDestination/g)).toHaveLength(1);
     expect(onboardingFlow).toContain("Opening your first ${language.singular}");
     expect(onboardingFlow).not.toContain("Link your phone");
     expect(appShell).not.toContain("ActivationCheckpoint");
@@ -54,9 +79,7 @@ describe("authenticated agent flow", () => {
     const carrierRoutes = read("src/routes/carrier-routes.ts");
 
     expect(trialGate).toContain("enforceLiveWorkActivation");
-    expect(trialGate).toContain(
-      "other provider-spending live actions until verified",
-    );
+    expect(trialGate).toContain("other provider-spending live actions until verified");
     expect(agentRoutes).not.toContain("enforceLiveWorkActivation");
     expect(carrierRoutes).toContain("enforceLiveWorkActivation");
     expect(carrierRoutes).toContain('"/api/phone-numbers/provision"');
@@ -106,9 +129,7 @@ describe("authenticated agent flow", () => {
     expect(createDialog).toContain("Not now");
     expect(createDialog).not.toContain("VoicePickerField");
     expect(createDialog).not.toContain("CreateAgentCatalogFacePicker");
-    expect(productCopy).toContain(
-      'createHeadline: "Build your next voice agent."',
-    );
+    expect(productCopy).toContain('createHeadline: "Build your next voice agent."');
     expect(productCopy).toContain(
       'emptyCue: "Brief it. Train it once. Connect calls, texts, and email."',
     );
@@ -119,9 +140,7 @@ describe("authenticated agent flow", () => {
 
     expect(studioHome).toContain('params.get("brief")');
     expect(studioHome).toContain('params.get("posture")');
-    expect(studioHome).toContain(
-      'requestedPosture !== "personal" && accountType === "business"',
-    );
+    expect(studioHome).toContain('requestedPosture !== "personal" && accountType === "business"');
     expect(studioHome).toContain("PostCreateActivationWizard");
     expect(studioHome).toContain("readPostCreateWizard");
     expect(studioHome).not.toContain("mode=workroom");
@@ -138,9 +157,7 @@ describe("authenticated agent flow", () => {
     // with. That pre-fill is gone — the box opens empty so the customer writes
     // their own job — so the same promise is checked where it still lives: the
     // placeholder, which suggests the range without occupying the field.
-    expect(createDialog).toContain(
-      "Qualify inbound demos, answer support questions",
-    );
+    expect(createDialog).toContain("Qualify inbound demos, answer support questions");
     expect(createDialog).toContain("route urgent calls");
     expect(createDialog).not.toContain("Handle pharmacy calls");
   });
@@ -165,9 +182,7 @@ describe("authenticated agent flow", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const studioHome = read("src/pages/AgentStudioHome.tsx");
     const createFlow = read("src/lib/wireline-create-flow.ts");
-    const wizard = read(
-      "src/components/onboarding/PostCreateActivationWizard.tsx",
-    );
+    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     const copy = read("src/lib/wireline-onboarding-copy.ts");
 
     expect(createDialog).toContain("stashPostCreateWizard");
@@ -221,18 +236,14 @@ describe("authenticated agent flow", () => {
     // template deploy, and mobile all seed identically — assert the delegation
     // here and the composition where it actually happens.
     expect(routes).toContain("resolveCreatePersonality({");
-    expect(routes).toContain(
-      "resolveCreateEnabledTools(role, isBusinessAgent)",
-    );
+    expect(routes).toContain("resolveCreateEnabledTools(role, isBusinessAgent)");
     const createDefaults = read("src/lib/agent-create-defaults.ts");
     expect(createDefaults).toContain("composeAgentPersonality");
     expect(createDefaults).toContain("TEMPLATE_OVERLAYS[opts.templateId]");
     expect(templates).toContain("voice_id: values.voiceId");
     expect(deployModal).toContain("VAPI_CURATED_VOICES");
     expect(deployModal).toContain("MANAGED_VOICE_BY_GENDER");
-    expect(deployModal).not.toMatch(
-      /PREMIUM_VOICES|\/api\/voices\/|VoicePreviewButton/,
-    );
+    expect(deployModal).not.toMatch(/PREMIUM_VOICES|\/api\/voices\/|VoicePreviewButton/);
   });
 
   it("surfaces the create warning even though Studio is already mounted", () => {
@@ -250,10 +261,7 @@ describe("authenticated agent flow", () => {
     // legitimately keeps mount-only deps, and a wider window would read its
     // dependency array instead of this one's.
     const start = studioHome.indexOf("consumeCreateWarning()");
-    const consumeEffect = studioHome.slice(
-      start,
-      studioHome.indexOf("]);", start) + 3,
-    );
+    const consumeEffect = studioHome.slice(start, studioHome.indexOf("]);", start) + 3);
     // The post-create redirect swaps `create=1` for `agent=<id>`, so the search
     // params are the signal that the flow finished.
     expect(consumeEffect).toMatch(/\}, \[toast, params\]\);$/);
@@ -261,9 +269,7 @@ describe("authenticated agent flow", () => {
 
   it("defers phone provisioning from Fast Start into the post-create wizard", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
-    const wizard = read(
-      "src/components/onboarding/PostCreateActivationWizard.tsx",
-    );
+    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     const createFlow = read("src/lib/wireline-create-flow.ts");
 
     expect(createDialog).not.toContain('"/api/phone-numbers/provision"');
@@ -273,9 +279,7 @@ describe("authenticated agent flow", () => {
   });
 
   it("scopes wizard phone state to the created agent only", () => {
-    const wizard = read(
-      "src/components/onboarding/PostCreateActivationWizard.tsx",
-    );
+    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
 
     expect(wizard).toContain("row.agent_id === payload.agentId");
     expect(wizard).not.toContain("numbers[0]");
@@ -304,9 +308,7 @@ describe("authenticated agent flow", () => {
 
   it("surfaces custom presence consent FTUX for business agents", () => {
     const preview = read("src/components/AgentPresenceLivePreview.tsx");
-    const panel = read(
-      "src/components/video-presenter/CustomPresenceConsentPanel.tsx",
-    );
+    const panel = read("src/components/video-presenter/CustomPresenceConsentPanel.tsx");
 
     expect(preview).toContain("CustomPresenceConsentPanel");
     expect(preview).toContain("consentStatus");

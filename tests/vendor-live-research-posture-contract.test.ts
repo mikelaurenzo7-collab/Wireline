@@ -39,15 +39,33 @@ describe("vendor live-research and voice posture", () => {
     expect(flags).toContain("PERPLEXITY_PREVIEW_API_KEY");
   });
 
+  /*
+   * This used to assert against AgentActionEngine.tsx, which had never been
+   * imported anywhere in the repository's history and posted to
+   * `PATCH /api/agents/:id` — a route that does not exist. So the "capability
+   * toggle" this contract protected could not be reached or saved by any user.
+   * It now reads the surface that ships: a lazy section in Studio setup posting
+   * to `POST /api/agents/:id/tools`.
+   */
   it("keeps live web research under the agent capability toggle", () => {
     const capabilities = read("src/lib/agent-capabilities.ts");
-    const actionEngine = read("src/components/AgentActionEngine.tsx");
+    const permissions = read("src/components/AgentToolPermissions.tsx");
+    const studio = read("src/components/StudioAgentWorkspacePanel.tsx");
+    const agentRoutes = read("src/routes/agent-routes-v2.ts");
     const vapiTools = read("src/lib/vapi-helpers.ts");
 
     expect(capabilities).toContain('name: "gemini_ground"');
     expect(capabilities).toContain('label: "Grounded web search"');
-    expect(actionEngine).toContain("enabledTools.includes(tool.name)");
-    expect(actionEngine).toContain("body: JSON.stringify({ enabledTools })");
+
+    // gemini_ground carries no merchant integration, so an integration-only UI
+    // would never render it. The platform-tools list is what puts it on screen.
+    expect(capabilities).toContain('group: "core"');
+    expect(permissions).toContain("AGENT_TOOL_CATALOG.filter((tool) => !tool.integration)");
+    expect(permissions).toContain("Platform actions");
+
+    expect(permissions).toContain("JSON.stringify({ enabled_tools: enabled })");
+    expect(agentRoutes).toContain('"/api/agents/:id/tools"');
+    expect(studio).toContain("<AgentToolPermissions agentId={agentId} />");
     expect(vapiTools).toContain("resolveAgentTools(role, enabledTools)");
   });
 

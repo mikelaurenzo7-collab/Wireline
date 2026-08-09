@@ -11,7 +11,7 @@ const nestedSurfaces = [
   "src/pages/About.tsx",
   "src/components/AuthPortal.tsx",
   "src/components/StudioWorkspaceV2.tsx",
-  "src/components/AgentActionEngine.tsx",
+  "src/components/AgentToolPermissions.tsx",
   "src/components/layout/MarketingPageFrame.tsx",
 ] as const;
 
@@ -38,9 +38,6 @@ describe("safe-area spacing ownership", () => {
     expect(authPortal).toContain('compact ? "py-3 sm:py-4" : "py-8 sm:py-12"');
     expect(read("src/components/StudioWorkspaceV2.tsx")).toContain(
       "flex min-h-[55vh] flex-col bg-background px-4 py-8 sm:px-6",
-    );
-    expect(read("src/components/AgentActionEngine.tsx")).toContain(
-      "h-full flex flex-col p-4 md:p-6 overflow-hidden",
     );
   });
 });

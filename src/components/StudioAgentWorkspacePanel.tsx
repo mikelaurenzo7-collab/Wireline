@@ -7,6 +7,7 @@ import { composeSetupPersonality } from "../lib/compose-setup-personality";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
+import AgentToolPermissions from "./AgentToolPermissions";
 
 const PERSONALITIES = ["Clear", "Warm", "Polished", "Energetic"] as const;
 
@@ -323,6 +324,8 @@ export default function StudioAgentWorkspacePanel({
           </div>
           <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
         </section>
+
+        <AgentToolPermissions agentId={agentId} />
 
         <section
           className="rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6"
