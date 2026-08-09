@@ -94,6 +94,7 @@ describe("demand-driven authenticated experience", () => {
     expect(studioWorkspace).not.toMatch(/description: "Job, greeting, facts, and voice"/);
     expect(studioSetup).not.toMatch(/AgentPresenceLivePreview|VoiceGallery|Advanced options/);
     expect(studioSetup).not.toContain('text-eyebrow text-primary">Set up');
+    expect(studioSetup).not.toMatch(/Run one realistic customer test/);
     expect(studioTest).toMatch(/\/test\/stream/);
     expect(studioTest).toMatch(/Browser test/);
     expect(studioReview).toMatch(/Next action/);
