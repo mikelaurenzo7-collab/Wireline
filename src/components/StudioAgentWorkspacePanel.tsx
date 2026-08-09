@@ -303,11 +303,6 @@ export default function StudioAgentWorkspacePanel({
               <h3 className="text-base font-semibold text-foreground">
                 {isBusinessAgent ? "Test before going live" : "Test before connecting a line"}
               </h3>
-              <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
-                {isBusinessAgent
-                  ? "Run one realistic customer test before connecting live channels."
-                  : "Run one private conversation test before connecting a live number."}
-              </p>
             </div>
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               <Button
