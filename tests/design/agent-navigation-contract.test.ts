@@ -141,7 +141,7 @@ describe("agent navigation contract", () => {
       /Advanced options|AgentPresenceLivePreview|VoiceGallery/,
     );
     expect(studioReview).toMatch(
-      /Is <span className="wl-preserve-case">\{agentName\}<\/span> ready for customers/,
+      /Is <span className="wl-preserve-case">\{agentName\}<\/span> ready for\s+customers/,
     );
     expect(studioReview).toMatch(/Customer-facing job/);
     expect(studioReview).toMatch(/Browser-ready; live line not connected/);
