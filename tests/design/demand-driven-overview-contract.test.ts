@@ -82,7 +82,7 @@ describe("demand-driven authenticated experience", () => {
   });
 
   it("tracks only verifiable customer-readiness milestones", () => {
-    expect(activation).toMatch(/Get ready for real customers/);
+    expect(activation).toMatch(/Ready for customers/);
     expect(activation).toMatch(/Job and greeting defined/);
     expect(activation).toMatch(/Business facts added/);
     expect(activation).toMatch(/Phone number connected/);
