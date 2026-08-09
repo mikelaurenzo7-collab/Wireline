@@ -85,9 +85,9 @@ describe("current-state UI contract", () => {
     expect(developers).toContain("https://trywireline.com/mcp");
     expect(developers).toContain("https://claude.ai/settings/connectors");
     expect(developers).toContain("Cursor");
-    expect(developers).toContain("one account-bound MCP connector");
-    expect(developers).toContain(
-      "this connector cannot place calls, send messages,\n              provision numbers, or launch a live voice agent.",
+    expect(developers).toContain("Private-by-default boundary");
+    expect(developers).toMatch(
+      /this connector cannot place calls,\s+send messages, provision numbers, or launch a live voice agent/,
     );
     expect(developers).not.toContain("Settings -> API Access");
     expect(developers).not.toContain("wl_YOUR_API_KEY");
