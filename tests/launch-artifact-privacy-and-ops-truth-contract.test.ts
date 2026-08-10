@@ -50,9 +50,15 @@ describe("launch artifact privacy and operations truth", () => {
 
   it("documents only monitoring cadences that exist in deployed configuration", () => {
     const runbook = read("docs/INCIDENT_RESPONSE.md");
-    const vercel = read("vercel.json");
-    expect(vercel).toContain('"schedule": "*/5 * * * *"');
-    expect(vercel).toContain('"schedule": "*/15 * * * *"');
+    const vercel = JSON.parse(read("vercel.json")) as {
+      crons?: Array<{ path?: string; schedule?: string }>;
+    };
+    expect(vercel.crons).toEqual(
+      expect.arrayContaining([
+        { path: "/api/jobs/sweep", schedule: "*/5 * * * *" },
+        { path: "/api/daily-brief/schedule", schedule: "*/15 * * * *" },
+      ]),
+    );
     expect(runbook).toContain("`/api/jobs/sweep` every **5 minutes**");
     expect(runbook).toContain("`/api/daily-brief/schedule` every **15 minutes**");
     expect(runbook).toContain("**nightly** schedule");
