@@ -3,7 +3,6 @@
 /* TEAM */
   Team: Wireline
   Site: https://trywireline.com
-  Twitter: @wirelineapp
 
 /* THANKS */
   Every early customer who picked up the phone and trusted an AI
@@ -16,4 +15,4 @@
   Components:       React 19, Vite, TypeScript, TailwindCSS, motion/react
   Hosting:          Vercel
   Analytics:        Plausible (privacy-first, no cookies)
-  Last update:      2026/07
+  Last update:      2026/08
