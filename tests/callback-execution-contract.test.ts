@@ -31,9 +31,53 @@ describe("caller-requested callbacks execute end-to-end", () => {
   it("every callback dial passes the shared outbound gate and spend controls", () => {
     const engine = read("src/lib/callback-engine.ts");
     expect(engine).toContain("evaluateOutboundDialGate");
-    expect(engine).toContain("isRequestedCallback: true");
     expect(engine).toContain("assertOutboundVoiceAllowed");
     expect(engine).toContain("placeOutboundCall");
+  });
+
+  /*
+   * The engine selects on a due `callback_scheduled_at` alone, and two writers
+   * set that column for leads no consumer ever spoke to: the intake
+   * quiet-hours deferral (intake-routes.ts) and the summary-regex "followup"
+   * outcome (outbound-call-tracking.ts). While the engine hardcoded
+   * `isRequestedCallback: true`, both were dialed as consented callbacks —
+   * express written consent synthesized, marketing classification dropped, and
+   * with it the 47 CFR 64.1200(b)(3) opt-out announcement. A consentless cold
+   * marketing lead submitted at 22:30 local went out the next morning; the
+   * same lead submitted at 10:00 was hard-blocked. Time of day is not consent.
+   */
+  it("claims the callback consent class only from the consumer's own request", () => {
+    const engine = read("src/lib/callback-engine.ts");
+    const handler = read("src/routes/vapi/tool-handlers-workflow.ts");
+    const intake = read("src/routes/intake-routes.ts");
+
+    // Read from the lead, never assumed.
+    expect(engine).not.toMatch(/isRequestedCallback:\s*true/);
+    expect(engine).toContain("isRequestedCallback: consumerRequested");
+    expect(engine).toContain("isConsumerRequestedCallback(metadata)");
+
+    // Only a live call writes the marker.
+    expect(handler).toContain('[CALLBACK_REQUEST_MARKER]: "phone_call"');
+    // ...and intake metadata is stored verbatim, so it must be stripped there
+    // or the account holder could assert it over HTTP.
+    expect(intake).toContain("k !== CALLBACK_REQUEST_MARKER");
+
+    // Without the marker the dial stays marketing-classed, which is what keeps
+    // the opt-out announcement on (vapi-client isMarketingCallPurpose).
+    expect(engine).toContain('consumerRequested ? "callback" : "marketing_or_sales"');
+  });
+
+  /*
+   * Reading the flag instead of asserting it re-arms the gate's 24h duplicate
+   * window for this path. `outbound-call-tracking.ts` schedules inferred
+   * follow-ups at exactly lastCalledAt + 24h, so they land on the boundary and
+   * return `self_recent_call_scheduled` — which the engine treats as terminal.
+   * Left alone, the consent fix would have silently retired every follow-up.
+   */
+  it("defers reasons that expire on their own instead of retiring the lead", () => {
+    const engine = read("src/lib/callback-engine.ts");
+    expect(engine).toContain('gate.reason === "outside_permitted_calling_hours"');
+    expect(engine).toContain('gate.reason === "self_recent_call_scheduled"');
   });
 
   it("requested callbacks stay tenant-DNC-protected in the shared gate", () => {

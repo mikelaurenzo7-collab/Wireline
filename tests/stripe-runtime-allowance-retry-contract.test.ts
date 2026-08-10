@@ -44,9 +44,21 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     const { getHandledStripeWebhookEvents } =
       await import("../scripts/lib/stripe-handled-events.mjs");
 
-    expect(alignment).toContain("getHandledStripeWebhookEvents()");
-    expect(launchStatus).toContain("getHandledStripeWebhookEvents()");
-    // Neither may reintroduce a second, hand-maintained copy.
+    // A third copy survived the first consolidation: check-vendor-readiness
+    // still hardcoded the original eight, so `npm run vendor:readiness` and
+    // `npm run stripe:webhook:check` were mutually unsatisfiable — no endpoint
+    // configuration passed both. Every consumer reads the helper.
+    const vendorReadiness = read("scripts/check-vendor-readiness.mjs");
+
+    for (const [name, source] of [
+      ["align", alignment],
+      ["launch-status", launchStatus],
+      ["vendor-readiness", vendorReadiness],
+    ] as const) {
+      expect(source, name).toContain("getHandledStripeWebhookEvents()");
+      // None may reintroduce a hand-maintained copy.
+      expect(source, name).not.toMatch(/=\s*\[\s*\n\s*"charge\.dispute\.created",/);
+    }
     expect(launchStatus).not.toMatch(/expectedWebhookEvents = \[/);
     expect(alignment).not.toContain("function extractHandledEvents");
 
@@ -71,6 +83,31 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     expect(middleware).toContain("refund.id,");
     expect(middleware).toContain("subscriptionDisputeAllowancePortion(");
     expect(middleware).not.toContain("amount_refunded under charge.id");
+  });
+
+  /*
+   * Both webhook owners debit Runtime Balance on a refund, and both must key
+   * every reversal on the refund's own id. The legacy top-up path documented
+   * that rule and then broke it in its own else-branch: when the succeeded-only
+   * filter came back empty — the ordinary case for a refund Stripe has accepted
+   * but not settled — it reversed cumulative `charge.amount_refunded` keyed on
+   * `charge.id`. The later `charge.refunded` redelivery then reversed the same
+   * money again per refund.id. Disjoint ref keys defeat the (user, ref) unique
+   * index, so nothing dedupes them and the wallet can go negative into a hard
+   * 402. Fail closed in both files: throw, release the claim, let Stripe retry.
+   */
+  it("never reverses a refund under the charge id, in either webhook owner", () => {
+    const billing = read("src/routes/billing-routes.ts");
+
+    for (const [name, source] of [
+      ["billing-routes", billing],
+      ["allowance-retry", middleware],
+    ] as const) {
+      expect(source, name).toContain("reports refunded funds but no succeeded refund objects.");
+      // The reversal reference must never be the charge.
+      expect(source, name).not.toMatch(/\bid:\s*charge\.id,/);
+      expect(source, name).not.toMatch(/providerObjectId:\s*charge\.id,/);
+    }
   });
 
   it("treats inquiry creation as notification-only and follows monetary events", () => {

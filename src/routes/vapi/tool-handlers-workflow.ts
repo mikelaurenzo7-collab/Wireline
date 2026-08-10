@@ -101,7 +101,8 @@ export async function handleWorkflowToolCall(
   if (fn === "schedule_callback") {
     try {
       const { callback_datetime, notes } = args || {};
-      const { parseCallbackDatetime } = await import("../../lib/callback-engine");
+      const { parseCallbackDatetime, CALLBACK_REQUEST_MARKER } =
+        await import("../../lib/callback-engine");
       const dueAt = parseCallbackDatetime(callback_datetime);
       if (!dueAt) {
         return {
@@ -143,7 +144,7 @@ export async function handleWorkflowToolCall(
               metadata: {
                 ...((existingLead.metadata as Record<string, unknown> | null) || {}),
                 callback_notes: notes || null,
-                callback_requested_via: "phone_call",
+                [CALLBACK_REQUEST_MARKER]: "phone_call",
                 // Fresh request → reset the deferral counter so a prior run's
                 // stale count can't prematurely drop this new callback.
                 callback_deferrals: 0,
@@ -159,7 +160,10 @@ export async function handleWorkflowToolCall(
             source: "callback",
             context: notes || "Caller requested a callback during a phone call.",
             callbackScheduledAt: dueAt,
-            metadata: { callback_notes: notes || null, callback_requested_via: "phone_call" },
+            metadata: {
+              callback_notes: notes || null,
+              [CALLBACK_REQUEST_MARKER]: "phone_call",
+            },
           });
         }
       }
@@ -246,9 +250,7 @@ export async function handleWorkflowToolCall(
           // calls to 555-…"); it backs up escalationPhone so the field the
           // planner writes actually influences live transfers instead of being
           // stored and never read.
-          const destination = sanitizePhone(
-            row?.phone?.trim() || row?.transferPhone?.trim() || "",
-          );
+          const destination = sanitizePhone(row?.phone?.trim() || row?.transferPhone?.trim() || "");
           if (row?.enabled && destination.replace(/\D/g, "").length >= 10) {
             warmTransferPhone = destination;
           }

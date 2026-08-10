@@ -13,6 +13,7 @@ import { rateLimit, distributedLimiterStatus } from "../lib/rate-limit";
 import { runInBackground } from "../lib/background-work";
 import { placeOutboundCall } from "../lib/vapi-client";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
+import { CALLBACK_REQUEST_MARKER } from "../lib/callback-engine";
 import { assertOutboundVoiceAllowed } from "../lib/voice-spend-control";
 
 const router = express.Router();
@@ -227,7 +228,16 @@ async function processIntakeLead(
   const context = (input.context || input.message || "").toString().slice(0, 4000);
   let metadata: Record<string, unknown> | null = null;
   if (input.metadata && typeof input.metadata === "object" && !Array.isArray(input.metadata)) {
-    const entries = Object.entries(input.metadata as Record<string, unknown>).slice(0, 50);
+    const entries = Object.entries(input.metadata as Record<string, unknown>)
+      // Intake metadata is stored verbatim, so anything the gate reads as
+      // evidence is assertable by whoever holds the key. `has_express_written_consent`
+      // is deliberately such a channel — the account holder attests they
+      // collected it, and the dial stays marketing-classed with DNC and the
+      // opt-out announcement intact. CALLBACK_REQUEST_MARKER is not: it claims
+      // a consumer asked to be called back, which waives consent AND drops the
+      // opt-out announcement. Only a live call can produce that.
+      .filter(([k]) => k !== CALLBACK_REQUEST_MARKER)
+      .slice(0, 50);
     metadata = Object.fromEntries(entries.map(([k, v]) => [String(k).slice(0, 100), v]));
   }
   const agent_id = input.agent_id || key.default_agent_id || null;

@@ -26,7 +26,12 @@ describe("64.1200(b) runtime wiring", () => {
     const sites: Array<[string, RegExp]> = [
       ["src/services/campaign-dialer.ts", /callPurpose: "marketing_or_sales"/],
       ["src/lib/cadence-engine.ts", /callPurpose: "marketing_or_sales"/],
-      ["src/lib/callback-engine.ts", /callPurpose: "callback"/],
+      // The callback engine is the one site whose purpose is not fixed. It
+      // dials leads it did not schedule (intake quiet-hours deferrals, and
+      // follow-ups inferred from a call summary), and only a consumer's own
+      // recorded request earns the "callback" class — which drops the (b)(3)
+      // announcement. Everything else stays marketing and keeps it.
+      ["src/lib/callback-engine.ts", /consumerRequested \? "callback" : "marketing_or_sales"/],
       ["src/routes/intake-routes.ts", /callPurpose: "marketing_or_sales"/],
       // Web/mobile manual dials pass the request's validated purpose through.
       ["src/routes/outbound-routes.ts", /placeOutboundCall\(\{[\s\S]{0,220}callPurpose,/],
