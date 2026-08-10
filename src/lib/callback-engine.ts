@@ -58,11 +58,12 @@ export const CALLBACK_REQUEST_MARKER = "callback_requested_via";
 
 /**
  * A due `callback_scheduled_at` is not evidence of a request — system deferrals
- * and inferred follow-ups write it too. Only the marker is.
+ * and inferred follow-ups write it too. Only the exact internally minted
+ * `phone_call` provenance value is allowed to claim the requested-callback
+ * class; an arbitrary non-empty marker must fail closed.
  */
 export function isConsumerRequestedCallback(metadata: Record<string, unknown>): boolean {
-  const via = metadata[CALLBACK_REQUEST_MARKER];
-  return typeof via === "string" && via.trim() !== "";
+  return metadata[CALLBACK_REQUEST_MARKER] === "phone_call";
 }
 
 /**
@@ -356,7 +357,9 @@ export async function tickDueCallbacks({
         });
         await finish({
           callbackScheduledAt: null,
-          summary: "Requested callback placed automatically.",
+          summary: consumerRequested
+            ? "Requested callback placed automatically."
+            : "Scheduled outbound follow-up placed automatically.",
           metadata: { ...metadata, callback_deferrals: 0 },
         });
       } else {
