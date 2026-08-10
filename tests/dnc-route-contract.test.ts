@@ -84,3 +84,35 @@ describe("a dnc-classified outcome suppresses the number, not just the lead", ()
     expect(read("src/lib/vapi-handlers.ts")).toContain("persistTranscriptDncSuppression");
   });
 });
+
+/*
+ * docs/SLA.md publishes "Retention: Configurable per tenant (default 365 days,
+ * minimum 90 days)". `retentionDays` is client-writable and drives the purge
+ * job that irreversibly deletes call logs, transcripts, and outcomes, and
+ * nothing bounded it — a PATCH of {"retentionDays": 1} was stored verbatim and
+ * the next purge would destroy a tenant's history far inside the window their
+ * own SLA promises. Over-retaining costs storage; under-retaining is
+ * unrecoverable, so the floor is the side that has to hold.
+ */
+describe("tenant retention cannot be set below the published SLA floor", () => {
+  const source = readFileSync("src/routes/settings-routes.ts", "utf8");
+
+  it("clamps the client-writable value to the documented range", () => {
+    expect(source).toContain("const RETENTION_DAYS_MIN = 90;");
+    expect(source).toContain("const RETENTION_DAYS_MAX = 365;");
+    expect(source).toContain("Math.min(RETENTION_DAYS_MAX, Math.max(RETENTION_DAYS_MIN, days))");
+    // The clamp must sit in the write filter, not merely be declared.
+    const filter = source.slice(source.indexOf("function pickWritableSettings("));
+    expect(filter.slice(0, 900)).toContain('key === "retentionDays"');
+  });
+
+  it("treats an explicit clear as leave-alone, not as zero", () => {
+    // Number(null) is 0, which would clamp UP to the floor and silently shorten
+    // a tenant sitting on the 365-day default.
+    expect(source).toContain('if (value === null || value === undefined || value === "")');
+  });
+
+  it("matches the number the SLA actually publishes", () => {
+    expect(readFileSync("docs/SLA.md", "utf8")).toContain("minimum 90 days");
+  });
+});

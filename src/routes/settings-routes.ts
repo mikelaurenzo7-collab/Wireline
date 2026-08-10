@@ -64,6 +64,30 @@ const CLIENT_WRITABLE_SETTINGS = new Set([
 /** Platform-admin-only capacity fields — never via Stripe-bypass self-service. */
 const ADMIN_WRITABLE_SETTINGS = new Set(["subscriptionStatus", "maxAgents", "extraAgents"]);
 
+/**
+ * Retention bounds published in `docs/SLA.md`: "default 365 days, minimum 90
+ * days". `retentionDays` is client-writable and drives the purge job that
+ * irreversibly deletes call logs, transcripts, and outcomes — but nothing
+ * bounded it, so a PATCH of `{"retentionDays": 1}` (or 0, or a negative) was
+ * accepted verbatim and the next purge would destroy a tenant's history far
+ * inside the window their SLA promises. Clamping rather than rejecting keeps a
+ * fat-fingered settings save from 400-ing the whole form, and the floor is the
+ * side that matters: over-retaining is a storage cost, under-retaining is
+ * unrecoverable data loss against a written commitment.
+ */
+const RETENTION_DAYS_MIN = 90;
+const RETENTION_DAYS_MAX = 365;
+
+function clampRetentionDays(value: unknown): number | undefined {
+  // null / undefined / "" are "leave it alone", not zero. Number(null) is 0,
+  // which would clamp an explicit clear up to the 90-day FLOOR and silently
+  // shorten a tenant sitting on the 365-day default.
+  if (value === null || value === undefined || value === "") return undefined;
+  const days = Math.trunc(Number(value));
+  if (!Number.isFinite(days)) return undefined;
+  return Math.min(RETENTION_DAYS_MAX, Math.max(RETENTION_DAYS_MIN, days));
+}
+
 function pickWritableSettings(
   update: Record<string, unknown>,
   isAccountHolder: boolean,
@@ -73,7 +97,15 @@ function pickWritableSettings(
     : CLIENT_WRITABLE_SETTINGS;
   const filtered: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(update)) {
-    if (allowed.has(key)) filtered[key] = value;
+    if (!allowed.has(key)) continue;
+    if (key === "retentionDays") {
+      const clamped = clampRetentionDays(value);
+      // A non-numeric retention is dropped, not stored: leaving the existing
+      // value alone is safer than writing NaN into the purge window.
+      if (clamped !== undefined) filtered[key] = clamped;
+      continue;
+    }
+    filtered[key] = value;
   }
   return filtered;
 }
