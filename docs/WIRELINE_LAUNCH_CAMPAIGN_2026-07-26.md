@@ -92,7 +92,7 @@ Earlier AI Voice Generator previews below are superseded; keep them for referenc
 - Preview: https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/ec315585-89bf-4b2b-ad7f-7e30bb50d5fd.mp3
 - Full audio: https://www.aidocmaker.com/g0/audio?name=acdf9b5a628e4558923c63ba0ed2d821
 - Voice style: clear, direct, polished, founder-friendly
-- Transcript: "Missed calls should not become lost revenue. Wireline helps you build voice agents for personal tasks and business conversations. Start with one agent, train it on your rules, connect calls, texts, and email, and let it handle the next conversation with every outcome logged. Build free. Go live from nineteen dollars a month at trywireline dot com."
+- Transcript (retired — opens on the retired hook, kept for provenance only): "Missed calls should not become lost revenue. Wireline helps you build voice agents for personal tasks and business conversations. Start with one agent, train it on your rules, connect calls, texts, and email, and let it handle the next conversation with every outcome logged. Build free. Go live from nineteen dollars a month at trywireline dot com."
 
 ## Paid Social Set
 
@@ -393,7 +393,7 @@ Create a premium SaaS social ad for Wireline. Headline: "Voice Agents". Subhead:
 
 ### Story/Reel Cover - 9:16
 
-Create a vertical launch cover for Wireline. Headline: "Missed calls should not become lost revenue." Secondary line: "Build your Voice Agent." Footer: "trywireline.com". Visual: clean mobile-first call card flowing into a text confirmation and outcome log.
+Create a vertical launch cover for Wireline. Headline: "Every missed call is someone trying the next name on the list." Secondary line: "Build your Voice Agent." Footer: "trywireline.com". Visual: clean mobile-first call card flowing into a text confirmation and outcome log.
 
 ### LinkedIn Banner - 16:9
 

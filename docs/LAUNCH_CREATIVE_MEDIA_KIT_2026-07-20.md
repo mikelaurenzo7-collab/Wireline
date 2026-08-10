@@ -1,8 +1,10 @@
 # Wireline Launch Creative Media Kit
 
-Date: 2026-07-26  
+Date: 2026-08-10  
 Status: Active creative kit; published reels require source-commit certification  
 Related: `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`
+
+**Who owns what.** The campaign document owns copy: the Brand Spine, every voiceover script, and every cut's shot list, timing, and mix. This kit owns delivery: the asset manifest, the capture-and-certification workflow, the tool briefs, and the placement plan. When the two disagree, the campaign document wins and this file is the bug — that is how the retired missed-call hook survived here for two weeks after it was retired there.
 
 ## Current Creative Doctrine
 
@@ -41,17 +43,38 @@ Business-context assets may use "AI employee" only when the placement is explici
 | Asset | Format | Copy |
 | --- | --- | --- |
 | `social/wireline-social-ai-voice-agents.png` | 1:1 | Voice Agents / Personal + Business |
-| `social/wireline-social-missed-call.png` | 1:1 | Missed calls should not become lost revenue |
+| `social/wireline-social-missed-call.png` | 1:1 | Every missed call is someone trying the next name on the list |
 | `ads/wireline-ad-build-free-live-19.png` | 16:9 | Build free / Go live from $19/mo |
 | `ads/wireline-ad-one-agent-every-channel.png` | 16:9 | One agent / voice + SMS + email |
 | `stories/wireline-story-voice-agent.png` | 9:16 | Build your Voice Agent |
 | `deck/wireline-founder-early-access.pdf` | 16:9 deck | Founder Early Access from $19/mo |
-| `audio/wireline-ai-voice-agent-30s.mp3` | audio | AI Voice Generator campaign VO |
+| `audio/wireline-ai-voice-agent-30s.mp3` | audio | "The Second Ring" hero narration — 24 words entering at 0:20, **not** the retired four-verb walkthrough |
 | `audio/wireline-missed-call-15s.mp3` | audio | 15s reel VO from the campaign pack ("Your agent can.") |
 | `audio/wireline-founder-60s.mp3` | audio | 60s founder explainer VO from the campaign pack |
 | [Published Launch Reel 46s (VO mixed)](https://share.descript.com/view/MvGqlYX4NMf) | 16:9 edit | Published August 1 cut; release-current only when its delivery record certifies the deployed source commit |
 
+Video cuts are briefed in `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`, which owns their shot lists, timings, and mix rules. The deliverables:
+
+| Cut | Length | Slot | Blocking issue |
+| --- | --- | --- | --- |
+| "The Second Ring" hero | 30s | Primary paid social | Needs a real captured booking call mixed forward — a capture task, not an edit |
+| "Two Rings" bumper | 6s | YouTube bumper, Reels/TikTok scroll-stop | Same captured call; no VO needed |
+| Missed-call cutdown | 15s | Paid social | Delivered file runs 16.80s and mixes the agent low; both violate the brief |
+| Product walkthrough | 30s | Sales, onboarding, docs | Alternate cut — not for paid social |
+| Descript master | 46s | Long-form, founder | Not yet re-cut; founder-60s VO is ready for it |
+
+Every paid cut ships in **two mixes**: sound-on as briefed, and sound-off with the Studio live-transcript segment extended so a muted viewer can read the agent's words. Most paid social plays muted, and the hero and bumper both stake everything on audio.
+
 Legacy filenames containing `one-employee`, `employee`, `launch-9`, or `starter-9` are not publishable unless regenerated with the current copy above.
+
+### Retired copy — do not ship
+
+The campaign document retires lines as the creative sharpens. Retired copy has a habit of surviving in asset tables and design prompts long after the decision, so it is listed here and pinned by `tests/launch-creative-consistency-contract.test.ts`.
+
+| Retired | Use instead | Why |
+| --- | --- | --- |
+| "Missed calls should not become lost revenue." | "Every missed call is someone trying the next name on the list." | A principle, not a moment. It states a truism the viewer already agrees with and gives them nothing to picture; the replacement names the person walking away. |
+| The four-verb walkthrough script in the 30s slot | "The Second Ring" hero narration | The 30s slot is now the hero cut. Its narration is 24 words entering at 0:20; the rest is captured agent audio and silence. |
 
 ## Launch Reel Source of Truth
 
@@ -60,8 +83,9 @@ The [Descript share](https://share.descript.com/view/MvGqlYX4NMf) is the current
 Derivatives must preserve the approved voiceover, product sequence, timing, and price promise while using picture certified against the current production source commit.
 
 - Show the real product. No stock footage, mock dashboards, vendor logos, decorative captions, or extra claims.
-- Burn in only four chapter words when they help orientation: **Create. Train. Wire. Run.**
-- End card only: **Build free. Go live from $19/mo.** and **trywireline.com**.
+- Keep burned-in words scarce. The walkthrough cut uses four chapter words — **Create. Train. Wire. Run.** — and the hero and bumper carry their own briefed overlays. Anything not in a cut's shot list does not go on screen.
+- Every end card carries **Build free. Go live from $19/mo.** and **trywireline.com**. The hero and bumper open theirs with **Nobody went to voicemail.**
+- **Let the agent be heard.** Every cut must contain at least one stretch of real captured agent audio at full level, with no voiceover and no music under it. We sell a voice product, and the buyer's real objection is that their customers will know it is a bot; nothing in a deck answers that, and mixing the agent low throws away the only asset that does.
 - Provide accurate platform captions as a selectable accessibility track. Do not stack persistent subtitles over already legible product UI.
 - Cut 9:16 and 1:1 variants from the 16:9 master by reframing the active UI, never by shrinking the full desktop canvas into unreadable space.
 - Do not publish when `release-record.json.sourceCommit` differs from the deployed production SHA. Re-run the capture, inspect the frames, and update the delivery record first.
@@ -127,19 +151,24 @@ Prompt: Produce a 60-second founder-style launch video for Wireline using the 60
 
 ### BlitzReels Short Cut
 
-Prompt: Cut a 15-second 9:16 derivative from the approved 46-second Descript master. Use only real product footage: answer -> follow up -> logged outcome -> end card. Keep the approved VO phrases in order. No persistent overlays or vendor marks. Use platform captions for accessibility. End card: "Build free. Go live from $19/mo." and "trywireline.com".
+Cut the 15-second 9:16 derivative to the shot list in `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md` → *15-Second Reel — Missed Call*, which owns its timings, overlays, and mix. Summarised: real product footage only, no vendor marks, platform captions for accessibility, and the agent forward at full level from 5.0-8.0 with the narration ducking under it. Two overlays are briefed and required — **You cannot pick up.** then **Your agent can.** — because that contrast is the ad. End card: "Build free. Go live from $19/mo." and "trywireline.com".
 
 ### Beautiful.ai Deck
 
 Prompt: Build a concise 6-slide launch deck for Wireline: 1) Voice Agents, 2) Missed calls are expensive, 3) Create -> Train -> Wire -> Run, 4) Personal + business use cases, 5) Founder Early Access from $19/mo, 6) Build your Voice Agent.
 
-## AI Voice Generator Asset
+## Voiceover masters
 
-This voiceover was generated for promotion/reference only. It is not approved as a production runtime phone-call voice.
+`npm run campaign:vo` renders every VO from the canonical scripts in the campaign document, into gitignored `official-assets/audio/`. `tests/launch-campaign-vo-contract.test.ts` pins the generator's copy to the document, so the audio can never read a script the reels were not timecoded against. Regenerate whenever campaign copy changes — the renders are build artifacts, not repository content.
+
+All campaign audio is **marketing and reference use only**. Production phone-call speech goes through the managed voice runtime, never through campaign assets.
+
+### Superseded — reference only
+
+The original AI Voice Generator preview reads the retired hook and the retired four-verb script. It is kept for provenance and must not be laid over any current cut.
 
 - Preview: https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/ec315585-89bf-4b2b-ad7f-7e30bb50d5fd.mp3
 - Full audio: https://www.aidocmaker.com/g0/audio?name=acdf9b5a628e4558923c63ba0ed2d821
-- Script: "Missed calls should not become lost revenue. Wireline helps you build voice agents for personal tasks and business conversations. Start with one agent, train it on your rules, connect calls, texts, and email, and let it handle the next conversation with every outcome logged. Build free. Go live from nineteen dollars a month at trywireline dot com."
 
 ## Placement Plan
 

@@ -103,7 +103,7 @@ Add-on: $15/mo per extra agent, including +50 live voice minutes and +1 number.
 
 | Angle | Hook | CTA |
 | --- | --- | --- |
-| Missed call | Missed calls should not become lost revenue. | Build your Voice Agent |
+| Missed call | Every missed call is someone trying the next name on the list. | Build your Voice Agent |
 | Personal | Delegate calls without handing over your life. | Start free |
 | Business | Give every high-intent call a trained first response. | Go live from $19/mo |
 | Multi-agent | Start with one agent. Add specialists when volume proves it. | Build your Voice Agent |
