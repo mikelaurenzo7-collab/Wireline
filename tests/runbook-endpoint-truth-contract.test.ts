@@ -54,9 +54,27 @@ describe("runbooks only name endpoints that exist", () => {
     expect(mounted).toContain("/api/health/voice-status");
   });
 
+  /*
+   * Scanning docs/ alone was not enough, and the gap was the whole point: the
+   * first fix corrected the runbook prose while `src/lib/demo-line-canary.ts`
+   * kept SENDING operators the same phantom endpoint in a production alert
+   * email. Documentation is not the only thing that instructs a human. Source
+   * files that emit operator-facing text are scanned too.
+   */
   it("cites no health endpoint the server does not mount", () => {
     const docsDir = resolve(process.cwd(), "docs");
     const offenders: string[] = [];
+
+    // Source files whose strings reach an operator (alerts, emails, runbook
+    // text embedded in code).
+    for (const file of ["src/lib/demo-line-canary.ts"]) {
+      for (const [index, line] of read(file).split("\n").entries()) {
+        if (/never existed|does not exist|not mounted/i.test(line)) continue;
+        for (const match of line.matchAll(/\/api\/health\/[a-z0-9-]+/g)) {
+          if (!mounted.has(match[0])) offenders.push(`${file}:${index + 1} → ${match[0]}`);
+        }
+      }
+    }
 
     for (const file of readdirSync(docsDir).filter((name) => name.endsWith(".md"))) {
       const source = read(`docs/${file}`);

@@ -155,7 +155,10 @@ export async function updateLeadStatusOnCallEnd(
        * failing must not abandon the lead-status update that records the
        * outcome, but it is logged at error because it is a compliance write.
        */
-      const suppressible = normalizeDncPhone(customerNumber);
+      // The lead row is authoritative: a lead can match by vapiCallId alone, in
+      // which case the webhook's customerNumber is empty and suppressing it
+      // would silently no-op on exactly the call that asked us to stop.
+      const suppressible = normalizeDncPhone(lead.customerNumber || customerNumber);
       if (suppressible) {
         try {
           await drizzle

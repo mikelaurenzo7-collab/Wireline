@@ -88,6 +88,35 @@ export function stripCallbackRequestMarker(
 }
 
 /**
+ * Decide the metadata a callback-tick write should persist.
+ *
+ * A terminal outcome (the schedule is cleared — placed, blocked, dropped, or
+ * failed) spends the consumer's request, so the marker is consumed from
+ * whichever object this write persists: the caller's patch when it supplied
+ * one, otherwise the lead's own metadata, and then only when it actually
+ * carries the marker (rewriting untouched metadata for nothing is churn).
+ *
+ * A deferral persists the patch untouched — the same request is still rolling
+ * forward to its permitted window and has not been used yet.
+ *
+ * Returning undefined means "do not write the metadata column at all".
+ * Extracted and exported so the rule is unit-testable: it decides whether a
+ * later system-scheduled dial may claim consent, which is too consequential to
+ * leave verified only by reading the source for a substring.
+ */
+export function nextCallbackLeadMetadata(input: {
+  terminal: boolean;
+  patchMetadata?: Record<string, unknown>;
+  leadMetadata: Record<string, unknown>;
+}): Record<string, unknown> | undefined {
+  if (!input.terminal) return input.patchMetadata;
+  const source =
+    input.patchMetadata ??
+    (CALLBACK_REQUEST_MARKER in input.leadMetadata ? input.leadMetadata : undefined);
+  return source ? stripCallbackRequestMarker(source) : undefined;
+}
+
+/**
  * Parse the `callback_datetime` an agent captured mid-call into an executable
  * Date. The tool mandate asks the model for an exact ISO datetime, but LLM
  * output drifts — this is the single tolerant/clamping parser both the tool
@@ -143,13 +172,13 @@ export async function tickDueCallbacks({
       summary: string;
       metadata?: Record<string, unknown>;
     }) => {
-      // Terminal outcomes (null schedule) consume the consumer's request
-      // marker — enforced here so no individual call site can forget. A
-      // deferral keeps it: the same request is still in flight.
-      const terminal = patch.callbackScheduledAt === null;
-      const base =
-        patch.metadata ?? (terminal && CALLBACK_REQUEST_MARKER in metadata ? metadata : undefined);
-      const nextMetadata = terminal && base ? stripCallbackRequestMarker(base) : patch.metadata;
+      // Terminal outcomes consume the consumer's request marker — enforced
+      // here so no individual call site can forget it.
+      const nextMetadata = nextCallbackLeadMetadata({
+        terminal: patch.callbackScheduledAt === null,
+        patchMetadata: patch.metadata,
+        leadMetadata: metadata,
+      });
       await drizzle
         .update(schema.outboundLeads)
         .set({

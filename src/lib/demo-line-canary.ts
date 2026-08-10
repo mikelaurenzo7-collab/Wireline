@@ -16,7 +16,7 @@
  * assistant was accidentally deleted, we know before the next prospect calls.
  *
  * Triggered via the job queue as `demo_line_canary` (nightly 04:00 UTC).
- * Also exposed via GET /api/health/canary (authenticated) for on-demand use.
+ * Also exposed via GET /api/health/voice-status for on-demand use.
  */
 
 import { log } from "./server-context";
@@ -255,7 +255,7 @@ async function sendCanaryAlert(run: CanaryRunResult): Promise<boolean> {
       ? `Voice window (${run.voiceWindow.windowMinutes}m): ${run.voiceWindowHealthy ? "healthy" : "degraded"} · calls=${run.voiceWindow.totalCalls} · ttft_p95=${run.voiceWindow.ttftP95Ms ?? "—"}ms`
       : "",
     "",
-    "Check: GET /api/health/canary for full details.",
+    "Check: GET /api/health/voice-status for full details.",
     "",
     `Run at: ${run.timestamp}`,
   ];

@@ -73,7 +73,12 @@ describe("a dnc-classified outcome suppresses the number, not just the lead", ()
     const tracking = read("src/lib/outbound-call-tracking.ts");
     const arm = tracking.slice(tracking.indexOf('} else if (outcomeTag === "dnc") {'));
     expect(arm.slice(0, 2000)).toContain("insert(schema.dncList)");
-    expect(arm.slice(0, 2000)).toContain("normalizeDncPhone(customerNumber)");
+    // The LEAD row is authoritative: a lead can match by vapiCallId alone, in
+    // which case the webhook's customerNumber is empty and suppression would
+    // silently no-op on exactly the call that asked us to stop.
+    expect(arm.slice(0, 2000)).toContain(
+      "normalizeDncPhone(lead.customerNumber || customerNumber)",
+    );
     // Idempotent, so redelivery cannot fail the call-end handler.
     expect(arm.slice(0, 2000)).toContain(
       "onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] })",
