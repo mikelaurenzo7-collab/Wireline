@@ -34,6 +34,8 @@ export type LiveAvatarSessionCredentials = {
   livekitClientToken?: string;
   wsUrl?: string | null;
   sandbox: boolean;
+  /** Product/provider ceiling for this session. */
+  maxSessionSeconds?: number;
 };
 
 export type LiveVideoAddonState = {
