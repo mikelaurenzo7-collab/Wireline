@@ -33,11 +33,14 @@ describe("video presenter integration", () => {
     );
   });
 
-  it("starts LiveAvatar LITE sessions on the server", () => {
+  it("starts bounded LiveAvatar LITE sessions on the server", () => {
     const service = source("src/lib/video-presenter/liveavatar-service.ts");
+    const routes = source("src/routes/video-presenter-routes-base.ts");
     expect(service).toContain('mode: "LITE"');
     expect(service).toContain("/v1/sessions/token");
     expect(service).toContain("mintLiveAvatarLiteSessionToken");
+    expect(routes).toContain("LIVE_VIDEO_MAX_SESSION_SECONDS");
+    expect(routes).toContain("maxSessionDurationSeconds: LIVE_VIDEO_MAX_SESSION_SECONDS");
   });
 
   it("uses the official LiveAvatar Web SDK in the browser", () => {
@@ -47,7 +50,7 @@ describe("video presenter integration", () => {
     expect(live).toContain("repeatAudio");
   });
 
-  it("seeds business agents with synthetic identity until live video add-on is enabled", () => {
+  it("seeds business agents with synthetic identity until live video is explicitly enabled", () => {
     const routes = source("src/routes/agent-routes-v2.ts");
     expect(routes).toContain("businessAgentVideoPresenterDefaults");
     const defaults = source("src/lib/video-presenter/liveavatar-service.ts");
@@ -59,20 +62,21 @@ describe("video presenter integration", () => {
     expect(routes).toContain("/api/agents/:id/video-presenter/sample");
     expect(routes).toContain("generatePresenterSpeech");
     expect(routes).toContain("LIVE_VIDEO_NO_VOICE");
+    const preview = source("src/components/AgentPresenceLivePreview.tsx");
+    expect(preview).toContain("mp3Base64ChunksToPcmBinary");
+    expect(preview).toContain("streamSampleBinary");
     const live = source("src/components/LiveVideoPresenter.tsx");
     expect(live).toContain("feedPcmDelta");
     const sandbox = source("src/components/OpenAILiveVoiceSandbox.tsx");
     expect(sandbox).toContain("onAgentAudioDelta");
   });
 
-  it("offers live video as an explicit opt-in add-on", () => {
+  it("offers live video as an explicit paid opt-in add-on with an operator kill switch", () => {
     const entitlements = source(
       "src/lib/video-presenter/live-video-entitlements.ts",
     );
-    expect(entitlements).toContain("WIRELINE_LIVE_VIDEO_CATALOG_READY");
-    expect(entitlements).toContain(
-      "addonOffered && workspaceFlag && stripeActive && settingsActive && onPaidPlan",
-    );
+    expect(entitlements).toContain("WIRELINE_LIVE_VIDEO_DISABLED");
+    expect(entitlements).toContain("workspaceFlag && baseSubscriptionActive");
     expect(entitlements).not.toContain("workspaceFlag ||");
 
     const routes = source("src/routes/video-presenter-routes.ts");
@@ -81,24 +85,22 @@ describe("video presenter integration", () => {
       "LIVE_VIDEO_UPGRADE_REQUIRED",
     );
     const preview = source("src/components/AgentPresenceLivePreview.tsx");
-    expect(preview).toContain("Add live video");
+    expect(preview).toContain("Enable live video");
+    expect(preview).toContain("Subscribe to live video · $19/mo");
     expect(preview).toContain("live-video-checkout");
     expect(preview).toContain("liveVideoMeteringNote");
-    expect(preview).toContain("catalogReadyForLiveVideo");
-    expect(preview).toContain(
-      "Checkout stays hidden until Presence Catalog selection returns",
-    );
+    expect(preview).toContain("Choose a presenter face above before subscribing to Live Video");
   });
 
-  it("imports catalog listing for the avatar picker route", () => {
+  it("loads and saves public presenter catalog choices through authenticated Wireline routes", () => {
     const routes = source("src/routes/video-presenter-routes-base.ts");
     expect(routes).toContain("listPublicAvatars");
-  });
-
-  it("pauses catalog presenter pickers until the curated Presence Catalog is ready", () => {
+    expect(routes).toContain('"/api/video-presenter/avatars"');
     const picker = source("src/components/AgentPresenceAvatarPicker.tsx");
-    expect(picker).toContain("Presence catalog paused");
-    expect(picker).not.toContain('provider: "liveavatar"');
+    expect(picker).toContain('authFetch("/api/video-presenter/avatars")');
+    expect(picker).toContain("JSON.stringify({ avatarId })");
+    expect(picker).toContain("aria-pressed={selected}");
+    expect(picker).not.toContain("Presence catalog paused");
     const resolve = source(
       "src/lib/video-presenter/resolve-agent-presenter.ts",
     );
@@ -128,9 +130,10 @@ describe("video presenter integration", () => {
     expect(billing).toContain("LIVE_VIDEO_CATALOG_UNAVAILABLE");
     expect(billing).toContain("LIVE_VIDEO_BASE_PLAN_REQUIRED");
     expect(billing).toContain("automatic_tax: { enabled: true }");
-    expect(source("scripts/lib/stripe-founder-catalog.mjs")).toContain(
-      "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
-    );
+    const manifest = source("scripts/lib/stripe-founder-catalog.mjs");
+    expect(manifest).toContain("STRIPE_LIVE_VIDEO_ADDON_PRICE_ID");
+    expect(manifest).toContain('session_reservation_minutes: "5"');
+    expect(manifest).toContain('wireline_catalog_state: "launch_active"');
     expect(source("src/components/StripeBillingCard.tsx")).toContain(
       "live-video-checkout",
     );
