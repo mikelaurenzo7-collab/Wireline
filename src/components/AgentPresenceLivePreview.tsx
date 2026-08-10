@@ -3,7 +3,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { Loader2, Play, Volume2 } from "lucide-react";
+import { Loader2, Play, Square, Volume2 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import {
@@ -65,6 +65,7 @@ export default function AgentPresenceLivePreview({
 }) {
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
+  const [ending, setEnding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [presenterState, setPresenterState] = useState<PresenterPayload | null>(null);
   const [session, setSession] = useState<{
@@ -132,6 +133,20 @@ export default function AgentPresenceLivePreview({
       setConnecting(false);
     }
   }, [agentId, presenterState?.platform.configured]);
+
+  const endLiveVideo = useCallback(async () => {
+    if (!session || ending) return;
+    setEnding(true);
+    setError(null);
+    try {
+      await livePresenterRef.current?.stop();
+    } finally {
+      setSession(null);
+      setStreamReady(false);
+      setVideoSpeaking(false);
+      setEnding(false);
+    }
+  }, [ending, session]);
 
   const playVoiceSample = useCallback(async () => {
     if (!session) return;
@@ -428,26 +443,41 @@ export default function AgentPresenceLivePreview({
             Preview live presenter
           </button>
         ) : liveVideoEnabled && session ? (
-          <button
-            type="button"
-            onClick={() => void playVoiceSample()}
-            disabled={sampleLoading || !hasVoice || !streamReady}
-            title={
-              !hasVoice
-                ? "Pick a voice for this agent in Setup first."
-                : !streamReady
-                  ? "Wait for the live presenter stream to connect."
-                  : undefined
-            }
-            className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 text-xs font-semibold text-foreground transition-colors hover:border-[var(--wireline-color-action-primary-default)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {sampleLoading ? (
-              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-            ) : (
-              <Volume2 className="size-3.5" aria-hidden="true" />
-            )}
-            Hear agent voice on video
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => void playVoiceSample()}
+              disabled={sampleLoading || ending || !hasVoice || !streamReady}
+              title={
+                !hasVoice
+                  ? "Pick a voice for this agent in Setup first."
+                  : !streamReady
+                    ? "Wait for the live presenter stream to connect."
+                    : undefined
+              }
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 text-xs font-semibold text-foreground transition-colors hover:border-[var(--wireline-color-action-primary-default)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {sampleLoading ? (
+                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <Volume2 className="size-3.5" aria-hidden="true" />
+              )}
+              Hear agent voice on video
+            </button>
+            <button
+              type="button"
+              onClick={() => void endLiveVideo()}
+              disabled={ending}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 text-xs font-semibold text-muted-foreground transition-colors hover:border-[var(--wireline-color-status-warning)] hover:text-foreground disabled:cursor-wait disabled:opacity-60"
+            >
+              {ending ? (
+                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <Square className="size-3.5" aria-hidden="true" />
+              )}
+              End live video
+            </button>
+          </>
         ) : null}
         {error ? (
           <p className="text-xs text-[var(--wireline-color-status-warning)]" role="alert">
