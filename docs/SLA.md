@@ -1,87 +1,61 @@
-# Wireline Service Level Agreement (SLA)
+# Wireline Service Level & Support Policy
 
-**Effective:** May 2026
-**Applies to:** Pro, Business, and Enterprise plans
+**Updated:** August 10, 2026  
+**Applies to:** Wireline self-serve service unless a signed order form or agreement says otherwise.
 
----
+## Contract boundary
 
-## 1. Platform Availability
+Wireline's public plans are sold as self-serve software. They do **not** include a contractual uptime SLA, service-credit schedule, guaranteed incident-response time, dedicated Slack channel, or 24/7 founder escalation unless those terms are expressly included in a signed agreement.
 
-Wireline commits to the following monthly uptime targets:
+Scale / Enterprise customers may negotiate support, availability, security, data-handling, and service-credit terms. A signed agreement controls over this document if the two conflict.
 
-| Plan | Uptime Target | Monthly Downtime Budget |
-|------|---------------|------------------------|
-| Pro | 99.5% | ~2h 11m |
-| Business | 99.9% | ~43m |
-| Enterprise | 99.95% | ~22m |
+## Availability posture
 
-**"Uptime"** means the Wireline voice agent platform successfully processes
-inbound and outbound calls. Measured as `(total_minutes − downtime_minutes) / total_minutes × 100`.
+Wireline is engineered for continuous operation across calling, messaging, email, and the web application, with provider fallbacks and bounded failure modes where the product can safely provide them.
 
-## 2. Exclusions
+- Public service posture: `https://trywireline.com/status`
+- Public application health: `GET /api/health`
+- Public voice reliability surface: `GET /api/voice/status`
+- Authenticated/operator diagnostics provide additional provider, queue, and SLO evidence.
 
-The following do not count toward downtime:
+These surfaces report observed system state. They are operational evidence, not a contractual uptime guarantee.
 
-- Scheduled maintenance (announced 48h+ in advance via status page)
-- Upstream provider outages (Vapi, ElevenLabs, Twilio, Anthropic) beyond
-  Wireline's control — though we maintain fallback providers where possible
-- Force majeure events
-- Customer-side configuration errors
-- Features explicitly marked as "beta"
+## Support
 
-## 3. Response Time Targets
+- Product and account support: `support@trywireline.com`
+- Security reports and security-document requests: `security@trywireline.com`
+- In-product support and escalation paths may be available by plan and configuration.
 
-| Severity | Definition | First Response | Resolution Target |
-|----------|-----------|----------------|-------------------|
-| **P0 — Critical** | Voice agents completely unavailable for all customers | 15 min | 1 hour |
-| **P1 — Major** | Voice agents degraded (>2s latency, partial failures) | 30 min | 4 hours |
-| **P2 — Minor** | Non-voice features impacted (dashboard, billing portal) | 2 hours | 24 hours |
-| **P3 — Low** | Cosmetic issues, documentation, feature requests | 24 hours | Best effort |
+Wireline prioritizes widespread voice/runtime outages and security incidents above ordinary product questions. Any response or resolution times stated in an executed Enterprise agreement are contractual only for that customer.
 
-## 4. Service Credits
+## Incidents
 
-If we miss the uptime target in a calendar month:
+Wireline uses application health probes, job/queue monitoring, provider diagnostics, structured error reporting, and a nightly public-line canary to detect failures. Some checks are request-driven rather than scheduled; monitoring cadence and alert delivery depend on the active production configuration.
 
-| Uptime Achieved | Credit (% of monthly bill) |
-|-----------------|---------------------------|
-| 99.0% – 99.5% | 10% |
-| 95.0% – 99.0% | 25% |
-| < 95.0% | 50% |
+During a material incident, Wireline aims to:
 
-Credits are applied to the next billing cycle. Maximum credit per month: 50%
-of that month's charges. Credits must be requested within 30 days.
+1. contain customer impact;
+2. preserve data and billing integrity;
+3. restore the safest viable service path;
+4. communicate material customer-facing status through the appropriate product/support surface; and
+5. document root cause and corrective action when warranted.
 
-## 5. Monitoring
+These are operating objectives, not guaranteed response-time commitments for self-serve plans.
 
-- **Public status page:** [trywireline.com/status](/status)
-- **Health endpoint:** `GET /api/health` (public, no auth required)
-- **Internal probes:** `GET /api/health/internal`, `GET /api/health/models`
-- **Synthetic monitoring:** Automated call probes run every 15 minutes against
-  showcase agents to detect voice-path degradation before customers do
+## Provider dependencies
 
-## 6. Communication During Incidents
+Wireline depends on managed infrastructure and communications providers for functions including cloud hosting, telephony, voice orchestration, model inference, payments, email delivery, database hosting, and rate limiting. Wireline designs for graceful degradation and fallback where practical, but an upstream outage can still affect service.
 
-- **Status page** updated within 5 minutes of confirmed incident
-- **Email notification** to affected account owners for P0/P1
-- **Post-incident report** published within 72 hours for any P0/P1 event
+## Data durability and retention
 
-## 7. Support Channels
+- Primary application data is stored in managed Postgres infrastructure.
+- Backup and point-in-time-recovery capabilities follow the active managed-database plan and production configuration; Wireline does not publicly promise a recovery window that has not been independently verified for the active plan.
+- Call transcripts use tenant-configurable retention with a **365-day default and a supported 90–365 day range**.
+- Managed full-call provider audio recording is disabled by default. Caller-submitted voicemail or message-recording features may create audio when the feature is intentionally used.
+- Account deletion and privacy-rights workflows use server-owned deletion paths for user-owned product data; third-party processors may retain bounded records as required for security, fraud prevention, billing, legal obligations, or their documented retention cycles.
 
-| Channel | Availability | Plans |
-|---------|-------------|-------|
-| In-app chat | 24/7 (AI first, human escalation) | All |
-| Email (support@trywireline.com) | Business hours ET | All |
-| Phone escalation to founder | 24/7 for P0 | Business, Enterprise |
-| Dedicated Slack channel | Business hours ET | Enterprise |
+## Enterprise terms
 
-## 8. Data Durability
+Customers that need a contractual uptime target, BAA, DPA, security addendum, named support contacts, incident-notification window, data-residency term, recovery objective, or service credits should obtain those terms in writing before relying on them.
 
-- Database: Supabase Postgres with point-in-time recovery (30 days)
-- Backups: Daily automated, tested monthly
-- Retention: Configurable per tenant (default 365 days, minimum 90 days)
-- Deletion: Account deletion cascades all data within 30 days
-
----
-
-*This SLA is a commitment to operational excellence. It will be updated as
-our infrastructure matures and as we achieve SOC 2 Type II certification.*
+This document deliberately describes what Wireline can substantiate today. Roadmap work, internal targets, and historical runbooks are not customer commitments.
