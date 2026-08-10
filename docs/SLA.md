@@ -50,7 +50,7 @@ Wireline depends on managed infrastructure and communications providers for func
 
 - Primary application data is stored in managed Postgres infrastructure.
 - Backup and point-in-time-recovery capabilities follow the active managed-database plan and production configuration; Wireline does not publicly promise a recovery window that has not been independently verified for the active plan.
-- Call transcripts use tenant-configurable retention with a **365-day default and a supported 90–365 day range**.
+- Call transcripts use tenant-configurable retention with a **365-day default, minimum 90 days, and a supported 90–365 day range**.
 - Managed full-call provider audio recording is disabled by default. Caller-submitted voicemail or message-recording features may create audio when the feature is intentionally used.
 - Account deletion and privacy-rights workflows use server-owned deletion paths for user-owned product data; third-party processors may retain bounded records as required for security, fraud prevention, billing, legal obligations, or their documented retention cycles.
 
