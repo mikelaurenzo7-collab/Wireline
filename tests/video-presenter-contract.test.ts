@@ -48,6 +48,11 @@ describe("video presenter integration", () => {
     expect(live).toContain("@heygen/liveavatar-web-sdk");
     expect(live).toContain("LiveAvatarSession");
     expect(live).toContain("repeatAudio");
+    expect(live).toContain("stop: () => Promise<void>");
+    expect(live).toContain("await session.stop().catch(() => undefined)");
+    const preview = source("src/components/AgentPresenceLivePreview.tsx");
+    expect(preview).toContain("End live video");
+    expect(preview).toContain("livePresenterRef.current?.stop()");
   });
 
   it("seeds business agents with synthetic identity until live video is explicitly enabled", () => {
