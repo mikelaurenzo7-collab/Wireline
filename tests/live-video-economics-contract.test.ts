@@ -5,17 +5,19 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("live video economics contract", () => {
-  it("keeps the add-on paused until an explicit catalog release", () => {
-    const env = read(".env.example");
-    const billing = read("src/routes/billing-routes.ts");
+  it("keeps the add-on launch-active with an explicit emergency kill switch", () => {
+    const entitlement = read("src/lib/video-presenter/live-video-entitlements.ts");
     const manifest = read("scripts/lib/stripe-founder-catalog.mjs");
+    const routes = read("src/routes/video-presenter-routes-base.ts");
 
-    expect(env).toContain("WIRELINE_LIVE_VIDEO_CATALOG_READY=false");
-    expect(billing).toContain("if (!isLiveVideoCatalogReady())");
-    expect(manifest).toContain('wireline_catalog_state: "launch_paused"');
+    expect(entitlement).toContain('WIRELINE_LIVE_VIDEO_DISABLED !== "true"');
+    expect(entitlement).not.toContain('WIRELINE_LIVE_VIDEO_CATALOG_READY === "true"');
+    expect(manifest).toContain('wireline_catalog_state: "launch_active"');
     expect(manifest).toContain('included_live_video_minutes: "60"');
-    expect(manifest).toContain('session_reservation_minutes: "10"');
+    expect(manifest).toContain('session_reservation_minutes: "5"');
     expect(manifest).toContain('overage_policy: "none_pause_at_limit"');
+    expect(routes).toContain("maxSessionDurationSeconds: LIVE_VIDEO_MAX_SESSION_SECONDS");
+    expect(routes).not.toContain("maxSessionDurationSeconds: 600");
   });
 
   it("serializes monthly reservations before minting any provider token", () => {
@@ -31,14 +33,8 @@ describe("live video economics contract", () => {
     const reservation = routes.indexOf(
       "const reservation = await reserveLiveVideoSessionMinutes",
     );
-    const mint = routes.indexOf(
-      "await mintLiveAvatarLiteSessionToken",
-      reservation,
-    );
-    const release = routes.indexOf(
-      "await releaseLiveVideoSessionReservation",
-      mint,
-    );
+    const mint = routes.indexOf("await mintLiveAvatarLiteSessionToken", reservation);
+    const release = routes.indexOf("await releaseLiveVideoSessionReservation", mint);
     expect(reservation).toBeGreaterThan(-1);
     expect(mint).toBeGreaterThan(reservation);
     expect(release).toBeGreaterThan(mint);
@@ -51,6 +47,16 @@ describe("live video economics contract", () => {
     expect(entitlement).toContain("LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY");
     expect(entitlement).toContain("LIVE_VIDEO_SESSION_RESERVATION_MINUTES");
     expect(catalog).toContain('included_live_video_minutes: "60"');
-    expect(catalog).toContain('session_reservation_minutes: "10"');
+    expect(catalog).toContain('session_reservation_minutes: "5"');
+  });
+
+  it("keeps the browser audio bridge compatible with LiveAvatar LITE repeatAudio", () => {
+    const browserAudio = read("src/lib/voice/decode-browser-audio.ts");
+    const presenter = read("src/components/AgentPresenceLivePreview.tsx");
+
+    expect(browserAudio).toContain("PCM16 LE @ 24 kHz");
+    expect(browserAudio).toContain("mp3Base64ChunksToPcmBinary");
+    expect(presenter).toContain("mp3Base64ChunksToPcmBinary(payload.chunks)");
+    expect(presenter).toContain("streamSampleBinary(pcmBinary, payload.eventId)");
   });
 });
