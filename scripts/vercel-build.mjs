@@ -134,6 +134,7 @@ run("npx", [
   "tests/spend-guard-integrity-contract.test.ts",
   "tests/launch-truth-contract.test.ts",
   "tests/double-pass-launch-honesty-contract.test.ts",
+  "tests/launch-artifact-privacy-and-ops-truth-contract.test.ts",
   "tests/ai-cost-protection-contract.test.ts",
   "tests/public-health-probe.test.ts",
   "tests/public-health-function.test.ts",
