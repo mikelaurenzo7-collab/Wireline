@@ -55,3 +55,32 @@ describe("mid-call DNC termination stays inside one tenant", () => {
     }
   });
 });
+
+/*
+ * Two independent signals classify a call as a do-not-call request, and only
+ * one of them used to be operative. The transcript matcher writes the tenant
+ * DNC row when an opt-out PHRASE matches; the post-call digest tags the outcome
+ * "dnc" from a regex over the model's SUMMARY, which catches requests the
+ * phrase matcher missed. That second path only set one lead row to Blocked-DNC
+ * while isDncBlocked kept answering false, because it reads the DNC list — so a
+ * second campaign or a re-import could dial the same person again after they
+ * had asked us to stop. Both signals must reach the list.
+ */
+describe("a dnc-classified outcome suppresses the number, not just the lead", () => {
+  const read = (p: string) => readFileSync(p, "utf8");
+
+  it("writes the tenant DNC row from the summary-classified outcome", () => {
+    const tracking = read("src/lib/outbound-call-tracking.ts");
+    const arm = tracking.slice(tracking.indexOf('} else if (outcomeTag === "dnc") {'));
+    expect(arm.slice(0, 2000)).toContain("insert(schema.dncList)");
+    expect(arm.slice(0, 2000)).toContain("normalizeDncPhone(customerNumber)");
+    // Idempotent, so redelivery cannot fail the call-end handler.
+    expect(arm.slice(0, 2000)).toContain(
+      "onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] })",
+    );
+  });
+
+  it("keeps the transcript-phrase writer as the other independent path", () => {
+    expect(read("src/lib/vapi-handlers.ts")).toContain("persistTranscriptDncSuppression");
+  });
+});

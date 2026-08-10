@@ -3,6 +3,7 @@ import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "./server-utils";
 import { LEAD_STATUS } from "./outbound-status";
+import { normalizeDncPhone } from "./compliance";
 
 /** Summary written when Vapi accepts an outbound dial — replaced by end-of-call report. */
 export const OUTBOUND_CALL_PLACEHOLDER_SUMMARY = "Outbound call in progress…";
@@ -138,6 +139,42 @@ export async function updateLeadStatusOnCallEnd(
       newStatus = LEAD_STATUS.COMPLETED;
     } else if (outcomeTag === "dnc") {
       newStatus = LEAD_STATUS.BLOCKED_DNC;
+      /*
+       * Make the classification operative, not just cosmetic.
+       *
+       * The transcript matcher in vapi-handlers writes the tenant DNC row when
+       * a raw opt-out PHRASE matches. This tag comes from a different signal —
+       * a regex over the model's post-call summary — so it catches requests the
+       * phrase matcher missed ("caller asked to be removed from the list").
+       * Setting lead status alone marked ONE row Blocked-DNC while
+       * `isDncBlocked` kept answering false, because it reads the DNC list:
+       * a second campaign, a re-import, or any other lead row for the same
+       * person was still dialable after they had asked us to stop.
+       *
+       * Idempotent on (user_id, phone), and best-effort — a suppression write
+       * failing must not abandon the lead-status update that records the
+       * outcome, but it is logged at error because it is a compliance write.
+       */
+      const suppressible = normalizeDncPhone(customerNumber);
+      if (suppressible) {
+        try {
+          await drizzle
+            .insert(schema.dncList)
+            .values({
+              userId,
+              phone: suppressible,
+              reason: "Post-call summary classified the outcome as a do-not-call request",
+              source: "call_outcome",
+            })
+            .onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] });
+        } catch (dncError) {
+          log.error("DNC suppression write failed for a dnc-classified call outcome", {
+            userId,
+            leadId: lead.id?.toString?.() ?? String(lead.id),
+            error: getErrorMessage(dncError),
+          });
+        }
+      }
     } else if (outcomeTag === "unreachable") {
       if (currentAttempts < maxAttempts) {
         newStatus = LEAD_STATUS.RETRYING;
