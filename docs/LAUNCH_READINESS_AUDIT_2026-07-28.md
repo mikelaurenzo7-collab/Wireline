@@ -83,7 +83,7 @@ The read-only vendor probe and generated launch-status record now verify all of 
 - charges and payouts enabled with non-negative available balance;
 - customer-facing Wireline name, statement descriptor, website, and support origin;
 - one active Wireline-managed or default customer portal with payment-method updates, invoice history, and subscription cancellation;
-- one enabled `https://trywireline.com/api/stripe-webhook` endpoint with exactly the eight server-handled events;
+- one enabled `https://trywireline.com/api/stripe-webhook` endpoint with exactly the server-handled events derived by `scripts/lib/stripe-handled-events.mjs`;
 - active Stripe Tax settings.
 
 A regression contract pins these fail-closed gates.

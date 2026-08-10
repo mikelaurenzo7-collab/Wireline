@@ -28,7 +28,7 @@ export function CoachForm({
             value={transcript}
             onChange={setTranscript}
             rows={10}
-            placeholder="Customer: Hi, I called yesterday about..."
+            placeholder="Customer: Hi, I called yesterday about…"
           />
         </Field>
       )}

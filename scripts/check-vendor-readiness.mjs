@@ -9,6 +9,8 @@
  *   node --env-file=.env.production scripts/check-vendor-readiness.mjs
  */
 
+import { getHandledStripeWebhookEvents } from "./lib/stripe-handled-events.mjs";
+
 const checks = [];
 
 function record(id, required, level, detail, fundingAction = null, metadata = undefined) {
@@ -536,16 +538,15 @@ const stripePortalConfiguration =
 const stripePortalFeatures = stripePortalConfiguration?.features ?? {};
 const stripePortalReady = Boolean(stripePortalConfigurations?.ok && stripePortalConfiguration);
 
-const expectedStripeWebhookEvents = [
-  "charge.dispute.created",
-  "charge.refunded",
-  "checkout.session.completed",
-  "customer.subscription.created",
-  "customer.subscription.deleted",
-  "customer.subscription.updated",
-  "invoice.payment_failed",
-  "invoice.payment_succeeded",
-];
+// Derived from the handlers, never hand-maintained. This file kept its own
+// copy of eight events and never learned about charge.dispute.funds_withdrawn
+// and charge.dispute.funds_reinstated, so a correctly aligned endpoint was
+// reported as carrying two "extra" events and blocked the run — while
+// `npm run stripe:webhook:check` demanded exactly those ten. No endpoint
+// satisfied both gates, and the only way to clear this one was to delete the
+// two dispute-funds events from Stripe, which is what debits and re-credits
+// tenant Runtime Allowance when dispute funds move.
+const expectedStripeWebhookEvents = getHandledStripeWebhookEvents();
 const stripeWebhookInventory = arrayAt(stripeWebhookEndpoints?.body, "data");
 const stripeWebhook = stripeWebhookInventory.find(
   (endpoint) =>
@@ -581,7 +582,7 @@ const stripeFundingAction = !stripeBalanceRead
       : !stripePortalReady
         ? "Exercise Wireline portal bootstrap (or create a Dashboard default) and verify payment methods, invoices, and cancellation."
         : !stripeWebhookReady
-          ? "Align the enabled trywireline.com webhook endpoint to the eight server-handled events."
+          ? `Align the enabled trywireline.com webhook endpoint to the ${expectedStripeWebhookEvents.length} server-handled events (npm run stripe:webhook:align).`
           : !stripeTaxReady
             ? "Activate and verify Stripe Tax settings before accepting paid self-serve checkout."
             : "No prepaid funding required; keep payout bank, portal, tax, and webhook healthy.";

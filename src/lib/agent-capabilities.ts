@@ -92,6 +92,12 @@ export interface AgentToolCatalogEntry {
 export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   // Core
   {
+    name: "search_knowledge_base",
+    label: "Search knowledge base",
+    description: "Look up an answer in the agent's approved training material.",
+    group: "core",
+  },
+  {
     name: "view_recent_interactions",
     label: "View recent interactions",
     description: "Recent context.",
@@ -533,6 +539,7 @@ export const SQUARE_TOOL_NAMES: readonly AgentToolName[] = [
 
 export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
   sales: [
+    "search_knowledge_base",
     "view_recent_interactions",
     "escalate_to_human",
     "create_followup_task",
@@ -563,6 +570,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "log_to_google_sheets",
   ],
   customer_service: [
+    "search_knowledge_base",
     "view_recent_interactions",
     "escalate_to_human",
     "create_followup_task",
@@ -599,6 +607,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
   ],
   // E-commerce support agents — order status, inventory, returns, address fixes.
   ecommerce: [
+    "search_knowledge_base",
     "view_recent_interactions",
     "escalate_to_human",
     "create_followup_task",
@@ -628,6 +637,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "log_to_google_sheets",
   ],
   scheduler: [
+    "search_knowledge_base",
     "view_recent_interactions",
     "escalate_to_human",
     "create_followup_task",
@@ -646,6 +656,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "crm_search_contacts",
   ],
   collections: [
+    "search_knowledge_base",
     "view_recent_interactions",
     "escalate_to_human",
     "create_followup_task",
@@ -665,6 +676,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "log_to_google_sheets",
   ],
   technical_support: [
+    "search_knowledge_base",
     "view_recent_interactions",
     "escalate_to_human",
     "create_followup_task",
@@ -691,6 +703,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "log_to_google_sheets",
   ],
   lead_qualifier: [
+    "search_knowledge_base",
     "view_recent_interactions",
     "escalate_to_human",
     "create_followup_task",
@@ -720,6 +733,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "log_to_google_sheets",
   ],
   receptionist: [
+    "search_knowledge_base",
     "view_recent_interactions",
     "escalate_to_human",
     "create_followup_task",
@@ -740,6 +754,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "crm_search_contacts",
   ],
   marketing: [
+    "search_knowledge_base",
     "view_recent_interactions",
     "escalate_to_human",
     "create_followup_task",
@@ -769,6 +784,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
   // Workplace alerts, commerce, CRM pipeline, and lead scoring stay opt-in and
   // do not enter the live model context merely because the tenant connected them.
   personal_assistant: [
+    "search_knowledge_base",
     "view_recent_interactions",
     "escalate_to_human",
     "create_followup_task",

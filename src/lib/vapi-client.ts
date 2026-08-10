@@ -96,11 +96,7 @@ async function fetchWithRetry(
       // Non-idempotent call creation disables BOTH response-status and
       // transport retries. A 5xx/429 can still be ambiguous after the provider
       // accepted a POST, so replaying it can dial the same consumer twice.
-      if (
-        response.ok ||
-        !TRANSIENT_ERROR_CODES.has(response.status) ||
-        !retryTransportErrors
-      ) {
+      if (response.ok || !TRANSIENT_ERROR_CODES.has(response.status) || !retryTransportErrors) {
         return response;
       }
 
@@ -498,11 +494,18 @@ ${lessons ? `## LEARNED IMPROVEMENTS (APPLY THESE)\nYour previous call analysis 
 ${roleProtocol}
 
 ## VOICEMAIL PROTOCOL
-If you detect you have reached a voicemail or answering machine (recorded greeting, beep, or "please leave a message"):
+${
+  telemarketing
+    ? `If you detect you have reached a voicemail or answering machine (recorded greeting, beep, or "please leave a message"):
+1. Call the leave_voicemail tool to record the outcome.
+2. Do NOT speak a message. Say nothing and end the call.
+Leaving a prerecorded marketing message on an answering machine requires a toll-free opt-out line under 47 CFR 64.1200(b)(3), which this deployment does not operate, so no message may be left.`
+    : `If you detect you have reached a voicemail or answering machine (recorded greeting, beep, or "please leave a message"):
 1. IMMEDIATELY call the leave_voicemail tool before speaking.
 2. After the tool responds, deliver a clear, professional voicemail: identify yourself and your company, state the reason for your call in ONE sentence, ${callbackNumberSpoken ? `leave the callback number ${callbackNumberSpoken} (say it slowly, digit groups with pauses), ` : "leave a callback number if you know one, "}and close with "I look forward to connecting with you."
 3. Keep the voicemail under 20 seconds total.
-4. Say goodbye naturally to end the call.
+4. Say goodbye naturally to end the call.`
+}
 
 ## EMOTIONAL INTELLIGENCE
 - If the contact sounds surprised, annoyed, or busy: acknowledge it immediately ("I know this is unexpected — I'll be brief"). Respect their time.
@@ -537,7 +540,7 @@ Today is ${currentDateTime} in the agent's local timezone (${outboundTimeZone}).
 - Customer intel: Use capture_customer_profile whenever you learn something meaningful — budget, pain points, timeline, decision authority, objections, or agreed next steps. Capture it in the moment, not at the end. This data travels with the contact across all future calls.
 
 ## OUTBOUND COMPLIANCE (FEDERAL — NON-NEGOTIABLE)
-${callbackNumberSpoken ? `- Callback number: whenever the contact asks how to reach the business, and in every voicemail you leave, state the callback number ${callbackNumberSpoken}. Do-not-call requests are honored at that number too.\n` : ""}- The moment the contact asks to stop calls in any words ("stop calling", "take me off your list", "do not call me"): use the add_to_dnc tool immediately, confirm the removal in one sentence, and end the call politely. Never argue, delay, or pitch again first.${telemarketing ? `\n- Your opening line announced that saying stop calling places them on the do not call list. That promise is binding — treat any variation of it as an immediate add_to_dnc.` : ""}
+${callbackNumberSpoken ? `- Callback number: whenever the contact asks how to reach the business${telemarketing ? "" : ", and in every voicemail you leave"}, state the callback number ${callbackNumberSpoken}. Do-not-call requests are honored at that number too.\n` : ""}- The moment the contact asks to stop calls in any words ("stop calling", "take me off your list", "do not call me"): use the add_to_dnc tool immediately, confirm the removal in one sentence, and end the call politely. Never argue, delay, or pitch again first.${telemarketing ? `\n- Your opening line announced that saying stop calling places them on the do not call list. That promise is binding — treat any variation of it as an immediate add_to_dnc.` : ""}
 
 ## CALL CLOSING STANDARD
 Never end an outbound call without:
@@ -659,6 +662,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
       agentConfig.name || "your representative",
       settings?.businessName,
       callbackNumberSpoken,
+      telemarketing,
     ),
     responseDelaySeconds: 0,
     numWordsToInterruptAssistant: 2,
@@ -723,10 +727,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     if (
       !vapiResponse.ok &&
       voiceSelection.provider === "google" &&
-      isDefinitiveVapiVoiceModelRejection(
-        vapiResponse.status,
-        await vapiResponse.clone().text(),
-      )
+      isDefinitiveVapiVoiceModelRejection(vapiResponse.status, await vapiResponse.clone().text())
     ) {
       const geminiErrorBody = await vapiResponse.text();
       const retryModel =

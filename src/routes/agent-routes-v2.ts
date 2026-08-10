@@ -904,6 +904,44 @@ router.post(
   },
 );
 
+/**
+ * Update which actions an agent may take.
+ *
+ * `POST /api/mobile/agents/:id/tools` has always been able to do this; the web
+ * app never could. The one component that tried, AgentActionEngine, posted to
+ * `PATCH /api/agents/:id`, a route that does not exist — which is why it was
+ * never imported anywhere. The import route below can also write the column,
+ * but it is an import, not a capability edit.
+ *
+ * Deliberately identical to the mobile contract: same ownership check, same
+ * per-name validation, same normalizer, same response body. Tools reach live
+ * calls through `resolveAgentTools`, so the two clients must not be able to
+ * produce different stored states.
+ */
+router.post(
+  "/api/agents/:id/tools",
+  authenticateUser,
+  agentMutationRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!(await owned(req.params.id, req.user.id))) {
+      throw AppError.fromHttpStatus(404, "Agent not found");
+    }
+    const raw = req.body?.enabled_tools;
+    if (
+      !Array.isArray(raw) ||
+      raw.some((tool) => typeof tool !== "string" || !isAgentToolName(tool))
+    ) {
+      throw AppError.fromHttpStatus(400, "enabled_tools must contain known agent tools");
+    }
+    const enabledTools = normalizeEnabledTools(raw as AgentToolName[]);
+    await drizzle
+      .update(schema.agents)
+      .set({ enabledTools })
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
+    res.json({ success: true, enabledTools });
+  },
+);
+
 router.post(
   "/api/agents/:id/import",
   authenticateUser,

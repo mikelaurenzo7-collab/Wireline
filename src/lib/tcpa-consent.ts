@@ -389,6 +389,21 @@ const NORTH_AMERICAN_AREA_CODE_STATE: Record<string, string> = {
   "984": "NC",
   "985": "LA",
   "989": "MI",
+  /*
+   * NANP territories. `STATE_PRIMARY_TIMEZONE` in tcpa-calling-hours.ts has
+   * carried PR / VI / GU entries all along, but without these area codes
+   * `inferStateFromPhone` returned null for every territory number and those
+   * entries were unreachable. The null path falls back to an 11:00-21:00
+   * Eastern window, which over-blocks Puerto Rico and the USVI (AST is ahead of
+   * Eastern) but UNDER-blocks Guam badly: at UTC+10 that window lands at roughly
+   * 01:00-11:00 Guam local, so calls were permitted in the middle of the night
+   * there and blocked during the business day. Mapping the codes makes the
+   * intended per-territory zone live.
+   */
+  "787": "PR",
+  "939": "PR",
+  "340": "VI",
+  "671": "GU",
 };
 
 /**

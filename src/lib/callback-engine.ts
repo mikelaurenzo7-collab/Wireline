@@ -9,9 +9,18 @@
  *
  * Runs from the `callback_tick` job (enqueued by every /api/jobs/sweep tick,
  * same cluster-safe shape as cadence_tick). Every dial passes the shared
- * evaluateOutboundDialGate with `isRequestedCallback` (quiet hours + DNC
- * still enforced; consent comes from the caller's own request) and the
- * outbound voice spend controls.
+ * evaluateOutboundDialGate and the outbound voice spend controls.
+ *
+ * `isRequestedCallback` is READ from the lead, never assumed. It waives express
+ * written consent and flips the dial to non-marketing (which drops the 47 CFR
+ * 64.1200(b)(3) opt-out announcement), so it may only be claimed for a lead a
+ * consumer actually asked to be called back on. Two other writers put a due
+ * timestamp on `callback_scheduled_at` for leads nobody spoke to — the intake
+ * quiet-hours deferral and the summary-inferred "followup" outcome — and this
+ * engine selects purely on that timestamp. Hardcoding the flag laundered those
+ * into consented callbacks: a cold marketing lead submitted at 22:30 got dialed
+ * next morning with no consent check and no opt-out announcement, while the
+ * identical lead submitted at 10:00 was hard-blocked.
  */
 import { and, asc, eq, isNotNull, lte } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
@@ -37,6 +46,76 @@ export interface CallbackTickSummary {
 /** Scheduling bounds for agent-captured callback times. */
 const MIN_LEAD_TIME_MS = 5 * 60 * 1000;
 const MAX_HORIZON_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * Provenance stamp proving a consumer asked for this callback on a live line.
+ * Written only by the `schedule_callback` tool handler
+ * (`src/routes/vapi/tool-handlers-workflow.ts`) and stripped from
+ * account-holder-supplied intake metadata, so it cannot be asserted from
+ * outside a call.
+ */
+export const CALLBACK_REQUEST_MARKER = "callback_requested_via";
+
+/**
+ * A due `callback_scheduled_at` is not evidence of a request — system deferrals
+ * and inferred follow-ups write it too. Only the exact internally minted
+ * `phone_call` provenance value is allowed to claim the requested-callback
+ * class; an arbitrary non-empty marker must fail closed.
+ */
+export function isConsumerRequestedCallback(metadata: Record<string, unknown>): boolean {
+  return metadata[CALLBACK_REQUEST_MARKER] === "phone_call";
+}
+
+/**
+ * One request authorizes one return call. The marker is consumed on every
+ * terminal outcome (placed, blocked, dropped, failed) and preserved only
+ * across deferrals, where the same request is still rolling forward to its
+ * window. Leaving it behind would relaunder every later system-scheduled dial
+ * on the lead — a summary-inferred "followup" lands 24h after the placed
+ * callback, and a stale marker would send it out with consent waived and the
+ * opt-out announcement dropped, on the strength of a request the consumer
+ * made once, for a call they already received.
+ *
+ * Also the sanitizer for HTTP boundaries that store caller-supplied lead
+ * metadata verbatim: the claim "a consumer asked us to call back" is only
+ * mintable by the in-call tool handler, never by an imported row.
+ */
+export function stripCallbackRequestMarker(
+  metadata: Record<string, unknown>,
+): Record<string, unknown> {
+  if (!(CALLBACK_REQUEST_MARKER in metadata)) return metadata;
+  const { [CALLBACK_REQUEST_MARKER]: _consumed, ...rest } = metadata;
+  return rest;
+}
+
+/**
+ * Decide the metadata a callback-tick write should persist.
+ *
+ * A terminal outcome (the schedule is cleared — placed, blocked, dropped, or
+ * failed) spends the consumer's request, so the marker is consumed from
+ * whichever object this write persists: the caller's patch when it supplied
+ * one, otherwise the lead's own metadata, and then only when it actually
+ * carries the marker (rewriting untouched metadata for nothing is churn).
+ *
+ * A deferral persists the patch untouched — the same request is still rolling
+ * forward to its permitted window and has not been used yet.
+ *
+ * Returning undefined means "do not write the metadata column at all".
+ * Extracted and exported so the rule is unit-testable: it decides whether a
+ * later system-scheduled dial may claim consent, which is too consequential to
+ * leave verified only by reading the source for a substring.
+ */
+export function nextCallbackLeadMetadata(input: {
+  terminal: boolean;
+  patchMetadata?: Record<string, unknown>;
+  leadMetadata: Record<string, unknown>;
+}): Record<string, unknown> | undefined {
+  if (!input.terminal) return input.patchMetadata;
+  const source =
+    input.patchMetadata ??
+    (CALLBACK_REQUEST_MARKER in input.leadMetadata ? input.leadMetadata : undefined);
+  return source ? stripCallbackRequestMarker(source) : undefined;
+}
 
 /**
  * Parse the `callback_datetime` an agent captured mid-call into an executable
@@ -94,12 +173,19 @@ export async function tickDueCallbacks({
       summary: string;
       metadata?: Record<string, unknown>;
     }) => {
+      // Terminal outcomes consume the consumer's request marker — enforced
+      // here so no individual call site can forget it.
+      const nextMetadata = nextCallbackLeadMetadata({
+        terminal: patch.callbackScheduledAt === null,
+        patchMetadata: patch.metadata,
+        leadMetadata: metadata,
+      });
       await drizzle
         .update(schema.outboundLeads)
         .set({
           callbackScheduledAt: patch.callbackScheduledAt,
           lastContactSummary: patch.summary,
-          ...(patch.metadata ? { metadata: patch.metadata } : {}),
+          ...(nextMetadata ? { metadata: nextMetadata } : {}),
         })
         .where(eq(schema.outboundLeads.id, lead.id));
     };
@@ -172,20 +258,37 @@ export async function tickDueCallbacks({
         continue;
       }
 
+      // Read the consumer's request off the lead. Absent it, this is an
+      // ordinary outbound dial and gets the full marketing treatment: federal
+      // DNC, express written consent, the duplicate window, and the spoken
+      // opt-out announcement.
+      const consumerRequested = isConsumerRequestedCallback(metadata);
+
       const gate = await evaluateOutboundDialGate({
         userId: lead.userId,
         phone: lead.customerNumber,
         leadId: lead.id,
         lastCalledAt: lead.lastCalledAt,
         metadata,
-        isRequestedCallback: true,
+        isRequestedCallback: consumerRequested,
       });
 
       if (!gate.allowed) {
-        if (gate.reason === "outside_permitted_calling_hours") {
-          // Requested time drifted into quiet hours (timezone, DST, late
-          // processing). Roll forward until it lands in a permitted window.
-          (await deferOrDrop("outside permitted calling hours")) === "deferred"
+        if (
+          gate.reason === "outside_permitted_calling_hours" ||
+          gate.reason === "self_recent_call_scheduled"
+        ) {
+          // Both reasons expire on their own: quiet hours reopen, and the 24h
+          // duplicate window elapses. Roll forward instead of retiring the
+          // lead. `self_recent_call_scheduled` only became reachable here once
+          // the duplicate window stopped being waived — the "followup" outcome
+          // schedules at exactly lastCalledAt + 24h, so the boundary would
+          // otherwise silently kill every inferred follow-up.
+          (await deferOrDrop(
+            gate.reason === "self_recent_call_scheduled"
+              ? "called within the last 24 hours"
+              : "outside permitted calling hours",
+          )) === "deferred"
             ? deferred++
             : skipped++;
         } else {
@@ -213,13 +316,20 @@ export async function tickDueCallbacks({
       }
 
       const requestedFor = lead.callbackScheduledAt?.toISOString() || "the requested time";
+      // The opening line must match what actually happened. Telling the model
+      // to acknowledge a promise the contact never made is a scripted lie on a
+      // recorded line, and `callback` purpose would drop the opt-out
+      // announcement this dial is required to carry.
+      const callPurpose = consumerRequested ? "callback" : "marketing_or_sales";
       const res = await placeOutboundCall({
         userId: lead.userId,
         agentId,
         customerName: lead.customerName,
         customerNumber: lead.customerNumber,
-        context: `Returning the callback this contact requested (scheduled for ${requestedFor}). Open by acknowledging you're calling back as promised.`,
-        callPurpose: "callback",
+        context: consumerRequested
+          ? `Returning the callback this contact requested (scheduled for ${requestedFor}). Open by acknowledging you're calling back as promised.`
+          : `Scheduled outbound follow-up for this contact (queued for ${requestedFor}). They did not request this call — introduce yourself and state why you are calling.`,
+        callPurpose,
       });
 
       if (res.ok) {
@@ -239,14 +349,17 @@ export async function tickDueCallbacks({
           state: "initiated",
           metadata: {
             leadId: String(lead.id),
-            call_purpose: "callback",
+            call_purpose: callPurpose,
             consent_version: OUTBOUND_CONSENT_VERSION,
             source: "callback",
+            consumer_requested: consumerRequested,
           },
         });
         await finish({
           callbackScheduledAt: null,
-          summary: "Requested callback placed automatically.",
+          summary: consumerRequested
+            ? "Requested callback placed automatically."
+            : "Scheduled outbound follow-up placed automatically.",
           metadata: { ...metadata, callback_deferrals: 0 },
         });
       } else {

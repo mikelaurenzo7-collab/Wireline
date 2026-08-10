@@ -537,9 +537,59 @@ const browser = await chromium.launch({
 const issues = [];
 let authenticatedStorageState = null;
 
+/*
+ * Preview deployments sit behind Vercel SSO, so every navigation 302s to the
+ * login wall and the capture matrix silently becomes a folder of screenshots of
+ * someone else's sign-in page. That is why this harness had only ever been
+ * pointed at production — which means preview verification could never see a
+ * regression before it shipped.
+ *
+ * A share token is exchanged once for the `_vercel_jwt` bypass cookie, then
+ * replayed into every context. Unset, this is inert and the run behaves exactly
+ * as it always has against a public origin.
+ */
+const bypassToken = process.env.WIRELINE_VISUAL_BYPASS_TOKEN?.trim();
+let protectionCookies = [];
+if (bypassToken) {
+  const seedContext = await browser.newContext();
+  try {
+    const seedPage = await seedContext.newPage();
+    await seedPage.goto(
+      `${baseUrl}/?_vercel_share=${encodeURIComponent(bypassToken)}`,
+      { waitUntil: "domcontentloaded", timeout: 45_000 },
+    );
+    protectionCookies = (await seedContext.cookies()).filter((cookie) =>
+      cookie.name.startsWith("_vercel"),
+    );
+  } catch (error) {
+    pushIssue(issues, {
+      viewport: "bypass-seed",
+      route: "/",
+      kind: "auth",
+      detail: error instanceof Error ? error.message : "Bypass seed failed",
+    });
+  } finally {
+    await seedContext.close();
+  }
+  if (!protectionCookies.length) {
+    pushIssue(issues, {
+      viewport: "bypass-seed",
+      route: "/",
+      kind: "auth",
+      detail: "Share token did not yield a Vercel bypass cookie",
+    });
+  }
+}
+
+async function newCapturedContext(options) {
+  const context = await browser.newContext(options);
+  if (protectionCookies.length) await context.addCookies(protectionCookies);
+  return context;
+}
+
 try {
   if (email && password) {
-    const authContext = await browser.newContext({
+    const authContext = await newCapturedContext({
       viewport: { width: 1280, height: 900 },
       isMobile: false,
       hasTouch: false,
@@ -554,7 +604,7 @@ try {
   }
 
   for (const viewport of activeViewports) {
-    const marketingContext = await browser.newContext({
+    const marketingContext = await newCapturedContext({
       viewport: { width: viewport.width, height: viewport.height },
       isMobile: viewport.isMobile,
       hasTouch: viewport.hasTouch,
@@ -567,7 +617,7 @@ try {
     await marketingContext.close();
 
     if (authenticatedStorageState) {
-      const authContext = await browser.newContext({
+      const authContext = await newCapturedContext({
         viewport: { width: viewport.width, height: viewport.height },
         isMobile: viewport.isMobile,
         hasTouch: viewport.hasTouch,

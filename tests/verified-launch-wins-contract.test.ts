@@ -15,15 +15,24 @@ describe("verified launch-readiness wins", () => {
     expect(sentinel).not.toMatch(/api\.vapi\.ai\/call\/\$\{callId\}\/terminate/);
 
     const dnc = handlers.slice(handlers.indexOf('fn === "add_to_dnc"'));
-    expect(dnc).toContain("await sentinel.terminateActiveCallsForNumber(normalizedPhone)");
+    // Awaited, so the tool result cannot claim termination before the provider
+    // confirms it — and tenant-scoped, because a DNC list is per-tenant and the
+    // unscoped lookup killed other workspaces' live calls to the same number.
+    expect(dnc).toContain(
+      "await sentinel.terminateActiveCallsForNumber(normalizedPhone, agent?.user_id)",
+    );
     expect(dnc).toContain("End this conversation immediately.");
     expect(dnc).not.toContain("void sentinel.terminateActiveCallsForNumber");
   });
 
   it("does not promise caller follow-up work that was never persisted", () => {
     const handlers = read("src/routes/vapi/tool-handlers-core.ts");
-    expect(handlers).not.toContain("I've noted that down. I'll make sure the team follows up with you.");
-    expect(handlers).not.toContain("I wasn't able to verify that number right now, but I've noted it down.");
+    expect(handlers).not.toContain(
+      "I've noted that down. I'll make sure the team follows up with you.",
+    );
+    expect(handlers).not.toContain(
+      "I wasn't able to verify that number right now, but I've noted it down.",
+    );
     expect(handlers).toContain("I've logged the request for human follow-up.");
     expect(handlers).toContain("recordCommsFollowUpTask");
   });
@@ -78,6 +87,8 @@ describe("verified launch-readiness wins", () => {
     expect(integrations).toMatch(
       /set\(\{ accessToken: null, refreshToken: null, expiresAt: BigInt\(0\) \}\)/,
     );
-    expect(health).toContain("Google mailbox/calendar tokens were revoked, expired, or cannot refresh.");
+    expect(health).toContain(
+      "Google mailbox/calendar tokens were revoked, expired, or cannot refresh.",
+    );
   });
 });

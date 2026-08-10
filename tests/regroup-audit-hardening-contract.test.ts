@@ -66,7 +66,10 @@ describe("outbound engine hardening", () => {
     expect(engine).toContain(
       "eq(schema.outboundLeads.callbackScheduledAt, lead.callbackScheduledAt!)",
     );
-    expect(engine).toContain('call_purpose: "callback"');
+    // The ledger records the purpose actually dialed, not the assumed one —
+    // a deferred cold lead goes out as marketing_or_sales and must say so.
+    expect(engine).toContain("call_purpose: callPurpose");
+    expect(engine).toContain("consumer_requested: consumerRequested");
     expect(engine).toContain("lastCalledAt: new Date()");
   });
 

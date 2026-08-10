@@ -118,7 +118,7 @@ router.post("/api/dnc", authenticateUser, async (req: AuthenticatedRequest, res:
       const { SentinelService } = await import("../services/sentinel");
       const sentinel = new SentinelService();
       for (const row of rows) {
-        void sentinel.terminateActiveCallsForNumber(row.phone).catch((err) =>
+        void sentinel.terminateActiveCallsForNumber(row.phone, req.user.id).catch((err) =>
           log.error("sentinel terminate-on-DNC failed", {
             phone: row.phone,
             error: getErrorMessage(err),

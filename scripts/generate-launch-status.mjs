@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { getHandledStripeWebhookEvents } from "./lib/stripe-handled-events.mjs";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
@@ -137,16 +138,10 @@ async function stripeStatus() {
   const portalFeatures = portalConfiguration?.features ?? {};
   const portalReady = Boolean(portalResult.ok && portalConfiguration);
 
-  const expectedWebhookEvents = [
-    "charge.dispute.created",
-    "charge.refunded",
-    "checkout.session.completed",
-    "customer.subscription.created",
-    "customer.subscription.deleted",
-    "customer.subscription.updated",
-    "invoice.payment_failed",
-    "invoice.payment_succeeded",
-  ];
+  // Read off the code that handles them, exactly as the aligner does. A second
+  // hardcoded copy here drifted once the dispute-funds handlers landed and
+  // reported a correct endpoint as carrying two extra events.
+  const expectedWebhookEvents = getHandledStripeWebhookEvents();
   const webhookEndpoints = Array.isArray(webhookResult.body?.data) ? webhookResult.body.data : [];
   const webhook = webhookEndpoints.find(
     (endpoint) =>

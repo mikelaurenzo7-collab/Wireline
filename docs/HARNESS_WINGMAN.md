@@ -24,12 +24,21 @@ HARNESS_ORG=default
 HARNESS_PROJECT=default_project
 ```
 
-**Common mistake:** using the base64 delegate token (`ZjM1Yjkx...`) as account ID. That value is the **delegate token**, not the account. Your account ID is `FHa6zrtNTJ6nAIiEys5E1A` (also `defaultAccountId` from `/ng/api/user/currentUser`).
+**Common mistake:** using the base64 delegate token as account ID. That value is the **delegate token**, not the account. Your account ID is `FHa6zrtNTJ6nAIiEys5E1A` (also `defaultAccountId` from `/ng/api/user/currentUser`).
 
 ## Docker delegate (from harness-docker-runner)
 
+> **The delegate token that used to sit inline here was a live credential and
+> must be treated as compromised.** It was committed in plaintext and is still
+> readable in git history, so deleting it from this file does not revoke it —
+> only rotating it in Harness does. Rotate, then export the new value locally;
+> never paste it back into a tracked file. GitGuardian did not flag it because a
+> base64 blob carries no recognisable secret signature, which is exactly why
+> secrets belong in the environment rather than in prose.
+
 ```bash
-sh script.sh FHa6zrtNTJ6nAIiEys5E1A ZjM1YjkxMmJlMGQ1NTJiYTJjMGY5YzdmZTU3YmRjZDI= 26.06.89303
+export HARNESS_DELEGATE_TOKEN=…   # from Harness → Account Settings → Delegate tokens
+sh script.sh FHa6zrtNTJ6nAIiEys5E1A "$HARNESS_DELEGATE_TOKEN" 26.06.89303
 ```
 
 - Arg 1: **Account ID**

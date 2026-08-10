@@ -26,7 +26,12 @@ describe("64.1200(b) runtime wiring", () => {
     const sites: Array<[string, RegExp]> = [
       ["src/services/campaign-dialer.ts", /callPurpose: "marketing_or_sales"/],
       ["src/lib/cadence-engine.ts", /callPurpose: "marketing_or_sales"/],
-      ["src/lib/callback-engine.ts", /callPurpose: "callback"/],
+      // The callback engine is the one site whose purpose is not fixed. It
+      // dials leads it did not schedule (intake quiet-hours deferrals, and
+      // follow-ups inferred from a call summary), and only a consumer's own
+      // recorded request earns the "callback" class — which drops the (b)(3)
+      // announcement. Everything else stays marketing and keeps it.
+      ["src/lib/callback-engine.ts", /consumerRequested \? "callback" : "marketing_or_sales"/],
       ["src/routes/intake-routes.ts", /callPurpose: "marketing_or_sales"/],
       // Web/mobile manual dials pass the request's validated purpose through.
       ["src/routes/outbound-routes.ts", /placeOutboundCall\(\{[\s\S]{0,220}callPurpose,/],
@@ -85,5 +90,36 @@ describe("64.1200(b) runtime wiring", () => {
     expect(legal).toMatch(/purchased, rented, or third-party lead lists/);
     expect(legal).toMatch(/affiliate-marketing or third-party lead-generation/);
     expect(legal).toMatch(/cannot be bought, sold, or shared across brands/);
+  });
+});
+
+/*
+ * (b)(3) reaches answering machines too. A prerecorded TELEMARKETING message
+ * left on voicemail must carry a toll-free number connecting the called party
+ * to an automated opt-out mechanism — identity and a callback number satisfy
+ * (b)(1) and (b)(2) only. Wireline operates no opt-out line, so there is no
+ * compliant marketing voicemail to compose and the only fail-closed answer is
+ * to leave none: the provider ends the call on detection, and the model is told
+ * the same thing so it cannot narrate one instead. Non-marketing voicemail is
+ * unchanged. Building the opt-out line is what re-enables marketing drops.
+ */
+describe("(b)(3) applies to answering machines", () => {
+  const profile = readFileSync(resolve(process.cwd(), "src/lib/voice-agent-profile.ts"), "utf8");
+  const client = readFileSync(resolve(process.cwd(), "src/lib/vapi-client.ts"), "utf8");
+
+  it("leaves no prerecorded message on a marketing call", () => {
+    expect(profile).toContain("telemarketing = false,");
+    expect(profile).toContain('if (telemarketing) return "";');
+  });
+
+  it("passes the call's own marketing classification into the builder", () => {
+    const call = client.slice(client.indexOf("voicemailMessage: buildOutboundVoicemailMessage("));
+    expect(call.slice(0, 300)).toContain("telemarketing,");
+  });
+
+  it("tells the model the same rule, so it cannot speak one anyway", () => {
+    const protocol = client.slice(client.indexOf("## VOICEMAIL PROTOCOL"));
+    expect(protocol.slice(0, 900)).toContain("Do NOT speak a message");
+    expect(protocol.slice(0, 900)).toContain("64.1200(b)(3)");
   });
 });

@@ -109,9 +109,15 @@ describe("final e2e bugfix contracts", () => {
     // amount_refunded under charge.id drops every partial refund after the first.
     const fallbackAt = billing.indexOf("The event omitted the inline refunds list");
     expect(fallbackAt).toBeGreaterThan(-1);
-    const fallbackBlock = billing.slice(fallbackAt, fallbackAt + 2200);
+    const fallbackBlock = billing.slice(fallbackAt, fallbackAt + 3200);
     expect(fallbackBlock).toContain("stripe.refunds");
     expect(fallbackBlock).toContain("providerObjectId: refund.id");
+    // An empty list is not licence to reverse the cumulative total under
+    // charge.id. That fired whenever a refund was accepted but unsettled, and
+    // the later charge.refunded redelivery reversed the same money again under
+    // refund.id — disjoint keys, so the (user, ref) index dedupes neither.
+    expect(fallbackBlock).toContain("reports refunded funds but no succeeded refund objects.");
+    expect(fallbackBlock).not.toContain("providerObjectId: charge.id");
   });
 
   it("password-reset, resend-verification, and migrate-session limiters fail closed without a distributed limiter", () => {

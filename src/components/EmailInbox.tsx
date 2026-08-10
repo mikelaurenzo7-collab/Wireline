@@ -214,7 +214,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
         fetched?: number;
         message?: string;
       } | null;
-      if (!response.ok) throw new Error(body?.error || "Inbox refresh failed.");
+      if (!response.ok) throw new Error(body?.error || "Try again in a moment.");
       await loadThreads();
       setNotice(
         body?.message ||
@@ -223,7 +223,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
             : "Inbox refresh started."),
       );
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Inbox refresh failed.");
+      setError(cause instanceof Error ? cause.message : "Try again in a moment.");
     } finally {
       setSyncing(false);
     }
@@ -370,7 +370,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
 
       <div className="space-y-3 px-5 pt-4 sm:px-6">
         {error ? (
-          <StatusNotice tone="destructive" title="Inbox refresh failed" action={undefined}>
+          <StatusNotice tone="destructive" title="Inbox refresh failed">
             {error}
           </StatusNotice>
         ) : null}

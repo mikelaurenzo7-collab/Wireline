@@ -92,9 +92,19 @@ export default function IntegrationCapabilityPanel({
                       key={toolName}
                       className={cn(
                         "inline-flex px-1.5 py-0.5 rounded wl-micro-badge font-mono uppercase tracking-wide border",
-                        on
-                          ? "wl-accent-tag border-current/25 bg-current/8"
-                          : "border-border bg-muted/10 text-foreground/55",
+                        /*
+                         * Hub cards are account level — one CRM connection can
+                         * back several agents with different tool sets, so there
+                         * is no single correct answer and they pass no tools at
+                         * all. Reusing the on/off styling there rendered every
+                         * capability of a *connected* integration in the "off"
+                         * treatment. Compact badges are labels, not state.
+                         */
+                        compact
+                          ? "border-border bg-muted/10 text-foreground/80"
+                          : on
+                            ? "wl-accent-tag border-current/25 bg-current/8"
+                            : "border-border bg-muted/10 text-foreground/55",
                       )}
                       title={entry?.description}
                     >

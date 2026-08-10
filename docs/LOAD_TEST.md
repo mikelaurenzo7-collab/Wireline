@@ -1,7 +1,7 @@
 # Load testing the voice webhook path
 
 ## Scope
-This load test targets the `/api/vapi/webhook` endpoint, which is the primary voice call ingress path for Wireline. Run tests against a production-like deployment with representative downstream integrations enabled or stubbed.
+This load test targets the `/api/vapi-webhook` endpoint, which is the primary voice call ingress path for Wireline. Run tests against a production-like deployment with representative downstream integrations enabled or stubbed.
 
 ## Methodology
 - Preferred tool: k6 for repeatable HTTP load profiles and easy CI usage.
@@ -60,7 +60,7 @@ export default function () {
     timestamp: new Date().toISOString(),
   });
 
-  const response = http.post(`${BASE_URL}/api/vapi/webhook`, payload, {
+  const response = http.post(`${BASE_URL}/api/vapi-webhook`, payload, {
     headers: {
       'Content-Type': 'application/json',
       'x-load-test': 'true',

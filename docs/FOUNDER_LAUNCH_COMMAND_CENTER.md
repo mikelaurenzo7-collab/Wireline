@@ -54,7 +54,9 @@ Verified live via connectors and local gates, not inferred:
   two groups only — the pg deprecation warning (silent since 2026-08-02, matching the K3 fix) and
   one demo-line canary timeout for Marcus/+16173134469 at 2026-08-07 04:00 UTC (single probe,
   10s abort, no retry by design). **Re-check the Marcus line in daylight** via
-  `GET /api/health/canary` or the Vapi dashboard before demo traffic.
+  `GET /api/health/voice-status` or the Vapi dashboard before demo traffic.
+  (`/api/health/canary` never existed; the mounted health endpoints are `/`,
+  `/public`, `/ready`, `/launch-readiness`, and `/voice-status`.)
 - **Sentry:** `revaluate/wireline-backend` receives events; zero production-relevant unresolved
   issues in 14 days. The `mikelaurenzo7gmailcom` org's two auto-named projects are unused —
   consolidate or delete to keep one observability home.

@@ -54,10 +54,14 @@ describe("health surfaces contract", () => {
     expect(source).not.toMatch(/getTenantSloSnapshot/);
   });
 
+  // Re-pointed from AgentActionEngine.tsx, which never rendered, to the tool
+  // permissions surface that now ships. The rule is the same: a tenant editing
+  // agent actions reads tenant OAuth posture, never the platform-admin health
+  // route (which answers 403 to anyone who is not a platform admin anyway).
   it("keeps tenant tool status off the platform integrations health route", () => {
-    const actionEngine = read("src/components/AgentActionEngine.tsx");
-    expect(actionEngine).not.toContain("/api/health/integrations");
-    expect(actionEngine).toContain("/api/oauth/crm/status");
+    const permissions = read("src/components/AgentToolPermissions.tsx");
+    expect(permissions).not.toContain("/api/health/integrations");
+    expect(permissions).toContain("/api/oauth/crm/status");
   });
 
   it("accepts bounded browser error reports and forwards them to server telemetry", () => {
@@ -73,8 +77,7 @@ describe("health surfaces contract", () => {
 
   it("routes standalone public health through the certified shared handler first", () => {
     const registration = read("src/server/register-api-routes.ts");
-    const sharedImport =
-      'import publicHealthHandler from "../entrypoints/public-health-api";';
+    const sharedImport = 'import publicHealthHandler from "../entrypoints/public-health-api";';
     const exactRoute = 'app.all("/api/health/public"';
     const broadRouter = 'app.use("/api/health", healthRouter)';
 
@@ -142,7 +145,9 @@ describe("health surfaces contract", () => {
   it("clears the diagnostic deadline after a successful provider response", async () => {
     process.env.OPENAI_API_KEY = "test-openai-key";
     vi.useFakeTimers();
-    const fetchImpl = vi.fn(async () => new Response(null, { status: 200 })) as unknown as typeof fetch;
+    const fetchImpl = vi.fn(
+      async () => new Response(null, { status: 200 }),
+    ) as unknown as typeof fetch;
 
     await expect(probeOpenAIModelDiagnostic("test-model", 50, fetchImpl)).resolves.toMatchObject({
       ok: true,

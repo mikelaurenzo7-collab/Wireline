@@ -31,10 +31,12 @@ describe("refund tax-clamp contract", () => {
   });
 
   it("every refund and dispute reversal flows through the clamp — no raw gross amounts", () => {
-    // All four reversal sites (inline refunds, fetched fallback, cumulative
-    // last-resort, dispute) must use creditPortionUsd.
+    // Three reversal sites (inline refunds, fetched fallback, dispute) must use
+    // creditPortionUsd. The fourth — a cumulative "last resort" keyed on
+    // charge.id — is gone: it double-debited on top of the per-refund.id
+    // reversals a later charge.refunded wrote. That path now throws.
     const calls = billing.match(/creditPortionUsd\(/g) || [];
-    expect(calls.length).toBeGreaterThanOrEqual(5); // definition + 4 sites
+    expect(calls.length).toBeGreaterThanOrEqual(4); // definition + 3 sites
     // The old raw-gross patterns must be gone from reverseCredit call sites.
     expect(billing).not.toMatch(/reverseCredit\(userId,\s*\(refund\.amount \?\? 0\) \/ 100/);
     expect(billing).not.toMatch(

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, Loader2, PlugZap, Save } from "lucide-react";
 import { Link } from "react-router";
 
@@ -7,6 +7,7 @@ import { composeSetupPersonality } from "../lib/compose-setup-personality";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
+import AgentToolPermissions from "./AgentToolPermissions";
 
 const PERSONALITIES = ["Clear", "Warm", "Polished", "Energetic"] as const;
 
@@ -25,17 +26,12 @@ type AgentSetupResponse = {
 
 function inferPersonality(value: string | undefined) {
   const normalized = value?.toLowerCase() ?? "";
-  return (
-    PERSONALITIES.find((option) => normalized.includes(option.toLowerCase())) ??
-    "Clear"
-  );
+  return PERSONALITIES.find((option) => normalized.includes(option.toLowerCase())) ?? "Clear";
 }
 
 function existingGreeting(directives: AgentSetupResponse["directives"]) {
   const prefix = "Opening greeting:";
-  const match = directives?.find((directive) =>
-    directive.content?.startsWith(prefix),
-  );
+  const match = directives?.find((directive) => directive.content?.startsWith(prefix));
   return match?.content?.slice(prefix.length).trim() ?? "";
 }
 
@@ -54,9 +50,7 @@ export default function StudioAgentWorkspacePanel({
     [agentName, isBusinessAgent],
   );
   const [setupPersonality, setSetupPersonality] = useState("Clear");
-  const [loadedPersonality, setLoadedPersonality] = useState<string | null>(
-    null,
-  );
+  const [loadedPersonality, setLoadedPersonality] = useState<string | null>(null);
   // Empty until the saved greeting loads. A generated sentence sitting in the
   // box reads as something the customer already wrote and saved, when nothing
   // has been saved at all; it belongs in the placeholder instead.
@@ -64,14 +58,28 @@ export default function StudioAgentWorkspacePanel({
   const [setupKnowledge, setSetupKnowledge] = useState("");
   const [loadingSetup, setLoadingSetup] = useState(true);
   const [applyingSetup, setApplyingSetup] = useState(false);
+  const [setupLoadError, setSetupLoadError] = useState<string | null>(null);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [setupNotice, setSetupNotice] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const activeAgentIdRef = useRef(agentId);
+
+  useLayoutEffect(() => {
+    activeAgentIdRef.current = agentId;
+  }, [agentId]);
 
   useEffect(() => {
     if (!agentId) return;
     let cancelled = false;
     setLoadingSetup(true);
+    setApplyingSetup(false);
+    setSetupLoadError(null);
     setSetupError(null);
+    setSetupNotice(null);
+    setSetupPersonality("Clear");
+    setSetupGreeting("");
+    setSetupKnowledge("");
+    setLoadedPersonality(null);
     authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`)
       .then(async (response) => {
         if (!response.ok) throw new Error("Current setup could not be loaded.");
@@ -79,18 +87,15 @@ export default function StudioAgentWorkspacePanel({
       })
       .then((data) => {
         if (cancelled) return;
-        const personality =
-          typeof data.personality === "string" ? data.personality : "";
+        const personality = typeof data.personality === "string" ? data.personality : "";
         setLoadedPersonality(personality || null);
         setSetupPersonality(inferPersonality(personality));
         setSetupGreeting(existingGreeting(data.directives));
       })
       .catch((reason) => {
         if (!cancelled) {
-          setSetupError(
-            reason instanceof Error
-              ? reason.message
-              : "Current setup could not be loaded.",
+          setSetupLoadError(
+            reason instanceof Error ? reason.message : "Current setup could not be loaded.",
           );
         }
       })
@@ -100,29 +105,23 @@ export default function StudioAgentWorkspacePanel({
     return () => {
       cancelled = true;
     };
-  }, [agentId]);
+  }, [agentId, reloadKey]);
 
-  async function saveManual(
-    type: "personality" | "directive",
-    content: string,
-  ) {
-    const response = await authFetch(
-      `/api/agent-config/${encodeURIComponent(agentId)}/manual`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, content }),
-      },
-    );
+  async function saveManual(type: "personality" | "directive", content: string) {
+    const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, content }),
+    });
     if (!response.ok) {
-      throw new Error(
-        `${type === "personality" ? "Tone" : "Greeting"} could not be saved.`,
-      );
+      throw new Error(`${type === "personality" ? "Tone" : "Greeting"} could not be saved.`);
     }
   }
 
   async function applySetup() {
     if (!agentId) return;
+    const setupAgentId = agentId;
+    const isCurrentAgent = () => activeAgentIdRef.current === setupAgentId;
     setApplyingSetup(true);
     setSetupError(null);
     setSetupNotice(null);
@@ -136,7 +135,7 @@ export default function StudioAgentWorkspacePanel({
       const knowledgeTrimmed = setupKnowledge.trim();
 
       await saveManual("personality", personalityText);
-      setLoadedPersonality(personalityText);
+      if (isCurrentAgent()) setLoadedPersonality(personalityText);
       if (greetingTrimmed) {
         await saveManual("directive", `Opening greeting: ${greetingTrimmed}`);
       }
@@ -153,32 +152,34 @@ export default function StudioAgentWorkspacePanel({
               : "Personal preferences could not be saved.",
           );
         }
-        setSetupKnowledge("");
+        if (isCurrentAgent()) setSetupKnowledge("");
       }
 
-      setSetupNotice(
-        isBusinessAgent
-          ? "Changes saved. Run a customer test before connecting live traffic."
-          : "Changes saved. Run a private test before connecting a live line.",
-      );
+      if (isCurrentAgent()) {
+        // The notice renders under a "Changes saved" title, so saying it again
+        // here read as "Changes saved / Changes saved. Run a customer test…".
+        // The body carries the next step only.
+        setSetupNotice(
+          isBusinessAgent
+            ? "Run a customer test before connecting live traffic."
+            : "Run a private test before connecting a live line.",
+        );
+      }
     } catch (reason) {
-      setSetupError(
-        reason instanceof Error ? reason.message : "Setup could not be saved.",
-      );
+      if (isCurrentAgent()) {
+        setSetupError(reason instanceof Error ? reason.message : "Setup could not be saved.");
+      }
     } finally {
-      setApplyingSetup(false);
+      if (isCurrentAgent()) setApplyingSetup(false);
     }
   }
 
   return (
-    <div
-      className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}
-    >
+    <div className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}>
       <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
         <header>
           <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Give <span className="wl-preserve-case">{agentName}</span> one clear
-            job.
+            Give <span className="wl-preserve-case">{agentName}</span> one clear job.
           </h2>
         </header>
 
@@ -200,12 +201,27 @@ export default function StudioAgentWorkspacePanel({
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
               Loading setup…
             </div>
+          ) : setupLoadError ? (
+            <StatusNotice
+              tone="destructive"
+              title="Setup unavailable"
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setReloadKey((current) => current + 1)}
+                >
+                  Try again
+                </Button>
+              }
+            >
+              {setupLoadError} Your saved setup was not changed.
+            </StatusNotice>
           ) : (
             <div className="space-y-5">
               <fieldset>
-                <legend className="mb-2 text-sm font-semibold text-foreground">
-                  Tone
-                </legend>
+                <legend className="mb-2 text-sm font-semibold text-foreground">Tone</legend>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {PERSONALITIES.map((option) => {
                     const selected = setupPersonality === option;
@@ -223,10 +239,7 @@ export default function StudioAgentWorkspacePanel({
                       >
                         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
                           {selected ? (
-                            <CheckCircle2
-                              className="size-4 text-primary"
-                              aria-hidden="true"
-                            />
+                            <CheckCircle2 className="size-4 text-primary" aria-hidden="true" />
                           ) : null}
                           {option}
                         </span>
@@ -237,9 +250,7 @@ export default function StudioAgentWorkspacePanel({
               </fieldset>
 
               <label className="grid gap-2" htmlFor="setup-greeting">
-                <span className="text-sm font-semibold text-foreground">
-                  Opening greeting
-                </span>
+                <span className="text-sm font-semibold text-foreground">Opening greeting</span>
                 <textarea
                   id="setup-greeting"
                   value={setupGreeting}
@@ -256,12 +267,8 @@ export default function StudioAgentWorkspacePanel({
                     className="text-sm font-semibold text-foreground"
                     htmlFor="setup-knowledge"
                   >
-                    {isBusinessAgent
-                      ? "Essential business facts"
-                      : "Essential personal facts"}{" "}
-                    <span className="font-normal text-muted-foreground">
-                      (optional)
-                    </span>
+                    {isBusinessAgent ? "Essential business facts" : "Essential personal facts"}{" "}
+                    <span className="font-normal text-muted-foreground">(optional)</span>
                   </label>
                   <Link
                     to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
@@ -289,16 +296,12 @@ export default function StudioAgentWorkspacePanel({
                 </StatusNotice>
               ) : null}
               {setupError ? (
-                <StatusNotice tone="destructive" title="Changes not saved">
+                <StatusNotice tone="destructive" title="Setup needs attention">
                   {setupError}
                 </StatusNotice>
               ) : null}
 
-              <Button
-                type="button"
-                onClick={() => void applySetup()}
-                disabled={applyingSetup}
-              >
+              <Button type="button" onClick={() => void applySetup()} disabled={applyingSetup}>
                 {applyingSetup ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 ) : (
@@ -315,19 +318,14 @@ export default function StudioAgentWorkspacePanel({
           aria-labelledby="voice-heading"
         >
           <div className="mb-3">
-            <h3
-              id="voice-heading"
-              className="text-lg font-semibold tracking-tight text-foreground"
-            >
+            <h3 id="voice-heading" className="text-lg font-semibold tracking-tight text-foreground">
               Phone voice
             </h3>
           </div>
-          <SimpleVoicePicker
-            agentId={agentId}
-            agentName={agentName}
-            onTest={onTestVoiceInChat}
-          />
+          <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
         </section>
+
+        <AgentToolPermissions agentId={agentId} />
 
         <section
           className="rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6"

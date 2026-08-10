@@ -153,4 +153,28 @@ describe("authenticated mobile cleanup", () => {
     expect(trialBanner).toContain("keep your voice agents live");
     expect(activationWizard).toContain("connected to this voice agent");
   });
+
+  it("fails closed on setup-load errors and keeps action feedback in view", () => {
+    const setup = read("src/components/StudioAgentWorkspacePanel.tsx");
+    const review = read("src/components/StudioAgentReviewPanel.tsx");
+    const phoneSetup = read("src/components/PhoneSetupPanel.tsx");
+
+    expect(setup).toContain("setupLoadError");
+    expect(setup).toContain('title="Setup unavailable"');
+    expect(setup).toContain('setSetupKnowledge("")');
+    expect(setup).toContain("setSetupNotice(null)");
+    expect(setup).toContain('setSetupGreeting("")');
+    expect(setup).toContain("setLoadedPersonality(null)");
+    expect(setup).toContain("setReloadKey((current) => current + 1)");
+    expect(setup).toContain("activeAgentIdRef.current === setupAgentId");
+    expect(setup).toContain('title="Setup needs attention"');
+    expect(review).toContain("setConfig(null)");
+    expect(review).toContain("hidden={Boolean(error)}");
+    expect(phoneSetup.indexOf("{message ? (")).toBeLessThan(
+      phoneSetup.indexOf("<CompanyIdentityPack"),
+    );
+    expect(phoneSetup.indexOf("{error ? (")).toBeLessThan(
+      phoneSetup.indexOf("<CompanyIdentityPack"),
+    );
+  });
 });

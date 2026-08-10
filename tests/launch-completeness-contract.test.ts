@@ -88,9 +88,7 @@ describe("launch completeness contracts", () => {
     expect(appRoutes).toContain('<Route path="/inbox" element={<EmailPage />} />');
     expect(appRoutes).toContain("function EmailToInboxRedirect()");
     expect(appRoutes).toContain("`/inbox${location.search}${location.hash}`");
-    expect(appRoutes).toContain(
-      '<Route path="/email" element={<EmailToInboxRedirect />} />',
-    );
+    expect(appRoutes).toContain('<Route path="/email" element={<EmailToInboxRedirect />} />');
   });
 
   it("does not call an unproven published edit release-current", () => {
@@ -103,7 +101,7 @@ describe("launch completeness contracts", () => {
     expect(mediaKit).toContain("Raw output is not release-certified.");
   });
 
-  it("keeps the public status refresh cadence aligned with its 60-second copy", () => {
+  it("keeps public status cadence and claims aligned with the probes", () => {
     const status = source("src/components/Status.tsx");
 
     expect(status).toContain("const STATUS_REFRESH_MS = 60_000;");
@@ -112,5 +110,48 @@ describe("launch completeness contracts", () => {
     expect(status).toContain("Updated every 60 seconds.");
     expect(status).toContain("refreshes every 60s.");
     expect(status).toContain("Probe interval · 60s");
+    expect(status).toContain("Provider checks operational");
+    expect(status).toContain("Managed voice access");
+    expect(status).toContain("Reasoning model access");
+    expect(status).toContain("not an end-to-end customer call");
+    expect(status).not.toContain("All systems operational");
+    expect(status).not.toContain("pings each production LLM tier");
+    expect(status).not.toContain("configured fallback remains available");
+  });
+
+  /*
+   * Found by driving the built page in a browser: /status never reached network
+   * idle. Throwing on `!res.ok` left the response body unread, and an unread
+   * body keeps the request open, so every failed 60s poll leaked another one for
+   * the life of the page. Nothing bounded the request either — `authFetch`
+   * carries a timeout but this page is public and calls `fetch` directly, so a
+   * server that accepted and then stalled left it reading "Checking…" forever.
+   * Both matter most during an incident, which is the only time anyone loads it.
+   */
+  it("keeps the public status poll bounded and leak-free", () => {
+    const status = source("src/components/Status.tsx");
+
+    expect(status).toContain("const STATUS_FETCH_TIMEOUT_MS = 15_000;");
+    /*
+     * The bound must come from AbortController + setTimeout, not
+     * `AbortSignal.timeout`. That is a runtime API the es2022 target does not
+     * polyfill: used bare it throws TypeError on browsers lacking it, and
+     * feature-detecting it leaves the fallback with no timeout at all — which
+     * silently restores the unbounded stall this guards against, on the one page
+     * that must not invent an outage.
+     */
+    expect(status).toContain("const controller = new AbortController();");
+    expect(status).toContain(
+      "window.setTimeout(() => controller.abort(), STATUS_FETCH_TIMEOUT_MS)",
+    );
+    expect(status).toContain("signal: controller.signal,");
+    expect(status).toContain("window.clearTimeout(timeout);");
+    // Bans the call, not the comment that explains why it is avoided.
+    expect(status).not.toMatch(/signal:\s*AbortSignal\.timeout/);
+    expect(status).not.toMatch(/=\s*AbortSignal\.timeout\(/);
+    expect(status).toContain("await res.body?.cancel().catch(() => undefined);");
+    // The short feed-error line only earns its place next to a "Last checked"
+    // timestamp; with no reading it repeated the heading a third time.
+    expect(status).toContain("{error && data ? (");
   });
 });

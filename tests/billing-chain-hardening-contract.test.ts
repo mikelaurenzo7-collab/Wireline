@@ -115,3 +115,40 @@ describe("the trial gate agrees with the dial layer", () => {
     expect(enforcer).toMatch(/"trialing"[\s\S]{0,700}SUBSCRIPTION_REQUIRED/);
   });
 });
+
+/*
+ * The live-video add-on is a standalone Stripe subscription sharing the plan's
+ * customer, and its only local record is a workspace-wide boolean written
+ * solely by the webhook. That made the flag wrong for both questions it was
+ * being asked. On checkout it was a stale duplicate guard: during webhook
+ * delivery lag it still read false after a completed purchase, so a second
+ * click created a second subscription that nothing ever detected or cancelled.
+ * On cancellation it was worse — clearing it keyed on the customer, not the
+ * subscription, so ending one of two turned the feature off and reset EVERY
+ * agent to synthetic while the survivor kept billing monthly. Ask Stripe.
+ */
+describe("the live-video add-on asks Stripe what the customer actually has", () => {
+  const source = read("src/routes/billing-routes.ts");
+
+  it("checks for an existing add-on subscription before creating a session", () => {
+    const check = source.indexOf("const existingAddons = await listLiveVideoAddonSubscriptions(");
+    const create = source.indexOf('mode: "subscription",\n        customer: customerId,');
+    expect(check).toBeGreaterThan(-1);
+    expect(create).toBeGreaterThan(check);
+  });
+
+  it("re-checks for a surviving subscription before resetting every agent", () => {
+    const survivorCheck = source.indexOf("listLiveVideoAddonSubscriptions(customerId, sub.id)");
+    const reset = source.indexOf('videoPresenterProvider: "synthetic"');
+    expect(survivorCheck).toBeGreaterThan(-1);
+    expect(reset).toBeGreaterThan(survivorCheck);
+    // A survivor keeps the entitlement; a failed lookup must still disable.
+    expect(source).toContain("disable = false;");
+    expect(source).toContain("Live video add-on survivor check failed; disabling");
+  });
+
+  it("excludes terminal subscriptions from both answers", () => {
+    expect(source).toContain("LIVE_VIDEO_ADDON_TERMINAL_STATUSES");
+    expect(source).toContain('sub.metadata?.purpose === "live_video_addon"');
+  });
+});

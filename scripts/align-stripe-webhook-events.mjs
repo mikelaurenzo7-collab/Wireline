@@ -13,39 +13,20 @@
  *   VERCEL_TOKEN=... node scripts/align-stripe-webhook-events.mjs --apply   # fix
  */
 
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import Stripe from "stripe";
 import { getVercelEnvValue } from "./lib/vercel-env-values.mjs";
+import { getHandledStripeWebhookEvents } from "./lib/stripe-handled-events.mjs";
 
 const API_VERSION = "2026-02-25.clover";
 const WEBHOOK_URL = "https://trywireline.com/api/stripe-webhook";
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const apply = process.argv.includes("--apply");
 
-function extractHandledEvents(source) {
-  return [
-    ...source.matchAll(/(?:case\s+|event(?:Type|\.type)\s*===\s*)"([a-z_]+(?:\.[a-z_]+)+)"/g),
-  ].map((match) => match[1]);
-}
-
 // Source of truth: the switch arms in the canonical router plus exact event
-// comparisons in the preflight mounted before it. Parsing both owners prevents
-// an event implemented at the stricter boundary from being silently omitted
-// from Stripe's endpoint subscription.
-const billingRoutes = readFileSync(join(ROOT, "src/routes/billing-routes.ts"), "utf8");
-const financialPreflight = readFileSync(
-  join(ROOT, "src/middleware/stripe-runtime-allowance-retry.ts"),
-  "utf8",
-);
-const handledEvents = [
-  ...new Set([
-    ...extractHandledEvents(billingRoutes),
-    ...extractHandledEvents(financialPreflight),
-  ]),
-].sort();
+// comparisons in the preflight mounted before it, read by the shared helper so
+// the launch-status gate cannot disagree with this script about the same
+// endpoint.
+const handledEvents = getHandledStripeWebhookEvents();
 
 if (!handledEvents.length) {
   console.error("Could not extract any handled Stripe webhook events.");

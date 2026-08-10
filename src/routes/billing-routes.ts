@@ -74,6 +74,42 @@ function creditPortionUsd(grossCents: number, pi: Stripe.PaymentIntent): number 
 }
 
 /**
+ * Live live-video add-on subscriptions on a Stripe customer, excluding one id.
+ *
+ * The add-on is a standalone subscription that shares the customer with the
+ * plan, and the only local record of it is `settings.live_video_addon_enabled`
+ * — a boolean written solely by the webhook. That makes the flag useless as a
+ * duplicate guard during delivery lag, and useless as a "does the customer
+ * still have this?" answer when one of two subscriptions is canceled. Both
+ * questions have to be asked of Stripe.
+ *
+ * `subscriptions.list` cannot filter on metadata, so the purpose filter is
+ * local. Terminal statuses are excluded: those no longer entitle anything.
+ */
+const LIVE_VIDEO_ADDON_TERMINAL_STATUSES = new Set<Stripe.Subscription.Status>([
+  "canceled",
+  "incomplete_expired",
+  "unpaid",
+]);
+
+async function listLiveVideoAddonSubscriptions(
+  customerId: string,
+  excludeSubscriptionId?: string,
+): Promise<Stripe.Subscription[]> {
+  const listed = await stripe.subscriptions.list({
+    customer: customerId,
+    status: "all",
+    limit: 100,
+  });
+  return listed.data.filter(
+    (sub) =>
+      sub.id !== excludeSubscriptionId &&
+      sub.metadata?.purpose === "live_video_addon" &&
+      !LIVE_VIDEO_ADDON_TERMINAL_STATUSES.has(sub.status),
+  );
+}
+
+/**
  * Reverse the Runtime Allowance funded by a refunded/disputed SUBSCRIPTION
  * charge. Top-ups are handled separately (they carry purpose=credit_topup);
  * a subscription invoice PaymentIntent carries no such marker, which is why
@@ -395,116 +431,22 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         break;
       }
       case "charge.refunded": {
-        // Claw back a refunded/disputed web credit top-up so a refund can't
-        // leave the purchased credit sitting in the wallet. Only top-ups carry
-        // purpose=credit_topup on their PaymentIntent. Idempotent via the
-        // stripe_events guard above + the (user, ref) ledger index.
-        const charge = event.data.object as Stripe.Charge;
-        const piId =
-          typeof charge.payment_intent === "string"
-            ? charge.payment_intent
-            : charge.payment_intent?.id;
-        if (!piId) break;
-        const pi = await stripe.paymentIntents.retrieve(piId);
-        if (pi.metadata?.purpose === "credit_topup") {
-          const userId = pi.metadata.wireline_user_id;
-          // Reverse each refund keyed on its OWN id. charge.amount_refunded is
-          // Stripe's cumulative total, so keying the ledger entry on charge.id
-          // would let the (user, ref) unique index drop every refund after the
-          // first — leaving later partial/full refunds spendable as balance.
-          const refunds = charge.refunds?.data ?? [];
-          const reversible = refunds.filter(
-            (r) => (!r.status || r.status === "succeeded") && (r.amount ?? 0) > 0,
-          );
-          if (userId && reversible.length) {
-            await tenantStore.run(userId, async () => {
-              for (const refund of reversible) {
-                await reverseCredit(
-                  userId,
-                  creditPortionUsd(refund.amount ?? 0, pi),
-                  "web_topup_refund",
-                  {
-                    type: "stripe_refund",
-                    id: refund.id,
-                    entryKind: "refund",
-                    source: "stripe",
-                    provider: "stripe",
-                    providerEventId: event.id,
-                    providerObjectId: refund.id,
-                    customerReason: "Runtime Balance refund",
-                    metadata: { payment_intent_id: piId, charge_id: charge.id },
-                  },
-                );
-              }
-            });
-          } else if (userId && (charge.amount_refunded ?? 0) > 0) {
-            // The event omitted the inline refunds list (the pinned API version
-            // no longer expands charge.refunds by default). Fetch them so each
-            // partial refund is reversed once, keyed on its OWN id — reversing
-            // the cumulative amount_refunded under charge.id would collide on
-            // the (user, ref) unique index and silently drop every partial
-            // refund after the first, leaving refunded money spendable.
-            // A transient list failure must THROW (the handler releases the
-            // stripe_events claim and 500s, so Stripe redelivers cleanly) —
-            // degrading to the cumulative charge.id reversal here would stack
-            // on top of any per-refund.id rows already written by earlier
-            // events and over-debit the tenant (different ref keys defeat the
-            // (user, ref) dedupe).
-            const listed = await stripe.refunds
-              .list({ charge: charge.id, limit: 100 })
-              .then((r) =>
-                r.data.filter(
-                  (x) => (!x.status || x.status === "succeeded") && (x.amount ?? 0) > 0,
-                ),
-              );
-            await tenantStore.run(userId, async () => {
-              if (listed.length) {
-                for (const refund of listed) {
-                  await reverseCredit(
-                    userId,
-                    creditPortionUsd(refund.amount ?? 0, pi),
-                    "web_topup_refund",
-                    {
-                      type: "stripe_refund",
-                      id: refund.id,
-                      entryKind: "refund",
-                      source: "stripe",
-                      provider: "stripe",
-                      providerEventId: event.id,
-                      providerObjectId: refund.id,
-                      customerReason: "Runtime Balance refund",
-                      metadata: { payment_intent_id: piId, charge_id: charge.id },
-                    },
-                  );
-                }
-              } else {
-                // Last resort if the refund list is unexpectedly empty: reverse
-                // the cumulative total keyed on charge.id (single-refund-safe).
-                await reverseCredit(
-                  userId,
-                  creditPortionUsd(charge.amount_refunded ?? 0, pi),
-                  "web_topup_refund",
-                  {
-                    type: "stripe_refund",
-                    id: charge.id,
-                    entryKind: "refund",
-                    source: "stripe",
-                    provider: "stripe",
-                    providerEventId: event.id,
-                    providerObjectId: charge.id,
-                    customerReason: "Runtime Balance refund",
-                    metadata: { payment_intent_id: piId },
-                  },
-                );
-              }
-            });
-          }
-        } else {
-          // Not a top-up — but a subscription invoice charge funds the Runtime
-          // Allowance, which was granted on subscription sync and never came
-          // back on a refund. Reverse it under the refund's own id.
-          await reverseRuntimeAllowanceForCharge(charge, "refund");
-        }
+        await reverseSettledRefundsForCharge(event.data.object as Stripe.Charge, event);
+        break;
+      }
+      case "refund.updated": {
+        // A pending refund settled (or failed). Only a transition to
+        // succeeded moves money; the shared routing no-ops anything already
+        // reversed and throws on inconsistency, same as charge.refunded.
+        const refund = event.data.object as Stripe.Refund;
+        if (refund.status !== "succeeded") break;
+        const chargeId = typeof refund.charge === "string" ? refund.charge : refund.charge?.id;
+        if (!chargeId) break;
+        const charge = await stripe.charges.retrieve(chargeId);
+        // Top-ups only. Subscription allowance for this event is owned by the
+        // strict preflight, which keys on refund.id; the legacy fallback below
+        // keys on charge.id and would double-debit the same refund.
+        await reverseSettledRefundsForCharge(charge, event, false);
         break;
       }
       case "charge.dispute.created": {
@@ -560,8 +502,35 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
             // does not yank a paid feature mid-session; Stripe will fire the
             // delete event once dunning is exhausted.
             const terminal = new Set(["canceled", "incomplete_expired", "unpaid"]);
-            const disable =
+            let disable =
               event.type === "customer.subscription.deleted" || terminal.has(sub.status);
+            // The flag is workspace-wide but the subscription is not, and the
+            // customer can hold more than one (checkout dedupes on this same
+            // flag, so a webhook delay lets a second one through). Cancelling
+            // either would otherwise turn the feature off and reset EVERY agent
+            // to synthetic while the survivor kept billing monthly. Ask Stripe
+            // whether any live add-on remains before tearing anything down.
+            const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+            if (disable && customerId) {
+              try {
+                const survivors = await listLiveVideoAddonSubscriptions(customerId, sub.id);
+                if (survivors.length > 0) {
+                  disable = false;
+                  log.info("Live video add-on retained; another subscription is still active", {
+                    userId,
+                    endedSubscriptionId: sub.id,
+                    survivingSubscriptionIds: survivors.map((s) => s.id),
+                  });
+                }
+              } catch (e: any) {
+                // Fail closed on the entitlement: a list failure must not keep
+                // a canceled add-on switched on.
+                log.error("Live video add-on survivor check failed; disabling", {
+                  userId,
+                  error: getErrorMessage(e),
+                });
+              }
+            }
             await drizzle
               .update(schema.settings)
               .set({ liveVideoAddonEnabled: !disable, updatedAt: new Date() })
@@ -764,6 +733,139 @@ router.get("/billing/usage", authenticateUser, async (req: AuthenticatedRequest,
  * so the cost is bounded. Caching can come later if Sentry shows the
  * Stripe latency dominating dashboard time-to-interactive.
  */
+/**
+ * Reverse every settled refund on a charge, keyed per refund.id — shared by
+ * `charge.refunded` and `refund.updated`. The second event is the only
+ * signal Stripe sends when a PENDING refund later settles: `charge.refunded`
+ * fires at creation, its succeeded-only filter correctly yields nothing for an
+ * unsettled refund, and Stripe's redelivery retries stop after ~3 days — a
+ * card refund that takes an issuer 5-10 days to clear would otherwise never be
+ * clawed back and the credit would stay spendable forever. Every reversal is
+ * idempotent under the (user, ref=refund.id) ledger index, so re-running the
+ * full routing for each refund-lifecycle event is safe by construction.
+ */
+async function reverseSettledRefundsForCharge(
+  charge: Stripe.Charge,
+  event: Stripe.Event,
+  /*
+   * Whether this event may also reverse a SUBSCRIPTION charge's Runtime
+   * Allowance through the legacy reverser below.
+   *
+   * Only `charge.refunded` may, and only as a fallback: the strict preflight
+   * (stripe-runtime-allowance-retry.ts) owns non-top-up refunds and consumes
+   * those events before this router sees them, keying every reversal on
+   * refund.id. The legacy reverser falls back to charge.id whenever the Charge
+   * arrives without an expanded refunds list — the default under the pinned
+   * API version — and that key is disjoint from refund.id, so the
+   * (user, ref_type, ref_id) unique index cannot dedupe the pair. Letting
+   * `refund.updated` reach it would debit a paying customer twice for
+   * one refund and could drive the wallet negative into a hard 402.
+   */
+  allowSubscriptionFallback = true,
+): Promise<void> {
+  // Claw back a refunded/disputed web credit top-up so a refund can't
+  // leave the purchased credit sitting in the wallet. Only top-ups carry
+  // purpose=credit_topup on their PaymentIntent. Idempotent via the
+  // stripe_events guard in the webhook handler + the (user, ref) ledger
+  // index.
+  const piId =
+    typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
+  if (!piId) return;
+  const pi = await stripe.paymentIntents.retrieve(piId);
+  if (pi.metadata?.purpose === "credit_topup") {
+    const userId = pi.metadata.wireline_user_id;
+    // Reverse each refund keyed on its OWN id. charge.amount_refunded is
+    // Stripe's cumulative total, so keying the ledger entry on charge.id
+    // would let the (user, ref) unique index drop every refund after the
+    // first — leaving later partial/full refunds spendable as balance.
+    const refunds = charge.refunds?.data ?? [];
+    const reversible = refunds.filter(
+      (r) => (!r.status || r.status === "succeeded") && (r.amount ?? 0) > 0,
+    );
+    if (userId && reversible.length) {
+      await tenantStore.run(userId, async () => {
+        for (const refund of reversible) {
+          await reverseCredit(
+            userId,
+            creditPortionUsd(refund.amount ?? 0, pi),
+            "web_topup_refund",
+            {
+              type: "stripe_refund",
+              id: refund.id,
+              entryKind: "refund",
+              source: "stripe",
+              provider: "stripe",
+              providerEventId: event.id,
+              providerObjectId: refund.id,
+              customerReason: "Runtime Balance refund",
+              metadata: { payment_intent_id: piId, charge_id: charge.id },
+            },
+          );
+        }
+      });
+    } else if (userId && (charge.amount_refunded ?? 0) > 0) {
+      // The event omitted the inline refunds list (the pinned API version
+      // no longer expands charge.refunds by default). Fetch them so each
+      // partial refund is reversed once, keyed on its OWN id — reversing
+      // the cumulative amount_refunded under charge.id would collide on
+      // the (user, ref) unique index and silently drop every partial
+      // refund after the first, leaving refunded money spendable.
+      // A transient list failure must THROW (the handler releases the
+      // stripe_events claim and 500s, so Stripe redelivers cleanly) —
+      // degrading to the cumulative charge.id reversal here would stack
+      // on top of any per-refund.id rows already written by earlier
+      // events and over-debit the tenant (different ref keys defeat the
+      // (user, ref) dedupe).
+      const listed = await stripe.refunds
+        .list({ charge: charge.id, limit: 100 })
+        .then((r) =>
+          r.data.filter((x) => (!x.status || x.status === "succeeded") && (x.amount ?? 0) > 0),
+        );
+      // The comment above is the whole rule, so honour it here too. The
+      // filter drops pending/failed refunds, so an empty list is the
+      // ordinary outcome for a refund Stripe has accepted but not yet
+      // settled — and the cumulative charge.id fallback that used to sit
+      // here fired on exactly that case. When the refund later settles,
+      // `charge.refunded` redelivers, the per-refund.id reversal runs,
+      // and because the two ref keys are disjoint under the (user, ref)
+      // unique index nothing dedupes them: the tenant is debited twice
+      // and the wallet can go negative into a hard 402. Throwing releases
+      // the claim and lets Stripe redeliver once the refund is real.
+      if (!listed.length) {
+        throw new Error(
+          `Stripe charge ${charge.id} reports refunded funds but no succeeded refund objects.`,
+        );
+      }
+      await tenantStore.run(userId, async () => {
+        for (const refund of listed) {
+          await reverseCredit(
+            userId,
+            creditPortionUsd(refund.amount ?? 0, pi),
+            "web_topup_refund",
+            {
+              type: "stripe_refund",
+              id: refund.id,
+              entryKind: "refund",
+              source: "stripe",
+              provider: "stripe",
+              providerEventId: event.id,
+              providerObjectId: refund.id,
+              customerReason: "Runtime Balance refund",
+              metadata: { payment_intent_id: piId, charge_id: charge.id },
+            },
+          );
+        }
+      });
+    }
+  } else {
+    // Not a top-up — but a subscription invoice charge funds the Runtime
+    // Allowance, which was granted on subscription sync and never came
+    // back on a refund. Reverse it under the refund's own id.
+    if (!allowSubscriptionFallback) return;
+    await reverseRuntimeAllowanceForCharge(charge, "refund");
+  }
+}
+
 async function verifyStripeCustomer(
   customerId: string,
 ): Promise<"present" | "deleted" | "missing" | "unknown"> {
@@ -1106,6 +1208,19 @@ router.post(
             target: schema.subscriptions.userId,
             set: { stripeCustomerId: customerId, updatedAt: new Date() },
           });
+      }
+
+      // The local flag checked above is written only by the webhook, so during
+      // delivery lag (or from a second tab) it still reads false after a
+      // completed checkout. Nothing downstream ever detects or cancels a
+      // duplicate, so two subscriptions would bill this customer monthly
+      // forever. Stripe is the only authority on what they already have.
+      const existingAddons = await listLiveVideoAddonSubscriptions(customerId);
+      if (existingAddons.length > 0) {
+        return res.status(409).json({
+          code: "LIVE_VIDEO_ALREADY_ENABLED",
+          error: "Live video add-on is already active on this workspace.",
+        });
       }
 
       const appUrl = resolveCanonicalAppUrl();

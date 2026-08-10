@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 369
-**Protected:** 302
-**Public (allowlisted):** 67
+**Routes scanned:** 371
+**Protected:** 303
+**Public (allowlisted):** 68
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -34,6 +34,7 @@
 | `POST /api/auth/signout` | Signup/login/refresh (public by definition) |
 | `GET /api/billing/plans` | Public plan/price comparison table |
 | `POST /api/stripe-webhook` | Stripe signature verification + idempotency |
+| `GET /api/daily-brief/schedule` | Vercel cron; Bearer CRON_SECRET (timing-safe) |
 | `POST /api/daily-brief/schedule` | Vercel cron; Bearer CRON_SECRET (timing-safe) |
 | `POST /api/email/unsubscribe` | CAN-SPAM one-click unsubscribe; token-scoped + rate-limited |
 | `GET /api/email/unsubscribe` | CAN-SPAM one-click unsubscribe; token-scoped + rate-limited |
@@ -105,6 +106,7 @@
 | agent-routes-v2.ts | GET | `/api/agents` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agents` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agents/:id/import` | inline | — | — | Protected |
+| agent-routes-v2.ts | POST | `/api/agents/:id/tools` | inline | — | — | Protected |
 | agent-routes-v2.ts | GET | `/api/agents/roles` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/train/extract` | inline | — | — | Protected |
 | agent-test-routes.ts | POST | `/api/agents/:id/test/stream` | inline | — | — | Protected |
@@ -199,6 +201,7 @@
 | compliance-routes.ts | GET | `/api/tcpa/consent-check` | inline | — | — | Protected |
 | conversation-balance-routes.ts | GET | `/api/conversation-balance` | inline | — | — | Protected |
 | conversation-balance-routes.ts | POST | `/api/conversation-balance/checkout` | inline | — | — | Protected |
+| daily-brief-routes.ts | GET | `/api/daily-brief/schedule` | — | — | yes | Public (allowlisted) |
 | daily-brief-routes.ts | POST | `/api/daily-brief/schedule` | — | — | yes | Public (allowlisted) |
 | daily-brief-routes.ts | POST | `/api/daily-brief/send-now` | inline | — | — | Protected |
 | daily-brief-routes.ts | GET | `/api/daily-brief/settings` | inline | — | — | Protected |

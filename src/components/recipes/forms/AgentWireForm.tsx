@@ -108,7 +108,7 @@ export function AgentWireForm({
           <TextInput
             value={industry}
             onChange={setIndustry}
-            placeholder="Sales follow-up, billing recovery, scheduling, support overflow..."
+            placeholder="Sales follow-up, billing recovery, scheduling, support overflow…"
           />
         </Field>
         <Field label="Website (optional)">

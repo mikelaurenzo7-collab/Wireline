@@ -194,12 +194,25 @@ export const VAPI_ANALYSIS_PLAN = {
  * to caller ID. Both are optional inputs because not every tenant has them
  * configured; when absent the message degrades to the old identity-only form
  * rather than inventing details.
+ *
+ * TELEMARKETING MESSAGES ARE NOT LEFT AT ALL. (b)(3) additionally requires a
+ * prerecorded telemarketing message left on an answering machine to carry a
+ * toll-free number that connects the called party to an automated opt-out
+ * mechanism. Wireline operates no such opt-out line, so there is no compliant
+ * marketing voicemail to compose — and leaving a non-compliant one carries
+ * per-call statutory damages. Returning empty makes the provider end the call
+ * on voicemail detection instead, which is the only fail-closed answer
+ * available. Building the opt-out line is what re-enables marketing voicemail
+ * drops; until then this must not be softened into "identity only", because
+ * (b)(3) is not satisfied by identity.
  */
 export function buildOutboundVoicemailMessage(
   agentName: string,
   businessName?: string | null,
   callbackNumberSpoken?: string | null,
+  telemarketing = false,
 ): string {
+  if (telemarketing) return "";
   const business = (businessName ?? "").trim();
   const identity =
     business && business.toLowerCase() !== agentName.trim().toLowerCase()

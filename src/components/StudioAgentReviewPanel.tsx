@@ -84,6 +84,7 @@ export default function StudioAgentReviewPanel({
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setConfig(null);
     authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`)
       .then(async (response) => {
         if (!response.ok) throw new Error("Setup summary could not be loaded.");
@@ -133,6 +134,7 @@ export default function StudioAgentReviewPanel({
         ) : null}
 
         <section
+          hidden={Boolean(error)}
           className="rounded-2xl border border-border bg-card p-5 sm:p-6"
           aria-label="Launch summary"
         >

@@ -76,23 +76,30 @@ Build your Voice Agent
 
 ## AI Voice Generator Audio
 
-Canonical voiceover masters were re-rendered with ElevenLabs on 2026-08-01 (clear, direct, founder-friendly; ~2.4 words/sec per the delivery guide below):
+Canonical voiceover masters were re-rendered with ElevenLabs on 2026-08-10 from
+`CAMPAIGN_VO` (`npm run campaign:vo`), measured after render per the delivery
+guide below:
 
-- `wireline-missed-call-15s.mp3` (14.39s) — 15-second reel VO
-- `wireline-voice-agent-fit25.mp3` (24.24s) — walkthrough/final reel VO
-- `wireline-ai-voice-agent-30s.mp3` (27.12s) — **STALE. Re-render required.** This master
-  reads the retired four-verb walkthrough script. The 30-second slot is now the "Second Ring"
-  hero cut, whose narration is 24 words and enters at 0:20; the rest of the spot is captured
-  agent audio and silence. Re-render from `CAMPAIGN_VO` (`npm run campaign:vo`) before this
-  cut runs anywhere paid. Do not lay the 27.12s file over the new picture edit.
-- `wireline-founder-60s.mp3` (54.65s) — founder explainer VO, reserved for the 46s Descript master cut
+- `wireline-missed-call-15s.mp3` (14.65s, 2.32 wps) — 15-second reel VO. The one
+  track with a hard ceiling: the film is 15.0s, so this is rendered at speed
+  1.07 after a 1.0 render measured 15.41s. Re-measure after every render.
+- `wireline-ai-voice-agent-30s.mp3` (7.47s) — the "Second Ring" hero narration:
+  24 words entering at 0:20 into a ten-second tail. Short is correct — the rest
+  of the spot is captured agent audio and silence, and the last two seconds
+  belong to the end card. The retired 27.12s four-verb master this replaced must
+  not be laid over the new picture edit.
+- `wireline-founder-60s.mp3` (53.45s) — founder explainer VO for the 60-second
+  slot (see the master-cut voiceover decision below before assigning it to the
+  46s Descript master).
+- `wireline-voice-agent-fit25.mp3` (24.24s) — walkthrough/final reel VO from the
+  2026-08-01 batch; unchanged.
 
 Earlier AI Voice Generator previews below are superseded; keep them for reference only. All regenerated audio remains marketing/reference use only — never a production phone-call runtime voice without provider rights, latency, fallback, and telephony verification.
 
 - Preview: https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/ec315585-89bf-4b2b-ad7f-7e30bb50d5fd.mp3
 - Full audio: https://www.aidocmaker.com/g0/audio?name=acdf9b5a628e4558923c63ba0ed2d821
 - Voice style: clear, direct, polished, founder-friendly
-- Transcript: "Missed calls should not become lost revenue. Wireline helps you build voice agents for personal tasks and business conversations. Start with one agent, train it on your rules, connect calls, texts, and email, and let it handle the next conversation with every outcome logged. Build free. Go live from nineteen dollars a month at trywireline dot com."
+- Transcript (retired — opens on the retired hook, kept for provenance only): "Missed calls should not become lost revenue. Wireline helps you build voice agents for personal tasks and business conversations. Start with one agent, train it on your rules, connect calls, texts, and email, and let it handle the next conversation with every outcome logged. Build free. Go live from nineteen dollars a month at trywireline dot com."
 
 ## Paid Social Set
 
@@ -235,11 +242,21 @@ Outstanding against the reel doctrine, in priority order:
    agent under narration, which the doctrine now forbids — it is the proof, and we are
    hiding it. The "Second Ring" hero cut needs a genuine captured booking call, mixed
    forward, before it can ship. This is a capture task, not an edit task.
-2. **The 30s master is stale** (see above) and must be re-rendered.
-3. The 15s cut still carries "Agent voice, low in the mix" from its original shot list.
-   Corrected in the table below; the delivered file has not been re-mixed.
+2. The 15s cut still carries "Agent voice, low in the mix" from its original shot list.
+   Corrected in the table below; the delivered file has not been re-mixed, and it runs
+   16.80s against a 15.0s brief.
+
+Resolved 2026-08-10: the stale 30s walkthrough master is replaced — the slot's audio is
+now the 7.47s "Second Ring" narration rendered from `CAMPAIGN_VO` (see the audio section).
 
 ### 46-Second Launch Reel — Master
+
+**Open decision (owner):** this document currently assigns the master two
+different voiceovers — the script below, which has no render target in
+`CAMPAIGN_VO`, and `wireline-founder-60s.mp3`, which the audio section reserves
+for it but which measures 53.45s against a 46s picture. Pick one before the
+re-cut: render the script below as its own track, or re-time the picture to the
+founder VO. Until then the master has no publishable narration.
 
 Approved voiceover:
 
@@ -393,7 +410,7 @@ Create a premium SaaS social ad for Wireline. Headline: "Voice Agents". Subhead:
 
 ### Story/Reel Cover - 9:16
 
-Create a vertical launch cover for Wireline. Headline: "Missed calls should not become lost revenue." Secondary line: "Build your Voice Agent." Footer: "trywireline.com". Visual: clean mobile-first call card flowing into a text confirmation and outcome log.
+Create a vertical launch cover for Wireline. Headline: "Every missed call is someone trying the next name on the list." Secondary line: "Build your Voice Agent." Footer: "trywireline.com". Visual: clean mobile-first call card flowing into a text confirmation and outcome log.
 
 ### LinkedIn Banner - 16:9
 

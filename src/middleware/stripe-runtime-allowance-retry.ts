@@ -90,9 +90,8 @@ async function resolveSubscriptionAllowanceContext(
   }
 
   const invoice = await stripe.invoices.retrieve(invoiceId);
-  const subscriptionField = (
-    invoice as Stripe.Invoice & { subscription?: string | { id: string } }
-  ).subscription;
+  const subscriptionField = (invoice as Stripe.Invoice & { subscription?: string | { id: string } })
+    .subscription;
   const subscriptionId =
     typeof subscriptionField === "string" ? subscriptionField : subscriptionField?.id;
   if (!subscriptionId) {
@@ -123,8 +122,7 @@ async function resolveSubscriptionAllowanceContext(
     );
   }
 
-  const customerId =
-    typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+  const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
   const [bySubscription] = await drizzle
     .select({ userId: schema.subscriptions.userId })
     .from(schema.subscriptions)
@@ -315,10 +313,7 @@ async function restoreSubscriptionRuntimeAllowanceForDisputeStrict(
   reinstatedCents: number,
   providerEventId: string,
 ): Promise<boolean> {
-  const context = await resolveSubscriptionAllowanceContext(
-    charge,
-    "dispute_reinstatement",
-  );
+  const context = await resolveSubscriptionAllowanceContext(charge, "dispute_reinstatement");
   if (!context) return false;
 
   const portion = subscriptionDisputeAllowancePortion(
@@ -345,29 +340,24 @@ async function restoreSubscriptionRuntimeAllowanceForDisputeStrict(
     }
     const amountUsd = Math.min(calculatedAmountUsd, reversedAmountUsd);
 
-    await addCredit(
-      context.userId,
-      amountUsd,
-      "subscription_runtime_allowance_dispute_restored",
-      {
-        type: "subscription_runtime_allowance_dispute_restoration",
-        id: dispute.id,
-        entryKind: "adjustment",
-        source: "stripe",
-        provider: "stripe",
-        providerEventId,
-        providerObjectId: dispute.id,
-        customerReason: "Runtime Allowance restored after dispute funds were reinstated",
-        metadata: {
-          plan_id: context.planId,
-          billing_interval: context.interval,
-          runtime_allowance_usd: amountUsd,
-          restoration_portion: portion,
-          stripe_reinstated_cents: reinstatedCents,
-          dispute_status: dispute.status,
-        },
+    await addCredit(context.userId, amountUsd, "subscription_runtime_allowance_dispute_restored", {
+      type: "subscription_runtime_allowance_dispute_restoration",
+      id: dispute.id,
+      entryKind: "adjustment",
+      source: "stripe",
+      provider: "stripe",
+      providerEventId,
+      providerObjectId: dispute.id,
+      customerReason: "Runtime Allowance restored after dispute funds were reinstated",
+      metadata: {
+        plan_id: context.planId,
+        billing_interval: context.interval,
+        runtime_allowance_usd: amountUsd,
+        restoration_portion: portion,
+        stripe_reinstated_cents: reinstatedCents,
+        dispute_status: dispute.status,
       },
-    );
+    });
   });
   return true;
 }
@@ -461,18 +451,48 @@ export async function stripeRuntimeAllowanceRetryPreflight(
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET,
-    );
+    event = stripe.webhooks.constructEvent(req.body, signature, process.env.STRIPE_WEBHOOK_SECRET);
   } catch {
     return next();
   }
 
   try {
-    if (event.type === "charge.refunded") {
-      const charge = event.data.object as Stripe.Charge;
+    /*
+     * Both refund-lifecycle events land here. `charge.refunded` fires when the
+     * refund is CREATED, which for an asynchronous refund is before any refund
+     * object reads `succeeded` — the strict reversal below then throws, the
+     * claim is released, and Stripe retries for ~3 days before giving up. If
+     * the issuer takes longer than that to settle (5-10 days is ordinary for
+     * some card refunds), the allowance is never reversed and the refunded
+     * money stays spendable.
+     *
+     * `refund.updated` is the settle signal — NOT `charge.refund.updated`,
+     * which Stripe documents for selected non-card payment methods. This
+     * account accepts `card` and `link` only, and Stripe's own async-refund
+     * test cards state that a pending card refund transitions to succeeded and
+     * "sends a `refund.updated` event". Subscribing the wrong one would have
+     * left the dead-end this exists to close wide open while looking fixed.
+     * It MUST be owned here, not downstream: the legacy reverser in billing-routes falls back to keying on
+     * charge.id when a Charge arrives without an expanded refunds list — which
+     * is the default under the pinned API version — and that key is disjoint
+     * from the refund.id key this path writes, so the (user, ref) unique index
+     * would not dedupe them and the tenant would be debited twice for one
+     * refund. Same claim, same strict per-refund.id reversal, both events.
+     */
+    if (event.type === "charge.refunded" || event.type === "refund.updated") {
+      let charge: Stripe.Charge;
+      if (event.type === "charge.refunded") {
+        charge = event.data.object as Stripe.Charge;
+      } else {
+        const refund = event.data.object as Stripe.Refund;
+        // Only a transition to succeeded moves money; pending/failed updates
+        // would re-enter the strict path and throw on an empty list.
+        if (refund.status !== "succeeded") return next();
+        const refundChargeId =
+          typeof refund.charge === "string" ? refund.charge : refund.charge?.id;
+        if (!refundChargeId) return next();
+        charge = await stripe.charges.retrieve(refundChargeId);
+      }
       const paymentIntentId =
         typeof charge.payment_intent === "string"
           ? charge.payment_intent
@@ -546,12 +566,7 @@ export async function stripeRuntimeAllowanceRetryPreflight(
         const mutated =
           direction === "withdrawn"
             ? topUp && paymentIntent
-              ? await reverseTopUpDisputeStrict(
-                  paymentIntent,
-                  dispute,
-                  movementCents,
-                  event.id,
-                )
+              ? await reverseTopUpDisputeStrict(paymentIntent, dispute, movementCents, event.id)
               : await reverseSubscriptionRuntimeAllowanceForChargeStrict(
                   charge,
                   "dispute",
@@ -560,12 +575,7 @@ export async function stripeRuntimeAllowanceRetryPreflight(
                   event.id,
                 )
             : topUp && paymentIntent
-              ? await restoreTopUpDisputeStrict(
-                  paymentIntent,
-                  dispute,
-                  movementCents,
-                  event.id,
-                )
+              ? await restoreTopUpDisputeStrict(paymentIntent, dispute, movementCents, event.id)
               : await restoreSubscriptionRuntimeAllowanceForDisputeStrict(
                   charge,
                   dispute,
@@ -620,8 +630,7 @@ async function claimStripeEventForPreflight(event: Stripe.Event): Promise<Stripe
     if (prior?.status === "processed") return "already_processed";
     const abandonedAfterMs = 5 * 60 * 1000;
     const isProcessing = prior?.status === "processing";
-    const stale =
-      isProcessing && Date.now() - new Date(prior.at ?? 0).getTime() > abandonedAfterMs;
+    const stale = isProcessing && Date.now() - new Date(prior.at ?? 0).getTime() > abandonedAfterMs;
     if (isProcessing && stale) {
       await releaseStripeEventClaim(event.id);
       await drizzle.insert(schema.stripeEvents).values({

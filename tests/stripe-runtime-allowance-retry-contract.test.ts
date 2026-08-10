@@ -9,10 +9,7 @@ import {
   subscriptionDisputeAllowancePortion,
 } from "../src/lib/stripe-dispute-accounting";
 import { basePlanFromStripeSubscription } from "../src/lib/stripe-base-plan";
-import {
-  EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID,
-  STRIPE_PLANS,
-} from "../src/lib/plan-catalog";
+import { EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID, STRIPE_PLANS } from "../src/lib/plan-catalog";
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
@@ -32,12 +29,149 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     expect(billingMount).toBeGreaterThan(strictMount);
   });
 
+  /*
+   * The aligner derived the endpoint's event list from source; the launch-status
+   * gate carried its own hardcoded eight and never learned about the two
+   * dispute-funds events implemented in this middleware. A correctly configured
+   * endpoint was therefore reported as carrying two "extra" events, and the
+   * obvious way to clear `stripe_webhook_not_aligned` would have been to delete
+   * them from Stripe — silently stopping the handlers below from ever firing and
+   * leaving tenant allowance un-debited when dispute funds move. Both callers
+   * now read one helper.
+   */
+  it("derives the webhook event list from the handlers, in one place", async () => {
+    const launchStatus = read("scripts/generate-launch-status.mjs");
+    const { getHandledStripeWebhookEvents } =
+      await import("../scripts/lib/stripe-handled-events.mjs");
+
+    // A third copy survived the first consolidation: check-vendor-readiness
+    // still hardcoded the original eight, so `npm run vendor:readiness` and
+    // `npm run stripe:webhook:check` were mutually unsatisfiable — no endpoint
+    // configuration passed both. Every consumer reads the helper.
+    const vendorReadiness = read("scripts/check-vendor-readiness.mjs");
+
+    for (const [name, source] of [
+      ["align", alignment],
+      ["launch-status", launchStatus],
+      ["vendor-readiness", vendorReadiness],
+    ] as const) {
+      expect(source, name).toContain("getHandledStripeWebhookEvents()");
+      // None may reintroduce a hand-maintained copy.
+      expect(source, name).not.toMatch(/=\s*\[\s*\n\s*"charge\.dispute\.created",/);
+    }
+    expect(launchStatus).not.toMatch(/expectedWebhookEvents = \[/);
+    expect(alignment).not.toContain("function extractHandledEvents");
+
+    const events = getHandledStripeWebhookEvents() as string[];
+    for (const event of [
+      "charge.dispute.created",
+      "charge.dispute.funds_withdrawn",
+      "charge.dispute.funds_reinstated",
+      "refund.updated",
+      "checkout.session.completed",
+      "invoice.payment_succeeded",
+    ]) {
+      expect(events, event).toContain(event);
+    }
+    // The money-movement arms this middleware implements must be in the list.
+    expect(middleware).toContain('eventType === "charge.dispute.funds_withdrawn"');
+    expect(middleware).toContain('eventType === "charge.dispute.funds_reinstated"');
+  });
+
   it("uses authoritative refund objects and one idempotency key per partial refund", () => {
     expect(middleware).toContain("stripe.refunds.list");
     expect(middleware).toContain("starting_after: startingAfter");
     expect(middleware).toContain("refund.id,");
     expect(middleware).toContain("subscriptionDisputeAllowancePortion(");
     expect(middleware).not.toContain("amount_refunded under charge.id");
+  });
+
+  /*
+   * Both webhook owners debit Runtime Balance on a refund, and both must key
+   * every reversal on the refund's own id. The legacy top-up path documented
+   * that rule and then broke it in its own else-branch: when the succeeded-only
+   * filter came back empty — the ordinary case for a refund Stripe has accepted
+   * but not settled — it reversed cumulative `charge.amount_refunded` keyed on
+   * `charge.id`. The later `charge.refunded` redelivery then reversed the same
+   * money again per refund.id. Disjoint ref keys defeat the (user, ref) unique
+   * index, so nothing dedupes them and the wallet can go negative into a hard
+   * 402. Fail closed in both files: throw, release the claim, let Stripe retry.
+   */
+  it("never reverses a refund under the charge id, in either webhook owner", () => {
+    const billing = read("src/routes/billing-routes.ts");
+
+    for (const [name, source] of [
+      ["billing-routes", billing],
+      ["allowance-retry", middleware],
+    ] as const) {
+      expect(source, name).toContain("reports refunded funds but no succeeded refund objects.");
+      // The reversal reference must never be the charge.
+      expect(source, name).not.toMatch(/\bid:\s*charge\.id,/);
+      expect(source, name).not.toMatch(/providerObjectId:\s*charge\.id,/);
+    }
+  });
+
+  /*
+   * Failing closed on a pending refund is only safe if something fires when it
+   * settles. `charge.refunded` is emitted at creation — for an asynchronous
+   * refund the succeeded-only filter correctly finds nothing, the handler
+   * throws, and Stripe's redelivery retries stop after ~3 days. An issuer that
+   * takes 5-10 days to clear the refund would leave the credit spendable
+   * forever, silently. The settle signal is `refund.updated`; both
+   * refund-lifecycle events route through one shared, per-refund.id-idempotent
+   * handler, so redelivery and overlap between the two are no-ops.
+   */
+  it("recovers pending refunds when they settle, through the same idempotent path", () => {
+    const billing = read("src/routes/billing-routes.ts");
+
+    expect(billing).toContain('case "refund.updated": {');
+    expect(billing).toContain('if (refund.status !== "succeeded") break;');
+    // Both events call the one extracted handler — no second copy of the
+    // routing that could drift.
+    const calls = billing.match(/await reverseSettledRefundsForCharge\(/g) || [];
+    expect(calls.length).toBe(2);
+    expect(billing).toContain("async function reverseSettledRefundsForCharge(");
+  });
+
+  /*
+   * SUBSCRIPTION allowance for both refund-lifecycle events belongs to this
+   * preflight, which keys every reversal on refund.id. The legacy reverser in
+   * billing-routes falls back to keying on charge.id whenever a Charge arrives
+   * without an expanded refunds list — the DEFAULT under the pinned API
+   * version, since `stripe.charges.retrieve` does not expand it. Those two ref
+   * keys are disjoint, so the (user, ref_type, ref_id) unique index cannot
+   * dedupe the pair: routing the settle event to the legacy fallback
+   * debited a paying customer twice for one refund and could drive the wallet
+   * negative into a hard 402. Ownership is asserted on both sides.
+   */
+  it("keeps subscription refund reversals in one owner, keyed on refund.id", () => {
+    const billing = read("src/routes/billing-routes.ts");
+
+    // The preflight claims BOTH refund events for non-top-up charges.
+    expect(middleware).toMatch(
+      /event\.type === "charge\.refunded" \|\| event\.type === "refund\.updated"/,
+    );
+    /*
+     * The event name is load-bearing and easy to get wrong. Stripe documents
+     * `charge.refund.updated` for selected NON-card payment methods; this
+     * account pins payment_method_types to card and link, and Stripe's own
+     * async-refund test cards state that a pending CARD refund transitions to
+     * succeeded and "sends a refund.updated event". Subscribing the wrong one
+     * leaves the slow-settle dead-end open while the code looks fixed.
+     */
+    // Bans the event NAME in use, not the comment explaining why it is wrong.
+    for (const source of [middleware, billing]) {
+      expect(source).not.toMatch(/(?:event\.type ===|case)\s*"charge\.refund\.updated"/);
+    }
+    // ...and only acts on a real settle, so a pending/failed update cannot
+    // re-enter the strict path and throw on an empty refund list.
+    expect(middleware).toContain('if (refund.status !== "succeeded") return next();');
+
+    // billing-routes must refuse the subscription fallback for that event even
+    // if mount order ever changed — defence in depth on a money path.
+    expect(billing).toContain("allowSubscriptionFallback = true");
+    expect(billing).toContain("if (!allowSubscriptionFallback) return;");
+    expect(billing).toContain("await reverseSettledRefundsForCharge(charge, event, false);");
   });
 
   it("treats inquiry creation as notification-only and follows monetary events", () => {
@@ -150,7 +284,9 @@ describe("Stripe Runtime Balance movements fail closed", () => {
 
   it("never restores more than the recorded withdrawal", () => {
     expect(middleware).toContain("Math.min(calculatedAmountUsd, reversedAmountUsd)");
-    expect(middleware).toContain("reinstatement arrived before its subscription allowance withdrawal");
+    expect(middleware).toContain(
+      "reinstatement arrived before its subscription allowance withdrawal",
+    );
     expect(middleware).toContain("reinstatement arrived before its top-up withdrawal");
   });
 
@@ -192,10 +328,21 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     expect(middleware).toContain("funded Runtime Allowance but its Wireline owner is unresolved");
   });
 
-  it("keeps endpoint subscriptions aligned with the preflight event owner", () => {
-    expect(alignment).toContain("stripe-runtime-allowance-retry.ts");
-    expect(alignment).toContain("extractHandledEvents(financialPreflight)");
-    expect(alignment).toContain("extractHandledEvents(billingRoutes)");
+  // The invariant is unchanged — both owners must be parsed, so an event
+  // implemented at the stricter preflight boundary is never omitted from the
+  // endpoint subscription. The parsing itself moved into the shared helper the
+  // launch-status gate now reads too, so this asserts against that owner.
+  it("keeps endpoint subscriptions aligned with the preflight event owner", async () => {
+    const helper = read("scripts/lib/stripe-handled-events.mjs");
+    const { STRIPE_WEBHOOK_EVENT_OWNERS } =
+      await import("../scripts/lib/stripe-handled-events.mjs");
+
+    expect(alignment).toContain("getHandledStripeWebhookEvents()");
+    expect(helper).toContain("function extractHandledEvents");
+    expect(STRIPE_WEBHOOK_EVENT_OWNERS).toContain(
+      "src/middleware/stripe-runtime-allowance-retry.ts",
+    );
+    expect(STRIPE_WEBHOOK_EVENT_OWNERS).toContain("src/routes/billing-routes.ts");
   });
 
   it("never acknowledges a failed financial mutation", () => {

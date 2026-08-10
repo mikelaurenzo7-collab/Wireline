@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router";
 import { ArrowLeft, ArrowRight, Check, FileCheck2, ShieldAlert, ShieldCheck } from "lucide-react";
 import MarketingChrome from "./marketing/MarketingChrome";
 import { PageMeta } from "../lib/page-meta";
+import { resolveRouteMeta } from "../lib/marketing-route-meta";
 
 type TrustPack = {
   eyebrow: string;
@@ -185,6 +186,16 @@ const PACKS: Record<string, TrustPack> = {
 export default function TrustPackPage() {
   const { vertical } = useParams<{ vertical: string }>();
   const pack = vertical ? PACKS[vertical] : null;
+  /*
+   * These four pages are submitted in sitemap.xml and are where regulated
+   * buyers get sent, so the build prerenders their head from
+   * `marketing-route-meta`. Hydration used to overwrite that head with a
+   * differently-worded title and a shorter description, leaving the crawler and
+   * the browser advertising two different pages. Reading the prerendered values
+   * back makes the registry the single source and removes the drift by
+   * construction rather than by reminder.
+   */
+  const prerendered = vertical ? resolveRouteMeta(`/trust/${vertical}`) : null;
 
   if (!pack) {
     return (
@@ -203,8 +214,8 @@ export default function TrustPackPage() {
   return (
     <MarketingChrome stickyCta={false}>
       <PageMeta
-        title={`Trust · ${pack.eyebrow}`}
-        description={pack.subtitle}
+        title={prerendered?.title ?? `Trust · ${pack.eyebrow}`}
+        description={prerendered?.description ?? pack.subtitle}
         path={`/trust/${vertical}`}
       />
 

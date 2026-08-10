@@ -47,8 +47,13 @@ export const CAMPAIGN_VO = [
     id: "missed-call-15s",
     file: "wireline-missed-call-15s.mp3",
     targetSeconds: 15,
-    // Already lands at 14.4s; the 15s cut has no room to slow down.
-    speed: 1.0,
+    // The one track with a hard ceiling: the film is 15.0s and the VO must
+    // finish inside it. Provider pacing drifts between renders — speed 1.0
+    // measured 15.41s (2.21 wps, below the guide's 2.3–2.5 band) on 2026-08-10
+    // where an earlier render made 14.39s. 1.07 brings it to ~14.4s and
+    // ~2.36 wps, inside the guide. Re-measure after every render; this is the
+    // only cut where running long is a defect rather than a taste note.
+    speed: 1.07,
     text: "Six forty-seven. The phone rings, and you cannot pick up. Your Wireline agent can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at trywireline.com.",
   },
   {
