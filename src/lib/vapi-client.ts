@@ -29,6 +29,7 @@ import {
 } from "./vapi-helpers";
 import { toVapiFunctionTools } from "./vapi-tool-format";
 import { buildVapiServerConfig } from "./vapi-server-config";
+import { buildVapiTranscriptOnlyArtifactPlan } from "./vapi-artifact-plan";
 import { normalizeOutboundNumber } from "./dialer-compliance";
 import { isMarketingCallPurpose, type OutboundCallPurpose } from "./outbound-call-purpose";
 import {
@@ -600,7 +601,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     },
   );
   const outboundTools = toVapiFunctionTools(outboundFunctions);
-  const recordingEnabled = agentConfig.complianceMode !== "hipaa";
+  const artifactPlan = buildVapiTranscriptOnlyArtifactPlan();
   const openingMessage =
     agentConfig.firstMessage ||
     buildOutboundFirstMessage(
@@ -611,7 +612,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
   const disclosurePrefix = complianceFirstMessagePrefix(
     agentConfig.complianceMode,
     settings?.businessName || agentConfig.name,
-    { outboundAiCall: true, recordingEnabled, telemarketing },
+    { outboundAiCall: true, recordingEnabled: artifactPlan.recordingEnabled, telemarketing },
   );
   const outboundVoiceId = agentConfig.voiceIdOutbound || agentConfig.voiceId;
   // A selected ElevenLabs voice already runs on PSTN through Vapi. Reserve the
@@ -673,6 +674,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
     analysisPlan: VAPI_ANALYSIS_PLAN,
     startSpeakingPlan: resolveOutboundStartSpeakingPlan(speechPipeline),
     transcriber: speechPipeline.transcriber,
+    artifactPlan,
     ...(outboundServerUrl && {
       server: buildVapiServerConfig(outboundServerUrl),
     }),
@@ -687,18 +689,11 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
       provider: voiceLlmProvider,
       model: voiceLlmModel,
       ...(voiceSelection.fallbackModels?.length
-        ? { fallbackModels: voiceSelection.fallbackModels }
-        : {}),
+        ? { fallbackModels: voiceSelection.fallbackModels } : {}),
       systemPrompt: finalSystemPrompt,
       temperature: clampVoiceTemperature(agentConfig.llmTemperature, llmTemp),
       tools: outboundTools,
     },
-    // Recording parity with the inbound factory: HIPAA-mode agents must not
-    // record on EITHER direction — a hardcoded true here recorded every
-    // outbound call (manual, campaign, cadence, callback, intake auto-dial)
-    // for agents whose owners selected HIPAA compliance, and persisted the
-    // recording URL to call logs.
-    recordingEnabled,
     voice: managedVoiceRuntime,
   };
 
