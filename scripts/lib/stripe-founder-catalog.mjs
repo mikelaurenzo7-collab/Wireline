@@ -107,14 +107,14 @@ export const FOUNDER_PRODUCTS = [
     key: "live_video",
     name: "Wireline Live Video",
     description:
-      "Photoreal presenter streaming add-on for business agents: 60 reserved Live Video session minutes monthly, reserved in 10-minute sessions, with no automatic overage.",
+      "Photoreal presenter streaming add-on for business agents: 60 reserved Live Video minutes monthly, reserved in up-to-5-minute sessions, with no automatic overage.",
     defaultPriceKey: "live_video_monthly",
     metadata: {
       wireline_product: "live_video_addon",
       wireline_billing_model: "addon_subscription",
-      wireline_catalog_state: "launch_paused",
+      wireline_catalog_state: "launch_active",
       included_live_video_minutes: "60",
-      session_reservation_minutes: "10",
+      session_reservation_minutes: "5",
       overage_policy: "none_pause_at_limit",
     },
   },
@@ -239,8 +239,9 @@ export const FOUNDER_PRICES = [
     metadata: {
       wireline_product: "live_video_addon",
       wireline_price_type: "live_video_addon",
+      wireline_catalog_state: "launch_active",
       included_live_video_minutes: "60",
-      session_reservation_minutes: "10",
+      session_reservation_minutes: "5",
       overage_policy: "none_pause_at_limit",
     },
   },
