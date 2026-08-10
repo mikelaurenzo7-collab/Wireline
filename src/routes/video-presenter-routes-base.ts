@@ -23,6 +23,7 @@ import {
   isLiveVideoProvider,
 } from "../lib/video-presenter/live-video-addon";
 import { resolveLiveVideoEntitlement } from "../lib/video-presenter/live-video-entitlements";
+import { LIVE_VIDEO_MAX_SESSION_SECONDS } from "../lib/video-presenter/live-video-policy";
 import {
   releaseLiveVideoSessionReservation,
   reserveLiveVideoSessionMinutes,
@@ -310,7 +311,7 @@ router.post(
     try {
       liveSession = await mintLiveAvatarLiteSessionToken({
         avatarId: presenter.avatarId,
-        maxSessionDurationSeconds: 600,
+        maxSessionDurationSeconds: LIVE_VIDEO_MAX_SESSION_SECONDS,
       });
     } catch (error) {
       try {
@@ -336,6 +337,7 @@ router.post(
         provider: "liveavatar",
         sessionToken: liveSession.sessionToken,
         sandbox: liveSession.sandbox,
+        maxSessionSeconds: LIVE_VIDEO_MAX_SESSION_SECONDS,
       },
     });
   },
