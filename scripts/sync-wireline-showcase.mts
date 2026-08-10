@@ -24,6 +24,7 @@ import {
 import { sanitizeShowcaseAssistantPayload } from "../src/lib/showcase-prompt-truth-guard.ts";
 import { sanitizePhone } from "../src/lib/vapi-helpers.ts";
 import { VAPI_OPENAI_FALLBACK_MODEL } from "../src/lib/ai-models.ts";
+import { buildVapiTranscriptOnlyArtifactPlan } from "../src/lib/vapi-artifact-plan.ts";
 
 const VAPI_BASE = "https://api.vapi.ai";
 const PATCH_DELAY_MS = 600;
@@ -143,6 +144,11 @@ function preflightTargets(numbers: VapiNumber[], webhookSecret: string): SyncTar
         webhookSecret,
       }) as Record<string, unknown>,
     );
+    // Public demo/support lines are the most exposed call surface. Never rely
+    // on Vapi's permissive artifact defaults; preserve transcripts while
+    // disabling full-call audio/video recording and packet capture.
+    payload.artifactPlan = buildVapiTranscriptOnlyArtifactPlan();
+    delete payload.recordingEnabled;
     targets.push({
       agent,
       kind,
