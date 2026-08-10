@@ -66,6 +66,28 @@ export function isConsumerRequestedCallback(metadata: Record<string, unknown>): 
 }
 
 /**
+ * One request authorizes one return call. The marker is consumed on every
+ * terminal outcome (placed, blocked, dropped, failed) and preserved only
+ * across deferrals, where the same request is still rolling forward to its
+ * window. Leaving it behind would relaunder every later system-scheduled dial
+ * on the lead — a summary-inferred "followup" lands 24h after the placed
+ * callback, and a stale marker would send it out with consent waived and the
+ * opt-out announcement dropped, on the strength of a request the consumer
+ * made once, for a call they already received.
+ *
+ * Also the sanitizer for HTTP boundaries that store caller-supplied lead
+ * metadata verbatim: the claim "a consumer asked us to call back" is only
+ * mintable by the in-call tool handler, never by an imported row.
+ */
+export function stripCallbackRequestMarker(
+  metadata: Record<string, unknown>,
+): Record<string, unknown> {
+  if (!(CALLBACK_REQUEST_MARKER in metadata)) return metadata;
+  const { [CALLBACK_REQUEST_MARKER]: _consumed, ...rest } = metadata;
+  return rest;
+}
+
+/**
  * Parse the `callback_datetime` an agent captured mid-call into an executable
  * Date. The tool mandate asks the model for an exact ISO datetime, but LLM
  * output drifts — this is the single tolerant/clamping parser both the tool
@@ -121,12 +143,19 @@ export async function tickDueCallbacks({
       summary: string;
       metadata?: Record<string, unknown>;
     }) => {
+      // Terminal outcomes (null schedule) consume the consumer's request
+      // marker — enforced here so no individual call site can forget. A
+      // deferral keeps it: the same request is still in flight.
+      const terminal = patch.callbackScheduledAt === null;
+      const base =
+        patch.metadata ?? (terminal && CALLBACK_REQUEST_MARKER in metadata ? metadata : undefined);
+      const nextMetadata = terminal && base ? stripCallbackRequestMarker(base) : patch.metadata;
       await drizzle
         .update(schema.outboundLeads)
         .set({
           callbackScheduledAt: patch.callbackScheduledAt,
           lastContactSummary: patch.summary,
-          ...(patch.metadata ? { metadata: patch.metadata } : {}),
+          ...(nextMetadata ? { metadata: nextMetadata } : {}),
         })
         .where(eq(schema.outboundLeads.id, lead.id));
     };

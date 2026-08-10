@@ -61,10 +61,33 @@ describe("caller-requested callbacks execute end-to-end", () => {
     // ...and intake metadata is stored verbatim, so it must be stripped there
     // or the account holder could assert it over HTTP.
     expect(intake).toContain("k !== CALLBACK_REQUEST_MARKER");
+    // The bulk lead import stores account-holder metadata verbatim too — the
+    // same trust boundary, one route over. An imported cold list carrying the
+    // marker would dial as consented callbacks after any writer of
+    // callback_scheduled_at touched the rows.
+    const bulk = read("src/routes/outbound-routes.ts");
+    expect(bulk).toContain("stripCallbackRequestMarker((lead.metadata as Record<string, unknown>)");
 
     // Without the marker the dial stays marketing-classed, which is what keeps
     // the opt-out announcement on (vapi-client isMarketingCallPurpose).
     expect(engine).toContain('consumerRequested ? "callback" : "marketing_or_sales"');
+  });
+
+  /*
+   * One request authorizes one return call. The marker survived the placed
+   * callback (`finish` re-wrote metadata with it intact), so the next
+   * summary-inferred "followup" — scheduled 24h later by a regex, not a person
+   * — re-read the stale marker and went out with consent waived and the
+   * opt-out announcement dropped. The consumer asked once, for a call they
+   * already received; nothing they said authorized the second one.
+   */
+  it("consumes the consumer's request on every terminal outcome", () => {
+    const engine = read("src/lib/callback-engine.ts");
+    expect(engine).toContain("export function stripCallbackRequestMarker");
+    // finish() owns the rule so no call site can forget: terminal outcomes
+    // (null schedule) strip the marker; deferrals keep the request in flight.
+    expect(engine).toContain("const terminal = patch.callbackScheduledAt === null;");
+    expect(engine).toMatch(/terminal && base \? stripCallbackRequestMarker\(base\)/);
   });
 
   /*

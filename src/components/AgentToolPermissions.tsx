@@ -168,21 +168,30 @@ export default function AgentToolPermissions({
 
   async function save() {
     if (saving || !enabled) return;
+    // The component survives agent switches in place, so a save started for
+    // one agent can resolve after another is active. Applying that response
+    // would overwrite the new agent's loaded selection with the old agent's
+    // tools — and the next save would persist them. The load effect already
+    // tracks the active agent in loadedAgentRef; a response only applies while
+    // the agent it was saved for is still the one on screen.
+    const savedFor = agentId;
     setSaving(true);
     setSaveError(null);
     setNotice(null);
     try {
-      const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/tools`, {
+      const response = await authFetch(`/api/agents/${encodeURIComponent(savedFor)}/tools`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled_tools: enabled }),
       });
       if (!response.ok) throw new Error("Actions could not be saved.");
       const body = (await response.json()) as { enabledTools?: AgentToolName[] };
+      if (loadedAgentRef.current !== savedFor) return;
       // Trust the server's normalized set so the UI cannot drift from storage.
       if (Array.isArray(body.enabledTools)) setEnabled(body.enabledTools);
       setNotice("Run a test before the next live call.");
     } catch (reason) {
+      if (loadedAgentRef.current !== savedFor) return;
       setSaveError(reason instanceof Error ? reason.message : "Actions could not be saved.");
     } finally {
       setSaving(false);

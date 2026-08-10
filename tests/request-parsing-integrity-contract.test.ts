@@ -133,8 +133,14 @@ describe("bulk outbound validates the fields it actually persists", () => {
     // The handler spreads caller metadata FIRST and overlays server-derived
     // consent after, so this ordering is what stops a client asserting its own
     // TCPA consent. Guarded here because it is one line away from reversing.
+    // The caller spread also passes through stripCallbackRequestMarker: the
+    // consent overlay only protects keys it writes, and the callback-request
+    // marker is a consent claim it never writes — an imported row carrying it
+    // would sail through the overlay and waive consent at dial time.
     const routes = stripComments(read("src/routes/outbound-routes.ts"));
-    const spread = routes.indexOf("...((lead.metadata as Record<string, unknown>) || {})");
+    const spread = routes.indexOf(
+      "...stripCallbackRequestMarker((lead.metadata as Record<string, unknown>) || {})",
+    );
     const consent = routes.indexOf("...outboundConsentMetadata({", spread);
     expect(spread).toBeGreaterThan(-1);
     expect(consent).toBeGreaterThan(spread);

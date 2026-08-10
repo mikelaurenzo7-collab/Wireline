@@ -71,6 +71,17 @@ describe("authenticated agent flow", () => {
     expect(permissions).toContain("Not connected — these stay off in live calls until");
     expect(permissions).toContain("to={playbook.connectPath}");
     expect(read("src/lib/vapi-helpers.ts")).toContain("filterToolsByTenantConnections");
+
+    /*
+     * The component survives agent switches in place, so an in-flight save for
+     * agent A can resolve while agent B is on screen. Unguarded, the response
+     * replaced B's loaded selection with A's tools — and the next save
+     * persisted them onto B. The save captures its agent at call time and a
+     * response applies only while that agent is still the active one.
+     */
+    expect(permissions).toContain("const savedFor = agentId;");
+    expect(permissions).toMatch(/if \(loadedAgentRef\.current !== savedFor\) return;/);
+    expect(permissions).toContain("encodeURIComponent(savedFor)");
   });
 
   it("routes fresh signups into the real create flow", () => {

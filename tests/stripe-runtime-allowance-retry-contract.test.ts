@@ -67,6 +67,7 @@ describe("Stripe Runtime Balance movements fail closed", () => {
       "charge.dispute.created",
       "charge.dispute.funds_withdrawn",
       "charge.dispute.funds_reinstated",
+      "charge.refund.updated",
       "checkout.session.completed",
       "invoice.payment_succeeded",
     ]) {
@@ -108,6 +109,28 @@ describe("Stripe Runtime Balance movements fail closed", () => {
       expect(source, name).not.toMatch(/\bid:\s*charge\.id,/);
       expect(source, name).not.toMatch(/providerObjectId:\s*charge\.id,/);
     }
+  });
+
+  /*
+   * Failing closed on a pending refund is only safe if something fires when it
+   * settles. `charge.refunded` is emitted at creation — for an asynchronous
+   * refund the succeeded-only filter correctly finds nothing, the handler
+   * throws, and Stripe's redelivery retries stop after ~3 days. An issuer that
+   * takes 5-10 days to clear the refund would leave the credit spendable
+   * forever, silently. The settle signal is `charge.refund.updated`; both
+   * refund-lifecycle events route through one shared, per-refund.id-idempotent
+   * handler, so redelivery and overlap between the two are no-ops.
+   */
+  it("recovers pending refunds when they settle, through the same idempotent path", () => {
+    const billing = read("src/routes/billing-routes.ts");
+
+    expect(billing).toContain('case "charge.refund.updated": {');
+    expect(billing).toContain('if (refund.status !== "succeeded") break;');
+    // Both events call the one extracted handler — no second copy of the
+    // routing that could drift.
+    const calls = billing.match(/await reverseSettledRefundsForCharge\(/g) || [];
+    expect(calls.length).toBe(2);
+    expect(billing).toContain("async function reverseSettledRefundsForCharge(");
   });
 
   it("treats inquiry creation as notification-only and follows monetary events", () => {

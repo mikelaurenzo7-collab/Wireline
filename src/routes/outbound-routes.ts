@@ -9,6 +9,7 @@ import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { parseFormData } from "../lib/form-validators";
 import { OutboundBulkSchema } from "../lib/form-validators";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
+import { stripCallbackRequestMarker } from "../lib/callback-engine";
 import {
   OUTBOUND_CALL_PURPOSES,
   isMarketingCallPurpose,
@@ -364,8 +365,14 @@ router.post(
         campaignId: campaign_id || null,
         // Campaign-bound imports are launch-ready; standalone imports stay Pending.
         status: campaign_id ? "Queued" : "Pending",
+        // Imported metadata is stored verbatim, so the callback-request marker
+        // must be stripped here exactly as intake strips it: it claims a
+        // consumer asked to be called back — which waives express written
+        // consent and drops the opt-out announcement — and only a live call
+        // may mint that. `has_express_written_consent` stays the deliberate
+        // attestation channel; the dial remains marketing-classed either way.
         metadata: {
-          ...((lead.metadata as Record<string, unknown>) || {}),
+          ...stripCallbackRequestMarker((lead.metadata as Record<string, unknown>) || {}),
           ...outboundConsentMetadata({
             callPurpose: "marketing_or_sales",
             hasExpressWrittenConsent: !!has_express_written_consent,
