@@ -43,7 +43,7 @@ describe("launch artifact privacy and operations truth", () => {
   it("does not publish unsupported self-serve SLA or recovery guarantees", () => {
     const sla = read("docs/SLA.md");
     expect(sla).toContain("do **not** include a contractual uptime SLA");
-    expect(sla).toContain("365-day default and a supported 90–365 day range");
+    expect(sla).toContain("365-day default, minimum 90 days, and a supported 90–365 day range");
     expect(sla).not.toContain("99.95%");
     expect(sla).not.toContain("Dedicated Slack channel");
     expect(sla).not.toContain("Synthetic monitoring:");
