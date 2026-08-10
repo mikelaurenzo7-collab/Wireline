@@ -132,7 +132,23 @@ describe("launch completeness contracts", () => {
     const status = source("src/components/Status.tsx");
 
     expect(status).toContain("const STATUS_FETCH_TIMEOUT_MS = 15_000;");
-    expect(status).toContain("AbortSignal.timeout(STATUS_FETCH_TIMEOUT_MS)");
+    /*
+     * The bound must come from AbortController + setTimeout, not
+     * `AbortSignal.timeout`. That is a runtime API the es2022 target does not
+     * polyfill: used bare it throws TypeError on browsers lacking it, and
+     * feature-detecting it leaves the fallback with no timeout at all — which
+     * silently restores the unbounded stall this guards against, on the one page
+     * that must not invent an outage.
+     */
+    expect(status).toContain("const controller = new AbortController();");
+    expect(status).toContain(
+      "window.setTimeout(() => controller.abort(), STATUS_FETCH_TIMEOUT_MS)",
+    );
+    expect(status).toContain("signal: controller.signal,");
+    expect(status).toContain("window.clearTimeout(timeout);");
+    // Bans the call, not the comment that explains why it is avoided.
+    expect(status).not.toMatch(/signal:\s*AbortSignal\.timeout/);
+    expect(status).not.toMatch(/=\s*AbortSignal\.timeout\(/);
     expect(status).toContain("await res.body?.cancel().catch(() => undefined);");
     // The short feed-error line only earns its place next to a "Last checked"
     // timestamp; with no reading it repeated the heading a third time.

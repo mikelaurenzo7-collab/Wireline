@@ -122,18 +122,29 @@ export default function Status() {
   useEffect(() => {
     let cancelled = false;
     const fetchHealth = async () => {
+      /*
+       * Nothing else bounds this. `authFetch` carries a timeout, but the status
+       * page is public and calls `fetch` directly, so a server that accepted the
+       * connection and then stalled left the page reading "Checking…" forever —
+       * on the one surface whose job is to still be standing when something else
+       * is not.
+       *
+       * Deliberately AbortController + setTimeout rather than
+       * `AbortSignal.timeout`, which is a runtime API the es2022 target does not
+       * polyfill: bare, it throws TypeError on browsers that lack it, and
+       * feature-detecting it means the fallback silently has no timeout at all —
+       * reintroducing the stall this exists to prevent. This pattern is portable
+       * everywhere and is what `authFetch` already uses.
+       */
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), STATUS_FETCH_TIMEOUT_MS);
       try {
         const res = await fetch("/api/health/public", {
           headers: { Accept: "application/json" },
           // The server already owns a bounded distributed probe cache. Do not let
           // the browser retain an older degraded payload across later 60s polls.
           cache: "no-store",
-          // Nothing else bounds this. `authFetch` carries a timeout, but the
-          // status page is public and calls `fetch` directly, so a server that
-          // accepted the connection and then stalled left the page reading
-          // "Checking…" forever — on the one surface whose job is to still be
-          // standing when something else is not.
-          signal: AbortSignal.timeout(STATUS_FETCH_TIMEOUT_MS),
+          signal: controller.signal,
         });
         if (!res.ok) {
           /*
@@ -155,6 +166,7 @@ export default function Status() {
       } catch (_err) {
         if (!cancelled) setError("Status feed temporarily unavailable.");
       } finally {
+        window.clearTimeout(timeout);
         if (!cancelled) setLoading(false);
       }
     };
