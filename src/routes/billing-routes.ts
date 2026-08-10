@@ -443,7 +443,10 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         const chargeId = typeof refund.charge === "string" ? refund.charge : refund.charge?.id;
         if (!chargeId) break;
         const charge = await stripe.charges.retrieve(chargeId);
-        await reverseSettledRefundsForCharge(charge, event);
+        // Top-ups only. Subscription allowance for this event is owned by the
+        // strict preflight, which keys on refund.id; the legacy fallback below
+        // keys on charge.id and would double-debit the same refund.
+        await reverseSettledRefundsForCharge(charge, event, false);
         break;
       }
       case "charge.dispute.created": {
@@ -744,6 +747,21 @@ router.get("/billing/usage", authenticateUser, async (req: AuthenticatedRequest,
 async function reverseSettledRefundsForCharge(
   charge: Stripe.Charge,
   event: Stripe.Event,
+  /*
+   * Whether this event may also reverse a SUBSCRIPTION charge's Runtime
+   * Allowance through the legacy reverser below.
+   *
+   * Only `charge.refunded` may, and only as a fallback: the strict preflight
+   * (stripe-runtime-allowance-retry.ts) owns non-top-up refunds and consumes
+   * those events before this router sees them, keying every reversal on
+   * refund.id. The legacy reverser falls back to charge.id whenever the Charge
+   * arrives without an expanded refunds list — the default under the pinned
+   * API version — and that key is disjoint from refund.id, so the
+   * (user, ref_type, ref_id) unique index cannot dedupe the pair. Letting
+   * `charge.refund.updated` reach it would debit a paying customer twice for
+   * one refund and could drive the wallet negative into a hard 402.
+   */
+  allowSubscriptionFallback = true,
 ): Promise<void> {
   // Claw back a refunded/disputed web credit top-up so a refund can't
   // leave the purchased credit sitting in the wallet. Only top-ups carry
@@ -843,6 +861,7 @@ async function reverseSettledRefundsForCharge(
     // Not a top-up — but a subscription invoice charge funds the Runtime
     // Allowance, which was granted on subscription sync and never came
     // back on a refund. Reverse it under the refund's own id.
+    if (!allowSubscriptionFallback) return;
     await reverseRuntimeAllowanceForCharge(charge, "refund");
   }
 }

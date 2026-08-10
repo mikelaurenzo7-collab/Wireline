@@ -133,6 +133,35 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     expect(billing).toContain("async function reverseSettledRefundsForCharge(");
   });
 
+  /*
+   * SUBSCRIPTION allowance for both refund-lifecycle events belongs to this
+   * preflight, which keys every reversal on refund.id. The legacy reverser in
+   * billing-routes falls back to keying on charge.id whenever a Charge arrives
+   * without an expanded refunds list — the DEFAULT under the pinned API
+   * version, since `stripe.charges.retrieve` does not expand it. Those two ref
+   * keys are disjoint, so the (user, ref_type, ref_id) unique index cannot
+   * dedupe the pair: routing charge.refund.updated to the legacy fallback
+   * debited a paying customer twice for one refund and could drive the wallet
+   * negative into a hard 402. Ownership is asserted on both sides.
+   */
+  it("keeps subscription refund reversals in one owner, keyed on refund.id", () => {
+    const billing = read("src/routes/billing-routes.ts");
+
+    // The preflight claims BOTH refund events for non-top-up charges.
+    expect(middleware).toMatch(
+      /event\.type === "charge\.refunded" \|\| event\.type === "charge\.refund\.updated"/,
+    );
+    // ...and only acts on a real settle, so a pending/failed update cannot
+    // re-enter the strict path and throw on an empty refund list.
+    expect(middleware).toContain('if (refund.status !== "succeeded") return next();');
+
+    // billing-routes must refuse the subscription fallback for that event even
+    // if mount order ever changed — defence in depth on a money path.
+    expect(billing).toContain("allowSubscriptionFallback = true");
+    expect(billing).toContain("if (!allowSubscriptionFallback) return;");
+    expect(billing).toContain("await reverseSettledRefundsForCharge(charge, event, false);");
+  });
+
   it("treats inquiry creation as notification-only and follows monetary events", () => {
     const created = middleware.indexOf('if (event.type === "charge.dispute.created")');
     const withdrawn = middleware.indexOf('eventType === "charge.dispute.funds_withdrawn"');

@@ -122,7 +122,7 @@ async function persistTranscriptDncSuppression(input: {
 
     const { SentinelService } = await import("../services/sentinel");
     const sentinel = new SentinelService();
-    void sentinel.terminateActiveCallsForNumber(normalizedCallerNumber).catch((err) =>
+    void sentinel.terminateActiveCallsForNumber(normalizedCallerNumber, input.userId).catch((err) =>
       log.error("sentinel terminate-on-transcript-DNC failed", {
         error: err instanceof Error ? err.message : String(err),
       }),

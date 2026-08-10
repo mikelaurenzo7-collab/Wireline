@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { dncPhoneCandidates, isDncBlocked, normalizeDncPhone } from "../lib/compliance";
 import { fetchWithTimeout } from "../lib/server-context";
 import { isAllowedVapiControlUrl } from "../lib/vapi-monitor-url";
@@ -72,14 +72,30 @@ export class SentinelService {
    */
   async terminateActiveCallsForNumber(
     phoneNumber: string,
+    /**
+     * The tenant whose DNC list just changed. REQUIRED — a Do Not Call list is
+     * per-tenant (`isDncBlocked(userId, phone)`), so the termination it triggers
+     * must be too. Matching on customer_number alone reached across tenants:
+     * when one workspace suppressed a number, every OTHER workspace holding a
+     * live call with that same person had their call killed mid-sentence, on
+     * the strength of a request those callers never made to them. Consumer
+     * numbers are shared across businesses constantly — a plumber and a dentist
+     * calling the same household is the ordinary case, not the edge case.
+     */
+    userId: string,
   ): Promise<{ attempted: number; terminated: number; failed: number }> {
     const candidates = dncPhoneCandidates(phoneNumber);
-    if (!candidates.length) return { attempted: 0, terminated: 0, failed: 0 };
+    if (!candidates.length || !userId) return { attempted: 0, terminated: 0, failed: 0 };
 
     const activeCalls = await drizzle
       .select({ id: schema.signalPresence.id })
       .from(schema.signalPresence)
-      .where(inArray(schema.signalPresence.customerNumber, candidates));
+      .where(
+        and(
+          eq(schema.signalPresence.userId, userId),
+          inArray(schema.signalPresence.customerNumber, candidates),
+        ),
+      );
 
     let terminated = 0;
     for (const call of activeCalls) {
@@ -97,7 +113,10 @@ export class SentinelService {
     log.info(`Terminating call ${callId} due to ${reason}`);
     const apiKey = process.env.VAPI_PRIVATE_KEY?.trim();
     if (!apiKey) {
-      log.error("Cannot terminate Vapi call: VAPI_PRIVATE_KEY is not configured", { callId, reason });
+      log.error("Cannot terminate Vapi call: VAPI_PRIVATE_KEY is not configured", {
+        callId,
+        reason,
+      });
       return false;
     }
 

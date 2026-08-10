@@ -66,6 +66,33 @@ function tokenize(text: string): string[] {
   );
 }
 
+/**
+ * Return the window of an entry AROUND the caller's match, not its opening
+ * characters.
+ *
+ * Entries used to be truncated to MAX_KB_RESULT_CHARS before scoring, which
+ * made every entry unsearchable past its first 600 characters — roughly a
+ * short paragraph, so most real knowledge entries were affected. A caller
+ * asking about something documented in the second half of a page scored zero,
+ * was dropped from the results, and heard NO_VERIFIED_MATCH: the agent said it
+ * had no verified answer while the answer sat in its own knowledge base. The
+ * excerpt is now a presentation concern only.
+ */
+function excerptAroundMatch(content: string, queryTokens: string[]): string {
+  if (content.length <= MAX_KB_RESULT_CHARS) return content;
+  const lower = content.toLowerCase();
+  let hit = -1;
+  for (const token of queryTokens) {
+    const index = lower.indexOf(token);
+    if (index >= 0 && (hit < 0 || index < hit)) hit = index;
+  }
+  if (hit < 0) return `${content.slice(0, MAX_KB_RESULT_CHARS)}…`;
+  // Leave a third of the window as lead-in so the match keeps its context.
+  const start = Math.max(0, hit - Math.floor(MAX_KB_RESULT_CHARS / 3));
+  const end = start + MAX_KB_RESULT_CHARS;
+  return `${start > 0 ? "…" : ""}${content.slice(start, end)}${end < content.length ? "…" : ""}`;
+}
+
 function scoreSnippet(content: string, queryTokens: string[]): number {
   const lower = content.toLowerCase();
   let score = 0;
@@ -102,13 +129,15 @@ async function searchAgentKnowledge(
 
   type Snippet = { source: "rule" | "knowledge"; content: string };
   const snippets: Snippet[] = [
+    // Full content — the excerpt window is applied on OUTPUT, never before
+    // scoring. See excerptAroundMatch below.
     ...directives.map((d: any) => ({
       source: "rule" as const,
-      content: (d.content || "").trim().slice(0, MAX_KB_RESULT_CHARS),
+      content: (d.content || "").trim(),
     })),
     ...knowledge.map((k: any) => ({
       source: "knowledge" as const,
-      content: (k.content || "").trim().slice(0, MAX_KB_RESULT_CHARS),
+      content: (k.content || "").trim(),
     })),
   ].filter((s) => s.content.length > 0);
 
@@ -133,7 +162,7 @@ async function searchAgentKnowledge(
 
   return [
     "VERIFIED_KNOWLEDGE_MATCH: Answer only from the approved excerpts below. If they do not fully resolve the question, say you do not have a verified answer and offer follow-up; do not combine them with assumptions.",
-    ...scored.map((s) => `[${s.source}] ${s.content}`),
+    ...scored.map((s) => `[${s.source}] ${excerptAroundMatch(s.content, queryTokens)}`),
   ].join("\n\n");
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -703,7 +732,7 @@ export async function handleCoreToolCall(
       try {
         const { SentinelService } = await import("../../services/sentinel");
         const sentinel = new SentinelService();
-        termination = await sentinel.terminateActiveCallsForNumber(normalizedPhone);
+        termination = await sentinel.terminateActiveCallsForNumber(normalizedPhone, agent?.user_id);
       } catch (terminationError) {
         // The DNC row is already durable. A provider/control-plane failure must
         // never fall through to the outer "opt-out was not saved" response.
@@ -711,9 +740,7 @@ export async function handleCoreToolCall(
         log.error("sentinel failed after DNC suppression was persisted", {
           phone: normalizedPhone,
           error:
-            terminationError instanceof Error
-              ? terminationError.message
-              : String(terminationError),
+            terminationError instanceof Error ? terminationError.message : String(terminationError),
         });
       }
 

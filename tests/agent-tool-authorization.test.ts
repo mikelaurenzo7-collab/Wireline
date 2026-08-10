@@ -233,3 +233,37 @@ describe("agent tool execution authorization", () => {
     expect(journal).toContain('"tag": "0111_remove_unscoped_platform_live_tools"');
   });
 });
+
+/*
+ * `search_knowledge_base` truncated every entry to MAX_KB_RESULT_CHARS BEFORE
+ * scoring it, so nothing documented past the first 600 characters — roughly a
+ * short paragraph — could ever match. The entry scored zero, was filtered out,
+ * and the caller heard NO_VERIFIED_MATCH: the agent said it had no verified
+ * answer while the answer sat in its own knowledge base. Enabling this tool
+ * fleet-wide made the defect reachable for every agent, so the window is now a
+ * presentation concern applied on output, centred on the caller's match.
+ */
+describe("knowledge search reads the whole entry", () => {
+  const source = readFileSync(
+    resolve(process.cwd(), "src/routes/vapi/tool-handlers-core.ts"),
+    "utf8",
+  );
+
+  it("never truncates before scoring", () => {
+    const build = source.slice(
+      source.indexOf("const snippets: Snippet[] = ["),
+      source.indexOf("if (snippets.length === 0)"),
+    );
+    expect(build).not.toContain("MAX_KB_RESULT_CHARS");
+    expect(build).toContain('content: (d.content || "").trim(),');
+    expect(build).toContain('content: (k.content || "").trim(),');
+  });
+
+  it("applies the excerpt window on output, around the match", () => {
+    expect(source).toContain("function excerptAroundMatch(");
+    expect(source).toContain("excerptAroundMatch(s.content, queryTokens)");
+    // The window must be anchored on the caller's token, not the entry start.
+    expect(source).toContain("const index = lower.indexOf(token);");
+    expect(source).toContain("Math.max(0, hit - Math.floor(MAX_KB_RESULT_CHARS / 3))");
+  });
+});
