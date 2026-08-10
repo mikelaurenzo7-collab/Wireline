@@ -434,7 +434,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         await reverseSettledRefundsForCharge(event.data.object as Stripe.Charge, event);
         break;
       }
-      case "charge.refund.updated": {
+      case "refund.updated": {
         // A pending refund settled (or failed). Only a transition to
         // succeeded moves money; the shared routing no-ops anything already
         // reversed and throws on inconsistency, same as charge.refunded.
@@ -735,7 +735,7 @@ router.get("/billing/usage", authenticateUser, async (req: AuthenticatedRequest,
  */
 /**
  * Reverse every settled refund on a charge, keyed per refund.id — shared by
- * `charge.refunded` and `charge.refund.updated`. The second event is the only
+ * `charge.refunded` and `refund.updated`. The second event is the only
  * signal Stripe sends when a PENDING refund later settles: `charge.refunded`
  * fires at creation, its succeeded-only filter correctly yields nothing for an
  * unsettled refund, and Stripe's redelivery retries stop after ~3 days — a
@@ -758,7 +758,7 @@ async function reverseSettledRefundsForCharge(
    * arrives without an expanded refunds list — the default under the pinned
    * API version — and that key is disjoint from refund.id, so the
    * (user, ref_type, ref_id) unique index cannot dedupe the pair. Letting
-   * `charge.refund.updated` reach it would debit a paying customer twice for
+   * `refund.updated` reach it would debit a paying customer twice for
    * one refund and could drive the wallet negative into a hard 402.
    */
   allowSubscriptionFallback = true,

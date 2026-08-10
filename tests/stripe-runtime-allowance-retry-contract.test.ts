@@ -67,7 +67,7 @@ describe("Stripe Runtime Balance movements fail closed", () => {
       "charge.dispute.created",
       "charge.dispute.funds_withdrawn",
       "charge.dispute.funds_reinstated",
-      "charge.refund.updated",
+      "refund.updated",
       "checkout.session.completed",
       "invoice.payment_succeeded",
     ]) {
@@ -117,14 +117,14 @@ describe("Stripe Runtime Balance movements fail closed", () => {
    * refund the succeeded-only filter correctly finds nothing, the handler
    * throws, and Stripe's redelivery retries stop after ~3 days. An issuer that
    * takes 5-10 days to clear the refund would leave the credit spendable
-   * forever, silently. The settle signal is `charge.refund.updated`; both
+   * forever, silently. The settle signal is `refund.updated`; both
    * refund-lifecycle events route through one shared, per-refund.id-idempotent
    * handler, so redelivery and overlap between the two are no-ops.
    */
   it("recovers pending refunds when they settle, through the same idempotent path", () => {
     const billing = read("src/routes/billing-routes.ts");
 
-    expect(billing).toContain('case "charge.refund.updated": {');
+    expect(billing).toContain('case "refund.updated": {');
     expect(billing).toContain('if (refund.status !== "succeeded") break;');
     // Both events call the one extracted handler — no second copy of the
     // routing that could drift.
@@ -140,7 +140,7 @@ describe("Stripe Runtime Balance movements fail closed", () => {
    * without an expanded refunds list — the DEFAULT under the pinned API
    * version, since `stripe.charges.retrieve` does not expand it. Those two ref
    * keys are disjoint, so the (user, ref_type, ref_id) unique index cannot
-   * dedupe the pair: routing charge.refund.updated to the legacy fallback
+   * dedupe the pair: routing the settle event to the legacy fallback
    * debited a paying customer twice for one refund and could drive the wallet
    * negative into a hard 402. Ownership is asserted on both sides.
    */
@@ -149,8 +149,20 @@ describe("Stripe Runtime Balance movements fail closed", () => {
 
     // The preflight claims BOTH refund events for non-top-up charges.
     expect(middleware).toMatch(
-      /event\.type === "charge\.refunded" \|\| event\.type === "charge\.refund\.updated"/,
+      /event\.type === "charge\.refunded" \|\| event\.type === "refund\.updated"/,
     );
+    /*
+     * The event name is load-bearing and easy to get wrong. Stripe documents
+     * `charge.refund.updated` for selected NON-card payment methods; this
+     * account pins payment_method_types to card and link, and Stripe's own
+     * async-refund test cards state that a pending CARD refund transitions to
+     * succeeded and "sends a refund.updated event". Subscribing the wrong one
+     * leaves the slow-settle dead-end open while the code looks fixed.
+     */
+    // Bans the event NAME in use, not the comment explaining why it is wrong.
+    for (const source of [middleware, billing]) {
+      expect(source).not.toMatch(/(?:event\.type ===|case)\s*"charge\.refund\.updated"/);
+    }
     // ...and only acts on a real settle, so a pending/failed update cannot
     // re-enter the strict path and throw on an empty refund list.
     expect(middleware).toContain('if (refund.status !== "succeeded") return next();');

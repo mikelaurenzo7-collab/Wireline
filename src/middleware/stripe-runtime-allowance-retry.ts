@@ -466,15 +466,20 @@ export async function stripeRuntimeAllowanceRetryPreflight(
      * some card refunds), the allowance is never reversed and the refunded
      * money stays spendable.
      *
-     * `charge.refund.updated` is the settle signal. It MUST be owned here, not
-     * downstream: the legacy reverser in billing-routes falls back to keying on
+     * `refund.updated` is the settle signal — NOT `charge.refund.updated`,
+     * which Stripe documents for selected non-card payment methods. This
+     * account accepts `card` and `link` only, and Stripe's own async-refund
+     * test cards state that a pending card refund transitions to succeeded and
+     * "sends a `refund.updated` event". Subscribing the wrong one would have
+     * left the dead-end this exists to close wide open while looking fixed.
+     * It MUST be owned here, not downstream: the legacy reverser in billing-routes falls back to keying on
      * charge.id when a Charge arrives without an expanded refunds list — which
      * is the default under the pinned API version — and that key is disjoint
      * from the refund.id key this path writes, so the (user, ref) unique index
      * would not dedupe them and the tenant would be debited twice for one
      * refund. Same claim, same strict per-refund.id reversal, both events.
      */
-    if (event.type === "charge.refunded" || event.type === "charge.refund.updated") {
+    if (event.type === "charge.refunded" || event.type === "refund.updated") {
       let charge: Stripe.Charge;
       if (event.type === "charge.refunded") {
         charge = event.data.object as Stripe.Charge;
