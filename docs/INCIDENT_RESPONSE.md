@@ -1,7 +1,7 @@
 # Wireline Incident Response Runbook
 
 **Owner:** Wireline platform owner  
-**Last reviewed:** August 10, 2026
+**Last reviewed:** August 11, 2026
 
 This is an operator runbook. Response-time language below is prioritization guidance, not a customer SLA unless a signed customer agreement explicitly incorporates it.
 
@@ -30,7 +30,7 @@ Do not describe a monitoring cadence as live until it is present in production c
 
 - `GET /api/health` — application/database health.
 - `GET /api/health/public` — cached, distributed public provider posture used by `/status`.
-- `GET /api/voice/status` — recent voice reliability surface.
+- `GET /api/health/voice-status` — recent voice reliability surface.
 - Authenticated/operator health routes expose deeper provider, SLO, queue, and integration diagnostics.
 - Vercel runtime logs and grouped runtime errors are deployment evidence.
 - Structured error reporting is forwarded to Sentry **only when the production Sentry DSN is configured**; do not assume an email/Slack routing rule exists without verifying that rule in the active Sentry account.
