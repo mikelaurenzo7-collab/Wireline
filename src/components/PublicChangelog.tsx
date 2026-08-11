@@ -51,7 +51,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Aug 11, 2026",
     tag: "launch",
     title: "Launch certification hardened",
-    body: "Launch builds now verify TypeScript, lint, production dependency advisories, the full test suite, production schema effects, and live service health before promotion. Public product and creative now share one Build, Train, Launch, Improve story, with demo and test activity kept separate from customer evidence.",
+    body: "Deep launch builds now verify TypeScript, lint, production dependency advisories, the non-E2E test suite, and production schema effects. Post-promotion health checks verify the live service. The August 11 launch authority defines the current Build, Train, Launch, Improve story and keeps demo and test evidence separate from customer proof.",
   },
   {
     date: "Jul 25, 2026",
@@ -122,8 +122,8 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Jan 27, 2026",
     tag: "infra",
-    title: "Visual-regression coverage",
-    body: "Added Playwright screenshot coverage and committed baselines for critical routes and viewports so layout regressions can be checked before release.",
+    title: "Visual QA coverage",
+    body: "Added Playwright screenshot capture and responsive-layout auditing for critical routes and viewports so visual QA can be run before release.",
   },
   {
     date: "Jan 27, 2026",
