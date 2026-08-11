@@ -314,21 +314,24 @@ async function currentPlanSubscriptionForCustomer(
 
 /**
  * A Live Video subscription is economically dependent on the base Wireline
- * plan. When the base plan is scheduled to end, schedule any active standalone
- * Live Video add-on to end too so a customer cannot become blocked in-product
- * while continuing to receive future $19 renewals. A cascade marker lets us
- * safely undo only Wireline-triggered add-on cancellations if the base-plan
- * cancellation is reversed before either subscription ends.
+ * plan. When the base plan is scheduled to end, becomes unpaid, or reaches a
+ * terminal state, schedule any active standalone Live Video add-on to end too
+ * so a customer cannot become blocked in-product while continuing to receive
+ * future $19 renewals. We preserve the already-paid add-on period rather than
+ * performing an immediate cancellation/refund mutation. A cascade marker lets
+ * us safely undo only Wireline-triggered add-on cancellations if the base plan
+ * recovers or a replacement paid base plan becomes active before the add-on ends.
  */
 async function reconcileLiveVideoAddonWithBasePlan(opts: {
   customerId: string;
   baseCancelAtPeriodEnd: boolean;
   baseTerminal: boolean;
+  baseUnpaid: boolean;
   restoreCascade: boolean;
 }): Promise<void> {
-  const { customerId, baseCancelAtPeriodEnd, baseTerminal, restoreCascade } = opts;
+  const { customerId, baseCancelAtPeriodEnd, baseTerminal, baseUnpaid, restoreCascade } = opts;
   if (!stripeAvailable()) return;
-  if (!baseCancelAtPeriodEnd && !baseTerminal && !restoreCascade) return;
+  if (!baseCancelAtPeriodEnd && !baseTerminal && !baseUnpaid && !restoreCascade) return;
 
   const listed = await stripe.subscriptions.list({
     customer: customerId,
@@ -351,7 +354,7 @@ async function reconcileLiveVideoAddonWithBasePlan(opts: {
           cancel_at_period_end: false,
           metadata: { wireline_base_plan_cascade: "" },
         });
-        log.info("Restored Live Video renewal after base-plan cancellation reversal", {
+        log.info("Restored Live Video renewal after base-plan recovery", {
           customerId,
           liveVideoSubscriptionId: addon.id,
         });
@@ -368,6 +371,7 @@ async function reconcileLiveVideoAddonWithBasePlan(opts: {
         customerId,
         liveVideoSubscriptionId: addon.id,
         baseTerminal,
+        baseUnpaid,
       });
     }
   }
@@ -548,12 +552,20 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
     : null;
 
   const baseTerminal = TERMINAL_SUBSCRIPTION_STATUSES.has(stripeStatus);
+  const baseUnpaid = stripeStatus === "unpaid";
+  const priorBaseRequiredCascade =
+    existing.cancelAtPeriodEnd === true ||
+    existing.status === "unpaid" ||
+    (!!existing.status && TERMINAL_SUBSCRIPTION_STATUSES.has(existing.status));
   const restoreCascade =
-    existing.cancelAtPeriodEnd === true && !sub.cancel_at_period_end && !baseTerminal;
+    priorBaseRequiredCascade &&
+    (stripeStatus === "active" || stripeStatus === "trialing") &&
+    !sub.cancel_at_period_end;
   await reconcileLiveVideoAddonWithBasePlan({
     customerId,
     baseCancelAtPeriodEnd: !!sub.cancel_at_period_end,
     baseTerminal,
+    baseUnpaid,
     restoreCascade,
   });
 
