@@ -1,0 +1,110 @@
+-- 0144 — make account deletion authoritative for every user-bound auth artifact.
+--
+-- Live verification on 2026-08-11 found that none of Wireline's password,
+-- verification, MCP OAuth-code, MCP access-token, MCP refresh-token, or OAuth
+-- pending-code tables had a foreign key to wireline_users. Deleted QA users had
+-- therefore left 12 expired password-reset hashes and 24 expired email-
+-- verification hashes behind. The MCP tables had no current orphans, but shared
+-- the same structural gap.
+--
+-- Delete only rows whose owner is already gone, then install ON DELETE CASCADE
+-- ownership for every user-bound auth artifact. Active rows owned by existing
+-- users are untouched.
+
+DELETE FROM public.wireline_password_reset_tokens AS token
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.wireline_users AS users WHERE users.id = token.user_id
+);
+
+DELETE FROM public.wireline_email_verification_tokens AS token
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.wireline_users AS users WHERE users.id = token.user_id
+);
+
+DELETE FROM public.wireline_mcp_oauth_codes AS token
+WHERE token.user_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM public.wireline_users AS users WHERE users.id = token.user_id
+  );
+
+DELETE FROM public.wireline_mcp_access_tokens AS token
+WHERE token.user_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM public.wireline_users AS users WHERE users.id = token.user_id
+  );
+
+DELETE FROM public.wireline_mcp_refresh_tokens AS token
+WHERE token.user_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM public.wireline_users AS users WHERE users.id = token.user_id
+  );
+
+DELETE FROM public.wireline_oauth_pending_codes AS token
+WHERE token.user_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM public.wireline_users AS users WHERE users.id = token.user_id
+  );
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'wireline_password_reset_tokens_user_id_fkey'
+      AND conrelid = 'public.wireline_password_reset_tokens'::regclass
+  ) THEN
+    ALTER TABLE public.wireline_password_reset_tokens
+      ADD CONSTRAINT wireline_password_reset_tokens_user_id_fkey
+      FOREIGN KEY (user_id) REFERENCES public.wireline_users(id) ON DELETE CASCADE;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'wireline_email_verification_tokens_user_id_fkey'
+      AND conrelid = 'public.wireline_email_verification_tokens'::regclass
+  ) THEN
+    ALTER TABLE public.wireline_email_verification_tokens
+      ADD CONSTRAINT wireline_email_verification_tokens_user_id_fkey
+      FOREIGN KEY (user_id) REFERENCES public.wireline_users(id) ON DELETE CASCADE;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'wireline_mcp_oauth_codes_user_id_fkey'
+      AND conrelid = 'public.wireline_mcp_oauth_codes'::regclass
+  ) THEN
+    ALTER TABLE public.wireline_mcp_oauth_codes
+      ADD CONSTRAINT wireline_mcp_oauth_codes_user_id_fkey
+      FOREIGN KEY (user_id) REFERENCES public.wireline_users(id) ON DELETE CASCADE;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'wireline_mcp_access_tokens_user_id_fkey'
+      AND conrelid = 'public.wireline_mcp_access_tokens'::regclass
+  ) THEN
+    ALTER TABLE public.wireline_mcp_access_tokens
+      ADD CONSTRAINT wireline_mcp_access_tokens_user_id_fkey
+      FOREIGN KEY (user_id) REFERENCES public.wireline_users(id) ON DELETE CASCADE;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'wireline_mcp_refresh_tokens_user_id_fkey'
+      AND conrelid = 'public.wireline_mcp_refresh_tokens'::regclass
+  ) THEN
+    ALTER TABLE public.wireline_mcp_refresh_tokens
+      ADD CONSTRAINT wireline_mcp_refresh_tokens_user_id_fkey
+      FOREIGN KEY (user_id) REFERENCES public.wireline_users(id) ON DELETE CASCADE;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'wireline_oauth_pending_codes_user_id_fkey'
+      AND conrelid = 'public.wireline_oauth_pending_codes'::regclass
+  ) THEN
+    ALTER TABLE public.wireline_oauth_pending_codes
+      ADD CONSTRAINT wireline_oauth_pending_codes_user_id_fkey
+      FOREIGN KEY (user_id) REFERENCES public.wireline_users(id) ON DELETE CASCADE;
+  END IF;
+END
+$$;
