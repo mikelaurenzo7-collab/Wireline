@@ -93,7 +93,7 @@ const STATIC_ROUTE_META: Record<string, { title: string; description: string }> 
   "/status": {
     title: "Provider Status | Wireline",
     description:
-      "Live access checks for Wireline's managed voice control plane and reasoning model. Updated every 60 seconds.",
+      "Live access checks for Wireline's managed voice control plane and reasoning runtime. Page refreshes every 60 seconds.",
   },
   "/security": {
     title: "Security and Compliance | Wireline",
