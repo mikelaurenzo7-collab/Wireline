@@ -24,6 +24,7 @@ const migrationsDisabled = process.env.WIRELINE_RUN_MIGRATIONS === "false";
 const shouldMigrate =
   !migrationsDisabled &&
   (migrationsForced || (environment === "production" && !isDuplicateV0Project));
+const shouldVerifyProductionSchema = environment === "production" && !isDuplicateV0Project;
 
 function runLiveVapiSchemaAuditIfRequested() {
   const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
@@ -206,13 +207,19 @@ if (shouldMigrate) {
   }
 
   run("npm", ["run", "db:migrate"]);
-  run("node", ["scripts/check-production-schema-effects.mjs"]);
 } else {
   console.log(
     `Skipping database migrations for ${environment || "local"} build${
       isDuplicateV0Project ? " on duplicate v0-project" : ""
     }.`,
   );
+}
+
+// This is a read-only release assertion and must run for every real production
+// build even when migration execution is explicitly disabled. A migration
+// override cannot weaken the runtime schema contract.
+if (shouldVerifyProductionSchema) {
+  run("node", ["scripts/check-production-schema-effects.mjs"]);
 }
 
 run("npm", ["run", "build"]);
