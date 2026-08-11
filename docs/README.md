@@ -19,7 +19,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | iOS | `ios/` | **Planned** until signing, physical-device acceptance, privacy review, and TestFlight. |
 | Android | `android/` | **Internal beta** until device acceptance, signing, privacy review, and Play release. |
 | ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts` | **Early access** account-bound MCP/OAuth surface. |
-| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx` | **Planned/beta add-on** with consent, fallback, pricing, and support gates. |
+| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx` | **Live paid add-on** for eligible business agents; 60 reserved minutes monthly, 5-minute sessions, provider-fail-closed. |
 
 ## Product interface rules
 
@@ -67,6 +67,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | --- | --- |
 | [DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md) | Shared Postgres, migration, RLS, privilege, and rollback operations. |
 | [DEPLOYMENT_RUNBOOK.md](./DEPLOYMENT_RUNBOOK.md) | Exact-head preview, production promotion, environment, migration, and rollback workflow. |
+| [RESEND_DELIVERY_FEEDBACK.md](./RESEND_DELIVERY_FEEDBACK.md) | Signed Resend feedback receiver, provider suppression semantics, activation, and rollback. |
 | [IOS_APP_STORE_CARPLAY_READINESS.md](./IOS_APP_STORE_CARPLAY_READINESS.md) | iOS signing, App Review, native capability, physical-device, and entitlement-gated CarPlay release checks. |
 | [FOUNDER_LAUNCH_COMMAND_CENTER.md](./FOUNDER_LAUNCH_COMMAND_CENTER.md) | Founder go/no-go, runtime, GTM, KPI, support, and rollback command center. |
 | [LAUNCH_GURU_PLAYBOOK_2026-07-20.md](./LAUNCH_GURU_PLAYBOOK_2026-07-20.md) | Current launch sequence and operating playbook. |
