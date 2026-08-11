@@ -107,7 +107,7 @@ describe("distributed public health boundary", () => {
     expect(source).toContain("requestId,");
     expect(source).toContain("cacheScope: CACHE_SCOPE");
     expect(source).toContain("console.error(");
-    expect(source).toContain('console.warn("Public health provider probe degraded"');
+    expect(source).toContain('console.error("Public health provider probe degraded"');
     expect(source).toContain("failures,");
     expect(source).not.toContain("payload: failures");
   });
