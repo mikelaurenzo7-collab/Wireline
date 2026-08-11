@@ -172,7 +172,9 @@ describe("launch completeness contracts", () => {
     ]) {
       expect(migration).toContain(`public.${table}`);
     }
-    expect(migration.match(/ON DELETE CASCADE/g)).toHaveLength(6);
+    expect(
+      migration.match(/REFERENCES public\.wireline_users\(id\) ON DELETE CASCADE/g),
+    ).toHaveLength(6);
     expect(migration).toContain("DELETE FROM public.wireline_password_reset_tokens");
     expect(migration).toContain("DELETE FROM public.wireline_email_verification_tokens");
     for (const index of [
