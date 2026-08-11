@@ -22,6 +22,7 @@ import {
   buildComplianceFooterHtml,
   getPostalAddress,
 } from "./email-compliance";
+import { isProviderDeliverySuppressed } from "./email-delivery-suppression";
 import { BRAND } from "../constants/brand-colors";
 import {
   formatResendApiError,
@@ -72,6 +73,34 @@ async function sendViaResend(args: {
   if (!apiKey) {
     return { ok: false, provider: "resend", error: "RESEND_API_KEY not set" };
   }
+
+  // Provider complaints, hard bounces, and Resend-level suppressions apply to
+  // every platform Resend attempt, including transactional mail. This is kept
+  // separate from the CAN-SPAM preference table so a marketing unsubscribe
+  // does not suppress password reset, verification, or billing notices.
+  try {
+    if (await isProviderDeliverySuppressed(args.to)) {
+      log.warn("[email-service] Resend send blocked by provider delivery suppression", {
+        ...emailLogContext(args.to),
+      });
+      return {
+        ok: false,
+        provider: "resend",
+        error: "Recipient is suppressed after provider delivery feedback.",
+      };
+    }
+  } catch (err) {
+    log.error("[email-service] Provider delivery suppression check failed", {
+      ...emailLogContext(args.to),
+      error: getErrorMessage(err),
+    });
+    return {
+      ok: false,
+      provider: "resend",
+      error: "Email delivery safety check unavailable",
+    };
+  }
+
   const from = resolveResendFromAddress();
   try {
     const res = await fetch("https://api.resend.com/emails", {
