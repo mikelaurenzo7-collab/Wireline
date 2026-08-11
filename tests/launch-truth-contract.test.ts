@@ -61,6 +61,17 @@ describe("launch truth contract", () => {
     expect(security).not.toContain("vendor names stay in operator configuration, not buyer UI");
   });
 
+  it("keeps pre-customer GTM focused on first evidence instead of outbound scale", () => {
+    const sprint = read("docs/DESIGN_PARTNER_SPRINT_2026-07-08.md");
+
+    expect(sprint).toContain("Recruit **3–5 design partners**");
+    expect(sprint).toContain("Cold marketing outbound is not a prerequisite");
+    expect(sprint).toContain("No fake urgency");
+    expect(sprint).toContain("depth beats volume");
+    expect(sprint).not.toContain("10–25 design partners");
+    expect(sprint).not.toContain("sales-heavy categories");
+  });
+
   it("does not leak Wireline branding into a customer's sequence message", () => {
     const cadences = read("src/components/Cadences.tsx");
     expect(cadences).not.toContain("Reaching out from Wireline");
