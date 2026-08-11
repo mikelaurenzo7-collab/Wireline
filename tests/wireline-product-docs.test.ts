@@ -54,6 +54,20 @@ describe("Wireline product documentation contract", () => {
     expectNoTerms(readme, retiredProductTerms);
   });
 
+  it("pins the active launch creative manifest to the actual QA pack", () => {
+    const launchTruth = read("docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
+    for (const asset of [
+      "Wireline_Launch_15s_Missed_Call_Clean.mp4",
+      "Wireline_Product_Loop_22s_Music.mp4",
+      "Wireline_Launch_53s_Founder_Walkthrough_Clean.mp4",
+    ]) {
+      expect(launchTruth).toContain(asset);
+    }
+    expect(launchTruth).not.toContain("Wireline_Launch_22s_Product_Reel_Clean.mp4");
+    expect(launchTruth).toContain('7.47-second "Second Ring" narration');
+    expect(launchTruth).toContain("reference/editing assets until the picture is recaptured");
+  });
+
   it("keeps the 2026 roadmap aligned with Letterpress and activation doctrine", () => {
     const roadmap = read("docs/WIRELINE_2026_ROADMAP.md");
     const vendors = read("docs/PRESENTER_VENDOR_STRATEGY.md");
