@@ -103,13 +103,22 @@ describe("launch completeness contracts", () => {
 
   it("keeps public status cadence and claims aligned with the probes", () => {
     const status = source("src/components/Status.tsx");
+    const probe = source("src/lib/public-health-probe.ts");
+    const marketingMeta = source("src/lib/marketing-route-meta.ts");
 
     expect(status).toContain("const STATUS_REFRESH_MS = 60_000;");
     expect(status).toContain('cache: "no-store"');
     expect(status).toMatch(/window\.setInterval\([\s\S]*STATUS_REFRESH_MS\)/);
-    expect(status).toContain("Updated every 60 seconds.");
-    expect(status).toContain("refreshes every 60s.");
-    expect(status).toContain("Probe interval · 60s");
+    expect(status).toContain("Page refreshes every 60 seconds.");
+    expect(status).toContain("page refreshes every 60s.");
+    expect(status).toContain("Page refresh · 60s");
+    expect(status).toContain("Provider cache · up to 120s");
+    expect(status).toContain("minimal,\n              non-persistent OpenAI Responses inference");
+    expect(marketingMeta).toContain(
+      "Live access checks for Wireline's managed voice control plane and reasoning runtime. Page refreshes every 60 seconds.",
+    );
+    expect(probe).toContain('fetch("https://api.openai.com/v1/responses"');
+    expect(probe).toContain("store: false");
     expect(status).toContain("Provider checks operational");
     expect(status).toContain("Managed voice access");
     expect(status).toContain("Reasoning model access");
@@ -117,6 +126,7 @@ describe("launch completeness contracts", () => {
     expect(status).not.toContain("All systems operational");
     expect(status).not.toContain("pings each production LLM tier");
     expect(status).not.toContain("configured fallback remains available");
+    expect(status).not.toContain("without placing a call or generating content");
   });
 
   /*
@@ -153,5 +163,21 @@ describe("launch completeness contracts", () => {
     // The short feed-error line only earns its place next to a "Last checked"
     // timestamp; with no reading it repeated the heading a third time.
     expect(status).toContain("{error && data ? (");
+  });
+
+  it("makes agent/account ownership a database-owned invariant", () => {
+    const migration = source("drizzle/migrations/0143_agent_account_binding.sql");
+    const journal = source("drizzle/migrations/meta/_journal.json");
+
+    expect(journal).toContain('"tag": "0143_agent_account_binding"');
+    expect(migration).toContain("UPDATE public.wireline_agents AS a");
+    expect(migration).toContain("WHERE a.account_id IS NULL");
+    expect(migration).toContain("wireline_enforce_agent_account_binding");
+    expect(migration).toContain("BEFORE INSERT OR UPDATE OF user_id, account_id");
+    expect(migration).toContain("wa.user_id = NEW.user_id");
+    expect(migration).toContain("Agent account does not belong to agent owner");
+    expect(migration).toContain("Agent owner has no account to bind");
+    expect(migration).toContain("SECURITY DEFINER");
+    expect(migration).toContain("SET search_path = pg_catalog, public");
   });
 });
