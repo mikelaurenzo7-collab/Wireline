@@ -47,6 +47,20 @@ describe("launch truth contract", () => {
     expect(trust).toContain("Important boundary");
   });
 
+  it("keeps the public changelog and Trust Center current without overclaiming controls", () => {
+    const changelog = read("src/components/PublicChangelog.tsx");
+    const security = read("src/components/Security.tsx");
+
+    expect(changelog).toContain('date: "Aug 11, 2026"');
+    expect(changelog).toContain('title: "Launch certification hardened"');
+    expect(changelog).not.toContain("Every PR now runs");
+    expect(changelog).toContain("Visual-regression coverage");
+
+    expect(security).toContain("Last updated · August 11, 2026");
+    expect(security).toContain("names key subprocessors for transparency");
+    expect(security).not.toContain("vendor names stay in operator configuration, not buyer UI");
+  });
+
   it("does not leak Wireline branding into a customer's sequence message", () => {
     const cadences = read("src/components/Cadences.tsx");
     expect(cadences).not.toContain("Reaching out from Wireline");
