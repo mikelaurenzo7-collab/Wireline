@@ -146,6 +146,8 @@ run("npx", [
   "tests/round6-margin-capacity-contract.test.ts",
   "src/lib/video-presenter/live-video-policy.test.ts",
   "tests/live-video-economics-contract.test.ts",
+  "tests/live-video-base-plan-cascade-contract.test.ts",
+  "tests/video-presenter-contract.test.ts",
   "tests/signup-bootstrap-integrity-contract.test.ts",
   "tests/repo-documentation-organization-contract.test.ts",
   "tests/marketing-metadata-contract.test.ts",
