@@ -81,10 +81,6 @@ describe("launch completeness contracts", () => {
   it("preserves the retired email deep link and its state while Inbox remains canonical", () => {
     const appRoutes = source("src/routes/AppRoutes.tsx");
 
-    // The August 2 reel source used /email while the product had moved the
-    // surface to /inbox. The resulting 15-second cut ended on a full 404 page.
-    // Keep old external links and historical capture instructions safe while
-    // preserving any tab/filter state carried in the query or hash.
     expect(appRoutes).toContain('<Route path="/inbox" element={<EmailPage />} />');
     expect(appRoutes).toContain("function EmailToInboxRedirect()");
     expect(appRoutes).toContain("`/inbox${location.search}${location.hash}`");
@@ -129,39 +125,19 @@ describe("launch completeness contracts", () => {
     expect(status).not.toContain("without placing a call or generating content");
   });
 
-  /*
-   * Found by driving the built page in a browser: /status never reached network
-   * idle. Throwing on `!res.ok` left the response body unread, and an unread
-   * body keeps the request open, so every failed 60s poll leaked another one for
-   * the life of the page. Nothing bounded the request either — `authFetch`
-   * carries a timeout but this page is public and calls `fetch` directly, so a
-   * server that accepted and then stalled left it reading "Checking…" forever.
-   * Both matter most during an incident, which is the only time anyone loads it.
-   */
   it("keeps the public status poll bounded and leak-free", () => {
     const status = source("src/components/Status.tsx");
 
     expect(status).toContain("const STATUS_FETCH_TIMEOUT_MS = 15_000;");
-    /*
-     * The bound must come from AbortController + setTimeout, not
-     * `AbortSignal.timeout`. That is a runtime API the es2022 target does not
-     * polyfill: used bare it throws TypeError on browsers lacking it, and
-     * feature-detecting it leaves the fallback with no timeout at all — which
-     * silently restores the unbounded stall this guards against, on the one page
-     * that must not invent an outage.
-     */
     expect(status).toContain("const controller = new AbortController();");
     expect(status).toContain(
       "window.setTimeout(() => controller.abort(), STATUS_FETCH_TIMEOUT_MS)",
     );
     expect(status).toContain("signal: controller.signal,");
     expect(status).toContain("window.clearTimeout(timeout);");
-    // Bans the call, not the comment that explains why it is avoided.
     expect(status).not.toMatch(/signal:\s*AbortSignal\.timeout/);
     expect(status).not.toMatch(/=\s*AbortSignal\.timeout\(/);
     expect(status).toContain("await res.body?.cancel().catch(() => undefined);");
-    // The short feed-error line only earns its place next to a "Last checked"
-    // timestamp; with no reading it repeated the heading a third time.
     expect(status).toContain("{error && data ? (");
   });
 
@@ -179,5 +155,25 @@ describe("launch completeness contracts", () => {
     expect(migration).toContain("Agent owner has no account to bind");
     expect(migration).toContain("SECURITY DEFINER");
     expect(migration).toContain("SET search_path = pg_catalog, public");
+  });
+
+  it("cascades account deletion through every user-bound auth artifact", () => {
+    const migration = source("drizzle/migrations/0144_auth_token_user_cascades.sql");
+    const journal = source("drizzle/migrations/meta/_journal.json");
+
+    expect(journal).toContain('"tag": "0144_auth_token_user_cascades"');
+    for (const table of [
+      "wireline_password_reset_tokens",
+      "wireline_email_verification_tokens",
+      "wireline_mcp_oauth_codes",
+      "wireline_mcp_access_tokens",
+      "wireline_mcp_refresh_tokens",
+      "wireline_oauth_pending_codes",
+    ]) {
+      expect(migration).toContain(`public.${table}`);
+    }
+    expect(migration.match(/ON DELETE CASCADE/g)).toHaveLength(6);
+    expect(migration).toContain("DELETE FROM public.wireline_password_reset_tokens");
+    expect(migration).toContain("DELETE FROM public.wireline_email_verification_tokens");
   });
 });
