@@ -15,24 +15,42 @@
  */
 import { Router, type Request, type Response } from "express";
 import { AppError } from "../lib/api-error";
+import { isProviderDeliverySuppressed } from "../lib/email-delivery-suppression";
 import { log } from "../lib/server-context";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { getErrorMessage } from "../lib/server-utils";
+import { formatResendApiError, resolveResendFromAddress } from "../lib/resend-config";
 
-// Direct Resend call — the centralized email-service has typed
-// helpers for specific transactional emails (password reset,
-// verification, signup link) but no generic sendEmail. Inlining here
-// keeps the contact form a self-contained route + avoids touching
-// email-service.ts for a one-off use.
-import { resolveResendFromAddress } from "../lib/resend-config";
+/**
+ * The support form keeps its direct Resend transport so Reply-To can point at
+ * the submitter, but it must honor the same provider-feedback suppression
+ * boundary as every other platform Resend sender. A suppression-store failure
+ * fails closed rather than retrying an address Resend has already rejected.
+ */
 async function sendSupportEmail(args: {
   to: string;
   replyTo: string;
   subject: string;
   text: string;
 }): Promise<{ ok: boolean; error?: string }> {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) return { ok: false, error: "RESEND_API_KEY not set" };
+
+  try {
+    if (await isProviderDeliverySuppressed(args.to)) {
+      log.warn("Support email blocked by provider delivery suppression");
+      return {
+        ok: false,
+        error: "Support inbox is suppressed after provider delivery feedback.",
+      };
+    }
+  } catch (err) {
+    log.error("Support email delivery-suppression check failed", {
+      error: getErrorMessage(err),
+    });
+    return { ok: false, error: "Email delivery safety check unavailable" };
+  }
+
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -47,10 +65,11 @@ async function sendSupportEmail(args: {
         subject: args.subject,
         text: args.text,
       }),
+      signal: AbortSignal.timeout(10_000),
     });
+    const body = await res.text();
     if (!res.ok) {
-      const body = await res.text();
-      return { ok: false, error: `Resend ${res.status}: ${body.slice(0, 200)}` };
+      return { ok: false, error: formatResendApiError(res.status, body) };
     }
     return { ok: true };
   } catch (err) {
@@ -148,7 +167,7 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
       });
     }
 
-    log.info("Support ticket received", { issueType, email, sent: true });
+    log.info("Support ticket received", { issueType, sent: true });
     return res.json({ ok: true, sent: true });
   } catch (e) {
     if (e instanceof AppError) throw e;
