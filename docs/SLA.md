@@ -1,6 +1,6 @@
 # Wireline Service Level & Support Policy
 
-**Updated:** August 10, 2026  
+**Updated:** August 11, 2026  
 **Applies to:** Wireline self-serve service unless a signed order form or agreement says otherwise.
 
 ## Contract boundary
@@ -15,7 +15,7 @@ Wireline is engineered for continuous operation across calling, messaging, email
 
 - Public service posture: `https://trywireline.com/status`
 - Public application health: `GET /api/health`
-- Public voice reliability surface: `GET /api/voice/status`
+- Public voice reliability surface: `GET /api/health/voice-status`
 - Authenticated/operator diagnostics provide additional provider, queue, and SLO evidence.
 
 These surfaces report observed system state. They are operational evidence, not a contractual uptime guarantee.

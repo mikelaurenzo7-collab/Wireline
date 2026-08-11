@@ -1,7 +1,7 @@
 # Vendor Launch Map
 
 **Status:** Active canonical operating map.  
-**Updated:** August 10, 2026.
+**Updated:** August 11, 2026.
 
 This document records Wireline's intended production provider roles and the evidence required before a capability is treated as launch-ready. Historical balances, account screenshots, temporary tokens, and one-off audit results do not belong here; use the executable probes and deployment logs for current evidence.
 
@@ -102,6 +102,6 @@ GitHub Actions billing/startup failures that do not execute repository code are 
 - `npm run stripe:catalog:check` — static canonical Stripe contract.
 - `npm run stripe:audit-live` — read-only live Stripe/account/catalog audit.
 - `npm run dnc:probe` — federal DNC diagnostic after credentials exist.
-- `/api/health`, `/api/health/launch-readiness`, and `/api/voice/status` — deployed health evidence appropriate to each audience.
+- `/api/health`, `/api/health/launch-readiness`, and `/api/health/voice-status` — deployed health evidence appropriate to each audience.
 
 When an executable probe and current source disagree, fix the probe rather than weakening the product contract or documenting the stale result as truth.

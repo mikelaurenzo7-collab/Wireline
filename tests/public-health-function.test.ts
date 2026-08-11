@@ -75,6 +75,7 @@ beforeEach(() => {
 afterEach(() => {
   process.env = { ...originalEnv };
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 // Executed in every Vercel build; the certification commit also runs the full
@@ -167,6 +168,49 @@ describe("public health Vercel function", () => {
     expect(res.statusCode).toBe(200);
     expect(res.headers.get("cache-control")).toContain("s-maxage=60");
     expect(res.headers.get("x-wireline-health-source")).toBe("probe");
+  });
+
+  it("logs failed provider diagnostics internally without leaking them publicly", async () => {
+    mocks.get.mockResolvedValue(null);
+    mocks.set.mockResolvedValueOnce("OK").mockResolvedValueOnce("OK");
+    mocks.vapiProbe.mockResolvedValue({
+      ok: true,
+      latency_ms: 4,
+      model: "vapi-managed-voice",
+    });
+    mocks.openaiProbe.mockResolvedValue({
+      ok: false,
+      latency_ms: 7,
+      model: "reasoning-model",
+      error: "OpenAI model probe failed (403)",
+    });
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const handler = await loadHandler();
+    const res = new MockResponse();
+
+    await handler(request(), res as unknown as ServerResponse);
+
+    expect(errorLog).toHaveBeenCalledWith(
+      "Public health provider probe degraded",
+      expect.objectContaining({
+        cacheScope: "preview:abcdef1234567890",
+        failures: [
+          {
+            component: "reasoning",
+            model: "reasoning-model",
+            latency_ms: 7,
+            error: "OpenAI model probe failed (403)",
+          },
+        ],
+      }),
+    );
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body)).toMatchObject({
+      overall: "outage",
+      components: { reasoning: "outage" },
+    });
+    expect(res.body).not.toContain("403");
+    expect(res.body).not.toContain("OpenAI model probe failed");
   });
 
   it("rejects unsupported methods without touching Redis", async () => {

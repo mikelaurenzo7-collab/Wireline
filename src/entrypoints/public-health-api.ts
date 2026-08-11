@@ -9,6 +9,7 @@ import {
   probeVapiManagedVoice,
   type PublicHealthLevel,
   type PublicHealthPayload,
+  type PublicModelProbe,
 } from "../lib/public-health-probe";
 
 function cacheScope(): string {
@@ -111,6 +112,32 @@ function unavailablePayload(code: string): PublicHealthPayload & { code: string 
   };
 }
 
+function logProviderProbeFailures(
+  requestId: string,
+  probes: Array<{ component: "voice_runtime" | "reasoning"; probe: PublicModelProbe }>,
+): void {
+  const failures = probes
+    .filter(({ probe }) => !probe.ok)
+    .map(({ component, probe }) => ({
+      component,
+      model: probe.model,
+      latency_ms: probe.latency_ms,
+      error: probe.error || "provider probe failed",
+    }));
+  if (failures.length === 0) return;
+
+  // Provider diagnostics belong in internal runtime logs, never the public
+  // status payload. Probe errors are already bounded to 240 characters and do
+  // not contain request credentials. This direct Vercel function intentionally
+  // permits console.error only, so degraded provider probes use that internal
+  // severity instead of weakening the repository's zero-warning lint policy.
+  console.error("Public health provider probe degraded", {
+    requestId,
+    cacheScope: CACHE_SCOPE,
+    failures,
+  });
+}
+
 async function readCached(client: Redis): Promise<PublicHealthPayload | null> {
   const cached = await client.get<PublicHealthPayload>(RESULT_KEY);
   if (!validPayload(cached)) return null;
@@ -186,6 +213,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const [voice, reasoning] = await Promise.all([
       managedVoicePromise,
       probeOpenAIModel(OPENAI_STRUCTURED_PRIMARY_MODEL, process.env.OPENAI_API_KEY),
+    ]);
+    logProviderProbeFailures(requestId, [
+      { component: "voice_runtime", probe: voice },
+      { component: "reasoning", probe: reasoning },
     ]);
     const payload = buildPublicHealthPayload({
       voice,

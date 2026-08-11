@@ -81,7 +81,13 @@ describe("video presenter integration", () => {
       "src/lib/video-presenter/live-video-entitlements.ts",
     );
     expect(entitlements).toContain("WIRELINE_LIVE_VIDEO_DISABLED");
-    expect(entitlements).toContain("workspaceFlag && baseSubscriptionActive");
+    expect(entitlements).toContain("terminalPaidPeriodGrace");
+    expect(entitlements).toContain(
+      "const billingEntitled = addonOffered && workspaceFlag && existingAddonEntitled",
+    );
+    expect(entitlements).toContain(
+      "const checkoutAvailable = addonOffered && baseSubscriptionActive && priceConfigured",
+    );
     expect(entitlements).not.toContain("workspaceFlag ||");
 
     const routes = source("src/routes/video-presenter-routes.ts");

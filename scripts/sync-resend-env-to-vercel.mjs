@@ -1,22 +1,26 @@
 #!/usr/bin/env node
 /**
- * Push Resend env vars to the Wireline Vercel project.
+ * Push production Resend env vars to the Wireline Vercel project.
  *
- * API/send credentials can target every environment. The production webhook
- * signing secret is intentionally production-only because Resend's production
- * endpoint should never authenticate against an arbitrary preview deployment.
+ * Live Resend credentials and production sender configuration are production-
+ * only. Preview/Development must use dedicated sandbox credentials or remain
+ * unset; this helper never widens a production value across targets.
+ *
+ * Each value is optional so an operator can sync only the newly-created
+ * webhook signing secret without re-supplying or redistributing RESEND_API_KEY.
+ * At least one Resend value must be provided.
  *
  * Usage:
  *   $env:VERCEL_TOKEN = "<token>"
- *   $env:RESEND_API_KEY = "re_..."
  *   $env:RESEND_WEBHOOK_SECRET = "whsec_..."   # from the Resend webhook page
+ *   # Optional when rotating/configuring the production sender:
+ *   $env:RESEND_API_KEY = "re_..."
  *   $env:RESEND_FROM_EMAIL = "Wireline <noreply@trywireline.com>"
  *   # or: $env:RESEND_FROM_DOMAIN = "trywireline.com"
  *   node scripts/sync-resend-env-to-vercel.mjs
  */
 import { TEAM_ID, PROJECT_ID } from "./lib/vercel-project.mjs";
 
-const ALL_TARGETS = ["production", "preview", "development"];
 const PRODUCTION_TARGET = ["production"];
 
 const token = process.env.VERCEL_TOKEN || process.env.VERCEL_OIDC_TOKEN;
@@ -25,13 +29,12 @@ if (!token) {
   process.exit(1);
 }
 
+const envEntries = [];
 const resendKey = process.env.RESEND_API_KEY?.trim();
-if (!resendKey) {
-  console.error("Set RESEND_API_KEY in the environment.");
-  process.exit(1);
+if (resendKey) {
+  envEntries.push({ key: "RESEND_API_KEY", value: resendKey, targets: PRODUCTION_TARGET });
 }
 
-const envEntries = [{ key: "RESEND_API_KEY", value: resendKey, targets: ALL_TARGETS }];
 const webhookSecret = process.env.RESEND_WEBHOOK_SECRET?.trim();
 if (webhookSecret) {
   envEntries.push({
@@ -39,21 +42,22 @@ if (webhookSecret) {
     value: webhookSecret,
     targets: PRODUCTION_TARGET,
   });
-} else {
-  console.warn(
-    "Warning: RESEND_WEBHOOK_SECRET is not set locally. Delivery-feedback ingestion will remain unavailable until the Resend production webhook is created and its signing secret is synced.",
-  );
 }
 
 const fromEmail = process.env.RESEND_FROM_EMAIL?.trim();
 const fromDomain = process.env.RESEND_FROM_DOMAIN?.trim();
-if (fromEmail) envEntries.push({ key: "RESEND_FROM_EMAIL", value: fromEmail, targets: ALL_TARGETS });
-if (fromDomain) envEntries.push({ key: "RESEND_FROM_DOMAIN", value: fromDomain, targets: ALL_TARGETS });
-if (!fromEmail && !fromDomain) {
-  console.warn(
-    "Warning: neither RESEND_FROM_EMAIL nor RESEND_FROM_DOMAIN is set locally.\n" +
-      "         Production will default to noreply@trywireline.com — must match your verified Resend domain.",
+if (fromEmail) {
+  envEntries.push({ key: "RESEND_FROM_EMAIL", value: fromEmail, targets: PRODUCTION_TARGET });
+}
+if (fromDomain) {
+  envEntries.push({ key: "RESEND_FROM_DOMAIN", value: fromDomain, targets: PRODUCTION_TARGET });
+}
+
+if (envEntries.length === 0) {
+  console.error(
+    "Set at least one of RESEND_API_KEY, RESEND_WEBHOOK_SECRET, RESEND_FROM_EMAIL, or RESEND_FROM_DOMAIN.",
   );
+  process.exit(1);
 }
 
 function vercelUrl(path) {
@@ -126,11 +130,11 @@ async function upsertEnv(key, value, targets) {
 }
 
 async function main() {
-  console.log("Syncing Resend env vars to Vercel…\n");
+  console.log("Syncing production Resend env vars to Vercel…\n");
   for (const { key, value, targets } of envEntries) {
     await upsertEnv(key, value, targets);
   }
-  console.log("\nDone. Redeploy production for serverless functions to pick up new values.");
+  console.log("\nDone. Redeploy production for serverless functions to pick up changed values.");
 }
 
 main().catch((e) => {

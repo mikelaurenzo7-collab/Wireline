@@ -22,6 +22,8 @@ const PAID_LIVE_VIDEO_PLANS = new Set<StripePlanId>([
   "enterprise",
 ]);
 
+const TERMINAL_BASE_SUBSCRIPTION_STATUSES = new Set(["canceled", "incomplete_expired"]);
+
 /** Legacy name retained at call sites; semantics are now launch-active unless explicitly killed. */
 export function isLiveVideoCatalogReady(): boolean {
   return process.env.WIRELINE_LIVE_VIDEO_DISABLED !== "true";
@@ -102,8 +104,19 @@ export async function resolveLiveVideoEntitlement(
   const onPaidPlan = planId ? PAID_LIVE_VIDEO_PLANS.has(planId) : false;
   const baseSubscriptionActive = stripeActive && settingsActive && onPaidPlan;
 
+  // When a paid base plan reaches a terminal state, Stripe reconciliation first
+  // schedules the independently billed Live Video add-on to stop renewing. Keep
+  // the already-paid add-on usable until its own period-end webhook disables the
+  // workspace flag. `unpaid` is intentionally excluded: dunning blocks access
+  // while the base payment remains unresolved.
+  const terminalPaidPeriodGrace =
+    workspaceFlag &&
+    onPaidPlan &&
+    TERMINAL_BASE_SUBSCRIPTION_STATUSES.has(row?.stripeStatus ?? "");
+  const existingAddonEntitled = baseSubscriptionActive || terminalPaidPeriodGrace;
+
   const addonOffered = platformConfigured && launchEnabled;
-  const billingEntitled = addonOffered && workspaceFlag && baseSubscriptionActive;
+  const billingEntitled = addonOffered && workspaceFlag && existingAddonEntitled;
   const priceConfigured = Boolean(
     process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID ||
       process.env.STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID,
@@ -117,7 +130,7 @@ export async function resolveLiveVideoEntitlement(
     reason = "Live video is temporarily disabled by the platform operator.";
   } else if (!onPaidPlan) {
     reason = "Activate a paid plan before adding live video.";
-  } else if (!stripeActive || !settingsActive) {
+  } else if (!baseSubscriptionActive && !terminalPaidPeriodGrace) {
     reason = "Activate your subscription before adding live video.";
   } else if (!workspaceFlag) {
     reason = `Subscribe to Live Video ($19/mo, ${LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY} reserved minutes, up to ${LIVE_VIDEO_SESSION_RESERVATION_MINUTES} minutes per session) to stream a presenter.`;
@@ -131,7 +144,7 @@ export async function resolveLiveVideoEntitlement(
     liveVideoCheckoutAvailable: checkoutAvailable,
     ...liveVideoAllowance,
     planId,
-    upgradeRequired: addonOffered && !baseSubscriptionActive,
+    upgradeRequired: addonOffered && !baseSubscriptionActive && !terminalPaidPeriodGrace,
     reason,
   };
 }

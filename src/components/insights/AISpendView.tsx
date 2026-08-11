@@ -156,7 +156,7 @@ function SpendBudgetCard() {
     ? `Up to $${safeFixed(maximumLimit, 2)} for private setup, training, and simulation. Activate a paid plan to go live.`
     : `Up to $${safeFixed(maximumLimit, 2)} for ${status?.plan_name || "the active plan"}. You can lower this guard, but it cannot exceed the provider-cost envelope funded by the plan.`;
   const hardCapHelper = isSimulationAllowance
-    ? "Private setup, training, and simulation pause at the monthly allowance. Live provider work requires a paid plan."
+    ? "Private simulation pauses at the monthly allowance. Live provider work requires a paid plan."
     : "New provider-funded work pauses at the limit. Completed in-flight work still settles.";
 
   return (
