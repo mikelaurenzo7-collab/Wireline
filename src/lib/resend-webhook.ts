@@ -1,4 +1,3 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import { normalizeEmail } from "./email-compliance";
@@ -7,114 +6,16 @@ import {
   type ProviderDeliverySuppressionReason,
 } from "./email-delivery-suppression";
 import { resendWebhookEvents } from "../db/resend-webhook-schema";
+export {
+  RESEND_WEBHOOK_MAX_AGE_SECONDS,
+  verifyResendWebhookSignature,
+  type ResendWebhookHeaders,
+  type ResendWebhookVerification,
+} from "./resend-webhook-signature";
 
-const RESEND_WEBHOOK_MAX_AGE_SECONDS = 5 * 60;
 const MAX_RECIPIENTS_PER_EVENT = 100;
-const MAX_HEADER_LENGTH = 2048;
 const MAX_EVENT_TYPE_LENGTH = 96;
 const MAX_PROVIDER_ID_LENGTH = 256;
-
-type HeaderValue = string | string[] | undefined;
-
-export type ResendWebhookHeaders = {
-  "svix-id"?: HeaderValue;
-  "svix-timestamp"?: HeaderValue;
-  "svix-signature"?: HeaderValue;
-};
-
-export type ResendWebhookVerification =
-  | { ok: true; webhookId: string; timestamp: number }
-  | {
-      ok: false;
-      code:
-        | "missing_secret"
-        | "missing_headers"
-        | "malformed_headers"
-        | "stale_timestamp"
-        | "invalid_signature";
-    };
-
-function firstHeader(value: HeaderValue): string {
-  if (Array.isArray(value)) return String(value[0] || "").trim();
-  return String(value || "").trim();
-}
-
-function decodeSigningSecret(secret: string): Buffer | null {
-  const encoded = secret.trim().replace(/^whsec_/, "");
-  if (!encoded) return null;
-  try {
-    const decoded = Buffer.from(encoded, "base64");
-    return decoded.length >= 16 ? decoded : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Verify Resend's Standard Webhooks/Svix envelope against the untouched body.
- * No JSON parsing or external work is allowed before this returns `ok: true`.
- */
-export function verifyResendWebhookSignature(
-  rawBody: Buffer,
-  headers: ResendWebhookHeaders,
-  signingSecret = process.env.RESEND_WEBHOOK_SECRET,
-  nowSeconds = Math.floor(Date.now() / 1000),
-): ResendWebhookVerification {
-  if (!signingSecret?.trim()) return { ok: false, code: "missing_secret" };
-
-  const webhookId = firstHeader(headers["svix-id"]);
-  const timestampRaw = firstHeader(headers["svix-timestamp"]);
-  const signatureRaw = firstHeader(headers["svix-signature"]);
-  if (!webhookId || !timestampRaw || !signatureRaw) {
-    return { ok: false, code: "missing_headers" };
-  }
-  if (
-    webhookId.length > MAX_HEADER_LENGTH ||
-    timestampRaw.length > 32 ||
-    signatureRaw.length > MAX_HEADER_LENGTH
-  ) {
-    return { ok: false, code: "malformed_headers" };
-  }
-
-  const timestamp = Number(timestampRaw);
-  if (!Number.isInteger(timestamp) || timestamp <= 0) {
-    return { ok: false, code: "malformed_headers" };
-  }
-  if (Math.abs(nowSeconds - timestamp) > RESEND_WEBHOOK_MAX_AGE_SECONDS) {
-    return { ok: false, code: "stale_timestamp" };
-  }
-
-  const key = decodeSigningSecret(signingSecret);
-  if (!key) return { ok: false, code: "missing_secret" };
-
-  const signed = Buffer.concat([
-    Buffer.from(`${webhookId}.${timestamp}.`, "utf8"),
-    rawBody,
-  ]);
-  const expected = createHmac("sha256", key).update(signed).digest();
-  const candidates = signatureRaw
-    .split(/\s+/)
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-    .flatMap((entry) => {
-      const [version, encoded] = entry.split(",", 2);
-      return version === "v1" && encoded ? [encoded] : [];
-    });
-
-  for (const encoded of candidates) {
-    let candidate: Buffer;
-    try {
-      candidate = Buffer.from(encoded, "base64");
-    } catch {
-      continue;
-    }
-    if (candidate.length === expected.length && timingSafeEqual(candidate, expected)) {
-      return { ok: true, webhookId, timestamp };
-    }
-  }
-
-  return { ok: false, code: "invalid_signature" };
-}
 
 type ResendEventEnvelope = {
   type?: unknown;
@@ -162,7 +63,9 @@ function parseRecipients(data: ResendEventData): string[] {
   return [...unique];
 }
 
-function permanentReason(eventType: string): ProviderDeliverySuppressionReason | null {
+export function resendPermanentSuppressionReason(
+  eventType: string,
+): ProviderDeliverySuppressionReason | null {
   switch (eventType) {
     case "email.bounced":
       return "resend_bounced";
@@ -175,7 +78,7 @@ function permanentReason(eventType: string): ProviderDeliverySuppressionReason |
   }
 }
 
-function detailCodeFor(eventType: string, permanent: boolean): string {
+export function resendEventDetailCode(eventType: string, permanent: boolean): string {
   if (permanent) return "permanent_recipient_risk";
   if (eventType === "email.delivery_delayed") return "temporary_delivery_delay";
   if (eventType === "email.failed") return "provider_delivery_failure";
@@ -228,7 +131,7 @@ export async function processVerifiedResendWebhook(
 
   const emailId = boundedText(data.email_id, MAX_PROVIDER_ID_LENGTH);
   const recipients = parseRecipients(data);
-  const reason = permanentReason(eventType);
+  const reason = resendPermanentSuppressionReason(eventType);
   let suppressionCount = 0;
 
   if (reason) {
@@ -250,7 +153,7 @@ export async function processVerifiedResendWebhook(
       occurredAt,
       recipientCount: recipients.length,
       suppressionCount,
-      detailCode: detailCodeFor(eventType, Boolean(reason)),
+      detailCode: resendEventDetailCode(eventType, Boolean(reason)),
       processedAt: new Date(),
     })
     .onConflictDoNothing({ target: resendWebhookEvents.webhookId });
