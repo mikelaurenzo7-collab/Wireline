@@ -37,7 +37,7 @@ describe("product voice cohesion", () => {
     expect(BRAND_SYSTEM.defaultRole).toBe("Your voice agent");
     expect(BRAND_SYSTEM.brandSpine).toEqual(["Build", "Train", "Launch"]);
     expect(BRAND_SYSTEM.proofLoop).toEqual([
-      "Brief",
+      "Build",
       "Train",
       "Launch",
       "Improve",
