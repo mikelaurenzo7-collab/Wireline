@@ -180,7 +180,7 @@ const TRUST_PACK_SECTIONS = [
     icon: Database,
     title: "Subprocessors & vendors",
     items: [
-      "Production voice: approved telephony and voice orchestration partners (configured server-side only).",
+      "Production voice: Twilio and Vapi for telephony and orchestration, Deepgram for transcription, OpenAI for managed call models and realtime voice, and ElevenLabs for managed text-to-speech and authorized private voices where enabled.",
       "Payments: Stripe (PCI scope reduced — Wireline never stores card numbers).",
       "Data plane: Supabase Postgres (US-East today). Email: Resend. Rate limits: Upstash Redis.",
       "Provider credentials and routing stay server-side. Wireline owns the customer-facing experience while this Trust Center names key subprocessors for transparency.",
