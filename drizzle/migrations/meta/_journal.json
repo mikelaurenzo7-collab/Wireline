@@ -288,6 +288,13 @@
       "when": 1786410300000,
       "tag": "0142_resend_delivery_feedback",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1786482000000,
+      "tag": "0143_agent_account_binding",
+      "breakpoints": true
     }
   ]
 }
