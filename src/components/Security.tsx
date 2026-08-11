@@ -183,7 +183,7 @@ const TRUST_PACK_SECTIONS = [
       "Production voice: approved telephony and voice orchestration partners (configured server-side only).",
       "Payments: Stripe (PCI scope reduced — Wireline never stores card numbers).",
       "Data plane: Supabase Postgres (US-East today). Email: Resend. Rate limits: Upstash Redis.",
-      "Customer-facing surfaces use Wireline-owned copy — vendor names stay in operator configuration, not buyer UI.",
+      "Provider credentials and routing stay server-side. Wireline owns the customer-facing experience while this Trust Center names key subprocessors for transparency.",
     ],
   },
 ];
@@ -227,7 +227,7 @@ export default function Security() {
             </div>
             <p className="mt-4 text-eyebrow !text-[0.625rem]">
               <span className="whitespace-nowrap">
-                Last updated · August 10, 2026
+                Last updated · August 11, 2026
               </span>
             </p>
           </motion.div>
