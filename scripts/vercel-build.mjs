@@ -118,6 +118,7 @@ run("npx", [
   "tests/production-build-env-gate-contract.test.ts",
   "tests/database-connection.test.ts",
   "tests/migration-journal-integrity-contract.test.ts",
+  "tests/production-schema-effects-contract.test.ts",
   "tests/product-voice-contract.test.ts",
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
@@ -204,6 +205,7 @@ if (shouldMigrate) {
   }
 
   run("npm", ["run", "db:migrate"]);
+  run("node", ["scripts/check-production-schema-effects.mjs"]);
 } else {
   console.log(
     `Skipping database migrations for ${environment || "local"} build${
