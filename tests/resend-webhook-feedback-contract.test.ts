@@ -147,6 +147,7 @@ describe("Resend delivery-feedback contract", () => {
     const sync = read("scripts/sync-resend-env-to-vercel.mjs");
     const docs = read("docs/RESEND_DELIVERY_FEEDBACK.md");
     const build = read("scripts/vercel-build.mjs");
+    const envExample = read(".env.example");
 
     expect(readiness).toContain("RESEND_WEBHOOK_SECRET");
     expect(readiness).toContain("https://trywireline.com/api/webhooks/resend");
@@ -157,6 +158,8 @@ describe("Resend delivery-feedback contract", () => {
     );
     expect(sync).toContain('key: "RESEND_WEBHOOK_SECRET"');
     expect(sync).toContain("envEntries.length === 0");
+    expect(envExample).toContain("RESEND_WEBHOOK_SECRET=");
+    expect(envExample).toMatch(/Production-only Svix\/Resend signing secret/i);
     expect(build).toContain("check-resend-webhook-readiness.mjs");
     expect(build).toContain("tests/resend-webhook-feedback-contract.test.ts");
 
