@@ -53,10 +53,19 @@ describe("launch truth contract", () => {
 
     expect(changelog).toContain('date: "Aug 11, 2026"');
     expect(changelog).toContain('title: "Launch certification hardened"');
+    expect(changelog).toContain("the non-E2E test suite");
+    expect(changelog).toContain("Post-promotion health checks verify the live service");
+    expect(changelog).not.toContain("the full test suite");
+    expect(changelog).not.toContain("live service health before promotion");
     expect(changelog).not.toContain("Every PR now runs");
-    expect(changelog).toContain("Visual-regression coverage");
+    expect(changelog).toContain("Playwright screenshot capture and responsive-layout auditing");
+    expect(changelog).not.toContain("committed baselines");
 
     expect(security).toContain("Last updated · August 11, 2026");
+    expect(security).toContain("Twilio and Vapi for telephony and orchestration");
+    expect(security).toContain("Deepgram for transcription");
+    expect(security).toContain("OpenAI for managed call models and realtime voice");
+    expect(security).toContain("ElevenLabs for managed text-to-speech");
     expect(security).toContain("names key subprocessors for transparency");
     expect(security).not.toContain("vendor names stay in operator configuration, not buyer UI");
   });
