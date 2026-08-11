@@ -47,6 +47,40 @@ describe("launch truth contract", () => {
     expect(trust).toContain("Important boundary");
   });
 
+  it("keeps the public changelog and Trust Center current without overclaiming controls", () => {
+    const changelog = read("src/components/PublicChangelog.tsx");
+    const security = read("src/components/Security.tsx");
+
+    expect(changelog).toContain('date: "Aug 11, 2026"');
+    expect(changelog).toContain('title: "Launch certification hardened"');
+    expect(changelog).toContain("the non-E2E test suite");
+    expect(changelog).toContain("Post-promotion health checks verify the live service");
+    expect(changelog).not.toContain("the full test suite");
+    expect(changelog).not.toContain("live service health before promotion");
+    expect(changelog).not.toContain("Every PR now runs");
+    expect(changelog).toContain("Playwright screenshot capture and responsive-layout auditing");
+    expect(changelog).not.toContain("committed baselines");
+
+    expect(security).toContain("Last updated · August 11, 2026");
+    expect(security).toContain("Twilio and Vapi for telephony and orchestration");
+    expect(security).toContain("Deepgram for transcription");
+    expect(security).toContain("OpenAI for managed call models and realtime voice");
+    expect(security).toContain("ElevenLabs for managed text-to-speech");
+    expect(security).toContain("names key subprocessors for transparency");
+    expect(security).not.toContain("vendor names stay in operator configuration, not buyer UI");
+  });
+
+  it("keeps pre-customer GTM focused on first evidence instead of outbound scale", () => {
+    const sprint = read("docs/DESIGN_PARTNER_SPRINT_2026-07-08.md");
+
+    expect(sprint).toContain("Recruit **3–5 design partners**");
+    expect(sprint).toContain("Cold marketing outbound is not a prerequisite");
+    expect(sprint).toContain("No fake urgency");
+    expect(sprint).toContain("depth beats volume");
+    expect(sprint).not.toContain("10–25 design partners");
+    expect(sprint).not.toContain("sales-heavy categories");
+  });
+
   it("does not leak Wireline branding into a customer's sequence message", () => {
     const cadences = read("src/components/Cadences.tsx");
     expect(cadences).not.toContain("Reaching out from Wireline");
