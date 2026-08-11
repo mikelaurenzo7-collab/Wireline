@@ -9,6 +9,13 @@ import {
   selectModelForTask,
 } from "../src/lib/ai-models";
 
+// Pricing provenance verified 2026-08-10 against vendor-owned documentation:
+// https://developers.openai.com/api/docs/models/gpt-5.6-terra
+// https://developers.openai.com/api/docs/models/gpt-5.6-luna
+// https://developers.openai.com/api/docs/models/gpt-5.6-sol
+// https://ai.google.dev/gemini-api/docs/pricing
+// https://docs.x.ai/docs/models
+
 describe("model pricing coverage contract", () => {
   const declaredIds = [
     ...Object.values(OPENAI_MODELS),
