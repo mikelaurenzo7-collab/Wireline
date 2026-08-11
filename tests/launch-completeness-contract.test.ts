@@ -159,6 +159,7 @@ describe("launch completeness contracts", () => {
 
   it("cascades account deletion through every user-bound auth artifact", () => {
     const migration = source("drizzle/migrations/0144_auth_token_user_cascades.sql");
+    const oauthSecurity = source("src/lib/mcp-oauth-security.ts");
     const journal = source("drizzle/migrations/meta/_journal.json");
 
     expect(journal).toContain('"tag": "0144_auth_token_user_cascades"');
@@ -177,14 +178,26 @@ describe("launch completeness contracts", () => {
     ).toHaveLength(6);
     expect(migration).toContain("DELETE FROM public.wireline_password_reset_tokens");
     expect(migration).toContain("DELETE FROM public.wireline_email_verification_tokens");
+    expect(migration).toContain(
+      "DELETE FROM public.wireline_mcp_oauth_codes WHERE expires_at < now()",
+    );
+    expect(migration).toContain(
+      "DELETE FROM public.wireline_mcp_access_tokens WHERE expires_at < now()",
+    );
+    expect(migration).toContain(
+      "DELETE FROM public.wireline_mcp_refresh_tokens WHERE expires_at < now()",
+    );
     for (const index of [
       "idx_mcp_oauth_codes_user_id",
       "idx_mcp_access_tokens_user_id",
       "idx_mcp_refresh_tokens_user_id",
       "idx_oauth_pending_codes_user_id",
+      "idx_mcp_oauth_codes_expires_at",
     ]) {
       expect(migration).toContain(`CREATE INDEX IF NOT EXISTS ${index}`);
     }
+    expect(oauthSecurity).toContain("pruneExpiredMcpOAuthRows");
+    expect(oauthSecurity).toContain("DELETE FROM wireline_mcp_oauth_codes WHERE expires_at < now()");
   });
 
   it("reconciles only historical rows already covered by the current deletion contract", () => {
