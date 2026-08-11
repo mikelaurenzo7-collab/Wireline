@@ -175,5 +175,34 @@ describe("launch completeness contracts", () => {
     expect(migration.match(/ON DELETE CASCADE/g)).toHaveLength(6);
     expect(migration).toContain("DELETE FROM public.wireline_password_reset_tokens");
     expect(migration).toContain("DELETE FROM public.wireline_email_verification_tokens");
+    for (const index of [
+      "idx_mcp_oauth_codes_user_id",
+      "idx_mcp_access_tokens_user_id",
+      "idx_mcp_refresh_tokens_user_id",
+      "idx_oauth_pending_codes_user_id",
+    ]) {
+      expect(migration).toContain(`CREATE INDEX IF NOT EXISTS ${index}`);
+    }
+  });
+
+  it("reconciles only historical rows already covered by the current deletion contract", () => {
+    const migration = source(
+      "drizzle/migrations/0145_reconcile_historical_deleted_user_artifacts.sql",
+    );
+    const deletion = source("src/lib/account-deletion.ts");
+    const journal = source("drizzle/migrations/meta/_journal.json");
+    const reconciled = [
+      "wireline_director_conversation_messages",
+      "wireline_dnc_list",
+      "wireline_audit_log",
+      "wireline_training_backup_20260609",
+    ];
+
+    expect(journal).toContain('"tag": "0145_reconcile_historical_deleted_user_artifacts"');
+    for (const table of reconciled) {
+      expect(migration).toContain(`DELETE FROM public.${table}`);
+      expect(deletion).toContain(`table: "${table}"`);
+    }
+    expect(migration).not.toContain("DELETE FROM public.wireline_jobs");
   });
 });
