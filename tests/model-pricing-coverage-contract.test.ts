@@ -25,25 +25,52 @@ describe("model pricing coverage contract", () => {
     }
   });
 
-  it("keeps cached reads below ordinary input and records GPT-5.6 write premiums", () => {
+  it("pins current GPT-5.6 standard rates and cache-write premiums", () => {
     for (const [id, row] of Object.entries(MODEL_PRICING)) {
       expect(row.input, `${id} input rate`).toBeGreaterThan(0);
       expect(row.output, `${id} output rate`).toBeGreaterThanOrEqual(row.input);
       expect(row.cacheRead, `${id} cached input`).toBeLessThan(row.input);
       expect(row.cacheWrite, `${id} cache write`).toBeGreaterThanOrEqual(0);
     }
-    expect(MODEL_PRICING[OPENAI_MODELS.GPT_5_6_TERRA].cacheWrite).toBe(2.5);
-    expect(MODEL_PRICING[OPENAI_MODELS.GPT_5_6_LUNA].cacheWrite).toBe(0.25);
-    expect(MODEL_PRICING[OPENAI_MODELS.GPT_5_6_SOL].cacheWrite).toBe(6.25);
+
+    expect(MODEL_PRICING[OPENAI_MODELS.GPT_5_6_TERRA]).toEqual({
+      input: 2.5,
+      output: 15,
+      cacheRead: 0.25,
+      cacheWrite: 3.125,
+    });
+    expect(MODEL_PRICING[OPENAI_MODELS.GPT_5_6_LUNA]).toEqual({
+      input: 1,
+      output: 6,
+      cacheRead: 0.1,
+      cacheWrite: 1.25,
+    });
+    expect(MODEL_PRICING[OPENAI_MODELS.GPT_5_6_SOL]).toEqual({
+      input: 5,
+      output: 30,
+      cacheRead: 0.5,
+      cacheWrite: 6.25,
+    });
   });
 
-  it("applies vendor long-context rates to the full request", () => {
-    expect(pricingForModel(OPENAI_MODELS.GPT_5_6_TERRA, 272_000).input).toBe(2);
+  it("applies current vendor long-context rates to the full request", () => {
+    expect(pricingForModel(OPENAI_MODELS.GPT_5_6_TERRA, 272_000)).toEqual({
+      input: 2.5,
+      output: 15,
+      cacheRead: 0.25,
+      cacheWrite: 3.125,
+    });
     expect(pricingForModel(OPENAI_MODELS.GPT_5_6_TERRA, 272_001)).toEqual({
-      input: 4,
-      output: 18,
-      cacheRead: 0.4,
-      cacheWrite: 5,
+      input: 5,
+      output: 22.5,
+      cacheRead: 0.5,
+      cacheWrite: 6.25,
+    });
+    expect(pricingForModel(OPENAI_MODELS.GPT_5_6_LUNA, 272_001)).toEqual({
+      input: 2,
+      output: 9,
+      cacheRead: 0.2,
+      cacheWrite: 2.5,
     });
     expect(pricingForModel(XAI_MODELS.GROK_4_5, 200_000).input).toBe(4);
     expect(pricingForModel(GEMINI_MODELS.PRO_3_1, 200_001).output).toBe(18);
@@ -63,9 +90,10 @@ describe("model pricing coverage contract", () => {
       OPENAI_MODELS.GPT_5_6_TERRA,
     );
     // 300k total prompt tokens crosses the OpenAI long-context tier.
-    expect(cost.inputCost).toBeCloseTo(0.4);
-    expect(cost.cacheReadCost).toBeCloseTo(0.04);
-    expect(cost.cacheWriteCost).toBeCloseTo(0.5);
-    expect(cost.outputCost).toBeCloseTo(0.18);
+    expect(cost.inputCost).toBeCloseTo(0.5);
+    expect(cost.cacheReadCost).toBeCloseTo(0.05);
+    expect(cost.cacheWriteCost).toBeCloseTo(0.625);
+    expect(cost.outputCost).toBeCloseTo(0.225);
+    expect(cost.totalCost).toBeCloseTo(1.4);
   });
 });
