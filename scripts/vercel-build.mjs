@@ -46,12 +46,19 @@ function runDeepLaunchAuditIfRequested() {
   if (!commitMessage.includes("[launch-deep-audit]")) return;
 
   console.log(
-    `Running one-shot full TypeScript, ESLint, and Vitest launch audit for ${environment || "local"}.`,
+    `Running one-shot full TypeScript, ESLint, production-dependency security, and Vitest launch audit for ${environment || "local"}.`,
   );
   run("npm", ["run", "lint"]);
   run("npm", ["run", "lint:server"]);
   run("npm", ["run", "lint:audit-modules"]);
   run("npm", ["run", "lint:eslint"]);
+  // GitHub-hosted runners are not currently executing for this repository and
+  // GitHub Dependabot alerts are disabled. Keep launch certification independent
+  // of those control-plane conditions by running Wireline's existing fail-closed
+  // production-dependency advisory gate in the Vercel deep-audit path itself.
+  // The gate rejects an inconclusive npm registry response rather than silently
+  // treating "nothing checked" as a pass.
+  run("npm", ["run", "security:audit"]);
   run("npm", ["run", "test:run"]);
 }
 

@@ -33,4 +33,27 @@ describe("production build environment gate", () => {
     expect(build).toContain("configurePreviewEnvironment();\nvalidateProductionEnvironment();");
     expect(build).not.toContain("PRODUCTION_CHECK=1");
   });
+
+  it("runs the fail-closed production dependency audit in every deep launch certification", () => {
+    const build = read("scripts/vercel-build.mjs");
+    const audit = read("scripts/check-security-audit.mjs");
+    const deepAuditStart = build.indexOf("function runDeepLaunchAuditIfRequested()");
+    const nextFunction = build.indexOf("function syncShowcaseIfRequested()", deepAuditStart);
+    const deepAudit = build.slice(deepAuditStart, nextFunction);
+
+    expect(deepAuditStart).toBeGreaterThan(-1);
+    expect(deepAudit).toContain('commitMessage.includes("[launch-deep-audit]")');
+    expect(deepAudit).toContain('run("npm", ["run", "security:audit"])');
+    expect(deepAudit.indexOf('run("npm", ["run", "lint:eslint"])')).toBeLessThan(
+      deepAudit.indexOf('run("npm", ["run", "security:audit"])'),
+    );
+    expect(deepAudit.indexOf('run("npm", ["run", "security:audit"])')).toBeLessThan(
+      deepAudit.indexOf('run("npm", ["run", "test:run"])'),
+    );
+
+    expect(audit).toContain('execSync("npm audit --json --omit=dev"');
+    expect(audit).toContain('!["high", "critical"].includes(vuln.severity)');
+    expect(audit).toContain("Security audit gate FAILED");
+    expect(audit).toContain("const ACCEPTED = []");
+  });
 });
