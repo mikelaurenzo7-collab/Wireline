@@ -58,7 +58,7 @@ export function buildPublicHealthPayload(input: {
   };
 }
 
-async function probeMetadataEndpoint(input: {
+async function probeGetEndpoint(input: {
   url: string;
   apiKey: string | undefined;
   keyName: string;
@@ -120,7 +120,7 @@ export function probeVapiManagedVoice(
   apiKey: string | undefined,
   timeoutMs = PUBLIC_HEALTH_PROBE_TIMEOUT_MS,
 ): Promise<PublicModelProbe> {
-  return probeMetadataEndpoint({
+  return probeGetEndpoint({
     url: "https://api.vapi.ai/assistant?limit=1",
     apiKey,
     keyName: "VAPI_PRIVATE_KEY",
@@ -131,21 +131,70 @@ export function probeVapiManagedVoice(
 }
 
 /**
- * Check that the configured key can resolve a specific OpenAI model without
- * generating output. The model metadata endpoint validates connectivity,
- * authentication, and model access while consuming no inference tokens.
+ * Check the same OpenAI Responses execution surface used by Wireline's managed
+ * reasoning runtime. A model-metadata GET can be slow or unavailable while
+ * inference is healthy, which makes it a poor public product-health signal.
+ *
+ * This deliberately generates the smallest practical response: GPT-5.6 allows
+ * reasoning effort `none`, and Responses requires max_output_tokens >= 16. The
+ * shared Redis result/lock in public-health-api bounds this to one probe per
+ * cache refresh globally rather than one probe per visitor.
  */
-export function probeOpenAIModel(
+export async function probeOpenAIModel(
   model: string,
   apiKey: string | undefined,
   timeoutMs = PUBLIC_HEALTH_PROBE_TIMEOUT_MS,
 ): Promise<PublicModelProbe> {
-  return probeMetadataEndpoint({
-    url: `https://api.openai.com/v1/models/${encodeURIComponent(model)}`,
-    apiKey,
-    keyName: "OPENAI_API_KEY",
-    label: model,
-    failurePrefix: "OpenAI model probe failed",
+  const started = Date.now();
+  if (!apiKey) {
+    return {
+      ok: false,
+      latency_ms: 0,
+      model,
+      error: "OPENAI_API_KEY not configured",
+    };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(new Error("provider probe timed out")),
     timeoutMs,
-  });
+  );
+  timeout.unref?.();
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        input: "Reply with OK.",
+        max_output_tokens: 16,
+        reasoning: { effort: "none" },
+        text: { verbosity: "low" },
+        store: false,
+      }),
+      signal: controller.signal,
+    });
+    await response.body?.cancel().catch(() => undefined);
+    if (!response.ok) throw new Error(`OpenAI Responses probe failed (${response.status})`);
+    return { ok: true, latency_ms: Date.now() - started, model };
+  } catch (error) {
+    const message = controller.signal.aborted
+      ? "provider probe timed out"
+      : error instanceof Error
+        ? error.message
+        : String(error);
+    return {
+      ok: false,
+      latency_ms: Date.now() - started,
+      model,
+      error: message.slice(0, 240),
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
 }

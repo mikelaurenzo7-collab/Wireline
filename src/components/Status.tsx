@@ -188,7 +188,7 @@ export default function Status() {
     <>
       <PageMeta
         title="Provider Status | Wireline"
-        description="Live access checks for Wireline's managed voice control plane and reasoning model. Updated every 60 seconds."
+        description="Live access checks for Wireline's managed voice control plane and reasoning runtime. Page refreshes every 60 seconds."
         path="/status"
       />
       <MarketingChrome stickyCta={false}>
@@ -240,7 +240,7 @@ export default function Status() {
                             timeZoneName: "short",
                           })}
                         </time>{" "}
-                        · refreshes every 60s.
+                        · page refreshes every 60s.
                       </>
                     ) : error ? (
                       "We could not reach the public status feed. This is not treated as a service outage until a live probe confirms one."
@@ -306,15 +306,16 @@ export default function Status() {
           <div className="marketing-panel-muted p-4 sm:p-5">
             <p className="text-eyebrow mb-2">How we measure</p>
             <p className="marketing-body">
-              Every 60 seconds, Wireline checks managed voice control-plane access and OpenAI model
-              access without placing a call or generating content. These checks confirm provider
-              reachability and credential access—not an end-to-end customer call. The cards above
-              show which check needs attention.
+              Wireline checks managed voice control-plane access and performs a minimal,
+              non-persistent OpenAI Responses inference for reasoning access. Provider results are
+              cached for up to 120 seconds so public traffic cannot multiply provider work. These
+              are provider-access checks—not an end-to-end customer call. The cards above show
+              which check needs attention.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.32em] text-muted/70">
-              <span>Probe interval · 60s</span>
+              <span>Page refresh · 60s</span>
               <span className="text-muted/70">·</span>
-              <span>Public cache · 60s</span>
+              <span>Provider cache · up to 120s</span>
               <span className="text-muted/70">·</span>
               <Link to="/security" className="transition-colors hover:text-foreground">
                 Security practices

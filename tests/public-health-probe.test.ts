@@ -19,7 +19,7 @@ describe("public health probe", () => {
         ok: false,
         latency_ms: 20,
         model: "reasoning",
-        error: "OpenAI model probe failed (503)",
+        error: "OpenAI Responses probe failed (503)",
       },
       checkedAt: new Date("2026-08-03T23:00:00.000Z"),
     });
@@ -121,7 +121,7 @@ describe("public health probe", () => {
     expect(cancel).toHaveBeenCalledTimes(1);
   });
 
-  it("uses OpenAI model metadata rather than a token-generating Responses request", async () => {
+  it("probes the real OpenAI Responses execution path with minimum reasoning and output", async () => {
     const cancel = vi.fn().mockResolvedValue(undefined);
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -135,17 +135,24 @@ describe("public health probe", () => {
       model: "gpt-test/model",
     });
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.openai.com/v1/models/gpt-test%2Fmodel",
+      "https://api.openai.com/v1/responses",
       expect.objectContaining({
-        method: "GET",
+        method: "POST",
         headers: {
           Authorization: "Bearer test-key",
-          Accept: "application/json",
+          "Content-Type": "application/json",
         },
       }),
     );
-    const request = fetchMock.mock.calls[0]?.[1] as Record<string, unknown>;
-    expect(request).not.toHaveProperty("body");
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(String(request.body))).toEqual({
+      model: "gpt-test/model",
+      input: "Reply with OK.",
+      max_output_tokens: 16,
+      reasoning: { effort: "none" },
+      text: { verbosity: "low" },
+      store: false,
+    });
     expect(cancel).toHaveBeenCalledTimes(1);
   });
 
