@@ -302,6 +302,13 @@
       "when": 1786482600000,
       "tag": "0144_auth_token_user_cascades",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1786483200000,
+      "tag": "0145_reconcile_historical_deleted_user_artifacts",
+      "breakpoints": true
     }
   ]
 }
