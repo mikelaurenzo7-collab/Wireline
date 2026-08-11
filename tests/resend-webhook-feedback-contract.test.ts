@@ -156,7 +156,7 @@ describe("Resend delivery-feedback contract", () => {
     ]) {
       expect(docs).toContain(eventType);
     }
-    expect(docs).toContain("production-only");
+    expect(docs).toMatch(/production(?:-| )only/i);
     expect(docs).toContain("code path launch-ready");
   });
 });
