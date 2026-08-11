@@ -142,6 +142,18 @@ describe("Resend delivery-feedback contract", () => {
     expect(supportRoute).toContain("Email delivery safety check unavailable");
   });
 
+  it("fails closed before public support intake can create unbounded provider work", () => {
+    const supportRoute = read("src/routes/support-routes.ts");
+    expect(supportRoute).toContain('from "../lib/rate-limit"');
+    expect(supportRoute).toContain("distributedLimiterStatus()");
+    expect(supportRoute).toContain("failClosedOnError: true");
+    expect(supportRoute).toContain('code: "RATE_LIMITER_ERROR"');
+    expect(supportRoute).toContain("normalizeEmail(email)");
+    expect(supportRoute).toContain("const cleanSubject = subject.trim()");
+    expect(supportRoute).toContain("const cleanBody = body.trim()");
+    expect(supportRoute).not.toContain("Tracked in-memory");
+  });
+
   it("makes production activation explicit and keeps live Resend credentials production-only", () => {
     const readiness = read("scripts/check-resend-webhook-readiness.mjs");
     const sync = read("scripts/sync-resend-env-to-vercel.mjs");
