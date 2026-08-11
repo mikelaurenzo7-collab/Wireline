@@ -51,7 +51,7 @@ describe("OpenAI runtime cohesion across agent postures", () => {
     expect(sandbox).toContain("OpenAILiveVoiceSandbox");
   });
 
-  it("keeps Active architecture docs on one OpenAI default for demos and runtime", () => {
+  it("keeps active architecture docs on the managed OpenAI primary", () => {
     const architecture = read("ARCHITECTURE.md");
     const grokDoc = read("docs/GROK_LIVE_VOICE.md");
     const vendor = read("docs/VENDOR_LAUNCH_MAP.md");
@@ -66,7 +66,8 @@ describe("OpenAI runtime cohesion across agent postures", () => {
       "Primary: direct xAI Responses API using Grok 4.5 by default",
     );
     expect(grokDoc).toContain("retired from demo routing");
-    expect(vendor).toContain("runtime is OpenAI-first");
-    expect(vendor).toContain("Optional experiment only");
+    // The compact vendor map is the current operating source of truth.
+    expect(vendor).toContain("Structured reasoning | OpenAI managed structured runtime");
+    expect(vendor).toContain("optional xAI experiment only when explicitly enabled");
   });
 });

@@ -1,27 +1,26 @@
 # Billing Runbook
 
-Status: **Active canonical runbook**. This is the operator proof path for Stripe checkout, server-owned entitlements, Runtime Balance, webhook idempotency, cancellation, and usage reconciliation.
+Status: **Active canonical runbook**. This is the operator proof path for Stripe checkout, server-owned entitlements, Runtime Balance, webhook idempotency, cancellation, Live Video, and usage reconciliation.
 
 ## Source of truth
 
 - **Catalog:** `src/lib/plan-catalog.ts` owns canonical plan ids, public checkout eligibility, capacity limits, included phone numbers, included voice minutes, Runtime Allowance, and overflow rates.
+- **Stripe product manifest:** `scripts/lib/stripe-founder-catalog.mjs` owns managed Stripe product/price metadata, including the Live Video add-on.
 - **Runtime Balance:** `src/lib/conversation-balance.ts` owns customer-facing top-up limits and preset amounts (module path retained; customer term is Runtime Balance).
 - **Stripe integration:** `src/lib/stripe-helpers.ts` owns Stripe client configuration and subscription-to-entitlement sync.
-- **HTTP routes:** `src/routes/launch-billing-checkout-routes.ts` is the sole owner of `POST /api/billing/checkout` (founder catalog). `src/routes/billing-portal-readiness-routes.ts` is the sole owner of `POST /api/billing/portal` (managed portal configuration). `src/routes/billing-routes.ts` owns the remaining `/api/billing/*` surface, `/api/stripe-webhook`, and live-video add-on checkout. `src/routes/conversation-balance-routes.ts` owns `/api/conversation-balance/*`.
+- **HTTP routes:** `src/routes/launch-billing-checkout-routes.ts` owns `POST /api/billing/checkout`. `src/routes/billing-portal-readiness-routes.ts` owns `POST /api/billing/portal`. `src/routes/billing-routes.ts` owns the remaining `/api/billing/*` surface, `/api/stripe-webhook`, and Live Video add-on checkout. `src/routes/conversation-balance-routes.ts` owns `/api/conversation-balance/*`.
 - **Wallet ledger:** `src/lib/credit-wallet.ts` is the append-only USD ledger for top-ups, burns, refunds, disputes, and grants.
-- **Usage reconciliation:** `src/lib/voice-usage.ts` records monthly voice usage, consumes included capacity first, and burns Runtime Balance only for explicit funded overflow.
-- **Historical welcome-credit helper:** `src/lib/subscription-welcome-credit.ts` remains for prior ledger compatibility; new subscriptions receive the recurring Runtime Allowance defined by the catalog.
-- **SMS billing:** `src/lib/sms-billing.ts` + `src/lib/twilio-service.ts` debit $0.02/segment from Runtime Balance after live-work entitlement (`assertLiveWorkEntitlementForUser`).
+- **Voice usage:** `src/lib/voice-usage.ts` consumes included voice capacity first and Runtime Balance only for explicit funded overflow.
+- **Live Video usage:** `src/lib/video-presenter/live-video-usage.ts` atomically reserves monthly Live Video capacity before a provider session token is minted.
+- **Live Video policy:** `src/lib/video-presenter/live-video-policy.ts` owns price, allowance, session reservation size, provider cost reserve, and minimum full-use margin.
 
-## Commercial contract (Jul 2026)
+## Commercial contract
 
 - Free Builder creates, trains, and privately simulates one draft.
-- Every paid tier includes voice minutes, number capacity, and a recurring
-  Runtime Allowance as defined in `src/lib/plan-catalog.ts`.
-- Runtime Balance is prepaid overflow. Wireline does not silently create
-  a postpaid overage invoice.
-- Extra-agent add-ons include additional capacity and minutes as defined by the
-  catalog.
+- Paid tiers include voice minutes, number capacity, and recurring Runtime Allowance as defined in `src/lib/plan-catalog.ts`.
+- Runtime Balance is prepaid overflow. Wireline does not silently create a postpaid voice overage invoice.
+- Extra-agent add-ons include additional capacity and minutes as defined by the catalog.
+- **Live Video is a separate $19/month add-on** for active paid business workspaces: 60 reserved minutes per UTC month, five minutes reserved per session, 300-second provider-session ceiling, and no automatic overage.
 - Ops lock: [P0_BILLING_OPS_NOTE.md](./P0_BILLING_OPS_NOTE.md).
 
 ## Required environment
@@ -33,13 +32,15 @@ Minimum self-serve billing variables:
 - `STRIPE_WEBHOOK_SECRET`
 - recurring price ids for public plans in `src/lib/plan-catalog.ts`
 
-Optional compatibility/add-on variables:
+To sell Live Video additionally require:
 
-- historical meter/overage IDs only while reconciling old subscriptions; they
-  are not the Founder launch billing path
-- `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID` only if the live video add-on is sold
+- `LIVEAVATAR_API_KEY`
+- `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID` (or the supported monthly alias)
+- `WIRELINE_LIVE_VIDEO_DISABLED` unset or `false`
 
-Do not run catalog writes against production casually. Run the static contract and the complete read-only live audit first. `stripe:audit-live` pulls the production Stripe key from Vercel, then validates customer-facing account identity, product descriptions and managed metadata, and catalog/price topology. It performs no Stripe writes and deliberately excludes legal-entity, representative, bank, address, tax, and verification data from output.
+`HEYGEN_API_KEY` is optional for presenter voice-preview features. It is not the LiveAvatar session credential.
+
+Do not run catalog writes against production casually. Run the static contract and complete read-only live audit first:
 
 ```bash
 npm run stripe:catalog:check
@@ -48,105 +49,115 @@ VERCEL_TOKEN=... npm run stripe:audit-live
 
 ## Proof checklist
 
-### 1. New user can reach checkout
+### 1. New user can reach base-plan checkout
 
 1. Sign up a new account.
 2. Open `/settings/billing`.
-3. Confirm the plan picker loads public plans from `GET /api/billing/plans`.
-4. Click a configured public plan.
+3. Confirm public plans load from `GET /api/billing/plans`.
+4. Click a configured paid plan.
 5. Confirm `POST /api/billing/checkout` returns a Stripe Checkout URL.
-6. Confirm Free Builder has no recurring checkout; live work requires choosing a paid plan.
+6. Confirm Free Builder has no recurring checkout; live provider work requires a paid plan.
 
-Expected failure modes must be explicit JSON: `FREE_PLAN_NO_CHECKOUT` for Free Builder, `SERVICE_UNAVAILABLE` for a missing paid-plan price, `LEGACY_PLAN_RETIRED` for retired catalog entries, and `ALREADY_SUBSCRIBED` for an existing live subscription. Scale/custom sales intents are not plan aliases and never resolve to checkout.
+Expected failure modes must remain explicit JSON: `FREE_PLAN_NO_CHECKOUT`, `SERVICE_UNAVAILABLE`, `LEGACY_PLAN_RETIRED`, and `ALREADY_SUBSCRIBED`. Scale/custom sales intents are not plan aliases and never resolve to ordinary checkout.
 
 ### 2. Successful checkout updates server-owned entitlement state
 
 1. Complete subscription checkout in Stripe test mode.
-2. Deliver `checkout.session.completed` and the following `customer.subscription.*` webhook events.
-3. Confirm `wireline_subscriptions` has the Stripe customer id, subscription id, canonical plan id, Stripe status, current period end, and cancellation flag.
-4. Confirm `wireline_settings.subscription_status` and `wireline_settings.max_agents` mirror the server-owned entitlement state.
-5. Confirm `GET /api/billing/status` reports the plan, status, capacity, customer state, and cancellation flag.
+2. Deliver `checkout.session.completed` and subsequent `customer.subscription.*` webhook events.
+3. Confirm `wireline_subscriptions` has customer id, subscription id, canonical plan id, Stripe status, current period end, and cancellation state.
+4. Confirm `wireline_settings.subscription_status` and `max_agents` mirror server-owned entitlement state.
+5. Confirm `GET /api/billing/status` reports the same plan/capacity/customer state.
 
-The client must never compute paid entitlements from returned Checkout success URLs. Entitlements change only after Stripe webhook sync.
+The client must never compute paid entitlements from a returned Checkout success URL. Entitlements change only after Stripe webhook synchronization.
 
-### 3. Webhook events are idempotent
+### 3. Webhook events are idempotent and complete
 
-Webhook processing must claim `wireline_stripe_events.event_id` before side effects. Duplicate event ids return `{ received: true, duplicate: true }` and do not re-credit wallets, re-run entitlement sync, or re-dispatch usage mutations.
+Webhook processing must claim `wireline_stripe_events.event_id` before side effects. Duplicate event ids must not re-credit wallets, re-run entitlement sync, or duplicate usage mutations.
 
-### 3a. Webhook endpoint subscribes to every handled event
+The production endpoint's `enabled_events` must exactly match the handled event set derived from source:
 
-The production endpoint's `enabled_events` must exactly match the `case` arms of the webhook switch in `src/routes/billing-routes.ts` — a handled event missing from the endpoint is silently dropped by Stripe (subscription updates never sync), and an enabled-but-unhandled event is delivery noise.
+- `npm run stripe:webhook:check` — read-only drift report.
+- `npm run stripe:webhook:align` — aligns enabled events; endpoint URL/signing secret remain untouched.
 
-- `npm run stripe:webhook:check` — read-only drift report (exits 1 on drift).
-- `npm run stripe:webhook:align` — sets `enabled_events` to exactly the handled set; endpoint URL and signing secret are untouched.
+If a claimed event fails after side effects begin, the handler releases the claim for Stripe retry. Wallet mutations remain separately idempotent through their stable reference/idempotency keys.
 
-If a claimed event fails after side effects begin, the handler deletes the idempotency claim so Stripe can retry. Wallet mutations remain additionally idempotent through `(user, ref_type, ref_id)` / idempotency-key ledger semantics.
+### 4. Stripe-hosted identity and product copy remain canonical
 
-### 3b. Stripe-hosted customer identity and product copy remain canonical
+Run `VERCEL_TOKEN=... npm run stripe:audit-live` and require:
 
-Run `VERCEL_TOKEN=... npm run stripe:audit-live` and require all three read-only audit sections to complete:
+1. **Account identity:** customer-facing public name/domain/descriptors are Wireline-aligned. Dashboard display name is an internal label, not the customer-facing identity gate.
+2. **Product copy:** active canonical products match `scripts/lib/stripe-founder-catalog.mjs`, including catalog metadata.
+3. **Catalog topology:** active products/prices, amounts, intervals, product ownership, subscriptions, payment links, and open Checkout sessions use canonical objects.
 
-1. **Account identity:** the customer-facing business profile name is `Wireline`; the public URL is HTTPS on `trywireline.com`; card and payment statement descriptors are Wireline-prefixed. Missing account logo/icon is a warning; name, domain, and descriptor drift are errors. Stripe Dashboard `display_name` is an internal account label and is not a launch-identity gate.
-2. **Product copy:** every active canonical product has the exact repository description, catalog version, and managed metadata from `scripts/lib/stripe-founder-catalog.mjs`.
-3. **Catalog topology:** active products/prices, amounts, recurring intervals, product ownership, subscriptions, payment links, and open Checkout sessions use canonical objects.
+Do not change legal-entity, representative, bank, tax, address, or verification data merely to fix public branding.
 
-Account-identity remediation is limited to customer-facing/public branding. Do not modify legal-entity, representative, bank, tax, address, or verification data while resolving an identity-audit failure.
-
-### 4. Cancellation or downgrade is reflected in the app
+### 5. Cancellation or downgrade is reflected in the app
 
 1. Use Stripe Customer Portal to cancel at period end or switch tiers.
-2. Deliver `customer.subscription.updated` or `customer.subscription.deleted`.
-3. Confirm `GET /api/billing/status` shows `cancel_at_period_end`, `current_period_end`, plan id, and Stripe status.
-4. Confirm `StripeBillingCard` shows active, trialing, past-due, canceled, and cancellation-at-period-end states from server data.
-5. Confirm capacity gates read server settings/subscriptions, not stale client state.
+2. Deliver the appropriate `customer.subscription.updated` / `deleted` event.
+3. Confirm billing status reports cancellation and current-period state accurately.
+4. Confirm capacity gates read server settings/subscriptions, not stale client state.
+5. Confirm a Live Video add-on cannot remain usefully entitled without an active paid base subscription; add-on cancellation/reconciliation must not strand a customer paying for unusable access.
 
-### 5. Runtime Balance top-up works
+### 6. Runtime Balance top-up works
 
-1. Activate a paid plan, then open `/settings/billing` and choose a Runtime Balance preset.
-2. Confirm `POST /api/conversation-balance/checkout` creates a one-time Stripe Checkout session with `purpose=credit_topup`, `wireline_user_id`, and `credit_usd` metadata on both the Checkout Session and PaymentIntent.
-3. Complete payment.
-4. Deliver `checkout.session.completed`.
-5. Confirm `wireline_credit_ledger` receives one `top_up` row and repeated webhook delivery does not add another.
-6. Confirm `GET /api/conversation-balance` returns the updated balance and recent ledger.
+1. Activate a paid plan, choose a Runtime Balance preset, and create one-time Checkout.
+2. Confirm Checkout/PaymentIntent metadata carries the Wireline user and credit amount.
+3. Complete payment and deliver the webhook.
+4. Confirm exactly one `top_up` ledger row and an updated balance.
+5. Redeliver the event and confirm no duplicate credit.
 
-### 6. Insufficient balance blocks live paid work with a recovery path
+### 7. Insufficient balance blocks new paid work with a recovery path
 
-Before a new paid provider action, verify plan entitlement and funded coverage.
-Paid plans consume included voice minutes first. Once included capacity is
-depleted, insufficient Runtime Balance blocks the next paid action with an
-actionable `402`; an active call is allowed to finish and records any amount due.
+Paid plans consume included voice minutes first. Once included capacity is depleted, insufficient Runtime Balance blocks the next new paid action with actionable `402`; an active call is allowed to finish and any completion debt is recorded. There is no hidden postpaid overage.
 
-### 7. Usage events reconcile against account state
+### 8. Voice usage reconciles against account state
 
 For each completed voice call, `trackVoiceMinutes` must:
 
-1. Round duration up to whole minutes.
-2. Upsert the monthly `voice_minutes_monthly` usage counter.
-3. Resolve the paid plan and extra-agent included-minute capacity.
-4. Consume the included pool first.
-5. Finalize only incremental overflow against Runtime Balance.
-6. If a completed call exceeded funded coverage, record completion grace and
-   block the next paid action until the balance is restored.
-7. Never emit a Stripe meter event or create an automatic overage invoice.
-8. Use the Vapi call id as the stable idempotency key for wallet mutations.
+1. round duration up to whole minutes;
+2. upsert the monthly voice usage counter;
+3. resolve paid-plan + extra-agent included capacity;
+4. consume included capacity first;
+5. finalize only incremental overflow against Runtime Balance;
+6. record bounded completion debt when a completed call exceeds funded coverage;
+7. never emit a Stripe meter event or create an automatic overage invoice; and
+8. use the provider call id as the stable idempotency key.
+
+### 9. Live Video checkout → entitlement → session lifecycle works
+
+Use a dedicated authorized test customer on an active paid base plan.
+
+1. In a business agent, load `/api/video-presenter/avatars` and select a public presenter. Confirm the choice is persisted to that agent.
+2. Start `POST /api/billing/live-video-checkout`; verify Checkout is **$19/month**, carries the Live Video add-on metadata, and uses automatic tax like the rest of the subscription surface.
+3. Complete Checkout and deliver the webhook. Confirm server-owned `liveVideoAddonEnabled` becomes true only from reconciled Stripe state.
+4. Enable Live Video on the selected business agent. Confirm Free Builder / inactive base plans cannot enable or purchase usable Live Video.
+5. Start a presenter session. Before provider token minting, confirm the database atomically reserves **5 minutes** from the **60-minute** UTC-month allowance.
+6. Confirm the provider request uses LITE mode and `maxSessionDurationSeconds = 300`.
+7. Confirm the client receives `maxSessionSeconds`, establishes the stream, and can drive presenter lip-sync from the agent audio path.
+8. Click **End live video** and verify the SDK session is stopped immediately.
+9. Repeat until fewer than five reserved minutes remain; the next session must fail closed with `LIVE_VIDEO_MONTHLY_LIMIT_REACHED`.
+10. Confirm there is **no automatic Stripe overage** and no usage-meter event for Live Video.
+11. Cancel the Live Video subscription and confirm the webhook removes entitlement. Cancel the base plan and confirm Live Video can no longer be used and billing reconciliation does not leave an orphaned unusable add-on.
+12. Set `WIRELINE_LIVE_VIDEO_DISABLED=true` in a non-production verification environment and confirm the provider surface/checkout becomes unavailable without changing stored customer entitlements.
 
 ## Verification commands
 
-Run these after touching billing logic:
+After billing or Live Video changes:
 
 ```bash
-npm run test:run -- src/lib/plan-catalog.test.ts src/lib/conversation-balance.test.ts tests/voice-wallet-guard.test.ts tests/voice-pricing-display.test.ts tests/billing-proof-contract.test.ts
+npm run test:run -- src/lib/plan-catalog.test.ts src/lib/conversation-balance.test.ts src/lib/video-presenter/live-video-policy.test.ts tests/live-video-economics-contract.test.ts tests/video-presenter-contract.test.ts tests/voice-wallet-guard.test.ts tests/voice-pricing-display.test.ts tests/billing-proof-contract.test.ts tests/vendor-readiness-contract.test.ts
 npm run stripe:catalog:check
 npm run lint:eslint
 ```
 
-Run the read-only production truth audit before a billing release:
+Before a billing release:
 
 ```bash
 VERCEL_TOKEN=... npm run stripe:audit-live
 ```
 
-Run full verification before a release candidate:
+Before a release candidate:
 
 ```bash
 npm run verify:full
@@ -154,6 +165,8 @@ npm run verify:full
 
 ## Incident notes
 
-- Stripe Dashboard deletes or test/live mode mismatches make stored customer ids stale. `GET /api/billing/status` reports `customer_state`; `POST /api/billing/portal` returns `STRIPE_CUSTOMER_MISSING` so the user can re-run checkout.
-- Do not manually edit entitlement state unless Stripe is unavailable and the account owner has approved an emergency intervention. Record any manual correction in audit logs and reconcile with Stripe afterward.
-- Refunds and disputes for credit top-ups must deliver `charge.refunded` / `charge.dispute.created` so the wallet ledger receives the reversal.
+- Stripe Dashboard deletes or test/live mismatches can make stored customer ids stale. The billing status/portal surfaces must expose a recoverable customer-missing state rather than pretending the portal exists.
+- Do not manually edit entitlement state unless Stripe is unavailable and the account owner has approved emergency intervention. Record and later reconcile any manual correction.
+- Refunds and disputes for Runtime Balance top-ups must reach the wallet ledger through the handled webhook events.
+- Live Video provider failure after reservation must release that reservation; failure after a provider session has been minted is not assumed free.
+- `WIRELINE_LIVE_VIDEO_DISABLED=true` is the operator emergency kill switch. It is not a substitute for canceling customer billing.

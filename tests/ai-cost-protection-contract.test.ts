@@ -220,10 +220,12 @@ describe("AI cost-protection contract", () => {
     const routeStart = webhook.indexOf('router.post("/api/vapi-webhook"');
     const helper = webhook.slice(helperStart, routeStart);
     expect(helper).toContain("maxDurationSeconds: 300");
-    // Vapi records by default: HIPAA agents must stay unrecorded here too, and
-    // any recorded call must open with the same spoken disclosure.
-    expect(helper).toContain('const recordingEnabled = complianceMode !== "hipaa";');
-    expect(helper).toContain("recordingEnabled,");
+    // The degraded assistant must inherit the same privacy-first artifact
+    // policy as the full tenant assistant: transcript/log evidence without
+    // full-call audio, video, or packet capture.
+    expect(helper).toContain("buildVapiTranscriptOnlyArtifactPlan()");
+    expect(helper).toContain("artifactPlan,");
+    expect(helper).toContain("recordingEnabled: artifactPlan.recordingEnabled");
     expect(helper).toContain("complianceFirstMessagePrefix(");
     expect(helper).toContain("firstMessage: `${disclosurePrefix}");
     expect(helper).toContain('name: "create_followup_task"');

@@ -59,8 +59,8 @@ const SECTIONS = [
     icon: Eye,
     title: "What we do — and don't — store",
     items: [
-      "Call transcripts are stored in the managed database with configurable retention per tenant (default 90 days).",
-      "Audio recordings are stored only when the tenant explicitly opts in. Default OFF.",
+      "Call transcripts are stored in the managed database with configurable retention per tenant (365-day default; supported range 90–365 days).",
+      "Managed full-call provider audio recording is disabled by default. Caller-submitted voicemail or message-recording features may create audio when intentionally used.",
       "Credit card numbers are never stored, logged, or read by Wireline servers. PCI scope is reduced through Stripe Checkout.",
       "Healthcare-sensitive runtime controls can reduce sensitive content in logs and restrict some exports. Do not process PHI unless Wireline confirms a signed BAA and approved configuration in writing.",
     ],
@@ -173,7 +173,7 @@ const TRUST_PACK_SECTIONS = [
     items: [
       "Self-serve account deletion runs a server-owned workflow over user-owned product data.",
       "GDPR/CCPA erasure requests follow the same workflow. Contact security@trywireline.com for current privacy and security documentation.",
-      "Transcript and recording retention honor per-tenant settings; recording defaults to off.",
+      "Transcript retention defaults to 365 days and supports 90–365 days per tenant. Managed full-call provider audio recording defaults off; intentionally used voicemail/message-recording features may still create audio.",
     ],
   },
   {
@@ -227,7 +227,7 @@ export default function Security() {
             </div>
             <p className="mt-4 text-eyebrow !text-[0.625rem]">
               <span className="whitespace-nowrap">
-                Last updated · August 8, 2026
+                Last updated · August 10, 2026
               </span>
             </p>
           </motion.div>

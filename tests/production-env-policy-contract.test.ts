@@ -60,6 +60,23 @@ describe("production environment launch policy", () => {
     expect(prodCheck).toContain("deferred checklist until business registration");
   });
 
+  it("promotes the launch-active Live Video provider key to production readiness", () => {
+    // Live Video can remain fail-closed at request time, but a launch operator
+    // must see a missing runtime key as degraded configuration rather than a
+    // harmless optional integration now that the catalog is publicly active.
+    const recommendedStart = prodCheck.indexOf("const recommended = [");
+    const optionalStart = prodCheck.indexOf("const optional = [");
+    const recommendedBlock = prodCheck.slice(recommendedStart, optionalStart);
+    const optionalBlock = prodCheck.slice(optionalStart);
+
+    expect(recommendedStart).toBeGreaterThanOrEqual(0);
+    expect(optionalStart).toBeGreaterThan(recommendedStart);
+    expect(recommendedBlock).toContain('"LIVEAVATAR_API_KEY"');
+    expect(recommendedBlock).toContain("launch-active HeyGen LiveAvatar product");
+    expect(optionalBlock).not.toContain('"LIVEAVATAR_API_KEY"');
+    expect(optionalBlock).toContain('"LIVEAVATAR_DEFAULT_AVATAR_ID"');
+  });
+
   it("keeps the Twilio Auth Token for webhook validation but prefers a scoped REST key pair", () => {
     expect(prodCheck).toContain("Twilio inbound webhook signature validation");
     expect(prodCheck).toContain('"TWILIO_API_KEY"');

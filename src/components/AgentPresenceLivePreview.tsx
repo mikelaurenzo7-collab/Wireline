@@ -3,7 +3,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { Loader2, Play, Volume2 } from "lucide-react";
+import { Loader2, Play, Square, Volume2 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import {
@@ -65,6 +65,7 @@ export default function AgentPresenceLivePreview({
 }) {
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
+  const [ending, setEnding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [presenterState, setPresenterState] = useState<PresenterPayload | null>(null);
   const [session, setSession] = useState<{
@@ -133,6 +134,20 @@ export default function AgentPresenceLivePreview({
     }
   }, [agentId, presenterState?.platform.configured]);
 
+  const endLiveVideo = useCallback(async () => {
+    if (!session || ending) return;
+    setEnding(true);
+    setError(null);
+    try {
+      await livePresenterRef.current?.stop();
+    } finally {
+      setSession(null);
+      setStreamReady(false);
+      setVideoSpeaking(false);
+      setEnding(false);
+    }
+  }, [ending, session]);
+
   const playVoiceSample = useCallback(async () => {
     if (!session) return;
     setSampleLoading(true);
@@ -184,7 +199,7 @@ export default function AgentPresenceLivePreview({
           payload?.message ||
           payload?.error ||
           (response.status === 402
-            ? "Upgrade to Starter Plus or higher to add live video."
+            ? "Activate a paid Wireline plan and subscribe to Live Video first."
             : "Live video could not be enabled.");
         throw new Error(message);
       }
@@ -303,6 +318,11 @@ export default function AgentPresenceLivePreview({
             <span className="wl-presence__chip">
               {session.live.sandbox ? "Sandbox" : "Live video"}
             </span>
+            {session.live.maxSessionSeconds ? (
+              <span className="wl-presence__chip">
+                {Math.max(1, Math.floor(session.live.maxSessionSeconds / 60))} min max
+              </span>
+            ) : null}
             <span className="wl-presence__chip">{showSpeaking ? "Speaking" : "Idle"}</span>
             <span className="wl-presence__chip">Fallback ready</span>
           </div>
@@ -358,8 +378,8 @@ export default function AgentPresenceLivePreview({
           <p className="mt-2 text-sm font-medium text-foreground">Live video presence</p>
           <p className="mt-1 max-w-[52ch] text-xs leading-relaxed text-muted-foreground">
             {catalogReadyForLiveVideo
-              ? `${liveVideoAddonPitch()} Your catalog face is saved — enable this to stream it on your site and in preview.`
-              : "Live video stays off while the Presence Catalog is paused. Keep using Wireline faces in Studio; checkout unlocks once a curated catalog face is available for your workspace."}
+              ? `${liveVideoAddonPitch()} Your presenter is saved — subscribe, enable it, and preview the live stream here.`
+              : "Choose a presenter face above to unlock Live Video checkout for this agent."}
           </p>
           {catalogReadyForLiveVideo ? (
             <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground/90">
@@ -374,7 +394,7 @@ export default function AgentPresenceLivePreview({
               className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-action-primary-default)] px-3 text-xs font-semibold text-[var(--wireline-color-text-onAction)] transition-colors hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {enabling ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : null}
-              Add live video
+              Enable live video
             </button>
           ) : canCheckoutAddon ? (
             <button
@@ -393,15 +413,15 @@ export default function AgentPresenceLivePreview({
               to="/settings/billing"
               className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 text-xs font-semibold text-foreground transition-colors hover:border-[var(--wireline-color-action-primary-default)]"
             >
-              Upgrade to unlock live video
+              Activate a paid plan
             </Link>
           ) : catalogReadyForLiveVideo ? (
             <p className="mt-3 text-xs text-muted-foreground">
-              Contact Wireline to enable this add-on on your workspace.
+              Live Video is unavailable on this workspace right now.
             </p>
           ) : (
             <p className="mt-3 text-xs text-muted-foreground">
-              Checkout stays hidden until Presence Catalog selection returns.
+              Choose a presenter face above before subscribing to Live Video.
             </p>
           )}
         </div>
@@ -423,26 +443,41 @@ export default function AgentPresenceLivePreview({
             Preview live presenter
           </button>
         ) : liveVideoEnabled && session ? (
-          <button
-            type="button"
-            onClick={() => void playVoiceSample()}
-            disabled={sampleLoading || !hasVoice || !streamReady}
-            title={
-              !hasVoice
-                ? "Pick a voice for this agent in Setup first."
-                : !streamReady
-                  ? "Wait for the live presenter stream to connect."
-                  : undefined
-            }
-            className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 text-xs font-semibold text-foreground transition-colors hover:border-[var(--wireline-color-action-primary-default)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {sampleLoading ? (
-              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-            ) : (
-              <Volume2 className="size-3.5" aria-hidden="true" />
-            )}
-            Hear agent voice on video
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => void playVoiceSample()}
+              disabled={sampleLoading || ending || !hasVoice || !streamReady}
+              title={
+                !hasVoice
+                  ? "Pick a voice for this agent in Setup first."
+                  : !streamReady
+                    ? "Wait for the live presenter stream to connect."
+                    : undefined
+              }
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 text-xs font-semibold text-foreground transition-colors hover:border-[var(--wireline-color-action-primary-default)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {sampleLoading ? (
+                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <Volume2 className="size-3.5" aria-hidden="true" />
+              )}
+              Hear agent voice on video
+            </button>
+            <button
+              type="button"
+              onClick={() => void endLiveVideo()}
+              disabled={ending}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 text-xs font-semibold text-muted-foreground transition-colors hover:border-[var(--wireline-color-status-warning)] hover:text-foreground disabled:cursor-wait disabled:opacity-60"
+            >
+              {ending ? (
+                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <Square className="size-3.5" aria-hidden="true" />
+              )}
+              End live video
+            </button>
+          </>
         ) : null}
         {error ? (
           <p className="text-xs text-[var(--wireline-color-status-warning)]" role="alert">

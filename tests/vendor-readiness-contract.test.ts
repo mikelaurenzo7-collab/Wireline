@@ -47,7 +47,11 @@ describe("vendor readiness contract", () => {
     expect(probe).toContain("voiceCapableNumbers.length > 0");
     expect(probe).toContain("No ONLINE Twilio WhatsApp sender found");
     expect(probe).toContain("included_minutes_monthly: 60");
+    expect(probe).toContain("session_reservation_minutes: 5");
     expect(probe).toContain('overage_policy: "none_pause_at_limit"');
+    expect(probe).toContain('WIRELINE_LIVE_VIDEO_DISABLED === "true"');
+    expect(probe).not.toContain("WIRELINE_LIVE_VIDEO_CATALOG_READY");
+    expect(probe).toContain("Live Video is launch-active in code");
     const liveVideoRecordIdx = probe.indexOf('"live_video"');
     expect(liveVideoRecordIdx).toBeGreaterThanOrEqual(0);
     expect(probe.slice(liveVideoRecordIdx - 15, liveVideoRecordIdx + 280)).toContain("false");

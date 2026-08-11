@@ -1,8 +1,8 @@
 /**
- * Workspace entitlement for the photoreal live video add-on.
+ * Workspace entitlement for the photoreal Live Video add-on.
  *
- * The paid streaming add-on is offered only after ops explicitly marks the
- * curated Presence Catalog launch-ready.
+ * Live Video is a launch-active paid add-on when the provider is configured.
+ * WIRELINE_LIVE_VIDEO_DISABLED=true is the emergency operator kill switch.
  */
 import { eq } from "drizzle-orm";
 
@@ -22,8 +22,9 @@ const PAID_LIVE_VIDEO_PLANS = new Set<StripePlanId>([
   "enterprise",
 ]);
 
+/** Legacy name retained at call sites; semantics are now launch-active unless explicitly killed. */
 export function isLiveVideoCatalogReady(): boolean {
-  return process.env.WIRELINE_LIVE_VIDEO_CATALOG_READY === "true";
+  return process.env.WIRELINE_LIVE_VIDEO_DISABLED !== "true";
 }
 
 export type LiveVideoEntitlement = {
@@ -51,7 +52,7 @@ export async function resolveLiveVideoEntitlement(
 ): Promise<LiveVideoEntitlement> {
   const platform = getLiveAvatarStatus();
   const platformConfigured = platform.configured;
-  const catalogReady = isLiveVideoCatalogReady();
+  const launchEnabled = isLiveVideoCatalogReady();
   const liveVideoAllowance = {
     liveVideoMinutesIncluded: LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY,
     liveVideoSessionMinutes: LIVE_VIDEO_SESSION_RESERVATION_MINUTES,
@@ -60,17 +61,24 @@ export async function resolveLiveVideoEntitlement(
   if (options?.isOwner || billingBypassEnabled()) {
     return {
       platformConfigured,
-      addonOffered: platformConfigured,
-      billingEntitled: true,
+      addonOffered: platformConfigured && launchEnabled,
+      billingEntitled: platformConfigured && launchEnabled,
       liveVideoAddonEnabled: true,
       liveVideoCheckoutAvailable: Boolean(
-        process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID ||
-        process.env.STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID,
+        platformConfigured &&
+          launchEnabled &&
+          (process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID ||
+            process.env.STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID),
       ),
       ...liveVideoAllowance,
       planId: "enterprise",
       upgradeRequired: false,
-      reason: null,
+      reason:
+        !platformConfigured
+          ? "Live video provider is not configured on this workspace."
+          : !launchEnabled
+            ? "Live video is temporarily disabled by the platform operator."
+            : null,
     };
   }
 
@@ -92,30 +100,28 @@ export async function resolveLiveVideoEntitlement(
   const settingsActive =
     row?.subscriptionStatus === "active" || row?.subscriptionStatus === "trialing";
   const onPaidPlan = planId ? PAID_LIVE_VIDEO_PLANS.has(planId) : false;
+  const baseSubscriptionActive = stripeActive && settingsActive && onPaidPlan;
 
-  const addonOffered = platformConfigured && catalogReady;
-  const billingEntitled =
-    addonOffered && workspaceFlag && stripeActive && settingsActive && onPaidPlan;
+  const addonOffered = platformConfigured && launchEnabled;
+  const billingEntitled = addonOffered && workspaceFlag && baseSubscriptionActive;
+  const priceConfigured = Boolean(
+    process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID ||
+      process.env.STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID,
+  );
+  const checkoutAvailable = addonOffered && baseSubscriptionActive && priceConfigured;
 
   let reason: string | null = null;
   if (!platformConfigured) {
     reason = "Live video is not available on this workspace yet.";
-  } else if (!catalogReady) {
-    reason = "Live video is paused while the curated Presence Catalog is prepared.";
+  } else if (!launchEnabled) {
+    reason = "Live video is temporarily disabled by the platform operator.";
   } else if (!onPaidPlan) {
     reason = "Activate a paid plan before adding live video.";
   } else if (!stripeActive || !settingsActive) {
     reason = "Activate your subscription before adding live video.";
   } else if (!workspaceFlag) {
-    reason = `Subscribe to Live Video ($19/mo, ${LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY} reserved session minutes) to stream a presenter.`;
+    reason = `Subscribe to Live Video ($19/mo, ${LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY} reserved minutes, up to ${LIVE_VIDEO_SESSION_RESERVATION_MINUTES} minutes per session) to stream a presenter.`;
   }
-
-  const checkoutAvailable =
-    addonOffered &&
-    Boolean(
-      process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID ||
-        process.env.STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID,
-    );
 
   return {
     platformConfigured,
@@ -125,7 +131,7 @@ export async function resolveLiveVideoEntitlement(
     liveVideoCheckoutAvailable: checkoutAvailable,
     ...liveVideoAllowance,
     planId,
-    upgradeRequired: addonOffered && !billingEntitled && !checkoutAvailable,
+    upgradeRequired: addonOffered && !baseSubscriptionActive,
     reason,
   };
 }

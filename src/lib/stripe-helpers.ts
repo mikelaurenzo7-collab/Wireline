@@ -313,6 +313,67 @@ async function currentPlanSubscriptionForCustomer(
 }
 
 /**
+ * A Live Video subscription is economically dependent on the base Wireline
+ * plan. When the base plan is scheduled to end, schedule any active standalone
+ * Live Video add-on to end too so a customer cannot become blocked in-product
+ * while continuing to receive future $19 renewals. A cascade marker lets us
+ * safely undo only Wireline-triggered add-on cancellations if the base-plan
+ * cancellation is reversed before either subscription ends.
+ */
+async function reconcileLiveVideoAddonWithBasePlan(opts: {
+  customerId: string;
+  baseCancelAtPeriodEnd: boolean;
+  baseTerminal: boolean;
+  restoreCascade: boolean;
+}): Promise<void> {
+  const { customerId, baseCancelAtPeriodEnd, baseTerminal, restoreCascade } = opts;
+  if (!stripeAvailable()) return;
+  if (!baseCancelAtPeriodEnd && !baseTerminal && !restoreCascade) return;
+
+  const listed = await stripe.subscriptions.list({
+    customer: customerId,
+    status: "all",
+    limit: 100,
+  });
+  const liveVideoAddons = listed.data.filter(
+    (candidate) =>
+      candidate.metadata?.purpose === "live_video_addon" &&
+      !TERMINAL_SUBSCRIPTION_STATUSES.has(candidate.status),
+  );
+
+  for (const addon of liveVideoAddons) {
+    if (restoreCascade) {
+      if (
+        addon.cancel_at_period_end &&
+        addon.metadata?.wireline_base_plan_cascade === "true"
+      ) {
+        await stripe.subscriptions.update(addon.id, {
+          cancel_at_period_end: false,
+          metadata: { wireline_base_plan_cascade: "" },
+        });
+        log.info("Restored Live Video renewal after base-plan cancellation reversal", {
+          customerId,
+          liveVideoSubscriptionId: addon.id,
+        });
+      }
+      continue;
+    }
+
+    if (!addon.cancel_at_period_end) {
+      await stripe.subscriptions.update(addon.id, {
+        cancel_at_period_end: true,
+        metadata: { wireline_base_plan_cascade: "true" },
+      });
+      log.info("Scheduled Live Video add-on cancellation with base plan", {
+        customerId,
+        liveVideoSubscriptionId: addon.id,
+        baseTerminal,
+      });
+    }
+  }
+}
+
+/**
  * Legacy ordering fallback retained only for environments without Stripe
  * credentials (unit tests/local import smoke). Production never depends on the
  * timestamp comparison: configured syncs reconcile against the current customer
@@ -353,6 +414,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
       userId: schema.subscriptions.userId,
       status: schema.subscriptions.status,
       stripeSubscriptionId: schema.subscriptions.stripeSubscriptionId,
+      cancelAtPeriodEnd: schema.subscriptions.cancelAtPeriodEnd,
     })
     .from(schema.subscriptions)
     .where(eq(schema.subscriptions.stripeCustomerId, customerId))
@@ -389,7 +451,12 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
         target: schema.subscriptions.userId,
         set: { stripeCustomerId: customerId, updatedAt: new Date() },
       });
-    existing = { userId: metadataUserId, status: null, stripeSubscriptionId: null };
+    existing = {
+      userId: metadataUserId,
+      status: null,
+      stripeSubscriptionId: null,
+      cancelAtPeriodEnd: false,
+    };
   }
 
   let sub = incomingSub;
@@ -479,6 +546,16 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
   const currentPeriodEndIso = currentPeriodEndUnix
     ? new Date(currentPeriodEndUnix * 1000).toISOString()
     : null;
+
+  const baseTerminal = TERMINAL_SUBSCRIPTION_STATUSES.has(stripeStatus);
+  const restoreCascade =
+    existing.cancelAtPeriodEnd === true && !sub.cancel_at_period_end && !baseTerminal;
+  await reconcileLiveVideoAddonWithBasePlan({
+    customerId,
+    baseCancelAtPeriodEnd: !!sub.cancel_at_period_end,
+    baseTerminal,
+    restoreCascade,
+  });
 
   await drizzle
     .insert(schema.subscriptions)

@@ -28,6 +28,7 @@ export type LiveVideoPresenterHandle = {
   streamSampleBinary: (pcmBinary: string, eventId: string) => Promise<void>;
   feedPcmDelta: (base64Pcm: string) => void;
   flushPcm: () => void;
+  stop: () => Promise<void>;
   isControlConnected: () => boolean;
   isStreamReady: () => boolean;
 };
@@ -163,6 +164,16 @@ const LiveVideoPresenter = forwardRef<
     },
     flushPcm() {
       flushAccumulatedPcm(true);
+    },
+    async stop() {
+      const session = sessionRef.current;
+      pcmAccumRef.current = "";
+      if (!session) return;
+      sessionRef.current = null;
+      setStreamReady(false);
+      setLipSyncActive(false);
+      onSpeakingChange?.(false);
+      await session.stop().catch(() => undefined);
     },
     isControlConnected: () => sessionRef.current?.state === SessionState.CONNECTED,
     isStreamReady: () => streamReady,

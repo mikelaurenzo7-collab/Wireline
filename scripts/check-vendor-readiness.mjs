@@ -649,28 +649,32 @@ record(
     : "Provide the operator's valid current postal address before enabling lifecycle or marketing email.",
 );
 
-const liveVideoCatalogGate = process.env.WIRELINE_LIVE_VIDEO_CATALOG_READY === "true";
+const liveVideoEmergencyDisabled = process.env.WIRELINE_LIVE_VIDEO_DISABLED === "true";
 const liveVideoProviderConfigured = present("LIVEAVATAR_API_KEY");
 const liveVideoPriceConfigured =
   present("STRIPE_LIVE_VIDEO_ADDON_PRICE_ID") || present("STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID");
 const liveVideoReady =
-  liveVideoCatalogGate && liveVideoProviderConfigured && liveVideoPriceConfigured;
+  !liveVideoEmergencyDisabled && liveVideoProviderConfigured && liveVideoPriceConfigured;
 record(
   "live_video",
   false,
   liveVideoReady ? "ready" : "degraded",
   liveVideoReady
-    ? "Live Video provider, $19 add-on price, and explicit catalog gate are configured; runtime reserves 10 minutes per session against a 60-minute monthly cap."
-    : "Live Video remains launch-paused; the optional provider, price, or explicit catalog gate is not fully enabled.",
+    ? "Live Video provider and $19 add-on price are configured; runtime reserves up to 5 minutes per session against a 60-minute monthly cap."
+    : liveVideoEmergencyDisabled
+      ? "Live Video is intentionally disabled by the operator kill switch."
+      : "Live Video is launch-active in code, but the optional provider or add-on price is not fully configured.",
   liveVideoReady
     ? "Maintain provider credits and alerts; no automatic overage is allowed."
-    : "Keep the catalog gate false until the curated presenter set and controlled paid lifecycle are verified.",
+    : liveVideoEmergencyDisabled
+      ? "Remove WIRELINE_LIVE_VIDEO_DISABLED only after the incident or operator hold is cleared."
+      : "Configure LIVEAVATAR_API_KEY and the canonical Live Video price before offering sessions.",
   {
-    catalog_gate: liveVideoCatalogGate,
+    operator_disabled: liveVideoEmergencyDisabled,
     provider_configured: liveVideoProviderConfigured,
     addon_price_configured: liveVideoPriceConfigured,
     included_minutes_monthly: 60,
-    session_reservation_minutes: 10,
+    session_reservation_minutes: 5,
     overage_policy: "none_pause_at_limit",
   },
 );

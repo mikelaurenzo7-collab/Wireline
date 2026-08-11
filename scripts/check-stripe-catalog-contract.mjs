@@ -143,8 +143,9 @@ for (const [label, metadata] of [
   ["price", liveVideoPrice?.metadata],
 ]) {
   const expectedMetadata = {
+    wireline_catalog_state: "launch_active",
     included_live_video_minutes: "60",
-    session_reservation_minutes: "10",
+    session_reservation_minutes: "5",
     overage_policy: "none_pause_at_limit",
   };
   for (const [key, value] of Object.entries(expectedMetadata)) {
@@ -153,8 +154,11 @@ for (const [label, metadata] of [
     }
   }
 }
-if (liveVideoProduct?.metadata?.wireline_catalog_state !== "launch_paused") {
-  errors.push("Live Video must remain launch_paused until catalog and paid lifecycle proof pass.");
+if (!liveVideoProduct?.description?.includes("up-to-5-minute sessions")) {
+  errors.push("Live Video product description must publish the five-minute session ceiling.");
+}
+if (liveVideoPrice?.unitAmount !== 1900 || liveVideoPrice?.recurring?.interval !== "month") {
+  errors.push("Live Video must remain a $19 monthly licensed add-on.");
 }
 
 if (FOUNDER_PRODUCTS.length !== 8) {

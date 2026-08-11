@@ -11,6 +11,7 @@ import {
 } from "./vapi-helpers";
 import { toVapiFunctionTools } from "./vapi-tool-format";
 import { buildVapiServerConfig } from "./vapi-server-config";
+import { buildVapiTranscriptOnlyArtifactPlan } from "./vapi-artifact-plan";
 import {
   getVoiceLatencyProfile,
   resolveOutboundStartSpeakingPlan,
@@ -281,14 +282,14 @@ export async function buildVapiAssistant({
       )
     : undefined;
 
-  // Spoken disclosure is part of the actual first message, not only a prompt
-  // instruction: every outbound AI call identifies the automation and responsible
-  // business, and every recorded call receives a recording notice.
-  const recordingEnabled = configured.complianceMode !== "hipaa";
+  // Wireline retains transcript-driven product value without full-call provider
+  // audio by default. Vapi artifact defaults are permissive, so send the
+  // privacy posture explicitly on every managed assistant payload.
+  const artifactPlan = buildVapiTranscriptOnlyArtifactPlan();
   const disclosurePrefix = complianceFirstMessagePrefix(
     configured.complianceMode,
     userSettings?.businessName || configured.name,
-    { outboundAiCall: isOutbound, recordingEnabled },
+    { outboundAiCall: isOutbound, recordingEnabled: artifactPlan.recordingEnabled },
   );
   return {
     name: configured.name,
@@ -315,6 +316,7 @@ export async function buildVapiAssistant({
     },
     voice: voiceRuntime,
     transcriber: speech.transcriber,
+    artifactPlan,
     ...(webhookServer ? { server: webhookServer } : {}),
     startSpeakingPlan: isOutbound
       ? resolveOutboundStartSpeakingPlan(speech)
@@ -332,7 +334,6 @@ export async function buildVapiAssistant({
     numWordsToInterruptAssistant: latency.numWordsToInterruptAssistant,
     backgroundDenoisingEnabled: false,
     backchannelingEnabled: true,
-    recordingEnabled,
     serverMessages: [
       "end-of-call-report",
       "status-update",

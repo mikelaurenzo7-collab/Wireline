@@ -18,6 +18,7 @@ import {
   findShowcaseAgentByPayload,
 } from "../lib/showcase-assistant";
 import { buildVapiAssistant } from "../lib/vapi-assistant-factory-v2";
+import { buildVapiTranscriptOnlyArtifactPlan } from "../lib/vapi-artifact-plan";
 import { normalizeVapiToolCalls } from "../lib/vapi-tool-call-utils";
 import { SENTIMENT_ANGRY_SIGNALS, SENTIMENT_POSITIVE_SIGNALS } from "../lib/vapi-helpers";
 import { buildVapiServerConfig } from "../lib/vapi-server-config";
@@ -103,25 +104,16 @@ function buildDurableTakeMessageAssistant(
       ])
     : [];
 
-  const recordingEnabled = complianceMode !== "hipaa";
-  // Same spoken opening disclosure the full inbound assistant emits. Without
-  // it this fallback records a two-party-state caller with nothing in the
-  // transcript to evidence the notice, which is both a real TCPA exposure and
-  // a guaranteed `disclosure_not_detected` compliance alert.
+  const artifactPlan = buildVapiTranscriptOnlyArtifactPlan();
   const disclosurePrefix = complianceFirstMessagePrefix(complianceMode, businessName || agentName, {
     outboundAiCall: false,
-    recordingEnabled,
+    recordingEnabled: artifactPlan.recordingEnabled,
   });
 
   return {
     firstMessage: `${disclosurePrefix}Hi, you've reached ${agentName || "our office"}. I can take a message for the team.`,
     maxDurationSeconds: 300,
-    // Vapi records by default. The full inbound and outbound assistants both
-    // disable recording for HIPAA-mode agents; this insolvency fallback answers
-    // the same tenant's line and must honor the same posture, or a HIPAA tenant
-    // would get a provider recording (and a persisted recording URL) purely
-    // because their balance ran low.
-    recordingEnabled,
+    artifactPlan,
     model: {
       provider: "openai" as const,
       model: VAPI_OPENAI_FALLBACK_MODEL,
@@ -160,10 +152,14 @@ router.post("/api/vapi-webhook", async (req, res) => {
   const showcaseRoute = findShowcaseAgentByPayload(payload);
 
   if (showcaseRoute && message?.type === "assistant-request") {
+    const assistant = buildShowcaseAssistantPayload(showcaseRoute.agent, showcaseRoute.kind, {
+      webhookSecret: process.env.VAPI_WEBHOOK_SECRET,
+    });
     return res.json({
-      assistant: buildShowcaseAssistantPayload(showcaseRoute.agent, showcaseRoute.kind, {
-        webhookSecret: process.env.VAPI_WEBHOOK_SECRET,
-      }),
+      assistant: {
+        ...assistant,
+        artifactPlan: buildVapiTranscriptOnlyArtifactPlan(),
+      },
     });
   }
 
@@ -260,10 +256,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
         return res.json({
           assistant: {
             firstMessage: "The automated service for this line is suspended.",
-            // Vapi records by default. This one-line notice carries no
-            // conversation worth keeping, and recording it would put a HIPAA
-            // agent's caller on a provider recording with no disclosure spoken.
-            recordingEnabled: false,
+            artifactPlan: buildVapiTranscriptOnlyArtifactPlan(),
             model: {
               provider: "openai",
               model: VAPI_OPENAI_FALLBACK_MODEL,
@@ -317,9 +310,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
         return res.json({
           assistant: {
             firstMessage: "I am having trouble connecting. Please try again.",
-            // Same reason as the suspended-line notice above: nothing to record,
-            // and no disclosure is spoken on this path.
-            recordingEnabled: false,
+            artifactPlan: buildVapiTranscriptOnlyArtifactPlan(),
             model: {
               provider: "openai",
               model: VAPI_OPENAI_FALLBACK_MODEL,

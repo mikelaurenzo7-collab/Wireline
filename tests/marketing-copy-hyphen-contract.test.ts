@@ -17,6 +17,10 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
  * and code identifiers keep theirs — the ban is on customer-facing prose.
  * SERP-visible meta fields (titles/descriptions) additionally carry no en/em
  * dashes; the "|" separator is the house convention there.
+ *
+ * "add-on" is intentionally not part of the retired-phrase list: Live Video is
+ * a distinct optional recurring product, and the precise billing noun is less
+ * ambiguous than forcing a house-style rewrite of that commercial term.
  */
 const HYPHEN = /[-‐‑]/;
 const ANY_DASH = /[-‐‑–—]/;
@@ -112,7 +116,6 @@ describe("marketing copy hyphen ban", () => {
       "lowest-risk",
       "phone-number cost",
       "Pay-as-you-go",
-      "add-on",
       "feature-for-feature",
       "live-voice",
       "double-booking",

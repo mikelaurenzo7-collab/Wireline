@@ -1,180 +1,139 @@
 # Wireline Incident Response Runbook
 
-**Owner:** Mike Laurenzo (founder)
-**Last reviewed:** July 2026
+**Owner:** Wireline platform owner  
+**Last reviewed:** August 10, 2026
 
----
+This is an operator runbook. Response-time language below is prioritization guidance, not a customer SLA unless a signed customer agreement explicitly incorporates it.
 
-## 1. Severity Classification
+## 1. Severity
 
-| Level  | Criteria                                              | Examples                                                                   |
-| ------ | ----------------------------------------------------- | -------------------------------------------------------------------------- |
-| **P0** | All live calls or the core platform down              | Vapi/OpenAI/Twilio call-chain or OpenAI structured-runtime outage, DB unreachable, DNS failure |
-| **P1** | Voice agents degraded or subset of customers affected | Latency >2s, one provider down (fallback active), webhook delivery stalled |
-| **P2** | Non-critical features broken                          | Dashboard slow, billing portal error, email delivery delayed               |
-| **P3** | Minor issues                                          | UI cosmetic bug, documentation error, single-user edge case                |
+| Level | Criteria | Examples |
+| --- | --- | --- |
+| **P0** | Core live-call platform broadly unavailable, active data-integrity risk, or critical security incident | Voice call chain unavailable across tenants, database unavailable, payment/webhook corruption, confirmed cross-tenant exposure |
+| **P1** | Material degradation or meaningful subset of customers affected | One provider degraded with fallback active, sustained webhook/job failures, severe latency, provisioning outage |
+| **P2** | Important but bounded feature failure | Dashboard workflow broken, email delay, billing-portal problem, one integration unavailable |
+| **P3** | Low-impact defect | Cosmetic issue, documentation error, isolated edge case |
 
-## 2. Detection
+## 2. Detection surfaces that actually exist
 
-### Automated Monitoring
+### Scheduled production work
 
-| Check                            | Frequency | Alert Channel                  |
-| -------------------------------- | --------- | ------------------------------ |
-| `GET /api/health`                | 1 min     | Uptime monitor → SMS + email   |
-| `GET /api/health/models`         | 5 min     | Vercel cron → Slack            |
-| Synthetic call to showcase lines | 15 min    | Scheduled job → SMS on failure |
-| Stripe webhook delivery lag      | 5 min     | Job queue sweep → log alert    |
-| Error rate spike (Sentry)        | Real-time | Sentry → email + Slack         |
+The deployed Vercel schedule currently runs:
 
-### Manual Indicators
+- `/api/jobs/sweep` every **5 minutes** for durable background work.
+- `/api/daily-brief/schedule` every **15 minutes** for due daily-brief dispatch.
+- The demo-line canary is queued separately on its **nightly** schedule. It validates the public-line control-plane/assignment posture and recent reliability evidence; it is **not** a paid synthetic call every 15 minutes.
 
-- Customer reports via support channel
-- Sudden drop in call volume (dashboard or daily brief anomaly)
-- Vapi, Twilio, xAI, OpenAI, Gemini, Supabase, or Vercel reports degradation
+Do not describe a monitoring cadence as live until it is present in production configuration and verified.
 
-## 3. Response Procedure
+### Request-driven / operator health
 
-### P0 — Critical (all voice agents down)
+- `GET /api/health` — application/database health.
+- `GET /api/health/public` — cached, distributed public provider posture used by `/status`.
+- `GET /api/voice/status` — recent voice reliability surface.
+- Authenticated/operator health routes expose deeper provider, SLO, queue, and integration diagnostics.
+- Vercel runtime logs and grouped runtime errors are deployment evidence.
+- Structured error reporting is forwarded to Sentry **only when the production Sentry DSN is configured**; do not assume an email/Slack routing rule exists without verifying that rule in the active Sentry account.
 
-```
-1. ACKNOWLEDGE (within 5 min)
-   □ Update status page: "Investigating voice service disruption"
-   □ Start incident timer
+### Human / external signals
 
-2. DIAGNOSE (within 15 min)
-   □ Check /api/health/models — which provider is down?
-   □ Check Vapi status: https://status.vapi.ai
-   □ Check Twilio status: https://status.twilio.com
-   □ Check OpenAI status: https://status.openai.com
-   □ Check Google Cloud status: https://status.cloud.google.com
-   □ Check xAI status only if opt-in structured fallback is enabled: https://status.x.ai
-   □ Check Supabase status: https://status.supabase.com
-   □ Check Vercel status: https://www.vercel-status.com
-   □ Check Sentry for error spike patterns
+- Customer reports through product/support channels.
+- Material changes in call volume, queue health, delivery failures, or spend/economics alerts.
+- Official provider status pages and support consoles.
 
-3. MITIGATE
-   □ If the OpenAI structured runtime is down → verify Gemini/Gateway fallback
-   □ If OpenAI Realtime demos are down → pause Studio/ChatGPT live tests; PSTN stays on Vapi
-   □ If OpenAI PSTN model is down → verify Vapi moved calls to Gemini
-   □ If Vapi is down → pause new calls and verify limited Twilio fallback behavior
-   □ If Twilio is down → pause number/SMS provisioning; assess Vapi-owned inventory
-   □ If DB down → Supabase incident, wait for recovery
-   □ If our code → identify commit, revert if clear cause
+## 3. Response procedure
 
-4. COMMUNICATE
-   □ Status page update every 15 min during active incident
-   □ Email affected customers if duration > 30 min
+### P0 — critical
 
-5. RESOLVE
-   □ Confirm voice agents processing calls normally
-   □ Update status page: "Resolved"
-   □ Begin post-incident review
-```
+1. **Confirm the blast radius.** Check public health, voice status, deployment state, runtime errors/logs, database health, and provider status.
+2. **Protect integrity before availability.** If billing, tenant isolation, webhook authenticity, or data correctness is uncertain, fail closed on the risky mutation path.
+3. **Identify the failing layer.** Separate Wireline deployment/configuration from database, Vapi/telephony, model provider, email, payments, and rate-limit/cache dependencies.
+4. **Mitigate using an already-tested path.** Prefer provider fallback, bounded degraded mode, feature pause, or rollback over an improvised production change.
+5. **Verify recovery.** Re-run the exact health surface that detected the issue and verify representative end-to-end behavior before declaring resolution.
+6. **Communicate material customer impact.** Use the public status/support channel appropriate to the incident; do not publish an unverified root cause.
 
-### P1 — Major (degraded service)
+### P1 — major degradation
 
-```
-1. ACKNOWLEDGE (within 15 min)
-   □ Update status page: "Degraded performance"
+1. Confirm affected tenants/features and whether a fallback is active.
+2. Review provider diagnostics, queue/webhook health, database/runtime errors, and recent deployment changes.
+3. Bound impact: pause the failing optional path, reduce concurrency, or use the tested fallback when appropriate.
+4. Verify normal operation with both telemetry and a representative user flow.
 
-2. DIAGNOSE (within 30 min)
-   □ Check /api/health/internal for tiering status
-   □ Review Sentry errors for patterns
-   □ Check rate-limit counters for unusual spikes
-   □ Review job queue for stuck jobs (/api/jobs/sweep)
+### P2/P3
 
-3. MITIGATE
-   □ Scale if load-related (Vercel auto-scales, but check)
-   □ Clear stuck jobs if queue is backed up
-   □ Disable non-critical features if they're causing load
+1. Capture the defect with reproducible evidence.
+2. Fix in the normal reviewed deployment path.
+3. Escalate severity if customer impact, security, billing, or data-integrity evidence expands.
 
-4. RESOLVE (within 4 hours)
-   □ Confirm metrics back to normal
-   □ Update status page
-```
+## 4. Provider triage
 
-### P2/P3 — Minor
+Use the relevant official provider status/support surface for the component actually in the call or transaction path. Current production dependencies include managed hosting, Postgres, Vapi/telephony, OpenAI, configured model fallbacks, Stripe, email delivery, and Upstash Redis. Optional/experimental providers should not be treated as launch dependencies unless the active runtime configuration uses them.
 
-```
-1. Log issue in project tracker
-2. Prioritize in next work session
-3. No status page update unless customer-facing
-```
+Never infer an upstream outage solely from one failed health request. Re-probe after the public-health cache TTL and compare against provider status plus Wireline runtime logs.
 
-## 4. Post-Incident Review
+## 5. Rollback standard
 
-Required for all P0 and P1 incidents within 72 hours:
+Rollback is appropriate when all of the following are true:
 
-### Template
+- a recent Wireline deployment is strongly correlated with the incident;
+- the prior production deployment is known good and schema-compatible;
+- rolling back will not reverse a required data migration or recreate a known security/billing defect; and
+- provider-side degradation is not the actual root cause.
+
+After rollback, verify application health, voice status, critical authenticated reads, billing/webhook processing, and the affected user flow.
+
+## 6. Post-incident review
+
+Run a written review for P0 and material P1 incidents. Complete it after facts are stable; do not trade accuracy for an arbitrary publication deadline.
 
 ```markdown
-## Incident Report: [Title]
+## Incident: [title]
 
-**Date:** YYYY-MM-DD
-**Duration:** X hours Y minutes
-**Severity:** P0/P1
-**Impact:** [number of customers affected, calls dropped]
+Date:
+Severity:
+Customer impact:
+Detection signal:
 
 ### Timeline
+- HH:MM — first verified signal
+- HH:MM — investigation started
+- HH:MM — cause isolated
+- HH:MM — mitigation applied
+- HH:MM — recovery verified
 
-- HH:MM — First detection signal
-- HH:MM — Investigation started
-- HH:MM — Root cause identified
-- HH:MM — Mitigation applied
-- HH:MM — Service restored
+### Root cause
+[Evidence-backed cause]
 
-### Root Cause
+### What limited impact
+- [fallback / guard / fast detection]
 
-[What actually broke and why]
+### What failed or was missing
+- [technical / process / monitoring gap]
 
-### What Went Well
-
-- [Detection was fast because...]
-- [Fallback worked because...]
-
-### What Went Poorly
-
-- [Detection was slow because...]
-- [Took too long to identify because...]
-
-### Action Items
-
-- [ ] [Preventive measure 1] — owner, due date
-- [ ] [Preventive measure 2] — owner, due date
-- [ ] [Monitoring improvement] — owner, due date
+### Corrective actions
+- [ ] [action] — owner / priority
+- [ ] [regression test or monitor]
+- [ ] [runbook/documentation change]
 ```
 
-## 5. Escalation Path
+## 7. Security or data-integrity incident
 
-```
-Level 1: Automated monitors detect → alert fires
-Level 2: Mike Laurenzo (founder) — all hours for P0/P1
-Level 3: Upstream provider support (Vapi, Twilio, xAI/OpenAI/Google, Supabase)
-```
+If cross-tenant access, credential exposure, webhook forgery, payment corruption, or unauthorized data disclosure is suspected:
 
-## 6. Key Contacts
+- preserve relevant logs and identifiers;
+- stop the unsafe mutation or data path before restoring convenience;
+- rotate affected credentials when exposure is credible;
+- do not include secrets or unnecessary personal data in incident chat/tickets;
+- assess notification obligations with qualified counsel based on the actual facts and jurisdictions; and
+- restore service only after the boundary is demonstrably closed.
 
-| Service    | Support Channel     | Account            |
-| ---------- | ------------------- | ------------------ |
-| Vapi       | support@vapi.ai     | Wireline workspace |
-| xAI        | support (console)   | Wireline team      |
-| OpenAI     | support (console)   | Wireline project   |
-| Google AI  | support (console)   | Wireline project   |
-| ElevenLabs | support (console)   | Wireline account   |
-| Supabase   | support (dashboard) | Wireline project   |
-| Vercel     | support (dashboard) | Wireline team      |
-| Twilio     | support (console)   | Wireline account   |
-| Stripe     | support (dashboard) | Wireline account   |
+## 8. Launch truths to keep current
 
-## 7. Preventive Measures
+- Public status is evidence, not an uptime guarantee.
+- The demo-line canary is nightly unless production scheduling is deliberately changed.
+- Vercel cron is the source of truth for Vercel-scheduled jobs.
+- Sentry alert destinations must be verified in Sentry; code presence alone does not prove a Slack/SMS/email rule.
+- Provider fallback claims must match the active runtime policy and vendor configuration.
+- Any contractual response time, recovery objective, support channel, or service credit belongs in the signed customer agreement, not this internal runbook.
 
-- **Dependency health:** Integration health panel in AdminSettings
-- **Budget guards:** Spend caps prevent runaway costs during incidents
-- **Rate limits:** Per-user and system-wide limits prevent cascading load
-- **Fallback providers:** structured OpenAI → Gemini → Gateway (optional opt-in xAI); Vapi PSTN OpenAI → Gemini. OpenAI Realtime powers Studio/ChatGPT/guest live demos.
-- **Idempotent webhooks:** Stripe event deduplication prevents double-processing
-- **Job queue retry:** Failed background jobs retry with exponential backoff
-
----
-
-_This runbook evolves with every incident. Update it after every P0/P1 review._
+Update this runbook whenever production monitoring, provider topology, or incident tooling changes materially.

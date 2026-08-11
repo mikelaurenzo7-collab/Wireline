@@ -56,28 +56,37 @@ describe("round-4 audit fix contracts", () => {
     expect(jobs).toMatch(/DELETE FROM wireline_jobs[\s\S]{0,200}status IN \('done', 'dead'\)/);
   });
 
-  it("HIPAA agents never record on either call direction", () => {
+  it("managed inbound and outbound assistants use transcript-only artifacts", () => {
     const client = read("src/lib/vapi-client.ts");
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
-    expect(client).toContain(
+    const policy = read("src/lib/vapi-artifact-plan.ts");
+    expect(policy).toContain("recordingEnabled: false");
+    expect(policy).toContain("videoRecordingEnabled: false");
+    expect(policy).toContain("pcapEnabled: false");
+    expect(policy).toContain("transcriptPlan: { enabled: true }");
+    expect(client).toContain("buildVapiTranscriptOnlyArtifactPlan()");
+    expect(factory).toContain("buildVapiTranscriptOnlyArtifactPlan()");
+    expect(client).toContain("artifactPlan,");
+    expect(factory).toContain("artifactPlan,");
+    expect(client).not.toContain(
       'const recordingEnabled = agentConfig.complianceMode !== "hipaa";',
     );
-    expect(factory).toContain(
+    expect(factory).not.toContain(
       'const recordingEnabled = configured.complianceMode !== "hipaa";',
     );
-    expect(client).toContain("    recordingEnabled,");
-    expect(factory).toContain("    recordingEnabled,");
   });
 
-  it("actual Vapi openings carry outbound AI identity and recording disclosures", () => {
+  it("actual Vapi openings carry outbound AI identity and purpose disclosures", () => {
     const client = read("src/lib/vapi-client.ts");
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
     expect(client).toContain("complianceFirstMessagePrefix(");
     expect(client).toContain("settings?.businessName || agentConfig.name");
     expect(client).toContain("outboundAiCall: true");
+    expect(client).toContain("recordingEnabled: artifactPlan.recordingEnabled");
     expect(client).toContain("firstMessage: disclosurePrefix + openingMessage");
     expect(factory).toContain("userSettings?.businessName || configured.name");
     expect(factory).toContain("outboundAiCall: isOutbound");
+    expect(factory).toContain("recordingEnabled: artifactPlan.recordingEnabled");
   });
 
   it("missing transcripts are logged as unverifiable, never as played", () => {

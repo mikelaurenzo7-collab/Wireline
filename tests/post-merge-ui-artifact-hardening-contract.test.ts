@@ -24,9 +24,10 @@ describe("post-merge UI and artifact hardening", () => {
     expect(env).not.toContain("STRIPE_VOICE_OVERAGE_METER_EVENT_NAME");
     expect(env).not.toContain("tenant overages bill through Stripe");
     expect(env).not.toContain("Cadence AI Stripe");
+    expect(env).not.toContain("WIRELINE_LIVE_VIDEO_CATALOG_READY");
 
     for (const preservedKey of [
-      "WIRELINE_LIVE_VIDEO_CATALOG_READY",
+      "WIRELINE_LIVE_VIDEO_DISABLED",
       "MCP_OAUTH_TOKEN_PEPPER",
       "UPSTASH_REDIS_REST_URL",
       "RESEND_API_KEY",
