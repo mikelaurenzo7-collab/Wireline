@@ -66,6 +66,7 @@ describe("OpenAI runtime cohesion across agent postures", () => {
       "Primary: direct xAI Responses API using Grok 4.5 by default",
     );
     expect(grokDoc).toContain("retired from demo routing");
+    // The compact vendor map is the current operating source of truth.
     expect(vendor).toContain("Structured reasoning | OpenAI managed structured runtime");
     expect(vendor).toContain("optional xAI experiment only when explicitly enabled");
   });
