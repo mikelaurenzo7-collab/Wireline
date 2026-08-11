@@ -64,7 +64,7 @@ describe("distributed public health boundary", () => {
     expect(source).toContain("return `${environment}:${deployment}`");
   });
 
-  it("probes each runtime through its owning provider without generating output", () => {
+  it("probes each runtime through its owning execution surface", () => {
     const functionSource = read("src/entrypoints/public-health-api.ts");
     const probeSource = read("src/lib/public-health-probe.ts");
 
@@ -74,11 +74,21 @@ describe("distributed public health boundary", () => {
       "probeOpenAIModel(OPENAI_STRUCTURED_PRIMARY_MODEL, process.env.OPENAI_API_KEY)",
     );
     expect(functionSource).not.toContain("VAPI_VOICE_FALLBACK_MODEL");
+
+    // Vapi can be verified without generating a call or model output.
     expect(probeSource).toContain('url: "https://api.vapi.ai/assistant?limit=1"');
-    expect(probeSource).toContain("/v1/models/${encodeURIComponent(model)}");
     expect(probeSource).toContain('method: "GET"');
-    expect(probeSource).not.toContain("/v1/responses");
-    expect(probeSource).not.toContain("max_output_tokens");
+
+    // Reasoning health must exercise the same Responses endpoint customers use,
+    // not the model-catalog metadata plane that repeatedly produced false public
+    // degradations while the application runtime itself remained healthy.
+    expect(probeSource).toContain('fetch("https://api.openai.com/v1/responses"');
+    expect(probeSource).toContain('method: "POST"');
+    expect(probeSource).toContain("max_output_tokens: 16");
+    expect(probeSource).toContain('reasoning: { effort: "none" }');
+    expect(probeSource).toContain('text: { verbosity: "low" }');
+    expect(probeSource).toContain("store: false");
+    expect(probeSource).not.toContain("/v1/models/${encodeURIComponent(model)}");
   });
 
   it("certifies the exact Vapi primary and fallback schema in deep previews", () => {
