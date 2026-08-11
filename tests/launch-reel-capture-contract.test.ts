@@ -24,12 +24,14 @@ const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 const CAMPAIGN_DOC = "docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md";
 const KIT = "scripts/marketing-kit.mjs";
+const CERTIFIER = "scripts/run-marketing-kit.mjs";
 
 /** Vendors the reel doctrine forbids putting on screen or in reel copy. */
 const VENDOR_MARKS = ["Bland", "Retell", "Vapi"];
 
 describe("launch reel capture contract", () => {
   const kit = source(KIT);
+  const certifier = source(CERTIFIER);
   const campaign = source(CAMPAIGN_DOC);
 
   it("generates reel copy from the campaign document rather than restating it", () => {
@@ -69,6 +71,16 @@ describe("launch reel capture contract", () => {
     // price change in the document reaches the reels without a code edit.
     expect(kit).toMatch(/\$\{spine\.price\}/);
     expect(kit).toMatch(/\$\{spine\.cta\}/);
+  });
+
+  it("never certifies local mock captures as publishable launch media", () => {
+    expect(kit).toContain('mode: useMocks ? "local-mock" : "production-session"');
+    expect(certifier).toContain('mode !== "production-session"');
+    expect(certifier).toContain(
+      "local-mock captures are layout/test fixtures only and must never produce a publishable release record.",
+    );
+    expect(certifier).toContain("publishable: true");
+    expect(certifier).toContain("publishable: certifiedManifest.captureCertification.publishable");
   });
 
   it("resolves a browser the same way in every capture script", () => {
