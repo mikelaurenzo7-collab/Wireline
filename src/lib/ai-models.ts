@@ -215,7 +215,10 @@ export interface ModelPricingRow {
   cacheWrite: number;
 }
 
-/** Standard synchronous API rates in USD per 1M text tokens, verified 2026-08-01. */
+/**
+ * Standard synchronous API rates in USD per 1M text tokens, verified 2026-08-10.
+ * GPT-5.6 cache writes are billed at 1.25x the uncached input rate.
+ */
 export const MODEL_PRICING = {
   [XAI_MODELS.GROK_4_5]: { input: 2, output: 6, cacheRead: 0.3, cacheWrite: 0 },
   [XAI_MODELS.GROK_4_3]: {
@@ -225,16 +228,16 @@ export const MODEL_PRICING = {
     cacheWrite: 0,
   },
   [OPENAI_MODELS.GPT_5_6_TERRA]: {
-    input: 2,
-    output: 12,
-    cacheRead: 0.2,
-    cacheWrite: 2.5,
+    input: 2.5,
+    output: 15,
+    cacheRead: 0.25,
+    cacheWrite: 3.125,
   },
   [OPENAI_MODELS.GPT_5_6_LUNA]: {
-    input: 0.2,
-    output: 1.2,
-    cacheRead: 0.02,
-    cacheWrite: 0.25,
+    input: 1,
+    output: 6,
+    cacheRead: 0.1,
+    cacheWrite: 1.25,
   },
   [OPENAI_MODELS.GPT_5_6_SOL]: {
     input: 5,
@@ -314,12 +317,12 @@ const MODEL_LONG_CONTEXT_PRICING: Partial<
   [OPENAI_MODELS.GPT_5_6_TERRA]: {
     thresholdTokens: 272_000,
     inclusive: false,
-    rates: { input: 4, output: 18, cacheRead: 0.4, cacheWrite: 5 },
+    rates: { input: 5, output: 22.5, cacheRead: 0.5, cacheWrite: 6.25 },
   },
   [OPENAI_MODELS.GPT_5_6_LUNA]: {
     thresholdTokens: 272_000,
     inclusive: false,
-    rates: { input: 0.4, output: 1.8, cacheRead: 0.04, cacheWrite: 0.5 },
+    rates: { input: 2, output: 9, cacheRead: 0.2, cacheWrite: 2.5 },
   },
   [OPENAI_MODELS.GPT_5_6_SOL]: {
     thresholdTokens: 272_000,
