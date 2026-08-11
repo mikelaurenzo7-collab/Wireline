@@ -184,13 +184,13 @@ describe("public health Vercel function", () => {
       model: "reasoning-model",
       error: "OpenAI model probe failed (403)",
     });
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const handler = await loadHandler();
     const res = new MockResponse();
 
     await handler(request(), res as unknown as ServerResponse);
 
-    expect(warn).toHaveBeenCalledWith(
+    expect(errorLog).toHaveBeenCalledWith(
       "Public health provider probe degraded",
       expect.objectContaining({
         cacheScope: "preview:abcdef1234567890",
