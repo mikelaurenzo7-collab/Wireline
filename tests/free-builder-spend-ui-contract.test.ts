@@ -16,13 +16,16 @@ describe("Free Builder spend UI truth", () => {
     expect(source).toContain("simulation_allowance_enabled?: boolean;");
   });
 
-  it("labels Free Builder as private simulation, not a paid provider envelope", () => {
+  it("labels Free Builder as private simulation without claiming setup or training are capped", () => {
     expect(source).toContain('"Simulation allowance"');
     expect(source).toContain(
       "Funds private setup, training, and simulation. Activate a paid plan to go live.",
     );
     expect(source).toContain(
-      "Private setup, training, and simulation pause at the monthly allowance. Live provider work requires a paid plan.",
+      "Private simulation pauses at the monthly allowance. Live provider work requires a paid plan.",
+    );
+    expect(source).not.toContain(
+      "Private setup, training, and simulation pause at the monthly allowance.",
     );
   });
 
