@@ -34,7 +34,11 @@ describe("Wireline product documentation contract", () => {
 
   it("keeps the docs index aligned with current product truth", () => {
     const readme = read("docs/README.md");
-    expect(readme).toContain("Create -> Train -> Run");
+    const launchTruth = read("docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
+    expect(readme).toContain("Build -> Train -> Launch -> Improve");
+    expect(readme).toContain("LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
+    expect(launchTruth).toContain("**Build. Train. Launch. Improve.**");
+    expect(launchTruth).toContain("Voice agents that get the work done.");
     // The bare capitalised "Agents" this used to assert only ever appeared
     // inside a retired-thesis footnote ("AI Profit Agents"), so it passed by
     // accident and would have kept passing while the real terminology drifted.
