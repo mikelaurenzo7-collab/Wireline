@@ -93,6 +93,14 @@ function resolveAssetPath(asset) {
 }
 
 function certifyManifest(manifest, sourceCommit, sourceRef) {
+  const mode = String(manifest?.mode || "");
+  if (mode !== "production-session") {
+    throw new Error(
+      `Launch-reel certification requires a production-session capture; received ${mode || "unknown"}. ` +
+        "local-mock captures are layout/test fixtures only and must never produce a publishable release record.",
+    );
+  }
+
   const assets = Array.isArray(manifest.assets) ? manifest.assets : [];
   if (!assets.length) throw new Error("Marketing-kit manifest contains no assets.");
 
@@ -185,6 +193,8 @@ function certifyManifest(manifest, sourceCommit, sourceRef) {
     sourceRef,
     captureCertification: {
       certifiedAt: new Date().toISOString(),
+      publishable: true,
+      mode,
       authenticatedScreenshots: screenshotCertification,
       videos: videoRecords,
     },
@@ -220,6 +230,7 @@ const releaseRecord = {
   certifiedAt: certifiedManifest.captureCertification.certifiedAt,
   baseURL: certifiedManifest.baseURL,
   mode: certifiedManifest.mode,
+  publishable: certifiedManifest.captureCertification.publishable,
   videos: certifiedManifest.captureCertification.videos,
   authenticatedScreenshots: certifiedManifest.captureCertification.authenticatedScreenshots.map(
     ({ layout, routes, uniqueFrames }) => ({ layout, routes, uniqueFrames }),

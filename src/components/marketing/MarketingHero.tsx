@@ -21,11 +21,9 @@ type HeroMetric = {
 };
 
 type MarketingHeroProps = {
-  eyebrow?: ReactNode;
   title: ReactNode;
   primaryAction?: HeroAction;
   secondaryAction?: HeroAction;
-  proof?: readonly string[];
   metrics?: readonly HeroMetric[];
   visual?: ReactNode;
   className?: string;

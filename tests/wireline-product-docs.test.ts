@@ -34,7 +34,11 @@ describe("Wireline product documentation contract", () => {
 
   it("keeps the docs index aligned with current product truth", () => {
     const readme = read("docs/README.md");
-    expect(readme).toContain("Create -> Train -> Run");
+    const launchTruth = read("docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
+    expect(readme).toContain("Build -> Train -> Launch -> Improve");
+    expect(readme).toContain("LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
+    expect(launchTruth).toContain("**Build. Train. Launch. Improve.**");
+    expect(launchTruth).toContain("Voice agents that get the work done.");
     // The bare capitalised "Agents" this used to assert only ever appeared
     // inside a retired-thesis footnote ("AI Profit Agents"), so it passed by
     // accident and would have kept passing while the real terminology drifted.
@@ -48,6 +52,20 @@ describe("Wireline product documentation contract", () => {
     expect(readme).toContain("Wireline Command");
     expect(readme).toContain("WIRELINE_2026_ROADMAP.md");
     expectNoTerms(readme, retiredProductTerms);
+  });
+
+  it("pins the active launch creative manifest to the actual QA pack", () => {
+    const launchTruth = read("docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
+    for (const asset of [
+      "Wireline_Launch_15s_Missed_Call_Clean.mp4",
+      "Wireline_Product_Loop_22s_Music.mp4",
+      "Wireline_Launch_53s_Founder_Walkthrough_Clean.mp4",
+    ]) {
+      expect(launchTruth).toContain(asset);
+    }
+    expect(launchTruth).not.toContain("Wireline_Launch_22s_Product_Reel_Clean.mp4");
+    expect(launchTruth).toContain('7.47-second "Second Ring" narration');
+    expect(launchTruth).toContain("reference/editing assets until the picture is recaptured");
   });
 
   it("keeps the 2026 roadmap aligned with Letterpress and activation doctrine", () => {

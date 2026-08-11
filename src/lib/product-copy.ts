@@ -7,7 +7,7 @@ export const BRAND_SYSTEM = {
   buyingNoun: "Voice Agent",
   defaultRole: "Your voice agent",
   brandSpine: ["Build", "Train", "Launch"],
-  proofLoop: ["Brief", "Train", "Launch", "Improve"],
+  proofLoop: ["Build", "Train", "Launch", "Improve"],
   toneRules: [
     "Lead with outcomes before AI mechanics.",
     "Welcome both personal and business use without making either audience feel secondary.",
