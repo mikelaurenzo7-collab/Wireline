@@ -75,13 +75,15 @@ Do not publish or recirculate those broken masters simply because they are alrea
 
 ### Clean derivative drafts
 
-Three clean derivatives were rebuilt on 2026-08-11 from authentic Wireline product footage and current campaign voiceovers, with the visible 404 removed and no burned-in captions:
+Three clean derivatives were rebuilt on 2026-08-11 from authentic Wireline product footage, using current campaign audio where the cut calls for narration, with the visible 404 removed and no burned-in captions:
 
 | Draft | Format | Purpose | Release posture |
 | --- | --- | --- | --- |
-| `Wireline_Launch_15s_Missed_Call_Clean.mp4` | 9:16, ~15s | Missed-call performance cut | **Creative QA draft** |
-| `Wireline_Launch_22s_Product_Reel_Clean.mp4` | 9:16, ~22s | Fast product proof | **Creative QA draft** |
-| `Wireline_Launch_53s_Founder_Walkthrough_Clean.mp4` | 16:9, ~53s | Founder/product walkthrough | **Creative QA draft** |
+| `Wireline_Launch_15s_Missed_Call_Clean.mp4` | 9:16, ~15s | Missed-call performance cut with current missed-call VO | **Creative QA draft** |
+| `Wireline_Product_Loop_22s_Music.mp4` | 9:16, 22s | Music-only fast product loop; no mismatched hero narration | **Creative QA draft** |
+| `Wireline_Launch_53s_Founder_Walkthrough_Clean.mp4` | 16:9, ~53s | Founder/product walkthrough with current founder VO | **Creative QA draft** |
+
+The abandoned 22-second voiced exploration is not part of the launch pack. The 7.47-second "Second Ring" narration belongs to a future captured-call hero spot and must not be repurposed as generic walkthrough narration.
 
 These derivatives are visually cleaner than the rejected masters, but their picture is historical footage. They are reference/editing assets until the picture is recaptured and certified against the exact production SHA being promoted.
 
