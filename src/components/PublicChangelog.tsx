@@ -48,6 +48,12 @@ const TAG_META: Record<
 
 const ENTRIES: ChangelogEntry[] = [
   {
+    date: "Aug 11, 2026",
+    tag: "launch",
+    title: "Launch certification hardened",
+    body: "Launch builds now verify TypeScript, lint, production dependency advisories, the full test suite, production schema effects, and live service health before promotion. Public product and creative now share one Build, Train, Launch, Improve story, with demo and test activity kept separate from customer evidence.",
+  },
+  {
     date: "Jul 25, 2026",
     tag: "infra",
     title: "OpenAI unified for reasoning and live demos",
@@ -116,8 +122,8 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Jan 27, 2026",
     tag: "infra",
-    title: "Visual-regression CI",
-    body: "Every PR now runs Playwright pixel-diff against the committed baselines for 5 critical routes × 3 viewports. Chrome regressions fail CI before they can ship.",
+    title: "Visual-regression coverage",
+    body: "Added Playwright screenshot coverage and committed baselines for critical routes and viewports so layout regressions can be checked before release.",
   },
   {
     date: "Jan 27, 2026",
