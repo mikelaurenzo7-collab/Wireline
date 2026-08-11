@@ -5,9 +5,11 @@ const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 /** Vendor callbacks and cron hooks cannot send a browser Origin header. */
 const ORIGIN_CHECK_SKIP_PREFIXES = [
   "/api/stripe-webhook",
-  // Scope the exemption to the specific public vendor receivers, not the whole
-  // /api/webhooks/ tree, so a future authenticated route under that prefix
-  // can't silently inherit the CSRF exemption.
+  // Scope exemptions to specific public vendor receivers, not the whole
+  // /api/webhooks/ tree, so future authenticated routes under that prefix
+  // cannot silently inherit the CSRF exemption. Authenticity is established by
+  // each provider's own signature verifier.
+  "/api/webhooks/resend",
   "/api/webhooks/meta/",
   "/api/twilio-webhook",
   "/api/intake/lead",

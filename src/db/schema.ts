@@ -1,6 +1,6 @@
 /**
  * Canonical Drizzle/runtime schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0141_scheduler_tick_singletons.sql`.
+ * Latest committed migration: `drizzle/migrations/0142_resend_delivery_feedback.sql`.
  *
  * `schema-base.ts` preserves the existing table graph. The two tables below are
  * declared explicitly here because migrations 0130, 0133, and 0134 changed
@@ -12,6 +12,7 @@
  */
 export * from "./schema-base";
 export * from "./voice-usage-schema";
+export * from "./resend-webhook-schema";
 
 import {
   bigint,

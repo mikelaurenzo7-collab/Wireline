@@ -105,6 +105,7 @@ run("node", ["scripts/check-marketing-measurement-consent.mjs"]);
 run("node", ["scripts/check-mcp-http-hardening.mjs"]);
 run("node", ["scripts/check-stripe-checkout-tax.mjs"]);
 run("node", ["scripts/check-stripe-catalog-contract.mjs"]);
+run("node", ["scripts/check-resend-webhook-readiness.mjs"]);
 run("node", ["--check", "scripts/check-vendor-readiness.mjs"]);
 run("npx", [
   "vitest",
@@ -116,6 +117,7 @@ run("npx", [
   "tests/production-env-policy-contract.test.ts",
   "tests/production-build-env-gate-contract.test.ts",
   "tests/database-connection.test.ts",
+  "tests/migration-journal-integrity-contract.test.ts",
   "tests/product-voice-contract.test.ts",
   "tests/design-brand-polish-contract.test.ts",
   "tests/post-merge-ui-artifact-hardening-contract.test.ts",
@@ -133,6 +135,7 @@ run("npx", [
   "tests/yahoo-jwks-rotation.test.ts",
   "tests/spend-guard-integrity-contract.test.ts",
   "tests/free-builder-spend-ui-contract.test.ts",
+  "tests/resend-webhook-feedback-contract.test.ts",
   "tests/launch-truth-contract.test.ts",
   "tests/double-pass-launch-honesty-contract.test.ts",
   "tests/launch-artifact-privacy-and-ops-truth-contract.test.ts",

@@ -12,6 +12,7 @@ import express from "express";
 type ExpressApp = ReturnType<typeof express>;
 
 const RAW_WEBHOOK_LIMIT = "1mb";
+const RESEND_WEBHOOK_LIMIT = "256kb";
 const TWILIO_WEBHOOK_LIMIT = "256kb";
 
 /**
@@ -25,6 +26,12 @@ export function installWebhookBodyParsers(app: ExpressApp): void {
   app.use(
     "/api/stripe-webhook",
     express.raw({ type: "application/json", limit: RAW_WEBHOOK_LIMIT }),
+  );
+
+  // Resend / Standard Webhooks — raw JSON signed across the untouched bytes.
+  app.use(
+    "/api/webhooks/resend",
+    express.raw({ type: "application/json", limit: RESEND_WEBHOOK_LIMIT }),
   );
 
   // Meta Lead Ads and data-deletion callbacks — raw bytes for HMAC validation.
