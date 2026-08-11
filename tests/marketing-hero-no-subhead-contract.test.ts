@@ -4,7 +4,7 @@ import { globSync } from "glob";
 import { describe, expect, it } from "vitest";
 
 /**
- * Marketing heroes carry a headline, actions, and proof — no subhead.
+ * Marketing heroes carry a headline, actions, and optional visual/metrics — no subhead.
  *
  * The home page dropped its subhead first, for a tighter and more confident
  * hero, but the prop survived and eight other pages still passed one. That left
@@ -21,11 +21,17 @@ const root = process.cwd();
 const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("marketing hero has no subhead", () => {
-  it("does not accept a hero description prop", () => {
+  it("keeps the shared hero API limited to properties it actually renders", () => {
     const hero = source("src/components/marketing/MarketingHero.tsx");
 
     expect(hero, "MarketingHero must not declare a description prop").not.toMatch(
       /^\s*description\?:/m,
+    );
+    expect(hero, "MarketingHero must not retain an unused eyebrow prop").not.toMatch(
+      /^\s*eyebrow\?:/m,
+    );
+    expect(hero, "MarketingHero must not retain an unused proof prop").not.toMatch(
+      /^\s*proof\?:/m,
     );
     expect(hero, "MarketingHero must not render a hero subhead").not.toContain(
       "marketing-hero__description",
