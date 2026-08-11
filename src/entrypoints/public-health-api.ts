@@ -128,8 +128,10 @@ function logProviderProbeFailures(
 
   // Provider diagnostics belong in internal runtime logs, never the public
   // status payload. Probe errors are already bounded to 240 characters and do
-  // not contain request credentials.
-  console.warn("Public health provider probe degraded", {
+  // not contain request credentials. This direct Vercel function intentionally
+  // permits console.error only, so degraded provider probes use that internal
+  // severity instead of weakening the repository's zero-warning lint policy.
+  console.error("Public health provider probe degraded", {
     requestId,
     cacheScope: CACHE_SCOPE,
     failures,
