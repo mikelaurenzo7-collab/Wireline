@@ -97,7 +97,7 @@ describe("distributed public health boundary", () => {
     expect(audit).not.toContain("/chat");
   });
 
-  it("does not cache failures and preserves request correlation outside Express", () => {
+  it("does not cache failures, preserves request correlation, and keeps diagnostics internal", () => {
     const source = read("src/entrypoints/public-health-api.ts");
 
     expect(source).toContain('import { randomUUID } from "node:crypto"');
@@ -107,7 +107,9 @@ describe("distributed public health boundary", () => {
     expect(source).toContain("requestId,");
     expect(source).toContain("cacheScope: CACHE_SCOPE");
     expect(source).toContain("console.error(");
-    expect(source).not.toContain("console.warn(");
+    expect(source).toContain('console.warn("Public health provider probe degraded"');
+    expect(source).toContain("failures,");
+    expect(source).not.toContain("payload: failures");
   });
 
   it("keeps the certified shared handler as the only public status implementation", () => {
