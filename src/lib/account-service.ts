@@ -120,3 +120,21 @@ export async function ensureDefaultAccount(
     preferredType === "personal" ? "Personal" : "My Business",
   );
 }
+
+/**
+ * Resolve the account that owns a newly-created agent.
+ *
+ * A client-supplied account id is accepted only when it belongs to the same
+ * authenticated user. Callers can distinguish an invalid requested account
+ * (`null`) from the no-request case, which falls back to the tenant's primary
+ * account and lazily creates that account only for legacy users that somehow
+ * predate account bootstrap.
+ */
+export async function resolveAgentAccountForCreate(
+  userId: string,
+  requestedAccountId?: string | null,
+): Promise<WirelineAccount | null> {
+  const requested = requestedAccountId?.trim();
+  if (requested) return getAccountById(requested, userId);
+  return ensureDefaultAccount(userId);
+}
