@@ -9,7 +9,8 @@
 --
 -- Delete only rows whose owner is already gone, then install ON DELETE CASCADE
 -- ownership for every user-bound auth artifact. Active rows owned by existing
--- users are untouched.
+-- users are untouched. Child-side user_id indexes keep the cascade bounded as
+-- these tables grow; password-reset and email-verification already have them.
 
 DELETE FROM public.wireline_password_reset_tokens AS token
 WHERE NOT EXISTS (
@@ -44,6 +45,15 @@ WHERE token.user_id IS NOT NULL
   AND NOT EXISTS (
     SELECT 1 FROM public.wireline_users AS users WHERE users.id = token.user_id
   );
+
+CREATE INDEX IF NOT EXISTS idx_mcp_oauth_codes_user_id
+  ON public.wireline_mcp_oauth_codes (user_id);
+CREATE INDEX IF NOT EXISTS idx_mcp_access_tokens_user_id
+  ON public.wireline_mcp_access_tokens (user_id);
+CREATE INDEX IF NOT EXISTS idx_mcp_refresh_tokens_user_id
+  ON public.wireline_mcp_refresh_tokens (user_id);
+CREATE INDEX IF NOT EXISTS idx_oauth_pending_codes_user_id
+  ON public.wireline_oauth_pending_codes (user_id);
 
 DO $$
 BEGIN
