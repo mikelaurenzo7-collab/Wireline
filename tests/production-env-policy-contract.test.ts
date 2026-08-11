@@ -61,6 +61,9 @@ describe("production environment launch policy", () => {
   });
 
   it("promotes the launch-active Live Video provider key to production readiness", () => {
+    // Live Video can remain fail-closed at request time, but a launch operator
+    // must see a missing runtime key as degraded configuration rather than a
+    // harmless optional integration now that the catalog is publicly active.
     const recommendedStart = prodCheck.indexOf("const recommended = [");
     const optionalStart = prodCheck.indexOf("const optional = [");
     const recommendedBlock = prodCheck.slice(recommendedStart, optionalStart);
