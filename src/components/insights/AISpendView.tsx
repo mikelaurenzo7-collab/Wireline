@@ -22,6 +22,8 @@ import { ShadButton } from "../ui/shadcn/ShadButton";
 
 import { BRAND } from "../../constants/brand-colors";
 
+type SpendGuardScope = "free_simulation_allowance" | "plan_funded";
+
 type SpendStatus = {
   period?: string;
   month_to_date_usd?: number;
@@ -33,6 +35,10 @@ type SpendStatus = {
   warn_threshold_pct?: number;
   hard_capped_now?: boolean;
   alerts_fired?: Array<{ threshold_pct: number }>;
+  guard_scope?: SpendGuardScope;
+  plan_name?: string;
+  live_provider_work_enabled?: boolean;
+  simulation_allowance_enabled?: boolean;
 };
 
 type SpendBudget = {
@@ -41,6 +47,10 @@ type SpendBudget = {
   hard_cap?: boolean;
   warn_threshold_pct?: number;
   enabled?: boolean;
+  guard_scope?: SpendGuardScope;
+  plan_name?: string;
+  live_provider_work_enabled?: boolean;
+  simulation_allowance_enabled?: boolean;
 };
 
 /* ─────────────────────────  Spend Budget Card  ─────────────────── */
@@ -137,6 +147,17 @@ function SpendBudgetCard() {
       ? BRAND.colors.outlineVariant
       : BRAND.colors.primary;
   const period = status?.period || "—";
+  const isSimulationAllowance = status?.guard_scope === "free_simulation_allowance";
+  const guardTitle = isSimulationAllowance ? "Simulation allowance" : "Provider spend guard";
+  const capReachedCopy = isSimulationAllowance
+    ? "Simulation allowance reached — private simulation is paused"
+    : "Provider spend limit reached — new provider work is paused";
+  const maximumHelper = isSimulationAllowance
+    ? `Up to $${safeFixed(maximumLimit, 2)} for private setup, training, and simulation. Activate a paid plan to go live.`
+    : `Up to $${safeFixed(maximumLimit, 2)} for ${status?.plan_name || "the active plan"}. You can lower this guard, but it cannot exceed the provider-cost envelope funded by the plan.`;
+  const hardCapHelper = isSimulationAllowance
+    ? "Private setup, training, and simulation pause at the monthly allowance. Live provider work requires a paid plan."
+    : "New provider-funded work pauses at the limit. Completed in-flight work still settles.";
 
   return (
     <div className={cn(WL_APP_CLASSES.panelFrame, "p-6 md:p-7 space-y-5")} data-accent={barColor}>
@@ -146,10 +167,13 @@ function SpendBudgetCard() {
             <Shield className="w-4 h-4 wl-accent-text" />
           </div>
           <div>
-            <div className="wl-insight-label tracking-[0.32em] wl-accent-text">
-              Provider spend guard
-            </div>
+            <div className="wl-insight-label tracking-[0.32em] wl-accent-text">{guardTitle}</div>
             <div className="text-sm text-foreground/70 mt-1 font-mono">{period}</div>
+            {isSimulationAllowance && (
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                Funds private setup, training, and simulation. Activate a paid plan to go live.
+              </p>
+            )}
           </div>
         </div>
         {(isWarn || status?.hard_capped_now) && (
@@ -162,9 +186,7 @@ function SpendBudgetCard() {
             )}
           >
             <AlertTriangle className="w-3.5 h-3.5" />
-            {status?.hard_capped_now
-              ? "Hard cap reached — outbound work is paused"
-              : "Spend has crossed your warn threshold"}
+            {status?.hard_capped_now ? capReachedCopy : "Spend has crossed your warn threshold"}
           </div>
         )}
       </div>
@@ -216,10 +238,7 @@ function SpendBudgetCard() {
             placeholder="e.g. 200"
             className="w-full h-11 px-4 rounded-md wl-panel border border-border outline-none text-foreground text-sm focus:border-brand/60 transition-all font-mono"
           />
-          <span className="block text-[11px] leading-5 text-muted-foreground">
-            Up to ${safeFixed(maximumLimit, 2)} for the active plan. You can lower this guard, but
-            it cannot exceed the provider-cost envelope funded by the plan.
-          </span>
+          <span className="block text-[11px] leading-5 text-muted-foreground">{maximumHelper}</span>
         </label>
         <label className="space-y-1.5">
           <span className="app-section-title">Warn at (% of limit)</span>
@@ -240,10 +259,10 @@ function SpendBudgetCard() {
 
       <div className="flex items-center justify-between gap-4 rounded-md border border-border px-4 py-3">
         <div>
-          <div className="text-sm font-medium text-foreground">Hard cap enforced</div>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            New provider-funded work pauses at the limit. Completed in-flight work still settles.
-          </p>
+          <div className="text-sm font-medium text-foreground">
+            {isSimulationAllowance ? "Monthly allowance enforced" : "Hard cap enforced"}
+          </div>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">{hardCapHelper}</p>
         </div>
         <span className="rounded-full border border-brand/25 bg-brand/10 px-2.5 py-1 text-[11px] font-semibold text-brand">
           Always on
