@@ -53,6 +53,7 @@ import icloudMailRouter from "../routes/icloud-mail-routes";
 import emailUnsubscribeRouter from "../routes/email-unsubscribe-routes";
 import shareableArtifactRouter from "../routes/shareable-artifact-routes";
 import marketingRuntimeRouter from "../routes/marketing-runtime-routes";
+import resendWebhookRouter from "../routes/resend-webhook-routes";
 import metaWebhookRouter from "../routes/meta-webhook-routes";
 import twilioWebhookRouter from "../routes/twilio-webhook";
 import escalationRouter from "../routes/escalation-routes";
@@ -167,6 +168,8 @@ export function registerApiRoutes(app: Express): void {
   app.use(icloudMailRouter);
   app.use(emailUnsubscribeRouter);
   app.use(shareableArtifactRouter);
+  // Signed provider callbacks own their exact paths before the tenant webhook router.
+  app.use(resendWebhookRouter);
   app.use(metaWebhookRouter);
   app.use(twilioWebhookRouter);
   app.use(escalationRouter);
