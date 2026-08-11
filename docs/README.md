@@ -1,6 +1,6 @@
 # Wireline Documentation
 
-Wireline's durable product loop is **Create -> Train -> Run**. Operationally, Wire sits between Training and Run for numbers, integrations, routing, approvals, billing, and launch controls: **Create -> Train -> Wire -> Run**.
+Wireline's public operating loop is **Build -> Train -> Launch -> Improve**. The repository still uses technical surface names such as Create, Training, Connections / Wire, Phone, Inbox, and Studio; those describe implementation ownership, not a competing customer-facing brand spine. Current launch positioning and creative status are governed by [LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md](./LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md).
 
 Broad public copy uses **voice agents** for personal and business conversations. Personal workspaces create **personal agents**. Business workspaces may describe role-specific **sales agents** or **support agents** when the context is explicit. Never pair "AI" with "agent" in copy: see `CUSTOMER_TERMINOLOGY.md`. Technical contracts retain `agent`. Every included agent has an **included number**. Outbound, inbound, and hybrid modes are first-class.
 
@@ -70,6 +70,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [RESEND_DELIVERY_FEEDBACK.md](./RESEND_DELIVERY_FEEDBACK.md) | Signed Resend feedback receiver, provider suppression semantics, activation, and rollback. |
 | [IOS_APP_STORE_CARPLAY_READINESS.md](./IOS_APP_STORE_CARPLAY_READINESS.md) | iOS signing, App Review, native capability, physical-device, and entitlement-gated CarPlay release checks. |
 | [FOUNDER_LAUNCH_COMMAND_CENTER.md](./FOUNDER_LAUNCH_COMMAND_CENTER.md) | Founder go/no-go, runtime, GTM, KPI, support, and rollback command center. |
+| [LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md](./LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md) | Active launch positioning, creative status, pre-customer proof rules, and publish gate. |
 | [LAUNCH_GURU_PLAYBOOK_2026-07-20.md](./LAUNCH_GURU_PLAYBOOK_2026-07-20.md) | Current launch sequence and operating playbook. |
 | [LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md](./LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md) | Creative doctrine, asset inventory, and channel placement. |
 | [WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md](./WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md) | Current launch campaign pack, claims, scripts, UTMs, and activation QA. |
