@@ -31,6 +31,53 @@ describe("production schema effects", () => {
     expect(verifierSource).toContain("wrong_index_definition");
   });
 
+  it("certifies agent ownership, auth cascades, and deletion reconciliation after migration", () => {
+    expect(verifierSource).toContain("agents:null_account_binding");
+    expect(verifierSource).toContain("agents:cross_user_account_binding");
+    expect(verifierSource).toContain("wireline_agents_account_binding_guard");
+    expect(verifierSource).toContain("wireline_enforce_agent_account_binding");
+    expect(verifierSource).toContain("security_definer");
+    expect(verifierSource).toContain("binding_function_search_path_not_pinned");
+
+    for (const constraint of [
+      "wireline_password_reset_tokens_user_id_fkey",
+      "wireline_email_verification_tokens_user_id_fkey",
+      "wireline_mcp_oauth_codes_user_id_fkey",
+      "wireline_mcp_access_tokens_user_id_fkey",
+      "wireline_mcp_refresh_tokens_user_id_fkey",
+      "wireline_oauth_pending_codes_user_id_fkey",
+    ]) {
+      expect(verifierSource).toContain(constraint);
+    }
+    expect(verifierSource).toContain('String(fk.delete_rule).toUpperCase() !== "CASCADE"');
+
+    for (const index of [
+      "idx_mcp_oauth_codes_user_id",
+      "idx_mcp_access_tokens_user_id",
+      "idx_mcp_refresh_tokens_user_id",
+      "idx_oauth_pending_codes_user_id",
+      "idx_mcp_oauth_codes_expires_at",
+    ]) {
+      expect(verifierSource).toContain(index);
+    }
+
+    for (const orphanCheck of [
+      "reset_orphans",
+      "verification_orphans",
+      "mcp_code_orphans",
+      "mcp_access_orphans",
+      "mcp_refresh_orphans",
+      "pending_code_orphans",
+      "director_message_orphans",
+      "dnc_orphans",
+      "audit_orphans",
+      "training_backup_orphans",
+    ]) {
+      expect(verifierSource).toContain(orphanCheck);
+    }
+    expect(verifierSource).not.toContain("wireline_jobs t LEFT JOIN public.wireline_users");
+  });
+
   it("runs the read-only schema assertion on every real production build", () => {
     const migrate = 'run("npm", ["run", "db:migrate"]);';
     const verify = 'run("node", ["scripts/check-production-schema-effects.mjs"]);';
