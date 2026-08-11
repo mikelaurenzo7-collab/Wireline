@@ -132,6 +132,7 @@ run("npx", [
   "tests/yahoo-openid-security.test.ts",
   "tests/yahoo-jwks-rotation.test.ts",
   "tests/spend-guard-integrity-contract.test.ts",
+  "tests/free-builder-spend-ui-contract.test.ts",
   "tests/launch-truth-contract.test.ts",
   "tests/double-pass-launch-honesty-contract.test.ts",
   "tests/launch-artifact-privacy-and-ops-truth-contract.test.ts",
