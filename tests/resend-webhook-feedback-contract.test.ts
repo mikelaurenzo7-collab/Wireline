@@ -68,11 +68,13 @@ describe("Resend delivery-feedback contract", () => {
   it("authenticates before parsing or database processing", () => {
     const parser = read("src/lib/body-parsers.ts");
     const route = read("src/routes/resend-webhook-routes.ts");
+    const sameOrigin = read("src/middleware/same-origin.ts");
     const verifyAt = route.indexOf("verifyResendWebhookSignature(");
     const processAt = route.indexOf("processVerifiedResendWebhook(");
 
     expect(parser).toContain('"/api/webhooks/resend"');
     expect(parser).toContain('express.raw({ type: "application/json", limit: RESEND_WEBHOOK_LIMIT })');
+    expect(sameOrigin).toContain('"/api/webhooks/resend"');
     expect(verifyAt).toBeGreaterThanOrEqual(0);
     expect(processAt).toBeGreaterThan(verifyAt);
     expect(route.slice(0, processAt)).not.toContain("JSON.parse");
@@ -130,5 +132,31 @@ describe("Resend delivery-feedback contract", () => {
       sender.indexOf('fetch("https://api.resend.com/emails"'),
     );
     expect(sender).toContain("Provider delivery suppression check failed");
+  });
+
+  it("makes production activation explicit and keeps the signing secret production-only", () => {
+    const readiness = read("scripts/check-resend-webhook-readiness.mjs");
+    const sync = read("scripts/sync-resend-env-to-vercel.mjs");
+    const docs = read("docs/RESEND_DELIVERY_FEEDBACK.md");
+    const build = read("scripts/vercel-build.mjs");
+
+    expect(readiness).toContain("RESEND_WEBHOOK_SECRET");
+    expect(readiness).toContain("https://trywireline.com/api/webhooks/resend");
+    expect(sync).toContain("PRODUCTION_TARGET");
+    expect(sync).toContain('key: "RESEND_WEBHOOK_SECRET"');
+    expect(build).toContain("check-resend-webhook-readiness.mjs");
+    expect(build).toContain("tests/resend-webhook-feedback-contract.test.ts");
+
+    for (const eventType of [
+      "email.bounced",
+      "email.complained",
+      "email.suppressed",
+      "email.failed",
+      "email.delivery_delayed",
+    ]) {
+      expect(docs).toContain(eventType);
+    }
+    expect(docs).toContain("production-only");
+    expect(docs).toContain("code path launch-ready");
   });
 });
