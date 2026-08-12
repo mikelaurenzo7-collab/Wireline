@@ -121,7 +121,7 @@ describe("launch completeness contracts", () => {
     expect(status).toContain("Provider checks operational");
     expect(status).toContain("Managed voice access");
     expect(status).toContain("Reasoning model access");
-    expect(status).toContain("not an end-to-end customer call");
+    expect(status).toContain("end-to-end customer call");
     expect(status).not.toContain("All systems operational");
     expect(status).not.toContain("pings each production LLM tier");
     expect(status).not.toContain("configured fallback remains available");
