@@ -80,7 +80,7 @@ A finished reel is publishable only when all of the following are true:
 
 - source picture was captured from the exact production commit being promoted;
 - `marketing-kit/release-record.json` records the exact `sourceCommit`;
-- the production URL itself reports the same commit through `X-Wireline-Source-Commit` before capture begins;
+- every origin represented in the publishable manifest reports that same commit through `X-Wireline-Source-Commit` **before and after** capture;
 - the verified remote commit is the deployed production SHA being represented in the release record;
 - no auth wall, 404, loading hold, dead route, error surface, or stale UI appears;
 - active UI remains legible after 9:16 or 1:1 reframing;
@@ -103,22 +103,26 @@ E2E_BASE_URL=https://trywireline.com \
 npm run marketing:kit
 ```
 
-You may use the exact production deployment URL instead of `trywireline.com` when certifying before or independently of alias movement.
+Publishable capture is restricted to Wireline-owned hosts: `trywireline.com` / its subdomains, the `wireline-chi.vercel.app` project alias, or Wireline deployments in the `revaluate` Vercel namespace. Embedded URL credentials and arbitrary third-party HTTPS hosts are rejected before capture.
 
-Before opening a browser, the wrapper requests `HEAD /api/health/public` from `E2E_BASE_URL` and requires its `X-Wireline-Source-Commit` header to equal the clean checkout SHA. A branch checkout pointed at an older production deployment therefore fails closed instead of mislabeling old footage as new.
+An exact Wireline deployment URL may be used as `E2E_BASE_URL`, but the current generator also includes a canonical `trywireline.com` public-screenshot set in the same manifest. Therefore **both origins must already serve the exact source commit** or certification fails closed. Do not use an immutable deployment URL to claim pre-alias certification while the canonical public screenshots still point at an older release.
 
-The wrapper then proves:
+Before opening a browser, the wrapper requests `HEAD /api/health/public` from every represented origin and requires each `X-Wireline-Source-Commit` header to equal the clean checkout SHA. It repeats the same verification after capture so an alias promotion during recording cannot produce mixed-source media.
+
+The wrapper also invalidates the entire prior `marketing-kit/` output before preflight and removes partial output on any failure. A failed recertification therefore cannot leave an older release record or stale video set available for accidental packaging.
+
+The wrapper proves:
 
 - exact 40-character checkout/source commit;
 - clean checkout provenance;
-- deployed source commit equals checkout source commit;
+- every represented deployed origin equals the checkout source commit before and after capture;
 - `production-session` capture mode;
 - exactly three intended video captures;
 - complete desktop/mobile/reel authenticated screenshot sets;
 - distinct authenticated frames rather than a shared auth wall/error page;
 - present, nontrivial video files with hashes in the release record.
 
-`MARKETING_USE_MOCKS=1` and localhost captures are layout/test fixtures. They must never produce a publishable release record. Use `npm run marketing:kit:raw` for that work.
+`MARKETING_USE_MOCKS=1` and localhost captures are layout/test fixtures. They must never produce a publishable release record. Use `npm run marketing:kit:raw` for that work, and do not supply real demo credentials to third-party or local layout targets.
 
 ### Current capture map
 
