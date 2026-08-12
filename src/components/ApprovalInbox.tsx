@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Shield,
   Sparkles,
+  UserRoundCheck,
   X,
 } from "lucide-react";
 
@@ -69,8 +70,16 @@ const BUCKET_SHORT_LABELS: Record<ApprovalBucket, string> = {
   knowledge_gaps: "Gaps",
 };
 
+function rawTaskType(task: FollowUpTaskRow): string {
+  return task.task_type || task.taskType || "action";
+}
+
 function taskType(task: FollowUpTaskRow): string {
-  return (task.task_type || task.taskType || "action").replace(/_/g, " ");
+  return rawTaskType(task).replace(/_/g, " ");
+}
+
+function isHumanHandoff(task: FollowUpTaskRow): boolean {
+  return rawTaskType(task) === "human_handoff";
 }
 
 function evidenceSnippet(task: FollowUpTaskRow): string {
@@ -89,6 +98,7 @@ function evidenceSnippet(task: FollowUpTaskRow): string {
 
 function actionIcon(task: FollowUpTaskRow) {
   const type = taskType(task).toLowerCase();
+  if (isHumanHandoff(task)) return <UserRoundCheck size={16} aria-hidden="true" />;
   if (type.includes("email")) return <Mail size={16} aria-hidden="true" />;
   if (type.includes("calendar") || type.includes("book")) {
     return <Calendar size={16} aria-hidden="true" />;
@@ -130,6 +140,7 @@ function editablePayloadFields(task: FollowUpTaskRow): Record<string, unknown> {
 }
 
 function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
+  const manualHandoff = isHumanHandoff(task);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -151,7 +162,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
     setBusy(true);
     setError(null);
     try {
-      if (editing) {
+      if (!manualHandoff && editing) {
         const basePayload = editablePayloadFields(task);
         const nextPayload: Record<string, unknown> = { ...basePayload };
         if (editSubject.trim()) nextPayload.subject = editSubject.trim();
@@ -182,15 +193,27 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
         method: "POST",
       });
       const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body?.error || "Approval failed.");
-      emitProductEventOnce({
-        event: "first_next_action_approved",
-        agentId: task.agentId || task.agent_id || undefined,
-        metadata: { task_id: task.id, task_type: task.task_type || task.taskType || "unknown" },
-      });
+      if (!response.ok) {
+        throw new Error(
+          body?.error || (manualHandoff ? "Could not complete this handoff." : "Approval failed."),
+        );
+      }
+      if (!manualHandoff) {
+        emitProductEventOnce({
+          event: "first_next_action_approved",
+          agentId: task.agentId || task.agent_id || undefined,
+          metadata: { task_id: task.id, task_type: task.task_type || task.taskType || "unknown" },
+        });
+      }
       onResolved();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Approval failed.");
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : manualHandoff
+            ? "Could not complete this handoff."
+            : "Approval failed.",
+      );
     } finally {
       setBusy(false);
     }
@@ -200,18 +223,28 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
     setBusy(true);
     setError(null);
     try {
-      const response = await authFetch(`/api/Assistants/tasks/${task.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: "cancelled",
-          resolution_notes: "Rejected from Approval Inbox",
-        }),
-      });
-      if (!response.ok) throw new Error("Could not reject this action.");
+      const response = manualHandoff
+        ? await authFetch(`/api/Assistants/tasks/${task.id}/dismiss-handoff`, { method: "POST" })
+        : await authFetch(`/api/Assistants/tasks/${task.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              status: "cancelled",
+              resolution_notes: "Rejected from Approval Inbox",
+            }),
+          });
+      if (!response.ok) {
+        throw new Error(manualHandoff ? "Could not dismiss this handoff." : "Could not reject this action.");
+      }
       onResolved();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Reject failed.");
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : manualHandoff
+            ? "Could not dismiss this handoff."
+            : "Reject failed.",
+      );
     } finally {
       setBusy(false);
     }
@@ -231,6 +264,11 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
                 {task.priority}
               </span>
             ) : null}
+            {task.status ? (
+              <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {task.status.replace(/_/g, " ")}
+              </span>
+            ) : null}
             {task.agent?.name ? (
               <span className="text-xs text-muted-foreground">{task.agent.name}</span>
             ) : null}
@@ -238,7 +276,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
           <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
             {evidenceSnippet(task)}
           </p>
-          {editing ? (
+          {!manualHandoff && editing ? (
             <div className="mt-3 grid gap-2">
               <input
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -272,20 +310,24 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
             <ShadButton type="button" size="sm" disabled={busy} onClick={() => void approve()}>
               {busy ? (
                 <Loader2 className="size-3.5 animate-spin" />
+              ) : manualHandoff ? (
+                <UserRoundCheck className="size-3.5" />
               ) : (
                 <Check className="size-3.5" />
               )}
-              Approve
+              {manualHandoff ? "Complete" : "Approve"}
             </ShadButton>
-            <ShadButton
-              type="button"
-              size="sm"
-              variant="secondary"
-              disabled={busy}
-              onClick={() => setEditing((value) => !value)}
-            >
-              {editing ? "Cancel edit" : "Edit"}
-            </ShadButton>
+            {!manualHandoff ? (
+              <ShadButton
+                type="button"
+                size="sm"
+                variant="secondary"
+                disabled={busy}
+                onClick={() => setEditing((value) => !value)}
+              >
+                {editing ? "Cancel edit" : "Edit"}
+              </ShadButton>
+            ) : null}
             <ShadButton
               type="button"
               size="sm"
@@ -294,7 +336,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
               onClick={() => void reject()}
             >
               <X className="size-3.5" />
-              Reject
+              {manualHandoff ? "Dismiss" : "Reject"}
             </ShadButton>
           </div>
         </div>
@@ -324,7 +366,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
     try {
       const [triageRes, tasksRes] = await Promise.all([
         authFetch("/api/triage"),
-        authFetch("/api/Assistants/tasks?status=pending"),
+        authFetch("/api/Assistants/tasks?status=active"),
       ]);
       if (!triageRes.ok && !tasksRes.ok) {
         setError("Could not load approval inbox.");
@@ -335,7 +377,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       const triageBody = triageRes.ok ? await triageRes.json() : null;
       const tasksBody = tasksRes.ok ? await tasksRes.json() : null;
       if (!tasksRes.ok) {
-        setError("Could not load pending approvals.");
+        setError("Could not load active operator work.");
       }
       setTriage(triageBody);
       setTasks(Array.isArray(tasksBody?.tasks) ? tasksBody.tasks : []);
@@ -356,29 +398,37 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
     setVisibleCount(APPROVAL_PAGE_SIZE);
   }, [bucket]);
 
+  const pendingTasks = useMemo(
+    () => tasks.filter((task) => rawTaskType(task) !== "compliance_review"),
+    [tasks],
+  );
+  const complianceTasks = useMemo(
+    () => tasks.filter((task) => rawTaskType(task) === "compliance_review"),
+    [tasks],
+  );
+
   const bucketItems = useMemo(() => {
-    if (!triage) return [];
     switch (bucket) {
       case "pending":
-        return triage.pending_tasks?.length ? triage.pending_tasks : tasks;
+        return pendingTasks;
       case "compliance":
-        return triage.compliance || [];
+        return complianceTasks;
       case "hot_leads":
-        return (triage.hot_leads || []).map((lead) => ({
+        return (triage?.hot_leads || []).map((lead) => ({
           id: String(lead.id),
           description: typeof lead.summary === "string" ? lead.summary : "Hot lead follow-up",
           task_type: "hot_lead_review",
           payload: lead,
         })) as FollowUpTaskRow[];
       case "escalations":
-        return (triage.escalations || []).map((row) => ({
+        return (triage?.escalations || []).map((row) => ({
           id: String(row.id),
           description: typeof row.summary === "string" ? row.summary : "Escalated call",
           task_type: "escalation_review",
           payload: row,
         })) as FollowUpTaskRow[];
       case "knowledge_gaps":
-        return (triage.knowledge_gaps || []).map((gap) => ({
+        return (triage?.knowledge_gaps || []).map((gap) => ({
           id: String(gap.id),
           description: typeof gap.lesson === "string" ? gap.lesson : "Knowledge gap",
           task_type: "knowledge_gap",
@@ -387,7 +437,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       default:
         return [];
     }
-  }, [bucket, tasks, triage]);
+  }, [bucket, complianceTasks, pendingTasks, triage]);
 
   const actionableTasks = bucketItems.filter(
     (item) => item.task_type !== "hot_lead_review" && item.task_type !== "escalation_review",
@@ -396,8 +446,10 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
   const approvalTabs = (Object.keys(BUCKET_LABELS) as ApprovalBucket[]).map((key) => {
     const count =
       key === "pending"
-        ? (triage?.counts?.pending_tasks ?? tasks.length)
-        : (triage?.counts?.[key] ?? triage?.[key]?.length ?? 0);
+        ? pendingTasks.length
+        : key === "compliance"
+          ? complianceTasks.length
+          : (triage?.counts?.[key] ?? triage?.[key]?.length ?? 0);
     return {
       id: key,
       label: `${BUCKET_LABELS[key]} (${count})`,
@@ -431,7 +483,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
             description={
               bucket === "compliance"
                 ? "Compliance-sensitive follow-ups will appear here before anything executes."
-                : "Follow-ups that need your review will appear here with evidence and edit controls."
+                : "Follow-ups and human handoffs that need you will appear here with their evidence."
             }
           />
         ) : (
