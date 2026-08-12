@@ -20,7 +20,9 @@ const HIGH_INTENT_SCORE = 75;
  *
  * Home is an operating surface, not an analytics sample. These counts therefore
  * come from aggregate queries rather than `/api/dashboard/stats`, whose recent
- * call rows are intentionally capped for payload and analysis work.
+ * call rows are intentionally capped for payload and analysis work. A customer
+ * conversation is a voice call or an email/SMS thread active during the user's
+ * local day; the endpoint returns counts only, never conversation contents.
  */
 router.get(
   "/api/overview/operating-metrics",
@@ -42,47 +44,63 @@ router.get(
       }
 
       const userId = req.user.id;
-      const [[callResult], [emailResult], [appointmentResult], [workResult]] =
-        await drizzle.transaction((tx) =>
-          serialQueryBatch([
-            tx
-              .select({
-                conversationsToday: sql`count(*)`,
-                highIntentToday: sql`count(*) filter (where ${schema.callLogs.leadScore} >= ${HIGH_INTENT_SCORE})`,
-              })
-              .from(schema.callLogs)
-              .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, since))),
-            tx
-              .select({ count: sql`count(*)` })
-              .from(schema.emailThreads)
-              .where(
-                and(
-                  eq(schema.emailThreads.userId, userId),
-                  gte(schema.emailThreads.createdAt, since),
-                  gte(schema.emailThreads.leadScore, HIGH_INTENT_SCORE),
-                ),
+      const [
+        [callResult],
+        [emailResult],
+        [smsResult],
+        [appointmentResult],
+        [workResult],
+      ] = await drizzle.transaction((tx) =>
+        serialQueryBatch([
+          tx
+            .select({
+              conversationsToday: sql`count(*)`,
+              highIntentToday: sql`count(*) filter (where ${schema.callLogs.leadScore} >= ${HIGH_INTENT_SCORE})`,
+            })
+            .from(schema.callLogs)
+            .where(and(eq(schema.callLogs.userId, userId), gte(schema.callLogs.createdAt, since))),
+          tx
+            .select({
+              conversationsToday: sql`count(*)`,
+              highIntentToday: sql`count(*) filter (where ${schema.emailThreads.leadScore} >= ${HIGH_INTENT_SCORE})`,
+            })
+            .from(schema.emailThreads)
+            .where(
+              and(
+                eq(schema.emailThreads.userId, userId),
+                gte(schema.emailThreads.lastMessageAt, since),
               ),
-            tx
-              .select({ count: sql`count(*)` })
-              .from(schema.appointments)
-              .where(eq(schema.appointments.userId, userId)),
-            tx
-              .select({ count: sql`count(*)` })
-              .from(schema.followUpTasks)
-              .where(
-                and(
-                  eq(schema.followUpTasks.userId, userId),
-                  inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES]),
-                ),
+            ),
+          tx
+            .select({ count: sql`count(*)` })
+            .from(schema.smsThreads)
+            .where(
+              and(eq(schema.smsThreads.userId, userId), gte(schema.smsThreads.lastMessageAt, since)),
+            ),
+          tx
+            .select({ count: sql`count(*)` })
+            .from(schema.appointments)
+            .where(eq(schema.appointments.userId, userId)),
+          tx
+            .select({ count: sql`count(*)` })
+            .from(schema.followUpTasks)
+            .where(
+              and(
+                eq(schema.followUpTasks.userId, userId),
+                inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES]),
               ),
-          ]),
-        );
+            ),
+        ]),
+      );
 
       res.setHeader("Cache-Control", "private, no-store, max-age=0");
       res.json({
-        conversationsToday: Number(callResult?.conversationsToday ?? 0),
+        conversationsToday:
+          Number(callResult?.conversationsToday ?? 0) +
+          Number(emailResult?.conversationsToday ?? 0) +
+          Number(smsResult?.count ?? 0),
         highIntentToday:
-          Number(callResult?.highIntentToday ?? 0) + Number(emailResult?.count ?? 0),
+          Number(callResult?.highIntentToday ?? 0) + Number(emailResult?.highIntentToday ?? 0),
         appointmentsBooked: Number(appointmentResult?.count ?? 0),
         activeWork: Number(workResult?.count ?? 0),
         since: since.toISOString(),
