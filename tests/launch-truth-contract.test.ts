@@ -81,6 +81,30 @@ describe("launch truth contract", () => {
     expect(sprint).not.toContain("sales-heavy categories");
   });
 
+  it("keeps every active launch authority on one product story and current security posture", () => {
+    const commandCenter = read("docs/FOUNDER_LAUNCH_COMMAND_CENTER.md");
+    const campaign = read("docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md");
+    const mediaKit = read("docs/LAUNCH_CREATIVE_MEDIA_KIT_2026-07-20.md");
+    const playbook = read("docs/LAUNCH_GURU_PLAYBOOK_2026-07-20.md");
+    const authorities = [commandCenter, campaign, mediaKit, playbook];
+
+    for (const source of authorities) {
+      expect(source).toContain("Build -> Train -> Launch -> Improve");
+      expect(source).not.toContain("Create -> Train -> Wire -> Run");
+      expect(source).not.toContain("Brief -> Train -> Launch -> Improve");
+    }
+
+    expect(commandCenter).toContain("business voice agent");
+    expect(commandCenter).not.toContain("Business creates an **AI employee**");
+    expect(commandCenter).not.toContain("Enable **leaked password protection** in Supabase Auth");
+    expect(commandCenter).toContain("custom scrypt/HIBP-screened auth path");
+
+    expect(campaign).not.toContain("AI employee");
+    expect(mediaKit).not.toContain("AI employee");
+    expect(playbook).toContain("First 3–5 founder-led design partners");
+    expect(playbook).not.toContain("Invite 5-10 early operators");
+  });
+
   it("does not leak Wireline branding into a customer's sequence message", () => {
     const cadences = read("src/components/Cadences.tsx");
     expect(cadences).not.toContain("Reaching out from Wireline");
