@@ -33,10 +33,11 @@ describe("double-pass residual hardening", () => {
     expect(wrapper).toContain("delete childEnv.DATABASE_URL");
   });
 
-  it("describes public status freshness including bounded incident fallback", () => {
+  it("describes public status freshness without understating edge staleness", () => {
     const status = read("src/components/Status.tsx");
     expect(status).toContain("Normal cache · 120s");
-    expect(status).toContain("Incident fallback · up to 5m");
+    expect(status).toContain("Server fallback · up to 5m");
+    expect(status).toContain("edge stale-while-revalidate");
     expect(status).toContain("timestamp above is the authoritative age");
   });
 });
