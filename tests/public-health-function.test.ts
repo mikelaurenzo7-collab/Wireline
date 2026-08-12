@@ -97,6 +97,29 @@ describe("public health Vercel function", () => {
     expect(mocks.vapiProbe).not.toHaveBeenCalled();
   });
 
+  it("exposes the exact deployed source commit as non-secret release metadata", async () => {
+    process.env.VERCEL_ENV = "production";
+    process.env.VERCEL_GIT_COMMIT_SHA = "a".repeat(40);
+    const cached = {
+      overall: "operational",
+      components: {
+        voice_runtime: "operational",
+        voice_fallback: "operational",
+        reasoning: "operational",
+      },
+      last_checked: "2026-08-11T00:00:00.000Z",
+    };
+    mocks.get.mockResolvedValue(cached);
+    const handler = await loadHandler();
+    const res = new MockResponse();
+
+    await handler(request("HEAD"), res as unknown as ServerResponse);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers.get("x-wireline-source-commit")).toBe("a".repeat(40));
+    expect(res.body).toBe("");
+  });
+
   it("serves a production-scoped Redis result without probing providers", async () => {
     process.env.VERCEL_ENV = "production";
     const cached = {

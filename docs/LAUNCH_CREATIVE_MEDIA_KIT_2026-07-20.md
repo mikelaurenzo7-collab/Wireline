@@ -1,14 +1,17 @@
 # Wireline Launch Creative Media Kit
 
-Date: 2026-08-10  
-Status: Active creative kit; published reels require source-commit certification  
-Related: `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`
+Updated: 2026-08-11  
+Status: **Active delivery and capture kit**  
+Authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`  
+Copy owner: `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`
 
-**Who owns what.** The campaign document owns copy: the Brand Spine, every voiceover script, and every cut's shot list, timing, and mix. This kit owns delivery: the asset manifest, the capture-and-certification workflow, the tool briefs, and the placement plan. When the two disagree, the campaign document wins and this file is the bug — that is how the retired missed-call hook survived here for two weeks after it was retired there.
+This kit owns asset delivery, capture/certification, tool briefs, and placement. The campaign document owns shippable campaign copy and cut scripts; **the campaign document wins** when detailed copy differs. The launch source of truth wins over both when positioning, proof posture, or publishability differs.
 
 ## Current Creative Doctrine
 
-Wireline's public creative promise is **Voice Agents for personal and business conversations**. The market should immediately understand that Wireline can start with one useful agent and grow into a coordinated roster, without making personal plans feel like an afterthought.
+One story across public creative:
+
+**Build -> Train -> Launch -> Improve**
 
 Use:
 
@@ -16,167 +19,197 @@ Use:
 - **Build your Voice Agent**
 - **Build free. Go live from $19/mo.**
 - **Personal + Business**
-- **Voice + SMS + Email**
-- **Create -> Train -> Wire -> Run**
+- calls, texts, email, follow-up, handoff, and logged outcomes
+- real product proof from the production commit being promoted
 
-Do not use:
+Avoid:
 
-- broad AI-employee hero copy
-- one-employee public promises
-- old best-employee slogans
-- sub-$19 launch pricing
+- employee language as a launch product noun;
+- pairing `AI` with `agent` in customer-facing copy;
+- competing workflow spines;
+- fake dashboards, customer logos, testimonials, adoption counts, or ROI;
+- stale screenshots or footage simply because they are already edited.
 
-Business-context assets may use "AI employee" only when the placement is explicitly Business workspace or Business plan oriented.
+Legacy filenames containing older provider or positioning language may remain for file compatibility. Filenames are not current launch copy and must not override this doctrine.
 
 ## Brand System
 
 | Element | Direction |
 | --- | --- |
-| Palette | Cool near-white or cool obsidian canvas, electric-violet action, platinum wire accent, restrained status colors |
-| Mood | Premium, clear, operational, outcome-driven |
-| Imagery | Concrete product scenes: call card, SMS follow-up, email draft, outcome log, approval/handoff |
-| Typography | Crisp SaaS, high contrast, no novelty effects |
-| Avoid | Purple blobs, beige/tan palettes, abstract bokeh, fake humanoid robots, generic call-center stock |
+| Canvas | Cool near-white or cool obsidian |
+| Accent | Electric violet with restrained platinum wire detail |
+| Mood | Premium, operational, clear, outcome-driven |
+| Product imagery | Call, agent, follow-up, booking/handoff, transcript, outcome |
+| Avoid | Generic call-center stock, humanoid robots, abstract AI blobs, vendor marks |
 
-## Required Launch Assets
+## Required Audio Deliverables
 
-| Asset | Format | Copy |
-| --- | --- | --- |
-| `social/wireline-social-ai-voice-agents.png` | 1:1 | Voice Agents / Personal + Business |
-| `social/wireline-social-missed-call.png` | 1:1 | Every missed call is someone trying the next name on the list |
-| `ads/wireline-ad-build-free-live-19.png` | 16:9 | Build free / Go live from $19/mo |
-| `ads/wireline-ad-one-agent-every-channel.png` | 16:9 | One agent / voice + SMS + email |
-| `stories/wireline-story-voice-agent.png` | 9:16 | Build your Voice Agent |
-| `deck/wireline-founder-early-access.pdf` | 16:9 deck | Founder Early Access from $19/mo |
-| `audio/wireline-ai-voice-agent-30s.mp3` | audio | "The Second Ring" hero narration — 24 words entering at 0:20, **not** the retired four-verb walkthrough |
-| `audio/wireline-missed-call-15s.mp3` | audio | 15s reel VO from the campaign pack ("Your agent can.") |
-| `audio/wireline-founder-60s.mp3` | audio | 60s founder explainer VO from the campaign pack |
-| [Published Launch Reel 46s (VO mixed)](https://share.descript.com/view/MvGqlYX4NMf) | 16:9 edit | Published August 1 cut; release-current only when its delivery record certifies the deployed source commit |
+| Asset | Purpose |
+| --- | --- |
+| `wireline-missed-call-15s.mp3` | 15-second missed-call narration from the campaign pack |
+| `wireline-ai-voice-agent-30s.mp3` | **Second Ring** late-entry narration; not a generic walkthrough VO |
+| `wireline-founder-60s.mp3` | Founder/product-proof narration |
 
-Video cuts are briefed in `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`, which owns their shot lists, timings, and mix rules. The deliverables:
+Generate with `npm run campaign:vo`. Campaign audio is marketing/reference material only and never the production phone-call speech path.
 
-| Cut | Length | Slot | Blocking issue |
+## Required Launch Cuts
+
+| Cut | Format | Purpose | Current posture |
 | --- | --- | --- | --- |
-| "The Second Ring" hero | 30s | Primary paid social | Needs a real captured booking call mixed forward — a capture task, not an edit |
-| "Two Rings" bumper | 6s | YouTube bumper, Reels/TikTok scroll-stop | Same captured call; no VO needed |
-| Missed-call cutdown | 15s | Paid social | Delivered file runs 16.80s and mixes the agent low; both violate the brief |
-| Product walkthrough | 30s | Sales, onboarding, docs | Alternate cut — not for paid social |
-| Descript master | 46s | Long-form, founder | Not yet re-cut; founder-60s VO is ready for it |
+| Missed Call | 9:16, 15s | Fast problem -> agent -> outcome -> CTA | Recapture against exact production before publishing |
+| Second Ring | 9:16 / 1:1 / 16:9, ~30s | Primary paid-social voice-quality proof | Needs certified captured call/product picture |
+| Founder / Product Proof | 16:9, 45–60s | Founder-led explanation and product proof | Recapture against exact production before publishing |
+| Two Rings | 6s bumper | Minimal missed-call scroll-stop | Derive from certified captured-call proof |
+| sound-off variants | matching paid formats | Muted-viewer accessibility without UI clutter | Produce from each certified paid cut |
 
-Every paid cut ships in **two mixes**: sound-on as briefed, and sound-off with the Studio live-transcript segment extended so a muted viewer can read the agent's words. Most paid social plays muted, and the hero and bumper both stake everything on audio.
+## Creative Status — 2026-08-11
 
-Legacy filenames containing `one-employee`, `employee`, `launch-9`, or `starter-9` are not publishable unless regenerated with the current copy above.
+### Rejected historical masters
 
-### Retired copy — do not ship
+The old 46-second walkthrough and old 15-second missed-call source contain a visible authenticated 404 and are **not publishable**. Do not recirculate them because they were once called final or published.
 
-The campaign document retires lines as the creative sharpens. Retired copy has a habit of surviving in asset tables and design prompts long after the decision, so it is listed here and pinned by `tests/launch-creative-consistency-contract.test.ts`.
+### Repaired historical derivatives
 
-| Retired | Use instead | Why |
-| --- | --- | --- |
-| "Missed calls should not become lost revenue." | "Every missed call is someone trying the next name on the list." | A principle, not a moment. It states a truism the viewer already agrees with and gives them nothing to picture; the replacement names the person walking away. |
-| The four-verb walkthrough script in the 30s slot | "The Second Ring" hero narration | The 30s slot is now the hero cut. Its narration is 24 words entering at 0:20; the rest is captured agent audio and silence. |
+The repaired 15s, 22s product-loop, and founder walkthrough derivatives remove the old 404, but their picture is historical. They are **QA/editing drafts only** until recaptured and certified against the exact production commit being promoted.
 
-## Launch Reel Source of Truth
+A clean edit of stale product footage is still stale product footage. Raw output is not release-certified.
 
-The [Descript share](https://share.descript.com/view/MvGqlYX4NMf) is the currently published edit, not proof that its picture matches current production. A reel is **release-current** only when its delivery record includes the exact `sourceCommit` from `marketing-kit/release-record.json` and that SHA matches the production deployment being promoted. An older published link remains a historical edit until it is re-cut and recertified.
+## Publish Gate
 
-Derivatives must preserve the approved voiceover, product sequence, timing, and price promise while using picture certified against the current production source commit.
+A finished reel is publishable only when all of the following are true:
 
-- Show the real product. No stock footage, mock dashboards, vendor logos, decorative captions, or extra claims.
-- Keep burned-in words scarce. The walkthrough cut uses four chapter words — **Create. Train. Wire. Run.** — and the hero and bumper carry their own briefed overlays. Anything not in a cut's shot list does not go on screen.
-- Every end card carries **Build free. Go live from $19/mo.** and **trywireline.com**. The hero and bumper open theirs with **Nobody went to voicemail.**
-- **Let the agent be heard.** Every cut must contain at least one stretch of real captured agent audio at full level, with no voiceover and no music under it. We sell a voice product, and the buyer's real objection is that their customers will know it is a bot; nothing in a deck answers that, and mixing the agent low throws away the only asset that does.
-- Provide accurate platform captions as a selectable accessibility track. Do not stack persistent subtitles over already legible product UI.
-- Cut 9:16 and 1:1 variants from the 16:9 master by reframing the active UI, never by shrinking the full desktop canvas into unreadable space.
-- Do not publish when `release-record.json.sourceCommit` differs from the deployed production SHA. Re-run the capture, inspect the frames, and update the delivery record first.
+- source picture was captured from the exact production commit being promoted;
+- `marketing-kit/release-record.json` records the exact `sourceCommit`;
+- every origin represented in the publishable manifest reports that same commit through `X-Wireline-Source-Commit` **before and after** capture;
+- the verified remote commit is the deployed production SHA being represented in the release record;
+- no auth wall, 404, loading hold, dead route, error surface, or stale UI appears;
+- active UI remains legible after 9:16 or 1:1 reframing;
+- product-proof frames are authentic Wireline UI, not generated or fabricated dashboards;
+- no unsupported customer, ROI, revenue, adoption, or compliance claim appears;
+- pricing and channel claims match the current plan catalog and launch posture;
+- the real agent voice is heard at **full level** for a meaningful stretch when voice quality is the selling point;
+- the end frame is deliberate, readable, and current;
+- platform captions are provided for accessibility without persistent subtitle clutter over legible UI.
 
-### Re-cutting and certifying the picture
+## Capture and Certification
 
-`npm run marketing:kit` records and certifies the picture for all three cuts. It captures the live product, so **the footage expires whenever the product's design changes** — a reel cut before a type or layout change shows a product that no longer exists.
+Publishable capture requires a clean checkout of the exact deployed source commit and a real demo/founder production session.
 
 ```bash
-npm run build && node -e "require('./dist/server.cjs')"   # serve the real bundle
-E2E_BASE_URL=http://127.0.0.1:3000 MARKETING_USE_MOCKS=1 npm run marketing:kit
+git checkout <exact-production-sha>
+DEMO_EMAIL=<demo-account-email> \
+DEMO_PASSWORD=<demo-account-password> \
+E2E_BASE_URL=https://trywireline.com \
+npm run marketing:kit
 ```
 
-The command runs the raw Playwright capture, then:
+Publishable capture is restricted to Wireline-owned hosts: `trywireline.com` / its subdomains, the `wireline-chi.vercel.app` project alias, or Wireline deployments in the `revaluate` Vercel namespace. Embedded URL credentials and arbitrary third-party HTTPS hosts are rejected before capture.
 
-- records the exact 40-character Git source commit and ref;
-- verifies all declared assets exist;
-- requires all three intended video captures and rejects implausibly empty files;
-- hashes every authenticated screenshot and rejects duplicate route frames, the signature of an auth wall, redirect, or shared error screen;
-- writes the evidence to `marketing-kit/manifest.json` and the portable delivery proof to `marketing-kit/release-record.json`.
+An exact Wireline deployment URL may be used as `E2E_BASE_URL`, but the current generator also includes a canonical `trywireline.com` public-screenshot set in the same manifest. Therefore **both origins must already serve the exact source commit** or certification fails closed. Do not use an immutable deployment URL to claim pre-alias certification while the canonical public screenshots still point at an older release.
 
-Use `npm run marketing:kit:raw` only while debugging the capture script. Raw output is not release-certified.
+Before opening a browser, the wrapper requests `HEAD /api/health/public` from every represented origin and requires each `X-Wireline-Source-Commit` header to equal the clean checkout SHA. It repeats the same verification after capture so an alias promotion during recording cannot produce mixed-source media.
 
-### Raw-source visual acceptance
+The wrapper also invalidates the entire prior `marketing-kit/` output before preflight and removes partial output on any failure. A failed recertification therefore cannot leave an older release record or stale video set available for accidental packaging.
 
-Certification proves provenance and distinct routes; it does not replace frame review. Before any source capture moves into Descript, CapCut, Premiere, or a platform upload:
+The wrapper proves:
 
-- confirm every held scene is the intended product surface, not the sign-in wall, authenticated 404, or shared error screen;
-- trim route-loading transitions from the edit rather than presenting them as product beats;
-- verify modal, dropdown, sheet, and select content remains centered and visible after portal styling changes;
-- reframe vertical cuts around the active UI; a full desktop shell surrounded by unused 9:16 space is source footage, not a publishable vertical composition;
-- confirm the finished edit meets its named duration and includes the approved end card;
-- treat any route named in the scene map as a release contract. `tests/launch-completeness-contract.test.ts` fails in the mandatory Vercel gate when a beat no longer exists in the authenticated router.
+- exact 40-character checkout/source commit;
+- clean checkout provenance;
+- every represented deployed origin equals the checkout source commit before and after capture;
+- `production-session` capture mode;
+- exactly three intended video captures;
+- complete desktop/mobile/reel authenticated screenshot sets;
+- distinct authenticated frames rather than a shared auth wall/error page;
+- present, nontrivial video files with hashes in the release record.
 
-The August 2 source review found the 15-second raw capture holding on an authenticated 404 because its historical `/email` beat no longer existed after Inbox moved to `/inbox`. The application now preserves `/email` as a redirect to `/inbox` for old links and historical capture instructions. Existing affected footage remains rejected; re-run the kit on the certified source commit.
+`MARKETING_USE_MOCKS=1` and localhost captures are layout/test fixtures. They must never produce a publishable release record. Use `npm run marketing:kit:raw` for that work, and do not supply real demo credentials to third-party or local layout targets.
 
-| Capture | Frame | Scene map |
-| --- | --- | --- |
-| `videos/reel-46s-master-walkthrough.webm` | 1920×1080 | home → overview → studio → knowledge → number → outbound (dial modal) → inbox/email → call log |
-| `videos/reel-30s-product-loop.webm` | 1080×1920 | Create → Train → Wire → Run |
-| `videos/reel-15s-missed-call.webm` | 1080×1920 | call log → outbound dial modal → inbox/email |
+### Current capture map
 
-Each beat is a hold long enough to cut from; the editor trims down, never stretches up. Scrolls are eased across twelve steps rather than jumped, so the motion matches what a person sees.
+The technical scene map can use current product surfaces while still expressing the public loop:
 
-Two rules the capture enforces rather than trusts:
+| Public beat | Product evidence |
+| --- | --- |
+| Build | Create/Studio intake and focused agent setup |
+| Train | Knowledge/training facts, rules, voice, and behavior |
+| Launch | Phone/Connections setup and enabled channels |
+| Improve | Call history, transcript, outcome, analytics, or follow-up review |
 
-- **Copy comes from the campaign document.** `copy/social-copy.md` is generated from the Brand Spine in `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`. Edit the document, re-run the kit; never edit the generated file. It previously hardcoded its own hooks, which had drifted to naming three competitors — against the doctrine above — and to omitting the price line entirely.
-- **No reel films `/compare`.** It is the one route that renders vendor marks.
+Implementation surface names do not create a second brand narrative.
 
-## Plugin-Ready Design Briefs
+## Raw-Source Visual Acceptance
 
-### Canva / Adobe Express Static Ad
+Certification proves provenance and route distinctness; it does not replace frame review.
 
-Prompt: Create a premium SaaS launch ad for Wireline. Headline: "Voice Agents". Subhead: "Personal + Business. Voice + SMS + Email." CTA: "Build free. Go live from $19/mo." Use a clean product-interface composition with an incoming call, SMS confirmation, and logged outcome. Use electric-violet accents, cool near-white or obsidian canvas, platinum wire detail, crisp type, and no generic stock photos.
+Before editing:
 
-### Adobe Firefly Product Scene
+- inspect the first, middle, and last frames of every held scene;
+- trim route-loading transitions rather than presenting them as product beats;
+- verify dropdowns, dialogs, sheets, and portalled controls remain centered and visible;
+- reject sign-in redirects, 404s, empty states that imply a defect, or transient error notices;
+- reframe vertical video around the active UI rather than shrinking the entire desktop shell;
+- verify the final edit meets its named duration and end-card contract.
 
-Prompt: A realistic premium SaaS workspace scene showing a laptop with a clean voice-agent dashboard, incoming call card, SMS follow-up, and outcome log. Modern founder/operator desk, subtle platinum wire accent, electric-violet UI highlight, professional lighting, no visible brand names except Wireline if text is supported.
+## Cut Delivery Rules
 
-### HeyGen / HyperFrames Founder Video
+### Missed Call — 15s
 
-Prompt: Produce a 60-second founder-style launch video for Wireline using the 60-second founder explainer voiceover from `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md` word for word. Tone: confident, warm, practical - a founder explaining their product to a friend, not an announcer. Visuals: real product footage of create, train, wire, and run. End card: Build your Voice Agent at trywireline.com.
+Follow the campaign pack’s exact timing. The contrast may use **You cannot pick up.** then **Your agent can.** Keep the real product and outcome legible. End on **Build free. Go live from $19/mo.** and `trywireline.com`.
 
-### BlitzReels Short Cut
+### Second Ring — ~30s
 
-Cut the 15-second 9:16 derivative to the shot list in `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md` → *15-Second Reel — Missed Call*, which owns its timings, overlays, and mix. Summarised: real product footage only, no vendor marks, platform captions for accessibility, and the agent forward at full level from 5.0-8.0 with the narration ducking under it. Two overlays are briefed and required — **You cannot pick up.** then **Your agent can.** — because that contrast is the ad. End card: "Build free. Go live from $19/mo." and "trywireline.com".
+The captured call and agent response are the proof center. Do not fill the whole cut with narration. Preserve silence where the missed-call problem needs it, then let the real agent voice play at full level.
 
-### Beautiful.ai Deck
+### Founder / Product Proof — 45–60s
 
-Prompt: Build a concise 6-slide launch deck for Wireline: 1) Voice Agents, 2) Missed calls are expensive, 3) Create -> Train -> Wire -> Run, 4) Personal + business use cases, 5) Founder Early Access from $19/mo, 6) Build your Voice Agent.
+Show **Build -> Train -> Launch -> Improve** with enough time for viewers to understand each useful transition. Do not turn the cut into a speed-run of every tab.
 
-## Voiceover masters
+### Two Rings — 6s
 
-`npm run campaign:vo` renders every VO from the canonical scripts in the campaign document, into gitignored `official-assets/audio/`. `tests/launch-campaign-vo-contract.test.ts` pins the generator's copy to the document, so the audio can never read a script the reels were not timecoded against. Regenerate whenever campaign copy changes — the renders are build artifacts, not repository content.
+Derive from the same certified missed-call/captured-call proof. No competing story, no generic AI montage.
 
-All campaign audio is **marketing and reference use only**. Production phone-call speech goes through the managed voice runtime, never through campaign assets.
+### sound-off
 
-### Superseded — reference only
+For muted placements, extend readable product moments and use sparse on-screen cues. Do not permanently subtitle over dense UI when selectable platform captions can carry accessibility.
 
-The original AI Voice Generator preview reads the retired hook and the retired four-verb script. It is kept for provenance and must not be laid over any current cut.
+## Tool-Ready Briefs
 
-- Preview: https://storage.googleapis.com/adm--audio-playback--7d--public/mcp-preview/ec315585-89bf-4b2b-ad7f-7e30bb50d5fd.mp3
-- Full audio: https://www.aidocmaker.com/g0/audio?name=acdf9b5a628e4558923c63ba0ed2d821
+### Static ad
+
+Create a premium Wireline launch ad using authentic product imagery or approved product screenshots. Headline: **Voice Agents**. Support: **Personal + Business. Calls + follow-up + outcomes.** CTA: **Build free. Go live from $19/mo.** Keep the composition clean and operational; no fake customer proof or generic robot imagery.
+
+### Founder video
+
+Use the canonical founder narration from the campaign pack with exact-production product footage. Show Build, Train, Launch, Improve in that order. Keep the product readable and let captured agent audio take over where voice quality is being proved.
+
+### Short-form edit
+
+Cut the certified 15-second source to the campaign pack. Real product proof only after any cinematic problem hook. Preserve the agent at full level during its proof beat. End with the current price line and domain.
+
+### Launch deck
+
+Six slides maximum: Voice Agents; the missed-call/follow-up problem; Build -> Train -> Launch -> Improve; personal + business workflows; product proof; Build free / Go live from $19/mo.
+
+## Asset Organization
+
+Use clear status folders or metadata:
+
+- `Certified` — exact-production source commit recorded and frame-reviewed;
+- `QA Drafts` — useful edits that are not release-current;
+- `Rejected Historical` — known broken/stale masters retained only for provenance;
+- `Audio` — current canonical VO renders;
+- `Copy` — current launch copy pack.
+
+Never label a historical edit `final` without also recording whether it is release-current.
 
 ## Placement Plan
 
-| Channel | Asset | Notes |
+| Channel | Preferred asset | Gate |
 | --- | --- | --- |
-| Homepage / pricing support | 16:9 Voice Agents banner | Align with current metadata and product-copy constants |
-| LinkedIn organic | Founder post + 16:9 banner | Promote founder early access, not public WhatsApp |
-| X / Twitter | Short text + 1:1 missed-call image | Drive to signup/pricing with v6 UTM |
-| Meta / LinkedIn ads | 16:9 build-free-live-19 and 1:1 Voice Agents | Start only after phone and payment loops are verified |
-| Reels / Shorts | 46s master + 15s 9:16 cut | Real product, minimal chapter words, selectable captions, one end card |
-| Sales deck | 6-slide deck | Use for warm founder outreach and early adopters |
+| Homepage / sales support | 16:9 product-proof cut | Exact-production capture certified |
+| LinkedIn organic | Founder post + founder/product proof | Current claims and UI |
+| X / short social | Missed-call still or short cut | Current price/domain |
+| Meta / LinkedIn paid | Missed Call / Second Ring | Phone + checkout dogfood complete |
+| Reels / TikTok | 9:16 Missed Call / Second Ring | Legible vertical reframe + captions |
+
+Paid acquisition starts only after the workflow being advertised has passed founder dogfood. Creative polish is not a substitute for product evidence.
