@@ -135,10 +135,11 @@ export function probeVapiManagedVoice(
  * reasoning runtime. A model-metadata GET can be slow or unavailable while
  * inference is healthy, which makes it a poor public product-health signal.
  *
- * This deliberately generates the smallest practical response: GPT-5.6 allows
- * reasoning effort `none`, and Responses requires max_output_tokens >= 16. The
- * shared Redis result/lock in public-health-api bounds this to one probe per
- * cache refresh globally rather than one probe per visitor.
+ * Keep this request intentionally model-neutral. `WIRELINE_OPENAI_STRUCTURED_MODEL`
+ * is an operator override, so a probe that adds GPT-5.6-only reasoning or
+ * verbosity controls can falsely report an outage for an otherwise valid
+ * Responses model. The shared Redis result/lock in public-health-api bounds
+ * this to one minimal inference per cache refresh globally.
  */
 export async function probeOpenAIModel(
   model: string,
@@ -173,8 +174,6 @@ export async function probeOpenAIModel(
         model,
         input: "Reply with OK.",
         max_output_tokens: 16,
-        reasoning: { effort: "none" },
-        text: { verbosity: "low" },
         store: false,
       }),
       signal: controller.signal,
