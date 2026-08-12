@@ -15,7 +15,8 @@ describe("Call Ops operational truth", () => {
     expect(route).toContain("gte(schema.callLogs.createdAt, since)");
     expect(route).toContain("eq(schema.callLogs.userId, userId)");
     expect(route).toContain("eq(schema.followUpTasks.userId, userId)");
-    expect(route).toContain('eq(schema.followUpTasks.status, "pending")');
+    expect(route).toContain('import { ACTIVE_OPERATOR_TASK_STATUSES } from "../lib/operator-work-status";');
+    expect(route).toContain("inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES])");
     expect(route).toContain('const CALL_TASK_SOURCE_TYPES = ["phone_call", "showcase_call"] as const;');
     expect(route).toContain("inArray(schema.followUpTasks.sourceType, [...CALL_TASK_SOURCE_TYPES])");
     expect(route).toContain("taskType} = 'human_escalation'");
