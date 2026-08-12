@@ -101,8 +101,12 @@ describe("launch truth contract", () => {
 
     expect(campaign).not.toContain("AI employee");
     expect(mediaKit).not.toContain("AI employee");
+    expect(mediaKit).toContain("X-Wireline-Source-Commit");
+    expect(mediaKit).toContain("deployed production SHA");
     expect(playbook).toContain("First 3–5 founder-led design partners");
+    expect(playbook).toContain("Do not maintain a second hand-written plan catalog");
     expect(playbook).not.toContain("Invite 5-10 early operators");
+    expect(playbook).not.toContain("| Starter Plus | $39");
   });
 
   it("does not leak Wireline branding into a customer's sequence message", () => {
