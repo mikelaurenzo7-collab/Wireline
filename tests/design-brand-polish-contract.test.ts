@@ -120,6 +120,10 @@ describe("E2E design and brand polish", () => {
     //    theme-aware onAction foreground like every other primary button, not a
     //    hardcoded white that fails contrast on the violet action color in dark.
     const demo = read("src/components/marketing/BrowserCallWidget.tsx");
+    expect(demo).toContain('import WirelineMark from "../brand/WirelineMark"');
+    expect(demo).toContain("<SignalOrbFrame");
+    expect(demo).toContain('<Medallion size="lg" variant="signature"');
+    expect(demo).not.toContain("AgentFace");
     expect(demo).toContain(
       "bg-[color:var(--wireline-color-action-primary-default)] text-[color:var(--wireline-color-text-onAction)]",
     );

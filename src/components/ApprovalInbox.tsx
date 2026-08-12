@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   Calendar,
@@ -13,41 +13,17 @@ import {
 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import {
+  parseApprovalTasks,
+  parseTriageBucket,
+  type FollowUpTaskRow,
+  type TriageBucket,
+} from "../lib/approval-inbox-response";
 import { emitProductEventOnce } from "../lib/product-event-client";
 import { EmptyState } from "./ui/EmptyState";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 import { StatusNotice } from "./molecules";
-
-export type FollowUpTaskRow = {
-  id: string;
-  task_type?: string;
-  taskType?: string;
-  description?: string | null;
-  status?: string;
-  priority?: string;
-  payload?: Record<string, unknown> | null;
-  customer_info?: Record<string, unknown> | null;
-  customerInfo?: Record<string, unknown> | null;
-  source_type?: string | null;
-  sourceType?: string | null;
-  source_id?: string | null;
-  sourceId?: string | null;
-  agent?: { name?: string | null };
-  agentId?: string | null;
-  agent_id?: string | null;
-  created_at?: string;
-  createdAt?: string;
-};
-
-export type TriageBucket = {
-  hot_leads: Array<Record<string, unknown>>;
-  compliance: FollowUpTaskRow[];
-  pending_tasks: FollowUpTaskRow[];
-  knowledge_gaps: Array<Record<string, unknown>>;
-  escalations: Array<Record<string, unknown>>;
-  counts?: Record<string, number>;
-};
 
 type ApprovalBucket = "pending" | "compliance" | "hot_leads" | "escalations" | "knowledge_gaps";
 
@@ -235,7 +211,9 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
             }),
           });
       if (!response.ok) {
-        throw new Error(manualHandoff ? "Could not dismiss this handoff." : "Could not reject this action.");
+        throw new Error(
+          manualHandoff ? "Could not dismiss this handoff." : "Could not reject this action.",
+        );
       }
       onResolved();
     } catch (reason) {
@@ -278,27 +256,36 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
             {evidenceSnippet(task)}
           </p>
           {!manualHandoff && editing ? (
-            <div className="mt-3 grid gap-2">
-              <input
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                value={editSubject}
-                onChange={(event) => setEditSubject(event.target.value)}
-                placeholder="Subject (email / CRM)"
-              />
-              <textarea
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                rows={3}
-                value={editBody}
-                onChange={(event) => setEditBody(event.target.value)}
-                placeholder="Message / body that will execute on approve"
-              />
-              <textarea
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                rows={2}
-                value={editNotes}
-                onChange={(event) => setEditNotes(event.target.value)}
-                placeholder="Internal description for this approval card"
-              />
+            <div className="mt-3 grid gap-3 rounded-lg border border-border bg-muted/30 p-3">
+              <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+                Subject
+                <input
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                  value={editSubject}
+                  onChange={(event) => setEditSubject(event.target.value)}
+                  placeholder="Email or CRM subject"
+                />
+              </label>
+              <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+                Message
+                <textarea
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                  rows={3}
+                  value={editBody}
+                  onChange={(event) => setEditBody(event.target.value)}
+                  placeholder="Message that will execute on approval"
+                />
+              </label>
+              <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+                Internal notes
+                <textarea
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                  rows={2}
+                  value={editNotes}
+                  onChange={(event) => setEditNotes(event.target.value)}
+                  placeholder="Context for this approval card"
+                />
+              </label>
             </div>
           ) : null}
           {error ? (
@@ -310,11 +297,11 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
           <div className="mt-3 flex flex-wrap gap-2">
             <ShadButton type="button" size="sm" disabled={busy} onClick={() => void approve()}>
               {busy ? (
-                <Loader2 className="size-3.5 animate-spin" />
+                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
               ) : manualHandoff ? (
-                <UserRoundCheck className="size-3.5" />
+                <UserRoundCheck className="size-3.5" aria-hidden="true" />
               ) : (
-                <Check className="size-3.5" />
+                <Check className="size-3.5" aria-hidden="true" />
               )}
               {manualHandoff ? "Complete" : "Approve"}
             </ShadButton>
@@ -336,7 +323,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
               disabled={busy}
               onClick={() => void reject()}
             >
-              <X className="size-3.5" />
+              <X className="size-3.5" aria-hidden="true" />
               {manualHandoff ? "Dismiss" : "Reject"}
             </ShadButton>
           </div>
@@ -362,23 +349,32 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
   const [triageUnavailable, setTriageUnavailable] = useState(false);
   const [tasksUnavailable, setTasksUnavailable] = useState(false);
   const [visibleCount, setVisibleCount] = useState(APPROVAL_PAGE_SIZE);
+  const loadAbortRef = useRef<AbortController | null>(null);
 
   const load = useCallback(async () => {
+    loadAbortRef.current?.abort();
+    const controller = new AbortController();
+    loadAbortRef.current = controller;
     setLoading(true);
     setError(null);
     setTriageUnavailable(false);
     setTasksUnavailable(false);
     try {
       const [triageRes, tasksRes] = await Promise.all([
-        authFetch("/api/triage").catch(() => null),
-        authFetch("/api/Assistants/tasks?status=active").catch(() => null),
+        authFetch("/api/triage", { signal: controller.signal }).catch(() => null),
+        authFetch("/api/Assistants/tasks?status=active", { signal: controller.signal }).catch(
+          () => null,
+        ),
       ]);
       const [triageBody, tasksBody] = await Promise.all([
         triageRes?.ok ? triageRes.json().catch(() => null) : null,
         tasksRes?.ok ? tasksRes.json().catch(() => null) : null,
       ]);
-      const triageReady = Boolean(triageRes?.ok && triageBody);
-      const tasksReady = Boolean(tasksRes?.ok && tasksBody);
+      if (controller.signal.aborted) return;
+      const validTriage = triageRes?.ok ? parseTriageBucket(triageBody) : null;
+      const validTasks = tasksRes?.ok ? parseApprovalTasks(tasksBody) : null;
+      const triageReady = validTriage !== null;
+      const tasksReady = validTasks !== null;
       if (!triageReady && !tasksReady) {
         setError("Could not load approval inbox.");
         setTriage(null);
@@ -387,17 +383,25 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       }
       setTriageUnavailable(!triageReady);
       setTasksUnavailable(!tasksReady);
-      setTriage(triageReady ? triageBody : null);
-      setTasks(tasksReady && Array.isArray(tasksBody?.tasks) ? tasksBody.tasks : []);
+      setTriage(validTriage);
+      setTasks(validTasks || []);
     } catch {
+      if (controller.signal.aborted) return;
       setError("Could not load approval inbox.");
     } finally {
-      setLoading(false);
+      if (loadAbortRef.current === controller && !controller.signal.aborted) {
+        loadAbortRef.current = null;
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     void load();
+    return () => {
+      loadAbortRef.current?.abort();
+      loadAbortRef.current = null;
+    };
   }, [load]);
 
   // Reset pagination whenever the active bucket changes so switching tabs

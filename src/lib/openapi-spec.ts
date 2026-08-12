@@ -230,13 +230,18 @@ const Webhook: JsonSchema = {
 const TriageBucket: JsonSchema = {
   type: "object",
   description:
-    "One of the five Triage Inbox buckets: hot leads, compliance, Training gaps, tasks, escalations.",
+    "The five Triage Inbox buckets: hot leads, compliance work, pending tasks, knowledge gaps, and escalations.",
+  required: ["hot_leads", "compliance", "pending_tasks", "knowledge_gaps", "escalations", "counts"],
   properties: {
     hot_leads: { type: "array", items: { type: "object", additionalProperties: true } },
     compliance: { type: "array", items: { type: "object", additionalProperties: true } },
     knowledge_gaps: { type: "array", items: { type: "object", additionalProperties: true } },
-    tasks: { type: "array", items: { type: "object", additionalProperties: true } },
+    pending_tasks: { type: "array", items: { type: "object", additionalProperties: true } },
     escalations: { type: "array", items: { type: "object", additionalProperties: true } },
+    counts: {
+      type: "object",
+      additionalProperties: { type: "integer", minimum: 0 },
+    },
   },
   additionalProperties: true,
 };

@@ -78,7 +78,9 @@ describe("omnichannel outcome loop", () => {
     expect(operatorRoute).toContain(".returning({ id: schema.followUpTasks.id })");
     expect(operatorRoute).not.toContain("emitServerProductEventOnce");
     expect(operatorRoute).not.toContain("first_next_action_approved");
-    expect(approvals).toContain('authFetch("/api/Assistants/tasks?status=active")');
+    expect(approvals).toContain(
+      'authFetch("/api/Assistants/tasks?status=active", { signal: controller.signal })',
+    );
     expect(approvals).toContain('rawTaskType(task) === "human_handoff"');
     expect(approvals).toContain('{manualHandoff ? "Complete" : "Approve"}');
     expect(approvals).toContain('{manualHandoff ? "Dismiss" : "Reject"}');
@@ -91,7 +93,14 @@ describe("omnichannel outcome loop", () => {
     expect(approvals).toContain('case "pending":\n        return pendingTasks;');
     expect(approvals).toContain('case "compliance":\n        return complianceTasks;');
     expect(approvals).not.toContain("if (!triage) return []");
-    expect(approvals).toContain('authFetch("/api/triage").catch(() => null)');
+    expect(approvals).toContain(
+      'authFetch("/api/triage", { signal: controller.signal }).catch(() => null)',
+    );
+    expect(approvals).toContain("parseTriageBucket(triageBody)");
+    expect(approvals).toContain("parseApprovalTasks(tasksBody)");
+    expect(approvals).toContain("loadAbortRef.current?.abort()");
+    expect(approvals).toContain("loadAbortRef.current = null");
+    expect(approvals).toContain("!controller.signal.aborted");
     expect(approvals).toContain("setTriageUnavailable(!triageReady)");
     expect(approvals).toContain("Active operator work is still current.");
   });
