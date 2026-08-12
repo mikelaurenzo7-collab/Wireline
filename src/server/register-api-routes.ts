@@ -60,6 +60,7 @@ import resendWebhookRouter from "../routes/resend-webhook-routes";
 import metaWebhookRouter from "../routes/meta-webhook-routes";
 import twilioWebhookRouter from "../routes/twilio-webhook";
 import escalationRouter from "../routes/escalation-routes";
+import smsOutcomeRouter from "../routes/sms-outcome-routes";
 import smsRouter from "../routes/sms-routes";
 import webhookTestRouter from "../routes/webhook-test-routes";
 import webhookRouter from "../routes/webhook-routes";
@@ -179,6 +180,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(metaWebhookRouter);
   app.use(twilioWebhookRouter);
   app.use(escalationRouter);
+  app.use(smsOutcomeRouter);
   app.use(smsRouter);
 
   // Target-specific test delivery owns /:id/test before the broad webhook router.
