@@ -31,7 +31,24 @@ type TaskLite = {
   status?: string | null;
   task_type?: string | null;
   taskType?: string | null;
+  created_at?: string | null;
+  createdAt?: string | null;
 };
+
+function newestTask(tasks: TaskLite[]): TaskLite | undefined {
+  let newest: TaskLite | undefined;
+  let newestAt = Number.NEGATIVE_INFINITY;
+  for (const task of tasks) {
+    const value = task.created_at ?? task.createdAt;
+    const parsed = value ? Date.parse(value) : Number.NaN;
+    if (!Number.isFinite(parsed) || parsed <= newestAt) continue;
+    newest = task;
+    newestAt = parsed;
+  }
+  // Legacy/imported rows can lack a timestamp. Preserve a deterministic
+  // representative action rather than dropping action evidence entirely.
+  return newest ?? tasks[0];
+}
 
 function normalizeCall(row: Record<string, unknown>): OutcomeLedgerRow {
   return {
@@ -133,7 +150,7 @@ export default function OutcomeLedger({
         .map((row: OutcomeLedgerRow) => {
           const pending = pendingBySource.get(row.id) || [];
           const completed = completedBySource.get(row.id) || [];
-          const lastAction = pending[0] || completed[0];
+          const lastAction = newestTask([...pending, ...completed]);
           const pending_task_count = pending.length;
           const completed_task_count = completed.length;
           const last_action_type = (lastAction?.task_type || lastAction?.taskType || null) as
