@@ -14,12 +14,14 @@ describe("double-pass residual hardening", () => {
     }
   });
 
-  it("repairs historical production Resend credentials that leaked into non-production targets", () => {
+  it("repairs historical production Resend credentials without decrypting project secrets", () => {
     const source = read("scripts/sync-resend-env-to-vercel.mjs");
     expect(source).toContain("MANAGED_PRODUCTION_ONLY_KEYS");
     expect(source).toContain("narrowLegacyProductionEntries");
     expect(source).toContain('targets.some((target) => target !== "production")');
     expect(source).toContain("await patchEnv(entry.id, { target: PRODUCTION_TARGET })");
+    expect(source).toContain('`/v10/projects/${encodeURIComponent(PROJECT_ID)}/env`');
+    expect(source).not.toContain("decrypt=true");
     expect(source).not.toContain('["production", "preview", "development"]');
   });
 
