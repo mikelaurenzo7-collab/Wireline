@@ -224,9 +224,10 @@ if (shouldMigrate) {
 
 // This is a read-only release assertion and must run for every real production
 // build even when migration execution is explicitly disabled. A migration
-// override cannot weaken the runtime schema contract.
+// override cannot weaken the runtime schema contract. The wrapper first selects
+// the same validated database URL as the application runtime.
 if (shouldVerifyProductionSchema) {
-  run("node", ["scripts/check-production-schema-effects.mjs"]);
+  run("node", ["scripts/run-production-schema-effects.mjs"]);
 }
 
 run("npm", ["run", "build"]);
