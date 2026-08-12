@@ -12,6 +12,7 @@ import {
   stripeAvailable,
   subscriptionBillingInterval,
   basePlanInvoiceShare,
+  stripeInvoiceIdForCharge,
 } from "../lib/stripe-helpers";
 import { basePlanFromStripeSubscription } from "../lib/stripe-base-plan";
 import {
@@ -80,7 +81,7 @@ async function resolveSubscriptionAllowanceContext(
   charge: Stripe.Charge,
   operation: "refund" | "dispute_withdrawal" | "dispute_reinstatement",
 ): Promise<SubscriptionAllowanceContext | null> {
-  const invoiceId = typeof charge.invoice === "string" ? charge.invoice : charge.invoice?.id;
+  const invoiceId = await stripeInvoiceIdForCharge(charge);
   if (!invoiceId) {
     log.info("subscription allowance operation skipped: charge has no invoice", {
       chargeId: charge.id,

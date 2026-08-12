@@ -5,7 +5,11 @@ import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { FOUNDER_CATALOG_VERSION, planById, planLookupKey } from "../lib/plan-catalog";
 import { drizzle, auditLogger, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
-import { stripe, stripeAvailable } from "../lib/stripe-helpers";
+import {
+  stripe,
+  stripeAvailable,
+  stripeCheckoutIntegrationIdentifier,
+} from "../lib/stripe-helpers";
 import { authenticateUser } from "../middleware/auth";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import * as schema from "../db/schema";
@@ -224,6 +228,7 @@ router.post(
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
+      integration_identifier: stripeCheckoutIntegrationIdentifier("plan"),
       customer: customerId,
       customer_update: { address: "auto" },
       automatic_tax: { enabled: true },

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ExternalLink, Loader2, Plus, ShieldCheck } from "lucide-react";
 
 import { Badge, Button, Skeleton } from "../components/atoms";
+import { StatusNotice } from "../components/molecules/StatusNotice";
 import StripeBillingCard from "../components/StripeBillingCard";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
@@ -19,6 +20,12 @@ type SubscriptionState = BillingStatusResponse["subscription"];
 
 type ConversationBalanceResponse = {
   balance_usd: number;
+};
+
+type CheckoutReturnNotice = {
+  tone: "info" | "success";
+  title: string;
+  message: string;
 };
 
 function formatUsd(value: number | null) {
@@ -50,12 +57,16 @@ export default function BillingSettings() {
   const [topUpBusy, setTopUpBusy] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [checkoutReturnNotice, setCheckoutReturnNotice] = useState<CheckoutReturnNotice | null>(
+    null,
+  );
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
       setLoadError(null);
+      setCheckoutReturnNotice(null);
       try {
         // Returning from a successful Stripe checkout: prove the session
         // server-side BEFORE reading billing status, so entitlements are
@@ -64,12 +75,58 @@ export default function BillingSettings() {
         // the verify endpoint is idempotent against it.
         const params = new URLSearchParams(window.location.search);
         const returnedSessionId = params.get("session_id");
-        if (params.get("billing") === "success" && returnedSessionId) {
-          await authFetch("/api/billing/checkout/verify", {
+        const returnFlow =
+          params.get("billing") === "success"
+            ? "plan"
+            : params.get("balance") === "success"
+              ? "runtime_balance"
+              : params.get("live_video") === "success"
+                ? "live_video"
+                : null;
+        if (returnFlow && returnedSessionId) {
+          const verifyResponse = await authFetch("/api/billing/checkout/verify", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ session_id: returnedSessionId }),
-          }).catch(() => {});
+          }).catch(() => null);
+          if (verifyResponse?.ok) {
+            const verification = (await verifyResponse.json()) as {
+              payment_status?: string;
+              synced?: boolean;
+              credit_granted?: boolean;
+              live_video_enabled?: boolean;
+            };
+            if (verification.payment_status === "unpaid") {
+              setCheckoutReturnNotice({
+                tone: "info",
+                title: "Payment processing",
+                message:
+                  returnFlow === "runtime_balance"
+                    ? "Your Runtime Balance will update automatically after Stripe confirms the funds."
+                    : returnFlow === "live_video"
+                      ? "Live video will activate automatically after Stripe confirms the funds."
+                      : "Your plan will activate automatically after Stripe confirms the funds.",
+              });
+            } else if (returnFlow === "runtime_balance" && verification.credit_granted) {
+              setCheckoutReturnNotice({
+                tone: "success",
+                title: "Runtime Balance added",
+                message: "Your prepaid balance is ready for calls, texts, and live work.",
+              });
+            } else if (returnFlow === "live_video" && verification.live_video_enabled) {
+              setCheckoutReturnNotice({
+                tone: "success",
+                title: "Live video activated",
+                message: "Your workspace can now use the live video add-on.",
+              });
+            } else if (returnFlow === "plan" && verification.synced) {
+              setCheckoutReturnNotice({
+                tone: "success",
+                title: "Plan confirmed",
+                message: "Your Wireline plan and workspace access are up to date.",
+              });
+            }
+          }
         }
 
         const [statusRes, balanceRes] = await Promise.all([
@@ -107,7 +164,11 @@ export default function BillingSettings() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("balance") === "success" || params.get("billing") === "success") {
+    if (
+      params.get("balance") === "success" ||
+      params.get("billing") === "success" ||
+      params.get("live_video") === "success"
+    ) {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
@@ -175,6 +236,17 @@ export default function BillingSettings() {
             for assistive tech only so the page is not labelled twice on screen.
             It also gives the page an h1 while the plan card is still loading. */}
         <WorkspacePageIntro title="Billing" titleHidden />
+
+        {checkoutReturnNotice ? (
+          <StatusNotice
+            tone={checkoutReturnNotice.tone}
+            title={checkoutReturnNotice.title}
+            className="mb-6"
+            aria-live="polite"
+          >
+            {checkoutReturnNotice.message}
+          </StatusNotice>
+        ) : null}
 
         {loadError ? (
           <div

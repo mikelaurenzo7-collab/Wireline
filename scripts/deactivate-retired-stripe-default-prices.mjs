@@ -18,7 +18,7 @@ import Stripe from "stripe";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
-const API_VERSION = "2026-02-25.clover";
+const API_VERSION = "2026-07-29.dahlia";
 
 const RETIRED_PRODUCT_NAMES = [
   "Wireline Plus",
