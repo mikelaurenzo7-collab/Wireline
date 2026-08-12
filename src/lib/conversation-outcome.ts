@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { ACTIVE_OPERATOR_TASK_STATUSES } from "./operator-work-status";
+
 export const CONVERSATION_OUTCOME_STATUSES = [
   "open",
   "waiting",
@@ -10,7 +12,10 @@ export const CONVERSATION_OUTCOME_STATUSES = [
 
 export type ConversationOutcomeStatus = (typeof CONVERSATION_OUTCOME_STATUSES)[number];
 
-export const ACTIVE_HANDOFF_TASK_STATUSES = ["pending", "open", "in_progress"] as const;
+// Handoffs use the same active lifecycle as every other item owned by the
+// operator queue. Keep the handoff-named export for channel routes while the
+// canonical definition lives in operator-work-status.
+export const ACTIVE_HANDOFF_TASK_STATUSES = ACTIVE_OPERATOR_TASK_STATUSES;
 
 export const conversationOutcomeSchema = z
   .object({

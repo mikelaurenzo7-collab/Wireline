@@ -24,10 +24,9 @@ describe("demand-driven authenticated experience", () => {
 
   it("prioritizes customer demand and outcomes over internal inventory", () => {
     expect(overview).toMatch(/Customer conversations today/);
-    expect(overview).toMatch(/Priority leads/);
-    expect(overview).toMatch(/Latest high-intent conversations/);
+    expect(overview).toMatch(/High-intent today/);
     expect(overview).toMatch(/Appointments booked/);
-    expect(overview).toMatch(/Follow-ups waiting/);
+    expect(overview).toMatch(/Needs attention/);
     expect(overview).toMatch(/Customer outcomes/);
     expect(overview).not.toMatch(/Conversation Balance/);
     expect(overview).not.toMatch(/DailyBriefPanel/);
@@ -40,7 +39,7 @@ describe("demand-driven authenticated experience", () => {
     expect(overview).toContain('primaryLabel: "Connect phone"');
     expect(overview).toContain("secondaryHref: undefined");
     expect(overview).toMatch(/Put it where customers already call/);
-    expect(overview).toMatch(/Review follow-ups/);
+    expect(overview).toMatch(/Review work/);
     expect(overview).not.toMatch(
       /capturing real demand|site and business listings|forward missed calls/,
     );
