@@ -21,6 +21,15 @@ export const conversationOutcomeSchema = z
     message: "Handoff requires status escalated.",
   });
 
+/** Stable input for a Postgres transaction advisory lock. */
+export function handoffAdvisoryLockKey(
+  userId: string,
+  sourceType: "email_thread" | "sms_thread",
+  sourceId: string,
+): string {
+  return `${userId}:${sourceType}:${sourceId}:human_handoff`;
+}
+
 /**
  * A conversation that leaves the escalated state must not retain an active
  * human-handoff task. Successful terminal outcomes complete the work; returning
