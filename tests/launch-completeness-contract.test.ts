@@ -108,7 +108,9 @@ describe("launch completeness contracts", () => {
     expect(status).toContain("Page refreshes every 60 seconds.");
     expect(status).toContain("page refreshes every 60s.");
     expect(status).toContain("Page refresh · 60s");
-    expect(status).toContain("Provider cache · up to 120s");
+    expect(status).toContain("Normal cache · 120s");
+    expect(status).toContain("Incident fallback · up to 5m");
+    expect(status).toContain("timestamp above is the authoritative age");
     expect(status).toContain("minimal,\n              non-persistent OpenAI Responses inference");
     expect(marketingMeta).toContain(
       "Live access checks for Wireline's managed voice control plane and reasoning runtime. Page refreshes every 60 seconds.",
