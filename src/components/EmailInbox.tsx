@@ -258,14 +258,16 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
               thread: updated,
               handoff: body.handoff_task_id
                 ? { id: body.handoff_task_id, status: "pending" }
-                : current.handoff,
+                : updated.status === "escalated"
+                  ? current.handoff
+                  : null,
             }
           : current,
       );
       setNotice(
         handoff
           ? "A human follow-up task is now in the queue."
-          : `Conversation marked ${OUTCOME_META[status].label.toLowerCase()}.`,
+          : `Conversation marked ${OUTCOME_META[updated.status].label.toLowerCase()}.`,
       );
     } catch (cause) {
       setDetailError(cause instanceof Error ? cause.message : "Could not update the outcome.");
@@ -623,7 +625,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     </Button>
                   ) : null}
                 </div>
-                {detail?.handoff ? (
+                {detail?.handoff && selectedThread.status === "escalated" ? (
                   <ConversationActivity
                     className="mt-4"
                     state="active"

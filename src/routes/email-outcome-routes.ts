@@ -1,35 +1,39 @@
 import { Router, Response } from "express";
-import { and, eq, inArray } from "drizzle-orm";
-import { z } from "zod";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
+import {
+  ACTIVE_HANDOFF_TASK_STATUSES,
+  conversationOutcomeSchema,
+  handoffAdvisoryLockKey,
+  handoffResolutionNote,
+  handoffTaskStatusForOutcome,
+} from "../lib/conversation-outcome";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
 import { validateBody } from "../lib/api-validation";
 import type { AuthenticatedRequest } from "../types/auth";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
+import { touchNavCounts } from "../lib/nav-counts-invalidate";
 
 const router = Router();
-
-const outcomeSchema = z
-  .object({
-    status: z.enum(["open", "waiting", "escalated", "booked", "resolved"]),
-    handoff: z.boolean().optional().default(false),
-  })
-  .refine((data) => !data.handoff || data.status === "escalated", {
-    message: "Handoff requires status escalated.",
-  });
+const EMAIL_HANDOFF_SOURCE_TYPE = "email_thread";
+const HUMAN_HANDOFF_TASK_TYPE = "human_handoff";
 
 /**
  * Outcome Center action for an email thread. Status is intentionally explicit:
  * it represents the account holder's approved operating state, not an AI guess.
  * A handoff also becomes a durable follow-up task so the request cannot vanish
  * behind a UI notification.
+ *
+ * Conversation state and handoff state are kept bidirectionally coherent here:
+ * leaving `escalated` completes or withdraws any still-active human handoff,
+ * preventing a resolved thread from remaining in the operator queue.
  */
 router.patch(
   "/api/emails/threads/:id/outcome",
   authenticateUser,
-  validateBody(outcomeSchema),
+  validateBody(conversationOutcomeSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { status: requestedStatus, handoff } = req.body;
@@ -53,7 +57,12 @@ router.patch(
 
       if (!thread) throw AppError.fromHttpStatus(404, "Email conversation not found.");
 
-      const { updated, handoffTaskId } = await drizzle.transaction(async (tx) => {
+      const { updated, handoffTaskId, taskStateChanged } = await drizzle.transaction(async (tx) => {
+        const lockKey = handoffAdvisoryLockKey(req.user.id, EMAIL_HANDOFF_SOURCE_TYPE, thread.id);
+        await tx.execute(
+          sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`,
+        );
+
         const [nextThread] = await tx
           .update(schema.emailThreads)
           .set({ status })
@@ -63,6 +72,8 @@ router.patch(
           .returning();
 
         let nextHandoffTaskId: string | null = null;
+        let nextTaskStateChanged = false;
+
         if (handoff) {
           const [existing] = await tx
             .select({ id: schema.followUpTasks.id })
@@ -70,9 +81,10 @@ router.patch(
             .where(
               and(
                 eq(schema.followUpTasks.userId, req.user.id),
-                eq(schema.followUpTasks.sourceType, "email_thread"),
+                eq(schema.followUpTasks.sourceType, EMAIL_HANDOFF_SOURCE_TYPE),
                 eq(schema.followUpTasks.sourceId, thread.id),
-                inArray(schema.followUpTasks.status, ["pending", "in_progress"]),
+                eq(schema.followUpTasks.taskType, HUMAN_HANDOFF_TASK_TYPE),
+                inArray(schema.followUpTasks.status, [...ACTIVE_HANDOFF_TASK_STATUSES]),
               ),
             )
             .limit(1);
@@ -84,24 +96,52 @@ router.patch(
               .insert(schema.followUpTasks)
               .values({
                 userId: req.user.id,
-                sourceType: "email_thread",
+                sourceType: EMAIL_HANDOFF_SOURCE_TYPE,
                 sourceId: thread.id,
                 targetChannel: "manual",
                 agentId: thread.agentId,
                 customerInfo: { email: thread.customerEmail },
                 payload: { thread_id: thread.id, status: "escalated" },
-                taskType: "human_handoff",
+                taskType: HUMAN_HANDOFF_TASK_TYPE,
                 description: `Review email conversation: ${thread.subject || "Untitled conversation"}`,
                 priority: "high",
                 status: "pending",
               })
               .returning({ id: schema.followUpTasks.id });
             nextHandoffTaskId = task?.id ?? null;
+            nextTaskStateChanged = Boolean(task?.id);
+          }
+        } else {
+          const handoffStatus = handoffTaskStatusForOutcome(status);
+          if (handoffStatus) {
+            const reconciled = await tx
+              .update(schema.followUpTasks)
+              .set({
+                status: handoffStatus,
+                resolutionNotes: handoffResolutionNote("email", status),
+              })
+              .where(
+                and(
+                  eq(schema.followUpTasks.userId, req.user.id),
+                  eq(schema.followUpTasks.sourceType, EMAIL_HANDOFF_SOURCE_TYPE),
+                  eq(schema.followUpTasks.sourceId, thread.id),
+                  eq(schema.followUpTasks.taskType, HUMAN_HANDOFF_TASK_TYPE),
+                  inArray(schema.followUpTasks.status, [...ACTIVE_HANDOFF_TASK_STATUSES]),
+                ),
+              )
+              .returning({ id: schema.followUpTasks.id });
+            nextTaskStateChanged = reconciled.length > 0;
           }
         }
 
-        return { updated: nextThread, handoffTaskId: nextHandoffTaskId };
+        return {
+          updated: nextThread,
+          handoffTaskId: nextHandoffTaskId,
+          taskStateChanged: nextTaskStateChanged,
+        };
       });
+
+      if (taskStateChanged) touchNavCounts(req.user.id);
 
       res.json({
         thread: mapObjectToSnake(updated),
@@ -161,9 +201,10 @@ router.get(
         .where(
           and(
             eq(schema.followUpTasks.userId, req.user.id),
-            eq(schema.followUpTasks.sourceType, "email_thread"),
+            eq(schema.followUpTasks.sourceType, EMAIL_HANDOFF_SOURCE_TYPE),
             eq(schema.followUpTasks.sourceId, thread.id),
-            inArray(schema.followUpTasks.status, ["pending", "in_progress"]),
+            eq(schema.followUpTasks.taskType, HUMAN_HANDOFF_TASK_TYPE),
+            inArray(schema.followUpTasks.status, [...ACTIVE_HANDOFF_TASK_STATUSES]),
           ),
         )
         .limit(1);

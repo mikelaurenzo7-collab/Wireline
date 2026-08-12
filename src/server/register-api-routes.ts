@@ -49,6 +49,7 @@ import callRecordingRouter from "../routes/call-recording-routes";
 import agentCallRouter from "../routes/agent-call-routes";
 import callOpsMetricsRouter from "../routes/call-ops-metrics-routes";
 import callOpsAnalyticsRouter from "../routes/call-ops-analytics-routes";
+import operatorTaskRouter from "../routes/operator-task-routes";
 import fleetRouter from "../routes/fleet-routes";
 import calendarRouter from "../routes/calendar-routes";
 import workspaceKnowledgeRouter from "../routes/workspace-knowledge-routes";
@@ -60,6 +61,7 @@ import resendWebhookRouter from "../routes/resend-webhook-routes";
 import metaWebhookRouter from "../routes/meta-webhook-routes";
 import twilioWebhookRouter from "../routes/twilio-webhook";
 import escalationRouter from "../routes/escalation-routes";
+import smsOutcomeRouter from "../routes/sms-outcome-routes";
 import smsRouter from "../routes/sms-routes";
 import webhookTestRouter from "../routes/webhook-test-routes";
 import webhookRouter from "../routes/webhook-routes";
@@ -168,6 +170,9 @@ export function registerApiRoutes(app: Express): void {
   app.use(callOpsMetricsRouter);
   app.use(callOpsAnalyticsRouter);
   app.use(dashboardRouter);
+  // Operator semantics shadow only `status=active` task reads and human-handoff
+  // completion; all executable task behavior continues through fleetRouter.
+  app.use(operatorTaskRouter);
   app.use(fleetRouter);
   app.use(calendarRouter);
   app.use(workspaceKnowledgeRouter);
@@ -179,6 +184,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(metaWebhookRouter);
   app.use(twilioWebhookRouter);
   app.use(escalationRouter);
+  app.use(smsOutcomeRouter);
   app.use(smsRouter);
 
   // Target-specific test delivery owns /:id/test before the broad webhook router.
