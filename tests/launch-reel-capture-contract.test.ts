@@ -85,6 +85,16 @@ describe("launch reel capture contract", () => {
     expect(certifier).toContain("publishable: certifiedManifest.captureCertification.publishable");
   });
 
+  it("restricts publishable capture to Wireline-owned production hosts", () => {
+    expect(certifier).toContain("function isTrustedWirelineCaptureHost(hostname)");
+    expect(certifier).toContain('host === "trywireline.com"');
+    expect(certifier).toContain('host.endsWith(".trywireline.com")');
+    expect(certifier).toContain('host === "wireline-chi.vercel.app"');
+    expect(certifier).toContain("-revaluate\\.vercel\\.app");
+    expect(certifier).toContain("Launch-reel certification refuses untrusted capture host");
+    expect(certifier).toContain("does not allow credentials embedded in E2E_BASE_URL");
+  });
+
   it("proves the production URL serves the exact checkout commit for the full capture window", () => {
     expect(publicHealth).toContain('res.setHeader("X-Wireline-Source-Commit", SOURCE_COMMIT)');
     expect(certifier).toContain('response.headers.get("x-wireline-source-commit")');
