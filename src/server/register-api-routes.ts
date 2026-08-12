@@ -49,6 +49,7 @@ import callRecordingRouter from "../routes/call-recording-routes";
 import agentCallRouter from "../routes/agent-call-routes";
 import callOpsMetricsRouter from "../routes/call-ops-metrics-routes";
 import callOpsAnalyticsRouter from "../routes/call-ops-analytics-routes";
+import overviewOperatingMetricsRouter from "../routes/overview-operating-metrics-routes";
 import operatorTaskRouter from "../routes/operator-task-routes";
 import fleetRouter from "../routes/fleet-routes";
 import calendarRouter from "../routes/calendar-routes";
@@ -169,6 +170,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(agentCallRouter);
   app.use(callOpsMetricsRouter);
   app.use(callOpsAnalyticsRouter);
+  app.use(overviewOperatingMetricsRouter);
   app.use(dashboardRouter);
   // Operator semantics shadow only `status=active` task reads and human-handoff
   // completion; all executable task behavior continues through fleetRouter.
