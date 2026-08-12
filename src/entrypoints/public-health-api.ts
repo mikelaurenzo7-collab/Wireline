@@ -30,7 +30,15 @@ function cacheScope(): string {
   return `${environment}:${deployment}`;
 }
 
+function deployedSourceCommit(): string | null {
+  const commit = String(process.env.VERCEL_GIT_COMMIT_SHA || "")
+    .trim()
+    .toLowerCase();
+  return /^[0-9a-f]{40}$/.test(commit) ? commit : null;
+}
+
 const CACHE_SCOPE = cacheScope();
+const SOURCE_COMMIT = deployedSourceCommit();
 const RESULT_KEY = `wireline:health:public:v4:${CACHE_SCOPE}`;
 const LOCK_KEY = `wireline:health:public:probe-lock:v4:${CACHE_SCOPE}`;
 const RESULT_TTL_SECONDS = 120;
@@ -83,6 +91,10 @@ function setCommonHeaders(res: ServerResponse): void {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
   res.setHeader("X-Content-Type-Options", "nosniff");
+  // A commit SHA is non-secret release metadata. Keeping it in a response header
+  // lets capture/release tooling prove that the production URL being recorded is
+  // actually serving the same source commit as the clean checkout being certified.
+  if (SOURCE_COMMIT) res.setHeader("X-Wireline-Source-Commit", SOURCE_COMMIT);
 }
 
 function sendJson(
