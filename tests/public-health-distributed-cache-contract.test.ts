@@ -81,13 +81,14 @@ describe("distributed public health boundary", () => {
 
     // Reasoning health must exercise the same Responses endpoint customers use,
     // not the model-catalog metadata plane that repeatedly produced false public
-    // degradations while the application runtime itself remained healthy.
+    // degradations while the application runtime itself remained healthy. Keep
+    // this probe model-neutral because the runtime model is operator-overridable.
     expect(probeSource).toContain('fetch("https://api.openai.com/v1/responses"');
     expect(probeSource).toContain('method: "POST"');
     expect(probeSource).toContain("max_output_tokens: 16");
-    expect(probeSource).toContain('reasoning: { effort: "none" }');
-    expect(probeSource).toContain('text: { verbosity: "low" }');
     expect(probeSource).toContain("store: false");
+    expect(probeSource).not.toContain('reasoning: { effort: "none" }');
+    expect(probeSource).not.toContain('text: { verbosity: "low" }');
     expect(probeSource).not.toContain("/v1/models/${encodeURIComponent(model)}");
   });
 
