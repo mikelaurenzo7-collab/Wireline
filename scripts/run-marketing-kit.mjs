@@ -76,6 +76,57 @@ function assertCleanCheckout(sourceCommit) {
   }
 }
 
+function normalizeBaseURL(value) {
+  const url = new URL(value || "https://trywireline.com");
+  if (url.protocol !== "https:") {
+    throw new Error(
+      `Launch-reel certification requires an HTTPS production URL; received ${url.toString()}. ` +
+        "Use marketing:kit:raw for localhost or mock capture work.",
+    );
+  }
+  url.pathname = "/";
+  url.search = "";
+  url.hash = "";
+  return url.toString().replace(/\/$/, "");
+}
+
+async function verifyRemoteSourceCommit(sourceCommit) {
+  const baseURL = normalizeBaseURL(process.env.E2E_BASE_URL || "https://trywireline.com");
+  const healthURL = new URL("/api/health/public", `${baseURL}/`);
+  const response = await fetch(healthURL, {
+    method: "HEAD",
+    redirect: "error",
+    headers: { "Cache-Control": "no-cache" },
+  });
+  if (!response.ok) {
+    throw new Error(
+      `Launch-reel source verification failed: ${healthURL} returned ${response.status}. ` +
+        "Do not certify footage when the deployed source cannot be proven.",
+    );
+  }
+
+  const deployedCommit = String(response.headers.get("x-wireline-source-commit") || "")
+    .trim()
+    .toLowerCase();
+  if (!/^[0-9a-f]{40}$/.test(deployedCommit)) {
+    throw new Error(
+      "Launch-reel source verification failed: production health did not return a valid X-Wireline-Source-Commit header.",
+    );
+  }
+  if (deployedCommit !== sourceCommit) {
+    throw new Error(
+      `Launch-reel source mismatch: checkout is ${sourceCommit}, but ${baseURL} serves ${deployedCommit}. ` +
+        "Deploy the checkout being certified or capture from its exact production deployment URL.",
+    );
+  }
+
+  return {
+    baseURL,
+    deployedCommit,
+    verifiedAt: new Date().toISOString(),
+  };
+}
+
 function fileDigest(filePath) {
   return createHash("sha256").update(readFileSync(filePath)).digest("hex");
 }
@@ -92,12 +143,19 @@ function resolveAssetPath(asset) {
   return resolved;
 }
 
-function certifyManifest(manifest, sourceCommit, sourceRef) {
+function certifyManifest(manifest, sourceCommit, sourceRef, sourceVerification) {
   const mode = String(manifest?.mode || "");
   if (mode !== "production-session") {
     throw new Error(
       `Launch-reel certification requires a production-session capture; received ${mode || "unknown"}. ` +
         "local-mock captures are layout/test fixtures only and must never produce a publishable release record.",
+    );
+  }
+
+  const manifestBaseURL = normalizeBaseURL(manifest?.baseURL || "");
+  if (manifestBaseURL !== sourceVerification.baseURL) {
+    throw new Error(
+      `Launch-reel capture URL changed during certification: verified ${sourceVerification.baseURL}, captured ${manifestBaseURL}.`,
     );
   }
 
@@ -195,17 +253,21 @@ function certifyManifest(manifest, sourceCommit, sourceRef) {
       certifiedAt: new Date().toISOString(),
       publishable: true,
       mode,
+      sourceVerification,
       authenticatedScreenshots: screenshotCertification,
       videos: videoRecords,
     },
   };
 }
 
-// Resolve and freeze provenance before opening a browser. A checkout that moves
-// during a long capture must not be allowed to label old frames with a new SHA.
+// Freeze both sides of provenance before opening a browser: the clean checkout
+// and the exact production URL must report the same source commit. Without this,
+// a branch checkout could label footage from an older trywireline.com deployment
+// with the branch SHA and still produce a publishable release record.
 const sourceCommit = resolveSourceCommit();
 const sourceRef = resolveSourceRef();
 assertCleanCheckout(sourceCommit);
+const sourceVerification = await verifyRemoteSourceCommit(sourceCommit);
 
 const capture = spawnSync(process.execPath, [path.join(scriptDir, "marketing-kit.mjs")], {
   cwd: repoRoot,
@@ -220,7 +282,12 @@ if (!existsSync(manifestPath)) {
 
 assertCleanCheckout(sourceCommit);
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-const certifiedManifest = certifyManifest(manifest, sourceCommit, sourceRef);
+const certifiedManifest = certifyManifest(
+  manifest,
+  sourceCommit,
+  sourceRef,
+  sourceVerification,
+);
 writeFileSync(manifestPath, `${JSON.stringify(certifiedManifest, null, 2)}\n`, "utf8");
 
 const releaseRecord = {
@@ -231,6 +298,7 @@ const releaseRecord = {
   baseURL: certifiedManifest.baseURL,
   mode: certifiedManifest.mode,
   publishable: certifiedManifest.captureCertification.publishable,
+  sourceVerification: certifiedManifest.captureCertification.sourceVerification,
   videos: certifiedManifest.captureCertification.videos,
   authenticatedScreenshots: certifiedManifest.captureCertification.authenticatedScreenshots.map(
     ({ layout, routes, uniqueFrames }) => ({ layout, routes, uniqueFrames }),
@@ -239,5 +307,7 @@ const releaseRecord = {
 const releaseRecordPath = path.join(outputRoot, "release-record.json");
 writeFileSync(releaseRecordPath, `${JSON.stringify(releaseRecord, null, 2)}\n`, "utf8");
 
-console.log(`Marketing kit certified against ${sourceCommit.slice(0, 12)} (${sourceRef}).`);
+console.log(
+  `Marketing kit certified against ${sourceCommit.slice(0, 12)} (${sourceRef}) on ${sourceVerification.baseURL}.`,
+);
 console.log(`Release record: ${releaseRecordPath}`);
