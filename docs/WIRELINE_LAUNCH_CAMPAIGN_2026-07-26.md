@@ -8,7 +8,9 @@ This document owns launch copy, voiceover masters, paid/organic campaign languag
 
 ## Campaign Truth
 
-Wireline helps people and teams build **voice agents** for personal tasks and business conversations.
+**Voice agents for personal tasks and business conversations.**
+
+Wireline helps people and teams build voice agents around useful work.
 
 The public operating loop is **Build -> Train -> Launch -> Improve**:
 
@@ -75,9 +77,11 @@ Avoid:
 - Build free. Go live from $19/mo.
 - trywireline.com
 
-## Voiceover Masters
+## AI Voice Generator Audio
 
-`npm run campaign:vo` renders exactly three canonical marketing tracks into the gitignored `official-assets/audio/` directory. These are marketing/reference assets only; production phone-call speech uses the managed runtime.
+These generated tracks are for **marketing/reference use only**. They are not the production phone-call speech path.
+
+`npm run campaign:vo` renders exactly three canonical tracks into the gitignored `official-assets/audio/` directory.
 
 ### Missed call — 15s
 
@@ -206,4 +210,6 @@ The current production source of truth, not a Descript share URL or historical f
 
 ## Measurement
 
-Use one launch campaign naming system and measure signup intent, successful private test, paid activation, first useful live outcome, and retained use. Do not optimize ads against demo/test activity as though it were customer conversion evidence.
+Reserved launch measurement key: `wl_launch_ai_voice_agents_v6`.
+
+The identifier is internal analytics plumbing, not customer-facing positioning. Use one launch campaign naming system and measure signup intent, successful private test, paid activation, first useful live outcome, and retained use. Do not optimize ads against demo/test activity as though it were customer conversion evidence.
