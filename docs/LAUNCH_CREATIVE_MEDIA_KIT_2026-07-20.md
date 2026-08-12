@@ -30,6 +30,8 @@ Avoid:
 - fake dashboards, customer logos, testimonials, adoption counts, or ROI;
 - stale screenshots or footage simply because they are already edited.
 
+Legacy filenames containing older provider or positioning language may remain for file compatibility. Filenames are not current launch copy and must not override this doctrine.
+
 ## Brand System
 
 | Element | Direction |
@@ -70,15 +72,16 @@ The old 46-second walkthrough and old 15-second missed-call source contain a vis
 
 The repaired 15s, 22s product-loop, and founder walkthrough derivatives remove the old 404, but their picture is historical. They are **QA/editing drafts only** until recaptured and certified against the exact production commit being promoted.
 
-A clean edit of stale product footage is still stale product footage.
+A clean edit of stale product footage is still stale product footage. Raw output is not release-certified.
 
 ## Publish Gate
 
 A finished reel is publishable only when all of the following are true:
 
 - source picture was captured from the exact production commit being promoted;
-- `marketing-kit/release-record.json` records that exact source commit;
+- `marketing-kit/release-record.json` records the exact `sourceCommit`;
 - the production URL itself reports the same commit through `X-Wireline-Source-Commit` before capture begins;
+- the verified remote commit is the deployed production SHA being represented in the release record;
 - no auth wall, 404, loading hold, dead route, error surface, or stale UI appears;
 - active UI remains legible after 9:16 or 1:1 reframing;
 - product-proof frames are authentic Wireline UI, not generated or fabricated dashboards;
