@@ -37,7 +37,7 @@ export const XAI_STRUCTURED_PRIMARY_MODEL =
   process.env.WIRELINE_XAI_STRUCTURED_MODEL?.trim() || XAI_MODELS.GROK_4_5;
 /** Managed structured default through the direct OpenAI Responses API. */
 export const OPENAI_STRUCTURED_PRIMARY_MODEL =
-  process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() || OPENAI_MODELS.GPT_5_6_SOL;
+  process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() || OPENAI_MODELS.GPT_5_6_TERRA;
 /** First automatic fallback if direct OpenAI is unavailable. */
 export const GEMINI_STRUCTURED_FALLBACK_MODEL =
   process.env.WIRELINE_GEMINI_STRUCTURED_FALLBACK_MODEL?.trim() ||
@@ -373,12 +373,12 @@ export const DEFAULT_MODEL = STRUCTURED_PRIMARY_MODEL;
  * complexity selector — OpenAI only accepts gpt-* ids on the primary path.
  * The tier ladder follows OpenAI's workload guidance: Luna for efficient
  * high-volume work, Terra for balanced work, and Sol for complex professional
- * work. Unclassified structured work uses the managed Sol primary by default.
+ * work. Unclassified structured work remains on the managed Terra default.
  */
 export function selectModelForTask(complexity: TaskComplexity): string {
   if (complexity === "simple") return OPENAI_MODELS.GPT_5_6_LUNA;
   if (complexity === "medium") return OPENAI_MODELS.GPT_5_6_TERRA;
-  return STRUCTURED_PRIMARY_MODEL;
+  return OPENAI_MODELS.GPT_5_6_SOL;
 }
 export function modelLabel(model: string): string {
   if (model === OPENAI_MODELS.GPT_5_6_TERRA) return "GPT-5.6 Terra";
