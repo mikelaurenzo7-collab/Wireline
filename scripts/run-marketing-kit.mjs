@@ -1,6 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -110,8 +110,8 @@ function normalizeBaseURL(value) {
   return url.toString().replace(/\/$/, "");
 }
 
-async function verifyRemoteSourceCommit(sourceCommit) {
-  const baseURL = normalizeBaseURL(process.env.E2E_BASE_URL || "https://trywireline.com");
+async function verifyRemoteSourceCommit(sourceCommit, requestedBaseURL) {
+  const baseURL = normalizeBaseURL(requestedBaseURL);
   const healthURL = new URL("/api/health/public", `${baseURL}/`);
   // The query is intentionally unique to the source being certified. A stale
   // edge response from a previous deployment may make certification fail closed,
@@ -152,6 +152,22 @@ async function verifyRemoteSourceCommit(sourceCommit) {
     deployedCommit,
     verifiedAt: new Date().toISOString(),
   };
+}
+
+async function verifyCaptureOrigins(sourceCommit) {
+  const configuredBaseURL = normalizeBaseURL(
+    process.env.E2E_BASE_URL || "https://trywireline.com",
+  );
+  // `marketing-kit.mjs` currently takes authenticated/video captures from
+  // E2E_BASE_URL but deliberately takes the public screenshot set from the
+  // canonical production alias. Both origins therefore belong to one
+  // publishable manifest and both must prove the same source commit.
+  const origins = [...new Set([configuredBaseURL, "https://trywireline.com"])];
+  const verified = [];
+  for (const origin of origins) {
+    verified.push(await verifyRemoteSourceCommit(sourceCommit, origin));
+  }
+  return { baseURL: configuredBaseURL, verified };
 }
 
 function fileDigest(filePath) {
@@ -287,67 +303,105 @@ function certifyManifest(manifest, sourceCommit, sourceRef, sourceVerification) 
   };
 }
 
-// Freeze both sides of provenance before opening a browser: the clean checkout
-// and the exact production URL must report the same source commit. Without this,
-// a branch checkout could label footage from an older trywireline.com deployment
-// with the branch SHA and still produce a publishable release record.
-const sourceCommit = resolveSourceCommit();
-const sourceRef = resolveSourceRef();
-assertCleanCheckout(sourceCommit);
-const beforeCapture = await verifyRemoteSourceCommit(sourceCommit);
-
-const capture = spawnSync(process.execPath, [path.join(scriptDir, "marketing-kit.mjs")], {
-  cwd: repoRoot,
-  env: process.env,
-  stdio: "inherit",
-});
-if (capture.error) throw capture.error;
-if (capture.status !== 0) process.exit(capture.status ?? 1);
-if (!existsSync(manifestPath)) {
-  throw new Error("Marketing-kit capture completed without writing marketing-kit/manifest.json.");
+function combineSourceVerification(sourceCommit, beforeCapture, afterCapture) {
+  if (beforeCapture.baseURL !== afterCapture.baseURL) {
+    throw new Error(
+      `Launch-reel source URL changed during capture: started at ${beforeCapture.baseURL}, ended at ${afterCapture.baseURL}.`,
+    );
+  }
+  const afterByURL = new Map(afterCapture.verified.map((item) => [item.baseURL, item]));
+  const origins = beforeCapture.verified.map((before) => {
+    const after = afterByURL.get(before.baseURL);
+    if (!after) {
+      throw new Error(`Launch-reel source origin disappeared during capture: ${before.baseURL}.`);
+    }
+    return {
+      baseURL: before.baseURL,
+      deployedCommit: sourceCommit,
+      verifiedBeforeCaptureAt: before.verifiedAt,
+      verifiedAfterCaptureAt: after.verifiedAt,
+    };
+  });
+  if (origins.length !== afterCapture.verified.length) {
+    throw new Error("Launch-reel source origin set changed during capture.");
+  }
+  const primary = origins.find((origin) => origin.baseURL === beforeCapture.baseURL);
+  if (!primary) throw new Error("Launch-reel primary source verification is missing.");
+  return {
+    baseURL: beforeCapture.baseURL,
+    deployedCommit: sourceCommit,
+    verifiedBeforeCaptureAt: primary.verifiedBeforeCaptureAt,
+    verifiedAfterCaptureAt: primary.verifiedAfterCaptureAt,
+    origins,
+  };
 }
 
-assertCleanCheckout(sourceCommit);
-const afterCapture = await verifyRemoteSourceCommit(sourceCommit);
-if (beforeCapture.baseURL !== afterCapture.baseURL) {
-  throw new Error(
-    `Launch-reel source URL changed during capture: started at ${beforeCapture.baseURL}, ended at ${afterCapture.baseURL}.`,
+// A certification attempt invalidates all prior generated output immediately.
+// If preflight, capture, or postflight fails, downstream packaging must not be
+// able to reuse a previous release record or stale videos by accident.
+rmSync(outputRoot, { recursive: true, force: true });
+
+try {
+  // Freeze every origin represented by the publishable manifest before opening
+  // a browser. The clean checkout, authenticated/video base URL, and canonical
+  // public-screenshot alias must all report the same source commit.
+  const sourceCommit = resolveSourceCommit();
+  const sourceRef = resolveSourceRef();
+  assertCleanCheckout(sourceCommit);
+  const beforeCapture = await verifyCaptureOrigins(sourceCommit);
+
+  const capture = spawnSync(process.execPath, [path.join(scriptDir, "marketing-kit.mjs")], {
+    cwd: repoRoot,
+    env: process.env,
+    stdio: "inherit",
+  });
+  if (capture.error) throw capture.error;
+  if (capture.status !== 0) {
+    throw new Error(`Marketing-kit capture failed with exit code ${capture.status ?? "unknown"}.`);
+  }
+  if (!existsSync(manifestPath)) {
+    throw new Error("Marketing-kit capture completed without writing marketing-kit/manifest.json.");
+  }
+
+  assertCleanCheckout(sourceCommit);
+  const afterCapture = await verifyCaptureOrigins(sourceCommit);
+  const sourceVerification = combineSourceVerification(
+    sourceCommit,
+    beforeCapture,
+    afterCapture,
   );
+
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  const certifiedManifest = certifyManifest(
+    manifest,
+    sourceCommit,
+    sourceRef,
+    sourceVerification,
+  );
+  writeFileSync(manifestPath, `${JSON.stringify(certifiedManifest, null, 2)}\n`, "utf8");
+
+  const releaseRecord = {
+    sourceCommit,
+    sourceRef,
+    generatedAt: certifiedManifest.generatedAt,
+    certifiedAt: certifiedManifest.captureCertification.certifiedAt,
+    baseURL: certifiedManifest.baseURL,
+    mode: certifiedManifest.mode,
+    publishable: certifiedManifest.captureCertification.publishable,
+    sourceVerification: certifiedManifest.captureCertification.sourceVerification,
+    videos: certifiedManifest.captureCertification.videos,
+    authenticatedScreenshots: certifiedManifest.captureCertification.authenticatedScreenshots.map(
+      ({ layout, routes, uniqueFrames }) => ({ layout, routes, uniqueFrames }),
+    ),
+  };
+  const releaseRecordPath = path.join(outputRoot, "release-record.json");
+  writeFileSync(releaseRecordPath, `${JSON.stringify(releaseRecord, null, 2)}\n`, "utf8");
+
+  console.log(
+    `Marketing kit certified against ${sourceCommit.slice(0, 12)} (${sourceRef}) on ${sourceVerification.baseURL}.`,
+  );
+  console.log(`Release record: ${releaseRecordPath}`);
+} catch (error) {
+  rmSync(outputRoot, { recursive: true, force: true });
+  throw error;
 }
-const sourceVerification = {
-  baseURL: beforeCapture.baseURL,
-  deployedCommit: sourceCommit,
-  verifiedBeforeCaptureAt: beforeCapture.verifiedAt,
-  verifiedAfterCaptureAt: afterCapture.verifiedAt,
-};
-
-const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-const certifiedManifest = certifyManifest(
-  manifest,
-  sourceCommit,
-  sourceRef,
-  sourceVerification,
-);
-writeFileSync(manifestPath, `${JSON.stringify(certifiedManifest, null, 2)}\n`, "utf8");
-
-const releaseRecord = {
-  sourceCommit,
-  sourceRef,
-  generatedAt: certifiedManifest.generatedAt,
-  certifiedAt: certifiedManifest.captureCertification.certifiedAt,
-  baseURL: certifiedManifest.baseURL,
-  mode: certifiedManifest.mode,
-  publishable: certifiedManifest.captureCertification.publishable,
-  sourceVerification: certifiedManifest.captureCertification.sourceVerification,
-  videos: certifiedManifest.captureCertification.videos,
-  authenticatedScreenshots: certifiedManifest.captureCertification.authenticatedScreenshots.map(
-    ({ layout, routes, uniqueFrames }) => ({ layout, routes, uniqueFrames }),
-  ),
-};
-const releaseRecordPath = path.join(outputRoot, "release-record.json");
-writeFileSync(releaseRecordPath, `${JSON.stringify(releaseRecord, null, 2)}\n`, "utf8");
-
-console.log(
-  `Marketing kit certified against ${sourceCommit.slice(0, 12)} (${sourceRef}) on ${sourceVerification.baseURL}.`,
-);
-console.log(`Release record: ${releaseRecordPath}`);
