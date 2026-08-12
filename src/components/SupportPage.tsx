@@ -39,12 +39,14 @@ export function SupportPage() {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
+    let responseStatus: number | null = null;
     try {
       const response = await fetch("/api/support/ticket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ issueType, email, subject, body }),
       });
+      responseStatus = response.status;
       if (!response.ok) {
         const failBody = (await response.json().catch(() => null)) as {
           error?: string;
@@ -72,9 +74,11 @@ export function SupportPage() {
           ? reason.message
           : "The ticket service did not respond.";
       const isTransport =
+        (responseStatus !== null && responseStatus >= 500) ||
         /did not respond|failed to fetch|network|503|502|504|was not delivered/i.test(
           message,
-        ) || message.includes("(5");
+        ) ||
+        message.includes("(5");
       if (isTransport) {
         const fallback = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[Support / ${issueType}] ${subject || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email}\n\n${body}`)}`;
         window.location.href = fallback;
