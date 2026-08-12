@@ -307,15 +307,19 @@ export default function Status() {
             <p className="text-eyebrow mb-2">How we measure</p>
             <p className="marketing-body">
               Wireline checks managed voice control-plane access and performs a minimal,
-              non-persistent OpenAI Responses inference for reasoning access. Provider results are
-              cached for up to 120 seconds so public traffic cannot multiply provider work. These
-              are provider-access checks—not an end-to-end customer call. The cards above show
-              which check needs attention.
+              non-persistent OpenAI Responses inference for reasoning access. Normal provider
+              results are cached for 120 seconds. During a cache refresh or distributed-cache
+              incident, the service may return its last known result for up to five minutes rather
+              than multiplying provider traffic. These are provider-access checks—not an
+              end-to-end customer call. The timestamp above is the authoritative age of the
+              displayed reading.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.32em] text-muted/70">
               <span>Page refresh · 60s</span>
               <span className="text-muted/70">·</span>
-              <span>Provider cache · up to 120s</span>
+              <span>Normal cache · 120s</span>
+              <span className="text-muted/70">·</span>
+              <span>Incident fallback · up to 5m</span>
               <span className="text-muted/70">·</span>
               <Link to="/security" className="transition-colors hover:text-foreground">
                 Security practices
