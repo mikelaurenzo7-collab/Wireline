@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 
 const POSTGRES_PROTOCOLS = new Set(["postgres:", "postgresql:"]);
 const LOCAL_DATABASE_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
@@ -84,6 +86,5 @@ export function runProductionSchemaEffects(env = process.env) {
   return result.status ?? 1;
 }
 
-if (process.argv[1] && new URL(import.meta.url).pathname === new URL(`file://${process.argv[1]}`).pathname) {
-  process.exit(runProductionSchemaEffects());
-}
+const isEntrypoint = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isEntrypoint) process.exit(runProductionSchemaEffects());
