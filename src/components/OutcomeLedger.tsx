@@ -72,10 +72,13 @@ export default function OutcomeLedger({
     setFatalError(null);
     setEnrichmentWarning(null);
     try {
+      // Call outcomes are the source of truth for this surface. Follow-up tasks
+      // are enrichment only, so transport failures in either task request must
+      // never reject the whole load and hide otherwise healthy call evidence.
       const [callsRes, pendingRes, completedRes] = await Promise.all([
         authFetch(`/api/calls?limit=${limit}`),
-        authFetch("/api/Assistants/tasks?status=pending"),
-        authFetch("/api/Assistants/tasks?status=completed"),
+        authFetch("/api/Assistants/tasks?status=pending").catch(() => null),
+        authFetch("/api/Assistants/tasks?status=completed").catch(() => null),
       ]);
       if (!callsRes.ok) {
         setFatalError("Could not load outcome ledger.");
@@ -83,9 +86,9 @@ export default function OutcomeLedger({
         return;
       }
       const callsBody = await callsRes.json();
-      const pendingBody = pendingRes.ok ? await pendingRes.json() : { tasks: [] };
-      const completedBody = completedRes.ok ? await completedRes.json() : { tasks: [] };
-      if (!pendingRes.ok || !completedRes.ok) {
+      const pendingBody = pendingRes?.ok ? await pendingRes.json() : { tasks: [] };
+      const completedBody = completedRes?.ok ? await completedRes.json() : { tasks: [] };
+      if (!pendingRes?.ok || !completedRes?.ok) {
         // Tasks are enrichment. Keep healthy call outcomes visible and disclose
         // only that action state may be incomplete until the task service recovers.
         setEnrichmentWarning("Follow-up status is temporarily incomplete.");

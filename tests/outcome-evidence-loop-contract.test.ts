@@ -16,6 +16,17 @@ describe("outcome evidence loop", () => {
     expect(ledger).not.toContain("Some follow-up tasks could not be loaded.");
   });
 
+  it("isolates task transport failures instead of rejecting the call outcome load", () => {
+    expect(ledger).toContain(
+      'authFetch("/api/Assistants/tasks?status=pending").catch(() => null)',
+    );
+    expect(ledger).toContain(
+      'authFetch("/api/Assistants/tasks?status=completed").catch(() => null)',
+    );
+    expect(ledger).toContain("pendingRes?.ok");
+    expect(ledger).toContain("completedRes?.ok");
+  });
+
   it("lets a user inspect real call evidence without inventing a parallel outcome record", () => {
     expect(ledger).toContain("<details");
     expect(ledger).toContain("Transcript");
