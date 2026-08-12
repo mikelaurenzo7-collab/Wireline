@@ -38,10 +38,14 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(ledger).not.toContain("callsRes.ok ? await callsRes.json() : { calls: [] }");
     expect(inbox).toContain("Could not load approval inbox.");
     expect(inbox).toContain("Could not load active operator work.");
-    expect(inbox).toContain('authFetch("/api/triage").catch(() => null)');
     expect(inbox).toContain(
-      'authFetch("/api/Assistants/tasks?status=active").catch(() => null)',
+      'authFetch("/api/triage", { signal: controller.signal }).catch(() => null)',
     );
+    expect(inbox).toContain(
+      'authFetch("/api/Assistants/tasks?status=active", { signal: controller.signal })',
+    );
+    expect(inbox).toContain("parseTriageBucket(triageBody)");
+    expect(inbox).toContain("parseApprovalTasks(tasksBody)");
     expect(inbox).not.toContain("tasksRes.ok ? await tasksRes.json() : { tasks: [] }");
   });
 
