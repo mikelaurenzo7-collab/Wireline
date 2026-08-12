@@ -46,6 +46,7 @@ import teamRouter from "../routes/team-routes";
 import emailRouter from "../routes/email-routes";
 import dashboardRouter from "../routes/dashboard-routes";
 import callRecordingRouter from "../routes/call-recording-routes";
+import agentCallRouter from "../routes/agent-call-routes";
 import fleetRouter from "../routes/fleet-routes";
 import calendarRouter from "../routes/calendar-routes";
 import workspaceKnowledgeRouter from "../routes/workspace-knowledge-routes";
@@ -161,6 +162,7 @@ export function registerApiRoutes(app: Express): void {
 
   app.use(emailRouter);
   app.use(callRecordingRouter);
+  app.use(agentCallRouter);
   app.use(dashboardRouter);
   app.use(fleetRouter);
   app.use(calendarRouter);
