@@ -30,9 +30,9 @@ import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
-import twilio from "twilio";
 import { vapiWebhookSecretOk } from "../lib/vapi-webhook-auth";
 import { postMessage as slackPostMessage, getDefaultChannel } from "../lib/slack-service";
+import { getTwilioClient } from "../lib/twilio-service-base";
 
 // Targeted, tight rate limit on the public escalation webhook.
 // Real Vapi incidents during a busy period might legitimately produce a handful of escalations.
@@ -64,14 +64,12 @@ async function dispatchOwnerSms(
   to: string,
   body: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
   const from = process.env.PLATFORM_SMS_FROM;
-  if (!sid || !token || !from) {
+  const client = getTwilioClient();
+  if (!client || !from) {
     return { ok: false, error: "Twilio platform sender not configured" };
   }
   try {
-    const client = twilio(sid, token);
     const msg = await client.messages.create({ to, from, body });
     log.info("Escalation SMS sent", { sid: msg.sid, to: to.slice(0, 8) });
     return { ok: true };

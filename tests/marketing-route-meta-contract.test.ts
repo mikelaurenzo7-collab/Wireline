@@ -169,7 +169,9 @@ describe("marketing route meta prerendering", () => {
     const buildScript = (JSON.parse(pkg) as { scripts: Record<string, string> }).scripts.build;
     // Prerender must run after vite build (needs dist/index.html) and before
     // anything consumes dist.
-    expect(buildScript).toContain("vite build && tsx scripts/prerender-marketing-meta.mts");
+    expect(buildScript).toContain(
+      "vite build && node --import tsx scripts/prerender-marketing-meta.mts",
+    );
 
     const script = read("scripts/prerender-marketing-meta.mts");
     expect(script).toContain("PRERENDERED_MARKETING_ROUTES");

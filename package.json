@@ -8,8 +8,8 @@
     "node": "22.x"
   },
   "scripts": {
-    "dev": "tsx server.ts",
-    "build": "npm run assets && vite build && tsx scripts/prerender-marketing-meta.mts && esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/server.cjs --footer:js=\"module.exports.app = app;\"",
+    "dev": "node --import tsx server.ts",
+    "build": "npm run assets && vite build && node --import tsx scripts/prerender-marketing-meta.mts && esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/server.cjs --footer:js=\"module.exports.app = app;\"",
     "build:server": "esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/server.cjs --footer:js=\"module.exports.app = app;\"",
     "build:vercel": "node scripts/vercel-build.mjs",
     "start": "node dist/server.cjs",
@@ -54,10 +54,10 @@
     "resend:sync-vercel": "node scripts/sync-resend-env-to-vercel.mjs",
     "vapi:patch-webhooks": "node scripts/patch-vapi-prod-webhooks.mjs",
     "vapi:patch-flux-ab": "node scripts/patch-vapi-showcase-flux-ab.mjs",
-    "vapi:sync-showcase": "tsx scripts/sync-wireline-showcase.mts",
+    "vapi:sync-showcase": "node --import tsx scripts/sync-wireline-showcase.mts",
     "csp:check": "node scripts/check-csp-drift.mjs",
     "csp:sync": "node scripts/check-csp-drift.mjs --write",
-    "authz:check": "tsx scripts/generate-authz-matrix.ts",
+    "authz:check": "node --import tsx scripts/generate-authz-matrix.ts",
     "api-error:check": "node scripts/check-api-error-shape.mjs",
     "security:audit": "node scripts/check-security-audit.mjs",
     "security:routes:check": "node scripts/check-security-route-precedence.mjs",
@@ -69,7 +69,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:check": "drizzle-kit check",
-    "db:health": "tsx scripts/db-health-check.ts",
+    "db:health": "node --import tsx scripts/db-health-check.ts",
     "marketing:kit": "node scripts/run-marketing-kit.mjs",
     "marketing:kit:raw": "node scripts/marketing-kit.mjs",
     "prepare": "husky",
@@ -94,7 +94,7 @@
     "vercel:wait-deployment": "node scripts/wait-vercel-deployment.mjs",
     "vapi:replay-pending-webhooks": "node scripts/replay-pending-vapi-webhooks.mjs",
     "lint:strict:candidates": "node scripts/strict-coverage.mjs",
-    "recap:preview": "tsx scripts/preview-recap-artifact.mts"
+    "recap:preview": "node --import tsx scripts/preview-recap-artifact.mts"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

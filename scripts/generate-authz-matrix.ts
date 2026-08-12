@@ -48,6 +48,10 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     reason: "Twilio signature validation; valid provider retries are never IP-throttled",
   },
   { pattern: /^\/api\/webhooks\/meta\//, reason: "Meta HMAC-SHA256 signature + rate limit" },
+  {
+    pattern: /^\/api\/webhooks\/resend$/,
+    reason: "Resend/Svix timestamped HMAC-SHA256 signature + replay window",
+  },
   { pattern: /^\/api\/vapi\//, reason: "Vapi tool/webhook signature verification" },
   { pattern: /^\/api\/vapi-webhook$/, reason: "Vapi signature validation + agent-scoped routing" },
   { pattern: /^\/api\/escalate$/, reason: "Vapi X-Vapi-Secret (timing-safe) + rate limit" },

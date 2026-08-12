@@ -88,11 +88,17 @@ describe("strict prelaunch account export and Twilio contracts", () => {
 
   it("prefers scoped API keys for Twilio REST while retaining the webhook token fallback", () => {
     const source = read("src/lib/twilio-service-base.ts");
+    const escalation = read("src/routes/escalation-routes.ts");
     expect(source).toContain('env("TWILIO_API_KEY")');
     expect(source).toContain('env("TWILIO_API_SECRET")');
     expect(source).toContain('twilio(apiKey, apiSecret, { accountSid })');
     expect(source).toContain('env("TWILIO_AUTH_TOKEN")');
     expect(source).toContain('TwilioRestAuthMode = "api_key" | "auth_token" | "unconfigured"');
+    expect(escalation).toContain(
+      'import { getTwilioClient } from "../lib/twilio-service-base"',
+    );
+    expect(escalation).toContain("const client = getTwilioClient()");
+    expect(escalation).not.toContain("twilio(sid, token)");
   });
 
   it("registers both terminal guards before the legacy settings router", () => {

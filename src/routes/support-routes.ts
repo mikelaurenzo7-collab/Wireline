@@ -133,7 +133,10 @@ async function ticketRateLimiter(req: Request, res: Response, next: NextFunction
 
     if (!result.allowed) {
       res.set("Retry-After", String(Math.ceil(result.resetMs / 1000)));
-      return res.status(429).json({ error: "Too many support requests. Try again in 15 minutes." });
+      return res.status(429).json({
+        code: "SUPPORT_RATE_LIMITED",
+        error: "Too many support requests. Try again in 15 minutes.",
+      });
     }
     next();
   } catch (err) {

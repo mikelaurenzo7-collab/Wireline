@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 371
-**Protected:** 303
-**Public (allowlisted):** 68
+**Routes scanned:** 382
+**Protected:** 313
+**Public (allowlisted):** 69
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -67,6 +67,7 @@
 | `GET /api/oauth/zoom/callback` | OAuth initiation/callback (state-validated) |
 | `GET /api/openapi.json` | Public OpenAPI spec; rate-limited + CDN cached |
 | `GET /api/quotas/plans` | Public plan limits comparison table |
+| `POST /api/webhooks/resend` | Resend/Svix timestamped HMAC-SHA256 signature + replay window |
 | `GET /recap/:slug` | Signed shareable call/weekly recap; opaque slug + bearer token verified against stored SHA-256 hash, timing-safe; per-IP + per-slug rate limits |
 | `POST /api/support/ticket` | Public support/contact form; strict validation + 5/15min IP rate limit |
 | `POST /api/twilio-webhook/singing-receptionist` | Twilio signature validation; valid provider retries are never IP-throttled |
@@ -96,6 +97,7 @@
 | admin-seed-demo-routes.ts | DELETE | `/api/admin/demo-data` | inline | platform_admin | — | Protected |
 | admin-seed-demo-routes.ts | POST | `/api/admin/seed-demo-account` | inline | platform_admin | — | Protected |
 | admin-seed-demo-routes.ts | POST | `/api/admin/seed-founder-Assistants` | inline | platform_admin | — | Protected |
+| agent-call-routes.ts | GET | `/api/agents/:agentId/calls` | inline | — | — | Protected |
 | agent-routes-v2.ts | GET | `/api/agent-config/:id` | inline | — | — | Protected |
 | agent-routes-v2.ts | DELETE | `/api/agent-config/:id/:type/:rowId` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agent-config/:id/assets` | inline | — | — | Protected |
@@ -170,6 +172,8 @@
 | calendar-routes.ts | GET | `/api/calendar/accounts` | inline | — | — | Protected |
 | calendar-routes.ts | GET | `/api/calendar/events` | inline | — | — | Protected |
 | calendar-routes.ts | POST | `/api/calendar/sync` | inline | — | — | Protected |
+| call-ops-analytics-routes.ts | GET | `/api/call-ops/analytics` | inline | — | — | Protected |
+| call-ops-metrics-routes.ts | GET | `/api/call-ops/metrics` | inline | — | — | Protected |
 | call-recording-routes.ts | GET | `/api/calls/:callId/recording` | inline | — | — | Protected |
 | campaign-routes.ts | GET | `/api/campaigns` | inline | — | — | Protected |
 | campaign-routes.ts | POST | `/api/campaigns` | inline | — | — | Protected |
@@ -312,6 +316,7 @@
 | mobile-routes.ts | GET | `/api/mobile/me` | inline | — | — | Protected |
 | mobile-routes.ts | PUT | `/api/mobile/settings` | inline | — | — | Protected |
 | mobile-routes.ts | GET | `/api/mobile/wallet` | inline | — | — | Protected |
+| nav-counts-truth-routes.ts | GET | `/api/nav-counts` | inline | — | — | Protected |
 | oauth/apollo.ts | GET | `/api/oauth/apollo/callback` | — | — | yes | Public (allowlisted) |
 | oauth/apollo.ts | POST | `/api/oauth/apollo/disconnect` | inline | — | yes | Protected |
 | oauth/apollo.ts | GET | `/api/oauth/apollo/url` | inline | — | yes | Protected |
@@ -365,12 +370,16 @@
 | openai-realtime-routes.ts | POST | `/api/voice/openai/session` | inline | — | — | Protected |
 | openai-realtime-routes.ts | GET | `/api/voice/openai/status` | inline | — | — | Protected |
 | openapi-routes.ts | GET | `/api/openapi.json` | — | — | yes | Public (allowlisted) |
+| operator-task-routes.ts | GET | `/api/Assistants/tasks` | inline | — | — | Protected |
+| operator-task-routes.ts | POST | `/api/Assistants/tasks/:id/approve` | inline | — | — | Protected |
+| operator-task-routes.ts | POST | `/api/Assistants/tasks/:id/dismiss-handoff` | inline | — | — | Protected |
 | outbound-dial-atomic-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/callbacks` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/outbound` | inline | — | — | Protected |
 | outbound-routes.ts | DELETE | `/api/outbound/:id` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/bulk` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
+| overview-operating-metrics-routes.ts | GET | `/api/overview/operating-metrics` | inline | — | — | Protected |
 | phone-number-release-routes.ts | DELETE | `/api/phone-numbers/:id` | inline | — | — | Protected |
 | pipeline-routes.ts | GET | `/api/insights/campaign-attribution` | inline | — | — | Protected |
 | pipeline-routes.ts | GET | `/api/pipeline` | inline | — | — | Protected |
@@ -385,6 +394,7 @@
 | quota-routes.ts | GET | `/api/quotas` | inline | — | — | Protected |
 | quota-routes.ts | PUT | `/api/quotas/override` | inline | platform_admin | — | Protected |
 | quota-routes.ts | GET | `/api/quotas/plans` | — | — | yes | Public (allowlisted) |
+| resend-webhook-routes.ts | POST | `/api/webhooks/resend` | — | — | yes | Public (allowlisted) |
 | settings-routes.ts | POST | `/api/account/cancel-deletion` | inline | — | — | Protected |
 | settings-routes.ts | POST | `/api/account/export` | inline | — | — | Protected |
 | settings-routes.ts | POST | `/api/account/purge-old-data` | inline | — | — | Protected |
@@ -397,6 +407,8 @@
 | shareable-artifact-routes.ts | GET | `/api/recap-artifacts` | inline | — | — | Protected |
 | shareable-artifact-routes.ts | DELETE | `/api/recap-artifacts/:id` | inline | — | — | Protected |
 | shareable-artifact-routes.ts | GET | `/recap/:slug` | — | — | yes | Public (allowlisted) |
+| sms-outcome-routes.ts | PATCH | `/api/sms/threads/:id/outcome` | inline | — | — | Protected |
+| sms-outcome-routes.ts | GET | `/api/sms/threads/:id/outcome` | inline | — | — | Protected |
 | sms-routes.ts | GET | `/api/sms/threads` | inline | — | — | Protected |
 | sms-routes.ts | POST | `/api/sms/threads/:id/mark-read` | inline | — | — | Protected |
 | sms-routes.ts | GET | `/api/sms/threads/:id/messages` | inline | — | — | Protected |

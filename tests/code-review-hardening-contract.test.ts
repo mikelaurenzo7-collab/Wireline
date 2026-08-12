@@ -6,6 +6,33 @@ const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
 describe("code review hardening contracts", () => {
+  it("runs TypeScript build checks without the TSX CLI IPC server", () => {
+    for (const path of [
+      "scripts/check-csp-drift.mjs",
+      "scripts/check-openapi-implementation.mjs",
+    ]) {
+      const source = read(path);
+      expect(source, path).toContain('"--import"');
+      expect(source, path).toContain('"tsx"');
+      expect(source, path).toContain('"--input-type=module"');
+      expect(source, path).not.toContain("tsx/dist/cli.mjs");
+    }
+
+    const scripts = (JSON.parse(read("package.json")) as {
+      scripts: Record<string, string>;
+    }).scripts;
+    for (const name of [
+      "dev",
+      "build",
+      "vapi:sync-showcase",
+      "authz:check",
+      "db:health",
+      "recap:preview",
+    ]) {
+      expect(scripts[name], name).toContain("node --import tsx");
+    }
+  });
+
   it("routes unauthenticated browser handoffs through ?redirect=", () => {
     const bridge = read("src/pages/BrowserHandoffBridge.tsx");
     expect(bridge).toContain("?redirect=");

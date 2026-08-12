@@ -11,7 +11,7 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, join, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 
@@ -26,12 +26,13 @@ const staticHtmlSources = [
 ];
 
 function expectedCsp() {
-  const tsxCli = join(repoRoot, "node_modules", "tsx", "dist", "cli.mjs");
   const result = spawnSync(
     process.execPath,
     [
-      tsxCli,
-      "-e",
+      "--import",
+      "tsx",
+      "--input-type=module",
+      "--eval",
       `import { buildCSP, buildConnectSrcs } from "./src/lib/csp.ts"; console.log(buildCSP(false, undefined, buildConnectSrcs(false)));`,
     ],
     { cwd: repoRoot, encoding: "utf8" },
