@@ -7,8 +7,9 @@
 import { eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
-import { drizzle } from "../server-context";
+import { drizzle, log } from "../server-context";
 import { canonicalPlanId, type StripePlanId } from "../plan-catalog";
+import { stripe, stripeAvailable } from "../stripe-helpers";
 import {
   LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY,
   LIVE_VIDEO_SESSION_RESERVATION_MINUTES,
@@ -23,6 +24,7 @@ const PAID_LIVE_VIDEO_PLANS = new Set<StripePlanId>([
 ]);
 
 const TERMINAL_BASE_SUBSCRIPTION_STATUSES = new Set(["canceled", "incomplete_expired"]);
+const NON_ENTITLING_LIVE_VIDEO_STATUSES = new Set(["canceled", "incomplete_expired", "unpaid"]);
 
 /** Legacy name retained at call sites; semantics are now launch-active unless explicitly killed. */
 export function isLiveVideoCatalogReady(): boolean {
@@ -46,6 +48,41 @@ export type LiveVideoEntitlement = {
 
 function billingBypassEnabled(): boolean {
   return process.env.LIVE_VIDEO_BYPASS_BILLING === "true";
+}
+
+/**
+ * The workspace flag is a webhook-maintained cache, not sufficient payment
+ * proof once the base plan is terminal. Re-check Stripe only in that rare grace
+ * state so a missed terminal add-on webhook cannot leave provider-funded Live
+ * Video enabled forever. Past-due/incomplete deliberately preserve the existing
+ * dunning posture; only true terminal/unpaid add-on states revoke entitlement.
+ */
+async function hasCurrentStripeLiveVideoAddon(stripeCustomerId: string | null): Promise<boolean> {
+  if (!stripeCustomerId || !stripeAvailable()) return false;
+  try {
+    for await (const subscription of stripe.subscriptions.list({
+      customer: stripeCustomerId,
+      status: "all",
+      limit: 100,
+    })) {
+      if (
+        subscription.metadata?.purpose === "live_video_addon" &&
+        !NON_ENTITLING_LIVE_VIDEO_STATUSES.has(subscription.status)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  } catch (error) {
+    // Terminal grace is an exception after the base entitlement has already
+    // ended. Fail closed if Stripe truth cannot be established rather than
+    // letting a stale local boolean authorize indefinite provider spend.
+    log.warn("Live Video terminal-grace Stripe verification failed closed", {
+      stripeCustomerId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
 }
 
 export async function resolveLiveVideoEntitlement(
@@ -90,6 +127,7 @@ export async function resolveLiveVideoEntitlement(
       liveVideoAddonEnabled: schema.settings.liveVideoAddonEnabled,
       planId: schema.subscriptions.plan,
       stripeStatus: schema.subscriptions.status,
+      stripeCustomerId: schema.subscriptions.stripeCustomerId,
     })
     .from(schema.settings)
     .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
@@ -106,13 +144,15 @@ export async function resolveLiveVideoEntitlement(
 
   // When a paid base plan reaches a terminal state, Stripe reconciliation first
   // schedules the independently billed Live Video add-on to stop renewing. Keep
-  // the already-paid add-on usable until its own period-end webhook disables the
-  // workspace flag. `unpaid` is intentionally excluded: dunning blocks access
-  // while the base payment remains unresolved.
-  const terminalPaidPeriodGrace =
+  // an already-paid add-on usable only while Stripe still reports that add-on as
+  // current. This converts the local flag from authority into the cache it was
+  // intended to be and closes the missed-webhook indefinite-grace path.
+  const terminalBase =
     workspaceFlag &&
     onPaidPlan &&
     TERMINAL_BASE_SUBSCRIPTION_STATUSES.has(row?.stripeStatus ?? "");
+  const terminalPaidPeriodGrace =
+    terminalBase && (await hasCurrentStripeLiveVideoAddon(row?.stripeCustomerId ?? null));
   const existingAddonEntitled = baseSubscriptionActive || terminalPaidPeriodGrace;
 
   const addonOffered = platformConfigured && launchEnabled;
