@@ -1,10 +1,11 @@
 import { Router, type Response } from "express";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { AppError } from "../lib/api-error";
 import {
   ACTIVE_HANDOFF_TASK_STATUSES,
   conversationOutcomeSchema,
+  handoffAdvisoryLockKey,
   handoffResolutionNote,
   handoffTaskStatusForOutcome,
 } from "../lib/conversation-outcome";
@@ -52,6 +53,11 @@ router.patch(
       if (!thread) throw AppError.fromHttpStatus(404, "SMS conversation not found.");
 
       const { updated, handoffTaskId, taskStateChanged } = await drizzle.transaction(async (tx) => {
+        const lockKey = handoffAdvisoryLockKey(req.user.id, SMS_HANDOFF_SOURCE_TYPE, thread.id);
+        await tx.execute(
+          sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`,
+        );
+
         const [nextThread] = await tx
           .update(schema.smsThreads)
           .set({ status })
