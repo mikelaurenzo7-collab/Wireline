@@ -2,6 +2,7 @@ import { Router, type Response } from "express";
 import { and, eq, gte, inArray, sql } from "drizzle-orm";
 
 import { AppError } from "../lib/api-error";
+import { ACTIVE_OPERATOR_TASK_STATUSES } from "../lib/operator-work-status";
 import { dashboardRateLimit } from "../middleware/api-rate-limits";
 import { authenticateUser } from "../middleware/auth";
 import { drizzle, log, serialQueryBatch } from "../lib/server-context";
@@ -58,7 +59,7 @@ router.get(
             .where(
               and(
                 eq(schema.followUpTasks.userId, userId),
-                eq(schema.followUpTasks.status, "pending"),
+                inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES]),
                 inArray(schema.followUpTasks.sourceType, [...CALL_TASK_SOURCE_TYPES]),
               ),
             ),
@@ -72,6 +73,8 @@ router.get(
       res.setHeader("Cache-Control", "private, no-store, max-age=0");
       res.json({
         today: Number(todayResult?.count ?? 0),
+        // Kept as `pending` for response compatibility; semantically this is all
+        // unresolved call-originated operator work (pending/open/in-progress).
         pending: Number(taskResult?.pending ?? 0),
         agents: Number(agentResult?.count ?? 0),
         escalations: Number(taskResult?.escalations ?? 0),
