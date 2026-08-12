@@ -35,7 +35,6 @@ import {
 import { workspaceFirstName } from "../lib/user-display";
 import { authFetch } from "../lib/api";
 import { agentReadinessLabel } from "../lib/agent-readiness";
-import { isoToLocalDateKey, localDateKey } from "../lib/date-display";
 import type { CallLog } from "../types/api";
 
 function dayGreeting(date = new Date()) {
@@ -46,51 +45,37 @@ function dayGreeting(date = new Date()) {
 }
 
 function metricRows(
-  callsCount: number,
-  callsDetail: string,
-  hotLeadsCount: number,
+  conversationsToday: number,
+  highIntentToday: number,
   totalAppointments: number,
-  pendingFollowUps: number,
+  activeWork: number,
 ) {
   return [
     {
       label: "Customer conversations today",
-      value: String(callsCount),
-      detail: callsDetail,
-      tone: callsCount > 0 ? ("success" as const) : ("neutral" as const),
-      href: "/phone?tab=logs",
+      value: String(conversationsToday),
+      tone: conversationsToday > 0 ? ("success" as const) : ("neutral" as const),
+      href: "/inbox",
       icon: Phone,
     },
     {
-      label: "Priority leads",
-      value: String(hotLeadsCount),
-      detail:
-        hotLeadsCount > 0
-          ? "Latest high-intent conversations"
-          : "No priority leads yet",
-      tone: hotLeadsCount > 0 ? ("primary" as const) : ("neutral" as const),
+      label: "High-intent today",
+      value: String(highIntentToday),
+      tone: highIntentToday > 0 ? ("primary" as const) : ("neutral" as const),
       href: "/insights",
       icon: Flame,
     },
     {
       label: "Appointments booked",
       value: String(totalAppointments),
-      detail:
-        totalAppointments > 0
-          ? "Total appointments on record"
-          : "Connect a calendar to book",
       tone: totalAppointments > 0 ? ("wire" as const) : ("neutral" as const),
       href: totalAppointments > 0 ? "/phone?tab=appointments" : "/connections",
       icon: CalendarCheck2,
     },
     {
-      label: "Follow-ups waiting",
-      value: String(pendingFollowUps),
-      detail:
-        pendingFollowUps > 0
-          ? "Review before they go out"
-          : "Nothing waiting for approval",
-      tone: pendingFollowUps > 0 ? ("warning" as const) : ("success" as const),
+      label: "Needs attention",
+      value: String(activeWork),
+      tone: activeWork > 0 ? ("warning" as const) : ("success" as const),
       href: "/approvals",
       icon: ListTodo,
     },
@@ -200,8 +185,8 @@ function FirstRunLaunchpad({ posture }: { posture: "personal" | "business" }) {
 function DemandReadinessCard({
   hasLiveLine,
   hasConversationHistory,
-  callsCount,
-  pendingFollowUps,
+  conversationsToday,
+  activeWork,
   connectionsCount,
   connectionsDetail,
   setupHref,
@@ -210,8 +195,8 @@ function DemandReadinessCard({
 }: {
   hasLiveLine: boolean;
   hasConversationHistory: boolean;
-  callsCount: number;
-  pendingFollowUps: number;
+  conversationsToday: number;
+  activeWork: number;
   connectionsCount: number;
   connectionsDetail: string;
   setupHref: string;
@@ -232,34 +217,30 @@ function DemandReadinessCard({
       ? {
           eyebrow: "Line ready",
           title: "Your line is live. Put it where customers already call.",
-          // No detail: the title states the situation and the two buttons name
-          // the next actions. A third sentence restating them is noise.
           detail: undefined,
           primaryHref: "/settings/phone",
           primaryLabel: "Review phone setup",
           secondaryHref: testHref,
           secondaryLabel: "Run a test conversation",
         }
-      : pendingFollowUps > 0
+      : activeWork > 0
         ? {
             eyebrow: "Action required",
-            title: `${pendingFollowUps} customer follow-up${pendingFollowUps === 1 ? " needs" : "s need"} your decision.`,
-            detail:
-              "Approve, edit, or decline each next step while the context is fresh.",
+            title: `${activeWork} item${activeWork === 1 ? " needs" : "s need"} your attention.`,
+            detail: "Review approvals and human handoffs while the context is fresh.",
             primaryHref: "/approvals",
-            primaryLabel: "Review follow-ups",
-            secondaryHref: "/phone?tab=logs",
+            primaryLabel: "Review work",
+            secondaryHref: "/inbox",
             secondaryLabel: "Open conversations",
           }
         : {
-            eyebrow: callsCount > 0 ? "Customer demand today" : "Line ready",
+            eyebrow: conversationsToday > 0 ? "Customer demand today" : "Line ready",
             title:
-              callsCount > 0
+              conversationsToday > 0
                 ? "Wireline is handling conversations and recording what happened."
                 : "No new conversations today. Your customer line is still ready.",
-            // The "Review conversations" button already names the action.
             detail: undefined,
-            primaryHref: "/phone?tab=logs",
+            primaryHref: "/inbox",
             primaryLabel: "Review conversations",
             secondaryHref: setupHref,
             secondaryLabel: `Improve the ${subjectLabel}`,
@@ -431,17 +412,14 @@ export default function OverviewPage() {
   const language = customerAgentLanguage(accountType);
   const [showOutboundDial, setShowOutboundDial] = useState(false);
 
-  const [callsCount, setCallsCount] = useState(0);
-  const [callsDetail, setCallsDetail] = useState(
-    "Waiting for first conversation",
-  );
+  const [conversationsToday, setConversationsToday] = useState(0);
+  const [highIntentToday, setHighIntentToday] = useState(0);
   const [connectionsCount, setConnectionsCount] = useState(0);
   const [connectionsDetail, setConnectionsDetail] = useState(
     "Checking connections…",
   );
-  const [hotLeadsCount, setHotLeadsCount] = useState(0);
   const [totalAppointments, setTotalAppointments] = useState(0);
-  const [pendingFollowUps, setPendingFollowUps] = useState(0);
+  const [activeWork, setActiveWork] = useState(0);
   const [recentCalls, setRecentCalls] = useState<CallLog[]>([]);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [statsUnavailable, setStatsUnavailable] = useState(false);
@@ -452,64 +430,43 @@ export default function OverviewPage() {
     async function loadDashboard() {
       setLoadingDashboard(true);
       setStatsUnavailable(false);
-      try {
-        const [statsRes, crmRes, calendarRes, navCountsRes] = await Promise.all(
-          [
-            authFetch("/api/dashboard/stats"),
-            authFetch("/api/oauth/crm/status"),
-            authFetch("/api/calendar/accounts"),
-            authFetch("/api/nav-counts"),
-          ],
-        );
+      const dayBoundary = new Date();
+      dayBoundary.setHours(0, 0, 0, 0);
+      const since = dayBoundary.toISOString();
 
-        if (cancelled) return;
+      const [statsRes, operatingRes, crmRes, calendarRes] = await Promise.all([
+        authFetch("/api/dashboard/stats").catch(() => null),
+        authFetch(`/api/overview/operating-metrics?since=${encodeURIComponent(since)}`).catch(
+          () => null,
+        ),
+        authFetch("/api/oauth/crm/status").catch(() => null),
+        authFetch("/api/calendar/accounts").catch(() => null),
+      ]);
 
-        if (statsRes.ok) {
-          const data = await statsRes.json();
-          const logs: CallLog[] = Array.isArray(data?.recentLogs)
-            ? data.recentLogs
-            : [];
-          setRecentCalls(logs.slice(0, 4));
-          setHotLeadsCount(
-            Array.isArray(data?.hotLeads) ? data.hotLeads.length : 0,
-          );
-          setTotalAppointments(Number(data?.totalAppointments ?? 0));
+      if (cancelled) return;
 
-          const todayStr = localDateKey(new Date());
-          const todayLogs = logs.filter(
-            (log) => isoToLocalDateKey(log.created_at) === todayStr,
-          );
-          const count = todayLogs.length;
-          setCallsCount(count);
-          if (count > 0) {
-            const inbound = todayLogs.filter(
-              (log) => log.direction === "inbound",
-            ).length;
-            const outbound = todayLogs.filter(
-              (log) => log.direction === "outbound",
-            ).length;
-            setCallsDetail(`${inbound} inbound · ${outbound} outbound`);
-          } else {
-            setCallsDetail(
-              logs.length > 0
-                ? "No new calls today"
-                : "Waiting for first conversation",
-            );
-          }
-        } else {
-          // Don't present initial zeros as real business data when the metrics
-          // API fails — flag it so the UI can say the numbers aren't current.
-          setStatsUnavailable(true);
-        }
+      if (statsRes?.ok) {
+        const data = await statsRes.json().catch(() => null);
+        const logs: CallLog[] = Array.isArray(data?.recentLogs) ? data.recentLogs : [];
+        setRecentCalls(logs.slice(0, 4));
+      } else {
+        setStatsUnavailable(true);
+      }
 
-        if (navCountsRes.ok) {
-          const data = await navCountsRes.json();
-          setPendingFollowUps(Number(data?.["/overview"] ?? 0));
-        }
+      if (operatingRes?.ok) {
+        const data = await operatingRes.json().catch(() => null);
+        setConversationsToday(Number(data?.conversationsToday ?? 0));
+        setHighIntentToday(Number(data?.highIntentToday ?? 0));
+        setTotalAppointments(Number(data?.appointmentsBooked ?? 0));
+        setActiveWork(Number(data?.activeWork ?? 0));
+      } else {
+        setStatsUnavailable(true);
+      }
 
-        const activeProviders: string[] = [];
-        if (crmRes.ok) {
-          const data = await crmRes.json();
+      const activeProviders: string[] = [];
+      if (crmRes?.ok) {
+        const data = await crmRes.json().catch(() => null);
+        if (data) {
           activeProviders.push(
             ...Object.entries(data as Record<string, { connected?: boolean }>)
               .filter(([, connection]) => connection?.connected)
@@ -520,37 +477,23 @@ export default function OverviewPage() {
               ),
           );
         }
-
-        const coreConnections: string[] = [];
-        if (calendarRes.ok) {
-          const calendarData = await calendarRes.json().catch(() => null);
-          if (
-            Array.isArray(calendarData?.accounts) &&
-            calendarData.accounts.length > 0
-          ) {
-            coreConnections.push("Calendar");
-          }
-        }
-        if (agents.some((agent) => agent.phone_number))
-          coreConnections.push("Phone");
-
-        const allConnections = [
-          ...new Set([...coreConnections, ...activeProviders]),
-        ];
-        setConnectionsCount(allConnections.length);
-        setConnectionsDetail(
-          allConnections.length
-            ? allConnections.join(" · ")
-            : "Connect tools in Connections",
-        );
-      } catch {
-        if (!cancelled) {
-          setConnectionsDetail("Connect tools in Connections");
-          setStatsUnavailable(true);
-        }
-      } finally {
-        if (!cancelled) setLoadingDashboard(false);
       }
+
+      const coreConnections: string[] = [];
+      if (calendarRes?.ok) {
+        const calendarData = await calendarRes.json().catch(() => null);
+        if (Array.isArray(calendarData?.accounts) && calendarData.accounts.length > 0) {
+          coreConnections.push("Calendar");
+        }
+      }
+      if (agents.some((agent) => agent.phone_number)) coreConnections.push("Phone");
+
+      const allConnections = [...new Set([...coreConnections, ...activeProviders])];
+      setConnectionsCount(allConnections.length);
+      setConnectionsDetail(
+        allConnections.length ? allConnections.join(" · ") : "Connect tools in Connections",
+      );
+      if (!cancelled) setLoadingDashboard(false);
     }
 
     void loadDashboard();
@@ -577,7 +520,7 @@ export default function OverviewPage() {
       : "Add business voice agent";
   const primaryAgent = agents[0];
   const hasLiveLine = agents.some((agent) => Boolean(agent.phone_number));
-  const hasConversationHistory = recentCalls.length > 0;
+  const hasConversationHistory = recentCalls.length > 0 || conversationsToday > 0;
   const emptyStudioHref =
     accountType === "personal"
       ? "/studio?create=1&posture=personal"
@@ -599,8 +542,6 @@ export default function OverviewPage() {
             className={`flex flex-col gap-5 ${hasAgents ? "items-start" : "items-center"}`}
           >
             <div className="max-w-2xl">
-              {/* Warm personal line carrying the operator's own name; the case
-                  system must never rewrite someone's words. */}
               <h1 className="wl-preserve-case wl-display-2 text-balance">
                 {isFirstRun
                   ? `Let's put your first ${language.singular} to work.`
@@ -660,8 +601,8 @@ export default function OverviewPage() {
             <DemandReadinessCard
               hasLiveLine={hasLiveLine}
               hasConversationHistory={hasConversationHistory}
-              callsCount={callsCount}
-              pendingFollowUps={pendingFollowUps}
+              conversationsToday={conversationsToday}
+              activeWork={activeWork}
               connectionsCount={connectionsCount}
               connectionsDetail={connectionsDetail}
               setupHref={primaryStudioHref}
@@ -678,11 +619,10 @@ export default function OverviewPage() {
                     <MetricSkeleton key={index} />
                   ))
                 : metricRows(
-                    callsCount,
-                    callsDetail,
-                    hotLeadsCount,
+                    conversationsToday,
+                    highIntentToday,
                     totalAppointments,
-                    pendingFollowUps,
+                    activeWork,
                   ).map((item, index) => {
                     const Icon = item.icon;
                     return (
@@ -699,9 +639,7 @@ export default function OverviewPage() {
                             aria-hidden="true"
                           />
                         </div>
-                        <div className="wl-metric-tile__value">
-                          {item.value}
-                        </div>
+                        <div className="wl-metric-tile__value">{item.value}</div>
                       </Link>
                     );
                   })}
@@ -713,8 +651,6 @@ export default function OverviewPage() {
               </StatusNotice>
             ) : null}
 
-            {/* A failed number lookup silently relabelled every live agent
-                "Needs setup" with nothing on screen to explain it. */}
             {!degraded && phoneLookupDegraded ? (
               <StatusNotice tone="warning" title="Line status unavailable">
                 We could not check which numbers are attached. Your phone lines
@@ -723,10 +659,9 @@ export default function OverviewPage() {
             ) : null}
 
             {statsUnavailable && !loadingDashboard ? (
-              <StatusNotice tone="warning" title="Live metrics unavailable">
-                We couldn&apos;t load your latest calls, appointments, and
-                leads. Refresh to try again — the numbers above may not be
-                current.
+              <StatusNotice tone="warning" title="Home data partial">
+                We couldn&apos;t load every Home data source. Refresh to try again —
+                affected metrics or recent activity may not be current.
               </StatusNotice>
             ) : null}
 
