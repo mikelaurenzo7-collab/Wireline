@@ -17,8 +17,8 @@ export const OPENAI_MODELS = {
   GPT_5_6_TERRA: "gpt-5.6-terra",
   GPT_5_6_LUNA: "gpt-5.6-luna",
   GPT_5_6_SOL: "gpt-5.6-sol",
-  // Historical audit rows still use this id. New simple/medium work routes
-  // to Luna below.
+  // Historical audit rows still use this id. New work routes through the
+  // current GPT-5.6 family below.
   GPT_5: "gpt-5",
   GPT_4O: "gpt-4o",
 } as const;
@@ -371,13 +371,14 @@ export const DEFAULT_MODEL = STRUCTURED_PRIMARY_MODEL;
  * Route structured work by complexity inside the OpenAI primary lane.
  * Gemini remains the automatic continuity fallback (see ai-client), not a
  * complexity selector — OpenAI only accepts gpt-* ids on the primary path.
- * Luna is the low-cost member of the same current model family; Terra remains
- * the default for complex work.
+ * The tier ladder follows OpenAI's workload guidance: Luna for efficient
+ * high-volume work, Terra for balanced work, and Sol for complex professional
+ * work. Unclassified structured work remains on the managed Terra default.
  */
 export function selectModelForTask(complexity: TaskComplexity): string {
-  if (complexity === "simple" || complexity === "medium")
-    return OPENAI_MODELS.GPT_5_6_LUNA;
-  return STRUCTURED_PRIMARY_MODEL;
+  if (complexity === "simple") return OPENAI_MODELS.GPT_5_6_LUNA;
+  if (complexity === "medium") return OPENAI_MODELS.GPT_5_6_TERRA;
+  return OPENAI_MODELS.GPT_5_6_SOL;
 }
 export function modelLabel(model: string): string {
   if (model === OPENAI_MODELS.GPT_5_6_TERRA) return "GPT-5.6 Terra";

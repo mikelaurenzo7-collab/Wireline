@@ -50,6 +50,7 @@ describe("OpenAI-first structured runtime provider chain", () => {
       'requested.startsWith("gpt-") ? requested : OPENAI_STRUCTURED_PRIMARY_MODEL',
     );
     expect(models).toContain('GPT_5_6_TERRA: "gpt-5.6-terra"');
+    expect(models).toContain('GPT_5_6_SOL: "gpt-5.6-sol"');
     expect(models).toContain(
       "process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() || OPENAI_MODELS.GPT_5_6_TERRA",
     );
