@@ -72,11 +72,18 @@ export default function OutcomeLedger({
     setFatalError(null);
     setEnrichmentWarning(null);
     try {
+      // Agent workspaces must scope in Postgres before LIMIT/OFFSET. Filtering a
+      // globally-limited page in the browser can falsely report no outcomes for
+      // an agent whose calls are simply older than another agent's newest rows.
+      const callHistoryPath = agentId
+        ? `/api/agents/${encodeURIComponent(agentId)}/calls?limit=${limit}`
+        : `/api/calls?limit=${limit}`;
+
       // Call outcomes are the source of truth for this surface. Follow-up tasks
       // are enrichment only, so transport failures in either task request must
       // never reject the whole load and hide otherwise healthy call evidence.
       const [callsRes, pendingRes, completedRes] = await Promise.all([
-        authFetch(`/api/calls?limit=${limit}`),
+        authFetch(callHistoryPath),
         authFetch("/api/Assistants/tasks?status=pending").catch(() => null),
         authFetch("/api/Assistants/tasks?status=completed").catch(() => null),
       ]);
@@ -120,6 +127,8 @@ export default function OutcomeLedger({
 
       const normalized = calls
         .map((row: Record<string, unknown>) => normalizeCall(row))
+        // Defense in depth: even the dedicated server route must never surface a
+        // row outside the requested agent scope if its contract regresses later.
         .filter((row: OutcomeLedgerRow) => !agentId || row.agent_id === agentId)
         .map((row: OutcomeLedgerRow) => {
           const pending = pendingBySource.get(row.id) || [];
