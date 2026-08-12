@@ -31,7 +31,24 @@ type TaskLite = {
   status?: string | null;
   task_type?: string | null;
   taskType?: string | null;
+  created_at?: string | null;
+  createdAt?: string | null;
 };
+
+function newestTask(tasks: TaskLite[]): TaskLite | undefined {
+  let newest: TaskLite | undefined;
+  let newestAt = Number.NEGATIVE_INFINITY;
+  for (const task of tasks) {
+    const value = task.created_at ?? task.createdAt;
+    const parsed = value ? Date.parse(value) : Number.NaN;
+    if (!Number.isFinite(parsed) || parsed <= newestAt) continue;
+    newest = task;
+    newestAt = parsed;
+  }
+  // Legacy/imported rows can lack a timestamp. Preserve a deterministic
+  // representative action rather than dropping action evidence entirely.
+  return newest ?? tasks[0];
+}
 
 function normalizeCall(row: Record<string, unknown>): OutcomeLedgerRow {
   return {
@@ -72,11 +89,18 @@ export default function OutcomeLedger({
     setFatalError(null);
     setEnrichmentWarning(null);
     try {
+      // Agent workspaces must scope in Postgres before LIMIT/OFFSET. Filtering a
+      // globally-limited page in the browser can falsely report no outcomes for
+      // an agent whose calls are simply older than another agent's newest rows.
+      const callHistoryPath = agentId
+        ? `/api/agents/${encodeURIComponent(agentId)}/calls?limit=${limit}`
+        : `/api/calls?limit=${limit}`;
+
       // Call outcomes are the source of truth for this surface. Follow-up tasks
       // are enrichment only, so transport failures in either task request must
       // never reject the whole load and hide otherwise healthy call evidence.
       const [callsRes, pendingRes, completedRes] = await Promise.all([
-        authFetch(`/api/calls?limit=${limit}`),
+        authFetch(callHistoryPath),
         authFetch("/api/Assistants/tasks?status=pending").catch(() => null),
         authFetch("/api/Assistants/tasks?status=completed").catch(() => null),
       ]);
@@ -120,11 +144,13 @@ export default function OutcomeLedger({
 
       const normalized = calls
         .map((row: Record<string, unknown>) => normalizeCall(row))
+        // Defense in depth: even the dedicated server route must never surface a
+        // row outside the requested agent scope if its contract regresses later.
         .filter((row: OutcomeLedgerRow) => !agentId || row.agent_id === agentId)
         .map((row: OutcomeLedgerRow) => {
           const pending = pendingBySource.get(row.id) || [];
           const completed = completedBySource.get(row.id) || [];
-          const lastAction = pending[0] || completed[0];
+          const lastAction = newestTask([...pending, ...completed]);
           const pending_task_count = pending.length;
           const completed_task_count = completed.length;
           const last_action_type = (lastAction?.task_type || lastAction?.taskType || null) as
