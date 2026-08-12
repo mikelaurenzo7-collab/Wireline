@@ -45,6 +45,13 @@ export function shouldDispatchProductEvent(
     return input.metadata?.has_line === true && input.metadata?.test_started === true;
   }
 
+  // Outcome review is a behavioral milestone, not a data-presence milestone.
+  // A call existing on a page must never count as reviewed merely because the
+  // component mounted. Emitters must prove an explicit user review action.
+  if (input.event === "outcome_reviewed") {
+    return input.metadata?.reviewed === true;
+  }
+
   return true;
 }
 
