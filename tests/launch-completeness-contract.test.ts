@@ -108,7 +108,10 @@ describe("launch completeness contracts", () => {
     expect(status).toContain("Page refreshes every 60 seconds.");
     expect(status).toContain("page refreshes every 60s.");
     expect(status).toContain("Page refresh · 60s");
-    expect(status).toContain("Provider cache · up to 120s");
+    expect(status).toContain("Normal cache · 120s");
+    expect(status).toContain("Server fallback · up to 5m");
+    expect(status).toContain("edge stale-while-revalidate");
+    expect(status).toContain("timestamp above is the authoritative age");
     expect(status).toContain("minimal,\n              non-persistent OpenAI Responses inference");
     expect(marketingMeta).toContain(
       "Live access checks for Wireline's managed voice control plane and reasoning runtime. Page refreshes every 60 seconds.",
@@ -118,7 +121,7 @@ describe("launch completeness contracts", () => {
     expect(status).toContain("Provider checks operational");
     expect(status).toContain("Managed voice access");
     expect(status).toContain("Reasoning model access");
-    expect(status).toContain("not an end-to-end customer call");
+    expect(status).toContain("end-to-end customer call");
     expect(status).not.toContain("All systems operational");
     expect(status).not.toContain("pings each production LLM tier");
     expect(status).not.toContain("configured fallback remains available");

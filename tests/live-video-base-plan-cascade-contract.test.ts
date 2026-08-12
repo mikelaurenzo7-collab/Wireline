@@ -30,17 +30,23 @@ describe("Live Video dependent billing lifecycle", () => {
     expect(helpers).toContain('metadata: { wireline_base_plan_cascade: "" }');
   });
 
-  it("preserves an already-paid add-on period after terminal base cancellation", () => {
+  it("preserves only a Stripe-current add-on after terminal base cancellation", () => {
     expect(entitlements).toContain("TERMINAL_BASE_SUBSCRIPTION_STATUSES");
+    expect(entitlements).toContain("hasCurrentStripeLiveVideoAddon");
+    expect(entitlements).toContain('subscription.metadata?.purpose === "live_video_addon"');
+    expect(entitlements).toContain("NON_ENTITLING_LIVE_VIDEO_STATUSES");
     expect(entitlements).toContain("terminalPaidPeriodGrace");
-    expect(entitlements).toContain("existingAddonEntitled");
+    expect(entitlements).toContain("stripeCustomerId: schema.subscriptions.stripeCustomerId");
+    expect(entitlements).toContain(
+      "terminalBase && (await hasCurrentStripeLiveVideoAddon(row?.stripeCustomerId ?? null))",
+    );
     expect(entitlements).toContain(
       "const billingEntitled = addonOffered && workspaceFlag && existingAddonEntitled",
     );
     expect(entitlements).toContain(
       "const checkoutAvailable = addonOffered && baseSubscriptionActive && priceConfigured",
     );
-    expect(entitlements).toContain("`unpaid` is intentionally excluded");
+    expect(entitlements).toContain("failed closed");
   });
 
   it("runs Stripe reconciliation before persisting the new local base-plan mirror", () => {

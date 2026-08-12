@@ -10,6 +10,11 @@
  * webhook signing secret without re-supplying or redistributing RESEND_API_KEY.
  * At least one Resend value must be provided.
  *
+ * The helper also repairs legacy mixed-target entries created by older versions
+ * of this script. Vercel lets us narrow an existing env entry's target without
+ * supplying its secret value, so a webhook-secret-only run can still remove a
+ * production API key from Preview/Development safely.
+ *
  * Usage:
  *   $env:VERCEL_TOKEN = "<token>"
  *   $env:RESEND_WEBHOOK_SECRET = "whsec_..."   # from the Resend webhook page
@@ -22,6 +27,12 @@
 import { TEAM_ID, PROJECT_ID } from "./lib/vercel-project.mjs";
 
 const PRODUCTION_TARGET = ["production"];
+const MANAGED_PRODUCTION_ONLY_KEYS = new Set([
+  "RESEND_API_KEY",
+  "RESEND_WEBHOOK_SECRET",
+  "RESEND_FROM_EMAIL",
+  "RESEND_FROM_DOMAIN",
+]);
 
 const token = process.env.VERCEL_TOKEN || process.env.VERCEL_OIDC_TOKEN;
 if (!token) {
@@ -80,8 +91,10 @@ async function vercelFetch(path, opts = {}) {
 }
 
 async function listProjectEnv() {
+  // Target repair needs only ids, keys, and target metadata. Do not ask Vercel
+  // to decrypt live values merely to inspect scope.
   const data = await vercelFetch(
-    `/v9/projects/${encodeURIComponent(PROJECT_ID)}/env?decrypt=true`,
+    `/v10/projects/${encodeURIComponent(PROJECT_ID)}/env`,
     { method: "GET" },
   );
   return data.envs || [];
@@ -94,6 +107,16 @@ async function deleteEnv(envId) {
   );
 }
 
+async function patchEnv(envId, body) {
+  await vercelFetch(
+    `/v9/projects/${encodeURIComponent(PROJECT_ID)}/env/${encodeURIComponent(envId)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
 async function createEnv(key, value, targets) {
   await vercelFetch(`/v10/projects/${encodeURIComponent(PROJECT_ID)}/env`, {
     method: "POST",
@@ -102,21 +125,36 @@ async function createEnv(key, value, targets) {
   console.log(`  + created ${key} (${targets.join(", ")})`);
 }
 
+function envTargets(entry) {
+  return Array.isArray(entry?.target) ? entry.target.map(String) : [];
+}
+
+async function narrowLegacyProductionEntries() {
+  const existing = await listProjectEnv();
+  for (const entry of existing) {
+    if (!MANAGED_PRODUCTION_ONLY_KEYS.has(entry.key)) continue;
+    const targets = envTargets(entry);
+    if (!targets.includes("production")) continue;
+    if (!targets.some((target) => target !== "production")) continue;
+
+    // Target-only PATCH is deliberate: never require an operator to reveal or
+    // re-supply an existing live secret merely to undo historical target drift.
+    await patchEnv(entry.id, { target: PRODUCTION_TARGET });
+    console.log(`  ↘ narrowed ${entry.key} to production`);
+  }
+}
+
 async function upsertEnv(key, value, targets) {
-  const existing = (await listProjectEnv()).find((e) => e.key === key);
+  const existingEntries = (await listProjectEnv()).filter((entry) => entry.key === key);
+  const existing =
+    existingEntries.find((entry) => envTargets(entry).includes("production")) || null;
   if (!existing) {
     await createEnv(key, value, targets);
     return;
   }
 
   try {
-    await vercelFetch(
-      `/v9/projects/${encodeURIComponent(PROJECT_ID)}/env/${encodeURIComponent(existing.id)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({ value, type: "encrypted", target: targets }),
-      },
-    );
+    await patchEnv(existing.id, { value, type: "encrypted", target: targets });
     console.log(`  ↻ updated ${key} (${targets.join(", ")})`);
   } catch (err) {
     if (/cannot change the type/i.test(String(err.message))) {
@@ -131,6 +169,7 @@ async function upsertEnv(key, value, targets) {
 
 async function main() {
   console.log("Syncing production Resend env vars to Vercel…\n");
+  await narrowLegacyProductionEntries();
   for (const { key, value, targets } of envEntries) {
     await upsertEnv(key, value, targets);
   }

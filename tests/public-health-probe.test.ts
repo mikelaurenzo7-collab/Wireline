@@ -121,7 +121,7 @@ describe("public health probe", () => {
     expect(cancel).toHaveBeenCalledTimes(1);
   });
 
-  it("probes the real OpenAI Responses execution path with minimum reasoning and output", async () => {
+  it("probes the real OpenAI Responses execution path without model-specific controls", async () => {
     const cancel = vi.fn().mockResolvedValue(undefined);
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -145,14 +145,15 @@ describe("public health probe", () => {
       }),
     );
     const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
-    expect(JSON.parse(String(request.body))).toEqual({
+    const payload = JSON.parse(String(request.body));
+    expect(payload).toEqual({
       model: "gpt-test/model",
       input: "Reply with OK.",
       max_output_tokens: 16,
-      reasoning: { effort: "none" },
-      text: { verbosity: "low" },
       store: false,
     });
+    expect(payload).not.toHaveProperty("reasoning");
+    expect(payload).not.toHaveProperty("text");
     expect(cancel).toHaveBeenCalledTimes(1);
   });
 

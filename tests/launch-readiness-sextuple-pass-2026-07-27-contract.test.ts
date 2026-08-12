@@ -68,12 +68,17 @@ describe("launch readiness sextuple-pass 2026-07-27", () => {
     expect(browser).not.toContain("dogfood");
   });
 
-  it("surfaces Contact/Support API errors inline instead of always opening mailto", () => {
+  it("keeps validation/API errors inline but opens email fallback for transport and 5xx failures", () => {
     const contact = read("src/components/ContactPage.tsx");
     const support = read("src/components/SupportPage.tsx");
-    expect(contact).toContain("Only fall back to mailto for transport failures");
-    expect(contact).toContain("setError(message)");
-    expect(support).toContain("setError(message)");
+    for (const source of [contact, support]) {
+      expect(source).toContain("responseStatus = response.status");
+      expect(source).toContain("responseStatus !== null && responseStatus >= 500");
+      expect(source).toContain("mailto:support@trywireline.com");
+      expect(source).toContain("setError(message)");
+    }
+    expect(contact).toContain("Only fall back to mailto for transport/service failures");
+    expect(contact).toContain("isTransport");
     expect(support).toContain("isTransport");
   });
 

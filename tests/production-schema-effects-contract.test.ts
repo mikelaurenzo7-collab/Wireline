@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const buildSource = readFileSync("scripts/vercel-build.mjs", "utf8");
 const verifierSource = readFileSync("scripts/check-production-schema-effects.mjs", "utf8");
+const wrapperSource = readFileSync("scripts/run-production-schema-effects.mjs", "utf8");
 const migrationSource = readFileSync("drizzle/migrations/0142_resend_delivery_feedback.sql", "utf8");
 
 describe("production schema effects", () => {
@@ -78,9 +79,9 @@ describe("production schema effects", () => {
     expect(verifierSource).not.toContain("wireline_jobs t LEFT JOIN public.wireline_users");
   });
 
-  it("runs the read-only schema assertion on every real production build", () => {
+  it("runs the read-only schema assertion on every real production build against runtime-selected DB truth", () => {
     const migrate = 'run("npm", ["run", "db:migrate"]);';
-    const verify = 'run("node", ["scripts/check-production-schema-effects.mjs"]);';
+    const verify = 'run("node", ["scripts/run-production-schema-effects.mjs"]);';
     const migrateAt = buildSource.indexOf(migrate);
     const verifyAt = buildSource.indexOf(verify);
 
@@ -91,5 +92,10 @@ describe("production schema effects", () => {
     );
     expect(buildSource.slice(migrateAt, verifyAt)).toContain("if (shouldVerifyProductionSchema)");
     expect(buildSource.slice(migrateAt, verifyAt)).toContain("Skipping database migrations");
+    expect(wrapperSource).toContain("resolveProductionSchemaDatabase");
+    expect(wrapperSource).toContain("DATABASE_POOL_URL");
+    expect(wrapperSource).toContain("POSTGRES_URL");
+    expect(wrapperSource).toContain("delete childEnv.DATABASE_URL");
+    expect(wrapperSource).toContain('"scripts/check-production-schema-effects.mjs"');
   });
 });
