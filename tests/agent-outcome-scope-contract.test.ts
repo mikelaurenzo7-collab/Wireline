@@ -9,6 +9,7 @@ describe("agent outcome scope", () => {
   it("proves agent ownership and scopes calls by tenant plus agent before pagination", () => {
     expect(route).toContain('"/api/agents/:agentId/calls"');
     expect(route).toContain("authenticateUser");
+    expect(route).toContain("agentId.length > 255");
     expect(route).toContain("eq(schema.agents.id, agentId)");
     expect(route).toContain("eq(schema.agents.userId, req.user.id)");
     expect(route).toContain("eq(schema.callLogs.userId, req.user.id)");
@@ -19,10 +20,15 @@ describe("agent outcome scope", () => {
     expect(route.indexOf(".where(callScope)")).toBeLessThan(route.indexOf(".limit(limit)"));
   });
 
-  it("preserves authenticated recording proxies and private response caching", () => {
+  it("preserves evidence while minimizing identifiers and recording exposure", () => {
+    expect(route).toContain("transcript: schema.callLogs.transcript");
+    expect(route).toContain("coachingNote: schema.callLogs.coachingNote");
     expect(route).toContain("`/api/calls/${String(call.id)}/recording`");
     expect(route).toContain('res.setHeader("Cache-Control", "private, no-store, max-age=0")');
     expect(route).not.toContain("recordingUrl: call.recordingUrl,");
+    expect(route).not.toContain("userId: schema.callLogs.userId");
+    expect(route).not.toContain("vapiCallId: schema.callLogs.vapiCallId");
+    expect(route).not.toContain("demo: schema.callLogs.demo");
   });
 
   it("registers the scoped route and uses it only for agent ledgers", () => {
