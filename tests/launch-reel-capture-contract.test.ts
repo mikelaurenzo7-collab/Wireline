@@ -39,16 +39,12 @@ describe("launch reel capture contract", () => {
   it("generates reel copy from the campaign document rather than restating it", () => {
     expect(kit, "the kit must name the campaign document as its source").toContain(CAMPAIGN_DOC);
     expect(kit, "the kit must read the Brand Spine").toMatch(/function readBrandSpine/);
-    // The spine keys the copy pack depends on have to exist upstream, or the
-    // generator is reading a table that no longer says what it needs.
     for (const key of ["North star", "Compact line", "Outcome line", "CTA", "Price"]) {
       expect(campaign, `Brand Spine is missing "${key}"`).toContain(`| ${key} |`);
     }
   });
 
   it("keeps competitor names out of the generated reel copy", () => {
-    // Comments may discuss the rule; the emitted template must not carry the
-    // names, so only the generated markdown template is searched.
     const template = kit.slice(kit.indexOf("# Wireline marketing copy pack"));
     for (const vendor of VENDOR_MARKS) {
       expect(template, `reel copy must not name ${vendor}`).not.toContain(vendor);
@@ -56,8 +52,6 @@ describe("launch reel capture contract", () => {
   });
 
   it("does not film the competitor comparison table", () => {
-    // The reel doctrine is "never vendor marks". `/compare` is the one route in
-    // the product that renders them, and a reel used to pan across it.
     const reels = kit.slice(
       kit.indexOf("const reels = ["),
       kit.indexOf("for (const reel of reels)"),
@@ -69,8 +63,6 @@ describe("launch reel capture contract", () => {
     const priceRow = campaign.match(/\|\s*Price\s*\|\s*(.+?)\s*\|/)?.[1] ?? "";
     expect(priceRow, "the campaign document must state a price line").not.toBe("");
     expect(priceRow).toContain("$19");
-    // The copy pack interpolates the row rather than repeating a number, so a
-    // price change in the document reaches the reels without a code edit.
     expect(kit).toMatch(/\$\{spine\.price\}/);
     expect(kit).toMatch(/\$\{spine\.cta\}/);
   });
@@ -95,31 +87,37 @@ describe("launch reel capture contract", () => {
     expect(certifier).toContain("does not allow credentials embedded in E2E_BASE_URL");
   });
 
-  it("proves the production URL serves the exact checkout commit for the full capture window", () => {
+  it("source-verifies every origin represented by a publishable manifest", () => {
+    expect(certifier).toContain("async function verifyCaptureOrigins(sourceCommit)");
+    expect(certifier).toContain(
+      'const origins = [...new Set([configuredBaseURL, "https://trywireline.com"])]',
+    );
+    expect(certifier).toContain("verified.push(await verifyRemoteSourceCommit(sourceCommit, origin))");
+    expect(certifier).toContain("function combineSourceVerification");
+    expect(certifier).toContain("origins,");
+  });
+
+  it("proves every capture origin serves the checkout commit for the full capture window", () => {
     expect(publicHealth).toContain('res.setHeader("X-Wireline-Source-Commit", SOURCE_COMMIT)');
     expect(certifier).toContain('response.headers.get("x-wireline-source-commit")');
     expect(certifier).toContain("deployedCommit !== sourceCommit");
     expect(certifier).toContain("Do not certify footage when the deployed source cannot be proven.");
     expect(certifier).toContain("source_commit_check");
-    expect(certifier).toContain(
-      "const beforeCapture = await verifyRemoteSourceCommit(sourceCommit)",
-    );
-    expect(certifier).toContain(
-      "const afterCapture = await verifyRemoteSourceCommit(sourceCommit)",
-    );
+    expect(certifier).toContain("const beforeCapture = await verifyCaptureOrigins(sourceCommit)");
+    expect(certifier).toContain("const afterCapture = await verifyCaptureOrigins(sourceCommit)");
     expect(certifier).toContain("verifiedBeforeCaptureAt");
     expect(certifier).toContain("verifiedAfterCaptureAt");
     expect(certifier).toContain("sourceVerification");
   });
 
+  it("invalidates stale and partial release output whenever certification cannot finish", () => {
+    expect(certifier).toContain("rmSync(outputRoot, { recursive: true, force: true })");
+    expect(certifier).toContain("A certification attempt invalidates all prior generated output immediately");
+    expect(certifier).toContain("Marketing-kit capture failed with exit code");
+    expect(certifier).toMatch(/catch \(error\) \{\s*rmSync\(outputRoot, \{ recursive: true, force: true \}\);/);
+  });
+
   it("resolves a browser the same way in every capture script", () => {
-    /*
-     * The helper exists precisely for sandboxes with a preinstalled browser and
-     * downloads disabled, and it had been wired into one of six callers. Both
-     * asset producers — the marketing kit that records these reels, and the
-     * official asset builder — died at launch with "Executable doesn't exist".
-     * A reel cannot be re-cut from a script that cannot open a browser.
-     */
     const offenders = globSync("scripts/**/*.mjs", { cwd: root })
       .map((file) => file.replaceAll("\\", "/"))
       .filter((file) => !file.endsWith("resolve-preinstalled-chromium.mjs"))
@@ -135,21 +133,11 @@ describe("launch reel capture contract", () => {
   });
 
   it("names each captured reel after its cut", () => {
-    // Playwright writes `page@<hash>.webm`; an editor should not have to
-    // cross-reference a manifest to tell three reels apart.
     expect(kit).toMatch(/video\.saveAs\(/);
     expect(kit).toMatch(/\$\{reel\.id\}\.webm/);
   });
 
   it("mocks the session route the app actually reads", () => {
-    /*
-     * Without this the authenticated half of the kit is a screenshot of the
-     * sign-in wall — and it fails silently. All eight "authenticated" desktop
-     * stills were byte-identical at 123,587 bytes, the same login page filed
-     * under eight product names, at three layouts, plus three reels recorded
-     * against the same page. `mockSession` seeds the legacy localStorage key,
-     * which AuthContext deletes during migration on first load.
-     */
     expect(kit, "the kit must mock /api/auth/session").toContain('"/api/auth/session"');
     expect(kit).toMatch(/return json\(\{ user: DEMO_USER \}\)/);
   });
