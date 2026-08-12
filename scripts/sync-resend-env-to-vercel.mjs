@@ -91,8 +91,10 @@ async function vercelFetch(path, opts = {}) {
 }
 
 async function listProjectEnv() {
+  // Target repair needs only ids, keys, and target metadata. Do not ask Vercel
+  // to decrypt live values merely to inspect scope.
   const data = await vercelFetch(
-    `/v9/projects/${encodeURIComponent(PROJECT_ID)}/env?decrypt=true`,
+    `/v10/projects/${encodeURIComponent(PROJECT_ID)}/env`,
     { method: "GET" },
   );
   return data.envs || [];
