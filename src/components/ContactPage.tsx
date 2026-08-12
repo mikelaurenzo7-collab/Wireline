@@ -75,6 +75,7 @@ export function ContactPage() {
     const composedBody = contextLines.length
       ? `${contextLines.join("\n")}\n\n${normalizedBody}`
       : normalizedBody;
+    let responseStatus: number | null = null;
     try {
       const response = await fetch("/api/support/ticket", {
         method: "POST",
@@ -86,6 +87,7 @@ export function ContactPage() {
           body: composedBody,
         }),
       });
+      responseStatus = response.status;
       if (!response.ok) {
         const failBody = (await response.json().catch(() => null)) as {
           error?: string;
@@ -115,11 +117,13 @@ export function ContactPage() {
         reason instanceof Error
           ? reason.message
           : "The message service did not respond.";
-      // Only fall back to mailto for transport failures — keep validation/API errors inline.
+      // Only fall back to mailto for transport/service failures — keep validation/API errors inline.
       const isTransport =
+        (responseStatus !== null && responseStatus >= 500) ||
         /did not respond|failed to fetch|network|503|502|504|Message was not delivered/i.test(
           message,
-        ) || message.includes("(5");
+        ) ||
+        message.includes("(5");
       if (isTransport) {
         window.location.href = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[Wireline / ${inquiryType}] ${normalizedSubject}`)}&body=${encodeURIComponent(`From: ${normalizedEmail}\n\n${composedBody}`)}`;
         setError(
