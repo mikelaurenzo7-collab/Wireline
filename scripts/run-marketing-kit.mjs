@@ -76,12 +76,32 @@ function assertCleanCheckout(sourceCommit) {
   }
 }
 
+function isTrustedWirelineCaptureHost(hostname) {
+  const host = String(hostname || "").trim().toLowerCase();
+  return (
+    host === "trywireline.com" ||
+    host.endsWith(".trywireline.com") ||
+    host === "wireline-chi.vercel.app" ||
+    /^wireline-[a-z0-9-]+-revaluate\.vercel\.app$/.test(host)
+  );
+}
+
 function normalizeBaseURL(value) {
   const url = new URL(value || "https://trywireline.com");
   if (url.protocol !== "https:") {
     throw new Error(
       `Launch-reel certification requires an HTTPS production URL; received ${url.toString()}. ` +
         "Use marketing:kit:raw for localhost or mock capture work.",
+    );
+  }
+  if (url.username || url.password) {
+    throw new Error("Launch-reel certification does not allow credentials embedded in E2E_BASE_URL.");
+  }
+  if (!isTrustedWirelineCaptureHost(url.hostname)) {
+    throw new Error(
+      `Launch-reel certification refuses untrusted capture host ${url.hostname}. ` +
+        "Use trywireline.com or a Wireline deployment in the revaluate Vercel namespace. " +
+        "Use marketing:kit:raw without real credentials for local or third-party layout work.",
     );
   }
   url.pathname = "/";
