@@ -93,10 +93,17 @@ function normalizeBaseURL(value) {
 async function verifyRemoteSourceCommit(sourceCommit) {
   const baseURL = normalizeBaseURL(process.env.E2E_BASE_URL || "https://trywireline.com");
   const healthURL = new URL("/api/health/public", `${baseURL}/`);
+  // The query is intentionally unique to the source being certified. A stale
+  // edge response from a previous deployment may make certification fail closed,
+  // but it must never let a different deployment falsely pass as this source.
+  healthURL.searchParams.set("source_commit_check", sourceCommit);
   const response = await fetch(healthURL, {
     method: "HEAD",
     redirect: "error",
-    headers: { "Cache-Control": "no-cache" },
+    headers: {
+      "Cache-Control": "no-cache, no-store",
+      Pragma: "no-cache",
+    },
   });
   if (!response.ok) {
     throw new Error(
@@ -267,7 +274,7 @@ function certifyManifest(manifest, sourceCommit, sourceRef, sourceVerification) 
 const sourceCommit = resolveSourceCommit();
 const sourceRef = resolveSourceRef();
 assertCleanCheckout(sourceCommit);
-const sourceVerification = await verifyRemoteSourceCommit(sourceCommit);
+const beforeCapture = await verifyRemoteSourceCommit(sourceCommit);
 
 const capture = spawnSync(process.execPath, [path.join(scriptDir, "marketing-kit.mjs")], {
   cwd: repoRoot,
@@ -281,6 +288,19 @@ if (!existsSync(manifestPath)) {
 }
 
 assertCleanCheckout(sourceCommit);
+const afterCapture = await verifyRemoteSourceCommit(sourceCommit);
+if (beforeCapture.baseURL !== afterCapture.baseURL) {
+  throw new Error(
+    `Launch-reel source URL changed during capture: started at ${beforeCapture.baseURL}, ended at ${afterCapture.baseURL}.`,
+  );
+}
+const sourceVerification = {
+  baseURL: beforeCapture.baseURL,
+  deployedCommit: sourceCommit,
+  verifiedBeforeCaptureAt: beforeCapture.verifiedAt,
+  verifiedAfterCaptureAt: afterCapture.verifiedAt,
+};
+
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 const certifiedManifest = certifyManifest(
   manifest,
