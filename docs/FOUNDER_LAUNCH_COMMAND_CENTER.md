@@ -4,7 +4,7 @@ Updated: 2026-08-11
 Status: **Active owner go/no-go runbook**  
 Primary authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
 
-This file is deliberately short. Historical launch audits belong in Git history and `docs/AUDIT_INDEX.md`; they are not current operating truth.
+This file is deliberately short and state-light. Historical launch audits belong in Git history and `docs/AUDIT_INDEX.md`; provider balances, deployment SHAs, test totals, and temporary incident findings do **not** belong here as permanent operating truth.
 
 ## Authority order
 
@@ -43,24 +43,25 @@ Operational rules:
 - provider fallbacks must preserve billing, compliance, tenant binding, and observability;
 - optional providers are continuity or feature choices, not competing product identities.
 
-## Verified production baseline — 2026-08-11
+## Release evidence rule
 
-Production commit: `0622a5497a9d75c21ca1239d5b1b861708f19474`.
+A release is current only when evidence is collected against the exact `main` commit being promoted or already serving production.
 
-Verified on the exact production deployment:
+For every release, verify rather than copy forward:
 
-- Vercel production is READY and aliases `trywireline.com`;
-- public health is `operational` for voice runtime, voice fallback, and reasoning;
-- voice-status is `healthy`;
-- 75/75 release-boundary files and 517/517 release-boundary tests passed;
-- 358/358 non-E2E test files and 2,049/2,049 tests passed;
-- app, server, and audit-module TypeScript checks passed;
-- ESLint passed with zero warnings;
-- production dependency audit found 0 unaccepted high/critical advisories;
-- migrations and the production semantic schema-effects verifier passed;
-- fresh error/fatal runtime-log query for the deployment returned no events.
+- exact Git SHA and verified source state;
+- Vercel production READY state and intended aliases;
+- release-boundary and full non-E2E test results;
+- app, server, and audit-module TypeScript;
+- zero-warning ESLint;
+- production dependency security audit;
+- migrations and semantic schema-effects verification;
+- public health and voice-status after promotion;
+- fresh production error/fatal logs after promotion.
 
 The build's integration-test fixtures intentionally strip selected environment variables; fixture stderr must not be mistaken for the real production environment gate.
+
+Do not store a passing test count or deployment SHA in this runbook as though it were evergreen. The deployment and its logs are the evidence record.
 
 ## Current external dependencies
 
