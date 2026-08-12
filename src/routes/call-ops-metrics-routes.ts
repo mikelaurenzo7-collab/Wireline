@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, sql } from "drizzle-orm";
 
 import { AppError } from "../lib/api-error";
 import { dashboardRateLimit } from "../middleware/api-rate-limits";
@@ -13,6 +13,7 @@ const router = Router();
 
 const MAX_DAY_BOUNDARY_AGE_MS = 48 * 60 * 60 * 1000;
 const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
+const CALL_TASK_SOURCE_TYPES = ["phone_call", "showcase_call"] as const;
 
 /**
  * Exact, lightweight operational counts for Call Ops.
@@ -58,6 +59,7 @@ router.get(
               and(
                 eq(schema.followUpTasks.userId, userId),
                 eq(schema.followUpTasks.status, "pending"),
+                inArray(schema.followUpTasks.sourceType, [...CALL_TASK_SOURCE_TYPES]),
               ),
             ),
           tx
