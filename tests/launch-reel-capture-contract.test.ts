@@ -85,11 +85,20 @@ describe("launch reel capture contract", () => {
     expect(certifier).toContain("publishable: certifiedManifest.captureCertification.publishable");
   });
 
-  it("proves the production URL serves the exact checkout commit before certification", () => {
+  it("proves the production URL serves the exact checkout commit for the full capture window", () => {
     expect(publicHealth).toContain('res.setHeader("X-Wireline-Source-Commit", SOURCE_COMMIT)');
     expect(certifier).toContain('response.headers.get("x-wireline-source-commit")');
     expect(certifier).toContain("deployedCommit !== sourceCommit");
     expect(certifier).toContain("Do not certify footage when the deployed source cannot be proven.");
+    expect(certifier).toContain("source_commit_check");
+    expect(certifier).toContain(
+      "const beforeCapture = await verifyRemoteSourceCommit(sourceCommit)",
+    );
+    expect(certifier).toContain(
+      "const afterCapture = await verifyRemoteSourceCommit(sourceCommit)",
+    );
+    expect(certifier).toContain("verifiedBeforeCaptureAt");
+    expect(certifier).toContain("verifiedAfterCaptureAt");
     expect(certifier).toContain("sourceVerification");
   });
 
