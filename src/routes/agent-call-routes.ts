@@ -24,7 +24,9 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = String(req.params.agentId || "").trim();
-      if (!agentId) throw AppError.fromHttpStatus(400, "Agent id is required");
+      if (!agentId || agentId.length > 255) {
+        throw AppError.fromHttpStatus(400, "Valid agent id is required");
+      }
 
       const limitRaw = Number.parseInt(String(req.query.limit ?? ""), 10);
       const offsetRaw = Number.parseInt(String(req.query.offset ?? ""), 10);
@@ -49,11 +51,11 @@ router.get(
         .where(callScope);
       const count = Number(countResult?.count ?? 0);
 
+      // Return only evidence and presentation fields the outcome ledger needs.
+      // Tenant ids, provider ids, demo flags, and unrelated QA internals stay server-side.
       const calls = await drizzle
         .select({
           id: schema.callLogs.id,
-          userId: schema.callLogs.userId,
-          vapiCallId: schema.callLogs.vapiCallId,
           agentId: schema.callLogs.agentId,
           direction: schema.callLogs.direction,
           customerNumber: schema.callLogs.customerNumber,
@@ -68,7 +70,6 @@ router.get(
           coachingNote: schema.callLogs.coachingNote,
           outcomeTag: schema.callLogs.outcomeTag,
           campaignSource: schema.callLogs.campaignSource,
-          demo: schema.callLogs.demo,
           createdAt: schema.callLogs.createdAt,
         })
         .from(schema.callLogs)
