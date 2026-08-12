@@ -78,6 +78,7 @@ A finished reel is publishable only when all of the following are true:
 
 - source picture was captured from the exact production commit being promoted;
 - `marketing-kit/release-record.json` records that exact source commit;
+- the production URL itself reports the same commit through `X-Wireline-Source-Commit` before capture begins;
 - no auth wall, 404, loading hold, dead route, error surface, or stale UI appears;
 - active UI remains legible after 9:16 or 1:1 reframing;
 - product-proof frames are authentic Wireline UI, not generated or fabricated dashboards;
@@ -89,23 +90,32 @@ A finished reel is publishable only when all of the following are true:
 
 ## Capture and Certification
 
-Use the real production session for publishable capture:
+Publishable capture requires a clean checkout of the exact deployed source commit and a real demo/founder production session.
 
 ```bash
-E2E_BASE_URL=https://trywireline.com npm run marketing:kit
+git checkout <exact-production-sha>
+DEMO_EMAIL=<demo-account-email> \
+DEMO_PASSWORD=<demo-account-password> \
+E2E_BASE_URL=https://trywireline.com \
+npm run marketing:kit
 ```
 
-The wrapper fails closed unless it can prove:
+You may use the exact production deployment URL instead of `trywireline.com` when certifying before or independently of alias movement.
 
-- exact 40-character source commit;
+Before opening a browser, the wrapper requests `HEAD /api/health/public` from `E2E_BASE_URL` and requires its `X-Wireline-Source-Commit` header to equal the clean checkout SHA. A branch checkout pointed at an older production deployment therefore fails closed instead of mislabeling old footage as new.
+
+The wrapper then proves:
+
+- exact 40-character checkout/source commit;
 - clean checkout provenance;
+- deployed source commit equals checkout source commit;
 - `production-session` capture mode;
 - exactly three intended video captures;
 - complete desktop/mobile/reel authenticated screenshot sets;
 - distinct authenticated frames rather than a shared auth wall/error page;
 - present, nontrivial video files with hashes in the release record.
 
-`MARKETING_USE_MOCKS=1` and localhost captures are layout/test fixtures. They must never produce a publishable release record.
+`MARKETING_USE_MOCKS=1` and localhost captures are layout/test fixtures. They must never produce a publishable release record. Use `npm run marketing:kit:raw` for that work.
 
 ### Current capture map
 
