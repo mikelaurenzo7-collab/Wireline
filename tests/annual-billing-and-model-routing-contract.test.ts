@@ -40,9 +40,9 @@ describe("annual billing purchase path", () => {
 });
 
 describe("structured model routing", () => {
-  it("routes simple and medium work to Luna and complex work to Terra", () => {
+  it("routes simple work to Luna, medium to Terra, and complex to Sol", () => {
     expect(selectModelForTask("simple")).toBe("gpt-5.6-luna");
-    expect(selectModelForTask("medium")).toBe("gpt-5.6-luna");
-    expect(selectModelForTask("complex")).toBe("gpt-5.6-terra");
+    expect(selectModelForTask("medium")).toBe("gpt-5.6-terra");
+    expect(selectModelForTask("complex")).toBe("gpt-5.6-sol");
   });
 });
