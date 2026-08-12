@@ -2,8 +2,10 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import type Vapi from "@vapi-ai/web";
 import { PhoneOff, Mic, Loader2, AlertCircle, Volume2 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import WirelineMark from "../brand/WirelineMark";
+import { SignalOrbFrame } from "../ui/SignalOrbFrame";
+import { Medallion } from "../ui/Medallion";
 import { ShadButton } from "../ui/shadcn/ShadButton";
-import AgentFace from "../AgentFace";
 import { emitProductEvent } from "../../lib/product-event-client";
 
 const VAPI_PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY || "";
@@ -160,13 +162,20 @@ export default function BrowserCallWidget({
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <AgentFace
-        seed={agentName}
-        size={callActive ? 56 : 44}
-        speaking={callActive && speakerActive}
-        title={`${agentName} face`}
-        className="transition-[width,height] duration-200"
-      />
+      <SignalOrbFrame
+        size="sm"
+        withConstellation
+        withBloom
+        refined={false}
+        className={cn(
+          "transition-transform duration-200 motion-reduce:transition-none",
+          callActive && "scale-105",
+        )}
+      >
+        <Medallion size="lg" variant="signature" withHalo={callActive}>
+          <WirelineMark className="size-7" label={`${agentName} voice agent`} strokeWidth={4.5} />
+        </Medallion>
+      </SignalOrbFrame>
       <ShadButton
         type="button"
         disableAnimations
