@@ -25,6 +25,7 @@ const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 const CAMPAIGN_DOC = "docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md";
 const KIT = "scripts/marketing-kit.mjs";
 const CERTIFIER = "scripts/run-marketing-kit.mjs";
+const PUBLIC_HEALTH = "src/entrypoints/public-health-api.ts";
 
 /** Vendors the reel doctrine forbids putting on screen or in reel copy. */
 const VENDOR_MARKS = ["Bland", "Retell", "Vapi"];
@@ -33,6 +34,7 @@ describe("launch reel capture contract", () => {
   const kit = source(KIT);
   const certifier = source(CERTIFIER);
   const campaign = source(CAMPAIGN_DOC);
+  const publicHealth = source(PUBLIC_HEALTH);
 
   it("generates reel copy from the campaign document rather than restating it", () => {
     expect(kit, "the kit must name the campaign document as its source").toContain(CAMPAIGN_DOC);
@@ -81,6 +83,14 @@ describe("launch reel capture contract", () => {
     );
     expect(certifier).toContain("publishable: true");
     expect(certifier).toContain("publishable: certifiedManifest.captureCertification.publishable");
+  });
+
+  it("proves the production URL serves the exact checkout commit before certification", () => {
+    expect(publicHealth).toContain('res.setHeader("X-Wireline-Source-Commit", SOURCE_COMMIT)');
+    expect(certifier).toContain('response.headers.get("x-wireline-source-commit")');
+    expect(certifier).toContain("deployedCommit !== sourceCommit");
+    expect(certifier).toContain("Do not certify footage when the deployed source cannot be proven.");
+    expect(certifier).toContain("sourceVerification");
   });
 
   it("resolves a browser the same way in every capture script", () => {
