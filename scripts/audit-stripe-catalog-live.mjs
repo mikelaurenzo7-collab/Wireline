@@ -20,7 +20,7 @@ import {
 } from "./lib/stripe-founder-catalog.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const API_VERSION = "2026-02-25.clover";
+const API_VERSION = "2026-07-29.dahlia";
 
 function parseEnvFile(path) {
   if (!existsSync(path)) return {};

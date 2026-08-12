@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { createHash, randomBytes } from "node:crypto";
 import { drizzle, log, auditLogger } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -18,7 +19,7 @@ import {
   type SubscriptionBillingInterval,
 } from "./subscription-welcome-credit";
 
-export const STRIPE_API_VERSION = "2026-04-22.dahlia" as Stripe.LatestApiVersion;
+export const STRIPE_API_VERSION: Stripe.LatestApiVersion = "2026-07-29.dahlia";
 
 const configuredStripeSecret = String(process.env.STRIPE_SECRET_KEY || "").trim();
 const previewAllowsLiveProviders =
@@ -45,6 +46,93 @@ export const stripe = new Stripe(effectiveStripeSecret || "sk_test_placeholder",
 
 export function stripeAvailable(): boolean {
   return Boolean(effectiveStripeSecret);
+}
+
+export type StripeCheckoutFlow = "plan" | "runtime_balance" | "live_video";
+
+/**
+ * Tags every Checkout Session with a flow-specific label while keeping each
+ * attempt distinct in Stripe Workbench. Stripe requires an eight-letter random
+ * suffix for integration identifiers; the value is observability metadata,
+ * not an authorization secret.
+ */
+export function stripeCheckoutIntegrationIdentifier(
+  flow: StripeCheckoutFlow,
+  stableSeed?: string,
+): string {
+  // An idempotent Checkout retry must send byte-for-byte equivalent params.
+  // Derive the suffix from the durable operation UUID when one exists; using
+  // fresh randomness on every retry would make Stripe reject the reused
+  // idempotency key as a parameter mismatch.
+  const entropy = stableSeed
+    ? createHash("sha256").update(stableSeed).digest().subarray(0, 8)
+    : randomBytes(8);
+  const suffix = Array.from(entropy, (byte) => String.fromCharCode(97 + (byte % 26))).join("");
+  return `wireline_${flow}_${suffix}`;
+}
+
+type LegacyInvoiceCharge = Stripe.Charge & {
+  /** Present on pre-Basil webhook payloads and API responses. */
+  invoice?: string | Stripe.Invoice | null;
+};
+
+/**
+ * Resolve the invoice funded by a Charge across Stripe API generations.
+ *
+ * Basil removed `charge.invoice` when Invoice Payments introduced support for
+ * multiple payments per invoice. Old webhook payloads can still carry the
+ * legacy field; current payloads must be joined through the PaymentIntent and
+ * Invoice Payments API. A single payment funding multiple invoices is
+ * deliberately rejected because allowance reversal needs an explicit
+ * allocation policy rather than guessing which subscription funded the money.
+ */
+export async function stripeInvoiceIdForCharge(charge: Stripe.Charge): Promise<string | null> {
+  const legacyInvoice = (charge as LegacyInvoiceCharge).invoice;
+  const legacyInvoiceId =
+    typeof legacyInvoice === "string" ? legacyInvoice : (legacyInvoice?.id ?? null);
+  if (legacyInvoiceId) return legacyInvoiceId;
+
+  const paymentIntentId =
+    typeof charge.payment_intent === "string"
+      ? charge.payment_intent
+      : (charge.payment_intent?.id ?? null);
+  if (!paymentIntentId) return null;
+
+  const invoiceIds = new Set<string>();
+  let startingAfter: string | undefined;
+  let hasMore = true;
+
+  while (hasMore) {
+    const page = await stripe.invoicePayments.list({
+      payment: { type: "payment_intent", payment_intent: paymentIntentId },
+      status: "paid",
+      limit: 100,
+      ...(startingAfter ? { starting_after: startingAfter } : {}),
+    });
+
+    for (const invoicePayment of page.data) {
+      const invoiceId =
+        typeof invoicePayment.invoice === "string"
+          ? invoicePayment.invoice
+          : invoicePayment.invoice.id;
+      invoiceIds.add(invoiceId);
+      if (invoiceIds.size > 1) {
+        throw new Error(
+          `Stripe charge ${charge.id} funds multiple invoices; refusing ambiguous allowance accounting.`,
+        );
+      }
+    }
+
+    hasMore = page.has_more;
+    if (!hasMore) break;
+    const last = page.data.at(-1);
+    if (!last) {
+      throw new Error("Stripe invoice payment pagination returned has_more without a cursor.");
+    }
+    startingAfter = last.id;
+  }
+
+  return invoiceIds.values().next().value ?? null;
 }
 
 /**
@@ -346,10 +434,7 @@ async function reconcileLiveVideoAddonWithBasePlan(opts: {
 
   for (const addon of liveVideoAddons) {
     if (restoreCascade) {
-      if (
-        addon.cancel_at_period_end &&
-        addon.metadata?.wireline_base_plan_cascade === "true"
-      ) {
+      if (addon.cancel_at_period_end && addon.metadata?.wireline_base_plan_cascade === "true") {
         await stripe.subscriptions.update(addon.id, {
           cancel_at_period_end: false,
           metadata: { wireline_base_plan_cascade: "" },

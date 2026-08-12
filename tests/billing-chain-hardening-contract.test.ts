@@ -34,10 +34,12 @@ describe("stripe sync cannot silently swallow a paying customer", () => {
 describe("checkout operations complete instead of bricking the next purchase", () => {
   const webhook = read("src/routes/billing-routes.ts");
   const checkout = read("src/routes/launch-billing-checkout-atomic-routes.ts");
+  const fulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
 
   it("the webhook closes the durable operation on checkout.session.completed", () => {
-    expect(webhook).toMatch(
-      /syncSubscriptionFromStripe\(sub\);[\s\S]{0,700}wireline_checkout_operation_id[\s\S]{0,700}status: "completed"/,
+    expect(webhook).toContain("await fulfillStripeCheckoutSession(session");
+    expect(fulfillment).toMatch(
+      /syncSubscriptionFromStripe\(subscription\);[\s\S]{0,500}markCheckoutOperationCompleted\(session\)/,
     );
   });
 
@@ -60,6 +62,7 @@ describe("checkout operations complete instead of bricking the next purchase", (
 describe("entitlement delivery survives webhook failure", () => {
   const checkout = read("src/routes/launch-billing-checkout-atomic-routes.ts");
   const billingPage = read("src/pages/BillingSettings.tsx");
+  const fulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
 
   it("the success redirect proves its session server-side", () => {
     expect(checkout).toContain('"/api/billing/checkout/verify"');
@@ -67,9 +70,8 @@ describe("entitlement delivery survives webhook failure", () => {
     // nonexistent id.
     expect(checkout).toMatch(/sessionUserId !== req\.user\.id[\s\S]{0,300}404/);
     // The reconcile shares the webhook's writers so the two stay idempotent.
-    expect(checkout).toMatch(
-      /\/api\/billing\/checkout\/verify[\s\S]*syncSubscriptionFromStripe\(sub\)/,
-    );
+    expect(checkout).toMatch(/\/api\/billing\/checkout\/verify[\s\S]*fulfillStripeCheckoutSession/);
+    expect(fulfillment).toContain("await syncSubscriptionFromStripe(subscription)");
   });
 
   it("the billing page calls verify before reading status", () => {
@@ -81,27 +83,38 @@ describe("entitlement delivery survives webhook failure", () => {
   });
 });
 
-describe("checkout accepts only instant-notification payment methods", () => {
-  // The webhook credits/syncs only on checkout.session.completed with
-  // payment_status "paid" and handles no async_payment_succeeded event, so a
-  // delayed-notification method (ACH debit, bank transfer) enabled in the
-  // dashboard would complete unpaid and the money that lands later would
-  // never grant anything. Every session create pins instant methods until
-  // async handling exists.
+describe("checkout stays synchronous until delayed webhooks are aligned", () => {
+  // The Stripe connector currently requires reauthentication, so the live
+  // endpoint cannot yet be subscribed to async success/failure. Keep instant
+  // methods pinned until that external gate is cleared; every creator still
+  // carries the new Workbench integration identifier.
   const sessionCreators = [
     "src/routes/launch-billing-checkout-atomic-routes.ts",
     "src/routes/conversation-balance-routes.ts",
     "src/routes/billing-routes.ts",
   ];
   for (const file of sessionCreators) {
-    it(`${file} pins payment_method_types`, () => {
+    it(`${file} pins instant methods and tags the flow`, () => {
       const source = read(file);
       const creates = source.match(/checkout\.sessions\.create\(/g) || [];
+      const identifiers = source.match(/integration_identifier:/g) || [];
       const pins = source.match(/payment_method_types: \["card", "link"\]/g) || [];
       expect(creates.length).toBeGreaterThan(0);
+      expect(identifiers.length).toBe(creates.length);
       expect(pins.length).toBe(creates.length);
     });
   }
+
+  it("keeps fulfillment shared and idempotent without claiming async delivery", () => {
+    const webhook = read("src/routes/billing-routes.ts");
+    const fulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
+
+    expect(webhook).toContain("await fulfillStripeCheckoutSession(session");
+    expect(webhook).not.toContain('case "checkout.session.async_payment_succeeded"');
+    expect(webhook).not.toContain('case "checkout.session.async_payment_failed"');
+    expect(fulfillment).toContain("id: session.id,");
+    expect(fulfillment).toContain("if (!paymentSettled) return result;");
+  });
 });
 
 describe("the trial gate agrees with the dial layer", () => {
@@ -132,7 +145,9 @@ describe("the live-video add-on asks Stripe what the customer actually has", () 
 
   it("checks for an existing add-on subscription before creating a session", () => {
     const check = source.indexOf("const existingAddons = await listLiveVideoAddonSubscriptions(");
-    const create = source.indexOf('mode: "subscription",\n        customer: customerId,');
+    const create = source.indexOf(
+      'integration_identifier: stripeCheckoutIntegrationIdentifier("live_video")',
+    );
     expect(check).toBeGreaterThan(-1);
     expect(create).toBeGreaterThan(check);
   });

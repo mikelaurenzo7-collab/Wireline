@@ -20,6 +20,7 @@ const read = (path: string) =>
  */
 describe("refund tax-clamp contract", () => {
   const billing = read("src/routes/billing-routes.ts");
+  const fulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
 
   it("defines the proportional clamp against PaymentIntent credit_usd metadata", () => {
     expect(billing).toContain("function creditPortionUsd");
@@ -46,9 +47,9 @@ describe("refund tax-clamp contract", () => {
   });
 
   it("the top-up grant stays pre-tax so the clamp numerator matches the grant", () => {
-    // checkout.session.completed credits Number(session.metadata.credit_usd);
+    // Shared webhook/redirect fulfillment credits Number(session.metadata.credit_usd);
     // if this ever changes to a gross amount the clamp must change with it.
-    expect(billing).toContain("const creditUsd = Number(session.metadata.credit_usd)");
-    expect(billing).toMatch(/addCredit\(userId, creditUsd, "web_topup"/);
+    expect(fulfillment).toContain("const creditUsd = Number(session.metadata.credit_usd)");
+    expect(fulfillment).toMatch(/addCredit\(userId, creditUsd, "web_topup"/);
   });
 });

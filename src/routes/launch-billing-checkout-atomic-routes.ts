@@ -9,7 +9,7 @@ import {
   isMissingStripeResource,
   stripe,
   stripeAvailable,
-  syncSubscriptionFromStripe,
+  stripeCheckoutIntegrationIdentifier,
 } from "../lib/stripe-helpers";
 import type Stripe from "stripe";
 import { authenticateUser } from "../middleware/auth";
@@ -18,6 +18,7 @@ import { checkoutOperations } from "../db/security-schema";
 import * as schema from "../db/schema";
 import type { AuthenticatedRequest } from "../types/auth";
 import { emitServerProductEvent } from "../lib/product-event-server";
+import { fulfillStripeCheckoutSession } from "../lib/stripe-checkout-fulfillment";
 
 const router = Router();
 const CHECKOUT_TTL_MS = 24 * 60 * 60_000;
@@ -480,15 +481,14 @@ router.post(
       const session = await stripe.checkout.sessions.create(
         {
           mode: "subscription",
+          integration_identifier: stripeCheckoutIntegrationIdentifier("plan", operationId),
           customer: customerId,
           customer_update: { address: "auto" },
           automatic_tax: { enabled: true },
-          // Instant-notification methods only. The webhook credits/syncs on
-          // checkout.session.completed with payment_status "paid" and handles
-          // no async_payment_succeeded event, so a delayed-notification method
-          // (ACH debit, bank transfer) enabled in the Stripe dashboard would
-          // complete unpaid, get acked, and the later payment would never
-          // grant anything. Widen only together with async event handling.
+          // Keep settlement synchronous until the production webhook endpoint
+          // is reauthenticated and subscribed to Checkout's delayed-payment
+          // events. The durable operation must never claim completion while a
+          // later success event is being dropped by Stripe configuration.
           payment_method_types: ["card", "link"],
           line_items: [{ price: priceId, quantity: 1 }],
           success_url: `${appUrl.url}/settings/billing?billing=success&session_id={CHECKOUT_SESSION_ID}`,
@@ -695,32 +695,16 @@ router.post(
       throw AppError.fromHttpStatus(404, "Unknown checkout session.");
     }
 
-    let synced = false;
-    if (session.mode === "subscription" && session.subscription) {
-      const subId =
-        typeof session.subscription === "string" ? session.subscription : session.subscription.id;
-      const sub = await stripe.subscriptions.retrieve(subId);
-      await syncSubscriptionFromStripe(sub);
-      synced = true;
-
-      const operationId = session.metadata?.wireline_checkout_operation_id;
-      if (operationId && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(operationId)) {
-        await drizzle
-          .update(checkoutOperations)
-          .set({ status: "completed", updatedAt: new Date() })
-          .where(
-            and(
-              eq(checkoutOperations.id, operationId),
-              inArray(checkoutOperations.status, ACTIVE_OPERATION_STATES),
-            ),
-          );
-      }
-    }
+    const fulfillment = await fulfillStripeCheckoutSession(session, {
+      providerEventId: `checkout_verify:${session.id}`,
+    });
 
     return res.json({
       status: session.status,
       payment_status: session.payment_status,
-      synced,
+      synced: fulfillment.subscriptionSynced,
+      credit_granted: fulfillment.creditGranted,
+      live_video_enabled: fulfillment.liveVideoEnabled,
     });
   },
 );

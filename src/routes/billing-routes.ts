@@ -3,8 +3,7 @@ import { AppError } from "../lib/api-error";
 import express, { Request, Response } from "express";
 import { drizzle, log, tenantStore, auditLogger } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { and, eq, inArray, lt, count } from "drizzle-orm";
-import { checkoutOperations } from "../db/security-schema";
+import { and, eq, lt, count } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { getErrorMessage } from "../lib/server-utils";
@@ -14,12 +13,14 @@ import {
   subscriptionBillingInterval,
   syncSubscriptionFromStripe,
   basePlanInvoiceShare,
+  stripeCheckoutIntegrationIdentifier,
+  stripeInvoiceIdForCharge,
 } from "../lib/stripe-helpers";
 import { sendPaymentFailedEmail } from "../lib/email-service";
 import { planById, plansForClient, FOUNDER_CATALOG_VERSION } from "../lib/plan-catalog";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import { getWorkspaceUsageSnapshot } from "../lib/workspace-usage-snapshot";
-import { addCredit, reverseCredit } from "../lib/credit-wallet";
+import { reverseCredit } from "../lib/credit-wallet";
 import { reverseSubscriptionRuntimeAllowance } from "../lib/subscription-welcome-credit";
 import Stripe from "stripe";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -27,6 +28,7 @@ import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { isLiveVideoCatalogReady } from "../lib/video-presenter/live-video-entitlements";
+import { fulfillStripeCheckoutSession } from "../lib/stripe-checkout-fulfillment";
 
 const router = express.Router();
 
@@ -125,7 +127,7 @@ async function reverseRuntimeAllowanceForCharge(
   explicitReference?: string,
 ): Promise<void> {
   try {
-    const invoiceId = typeof charge.invoice === "string" ? charge.invoice : charge.invoice?.id;
+    const invoiceId = await stripeInvoiceIdForCharge(charge);
     if (!invoiceId) return;
 
     const invoice = await stripe.invoices.retrieve(invoiceId);
@@ -353,81 +355,9 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        if (session.mode === "subscription" && session.subscription) {
-          if (session.metadata?.purpose === "live_video_addon") {
-            const userId = session.metadata.wireline_user_id;
-            if (userId) {
-              await drizzle
-                .update(schema.settings)
-                .set({ liveVideoAddonEnabled: true, updatedAt: new Date() })
-                .where(eq(schema.settings.userId, userId));
-            }
-            // The live-video add-on is a standalone subscription that shares the
-            // customer with the plan subscription. Syncing it here would upsert
-            // the single user-keyed plan row to plan=null and reset maxAgents to
-            // 1 — silently downgrading a paying Pro/Business customer. Skip sync,
-            // mirroring the guard in the customer.subscription.* handler below.
-            break;
-          }
-          const subId =
-            typeof session.subscription === "string"
-              ? session.subscription
-              : session.subscription.id;
-          const sub = await stripe.subscriptions.retrieve(subId);
-          await syncSubscriptionFromStripe(sub);
-          // Close the durable checkout operation. Nothing else transitions an
-          // op past "open", so without this the per-user active-op uniqueness
-          // 409-bricked plan selection for the 24h TTL after a completed
-          // purchase, and the reuse path could hand back the consumed
-          // session's dead URL.
-          const operationId = session.metadata?.wireline_checkout_operation_id;
-          if (operationId && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(operationId)) {
-            await drizzle
-              .update(checkoutOperations)
-              .set({ status: "completed", updatedAt: new Date() })
-              .where(
-                and(
-                  eq(checkoutOperations.id, operationId),
-                  inArray(checkoutOperations.status, ["creating", "open"]),
-                ),
-              );
-          }
-        } else if (
-          session.mode === "payment" &&
-          session.payment_status === "paid" &&
-          session.metadata?.purpose === "credit_topup"
-        ) {
-          // Apple-safe wallet top-up: credit is purchased on the web, never
-          // in-app. Idempotent twice over — the event is deduped via
-          // wireline_stripe_events, and addCredit dedupes on the session id.
-          const userId = session.metadata.wireline_user_id;
-          const creditUsd = Number(session.metadata.credit_usd);
-          if (userId && Number.isFinite(creditUsd) && creditUsd > 0) {
-            await tenantStore.run(userId, async () => {
-              await addCredit(userId, creditUsd, "web_topup", {
-                type: "stripe_session",
-                id: session.id,
-                entryKind: "top_up",
-                source: "stripe",
-                provider: "stripe",
-                providerEventId: event.id,
-                providerObjectId: session.id,
-                customerReason: "Runtime Balance top-up",
-                metadata: {
-                  checkout_session_id: session.id,
-                  payment_intent:
-                    typeof session.payment_intent === "string"
-                      ? session.payment_intent
-                      : session.payment_intent?.id,
-                },
-              });
-            });
-          } else {
-            log.warn("credit_topup session missing user id or amount", {
-              sessionId: session.id,
-            });
-          }
-        }
+        await fulfillStripeCheckoutSession(session, {
+          providerEventId: event.id,
+        });
         break;
       }
       case "charge.refunded": {
@@ -1237,14 +1167,17 @@ router.post(
 
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
+        integration_identifier: stripeCheckoutIntegrationIdentifier("live_video"),
         customer: customerId,
         line_items: [{ price: priceId, quantity: 1 }],
         automatic_tax: { enabled: true },
         customer_update: { address: "auto", name: "auto" },
         // Parity with the plan checkout — promo codes work on add-ons too.
         allow_promotion_codes: true,
-        // Instant-notification methods only — same reasoning as the plan and
-        // top-up checkouts: no async_payment_succeeded handling exists.
+        // Keep settlement synchronous until the production webhook endpoint is
+        // reauthenticated and subscribed to Checkout's delayed-payment events.
+        // Removing this pin before endpoint alignment can produce a paid add-on
+        // that never activates locally.
         payment_method_types: ["card", "link"],
         success_url: `${base}/settings/billing?live_video=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${base}/settings/billing?live_video=canceled`,

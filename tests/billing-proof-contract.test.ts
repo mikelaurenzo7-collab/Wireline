@@ -226,11 +226,12 @@ describe("billing proof contract", () => {
   it("keeps Conversation Balance top-up metadata and refund/dispute recovery wired", () => {
     const balanceRoutes = read("src/routes/conversation-balance-routes.ts");
     const billingRoutes = read("src/routes/billing-routes.ts");
+    const fulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
 
     expect(balanceRoutes).toContain('purpose: "credit_topup"');
     expect(balanceRoutes).toContain("payment_intent_data: { metadata: creditMeta }");
     expect(balanceRoutes).toContain("metadata: creditMeta");
-    expect(billingRoutes).toContain("await addCredit(userId, creditUsd");
+    expect(fulfillment).toContain("await addCredit(userId, creditUsd");
     expect(billingRoutes).toContain('case "charge.refunded"');
     expect(billingRoutes).toContain('case "charge.dispute.created"');
     expect(billingRoutes).toContain("await reverseCredit(userId");

@@ -3,13 +3,10 @@
 
 import Stripe from "stripe";
 
-import {
-  FOUNDER_CATALOG_VERSION,
-  FOUNDER_PRODUCTS,
-} from "./lib/stripe-founder-catalog.mjs";
+import { FOUNDER_CATALOG_VERSION, FOUNDER_PRODUCTS } from "./lib/stripe-founder-catalog.mjs";
 import { stripeProductCopyFindings } from "./lib/stripe-product-copy.mjs";
 
-const API_VERSION = "2026-02-25.clover";
+const API_VERSION = "2026-07-29.dahlia";
 const secret = process.env.STRIPE_SECRET_KEY?.trim();
 
 if (!secret) {

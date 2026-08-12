@@ -15,7 +15,7 @@ import {
   stripeAccountIdentitySummary,
 } from "./lib/stripe-account-identity.mjs";
 
-const API_VERSION = "2026-02-25.clover";
+const API_VERSION = "2026-07-29.dahlia";
 const secret = process.env.STRIPE_SECRET_KEY?.trim();
 
 if (!secret) {

@@ -11,6 +11,7 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   const dbSchema = read("src/db/schema.ts");
   const creditWallet = read("src/lib/credit-wallet.ts");
   const billingRoutes = read("src/routes/billing-routes.ts");
+  const checkoutFulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
   const balanceMigration = read("drizzle/migrations/0074_harden_conversation_balance_ledger.sql");
   const wirelineKnowledge = read("src/data/wireline-knowledge.ts");
   const verticalWedges = read("src/data/vertical-wedges.ts");
@@ -113,10 +114,10 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     "voice burns must have a customer-visible Runtime Balance reason",
   );
   mustInclude(
-    "src/routes/billing-routes.ts",
-    billingRoutes,
+    "src/lib/stripe-checkout-fulfillment.ts",
+    checkoutFulfillment,
     /entryKind:\s*"top_up"[\s\S]*customerReason:\s*"Runtime Balance top-up"/,
-    "Stripe top-up webhook must write durable Runtime Balance metadata",
+    "Stripe Checkout fulfillment must write durable Runtime Balance metadata",
   );
   mustInclude(
     "src/routes/billing-routes.ts",

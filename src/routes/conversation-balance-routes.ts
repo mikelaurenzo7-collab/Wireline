@@ -4,7 +4,11 @@ import { AppError, rethrowIfAppError } from "../lib/api-error";
 import { auditLogger, drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
-import { stripe, stripeAvailable } from "../lib/stripe-helpers";
+import {
+  stripe,
+  stripeAvailable,
+  stripeCheckoutIntegrationIdentifier,
+} from "../lib/stripe-helpers";
 import { getCreditBalanceUsd, getRecentLedger } from "../lib/credit-wallet";
 import {
   CONVERSATION_BALANCE_COPY,
@@ -126,15 +130,13 @@ router.post(
 
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
+        integration_identifier: stripeCheckoutIntegrationIdentifier("runtime_balance"),
         customer: customerId,
         customer_update: { address: "auto" },
         automatic_tax: { enabled: true },
-        // Instant-notification methods only. The webhook credits the wallet
-        // solely on checkout.session.completed with payment_status "paid" —
-        // there is no async_payment_succeeded handler — so a delayed method
-        // (ACH debit, bank transfer) would complete unpaid and the money that
-        // lands days later would never become credit. Widen only together
-        // with async event handling.
+        // Keep settlement synchronous until the production webhook endpoint is
+        // reauthenticated and subscribed to Checkout's delayed-payment events.
+        // Otherwise a customer can pay while the wallet never receives credit.
         payment_method_types: ["card", "link"],
         line_items: [
           {

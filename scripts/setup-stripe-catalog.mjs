@@ -20,7 +20,7 @@ import {
 } from "./lib/stripe-founder-catalog.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const API_VERSION = "2026-02-25.clover";
+const API_VERSION = "2026-07-29.dahlia";
 const CATALOG_MANIFEST_PATH = join(ROOT, "stripe-catalog-proposal.json");
 const GENERATED_ENV_PATH = join(ROOT, "scripts", ".stripe-env.generated.json");
 
