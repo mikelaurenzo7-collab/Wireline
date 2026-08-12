@@ -27,20 +27,13 @@ Authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
 6. **External provider readiness:** live account identity, funding, carrier status, webhooks, and budgets reverified rather than copied from old snapshots.
 7. **Secret hygiene:** revoke or rotate credentials exposed outside approved secret stores.
 
-## Founder Early Access Catalog
+## Commercial Source of Truth
 
-The plan catalog in `src/lib/plan-catalog.ts` is the billing source of truth. At this launch snapshot:
+Do not maintain a second hand-written plan catalog in launch documentation.
 
-| Plan | Monthly | Annual | Agents / Numbers | Live Voice Minutes | Best Fit |
-| --- | ---: | ---: | ---: | ---: | --- |
-| Free Builder | $0 | $0 | Builder only | 0 | Build, train, simulate |
-| Starter | $19 | $190 | 1 | 60 | First live voice agent |
-| Starter Plus | $39 | $390 | 2 | 120 | Two useful roles or personal + business |
-| Pro | $79 | $790 | 5 | 245 | Growing team / higher volume |
-| Business | $159 | $1,590 | 15 | 450 | Multi-role operations |
-| Enterprise | Custom | Custom | Custom | Custom | Procurement, scale, negotiated requirements |
+`src/lib/plan-catalog.ts` owns current plan names, monthly/annual prices, included agents, number slots, voice minutes, Runtime Allowance, and add-on economics. Public launch copy may state the tested floor **Build free. Go live from $19/mo.** only while the catalog still supports it.
 
-Extra-agent and usage economics must be read from the current plan catalog before publication or sale; do not copy this table forward after a catalog change.
+Before publishing pricing, sending an offer, or briefing paid creative, read the current catalog and run its Stripe/catalog checks. If the catalog changes, update launch copy deliberately rather than carrying an old table forward.
 
 ## Launch Sequence
 
