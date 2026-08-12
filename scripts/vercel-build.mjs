@@ -52,12 +52,9 @@ function runDeepLaunchAuditIfRequested() {
   run("npm", ["run", "lint:server"]);
   run("npm", ["run", "lint:audit-modules"]);
   run("npm", ["run", "lint:eslint"]);
-  // GitHub-hosted runners are not currently executing for this repository and
-  // GitHub Dependabot alerts are disabled. Keep launch certification independent
-  // of those control-plane conditions by running Wireline's existing fail-closed
-  // production-dependency advisory gate in the Vercel deep-audit path itself.
-  // The gate rejects an inconclusive npm registry response rather than silently
-  // treating "nothing checked" as a pass.
+  // Exact-head preview certification is the release authority while hosted
+  // GitHub runners remain externally unavailable: TypeScript, zero-warning
+  // ESLint, advisory gating, and the complete non-E2E suite all execute here.
   run("npm", ["run", "security:audit"]);
   run("npm", ["run", "test:run"]);
 }
