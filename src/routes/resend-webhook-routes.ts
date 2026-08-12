@@ -18,10 +18,16 @@ const router = express.Router();
  */
 router.post("/api/webhooks/resend", async (req, res) => {
   if (!req.is("application/json")) {
-    return res.status(415).json({ error: "Content-Type must be application/json." });
+    return res.status(415).json({
+      code: "INVALID_CONTENT_TYPE",
+      error: "Content-Type must be application/json.",
+    });
   }
   if (!Buffer.isBuffer(req.body)) {
-    return res.status(400).json({ error: "Raw webhook body is required." });
+    return res.status(400).json({
+      code: "RAW_WEBHOOK_BODY_REQUIRED",
+      error: "Raw webhook body is required.",
+    });
   }
 
   const verification = verifyResendWebhookSignature(req.body, {
@@ -32,10 +38,16 @@ router.post("/api/webhooks/resend", async (req, res) => {
   if (!verification.ok) {
     if (verification.code === "missing_secret") {
       log.error("[resend-webhook] signing secret is not configured");
-      return res.status(503).json({ error: "Resend webhook verification is unavailable." });
+      return res.status(503).json({
+        code: "WEBHOOK_VERIFICATION_UNAVAILABLE",
+        error: "Resend webhook verification is unavailable.",
+      });
     }
     log.warn("[resend-webhook] signature rejected", { code: verification.code });
-    return res.status(401).json({ error: "Invalid webhook signature." });
+    return res.status(401).json({
+      code: "INVALID_WEBHOOK_SIGNATURE",
+      error: "Invalid webhook signature.",
+    });
   }
 
   try {
@@ -57,7 +69,10 @@ router.post("/api/webhooks/resend", async (req, res) => {
       message.includes("recipient count exceeds safety limit")
     ) {
       log.warn("[resend-webhook] authenticated payload rejected", { error: message });
-      return res.status(400).json({ error: "Malformed Resend webhook payload." });
+      return res.status(400).json({
+        code: "MALFORMED_WEBHOOK_PAYLOAD",
+        error: "Malformed Resend webhook payload.",
+      });
     }
     throw error;
   }

@@ -1,22 +1,22 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { readdirSync, readFileSync, statSync, writeFileSync, rmSync } from "node:fs";
-import os from "node:os";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const tsxCli = path.join(root, "node_modules", "tsx", "dist", "cli.mjs");
 const specImport = pathToFileURL(path.resolve(root, "src/lib/openapi-spec.ts")).href;
-const tmp = path.join(os.tmpdir(), `wireline-openapi-${process.pid}.mjs`);
-writeFileSync(
-  tmp,
-  `import { listSpecOperations } from ${JSON.stringify(specImport)};\nconsole.log(JSON.stringify(listSpecOperations()));\n`,
-);
-let operations;
-try {
-  operations = JSON.parse(
-    execFileSync(process.execPath, [tsxCli, tmp], {
+const operations = JSON.parse(
+  execFileSync(
+    process.execPath,
+    [
+      "--import",
+      "tsx",
+      "--input-type=module",
+      "--eval",
+      `import { listSpecOperations } from ${JSON.stringify(specImport)}; console.log(JSON.stringify(listSpecOperations()));`,
+    ],
+    {
       encoding: "utf8",
       cwd: root,
       // The OpenAPI module imports route schemas that construct the shared pool at
@@ -27,11 +27,9 @@ try {
         POSTGRES_URL:
           process.env.POSTGRES_URL || "postgresql://wireline:wireline@127.0.0.1:5432/wireline",
       },
-    }),
-  );
-} finally {
-  rmSync(tmp, { force: true });
-}
+    },
+  ),
+);
 
 function walk(dir) {
   const files = [];

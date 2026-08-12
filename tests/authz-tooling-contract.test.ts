@@ -74,6 +74,12 @@ describe("authz tooling covers factory handlers, commented declarations, and sub
     expect(generator).not.toMatch(/PUBLIC_ALLOWLIST[\s\S]*jobs\\\/sweep/);
   });
 
+  it("records provider-authenticated Resend feedback as an explicit public security decision", () => {
+    expect(matrix).toMatch(
+      /\| resend-webhook-routes\.ts \| POST \| `\/api\/webhooks\/resend` \|.*\| Public \(allowlisted\) \|/,
+    );
+  });
+
   it("verifies MOUNTED_ELSEWHERE claims instead of trusting prose", () => {
     const registryCheck = read("scripts/check-route-registry.mjs");
     expect(registryCheck).toContain("mountedBy");

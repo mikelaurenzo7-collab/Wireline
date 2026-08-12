@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 const source = (path: string) => readFileSync(path, "utf8");
 
 const semantics = source("src/lib/conversation-outcome.ts");
+const operatorWorkStatus = source("src/lib/operator-work-status.ts");
 const emailRoute = source("src/routes/email-outcome-routes.ts");
 const smsRoute = source("src/routes/sms-outcome-routes.ts");
 const operatorRoute = source("src/routes/operator-task-routes.ts");
@@ -21,7 +22,12 @@ describe("omnichannel outcome loop", () => {
     expect(semantics).toContain('"escalated",');
     expect(semantics).toContain('"booked",');
     expect(semantics).toContain('"resolved",');
-    expect(semantics).toContain('ACTIVE_HANDOFF_TASK_STATUSES = ["pending", "open", "in_progress"]');
+    expect(operatorWorkStatus).toContain(
+      'ACTIVE_OPERATOR_TASK_STATUSES = ["pending", "open", "in_progress"]',
+    );
+    expect(semantics).toContain(
+      "ACTIVE_HANDOFF_TASK_STATUSES = ACTIVE_OPERATOR_TASK_STATUSES",
+    );
     expect(semantics).toContain("handoffAdvisoryLockKey(");
     expect(semantics).toContain('if (status === "booked" || status === "resolved") return "completed"');
     expect(semantics).toContain('return "cancelled"');
@@ -85,6 +91,9 @@ describe("omnichannel outcome loop", () => {
     expect(approvals).toContain('case "pending":\n        return pendingTasks;');
     expect(approvals).toContain('case "compliance":\n        return complianceTasks;');
     expect(approvals).not.toContain("if (!triage) return []");
+    expect(approvals).toContain('authFetch("/api/triage").catch(() => null)');
+    expect(approvals).toContain("setTriageUnavailable(!triageReady)");
+    expect(approvals).toContain("Active operator work is still current.");
   });
 
   it("registers shadow routes before their broader legacy owners", () => {

@@ -33,9 +33,15 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     const ledger = read("src/components/OutcomeLedger.tsx");
     const inbox = read("src/components/ApprovalInbox.tsx");
     expect(ledger).toContain("if (!callsRes.ok)");
-    expect(ledger).toContain('setError("Could not load outcome ledger.")');
+    expect(ledger).toContain('setFatalError("Could not load outcome ledger.")');
+    expect(ledger).toContain('setEnrichmentWarning("Follow-up status is temporarily incomplete.")');
     expect(ledger).not.toContain("callsRes.ok ? await callsRes.json() : { calls: [] }");
-    expect(inbox).toContain("Could not load pending approvals.");
+    expect(inbox).toContain("Could not load approval inbox.");
+    expect(inbox).toContain("Could not load active operator work.");
+    expect(inbox).toContain('authFetch("/api/triage").catch(() => null)');
+    expect(inbox).toContain(
+      'authFetch("/api/Assistants/tasks?status=active").catch(() => null)',
+    );
     expect(inbox).not.toContain("tasksRes.ok ? await tasksRes.json() : { tasks: [] }");
   });
 
@@ -90,7 +96,7 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(reliability).not.toContain(".catch(\n        () => ({ calls: [] }),");
     expect(reliability).not.toContain("() => ({ calls: [] })");
 
-    const analytics = read("src/components/CallLogsClaude.tsx");
+    const analytics = read("src/components/CallOpsAnalytics.tsx");
     expect(analytics).toContain('setError("Could not load call analytics.")');
     expect(analytics).toContain("Analytics unavailable");
   });

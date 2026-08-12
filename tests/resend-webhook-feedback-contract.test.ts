@@ -69,6 +69,7 @@ describe("Resend delivery-feedback contract", () => {
     const parser = read("src/lib/body-parsers.ts");
     const route = read("src/routes/resend-webhook-routes.ts");
     const sameOrigin = read("src/middleware/same-origin.ts");
+    const authzGenerator = read("scripts/generate-authz-matrix.ts");
     const verifyAt = route.indexOf("verifyResendWebhookSignature(");
     const processAt = route.indexOf("processVerifiedResendWebhook(");
 
@@ -78,6 +79,19 @@ describe("Resend delivery-feedback contract", () => {
     expect(verifyAt).toBeGreaterThanOrEqual(0);
     expect(processAt).toBeGreaterThan(verifyAt);
     expect(route.slice(0, processAt)).not.toContain("JSON.parse");
+    for (const code of [
+      "INVALID_CONTENT_TYPE",
+      "RAW_WEBHOOK_BODY_REQUIRED",
+      "WEBHOOK_VERIFICATION_UNAVAILABLE",
+      "INVALID_WEBHOOK_SIGNATURE",
+      "MALFORMED_WEBHOOK_PAYLOAD",
+    ]) {
+      expect(route).toContain(`code: "${code}"`);
+    }
+    expect(authzGenerator).toContain('/^\\/api\\/webhooks\\/resend$/');
+    expect(authzGenerator).toContain(
+      "Resend/Svix timestamped HMAC-SHA256 signature + replay window",
+    );
   });
 
   it("suppresses only permanent recipient-risk events", () => {
@@ -148,6 +162,7 @@ describe("Resend delivery-feedback contract", () => {
     expect(supportRoute).toContain("distributedLimiterStatus()");
     expect(supportRoute).toContain("failClosedOnError: true");
     expect(supportRoute).toContain('code: "RATE_LIMITER_ERROR"');
+    expect(supportRoute).toContain('code: "SUPPORT_RATE_LIMITED"');
     expect(supportRoute).toContain("normalizeEmail(email)");
     expect(supportRoute).toContain("const cleanSubject = subject.trim()");
     expect(supportRoute).toContain("const cleanBody = body.trim()");

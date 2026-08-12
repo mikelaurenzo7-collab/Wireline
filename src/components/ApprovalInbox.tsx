@@ -17,6 +17,7 @@ import { emitProductEventOnce } from "../lib/product-event-client";
 import { EmptyState } from "./ui/EmptyState";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
+import { StatusNotice } from "./molecules";
 
 export type FollowUpTaskRow = {
   id: string;
@@ -358,29 +359,36 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
   const [tasks, setTasks] = useState<FollowUpTaskRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [triageUnavailable, setTriageUnavailable] = useState(false);
+  const [tasksUnavailable, setTasksUnavailable] = useState(false);
   const [visibleCount, setVisibleCount] = useState(APPROVAL_PAGE_SIZE);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setTriageUnavailable(false);
+    setTasksUnavailable(false);
     try {
       const [triageRes, tasksRes] = await Promise.all([
-        authFetch("/api/triage"),
-        authFetch("/api/Assistants/tasks?status=active"),
+        authFetch("/api/triage").catch(() => null),
+        authFetch("/api/Assistants/tasks?status=active").catch(() => null),
       ]);
-      if (!triageRes.ok && !tasksRes.ok) {
+      const [triageBody, tasksBody] = await Promise.all([
+        triageRes?.ok ? triageRes.json().catch(() => null) : null,
+        tasksRes?.ok ? tasksRes.json().catch(() => null) : null,
+      ]);
+      const triageReady = Boolean(triageRes?.ok && triageBody);
+      const tasksReady = Boolean(tasksRes?.ok && tasksBody);
+      if (!triageReady && !tasksReady) {
         setError("Could not load approval inbox.");
         setTriage(null);
         setTasks([]);
         return;
       }
-      const triageBody = triageRes.ok ? await triageRes.json() : null;
-      const tasksBody = tasksRes.ok ? await tasksRes.json() : null;
-      if (!tasksRes.ok) {
-        setError("Could not load active operator work.");
-      }
-      setTriage(triageBody);
-      setTasks(Array.isArray(tasksBody?.tasks) ? tasksBody.tasks : []);
+      setTriageUnavailable(!triageReady);
+      setTasksUnavailable(!tasksReady);
+      setTriage(triageReady ? triageBody : null);
+      setTasks(tasksReady && Array.isArray(tasksBody?.tasks) ? tasksBody.tasks : []);
     } catch {
       setError("Could not load approval inbox.");
     } finally {
@@ -469,13 +477,57 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         className="mb-0 border-b-0 pb-0"
       />
 
+      {!error && (triageUnavailable || tasksUnavailable) ? (
+        <StatusNotice tone="warning" title="Approval data partial">
+          {triageUnavailable && tasksUnavailable
+            ? "Triage and active operator work are temporarily unavailable."
+            : triageUnavailable
+              ? "Triage queues are temporarily unavailable. Active operator work is still current."
+              : "Active operator work is temporarily unavailable. Triage queues are still current."}
+        </StatusNotice>
+      ) : null}
+
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
           Loading approvals…
         </div>
       ) : error ? (
-        <p className="text-sm text-destructive">{error}</p>
+        <StatusNotice
+          tone="destructive"
+          title="Approval inbox unavailable"
+          action={
+            <ShadButton type="button" size="sm" variant="secondary" onClick={() => void load()}>
+              Try again
+            </ShadButton>
+          }
+        >
+          {error}
+        </StatusNotice>
+      ) : (bucket === "pending" || bucket === "compliance") && tasksUnavailable ? (
+        <StatusNotice
+          tone="destructive"
+          title="Active operator work unavailable"
+          action={
+            <ShadButton type="button" size="sm" variant="secondary" onClick={() => void load()}>
+              Try again
+            </ShadButton>
+          }
+        >
+          Could not load active operator work.
+        </StatusNotice>
+      ) : bucket !== "pending" && bucket !== "compliance" && triageUnavailable ? (
+        <StatusNotice
+          tone="destructive"
+          title="Triage queues unavailable"
+          action={
+            <ShadButton type="button" size="sm" variant="secondary" onClick={() => void load()}>
+              Try again
+            </ShadButton>
+          }
+        >
+          Could not load this triage queue.
+        </StatusNotice>
       ) : bucket === "pending" || bucket === "compliance" ? (
         actionableTasks.length === 0 ? (
           <ApprovalEmptyCard

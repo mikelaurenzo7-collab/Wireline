@@ -18,7 +18,7 @@ const publicDir = resolve(root, "public");
 if (!existsSync(publicDir)) mkdirSync(publicDir, { recursive: true });
 
 const targets = [
-  { src: "public/favicon.svg", out: "public/favicon.png", width: 512 },
+  { src: "public/favicon.svg", out: "public/favicon.png", width: 64 },
   { src: "public/og-image.svg", out: "public/og-image.png", width: 1200 },
   { src: "scripts/apple-touch-icon.svg", out: "public/apple-touch-icon.png", width: 180 },
   { src: "scripts/apple-touch-icon.svg", out: "public/wireline-icon-192.png", width: 192 },

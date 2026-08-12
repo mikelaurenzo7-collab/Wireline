@@ -98,9 +98,9 @@ describe("agent navigation contract", () => {
   it("makes Overview answer customer-demand questions before configuration questions", () => {
     expect(overviewPage).toMatch(/function dayGreeting/);
     expect(overviewPage).toMatch(/Customer conversations today/);
-    expect(overviewPage).toMatch(/Priority leads/);
+    expect(overviewPage).toMatch(/High-intent today/);
     expect(overviewPage).toMatch(/Appointments booked/);
-    expect(overviewPage).toMatch(/Follow-ups waiting/);
+    expect(overviewPage).toMatch(/Needs attention/);
     expect(overviewPage).toMatch(/Customer outcomes/);
     expect(overviewPage).toMatch(/customerAgentLanguage\(kind\)/);
     expect(overviewPage).toMatch(/language\.plural\.replace/);
