@@ -131,15 +131,23 @@ router.post(
       }
 
       await drizzle.transaction(async (tx) => {
-        await tx
+        const completed = await tx
           .update(schema.followUpTasks)
           .set({
             status: "completed",
             resolutionNotes: "Human handoff completed from Approvals",
           })
           .where(
-            and(eq(schema.followUpTasks.id, task.id), eq(schema.followUpTasks.userId, req.user.id)),
-          );
+            and(
+              eq(schema.followUpTasks.id, task.id),
+              eq(schema.followUpTasks.userId, req.user.id),
+              inArray(schema.followUpTasks.status, [...ACTIVE_HANDOFF_TASK_STATUSES]),
+            ),
+          )
+          .returning({ id: schema.followUpTasks.id });
+        if (!completed.length) {
+          throw AppError.fromHttpStatus(409, "This handoff changed in another session.");
+        }
         await syncConversationFromHandoff(tx, {
           userId: req.user.id,
           sourceType: task.sourceType,
@@ -190,15 +198,23 @@ router.post(
       }
 
       await drizzle.transaction(async (tx) => {
-        await tx
+        const dismissed = await tx
           .update(schema.followUpTasks)
           .set({
             status: "cancelled",
             resolutionNotes: "Human handoff dismissed from Approvals",
           })
           .where(
-            and(eq(schema.followUpTasks.id, task.id), eq(schema.followUpTasks.userId, req.user.id)),
-          );
+            and(
+              eq(schema.followUpTasks.id, task.id),
+              eq(schema.followUpTasks.userId, req.user.id),
+              inArray(schema.followUpTasks.status, [...ACTIVE_HANDOFF_TASK_STATUSES]),
+            ),
+          )
+          .returning({ id: schema.followUpTasks.id });
+        if (!dismissed.length) {
+          throw AppError.fromHttpStatus(409, "This handoff changed in another session.");
+        }
         await syncConversationFromHandoff(tx, {
           userId: req.user.id,
           sourceType: task.sourceType,
