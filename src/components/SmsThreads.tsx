@@ -28,6 +28,7 @@ import { Button, EmptyState, Input, Skeleton } from "./atoms";
 import { ConversationActivity, ConversationMessage, SearchField, StatusNotice } from "./molecules";
 import ClientToolbar from "./layout/ClientToolbar";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
+import SmsOutcomePanel from "./SmsOutcomePanel";
 import {
   ChannelInboxDetailPane,
   ChannelInboxGrid,
@@ -495,6 +496,10 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                     </div>
 
                     <div className="shrink-0 border-t border-border pt-3">
+                      <SmsOutcomePanel
+                        threadId={activeThread.id}
+                        initialStatus={activeThread.status}
+                      />
                       {sending ? (
                         <ConversationActivity
                           className="mb-3"
