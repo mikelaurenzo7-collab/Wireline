@@ -46,6 +46,25 @@ describe("activation milestone truth", () => {
     ).toBe(true);
   });
 
+  it("requires an explicit user action before an outcome counts as reviewed", () => {
+    expect(
+      shouldDispatchProductEvent({
+        event: "outcome_reviewed",
+        metadata: { source: "call_ops", call_id: "call_123" },
+      }),
+    ).toBe(false);
+    expect(
+      shouldDispatchProductEvent({
+        event: "outcome_reviewed",
+        metadata: {
+          source: "outcome_ledger_evidence",
+          call_id: "call_123",
+          reviewed: true,
+        },
+      }),
+    ).toBe(true);
+  });
+
   it("leaves unrelated product events unchanged", () => {
     expect(
       shouldDispatchProductEvent({

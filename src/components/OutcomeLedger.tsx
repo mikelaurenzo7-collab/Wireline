@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { ArrowRight, ClipboardList } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import { emitProductEventOnce } from "../lib/product-event-client";
 import { Button, EmptyState } from "./atoms";
 import { CardRowSkeleton } from "./atoms/skeleton-presets";
 import { StatusNotice } from "./molecules";
@@ -63,11 +64,13 @@ export default function OutcomeLedger({
 }: OutcomeLedgerProps) {
   const [rows, setRows] = useState<OutcomeLedgerRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [fatalError, setFatalError] = useState<string | null>(null);
+  const [enrichmentWarning, setEnrichmentWarning] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setFatalError(null);
+    setEnrichmentWarning(null);
     try {
       const [callsRes, pendingRes, completedRes] = await Promise.all([
         authFetch(`/api/calls?limit=${limit}`),
@@ -75,7 +78,7 @@ export default function OutcomeLedger({
         authFetch("/api/Assistants/tasks?status=completed"),
       ]);
       if (!callsRes.ok) {
-        setError("Could not load outcome ledger.");
+        setFatalError("Could not load outcome ledger.");
         setRows([]);
         return;
       }
@@ -83,8 +86,9 @@ export default function OutcomeLedger({
       const pendingBody = pendingRes.ok ? await pendingRes.json() : { tasks: [] };
       const completedBody = completedRes.ok ? await completedRes.json() : { tasks: [] };
       if (!pendingRes.ok || !completedRes.ok) {
-        // Tasks are enrichment — surface the failure without blanking calls.
-        setError("Some follow-up tasks could not be loaded.");
+        // Tasks are enrichment. Keep healthy call outcomes visible and disclose
+        // only that action state may be incomplete until the task service recovers.
+        setEnrichmentWarning("Follow-up status is temporarily incomplete.");
       }
       const calls = Array.isArray(callsBody?.calls) ? callsBody.calls : [];
       const pendingTasks = (
@@ -142,7 +146,8 @@ export default function OutcomeLedger({
         });
       setRows(normalized);
     } catch {
-      setError("Could not load outcome ledger.");
+      setFatalError("Could not load outcome ledger.");
+      setRows([]);
     } finally {
       setLoading(false);
     }
@@ -156,7 +161,7 @@ export default function OutcomeLedger({
     return <CardRowSkeleton rows={compact ? 3 : Math.min(limit, 4)} />;
   }
 
-  if (error) {
+  if (fatalError) {
     return (
       <StatusNotice
         tone="destructive"
@@ -167,7 +172,7 @@ export default function OutcomeLedger({
           </Button>
         }
       >
-        {error}
+        {fatalError}
       </StatusNotice>
     );
   }
@@ -200,6 +205,11 @@ export default function OutcomeLedger({
 
   return (
     <div className={compact ? "grid gap-2" : "grid gap-3"}>
+      {enrichmentWarning ? (
+        <StatusNotice tone="warning" title="Follow-up status delayed">
+          {enrichmentWarning} Call outcomes below are still current.
+        </StatusNotice>
+      ) : null}
       {followUpsHref ? (
         <div className="mb-1 flex justify-end">
           <Link to={followUpsHref} className="text-xs font-semibold text-primary hover:underline">
@@ -247,6 +257,70 @@ export default function OutcomeLedger({
               </Link>
             ) : null}
           </div>
+
+          <details
+            className="group mt-3 border-t border-border/70 pt-2"
+            onToggle={(event) => {
+              if (!event.currentTarget.open) return;
+              emitProductEventOnce({
+                event: "outcome_reviewed",
+                metadata: {
+                  call_id: row.id,
+                  agent_id: row.agent_id || null,
+                  source: "outcome_ledger_evidence",
+                  reviewed: true,
+                },
+              });
+            }}
+          >
+            <summary className="cursor-pointer list-none text-xs font-semibold text-primary marker:hidden hover:underline">
+              Evidence
+            </summary>
+            <div className="mt-3 grid gap-3 rounded-lg bg-muted/35 p-3">
+              {row.transcript?.trim() ? (
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Transcript
+                  </p>
+                  <p className="mt-1 max-h-64 overflow-y-auto whitespace-pre-wrap text-xs leading-relaxed text-foreground">
+                    {row.transcript.trim()}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Transcript unavailable for this call.</p>
+              )}
+              {row.coaching_note?.trim() ? (
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Review note
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-foreground">
+                    {row.coaching_note.trim()}
+                  </p>
+                </div>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
+                {row.recording_url ? (
+                  <a
+                    href={row.recording_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Listen
+                  </a>
+                ) : null}
+                {(row.pending_task_count ?? 0) > 0 ? (
+                  <Link to="/approvals" className="text-primary hover:underline">
+                    Review action
+                  </Link>
+                ) : null}
+                <Link to="/phone?tab=logs" className="text-primary hover:underline">
+                  Call history
+                </Link>
+              </div>
+            </div>
+          </details>
         </article>
       ))}
       {showViewAll ? (
