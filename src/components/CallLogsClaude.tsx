@@ -7,7 +7,6 @@ import { Download, Phone, Zap } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import { formatPhone } from "../lib/safe-number";
-import { emitProductEventOnce } from "../lib/product-event-client";
 import AgentFace from "./AgentFace";
 import LiveFloorPresence from "./LiveFloorPresence";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
@@ -48,6 +47,14 @@ type CallsResponse = {
   calls?: Call[];
   total?: number;
   hasMore?: boolean;
+};
+
+type CallOpsMetrics = {
+  today: number;
+  pending: number;
+  agents: number;
+  escalations: number;
+  since: string;
 };
 
 type TabId = "floor" | "intel" | "triage" | "analytics";
@@ -181,6 +188,9 @@ export default function CallLogsClaude() {
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [metrics, setMetrics] = useState<CallOpsMetrics | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(true);
+  const [metricsError, setMetricsError] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [visibleFloorCount, setVisibleFloorCount] = useState(FLOOR_PAGE_SIZE);
@@ -241,6 +251,33 @@ export default function CallLogsClaude() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    setMetricsLoading(true);
+    setMetricsError(false);
+    const since = new Date(todayBoundary()).toISOString();
+    authFetch(`/api/call-ops/metrics?since=${encodeURIComponent(since)}`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Could not load Call Ops metrics.");
+        return response.json() as Promise<CallOpsMetrics>;
+      })
+      .then((body) => {
+        if (cancelled) return;
+        setMetrics(body);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setMetrics(null);
+        setMetricsError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setMetricsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const today = useMemo(() => {
     const boundary = todayBoundary();
     return calls.filter((call) => {
@@ -253,11 +290,6 @@ export default function CallLogsClaude() {
   const live = useMemo(() => calls.filter(isLive), [calls]);
   const escalations = useMemo(() => calls.filter(isEscalation), [calls]);
   const intel = useMemo(() => calls.filter(isActionItem), [calls]);
-  const fleet = useMemo(() => {
-    const ids = new Set<string>();
-    for (const call of calls) if (call.agent_id) ids.add(call.agent_id);
-    return ids.size;
-  }, [calls]);
 
   // Same priority chain the Floor tab renders (live > today > everything),
   // kept unsliced here so pagination can reason about the real bucket size
@@ -298,21 +330,14 @@ export default function CallLogsClaude() {
       .finally(() => setLoadingMore(false));
   }, [calls.length, floorHasMoreVisible, floorHasMoreServer, loadingMore]);
 
-  useEffect(() => {
-    const reviewed = calls.find((call) => call.outcome_tag && !isLive(call));
-    if (!reviewed) return;
-    emitProductEventOnce({
-      event: "outcome_reviewed",
-      agentId: reviewed.agent_id ?? undefined,
-      metadata: { call_id: reviewed.id, source: "call_ops" },
-    });
-  }, [calls]);
-
+  // KPI tiles reflect exact operational state. The Intel/Triage tabs below
+  // remain paginated call classifications by design; they are evidence feeds,
+  // not substitutes for workspace-wide pending/escalation queues.
   const kpis = [
-    { label: "Today", value: today.length, accent: "default" as const },
-    { label: "Pending", value: intel.length, accent: "default" as const },
-    { label: "Agents", value: fleet, accent: "default" as const },
-    { label: "Escalations", value: escalations.length, accent: "warning" as const },
+    { label: "Today", value: metrics?.today ?? 0, accent: "default" as const },
+    { label: "Pending", value: metrics?.pending ?? 0, accent: "default" as const },
+    { label: "Agents", value: metrics?.agents ?? 0, accent: "default" as const },
+    { label: "Escalations", value: metrics?.escalations ?? 0, accent: "warning" as const },
   ];
 
   return (
@@ -349,7 +374,7 @@ export default function CallLogsClaude() {
                 className="wl-metric-tile__value tabular-nums"
                 style={isWarning ? { color: "var(--wireline-color-status-warning)" } : undefined}
               >
-                {loading || error ? "—" : kpi.value}
+                {metricsLoading || metricsError ? "—" : kpi.value}
               </div>
             </article>
           );
