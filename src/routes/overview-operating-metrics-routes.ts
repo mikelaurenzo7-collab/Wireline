@@ -162,7 +162,9 @@ router.get(
             .from(schema.emailThreads)
             .leftJoin(schema.agents, eq(schema.emailThreads.agentId, schema.agents.id))
             .where(eq(schema.emailThreads.userId, userId))
-            .orderBy(desc(schema.emailThreads.lastMessageAt))
+            .orderBy(
+              desc(sql`coalesce(${schema.emailThreads.lastMessageAt}, ${schema.emailThreads.createdAt})`),
+            )
             .limit(RECENT_CONVERSATION_LIMIT),
           tx
             .select({
@@ -176,7 +178,9 @@ router.get(
             .from(schema.smsThreads)
             .leftJoin(schema.agents, eq(schema.smsThreads.agentId, schema.agents.id))
             .where(eq(schema.smsThreads.userId, userId))
-            .orderBy(desc(schema.smsThreads.lastMessageAt))
+            .orderBy(
+              desc(sql`coalesce(${schema.smsThreads.lastMessageAt}, ${schema.smsThreads.createdAt})`),
+            )
             .limit(RECENT_CONVERSATION_LIMIT),
         ]),
       );
@@ -213,8 +217,11 @@ router.get(
           agent_name: row.agentName || null,
         })),
       ]
-        .filter((row): row is typeof row & { occurred_at: string } => Boolean(row.occurred_at))
-        .sort((a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at))
+        .filter((row) => Boolean(row.occurred_at))
+        .sort(
+          (a, b) =>
+            Date.parse(b.occurred_at || "") - Date.parse(a.occurred_at || ""),
+        )
         .slice(0, RECENT_CONVERSATION_LIMIT);
 
       res.setHeader("Cache-Control", "private, no-store, max-age=0");
