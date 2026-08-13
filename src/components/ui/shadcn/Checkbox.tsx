@@ -11,8 +11,9 @@ import { cn } from "../../../lib/utils";
  * to avoid adding a new runtime dependency for a control the browser already
  * ships and that ships accessible behaviour out of the box.
  *
- * The default styling matches the rest of the shadcn layer: 1px ring border
- * using `border-input`, focus ring via `--ring`, brand accent on the checked
+ * The default styling matches the rest of the shadcn layer: a 1px border using
+ * the secondary-text token at 70% opacity (strong enough to identify an empty
+ * control on both themes), focus ring via `--ring`, brand accent on the checked
  * state, and disabled opacity parity with `Input` / `Switch`.
  *
  * The checked fill and tick live in `styles/components.css` under
@@ -33,7 +34,7 @@ const Checkbox = React.forwardRef<
     ref={ref}
     data-slot="checkbox"
     className={cn(
-      "h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-[var(--wireline-radius-xs)] border border-border bg-card align-middle transition-colors",
+      "h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-[var(--wireline-radius-xs)] border border-muted-foreground/70 bg-card align-middle transition-colors",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
       "disabled:cursor-not-allowed disabled:opacity-50",
       className,

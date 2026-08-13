@@ -3,6 +3,28 @@ import { expect, test } from "@playwright/test";
 const AUTH_REDIRECT_KEY = "wireline.auth.redirect";
 const FRESH_SIGNUP_KEY = "wireline_fresh_signup";
 
+test("direct account-entry routes recognize an existing session", async ({ page }) => {
+  await page.route("**/api/**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ agents: [], accounts: [], data: [] }),
+    });
+  });
+  await page.route("**/api/auth/session**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        user: { id: "existing-user", email: "existing@example.test", full_name: "Existing User" },
+      }),
+    });
+  });
+
+  await page.goto("/signin");
+  await expect(page).toHaveURL(/\/overview$/);
+});
+
 test("settings sign-out followed by direct personal signup always enters Fast Start", async ({
   page,
 }) => {

@@ -569,10 +569,9 @@ const SIGNUP_MIN_DURATION_MS = 500;
  * equalizedDuration() so the response time alone can't be used as an
  * oracle either.
  *
- * Email delivery goes through src/lib/email-service.ts. If
- * RESEND_API_KEY is configured the link goes via Resend; otherwise the
- * helper falls back to a log.warn so single-tenant pre-launch ops can
- * recover the URL from runtime logs.
+ * Email delivery goes through src/lib/email-service.ts and fails closed if
+ * transactional email is not configured. Reset credentials are never written
+ * to runtime logs.
  */
 router.post(
   "/api/auth/forgot-password",
@@ -592,11 +591,10 @@ router.post(
             log.error("Password reset skipped: APP_URL not configured in production");
             return token;
           }
-          const resetUrl = `${appUrl.url}/reset-password?token=${encodeURIComponent(token.token)}`;
-          // SECURITY: NEVER log the plaintext token — that's account
-          // takeover for anyone with log access. The email helper logs
-          // only the resetUrl when transport is the dev-fallback path,
-          // and that path warns loudly that it's not safe for prod.
+          // Keep the bearer credential in the fragment. Fragments never travel
+          // in HTTP request targets or Referer headers, so Vercel/CDN/server logs
+          // cannot capture newly issued reset tokens from the landing request.
+          const resetUrl = `${appUrl.url}/reset-password#token=${encodeURIComponent(token.token)}`;
           const sendResult = await sendPasswordResetEmail({
             to: email,
             resetUrl,
@@ -605,7 +603,6 @@ router.post(
           log.info("Password reset token issued", {
             email,
             expiresAt: token.expiresAt.toISOString(),
-            tokenPrefix: token.token.slice(0, 6) + "…",
             transport: sendResult.provider,
             delivery_ok: sendResult.ok,
           });

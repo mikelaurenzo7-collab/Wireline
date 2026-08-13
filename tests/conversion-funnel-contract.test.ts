@@ -101,6 +101,71 @@ describe("OAuth signups get the same onboarding as email signups", () => {
   });
 });
 
+describe("signup consent recovers at the control that needs attention", () => {
+  it("keeps the empty checkbox visible in both themes", () => {
+    const checkbox = read("src/components/ui/shadcn/Checkbox.tsx");
+    expect(checkbox).toContain("border-muted-foreground/70");
+    expect(checkbox).not.toContain("border border-border bg-card");
+  });
+
+  it("points OAuth users to the consent control and clears the error after acceptance", () => {
+    const portal = read("src/components/AuthPortal.tsx");
+    expect(portal).toContain(
+      'const TERMS_CONSENT_ERROR = "Accept the Terms and Privacy Policy above to continue.";',
+    );
+    expect(portal).not.toContain("Privacy Policy below to continue");
+    expect(portal).toContain("termsRef.current?.focus()");
+    expect(portal).toContain("aria-invalid={error === TERMS_CONSENT_ERROR}");
+    expect(portal).toContain('error === TERMS_CONSENT_ERROR ? "auth-consent-error" : undefined');
+    expect(portal).toMatch(
+      /e\.target\.checked && error === TERMS_CONSENT_ERROR\) setError\(null\)/,
+    );
+  });
+});
+
+describe("account entry recognizes an existing session without blocking first paint", () => {
+  it("hydrates auth routes in the background while keeping marketing routes probe-free", () => {
+    const auth = read("src/contexts/AuthContext.tsx");
+    const portal = read("src/components/AuthPortal.tsx");
+    expect(auth).toContain(
+      'import { isAuthPortalPath, isSessionOptionalPublicPath } from "../lib/public-routes";',
+    );
+    expect(auth).toMatch(
+      /if \(sessionOptional\) \{[\s\S]{0,500}setLoading\(false\);[\s\S]{0,500}if \(!isAuthPortalPath\(location\.pathname\)\) return;/,
+    );
+
+    const backgroundGate = auth.indexOf("if (!isAuthPortalPath(location.pathname)) return;");
+    const hydrate = auth.indexOf("await migrateLegacyLocalStorage();");
+    expect(backgroundGate).toBeGreaterThan(-1);
+    expect(hydrate).toBeGreaterThan(backgroundGate);
+    expect(portal).toContain("if (authLoading || !user) return;");
+    expect(portal).toContain("navigate(resolvePostAuthDestination(workspaceMode, location.search)");
+  });
+});
+
+describe("password recovery keeps reset credentials out of request and browser history", () => {
+  it("issues new reset links with a fragment and never logs token material", () => {
+    const routes = read("src/routes/auth-routes.ts");
+    expect(routes).toContain('/reset-password#token=${encodeURIComponent(token.token)}');
+    expect(routes).not.toContain('/reset-password?token=${encodeURIComponent(token.token)}');
+    expect(routes).not.toContain("tokenPrefix:");
+    expect(routes).not.toContain("token.token.slice(");
+  });
+
+  it("captures fragment tokens synchronously, supports old query links, and strips the URL", () => {
+    const reset = read("src/pages/ResetPassword.tsx");
+    expect(reset).toContain("function readResetTokenFromLocation(): string");
+    expect(reset).toContain('window.location.hash.replace(/^#/, "")');
+    expect(reset).toContain('return hash.get("token") || query.get("token") || ""');
+    expect(reset).toContain("const resetTokenRef = useRef(readResetTokenFromLocation())");
+    expect(reset).toContain('const [token] = useState<string | null>(() => resetTokenRef.current || null)');
+    expect(reset).toContain(
+      'window.history.replaceState(window.history.state, "", window.location.pathname)',
+    );
+    expect(reset).not.toContain("setToken(raw");
+  });
+});
+
 describe("signup states the whole password policy up front", () => {
   it("mirrors every rule getPasswordPolicyError enforces", () => {
     // getPasswordPolicyError returns only the FIRST failure, so without a
@@ -125,6 +190,10 @@ describe("signup states the whole password policy up front", () => {
     // The placeholder must not understate the policy either.
     expect(portal).not.toContain('"At least 8 characters"');
     expect(portal).toContain("PASSWORD_RULES");
+    expect(portal).toContain(
+      'aria-describedby={isSignUp ? "auth-password-requirements" : undefined}',
+    );
+    expect(portal).toContain('<p id="auth-password-requirements" className="sr-only">');
   });
 
   it("offers a way out of a duplicate-email signup", () => {

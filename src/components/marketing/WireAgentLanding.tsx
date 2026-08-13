@@ -8,6 +8,7 @@ import MarketingStickyCta from "./MarketingStickyCta";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import TrustSignals from "./TrustSignals";
 import BrowserCallWidget from "./BrowserCallWidget";
+import LiveVideoSpotlight from "./LiveVideoSpotlight";
 import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
 import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
@@ -132,6 +133,7 @@ function modePanelId(key: AgentMode) {
 }
 
 const HERO_DEMO_AGENT = LANDING_PUBLIC_DEMO_AGENTS[0];
+const LIVE_VIDEO_BRIDGE = "Every channel. One agent.";
 
 export default function WireAgentLanding() {
   const [mode, setMode] = useState<AgentMode>("outbound");
@@ -227,25 +229,7 @@ export default function WireAgentLanding() {
           }
         />
 
-        <section className="wl-public-section border-b border-border">
-          <div className="wl-public-rail">
-            <div className="mx-auto mb-8 max-w-2xl text-center">
-              <h2 className="wl-display-2">Every channel. One agent.</h2>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {["Voice", "Text messages", "Email", "One record"].map(
-                (title) => (
-                  <article
-                    key={title}
-                    className="wl-paper rounded-[16px] p-6 text-center"
-                  >
-                    <h3 className="wl-display-4">{title}</h3>
-                  </article>
-                ),
-              )}
-            </div>
-          </div>
-        </section>
+        <LiveVideoSpotlight bridgeLabel={LIVE_VIDEO_BRIDGE} />
 
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">

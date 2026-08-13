@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import React, { useEffect, useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { useAuth } from "../contexts/AuthContext";
@@ -11,27 +11,36 @@ import MarketingChrome from "../components/marketing/MarketingChrome";
 import WirelineMark from "../components/brand/WirelineMark";
 import { readStoredWorkspaceMode, resolvePostAuthDestination } from "../lib/auth-redirect";
 
+function readResetTokenFromLocation(): string {
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const query = new URLSearchParams(window.location.search);
+  // New reset emails use the fragment so the bearer credential never reaches
+  // the server. Query support keeps already-issued reset emails working.
+  return hash.get("token") || query.get("token") || "";
+}
+
 /**
- * /reset-password?token=<raw>
+ * /reset-password#token=<raw>
  *
- * Lands the user from the password-reset email. Reads the token from the URL,
- * validates the password locally, posts to /api/auth/reset-password, and
- * hydrates the authenticated client state when the server returns a user.
+ * Lands the user from the password-reset email. Captures the single-use token
+ * synchronously, removes it from browser-visible history before paint, validates
+ * the password locally, posts to /api/auth/reset-password, and hydrates the
+ * authenticated client state when the server returns a user.
  */
 export default function ResetPassword() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const [token, setToken] = useState<string | null>(null);
+  const resetTokenRef = useRef(readResetTokenFromLocation());
+  const [token] = useState<string | null>(() => resetTokenRef.current || null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const raw = params.get("token");
-    setToken(raw && raw.length > 0 ? raw : null);
+  useLayoutEffect(() => {
+    if (!window.location.search && !window.location.hash) return;
+    window.history.replaceState(window.history.state, "", window.location.pathname);
   }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {

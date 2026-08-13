@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import React, { useEffect, useState, type ReactNode } from "react";
+import React, { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import {
   ArrowLeft,
@@ -137,6 +137,8 @@ const PASSWORD_RULES: ReadonlyArray<{ label: string; test: (value: string) => bo
   { label: "number", test: (v) => /[0-9]/.test(v) },
 ];
 
+const TERMS_CONSENT_ERROR = "Accept the Terms and Privacy Policy above to continue.";
+
 function getPasswordStrengthLabel(password: string): string | null {
   if (!password) return null;
   // Never label a password Fair/Good/Strong until it meets the server policy.
@@ -157,11 +159,13 @@ type OAuthProvider = "google" | "microsoft" | "yahoo";
 function OAuthSignInButtons({
   disabled,
   onError,
+  onConsentNeeded,
   isSignUp = false,
   consentNeeded = false,
 }: {
   disabled?: boolean;
   onError?: (message: string) => void;
+  onConsentNeeded?: () => void;
   isSignUp?: boolean;
   consentNeeded?: boolean;
 }) {
@@ -170,7 +174,8 @@ function OAuthSignInButtons({
   const start = async (provider: OAuthProvider) => {
     if (disabled || pending) return;
     if (consentNeeded) {
-      onError?.("Accept the Terms and Privacy Policy below to continue.");
+      if (onConsentNeeded) onConsentNeeded();
+      else onError?.(TERMS_CONSENT_ERROR);
       return;
     }
     setPending(provider);
@@ -436,6 +441,7 @@ export default function AuthPortal() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const termsRef = useRef<HTMLInputElement>(null);
   const [signupIntent, setSignupIntent] = useState<SignupIntent | null>(() =>
     captureSignupIntentFromLocation(),
   );
@@ -539,7 +545,8 @@ export default function AuthPortal() {
       return;
     }
     if (isSignUp && !agreedToTerms) {
-      setError("Accept the Terms and Privacy Policy to create your account.");
+      setError(TERMS_CONSENT_ERROR);
+      termsRef.current?.focus();
       return;
     }
 
@@ -665,9 +672,7 @@ export default function AuthPortal() {
               buttons, and a cased divider, so it joins the title tier
               (presentation-only transform — the copy string never changes). */}
           <h1 className="text-xl font-semibold tracking-[-.02em] uppercase">{pageTitle}</h1>
-          {isReset ? (
-            <p className="mt-2 text-sm text-muted-foreground">{pageDescription}</p>
-          ) : null}
+          {isReset ? <p className="mt-2 text-sm text-muted-foreground">{pageDescription}</p> : null}
           {isSignUp && intentLabel ? (
             <p className="wl-stitch-label mt-3 inline-flex rounded-full border border-border bg-muted px-3 py-1">
               {intentLabel}
@@ -719,10 +724,18 @@ export default function AuthPortal() {
             {isSignUp && (
               <div className="wl-auth-terms mb-3 flex items-start gap-3 rounded-xl border border-border bg-muted/50 p-2.5 text-sm leading-relaxed text-foreground/75">
                 <Checkbox
+                  ref={termsRef}
                   id="auth-terms"
                   aria-labelledby="auth-terms-label"
+                  aria-invalid={error === TERMS_CONSENT_ERROR}
+                  aria-describedby={
+                    error === TERMS_CONSENT_ERROR ? "auth-consent-error" : undefined
+                  }
                   checked={agreedToTerms}
-                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  onChange={(e) => {
+                    setAgreedToTerms(e.target.checked);
+                    if (e.target.checked && error === TERMS_CONSENT_ERROR) setError(null);
+                  }}
                   className="mt-1"
                 />
                 <span id="auth-terms-label">
@@ -756,6 +769,10 @@ export default function AuthPortal() {
                 disabled={loading}
                 isSignUp={isSignUp}
                 consentNeeded={isSignUp && !agreedToTerms}
+                onConsentNeeded={() => {
+                  setError(TERMS_CONSENT_ERROR);
+                  termsRef.current?.focus();
+                }}
                 onError={(m) => setError(m || null)}
               />
             )}
@@ -828,6 +845,7 @@ export default function AuthPortal() {
                       className="wl-stitch-input h-11"
                       style={{ paddingLeft: "2.5rem", paddingRight: "2.75rem" }}
                       aria-label="Password"
+                      aria-describedby={isSignUp ? "auth-password-requirements" : undefined}
                     />
                     <button
                       type="button"
@@ -843,6 +861,12 @@ export default function AuthPortal() {
                       )}
                     </button>
                   </div>
+                  {isSignUp ? (
+                    <p id="auth-password-requirements" className="sr-only">
+                      Password must contain at least 8 characters, including an uppercase letter, a
+                      lowercase letter, and a number.
+                    </p>
+                  ) : null}
                   {/*
                    * Live checklist of the full policy. getPasswordPolicyError
                    * returns only the FIRST failure, so submitting was the only
@@ -898,7 +922,11 @@ export default function AuthPortal() {
               )}
 
               {error ? (
-                <StatusNotice tone="destructive" title={error}>
+                <StatusNotice
+                  id={error === TERMS_CONSENT_ERROR ? "auth-consent-error" : undefined}
+                  tone="destructive"
+                  title={error}
+                >
                   {/*
                    * The server's copy for a duplicate signup says "Try signing
                    * in instead", but the sign-in tab is a separate control the

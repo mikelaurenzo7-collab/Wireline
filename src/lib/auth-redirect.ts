@@ -1,4 +1,8 @@
-import { recommendedPlanFromIntent, type SignupIntent } from "./signup-intent";
+import {
+  parseSignupIntent,
+  recommendedPlanFromIntent,
+  type SignupIntent,
+} from "./signup-intent";
 import { clearFreshSignupSession, isFreshSignupSession } from "./post-signup-onboarding";
 
 export type WorkspaceMode = "personal" | "business";
@@ -54,6 +58,16 @@ export function persistAuthRedirect(value: string | null) {
   else window.localStorage.removeItem(AUTH_REDIRECT_KEY);
 }
 
+function returningPaidIntentDestination(search: string): string | null {
+  const intent = parseSignupIntent(search);
+  const plan = intent?.preferredPlanId;
+  if (!plan || plan === "personal") return null;
+
+  const params = new URLSearchParams({ plan });
+  if (intent.preferredBillingInterval === "year") params.set("interval", "year");
+  return `/settings/billing?${params.toString()}`;
+}
+
 export function resolvePostAuthDestination(
   workspaceMode: WorkspaceMode,
   search = typeof window !== "undefined" ? window.location.search : "",
@@ -63,6 +77,7 @@ export function resolvePostAuthDestination(
    * Honors an explicit ?redirect first. Fresh signup then takes precedence over
    * any persisted redirect left by an earlier sign-in flow.
    * Otherwise:
+   * - Returning users who explicitly chose a paid plan go directly to Billing.
    * - For immediate post-signup (fresh flag): Studio create (consumed after use).
    * - For returning sign-ins: persisted AUTH_REDIRECT_KEY (consumed after use).
    * - Default for all logged-in sessions: /overview (Home).
@@ -75,6 +90,14 @@ export function resolvePostAuthDestination(
     persistAuthRedirect(null);
     if (freshSignup) clearFreshSignupSession();
     return fromSearch;
+  }
+
+  if (!freshSignup) {
+    const paidIntentDestination = returningPaidIntentDestination(search);
+    if (paidIntentDestination) {
+      persistAuthRedirect(null);
+      return paidIntentDestination;
+    }
   }
 
   if (freshSignup) {
