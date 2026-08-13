@@ -41,14 +41,20 @@ export function collectAllowedOrigins(): Set<string> {
 /**
  * True when a browser Origin header is acceptable for a credentialed request.
  * A missing Origin is allowed (non-browser clients, same-origin GETs that omit
- * it); a present Origin must be on the allowlist. Shared with the supervisor
- * WebSocket upgrade so cookie-authenticated sockets get the same cross-site
- * hijacking protection assertSameOrigin gives HTTP mutations.
+ * it); a present Origin must be on the static allowlist OR match the request's
+ * own forwarded host — the same allowance assertSameOrigin makes, so a genuinely
+ * same-origin request from a deployment alias not listed in APP_URL/CORS_ORIGINS
+ * is not rejected. Shared with the supervisor WebSocket upgrade so cookie-
+ * authenticated sockets get the same cross-site protection HTTP mutations get.
  */
-export function isAllowedBrowserOrigin(origin: string | undefined | null): boolean {
+export function isAllowedBrowserOrigin(
+  origin: string | undefined | null,
+  selfOrigin?: string | null,
+): boolean {
   if (!origin) return true;
   const normalized = origin.replace(/\/+$/, "");
-  return collectAllowedOrigins().has(normalized);
+  if (collectAllowedOrigins().has(normalized)) return true;
+  return Boolean(selfOrigin) && normalized === selfOrigin;
 }
 
 function originFromReferer(referer: string): string | null {
@@ -59,31 +65,38 @@ function originFromReferer(referer: string): string | null {
   }
 }
 
+type ForwardedHeaders = {
+  "x-forwarded-host"?: string | string[];
+  "x-forwarded-proto"?: string | string[];
+  host?: string | string[];
+};
+
 /**
  * Resolve the request's own origin from forwarded proto + host headers.
  * A genuinely same-origin request (Origin/Referer host === the host the
  * browser actually hit) must always be trusted — this is the entire point
  * of a same-origin CSRF check. Relying solely on a static APP_URL/CORS_ORIGINS
- * allowlist breaks every Vercel preview deployment, whose domain is unknown
+ * allowlist breaks every deployment alias / preview whose domain is unknown
  * ahead of time even though the frontend and API share that same domain.
+ *
+ * Header-based so it works for both Express requests and raw upgrade
+ * `IncomingMessage`s (the supervisor WebSocket), which never reach the HTTP
+ * middleware but need the identical same-origin allowance.
  */
-function selfOrigin(req: Request): string | null {
-  const host = (
-    (typeof req.headers["x-forwarded-host"] === "string" && req.headers["x-forwarded-host"]) ||
-    (typeof req.headers.host === "string" && req.headers.host) ||
-    ""
-  )
-    .split(",")[0]
-    .trim();
+export function selfOriginFromHeaders(
+  headers: ForwardedHeaders,
+  protocolFallback?: string,
+): string | null {
+  const header = (value: string | string[] | undefined): string =>
+    (Array.isArray(value) ? value[0] : value || "").split(",")[0].trim();
+  const host = header(headers["x-forwarded-host"]) || header(headers.host);
   if (!host) return null;
-  const proto = (
-    (typeof req.headers["x-forwarded-proto"] === "string" && req.headers["x-forwarded-proto"]) ||
-    req.protocol ||
-    "https"
-  )
-    .split(",")[0]
-    .trim();
+  const proto = header(headers["x-forwarded-proto"]) || protocolFallback || "https";
   return `${proto}://${host}`.replace(/\/+$/, "");
+}
+
+function selfOrigin(req: Request): string | null {
+  return selfOriginFromHeaders(req.headers, req.protocol);
 }
 
 /**

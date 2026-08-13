@@ -14,7 +14,7 @@ import { isSessionGenerationActive } from "../lib/session-generation";
 import { sessionUsers } from "../db/security-schema";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { parseCookieHeader, SESSION_COOKIE_NAME, isProductionRuntime } from "../lib/session-cookie";
-import { isAllowedBrowserOrigin } from "../middleware/same-origin";
+import { isAllowedBrowserOrigin, selfOriginFromHeaders } from "../middleware/same-origin";
 import { isAllowedVapiListenUrl } from "../lib/vapi-monitor-url";
 import {
   applyVapiListenControlMessage,
@@ -59,10 +59,12 @@ export function initSupervisorWebSocketServer(server: any) {
     if (pathname === "/api/supervisor/stream") {
       // The socket accepts cookie credentials, so a cross-site page opening it
       // would ride the victim's session (whisper mode writes coaching notes).
-      // assertSameOrigin never sees upgrades — gate the browser Origin here.
+      // assertSameOrigin never sees upgrades — gate the browser Origin here,
+      // allowing the request's own forwarded host so a genuinely same-origin
+      // stream from a deployment alias not in APP_URL/CORS_ORIGINS still works.
       const origin =
         typeof request.headers.origin === "string" ? request.headers.origin : undefined;
-      if (!isAllowedBrowserOrigin(origin)) {
+      if (!isAllowedBrowserOrigin(origin, selfOriginFromHeaders(request.headers))) {
         socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
         socket.destroy();
         return;
