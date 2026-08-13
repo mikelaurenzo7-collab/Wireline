@@ -6,6 +6,8 @@ import {
   Clock3,
   Flame,
   ListTodo,
+  Mail,
+  MessageSquare,
   Phone,
   Play,
   PlugZap,
@@ -35,7 +37,6 @@ import {
 import { workspaceFirstName } from "../lib/user-display";
 import { authFetch } from "../lib/api";
 import { agentReadinessLabel } from "../lib/agent-readiness";
-import type { CallLog } from "../types/api";
 
 function dayGreeting(date = new Date()) {
   const hour = date.getHours();
@@ -346,6 +347,17 @@ function CompactAgentRow({
 
 type AgentKind = "personal" | "business";
 
+type RecentConversation = {
+  id: string;
+  channel: "voice" | "email" | "sms";
+  contact: string;
+  headline?: string | null;
+  summary?: string | null;
+  occurred_at: string;
+  duration_seconds?: number | null;
+  agent_name?: string | null;
+};
+
 function AgentSection({
   kind,
   agents,
@@ -388,7 +400,10 @@ function AgentSection({
   );
 }
 
-function formatCallMeta(createdAt: string, durationSeconds?: number | null) {
+function formatConversationMeta(
+  createdAt: string,
+  durationSeconds?: number | null,
+) {
   if (!createdAt) return "";
   const date = new Date(createdAt);
   const timeStr = date.toLocaleTimeString(undefined, {
@@ -402,6 +417,18 @@ function formatCallMeta(createdAt: string, durationSeconds?: number | null) {
     return `${timeStr} · ${durationStr}`;
   }
   return timeStr;
+}
+
+function conversationHref(channel: RecentConversation["channel"]) {
+  if (channel === "email") return "/inbox?tab=email";
+  if (channel === "sms") return "/inbox?tab=sms";
+  return "/phone?tab=logs";
+}
+
+function conversationChannelLabel(channel: RecentConversation["channel"]) {
+  if (channel === "email") return "Email";
+  if (channel === "sms") return "SMS";
+  return "Call";
 }
 
 export default function OverviewPage() {
@@ -420,9 +447,10 @@ export default function OverviewPage() {
   );
   const [totalAppointments, setTotalAppointments] = useState(0);
   const [activeWork, setActiveWork] = useState(0);
-  const [recentCalls, setRecentCalls] = useState<CallLog[]>([]);
+  const [recentConversations, setRecentConversations] = useState<RecentConversation[]>([]);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [statsUnavailable, setStatsUnavailable] = useState(false);
+  const [recentUnavailable, setRecentUnavailable] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -430,12 +458,13 @@ export default function OverviewPage() {
     async function loadDashboard() {
       setLoadingDashboard(true);
       setStatsUnavailable(false);
+      setRecentUnavailable(false);
       const dayBoundary = new Date();
       dayBoundary.setHours(0, 0, 0, 0);
       const since = dayBoundary.toISOString();
 
-      const [statsRes, operatingRes, crmRes, calendarRes, mailboxRes] = await Promise.all([
-        authFetch("/api/dashboard/stats").catch(() => null),
+      const [recentRes, operatingRes, crmRes, calendarRes, mailboxRes] = await Promise.all([
+        authFetch("/api/overview/recent-conversations").catch(() => null),
         authFetch(`/api/overview/operating-metrics?since=${encodeURIComponent(since)}`).catch(
           () => null,
         ),
@@ -446,11 +475,14 @@ export default function OverviewPage() {
 
       if (cancelled) return;
 
-      if (statsRes?.ok) {
-        const data = await statsRes.json().catch(() => null);
-        const logs: CallLog[] = Array.isArray(data?.recentLogs) ? data.recentLogs : [];
-        setRecentCalls(logs.slice(0, 4));
+      if (recentRes?.ok) {
+        const data = await recentRes.json().catch(() => null);
+        const conversations: RecentConversation[] = Array.isArray(data?.conversations)
+          ? data.conversations
+          : [];
+        setRecentConversations(conversations.slice(0, 4));
       } else {
+        setRecentUnavailable(true);
         setStatsUnavailable(true);
       }
 
@@ -527,7 +559,7 @@ export default function OverviewPage() {
       : "Add business voice agent";
   const primaryAgent = agents[0];
   const hasLiveLine = agents.some((agent) => Boolean(agent.phone_number));
-  const hasConversationHistory = recentCalls.length > 0 || conversationsToday > 0;
+  const hasConversationHistory = recentConversations.length > 0 || conversationsToday > 0;
   const emptyStudioHref =
     accountType === "personal"
       ? "/studio?create=1&posture=personal"
@@ -735,16 +767,10 @@ export default function OverviewPage() {
               </article>
 
               <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
-                <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="mb-4">
                   <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                     Recent customer conversations
                   </p>
-                  <Link
-                    to="/phone?tab=logs"
-                    className="text-xs font-semibold text-primary hover:underline"
-                  >
-                    View all →
-                  </Link>
                 </div>
                 <div className="grid gap-0">
                   {loadingDashboard ? (
@@ -772,66 +798,68 @@ export default function OverviewPage() {
                         </div>
                       ))}
                     </div>
-                  ) : recentCalls.length > 0 ? (
-                    recentCalls.map((call) => (
-                      <Link
-                        key={call.id}
-                        to="/phone?tab=logs"
-                        className="wl-data-row wl-data-row--divided group"
-                      >
-                        <span
-                          className="wl-data-row__leading"
-                          aria-hidden="true"
+                  ) : recentUnavailable ? (
+                    <StatusNotice tone="warning" title="Recent activity unavailable">
+                      Refresh to try again. Your conversation history is unchanged.
+                    </StatusNotice>
+                  ) : recentConversations.length > 0 ? (
+                    recentConversations.map((conversation) => {
+                      const ChannelIcon =
+                        conversation.channel === "email"
+                          ? Mail
+                          : conversation.channel === "sms"
+                            ? MessageSquare
+                            : Phone;
+                      return (
+                        <Link
+                          key={`${conversation.channel}-${conversation.id}`}
+                          to={conversationHref(conversation.channel)}
+                          className="wl-data-row wl-data-row--divided group"
                         >
-                          <span className="size-2 rounded-full bg-[var(--wireline-color-action-primary-default)]" />
-                        </span>
-                        <span className="wl-data-row__main">
-                          <span className="wl-data-row__title">
-                            {call.customer_number || "Unknown caller"}
-                          </span>
-                          <span className="wl-data-row__detail wl-data-row__detail--clamp">
-                            {[
-                              call.agent_name ||
-                                primaryAgent?.name ||
-                                language.singular,
-                              formatCallMeta(
-                                call.created_at,
-                                call.duration_seconds,
-                              ),
-                              call.summary || call.intent_label,
-                            ]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </span>
-                        </span>
-                        <span className="wl-data-row__trailing">
-                          <Clock3
-                            className="size-3.5 transition-colors group-hover:text-[var(--wireline-color-action-primary-default)]"
+                          <span
+                            className="wl-data-row__leading"
                             aria-hidden="true"
-                          />
-                        </span>
-                      </Link>
-                    ))
+                          >
+                            <ChannelIcon className="size-3.5 text-primary" />
+                          </span>
+                          <span className="wl-data-row__main">
+                            <span className="wl-data-row__title">
+                              {conversation.contact}
+                            </span>
+                            <span className="wl-data-row__detail wl-data-row__detail--clamp">
+                              {[
+                                conversation.agent_name,
+                                conversationChannelLabel(conversation.channel),
+                                formatConversationMeta(
+                                  conversation.occurred_at,
+                                  conversation.duration_seconds,
+                                ),
+                                conversation.headline,
+                                conversation.summary,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </span>
+                          </span>
+                          <span className="wl-data-row__trailing">
+                            <Clock3
+                              className="size-3.5 transition-colors group-hover:text-[var(--wireline-color-action-primary-default)]"
+                              aria-hidden="true"
+                            />
+                          </span>
+                        </Link>
+                      );
+                    })
                   ) : (
                     <EmptyState
                       density="compact"
                       titleTone="ui"
-                      icon={<Phone aria-hidden="true" />}
-                      title={
-                        hasLiveLine
-                          ? "No customer calls yet"
-                          : "Connect a line to receive calls"
-                      }
+                      icon={<MessageSquare aria-hidden="true" />}
+                      title="No customer conversations yet"
                       action={
                         <Button asChild size="sm">
-                          <Link
-                            to={
-                              hasLiveLine ? primaryTestHref : "/settings/phone"
-                            }
-                          >
-                            {hasLiveLine
-                              ? "Run test conversation"
-                              : "Connect phone"}
+                          <Link to={hasLiveLine ? primaryTestHref : "/connections"}>
+                            {hasLiveLine ? "Run test conversation" : "Open Connections"}
                           </Link>
                         </Button>
                       }
