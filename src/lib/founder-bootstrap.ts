@@ -27,6 +27,8 @@ export async function ensureFounderEnterpriseSubscription(userId: string): Promi
       userId,
       plan: FOUNDER_EFFECTIVE_PLAN_ID,
       status: "active",
+      entitlementSource: "demo",
+      grantReason: "founder_dogfood",
       currentPeriodEnd,
       cancelAtPeriodEnd: false,
     })
@@ -35,6 +37,8 @@ export async function ensureFounderEnterpriseSubscription(userId: string): Promi
       set: {
         plan: FOUNDER_EFFECTIVE_PLAN_ID,
         status: "active",
+        entitlementSource: "demo",
+        grantReason: "founder_dogfood",
         currentPeriodEnd,
         cancelAtPeriodEnd: false,
         updatedAt: new Date(),
@@ -92,11 +96,7 @@ export async function bootstrapFounderAssistantIfEmpty(
       const count = agentCounts[0]?.n ?? 0;
       const businessAgents = agentCounts[0]?.businessAgents ?? 0;
       const personalAgents = agentCounts[0]?.personalAgents ?? 0;
-      if (
-        count >= EXPECTED_FOUNDER_FLEET_AGENT_COUNT &&
-        businessAgents > 0 &&
-        personalAgents > 0
-      ) {
+      if (count >= EXPECTED_FOUNDER_FLEET_AGENT_COUNT && businessAgents > 0 && personalAgents > 0) {
         return { seeded: false, skipped: true, subscriptionEnsured: true };
       }
 

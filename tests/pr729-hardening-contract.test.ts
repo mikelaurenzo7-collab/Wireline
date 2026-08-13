@@ -43,7 +43,7 @@ describe("PR 729 hardening contract", () => {
   it("reserves Twilio spend before submitting to the carrier", () => {
     const twilio = read("src/lib/twilio-service.ts");
     expect(twilio.indexOf("reserveRuntimeUsage({")).toBeLessThan(
-      twilio.indexOf("client.messages.create(payload as any)"),
+      twilio.indexOf("createTwilioMessageWithRateLimitRetry("),
     );
     expect(twilio).toContain('provider: "twilio"');
     expect(twilio).not.toContain("getCreditBalanceUsd");
@@ -92,7 +92,9 @@ describe("PR 729 hardening contract", () => {
   it("uses the independently reserved catalog AI allowance", () => {
     const entitlements = read("src/lib/plan-entitlements.ts");
     expect(entitlements).toContain("return plan.ai_spend_allowance_usd_monthly");
-    expect(entitlements).not.toContain("plan.voice_minutes_monthly * VOICE_VARIABLE_COST_PER_MIN_USD");
+    expect(entitlements).not.toContain(
+      "plan.voice_minutes_monthly * VOICE_VARIABLE_COST_PER_MIN_USD",
+    );
     expect(entitlements).not.toContain("return 500");
     expect(entitlements).not.toContain("return 125");
   });

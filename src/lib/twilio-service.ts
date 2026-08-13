@@ -12,6 +12,10 @@ import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { assertLiveWorkEntitlementForUser } from "./trial-gate";
 import {
+  createTwilioMessageWithRateLimitRetry,
+  withTwilioMessageReliability,
+} from "./twilio-message-reliability";
+import {
   getTwilioClient,
   isTwilioConfigured,
   lookupTenantPhoneNumber,
@@ -45,16 +49,6 @@ function cleanPhone(raw: string | null | undefined): string {
 
 function address(phone: string, channel: TwilioMessageChannel): string {
   return channel === "whatsapp" ? `whatsapp:${phone}` : phone;
-}
-
-function appUrl(): string {
-  return (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
-}
-
-function boundedValidityPeriod(): number {
-  const configured = Number(process.env.TWILIO_MESSAGE_VALIDITY_SECONDS || 3600);
-  if (!Number.isFinite(configured)) return 3600;
-  return Math.max(60, Math.min(36_000, Math.floor(configured)));
 }
 
 function money(value: number): number {
@@ -391,12 +385,10 @@ export async function sendTenantMessage(
     };
   }
 
-  const payload: Record<string, any> = {
+  const payload: Record<string, any> = withTwilioMessageReliability({
     to: address(phone, channel),
     body,
-    statusCallback: `${appUrl()}/api/twilio-webhook/message-status`,
-    validityPeriod: boundedValidityPeriod(),
-  };
+  });
   const mediaUrls = Array.isArray(params.mediaUrl)
     ? params.mediaUrl.filter((url) => typeof url === "string" && url.trim())
     : typeof params.mediaUrl === "string" && params.mediaUrl.trim()
@@ -440,7 +432,18 @@ export async function sendTenantMessage(
   }
 
   try {
-    const message = await client.messages.create(payload as any);
+    const message = await createTwilioMessageWithRateLimitRetry(
+      () => client.messages.create(payload as any),
+      {
+        onRetry: ({ retryNumber, delayMs }) =>
+          log.warn("Twilio message rate limited; retrying accepted-safe request", {
+            userId,
+            channel,
+            retryNumber,
+            delayMs,
+          }),
+      },
+    );
     if (channel === "sms") {
       const actualSegments = Math.max(1, Number(message.numSegments) || segments);
       const actualCost = money(SMS_COST_PER_SEGMENT_USD * actualSegments);

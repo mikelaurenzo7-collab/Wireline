@@ -316,6 +316,13 @@
       "when": 1786658832000,
       "tag": "0146_paid_ai_budget_margin_alignment",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1786663359676,
+      "tag": "0147_active_subscription_provenance_guard",
+      "breakpoints": true
     }
   ]
 }

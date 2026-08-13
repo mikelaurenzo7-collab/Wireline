@@ -158,25 +158,48 @@ export async function resolveDemoUserId(email: string): Promise<string | null> {
 /** Demo / marketing tenants need Pro so Director features are exercisable. */
 export async function ensureDemoProSubscription(userId: string): Promise<void> {
   const currentPeriodEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
-  await drizzle
-    .insert(subscriptions)
-    .values({
-      userId,
-      plan: "pro",
-      status: "active",
-      currentPeriodEnd,
-      cancelAtPeriodEnd: false,
-    })
-    .onConflictDoUpdate({
-      target: [subscriptions.userId],
-      set: {
+  await drizzle.transaction(async (tx) => {
+    await tx
+      .insert(subscriptions)
+      .values({
+        userId,
         plan: "pro",
         status: "active",
+        entitlementSource: "demo",
+        grantReason: "admin_demo_seed",
         currentPeriodEnd,
         cancelAtPeriodEnd: false,
-        updatedAt: new Date(),
-      },
-    });
+      })
+      .onConflictDoUpdate({
+        target: [subscriptions.userId],
+        set: {
+          plan: "pro",
+          status: "active",
+          entitlementSource: "demo",
+          grantReason: "admin_demo_seed",
+          currentPeriodEnd,
+          cancelAtPeriodEnd: false,
+          updatedAt: new Date(),
+        },
+      });
+
+    await tx
+      .insert(schema.settings)
+      .values({
+        id: userId,
+        userId,
+        accountEnvironment: "demo",
+        subscriptionStatus: "active",
+      })
+      .onConflictDoUpdate({
+        target: schema.settings.userId,
+        set: {
+          accountEnvironment: "demo",
+          subscriptionStatus: "active",
+          updatedAt: new Date(),
+        },
+      });
+  });
 }
 
 async function pickFirstAgentId(userId: string): Promise<string | null> {

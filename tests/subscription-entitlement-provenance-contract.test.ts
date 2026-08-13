@@ -14,9 +14,13 @@ function executableSql(sql: string): string {
 
 describe("subscription entitlement provenance", () => {
   const migration = read("drizzle/migrations/0130_subscription_entitlement_provenance.sql");
+  const activeGuard = read("drizzle/migrations/0147_active_subscription_provenance_guard.sql");
   const audit = read("ops/reconciliation/subscription_entitlement_provenance.sql");
   const journal = read("drizzle/migrations/meta/_journal.json");
   const securitySchema = read("src/db/security-schema.ts");
+  const runtimeSchema = read("src/db/schema.ts");
+  const founderBootstrap = read("src/lib/founder-bootstrap.ts");
+  const demoSeed = read("src/lib/demo-account-seed.ts");
 
   it("reproduces the live provenance columns idempotently", () => {
     expect(migration).toContain("ADD COLUMN IF NOT EXISTS entitlement_source text");
@@ -24,7 +28,9 @@ describe("subscription entitlement provenance", () => {
     expect(migration).toContain("ADD COLUMN IF NOT EXISTS stripe_price_id text");
     expect(migration).toContain("ALTER COLUMN entitlement_source SET DEFAULT 'manual'");
     expect(migration).toContain("ALTER COLUMN entitlement_source SET NOT NULL");
-    expect(migration).toContain("CREATE INDEX IF NOT EXISTS idx_wireline_subscriptions_entitlement_source");
+    expect(migration).toContain(
+      "CREATE INDEX IF NOT EXISTS idx_wireline_subscriptions_entitlement_source",
+    );
   });
 
   it("classifies legacy rows without inventing Stripe provenance", () => {
@@ -35,25 +41,64 @@ describe("subscription entitlement provenance", () => {
   });
 
   it("classifies future Stripe-backed writes before commit", () => {
-    expect(migration).toContain("CREATE OR REPLACE FUNCTION public.wireline_set_subscription_entitlement_source()");
+    expect(migration).toContain(
+      "CREATE OR REPLACE FUNCTION public.wireline_set_subscription_entitlement_source()",
+    );
     expect(migration).toContain("IF NEW.stripe_subscription_id IS NOT NULL THEN");
     expect(migration).toContain("NEW.entitlement_source := 'stripe'");
     expect(migration).toContain("NEW.grant_reason := NULL");
-    expect(migration).toContain("BEFORE INSERT OR UPDATE OF stripe_subscription_id, entitlement_source");
-    expect(migration).toContain("EXECUTE FUNCTION public.wireline_set_subscription_entitlement_source()");
+    expect(migration).toContain(
+      "BEFORE INSERT OR UPDATE OF stripe_subscription_id, entitlement_source",
+    );
+    expect(migration).toContain(
+      "EXECUTE FUNCTION public.wireline_set_subscription_entitlement_source()",
+    );
   });
 
   it("exposes a narrow typed provenance mirror", () => {
-    expect(securitySchema).toContain('export const subscriptionEntitlements = pgTable("wireline_subscriptions"');
+    expect(securitySchema).toContain(
+      'export const subscriptionEntitlements = pgTable("wireline_subscriptions"',
+    );
     expect(securitySchema).toContain('stripePriceId: text("stripe_price_id")');
     expect(securitySchema).toContain('entitlementSource: text("entitlement_source"');
     expect(securitySchema).toContain('["stripe", "demo", "manual", "migration"]');
     expect(securitySchema).toContain('grantReason: text("grant_reason")');
   });
 
+  it("keeps provenance on the canonical runtime billing mirror", () => {
+    expect(runtimeSchema).toContain(
+      'export const subscriptions = pgTable("wireline_subscriptions"',
+    );
+    expect(runtimeSchema).toContain('stripePriceId: text("stripe_price_id")');
+    expect(runtimeSchema).toContain('entitlementSource: text("entitlement_source"');
+    expect(runtimeSchema).toContain('grantReason: text("grant_reason")');
+  });
+
+  it("labels founder and admin-demo access in the activating upsert", () => {
+    expect(founderBootstrap).toContain('entitlementSource: "demo"');
+    expect(founderBootstrap).toContain('grantReason: "founder_dogfood"');
+    expect(demoSeed).toContain('entitlementSource: "demo"');
+    expect(demoSeed).toContain('grantReason: "admin_demo_seed"');
+    expect(demoSeed).toContain('accountEnvironment: "demo"');
+    expect(demoSeed).toContain('subscriptionStatus: "active"');
+  });
+
   it("registers the canonical migration", () => {
     expect(journal).toContain('"idx": 27');
     expect(journal).toContain('"tag": "0130_subscription_entitlement_provenance"');
+    expect(journal).toContain('"idx": 45');
+    expect(journal).toContain('"tag": "0147_active_subscription_provenance_guard"');
+  });
+
+  it("rejects newly activated entitlements without provider or governed-grant evidence", () => {
+    expect(activeGuard).toContain("wireline_subscriptions_active_provenance_check");
+    expect(activeGuard).toContain("status NOT IN ('active', 'trialing')");
+    expect(activeGuard).toContain("entitlement_source = 'stripe'");
+    expect(activeGuard).toContain("stripe_customer_id IS NOT NULL");
+    expect(activeGuard).toContain("stripe_subscription_id IS NOT NULL");
+    expect(activeGuard).toContain("entitlement_source <> 'stripe'");
+    expect(activeGuard).toContain("NULLIF(BTRIM(grant_reason), '') IS NOT NULL");
+    expect(activeGuard).toContain(") NOT VALID;");
   });
 
   it("keeps the operator audit read-only and human-reviewed", () => {

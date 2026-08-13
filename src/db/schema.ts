@@ -1,12 +1,12 @@
 /**
  * Canonical Drizzle/runtime schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0146_paid_ai_budget_margin_alignment.sql`.
+ * Latest committed migration: `drizzle/migrations/0147_active_subscription_provenance_guard.sql`.
  *
- * `schema-base.ts` preserves the existing table graph. The two tables below are
- * declared explicitly here because migrations 0130, 0133, and 0134 changed
- * their database-owned defaults and classification fields. Explicit exports
- * override the same names from `export *` so callers and Drizzle Kit observe
- * the current migrated definitions. `voice-usage-schema.ts` (migration 0135)
+ * `schema-base.ts` preserves the existing table graph. The three runtime
+ * mirrors below are declared explicitly here because migrations 0130, 0133,
+ * and 0134 changed their database-owned defaults and classification fields.
+ * Explicit exports override the same names from `export *` so callers and
+ * Drizzle Kit observe the current migrated definitions. `voice-usage-schema.ts` (migration 0135)
  * is re-exported so Drizzle Kit sees `wireline_voice_usage_events` — without
  * it, `drizzle-kit generate` would emit a DROP for the idempotency table.
  */
@@ -175,6 +175,31 @@ export const spendBudgets = pgTable("wireline_spend_budgets", {
   enabled: boolean("enabled").default(true).notNull(),
   managedDefault: boolean("managed_default").notNull().default(false),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
+ * Canonical billing mirror, including the provenance columns introduced by
+ * migration 0130. Keeping these fields on the primary runtime definition lets
+ * every entitlement writer state why non-Stripe access exists in the same
+ * atomic upsert that activates it.
+ */
+export const subscriptions = pgTable("wireline_subscriptions", {
+  userId: uuid("user_id").primaryKey(),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  stripePriceId: text("stripe_price_id"),
+  plan: text("plan"),
+  status: text("status"),
+  entitlementSource: text("entitlement_source", {
+    enum: ["stripe", "demo", "manual", "migration"],
+  })
+    .notNull()
+    .default("manual"),
+  grantReason: text("grant_reason"),
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 // 1.2.1 SPEND ALERTS are defined in schema-base.ts.

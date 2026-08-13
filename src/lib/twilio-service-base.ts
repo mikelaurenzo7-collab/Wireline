@@ -1,10 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import twilio from "twilio";
 
-import { drizzle, log } from "./server-context";
+import { drizzle, log, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
+import {
+  createTwilioMessageWithRateLimitRetry,
+  withTwilioMessageReliability,
+} from "./twilio-message-reliability";
 
 export type TwilioMessageChannel = "sms" | "whatsapp";
 export type TwilioRestAuthMode = "api_key" | "auth_token" | "unconfigured";
@@ -188,8 +192,12 @@ export async function lookupTenantPhoneNumber(
 async function buildMessagePayload(
   userId: string,
   params: { to: string; body: string; channel: TwilioMessageChannel; agentId?: string },
-  options?: { ignoreMessagingToggle?: boolean; settings?: TwilioTenantSettings },
-): Promise<{ payload?: Record<string, string>; result?: TwilioSendResult }> {
+  options?: {
+    ignoreMessagingToggle?: boolean;
+    operationalAlert?: boolean;
+    settings?: TwilioTenantSettings;
+  },
+): Promise<{ payload?: Record<string, string | number>; result?: TwilioSendResult }> {
   const settings = options?.settings || (await getTenantSettings(userId));
 
   if (!options?.ignoreMessagingToggle && !settings.messagingEnabled) {
@@ -249,10 +257,13 @@ async function buildMessagePayload(
     }
   }
 
-  const payload: Record<string, string> = {
-    to: formatMessageAddress(params.to, params.channel),
-    body: params.body,
-  };
+  const payload: Record<string, string | number> = withTwilioMessageReliability(
+    {
+      to: formatMessageAddress(params.to, params.channel),
+      body: params.body,
+    },
+    options?.operationalAlert ? { scope: "operational" } : undefined,
+  );
 
   let sender = params.channel === "whatsapp" ? settings.whatsappFromNumber : settings.smsFromNumber;
 
@@ -295,6 +306,41 @@ async function buildMessagePayload(
 }
 
 /**
+ * Keep a null-thread correlation row for staff-facing operational alerts. The
+ * shared status callback can then attribute carrier failures to the workspace
+ * without surfacing the message in a customer conversation thread.
+ */
+async function persistOperationalAlertCorrelation(
+  userId: string,
+  twilioSid: string,
+): Promise<void> {
+  try {
+    await tenantStore.run(userId, () =>
+      drizzle
+        .insert(schema.smsMessages)
+        .values({
+          userId,
+          threadId: null,
+          direction: "out",
+          // The carrier SID is all status reconciliation needs. Avoid storing
+          // a second copy of staff-alert content, which can contain caller or
+          // incident details, outside its canonical operational record.
+          body: "[Operational alert delivery correlation]",
+          twilioSid,
+          agentId: null,
+        })
+        .onConflictDoNothing(),
+    );
+  } catch (error) {
+    // The carrier already accepted the alert. Do not claim failure or retry an
+    // ambiguous send merely because secondary correlation persistence failed.
+    log.warn("Twilio operational alert correlation persistence failed", {
+      error: getErrorMessage(error),
+    });
+  }
+}
+
+/**
  * Tenant SMS/WhatsApp sends live in ./twilio-service (sendTenantMessage),
  * which layers the DNC gate and atomic runtime-usage billing on top of this
  * module's payload building. Keep customer-bound sends there so no path can
@@ -326,7 +372,7 @@ export async function sendManagerAlert(
       body,
       channel: "sms",
     },
-    { ignoreMessagingToggle: true, settings },
+    { ignoreMessagingToggle: true, operationalAlert: true, settings },
   );
 
   if (prepared.result) return prepared.result;
@@ -340,14 +386,24 @@ export async function sendManagerAlert(
   }
 
   try {
-    const message = await client.messages.create(prepared.payload as any);
+    const message = await createTwilioMessageWithRateLimitRetry(
+      () => client.messages.create(prepared.payload as any),
+      {
+        onRetry: ({ retryNumber, delayMs }) =>
+          log.warn("Twilio manager alert rate limited; retrying accepted-safe request", {
+            retryNumber,
+            delayMs,
+          }),
+      },
+    );
+    await persistOperationalAlertCorrelation(userId, message.sid);
     return {
       ok: true,
       configured: true,
       enabled: true,
       sid: message.sid,
       status: message.status ?? null,
-      to: message.to || prepared.payload.to,
+      to: message.to || String(prepared.payload.to || ""),
       channel: "sms",
     };
   } catch (error) {
@@ -396,7 +452,7 @@ export async function sendDirectAlert(
   const prepared = await buildMessagePayload(
     userId,
     { to, body, channel: "sms" },
-    { ignoreMessagingToggle: true },
+    { ignoreMessagingToggle: true, operationalAlert: true },
   );
 
   if (prepared.result) return prepared.result;
@@ -410,14 +466,24 @@ export async function sendDirectAlert(
   }
 
   try {
-    const message = await client.messages.create(prepared.payload as any);
+    const message = await createTwilioMessageWithRateLimitRetry(
+      () => client.messages.create(prepared.payload as any),
+      {
+        onRetry: ({ retryNumber, delayMs }) =>
+          log.warn("Twilio per-agent alert rate limited; retrying accepted-safe request", {
+            retryNumber,
+            delayMs,
+          }),
+      },
+    );
+    await persistOperationalAlertCorrelation(userId, message.sid);
     return {
       ok: true,
       configured: true,
       enabled: true,
       sid: message.sid,
       status: message.status ?? null,
-      to: message.to || prepared.payload.to,
+      to: message.to || String(prepared.payload.to || ""),
       channel: "sms",
     };
   } catch (error) {
@@ -427,6 +493,78 @@ export async function sendDirectAlert(
       configured: true,
       enabled: true,
       reason: "Twilio rejected the per-agent escalation message.",
+      channel: "sms",
+    };
+  }
+}
+
+/**
+ * Platform-owner alert used by the public Vapi escalation webhook. This is a
+ * staff-facing operational message, never a consumer campaign send. When the
+ * invoked number resolves to a tenant, persist a null-thread correlation row
+ * so carrier delivery failures are attributed and visible in telemetry.
+ */
+export async function sendPlatformOperationalAlert(
+  userId: string | null,
+  destinationPhone: string,
+  body: string,
+): Promise<TwilioSendResult> {
+  const client = getTwilioClient();
+  const to = formatMessageAddress(destinationPhone, "sms");
+  const from = formatMessageAddress(env("PLATFORM_SMS_FROM"), "sms");
+  const messageBody = String(body || "").trim();
+
+  if (!client || !from) {
+    return {
+      ok: false,
+      configured: false,
+      enabled: false,
+      reason: "Twilio platform sender is not configured.",
+      channel: "sms",
+    };
+  }
+  if (!to || !messageBody) {
+    return {
+      ok: false,
+      configured: true,
+      enabled: false,
+      reason: "A platform alert destination and message are required.",
+      channel: "sms",
+    };
+  }
+
+  const payload = withTwilioMessageReliability(
+    { to, from, body: messageBody },
+    { scope: "operational" },
+  );
+  try {
+    const message = await createTwilioMessageWithRateLimitRetry(
+      () => client.messages.create(payload as any),
+      {
+        onRetry: ({ retryNumber, delayMs }) =>
+          log.warn("Twilio platform alert rate limited; retrying accepted-safe request", {
+            retryNumber,
+            delayMs,
+          }),
+      },
+    );
+    if (userId) await persistOperationalAlertCorrelation(userId, message.sid);
+    return {
+      ok: true,
+      configured: true,
+      enabled: true,
+      sid: message.sid,
+      status: message.status ?? null,
+      to: message.to || to,
+      channel: "sms",
+    };
+  } catch (error) {
+    log.warn("Twilio platform operational alert failed", { error: getErrorMessage(error) });
+    return {
+      ok: false,
+      configured: true,
+      enabled: true,
+      reason: "Twilio rejected the platform operational alert.",
       channel: "sms",
     };
   }
