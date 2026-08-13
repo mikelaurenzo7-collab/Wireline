@@ -21,9 +21,8 @@ import {
 } from "react";
 import { authFetch } from "../lib/api";
 import type { AccountType } from "../lib/account-type";
+import { readStoredAccountId, storeActiveAccountId } from "../lib/active-account-storage";
 import { useAuth } from "./AuthContext";
-
-const STORAGE_KEY = "wl_active_account";
 
 export interface Account {
   id: string;
@@ -46,14 +45,6 @@ interface AccountState {
 }
 
 const AccountContext = createContext<AccountState | undefined>(undefined);
-
-function readStoredAccountId(): string | null {
-  try {
-    return localStorage.getItem(STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
 
 export function AccountProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -78,14 +69,14 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         const fetched = (data?.accounts ?? []) as Account[];
         if (!cancelled) {
           setAccounts(fetched);
-          if (!activeId && fetched.length > 0) {
+          // Re-seed when nothing is stored OR the stored id is not one of this
+          // user's accounts (a previous user's selection, or a deleted account) —
+          // otherwise the stale id silently falls back to accounts[0] forever.
+          const stillValid = Boolean(activeId && fetched.some((a) => a.id === activeId));
+          if (!stillValid && fetched.length > 0) {
             const primary = fetched.find((a) => a.isPrimary) ?? fetched[0];
             setActiveId(primary.id);
-            try {
-              localStorage.setItem(STORAGE_KEY, primary.id);
-            } catch {
-              /* non-fatal */
-            }
+            storeActiveAccountId(primary.id);
           }
         }
       } catch {
@@ -108,11 +99,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   const switchAccount = useCallback((accountId: string) => {
     setActiveId(accountId);
-    try {
-      localStorage.setItem(STORAGE_KEY, accountId);
-    } catch {
-      /* non-fatal */
-    }
+    storeActiveAccountId(accountId);
   }, []);
 
   const addAccount = useCallback(

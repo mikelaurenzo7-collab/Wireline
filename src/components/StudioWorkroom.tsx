@@ -305,7 +305,7 @@ const StudioWorkroom = forwardRef<
       type="button"
       disabled={!messages.length || clearing}
       onClick={() => void clearConversation()}
-      className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
+      className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35 pointer-coarse:size-11"
       aria-label={mode === "test" ? "Reset test conversation" : "Clear conversation"}
     >
       {clearing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
@@ -352,7 +352,7 @@ const StudioWorkroom = forwardRef<
             <button
               type="button"
               onClick={onBack}
-              className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground pointer-coarse:size-11"
               aria-label={backLabel}
             >
               <ArrowLeft size={16} aria-hidden="true" />

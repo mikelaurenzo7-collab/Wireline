@@ -8,6 +8,7 @@ import RoleplaySandbox from "../RoleplaySandbox";
 import { Button } from "../atoms";
 import { StatusNotice } from "../molecules";
 import { authFetch } from "../../lib/api";
+import { AGENTS_CHANGED_EVENT } from "../../contexts/AgentsContext";
 import {
   ACTIVATION_PENDING_COPY,
   POST_CREATE_WIZARD_COPY,
@@ -180,6 +181,9 @@ export default function PostCreateActivationWizard({
         event: "wire_started",
         agentId: payload.agentId,
       });
+      // Overview, the rail, and Studio all derive live-line state from the
+      // roster's agents[].phone_number — tell them about the new line now.
+      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       const refreshed = await refreshPhone();
       if (refreshed) setStep("test");
     } catch {

@@ -12,6 +12,7 @@ import { AUTH_SESSION_EXPIRED_EVENT, refreshSessionIfNeeded } from "../lib/api";
 import { LEGACY_STORAGE_KEY } from "../lib/session-cookie";
 import { isAuthPortalPath, isSessionOptionalPublicPath } from "../lib/public-routes";
 import { clearStudioLastAgentId } from "../lib/studio-agent-preference";
+import { clearStoredActiveAccount } from "../lib/active-account-storage";
 
 export interface User {
   id: string;
@@ -194,6 +195,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     localStorage.removeItem(LEGACY_STORAGE_KEY);
     clearStudioLastAgentId();
+    clearStoredActiveAccount();
     setSession(null);
     setUser(null);
   }, []);

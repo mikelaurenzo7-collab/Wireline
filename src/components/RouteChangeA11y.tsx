@@ -10,10 +10,18 @@ function labelFromPath(pathname: string) {
 export default function RouteChangeA11y() {
   const location = useLocation();
   const first = useRef(true);
+  const lastPathname = useRef<string | null>(null);
   const label = useMemo(() => labelFromPath(location.pathname), [location.pathname]);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    // In-page tab strips mutate only the query string (?tab=…). Those are not
+    // page navigations: yanking focus back to the h1 there strands keyboard
+    // users at the top of the document after every tab activation.
+    const pathnameChanged = lastPathname.current !== location.pathname;
+    lastPathname.current = location.pathname;
+    if (!pathnameChanged) return;
+
     const id = window.setTimeout(() => {
       if (!location.hash) {
         window.scrollTo({ top: 0, left: 0 });
@@ -34,7 +42,7 @@ export default function RouteChangeA11y() {
     }, 0);
 
     return () => window.clearTimeout(id);
-  }, [label, location.hash, location.pathname, location.search]);
+  }, [label, location.hash, location.pathname]);
 
   return (
     <div aria-live="polite" className="sr-only" data-testid="route-announcer" role="status">

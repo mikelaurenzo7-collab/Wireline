@@ -51,19 +51,10 @@ export default function AgentStudioHome() {
 
     let cancelled = false;
     void (async () => {
-      const response = await authFetch(
-        `/api/browser/handoff/redeem?handoff_id=${encodeURIComponent(handoffId)}`,
-      );
-      const body = (await response.json()) as {
-        context?: BrowserCommandContext;
-        error?: string;
-      };
-      if (cancelled) return;
-
-      // Clear the handoff_id from the URL on both success AND failure so a
-      // page refresh doesn't re-fire the redemption (expired handoffs would
-      // otherwise re-toast on every reload until the user manually edits the
-      // URL).
+      // Clear the handoff_id from the URL on success AND every failure mode —
+      // including thrown fetches (offline, edge 502 HTML) — so a page refresh
+      // doesn't re-fire the redemption. Expired handoffs would otherwise
+      // re-toast on every reload until the user manually edits the URL.
       const clearHandoffParam = () =>
         setParams(
           (current) => {
@@ -74,19 +65,36 @@ export default function AgentStudioHome() {
           { replace: true },
         );
 
-      if (!response.ok || !body.context) {
+      let context: BrowserCommandContext | null = null;
+      let failureMessage: string | null = null;
+      try {
+        const response = await authFetch(
+          `/api/browser/handoff/redeem?handoff_id=${encodeURIComponent(handoffId)}`,
+        );
+        const body = (await response.json().catch(() => ({}))) as {
+          context?: BrowserCommandContext;
+          error?: string;
+        };
+        if (response.ok && body.context) context = body.context;
+        else failureMessage = body.error || null;
+      } catch {
+        failureMessage = null;
+      }
+      if (cancelled) return;
+
+      if (!context) {
         toast({
           type: "warning",
           title: "Handoff expired",
-          message: body.error || "Open Wireline Command and capture the page again.",
+          message: failureMessage || "Open Wireline Command and capture the page again.",
           duration: 10_000,
         });
         clearHandoffParam();
         return;
       }
 
-      setBrowserContext(body.context);
-      setSignedBrief(browserCommandBrief(body.context));
+      setBrowserContext(context);
+      setSignedBrief(browserCommandBrief(context));
       setShowCreate(true);
       clearHandoffParam();
     })();

@@ -56,19 +56,22 @@
   color: var(--wireline-color-text-primary);
 }
 
+/* The selected rail item must read on the violet action fill in both themes:
+   text-onAction is ink on the light violet (dark theme) and white on the
+   deeper violet (light theme). Hardcoding #fff here failed WCAG AA on Ink. */
 .wl-rail-link[aria-current="page"] {
   background: var(--wireline-color-action-primary-default);
-  color: #fff;
+  color: var(--wireline-color-text-onAction);
   font-weight: 600;
 }
 
 .wl-rail-link[aria-current="page"]:hover {
   background: var(--wireline-color-action-primary-pressed);
-  color: #fff;
+  color: var(--wireline-color-text-onAction);
 }
 
 .wl-rail-link[aria-current="page"] svg {
-  color: #fff;
+  color: var(--wireline-color-text-onAction);
 }
 
 .wl-rail-link:focus-visible {

@@ -6,7 +6,7 @@ import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import CompanyIdentityPack from "./settings/CompanyIdentityPack";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
-import { useAgents } from "../contexts/AgentsContext";
+import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 
@@ -143,6 +143,10 @@ export default function PhoneSetupPanel() {
           : "Your dedicated number is active and ready for calls.",
       );
       await loadNumbers();
+      // The roster derives "Needs setup" / "Connect a phone line" states from
+      // agents[].phone_number, so the whole workspace must learn about the new
+      // line now rather than on the next window-focus refresh.
+      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not activate a number.");
     } finally {
@@ -171,6 +175,7 @@ export default function PhoneSetupPanel() {
       );
       setSelectedAgentId(agentId || "");
       setMessage(agentId ? "Voice agent attached to this line." : "Line unassigned.");
+      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not attach voice agent.");
     } finally {

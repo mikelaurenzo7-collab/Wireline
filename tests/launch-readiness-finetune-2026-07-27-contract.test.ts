@@ -37,7 +37,7 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(ledger).toContain('setEnrichmentWarning("Follow-up status is temporarily incomplete.")');
     expect(ledger).not.toContain("callsRes.ok ? await callsRes.json() : { calls: [] }");
     expect(inbox).toContain("Could not load approval inbox.");
-    expect(inbox).toContain("Could not load active operator work.");
+    expect(inbox).toContain("Could not load active work.");
     expect(inbox).toContain(
       'authFetch("/api/triage", { signal: controller.signal }).catch(() => null)',
     );

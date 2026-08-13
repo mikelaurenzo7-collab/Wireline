@@ -25,22 +25,24 @@ describe("omnichannel outcome loop", () => {
     expect(operatorWorkStatus).toContain(
       'ACTIVE_OPERATOR_TASK_STATUSES = ["pending", "open", "in_progress"]',
     );
-    expect(semantics).toContain(
-      "ACTIVE_HANDOFF_TASK_STATUSES = ACTIVE_OPERATOR_TASK_STATUSES",
-    );
+    expect(semantics).toContain("ACTIVE_HANDOFF_TASK_STATUSES = ACTIVE_OPERATOR_TASK_STATUSES");
     expect(semantics).toContain("handoffAdvisoryLockKey(");
-    expect(semantics).toContain('if (status === "booked" || status === "resolved") return "completed"');
+    expect(semantics).toContain(
+      'if (status === "booked" || status === "resolved") return "completed"',
+    );
     expect(semantics).toContain('return "cancelled"');
   });
 
   it("keeps email conversation state and durable human handoff state synchronized", () => {
     expect(emailRoute).toContain("conversationOutcomeSchema");
     expect(emailRoute).toContain("ACTIVE_HANDOFF_TASK_STATUSES");
-    expect(emailRoute).toContain('eq(schema.followUpTasks.taskType, HUMAN_HANDOFF_TASK_TYPE)');
+    expect(emailRoute).toContain("eq(schema.followUpTasks.taskType, HUMAN_HANDOFF_TASK_TYPE)");
     expect(emailRoute).toContain("handoffTaskStatusForOutcome(status)");
-    expect(emailRoute).toContain("handoffResolutionNote(\"email\", status)");
+    expect(emailRoute).toContain('handoffResolutionNote("email", status)');
     expect(emailRoute).toContain("pg_advisory_xact_lock");
-    expect(emailRoute).toContain("handoffAdvisoryLockKey(req.user.id, EMAIL_HANDOFF_SOURCE_TYPE, thread.id)");
+    expect(emailRoute).toContain(
+      "handoffAdvisoryLockKey(req.user.id, EMAIL_HANDOFF_SOURCE_TYPE, thread.id)",
+    );
     expect(emailRoute).toContain("touchNavCounts(req.user.id)");
     expect(emailInbox).toContain('updated.status === "escalated"');
     expect(emailInbox).toContain('detail?.handoff && selectedThread.status === "escalated"');
@@ -50,15 +52,17 @@ describe("omnichannel outcome loop", () => {
     expect(smsRoute).toContain('"/api/sms/threads/:id/outcome"');
     expect(smsRoute).toContain("conversationOutcomeSchema");
     expect(smsRoute).toContain('const SMS_HANDOFF_SOURCE_TYPE = "sms_thread"');
-    expect(smsRoute).toContain('eq(schema.followUpTasks.taskType, HUMAN_HANDOFF_TASK_TYPE)');
+    expect(smsRoute).toContain("eq(schema.followUpTasks.taskType, HUMAN_HANDOFF_TASK_TYPE)");
     expect(smsRoute).toContain("handoffTaskStatusForOutcome(status)");
     expect(smsRoute).toContain("pg_advisory_xact_lock");
-    expect(smsRoute).toContain("handoffAdvisoryLockKey(req.user.id, SMS_HANDOFF_SOURCE_TYPE, thread.id)");
+    expect(smsRoute).toContain(
+      "handoffAdvisoryLockKey(req.user.id, SMS_HANDOFF_SOURCE_TYPE, thread.id)",
+    );
     expect(smsRoute).toContain("touchNavCounts(req.user.id)");
     expect(smsThreads).toContain('import SmsOutcomePanel from "./SmsOutcomePanel"');
     expect(smsThreads).toContain("<SmsOutcomePanel");
-    expect(smsThreads).toContain('authFetch(`/api/sms/threads/${threadId}/reply`');
-    expect(smsPanel).toContain('authFetch(`/api/sms/threads/${threadId}/outcome`');
+    expect(smsThreads).toContain("authFetch(`/api/sms/threads/${threadId}/reply`");
+    expect(smsPanel).toContain("authFetch(`/api/sms/threads/${threadId}/outcome`");
     expect(smsPanel).toContain('void setOutcome("waiting")');
     expect(smsPanel).toContain('void setOutcome("booked")');
     expect(smsPanel).toContain('void setOutcome("escalated", true)');
@@ -70,11 +74,15 @@ describe("omnichannel outcome loop", () => {
     expect(actionTypes).not.toContain('"human_handoff"');
     expect(operatorRoute).toContain('const HUMAN_HANDOFF_TASK_TYPE = "human_handoff"');
     expect(operatorRoute).toContain('if (req.query.status !== "active") return next()');
-    expect(operatorRoute).toContain("inArray(schema.followUpTasks.status, [...ACTIVE_HANDOFF_TASK_STATUSES])");
-    expect(operatorRoute).toContain('task.taskType !== HUMAN_HANDOFF_TASK_TYPE) return next()');
+    expect(operatorRoute).toContain(
+      "inArray(schema.followUpTasks.status, [...ACTIVE_HANDOFF_TASK_STATUSES])",
+    );
+    expect(operatorRoute).toContain("task.taskType !== HUMAN_HANDOFF_TASK_TYPE) return next()");
     expect(operatorRoute).toContain('status: "resolved"');
     expect(operatorRoute).toContain('status: "open"');
-    expect(operatorRoute).toContain('throw AppError.fromHttpStatus(409, "This handoff changed in another session.")');
+    expect(operatorRoute).toContain(
+      'throw AppError.fromHttpStatus(409, "This handoff changed in another session.")',
+    );
     expect(operatorRoute).toContain(".returning({ id: schema.followUpTasks.id })");
     expect(operatorRoute).not.toContain("emitServerProductEventOnce");
     expect(operatorRoute).not.toContain("first_next_action_approved");
@@ -102,7 +110,7 @@ describe("omnichannel outcome loop", () => {
     expect(approvals).toContain("loadAbortRef.current = null");
     expect(approvals).toContain("!controller.signal.aborted");
     expect(approvals).toContain("setTriageUnavailable(!triageReady)");
-    expect(approvals).toContain("Active operator work is still current.");
+    expect(approvals).toContain("Active work is still current.");
   });
 
   it("registers shadow routes before their broader legacy owners", () => {

@@ -484,10 +484,10 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       {!error && (triageUnavailable || tasksUnavailable) ? (
         <StatusNotice tone="warning" title="Approval data partial">
           {triageUnavailable && tasksUnavailable
-            ? "Triage and active operator work are temporarily unavailable."
+            ? "Triage and active work are temporarily unavailable."
             : triageUnavailable
-              ? "Triage queues are temporarily unavailable. Active operator work is still current."
-              : "Active operator work is temporarily unavailable. Triage queues are still current."}
+              ? "Triage queues are temporarily unavailable. Active work is still current."
+              : "Active work is temporarily unavailable. Triage queues are still current."}
         </StatusNotice>
       ) : null}
 
@@ -511,14 +511,14 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       ) : (bucket === "pending" || bucket === "compliance") && tasksUnavailable ? (
         <StatusNotice
           tone="destructive"
-          title="Active operator work unavailable"
+          title="Active work unavailable"
           action={
             <ShadButton type="button" size="sm" variant="secondary" onClick={() => void load()}>
               Try again
             </ShadButton>
           }
         >
-          Could not load active operator work.
+          Could not load active work.
         </StatusNotice>
       ) : bucket !== "pending" && bucket !== "compliance" && triageUnavailable ? (
         <StatusNotice

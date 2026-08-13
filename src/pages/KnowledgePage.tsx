@@ -127,12 +127,17 @@ export default function KnowledgePage() {
                 wrap
                 className="mb-0 border-b-0 pb-0"
               />
-              <Button asChild variant="secondary" size="sm" className="justify-center">
-                <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=test`}>
-                  <MessageCircle size={15} aria-hidden="true" />
-                  Test in Studio
-                </Link>
-              </Button>
+              {/* Until the roster resolves, agentId is "" and the deep link
+                  would discard the visitor's intended agent — hold the action
+                  back until it can carry a real id, like the picker below. */}
+              {populated ? (
+                <Button asChild variant="secondary" size="sm" className="justify-center">
+                  <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=test`}>
+                    <MessageCircle size={15} aria-hidden="true" />
+                    Test in Studio
+                  </Link>
+                </Button>
+              ) : null}
               {populated && activeTab === "knowledge" ? (
                 <NativeSelect
                   value={agentId}
