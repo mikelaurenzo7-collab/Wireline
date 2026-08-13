@@ -25,7 +25,7 @@ import {
   isMcpNotificationMethod,
   mcpToolErrorResult,
 } from "../lib/mcp-transport";
-import { drizzle, log, tenantStore } from "../lib/server-context";
+import { drizzle, log, quotaTracker, tenantStore } from "../lib/server-context";
 import { rateLimit } from "../lib/rate-limit";
 import { createOpenAIRealtimeClientSecret } from "../lib/voice/openai-realtime-service";
 import * as schema from "../db/schema";
@@ -559,6 +559,27 @@ router.post("/mcp", async (req, res) => {
       if (!limit.allowed)
         throw AppError.tooManyRequests(
           "The private voice simulation limit has been reached. Continue testing from Wireline.",
+        );
+      // Every mint charges a vendor-metered realtime secret on the platform
+      // key, so this tool must draw from the same daily simulation-minute
+      // quota the web sandbox charges — the hourly limiter alone allowed 8
+      // mints/hour all day, 64× the web path's daily ceiling. Fail closed on
+      // tracker outage for the same reason the web mint does.
+      const quota = await quotaTracker
+        .checkAndIncrement(authed.userId, "simulation_minutes_daily", 5)
+        .catch((err: unknown) => {
+          log.error("chatgpt simulation quota tracker unavailable — refusing mint", {
+            userId: authed.userId,
+            error: err instanceof Error ? err.message : String(err),
+          });
+          throw AppError.fromHttpStatus(
+            503,
+            "Live simulation is briefly unavailable. Try again shortly.",
+          );
+        });
+      if (!quota.allowed)
+        throw AppError.tooManyRequests(
+          "Today's live-simulation minutes are used. They reset at midnight UTC — continue testing from Wireline.",
         );
       const session = await createOpenAIRealtimeClientSecret({
         userId: authed.userId,

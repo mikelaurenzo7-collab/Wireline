@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 382
-**Protected:** 313
+**Routes scanned:** 383
+**Protected:** 314
 **Public (allowlisted):** 69
 **Violations:** 0
 
@@ -380,6 +380,7 @@
 | outbound-routes.ts | POST | `/api/outbound/bulk` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
 | overview-operating-metrics-routes.ts | GET | `/api/overview/operating-metrics` | inline | — | — | Protected |
+| overview-operating-metrics-routes.ts | GET | `/api/overview/recent-conversations` | inline | — | — | Protected |
 | phone-number-release-routes.ts | DELETE | `/api/phone-numbers/:id` | inline | — | — | Protected |
 | pipeline-routes.ts | GET | `/api/insights/campaign-attribution` | inline | — | — | Protected |
 | pipeline-routes.ts | GET | `/api/pipeline` | inline | — | — | Protected |

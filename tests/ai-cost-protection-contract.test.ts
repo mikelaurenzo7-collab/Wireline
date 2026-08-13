@@ -217,6 +217,21 @@ describe("AI cost-protection contract", () => {
     expect(quotaFn).toContain('"SIMULATION_QUOTA_UNAVAILABLE"');
     expect(quotaFn).toContain("res.status(503)");
     expect(quotaFn).not.toContain("allowing session");
+
+    // The ChatGPT MCP simulation tool mints the same vendor-metered secrets
+    // and must draw from the same daily quota — its hourly limiter alone
+    // allowed 8 mints/hour all day, 64× the web path's ceiling.
+    const mcpAccount = read("src/routes/chatgpt-mcp-account-routes.ts");
+    const mcpSimulation = mcpAccount.slice(
+      mcpAccount.indexOf('name === "start_private_voice_simulation"'),
+      mcpAccount.indexOf('name === "list_wireline_agents"'),
+    );
+    expect(mcpSimulation).toContain(
+      'checkAndIncrement(authed.userId, "simulation_minutes_daily", 5)',
+    );
+    expect(mcpSimulation.indexOf("checkAndIncrement")).toBeLessThan(
+      mcpSimulation.indexOf("createOpenAIRealtimeClientSecret"),
+    );
   });
 
   it("deep completion-grace debt routes inbound to a durable bounded take-a-message assistant", () => {
