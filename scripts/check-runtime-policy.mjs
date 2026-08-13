@@ -16,6 +16,9 @@ const registerApiRoutes = read("src/server/register-api-routes.ts");
 const schema = read("src/db/schema.ts");
 const adminSettings = read("src/components/AdminSettings.tsx");
 const carrierPanel = read("src/components/admin/CarrierPanel.tsx");
+// Whitespace-collapsed copy so the managed-runtime prose assertion survives
+// formatter reflow of the JSX text node (the invariant is the copy, not wrapping).
+const carrierPanelText = carrierPanel.replace(/\s+/g, " ");
 const prodEnvCheck = read("scripts/check-prod-env.mjs");
 const legalPage = read("src/components/LegalPage.tsx");
 const privacyPage = read("src/components/PrivacyPolicyPage.tsx");
@@ -82,7 +85,7 @@ if (
 if (adminSettings.includes('"anthropic"') || adminSettings.includes('"claude-sonnet-4-6"'))
   fail("Admin settings still contains legacy Claude voice defaults");
 if (
-  !carrierPanel.includes(
+  !carrierPanelText.includes(
     "Wireline manages the phone conversation runtime, voice selection, intelligence routing, and continuity.",
   ) ||
   !carrierPanel.includes('["Phone runtime", "Wireline managed"]') ||
