@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { resolveProductionSchemaDatabase } from "../scripts/run-production-schema-effects.mjs";
 import { tryResolveDatabaseConnection } from "../src/lib/database-connection";
+import { resolveTenantDatabaseScope } from "../src/lib/tenant-context-scope";
 
 const pool = "postgresql://wireline:secret@pool.example.com:6543/wireline";
 const direct = "postgresql://wireline:secret@db.example.com:5432/wireline";
@@ -67,5 +68,25 @@ describe("production schema database selection", () => {
     for (const env of environments) {
       expect(resolveProductionSchemaDatabase(env)).toEqual(tryResolveDatabaseConnection(env));
     }
+  });
+});
+
+describe("tenant database connection scope", () => {
+  it("reserves raw root scope for genuinely absent bootstrap/system context", () => {
+    expect(resolveTenantDatabaseScope(undefined)).toBe("root");
+    expect(resolveTenantDatabaseScope("")).toBe("root");
+  });
+
+  it("accepts only UUID tenant claims", () => {
+    expect(resolveTenantDatabaseScope("77e92712-8401-4a90-899c-b16213289ce3")).toBe("tenant");
+  });
+
+  it("fails closed instead of upgrading malformed tenant claims to root access", () => {
+    expect(() => resolveTenantDatabaseScope("e2e-gold@trywireline.com")).toThrow(
+      "INVALID_TENANT_CONTEXT",
+    );
+    expect(() => resolveTenantDatabaseScope("not-a-tenant-uuid")).toThrow(
+      "INVALID_TENANT_CONTEXT",
+    );
   });
 });
