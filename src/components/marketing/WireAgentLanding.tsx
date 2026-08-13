@@ -133,6 +133,7 @@ function modePanelId(key: AgentMode) {
 }
 
 const HERO_DEMO_AGENT = LANDING_PUBLIC_DEMO_AGENTS[0];
+const LIVE_VIDEO_BRIDGE = "Every channel. One agent.";
 
 export default function WireAgentLanding() {
   const [mode, setMode] = useState<AgentMode>("outbound");
@@ -228,7 +229,7 @@ export default function WireAgentLanding() {
           }
         />
 
-        <LiveVideoSpotlight />
+        <LiveVideoSpotlight bridgeLabel={LIVE_VIDEO_BRIDGE} />
 
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
@@ -345,7 +346,7 @@ export default function WireAgentLanding() {
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
             <div className="mx-auto mb-8 max-w-2xl text-center">
-              <h2 className="wl-display-2">Build free. Launch from $19.</h2>
+              <h2 className="wl-display-2">Build free. Go live from $19.</h2>
             </div>
             <div className="mx-auto grid max-w-[1200px] gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {PLAN_PREVIEW.map((plan) => (
@@ -422,14 +423,14 @@ export default function WireAgentLanding() {
               />
               <div className="relative">
                 <h2 className="wl-display-2 mx-auto max-w-[18ch]">
-                  Put your first agent to work.
+                  Put your first voice agent to work.
                 </h2>
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                   <Link
                     to="/signup?plan=personal"
                     className="marketing-btn-primary min-h-12 w-full justify-center px-7 text-[15px] font-semibold sm:w-auto"
                   >
-                    Build your agent
+                    Build your voice agent
                     <ArrowRight size={16} aria-hidden="true" />
                   </Link>
                   <Link
