@@ -55,10 +55,11 @@ describe("live video economics contract", () => {
 
     expect(spotlight).toContain('to="/signup?plan=starter"');
     expect(spotlight).not.toContain('to="/signup?plan=personal"');
-    expect(spotlight).toContain("paid business agent for $19/mo");
-    expect(spotlight).toContain('"60 min/month"');
-    expect(spotlight).toContain('"5 min/session max"');
-    expect(spotlight).toContain('"$19/mo add-on"');
+    expect(spotlight).toContain("paid business agent");
+    expect(spotlight).toContain("LIVE_VIDEO_ADDON_PRICE_USD");
+    expect(spotlight).toContain("LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY");
+    expect(spotlight).toContain("LIVE_VIDEO_SESSION_RESERVATION_MINUTES");
+    expect(spotlight).toContain("LIVE_VIDEO_FACTS");
   });
 
   it("keeps the browser audio bridge compatible with LiveAvatar LITE repeatAudio", () => {
