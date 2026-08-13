@@ -10,6 +10,7 @@ import {
   stripe,
   stripeAvailable,
   stripeCheckoutIntegrationIdentifier,
+  stripeCheckoutTaxConfig,
 } from "../lib/stripe-helpers";
 import type Stripe from "stripe";
 import { authenticateUser } from "../middleware/auth";
@@ -484,12 +485,7 @@ router.post(
           integration_identifier: stripeCheckoutIntegrationIdentifier("plan", operationId),
           customer: customerId,
           customer_update: { address: "auto" },
-          automatic_tax: { enabled: true },
-          // Keep settlement synchronous until the production webhook endpoint
-          // is reauthenticated and subscribed to Checkout's delayed-payment
-          // events. The durable operation must never claim completion while a
-          // later success event is being dropped by Stripe configuration.
-          payment_method_types: ["card", "link"],
+          ...stripeCheckoutTaxConfig(),
           line_items: [{ price: priceId, quantity: 1 }],
           success_url: `${appUrl.url}/settings/billing?billing=success&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${appUrl.url}/settings/billing?billing=canceled`,

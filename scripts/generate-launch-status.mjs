@@ -70,8 +70,15 @@ async function stripeStatus() {
   if (!key) return { status: "unknown", reason: "STRIPE_SECRET_KEY not supplied" };
   const priceId = process.env.STRIPE_STARTER_9_ANNUAL_PRICE_ID?.trim();
   const headers = { Authorization: `Bearer ${key}` };
-  const [balanceResult, priceResult, accountResult, portalResult, webhookResult, taxResult] =
-    await Promise.all([
+  const [
+    balanceResult,
+    priceResult,
+    accountResult,
+    portalResult,
+    webhookResult,
+    taxResult,
+    taxRegistrationsResult,
+  ] = await Promise.all([
       jsonFetch("https://api.stripe.com/v1/balance", { headers }),
       priceId
         ? jsonFetch(`https://api.stripe.com/v1/prices/${encodeURIComponent(priceId)}`, {
@@ -84,6 +91,9 @@ async function stripeStatus() {
       }),
       jsonFetch("https://api.stripe.com/v1/webhook_endpoints?limit=100", { headers }),
       jsonFetch("https://api.stripe.com/v1/tax/settings", { headers }),
+      jsonFetch("https://api.stripe.com/v1/tax/registrations?status=active&limit=100", {
+        headers,
+      }),
     ]);
 
   const available = Array.isArray(balanceResult.body?.available)
@@ -161,7 +171,17 @@ async function stripeStatus() {
   const webhookReady = Boolean(
     webhook && missingWebhookEvents.length === 0 && extraWebhookEvents.length === 0,
   );
-  const taxReady = Boolean(taxResult.ok && taxResult.body?.status === "active");
+  const automaticTaxEnabled = process.env.STRIPE_AUTOMATIC_TAX_ENABLED === "true";
+  const activeTaxRegistrations = Array.isArray(taxRegistrationsResult.body?.data)
+    ? taxRegistrationsResult.body.data.filter((registration) => registration?.status === "active")
+    : [];
+  const taxProviderReady = Boolean(
+    taxResult.ok &&
+      taxResult.body?.status === "active" &&
+      taxRegistrationsResult.ok &&
+      activeTaxRegistrations.length > 0,
+  );
+  const taxReady = !automaticTaxEnabled || taxProviderReady;
 
   return {
     status:
@@ -170,7 +190,7 @@ async function stripeStatus() {
       accountResult.ok &&
       portalResult.ok &&
       webhookResult.ok &&
-      taxResult.ok
+      (!automaticTaxEnabled || (taxResult.ok && taxRegistrationsResult.ok))
         ? "reachable"
         : "blocked",
     available_usd: typeof available === "number" ? available / 100 : null,
@@ -206,7 +226,12 @@ async function stripeStatus() {
       ready: webhookReady,
     },
     tax: {
+      automatic_tax_enabled: automaticTaxEnabled,
       status: taxResult.body?.status ?? null,
+      active_registration_count: taxRegistrationsResult.ok
+        ? activeTaxRegistrations.length
+        : null,
+      provider_ready: taxProviderReady,
       ready: taxReady,
     },
   };
@@ -394,7 +419,7 @@ if (stripe.status !== "reachable") blockers.push("stripe_not_reachable");
 if (stripe.brand?.ready !== true) blockers.push("stripe_brand_not_wireline");
 if (stripe.customer_portal?.ready !== true) blockers.push("stripe_customer_portal_not_ready");
 if (stripe.webhook?.ready !== true) blockers.push("stripe_webhook_not_aligned");
-if (stripe.tax?.ready !== true) blockers.push("stripe_tax_not_active");
+if (stripe.tax?.ready !== true) blockers.push("stripe_automatic_tax_not_ready");
 if (database.recap_agent_index_present !== true) blockers.push("recap_agent_index_missing");
 if (typeof twilio.prepaid_balance_usd !== "number" || twilio.prepaid_balance_usd < 150) {
   blockers.push("twilio_prepaid_balance_below_150");

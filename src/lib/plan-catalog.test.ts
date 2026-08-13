@@ -67,15 +67,15 @@ describe("plan-catalog", () => {
     }
   });
 
-  it("locks canonical Founder Early Access voice and capacity rates", () => {
-    expect(planById("starter")?.voice_minutes_monthly).toBe(60);
-    expect(planById("team")?.voice_minutes_monthly).toBe(120);
+  it("locks canonical launch-safe voice and capacity rates", () => {
+    expect(planById("starter")?.voice_minutes_monthly).toBe(50);
+    expect(planById("team")?.voice_minutes_monthly).toBe(100);
     expect(planById("team")?.max_agents).toBe(2);
     expect(planById("team")?.included_phone_numbers).toBe(2);
     expect(planById("team")?.price_usd_monthly).toBe(39);
     expect(planById("team")?.price_usd_annual).toBe(390);
-    expect(planById("business")?.voice_minutes_monthly).toBe(245);
-    expect(planById("enterprise")?.voice_minutes_monthly).toBe(450);
+    expect(planById("business")?.voice_minutes_monthly).toBe(190);
+    expect(planById("enterprise")?.voice_minutes_monthly).toBe(350);
     // Catalog v6: one flat top-up rate on every plan.
     expect(planById("starter")?.overage_per_min_usd).toBe(0.22);
     expect(planById("team")?.overage_per_min_usd).toBe(0.22);

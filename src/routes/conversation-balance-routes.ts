@@ -8,6 +8,7 @@ import {
   stripe,
   stripeAvailable,
   stripeCheckoutIntegrationIdentifier,
+  stripeCheckoutTaxConfig,
 } from "../lib/stripe-helpers";
 import { getCreditBalanceUsd, getRecentLedger } from "../lib/credit-wallet";
 import {
@@ -133,11 +134,7 @@ router.post(
         integration_identifier: stripeCheckoutIntegrationIdentifier("runtime_balance"),
         customer: customerId,
         customer_update: { address: "auto" },
-        automatic_tax: { enabled: true },
-        // Keep settlement synchronous until the production webhook endpoint is
-        // reauthenticated and subscribed to Checkout's delayed-payment events.
-        // Otherwise a customer can pay while the wallet never receives credit.
-        payment_method_types: ["card", "link"],
+        ...stripeCheckoutTaxConfig(),
         line_items: [
           {
             quantity: 1,

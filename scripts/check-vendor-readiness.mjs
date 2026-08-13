@@ -155,6 +155,7 @@ const [
   stripePortalConfigurations,
   stripeWebhookEndpoints,
   stripeTaxSettings,
+  stripeTaxRegistrations,
   resend,
   elevenlabs,
   elevenlabsVoices,
@@ -239,6 +240,11 @@ const [
     : null,
   present("STRIPE_SECRET_KEY")
     ? readJson("https://api.stripe.com/v1/tax/settings", {
+        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+      })
+    : null,
+  present("STRIPE_SECRET_KEY")
+    ? readJson("https://api.stripe.com/v1/tax/registrations?status=active&limit=100", {
         headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
       })
     : null,
@@ -566,9 +572,21 @@ const stripeExtraWebhookEvents = stripeEnabledWebhookEvents.filter(
 const stripeWebhookReady = Boolean(
   stripeWebhook && stripeMissingWebhookEvents.length === 0 && stripeExtraWebhookEvents.length === 0,
 );
-const stripeTaxReady = Boolean(
-  stripeTaxSettings?.ok && stripeTaxSettings.body?.status === "active",
+const stripeAutomaticTaxEnabled = process.env.STRIPE_AUTOMATIC_TAX_ENABLED === "true";
+const stripeActiveTaxRegistrations = stripeTaxRegistrations?.ok
+  ? arrayAt(stripeTaxRegistrations.body, "data").filter(
+      (registration) => registration?.status === "active",
+    )
+  : [];
+const stripeTaxProviderReady = Boolean(
+  stripeTaxSettings?.ok &&
+    stripeTaxSettings.body?.status === "active" &&
+    stripeTaxRegistrations?.ok &&
+    stripeActiveTaxRegistrations.length > 0,
 );
+// Tax collection is launch-safe when it is deliberately off, or when the
+// operator deliberately enabled it after both provider prerequisites exist.
+const stripeTaxReady = !stripeAutomaticTaxEnabled || stripeTaxProviderReady;
 const stripeReady = Boolean(
   stripeCoreReady && stripeBrandReady && stripePortalReady && stripeWebhookReady && stripeTaxReady,
 );
@@ -584,8 +602,8 @@ const stripeFundingAction = !stripeBalanceRead
         : !stripeWebhookReady
           ? `Align the enabled trywireline.com webhook endpoint to the ${expectedStripeWebhookEvents.length} server-handled events (npm run stripe:webhook:align).`
           : !stripeTaxReady
-            ? "Activate and verify Stripe Tax settings before accepting paid self-serve checkout."
-            : "No prepaid funding required; keep payout bank, portal, tax, and webhook healthy.";
+            ? "Disable STRIPE_AUTOMATIC_TAX_ENABLED, or activate Stripe Tax settings and at least one applicable registration after qualified tax review."
+            : "No prepaid funding required; keep payout bank, portal, webhook, and the deliberate tax posture healthy.";
 
 record(
   "stripe",
@@ -597,7 +615,11 @@ record(
       }" ${stripeBrandReady ? "ready" : "blocked"}; managed/default portal ${
         stripePortalReady ? "ready" : "blocked"
       }; webhook ${stripeWebhookReady ? "ready" : "blocked"}; tax ${
-        stripeTaxReady ? "ready" : "blocked"
+        stripeAutomaticTaxEnabled
+          ? stripeTaxProviderReady
+            ? "collection ready"
+            : "collection blocked"
+          : "collection off by policy"
       }; available USD balance ${
         stripeBalanceRead ? (stripeAvailable / 100).toFixed(2) : "unread"
       }.`
@@ -618,7 +640,12 @@ record(
     webhook_ready: stripeWebhookReady,
     webhook_missing_events: stripeMissingWebhookEvents,
     webhook_extra_events: stripeExtraWebhookEvents,
+    automatic_tax_enabled: stripeAutomaticTaxEnabled,
     tax_status: stripeTaxSettings?.body?.status ?? null,
+    active_tax_registration_count: stripeTaxRegistrations?.ok
+      ? stripeActiveTaxRegistrations.length
+      : null,
+    tax_provider_ready: stripeTaxProviderReady,
     tax_ready: stripeTaxReady,
   },
 );

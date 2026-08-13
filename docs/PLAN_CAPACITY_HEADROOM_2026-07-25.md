@@ -1,9 +1,9 @@
 # Plan Capacity Headroom — 2026-07-25
 
-Status: **Active methodology; historical v5 result.** The current founder v6
-decision is recorded in `PRICING_DECISION_2026-07-25.md`. Re-run this model
+Status: **Active methodology; historical v5/v6 result.** The launch-safe v6
+amendment is recorded in `business-usage-pricing-decision.md`. Re-run this model
 before changing any plan price, included minute count, included number count,
-Runtime Allowance, or commercial-fee assumption.
+Runtime Allowance, AI allowance, or commercial-fee assumption.
 
 ## The question
 
@@ -27,8 +27,9 @@ assumption:
 | `COGS_DRIFT_THRESHOLD_PER_MIN_USD`| $0.14 (alarm) |
 
 Contribution at full included utilization reserves *every* included minute,
-*every* number slot, and the whole Runtime Allowance as consumed COGS. That is
-deliberately pessimistic — most accounts will not exhaust any of the three.
+*every* number slot, the whole Runtime Allowance, and the independently metered
+AI allowance as consumed COGS. This is conservative but reachable: each meter
+can be exhausted without debiting the other three.
 
 ## The binding constraint is annual, not monthly
 
@@ -40,7 +41,7 @@ Until this pass, `assertPlanMarginFloors()` only ever evaluated the monthly
 interval, so the launch-readiness gate was watching the slack side. It now
 checks both.
 
-## Current v6 validation — 2026-07-29
+## Historical v6 validation — 2026-07-29
 
 The launch-hardening pass added Stripe Billing and a conservative future Tax
 transaction reserve to the shared fee helper. Pro moved from 250 to **245**
@@ -57,6 +58,16 @@ did not change.
 
 The full-use figures include Payments, Billing, and Tax transaction reserves;
 expected-use applies the catalog's 70% minute and Runtime Allowance assumption.
+
+## Launch-safe v6 amendment — 2026-08-13
+
+The historical calculation omitted the separate account AI-spend envelope even
+though it was independently consumable. Simultaneous full use could therefore
+drive every plan below the certified floor. With no production subscriptions,
+Wireline corrected the promise before launch: 50 / 100 / 190 / 350 voice
+minutes and explicit $1.50 / $3 / $6 / $12 AI allowances. The hard and expected
+floors now reserve voice, numbers, Runtime Allowance, AI allowance, and Stripe
+fees together. `npm run economics:report` is the canonical live proof.
 
 ## Historical v5 result
 
@@ -118,6 +129,7 @@ account.
 Included minutes are echoed in more places than the catalog. When they change:
 
 - `src/lib/plan-catalog.ts` — `voice_minutes_monthly` **and** the `features` copy
+- `src/lib/plan-catalog.ts` — `ai_spend_allowance_usd_monthly`
 - `scripts/lib/stripe-founder-catalog.mjs` — product + price `included_voice_minutes`
 - `scripts/check-stripe-catalog-contract.mjs` — `expectedCapacity`
 - `src/data/wireline-knowledge.ts` — the plan facts the agent quotes

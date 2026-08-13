@@ -24,6 +24,9 @@ describe("homepage hero live demo + funnel instrumentation", () => {
   it("falls back to a phone demo line when the browser demo can't run", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain("fallback=");
+    expect(landing).toContain("Live voice demo");
+    expect(landing).toContain("Call live demo");
+    expect(landing).toContain('mode: "phone"');
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
     // The widget renders the fallback instead of a dead button when the key
     // is missing.
@@ -38,6 +41,9 @@ describe("homepage hero live demo + funnel instrumentation", () => {
     );
     expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain(
       '"landing_audience_selected"',
+    );
+    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain(
+      'event: "landing_demo_clicked"',
     );
   });
 });

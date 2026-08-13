@@ -71,6 +71,22 @@ export function stripeCheckoutIntegrationIdentifier(
   return `wireline_${flow}_${suffix}`;
 }
 
+/**
+ * Enable Stripe Automatic Tax only after the live account has an active tax
+ * registration and the operator has deliberately opted in. Stripe can accept
+ * `automatic_tax.enabled` while collecting no tax when registrations are
+ * absent, so an implicit default would create false launch confidence and add
+ * address friction without a compliant collection posture.
+ */
+export function stripeCheckoutTaxConfig(): Pick<
+  Stripe.Checkout.SessionCreateParams,
+  "automatic_tax"
+> {
+  return process.env.STRIPE_AUTOMATIC_TAX_ENABLED === "true"
+    ? { automatic_tax: { enabled: true } }
+    : {};
+}
+
 type LegacyInvoiceCharge = Stripe.Charge & {
   /** Present on pre-Basil webhook payloads and API responses. */
   invoice?: string | Stripe.Invoice | null;

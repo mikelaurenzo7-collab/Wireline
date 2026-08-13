@@ -9,8 +9,8 @@ const read = (path: string) =>
  * Contract: refund/dispute reversals claw back only the credit that was
  * actually granted, not the tax-inclusive gross.
  *
- * Top-up checkouts run with automatic_tax enabled but credit the pre-tax
- * `credit_usd` (checkout.session.completed handler). The refund and dispute
+ * When Automatic Tax is enabled, top-up checkouts credit the pre-tax
+ * `credit_usd` (Checkout fulfillment handler). The refund and dispute
  * handlers used to reverse the GROSS Stripe amount (refund.amount /
  * dispute.amount / amount_refunded), so with exclusive tax a fully-refunded
  * customer landed at a negative wallet and was blocked on completion-grace

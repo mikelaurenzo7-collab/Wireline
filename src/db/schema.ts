@@ -1,6 +1,6 @@
 /**
  * Canonical Drizzle/runtime schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0145_reconcile_historical_deleted_user_artifacts.sql`.
+ * Latest committed migration: `drizzle/migrations/0146_paid_ai_budget_margin_alignment.sql`.
  *
  * `schema-base.ts` preserves the existing table graph. The two tables below are
  * declared explicitly here because migrations 0130, 0133, and 0134 changed

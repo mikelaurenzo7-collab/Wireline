@@ -1,6 +1,6 @@
 # Pricing Decision — 2026-07-25 (founder catalog v6)
 
-Status: **Active — decided and executed 2026-07-25.** This document records
+Status: **Historical foundation — amended 2026-08-13.** This document records
 the deep pricing audit, the analysis, and the decision for the founder
 catalog now live. A 2026-07-29 launch-hardening review then reserved Stripe
 Billing and future Stripe Tax transaction fees in every margin check and
@@ -13,6 +13,11 @@ recurring prices were archived once the deploy served v6. Supersedes the *conclu
 reference model and which explicitly anticipated this decision: *"Lower the
 floor… is a deliberate business decision, not a code change."* That decision
 is made here, by the founder's direction, together with a price restructure.
+
+The August launch review found that the independently metered AI-spend envelope
+was absent from these floor calculations. The corrected live contract is
+recorded in `business-usage-pricing-decision.md`; do not use the voice capacities
+or margin tables below as current truth. Prices and plan ids remain unchanged.
 
 ## Context that makes this cheap to do now
 

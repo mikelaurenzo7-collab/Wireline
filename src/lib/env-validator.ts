@@ -301,6 +301,15 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     validate: nonEmpty,
   },
   {
+    name: "STRIPE_AUTOMATIC_TAX_ENABLED",
+    group: "billing",
+    required: false,
+    description:
+      "Explicit opt-in for Stripe Automatic Tax after active registrations are verified",
+    validate: (value) => !value || value === "true" || value === "false",
+    formatHint: "true or false; keep false until Stripe has an active tax registration",
+  },
+  {
     name: "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
     group: "billing",
     required: false,

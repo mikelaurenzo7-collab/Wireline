@@ -9,6 +9,7 @@ import {
   STRIPE_API_VERSION,
   stripe,
   stripeCheckoutIntegrationIdentifier,
+  stripeCheckoutTaxConfig,
   stripeInvoiceIdForCharge,
 } from "../src/lib/stripe-helpers";
 
@@ -42,6 +43,7 @@ function invoicePaymentPage(invoiceIds: string[]) {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
 });
 
 describe("Stripe API modernization", () => {
@@ -65,6 +67,17 @@ describe("Stripe API modernization", () => {
     expect(retry).toBe(first);
     expect(different).not.toBe(first);
     expect(first).toMatch(/^wireline_plan_[a-z]{8}$/);
+  });
+
+  it("defaults Automatic Tax off and enables it only through the exact opt-in", () => {
+    vi.stubEnv("STRIPE_AUTOMATIC_TAX_ENABLED", "false");
+    expect(stripeCheckoutTaxConfig()).toEqual({});
+
+    vi.stubEnv("STRIPE_AUTOMATIC_TAX_ENABLED", "true");
+    expect(stripeCheckoutTaxConfig()).toEqual({ automatic_tax: { enabled: true } });
+
+    vi.stubEnv("STRIPE_AUTOMATIC_TAX_ENABLED", "TRUE");
+    expect(stripeCheckoutTaxConfig()).toEqual({});
   });
 
   it("treats paid and no-payment-required Checkout Sessions as settled", () => {

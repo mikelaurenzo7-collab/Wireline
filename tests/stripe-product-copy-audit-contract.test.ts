@@ -6,10 +6,10 @@ const audit = readFileSync("scripts/lib/stripe-product-copy.mjs", "utf8");
 const reconciler = readFileSync("scripts/setup-stripe-catalog.mjs", "utf8");
 
 const LIVE_PRODUCT_COPY = [
-  "1 live voice agent, 1 production number, 60 voice minutes/month, email + SMS, and no automatic overages.",
-  "2 live agents, 2 production numbers, 120 pooled voice minutes/month, Lead Hunt, email + SMS, and no automatic overages.",
-  "Up to 5 live voice agents, 245 pooled voice minutes/month, routing, approvals, CRM, email + SMS, and no automatic overages.",
-  "Up to 15 live voice agents, 450 pooled voice minutes/month, routing, analytics, CRM, email + SMS, and no automatic overages.",
+  "1 live voice agent, 1 production number, 50 voice minutes/month, email + SMS, and no automatic overages.",
+  "2 live agents, 2 production numbers, 100 pooled voice minutes/month, Lead Hunt, email + SMS, and no automatic overages.",
+  "Up to 5 live voice agents, 190 pooled voice minutes/month, routing, approvals, CRM, email + SMS, and no automatic overages.",
+  "Up to 15 live voice agents, 350 pooled voice minutes/month, routing, analytics, CRM, email + SMS, and no automatic overages.",
   "Custom plan for 25+ agents with advanced governance, SSO, integrations, retention controls, security review, and implementation support.",
   "+1 live voice agent, +1 production-number slot, and +50 guaranteed voice minutes/month.",
   "Live Video for a paid business agent: 60 reserved minutes/month in up-to-5-minute sessions, with no automatic overage.",

@@ -95,6 +95,7 @@ Preview builds must log that migrations were skipped. Production builds run the 
 Set the billing switch to `true` in Production only after all of the following have been certified against the live Wireline Stripe account:
 
 - Public business identity, support email/URL, statement descriptor, and tax posture display Wireline rather than a historical product identity.
+- `STRIPE_AUTOMATIC_TAX_ENABLED` remains `false` unless Stripe Tax settings and at least one applicable live registration are active. Registration and nexus decisions require qualified tax advice; the application must never infer them.
 - The managed Billing Portal supports payment-method changes, invoice history, plan changes, at-period-end cancellation, and a verified return path to `trywireline.com`.
 - A controlled lifecycle succeeds end to end: checkout, signed webhook entitlement, subscription projection, Runtime Allowance, portal access, cancellation, refund, and allowance reversal.
 - Production telemetry is deliberately switched from demo evidence to live-customer evidence with `WIRELINE_LAUNCH_DEMO_MODE=false`.

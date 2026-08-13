@@ -132,7 +132,7 @@ describe("video presenter integration", () => {
     expect(billing).toContain("live_video_addon");
     expect(billing).toContain("LIVE_VIDEO_CATALOG_UNAVAILABLE");
     expect(billing).toContain("LIVE_VIDEO_BASE_PLAN_REQUIRED");
-    expect(billing).toContain("automatic_tax: { enabled: true }");
+    expect(billing).toContain("...stripeCheckoutTaxConfig()");
     const manifest = source("scripts/lib/stripe-founder-catalog.mjs");
     expect(manifest).toContain("STRIPE_LIVE_VIDEO_ADDON_PRICE_ID");
     expect(manifest).toContain('session_reservation_minutes: "5"');

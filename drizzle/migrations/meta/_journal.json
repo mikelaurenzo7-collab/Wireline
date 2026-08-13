@@ -309,6 +309,13 @@
       "when": 1786483200000,
       "tag": "0145_reconcile_historical_deleted_user_artifacts",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1786658832000,
+      "tag": "0146_paid_ai_budget_margin_alignment",
+      "breakpoints": true
     }
   ]
 }

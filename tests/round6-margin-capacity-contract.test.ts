@@ -22,11 +22,15 @@ import { resolveCreateEnabledTools } from "../src/lib/agent-create-defaults";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("catalog v6 capacity stays inside the two-floor margin guardrail", () => {
-  it("ships the v6 founder voice allowances", () => {
-    expect(planById("starter")?.voice_minutes_monthly).toBe(60);
-    expect(planById("team")?.voice_minutes_monthly).toBe(120);
-    expect(planById("business")?.voice_minutes_monthly).toBe(245);
-    expect(planById("enterprise")?.voice_minutes_monthly).toBe(450);
+  it("ships the launch-safe founder voice and AI allowances", () => {
+    expect(planById("starter")?.voice_minutes_monthly).toBe(50);
+    expect(planById("team")?.voice_minutes_monthly).toBe(100);
+    expect(planById("business")?.voice_minutes_monthly).toBe(190);
+    expect(planById("enterprise")?.voice_minutes_monthly).toBe(350);
+    expect(planById("starter")?.ai_spend_allowance_usd_monthly).toBe(1.5);
+    expect(planById("team")?.ai_spend_allowance_usd_monthly).toBe(3);
+    expect(planById("business")?.ai_spend_allowance_usd_monthly).toBe(6);
+    expect(planById("enterprise")?.ai_spend_allowance_usd_monthly).toBe(12);
   });
 
   it("keeps every plan above both floors on both intervals", () => {
@@ -63,6 +67,7 @@ describe("catalog v6 capacity stays inside the two-floor margin guardrail", () =
           (revenue * (1 - HARD_CONTRIBUTION_MARGIN_FLOOR) -
             plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD -
             plan.runtime_allowance_usd_monthly -
+            plan.ai_spend_allowance_usd_monthly -
             commercialFees) /
           plan.voice_minutes_monthly;
         expect(
@@ -90,11 +95,13 @@ describe("catalog v6 capacity stays inside the two-floor margin guardrail", () =
         plan.voice_minutes_monthly * DRIFT_STRESS_RATE_PER_MIN_USD +
         plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD +
         plan.runtime_allowance_usd_monthly +
+        plan.ai_spend_allowance_usd_monthly +
         commercialFees;
       const expectedCost =
         plan.voice_minutes_monthly * 0.7 * DRIFT_STRESS_RATE_PER_MIN_USD +
         plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD +
         plan.runtime_allowance_usd_monthly * 0.7 +
+        plan.ai_spend_allowance_usd_monthly * 0.7 +
         commercialFees;
       expect(
         (revenue - expectedCost) / revenue,
@@ -123,13 +130,15 @@ describe("catalog v6 capacity stays inside the two-floor margin guardrail", () =
   it("keeps the Stripe founder manifest metadata in step with the catalog", () => {
     const manifest = read("scripts/lib/stripe-founder-catalog.mjs");
     for (const [planId, minutes] of [
-      ["starter", 60],
-      ["team", 120],
-      ["business", 245],
-      ["enterprise", 450],
+      ["starter", 50],
+      ["team", 100],
+      ["business", 190],
+      ["enterprise", 350],
     ] as const) {
-      expect(manifest).toContain(
-        `wireline_plan_id: "${planId}", included_voice_minutes: "${minutes}"`,
+      expect(manifest).toMatch(
+        new RegExp(
+          `wireline_plan_id: "${planId}",[\\s\\S]{0,100}included_voice_minutes: "${minutes}"`,
+        ),
       );
     }
   });

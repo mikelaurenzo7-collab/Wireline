@@ -11,7 +11,7 @@ export const FOUNDER_PRODUCTS = [
     key: "starter",
     name: "Wireline Starter",
     description:
-      "1 live voice agent, 1 production number, 60 voice minutes/month, email + SMS, and no automatic overages.",
+      "1 live voice agent, 1 production number, 50 voice minutes/month, email + SMS, and no automatic overages.",
     defaultPriceKey: "starter_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "starter",
@@ -20,7 +20,8 @@ export const FOUNDER_PRODUCTS = [
       wireline_catalog_state: "launch_active",
       included_agents: "1",
       included_numbers: "1",
-      included_voice_minutes: "60",
+      included_voice_minutes: "50",
+      included_ai_spend_usd: "1.50",
       overage_policy: "prepaid_balance_only",
       wireline_templates: "unlocked",
     },
@@ -29,7 +30,7 @@ export const FOUNDER_PRODUCTS = [
     key: "team",
     name: "Wireline Starter Plus",
     description:
-      "2 live agents, 2 production numbers, 120 pooled voice minutes/month, Lead Hunt, email + SMS, and no automatic overages.",
+      "2 live agents, 2 production numbers, 100 pooled voice minutes/month, Lead Hunt, email + SMS, and no automatic overages.",
     defaultPriceKey: "team_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "team",
@@ -38,7 +39,8 @@ export const FOUNDER_PRODUCTS = [
       wireline_catalog_state: "launch_active",
       included_agents: "2",
       included_numbers: "2",
-      included_voice_minutes: "120",
+      included_voice_minutes: "100",
+      included_ai_spend_usd: "3",
       overage_policy: "prepaid_balance_only",
       wireline_templates: "unlocked",
     },
@@ -47,7 +49,7 @@ export const FOUNDER_PRODUCTS = [
     key: "business",
     name: "Wireline Pro",
     description:
-      "Up to 5 live voice agents, 245 pooled voice minutes/month, routing, approvals, CRM, email + SMS, and no automatic overages.",
+      "Up to 5 live voice agents, 190 pooled voice minutes/month, routing, approvals, CRM, email + SMS, and no automatic overages.",
     defaultPriceKey: "business_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "business",
@@ -56,7 +58,8 @@ export const FOUNDER_PRODUCTS = [
       wireline_catalog_state: "launch_active",
       included_agents: "5",
       included_numbers: "5",
-      included_voice_minutes: "245",
+      included_voice_minutes: "190",
+      included_ai_spend_usd: "6",
       overage_policy: "prepaid_balance_only",
       wireline_templates: "unlocked",
     },
@@ -65,7 +68,7 @@ export const FOUNDER_PRODUCTS = [
     key: "enterprise",
     name: "Wireline Business",
     description:
-      "Up to 15 live voice agents, 450 pooled voice minutes/month, routing, analytics, CRM, email + SMS, and no automatic overages.",
+      "Up to 15 live voice agents, 350 pooled voice minutes/month, routing, analytics, CRM, email + SMS, and no automatic overages.",
     defaultPriceKey: "enterprise_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "enterprise",
@@ -74,7 +77,8 @@ export const FOUNDER_PRODUCTS = [
       wireline_catalog_state: "launch_active",
       included_agents: "15",
       included_numbers: "15",
-      included_voice_minutes: "450",
+      included_voice_minutes: "350",
+      included_ai_spend_usd: "12",
       overage_policy: "prepaid_balance_only",
       wireline_templates: "unlocked",
     },
@@ -142,7 +146,11 @@ export const FOUNDER_PRICES = [
     unitAmount: 1900,
     recurring: { interval: "month", usage_type: "licensed" },
     envTarget: "STRIPE_STARTER_9_PRICE_ID",
-    metadata: { wireline_plan_id: "starter", included_voice_minutes: "60" },
+    metadata: {
+      wireline_plan_id: "starter",
+      included_voice_minutes: "50",
+      included_ai_spend_usd: "1.50",
+    },
   },
   {
     key: "starter_annual_founder_2026_07_v6",
@@ -152,7 +160,11 @@ export const FOUNDER_PRICES = [
     unitAmount: 19000,
     recurring: { interval: "year", usage_type: "licensed" },
     envTarget: "STRIPE_STARTER_9_ANNUAL_PRICE_ID",
-    metadata: { wireline_plan_id: "starter", included_voice_minutes: "60" },
+    metadata: {
+      wireline_plan_id: "starter",
+      included_voice_minutes: "50",
+      included_ai_spend_usd: "1.50",
+    },
   },
   {
     key: "team_monthly_founder_2026_07_v6",
@@ -162,7 +174,11 @@ export const FOUNDER_PRICES = [
     unitAmount: 3900,
     recurring: { interval: "month", usage_type: "licensed" },
     envTarget: "STRIPE_STARTER_PRICE_ID",
-    metadata: { wireline_plan_id: "team", included_voice_minutes: "120" },
+    metadata: {
+      wireline_plan_id: "team",
+      included_voice_minutes: "100",
+      included_ai_spend_usd: "3",
+    },
   },
   {
     key: "team_annual_founder_2026_07_v6",
@@ -172,7 +188,11 @@ export const FOUNDER_PRICES = [
     unitAmount: 39000,
     recurring: { interval: "year", usage_type: "licensed" },
     envTarget: "STRIPE_STARTER_ANNUAL_PRICE_ID",
-    metadata: { wireline_plan_id: "team", included_voice_minutes: "120" },
+    metadata: {
+      wireline_plan_id: "team",
+      included_voice_minutes: "100",
+      included_ai_spend_usd: "3",
+    },
   },
   {
     key: "business_monthly_founder_2026_07_v6",
@@ -182,7 +202,11 @@ export const FOUNDER_PRICES = [
     unitAmount: 7900,
     recurring: { interval: "month", usage_type: "licensed" },
     envTarget: "STRIPE_TEAM_PRICE_ID",
-    metadata: { wireline_plan_id: "business", included_voice_minutes: "245" },
+    metadata: {
+      wireline_plan_id: "business",
+      included_voice_minutes: "190",
+      included_ai_spend_usd: "6",
+    },
   },
   {
     key: "business_annual_founder_2026_07_v6",
@@ -192,7 +216,11 @@ export const FOUNDER_PRICES = [
     unitAmount: 79000,
     recurring: { interval: "year", usage_type: "licensed" },
     envTarget: "STRIPE_TEAM_ANNUAL_PRICE_ID",
-    metadata: { wireline_plan_id: "business", included_voice_minutes: "245" },
+    metadata: {
+      wireline_plan_id: "business",
+      included_voice_minutes: "190",
+      included_ai_spend_usd: "6",
+    },
   },
   {
     key: "enterprise_monthly_founder_2026_07_v6",
@@ -202,7 +230,11 @@ export const FOUNDER_PRICES = [
     unitAmount: 15900,
     recurring: { interval: "month", usage_type: "licensed" },
     envTarget: "STRIPE_BUSINESS_PRICE_ID",
-    metadata: { wireline_plan_id: "enterprise", included_voice_minutes: "450" },
+    metadata: {
+      wireline_plan_id: "enterprise",
+      included_voice_minutes: "350",
+      included_ai_spend_usd: "12",
+    },
   },
   {
     key: "enterprise_annual_founder_2026_07_v6",
@@ -212,7 +244,11 @@ export const FOUNDER_PRICES = [
     unitAmount: 159000,
     recurring: { interval: "year", usage_type: "licensed" },
     envTarget: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
-    metadata: { wireline_plan_id: "enterprise", included_voice_minutes: "450" },
+    metadata: {
+      wireline_plan_id: "enterprise",
+      included_voice_minutes: "350",
+      included_ai_spend_usd: "12",
+    },
   },
   {
     key: "extra_agent_monthly_founder_2026_07_v3",

@@ -70,7 +70,7 @@ const MARKET_OPTIONS = [
     name: "Wireline",
     price: "$0 to build · live from $19/mo",
     usage:
-      "60 included live voice minutes, one number slot, and prepaid overflow on Starter",
+      "50 included live voice minutes, one number slot, and prepaid overflow on Starter",
     fit: "Owners who want one trained voice agent across voice, SMS, email, follow up, and outcomes",
     href: "/pricing",
     source: "Wireline pricing",
