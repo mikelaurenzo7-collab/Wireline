@@ -30,6 +30,19 @@ describe("daily brief scheduler launch contract", () => {
     expect(routes).toContain("already_sent");
   });
 
+  it("isolates a per-tenant claim failure so one bad row cannot abort the sweep", () => {
+    // Production 2026-08-08: a claim-update throw escaped to the outer catch,
+    // 500ing the entire run — every tenant after the failing row silently
+    // missed that day's brief. The claim must fail per-tenant, like sends do.
+    const claimIsolation = routes.indexOf("} catch (claimError: unknown) {");
+    expect(claimIsolation).toBeGreaterThan(-1);
+    expect(routes).toContain('log.error("Daily brief cron: claim update failed"');
+    // The isolated claim still counts the tenant and continues the loop.
+    const continueAfterClaim = routes.indexOf("continue;", claimIsolation);
+    expect(continueAfterClaim).toBeGreaterThan(claimIsolation);
+    expect(continueAfterClaim).toBeLessThan(routes.indexOf("if (!claimed?.userId)"));
+  });
+
   it("uses a durable lease and latches an ambiguous provider send before Gmail is called", () => {
     expect(schema).toContain("dailyBriefDispatchClaimedAt");
     // src/db/schema.ts intentionally re-declares settings and overrides the
