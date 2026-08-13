@@ -4,7 +4,10 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
-import { getHealthCapabilities, getIntegrationsStatus } from "../lib/integrations-registry";
+import {
+  getRuntimeCapabilities,
+  getRuntimeIntegrationStatus,
+} from "../lib/runtime-integrations-registry";
 import { evaluateLaunchReadiness } from "../lib/launch-readiness";
 import { validateEnv } from "../lib/env-validator";
 import { authenticateUser } from "../middleware/auth";
@@ -171,7 +174,7 @@ router.get(
       status: db.ok ? "ok" : "degraded",
       uptime_s: Math.round((process as any).uptime?.() || 0),
       db,
-      capabilities: getHealthCapabilities(),
+      capabilities: getRuntimeCapabilities(),
       app_model: STRUCTURED_PRIMARY_MODEL,
       voice_agent_model: VAPI_TENANT_DEFAULT_MODEL,
       voice_agent_premium_model: VAPI_PREMIUM_MODEL,
@@ -181,7 +184,7 @@ router.get(
   },
 );
 router.get("/actions", healthRateLimiter, authenticateUser, requirePlatformAdmin, (_req, res) =>
-  res.json({ integrations: getIntegrationsStatus(), timestamp: new Date().toISOString() }),
+  res.json({ integrations: getRuntimeIntegrationStatus(), timestamp: new Date().toISOString() }),
 );
 router.get(
   "/integrations",
@@ -189,7 +192,7 @@ router.get(
   authenticateUser,
   requirePlatformAdmin,
   (_req, res) =>
-    res.json({ integrations: getIntegrationsStatus(), timestamp: new Date().toISOString() }),
+    res.json({ integrations: getRuntimeIntegrationStatus(), timestamp: new Date().toISOString() }),
 );
 router.get(
   "/slos",

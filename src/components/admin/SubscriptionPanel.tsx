@@ -1,9 +1,9 @@
 import React from "react";
 import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
-import { Panel } from "../PageShell";
+import { Panel } from "../organisms";
 import StripeBillingCard from "../StripeBillingCard";
 import { Link } from "react-router";
-import { Input } from "../ui/shadcn/Input";
+import { Input } from "../atoms/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 interface SubscriptionPanelProps {

@@ -24,7 +24,7 @@ import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
 import { formatDateTime, formatTime } from "../lib/safe-date";
 import { PanelSkeleton } from "./Skeleton";
-import { Input } from "./ui/shadcn/Input";
+import { Input } from "./atoms/Input";
 import { EmptyState } from "./ui/EmptyState";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 

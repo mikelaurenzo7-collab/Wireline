@@ -2,10 +2,9 @@
  * Buyer-facing integration certification — beyond env presence.
  */
 import {
-  INTEGRATIONS,
-  getIntegrationsStatus,
+  getRuntimeIntegrationStatus,
   type IntegrationStatusResult,
-} from "./integrations-registry";
+} from "./runtime-integrations-registry";
 
 export type BuyerTier = "certified" | "beta" | "internal";
 
@@ -50,7 +49,7 @@ export type CertifiedIntegrationPublic = {
 };
 
 export async function getCertifiedIntegrationsPublic(): Promise<CertifiedIntegrationPublic[]> {
-  const status = getIntegrationsStatus();
+  const status = getRuntimeIntegrationStatus();
   const now = new Date().toISOString();
   return status
     .filter((s) => buyerTierForIntegration(s.id) !== "internal")
@@ -62,8 +61,4 @@ export async function getCertifiedIntegrationsPublic(): Promise<CertifiedIntegra
       certified: buyerTierForIntegration(s.id) === "certified" && s.status === "configured",
       last_checked_at: now,
     }));
-}
-
-export function extendIntegrationsRegistryDocs(): void {
-  void INTEGRATIONS;
 }

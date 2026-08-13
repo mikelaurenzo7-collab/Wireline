@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Target, Plus, Pencil, Trash2, Check, X, Loader2 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
-import { Input } from "./ui/shadcn/Input";
+import { Input } from "./atoms/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 /* ──────────────────────────────────────────────────────────────────────────

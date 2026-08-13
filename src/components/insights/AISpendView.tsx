@@ -17,7 +17,7 @@ import { formatMoney, safeFixed } from "../../lib/safe-number";
 import { cn } from "../../lib/utils";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty, SpendStat } from "./shared";
 import type { AuditSummary } from "../../types/api-insights";
-import { Input } from "../ui/shadcn/Input";
+import { Input } from "../atoms/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 import { BRAND } from "../../constants/brand-colors";

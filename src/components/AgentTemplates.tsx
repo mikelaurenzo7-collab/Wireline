@@ -31,7 +31,7 @@ import { BRAND } from "../constants/brand-colors";
 import { isBusinessTemplateCategory } from "../lib/agent-create-defaults";
 import { useToast } from "../contexts/ToastContext";
 import { EmptyState } from "./ui/EmptyState";
-import { Input } from "./ui/shadcn/Input";
+import { Input } from "./atoms/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Skeleton } from "./ui/shadcn/Skeleton";
 

@@ -6,7 +6,7 @@ import { cn } from "../lib/utils";
 import { MANAGED_VOICE_BY_GENDER, VAPI_CURATED_VOICES, providerLabel } from "../lib/voice-catalog";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
-import { Input } from "./ui/shadcn/Input";
+import { Input } from "./atoms/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 export type DeployTemplate = {

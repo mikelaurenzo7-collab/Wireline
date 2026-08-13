@@ -77,7 +77,9 @@ describe("PR 729 hardening contract", () => {
     const preview = read("src/components/AgentPresenceLivePreview.tsx");
     const api = read("src/lib/api.ts");
     expect(preview).toContain("JSON.stringify({ consentAcknowledged: true })");
-    expect(api.trim()).toBe('export * from "./api-base";');
+    // The shared fetch transport must stay consent-free: consent is recorded by
+    // the disclosed action above, never smuggled into every request.
+    expect(api).not.toContain("consentAcknowledged");
   });
 
   it("exposes manual special-file requests from Training", () => {

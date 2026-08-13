@@ -19,7 +19,7 @@ function walk(dir: string, out: string[] = []): string[] {
 // of every 402 in the app except the ones the trial-gate middleware emitted,
 // because the client filtered on a hand-curated allowlist that had drifted.
 describe("every paywall is clickable", () => {
-  const apiBase = read("src/lib/api-base.ts");
+  const apiBase = read("src/lib/api.ts");
 
   it("dispatches the gate event for any 402, not an allowlisted subset", () => {
     const sniffer = apiBase.slice(

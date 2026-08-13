@@ -1,5 +1,5 @@
 import { MessageSquareText, ShieldCheck } from "lucide-react";
-import LiveVoiceSandbox from "./LiveVoiceSandbox";
+import LiveVoiceSandbox from "./OpenAILiveVoiceSandbox";
 import WirelineLiveVoiceProfile from "./WirelineLiveVoiceProfile";
 
 export default function RoleplaySandbox({

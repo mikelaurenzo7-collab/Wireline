@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useId } from "react";
 import { Bot, Zap } from "lucide-react";
-import { Input } from "../ui/shadcn/Input";
+import { Input } from "../atoms/Input";
 import { AdminSaveBar } from "./AdminSaveBar";
 import { OPS_ADMIN, WL_ADMIN_CLASSES } from "../../lib/wireline-ops-design";
 import { BRAND } from "../../constants/brand-colors";

@@ -32,7 +32,6 @@ describe("authenticated modal lifecycle contract", () => {
     const customDialogs = [
       "src/components/TrialGateModal.tsx",
       "src/components/DeployAgentModal.tsx",
-      "src/components/recipes/RecipeModal.tsx",
       "src/components/CreateAgentDialog.tsx",
       "src/components/onboarding/PostCreateActivationWizard.tsx",
       "src/components/PhoneAgentBlueprint.tsx",
@@ -87,7 +86,6 @@ describe("authenticated modal lifecycle contract", () => {
     for (const path of [
       "src/components/TrialGateModal.tsx",
       "src/components/DeployAgentModal.tsx",
-      "src/components/recipes/RecipeModal.tsx",
     ]) {
       const component = source(path);
       expect(component, path).not.toContain('addEventListener("keydown"');

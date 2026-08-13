@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Phone, MapPin, Search, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { authFetch, readApiJson } from "../lib/api";
 import { cn } from "../lib/utils";
-import { Input } from "./ui/shadcn/Input";
+import { Input } from "./atoms/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface AvailableNumber {

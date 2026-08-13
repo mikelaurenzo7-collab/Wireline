@@ -8,7 +8,7 @@
  * still fails closed at runtime via `assertFederalDncForMarketing()`.
  */
 import { selfServeBillingReleaseBlockers } from "./billing-release";
-import { getIntegrationsStatus } from "./integrations-registry";
+import { getRuntimeIntegrationStatus } from "./runtime-integrations-registry";
 import { validateEnv } from "./env-validator";
 import { assertPlanMarginFloors } from "./tenant-economics";
 import { isFederalDncVendorConfigured } from "./federal-dnc-service";
@@ -52,7 +52,7 @@ function envPresent(name: string): boolean {
 }
 
 export function evaluateLaunchReadiness(): LaunchReadinessReport {
-  const integrations = getIntegrationsStatus();
+  const integrations = getRuntimeIntegrationStatus();
   const byId = new Map(integrations.map((integration) => [integration.id, integration]));
   const envValidation = validateEnv();
   const billingReleaseBlockers = selfServeBillingReleaseBlockers();
@@ -158,8 +158,7 @@ export function launchBlockResponse() {
   const report = evaluateLaunchReadiness();
   return {
     code: "LAUNCH_NOT_READY",
-    error:
-      "Launch hard gate is on and Wireline is not launch-ready (voice, billing, or core).",
+    error: "Launch hard gate is on and Wireline is not launch-ready (voice, billing, or core).",
     launch_blockers: report.launch_blockers,
     deferred_checklist: report.deferred_checklist,
     capabilities: report.capabilities,

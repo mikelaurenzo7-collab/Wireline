@@ -35,7 +35,7 @@ const TermsOfService = lazy(() =>
   import("./components/LegalPage").then((module) => ({ default: module.TermsOfService })),
 );
 const AppShell = lazy(() => import("./components/layout/AppShell"));
-const AuthPortalRoute = lazy(() => import("./AuthPortalRoute"));
+const AuthPortalRoute = lazy(() => import("./components/AuthPortal"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));

@@ -30,7 +30,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "./ui/shadcn/Dialog";
-import { Input } from "./ui/shadcn/Input";
+import { Input } from "./atoms/Input";
 import { Button } from "./atoms";
 import { EmptyState } from "./ui/EmptyState";
 import ClientRouteLoading from "./layout/ClientRouteLoading";

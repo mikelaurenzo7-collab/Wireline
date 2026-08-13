@@ -98,7 +98,7 @@ Wireline **does not** use generic Material-style dark SaaS palettes (pure black 
 | Text         | `#F5F4F8` primary                                             |
 | Action       | Electric violet `#A78BFA`                                     |
 | Accent       | Platinum silver `#C7CCD6`                                     |
-| Typography   | Instrument Serif (display), DM Sans (body), Space Mono (meta) |
+| Typography   | Inter Tight (display), Inter (body), IBM Plex Mono (meta)    |
 
 **Appearance:**
 

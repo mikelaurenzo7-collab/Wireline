@@ -20,7 +20,7 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDateTime } from "../lib/safe-date";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
-import { Input } from "./ui/shadcn/Input";
+import { Input } from "./atoms/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface IntakeKey {

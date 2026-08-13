@@ -4,7 +4,7 @@
  * Tokens: src/styles/foundation.css and src/styles/design-system.css
  */
 
-import { AUTHENTICATED_SURFACE_CONTRACT } from "./authenticated-surface-contract";
+import { AUTHENTICATED_SURFACE_CONTRACT } from "./surface-contract";
 import { WIRELINE_DESIGN_VISION } from "./wireline-design-vision";
 
 /** Canonical vision metadata for tooling and contracts. */
@@ -76,7 +76,8 @@ export const WL_COMPOSER_CLASSES = {
   composerDock:
     "wl-composer-dock wl-panel-elevated transition-all duration-200 ease-out focus-within:ring-2 focus-within:ring-ring/30",
   directorBubble: "rounded-xl border border-border bg-card transition-colors duration-200",
-  accountHolderBubble: "rounded-xl border border-border bg-secondary transition-colors duration-200",
+  accountHolderBubble:
+    "rounded-xl border border-border bg-secondary transition-colors duration-200",
   proposalCard:
     "wl-proposal-card transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-sm",
   proposalRail: "wl-proposal-rail",

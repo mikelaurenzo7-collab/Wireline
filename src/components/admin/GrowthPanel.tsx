@@ -12,8 +12,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { Panel } from "../PageShell";
-import { Input } from "../ui/shadcn/Input";
+import { Panel } from "../organisms";
+import { Input } from "../atoms/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { AdminSaveBar } from "./AdminSaveBar";
 import { OPS_ADMIN } from "../../lib/wireline-ops-design";

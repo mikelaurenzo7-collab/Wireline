@@ -13,8 +13,8 @@ import {
   Lock,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { Panel } from "../PageShell";
-import { Input } from "../ui/shadcn/Input";
+import { Panel } from "../organisms";
+import { Input } from "../atoms/Input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 

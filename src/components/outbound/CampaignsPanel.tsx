@@ -6,7 +6,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { EmptyState } from "../ui/EmptyState";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
-import { Input } from "../ui/shadcn/Input";
+import { Input } from "../atoms/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { cn } from "../../lib/utils";

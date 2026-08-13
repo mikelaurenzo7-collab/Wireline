@@ -19,7 +19,7 @@ import { logFetchError } from "../lib/utils";
 import { useToast } from "../contexts/ToastContext";
 import { useApiError } from "../hooks/useApiError";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
-import { Input } from "./ui/shadcn/Input";
+import { Input } from "./atoms/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { EmptyState } from "./ui/EmptyState";
 import ClientRouteLoading from "./layout/ClientRouteLoading";

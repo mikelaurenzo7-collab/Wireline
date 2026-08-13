@@ -20,7 +20,7 @@ describe("OpenAI/Vapi-only demo architecture", () => {
   });
 
   it("uses WebRTC in Studio and never the xAI client-secret protocol", () => {
-    const entry = read("src/components/LiveVoiceSandbox.tsx");
+    const entry = read("src/components/RoleplaySandbox.tsx");
     const sandbox = read("src/components/OpenAILiveVoiceSandbox.tsx");
     expect(entry).toContain("OpenAILiveVoiceSandbox");
     expect(sandbox).toContain("new RTCPeerConnection()");

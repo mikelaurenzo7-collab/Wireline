@@ -9,7 +9,7 @@ import IntegrationCapabilityPanel from "./IntegrationCapabilityPanel";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
-import { Input } from "./ui/shadcn/Input";
+import { Input } from "./atoms/Input";
 import { Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
 import { BRAND } from "../constants/brand-colors";

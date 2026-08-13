@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AUTHENTICATED_SURFACE_CONTRACT } from "../src/lib/authenticated-surface-contract";
+import { AUTHENTICATED_SURFACE_CONTRACT } from "../src/lib/surface-contract";
 
 describe("authenticated surfaces", () => {
   it("locks Aurora Letterpress as the live brand doctrine", () => {
@@ -18,10 +18,7 @@ describe("authenticated surfaces", () => {
       "Apps",
       "Compliance",
     ]);
-    expect(AUTHENTICATED_SURFACE_CONTRACT.training.tabs).toEqual([
-      "Business knowledge",
-      "Reports",
-    ]);
+    expect(AUTHENTICATED_SURFACE_CONTRACT.training.tabs).toEqual(["Business knowledge", "Reports"]);
   });
 
   it("defines navigation groups and mobile dock IA", () => {

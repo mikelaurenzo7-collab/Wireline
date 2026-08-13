@@ -40,6 +40,7 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 - Local agent-session output, generated review summaries, execution plans, screenshots, visual-QA captures, Playwright reports, coverage, build output, browser packages, temporary scripts, patches, and worktree scratchpads.
 - Secrets, exported environment mirrors, customer data, transcripts, raw provider payloads, local databases, and personal machine paths.
 - Generated marketing kits, official-asset bundles, archive exports, and provider/catalog mirrors.
+- One deliberate exception: `public/downloads/wireline-command-{chromium,firefox}.zip` are tracked because `src/pages/BrowserCommandInstallPage.tsx` serves them directly and `tests/browser-extension-download-freshness-contract.test.ts` pins them to their source; regenerate via `node apps/browser-extension/scripts/build.mjs` whenever `apps/browser-extension/` changes.
 
 ### Must be deleted when found
 

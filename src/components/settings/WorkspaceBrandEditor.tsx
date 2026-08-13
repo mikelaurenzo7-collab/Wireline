@@ -1,7 +1,7 @@
 import { useId } from "react";
 
 import { Button } from "../atoms";
-import { Input } from "../ui/shadcn/Input";
+import { Input } from "../atoms/Input";
 import { BRAND } from "../../constants/brand-colors";
 
 export type WorkspaceBrandForm = {
