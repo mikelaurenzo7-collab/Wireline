@@ -1,3 +1,6 @@
+export const STRIPE_PRODUCT_PRICING_URL = "https://trywireline.com/pricing";
+export const STRIPE_SUBSCRIPTION_STATEMENT_DESCRIPTOR = "WIRELINE";
+
 function normalizeCopy(value) {
   return String(value || "")
     .trim()
@@ -39,6 +42,28 @@ export function stripeProductCopyFindings(products, expectedProducts) {
           product_id: product.id,
           expected_description: expectedDescription,
           actual_description: actualDescription || null,
+        }),
+      );
+    }
+
+    if (String(product.url || "") !== STRIPE_PRODUCT_PRICING_URL) {
+      findings.push(
+        finding("error", `Stripe product URL drift for ${expected.name}.`, {
+          product_id: product.id,
+          expected_url: STRIPE_PRODUCT_PRICING_URL,
+          actual_url: product.url || null,
+        }),
+      );
+    }
+
+    const expectedDescriptor =
+      expected.key === "conversation_balance" ? "" : STRIPE_SUBSCRIPTION_STATEMENT_DESCRIPTOR;
+    if (String(product.statement_descriptor || "") !== expectedDescriptor) {
+      findings.push(
+        finding("error", `Stripe product statement descriptor drift for ${expected.name}.`, {
+          product_id: product.id,
+          expected_statement_descriptor: expectedDescriptor || null,
+          actual_statement_descriptor: product.statement_descriptor || null,
         }),
       );
     }
