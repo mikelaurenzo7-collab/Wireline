@@ -67,13 +67,13 @@ describe("spend guard integrity", () => {
     expect(route).not.toContain("hard_cap: false,");
   });
 
-  it("funds a deliberate Free Builder simulation allowance without changing paid envelopes", () => {
+  it("funds explicit, independently reserved AI allowances for every tier", () => {
     expect(FREE_BUILDER_SIMULATION_ALLOWANCE_USD).toBe(1.5);
     expect(defaultAiSpendBudgetUsdForTier("free")).toBe(1.5);
-    expect(defaultAiSpendBudgetUsdForTier("personal")).toBe(8.68);
-    expect(defaultAiSpendBudgetUsdForTier("team")).toBe(18.36);
-    expect(defaultAiSpendBudgetUsdForTier("business")).toBe(37.36);
-    expect(defaultAiSpendBudgetUsdForTier("enterprise")).toBe(69.6);
+    expect(defaultAiSpendBudgetUsdForTier("personal")).toBe(1.5);
+    expect(defaultAiSpendBudgetUsdForTier("team")).toBe(3);
+    expect(defaultAiSpendBudgetUsdForTier("business")).toBe(6);
+    expect(defaultAiSpendBudgetUsdForTier("enterprise")).toBe(12);
     expect(subscriptionPlanToTier("definitely-not-a-plan")).toBe("free");
 
     const route = read("src/routes/spend-control-routes.ts");
@@ -90,6 +90,19 @@ describe("spend guard integrity", () => {
     expect(migration).toContain("monthly_limit_usd = 1.50");
     expect(migration).toContain("NOT EXISTS");
     expect(journal).toContain('"tag": "0134_free_builder_simulation_allowance"');
+  });
+
+  it("moves only Wireline-managed paid defaults to the launch-safe allowance", () => {
+    const migration = read("drizzle/migrations/0146_paid_ai_budget_margin_alignment.sql");
+    const journal = read("drizzle/migrations/meta/_journal.json");
+
+    expect(migration).toContain("budget.managed_default = true");
+    expect(migration).toContain("THEN 12.00");
+    expect(migration).toContain("THEN 6.00");
+    expect(migration).toContain("THEN 3.00");
+    expect(migration).toContain("THEN 1.50");
+    expect(migration).toContain("IN ('active', 'trialing')");
+    expect(journal).toContain('"tag": "0146_paid_ai_budget_margin_alignment"');
   });
 
   it("keeps AI spend telemetry provider-neutral with exact legacy behavior", () => {

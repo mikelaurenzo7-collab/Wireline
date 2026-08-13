@@ -574,8 +574,8 @@
  *     family; the older partial definition in components.css is overridden
  *     here so every banner reads as Letterpress paper with a colored rail.
  *     Tones: --info, --success, --warning, --error. Aliases --warn and
- *     --critical keep existing TrialBanner / EmailVerifyBanner consumers on
- *     the correct tone without touching their class hooks.
+ *     --critical keep existing consumers (e.g. EmailVerifyBanner) on the
+ *     correct tone without touching their class hooks.
  * --------------------------------------------------------------------------*/
 .wl-banner {
   display: flex;

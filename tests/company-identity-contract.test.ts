@@ -11,8 +11,7 @@ import {
   readCompanyIdentityPreferences,
 } from "../src/lib/company-identity";
 
-const read = (path: string) =>
-  readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("company identity pack", () => {
   it("keeps provider approval separate from profile readiness", () => {
@@ -63,16 +62,10 @@ describe("company identity pack", () => {
     });
 
     expect(readiness.voice.missing).toContain("dedicated Wireline number");
-    expect(readiness.voice.missing).toContain(
-      "15-character caller ID fallback name",
-    );
+    expect(readiness.voice.missing).toContain("15-character caller ID fallback name");
     expect(readiness.sms.missing).toContain("support email");
-    expect(readiness.email.missing).toContain(
-      "support email on the company domain",
-    );
-    expect(readiness.email.missing).toContain(
-      "valid physical postal address for commercial email",
-    );
+    expect(readiness.email.missing).toContain("support email on the company domain");
+    expect(readiness.email.missing).toContain("valid physical postal address for commercial email");
     expect(
       canRequestCompanyIdentityReview({
         readiness,
@@ -107,9 +100,7 @@ describe("company identity pack", () => {
 
     expect(readiness.sms.profileStatus).toBe("ready");
     expect(readiness.email.profileStatus).toBe("incomplete");
-    expect(readiness.email.missing).toContain(
-      "support email on the company domain",
-    );
+    expect(readiness.email.missing).toContain("support email on the company domain");
   });
 
   it("binds review state to a privacy-minimized digest of the identity and number", () => {
@@ -157,9 +148,7 @@ describe("company identity pack", () => {
     expect(routes).toContain("reviewFingerprint: current.currentFingerprint");
     expect(routes).toContain("already_requested: true");
     expect(routes).toContain("IDENTITY_REVIEW_REQUIRES_CHANGES");
-    expect(routes).toContain(
-      'if (providerStatus[channel] === "not_requested")',
-    );
+    expect(routes).toContain('if (providerStatus[channel] === "not_requested")');
     expect(routes).toContain(
       'throw AppError.fromHttpStatus(400, "Select at least one identity channel.")',
     );
@@ -167,23 +156,15 @@ describe("company identity pack", () => {
     expect(routes).toContain("wireline_settings WHERE user_id");
     expect(routes).toContain("wireline_user_preferences WHERE user_id");
     expect(routes).toContain("FOR UPDATE");
-    expect(routes).toContain(
-      "profileFingerprintSha256: current.currentFingerprint",
-    );
-    expect(routes).not.toContain(
-      "profileFingerprint: current.currentFingerprint",
-    );
+    expect(routes).toContain("profileFingerprintSha256: current.currentFingerprint");
+    expect(routes).not.toContain("profileFingerprint: current.currentFingerprint");
     expect(routes).toContain("phoneNumber: current.phoneNumber");
     expect(routes).toContain("desc(schema.phoneNumbers.id)");
     expect(routes).toContain("channelSelectionChanged");
     expect(identity).toContain('createHash("sha256")');
     expect(identity).toContain("must fail closed");
-    expect(identity).toContain(
-      "Requested channel selection is deliberately excluded",
-    );
-    expect(routes).toContain(
-      "final display follow supported Wireline workflows",
-    );
+    expect(identity).toContain("Requested channel selection is deliberately excluded");
+    expect(routes).toContain("final display follow supported Wireline workflows");
     expect(routes).not.toContain('providerStatus[channel] = "approved"');
 
     expect(guard).toContain("Canonical preference writer");
@@ -205,9 +186,7 @@ describe("company identity pack", () => {
 
   it("reconciles generic branding and every tenant-number mutation", () => {
     const mutation = read("src/lib/company-identity-mutation.ts");
-    const settingsGuard = read(
-      "src/routes/company-identity-settings-guard-routes.ts",
-    );
+    const settingsGuard = read("src/routes/company-identity-settings-guard-routes.ts");
     const carrier = read("src/routes/carrier-routes.ts");
     const provisioning = read("src/lib/phone-provisioning.ts");
     const registry = read("src/server/register-api-routes.ts");
@@ -216,9 +195,7 @@ describe("company identity pack", () => {
     expect(mutation).toContain("reconcileCompanyIdentityAfterMutation");
     expect(mutation).toContain("pg_advisory_xact_lock");
     expect(mutation).toContain("company_identity.review_invalidated");
-    expect(mutation).toContain(
-      'reason: "branding_changed" | "phone_number_changed"',
-    );
+    expect(mutation).toContain('reason: "branding_changed" | "phone_number_changed"');
 
     expect(settingsGuard).toContain("IDENTITY_SETTING_KEYS");
     expect(settingsGuard).toContain('"business_name"');
@@ -233,29 +210,36 @@ describe("company identity pack", () => {
     expect(settingsGuard).toContain("parsed.username || parsed.password");
     expect(settingsGuard).toMatch(/"Business name",\r?\n\s+120/);
     expect(settingsGuard).toMatch(/"Brand name",\r?\n\s+80/);
-    expect(settingsGuard).toContain(
-      'runCompanyIdentityMutation(req.user.id, "branding_changed"',
-    );
+    expect(settingsGuard).toContain('runCompanyIdentityMutation(req.user.id, "branding_changed"');
     expect(settingsGuard).toContain("delete downstreamBody[key]");
+
+    // The branding commit is durable middleware state — it must be provably
+    // impossible for downstream validation to 400/403 after it lands. The
+    // guard preflights the exact downstream pipeline (schema parse, writable
+    // allowlist, telecom ownership) BEFORE the mutation, and the phone guard
+    // registers before this guard so malformed provider values reject first.
+    const preflight = settingsGuard.indexOf("SettingsSchema.partial().safeParse");
+    const ownership = settingsGuard.indexOf("await assertTelecomIdentityOwned(req.user.id");
+    const commit = settingsGuard.indexOf("await runCompanyIdentityMutation(");
+    expect(preflight).toBeGreaterThan(-1);
+    expect(ownership).toBeGreaterThan(preflight);
+    expect(commit).toBeGreaterThan(ownership);
+    expect(registry.indexOf("app.use(settingsPhoneGuardRouter)")).toBeLessThan(
+      registry.indexOf("app.use(companyIdentitySettingsGuardRouter)"),
+    );
     expect(registry).toContain(
       'import companyIdentitySettingsGuardRouter from "../routes/company-identity-settings-guard-routes"',
     );
     expect(registry).toContain("app.use(companyIdentitySettingsGuardRouter)");
 
     expect(
-      carrier.match(
-        /runCompanyIdentityMutation\(req\.user\.id, "phone_number_changed"/g,
-      ),
+      carrier.match(/runCompanyIdentityMutation\(req\.user\.id, "phone_number_changed"/g),
     ).toHaveLength(3);
     expect(carrier).toContain("desc(schema.phoneNumbers.id)");
-    expect(provisioning).toContain(
-      'runCompanyIdentityMutation(userId, "phone_number_changed"',
-    );
+    expect(provisioning).toContain('runCompanyIdentityMutation(userId, "phone_number_changed"');
     expect(provisioning).toContain("compensateProvisionedNumber");
     expect(provisioning).toContain("Carrier compensation completed");
-    expect(provisioning).toContain(
-      "Carrier compensation queued in durable orphan ledger",
-    );
+    expect(provisioning).toContain("Carrier compensation queued in durable orphan ledger");
     expect(provisioning).toContain(
       "Number provisioning could not be saved; the provider allocation was released.",
     );
@@ -271,18 +255,12 @@ describe("company identity pack", () => {
     expect(normalizedSurface).toContain("> Identity </h2>");
     expect(surface).toContain("{identity.guarantee}");
     expect(surface).toContain("{meta.display_scope}");
-    expect(normalizedSurface).toContain(
-      "Maximum 15 characters for traditional CNAM fallback.",
-    );
-    expect(normalizedSurface).toContain(
-      "supported mobile networks after approval",
-    );
+    expect(normalizedSurface).toContain("Maximum 15 characters for traditional CNAM fallback.");
+    expect(normalizedSurface).toContain("supported mobile networks after approval");
     expect(normalizedSurface).toContain(
       "Save these changes before requesting verification review.",
     );
-    expect(normalizedSurface).toContain(
-      "Select at least one identity channel before saving.",
-    );
+    expect(normalizedSurface).toContain("Select at least one identity channel before saving.");
     expect(surface).toContain("min-h-11 cursor-pointer");
     expect(surface).toContain("reviewAlreadyRequested");
     expect(surface).toContain("Review already requested");

@@ -1,4 +1,5 @@
 import { log } from "./server-context";
+import { reportError } from "./error-reporter";
 
 /**
  * Run work that must outlive the HTTP response.
@@ -18,8 +19,7 @@ type VercelRequestContext = {
 
 function vercelWaitUntil(promise: Promise<unknown>): boolean {
   const context = (globalThis as Record<symbol, unknown>)[Symbol.for("@vercel/request-context")] as
-    | VercelRequestContext
-    | undefined;
+    VercelRequestContext | undefined;
   const waitUntil = context?.get?.()?.waitUntil;
   if (typeof waitUntil !== "function") return false;
   waitUntil(promise);
@@ -28,9 +28,14 @@ function vercelWaitUntil(promise: Promise<unknown>): boolean {
 
 export function runInBackground(label: string, work: () => Promise<unknown>): void {
   const promise = work().catch((error: unknown) => {
-    log.warn(`background work failed: ${label}`, {
+    // Post-response work has no error middleware behind it — this catch IS
+    // the handler of last resort for lost leads, dropped webhook rows, and
+    // failed dial follow-ups. Error severity plus external reporting, not a
+    // warn that Vercel's error view never surfaces.
+    log.error(`background work failed: ${label}`, {
       error: error instanceof Error ? error.message : String(error),
     });
+    reportError(error, { tags: { surface: "background", label } });
   });
   vercelWaitUntil(promise);
 }

@@ -1,0 +1,3891 @@
+# Key Page Dependency Trees
+
+Local imports are traced recursively from each route entry. External packages and CSS-only imports are omitted; repeated local modules are marked once per page to keep the graph readable without losing coverage.
+
+## / (Home)
+Entry: src/pages/LandingPage.tsx
+Dependencies:
+- src/pages/LandingPage.tsx
+  - src/components/marketing/WireAgentLanding.tsx
+    - src/components/marketing/BrowserCallWidget.tsx
+      - src/components/brand/WirelineMark.tsx
+      - src/components/ui/Medallion.tsx
+        - src/lib/utils.ts
+      - src/components/ui/shadcn/ShadButton.tsx
+        - src/components/atoms/Button.tsx
+          - src/lib/utils.ts (already listed)
+      - src/components/ui/SignalOrbFrame.tsx
+        - src/components/ui/SignalFrameRail.tsx
+          - src/lib/utils.ts (already listed)
+        - src/lib/utils.ts (already listed)
+      - src/lib/product-event-client.ts
+        - src/lib/product-events.ts
+      - src/lib/utils.ts (already listed)
+    - src/components/marketing/LiveVideoSpotlight.tsx
+      - src/lib/video-presenter/live-video-policy.ts
+        - src/lib/plan-catalog.ts
+    - src/components/marketing/MarketingFooter.tsx
+      - src/components/brand/WirelineMark.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/marketing/MarketingHero.tsx
+      - src/lib/product-copy.ts
+      - src/lib/product-event-client.ts (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/marketing/MarketingStickyCta.tsx
+      - src/lib/product-event-client.ts (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/marketing/PrecisionPublicHeader.tsx
+      - src/components/atoms/index.ts
+        - src/components/atoms/Badge.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Button.tsx (already listed)
+        - src/components/atoms/Chip.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Dialog.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/DropdownMenu.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/EmptyState.tsx
+          - src/components/ui/EmptyState.tsx
+            - src/components/atoms/Button.tsx (already listed)
+            - src/components/ui/Medallion.tsx (already listed)
+            - src/components/ui/SectionHeader.tsx
+              - src/lib/utils.ts (already listed)
+              - src/lib/wireline-design-system.ts
+                - src/lib/authenticated-surface-contract.ts
+                  - src/lib/surface-contract.ts
+                - src/lib/wireline-design-vision.ts
+            - src/components/ui/SignalOrbFrame.tsx (already listed)
+            - src/lib/utils.ts (already listed)
+            - src/lib/wireline-design-system.ts (already listed)
+        - src/components/atoms/Eyebrow.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/HelpTooltip.tsx
+          - src/components/ui/shadcn/Tooltip.tsx
+            - src/lib/utils.ts (already listed)
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Input.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/MetricTile.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/NativeSelect.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Paper.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Reveal.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/skeleton-presets.tsx
+          - src/components/atoms/Skeleton.tsx
+            - src/lib/utils.ts (already listed)
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Skeleton.tsx (already listed)
+        - src/components/atoms/Switch.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Textarea.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Toast.tsx
+          - src/components/atoms/Button.tsx (already listed)
+          - src/lib/utils.ts (already listed)
+      - src/components/brand/WirelineMark.tsx (already listed)
+      - src/components/layout/SkipToContentLink.tsx
+      - src/lib/product-copy.ts (already listed)
+    - src/components/marketing/TrustSignals.tsx
+    - src/data/contact-agents.ts
+      - src/constants/brand-colors.ts
+        - src/constants/generated-design-tokens.ts
+    - src/lib/plan-catalog.ts (already listed)
+    - src/lib/product-copy.ts (already listed)
+    - src/lib/product-event-client.ts (already listed)
+  - src/lib/demo-attribution-client.ts
+    - src/lib/demo-funnel-shared.ts
+  - src/lib/page-meta.tsx
+  - src/lib/plan-catalog.ts (already listed)
+  - src/lib/product-copy.ts (already listed)
+  - src/lib/signup-intent.ts
+
+## /pricing
+Entry: src/pages/Pricing.tsx
+Dependencies:
+- src/pages/Pricing.tsx
+  - src/components/marketing/MarketingFooter.tsx
+    - src/components/brand/WirelineMark.tsx
+    - src/lib/utils.ts
+  - src/components/marketing/MarketingHero.tsx
+    - src/lib/product-copy.ts
+    - src/lib/product-event-client.ts
+      - src/lib/product-events.ts
+    - src/lib/utils.ts (already listed)
+  - src/components/marketing/PrecisionPublicHeader.tsx
+    - src/components/atoms/index.ts
+      - src/components/atoms/Badge.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Button.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Chip.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Dialog.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/DropdownMenu.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/EmptyState.tsx
+        - src/components/ui/EmptyState.tsx
+          - src/components/atoms/Button.tsx (already listed)
+          - src/components/ui/Medallion.tsx
+            - src/lib/utils.ts (already listed)
+          - src/components/ui/SectionHeader.tsx
+            - src/lib/utils.ts (already listed)
+            - src/lib/wireline-design-system.ts
+              - src/lib/authenticated-surface-contract.ts
+                - src/lib/surface-contract.ts
+              - src/lib/wireline-design-vision.ts
+          - src/components/ui/SignalOrbFrame.tsx
+            - src/components/ui/SignalFrameRail.tsx
+              - src/lib/utils.ts (already listed)
+            - src/lib/utils.ts (already listed)
+          - src/lib/utils.ts (already listed)
+          - src/lib/wireline-design-system.ts (already listed)
+      - src/components/atoms/Eyebrow.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/HelpTooltip.tsx
+        - src/components/ui/shadcn/Tooltip.tsx
+          - src/lib/utils.ts (already listed)
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Input.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/MetricTile.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/NativeSelect.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Paper.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Reveal.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/skeleton-presets.tsx
+        - src/components/atoms/Skeleton.tsx
+          - src/lib/utils.ts (already listed)
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Skeleton.tsx (already listed)
+      - src/components/atoms/Switch.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Textarea.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Toast.tsx
+        - src/components/atoms/Button.tsx (already listed)
+        - src/lib/utils.ts (already listed)
+    - src/components/brand/WirelineMark.tsx (already listed)
+    - src/components/layout/SkipToContentLink.tsx
+    - src/lib/product-copy.ts (already listed)
+  - src/lib/page-meta.tsx
+  - src/lib/plan-catalog.ts
+  - src/lib/utils.ts (already listed)
+
+## /signup and /signin
+Entry: src/AuthPortalRoute.tsx
+Dependencies:
+- src/AuthPortalRoute.tsx
+  - src/components/AuthPortal.tsx
+    - src/components/brand/WirelineMark.tsx
+    - src/components/molecules/index.ts
+      - src/components/molecules/Card.tsx
+        - src/lib/utils.ts
+      - src/components/molecules/ConversationActivity.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/ConversationMessage.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/FormField.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/MetricCard.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/SearchField.tsx
+        - src/components/atoms/Button.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Input.tsx
+          - src/lib/utils.ts (already listed)
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/StatusNotice.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/VoiceTurns.tsx
+        - src/components/molecules/ConversationMessage.tsx (already listed)
+        - src/lib/call-transcript.ts
+    - src/components/ui/shadcn/Checkbox.tsx
+      - src/lib/utils.ts (already listed)
+    - src/contexts/AuthContext.tsx
+      - src/lib/api.ts
+        - src/lib/api-base.ts
+      - src/lib/public-routes.ts
+      - src/lib/session-cookie.ts
+      - src/lib/studio-agent-preference.ts
+    - src/lib/auth-redirect.ts
+      - src/lib/post-signup-onboarding.ts
+        - src/lib/api.ts (already listed)
+        - src/lib/tenant-activation.ts
+          - src/db/schema.ts
+            - src/db/resend-webhook-schema.ts
+            - src/db/schema-base.ts
+            - src/db/voice-usage-schema.ts
+              - src/db/schema-base.ts (already listed)
+          - src/lib/post-call-digest.ts
+            - src/constants/brand-colors.ts
+              - src/constants/generated-design-tokens.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/action-engine.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/action-execution-idempotency.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/action-types.ts
+                - src/lib/server-context.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/api-error.ts
+                  - src/lib/audit-logger.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/types/audit.ts
+                  - src/lib/database-connection.ts
+                  - src/lib/server-logger.ts
+                  - src/lib/tenant-context-scope.ts
+                  - src/lib/tenant-quotas.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/plan-entitlements.ts
+                      - src/db/schema.ts (already listed)
+                      - src/lib/auth-service.ts
+                        - src/db/schema.ts (already listed)
+                        - src/db/security-schema.ts
+                        - src/lib/account-service.ts
+                          - src/db/schema.ts (already listed)
+                          - src/lib/account-type.ts
+                            - src/constants/navigation.ts
+                          - src/lib/server-context.ts (already listed)
+                        - src/lib/account-type.ts (already listed)
+                        - src/lib/auth-utils.ts
+                          - src/lib/server-context.ts (already listed)
+                        - src/lib/breached-passwords.ts
+                        - src/lib/internal-jwt-secret.ts
+                        - src/lib/password-limits.ts
+                        - src/lib/platform-owner-emails.ts
+                        - src/lib/server-context.ts (already listed)
+                        - src/lib/trial-gate.ts
+                          - src/db/schema.ts (already listed)
+                          - src/lib/auth-service.ts (already listed)
+                          - src/lib/server-context.ts (already listed)
+                          - src/lib/workspace-usage-snapshot.ts
+                            - src/db/schema.ts (already listed)
+                            - src/lib/credit-wallet.ts
+                              - src/db/schema.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                            - src/lib/plan-catalog.ts
+                            - src/lib/plan-entitlements.ts (already listed)
+                            - src/lib/server-context.ts (already listed)
+                            - src/lib/spend-guards.ts
+                              - src/db/schema.ts (already listed)
+                              - src/lib/ai-spend-alert.ts
+                              - src/lib/daily-spend-accumulator.ts
+                                - src/lib/server-context.ts (already listed)
+                              - src/lib/sentry-events.ts
+                                - src/lib/server-context.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                              - src/lib/server-utils.ts
+                              - src/lib/spend-budget-policy.ts
+                              - src/lib/webhook-helpers.ts
+                                - src/db/schema.ts (already listed)
+                                - src/lib/safe-webhook-delivery.ts
+                                  - src/lib/webhook-validators.ts
+                                - src/lib/secret-vault.ts
+                                - src/lib/sentry-events.ts (already listed)
+                                - src/lib/server-context.ts (already listed)
+                                - src/lib/server-utils.ts (already listed)
+                                - src/lib/webhook-delivery-status.ts
+                            - src/lib/voice-usage.ts
+                              - src/db/schema.ts (already listed)
+                              - src/db/voice-usage-schema.ts (already listed)
+                              - src/lib/plan-catalog.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                              - src/lib/tenant-quotas.ts (already listed)
+                              - src/lib/voice-completion-grace.ts
+                                - src/lib/credit-wallet.ts (already listed)
+                      - src/lib/plan-catalog.ts (already listed)
+                      - src/lib/server-context.ts (already listed)
+                      - src/lib/tenant-quotas.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                  - src/middleware/require-role.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/lib/soc2-controls.ts
+                      - src/db/schema.ts (already listed)
+              - src/lib/action-types.ts (already listed)
+              - src/lib/agent-capabilities.ts
+              - src/lib/agent-tool-authorization.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/agent-capabilities.ts (already listed)
+                - src/lib/tenant-integration-connections.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/agent-capabilities.ts (already listed)
+                  - src/lib/platform-integration-flags.ts
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/x-service.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/oauth-provider-revocation.ts
+                      - src/db/schema.ts (already listed)
+                      - src/lib/secret-vault.ts (already listed)
+                      - src/lib/server-context.ts (already listed)
+                      - src/lib/server-utils.ts (already listed)
+                    - src/lib/secret-vault.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/lib/server-utils.ts (already listed)
+                - src/routes/vapi/types.ts
+              - src/lib/ai-supervisor.ts
+                - src/lib/ai-structured.ts
+                  - src/lib/ai-audit.ts
+                    - src/lib/ai-models.ts
+                  - src/lib/ai-client.ts
+                    - src/lib/ai-gateway.ts
+                      - src/lib/ai-gateway-auth.ts
+                      - src/lib/server-logger.ts (already listed)
+                    - src/lib/ai-models.ts (already listed)
+                    - src/lib/ai-usage.ts
+                    - src/lib/server-logger.ts (already listed)
+                  - src/lib/ai-models.ts (already listed)
+              - src/lib/apollo-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/oauth-provider-revocation.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/middleware/audit-middleware.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/ai-audit.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                  - src/lib/spend-guards.ts (already listed)
+              - src/lib/background-work.ts
+                - src/lib/error-reporter.ts
+                  - src/lib/server-logger.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+              - src/lib/calendar-time.ts
+              - src/lib/crm-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/hubspot-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/salesforce-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/salesforce-sync-preferences.ts
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/slack-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                  - src/lib/webhook-helpers.ts (already listed)
+              - src/lib/integrations.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/calendar-time.ts (already listed)
+                - src/lib/email-compliance.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/company-identity.ts
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/email-service.ts
+                  - src/constants/brand-colors.ts (already listed)
+                  - src/lib/email-compliance.ts (already listed)
+                  - src/lib/email-delivery-suppression.ts
+                    - src/db/resend-webhook-schema.ts (already listed)
+                    - src/lib/email-compliance.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                  - src/lib/resend-config.ts
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/google-apis.ts
+                - src/lib/icloud-mail.ts
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/zoom-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+              - src/lib/nav-counts-invalidate.ts
+                - src/lib/nav-counts-cache.ts
+              - src/lib/outbound-dial-gate.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/compliance.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/dnc-failsafe.ts
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/federal-dnc-service.ts
+                  - src/lib/federal-dnc-config.ts
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/outbound-status.ts
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/tcpa-calling-hours.ts
+                  - src/lib/tcpa-consent.ts
+                - src/lib/tcpa-consent.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/slack-service.ts (already listed)
+              - src/lib/tenant-integration-connections.ts (already listed)
+              - src/lib/twilio-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/agent-phone-lines.ts
+                  - src/db/schema.ts (already listed)
+                - src/lib/compliance.ts (already listed)
+                - src/lib/runtime-usage-billing.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/credit-wallet.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/sms-billing.ts
+                - src/lib/trial-gate.ts (already listed)
+                - src/lib/twilio-service-base.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/agent-phone-lines.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+              - src/lib/webhook-helpers.ts (already listed)
+            - src/lib/crm-service.ts (already listed)
+            - src/lib/csat-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/outbound-dial-gate.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/twilio-service.ts (already listed)
+              - src/lib/vapi-helpers.ts
+                - src/lib/agent-capabilities.ts (already listed)
+                - src/lib/agent-constants.ts
+                - src/lib/tenant-integration-connections.ts (already listed)
+                - src/lib/tenant-tools-cache.ts
+                  - src/lib/server-context.ts (already listed)
+            - src/lib/google-sheets-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/oauth-provider-revocation.ts (already listed)
+              - src/lib/secret-vault.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+            - src/lib/integrations.ts (already listed)
+            - src/lib/job-queue.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/error-reporter.ts (already listed)
+              - src/lib/job-queue-base.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/error-reporter.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+            - src/lib/microsoft-graph-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/oauth-provider-revocation.ts (already listed)
+              - src/lib/secret-vault.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+            - src/lib/outbound-call-tracking.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/compliance.ts (already listed)
+              - src/lib/outbound-status.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+            - src/lib/post-call-output-preferences.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+            - src/lib/product-event-server.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/product-events.ts
+              - src/lib/server-context.ts (already listed)
+            - src/lib/sales-integration-policy.ts
+            - src/lib/server-context.ts (already listed)
+            - src/lib/shareable-artifact/publish-call-recap.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/plan-catalog.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/shareable-artifact/entitlement.ts
+                - src/lib/plan-catalog.ts (already listed)
+              - src/lib/shareable-artifact/redact.ts
+              - src/lib/shareable-artifact/service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/shareable-artifact/tokens.ts
+                - src/lib/shareable-artifact/types.ts
+              - src/lib/shareable-artifact/types.ts (already listed)
+            - src/lib/tenant-activation.ts (already listed)
+            - src/lib/vapi-helpers.ts (already listed)
+          - src/lib/product-event-server.ts (already listed)
+          - src/lib/sales-integration-policy.ts (already listed)
+          - src/lib/server-context.ts (already listed)
+      - src/lib/signup-intent.ts
+    - src/lib/demo-attribution-client.ts
+      - src/lib/demo-funnel-shared.ts
+    - src/lib/oauth-url.ts
+    - src/lib/page-meta.tsx
+    - src/lib/password-policy.ts
+    - src/lib/plan-catalog.ts (already listed)
+    - src/lib/post-signup-onboarding.ts (already listed)
+    - src/lib/product-copy.ts
+    - src/lib/product-event-client.ts
+      - src/lib/product-events.ts (already listed)
+    - src/lib/signup-intent.ts (already listed)
+
+## /overview
+Entry: src/pages/OverviewPage.tsx
+Dependencies:
+- src/pages/OverviewPage.tsx
+  - src/components/ActivationChecklist.tsx
+    - src/contexts/AccountContext.tsx
+      - src/contexts/AuthContext.tsx
+        - src/lib/api.ts
+          - src/lib/api-base.ts
+        - src/lib/public-routes.ts
+        - src/lib/session-cookie.ts
+        - src/lib/studio-agent-preference.ts
+      - src/lib/account-type.ts
+        - src/constants/navigation.ts
+      - src/lib/api.ts (already listed)
+    - src/contexts/AuthContext.tsx (already listed)
+    - src/lib/fleet-setup-progress.ts
+      - src/lib/api.ts (already listed)
+    - src/lib/post-signup-onboarding.ts
+      - src/lib/api.ts (already listed)
+      - src/lib/tenant-activation.ts
+        - src/db/schema.ts
+          - src/db/resend-webhook-schema.ts
+          - src/db/schema-base.ts
+          - src/db/voice-usage-schema.ts
+            - src/db/schema-base.ts (already listed)
+        - src/lib/post-call-digest.ts
+          - src/constants/brand-colors.ts
+            - src/constants/generated-design-tokens.ts
+          - src/db/schema.ts (already listed)
+          - src/lib/action-engine.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/action-execution-idempotency.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/action-types.ts
+              - src/lib/server-context.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/api-error.ts
+                - src/lib/audit-logger.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/types/audit.ts
+                - src/lib/database-connection.ts
+                - src/lib/server-logger.ts
+                - src/lib/tenant-context-scope.ts
+                - src/lib/tenant-quotas.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/plan-entitlements.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/auth-service.ts
+                      - src/db/schema.ts (already listed)
+                      - src/db/security-schema.ts
+                      - src/lib/account-service.ts
+                        - src/db/schema.ts (already listed)
+                        - src/lib/account-type.ts (already listed)
+                        - src/lib/server-context.ts (already listed)
+                      - src/lib/account-type.ts (already listed)
+                      - src/lib/auth-utils.ts
+                        - src/lib/server-context.ts (already listed)
+                      - src/lib/breached-passwords.ts
+                      - src/lib/internal-jwt-secret.ts
+                      - src/lib/password-limits.ts
+                      - src/lib/platform-owner-emails.ts
+                      - src/lib/server-context.ts (already listed)
+                      - src/lib/trial-gate.ts
+                        - src/db/schema.ts (already listed)
+                        - src/lib/auth-service.ts (already listed)
+                        - src/lib/server-context.ts (already listed)
+                        - src/lib/workspace-usage-snapshot.ts
+                          - src/db/schema.ts (already listed)
+                          - src/lib/credit-wallet.ts
+                            - src/db/schema.ts (already listed)
+                            - src/lib/server-context.ts (already listed)
+                          - src/lib/plan-catalog.ts
+                          - src/lib/plan-entitlements.ts (already listed)
+                          - src/lib/server-context.ts (already listed)
+                          - src/lib/spend-guards.ts
+                            - src/db/schema.ts (already listed)
+                            - src/lib/ai-spend-alert.ts
+                            - src/lib/daily-spend-accumulator.ts
+                              - src/lib/server-context.ts (already listed)
+                            - src/lib/sentry-events.ts
+                              - src/lib/server-context.ts (already listed)
+                            - src/lib/server-context.ts (already listed)
+                            - src/lib/server-utils.ts
+                            - src/lib/spend-budget-policy.ts
+                            - src/lib/webhook-helpers.ts
+                              - src/db/schema.ts (already listed)
+                              - src/lib/safe-webhook-delivery.ts
+                                - src/lib/webhook-validators.ts
+                              - src/lib/secret-vault.ts
+                              - src/lib/sentry-events.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                              - src/lib/server-utils.ts (already listed)
+                              - src/lib/webhook-delivery-status.ts
+                          - src/lib/voice-usage.ts
+                            - src/db/schema.ts (already listed)
+                            - src/db/voice-usage-schema.ts (already listed)
+                            - src/lib/plan-catalog.ts (already listed)
+                            - src/lib/server-context.ts (already listed)
+                            - src/lib/tenant-quotas.ts (already listed)
+                            - src/lib/voice-completion-grace.ts
+                              - src/lib/credit-wallet.ts (already listed)
+                    - src/lib/plan-catalog.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/lib/tenant-quotas.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                - src/middleware/require-role.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/soc2-controls.ts
+                    - src/db/schema.ts (already listed)
+            - src/lib/action-types.ts (already listed)
+            - src/lib/agent-capabilities.ts
+            - src/lib/agent-tool-authorization.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/agent-capabilities.ts (already listed)
+              - src/lib/tenant-integration-connections.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/agent-capabilities.ts (already listed)
+                - src/lib/platform-integration-flags.ts
+                - src/lib/server-context.ts (already listed)
+                - src/lib/x-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/secret-vault.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/lib/server-utils.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+              - src/routes/vapi/types.ts
+            - src/lib/ai-supervisor.ts
+              - src/lib/ai-structured.ts
+                - src/lib/ai-audit.ts
+                  - src/lib/ai-models.ts
+                - src/lib/ai-client.ts
+                  - src/lib/ai-gateway.ts
+                    - src/lib/ai-gateway-auth.ts
+                    - src/lib/server-logger.ts (already listed)
+                  - src/lib/ai-models.ts (already listed)
+                  - src/lib/ai-usage.ts
+                  - src/lib/server-logger.ts (already listed)
+                - src/lib/ai-models.ts (already listed)
+            - src/lib/apollo-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/oauth-provider-revocation.ts (already listed)
+              - src/lib/secret-vault.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/middleware/audit-middleware.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/ai-audit.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/spend-guards.ts (already listed)
+            - src/lib/background-work.ts
+              - src/lib/error-reporter.ts
+                - src/lib/server-logger.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+            - src/lib/calendar-time.ts
+            - src/lib/crm-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/hubspot-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/oauth-provider-revocation.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+              - src/lib/salesforce-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/oauth-provider-revocation.ts (already listed)
+                - src/lib/salesforce-sync-preferences.ts
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/slack-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/oauth-provider-revocation.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/webhook-helpers.ts (already listed)
+            - src/lib/integrations.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/calendar-time.ts (already listed)
+              - src/lib/email-compliance.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/company-identity.ts
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+              - src/lib/email-service.ts
+                - src/constants/brand-colors.ts (already listed)
+                - src/lib/email-compliance.ts (already listed)
+                - src/lib/email-delivery-suppression.ts
+                  - src/db/resend-webhook-schema.ts (already listed)
+                  - src/lib/email-compliance.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/resend-config.ts
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+              - src/lib/google-apis.ts
+              - src/lib/icloud-mail.ts
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+              - src/lib/secret-vault.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/zoom-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/oauth-provider-revocation.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+            - src/lib/nav-counts-invalidate.ts
+              - src/lib/nav-counts-cache.ts
+            - src/lib/outbound-dial-gate.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/compliance.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/dnc-failsafe.ts
+                - src/lib/server-context.ts (already listed)
+              - src/lib/federal-dnc-service.ts
+                - src/lib/federal-dnc-config.ts
+                - src/lib/server-context.ts (already listed)
+              - src/lib/outbound-status.ts
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/tcpa-calling-hours.ts
+                - src/lib/tcpa-consent.ts
+              - src/lib/tcpa-consent.ts (already listed)
+            - src/lib/server-context.ts (already listed)
+            - src/lib/server-utils.ts (already listed)
+            - src/lib/slack-service.ts (already listed)
+            - src/lib/tenant-integration-connections.ts (already listed)
+            - src/lib/twilio-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/agent-phone-lines.ts
+                - src/db/schema.ts (already listed)
+              - src/lib/compliance.ts (already listed)
+              - src/lib/runtime-usage-billing.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/credit-wallet.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/sms-billing.ts
+              - src/lib/trial-gate.ts (already listed)
+              - src/lib/twilio-service-base.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/agent-phone-lines.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+            - src/lib/webhook-helpers.ts (already listed)
+          - src/lib/crm-service.ts (already listed)
+          - src/lib/csat-service.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/outbound-dial-gate.ts (already listed)
+            - src/lib/server-context.ts (already listed)
+            - src/lib/twilio-service.ts (already listed)
+            - src/lib/vapi-helpers.ts
+              - src/lib/agent-capabilities.ts (already listed)
+              - src/lib/agent-constants.ts
+              - src/lib/tenant-integration-connections.ts (already listed)
+              - src/lib/tenant-tools-cache.ts
+                - src/lib/server-context.ts (already listed)
+          - src/lib/google-sheets-service.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/oauth-provider-revocation.ts (already listed)
+            - src/lib/secret-vault.ts (already listed)
+            - src/lib/server-context.ts (already listed)
+            - src/lib/server-utils.ts (already listed)
+          - src/lib/integrations.ts (already listed)
+          - src/lib/job-queue.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/error-reporter.ts (already listed)
+            - src/lib/job-queue-base.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/error-reporter.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+          - src/lib/microsoft-graph-service.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/oauth-provider-revocation.ts (already listed)
+            - src/lib/secret-vault.ts (already listed)
+            - src/lib/server-context.ts (already listed)
+            - src/lib/server-utils.ts (already listed)
+          - src/lib/outbound-call-tracking.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/compliance.ts (already listed)
+            - src/lib/outbound-status.ts (already listed)
+            - src/lib/server-context.ts (already listed)
+            - src/lib/server-utils.ts (already listed)
+          - src/lib/post-call-output-preferences.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/server-context.ts (already listed)
+          - src/lib/product-event-server.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/product-events.ts
+            - src/lib/server-context.ts (already listed)
+          - src/lib/sales-integration-policy.ts
+          - src/lib/server-context.ts (already listed)
+          - src/lib/shareable-artifact/publish-call-recap.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/plan-catalog.ts (already listed)
+            - src/lib/server-context.ts (already listed)
+            - src/lib/server-utils.ts (already listed)
+            - src/lib/shareable-artifact/entitlement.ts
+              - src/lib/plan-catalog.ts (already listed)
+            - src/lib/shareable-artifact/redact.ts
+            - src/lib/shareable-artifact/service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/shareable-artifact/tokens.ts
+              - src/lib/shareable-artifact/types.ts
+            - src/lib/shareable-artifact/types.ts (already listed)
+          - src/lib/tenant-activation.ts (already listed)
+          - src/lib/vapi-helpers.ts (already listed)
+        - src/lib/product-event-server.ts (already listed)
+        - src/lib/sales-integration-policy.ts (already listed)
+        - src/lib/server-context.ts (already listed)
+    - src/lib/utils.ts
+  - src/components/AgentFace.tsx
+    - src/lib/agent-identity.ts
+  - src/components/atoms/index.ts
+    - src/components/atoms/Badge.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Button.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Chip.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Dialog.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/DropdownMenu.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/EmptyState.tsx
+      - src/components/ui/EmptyState.tsx
+        - src/components/atoms/Button.tsx (already listed)
+        - src/components/ui/Medallion.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/ui/SectionHeader.tsx
+          - src/lib/utils.ts (already listed)
+          - src/lib/wireline-design-system.ts
+            - src/lib/authenticated-surface-contract.ts
+              - src/lib/surface-contract.ts
+            - src/lib/wireline-design-vision.ts
+        - src/components/ui/SignalOrbFrame.tsx
+          - src/components/ui/SignalFrameRail.tsx
+            - src/lib/utils.ts (already listed)
+          - src/lib/utils.ts (already listed)
+        - src/lib/utils.ts (already listed)
+        - src/lib/wireline-design-system.ts (already listed)
+    - src/components/atoms/Eyebrow.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/HelpTooltip.tsx
+      - src/components/ui/shadcn/Tooltip.tsx
+        - src/lib/utils.ts (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Input.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/MetricTile.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/NativeSelect.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Paper.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Reveal.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/skeleton-presets.tsx
+      - src/components/atoms/Skeleton.tsx
+        - src/lib/utils.ts (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Skeleton.tsx (already listed)
+    - src/components/atoms/Switch.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Textarea.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Toast.tsx
+      - src/components/atoms/Button.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+  - src/components/layout/WorkspacePageFrame.tsx
+    - src/lib/utils.ts (already listed)
+  - src/components/molecules/index.ts
+    - src/components/molecules/Card.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/molecules/ConversationActivity.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/molecules/ConversationMessage.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/molecules/FormField.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/molecules/MetricCard.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/molecules/SearchField.tsx
+      - src/components/atoms/Button.tsx (already listed)
+      - src/components/atoms/Input.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/molecules/StatusNotice.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/molecules/VoiceTurns.tsx
+      - src/components/molecules/ConversationMessage.tsx (already listed)
+      - src/lib/call-transcript.ts
+  - src/components/OutboundDialDialog.tsx
+    - src/components/atoms/Dialog.tsx (already listed)
+    - src/components/atoms/index.ts (already listed)
+    - src/components/ui/shadcn/Checkbox.tsx
+      - src/lib/utils.ts (already listed)
+    - src/contexts/AgentsContext.tsx
+      - src/contexts/AuthContext.tsx (already listed)
+      - src/lib/api.ts (already listed)
+    - src/contexts/ToastContext.tsx
+    - src/lib/api.ts (already listed)
+    - src/lib/outbound-call-purpose.ts
+    - src/lib/outbound-consent-copy.ts
+    - src/lib/product-event-client.ts
+      - src/lib/product-events.ts (already listed)
+  - src/components/OutcomeLedger.tsx
+    - src/components/atoms/index.ts (already listed)
+    - src/components/atoms/skeleton-presets.tsx (already listed)
+    - src/components/molecules/index.ts (already listed)
+    - src/lib/api.ts (already listed)
+    - src/lib/outcome-ledger.ts
+      - src/types/api.ts
+        - src/types/api-billing.ts
+        - src/types/api-insights.ts
+          - src/lib/audit-summary.ts
+            - src/lib/ai-models.ts (already listed)
+    - src/lib/product-event-client.ts (already listed)
+    - src/types/api.ts (already listed)
+  - src/components/WorkspaceRecovery.tsx
+    - src/components/atoms/index.ts (already listed)
+    - src/components/molecules/index.ts (already listed)
+  - src/components/WorkspaceShell.tsx
+    - src/components/ActivationNudge.tsx
+      - src/components/ui/shadcn/ShadButton.tsx
+        - src/components/atoms/Button.tsx (already listed)
+      - src/contexts/AccountContext.tsx (already listed)
+      - src/contexts/AuthContext.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/fleet-setup-progress.ts (already listed)
+      - src/lib/post-signup-onboarding.ts (already listed)
+      - src/lib/product-event-client.ts (already listed)
+      - src/lib/safe-number.ts
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-onboarding-copy.ts
+    - src/components/AgentFace.tsx (already listed)
+    - src/components/brand/WirelineMark.tsx
+    - src/components/layout/EmailVerifyBanner.tsx
+      - src/components/atoms/index.ts (already listed)
+      - src/contexts/ToastContext.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/types/api.ts (already listed)
+    - src/components/layout/MobileNavMoreSheet.tsx
+      - src/components/ui/shadcn/Sheet.tsx
+        - src/lib/utils.ts (already listed)
+      - src/constants/navigation.ts (already listed)
+      - src/contexts/AccountContext.tsx (already listed)
+      - src/lib/account-type.ts (already listed)
+    - src/components/layout/SkipToContentLink.tsx
+    - src/components/MobileBrowserUtilities.tsx
+      - src/constants/navigation.ts (already listed)
+    - src/components/ui/WiredEyebrow.tsx
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-design-system.ts (already listed)
+    - src/constants/navigation.ts (already listed)
+    - src/contexts/AccountContext.tsx (already listed)
+    - src/contexts/AgentsContext.tsx (already listed)
+    - src/contexts/AuthContext.tsx (already listed)
+    - src/hooks/useStudioActiveAgentId.ts
+      - src/contexts/AgentsContext.tsx (already listed)
+      - src/lib/studio-agent-preference.ts (already listed)
+    - src/lib/account-type.ts (already listed)
+    - src/lib/agent-readiness.ts
+    - src/lib/product-copy.ts
+    - src/lib/user-display.ts
+  - src/contexts/AccountContext.tsx (already listed)
+  - src/contexts/AgentsContext.tsx (already listed)
+  - src/contexts/AuthContext.tsx (already listed)
+  - src/lib/agent-readiness.ts (already listed)
+  - src/lib/api.ts (already listed)
+  - src/lib/product-copy.ts (already listed)
+  - src/lib/user-display.ts (already listed)
+
+## /studio
+Entry: src/pages/AgentStudioHome.tsx
+Dependencies:
+- src/pages/AgentStudioHome.tsx
+  - src/components/CreateAgentDialog.tsx
+    - src/components/atoms/index.ts
+      - src/components/atoms/Badge.tsx
+        - src/lib/utils.ts
+      - src/components/atoms/Button.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Chip.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Dialog.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/DropdownMenu.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/EmptyState.tsx
+        - src/components/ui/EmptyState.tsx
+          - src/components/atoms/Button.tsx (already listed)
+          - src/components/ui/Medallion.tsx
+            - src/lib/utils.ts (already listed)
+          - src/components/ui/SectionHeader.tsx
+            - src/lib/utils.ts (already listed)
+            - src/lib/wireline-design-system.ts
+              - src/lib/authenticated-surface-contract.ts
+                - src/lib/surface-contract.ts
+              - src/lib/wireline-design-vision.ts
+          - src/components/ui/SignalOrbFrame.tsx
+            - src/components/ui/SignalFrameRail.tsx
+              - src/lib/utils.ts (already listed)
+            - src/lib/utils.ts (already listed)
+          - src/lib/utils.ts (already listed)
+          - src/lib/wireline-design-system.ts (already listed)
+      - src/components/atoms/Eyebrow.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/HelpTooltip.tsx
+        - src/components/ui/shadcn/Tooltip.tsx
+          - src/lib/utils.ts (already listed)
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Input.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/MetricTile.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/NativeSelect.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Paper.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Reveal.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/skeleton-presets.tsx
+        - src/components/atoms/Skeleton.tsx
+          - src/lib/utils.ts (already listed)
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Skeleton.tsx (already listed)
+      - src/components/atoms/Switch.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Textarea.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Toast.tsx
+        - src/components/atoms/Button.tsx (already listed)
+        - src/lib/utils.ts (already listed)
+    - src/components/molecules/index.ts
+      - src/components/molecules/Card.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/ConversationActivity.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/ConversationMessage.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/FormField.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/MetricCard.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/SearchField.tsx
+        - src/components/atoms/Button.tsx (already listed)
+        - src/components/atoms/Input.tsx (already listed)
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/StatusNotice.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/VoiceTurns.tsx
+        - src/components/molecules/ConversationMessage.tsx (already listed)
+        - src/lib/call-transcript.ts
+    - src/contexts/AgentsContext.tsx
+      - src/contexts/AuthContext.tsx
+        - src/lib/api.ts
+          - src/lib/api-base.ts
+        - src/lib/public-routes.ts
+        - src/lib/session-cookie.ts
+        - src/lib/studio-agent-preference.ts
+      - src/lib/api.ts (already listed)
+    - src/lib/api.ts (already listed)
+    - src/lib/post-signup-onboarding.ts
+      - src/lib/api.ts (already listed)
+      - src/lib/tenant-activation.ts
+        - src/db/schema.ts
+          - src/db/resend-webhook-schema.ts
+          - src/db/schema-base.ts
+          - src/db/voice-usage-schema.ts
+            - src/db/schema-base.ts (already listed)
+        - src/lib/post-call-digest.ts
+          - src/constants/brand-colors.ts
+            - src/constants/generated-design-tokens.ts
+          - src/db/schema.ts (already listed)
+          - src/lib/action-engine.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/action-execution-idempotency.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/action-types.ts
+              - src/lib/server-context.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/api-error.ts
+                - src/lib/audit-logger.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/types/audit.ts
+                - src/lib/database-connection.ts
+                - src/lib/server-logger.ts
+                - src/lib/tenant-context-scope.ts
+                - src/lib/tenant-quotas.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/plan-entitlements.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/auth-service.ts
+                      - src/db/schema.ts (already listed)
+                      - src/db/security-schema.ts
+                      - src/lib/account-service.ts
+                        - src/db/schema.ts (already listed)
+                        - src/lib/account-type.ts
+                          - src/constants/navigation.ts
+                        - src/lib/server-context.ts (already listed)
+                      - src/lib/account-type.ts (already listed)
+                      - src/lib/auth-utils.ts
+                        - src/lib/server-context.ts (already listed)
+                      - src/lib/breached-passwords.ts
+                      - src/lib/internal-jwt-secret.ts
+                      - src/lib/password-limits.ts
+                      - src/lib/platform-owner-emails.ts
+                      - src/lib/server-context.ts (already listed)
+                      - src/lib/trial-gate.ts
+                        - src/db/schema.ts (already listed)
+                        - src/lib/auth-service.ts (already listed)
+                        - src/lib/server-context.ts (already listed)
+                        - src/lib/workspace-usage-snapshot.ts
+                          - src/db/schema.ts (already listed)
+                          - src/lib/credit-wallet.ts
+                            - src/db/schema.ts (already listed)
+                            - src/lib/server-context.ts (already listed)
+                          - src/lib/plan-catalog.ts
+                          - src/lib/plan-entitlements.ts (already listed)
+                          - src/lib/server-context.ts (already listed)
+                          - src/lib/spend-guards.ts
+                            - src/db/schema.ts (already listed)
+                            - src/lib/ai-spend-alert.ts
+                            - src/lib/daily-spend-accumulator.ts
+                              - src/lib/server-context.ts (already listed)
+                            - src/lib/sentry-events.ts
+                              - src/lib/server-context.ts (already listed)
+                            - src/lib/server-context.ts (already listed)
+                            - src/lib/server-utils.ts
+                            - src/lib/spend-budget-policy.ts
+                            - src/lib/webhook-helpers.ts
+                              - src/db/schema.ts (already listed)
+                              - src/lib/safe-webhook-delivery.ts
+                                - src/lib/webhook-validators.ts
+                              - src/lib/secret-vault.ts
+                              - src/lib/sentry-events.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                              - src/lib/server-utils.ts (already listed)
+                              - src/lib/webhook-delivery-status.ts
+                          - src/lib/voice-usage.ts
+                            - src/db/schema.ts (already listed)
+                            - src/db/voice-usage-schema.ts (already listed)
+                            - src/lib/plan-catalog.ts (already listed)
+                            - src/lib/server-context.ts (already listed)
+                            - src/lib/tenant-quotas.ts (already listed)
+                            - src/lib/voice-completion-grace.ts
+                              - src/lib/credit-wallet.ts (already listed)
+                    - src/lib/plan-catalog.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/lib/tenant-quotas.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                - src/middleware/require-role.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/soc2-controls.ts
+                    - src/db/schema.ts (already listed)
+            - src/lib/action-types.ts (already listed)
+            - src/lib/agent-capabilities.ts
+            - src/lib/agent-tool-authorization.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/agent-capabilities.ts (already listed)
+              - src/lib/tenant-integration-connections.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/agent-capabilities.ts (already listed)
+                - src/lib/platform-integration-flags.ts
+                - src/lib/server-context.ts (already listed)
+                - src/lib/x-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/secret-vault.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/lib/server-utils.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+              - src/routes/vapi/types.ts
+            - src/lib/ai-supervisor.ts
+              - src/lib/ai-structured.ts
+                - src/lib/ai-audit.ts
+                  - src/lib/ai-models.ts
+                - src/lib/ai-client.ts
+                  - src/lib/ai-gateway.ts
+                    - src/lib/ai-gateway-auth.ts
+                    - src/lib/server-logger.ts (already listed)
+                  - src/lib/ai-models.ts (already listed)
+                  - src/lib/ai-usage.ts
+                  - src/lib/server-logger.ts (already listed)
+                - src/lib/ai-models.ts (already listed)
+            - src/lib/apollo-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/oauth-provider-revocation.ts (already listed)
+              - src/lib/secret-vault.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/middleware/audit-middleware.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/ai-audit.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/spend-guards.ts (already listed)
+            - src/lib/background-work.ts
+              - src/lib/error-reporter.ts
+                - src/lib/server-logger.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+            - src/lib/calendar-time.ts
+            - src/lib/crm-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/hubspot-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/oauth-provider-revocation.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+              - src/lib/salesforce-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/oauth-provider-revocation.ts (already listed)
+                - src/lib/salesforce-sync-preferences.ts
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/slack-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/oauth-provider-revocation.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/webhook-helpers.ts (already listed)
+            - src/lib/integrations.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/calendar-time.ts (already listed)
+              - src/lib/email-compliance.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/company-identity.ts
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+              - src/lib/email-service.ts
+                - src/constants/brand-colors.ts (already listed)
+                - src/lib/email-compliance.ts (already listed)
+                - src/lib/email-delivery-suppression.ts
+                  - src/db/resend-webhook-schema.ts (already listed)
+                  - src/lib/email-compliance.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/resend-config.ts
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+              - src/lib/google-apis.ts
+              - src/lib/icloud-mail.ts
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+              - src/lib/secret-vault.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/zoom-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/oauth-provider-revocation.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+            - src/lib/nav-counts-invalidate.ts
+              - src/lib/nav-counts-cache.ts
+            - src/lib/outbound-dial-gate.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/compliance.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/dnc-failsafe.ts
+                - src/lib/server-context.ts (already listed)
+              - src/lib/federal-dnc-service.ts
+                - src/lib/federal-dnc-config.ts
+                - src/lib/server-context.ts (already listed)
+              - src/lib/outbound-status.ts
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/tcpa-calling-hours.ts
+                - src/lib/tcpa-consent.ts
+              - src/lib/tcpa-consent.ts (already listed)
+            - src/lib/server-context.ts (already listed)
+            - src/lib/server-utils.ts (already listed)
+            - src/lib/slack-service.ts (already listed)
+            - src/lib/tenant-integration-connections.ts (already listed)
+            - src/lib/twilio-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/agent-phone-lines.ts
+                - src/db/schema.ts (already listed)
+              - src/lib/compliance.ts (already listed)
+              - src/lib/runtime-usage-billing.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/credit-wallet.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/sms-billing.ts
+              - src/lib/trial-gate.ts (already listed)
+              - src/lib/twilio-service-base.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/agent-phone-lines.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+            - src/lib/webhook-helpers.ts (already listed)
+          - src/lib/crm-service.ts (already listed)
+          - src/lib/csat-service.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/outbound-dial-gate.ts (already listed)
+            - src/lib/server-context.ts (already listed)
+            - src/lib/twilio-service.ts (already listed)
+            - src/lib/vapi-helpers.ts
+              - src/lib/agent-capabilities.ts (already listed)
+              - src/lib/agent-constants.ts
+              - src/lib/tenant-integration-connections.ts (already listed)
+              - src/lib/tenant-tools-cache.ts
+                - src/lib/server-context.ts (already listed)
+          - src/lib/google-sheets-service.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/oauth-provider-revocation.ts (already listed)
+            - src/lib/secret-vault.ts (already listed)
+            - src/lib/server-context.ts (already listed)
+            - src/lib/server-utils.ts (already listed)
+          - src/lib/integrations.ts (already listed)
+          - src/lib/job-queue.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/error-reporter.ts (already listed)
+            - src/lib/job-queue-base.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/error-reporter.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+          - src/lib/microsoft-graph-service.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/oauth-provider-revocation.ts (already listed)
+            - src/lib/secret-vault.ts (already listed)
+            - src/lib/server-context.ts (already listed)
+            - src/lib/server-utils.ts (already listed)
+          - src/lib/outbound-call-tracking.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/compliance.ts (already listed)
+            - src/lib/outbound-status.ts (already listed)
+            - src/lib/server-context.ts (already listed)
+            - src/lib/server-utils.ts (already listed)
+          - src/lib/post-call-output-preferences.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/server-context.ts (already listed)
+          - src/lib/product-event-server.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/product-events.ts
+            - src/lib/server-context.ts (already listed)
+          - src/lib/sales-integration-policy.ts
+          - src/lib/server-context.ts (already listed)
+          - src/lib/shareable-artifact/publish-call-recap.ts
+            - src/db/schema.ts (already listed)
+            - src/lib/plan-catalog.ts (already listed)
+            - src/lib/server-context.ts (already listed)
+            - src/lib/server-utils.ts (already listed)
+            - src/lib/shareable-artifact/entitlement.ts
+              - src/lib/plan-catalog.ts (already listed)
+            - src/lib/shareable-artifact/redact.ts
+            - src/lib/shareable-artifact/service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/shareable-artifact/tokens.ts
+              - src/lib/shareable-artifact/types.ts
+            - src/lib/shareable-artifact/types.ts (already listed)
+          - src/lib/tenant-activation.ts (already listed)
+          - src/lib/vapi-helpers.ts (already listed)
+        - src/lib/product-event-server.ts (already listed)
+        - src/lib/sales-integration-policy.ts (already listed)
+        - src/lib/server-context.ts (already listed)
+    - src/lib/product-copy.ts
+    - src/lib/product-event-client.ts
+      - src/lib/product-events.ts (already listed)
+    - src/lib/use-body-scroll-lock.ts
+    - src/lib/use-modal-focus-trap.ts
+    - src/lib/wireline-create-flow.ts
+  - src/components/onboarding/PostCreateActivationWizard.tsx
+    - src/components/atoms/index.ts (already listed)
+    - src/components/molecules/index.ts (already listed)
+    - src/components/RoleplaySandbox.tsx
+      - src/components/LiveVoiceSandbox.tsx
+        - src/components/OpenAILiveVoiceSandbox.tsx
+          - src/components/AgentFace.tsx
+            - src/lib/agent-identity.ts
+          - src/components/molecules/index.ts (already listed)
+          - src/lib/api.ts (already listed)
+      - src/components/WirelineLiveVoiceProfile.tsx
+        - src/lib/api.ts (already listed)
+    - src/lib/api.ts (already listed)
+    - src/lib/post-signup-onboarding.ts (already listed)
+    - src/lib/product-event-client.ts (already listed)
+    - src/lib/use-body-scroll-lock.ts (already listed)
+    - src/lib/use-modal-focus-trap.ts (already listed)
+    - src/lib/wireline-create-flow.ts (already listed)
+    - src/lib/wireline-design-system.ts (already listed)
+    - src/lib/wireline-onboarding-copy.ts
+  - src/components/studio/StudioContextChrome.tsx
+    - src/components/AgentPresenceSlot.tsx
+      - src/components/AgentFace.tsx (already listed)
+      - src/lib/agent-identity.ts (already listed)
+      - src/lib/video-presenter/copy.ts
+        - src/lib/video-presenter/live-video-policy.ts
+          - src/lib/plan-catalog.ts (already listed)
+        - src/lib/video-presenter/types.ts
+          - src/lib/agent-identity.ts (already listed)
+      - src/lib/video-presenter/types.ts (already listed)
+    - src/components/atoms/Button.tsx (already listed)
+    - src/contexts/AccountContext.tsx
+      - src/contexts/AuthContext.tsx (already listed)
+      - src/lib/account-type.ts (already listed)
+      - src/lib/api.ts (already listed)
+    - src/contexts/AgentsContext.tsx (already listed)
+    - src/hooks/useStudioActiveAgentId.ts
+      - src/contexts/AgentsContext.tsx (already listed)
+      - src/lib/studio-agent-preference.ts (already listed)
+    - src/lib/product-copy.ts (already listed)
+  - src/components/studio/StudioPageShell.tsx
+    - src/components/WorkspaceShell.tsx
+      - src/components/ActivationNudge.tsx
+        - src/components/ui/shadcn/ShadButton.tsx
+          - src/components/atoms/Button.tsx (already listed)
+        - src/contexts/AccountContext.tsx (already listed)
+        - src/contexts/AuthContext.tsx (already listed)
+        - src/lib/api.ts (already listed)
+        - src/lib/fleet-setup-progress.ts
+          - src/lib/api.ts (already listed)
+        - src/lib/post-signup-onboarding.ts (already listed)
+        - src/lib/product-event-client.ts (already listed)
+        - src/lib/safe-number.ts
+        - src/lib/utils.ts (already listed)
+        - src/lib/wireline-onboarding-copy.ts (already listed)
+      - src/components/AgentFace.tsx (already listed)
+      - src/components/brand/WirelineMark.tsx
+      - src/components/layout/EmailVerifyBanner.tsx
+        - src/components/atoms/index.ts (already listed)
+        - src/contexts/ToastContext.tsx
+        - src/lib/api.ts (already listed)
+        - src/lib/utils.ts (already listed)
+        - src/types/api.ts
+          - src/types/api-billing.ts
+          - src/types/api-insights.ts
+            - src/lib/audit-summary.ts
+              - src/lib/ai-models.ts (already listed)
+      - src/components/layout/MobileNavMoreSheet.tsx
+        - src/components/ui/shadcn/Sheet.tsx
+          - src/lib/utils.ts (already listed)
+        - src/constants/navigation.ts (already listed)
+        - src/contexts/AccountContext.tsx (already listed)
+        - src/lib/account-type.ts (already listed)
+      - src/components/layout/SkipToContentLink.tsx
+      - src/components/MobileBrowserUtilities.tsx
+        - src/constants/navigation.ts (already listed)
+      - src/components/ui/WiredEyebrow.tsx
+        - src/lib/utils.ts (already listed)
+        - src/lib/wireline-design-system.ts (already listed)
+      - src/constants/navigation.ts (already listed)
+      - src/contexts/AccountContext.tsx (already listed)
+      - src/contexts/AgentsContext.tsx (already listed)
+      - src/contexts/AuthContext.tsx (already listed)
+      - src/hooks/useStudioActiveAgentId.ts (already listed)
+      - src/lib/account-type.ts (already listed)
+      - src/lib/agent-readiness.ts
+      - src/lib/product-copy.ts (already listed)
+      - src/lib/user-display.ts
+  - src/components/StudioWorkspaceV2.tsx
+    - src/components/atoms/index.ts (already listed)
+    - src/components/atoms/skeleton-presets.tsx (already listed)
+    - src/components/StudioAgentReviewPanel.tsx
+      - src/components/atoms/index.ts (already listed)
+      - src/components/molecules/index.ts (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/product-copy.ts (already listed)
+      - src/lib/voice-catalog.ts
+    - src/components/StudioAgentWorkspacePanel.tsx
+      - src/components/AgentToolPermissions.tsx
+        - src/components/atoms/index.ts (already listed)
+        - src/components/IntegrationCapabilityPanel.tsx
+          - src/components/ui/shadcn/Checkbox.tsx
+            - src/lib/utils.ts (already listed)
+          - src/components/ui/shadcn/ShadButton.tsx (already listed)
+          - src/lib/agent-capabilities.ts (already listed)
+          - src/lib/integration-playbooks.ts
+            - src/lib/agent-capabilities.ts (already listed)
+          - src/lib/utils.ts (already listed)
+        - src/components/molecules/index.ts (already listed)
+        - src/components/ui/shadcn/Checkbox.tsx (already listed)
+        - src/lib/agent-capabilities.ts (already listed)
+        - src/lib/api.ts (already listed)
+        - src/lib/integration-playbooks.ts (already listed)
+        - src/lib/tenant-tool-integration-status.ts
+          - src/lib/agent-capabilities.ts (already listed)
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/index.ts (already listed)
+      - src/components/molecules/index.ts (already listed)
+      - src/components/voice/SimpleVoicePicker.tsx
+        - src/components/molecules/index.ts (already listed)
+        - src/components/voice/VoiceCloningStudio.tsx
+          - src/components/molecules/index.ts (already listed)
+          - src/components/ui/shadcn/Checkbox.tsx (already listed)
+          - src/lib/api.ts (already listed)
+          - src/lib/managed-voice-runtime.ts
+            - src/data/voice-roster.ts
+              - src/lib/voice-catalog.ts (already listed)
+            - src/lib/voice-catalog.ts (already listed)
+        - src/lib/api.ts (already listed)
+        - src/lib/voice-catalog.ts (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/compose-setup-personality.ts
+    - src/components/StudioWorkroom.tsx
+      - src/components/AgentFace.tsx (already listed)
+      - src/components/atoms/index.ts (already listed)
+      - src/components/molecules/index.ts (already listed)
+      - src/components/OutboundDialDialog.tsx
+        - src/components/atoms/Dialog.tsx (already listed)
+        - src/components/atoms/index.ts (already listed)
+        - src/components/ui/shadcn/Checkbox.tsx (already listed)
+        - src/contexts/AgentsContext.tsx (already listed)
+        - src/contexts/ToastContext.tsx (already listed)
+        - src/lib/api.ts (already listed)
+        - src/lib/outbound-call-purpose.ts
+        - src/lib/outbound-consent-copy.ts
+        - src/lib/product-event-client.ts (already listed)
+      - src/hooks/useStreamingChat.ts
+        - src/lib/api.ts (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/product-copy.ts (already listed)
+      - src/lib/wireline-design-system.ts (already listed)
+    - src/components/ui/EmptyState.tsx (already listed)
+    - src/components/WorkspaceRecovery.tsx
+      - src/components/atoms/index.ts (already listed)
+      - src/components/molecules/index.ts (already listed)
+    - src/contexts/AccountContext.tsx (already listed)
+    - src/contexts/AgentsContext.tsx (already listed)
+    - src/hooks/useStudioActiveAgentId.ts (already listed)
+    - src/lib/product-copy.ts (already listed)
+    - src/lib/studio-agent-preference.ts (already listed)
+  - src/contexts/AccountContext.tsx (already listed)
+  - src/contexts/AgentsContext.tsx (already listed)
+  - src/contexts/ToastContext.tsx (already listed)
+  - src/lib/api.ts (already listed)
+  - src/lib/browser-command-context.ts
+  - src/lib/wireline-create-flow.ts (already listed)
+
+## /phone
+Entry: src/pages/PhonePage.tsx
+Dependencies:
+- src/pages/PhonePage.tsx
+  - src/components/AppointmentsPanel.tsx
+    - src/components/atoms/index.ts
+      - src/components/atoms/Badge.tsx
+        - src/lib/utils.ts
+      - src/components/atoms/Button.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Chip.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Dialog.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/DropdownMenu.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/EmptyState.tsx
+        - src/components/ui/EmptyState.tsx
+          - src/components/atoms/Button.tsx (already listed)
+          - src/components/ui/Medallion.tsx
+            - src/lib/utils.ts (already listed)
+          - src/components/ui/SectionHeader.tsx
+            - src/lib/utils.ts (already listed)
+            - src/lib/wireline-design-system.ts
+              - src/lib/authenticated-surface-contract.ts
+                - src/lib/surface-contract.ts
+              - src/lib/wireline-design-vision.ts
+          - src/components/ui/SignalOrbFrame.tsx
+            - src/components/ui/SignalFrameRail.tsx
+              - src/lib/utils.ts (already listed)
+            - src/lib/utils.ts (already listed)
+          - src/lib/utils.ts (already listed)
+          - src/lib/wireline-design-system.ts (already listed)
+      - src/components/atoms/Eyebrow.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/HelpTooltip.tsx
+        - src/components/ui/shadcn/Tooltip.tsx
+          - src/lib/utils.ts (already listed)
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Input.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/MetricTile.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/NativeSelect.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Paper.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Reveal.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/skeleton-presets.tsx
+        - src/components/atoms/Skeleton.tsx
+          - src/lib/utils.ts (already listed)
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Skeleton.tsx (already listed)
+      - src/components/atoms/Switch.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Textarea.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/atoms/Toast.tsx
+        - src/components/atoms/Button.tsx (already listed)
+        - src/lib/utils.ts (already listed)
+    - src/components/molecules/index.ts
+      - src/components/molecules/Card.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/ConversationActivity.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/ConversationMessage.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/FormField.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/MetricCard.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/SearchField.tsx
+        - src/components/atoms/Button.tsx (already listed)
+        - src/components/atoms/Input.tsx (already listed)
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/StatusNotice.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/VoiceTurns.tsx
+        - src/components/molecules/ConversationMessage.tsx (already listed)
+        - src/lib/call-transcript.ts
+    - src/lib/api.ts
+      - src/lib/api-base.ts
+  - src/components/layout/WorkspacePageFrame.tsx
+    - src/lib/utils.ts (already listed)
+  - src/components/layout/WorkspaceTabStrip.tsx
+    - src/lib/utils.ts (already listed)
+  - src/components/outbound/OutboundHub.tsx
+    - src/components/atoms/index.ts (already listed)
+    - src/components/Cadences.tsx
+      - src/components/layout/ClientRouteLoading.tsx
+        - src/components/ui/Medallion.tsx (already listed)
+        - src/components/ui/SignalOrbFrame.tsx (already listed)
+        - src/lib/utils.ts (already listed)
+      - src/components/ui/EmptyState.tsx (already listed)
+      - src/components/ui/shadcn/Input.tsx
+        - src/components/atoms/Input.tsx (already listed)
+      - src/components/ui/shadcn/Select.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/ui/shadcn/ShadButton.tsx
+        - src/components/atoms/Button.tsx (already listed)
+      - src/contexts/ToastContext.tsx
+      - src/hooks/useApiError.ts
+        - src/contexts/ToastContext.tsx (already listed)
+        - src/lib/sentry.ts
+      - src/lib/api.ts (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-ops-design.ts
+        - src/constants/brand-colors.ts
+          - src/constants/generated-design-tokens.ts
+        - src/lib/wireline-design-system.ts (already listed)
+    - src/components/IntakeKeysManager.tsx
+      - src/components/ui/shadcn/Input.tsx (already listed)
+      - src/components/ui/shadcn/Select.tsx (already listed)
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/safe-date.ts
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-design-system.ts (already listed)
+    - src/components/layout/WorkspaceTabStrip.tsx (already listed)
+    - src/components/outbound/CallbacksPanel.tsx
+      - src/components/layout/ClientRouteLoading.tsx (already listed)
+      - src/components/ui/EmptyState.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/wireline-ops-design.ts (already listed)
+    - src/components/outbound/CampaignsPanel.tsx
+      - src/components/layout/ClientRouteLoading.tsx (already listed)
+      - src/components/ui/EmptyState.tsx (already listed)
+      - src/components/ui/shadcn/Input.tsx (already listed)
+      - src/components/ui/shadcn/Select.tsx (already listed)
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/contexts/ToastContext.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/sales-playbooks.ts
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-ops-design.ts (already listed)
+    - src/components/OutboundDialDialog.tsx
+      - src/components/atoms/Dialog.tsx (already listed)
+      - src/components/atoms/index.ts (already listed)
+      - src/components/ui/shadcn/Checkbox.tsx
+        - src/lib/utils.ts (already listed)
+      - src/contexts/AgentsContext.tsx
+        - src/contexts/AuthContext.tsx
+          - src/lib/api.ts (already listed)
+          - src/lib/public-routes.ts
+          - src/lib/session-cookie.ts
+          - src/lib/studio-agent-preference.ts
+        - src/lib/api.ts (already listed)
+      - src/contexts/ToastContext.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/outbound-call-purpose.ts
+      - src/lib/outbound-consent-copy.ts
+      - src/lib/product-event-client.ts
+        - src/lib/product-events.ts
+    - src/lib/page-sub-tabs.ts
+      - src/lib/wireline-ops-design.ts (already listed)
+  - src/components/PhoneCallHistoryPanel.tsx
+    - src/components/atoms/index.ts (already listed)
+    - src/components/CallLogsClaude.tsx
+      - src/components/AgentFace.tsx
+        - src/lib/agent-identity.ts
+      - src/components/atoms/index.ts (already listed)
+      - src/components/atoms/skeleton-presets.tsx (already listed)
+      - src/components/CallOpsAnalytics.tsx
+        - src/components/atoms/skeleton-presets.tsx (already listed)
+        - src/components/ui/EmptyState.tsx (already listed)
+        - src/lib/api.ts (already listed)
+      - src/components/layout/WorkspaceTabStrip.tsx (already listed)
+      - src/components/LiveFloorPresence.tsx
+        - src/lib/wireline-design-system.ts (already listed)
+      - src/components/OutboundDialDialog.tsx (already listed)
+      - src/components/ui/EmptyState.tsx (already listed)
+      - src/components/ui/WiredEyebrow.tsx
+        - src/lib/utils.ts (already listed)
+        - src/lib/wireline-design-system.ts (already listed)
+      - src/hooks/usePresenceSignals.ts
+        - src/components/LiveFloorPresence.tsx (already listed)
+        - src/contexts/AuthContext.tsx (already listed)
+        - src/lib/api.ts (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/safe-number.ts
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-design-system.ts (already listed)
+    - src/components/molecules/index.ts (already listed)
+    - src/contexts/AgentsContext.tsx (already listed)
+    - src/lib/api.ts (already listed)
+  - src/components/PhoneSetupPanel.tsx
+    - src/components/atoms/index.ts (already listed)
+    - src/components/molecules/index.ts (already listed)
+    - src/components/settings/CompanyIdentityPack.tsx
+      - src/components/atoms/index.ts (already listed)
+      - src/components/molecules/index.ts (already listed)
+      - src/components/ui/shadcn/Checkbox.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/ui/shadcn/Select.tsx (already listed)
+    - src/contexts/AgentsContext.tsx (already listed)
+    - src/lib/api.ts (already listed)
+    - src/lib/wireline-design-system.ts (already listed)
+  - src/components/WorkspaceShell.tsx
+    - src/components/ActivationNudge.tsx
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/contexts/AccountContext.tsx
+        - src/contexts/AuthContext.tsx (already listed)
+        - src/lib/account-type.ts
+          - src/constants/navigation.ts
+        - src/lib/api.ts (already listed)
+      - src/contexts/AuthContext.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/fleet-setup-progress.ts
+        - src/lib/api.ts (already listed)
+      - src/lib/post-signup-onboarding.ts
+        - src/lib/api.ts (already listed)
+        - src/lib/tenant-activation.ts
+          - src/db/schema.ts
+            - src/db/resend-webhook-schema.ts
+            - src/db/schema-base.ts
+            - src/db/voice-usage-schema.ts
+              - src/db/schema-base.ts (already listed)
+          - src/lib/post-call-digest.ts
+            - src/constants/brand-colors.ts (already listed)
+            - src/db/schema.ts (already listed)
+            - src/lib/action-engine.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/action-execution-idempotency.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/action-types.ts
+                - src/lib/server-context.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/api-error.ts
+                  - src/lib/audit-logger.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/types/audit.ts
+                  - src/lib/database-connection.ts
+                  - src/lib/server-logger.ts
+                  - src/lib/tenant-context-scope.ts
+                  - src/lib/tenant-quotas.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/plan-entitlements.ts
+                      - src/db/schema.ts (already listed)
+                      - src/lib/auth-service.ts
+                        - src/db/schema.ts (already listed)
+                        - src/db/security-schema.ts
+                        - src/lib/account-service.ts
+                          - src/db/schema.ts (already listed)
+                          - src/lib/account-type.ts (already listed)
+                          - src/lib/server-context.ts (already listed)
+                        - src/lib/account-type.ts (already listed)
+                        - src/lib/auth-utils.ts
+                          - src/lib/server-context.ts (already listed)
+                        - src/lib/breached-passwords.ts
+                        - src/lib/internal-jwt-secret.ts
+                        - src/lib/password-limits.ts
+                        - src/lib/platform-owner-emails.ts
+                        - src/lib/server-context.ts (already listed)
+                        - src/lib/trial-gate.ts
+                          - src/db/schema.ts (already listed)
+                          - src/lib/auth-service.ts (already listed)
+                          - src/lib/server-context.ts (already listed)
+                          - src/lib/workspace-usage-snapshot.ts
+                            - src/db/schema.ts (already listed)
+                            - src/lib/credit-wallet.ts
+                              - src/db/schema.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                            - src/lib/plan-catalog.ts
+                            - src/lib/plan-entitlements.ts (already listed)
+                            - src/lib/server-context.ts (already listed)
+                            - src/lib/spend-guards.ts
+                              - src/db/schema.ts (already listed)
+                              - src/lib/ai-spend-alert.ts
+                              - src/lib/daily-spend-accumulator.ts
+                                - src/lib/server-context.ts (already listed)
+                              - src/lib/sentry-events.ts
+                                - src/lib/server-context.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                              - src/lib/server-utils.ts
+                              - src/lib/spend-budget-policy.ts
+                              - src/lib/webhook-helpers.ts
+                                - src/db/schema.ts (already listed)
+                                - src/lib/safe-webhook-delivery.ts
+                                  - src/lib/webhook-validators.ts
+                                - src/lib/secret-vault.ts
+                                - src/lib/sentry-events.ts (already listed)
+                                - src/lib/server-context.ts (already listed)
+                                - src/lib/server-utils.ts (already listed)
+                                - src/lib/webhook-delivery-status.ts
+                            - src/lib/voice-usage.ts
+                              - src/db/schema.ts (already listed)
+                              - src/db/voice-usage-schema.ts (already listed)
+                              - src/lib/plan-catalog.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                              - src/lib/tenant-quotas.ts (already listed)
+                              - src/lib/voice-completion-grace.ts
+                                - src/lib/credit-wallet.ts (already listed)
+                      - src/lib/plan-catalog.ts (already listed)
+                      - src/lib/server-context.ts (already listed)
+                      - src/lib/tenant-quotas.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                  - src/middleware/require-role.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/lib/soc2-controls.ts
+                      - src/db/schema.ts (already listed)
+              - src/lib/action-types.ts (already listed)
+              - src/lib/agent-capabilities.ts
+              - src/lib/agent-tool-authorization.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/agent-capabilities.ts (already listed)
+                - src/lib/tenant-integration-connections.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/agent-capabilities.ts (already listed)
+                  - src/lib/platform-integration-flags.ts
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/x-service.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/oauth-provider-revocation.ts
+                      - src/db/schema.ts (already listed)
+                      - src/lib/secret-vault.ts (already listed)
+                      - src/lib/server-context.ts (already listed)
+                      - src/lib/server-utils.ts (already listed)
+                    - src/lib/secret-vault.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/lib/server-utils.ts (already listed)
+                - src/routes/vapi/types.ts
+              - src/lib/ai-supervisor.ts
+                - src/lib/ai-structured.ts
+                  - src/lib/ai-audit.ts
+                    - src/lib/ai-models.ts
+                  - src/lib/ai-client.ts
+                    - src/lib/ai-gateway.ts
+                      - src/lib/ai-gateway-auth.ts
+                      - src/lib/server-logger.ts (already listed)
+                    - src/lib/ai-models.ts (already listed)
+                    - src/lib/ai-usage.ts
+                    - src/lib/server-logger.ts (already listed)
+                  - src/lib/ai-models.ts (already listed)
+              - src/lib/apollo-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/oauth-provider-revocation.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/middleware/audit-middleware.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/ai-audit.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                  - src/lib/spend-guards.ts (already listed)
+              - src/lib/background-work.ts
+                - src/lib/error-reporter.ts
+                  - src/lib/server-logger.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+              - src/lib/calendar-time.ts
+              - src/lib/crm-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/hubspot-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/salesforce-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/salesforce-sync-preferences.ts
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/slack-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                  - src/lib/webhook-helpers.ts (already listed)
+              - src/lib/integrations.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/calendar-time.ts (already listed)
+                - src/lib/email-compliance.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/company-identity.ts
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/email-service.ts
+                  - src/constants/brand-colors.ts (already listed)
+                  - src/lib/email-compliance.ts (already listed)
+                  - src/lib/email-delivery-suppression.ts
+                    - src/db/resend-webhook-schema.ts (already listed)
+                    - src/lib/email-compliance.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                  - src/lib/resend-config.ts
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/google-apis.ts
+                - src/lib/icloud-mail.ts
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/zoom-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+              - src/lib/nav-counts-invalidate.ts
+                - src/lib/nav-counts-cache.ts
+              - src/lib/outbound-dial-gate.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/compliance.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/dnc-failsafe.ts
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/federal-dnc-service.ts
+                  - src/lib/federal-dnc-config.ts
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/outbound-status.ts
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/tcpa-calling-hours.ts
+                  - src/lib/tcpa-consent.ts
+                - src/lib/tcpa-consent.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/slack-service.ts (already listed)
+              - src/lib/tenant-integration-connections.ts (already listed)
+              - src/lib/twilio-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/agent-phone-lines.ts
+                  - src/db/schema.ts (already listed)
+                - src/lib/compliance.ts (already listed)
+                - src/lib/runtime-usage-billing.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/credit-wallet.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/sms-billing.ts
+                - src/lib/trial-gate.ts (already listed)
+                - src/lib/twilio-service-base.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/agent-phone-lines.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+              - src/lib/webhook-helpers.ts (already listed)
+            - src/lib/crm-service.ts (already listed)
+            - src/lib/csat-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/outbound-dial-gate.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/twilio-service.ts (already listed)
+              - src/lib/vapi-helpers.ts
+                - src/lib/agent-capabilities.ts (already listed)
+                - src/lib/agent-constants.ts
+                - src/lib/tenant-integration-connections.ts (already listed)
+                - src/lib/tenant-tools-cache.ts
+                  - src/lib/server-context.ts (already listed)
+            - src/lib/google-sheets-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/oauth-provider-revocation.ts (already listed)
+              - src/lib/secret-vault.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+            - src/lib/integrations.ts (already listed)
+            - src/lib/job-queue.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/error-reporter.ts (already listed)
+              - src/lib/job-queue-base.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/error-reporter.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+            - src/lib/microsoft-graph-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/oauth-provider-revocation.ts (already listed)
+              - src/lib/secret-vault.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+            - src/lib/outbound-call-tracking.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/compliance.ts (already listed)
+              - src/lib/outbound-status.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+            - src/lib/post-call-output-preferences.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+            - src/lib/product-event-server.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/product-events.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+            - src/lib/sales-integration-policy.ts
+            - src/lib/server-context.ts (already listed)
+            - src/lib/shareable-artifact/publish-call-recap.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/plan-catalog.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/shareable-artifact/entitlement.ts
+                - src/lib/plan-catalog.ts (already listed)
+              - src/lib/shareable-artifact/redact.ts
+              - src/lib/shareable-artifact/service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/shareable-artifact/tokens.ts
+                - src/lib/shareable-artifact/types.ts
+              - src/lib/shareable-artifact/types.ts (already listed)
+            - src/lib/tenant-activation.ts (already listed)
+            - src/lib/vapi-helpers.ts (already listed)
+          - src/lib/product-event-server.ts (already listed)
+          - src/lib/sales-integration-policy.ts (already listed)
+          - src/lib/server-context.ts (already listed)
+      - src/lib/product-event-client.ts (already listed)
+      - src/lib/safe-number.ts (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-onboarding-copy.ts
+    - src/components/AgentFace.tsx (already listed)
+    - src/components/brand/WirelineMark.tsx
+    - src/components/layout/EmailVerifyBanner.tsx
+      - src/components/atoms/index.ts (already listed)
+      - src/contexts/ToastContext.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/types/api.ts
+        - src/types/api-billing.ts
+        - src/types/api-insights.ts
+          - src/lib/audit-summary.ts
+            - src/lib/ai-models.ts (already listed)
+    - src/components/layout/MobileNavMoreSheet.tsx
+      - src/components/ui/shadcn/Sheet.tsx
+        - src/lib/utils.ts (already listed)
+      - src/constants/navigation.ts (already listed)
+      - src/contexts/AccountContext.tsx (already listed)
+      - src/lib/account-type.ts (already listed)
+    - src/components/layout/SkipToContentLink.tsx
+    - src/components/MobileBrowserUtilities.tsx
+      - src/constants/navigation.ts (already listed)
+    - src/components/ui/WiredEyebrow.tsx (already listed)
+    - src/constants/navigation.ts (already listed)
+    - src/contexts/AccountContext.tsx (already listed)
+    - src/contexts/AgentsContext.tsx (already listed)
+    - src/contexts/AuthContext.tsx (already listed)
+    - src/hooks/useStudioActiveAgentId.ts
+      - src/contexts/AgentsContext.tsx (already listed)
+      - src/lib/studio-agent-preference.ts (already listed)
+    - src/lib/account-type.ts (already listed)
+    - src/lib/agent-readiness.ts
+    - src/lib/product-copy.ts
+    - src/lib/user-display.ts
+  - src/lib/page-sub-tabs.ts (already listed)
+
+## /insights
+Entry: src/pages/InsightsPage.tsx
+Dependencies:
+- src/pages/InsightsPage.tsx
+  - src/components/insights/InsightsView.tsx
+    - src/components/atoms/skeleton-presets.tsx
+      - src/components/atoms/Skeleton.tsx
+        - src/lib/utils.ts
+      - src/lib/utils.ts (already listed)
+    - src/components/CsvExportButton.tsx
+      - src/components/ui/shadcn/ShadButton.tsx
+        - src/components/atoms/Button.tsx
+          - src/lib/utils.ts (already listed)
+      - src/contexts/ToastContext.tsx
+      - src/lib/api.ts
+        - src/lib/api-base.ts
+      - src/lib/client-log.ts
+      - src/lib/utils.ts (already listed)
+    - src/components/GoalsView.tsx
+      - src/components/ui/shadcn/Input.tsx
+        - src/components/atoms/Input.tsx
+          - src/lib/utils.ts (already listed)
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/contexts/ToastContext.tsx (already listed)
+      - src/lib/api.ts (already listed)
+    - src/components/insights/AISpendView.tsx
+      - src/components/insights/shared.tsx
+        - src/components/atoms/index.ts
+          - src/components/atoms/Badge.tsx
+            - src/lib/utils.ts (already listed)
+          - src/components/atoms/Button.tsx (already listed)
+          - src/components/atoms/Chip.tsx
+            - src/lib/utils.ts (already listed)
+          - src/components/atoms/Dialog.tsx
+            - src/lib/utils.ts (already listed)
+          - src/components/atoms/DropdownMenu.tsx
+            - src/lib/utils.ts (already listed)
+          - src/components/atoms/EmptyState.tsx
+            - src/components/ui/EmptyState.tsx
+              - src/components/atoms/Button.tsx (already listed)
+              - src/components/ui/Medallion.tsx
+                - src/lib/utils.ts (already listed)
+              - src/components/ui/SectionHeader.tsx
+                - src/lib/utils.ts (already listed)
+                - src/lib/wireline-design-system.ts
+                  - src/lib/authenticated-surface-contract.ts
+                    - src/lib/surface-contract.ts
+                  - src/lib/wireline-design-vision.ts
+              - src/components/ui/SignalOrbFrame.tsx
+                - src/components/ui/SignalFrameRail.tsx
+                  - src/lib/utils.ts (already listed)
+                - src/lib/utils.ts (already listed)
+              - src/lib/utils.ts (already listed)
+              - src/lib/wireline-design-system.ts (already listed)
+          - src/components/atoms/Eyebrow.tsx
+            - src/lib/utils.ts (already listed)
+          - src/components/atoms/HelpTooltip.tsx
+            - src/components/ui/shadcn/Tooltip.tsx
+              - src/lib/utils.ts (already listed)
+            - src/lib/utils.ts (already listed)
+          - src/components/atoms/Input.tsx (already listed)
+          - src/components/atoms/MetricTile.tsx
+            - src/lib/utils.ts (already listed)
+          - src/components/atoms/NativeSelect.tsx
+            - src/lib/utils.ts (already listed)
+          - src/components/atoms/Paper.tsx
+            - src/lib/utils.ts (already listed)
+          - src/components/atoms/Reveal.tsx
+            - src/lib/utils.ts (already listed)
+          - src/components/atoms/skeleton-presets.tsx (already listed)
+          - src/components/atoms/Skeleton.tsx (already listed)
+          - src/components/atoms/Switch.tsx
+            - src/lib/utils.ts (already listed)
+          - src/components/atoms/Textarea.tsx
+            - src/lib/utils.ts (already listed)
+          - src/components/atoms/Toast.tsx
+            - src/components/atoms/Button.tsx (already listed)
+            - src/lib/utils.ts (already listed)
+        - src/components/ui/EmptyState.tsx (already listed)
+        - src/components/ui/shadcn/Skeleton.tsx
+          - src/components/atoms/Skeleton.tsx (already listed)
+        - src/constants/brand-colors.ts
+          - src/constants/generated-design-tokens.ts
+        - src/contexts/AgentsContext.tsx
+          - src/contexts/AuthContext.tsx
+            - src/lib/api.ts (already listed)
+            - src/lib/public-routes.ts
+            - src/lib/session-cookie.ts
+            - src/lib/studio-agent-preference.ts
+          - src/lib/api.ts (already listed)
+        - src/lib/api.ts (already listed)
+        - src/lib/utils.ts (already listed)
+        - src/lib/wireline-design-system.ts (already listed)
+        - src/lib/wireline-ops-design.ts
+          - src/constants/brand-colors.ts (already listed)
+          - src/lib/wireline-design-system.ts (already listed)
+      - src/components/ui/shadcn/Input.tsx (already listed)
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/constants/brand-colors.ts (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/safe-number.ts
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-design-system.ts (already listed)
+      - src/types/api-insights.ts
+        - src/lib/audit-summary.ts
+          - src/lib/ai-models.ts
+    - src/components/insights/AttributionView.tsx
+      - src/components/insights/shared.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-design-system.ts (already listed)
+      - src/types/api-insights.ts (already listed)
+    - src/components/insights/FailureModesView.tsx
+      - src/components/atoms/index.ts (already listed)
+      - src/components/insights/shared.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/types/api.ts
+        - src/types/api-billing.ts
+        - src/types/api-insights.ts (already listed)
+    - src/components/insights/FunnelView.tsx
+      - src/components/insights/shared.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-design-system.ts (already listed)
+      - src/types/api.ts (already listed)
+    - src/components/insights/HeatmapView.tsx
+      - src/components/insights/shared.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-design-system.ts (already listed)
+      - src/types/api-insights.ts (already listed)
+    - src/components/insights/LeaderboardView.tsx
+      - src/components/fleet/helpers.tsx
+      - src/components/insights/shared.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/types/api.ts (already listed)
+    - src/components/insights/LearningMetricsView.tsx
+      - src/components/layout/ClientRouteLoading.tsx
+        - src/components/ui/Medallion.tsx (already listed)
+        - src/components/ui/SignalOrbFrame.tsx (already listed)
+        - src/lib/utils.ts (already listed)
+      - src/components/ui/EmptyState.tsx (already listed)
+      - src/components/ui/MetricStatTile.tsx
+        - src/components/ui/AnimatedCounter.tsx
+        - src/lib/utils.ts (already listed)
+        - src/lib/wireline-ops-design.ts (already listed)
+      - src/lib/api.ts (already listed)
+    - src/components/insights/QualityView.tsx
+      - src/components/atoms/index.ts (already listed)
+      - src/components/insights/shared.tsx (already listed)
+      - src/contexts/ToastContext.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/wireline-design-system.ts (already listed)
+      - src/lib/wireline-ops-design.ts (already listed)
+      - src/types/api-insights.ts (already listed)
+    - src/components/insights/TopicsView.tsx
+      - src/components/atoms/index.ts (already listed)
+      - src/components/insights/shared.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-design-system.ts (already listed)
+      - src/types/api.ts (already listed)
+    - src/components/insights/VoiceLatencyView.tsx
+      - src/components/insights/shared.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/lib/vapi-tool-results.ts
+      - src/types/api-insights.ts (already listed)
+    - src/components/insights/VoiceReliabilityView.tsx
+      - src/components/insights/shared.tsx (already listed)
+      - src/lib/plan-catalog.ts
+      - src/lib/utils.ts (already listed)
+      - src/types/api.ts (already listed)
+    - src/components/layout/ClientRouteViewport.tsx
+      - src/components/layout/ClientRouteAmbience.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/layout/ClientToolbar.tsx
+      - src/components/atoms/index.ts (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/ui/SegmentStrip.tsx
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/WidgetBoundary.tsx
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/lib/chunk-recovery.ts
+      - src/lib/sentry.ts
+      - src/lib/utils.ts (already listed)
+    - src/lib/page-sub-tabs.ts
+      - src/lib/wireline-ops-design.ts (already listed)
+    - src/lib/wireline-ops-design.ts (already listed)
+  - src/components/layout/AppChromeSubTabs.tsx
+    - src/components/admin/SettingsTabSwitcher.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/layout/ClientSubTabs.tsx
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/hooks/useAppChromeTabs.ts
+      - src/lib/page-sub-tabs.ts (already listed)
+    - src/lib/utils.ts (already listed)
+  - src/components/layout/WorkspacePageFrame.tsx
+    - src/lib/utils.ts (already listed)
+  - src/components/WorkspaceShell.tsx
+    - src/components/ActivationNudge.tsx
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/contexts/AccountContext.tsx
+        - src/contexts/AuthContext.tsx (already listed)
+        - src/lib/account-type.ts
+          - src/constants/navigation.ts
+        - src/lib/api.ts (already listed)
+      - src/contexts/AuthContext.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/fleet-setup-progress.ts
+        - src/lib/api.ts (already listed)
+      - src/lib/post-signup-onboarding.ts
+        - src/lib/api.ts (already listed)
+        - src/lib/tenant-activation.ts
+          - src/db/schema.ts
+            - src/db/resend-webhook-schema.ts
+            - src/db/schema-base.ts
+            - src/db/voice-usage-schema.ts
+              - src/db/schema-base.ts (already listed)
+          - src/lib/post-call-digest.ts
+            - src/constants/brand-colors.ts (already listed)
+            - src/db/schema.ts (already listed)
+            - src/lib/action-engine.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/action-execution-idempotency.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/action-types.ts
+                - src/lib/server-context.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/api-error.ts
+                  - src/lib/audit-logger.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/types/audit.ts
+                  - src/lib/database-connection.ts
+                  - src/lib/server-logger.ts
+                  - src/lib/tenant-context-scope.ts
+                  - src/lib/tenant-quotas.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/plan-entitlements.ts
+                      - src/db/schema.ts (already listed)
+                      - src/lib/auth-service.ts
+                        - src/db/schema.ts (already listed)
+                        - src/db/security-schema.ts
+                        - src/lib/account-service.ts
+                          - src/db/schema.ts (already listed)
+                          - src/lib/account-type.ts (already listed)
+                          - src/lib/server-context.ts (already listed)
+                        - src/lib/account-type.ts (already listed)
+                        - src/lib/auth-utils.ts
+                          - src/lib/server-context.ts (already listed)
+                        - src/lib/breached-passwords.ts
+                        - src/lib/internal-jwt-secret.ts
+                        - src/lib/password-limits.ts
+                        - src/lib/platform-owner-emails.ts
+                        - src/lib/server-context.ts (already listed)
+                        - src/lib/trial-gate.ts
+                          - src/db/schema.ts (already listed)
+                          - src/lib/auth-service.ts (already listed)
+                          - src/lib/server-context.ts (already listed)
+                          - src/lib/workspace-usage-snapshot.ts
+                            - src/db/schema.ts (already listed)
+                            - src/lib/credit-wallet.ts
+                              - src/db/schema.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                            - src/lib/plan-catalog.ts (already listed)
+                            - src/lib/plan-entitlements.ts (already listed)
+                            - src/lib/server-context.ts (already listed)
+                            - src/lib/spend-guards.ts
+                              - src/db/schema.ts (already listed)
+                              - src/lib/ai-spend-alert.ts
+                              - src/lib/daily-spend-accumulator.ts
+                                - src/lib/server-context.ts (already listed)
+                              - src/lib/sentry-events.ts
+                                - src/lib/server-context.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                              - src/lib/server-utils.ts
+                              - src/lib/spend-budget-policy.ts
+                              - src/lib/webhook-helpers.ts
+                                - src/db/schema.ts (already listed)
+                                - src/lib/safe-webhook-delivery.ts
+                                  - src/lib/webhook-validators.ts
+                                - src/lib/secret-vault.ts
+                                - src/lib/sentry-events.ts (already listed)
+                                - src/lib/server-context.ts (already listed)
+                                - src/lib/server-utils.ts (already listed)
+                                - src/lib/webhook-delivery-status.ts
+                            - src/lib/voice-usage.ts
+                              - src/db/schema.ts (already listed)
+                              - src/db/voice-usage-schema.ts (already listed)
+                              - src/lib/plan-catalog.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                              - src/lib/tenant-quotas.ts (already listed)
+                              - src/lib/voice-completion-grace.ts
+                                - src/lib/credit-wallet.ts (already listed)
+                      - src/lib/plan-catalog.ts (already listed)
+                      - src/lib/server-context.ts (already listed)
+                      - src/lib/tenant-quotas.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                  - src/middleware/require-role.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/lib/soc2-controls.ts
+                      - src/db/schema.ts (already listed)
+              - src/lib/action-types.ts (already listed)
+              - src/lib/agent-capabilities.ts
+              - src/lib/agent-tool-authorization.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/agent-capabilities.ts (already listed)
+                - src/lib/tenant-integration-connections.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/agent-capabilities.ts (already listed)
+                  - src/lib/platform-integration-flags.ts
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/x-service.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/oauth-provider-revocation.ts
+                      - src/db/schema.ts (already listed)
+                      - src/lib/secret-vault.ts (already listed)
+                      - src/lib/server-context.ts (already listed)
+                      - src/lib/server-utils.ts (already listed)
+                    - src/lib/secret-vault.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/lib/server-utils.ts (already listed)
+                - src/routes/vapi/types.ts
+              - src/lib/ai-supervisor.ts
+                - src/lib/ai-structured.ts
+                  - src/lib/ai-audit.ts
+                    - src/lib/ai-models.ts (already listed)
+                  - src/lib/ai-client.ts
+                    - src/lib/ai-gateway.ts
+                      - src/lib/ai-gateway-auth.ts
+                      - src/lib/server-logger.ts (already listed)
+                    - src/lib/ai-models.ts (already listed)
+                    - src/lib/ai-usage.ts
+                    - src/lib/server-logger.ts (already listed)
+                  - src/lib/ai-models.ts (already listed)
+              - src/lib/apollo-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/oauth-provider-revocation.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/middleware/audit-middleware.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/ai-audit.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                  - src/lib/spend-guards.ts (already listed)
+              - src/lib/background-work.ts
+                - src/lib/error-reporter.ts
+                  - src/lib/server-logger.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+              - src/lib/calendar-time.ts
+              - src/lib/crm-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/hubspot-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/salesforce-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/salesforce-sync-preferences.ts
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/slack-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                  - src/lib/webhook-helpers.ts (already listed)
+              - src/lib/integrations.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/calendar-time.ts (already listed)
+                - src/lib/email-compliance.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/company-identity.ts
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/email-service.ts
+                  - src/constants/brand-colors.ts (already listed)
+                  - src/lib/email-compliance.ts (already listed)
+                  - src/lib/email-delivery-suppression.ts
+                    - src/db/resend-webhook-schema.ts (already listed)
+                    - src/lib/email-compliance.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                  - src/lib/resend-config.ts
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/google-apis.ts
+                - src/lib/icloud-mail.ts
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/zoom-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+              - src/lib/nav-counts-invalidate.ts
+                - src/lib/nav-counts-cache.ts
+              - src/lib/outbound-dial-gate.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/compliance.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/dnc-failsafe.ts
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/federal-dnc-service.ts
+                  - src/lib/federal-dnc-config.ts
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/outbound-status.ts
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/tcpa-calling-hours.ts
+                  - src/lib/tcpa-consent.ts
+                - src/lib/tcpa-consent.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/slack-service.ts (already listed)
+              - src/lib/tenant-integration-connections.ts (already listed)
+              - src/lib/twilio-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/agent-phone-lines.ts
+                  - src/db/schema.ts (already listed)
+                - src/lib/compliance.ts (already listed)
+                - src/lib/runtime-usage-billing.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/credit-wallet.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/sms-billing.ts
+                - src/lib/trial-gate.ts (already listed)
+                - src/lib/twilio-service-base.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/agent-phone-lines.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+              - src/lib/webhook-helpers.ts (already listed)
+            - src/lib/crm-service.ts (already listed)
+            - src/lib/csat-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/outbound-dial-gate.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/twilio-service.ts (already listed)
+              - src/lib/vapi-helpers.ts
+                - src/lib/agent-capabilities.ts (already listed)
+                - src/lib/agent-constants.ts
+                - src/lib/tenant-integration-connections.ts (already listed)
+                - src/lib/tenant-tools-cache.ts
+                  - src/lib/server-context.ts (already listed)
+            - src/lib/google-sheets-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/oauth-provider-revocation.ts (already listed)
+              - src/lib/secret-vault.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+            - src/lib/integrations.ts (already listed)
+            - src/lib/job-queue.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/error-reporter.ts (already listed)
+              - src/lib/job-queue-base.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/error-reporter.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+            - src/lib/microsoft-graph-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/oauth-provider-revocation.ts (already listed)
+              - src/lib/secret-vault.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+            - src/lib/outbound-call-tracking.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/compliance.ts (already listed)
+              - src/lib/outbound-status.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+            - src/lib/post-call-output-preferences.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+            - src/lib/product-event-server.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/product-events.ts
+              - src/lib/server-context.ts (already listed)
+            - src/lib/sales-integration-policy.ts
+            - src/lib/server-context.ts (already listed)
+            - src/lib/shareable-artifact/publish-call-recap.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/plan-catalog.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/shareable-artifact/entitlement.ts
+                - src/lib/plan-catalog.ts (already listed)
+              - src/lib/shareable-artifact/redact.ts
+              - src/lib/shareable-artifact/service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/shareable-artifact/tokens.ts
+                - src/lib/shareable-artifact/types.ts
+              - src/lib/shareable-artifact/types.ts (already listed)
+            - src/lib/tenant-activation.ts (already listed)
+            - src/lib/vapi-helpers.ts (already listed)
+          - src/lib/product-event-server.ts (already listed)
+          - src/lib/sales-integration-policy.ts (already listed)
+          - src/lib/server-context.ts (already listed)
+      - src/lib/product-event-client.ts
+        - src/lib/product-events.ts (already listed)
+      - src/lib/safe-number.ts (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-onboarding-copy.ts
+    - src/components/AgentFace.tsx
+      - src/lib/agent-identity.ts
+    - src/components/brand/WirelineMark.tsx
+    - src/components/layout/EmailVerifyBanner.tsx
+      - src/components/atoms/index.ts (already listed)
+      - src/contexts/ToastContext.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/types/api.ts (already listed)
+    - src/components/layout/MobileNavMoreSheet.tsx
+      - src/components/ui/shadcn/Sheet.tsx
+        - src/lib/utils.ts (already listed)
+      - src/constants/navigation.ts (already listed)
+      - src/contexts/AccountContext.tsx (already listed)
+      - src/lib/account-type.ts (already listed)
+    - src/components/layout/SkipToContentLink.tsx
+    - src/components/MobileBrowserUtilities.tsx
+      - src/constants/navigation.ts (already listed)
+    - src/components/ui/WiredEyebrow.tsx
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-design-system.ts (already listed)
+    - src/constants/navigation.ts (already listed)
+    - src/contexts/AccountContext.tsx (already listed)
+    - src/contexts/AgentsContext.tsx (already listed)
+    - src/contexts/AuthContext.tsx (already listed)
+    - src/hooks/useStudioActiveAgentId.ts
+      - src/contexts/AgentsContext.tsx (already listed)
+      - src/lib/studio-agent-preference.ts (already listed)
+    - src/lib/account-type.ts (already listed)
+    - src/lib/agent-readiness.ts
+    - src/lib/product-copy.ts
+    - src/lib/user-display.ts
+
+## /settings/billing
+Entry: src/pages/BillingSettings.tsx
+Dependencies:
+- src/pages/BillingSettings.tsx
+  - src/components/atoms/index.ts
+    - src/components/atoms/Badge.tsx
+      - src/lib/utils.ts
+    - src/components/atoms/Button.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Chip.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Dialog.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/DropdownMenu.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/EmptyState.tsx
+      - src/components/ui/EmptyState.tsx
+        - src/components/atoms/Button.tsx (already listed)
+        - src/components/ui/Medallion.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/ui/SectionHeader.tsx
+          - src/lib/utils.ts (already listed)
+          - src/lib/wireline-design-system.ts
+            - src/lib/authenticated-surface-contract.ts
+              - src/lib/surface-contract.ts
+            - src/lib/wireline-design-vision.ts
+        - src/components/ui/SignalOrbFrame.tsx
+          - src/components/ui/SignalFrameRail.tsx
+            - src/lib/utils.ts (already listed)
+          - src/lib/utils.ts (already listed)
+        - src/lib/utils.ts (already listed)
+        - src/lib/wireline-design-system.ts (already listed)
+    - src/components/atoms/Eyebrow.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/HelpTooltip.tsx
+      - src/components/ui/shadcn/Tooltip.tsx
+        - src/lib/utils.ts (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Input.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/MetricTile.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/NativeSelect.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Paper.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Reveal.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/skeleton-presets.tsx
+      - src/components/atoms/Skeleton.tsx
+        - src/lib/utils.ts (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Skeleton.tsx (already listed)
+    - src/components/atoms/Switch.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Textarea.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Toast.tsx
+      - src/components/atoms/Button.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+  - src/components/layout/WorkspacePageFrame.tsx
+    - src/lib/utils.ts (already listed)
+  - src/components/molecules/StatusNotice.tsx
+    - src/lib/utils.ts (already listed)
+  - src/components/settings/SettingsTabs.tsx
+    - src/components/layout/WorkspaceTabStrip.tsx
+      - src/lib/utils.ts (already listed)
+  - src/components/StripeBillingCard.tsx
+    - src/components/atoms/index.ts (already listed)
+    - src/components/ui/shadcn/ShadButton.tsx
+      - src/components/atoms/Button.tsx (already listed)
+    - src/components/ui/WiredEyebrow.tsx
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-design-system.ts (already listed)
+    - src/components/UsageMeter.tsx
+      - src/components/atoms/index.ts (already listed)
+      - src/components/ui/shadcn/Progress.tsx
+        - src/lib/utils.ts (already listed)
+      - src/lib/api.ts
+        - src/lib/api-base.ts
+      - src/lib/conversation-balance.ts
+      - src/lib/utils.ts (already listed)
+      - src/types/api.ts
+        - src/types/api-billing.ts
+        - src/types/api-insights.ts
+          - src/lib/audit-summary.ts
+            - src/lib/ai-models.ts
+    - src/constants/brand-colors.ts
+      - src/constants/generated-design-tokens.ts
+    - src/lib/api.ts (already listed)
+    - src/lib/conversation-balance.ts (already listed)
+    - src/lib/product-event-client.ts
+      - src/lib/product-events.ts
+    - src/lib/safe-date.ts
+    - src/lib/signup-intent.ts
+    - src/lib/utils.ts (already listed)
+    - src/lib/video-presenter/copy.ts
+      - src/lib/video-presenter/live-video-policy.ts
+        - src/lib/plan-catalog.ts
+      - src/lib/video-presenter/types.ts
+        - src/lib/agent-identity.ts
+    - src/lib/video-presenter/types.ts (already listed)
+    - src/types/api.ts (already listed)
+  - src/components/WorkspaceShell.tsx
+    - src/components/ActivationNudge.tsx
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/contexts/AccountContext.tsx
+        - src/contexts/AuthContext.tsx
+          - src/lib/api.ts (already listed)
+          - src/lib/public-routes.ts
+          - src/lib/session-cookie.ts
+          - src/lib/studio-agent-preference.ts
+        - src/lib/account-type.ts
+          - src/constants/navigation.ts
+        - src/lib/api.ts (already listed)
+      - src/contexts/AuthContext.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/fleet-setup-progress.ts
+        - src/lib/api.ts (already listed)
+      - src/lib/post-signup-onboarding.ts
+        - src/lib/api.ts (already listed)
+        - src/lib/tenant-activation.ts
+          - src/db/schema.ts
+            - src/db/resend-webhook-schema.ts
+            - src/db/schema-base.ts
+            - src/db/voice-usage-schema.ts
+              - src/db/schema-base.ts (already listed)
+          - src/lib/post-call-digest.ts
+            - src/constants/brand-colors.ts (already listed)
+            - src/db/schema.ts (already listed)
+            - src/lib/action-engine.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/action-execution-idempotency.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/action-types.ts
+                - src/lib/server-context.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/api-error.ts
+                  - src/lib/audit-logger.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/types/audit.ts
+                  - src/lib/database-connection.ts
+                  - src/lib/server-logger.ts
+                  - src/lib/tenant-context-scope.ts
+                  - src/lib/tenant-quotas.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/plan-entitlements.ts
+                      - src/db/schema.ts (already listed)
+                      - src/lib/auth-service.ts
+                        - src/db/schema.ts (already listed)
+                        - src/db/security-schema.ts
+                        - src/lib/account-service.ts
+                          - src/db/schema.ts (already listed)
+                          - src/lib/account-type.ts (already listed)
+                          - src/lib/server-context.ts (already listed)
+                        - src/lib/account-type.ts (already listed)
+                        - src/lib/auth-utils.ts
+                          - src/lib/server-context.ts (already listed)
+                        - src/lib/breached-passwords.ts
+                        - src/lib/internal-jwt-secret.ts
+                        - src/lib/password-limits.ts
+                        - src/lib/platform-owner-emails.ts
+                        - src/lib/server-context.ts (already listed)
+                        - src/lib/trial-gate.ts
+                          - src/db/schema.ts (already listed)
+                          - src/lib/auth-service.ts (already listed)
+                          - src/lib/server-context.ts (already listed)
+                          - src/lib/workspace-usage-snapshot.ts
+                            - src/db/schema.ts (already listed)
+                            - src/lib/credit-wallet.ts
+                              - src/db/schema.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                            - src/lib/plan-catalog.ts (already listed)
+                            - src/lib/plan-entitlements.ts (already listed)
+                            - src/lib/server-context.ts (already listed)
+                            - src/lib/spend-guards.ts
+                              - src/db/schema.ts (already listed)
+                              - src/lib/ai-spend-alert.ts
+                              - src/lib/daily-spend-accumulator.ts
+                                - src/lib/server-context.ts (already listed)
+                              - src/lib/sentry-events.ts
+                                - src/lib/server-context.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                              - src/lib/server-utils.ts
+                              - src/lib/spend-budget-policy.ts
+                              - src/lib/webhook-helpers.ts
+                                - src/db/schema.ts (already listed)
+                                - src/lib/safe-webhook-delivery.ts
+                                  - src/lib/webhook-validators.ts
+                                - src/lib/secret-vault.ts
+                                - src/lib/sentry-events.ts (already listed)
+                                - src/lib/server-context.ts (already listed)
+                                - src/lib/server-utils.ts (already listed)
+                                - src/lib/webhook-delivery-status.ts
+                            - src/lib/voice-usage.ts
+                              - src/db/schema.ts (already listed)
+                              - src/db/voice-usage-schema.ts (already listed)
+                              - src/lib/plan-catalog.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                              - src/lib/tenant-quotas.ts (already listed)
+                              - src/lib/voice-completion-grace.ts
+                                - src/lib/credit-wallet.ts (already listed)
+                      - src/lib/plan-catalog.ts (already listed)
+                      - src/lib/server-context.ts (already listed)
+                      - src/lib/tenant-quotas.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                  - src/middleware/require-role.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/lib/soc2-controls.ts
+                      - src/db/schema.ts (already listed)
+              - src/lib/action-types.ts (already listed)
+              - src/lib/agent-capabilities.ts
+              - src/lib/agent-tool-authorization.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/agent-capabilities.ts (already listed)
+                - src/lib/tenant-integration-connections.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/agent-capabilities.ts (already listed)
+                  - src/lib/platform-integration-flags.ts
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/x-service.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/oauth-provider-revocation.ts
+                      - src/db/schema.ts (already listed)
+                      - src/lib/secret-vault.ts (already listed)
+                      - src/lib/server-context.ts (already listed)
+                      - src/lib/server-utils.ts (already listed)
+                    - src/lib/secret-vault.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/lib/server-utils.ts (already listed)
+                - src/routes/vapi/types.ts
+              - src/lib/ai-supervisor.ts
+                - src/lib/ai-structured.ts
+                  - src/lib/ai-audit.ts
+                    - src/lib/ai-models.ts (already listed)
+                  - src/lib/ai-client.ts
+                    - src/lib/ai-gateway.ts
+                      - src/lib/ai-gateway-auth.ts
+                      - src/lib/server-logger.ts (already listed)
+                    - src/lib/ai-models.ts (already listed)
+                    - src/lib/ai-usage.ts
+                    - src/lib/server-logger.ts (already listed)
+                  - src/lib/ai-models.ts (already listed)
+              - src/lib/apollo-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/oauth-provider-revocation.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/middleware/audit-middleware.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/ai-audit.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                  - src/lib/spend-guards.ts (already listed)
+              - src/lib/background-work.ts
+                - src/lib/error-reporter.ts
+                  - src/lib/server-logger.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+              - src/lib/calendar-time.ts
+              - src/lib/crm-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/hubspot-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/salesforce-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/salesforce-sync-preferences.ts
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/slack-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                  - src/lib/webhook-helpers.ts (already listed)
+              - src/lib/integrations.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/calendar-time.ts (already listed)
+                - src/lib/email-compliance.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/company-identity.ts
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/email-service.ts
+                  - src/constants/brand-colors.ts (already listed)
+                  - src/lib/email-compliance.ts (already listed)
+                  - src/lib/email-delivery-suppression.ts
+                    - src/db/resend-webhook-schema.ts (already listed)
+                    - src/lib/email-compliance.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                  - src/lib/resend-config.ts
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/google-apis.ts
+                - src/lib/icloud-mail.ts
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/zoom-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+              - src/lib/nav-counts-invalidate.ts
+                - src/lib/nav-counts-cache.ts
+              - src/lib/outbound-dial-gate.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/compliance.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/dnc-failsafe.ts
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/federal-dnc-service.ts
+                  - src/lib/federal-dnc-config.ts
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/outbound-status.ts
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/tcpa-calling-hours.ts
+                  - src/lib/tcpa-consent.ts
+                - src/lib/tcpa-consent.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/slack-service.ts (already listed)
+              - src/lib/tenant-integration-connections.ts (already listed)
+              - src/lib/twilio-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/agent-phone-lines.ts
+                  - src/db/schema.ts (already listed)
+                - src/lib/compliance.ts (already listed)
+                - src/lib/runtime-usage-billing.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/credit-wallet.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/sms-billing.ts
+                - src/lib/trial-gate.ts (already listed)
+                - src/lib/twilio-service-base.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/agent-phone-lines.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+              - src/lib/webhook-helpers.ts (already listed)
+            - src/lib/crm-service.ts (already listed)
+            - src/lib/csat-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/outbound-dial-gate.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/twilio-service.ts (already listed)
+              - src/lib/vapi-helpers.ts
+                - src/lib/agent-capabilities.ts (already listed)
+                - src/lib/agent-constants.ts
+                - src/lib/tenant-integration-connections.ts (already listed)
+                - src/lib/tenant-tools-cache.ts
+                  - src/lib/server-context.ts (already listed)
+            - src/lib/google-sheets-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/oauth-provider-revocation.ts (already listed)
+              - src/lib/secret-vault.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+            - src/lib/integrations.ts (already listed)
+            - src/lib/job-queue.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/error-reporter.ts (already listed)
+              - src/lib/job-queue-base.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/error-reporter.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+            - src/lib/microsoft-graph-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/oauth-provider-revocation.ts (already listed)
+              - src/lib/secret-vault.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+            - src/lib/outbound-call-tracking.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/compliance.ts (already listed)
+              - src/lib/outbound-status.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+            - src/lib/post-call-output-preferences.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+            - src/lib/product-event-server.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/product-events.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+            - src/lib/sales-integration-policy.ts
+            - src/lib/server-context.ts (already listed)
+            - src/lib/shareable-artifact/publish-call-recap.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/plan-catalog.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/shareable-artifact/entitlement.ts
+                - src/lib/plan-catalog.ts (already listed)
+              - src/lib/shareable-artifact/redact.ts
+              - src/lib/shareable-artifact/service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/shareable-artifact/tokens.ts
+                - src/lib/shareable-artifact/types.ts
+              - src/lib/shareable-artifact/types.ts (already listed)
+            - src/lib/tenant-activation.ts (already listed)
+            - src/lib/vapi-helpers.ts (already listed)
+          - src/lib/product-event-server.ts (already listed)
+          - src/lib/sales-integration-policy.ts (already listed)
+          - src/lib/server-context.ts (already listed)
+      - src/lib/product-event-client.ts (already listed)
+      - src/lib/safe-number.ts
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-onboarding-copy.ts
+    - src/components/AgentFace.tsx
+      - src/lib/agent-identity.ts (already listed)
+    - src/components/brand/WirelineMark.tsx
+    - src/components/layout/EmailVerifyBanner.tsx
+      - src/components/atoms/index.ts (already listed)
+      - src/contexts/ToastContext.tsx
+      - src/lib/api.ts (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/types/api.ts (already listed)
+    - src/components/layout/MobileNavMoreSheet.tsx
+      - src/components/ui/shadcn/Sheet.tsx
+        - src/lib/utils.ts (already listed)
+      - src/constants/navigation.ts (already listed)
+      - src/contexts/AccountContext.tsx (already listed)
+      - src/lib/account-type.ts (already listed)
+    - src/components/layout/SkipToContentLink.tsx
+    - src/components/MobileBrowserUtilities.tsx
+      - src/constants/navigation.ts (already listed)
+    - src/components/ui/WiredEyebrow.tsx (already listed)
+    - src/constants/navigation.ts (already listed)
+    - src/contexts/AccountContext.tsx (already listed)
+    - src/contexts/AgentsContext.tsx
+      - src/contexts/AuthContext.tsx (already listed)
+      - src/lib/api.ts (already listed)
+    - src/contexts/AuthContext.tsx (already listed)
+    - src/hooks/useStudioActiveAgentId.ts
+      - src/contexts/AgentsContext.tsx (already listed)
+      - src/lib/studio-agent-preference.ts (already listed)
+    - src/lib/account-type.ts (already listed)
+    - src/lib/agent-readiness.ts
+    - src/lib/product-copy.ts
+    - src/lib/user-display.ts
+  - src/lib/api.ts (already listed)
+  - src/lib/conversation-balance.ts (already listed)
+  - src/lib/plan-catalog.ts (already listed)
+  - src/lib/voice-pricing-display.ts
+    - src/lib/conversation-balance.ts (already listed)
+    - src/lib/plan-catalog.ts (already listed)
+  - src/types/api.ts (already listed)
+
+## /connections
+Entry: src/pages/ConnectionsPage.tsx
+Dependencies:
+- src/pages/ConnectionsPage.tsx
+  - src/components/atoms/index.ts
+    - src/components/atoms/Badge.tsx
+      - src/lib/utils.ts
+    - src/components/atoms/Button.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Chip.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Dialog.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/DropdownMenu.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/EmptyState.tsx
+      - src/components/ui/EmptyState.tsx
+        - src/components/atoms/Button.tsx (already listed)
+        - src/components/ui/Medallion.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/ui/SectionHeader.tsx
+          - src/lib/utils.ts (already listed)
+          - src/lib/wireline-design-system.ts
+            - src/lib/authenticated-surface-contract.ts
+              - src/lib/surface-contract.ts
+            - src/lib/wireline-design-vision.ts
+        - src/components/ui/SignalOrbFrame.tsx
+          - src/components/ui/SignalFrameRail.tsx
+            - src/lib/utils.ts (already listed)
+          - src/lib/utils.ts (already listed)
+        - src/lib/utils.ts (already listed)
+        - src/lib/wireline-design-system.ts (already listed)
+    - src/components/atoms/Eyebrow.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/HelpTooltip.tsx
+      - src/components/ui/shadcn/Tooltip.tsx
+        - src/lib/utils.ts (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Input.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/MetricTile.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/NativeSelect.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Paper.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Reveal.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/skeleton-presets.tsx
+      - src/components/atoms/Skeleton.tsx
+        - src/lib/utils.ts (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Skeleton.tsx (already listed)
+    - src/components/atoms/Switch.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Textarea.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/atoms/Toast.tsx
+      - src/components/atoms/Button.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+  - src/components/CrmConnectionCard.tsx
+    - src/components/atoms/index.ts (already listed)
+    - src/components/IntegrationCapabilityPanel.tsx
+      - src/components/ui/shadcn/Checkbox.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/ui/shadcn/ShadButton.tsx
+        - src/components/atoms/Button.tsx (already listed)
+      - src/lib/agent-capabilities.ts
+      - src/lib/integration-playbooks.ts
+        - src/lib/agent-capabilities.ts (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/layout/IntegrationLogos.tsx
+    - src/components/molecules/index.ts
+      - src/components/molecules/Card.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/ConversationActivity.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/ConversationMessage.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/FormField.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/MetricCard.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/SearchField.tsx
+        - src/components/atoms/Button.tsx (already listed)
+        - src/components/atoms/Input.tsx (already listed)
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/StatusNotice.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/molecules/VoiceTurns.tsx
+        - src/components/molecules/ConversationMessage.tsx (already listed)
+        - src/lib/call-transcript.ts
+    - src/components/ui/shadcn/Input.tsx
+      - src/components/atoms/Input.tsx (already listed)
+    - src/components/ui/shadcn/Select.tsx
+      - src/lib/utils.ts (already listed)
+    - src/components/ui/shadcn/ShadButton.tsx (already listed)
+    - src/constants/brand-colors.ts
+      - src/constants/generated-design-tokens.ts
+    - src/lib/api.ts
+      - src/lib/api-base.ts
+    - src/lib/integration-playbooks.ts (already listed)
+    - src/lib/utils.ts (already listed)
+    - src/lib/wireline-design-system.ts (already listed)
+  - src/components/integrations/IntegrationOperatingMap.tsx
+    - src/components/layout/IntegrationLogos.tsx (already listed)
+    - src/lib/utils.ts (already listed)
+    - src/lib/workspace-integration-catalog.ts
+      - src/lib/agent-capabilities.ts (already listed)
+  - src/components/layout/WorkspacePageFrame.tsx
+    - src/lib/utils.ts (already listed)
+  - src/components/MailboxConnectionCard.tsx
+    - src/components/atoms/index.ts (already listed)
+    - src/components/layout/IntegrationLogos.tsx (already listed)
+    - src/components/molecules/index.ts (already listed)
+    - src/lib/api.ts (already listed)
+  - src/components/ui/shadcn/Accordion.tsx
+    - src/lib/utils.ts (already listed)
+  - src/components/WorkspaceShell.tsx
+    - src/components/ActivationNudge.tsx
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/contexts/AccountContext.tsx
+        - src/contexts/AuthContext.tsx
+          - src/lib/api.ts (already listed)
+          - src/lib/public-routes.ts
+          - src/lib/session-cookie.ts
+          - src/lib/studio-agent-preference.ts
+        - src/lib/account-type.ts
+          - src/constants/navigation.ts
+        - src/lib/api.ts (already listed)
+      - src/contexts/AuthContext.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/fleet-setup-progress.ts
+        - src/lib/api.ts (already listed)
+      - src/lib/post-signup-onboarding.ts
+        - src/lib/api.ts (already listed)
+        - src/lib/tenant-activation.ts
+          - src/db/schema.ts
+            - src/db/resend-webhook-schema.ts
+            - src/db/schema-base.ts
+            - src/db/voice-usage-schema.ts
+              - src/db/schema-base.ts (already listed)
+          - src/lib/post-call-digest.ts
+            - src/constants/brand-colors.ts (already listed)
+            - src/db/schema.ts (already listed)
+            - src/lib/action-engine.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/action-execution-idempotency.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/action-types.ts
+                - src/lib/server-context.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/api-error.ts
+                  - src/lib/audit-logger.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/types/audit.ts
+                  - src/lib/database-connection.ts
+                  - src/lib/server-logger.ts
+                  - src/lib/tenant-context-scope.ts
+                  - src/lib/tenant-quotas.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/plan-entitlements.ts
+                      - src/db/schema.ts (already listed)
+                      - src/lib/auth-service.ts
+                        - src/db/schema.ts (already listed)
+                        - src/db/security-schema.ts
+                        - src/lib/account-service.ts
+                          - src/db/schema.ts (already listed)
+                          - src/lib/account-type.ts (already listed)
+                          - src/lib/server-context.ts (already listed)
+                        - src/lib/account-type.ts (already listed)
+                        - src/lib/auth-utils.ts
+                          - src/lib/server-context.ts (already listed)
+                        - src/lib/breached-passwords.ts
+                        - src/lib/internal-jwt-secret.ts
+                        - src/lib/password-limits.ts
+                        - src/lib/platform-owner-emails.ts
+                        - src/lib/server-context.ts (already listed)
+                        - src/lib/trial-gate.ts
+                          - src/db/schema.ts (already listed)
+                          - src/lib/auth-service.ts (already listed)
+                          - src/lib/server-context.ts (already listed)
+                          - src/lib/workspace-usage-snapshot.ts
+                            - src/db/schema.ts (already listed)
+                            - src/lib/credit-wallet.ts
+                              - src/db/schema.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                            - src/lib/plan-catalog.ts
+                            - src/lib/plan-entitlements.ts (already listed)
+                            - src/lib/server-context.ts (already listed)
+                            - src/lib/spend-guards.ts
+                              - src/db/schema.ts (already listed)
+                              - src/lib/ai-spend-alert.ts
+                              - src/lib/daily-spend-accumulator.ts
+                                - src/lib/server-context.ts (already listed)
+                              - src/lib/sentry-events.ts
+                                - src/lib/server-context.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                              - src/lib/server-utils.ts
+                              - src/lib/spend-budget-policy.ts
+                              - src/lib/webhook-helpers.ts
+                                - src/db/schema.ts (already listed)
+                                - src/lib/safe-webhook-delivery.ts
+                                  - src/lib/webhook-validators.ts
+                                - src/lib/secret-vault.ts
+                                - src/lib/sentry-events.ts (already listed)
+                                - src/lib/server-context.ts (already listed)
+                                - src/lib/server-utils.ts (already listed)
+                                - src/lib/webhook-delivery-status.ts
+                            - src/lib/voice-usage.ts
+                              - src/db/schema.ts (already listed)
+                              - src/db/voice-usage-schema.ts (already listed)
+                              - src/lib/plan-catalog.ts (already listed)
+                              - src/lib/server-context.ts (already listed)
+                              - src/lib/tenant-quotas.ts (already listed)
+                              - src/lib/voice-completion-grace.ts
+                                - src/lib/credit-wallet.ts (already listed)
+                      - src/lib/plan-catalog.ts (already listed)
+                      - src/lib/server-context.ts (already listed)
+                      - src/lib/tenant-quotas.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                  - src/middleware/require-role.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/lib/soc2-controls.ts
+                      - src/db/schema.ts (already listed)
+              - src/lib/action-types.ts (already listed)
+              - src/lib/agent-capabilities.ts (already listed)
+              - src/lib/agent-tool-authorization.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/agent-capabilities.ts (already listed)
+                - src/lib/tenant-integration-connections.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/agent-capabilities.ts (already listed)
+                  - src/lib/platform-integration-flags.ts
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/x-service.ts
+                    - src/db/schema.ts (already listed)
+                    - src/lib/oauth-provider-revocation.ts
+                      - src/db/schema.ts (already listed)
+                      - src/lib/secret-vault.ts (already listed)
+                      - src/lib/server-context.ts (already listed)
+                      - src/lib/server-utils.ts (already listed)
+                    - src/lib/secret-vault.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                    - src/lib/server-utils.ts (already listed)
+                - src/routes/vapi/types.ts
+              - src/lib/ai-supervisor.ts
+                - src/lib/ai-structured.ts
+                  - src/lib/ai-audit.ts
+                    - src/lib/ai-models.ts
+                  - src/lib/ai-client.ts
+                    - src/lib/ai-gateway.ts
+                      - src/lib/ai-gateway-auth.ts
+                      - src/lib/server-logger.ts (already listed)
+                    - src/lib/ai-models.ts (already listed)
+                    - src/lib/ai-usage.ts
+                    - src/lib/server-logger.ts (already listed)
+                  - src/lib/ai-models.ts (already listed)
+              - src/lib/apollo-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/oauth-provider-revocation.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/middleware/audit-middleware.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/ai-audit.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                  - src/lib/spend-guards.ts (already listed)
+              - src/lib/background-work.ts
+                - src/lib/error-reporter.ts
+                  - src/lib/server-logger.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+              - src/lib/calendar-time.ts
+              - src/lib/crm-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/hubspot-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/salesforce-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/salesforce-sync-preferences.ts
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/slack-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                  - src/lib/webhook-helpers.ts (already listed)
+              - src/lib/integrations.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/calendar-time.ts (already listed)
+                - src/lib/email-compliance.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/company-identity.ts
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/email-service.ts
+                  - src/constants/brand-colors.ts (already listed)
+                  - src/lib/email-compliance.ts (already listed)
+                  - src/lib/email-delivery-suppression.ts
+                    - src/db/resend-webhook-schema.ts (already listed)
+                    - src/lib/email-compliance.ts (already listed)
+                    - src/lib/server-context.ts (already listed)
+                  - src/lib/resend-config.ts
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/google-apis.ts
+                - src/lib/icloud-mail.ts
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+                - src/lib/secret-vault.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/zoom-service.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/oauth-provider-revocation.ts (already listed)
+                  - src/lib/secret-vault.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+              - src/lib/nav-counts-invalidate.ts
+                - src/lib/nav-counts-cache.ts
+              - src/lib/outbound-dial-gate.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/compliance.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/dnc-failsafe.ts
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/federal-dnc-service.ts
+                  - src/lib/federal-dnc-config.ts
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/outbound-status.ts
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/tcpa-calling-hours.ts
+                  - src/lib/tcpa-consent.ts
+                - src/lib/tcpa-consent.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/slack-service.ts (already listed)
+              - src/lib/tenant-integration-connections.ts (already listed)
+              - src/lib/twilio-service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/agent-phone-lines.ts
+                  - src/db/schema.ts (already listed)
+                - src/lib/compliance.ts (already listed)
+                - src/lib/runtime-usage-billing.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/credit-wallet.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/sms-billing.ts
+                - src/lib/trial-gate.ts (already listed)
+                - src/lib/twilio-service-base.ts
+                  - src/db/schema.ts (already listed)
+                  - src/lib/agent-phone-lines.ts (already listed)
+                  - src/lib/server-context.ts (already listed)
+                  - src/lib/server-utils.ts (already listed)
+              - src/lib/webhook-helpers.ts (already listed)
+            - src/lib/crm-service.ts (already listed)
+            - src/lib/csat-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/outbound-dial-gate.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/twilio-service.ts (already listed)
+              - src/lib/vapi-helpers.ts
+                - src/lib/agent-capabilities.ts (already listed)
+                - src/lib/agent-constants.ts
+                - src/lib/tenant-integration-connections.ts (already listed)
+                - src/lib/tenant-tools-cache.ts
+                  - src/lib/server-context.ts (already listed)
+            - src/lib/google-sheets-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/oauth-provider-revocation.ts (already listed)
+              - src/lib/secret-vault.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+            - src/lib/integrations.ts (already listed)
+            - src/lib/job-queue.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/error-reporter.ts (already listed)
+              - src/lib/job-queue-base.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/error-reporter.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+            - src/lib/microsoft-graph-service.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/oauth-provider-revocation.ts (already listed)
+              - src/lib/secret-vault.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+            - src/lib/outbound-call-tracking.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/compliance.ts (already listed)
+              - src/lib/outbound-status.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+            - src/lib/post-call-output-preferences.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+            - src/lib/product-event-server.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/product-events.ts
+              - src/lib/server-context.ts (already listed)
+            - src/lib/sales-integration-policy.ts
+            - src/lib/server-context.ts (already listed)
+            - src/lib/shareable-artifact/publish-call-recap.ts
+              - src/db/schema.ts (already listed)
+              - src/lib/plan-catalog.ts (already listed)
+              - src/lib/server-context.ts (already listed)
+              - src/lib/server-utils.ts (already listed)
+              - src/lib/shareable-artifact/entitlement.ts
+                - src/lib/plan-catalog.ts (already listed)
+              - src/lib/shareable-artifact/redact.ts
+              - src/lib/shareable-artifact/service.ts
+                - src/db/schema.ts (already listed)
+                - src/lib/server-context.ts (already listed)
+                - src/lib/server-utils.ts (already listed)
+                - src/lib/shareable-artifact/tokens.ts
+                - src/lib/shareable-artifact/types.ts
+              - src/lib/shareable-artifact/types.ts (already listed)
+            - src/lib/tenant-activation.ts (already listed)
+            - src/lib/vapi-helpers.ts (already listed)
+          - src/lib/product-event-server.ts (already listed)
+          - src/lib/sales-integration-policy.ts (already listed)
+          - src/lib/server-context.ts (already listed)
+      - src/lib/product-event-client.ts
+        - src/lib/product-events.ts (already listed)
+      - src/lib/safe-number.ts
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-onboarding-copy.ts
+    - src/components/AgentFace.tsx
+      - src/lib/agent-identity.ts
+    - src/components/brand/WirelineMark.tsx
+    - src/components/layout/EmailVerifyBanner.tsx
+      - src/components/atoms/index.ts (already listed)
+      - src/contexts/ToastContext.tsx
+      - src/lib/api.ts (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/types/api.ts
+        - src/types/api-billing.ts
+        - src/types/api-insights.ts
+          - src/lib/audit-summary.ts
+            - src/lib/ai-models.ts (already listed)
+    - src/components/layout/MobileNavMoreSheet.tsx
+      - src/components/ui/shadcn/Sheet.tsx
+        - src/lib/utils.ts (already listed)
+      - src/constants/navigation.ts (already listed)
+      - src/contexts/AccountContext.tsx (already listed)
+      - src/lib/account-type.ts (already listed)
+    - src/components/layout/SkipToContentLink.tsx
+    - src/components/MobileBrowserUtilities.tsx
+      - src/constants/navigation.ts (already listed)
+    - src/components/ui/WiredEyebrow.tsx
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-design-system.ts (already listed)
+    - src/constants/navigation.ts (already listed)
+    - src/contexts/AccountContext.tsx (already listed)
+    - src/contexts/AgentsContext.tsx
+      - src/contexts/AuthContext.tsx (already listed)
+      - src/lib/api.ts (already listed)
+    - src/contexts/AuthContext.tsx (already listed)
+    - src/hooks/useStudioActiveAgentId.ts
+      - src/contexts/AgentsContext.tsx (already listed)
+      - src/lib/studio-agent-preference.ts (already listed)
+    - src/lib/account-type.ts (already listed)
+    - src/lib/agent-readiness.ts
+    - src/lib/product-copy.ts
+    - src/lib/user-display.ts
+
+## /admin
+Entry: src/components/AdminSettings.tsx
+Dependencies:
+- src/components/AdminSettings.tsx
+  - src/components/admin/AccountsPanel.tsx
+    - src/contexts/AccountContext.tsx
+      - src/contexts/AuthContext.tsx
+        - src/lib/api.ts
+          - src/lib/api-base.ts
+        - src/lib/public-routes.ts
+        - src/lib/session-cookie.ts
+        - src/lib/studio-agent-preference.ts
+      - src/lib/account-type.ts
+        - src/constants/navigation.ts
+      - src/lib/api.ts (already listed)
+    - src/lib/utils.ts
+  - src/components/admin/AuditActivityPanel.tsx
+    - src/components/ui/shadcn/ShadButton.tsx
+      - src/components/atoms/Button.tsx
+        - src/lib/utils.ts (already listed)
+    - src/constants/brand-colors.ts
+      - src/constants/generated-design-tokens.ts
+    - src/lib/api.ts (already listed)
+    - src/lib/client-log.ts
+    - src/lib/safe-date.ts
+    - src/lib/utils.ts (already listed)
+  - src/components/admin/BrandingPanel.tsx
+    - src/components/admin/AdminSaveBar.tsx
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-ops-design.ts
+        - src/constants/brand-colors.ts (already listed)
+        - src/lib/wireline-design-system.ts
+          - src/lib/authenticated-surface-contract.ts
+            - src/lib/surface-contract.ts
+          - src/lib/wireline-design-vision.ts
+    - src/components/ui/shadcn/Input.tsx
+      - src/components/atoms/Input.tsx
+        - src/lib/utils.ts (already listed)
+    - src/constants/brand-colors.ts (already listed)
+    - src/lib/wireline-ops-design.ts (already listed)
+  - src/components/admin/CarrierPanel.tsx
+    - src/components/admin/AdminSaveBar.tsx (already listed)
+    - src/components/IntakeKeysManager.tsx
+      - src/components/ui/shadcn/Input.tsx (already listed)
+      - src/components/ui/shadcn/Select.tsx
+        - src/lib/utils.ts (already listed)
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/safe-date.ts (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-design-system.ts (already listed)
+    - src/components/PageShell.tsx
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/lib/brand-token.ts
+      - src/lib/use-body-scroll-lock.ts
+      - src/lib/use-modal-focus-trap.ts
+      - src/lib/utils.ts (already listed)
+    - src/components/PhoneNumberPicker.tsx
+      - src/components/ui/shadcn/Input.tsx (already listed)
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/ui/shadcn/Input.tsx (already listed)
+    - src/components/ui/shadcn/Select.tsx (already listed)
+    - src/components/ui/shadcn/ShadButton.tsx (already listed)
+    - src/components/WebhooksManager.tsx
+      - src/components/Skeleton.tsx
+        - src/components/atoms/skeleton-presets.tsx
+          - src/components/atoms/Skeleton.tsx
+            - src/lib/utils.ts (already listed)
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Skeleton.tsx (already listed)
+      - src/components/ui/EmptyState.tsx
+        - src/components/atoms/Button.tsx (already listed)
+        - src/components/ui/Medallion.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/ui/SectionHeader.tsx
+          - src/lib/utils.ts (already listed)
+          - src/lib/wireline-design-system.ts (already listed)
+        - src/components/ui/SignalOrbFrame.tsx
+          - src/components/ui/SignalFrameRail.tsx
+            - src/lib/utils.ts (already listed)
+          - src/lib/utils.ts (already listed)
+        - src/lib/utils.ts (already listed)
+        - src/lib/wireline-design-system.ts (already listed)
+      - src/components/ui/shadcn/Input.tsx (already listed)
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/contexts/ToastContext.tsx
+      - src/lib/api.ts (already listed)
+      - src/lib/safe-date.ts (already listed)
+      - src/lib/utils.ts (already listed)
+      - src/lib/wireline-design-system.ts (already listed)
+    - src/lib/api.ts (already listed)
+    - src/lib/utils.ts (already listed)
+    - src/lib/wireline-ops-design.ts (already listed)
+  - src/components/admin/ComplianceChecklist.tsx
+    - src/components/ui/shadcn/ShadButton.tsx (already listed)
+    - src/lib/api.ts (already listed)
+    - src/lib/utils.ts (already listed)
+  - src/components/admin/GrowthPanel.tsx
+    - src/components/admin/AdminSaveBar.tsx (already listed)
+    - src/components/PageShell.tsx (already listed)
+    - src/components/ui/shadcn/Input.tsx (already listed)
+    - src/components/ui/shadcn/ShadButton.tsx (already listed)
+    - src/lib/utils.ts (already listed)
+    - src/lib/wireline-ops-design.ts (already listed)
+  - src/components/admin/SubscriptionPanel.tsx
+    - src/components/PageShell.tsx (already listed)
+    - src/components/StripeBillingCard.tsx
+      - src/components/atoms/index.ts
+        - src/components/atoms/Badge.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Button.tsx (already listed)
+        - src/components/atoms/Chip.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Dialog.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/DropdownMenu.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/EmptyState.tsx
+          - src/components/ui/EmptyState.tsx (already listed)
+        - src/components/atoms/Eyebrow.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/HelpTooltip.tsx
+          - src/components/ui/shadcn/Tooltip.tsx
+            - src/lib/utils.ts (already listed)
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Input.tsx (already listed)
+        - src/components/atoms/MetricTile.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/NativeSelect.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Paper.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Reveal.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/skeleton-presets.tsx (already listed)
+        - src/components/atoms/Skeleton.tsx (already listed)
+        - src/components/atoms/Switch.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Textarea.tsx
+          - src/lib/utils.ts (already listed)
+        - src/components/atoms/Toast.tsx
+          - src/components/atoms/Button.tsx (already listed)
+          - src/lib/utils.ts (already listed)
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/components/ui/WiredEyebrow.tsx
+        - src/lib/utils.ts (already listed)
+        - src/lib/wireline-design-system.ts (already listed)
+      - src/components/UsageMeter.tsx
+        - src/components/atoms/index.ts (already listed)
+        - src/components/ui/shadcn/Progress.tsx
+          - src/lib/utils.ts (already listed)
+        - src/lib/api.ts (already listed)
+        - src/lib/conversation-balance.ts
+        - src/lib/utils.ts (already listed)
+        - src/types/api.ts
+          - src/types/api-billing.ts
+          - src/types/api-insights.ts
+            - src/lib/audit-summary.ts
+              - src/lib/ai-models.ts
+      - src/constants/brand-colors.ts (already listed)
+      - src/lib/api.ts (already listed)
+      - src/lib/conversation-balance.ts (already listed)
+      - src/lib/product-event-client.ts
+        - src/lib/product-events.ts
+      - src/lib/safe-date.ts (already listed)
+      - src/lib/signup-intent.ts
+      - src/lib/utils.ts (already listed)
+      - src/lib/video-presenter/copy.ts
+        - src/lib/video-presenter/live-video-policy.ts
+          - src/lib/plan-catalog.ts
+        - src/lib/video-presenter/types.ts
+          - src/lib/agent-identity.ts
+      - src/lib/video-presenter/types.ts (already listed)
+      - src/types/api.ts (already listed)
+    - src/components/ui/shadcn/Input.tsx (already listed)
+    - src/components/ui/shadcn/ShadButton.tsx (already listed)
+  - src/components/admin/TeamPanel.tsx
+    - src/components/PageShell.tsx (already listed)
+    - src/components/ui/shadcn/Input.tsx (already listed)
+    - src/components/ui/shadcn/Select.tsx (already listed)
+    - src/components/ui/shadcn/ShadButton.tsx (already listed)
+    - src/lib/utils.ts (already listed)
+  - src/components/atoms/skeleton-presets.tsx (already listed)
+  - src/components/ConfirmModal.tsx
+    - src/components/ui/shadcn/AlertDialog.tsx
+      - src/components/ui/shadcn/ShadButton.tsx (already listed)
+      - src/lib/utils.ts (already listed)
+    - src/components/ui/shadcn/ShadButton.tsx (already listed)
+    - src/lib/utils.ts (already listed)
+  - src/components/IntegrationHealthBanner.tsx
+    - src/components/ui/shadcn/ShadButton.tsx (already listed)
+    - src/lib/utils.ts (already listed)
+  - src/components/layout/AdminHubViewport.tsx
+    - src/components/layout/ClientRouteViewport.tsx
+      - src/components/layout/ClientRouteAmbience.tsx
+      - src/lib/utils.ts (already listed)
+  - src/components/layout/ClientRouteLoading.tsx
+    - src/components/ui/Medallion.tsx (already listed)
+    - src/components/ui/SignalOrbFrame.tsx (already listed)
+    - src/lib/utils.ts (already listed)
+  - src/components/layout/WorkspacePageFrame.tsx
+    - src/lib/utils.ts (already listed)
+  - src/components/layout/WorkspaceTabStrip.tsx
+    - src/lib/utils.ts (already listed)
+  - src/constants/brand-colors.ts (already listed)
+  - src/contexts/AuthContext.tsx (already listed)
+  - src/contexts/BrandingContext.tsx
+    - src/contexts/AuthContext.tsx (already listed)
+    - src/lib/api.ts (already listed)
+  - src/contexts/ToastContext.tsx (already listed)
+  - src/lib/admin-access.ts
+  - src/lib/ai-models.ts (already listed)
+  - src/lib/api.ts (already listed)
+  - src/lib/client-log.ts (already listed)
+  - src/lib/wireline-ops-design.ts (already listed)

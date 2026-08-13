@@ -69,6 +69,8 @@ describe("Stripe Runtime Balance movements fail closed", () => {
       "charge.dispute.funds_reinstated",
       "refund.updated",
       "checkout.session.completed",
+      "checkout.session.async_payment_succeeded",
+      "checkout.session.async_payment_failed",
       "invoice.payment_succeeded",
     ]) {
       expect(events, event).toContain(event);
@@ -153,11 +155,10 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     );
     /*
      * The event name is load-bearing and easy to get wrong. Stripe documents
-     * `charge.refund.updated` for selected NON-card payment methods; this
-     * account pins payment_method_types to card and link, and Stripe's own
-     * async-refund test cards state that a pending CARD refund transitions to
-     * succeeded and "sends a refund.updated event". Subscribing the wrong one
-     * leaves the slow-settle dead-end open while the code looks fixed.
+     * `charge.refund.updated` for selected NON-card payment methods. Stripe's
+     * own async-refund test cards state that a pending card refund transitions
+     * to succeeded and "sends a refund.updated event". Subscribing the wrong
+     * event leaves the slow-settle dead-end open while the code looks fixed.
      */
     // Bans the event NAME in use, not the comment explaining why it is wrong.
     for (const source of [middleware, billing]) {

@@ -9,6 +9,7 @@ import {
   stripe,
   stripeAvailable,
   stripeCheckoutIntegrationIdentifier,
+  stripeCheckoutTaxConfig,
 } from "../lib/stripe-helpers";
 import { authenticateUser } from "../middleware/auth";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
@@ -231,7 +232,7 @@ router.post(
       integration_identifier: stripeCheckoutIntegrationIdentifier("plan"),
       customer: customerId,
       customer_update: { address: "auto" },
-      automatic_tax: { enabled: true },
+      ...stripeCheckoutTaxConfig(),
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${appUrl.url}/settings/billing?billing=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl.url}/settings/billing?billing=canceled`,

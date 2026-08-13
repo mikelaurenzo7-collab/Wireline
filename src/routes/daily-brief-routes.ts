@@ -253,32 +253,46 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
         continue;
       }
 
+      // A claim failure for one tenant must not abort the sweep: every tenant
+      // after them in the list would silently miss that day's brief, and the
+      // cron would surface only an opaque 500 (seen in production on 2026-08-08
+      // as "Cannot convert undefined or null to object"). Isolate the claim the
+      // same way per-tenant send failures are isolated below.
       const claimAt = new Date();
-      const [claimed] = await drizzle
-        .update(schema.settings)
-        .set({
-          dailyBriefDispatchClaimedAt: claimAt,
-          dailyBriefLastAttemptAt: claimAt,
-        })
-        .where(
-          and(
-            eq(schema.settings.userId, uid),
-            eq(schema.settings.dailyBriefEnabled, true),
-            or(
-              isNull(schema.settings.dailyBriefLastSentAt),
-              lt(schema.settings.dailyBriefLastSentAt, scheduledAt),
+      let claimed: { userId: string | null } | undefined;
+      try {
+        [claimed] = await drizzle
+          .update(schema.settings)
+          .set({
+            dailyBriefDispatchClaimedAt: claimAt,
+            dailyBriefLastAttemptAt: claimAt,
+          })
+          .where(
+            and(
+              eq(schema.settings.userId, uid),
+              eq(schema.settings.dailyBriefEnabled, true),
+              or(
+                isNull(schema.settings.dailyBriefLastSentAt),
+                lt(schema.settings.dailyBriefLastSentAt, scheduledAt),
+              ),
+              or(
+                isNull(schema.settings.dailyBriefLastAttemptAt),
+                lt(schema.settings.dailyBriefLastAttemptAt, scheduledAt),
+              ),
+              or(
+                isNull(schema.settings.dailyBriefDispatchClaimedAt),
+                lt(schema.settings.dailyBriefDispatchClaimedAt, staleClaimBefore),
+              ),
             ),
-            or(
-              isNull(schema.settings.dailyBriefLastAttemptAt),
-              lt(schema.settings.dailyBriefLastAttemptAt, scheduledAt),
-            ),
-            or(
-              isNull(schema.settings.dailyBriefDispatchClaimedAt),
-              lt(schema.settings.dailyBriefDispatchClaimedAt, staleClaimBefore),
-            ),
-          ),
-        )
-        .returning({ userId: schema.settings.userId });
+          )
+          .returning({ userId: schema.settings.userId });
+      } catch (claimError: unknown) {
+        const msg = getErrorMessage(claimError);
+        failed++;
+        if (errors.length < 5) errors.push(`${uid}: claim failed: ${msg}`);
+        log.error("Daily brief cron: claim update failed", { userId: uid, error: msg });
+        continue;
+      }
 
       if (!claimed?.userId) {
         contended++;

@@ -161,7 +161,25 @@ app.use("/api", (req, res) => {
 });
 
 app.use(
-  (error: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  (error: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    // A response that already started (SSE stream, post-ack webhook work) can
+    // still raise. Writing status/JSON onto it throws ERR_HTTP_HEADERS_SENT
+    // inside this handler, replacing the real fault with a header error, so
+    // delegate to Express's default handler, which destroys the socket. These
+    // are 5xx-class faults: they must still reach external alerting.
+    if (res.headersSent) {
+      log.error("API error after response started", {
+        requestId: res.locals.requestId,
+        method: req.method,
+        path: req.path,
+        error: getErrorMessage(error),
+      });
+      reportError(error, {
+        tags: { surface: "api", method: req.method, path: req.path, phase: "post-response" },
+        requestId: res.locals.requestId,
+      });
+      return next(error);
+    }
     const { status, body } = formatErrorResponse(error, res.locals.requestId as string | undefined);
     const logFields = {
       requestId: res.locals.requestId,

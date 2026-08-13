@@ -46,11 +46,43 @@ async function markCheckoutOperationCompleted(session: Stripe.Checkout.Session):
 }
 
 /**
+ * Release a durable plan-checkout operation after Stripe confirms a delayed
+ * payment failed. Only the stamped owner and an active operation can change;
+ * completed operations and unrelated Stripe sessions are immutable no-ops.
+ */
+export async function failStripeCheckoutSession(
+  session: Stripe.Checkout.Session,
+): Promise<boolean> {
+  const operationId = checkoutOperationId(session);
+  const userId = session.metadata?.wireline_user_id?.trim();
+  if (!operationId || !userId || session.mode !== "subscription") return false;
+
+  const updated = await tenantStore.run(userId, () =>
+    drizzle
+      .update(checkoutOperations)
+      .set({
+        status: "failed",
+        failureCode: "stripe_async_payment_failed",
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(checkoutOperations.id, operationId),
+          eq(checkoutOperations.userId, userId),
+          inArray(checkoutOperations.status, ["creating", "open"]),
+        ),
+      )
+      .returning({ id: checkoutOperations.id }),
+  );
+  return updated.length > 0;
+}
+
+/**
  * Fulfill Checkout through one idempotent path. The webhook and authenticated
  * success redirect call the same routine, so either can repair the other
  * without double-crediting a wallet or clobbering the base subscription with
  * the live-video add-on. The settlement gate also makes this safe to reuse
- * when delayed-payment webhook delivery is enabled later.
+ * for both immediate and delayed-payment webhook delivery.
  */
 export async function fulfillStripeCheckoutSession(
   session: Stripe.Checkout.Session,
@@ -82,11 +114,15 @@ export async function fulfillStripeCheckoutSession(
         throw new Error(`Settled live-video Checkout ${session.id} has no subscription.`);
       }
 
-      const updated = await drizzle
-        .update(schema.settings)
-        .set({ liveVideoAddonEnabled: true, updatedAt: new Date() })
-        .where(eq(schema.settings.userId, userId))
-        .returning({ userId: schema.settings.userId });
+      // Tenant-scoped like the credit-topup arm below: the entitlement write
+      // must carry RLS WITH CHECK insurance against a metadata-identity bug.
+      const updated = await tenantStore.run(userId, () =>
+        drizzle
+          .update(schema.settings)
+          .set({ liveVideoAddonEnabled: true, updatedAt: new Date() })
+          .where(eq(schema.settings.userId, userId))
+          .returning({ userId: schema.settings.userId }),
+      );
       if (!updated[0]) {
         // A paid add-on without a durable workspace projection must stay
         // retryable; acknowledging it here would strand the entitlement.
@@ -102,8 +138,11 @@ export async function fulfillStripeCheckoutSession(
     }
 
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    // syncSubscriptionFromStripe scopes its own mutation phase to the identity
+    // it resolves; the operation-completion write is scoped to the checkout's
+    // stamped owner, who created the operation row.
     await syncSubscriptionFromStripe(subscription);
-    await markCheckoutOperationCompleted(session);
+    await tenantStore.run(userId, () => markCheckoutOperationCompleted(session));
     result.subscriptionSynced = true;
     return result;
   }

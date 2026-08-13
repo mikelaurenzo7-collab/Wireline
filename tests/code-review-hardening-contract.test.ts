@@ -18,9 +18,11 @@ describe("code review hardening contracts", () => {
       expect(source, path).not.toContain("tsx/dist/cli.mjs");
     }
 
-    const scripts = (JSON.parse(read("package.json")) as {
-      scripts: Record<string, string>;
-    }).scripts;
+    const scripts = (
+      JSON.parse(read("package.json")) as {
+        scripts: Record<string, string>;
+      }
+    ).scripts;
     for (const name of [
       "dev",
       "build",
@@ -287,8 +289,10 @@ describe("code review hardening contracts", () => {
     // runtime-error view or trigger Sentry alerting.
     expect(server).toContain('log.error("API error", logFields)');
     expect(server).toContain('log.warn("API client error", logFields)');
+    // Window covers the headersSent delegation guard that now precedes the
+    // status classification.
     const handlerStart = server.indexOf("(error: unknown, req: express.Request");
-    const handlerBody = server.slice(handlerStart, handlerStart + 1200);
+    const handlerBody = server.slice(handlerStart, handlerStart + 2200);
     expect(handlerBody).toContain("if (status >= 500) {");
     expect(handlerBody.indexOf("log.error(")).toBeLessThan(handlerBody.indexOf("} else {"));
     expect(handlerBody.indexOf("reportError(")).toBeLessThan(handlerBody.indexOf("} else {"));

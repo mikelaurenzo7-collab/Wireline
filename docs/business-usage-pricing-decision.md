@@ -17,24 +17,32 @@ Wireline sells operating capacity, not template access.
 
 - All templates are unlocked; Personal ("Free Builder") creates, trains, and privately simulates one draft agent at $0.
 - Every paid tier (Starter, Starter Plus, Pro, Business) guarantees live voice capacity and an on-demand number slot — see `voice_minutes_monthly` per plan in `plan-catalog.ts`.
-- Optional SMS, platform AI/research, enrichment, and business-artifact generation draw from a smaller flexible monthly Runtime Allowance included in the same subscription (`runtime_allowance_usd_monthly`), funded every billing period rather than as a one-time welcome credit.
+- Optional SMS and business-artifact generation draw from a smaller flexible monthly Runtime Allowance included in the same subscription (`runtime_allowance_usd_monthly`), funded every billing period rather than as a one-time welcome credit. Platform AI, live research, and enrichment use a separate catalog allowance (`ai_spend_allowance_usd_monthly`), where every platform-funded provider call — model turns, Perplexity research, platform-key Apollo enrichment — is metered per account. The hard floor reserves voice, Runtime Allowance, and AI allowance simultaneously; `npm run economics:report` proves both billing intervals from source.
 - Live work should always reconcile through a durable ledger instead of vague "unlimited" promises.
 
 ## Current commercial structure (Founder Early Access, live in Stripe as of 2026-07-10)
 
-| Plan id | Product name | Monthly / Annual | Included voice minutes | Runtime Allowance | Max agents | Number slots |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| `personal` | Wireline Free Builder | $0 | 0 | $0 | 1 draft | 0 |
-| `starter` | Wireline Starter | $19 / $190 | 60 | $1/mo | 1 | 1 |
-| `team` | Wireline Starter Plus | $39 / $390 | 120 | $3/mo | 2 | 2 |
-| `business` | Wireline Pro | $79 / $790 | 245 | $6/mo | 5 | 5 |
-| `enterprise` | Wireline Business | $159 / $1,590 | 450 | $12/mo | 15 | 15 |
+| Plan id | Product name | Monthly / Annual | Voice min | Runtime | Managed AI | Max agents | Number slots |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `personal` | Wireline Free Builder | $0 | 0 | $0 | $1.50 simulation | 1 draft | 0 |
+| `starter` | Wireline Starter | $19 / $190 | 50 | $1/mo | $1.50/mo | 1 | 1 |
+| `team` | Wireline Starter Plus | $39 / $390 | 100 | $3/mo | $3/mo | 2 | 2 |
+| `business` | Wireline Pro | $79 / $790 | 190 | $6/mo | $6/mo | 5 | 5 |
+| `enterprise` | Wireline Business | $159 / $1,590 | 350 | $12/mo | $12/mo | 15 | 15 |
+
+The August 2026 launch review corrected a reachable split-meter defect before the first
+production subscriber: voice, Runtime Allowance, and AI spend could all be consumed independently,
+while the former margin gate reserved only the first two. The revised capacities keep the existing
+prices and prepaid-only experience while every monthly and annual plan remains above the 30%
+contribution floor at simultaneous full utilization. There were no production customers to migrate.
 
 The optional $19/month Live Video add-on is separate from voice capacity. It includes 60
-reserved presenter-session minutes per UTC month. Each session token reserves 10 minutes
-atomically before provider minting; the runtime pauses at the allowance and never creates
-automatic overage. This preserves an estimated 56.4% full-use contribution margin at a
-conservative $0.12/min provider reserve after Payments, Billing, future Tax, and fixed fees.
+reserved presenter-session minutes per UTC month. Each session token reserves 5 minutes
+atomically before provider minting (`LIVE_VIDEO_SESSION_RESERVATION_MINUTES`); the runtime
+pauses at the allowance and never creates automatic overage. This preserves an estimated
+~53.3% full-use contribution margin at a conservative $0.13/min provider reserve
+(`LIVE_VIDEO_PROVIDER_COST_PER_MINUTE_USD`) after Payments, Billing, future Tax, and fixed
+fees — above the 50% floor `LIVE_VIDEO_MIN_FULL_USE_MARGIN` enforces.
 
 Runtime Balance top-ups cover extra voice at a flat **$0.22/min** across paid tiers; there are no
 automatic postpaid overages. SMS outbound segments still bill Runtime Balance at **$0.02/segment**

@@ -271,15 +271,18 @@ describe("double-pass launch honesty", () => {
     ).toEqual([]);
   });
 
-  it("fails launch closed when Stripe brand or customer controls drift", () => {
+  it("fails launch closed when Stripe controls drift or enabled tax lacks registration", () => {
     const vendorProbe = read("scripts/check-vendor-readiness.mjs");
     expect(vendorProbe).toContain("/v1/billing_portal/configurations?active=true&limit=100");
     expect(vendorProbe).toContain("/v1/webhook_endpoints?limit=100");
     expect(vendorProbe).toContain("/v1/tax/settings");
+    expect(vendorProbe).toContain("/v1/tax/registrations?status=active&limit=100");
     expect(vendorProbe).toContain("stripeBrandReady");
     expect(vendorProbe).toContain("stripePortalReady");
     expect(vendorProbe).toContain("stripeWebhookReady");
     expect(vendorProbe).toContain("stripeTaxReady");
+    expect(vendorProbe).toContain("stripeTaxProviderReady");
+    expect(vendorProbe).toContain("!stripeAutomaticTaxEnabled || stripeTaxProviderReady");
     expect(vendorProbe).toMatch(
       /stripeCoreReady\s*&&\s*stripeBrandReady\s*&&\s*stripePortalReady\s*&&\s*stripeWebhookReady\s*&&\s*stripeTaxReady/,
     );
@@ -288,7 +291,7 @@ describe("double-pass launch honesty", () => {
     expect(launchStatus).toContain('blockers.push("stripe_brand_not_wireline")');
     expect(launchStatus).toContain('blockers.push("stripe_customer_portal_not_ready")');
     expect(launchStatus).toContain('blockers.push("stripe_webhook_not_aligned")');
-    expect(launchStatus).toContain('blockers.push("stripe_tax_not_active")');
+    expect(launchStatus).toContain('blockers.push("stripe_automatic_tax_not_ready")');
   });
 
   it("keeps high-cardinality tenant snapshots on one scoped connection", () => {
@@ -298,7 +301,6 @@ describe("double-pass launch honesty", () => {
       ["src/routes/insights-routes.ts", 1],
       ["src/lib/vapi-assistant-factory-v2.ts", 1],
       ["src/lib/vapi-client.ts", 1],
-      ["src/lib/voice/grok-voice-service.ts", 1],
       ["src/routes/settings-routes.ts", 1],
       ["src/routes/dashboard-routes.ts", 2],
       ["src/lib/voice/openai-live-agent-service.ts", 1],

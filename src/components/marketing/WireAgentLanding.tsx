@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent } from "react";
-import { ArrowRight, Volume2 } from "lucide-react";
+import { ArrowRight, Phone, Volume2 } from "lucide-react";
 import { Link } from "react-router";
 
 import MarketingFooter from "./MarketingFooter";
@@ -206,7 +206,7 @@ export default function WireAgentLanding() {
                     className="h-4 w-4 text-primary"
                     aria-hidden="true"
                   />
-                  Live browser demo
+                  Live voice demo
                 </div>
               </div>
               <div className="mt-6 rounded-[16px] border border-border bg-background/70 p-4 sm:p-5">
@@ -214,12 +214,26 @@ export default function WireAgentLanding() {
                   agentName={HERO_DEMO_AGENT.name}
                   buttonLabel="Start the live demo"
                   fallback={
-                    <div className="text-center">
+                    <div className="flex flex-col items-center gap-3 text-center">
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        Call a live Wireline agent now.
+                      </p>
                       <a
                         href={`tel:${HERO_DEMO_AGENT.tel}`}
-                        className="marketing-btn-secondary inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
+                        className="marketing-btn-secondary inline-flex min-h-11 items-center justify-center gap-2 px-5 text-[15px] font-semibold"
+                        onClick={() =>
+                          emitProductEvent({
+                            event: "landing_demo_clicked",
+                            surface: "marketing_web",
+                            metadata: {
+                              agent: HERO_DEMO_AGENT.name,
+                              mode: "phone",
+                            },
+                          })
+                        }
                       >
-                        Call demo
+                        <Phone className="h-4 w-4" aria-hidden="true" />
+                        Call live demo
                       </a>
                     </div>
                   }

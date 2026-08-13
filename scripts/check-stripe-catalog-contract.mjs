@@ -82,12 +82,12 @@ for (const [id, monthly, annual] of expectedPlans) {
 }
 
 const expectedCapacity = [
-  ["starter", 1, 1, 60],
-  ["team", 2, 2, 120],
-  ["business", 5, 5, 245],
-  ["enterprise", 15, 15, 450],
+  ["starter", 1, 1, 50, "1.50"],
+  ["team", 2, 2, 100, "3"],
+  ["business", 5, 5, 190, "6"],
+  ["enterprise", 15, 15, 350, "12"],
 ];
-for (const [planId, agents, numbers, voiceMinutes] of expectedCapacity) {
+for (const [planId, agents, numbers, voiceMinutes, aiSpendUsd] of expectedCapacity) {
   const product = FOUNDER_PRODUCTS.find(
     (candidate) => candidate.metadata?.wireline_plan_id === planId,
   );
@@ -100,6 +100,7 @@ for (const [planId, agents, numbers, voiceMinutes] of expectedCapacity) {
     included_agents: String(agents),
     included_numbers: String(numbers),
     included_voice_minutes: String(voiceMinutes),
+    included_ai_spend_usd: aiSpendUsd,
     overage_policy: "prepaid_balance_only",
   };
   for (const [key, value] of Object.entries(expectedMetadata)) {
@@ -118,6 +119,11 @@ for (const [planId, agents, numbers, voiceMinutes] of expectedCapacity) {
     if (price.metadata?.included_voice_minutes !== String(voiceMinutes)) {
       errors.push(
         `Founder price metadata drift for ${price.key}: expected ${voiceMinutes} included minutes.`,
+      );
+    }
+    if (price.metadata?.included_ai_spend_usd !== aiSpendUsd) {
+      errors.push(
+        `Founder price metadata drift for ${price.key}: expected $${aiSpendUsd} AI allowance.`,
       );
     }
   }

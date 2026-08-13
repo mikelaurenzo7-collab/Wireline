@@ -80,7 +80,7 @@ export function validateParams<T extends ZodSchema>(schema: T) {
 /**
  * Format Zod error into a user-friendly object
  */
-function formatZodError(error: ZodError): Array<{ field: string; message: string }> {
+export function formatZodError(error: ZodError): Array<{ field: string; message: string }> {
   return error.issues.map((issue) => ({
     field: issue.path.join("."),
     message: issue.message,

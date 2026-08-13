@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -19,22 +19,22 @@ describe("canonical mobile overlay system", () => {
     expect(dialog).toContain("DialogPortal");
   });
 
-  it("keeps ClientToolbar and AppPageIntro on canonical Button and Dialog primitives", () => {
-    for (const path of [
-      "src/components/layout/ClientToolbar.tsx",
-      "src/components/layout/AppPageIntro.tsx",
-    ]) {
-      const component = source(path);
+  it("keeps ClientToolbar on canonical Button and Dialog primitives", () => {
+    // AppPageIntro was removed 2026-08-13: nothing rendered it — every page
+    // moved to WorkspacePageIntro — so this gate was asserting Dialog
+    // discipline on UI no user could reach.
+    expect(existsSync(resolve(root, "src/components/layout/AppPageIntro.tsx"))).toBe(false);
 
-      expect(component).toContain("DialogContent");
-      expect(component).toContain("DialogTrigger");
-      expect(component).toContain("DialogClose");
-      expect(component).toContain("Button,");
-      expect(component).toContain('presentation="drawer"');
-      expect(component).not.toContain("window.addEventListener");
-      expect(component).not.toContain("document.body.style.overflow");
-      expect(component).not.toContain("ShadButton");
-    }
+    const component = source("src/components/layout/ClientToolbar.tsx");
+
+    expect(component).toContain("DialogContent");
+    expect(component).toContain("DialogTrigger");
+    expect(component).toContain("DialogClose");
+    expect(component).toContain("Button,");
+    expect(component).toContain('presentation="drawer"');
+    expect(component).not.toContain("window.addEventListener");
+    expect(component).not.toContain("document.body.style.overflow");
+    expect(component).not.toContain("ShadButton");
   });
 
   it("keeps WorkspaceShell on the canonical desktop rail plus native/mobile utility split", () => {

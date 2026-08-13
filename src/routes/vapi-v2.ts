@@ -15,8 +15,11 @@ import { drizzle, log, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import {
   buildShowcaseAssistantPayload,
+  buildShowcaseAtCapacityAssistant,
+  extractShowcaseCallerNumber,
   findShowcaseAgentByPayload,
 } from "../lib/showcase-assistant";
+import { admitShowcaseDemoCall } from "../lib/showcase-demo-ceiling";
 import { buildVapiAssistant } from "../lib/vapi-assistant-factory-v2";
 import { buildVapiTranscriptOnlyArtifactPlan } from "../lib/vapi-artifact-plan";
 import { normalizeVapiToolCalls } from "../lib/vapi-tool-call-utils";
@@ -152,6 +155,22 @@ router.post("/api/vapi-webhook", async (req, res) => {
   const showcaseRoute = findShowcaseAgentByPayload(payload);
 
   if (showcaseRoute && message?.type === "assistant-request") {
+    // Aggregate demo-spend ceiling: every call is COGS-capped individually,
+    // but the published numbers also need a daily budget. Refused calls get a
+    // bounded, dignified capacity message instead of the full demo.
+    const admission = await admitShowcaseDemoCall(extractShowcaseCallerNumber(payload));
+    if (!admission.admitted) {
+      log.warn("Showcase demo call refused by aggregate ceiling", {
+        reason: admission.reason,
+        agent: showcaseRoute.agent.name,
+      });
+      return res.json({
+        assistant: {
+          ...buildShowcaseAtCapacityAssistant(showcaseRoute.agent),
+          artifactPlan: buildVapiTranscriptOnlyArtifactPlan(),
+        },
+      });
+    }
     const assistant = buildShowcaseAssistantPayload(showcaseRoute.agent, showcaseRoute.kind, {
       webhookSecret: process.env.VAPI_WEBHOOK_SECRET,
     });
@@ -285,6 +304,24 @@ router.post("/api/vapi-webhook", async (req, res) => {
           log.warn("Inbound routed to take-a-message assistant — completion grace due", {
             agentId: webhookAgentId,
             completionGraceDueUsd: wallet.completion_grace_due_usd,
+          });
+          return res.json({
+            assistant: buildDurableTakeMessageAssistant(
+              webhookAgentId,
+              agentVoiceName,
+              agentComplianceMode,
+              userSettings?.businessName,
+            ),
+          });
+        }
+        // Concurrency ceiling: the grace gate reads settled ledger state, so a
+        // burst of simultaneous inbound calls all passed it before any of them
+        // settled. Beyond the per-tenant live-call ceiling, overflow degrades
+        // to the same bounded take-a-message assistant (fail-open on error).
+        const { inboundConcurrencyExceeded } = await import("../lib/inbound-concurrency");
+        if (await inboundConcurrencyExceeded(agent.user_id)) {
+          log.warn("Inbound routed to take-a-message assistant — concurrency ceiling", {
+            agentId: webhookAgentId,
           });
           return res.json({
             assistant: buildDurableTakeMessageAssistant(

@@ -13,7 +13,8 @@ const expectedProducts = [
     description: "One live communications agent with a production number.",
     metadata: {
       wireline_plan_id: "starter",
-      included_voice_minutes: "60",
+      included_voice_minutes: "50",
+      included_ai_spend_usd: "1.50",
     },
   },
 ];
@@ -28,7 +29,8 @@ function canonicalStarter() {
     statement_descriptor: EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR,
     metadata: {
       wireline_plan_id: "starter",
-      included_voice_minutes: "60",
+      included_voice_minutes: "50",
+      included_ai_spend_usd: "1.50",
       unrelated_provider_field: "ignored",
     },
   };
@@ -118,7 +120,8 @@ describe("Stripe product copy parity", () => {
           ...canonicalStarter(),
           metadata: {
             wireline_plan_id: "starter",
-            included_voice_minutes: "50",
+            included_voice_minutes: "49",
+            included_ai_spend_usd: "1.50",
             unrelated_provider_field: "safe",
           },
         },

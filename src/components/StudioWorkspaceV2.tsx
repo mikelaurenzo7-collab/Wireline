@@ -1,6 +1,6 @@
 import { CheckCircle2, MessageCircle, Plus, Settings2, Sparkles, Users } from "lucide-react";
 import { Link, useSearchParams } from "react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import { Button, Skeleton } from "../components/atoms";
 import { PanelSkeleton } from "../components/atoms/skeleton-presets";
@@ -228,6 +228,35 @@ export default function StudioWorkspaceV2() {
   const activePosture = active.is_business_agent ? "business" : "personal";
   const activeLanguage = customerAgentLanguage(activePosture);
 
+  // Full ARIA tablist contract — id/aria-controls pairing plus roving
+  // tabindex with arrow-key movement, matching the pattern the marketing
+  // mode switcher already implements. Without it a screen reader hears
+  // "tab 1 of 3" with no panel relationship and arrow keys do nothing.
+  const studioTabId = (id: WorkspaceSection) => `studio-tab-${id}`;
+  const studioPanelId = (id: WorkspaceSection) => `studio-panel-${id}`;
+  const handleSectionKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const currentIndex = SECTIONS.findIndex((item) => item.id === section);
+    const lastIndex = SECTIONS.length - 1;
+    let nextIndex = currentIndex;
+    // Horizontal tablist: Left/Right/Home/End only. Capturing Up/Down here
+    // would hijack page scroll while a tab is focused.
+    if (event.key === "ArrowRight") {
+      nextIndex = currentIndex === lastIndex ? 0 : currentIndex + 1;
+    } else if (event.key === "ArrowLeft") {
+      nextIndex = currentIndex === 0 ? lastIndex : currentIndex - 1;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = lastIndex;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    const next = SECTIONS[nextIndex].id;
+    setSection(next);
+    window.requestAnimationFrame(() => document.getElementById(studioTabId(next))?.focus());
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
       <nav
@@ -238,6 +267,7 @@ export default function StudioWorkspaceV2() {
           className="mx-auto grid w-full max-w-2xl grid-cols-3 gap-1.5 sm:gap-2"
           role="tablist"
           aria-label={`${activeLanguage.singular} setup steps`}
+          onKeyDown={handleSectionKeyDown}
         >
           {SECTIONS.map((item, index) => {
             const selected = section === item.id;
@@ -247,7 +277,10 @@ export default function StudioWorkspaceV2() {
                 key={item.id}
                 type="button"
                 role="tab"
+                id={studioTabId(item.id)}
                 aria-selected={selected}
+                aria-controls={studioPanelId(item.id)}
+                tabIndex={selected ? 0 : -1}
                 onClick={() => setSection(item.id)}
                 className={`min-w-0 rounded-xl border px-2 py-2.5 text-left transition-colors sm:px-3 ${
                   selected
@@ -279,41 +312,62 @@ export default function StudioWorkspaceV2() {
 
       <div className="min-h-0 flex-1 overflow-hidden">
         {section === "setup" ? (
-          <StudioAgentWorkspacePanel
-            key={active.id}
-            agentId={active.id}
-            agentName={active.name}
-            isBusinessAgent={Boolean(active.is_business_agent)}
-            onTestVoiceInChat={startCustomerTest}
-            className="h-full border-t-0"
-          />
+          <div
+            role="tabpanel"
+            id={studioPanelId("setup")}
+            aria-labelledby={studioTabId("setup")}
+            className="h-full min-h-0"
+          >
+            <StudioAgentWorkspacePanel
+              key={active.id}
+              agentId={active.id}
+              agentName={active.name}
+              isBusinessAgent={Boolean(active.is_business_agent)}
+              onTestVoiceInChat={startCustomerTest}
+              className="h-full border-t-0"
+            />
+          </div>
         ) : null}
         {section === "test" ? (
-          <StudioWorkroom
-            key={active.id}
-            ref={workroomRef}
-            agentId={active.id}
-            agentName={active.name}
-            initialCommand={params.get("command") || undefined}
-            commandNonce={params.get("commandNonce") || undefined}
-            onBack={() => setSection("setup")}
-            backLabel="Back to setup"
-            layout="split"
-            mode="test"
-            allowOutbound={Boolean(active.phone_number)}
-          />
+          <div
+            role="tabpanel"
+            id={studioPanelId("test")}
+            aria-labelledby={studioTabId("test")}
+            className="h-full min-h-0"
+          >
+            <StudioWorkroom
+              key={active.id}
+              ref={workroomRef}
+              agentId={active.id}
+              agentName={active.name}
+              initialCommand={params.get("command") || undefined}
+              commandNonce={params.get("commandNonce") || undefined}
+              onBack={() => setSection("setup")}
+              backLabel="Back to setup"
+              layout="split"
+              mode="test"
+              allowOutbound={Boolean(active.phone_number)}
+            />
+          </div>
         ) : null}
         {section === "review" ? (
-          <StudioAgentReviewPanel
-            key={active.id}
-            agentId={active.id}
-            agentName={active.name}
-            agentRole={active.role}
-            phoneNumber={active.phone_number}
-            onEdit={() => setSection("setup")}
-            onTest={startCustomerTest}
-            className="h-full"
-          />
+          <div
+            role="tabpanel"
+            id={studioPanelId("review")}
+            aria-labelledby={studioTabId("review")}
+            className="h-full min-h-0"
+          >
+            <StudioAgentReviewPanel
+              key={active.id}
+              agentId={active.id}
+              agentName={active.name}
+              agentRole={active.role}
+              phoneNumber={active.phone_number}
+              onEdit={() => setSection("setup")}
+              onTest={startCustomerTest}
+              className="h-full"
+            />
+          </div>
         ) : null}
       </div>
     </div>

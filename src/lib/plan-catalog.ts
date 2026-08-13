@@ -5,6 +5,16 @@
  * Includes carrier, voice runtime, model, and operational variance.
  */
 export const VOICE_VARIABLE_COST_PER_MIN_USD = 0.128;
+/**
+ * Per-tenant observed-COGS health headroom. A single tenant's blended rate
+ * naturally sits above the modeled fleet average (short calls carry per-call
+ * overhead, premium voices) without implying fleet-margin drift, so tenant
+ * health checks compare observed cost against reserve × this ratio. Shared by
+ * the voice-reliability health summary and its Insights tile so the banner
+ * and the tile can never disagree. Catalog-level pricing review uses
+ * COGS_DRIFT_THRESHOLD_PER_MIN_USD in tenant-economics instead.
+ */
+export const TENANT_OBSERVED_COGS_HEADROOM_RATIO = 1.15;
 export const PHONE_NUMBER_COST_MONTHLY_USD = 1.15;
 export const PAYMENT_PROCESSING_RATE = 0.029;
 export const PAYMENT_PROCESSING_FIXED_USD = 0.3;
@@ -18,6 +28,8 @@ export const STRIPE_BILLING_RATE = 0.007;
 export const STRIPE_TAX_TRANSACTION_RATE = 0.005;
 
 export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v6";
+/** Free Builder's bounded private model-training reserve. */
+export const FREE_BUILDER_AI_ALLOWANCE_USD = 1.5;
 
 /** Published prepaid top-up rate, shared by catalog, billing, and UI. */
 export const FLAT_OVERAGE_PER_MIN_USD = 0.22;
@@ -43,6 +55,11 @@ export type StripePlan = {
    * separately guaranteed so document/research/SMS usage cannot disable the phone agent.
    */
   runtime_allowance_usd_monthly: number;
+  /**
+   * Independently metered platform-funded model, research, and enrichment COGS.
+   * This reserve is deliberately separate from Runtime Allowance and voice.
+   */
+  ai_spend_allowance_usd_monthly: number;
   overage_per_min_usd: number;
   included_phone_numbers: number;
   features: string[];
@@ -117,8 +134,12 @@ const EXTRA_AGENT_FEATURE =
  * - Every paid tier guarantees live voice capacity and an on-demand number slot.
  * - Paid extra-agent add-ons increase both agent count and included voice capacity.
  * - Voice is the primary pricing driver because it is the only mandatory, high-variable-cost channel.
- * - Optional SMS, platform AI/research, enrichment, and business-artifact generation use a
- *   smaller flexible monthly Runtime Allowance included in the same subscription.
+ * - Optional SMS and business-artifact generation use a smaller flexible monthly
+ *   Runtime Allowance included in the same subscription. Platform AI, live
+ *   research, and enrichment use a separate, explicit AI-spend allowance,
+ *   metered per account. Every platform-funded provider call is recorded there.
+ * - Voice, Runtime Allowance, and AI spend can all be consumed in the same
+ *   month, so the margin floor reserves all three independently.
  * - Connected customer email, calendar, CRM, commerce, and data providers retain their own limits.
  * - Runtime Balance funds only usage beyond included capacity; there is no automatic postpaid meter.
  * - Active calls finish normally; depleted coverage blocks only the next paid action.
@@ -132,6 +153,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 1,
     voice_minutes_monthly: 0,
     runtime_allowance_usd_monthly: 0,
+    ai_spend_allowance_usd_monthly: FREE_BUILDER_AI_ALLOWANCE_USD,
     overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 0,
     // Free Builder is not a Stripe product.
@@ -139,6 +161,12 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "1 private draft communications agent",
       "Agent setup, training, knowledge, and private simulation",
+      // Derived disclosure, not marketing: the free tier's real monthly
+      // simulation envelope (FREE_BUILDER_SIMULATION_ALLOWANCE_USD) must be
+      // visible before signup — hitting it silently mid-training is the
+      // likeliest place a converting prospect churns. Keep the number and the
+      // enforced constant in lockstep via the metering contract.
+      "Includes $1.50 of private AI simulation each month",
       "No production number or paid provider action until activation",
     ],
   },
@@ -148,8 +176,9 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_monthly: 19,
     price_usd_annual: 190,
     max_agents: 1,
-    voice_minutes_monthly: 60,
+    voice_minutes_monthly: 50,
     runtime_allowance_usd_monthly: 1,
+    ai_spend_allowance_usd_monthly: 1.5,
     overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_STARTER_9_PRICE_ID",
@@ -162,9 +191,9 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "1 live communications agent",
       "1 production-number slot, provisioned when needed",
-      "60 guaranteed live-voice minutes each month",
+      "50 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
-      "$1 monthly flexible Runtime Allowance",
+      "$1 monthly Runtime Allowance + $1.50 managed AI allowance",
       "Voice, SMS, and email under one agent identity",
       "Lead Hunt access and connected email workflows",
       "Automatic post-call summary, outcome, note, and next action",
@@ -177,8 +206,9 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_monthly: 39,
     price_usd_annual: 390,
     max_agents: 2,
-    voice_minutes_monthly: 120,
+    voice_minutes_monthly: 100,
     runtime_allowance_usd_monthly: 3,
+    ai_spend_allowance_usd_monthly: 3,
     overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 2,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
@@ -191,9 +221,9 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "2 live agents — personal Concierge + business voice agent",
       "2 production-number slots, provisioned when needed",
-      "120 guaranteed live-voice minutes each month",
+      "100 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
-      "$3 monthly flexible Runtime Allowance",
+      "$3 monthly Runtime Allowance + $3 managed AI allowance",
       "Full Lead Hunt, enrichment, niche research, email, and SMS workflows",
       "Branded call and weekly recap share links",
       "Automatic post-call summary, outcome, note, and next action",
@@ -206,8 +236,9 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_monthly: 79,
     price_usd_annual: 790,
     max_agents: 5,
-    voice_minutes_monthly: 245,
+    voice_minutes_monthly: 190,
     runtime_allowance_usd_monthly: 6,
+    ai_spend_allowance_usd_monthly: 6,
     overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 5,
     priceIdEnv: "STRIPE_TEAM_PRICE_ID",
@@ -220,9 +251,9 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "Up to 5 live communications agents",
       "Up to 5 production-number slots, provisioned when needed",
-      "245 guaranteed live-voice minutes each month",
+      "190 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
-      "$6 monthly flexible Runtime Allowance",
+      "$6 monthly Runtime Allowance + $6 managed AI allowance",
       "Lead Hunt campaigns, enrichment, niche research, routing, and approvals",
       "Connected calendar, CRM, email, SMS, contracts, and commerce actions",
       "Branded call and weekly recap share links",
@@ -236,8 +267,9 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_monthly: 159,
     price_usd_annual: 1590,
     max_agents: 15,
-    voice_minutes_monthly: 450,
+    voice_minutes_monthly: 350,
     runtime_allowance_usd_monthly: 12,
+    ai_spend_allowance_usd_monthly: 12,
     overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 15,
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
@@ -250,9 +282,9 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "Up to 15 live communications agents",
       "Up to 15 production-number slots, provisioned when needed",
-      "450 guaranteed live-voice minutes each month",
+      "350 guaranteed live-voice minutes each month",
       EXTRA_AGENT_FEATURE,
-      "$12 monthly flexible Runtime Allowance",
+      "$12 monthly Runtime Allowance + $12 managed AI allowance",
       "Lead Hunt, enrichment, analytics, CRM controls, routing, and approvals",
       "Connected calendar, email, SMS, contracts, payments, and commerce actions",
       "Branded call and weekly recap share links",
@@ -296,8 +328,9 @@ export function estimatedStripeCommercialFeesUsd(grossChargeUsd: number): number
  * Conservative contribution margin at full included utilization.
  *
  * This is intentionally stricter than observed-use margin: it reserves every
- * included voice minute, every number slot, the flexible runtime allowance,
- * and Stripe commercial fees. Shared SaaS and founder time are not included.
+ * included voice minute, every number slot, the flexible Runtime Allowance,
+ * the independently metered AI allowance, and Stripe commercial fees. Shared
+ * SaaS and founder time are not included.
  * Judged against HARD_CONTRIBUTION_MARGIN_FLOOR.
  */
 export function estimatedContributionMarginAtFullIncludedUsage(
@@ -316,6 +349,7 @@ export function estimatedContributionMarginAtFullIncludedUsage(
     plan.voice_minutes_monthly * VOICE_VARIABLE_COST_PER_MIN_USD +
     plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD +
     plan.runtime_allowance_usd_monthly +
+    plan.ai_spend_allowance_usd_monthly +
     commercialFees;
 
   return (recurringRevenue - reservedVariableCost) / recurringRevenue;
@@ -323,9 +357,10 @@ export function estimatedContributionMarginAtFullIncludedUsage(
 
 /**
  * Contribution margin at expected included utilization — the planning-floor
- * view. Minutes and allowance are reserved at EXPECTED_INCLUDED_UTILIZATION;
- * number slots stay fully reserved because a provisioned line bills whether or
- * not it is used. Judged against LAUNCH_CONTRIBUTION_MARGIN_FLOOR.
+ * view. Minutes and both allowances are reserved at
+ * EXPECTED_INCLUDED_UTILIZATION; number slots stay fully reserved because a
+ * provisioned line bills whether or not it is used. Judged against
+ * LAUNCH_CONTRIBUTION_MARGIN_FLOOR.
  */
 export function estimatedContributionMarginAtExpectedUsage(
   plan: StripePlan,
@@ -343,6 +378,7 @@ export function estimatedContributionMarginAtExpectedUsage(
     plan.voice_minutes_monthly * EXPECTED_INCLUDED_UTILIZATION * VOICE_VARIABLE_COST_PER_MIN_USD +
     plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD +
     plan.runtime_allowance_usd_monthly * EXPECTED_INCLUDED_UTILIZATION +
+    plan.ai_spend_allowance_usd_monthly * EXPECTED_INCLUDED_UTILIZATION +
     commercialFees;
 
   return (recurringRevenue - expectedVariableCost) / recurringRevenue;
@@ -435,6 +471,7 @@ export function plansForClient() {
     max_agents: plan.max_agents,
     voice_minutes_monthly: plan.voice_minutes_monthly,
     runtime_allowance_usd_monthly: plan.runtime_allowance_usd_monthly,
+    ai_spend_allowance_usd_monthly: plan.ai_spend_allowance_usd_monthly,
     overage_per_min_usd: plan.overage_per_min_usd,
     included_phone_numbers: plan.included_phone_numbers,
     extra_agent_price_usd: plan.extra_agent_price_usd ?? null,

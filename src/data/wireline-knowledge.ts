@@ -31,8 +31,8 @@ export const WIRELINE_PLANS = [
     bestFor: "Solo or founder use going live for the first time.",
     includes: [
       "1 live agent and 1 production number, provisioned when needed",
-      "60 guaranteed live-voice minutes each month",
-      "$1 monthly flexible Runtime Allowance",
+      "50 guaranteed live-voice minutes each month",
+      "$1 monthly Runtime Allowance + $1.50 managed AI allowance",
       "Lead Hunt access and connected email workflows",
     ],
   },
@@ -42,8 +42,8 @@ export const WIRELINE_PLANS = [
     bestFor: "Founders who need a personal Concierge and a business voice agent.",
     includes: [
       "2 live agents and 2 production numbers, provisioned when needed",
-      "120 guaranteed live-voice minutes each month",
-      "$3 monthly flexible Runtime Allowance",
+      "100 guaranteed live-voice minutes each month",
+      "$3 monthly Runtime Allowance + $3 managed AI allowance",
       "Full Lead Hunt, enrichment, research, email, and SMS workflows",
     ],
   },
@@ -53,8 +53,8 @@ export const WIRELINE_PLANS = [
     bestFor: "Revenue, support, and front desk teams.",
     includes: [
       "Up to 5 live agents and 5 production numbers, provisioned when needed",
-      "245 guaranteed live-voice minutes each month",
-      "$6 monthly flexible Runtime Allowance",
+      "190 guaranteed live-voice minutes each month",
+      "$6 monthly Runtime Allowance + $6 managed AI allowance",
       "CRM sync, routing, approvals, and campaign workflows",
     ],
   },
@@ -64,8 +64,8 @@ export const WIRELINE_PLANS = [
     bestFor: "Governed rollout for larger teams.",
     includes: [
       "Up to 15 live agents and 15 production numbers, provisioned when needed",
-      "450 guaranteed live-voice minutes each month",
-      "$12 monthly flexible Runtime Allowance",
+      "350 guaranteed live-voice minutes each month",
+      "$12 monthly Runtime Allowance + $12 managed AI allowance",
       "Priority support posture and no automatic overages",
     ],
   },

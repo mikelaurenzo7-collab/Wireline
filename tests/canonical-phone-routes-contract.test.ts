@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -6,13 +6,18 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("canonical Phone routes", () => {
   it("keeps generated assets and customer CTAs off retired client routes", () => {
+    // PerformanceBenchmarks was removed 2026-08-13: nothing imported it, so
+    // its retired-route hygiene was a gate on UI no user could reach.
+    expect(existsSync(resolve(process.cwd(), "src/components/PerformanceBenchmarks.tsx"))).toBe(
+      false,
+    );
+
     const marketingKit = read("scripts/marketing-kit.mjs");
     const digest = read("src/lib/post-call-digest.ts");
     const escalation = read("src/routes/escalation-routes.ts");
     const onboarding = read("src/lib/wireline-onboarding-copy.ts");
-    const performance = read("src/components/PerformanceBenchmarks.tsx");
 
-    for (const source of [marketingKit, digest, escalation, onboarding, performance]) {
+    for (const source of [marketingKit, digest, escalation, onboarding]) {
       expect(source).not.toContain("trywireline.com/logs");
       expect(source).not.toContain('route: "/logs"');
       expect(source).not.toContain('route: "/triage"');

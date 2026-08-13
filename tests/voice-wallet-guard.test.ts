@@ -26,6 +26,11 @@ beforeEach(() => {
 async function loadModules() {
   vi.doMock("../src/lib/server-context", () => ({
     drizzle: { select: vi.fn() },
+    serialQueryBatch: async (queries: readonly unknown[]) => {
+      const rows: unknown[] = [];
+      for (const query of queries) rows.push(await query);
+      return rows;
+    },
   }));
   vi.doMock("../src/lib/credit-wallet", () => ({
     getCreditBalanceUsd: vi.fn(),
@@ -114,8 +119,8 @@ describe("voice-wallet-guard", () => {
     vi.mocked(getCreditBalanceUsd).mockResolvedValue(0);
 
     const snapshot = await getVoiceWalletSnapshot("user-1");
-    expect(snapshot.included_minutes).toBe(220);
-    expect(snapshot.included_minutes_remaining).toBe(145);
+    expect(snapshot.included_minutes).toBe(200);
+    expect(snapshot.included_minutes_remaining).toBe(125);
     expect(snapshot.sufficient).toBe(true);
     await expect(assertVoiceWalletSolvent("user-1")).resolves.toBeUndefined();
   });

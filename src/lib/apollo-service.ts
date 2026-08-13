@@ -216,14 +216,44 @@ async function getApolloAccessToken(userId: string): Promise<string | null> {
  * Returns `null` when neither path is configured — callers should
  * treat this as "Apollo is offline" and skip gracefully.
  */
-async function getApolloAuth(userId?: string): Promise<{ header: Record<string, string> } | null> {
+async function getApolloAuth(
+  userId?: string,
+): Promise<{ header: Record<string, string>; source: "tenant" | "platform" } | null> {
   if (userId) {
     const token = await getApolloAccessToken(userId);
-    if (token) return { header: { Authorization: `Bearer ${token}` } };
+    if (token) return { header: { Authorization: `Bearer ${token}` }, source: "tenant" };
   }
   const apiKey = process.env.APOLLO_API_KEY;
-  if (apiKey) return { header: { "x-api-key": apiKey } };
+  if (apiKey) return { header: { "x-api-key": apiKey }, source: "platform" };
   return null;
+}
+
+/**
+ * Meter platform-funded Apollo usage against the tenant's AI-spend envelope.
+ * A tenant's own OAuth connection spends THEIR Apollo credits — charging the
+ * Wireline envelope for it would double-bill them, so only the platform
+ * API-key fallback is metered, and only when a tenant benefits from it.
+ * Fire-and-forget: metering must never fail the enrichment it accounts for.
+ */
+function meterPlatformApolloUsage(
+  auth: { source: "tenant" | "platform" },
+  userId: string | undefined,
+  purpose: string,
+): void {
+  if (auth.source !== "platform" || !userId) return;
+  void import("../middleware/audit-middleware")
+    .then(({ persistPlatformCostRecord, platformCostReserveUsd }) =>
+      persistPlatformCostRecord({
+        userId,
+        action: `platform.enrichment.${purpose}`,
+        provider: "apollo",
+        model: "apollo-api",
+        costUsd: platformCostReserveUsd("apollo_enrichment"),
+      }),
+    )
+    .catch((error: unknown) =>
+      log.warn("Apollo cost metering failed", { purpose, error: getErrorMessage(error) }),
+    );
 }
 
 export async function disconnectApollo(userId: string): Promise<void> {
@@ -281,6 +311,7 @@ export async function searchLeads(
       throw new Error(`Apollo API error: ${response.status} ${response.statusText}`);
     }
 
+    meterPlatformApolloUsage(auth, userId, "lead_search");
     const data = await response.json();
     const people = (data.people || []) as any[];
 
@@ -332,6 +363,9 @@ export async function enrichLead(
     const data = await response.json();
     const p = data.person;
     if (!p) return null;
+    // Billed on a successful match only — Apollo consumes an enrichment
+    // credit when a person is returned, not on a miss.
+    meterPlatformApolloUsage(auth, userId, "lead_match");
 
     return {
       first_name: p.first_name,

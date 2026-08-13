@@ -12,6 +12,7 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
 import MarketingHero from "../components/marketing/MarketingHero";
+import { WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 
 const SOLUTIONS = {
   sales: {
@@ -23,18 +24,12 @@ const SOLUTIONS = {
     primary: { href: "/signup?wedge=sales", label: "Create a sales agent" },
     secondary: { href: "/showcase", label: "Hear a demo" },
     sequence: [
-      [
-        "A lead reaches out",
-        "A voice agent responds on the channel the lead already chose.",
-      ],
+      ["A lead reaches out", "A voice agent responds on the channel the lead already chose."],
       [
         "It qualifies by your rules",
         "Your offer, criteria, objections, and escalation path guide the conversation.",
       ],
-      [
-        "The next step is clear",
-        "Booked, handed off, or logged with the full context attached.",
-      ],
+      ["The next step is clear", "Booked, handed off, or logged with the full context attached."],
     ],
     capabilities: [
       [
@@ -95,8 +90,7 @@ const SOLUTIONS = {
         "Route exceptions with the customer, history, and requested outcome intact.",
       ],
     ],
-    proof:
-      "Customers get an answer sooner. Your team joins only when its judgment matters.",
+    proof: "Customers get an answer sooner. Your team joins only when its judgment matters.",
   },
 } as const;
 
@@ -106,6 +100,8 @@ export default function SolutionsPage() {
   const { wedge = "support" } = useParams<{ wedge: string }>();
   const key = (wedge in SOLUTIONS ? wedge : "support") as SolutionKey;
   const page = SOLUTIONS[key];
+  const demoAgentName = key === "sales" ? "Jake" : "Jordan";
+  const demoAgent = WIRELINE_DEMO_AGENTS.find((agent) => agent.name === demoAgentName);
 
   return (
     <MarketingPageFrame mainClassName="!px-0 !pb-0 !pt-16">
@@ -127,7 +123,22 @@ export default function SolutionsPage() {
           <div className="text-center">
             <div className="rounded-[16px] border border-border bg-background/70 p-4">
               <BrowserCallWidget
-                agentName={key === "sales" ? "Jake" : "Jordan"}
+                agentName={demoAgentName}
+                fallback={
+                  demoAgent ? (
+                    <div className="text-center">
+                      <a
+                        href={`tel:${demoAgent.tel}`}
+                        className="marketing-btn-secondary inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
+                      >
+                        Call the {key === "sales" ? "sales" : "support"} demo
+                      </a>
+                      <p className="mt-2 font-mono text-xs text-muted-foreground">
+                        {demoAgent.tel}
+                      </p>
+                    </div>
+                  ) : undefined
+                }
               />
             </div>
           </div>
@@ -136,16 +147,11 @@ export default function SolutionsPage() {
 
       <section className="wl-public-rail mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="wl-marketing-center mx-auto max-w-2xl">
-          <h2 className="wl-stitch-display text-balance">
-            From contact to next step.
-          </h2>
+          <h2 className="wl-stitch-display text-balance">From contact to next step.</h2>
         </div>
         <ol className="mt-10 grid gap-4 lg:grid-cols-3">
           {page.sequence.map(([title, copy], index) => (
-            <li
-              key={title}
-              className="wl-stitch-card relative p-6 text-center sm:p-7"
-            >
+            <li key={title} className="wl-stitch-card relative p-6 text-center sm:p-7">
               <span className="mx-auto grid h-9 w-9 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[length:var(--wireline-typography-caption-size)] font-semibold text-primary">
                 0{index + 1}
               </span>
@@ -167,24 +173,16 @@ export default function SolutionsPage() {
           </div>
           <div className="mt-9 grid gap-3 sm:grid-cols-3">
             {page.capabilities.map(([title, copy], index) => {
-              const CapabilityIcon = [
-                MessageSquareText,
-                CalendarClock,
-                ShieldCheck,
-              ][index] as LucideIcon;
+              const CapabilityIcon = [MessageSquareText, CalendarClock, ShieldCheck][
+                index
+              ] as LucideIcon;
               return (
                 <article
                   key={title}
                   className="wl-stitch-card bg-background p-5 text-center sm:p-6"
                 >
-                  <CapabilityIcon
-                    size={18}
-                    className="mx-auto text-primary"
-                    aria-hidden="true"
-                  />
-                  <h3 className="wl-card-title mx-auto mt-4 max-w-[18ch]">
-                    {title}
-                  </h3>
+                  <CapabilityIcon size={18} className="mx-auto text-primary" aria-hidden="true" />
+                  <h3 className="wl-card-title mx-auto mt-4 max-w-[18ch]">{title}</h3>
                   <p className="mx-auto mt-2 max-w-[34ch] text-[length:var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
                     {copy}
                   </p>

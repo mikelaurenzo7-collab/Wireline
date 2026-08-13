@@ -131,9 +131,9 @@ export default function AdminSettings() {
     "flywheel",
     "activity",
   ];
-  // Honor ?tab=<name> in the URL so deep links (e.g. the TrialBanner
-  // "Upgrade now" CTA pointing at /admin?tab=subscription) land on
-  // the correct tab instead of bouncing to the default.
+  // Honor ?tab=<name> in the URL so deep links (SettingsTabSwitcher and the
+  // ComplianceChecklist both point at /admin?tab=<name>) land on the correct
+  // tab instead of bouncing to the default.
   const location = useLocation();
   const navigate = useNavigate();
   const activeTab: AdminTab = (() => {

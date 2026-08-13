@@ -851,6 +851,61 @@ export function extractShowcaseDialedNumber(payload: Record<string, unknown>): s
   return null;
 }
 
+export function extractShowcaseCallerNumber(payload: Record<string, unknown>): string | null {
+  const call = (payload.call || null) as {
+    customer?: { number?: string };
+  } | null;
+  const message = (payload.message || null) as {
+    call?: { customer?: { number?: string } };
+  } | null;
+
+  const candidates = [call?.customer?.number, message?.call?.customer?.number];
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
 export function findShowcaseAgentByPayload(payload: Record<string, unknown>): ShowcaseMatch | null {
   return findShowcaseAgentByPhoneNumber(extractShowcaseDialedNumber(payload));
+}
+
+/**
+ * Bounded refusal assistant returned once the demo line's aggregate daily
+ * ceiling (src/lib/showcase-demo-ceiling.ts) is reached. Keeps the caller
+ * experience dignified — the line answers, explains, and points at the site —
+ * while capping the refused call's COGS to under a minute with no tools, no
+ * analysis, and no webhook round-trips.
+ */
+export function buildShowcaseAtCapacityAssistant(agent: ContactAgent) {
+  const voiceSelection = resolveVapiVoiceModelSelection({
+    provider: VAPI_SHOWCASE_PROVIDER,
+    model: VAPI_SHOWCASE_MODEL,
+  });
+  return {
+    name: `${showcaseVapiAssistantName(agent)} (at capacity)`,
+    firstMessage:
+      "Hi — you've reached the Wireline demo line. Today's live demo capacity is used up, but it resets tomorrow, and you can hear every agent anytime at trywireline.com. Thanks for calling.",
+    model: {
+      provider: voiceSelection.provider,
+      model: voiceSelection.model,
+      temperature: 0.1,
+      maxTokens: 120,
+      messages: [
+        {
+          role: "system",
+          content:
+            "The demo line has reached today's capacity. If the caller speaks, thank them warmly in one short sentence, mention trywireline.com, and end the conversation. Do not run a demo.",
+        },
+      ],
+    },
+    voice: {
+      provider: "vapi",
+      voiceId: agent.vapiVoiceId || "Elliot",
+      version: 2,
+    },
+    maxDurationSeconds: 45,
+  };
 }

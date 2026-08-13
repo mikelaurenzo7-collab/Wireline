@@ -16,8 +16,25 @@ import { getVoiceUsageSnapshot } from "./voice-usage";
 import { getBudgetSnapshot } from "./spend-guards";
 
 export const MARGIN_AT_RISK_THRESHOLD_PCT = 10;
-/** Observed blended COGS above this triggers a pricing review alert. */
-export const COGS_DRIFT_THRESHOLD_PER_MIN_USD = 0.14;
+/**
+ * Catalog-level pricing-review reference: fleet blended COGS above this means
+ * the priced-in reserve no longer covers reality and pricing needs review.
+ *
+ * The reference is the reserve itself, and it must sit below the point where
+ * the launch-certified 30% hard contribution floor (assertPlanMarginFloors)
+ * breaks — solving the full-utilization margin for the floor across the
+ * launch-safe v6 catalog puts the binding constraint above $0.13/min.
+ * The prior $0.14 value only flagged drift once four of the eight
+ * plan-interval combinations were already below the certified floor.
+ * round6-margin-capacity-contract re-derives that bound from the catalog and
+ * pins this beneath it; `npm run economics:report` prints both.
+ *
+ * This is a FLEET pricing bound, not a per-tenant health check: an individual
+ * tenant's observed rate naturally varies above the modeled average, so
+ * tenant-facing health (voice-reliability summary and its Insights tile)
+ * compares against reserve × TENANT_OBSERVED_COGS_HEADROOM_RATIO instead.
+ */
+export const COGS_DRIFT_THRESHOLD_PER_MIN_USD = VOICE_VARIABLE_COST_PER_MIN_USD;
 
 export type TenantEconomics = {
   user_id: string;
@@ -61,10 +78,15 @@ export function computePlanFullUtilizationMarginPct(
       : estimatedStripeCommercialFeesUsd(plan.price_usd_monthly);
   const voiceCost = plan.voice_minutes_monthly * VOICE_VARIABLE_COST_PER_MIN_USD;
   const numberCost = plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD;
-  // Treat every included Runtime Allowance dollar as fully consumed COGS. This
-  // intentionally understates margin because most optional actions cost less
-  // than their customer-facing reserve.
-  const totalCost = voiceCost + numberCost + plan.runtime_allowance_usd_monthly + commercialFees;
+  // Treat every included Runtime Allowance and independently metered AI dollar
+  // as fully consumed COGS. This is the reachable worst case because neither
+  // allowance debits the voice meter or the other allowance.
+  const totalCost =
+    voiceCost +
+    numberCost +
+    plan.runtime_allowance_usd_monthly +
+    plan.ai_spend_allowance_usd_monthly +
+    commercialFees;
   return Math.round(((recurringRevenue - totalCost) / recurringRevenue) * 1000) / 10;
 }
 

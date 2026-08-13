@@ -884,7 +884,7 @@ export default function AuthPortal() {
                           <li key={rule.label} className="inline-flex items-center gap-1">
                             <span
                               aria-hidden="true"
-                              className={met ? "text-emerald-500" : "text-foreground/40"}
+                              className={met ? "wl-text-success" : "text-foreground/40"}
                             >
                               {met ? "✓" : "•"}
                             </span>

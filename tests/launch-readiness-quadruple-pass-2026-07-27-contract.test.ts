@@ -50,9 +50,7 @@ describe("launch readiness quadruple-pass 2026-07-27", () => {
     expect(portal).toContain("portalProductsFingerprint");
     expect(portal).toContain("wireline_portal_products_fp");
     expect(portal).toContain("PORTAL_PRODUCTS_FINGERPRINT_KEY");
-    expect(portal).not.toContain(
-      "`wireline-managed-customer-portal-${FOUNDER_CATALOG_VERSION}`",
-    );
+    expect(portal).not.toContain("`wireline-managed-customer-portal-${FOUNDER_CATALOG_VERSION}`");
   });
 
   it("surfaces CRM disconnect failures instead of silent refresh", () => {
@@ -68,8 +66,13 @@ describe("launch readiness quadruple-pass 2026-07-27", () => {
     expect(read("src/data/vertical-wedges.ts")).not.toContain("Conversation Balance");
     expect(read("src/lib/showcase-assistant.ts")).toContain("Runtime Balance");
     expect(read("src/routes/vapi/showcase-handlers.ts")).toContain("Runtime Balance");
-    expect(read("src/lib/credit-wallet.ts")).toContain(
-      'customerReason: "Voice minutes covered by Runtime Balance"',
+    // The retired post-hoc voice debit (and its ledger copy) stays deleted;
+    // the live settlement path owns the buyer-visible ledger reason.
+    expect(read("src/lib/credit-wallet.ts")).not.toContain(
+      "Conversation Balance for pay-as-you-go",
+    );
+    expect(read("src/lib/voice-completion-grace.ts")).toContain(
+      'customerReason: "Completed live-call usage"',
     );
   });
 });

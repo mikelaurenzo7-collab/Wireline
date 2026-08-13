@@ -1,34 +1,12 @@
 /**
- * SMS usage billing — Runtime Balance at a fixed segment rate.
+ * SMS usage pricing — Runtime Balance at a fixed segment rate.
+ *
+ * Live SMS billing runs through `reserveRuntimeUsage` in twilio-service (a
+ * prepaid reservation adjusted on delivery), which reads this rate. The
+ * legacy post-hoc segment-debit helper that lived here was removed
+ * 2026-08-13: it had no callers, and its swallow-and-return-0 error contract
+ * contradicted the revenue-integrity rule the live path enforces.
  */
-import { debitForVoiceUsage } from "./credit-wallet";
-import { log } from "./server-context";
 
 /** Customer-facing SMS rate (carrier cost plus operating margin). */
 export const SMS_COST_PER_SEGMENT_USD = 0.02;
-
-/**
- * Debit Runtime Balance for outbound SMS. Idempotent per message SID.
- * Returns USD debited (0 if insufficient balance or on error).
- */
-export async function billSmsMessage(
-  userId: string,
-  twilioMessageSid: string,
-  segmentCount: number,
-): Promise<number> {
-  if (!userId || !twilioMessageSid) return 0;
-  const segments = Math.max(1, Math.floor(segmentCount) || 1);
-  const costUsd = Math.round(SMS_COST_PER_SEGMENT_USD * segments * 100) / 100;
-  try {
-    const debited = await debitForVoiceUsage(userId, costUsd, `sms_${twilioMessageSid}`);
-    return debited;
-  } catch (error: unknown) {
-    log.warn("sms billing debit failed", {
-      userId,
-      twilioMessageSid,
-      segments,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return 0;
-  }
-}

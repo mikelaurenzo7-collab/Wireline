@@ -35,7 +35,6 @@ describe("authenticated modal lifecycle contract", () => {
       "src/components/recipes/RecipeModal.tsx",
       "src/components/CreateAgentDialog.tsx",
       "src/components/onboarding/PostCreateActivationWizard.tsx",
-      "src/components/PhoneAgentBlueprint.tsx",
       "src/pages/TeamSettings.tsx",
       "src/components/CommandBar.tsx",
       "src/components/PageShell.tsx",
@@ -64,7 +63,6 @@ describe("authenticated modal lifecycle contract", () => {
       ["src/components/OutboundDialDialog.tsx", "if (!next && !placing) onClose()"],
       ["src/components/DncManager.tsx", "if (!nextOpen && adding) return"],
       ["src/components/onboarding/PostCreateActivationWizard.tsx", "if (provisioning) return"],
-      ["src/components/PhoneAgentBlueprint.tsx", "if (saving) return"],
       ["src/pages/TeamSettings.tsx", "if (inviting) return"],
     ] as const) {
       expect(source(path), path).toContain(guard);

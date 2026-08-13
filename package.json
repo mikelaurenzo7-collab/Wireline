@@ -93,6 +93,7 @@
     "vercel:promote-production": "node scripts/promote-vercel-production.mjs",
     "vercel:wait-deployment": "node scripts/wait-vercel-deployment.mjs",
     "vapi:replay-pending-webhooks": "node scripts/replay-pending-vapi-webhooks.mjs",
+    "economics:report": "node --import tsx scripts/report-plan-economics.mts",
     "lint:strict:candidates": "node scripts/strict-coverage.mjs",
     "recap:preview": "node --import tsx scripts/preview-recap-artifact.mts"
   },

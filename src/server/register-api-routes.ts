@@ -135,8 +135,11 @@ export function registerApiRoutes(app: Express): void {
   app.use(vapiRouter);
   app.use(accountRouter);
   app.use(userPreferenceGuardRouter);
-  app.use(companyIdentitySettingsGuardRouter);
+  // Phone normalization/validation is pure and must precede the identity
+  // guard, whose branding commit would otherwise land before a malformed
+  // phone value 400s the request (silent half-write).
   app.use(settingsPhoneGuardRouter);
+  app.use(companyIdentitySettingsGuardRouter);
   app.use(accountExportGuardRouter);
   app.use(settingsRouter);
   app.use(postCallOutputRouter);

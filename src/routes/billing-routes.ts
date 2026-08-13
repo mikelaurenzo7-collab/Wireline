@@ -14,6 +14,7 @@ import {
   syncSubscriptionFromStripe,
   basePlanInvoiceShare,
   stripeCheckoutIntegrationIdentifier,
+  stripeCheckoutTaxConfig,
   stripeInvoiceIdForCharge,
 } from "../lib/stripe-helpers";
 import { sendPaymentFailedEmail } from "../lib/email-service";
@@ -28,7 +29,10 @@ import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { isLiveVideoCatalogReady } from "../lib/video-presenter/live-video-entitlements";
-import { fulfillStripeCheckoutSession } from "../lib/stripe-checkout-fulfillment";
+import {
+  failStripeCheckoutSession,
+  fulfillStripeCheckoutSession,
+} from "../lib/stripe-checkout-fulfillment";
 
 const router = express.Router();
 
@@ -55,8 +59,8 @@ async function validateFounderCatalogPriceId(priceId: string): Promise<string | 
 
 /**
  * Scale a gross (tax-inclusive) refunded/disputed Stripe amount down to the
- * portion of the wallet credit it actually represents. Top-up checkouts run
- * with automatic_tax enabled but credit only the pre-tax `credit_usd`, so
+ * portion of the wallet credit it actually represents. When Automatic Tax is
+ * enabled, top-up checkouts credit only the pre-tax `credit_usd`, so
  * reversing the gross amount would claw back more than was ever granted —
  * a fully-refunded customer would land at a negative balance and be blocked
  * on completion-grace debt they never spent. `credit_usd` rides on the
@@ -353,11 +357,16 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
 
   try {
     switch (event.type) {
-      case "checkout.session.completed": {
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Stripe.Checkout.Session;
         await fulfillStripeCheckoutSession(session, {
           providerEventId: event.id,
         });
+        break;
+      }
+      case "checkout.session.async_payment_failed": {
+        await failStripeCheckoutSession(event.data.object as Stripe.Checkout.Session);
         break;
       }
       case "charge.refunded": {
@@ -597,8 +606,13 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                 );
             }
           }
-        } catch {
-          /* ignore */
+        } catch (err) {
+          // Audit-only arm — money state is untouched — but a persistently
+          // failing payment_succeeded record must not be invisible while its
+          // payment_failed sibling logs at error.
+          log.warn("payment_succeeded audit lookup failed", {
+            error: getErrorMessage(err),
+          });
         }
         break;
       }
@@ -1170,15 +1184,10 @@ router.post(
         integration_identifier: stripeCheckoutIntegrationIdentifier("live_video"),
         customer: customerId,
         line_items: [{ price: priceId, quantity: 1 }],
-        automatic_tax: { enabled: true },
+        ...stripeCheckoutTaxConfig(),
         customer_update: { address: "auto", name: "auto" },
         // Parity with the plan checkout — promo codes work on add-ons too.
         allow_promotion_codes: true,
-        // Keep settlement synchronous until the production webhook endpoint is
-        // reauthenticated and subscribed to Checkout's delayed-payment events.
-        // Removing this pin before endpoint alignment can produce a paid add-on
-        // that never activates locally.
-        payment_method_types: ["card", "link"],
         success_url: `${base}/settings/billing?live_video=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${base}/settings/billing?live_video=canceled`,
         metadata: addonMeta,

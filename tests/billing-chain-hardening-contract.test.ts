@@ -83,37 +83,37 @@ describe("entitlement delivery survives webhook failure", () => {
   });
 });
 
-describe("checkout stays synchronous until delayed webhooks are aligned", () => {
-  // The Stripe connector currently requires reauthentication, so the live
-  // endpoint cannot yet be subscribed to async success/failure. Keep instant
-  // methods pinned until that external gate is cleared; every creator still
-  // carries the new Workbench integration identifier.
+describe("checkout safely supports Dashboard-managed payment methods", () => {
   const sessionCreators = [
+    "src/routes/launch-billing-checkout-routes.ts",
     "src/routes/launch-billing-checkout-atomic-routes.ts",
     "src/routes/conversation-balance-routes.ts",
     "src/routes/billing-routes.ts",
   ];
   for (const file of sessionCreators) {
-    it(`${file} pins instant methods and tags the flow`, () => {
+    it(`${file} leaves payment methods dynamic and tags the flow`, () => {
       const source = read(file);
       const creates = source.match(/checkout\.sessions\.create\(/g) || [];
       const identifiers = source.match(/integration_identifier:/g) || [];
-      const pins = source.match(/payment_method_types: \["card", "link"\]/g) || [];
       expect(creates.length).toBeGreaterThan(0);
       expect(identifiers.length).toBe(creates.length);
-      expect(pins.length).toBe(creates.length);
+      expect(source).not.toContain("payment_method_types:");
     });
   }
 
-  it("keeps fulfillment shared and idempotent without claiming async delivery", () => {
+  it("handles delayed success and releases a failed durable plan checkout", () => {
     const webhook = read("src/routes/billing-routes.ts");
     const fulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
 
     expect(webhook).toContain("await fulfillStripeCheckoutSession(session");
-    expect(webhook).not.toContain('case "checkout.session.async_payment_succeeded"');
-    expect(webhook).not.toContain('case "checkout.session.async_payment_failed"');
+    expect(webhook).toContain('case "checkout.session.async_payment_succeeded"');
+    expect(webhook).toContain('case "checkout.session.async_payment_failed"');
+    expect(webhook).toContain("await failStripeCheckoutSession(");
     expect(fulfillment).toContain("id: session.id,");
     expect(fulfillment).toContain("if (!paymentSettled) return result;");
+    expect(fulfillment).toContain('failureCode: "stripe_async_payment_failed"');
+    expect(fulfillment).toContain("eq(checkoutOperations.userId, userId)");
+    expect(fulfillment).toContain('inArray(checkoutOperations.status, ["creating", "open"])');
   });
 });
 

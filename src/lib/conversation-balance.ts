@@ -16,7 +16,7 @@ export const CONVERSATION_BALANCE_PRESETS_USD = [10, 25, 50, 100] as const;
 export const CONVERSATION_BALANCE_COPY = {
   title: "Runtime Balance",
   subtitle:
-    "Your subscription guarantees monthly voice capacity and includes flexible runtime for optional AI, SMS, research, enrichment, and business artifacts. Add prepaid balance only when you need more.",
+    "Your subscription guarantees monthly voice capacity, includes flexible runtime for optional SMS and business artifacts, and funds platform AI, research, and enrichment from its included AI envelope. Add prepaid balance only when you need more.",
   reassurance:
     "No automatic overages or auto-refill by default. Active calls finish normally; the next paid action pauses when included capacity and balance are depleted.",
 } as const;

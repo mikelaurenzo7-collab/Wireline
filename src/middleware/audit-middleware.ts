@@ -81,6 +81,69 @@ export async function persistRuntimeAuditRecords(opts: {
   );
 }
 
+/**
+ * Flat-reserve cost record for platform work that is not token-priced.
+ *
+ * Perplexity search/research is dominated by a per-request fee and Apollo
+ * enrichment by per-credit pricing, so the token pipeline above cannot price
+ * them — and until now nothing did: both ran as invisible COGS outside the
+ * account AI-spend envelope the docstring in plan-entitlements claims funds
+ * them. This writes the same wireline_audit_log row the token pipeline
+ * writes (explicit costUsd, zero tokens), so the spend budget, AISpendView,
+ * and spend alerts finally see one complete envelope.
+ *
+ * The per-unit values are conservative operational reserves, env-tunable to
+ * the account's actual vendor contract — deliberately not presented as vendor
+ * price truth.
+ */
+const PLATFORM_COST_RESERVES = {
+  perplexity_request: { env: "WIRELINE_PERPLEXITY_REQUEST_RESERVE_USD", fallback: 0.01 },
+  apollo_enrichment: { env: "WIRELINE_APOLLO_ENRICHMENT_RESERVE_USD", fallback: 0.05 },
+} as const;
+
+export function platformCostReserveUsd(kind: keyof typeof PLATFORM_COST_RESERVES): number {
+  const reserve = PLATFORM_COST_RESERVES[kind];
+  const parsed = Number.parseFloat(process.env[reserve.env] || "");
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : reserve.fallback;
+}
+
+export async function persistPlatformCostRecord(opts: {
+  userId: string;
+  action: string;
+  provider: string;
+  model: string;
+  costUsd: number;
+  latencyMs?: number;
+  requestMeta?: Record<string, unknown>;
+}): Promise<void> {
+  if (!(opts.costUsd > 0)) return;
+  try {
+    await drizzle.insert(schema.auditLog).values({
+      userId: opts.userId,
+      action: opts.action,
+      provider: opts.provider,
+      model: opts.model,
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheReadTokens: 0,
+      cacheCreateTokens: 0,
+      costUsd: String(opts.costUsd),
+      latencyMs: opts.latencyMs ?? 0,
+      metadata: { ...(opts.requestMeta || {}) },
+    });
+  } catch (error) {
+    log.error("Platform cost record insert failed", {
+      action: opts.action,
+      error: getErrorMessage(error),
+    });
+    return;
+  }
+  recordDailySpend(opts.costUsd);
+  await evaluateSpend(opts.userId, opts.costUsd).catch((error: unknown) =>
+    log.error("Platform cost spend evaluation failed", { error: getErrorMessage(error) }),
+  );
+}
+
 export function withAudit(actionPrefix: string) {
   return (req: any, res: any, next: any) => {
     const ctx = createAuditContext();

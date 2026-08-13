@@ -298,11 +298,47 @@ describe("billing proof contract", () => {
     );
   });
 
+  it("runs the subscription-sync mutation phase tenant-scoped", () => {
+    // Identity resolution (customer lookup, metadata repair) legitimately
+    // needs root scope — no tenant is known yet. Everything after identity is
+    // fixed, including the Runtime Allowance ledger grant, must run inside
+    // tenantStore.run so RLS WITH CHECK backstops a userId-resolution bug
+    // before it can credit the wrong wallet.
+    const stripeHelpers = read("src/lib/stripe-helpers.ts");
+    const sync = stripeHelpers.slice(
+      stripeHelpers.indexOf("export async function syncSubscriptionFromStripe"),
+    );
+    const scopeStart = sync.indexOf("await tenantStore.run(userId, async () => {");
+    expect(scopeStart).toBeGreaterThan(-1);
+    // The identity phase's mapping-repair insert stays before the scope by
+    // design; the projection upsert, settings upsert, and allowance grant
+    // must each occur inside it.
+    for (const mutation of [
+      ".insert(schema.subscriptions)",
+      ".insert(schema.settings)",
+      "grantSubscriptionRuntimeAllowance(userId",
+    ]) {
+      expect(sync.indexOf(mutation, scopeStart), mutation).toBeGreaterThan(scopeStart);
+    }
+    // Checkout fulfillment's remaining direct writes are scoped the same way.
+    const fulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
+    expect(fulfillment).toContain("const updated = await tenantStore.run(userId, () =>");
+    expect(fulfillment).toContain(
+      "await tenantStore.run(userId, () => markCheckoutOperationCompleted(session));",
+    );
+  });
+
   it("bills SMS segments from Conversation Balance via a prepaid reservation", () => {
     const sms = read("src/lib/sms-billing.ts");
     const twilio = read("src/lib/twilio-service.ts");
     expect(sms).toContain("SMS_COST_PER_SEGMENT_USD = 0.02");
-    expect(sms).toContain("billSmsMessage");
+    // The legacy post-hoc debit path stays deleted: live SMS billing is the
+    // prepaid reservation below, and billSmsMessage's swallow-and-return-0
+    // contract contradicted the revenue-integrity rule that path enforces.
+    expect(sms).not.toContain("billSmsMessage");
+    expect(read("src/lib/credit-wallet.ts")).not.toContain(
+      "export async function debitForVoiceUsage",
+    );
     expect(twilio).toContain("reserveRuntimeUsage");
     expect(twilio).toContain("adjustMessagingReservation");
     expect(twilio).toContain("message.numSegments");

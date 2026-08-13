@@ -175,6 +175,15 @@ export interface QuotaDecision {
   period_key: string;
   /** When the current window resets (ISO string). */
   reset_at: string;
+  /**
+   * False when the increment could not be durably recorded and the decision
+   * came from the read-only fallback. During a write-degraded incident the
+   * fallback keeps allowing until *recorded* usage reaches the limit, so
+   * spend-sensitive callers (vendor-metered session mints) must refuse on
+   * `!persisted` — otherwise unmetered spend continues exactly while
+   * accounting is blind. Availability-oriented dimensions may accept it.
+   */
+  persisted: boolean;
 }
 
 export function buildDecision(opts: {
@@ -195,6 +204,9 @@ export function buildDecision(opts: {
     remaining: Math.max(0, opts.limit - opts.used),
     period_key: opts.period_key,
     reset_at: opts.reset_at,
+    // buildDecision is only reached from read-only paths (the fallback after
+    // a failed increment, and plain usage reads) — nothing was written.
+    persisted: false,
   };
 }
 
@@ -340,6 +352,7 @@ export class QuotaTracker {
         remaining: Math.max(0, limit - used),
         period_key: periodKey,
         reset_at: resetAt,
+        persisted: true,
       };
     } catch (error: any) {
       log.error("quota checkAndIncrement failed", { error: error.message, userId, dimension });

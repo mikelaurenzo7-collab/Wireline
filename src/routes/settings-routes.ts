@@ -88,7 +88,7 @@ function clampRetentionDays(value: unknown): number | undefined {
   return Math.min(RETENTION_DAYS_MAX, Math.max(RETENTION_DAYS_MIN, days));
 }
 
-function pickWritableSettings(
+export function pickWritableSettings(
   update: Record<string, unknown>,
   isAccountHolder: boolean,
 ): Record<string, unknown> {
@@ -159,7 +159,7 @@ router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, 
  * reputation damage, and TCPA exposure on a workspace that never sent anything.
  * A number may only be claimed as a tenant identity if that tenant owns the row.
  */
-async function assertTelecomIdentityOwned(
+export async function assertTelecomIdentityOwned(
   userId: string,
   update: Record<string, unknown>,
 ): Promise<void> {
@@ -618,7 +618,9 @@ router.delete(
 
       const renewal = await stopRenewalForDeletion(uid);
 
-      void auditLogger
+      // Awaited: a detached audit write can be frozen mid-flight on Vercel
+      // once the response goes out, losing the request evidence.
+      await auditLogger
         .logAccountDeletionRequested({
           userId: uid,
           scheduledPurgeAt: queueRow.scheduledPurgeAt?.toISOString() ?? "",
@@ -681,7 +683,9 @@ router.post(
 
       const renewal = await resumeRenewalAfterDeletionCancellation(uid);
 
-      void auditLogger.logAccountDeletionCancelled({ userId: uid, ip: req.ip }).catch((err) =>
+      // Awaited: a detached audit write can be frozen mid-flight on Vercel
+      // once the response goes out, losing the cancellation evidence.
+      await auditLogger.logAccountDeletionCancelled({ userId: uid, ip: req.ip }).catch((err) =>
         log.warn("audit logAccountDeletionCancelled failed", {
           uid,
           error: getErrorMessage(err),

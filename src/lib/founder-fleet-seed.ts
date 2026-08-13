@@ -187,10 +187,10 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
   },
   {
     id: "founder-personal",
-    name: "Personal Assistant",
+    name: "Personal Agent",
     role: "personal_assistant",
     channel: "voice",
-    archetype: "Executive Assistant",
+    archetype: "Personal Agent",
     firstMessage: "Hi, this is your agent. How can I help with your schedule today?",
     team: "personal",
     personalityVibe: "warm",

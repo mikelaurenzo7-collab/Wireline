@@ -118,6 +118,7 @@ docs/LAUNCH_STATUS.generated.json
 .worktrees/
 worktrees/
 scripts/.tmp-*
+.superdesign/tmp/
 
 # Generated marketing and official-asset exports
 marketing-kit/

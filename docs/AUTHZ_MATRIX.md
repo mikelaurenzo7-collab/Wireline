@@ -215,7 +215,6 @@
 | dashboard-routes.ts | PATCH | `/api/appointments/:id` | inline | — | — | Protected |
 | dashboard-routes.ts | DELETE | `/api/appointments/:id` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/calls` | inline | — | — | Protected |
-| dashboard-routes.ts | GET | `/api/dashboard/benchmarks` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/dashboard/dossiers` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/dashboard/stats` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/export/:type.csv` | inline | — | — | Protected |
@@ -380,6 +379,7 @@
 | outbound-routes.ts | POST | `/api/outbound/bulk` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
 | overview-operating-metrics-routes.ts | GET | `/api/overview/operating-metrics` | inline | — | — | Protected |
+| overview-operating-metrics-routes.ts | GET | `/api/overview/recent-conversations` | inline | — | — | Protected |
 | phone-number-release-routes.ts | DELETE | `/api/phone-numbers/:id` | inline | — | — | Protected |
 | pipeline-routes.ts | GET | `/api/insights/campaign-attribution` | inline | — | — | Protected |
 | pipeline-routes.ts | GET | `/api/pipeline` | inline | — | — | Protected |
