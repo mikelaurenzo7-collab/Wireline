@@ -18,6 +18,10 @@ import {
   FOUNDER_PRODUCTS,
   PRODUCT_BY_KEY,
 } from "./lib/stripe-founder-catalog.mjs";
+import {
+  EXPECTED_PRODUCT_URL,
+  EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR,
+} from "./lib/stripe-product-copy.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const API_VERSION = "2026-07-29.dahlia";
@@ -76,6 +80,15 @@ function sameRecurring(actual, expected) {
     actual?.interval === expected.interval &&
     (actual?.usage_type || "licensed") === (expected.usage_type || "licensed")
   );
+}
+
+function customerProductPresentation(spec) {
+  return {
+    url: EXPECTED_PRODUCT_URL,
+    ...(spec.key === "conversation_balance"
+      ? {}
+      : { statement_descriptor: EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR }),
+  };
 }
 
 async function dependencySnapshot(stripe) {
@@ -158,6 +171,7 @@ async function ensureProduct(stripe, spec, products, activePrices) {
     ...spec.metadata,
     wireline_catalog_version: FOUNDER_CATALOG_VERSION,
   };
+  const customerPresentation = customerProductPresentation(spec);
 
   if (!existing) {
     return {
@@ -167,6 +181,7 @@ async function ensureProduct(stripe, spec, products, activePrices) {
         description: spec.description,
         active: true,
         metadata,
+        ...customerPresentation,
       }),
     };
   }
@@ -178,6 +193,7 @@ async function ensureProduct(stripe, spec, products, activePrices) {
       description: spec.description,
       active: true,
       metadata,
+      ...customerPresentation,
     }),
   };
 }
