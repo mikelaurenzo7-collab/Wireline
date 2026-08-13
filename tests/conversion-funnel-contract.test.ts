@@ -143,13 +143,21 @@ describe("account entry recognizes an existing session without blocking first pa
   });
 });
 
-describe("password recovery does not leave reset credentials in browser history", () => {
-  it("captures the token synchronously and strips the URL before paint", () => {
+describe("password recovery keeps reset credentials out of request and browser history", () => {
+  it("issues new reset links with a fragment and never logs token material", () => {
+    const routes = read("src/routes/auth-routes.ts");
+    expect(routes).toContain('/reset-password#token=${encodeURIComponent(token.token)}');
+    expect(routes).not.toContain('/reset-password?token=${encodeURIComponent(token.token)}');
+    expect(routes).not.toContain("tokenPrefix:");
+    expect(routes).not.toContain("token.token.slice(");
+  });
+
+  it("captures fragment tokens synchronously, supports old query links, and strips the URL", () => {
     const reset = read("src/pages/ResetPassword.tsx");
-    expect(reset).toContain('useLayoutEffect, useRef, useState');
-    expect(reset).toContain(
-      'useRef(new URLSearchParams(window.location.search).get("token") || "")',
-    );
+    expect(reset).toContain("function readResetTokenFromLocation(): string");
+    expect(reset).toContain('window.location.hash.replace(/^#/, "")');
+    expect(reset).toContain('return hash.get("token") || query.get("token") || ""');
+    expect(reset).toContain("const resetTokenRef = useRef(readResetTokenFromLocation())");
     expect(reset).toContain('const [token] = useState<string | null>(() => resetTokenRef.current || null)');
     expect(reset).toContain(
       'window.history.replaceState(window.history.state, "", window.location.pathname)',
