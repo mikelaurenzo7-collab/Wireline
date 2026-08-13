@@ -1,5 +1,5 @@
-const EXPECTED_PRODUCT_URL = "https://trywireline.com/pricing";
-const EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR = "WIRELINE";
+export const EXPECTED_PRODUCT_URL = "https://trywireline.com/pricing";
+export const EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR = "WIRELINE";
 
 function normalizeCopy(value) {
   return String(value || "")
@@ -12,9 +12,9 @@ function finding(level, message, metadata = {}) {
 }
 
 /**
- * Compare active Stripe product copy and managed metadata against the canonical
- * repository manifest. The catalog audit owns price topology; this policy owns
- * customer-visible product truth and the metadata fields used by Wireline.
+ * Compare active Stripe product copy, billing presentation, and managed
+ * metadata against Wireline's canonical repository truth. The catalog audit
+ * owns price topology; this policy owns customer-visible product identity.
  */
 export function stripeProductCopyFindings(products, expectedProducts) {
   const findings = [];
@@ -56,18 +56,24 @@ export function stripeProductCopyFindings(products, expectedProducts) {
       );
     }
 
-    // Runtime Balance is a one-time top-up. Every recurring/custom Wireline
-    // product should carry a recognizable subscription statement descriptor so
-    // card statements cannot inherit stale account-level branding.
+    const actualDescriptor = String(product.statement_descriptor || "");
     if (
       expected.key !== "conversation_balance" &&
-      String(product.statement_descriptor || "") !== EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR
+      actualDescriptor !== EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR
     ) {
       findings.push(
         finding("error", `Stripe product statement descriptor drift for ${expected.name}.`, {
           product_id: product.id,
           expected_statement_descriptor: EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR,
           actual_statement_descriptor: product.statement_descriptor || null,
+        }),
+      );
+    } else if (expected.key === "conversation_balance" && actualDescriptor) {
+      findings.push(
+        finding("error", `Stripe product statement descriptor drift for ${expected.name}.`, {
+          product_id: product.id,
+          expected_statement_descriptor: null,
+          actual_statement_descriptor: product.statement_descriptor,
         }),
       );
     }
