@@ -1,5 +1,5 @@
 const EXPECTED_PRODUCT_URL = "https://trywireline.com/pricing";
-const EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR = "TRY WIRELINE";
+const EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR = "WIRELINE";
 
 function normalizeCopy(value) {
   return String(value || "")
