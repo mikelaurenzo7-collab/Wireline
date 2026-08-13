@@ -153,6 +153,12 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "1 private draft communications agent",
       "Agent setup, training, knowledge, and private simulation",
+      // Derived disclosure, not marketing: the free tier's real monthly
+      // simulation envelope (FREE_BUILDER_SIMULATION_ALLOWANCE_USD) must be
+      // visible before signup — hitting it silently mid-training is the
+      // likeliest place a converting prospect churns. Keep the number and the
+      // enforced constant in lockstep via the metering contract.
+      "Includes $1.50 of private AI simulation each month",
       "No production number or paid provider action until activation",
     ],
   },

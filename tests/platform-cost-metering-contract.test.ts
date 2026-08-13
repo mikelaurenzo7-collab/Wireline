@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { FREE_BUILDER_SIMULATION_ALLOWANCE_USD } from "../src/lib/plan-entitlements";
+import { planById } from "../src/lib/plan-catalog";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
@@ -65,5 +67,16 @@ describe("platform cost metering contract", () => {
     expect(balance).toContain(
       "funds platform AI, research, and enrichment from its included AI envelope",
     );
+  });
+
+  it("discloses the Free Builder simulation envelope, in lockstep with enforcement", () => {
+    // The free tier's hard cap 402s mid-training; a converting prospect must
+    // see the real shape before signup, and the disclosed number must be the
+    // enforced number.
+    const disclosed = planById("personal")?.features.find((feature) =>
+      feature.includes("private AI simulation each month"),
+    );
+    expect(disclosed).toBeDefined();
+    expect(disclosed).toContain(`$${FREE_BUILDER_SIMULATION_ALLOWANCE_USD.toFixed(2)}`);
   });
 });
