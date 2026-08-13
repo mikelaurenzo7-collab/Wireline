@@ -25,6 +25,20 @@ describe("sms thread outcome ownership contract", () => {
     );
   });
 
+  it("only the thread's latest outbound message may move thread status", () => {
+    // Twilio callbacks arrive out of order across messages: a delayed receipt
+    // for an older message must not overwrite what the newest outbound
+    // already established in either direction.
+    expect(statusHandler).toContain('eq(schema.smsMessages.direction, "out")');
+    expect(statusHandler).toContain(
+      "orderBy(desc(schema.smsMessages.createdAt), desc(schema.smsMessages.id))",
+    );
+    expect(statusHandler).toContain("latestOutbound?.id === message.id");
+    const guard = statusHandler.indexOf("speaksForThread");
+    expect(guard).toBeGreaterThan(-1);
+    expect(guard).toBeLessThan(statusHandler.indexOf('status: "delivery_failed"'));
+  });
+
   it("delivery receipts only clear a stale failure flag, never reopen threads", () => {
     const deliveredBranch = statusHandler.slice(
       statusHandler.indexOf('["delivered", "read"].includes(status)'),

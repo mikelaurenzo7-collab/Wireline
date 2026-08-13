@@ -83,6 +83,17 @@ export async function simulationMinuteQuota(req: Request, res: Response, next: N
         reset_at: decision.reset_at,
       });
     }
+    if (!decision.persisted) {
+      // The tracker's read-only fallback allowed the request but could not
+      // record the increment (write-degraded DB). For a vendor-metered mint an
+      // unrecorded allowance is the same as no ceiling — refuse like an outage.
+      log.error("simulation quota increment not durable — refusing session mint", { userId });
+      return res.status(503).json({
+        code: "SIMULATION_QUOTA_UNAVAILABLE",
+        error:
+          "Live simulation is briefly unavailable. Try again shortly — phone calls are unaffected.",
+      });
+    }
   } catch (err) {
     // checkAndIncrement already degrades internally; an exception here means
     // the tracker itself is down. Every session mint charges a vendor-metered

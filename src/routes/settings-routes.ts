@@ -618,7 +618,9 @@ router.delete(
 
       const renewal = await stopRenewalForDeletion(uid);
 
-      void auditLogger
+      // Awaited: a detached audit write can be frozen mid-flight on Vercel
+      // once the response goes out, losing the request evidence.
+      await auditLogger
         .logAccountDeletionRequested({
           userId: uid,
           scheduledPurgeAt: queueRow.scheduledPurgeAt?.toISOString() ?? "",
@@ -681,7 +683,9 @@ router.post(
 
       const renewal = await resumeRenewalAfterDeletionCancellation(uid);
 
-      void auditLogger.logAccountDeletionCancelled({ userId: uid, ip: req.ip }).catch((err) =>
+      // Awaited: a detached audit write can be frozen mid-flight on Vercel
+      // once the response goes out, losing the cancellation evidence.
+      await auditLogger.logAccountDeletionCancelled({ userId: uid, ip: req.ip }).catch((err) =>
         log.warn("audit logAccountDeletionCancelled failed", {
           uid,
           error: getErrorMessage(err),

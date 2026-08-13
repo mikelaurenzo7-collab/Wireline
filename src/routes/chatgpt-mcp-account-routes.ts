@@ -565,8 +565,13 @@ router.post("/mcp", async (req, res) => {
       // quota the web sandbox charges — the hourly limiter alone allowed 8
       // mints/hour all day, 64× the web path's daily ceiling. Fail closed on
       // tracker outage for the same reason the web mint does.
-      const quota = await quotaTracker
-        .checkAndIncrement(authed.userId, "simulation_minutes_daily", 5)
+      // Tenant-scoped like this file's other tenant writes: the quota-usage
+      // insert is RLS-protected, and the WITH CHECK backstop should hold here
+      // exactly as it does on the web path (authenticateUser scopes it there).
+      const quota = await tenantStore
+        .run(authed.userId, () =>
+          quotaTracker.checkAndIncrement(authed.userId, "simulation_minutes_daily", 5),
+        )
         .catch((err: unknown) => {
           log.error("chatgpt simulation quota tracker unavailable — refusing mint", {
             userId: authed.userId,
@@ -581,6 +586,17 @@ router.post("/mcp", async (req, res) => {
         throw AppError.tooManyRequests(
           "Today's live-simulation minutes are used. They reset at midnight UTC — continue testing from Wireline.",
         );
+      if (!quota.persisted) {
+        // Read-only fallback decision: the increment was not durably
+        // recorded, so an allowance here would be an unmetered vendor mint.
+        log.error("chatgpt simulation quota increment not durable — refusing mint", {
+          userId: authed.userId,
+        });
+        throw AppError.fromHttpStatus(
+          503,
+          "Live simulation is briefly unavailable. Try again shortly.",
+        );
+      }
       const session = await createOpenAIRealtimeClientSecret({
         userId: authed.userId,
         agentName: draft.view.name,

@@ -131,8 +131,12 @@ router.post(
     // This is the deletion path the UI actually calls, and cancellation
     // already audits — without this the trail records cancellations for
     // requests it never recorded. Deletion is irreversible after the grace
-    // window, so the request itself must be durable audit evidence.
-    void auditLogger
+    // window, so the request itself must be durable audit evidence. Awaited
+    // before the 202: a detached write can be frozen mid-flight on Vercel
+    // once the response is sent (see background-work.ts), which would lose
+    // exactly the evidence this exists to keep. An audit failure still must
+    // not block the already-queued deletion.
+    await auditLogger
       .logAccountDeletionRequested({
         userId,
         scheduledPurgeAt: (row?.scheduledPurgeAt ?? scheduledPurgeAt).toISOString(),

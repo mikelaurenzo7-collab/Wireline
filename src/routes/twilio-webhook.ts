@@ -1,5 +1,5 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { and, eq, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { drizzle, log, tenantStore } from "../lib/server-context";
@@ -288,6 +288,7 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
   try {
     const [message] = await drizzle
       .select({
+        id: schema.smsMessages.id,
         userId: schema.smsMessages.userId,
         threadId: schema.smsMessages.threadId,
       })
@@ -312,31 +313,72 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
         // receipt arriving hours after the operator resolved the thread used
         // to silently flip it back to `open` while the handoff task stayed
         // completed — Inbox and Approvals disagreed about ownership.
-        if (message.threadId && ["failed", "undelivered"].includes(status)) {
-          await drizzle
-            .update(schema.smsThreads)
-            .set({
-              status: "delivery_failed",
-              summary: `Latest outbound message ${status}${errorCode ? ` (Twilio ${errorCode})` : ""}.`,
-            })
+        //
+        // Callbacks also arrive out of order across messages: a delayed
+        // receipt for an OLDER message must not overwrite what the thread's
+        // newest outbound already established (a late `delivered` clearing a
+        // current failure, or a late `failed` flagging a thread whose newer
+        // message went through). Only the latest outbound message speaks for
+        // the thread.
+        const relevantStatus = ["failed", "undelivered", "delivered", "read"].includes(status);
+        if (message.threadId && relevantStatus) {
+          const [latestOutbound] = await drizzle
+            .select({ id: schema.smsMessages.id })
+            .from(schema.smsMessages)
             .where(
               and(
-                eq(schema.smsThreads.id, message.threadId),
-                inArray(schema.smsThreads.status, ["open", "waiting", "delivery_failed"]),
+                eq(schema.smsMessages.threadId, message.threadId),
+                eq(schema.smsMessages.direction, "out"),
               ),
-            );
-        } else if (message.threadId && ["delivered", "read"].includes(status)) {
-          // `open` here only clears a stale delivery-failure flag once a later
-          // message lands; it must not reopen live or operator-final threads.
-          await drizzle
-            .update(schema.smsThreads)
-            .set({ status: "open" })
-            .where(
-              and(
-                eq(schema.smsThreads.id, message.threadId),
-                eq(schema.smsThreads.status, "delivery_failed"),
-              ),
-            );
+            )
+            .orderBy(desc(schema.smsMessages.createdAt), desc(schema.smsMessages.id))
+            .limit(1);
+          const speaksForThread = latestOutbound?.id === message.id;
+
+          if (speaksForThread && ["failed", "undelivered"].includes(status)) {
+            const failureSummary = `Latest outbound message ${status}${errorCode ? ` (Twilio ${errorCode})` : ""}.`;
+            await drizzle
+              .update(schema.smsThreads)
+              .set({
+                status: "delivery_failed",
+                summary: failureSummary,
+              })
+              .where(
+                and(
+                  eq(schema.smsThreads.id, message.threadId),
+                  or(
+                    isNull(schema.smsThreads.status),
+                    inArray(schema.smsThreads.status, ["open", "waiting", "delivery_failed"]),
+                  ),
+                ),
+              );
+            // `escalated` is operator-ACTIVE, not final: a human is working
+            // this thread and their outbound just bounced. The status stays
+            // pinned (the handoff task is keyed to it), but the failure must
+            // still be visible where the operator is looking.
+            await drizzle
+              .update(schema.smsThreads)
+              .set({ summary: failureSummary })
+              .where(
+                and(
+                  eq(schema.smsThreads.id, message.threadId),
+                  eq(schema.smsThreads.status, "escalated"),
+                ),
+              );
+          } else if (speaksForThread && ["delivered", "read"].includes(status)) {
+            // `open` here only clears a stale delivery-failure flag once the
+            // latest message lands; it must not reopen live or operator-final
+            // threads.
+            await drizzle
+              .update(schema.smsThreads)
+              .set({ status: "open" })
+              .where(
+                and(
+                  eq(schema.smsThreads.id, message.threadId),
+                  eq(schema.smsThreads.status, "delivery_failed"),
+                ),
+              );
+          }
         }
       });
     }
