@@ -73,12 +73,13 @@ describe("production schema database selection", () => {
 
 describe("tenant database connection scope", () => {
   it("reserves raw root scope for genuinely absent bootstrap/system context", () => {
-    expect(resolveTenantDatabaseScope(undefined)).toBe("root");
-    expect(resolveTenantDatabaseScope("")).toBe("root");
+    expect(resolveTenantDatabaseScope(undefined)).toEqual({ kind: "root" });
+    expect(resolveTenantDatabaseScope("")).toEqual({ kind: "root" });
   });
 
-  it("accepts only UUID tenant claims", () => {
-    expect(resolveTenantDatabaseScope("77e92712-8401-4a90-899c-b16213289ce3")).toBe("tenant");
+  it("accepts only UUID tenant claims and carries the validated id forward", () => {
+    const userId = "77e92712-8401-4a90-899c-b16213289ce3";
+    expect(resolveTenantDatabaseScope(userId)).toEqual({ kind: "tenant", userId });
   });
 
   it("fails closed instead of upgrading malformed tenant claims to root access", () => {
