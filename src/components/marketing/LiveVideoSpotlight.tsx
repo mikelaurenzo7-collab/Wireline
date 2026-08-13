@@ -7,6 +7,7 @@ import {
   Video,
 } from "lucide-react";
 import { Link } from "react-router";
+import { LIVE_VIDEO_ADDON_PRICE_USD } from "../../lib/video-presenter/live-video-policy";
 
 const CHANNELS = [
   { label: "Voice", icon: PhoneCall },
@@ -62,12 +63,15 @@ export default function LiveVideoSpotlight({
             </div>
 
             <Link
-              to="/signup?plan=personal"
+              to="/signup?plan=starter"
               className="marketing-btn-primary mx-auto mt-7 min-h-11 justify-center px-5 text-sm font-semibold sm:w-fit lg:mx-0"
             >
-              Build your voice agent
+              Start with Starter
               <ArrowRight size={14} aria-hidden="true" />
             </Link>
+            <p className="mt-2 text-[11px] font-medium text-muted-foreground">
+              Paid business plan + ${LIVE_VIDEO_ADDON_PRICE_USD}/mo add-on.
+            </p>
           </div>
 
           <div className="relative mx-auto w-full max-w-[700px]">
