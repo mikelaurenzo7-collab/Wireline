@@ -1,12 +1,16 @@
 import { Router, type NextFunction, type Response } from "express";
 
+import { SettingsSchema } from "../../contracts/api-types";
 import * as schema from "../db/schema";
 import { AppError } from "../lib/api-error";
+import { formatZodError } from "../lib/api-validation-base";
 import { isOwnerEmail } from "../lib/auth-service";
 import { runCompanyIdentityMutation } from "../lib/company-identity-mutation";
 import { log } from "../lib/server-context";
-import { getErrorMessage } from "../lib/server-utils";
+import { getErrorMessage, mapObjectToCamel } from "../lib/server-utils";
 import { authenticateUser } from "../middleware/auth";
+import { isPlatformAdmin } from "../middleware/platform-admin";
+import { assertTelecomIdentityOwned, pickWritableSettings } from "./settings-routes";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -112,6 +116,30 @@ router.use(
           "Brand logo URL",
         );
       }
+
+      // Preflight the exact validation the downstream settings writer will
+      // run on the identity-stripped body. Without this, the branding commit
+      // below landed durably and THEN a schema 400 or telecom-ownership 403
+      // told the client "settings not saved" — a silent half-write. The
+      // request must be provably acceptable end-to-end before any commit.
+      const downstreamPreview: Record<string, unknown> = { ...body };
+      for (const key of IDENTITY_SETTING_KEYS) delete downstreamPreview[key];
+      const parsed = SettingsSchema.partial().safeParse(downstreamPreview);
+      if (!parsed.success) {
+        const errors = formatZodError(parsed.error);
+        _res.status(400).json({
+          error: errors[0]?.message || "Invalid request body",
+          code: "VALIDATION_ERROR",
+          details: errors,
+        });
+        return;
+      }
+      const isAccountHolder = await isPlatformAdmin(req.user);
+      const downstreamUpdate = pickWritableSettings(
+        mapObjectToCamel(parsed.data) as Record<string, unknown>,
+        isAccountHolder,
+      );
+      await assertTelecomIdentityOwned(req.user.id, downstreamUpdate);
 
       await runCompanyIdentityMutation(req.user.id, "branding_changed", async (tx) => {
         await tx
