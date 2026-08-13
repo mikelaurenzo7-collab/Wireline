@@ -1,7 +1,9 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { resolveProductionSchemaDatabase } from "../scripts/run-production-schema-effects.mjs";
 import { tryResolveDatabaseConnection } from "../src/lib/database-connection";
+import { resolveTenantDatabaseScope } from "../src/lib/tenant-context-scope";
 
 const pool = "postgresql://wireline:secret@pool.example.com:6543/wireline";
 const direct = "postgresql://wireline:secret@db.example.com:5432/wireline";
@@ -67,5 +69,34 @@ describe("production schema database selection", () => {
     for (const env of environments) {
       expect(resolveProductionSchemaDatabase(env)).toEqual(tryResolveDatabaseConnection(env));
     }
+  });
+});
+
+describe("tenant database connection scope", () => {
+  it("reserves raw root scope for genuinely absent bootstrap/system context", () => {
+    expect(resolveTenantDatabaseScope(undefined)).toEqual({ kind: "root" });
+    expect(resolveTenantDatabaseScope("")).toEqual({ kind: "root" });
+  });
+
+  it("accepts only UUID tenant claims and carries the validated id forward", () => {
+    const userId = "77e92712-8401-4a90-899c-b16213289ce3";
+    expect(resolveTenantDatabaseScope(userId)).toEqual({ kind: "tenant", userId });
+  });
+
+  it("fails closed instead of upgrading malformed tenant claims to root access", () => {
+    expect(() => resolveTenantDatabaseScope("e2e-gold@trywireline.com")).toThrow(
+      "INVALID_TENANT_CONTEXT",
+    );
+    expect(() => resolveTenantDatabaseScope("not-a-tenant-uuid")).toThrow(
+      "INVALID_TENANT_CONTEXT",
+    );
+  });
+
+  it("wires the classifier into the pooled connection boundary", () => {
+    const source = readFileSync(new URL("../src/lib/server-context.ts", import.meta.url), "utf8");
+    expect(source).toContain("connectionScope = resolveTenantDatabaseScope(userId)");
+    expect(source).toContain('connectionScope.kind === "root"');
+    expect(source).toContain("scopeClientToTenant(connectionScope.userId)");
+    expect(source).not.toContain("!userId || !UUID_RE.test(userId)");
   });
 });

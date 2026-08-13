@@ -1,6 +1,7 @@
 import { log, IS_PROD } from "./server-logger";
 import { tryResolveDatabaseConnection } from "./database-connection";
 import { AppError } from "./api-error";
+import { resolveTenantDatabaseScope } from "./tenant-context-scope";
 
 export { log, IS_PROD };
 
@@ -135,7 +136,6 @@ export async function serialQueryBatch<const T extends readonly unknown[]>(
   return rows as unknown as AwaitedTuple<T>;
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const _origConnect = pool.connect.bind(pool);
 
 // Savepoint used to remap drizzle's own top-level BEGIN/COMMIT/ROLLBACK so that
@@ -236,16 +236,30 @@ async function scopeClientToTenant(userId: string) {
 /* eslint-disable @typescript-eslint/no-explicit-any -- pg Pool.connect has overloaded callback/promise signatures */
 (pool as any).connect = function tenantScopedConnect(callback?: any): any {
   const userId = tenantStore.getStore();
-  if (!userId || !UUID_RE.test(userId)) {
+  let connectionScope: ReturnType<typeof resolveTenantDatabaseScope>;
+  try {
+    connectionScope = resolveTenantDatabaseScope(userId);
+  } catch (error) {
+    log.error("Refusing database checkout for malformed tenant context", {
+      hasTenantContext: Boolean(userId),
+    });
+    if (callback) {
+      queueMicrotask(() => callback(error));
+      return;
+    }
+    return Promise.reject(error);
+  }
+
+  if (connectionScope.kind === "root") {
     return callback ? _origConnect(callback) : _origConnect();
   }
   if (callback) {
-    scopeClientToTenant(userId)
+    scopeClientToTenant(connectionScope.userId)
       .then((client) => callback(null, client, client.release))
       .catch((err: any) => callback(err));
     return;
   }
-  return scopeClientToTenant(userId);
+  return scopeClientToTenant(connectionScope.userId);
 };
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
