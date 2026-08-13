@@ -107,11 +107,14 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     /idempotencyKey:\s*ref\?\.idempotencyKey/,
     "credit wallet must write idempotency keys",
   );
+  // The retired post-hoc voice debit in credit-wallet carried its own ledger
+  // copy; live voice settlement writes the customer-visible reason from
+  // voice-completion-grace instead.
   mustInclude(
-    "src/lib/credit-wallet.ts",
-    creditWallet,
-    /customerReason:\s*"Voice minutes covered by Runtime Balance"/,
-    "voice burns must have a customer-visible Runtime Balance reason",
+    "src/lib/voice-completion-grace.ts",
+    read("src/lib/voice-completion-grace.ts"),
+    /customerReason:\s*"Completed live-call usage"/,
+    "voice burns must have a customer-visible ledger reason",
   );
   mustInclude(
     "src/lib/stripe-checkout-fulfillment.ts",
