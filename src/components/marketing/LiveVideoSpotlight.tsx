@@ -19,13 +19,13 @@ const PRESENTER_SLOTS = ["01", "02", "03"] as const;
 
 export default function LiveVideoSpotlight() {
   return (
-    <section className="wl-public-section border-b border-border overflow-hidden">
+    <section className="wl-public-section overflow-hidden border-b border-border">
       <div className="wl-public-rail">
         <div className="grid items-center gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:gap-16">
           <div className="mx-auto max-w-xl text-center lg:mx-0 lg:text-left">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               <span className="relative flex size-2" aria-hidden="true">
-                <span className="absolute inline-flex size-full rounded-full bg-primary/35 motion-safe:animate-ping" />
+                <span className="absolute inline-flex size-full rounded-full bg-primary/30 motion-safe:animate-ping" />
                 <span className="relative inline-flex size-2 rounded-full bg-primary" />
               </span>
               Live Video
@@ -38,7 +38,10 @@ export default function LiveVideoSpotlight() {
               Call. Text. Email. Add a live presenter when the conversation deserves a face.
             </p>
 
-            <div className="mt-7 flex flex-wrap justify-center gap-2 lg:justify-start" aria-label="Agent channels">
+            <div
+              className="mt-7 flex flex-wrap justify-center gap-2 lg:justify-start"
+              aria-label="Agent channels"
+            >
               {CHANNELS.map(({ label, icon: Icon }) => (
                 <span
                   key={label}
@@ -98,10 +101,13 @@ export default function LiveVideoSpotlight() {
 
                 <div className="relative flex w-full max-w-[390px] flex-col items-center">
                   <div className="relative grid aspect-[4/5] w-[170px] place-items-center overflow-hidden rounded-[28px] border border-border/80 bg-background shadow-xl sm:w-[210px]">
-                    <div className="absolute inset-x-5 top-5 h-24 rounded-full bg-primary/8 blur-2xl" aria-hidden="true" />
+                    <div
+                      className="absolute inset-x-5 top-5 h-24 rounded-full bg-primary/10 blur-2xl"
+                      aria-hidden="true"
+                    />
                     <div className="relative flex flex-col items-center" aria-hidden="true">
                       <span className="grid size-24 place-items-center rounded-full border border-border bg-muted sm:size-28">
-                        <UserRound className="size-14 text-muted-foreground/65 sm:size-16" />
+                        <UserRound className="size-14 text-muted-foreground/60 sm:size-16" />
                       </span>
                       <span className="-mt-2 h-20 w-32 rounded-t-[48px] bg-muted sm:w-36" />
                     </div>
@@ -111,16 +117,23 @@ export default function LiveVideoSpotlight() {
                     </span>
                   </div>
 
-                  <div className="mt-5 flex items-end justify-center gap-2" aria-label="Presenter catalog preview">
+                  <div
+                    className="mt-5 flex items-end justify-center gap-2"
+                    aria-label="Presenter catalog preview"
+                  >
                     {PRESENTER_SLOTS.map((slot, index) => (
                       <div
                         key={slot}
                         className={`relative grid size-12 place-items-center overflow-hidden rounded-xl border bg-background shadow-sm sm:size-14 ${
-                          index === 0 ? "border-primary ring-2 ring-primary/15" : "border-border"
+                          index === 0
+                            ? "border-primary ring-2 ring-primary/20"
+                            : "border-border"
                         }`}
                       >
                         <UserRound
-                          className={`size-6 ${index === 0 ? "text-primary" : "text-muted-foreground/55"}`}
+                          className={`size-6 ${
+                            index === 0 ? "text-primary" : "text-muted-foreground/50"
+                          }`}
                           aria-hidden="true"
                         />
                         <span className="sr-only">Presenter option {slot}</span>
@@ -132,7 +145,10 @@ export default function LiveVideoSpotlight() {
 
               <div className="grid gap-px border-t border-border bg-border sm:grid-cols-3">
                 {["Presenter catalog", "Fallback ready", "Business agents"].map((item) => (
-                  <div key={item} className="bg-card px-4 py-3 text-center text-[11px] font-medium text-muted-foreground">
+                  <div
+                    key={item}
+                    className="bg-card px-4 py-3 text-center text-[11px] font-medium text-muted-foreground"
+                  >
                     {item}
                   </div>
                 ))}
