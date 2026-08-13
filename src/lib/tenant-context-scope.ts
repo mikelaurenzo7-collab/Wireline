@@ -1,6 +1,6 @@
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export type TenantDatabaseScope = "root" | "tenant";
+export type TenantDatabaseScope = { kind: "root" } | { kind: "tenant"; userId: string };
 
 /**
  * Classify the AsyncLocalStorage tenant value before a pooled DB connection is
@@ -12,7 +12,7 @@ export type TenantDatabaseScope = "root" | "tenant";
  * silently upgrade an upstream identity bug to the postgres owner connection.
  */
 export function resolveTenantDatabaseScope(userId: string | undefined): TenantDatabaseScope {
-  if (!userId) return "root";
+  if (!userId) return { kind: "root" };
   if (!UUID_RE.test(userId)) throw new Error("INVALID_TENANT_CONTEXT");
-  return "tenant";
+  return { kind: "tenant", userId };
 }
