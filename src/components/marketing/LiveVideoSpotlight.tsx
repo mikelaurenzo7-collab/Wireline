@@ -7,6 +7,11 @@ import {
   Video,
 } from "lucide-react";
 import { Link } from "react-router";
+import {
+  LIVE_VIDEO_ADDON_PRICE_USD,
+  LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY,
+  LIVE_VIDEO_SESSION_RESERVATION_MINUTES,
+} from "../../lib/video-presenter/live-video-policy";
 
 const CHANNELS = [
   { label: "Voice", icon: PhoneCall },
@@ -16,7 +21,11 @@ const CHANNELS = [
 ] as const;
 
 const PRESENTER_SLOTS = ["01", "02", "03"] as const;
-const LIVE_VIDEO_FACTS = ["60 min/month", "5 min/session max", "$19/mo add-on"] as const;
+const LIVE_VIDEO_FACTS = [
+  `${LIVE_VIDEO_INCLUDED_MINUTES_MONTHLY} min/month`,
+  `${LIVE_VIDEO_SESSION_RESERVATION_MINUTES} min/session max`,
+  `$${LIVE_VIDEO_ADDON_PRICE_USD}/mo add-on`,
+] as const;
 
 type LiveVideoSpotlightProps = {
   bridgeLabel: string;
@@ -42,7 +51,7 @@ export default function LiveVideoSpotlight({
               One agent. Now on screen.
             </h2>
             <p className="mx-auto mt-4 max-w-[48ch] text-[15px] leading-[1.7] text-muted-foreground lg:mx-0">
-              Call. Text. Email. Add Live Video to a paid business agent for $19/mo.
+              Call. Text. Email. Add Live Video to a paid business agent for $<span>{LIVE_VIDEO_ADDON_PRICE_USD}</span>/mo.
             </p>
 
             <div
