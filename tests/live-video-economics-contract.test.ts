@@ -50,6 +50,17 @@ describe("live video economics contract", () => {
     expect(catalog).toContain('session_reservation_minutes: "5"');
   });
 
+  it("keeps the public Live Video spotlight aligned with paid add-on economics", () => {
+    const spotlight = read("src/components/marketing/LiveVideoSpotlight.tsx");
+
+    expect(spotlight).toContain('to="/signup?plan=starter"');
+    expect(spotlight).not.toContain('to="/signup?plan=personal"');
+    expect(spotlight).toContain("paid business agent for $19/mo");
+    expect(spotlight).toContain('"60 min / month"');
+    expect(spotlight).toContain('"5 min sessions"');
+    expect(spotlight).toContain('"$19/mo add-on"');
+  });
+
   it("keeps the browser audio bridge compatible with LiveAvatar LITE repeatAudio", () => {
     const browserAudio = read("src/lib/voice/decode-browser-audio.ts");
     const presenter = read("src/components/AgentPresenceLivePreview.tsx");
