@@ -153,6 +153,23 @@ export type PlaceCallResult = {
   callId?: string;
 };
 
+/**
+ * True when a dial result cannot prove the carrier did NOT place a call, so the
+ * anti-double-dial reservation must be held (not released) to prevent a
+ * duplicate live call to the consumer. Two cases: a 200 with no callId, and a
+ * transport-level "unavailable after retries" 502 — Vapi's create-call POST is
+ * not idempotent, so a timed-out response may follow an accepted call. Shared
+ * by every outbound dial surface so mobile and web treat ambiguity identically.
+ */
+export function isAmbiguousProviderResult(result: PlaceCallResult): boolean {
+  if (result.ok && !result.callId) return true;
+  return (
+    !result.ok &&
+    result.status === 502 &&
+    String(result.error || "").startsWith("Voice carrier unavailable after retries:")
+  );
+}
+
 /** Turn raw Vapi error JSON into a short Account Holder-facing message. */
 export function formatVapiCallError(errBody: string): string {
   const trimmed = errBody.trim();
@@ -689,7 +706,8 @@ ${(knowledgeRes || []).map((k: any) => `- ${truncateRuntimeSnippet(k.content || 
       provider: voiceLlmProvider,
       model: voiceLlmModel,
       ...(voiceSelection.fallbackModels?.length
-        ? { fallbackModels: voiceSelection.fallbackModels } : {}),
+        ? { fallbackModels: voiceSelection.fallbackModels }
+        : {}),
       systemPrompt: finalSystemPrompt,
       temperature: clampVoiceTemperature(agentConfig.llmTemperature, llmTemp),
       tools: outboundTools,

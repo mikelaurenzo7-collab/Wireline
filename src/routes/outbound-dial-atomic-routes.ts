@@ -13,7 +13,7 @@ import {
   outboundConsentMetadata,
 } from "../lib/outbound-call-purpose";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
-import { placeOutboundCall } from "../lib/vapi-client";
+import { placeOutboundCall, isAmbiguousProviderResult } from "../lib/vapi-client";
 import { normalizeOutboundNumber } from "../lib/dialer-compliance";
 import { SentryEvents } from "../lib/sentry-events";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
@@ -92,15 +92,6 @@ function gateResponse(res: Response, gate: DeniedOutboundDialGate) {
     reason: gate.reason,
     status: gate.status,
   });
-}
-
-function isAmbiguousProviderResult(result: Awaited<ReturnType<typeof placeOutboundCall>>): boolean {
-  if (result.ok && !result.callId) return true;
-  return (
-    !result.ok &&
-    result.status === 502 &&
-    String(result.error || "").startsWith("Voice carrier unavailable after retries:")
-  );
 }
 
 router.post(

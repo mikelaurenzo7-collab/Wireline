@@ -39,7 +39,7 @@ import {
   normalizedExpressConsent,
   outboundConsentMetadata,
 } from "../lib/outbound-call-purpose";
-import { placeOutboundCall, transferLiveCall } from "../lib/vapi-client";
+import { placeOutboundCall, transferLiveCall, isAmbiguousProviderResult } from "../lib/vapi-client";
 import { getCreditBalanceUsd, getRecentLedger } from "../lib/credit-wallet";
 import { getErrorMessage } from "../lib/server-utils";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
@@ -674,9 +674,24 @@ router.post(
         });
       }
 
+      // Normalize to E.164 BEFORE the gate: the duplicate-suppression lookup is
+      // an exact string match against stored leads (all E.164), so gating on the
+      // raw client value let `4155551234` slip past a `+14155551234` lead. Mirror
+      // the atomic web route, which normalizes first for the same reason.
+      const normalizedNumber = normalizeOutboundNumber(customerNumber);
+      const phoneE164 = normalizedNumber.startsWith("+")
+        ? normalizedNumber
+        : `+${normalizedNumber.replace(/\D/g, "")}`;
+      if (!/^\+[1-9]\d{6,14}$/.test(phoneE164)) {
+        return res.status(400).json({
+          code: "VALIDATION_ERROR",
+          error: "Invalid phone number. Use E.164 format like +14155551234.",
+        });
+      }
+
       const gate = await evaluateOutboundDialGate({
         userId: req.user.id,
-        phone: customerNumber,
+        phone: phoneE164,
         isMarketingCall: marketing,
         hasExpressWrittenConsent: expressConsent,
         metadata: { has_express_written_consent: expressConsent },
@@ -727,106 +742,160 @@ router.post(
       // gate — no lead row exists yet for the 24h window — and place two
       // simultaneous calls. The partial unique index on active reservations
       // arbitrates; the loser gets a 409 instead of a second call.
-      const normalizedNumber = normalizeOutboundNumber(customerNumber);
-      const phoneE164 = normalizedNumber.startsWith("+")
-        ? normalizedNumber
-        : `+${normalizedNumber.replace(/\D/g, "")}`;
-      if (!/^\+[1-9]\d{6,14}$/.test(phoneE164)) {
-        return res.status(400).json({
-          code: "VALIDATION_ERROR",
-          error: "Invalid phone number. Use E.164 format like +14155551234.",
-        });
-      }
-
-      await drizzle
-        .update(outboundDialReservations)
-        .set({ status: "expired", updatedAt: new Date() })
-        .where(
-          and(
-            eq(outboundDialReservations.userId, req.user.id),
-            inArray(outboundDialReservations.status, ["reserved", "dialing"]),
-            sql`${outboundDialReservations.expiresAt} < clock_timestamp()`,
-          ),
-        );
-
       const operationKey = randomUUID();
-      const [reservation] = await drizzle
-        .insert(outboundDialReservations)
-        .values({
-          userId: req.user.id,
-          phoneE164,
-          operationKey,
-          status: "dialing",
-          expiresAt: new Date(Date.now() + 30 * 60_000),
-        })
-        .onConflictDoNothing()
-        .returning({ id: outboundDialReservations.id });
-      if (!reservation) {
-        return res.status(409).json({
-          code: "DIAL_ALREADY_IN_PROGRESS",
-          error:
-            "A call to this number is already being prepared. Check Phone before trying again.",
-        });
-      }
-
-      const result = await placeOutboundCall({
-        userId: req.user.id,
-        agentId,
-        customerName,
-        customerNumber: phoneE164,
-        context,
-        callPurpose,
-      });
-      if (!result.ok) {
+      let providerCallId: string | null = null;
+      try {
         await drizzle
           .update(outboundDialReservations)
-          .set({
-            status: "failed",
-            failureCode: `provider_${result.status || 500}`,
-            updatedAt: new Date(),
+          .set({ status: "expired", updatedAt: new Date() })
+          .where(
+            and(
+              eq(outboundDialReservations.userId, req.user.id),
+              inArray(outboundDialReservations.status, ["reserved", "dialing"]),
+              sql`${outboundDialReservations.expiresAt} < clock_timestamp()`,
+            ),
+          );
+
+        const [reservation] = await drizzle
+          .insert(outboundDialReservations)
+          .values({
+            userId: req.user.id,
+            phoneE164,
+            operationKey,
+            status: "dialing",
+            expiresAt: new Date(Date.now() + 30 * 60_000),
           })
-          .where(eq(outboundDialReservations.operationKey, operationKey));
-        return res.status(result.status).json({ code: "ERROR", error: result.error });
-      }
+          .onConflictDoNothing()
+          .returning({ id: outboundDialReservations.id });
+        if (!reservation) {
+          return res.status(409).json({
+            code: "DIAL_ALREADY_IN_PROGRESS",
+            error:
+              "A call to this number is already being prepared. Check Phone before trying again.",
+          });
+        }
 
-      await drizzle.insert(schema.outboundLeads).values({
-        userId: req.user.id,
-        agentId,
-        customerName,
-        customerNumber: phoneE164,
-        context,
-        callId: result.callId,
-        status: "Dialing",
-        attempts: 1,
-        lastCalledAt: new Date(),
-        metadata: {
-          ...outboundConsentMetadata({
-            callPurpose,
-            hasExpressWrittenConsent,
-            source: "mobile",
-            consentSource,
-            consentLeadId,
-          }),
-          wireline_dial_operation_id: operationKey,
-        },
-      });
-
-      await drizzle
-        .update(outboundDialReservations)
-        .set({ status: "completed", callId: result.callId, updatedAt: new Date() })
-        .where(eq(outboundDialReservations.operationKey, operationKey));
-
-      if (consentSource) {
-        emitServerProductEventOnce({
-          event: "consent_source_captured",
+        const result = await placeOutboundCall({
           userId: req.user.id,
           agentId,
-          audience: "sales",
-          metadata: { consent_source: consentSource, consent_lead_id: consentLeadId ?? null },
+          customerName,
+          customerNumber: phoneE164,
+          context,
+          callPurpose,
         });
-      }
+        // `|| !result.callId`: a 200 with no call id cannot be correlated back
+        // to this lead, and — like a timed-out carrier response — may follow an
+        // accepted call. Hold the reservation (do not release to "failed") and
+        // return 202 so the client does NOT auto-retry into a duplicate dial.
+        if (!result.ok || !result.callId) {
+          if (isAmbiguousProviderResult(result)) {
+            await drizzle
+              .update(outboundDialReservations)
+              .set({ failureCode: "provider_outcome_ambiguous", updatedAt: new Date() })
+              .where(eq(outboundDialReservations.operationKey, operationKey));
+            return res.status(202).json({
+              success: false,
+              code: "DIAL_STATUS_UNCERTAIN",
+              error:
+                "The carrier response was interrupted. Wireline is holding this number to prevent a duplicate call; check Phone before trying again.",
+              operationId: operationKey,
+            });
+          }
+          await drizzle
+            .update(outboundDialReservations)
+            .set({
+              status: "failed",
+              failureCode: `provider_${result.status || 500}`,
+              updatedAt: new Date(),
+            })
+            .where(eq(outboundDialReservations.operationKey, operationKey));
+          return res
+            .status(result.status || 500)
+            .json({ code: "ERROR", error: result.error || "Voice carrier rejected the call." });
+        }
 
-      res.json({ success: true, callId: result.callId });
+        providerCallId = result.callId;
+
+        // Lead (with its consent artifact) and reservation completion commit
+        // together: a redelivery or crash never leaves a live marketing call
+        // without its TCPA consent row.
+        await drizzle.transaction(async (tx) => {
+          await tx.insert(schema.outboundLeads).values({
+            userId: req.user.id,
+            agentId,
+            customerName,
+            customerNumber: phoneE164,
+            context,
+            callId: providerCallId,
+            status: "Dialing",
+            attempts: 1,
+            lastCalledAt: new Date(),
+            metadata: {
+              ...outboundConsentMetadata({
+                callPurpose,
+                hasExpressWrittenConsent,
+                source: "mobile",
+                consentSource,
+                consentLeadId,
+              }),
+              wireline_dial_operation_id: operationKey,
+            },
+          });
+          await tx
+            .update(outboundDialReservations)
+            .set({ status: "completed", callId: providerCallId, updatedAt: new Date() })
+            .where(eq(outboundDialReservations.operationKey, operationKey));
+        });
+
+        if (consentSource) {
+          emitServerProductEventOnce({
+            event: "consent_source_captured",
+            userId: req.user.id,
+            agentId,
+            audience: "sales",
+            metadata: { consent_source: consentSource, consent_lead_id: consentLeadId ?? null },
+          });
+        }
+
+        res.json({ success: true, callId: providerCallId, operationId: operationKey });
+      } catch (err) {
+        // The carrier already accepted the call; only local persistence failed.
+        // Reporting 500 here would tell the app the dial failed and invite a
+        // retry into a duplicate live call. Keep the reservation and return 202
+        // so the number stays held while tracking reconciles — same contract as
+        // the atomic web route.
+        if (providerCallId) {
+          await drizzle
+            .update(outboundDialReservations)
+            .set({
+              failureCode: "post_provider_persistence_failed",
+              callId: providerCallId,
+              updatedAt: new Date(),
+            })
+            .where(eq(outboundDialReservations.operationKey, operationKey))
+            .catch(() => {});
+          log.error("Mobile carrier accepted outbound call but local persistence failed", {
+            operationKey,
+            callId: providerCallId,
+            error: getErrorMessage(err),
+          });
+          return res.status(202).json({
+            success: true,
+            code: "DIAL_ACCEPTED_RECONCILING",
+            callId: providerCallId,
+            operationId: operationKey,
+            warning:
+              "The carrier accepted the call, but Wireline is reconciling local tracking. Do not retry this number.",
+          });
+        }
+        await drizzle
+          .update(outboundDialReservations)
+          .set({ status: "failed", failureCode: "internal_error", updatedAt: new Date() })
+          .where(eq(outboundDialReservations.operationKey, operationKey))
+          .catch(() => {});
+        log.error("Mobile outbound call failed", { error: getErrorMessage(err) });
+        throw AppError.fromHttpStatus(500, "Failed to dispatch call.");
+      }
     } catch (err) {
       log.error("Mobile outbound call failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to dispatch call.");
