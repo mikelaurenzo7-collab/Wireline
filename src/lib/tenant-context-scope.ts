@@ -10,6 +10,7 @@ export type TenantDatabaseScope = { kind: "root" } | { kind: "tenant"; userId: s
  * callbacks and signup bootstrap before a user UUID exists. A non-empty value
  * is a tenant claim and must be a UUID; treating malformed claims as root would
  * silently upgrade an upstream identity bug to the postgres owner connection.
+ * Validation is exact: surrounding whitespace is malformed context, not root.
  */
 export function resolveTenantDatabaseScope(userId: string | undefined): TenantDatabaseScope {
   if (!userId) return { kind: "root" };
