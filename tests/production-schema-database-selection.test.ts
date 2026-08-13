@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { resolveProductionSchemaDatabase } from "../scripts/run-production-schema-effects.mjs";
@@ -89,5 +90,13 @@ describe("tenant database connection scope", () => {
     expect(() => resolveTenantDatabaseScope("not-a-tenant-uuid")).toThrow(
       "INVALID_TENANT_CONTEXT",
     );
+  });
+
+  it("wires the classifier into the pooled connection boundary", () => {
+    const source = readFileSync(new URL("../src/lib/server-context.ts", import.meta.url), "utf8");
+    expect(source).toContain("connectionScope = resolveTenantDatabaseScope(userId)");
+    expect(source).toContain('connectionScope.kind === "root"');
+    expect(source).toContain("scopeClientToTenant(connectionScope.userId)");
+    expect(source).not.toContain("!userId || !UUID_RE.test(userId)");
   });
 });
