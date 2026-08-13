@@ -143,6 +143,21 @@ describe("account entry recognizes an existing session without blocking first pa
   });
 });
 
+describe("password recovery does not leave reset credentials in browser history", () => {
+  it("captures the token synchronously and strips the URL before paint", () => {
+    const reset = read("src/pages/ResetPassword.tsx");
+    expect(reset).toContain('useLayoutEffect, useRef, useState');
+    expect(reset).toContain(
+      'useRef(new URLSearchParams(window.location.search).get("token") || "")',
+    );
+    expect(reset).toContain('const [token] = useState<string | null>(() => resetTokenRef.current || null)');
+    expect(reset).toContain(
+      'window.history.replaceState(window.history.state, "", window.location.pathname)',
+    );
+    expect(reset).not.toContain("setToken(raw");
+  });
+});
+
 describe("signup states the whole password policy up front", () => {
   it("mirrors every rule getPasswordPolicyError enforces", () => {
     // getPasswordPolicyError returns only the FIRST failure, so without a
