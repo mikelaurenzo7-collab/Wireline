@@ -51,7 +51,7 @@ export default function LiveVideoSpotlight({
               One agent. Now on screen.
             </h2>
             <p className="mx-auto mt-4 max-w-[48ch] text-[15px] leading-[1.7] text-muted-foreground lg:mx-0">
-              Call. Text. Email. Add Live Video to a paid business agent for $<span>{LIVE_VIDEO_ADDON_PRICE_USD}</span>/mo.
+              {`Call. Text. Email. Add Live Video to a paid business agent for $${LIVE_VIDEO_ADDON_PRICE_USD}/mo.`}
             </p>
 
             <div
