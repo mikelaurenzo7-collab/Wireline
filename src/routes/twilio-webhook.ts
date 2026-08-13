@@ -10,10 +10,7 @@ import { clearDncFailsafe, recordDncFailsafe } from "../lib/dnc-failsafe";
 import { reportError } from "../lib/error-reporter";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { claimTwilioUsageAlert } from "../lib/twilio-usage-alert-idempotency";
-import {
-  opaqueIdSuffixForLog,
-  phoneSuffixForLog,
-} from "../lib/twilio-webhook-privacy";
+import { opaqueIdSuffixForLog, phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 import { sanitizePhone } from "../lib/vapi-helpers";
 import baseRouter from "./twilio-webhook-base";
 
@@ -77,7 +74,10 @@ async function tenantForSender(toValue: string): Promise<string | null> {
   return settings?.userId || null;
 }
 
-function resolveConsentControl(optOutType: string, bodyKeyword: string): {
+function resolveConsentControl(
+  optOutType: string,
+  bodyKeyword: string,
+): {
   control: ConsentControl | null;
   legacy: boolean;
 } {
@@ -304,6 +304,14 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
           outcome: errorCode ? `error_${errorCode}` : status,
         });
 
+        // Delivery telemetry shares one status column with the account
+        // holder's Outcome Center state. Telemetry must never move a thread
+        // off an operator-owned outcome: `escalated` is pinned to an active
+        // human-handoff task (sms-outcome-routes completes/reopens that task
+        // by status), and `booked`/`resolved` are terminal outcomes. A read
+        // receipt arriving hours after the operator resolved the thread used
+        // to silently flip it back to `open` while the handoff task stayed
+        // completed — Inbox and Approvals disagreed about ownership.
         if (message.threadId && ["failed", "undelivered"].includes(status)) {
           await drizzle
             .update(schema.smsThreads)
@@ -311,12 +319,24 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
               status: "delivery_failed",
               summary: `Latest outbound message ${status}${errorCode ? ` (Twilio ${errorCode})` : ""}.`,
             })
-            .where(eq(schema.smsThreads.id, message.threadId));
+            .where(
+              and(
+                eq(schema.smsThreads.id, message.threadId),
+                inArray(schema.smsThreads.status, ["open", "waiting", "delivery_failed"]),
+              ),
+            );
         } else if (message.threadId && ["delivered", "read"].includes(status)) {
+          // `open` here only clears a stale delivery-failure flag once a later
+          // message lands; it must not reopen live or operator-final threads.
           await drizzle
             .update(schema.smsThreads)
             .set({ status: "open" })
-            .where(eq(schema.smsThreads.id, message.threadId));
+            .where(
+              and(
+                eq(schema.smsThreads.id, message.threadId),
+                eq(schema.smsThreads.status, "delivery_failed"),
+              ),
+            );
         }
       });
     }

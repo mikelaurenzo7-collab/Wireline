@@ -131,6 +131,7 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
   // All tenant writes run inside tenantStore.run so RLS WITH CHECK applies —
   // the escalation can only ever land in the resolved tenant's own rows.
   let slackPosted = false;
+  let taskPersisted = false;
   if (tenantUserId) {
     await tenantStore.run(tenantUserId, async () => {
       // 1. Persist as a follow-up task — surfaces in Phone / Call History.
@@ -145,8 +146,13 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
           sourceId: sourceNumber || `escalation-${Date.now()}`,
           targetChannel: "manual",
         });
+        taskPersisted = true;
       } catch (e: any) {
-        log.warn("Escalation follow-up task insert failed", { error: e?.message });
+        // The task IS the escalation record — this file promises "nothing
+        // falls through the cracks" only because of this insert. Its failure
+        // must reach `tracked` below so the voice agent does not promise the
+        // caller a follow-up that no queue will ever surface.
+        log.error("Escalation follow-up task insert failed", { error: e?.message });
       }
 
       // 1b. Slack handoff — real-time ping with a deep link to Phone.
@@ -195,12 +201,15 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
     smsDispatched = result.ok;
   }
 
-  // 3. Always success-back to the Vapi agent — never break the call
+  // 3. Always success-back to the Vapi agent — never break the call. But
+  // `tracked` must report whether the escalation actually landed in the
+  // tenant's queue, not merely that a tenant was resolved: the agent phrases
+  // its follow-up promise to the caller from this flag.
   return res.json({
     ok: true,
     smsDispatched,
     slackPosted,
-    tracked: !!tenantUserId,
+    tracked: taskPersisted,
     sla: "4 business hours",
   });
   // Note: owner SMS + response use the platform OWNER_PHONE (a fixed env),

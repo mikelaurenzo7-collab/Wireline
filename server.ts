@@ -161,7 +161,20 @@ app.use("/api", (req, res) => {
 });
 
 app.use(
-  (error: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  (error: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    // A response that already started (SSE stream, post-ack webhook work) can
+    // still raise. Writing status/JSON onto it throws ERR_HTTP_HEADERS_SENT,
+    // escalating a loggable fault into an uncaughtException on the long-running
+    // server. Delegate to Express's default handler, which destroys the socket.
+    if (res.headersSent) {
+      log.error("API error after response started", {
+        requestId: res.locals.requestId,
+        method: req.method,
+        path: req.path,
+        error: getErrorMessage(error),
+      });
+      return next(error);
+    }
     const { status, body } = formatErrorResponse(error, res.locals.requestId as string | undefined);
     const logFields = {
       requestId: res.locals.requestId,

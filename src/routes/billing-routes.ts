@@ -597,8 +597,13 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                 );
             }
           }
-        } catch {
-          /* ignore */
+        } catch (err) {
+          // Audit-only arm — money state is untouched — but a persistently
+          // failing payment_succeeded record must not be invisible while its
+          // payment_failed sibling logs at error.
+          log.warn("payment_succeeded audit lookup failed", {
+            error: getErrorMessage(err),
+          });
         }
         break;
       }

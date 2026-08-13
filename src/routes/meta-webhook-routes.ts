@@ -8,6 +8,7 @@ import * as schema from "../db/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { decryptSecret } from "../lib/secret-vault";
 import { getErrorMessage } from "../lib/server-utils";
+import { runInBackground } from "../lib/background-work";
 
 // Targeted rate limit for Meta leadgen webhooks.
 // Meta retries failed deliveries with exponential backoff.
@@ -199,6 +200,16 @@ router.post("/api/webhooks/meta/leads", metaRateLimiter, async (req: Request, re
 
   if (payload?.object !== "page" || !Array.isArray(payload.entry)) return;
 
+  // Everything below outlives the response. On Vercel the instance freezes at
+  // res.send, so inline post-ack work can be suspended and silently lost — an
+  // acked Lead Ad that Meta will never redeliver. runInBackground pins the
+  // instance via waitUntil and turns any escaped error (including AppError
+  // from a DB checkout) into a logged failure instead of a write against the
+  // already-finished response.
+  runInBackground("meta webhook processing", () => processMetaPageEntries(payload.entry));
+});
+
+async function processMetaPageEntries(entries: any[]): Promise<void> {
   // Field router: each Page webhook field gets a dedicated processor.
   // We strategically handle the highest-value events (leadgen, messages,
   // ratings, feed, mention) and turn them into actionable AI agent tasks.
@@ -213,7 +224,7 @@ router.post("/api/webhooks/meta/leads", metaRateLimiter, async (req: Request, re
     "mention",
   ]);
 
-  for (const entry of payload.entry) {
+  for (const entry of entries) {
     const pageId = entry.id;
     if (!Array.isArray(entry.changes)) continue;
     for (const change of entry.changes) {
@@ -366,6 +377,10 @@ router.post("/api/webhooks/meta/leads", metaRateLimiter, async (req: Request, re
           continue;
         }
       } catch (err) {
+        // Infra faults (AppError from a DB checkout) abort the batch — the
+        // remaining changes would hit the same outage, and runInBackground
+        // logs the abort. Anything else is a per-change failure worth its own
+        // log line without sacrificing the rest of the delivery.
         if (err instanceof AppError) throw err;
         log.error("Meta webhook processing failed", {
           field,
@@ -375,7 +390,7 @@ router.post("/api/webhooks/meta/leads", metaRateLimiter, async (req: Request, re
       }
     }
   }
-});
+}
 
 // ────────────────────────────────────────────────────────────────────
 //  POST — Data Deletion Callback

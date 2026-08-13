@@ -26,6 +26,11 @@ beforeEach(() => {
 async function loadModules() {
   vi.doMock("../src/lib/server-context", () => ({
     drizzle: { select: vi.fn() },
+    serialQueryBatch: async (queries: readonly unknown[]) => {
+      const rows: unknown[] = [];
+      for (const query of queries) rows.push(await query);
+      return rows;
+    },
   }));
   vi.doMock("../src/lib/credit-wallet", () => ({
     getCreditBalanceUsd: vi.fn(),

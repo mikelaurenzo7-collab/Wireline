@@ -10,7 +10,7 @@ import { and, eq } from "drizzle-orm";
 import { getCreditBalanceUsd } from "./credit-wallet";
 import { planById } from "./plan-catalog";
 import { includedVoiceMinutes } from "./voice-usage";
-import { drizzle } from "./server-context";
+import { drizzle, serialQueryBatch } from "./server-context";
 import * as schema from "../db/schema";
 
 export const MIN_BILLABLE_MINUTES_BUFFER = 1;
@@ -35,7 +35,12 @@ function monthlyPeriodKey(now: Date = new Date()): string {
 }
 
 export async function getVoiceWalletSnapshot(userId: string): Promise<VoiceWalletSnapshot> {
-  const [[sub], [usage], [settingsRow], balanceRaw] = await Promise.all([
+  // This runs on the inbound assistant-request hot path, where the caller
+  // fails open on error. A Promise.all here checked out one pooled client per
+  // query — two simultaneous inbound calls could exhaust the max-5 pool,
+  // time out, and hand an insolvent tenant the full assistant. serialQueryBatch
+  // resolves the lazy builders one at a time on a single checkout.
+  const [[sub], [usage], [settingsRow]] = await serialQueryBatch([
     drizzle
       .select({ plan: schema.subscriptions.plan, status: schema.subscriptions.status })
       .from(schema.subscriptions)
@@ -57,8 +62,10 @@ export async function getVoiceWalletSnapshot(userId: string): Promise<VoiceWalle
       .from(schema.settings)
       .where(eq(schema.settings.userId, userId))
       .limit(1),
-    getCreditBalanceUsd(userId),
-  ]);
+  ] as const);
+  // Eager call, not a lazy builder — sequenced after the batch so it cannot
+  // hold a second concurrent checkout.
+  const balanceRaw = await getCreditBalanceUsd(userId);
 
   const plan = planById(sub?.plan ?? "personal");
   const planId = plan?.id ?? null;

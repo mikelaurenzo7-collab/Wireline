@@ -10,9 +10,10 @@ import {
   getPrimaryAccount,
 } from "../lib/account-service";
 import { ACCOUNT_DELETION_GRACE_DAYS, computeScheduledPurgeAt } from "../lib/account-deletion";
-import { drizzle, log } from "../lib/server-context";
+import { auditLogger, drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { stopRenewalForDeletion } from "../lib/account-deletion-billing";
+import { getErrorMessage } from "../lib/server-utils";
 
 type AuthedRequest = Request & { user?: { id: string } };
 
@@ -127,6 +128,22 @@ router.post(
       deletionRequestId: row?.id,
       renewalStopped: renewal.confirmed,
     });
+    // This is the deletion path the UI actually calls, and cancellation
+    // already audits — without this the trail records cancellations for
+    // requests it never recorded. Deletion is irreversible after the grace
+    // window, so the request itself must be durable audit evidence.
+    void auditLogger
+      .logAccountDeletionRequested({
+        userId,
+        scheduledPurgeAt: (row?.scheduledPurgeAt ?? scheduledPurgeAt).toISOString(),
+        ip: req.ip,
+      })
+      .catch((err: unknown) =>
+        log.warn("audit logAccountDeletionRequested failed", {
+          userId,
+          error: getErrorMessage(err),
+        }),
+      );
     res.status(202).json({
       ok: true,
       scheduled_purge_at: row?.scheduledPurgeAt ?? scheduledPurgeAt,
