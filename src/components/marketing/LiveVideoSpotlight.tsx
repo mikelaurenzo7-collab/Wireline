@@ -17,7 +17,13 @@ const CHANNELS = [
 
 const PRESENTER_SLOTS = ["01", "02", "03"] as const;
 
-export default function LiveVideoSpotlight() {
+type LiveVideoSpotlightProps = {
+  bridgeLabel: string;
+};
+
+export default function LiveVideoSpotlight({
+  bridgeLabel,
+}: LiveVideoSpotlightProps) {
   return (
     <section className="wl-public-section overflow-hidden border-b border-border">
       <div className="wl-public-rail">
@@ -28,7 +34,7 @@ export default function LiveVideoSpotlight() {
                 <span className="absolute inline-flex size-full rounded-full bg-primary/30 motion-safe:animate-ping" />
                 <span className="relative inline-flex size-2 rounded-full bg-primary" />
               </span>
-              Live Video
+              {bridgeLabel}
             </div>
 
             <h2 className="wl-display-2 mx-auto mt-5 max-w-[14ch] lg:mx-0">
@@ -40,11 +46,13 @@ export default function LiveVideoSpotlight() {
 
             <div
               className="mt-7 flex flex-wrap justify-center gap-2 lg:justify-start"
+              role="list"
               aria-label="Agent channels"
             >
               {CHANNELS.map(({ label, icon: Icon }) => (
                 <span
                   key={label}
+                  role="listitem"
                   className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border bg-card px-3.5 text-xs font-semibold text-foreground shadow-sm"
                 >
                   <Icon className="size-3.5 text-primary" aria-hidden="true" />
@@ -57,7 +65,7 @@ export default function LiveVideoSpotlight() {
               to="/signup?plan=personal"
               className="marketing-btn-primary mx-auto mt-7 min-h-11 justify-center px-5 text-sm font-semibold sm:w-fit lg:mx-0"
             >
-              Build your agent
+              Build your voice agent
               <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>
@@ -119,11 +127,13 @@ export default function LiveVideoSpotlight() {
 
                   <div
                     className="mt-5 flex items-end justify-center gap-2"
+                    role="list"
                     aria-label="Presenter catalog preview"
                   >
                     {PRESENTER_SLOTS.map((slot, index) => (
                       <div
                         key={slot}
+                        role="listitem"
                         className={`relative grid size-12 place-items-center overflow-hidden rounded-xl border bg-background shadow-sm sm:size-14 ${
                           index === 0
                             ? "border-primary ring-2 ring-primary/20"
