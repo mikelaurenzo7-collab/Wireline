@@ -66,9 +66,11 @@ Wireline Letterpress on the Aurora palette is the only active design system.
 
 ## Product-language discipline
 
-- Broad public language: `AI voice agents` for personal and business conversations.
-- Personal context: `personal agents`.
-- Explicit business-role context: `AI employees`, `AI sales agents`, or another specific role when truthful.
+`docs/CUSTOMER_TERMINOLOGY.md` is the active canonical language policy; the summary here must match it and the product-voice contracts that enforce it.
+
+- Broad public language: `voice agents` for personal and business conversations. Never pair `AI` with `agent` in copy — the contracts reject `AI voice agent` and `AI employee` on customer surfaces.
+- Personal context: `personal agent`.
+- Business context: `business voice agent`, or a specific truthful role (`sales agent`, `front desk agent`).
 - Technical contracts: `agent`.
 - Product nouns: `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, `Runtime Balance`, `included number`, `presenter`, and `live video add-on`.
 - Avoid generic `assistant`, `dashboard`, `operator`, `manager`, `control center`, and customer-facing vendor names unless the external API name is the subject.

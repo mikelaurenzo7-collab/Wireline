@@ -302,7 +302,13 @@ describe("billing proof contract", () => {
     const sms = read("src/lib/sms-billing.ts");
     const twilio = read("src/lib/twilio-service.ts");
     expect(sms).toContain("SMS_COST_PER_SEGMENT_USD = 0.02");
-    expect(sms).toContain("billSmsMessage");
+    // The legacy post-hoc debit path stays deleted: live SMS billing is the
+    // prepaid reservation below, and billSmsMessage's swallow-and-return-0
+    // contract contradicted the revenue-integrity rule that path enforces.
+    expect(sms).not.toContain("billSmsMessage");
+    expect(read("src/lib/credit-wallet.ts")).not.toContain(
+      "export async function debitForVoiceUsage",
+    );
     expect(twilio).toContain("reserveRuntimeUsage");
     expect(twilio).toContain("adjustMessagingReservation");
     expect(twilio).toContain("message.numSegments");

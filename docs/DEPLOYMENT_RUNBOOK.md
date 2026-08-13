@@ -88,6 +88,20 @@ See [DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md).
 
 Preview builds must log that migrations were skipped. Production builds run the committed journal before the application build. For a high-risk schema change, apply and probe the committed migration through the authenticated Supabase migration path only after the exact preview head is green.
 
+## Self-serve billing release control
+
+`WIRELINE_SELF_SERVE_BILLING_ENABLED` is a production release switch, not a provider credential. It defaults closed when unset and must remain `false` in Development and Preview. Checkout opens only when this switch is explicitly affirmative **and** `WIRELINE_LAUNCH_DEMO_MODE=false`; an unset demo-mode value remains fail-closed.
+
+Set the billing switch to `true` in Production only after all of the following have been certified against the live Wireline Stripe account:
+
+- Public business identity, support email/URL, statement descriptor, and tax posture display Wireline rather than a historical product identity.
+- The managed Billing Portal supports payment-method changes, invoice history, plan changes, at-period-end cancellation, and a verified return path to `trywireline.com`.
+- A controlled lifecycle succeeds end to end: checkout, signed webhook entitlement, subscription projection, Runtime Allowance, portal access, cancellation, refund, and allowance reversal.
+- Production telemetry is deliberately switched from demo evidence to live-customer evidence with `WIRELINE_LAUNCH_DEMO_MODE=false`.
+- The exact production deployment SHA and launch-readiness response are recorded. `billing_ready` must list neither billing release control after release.
+
+Valid Stripe credentials alone never authorize opening checkout. To close paid acquisition, set the billing switch to `false`, create a production redeployment so the new environment value is embedded, and verify the resulting deployment SHA and checkout 503 response before considering the rollback complete.
+
 ## Provider and integration releases
 
 For a provider change, verify both configuration and behavior without exposing tokens or customer data:

@@ -81,7 +81,10 @@ describe("Wireline Letterpress design vision", () => {
     expect(read("src/pages/EmailPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/TemplatesPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/ClientAppsPage.tsx")).toContain("WorkspacePageIntro");
-    expect(read("src/hooks/useLivePresence.ts")).toContain("usePresenceSignals");
+    // useLivePresence was removed 2026-08-13: an unimported one-line bridge
+    // over usePresenceSignals, which remains the canonical presence hook.
+    expect(existsSync("src/hooks/useLivePresence.ts")).toBe(false);
+    expect(read("src/components/CallLogsClaude.tsx")).toContain("usePresenceSignals");
   });
 
   it("maps tertiary text to the generated token in foundation runtime", () => {

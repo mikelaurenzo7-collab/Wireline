@@ -31,10 +31,12 @@ Wireline sells operating capacity, not template access.
 | `enterprise` | Wireline Business | $159 / $1,590 | 450 | $12/mo | 15 | 15 |
 
 The optional $19/month Live Video add-on is separate from voice capacity. It includes 60
-reserved presenter-session minutes per UTC month. Each session token reserves 10 minutes
-atomically before provider minting; the runtime pauses at the allowance and never creates
-automatic overage. This preserves an estimated 56.4% full-use contribution margin at a
-conservative $0.12/min provider reserve after Payments, Billing, future Tax, and fixed fees.
+reserved presenter-session minutes per UTC month. Each session token reserves 5 minutes
+atomically before provider minting (`LIVE_VIDEO_SESSION_RESERVATION_MINUTES`); the runtime
+pauses at the allowance and never creates automatic overage. This preserves an estimated
+~53.3% full-use contribution margin at a conservative $0.13/min provider reserve
+(`LIVE_VIDEO_PROVIDER_COST_PER_MINUTE_USD`) after Payments, Billing, future Tax, and fixed
+fees — above the 50% floor `LIVE_VIDEO_MIN_FULL_USE_MARGIN` enforces.
 
 Runtime Balance top-ups cover extra voice at a flat **$0.22/min** across paid tiers; there are no
 automatic postpaid overages. SMS outbound segments still bill Runtime Balance at **$0.02/segment**
