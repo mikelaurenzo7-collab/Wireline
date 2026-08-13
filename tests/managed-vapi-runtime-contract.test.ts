@@ -146,7 +146,8 @@ describe("managed phone voice runtime policy", () => {
   });
 
   it("keeps model and carrier complexity managed and provider-neutral", () => {
-    expect(carrier).toMatch(
+    // Whitespace-tolerant: the copy invariant holds independent of JSX wrapping.
+    expect(carrier.replace(/\s+/g, " ")).toMatch(
       /Wireline manages the phone conversation runtime, voice selection, intelligence routing, and continuity/,
     );
     expect(carrier).toMatch(/Phone runtime", "Wireline managed/);

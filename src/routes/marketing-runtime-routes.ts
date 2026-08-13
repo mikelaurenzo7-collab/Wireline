@@ -21,11 +21,10 @@ const PUBLIC_MARKETING_STATS = {
 } as const;
 
 router.get("/api/public/stats", async (req, res) => {
-  const ip = (
-    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
-    req.ip ||
-    "unknown"
-  ).trim();
+  // Key on Express's trust-proxy-resolved req.ip, NOT raw X-Forwarded-For:
+  // XFF is client-writable, so keying on XFF[0] lets a flooder mint a fresh
+  // bucket per request (same rule as shareable-artifact-routes).
+  const ip = (req.ip || "unknown").trim();
   const decision = await rateLimit(ip, { bucket: "public_stats", windowMs: 60_000, max: 30 });
   if (!decision.allowed) {
     res.setHeader("Retry-After", String(Math.ceil(decision.resetMs / 1000)));
@@ -61,6 +60,10 @@ router.get("/api/public/assistant/:agentName", assistantRateLimit, (req, res) =>
   res.json({
     name: `Wireline Showcase — ${agent.name}`,
     firstMessage: agent.firstMessage,
+    // Unauthenticated browser demo: same COGS ceiling as the public phone
+    // showcase (showcase-assistant.ts). Without it, a scripted visitor holds
+    // an unbounded WebRTC session on Wireline's Vapi + model spend.
+    maxDurationSeconds: 600,
     model: {
       provider: VAPI_SHOWCASE_PROVIDER,
       model: VAPI_SHOWCASE_MODEL,

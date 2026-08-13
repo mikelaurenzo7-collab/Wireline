@@ -49,7 +49,9 @@ describe("structured runtime policy", () => {
     expect(adminSettings).toContain("VAPI_TENANT_DEFAULT_MODEL");
     expect(adminSettings).not.toContain('"anthropic"');
     expect(adminSettings).not.toContain('"claude-sonnet-4-6"');
-    expect(carrierPanel).toContain(
+    // Whitespace-tolerant: assert the managed-runtime copy exists regardless of
+    // how the formatter wraps the JSX text node.
+    expect(carrierPanel.replace(/\s+/g, " ")).toContain(
       "Wireline manages the phone conversation runtime, voice selection, intelligence routing, and continuity.",
     );
     expect(carrierPanel).toContain('["Phone runtime", "Wireline managed"]');

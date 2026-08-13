@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { hasBearerAuthorization } from "../lib/session-cookie";
 
 const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -22,7 +23,7 @@ const ORIGIN_CHECK_SKIP_PREFIXES = [
   "/api/mobile/",
 ];
 
-function collectAllowedOrigins(): Set<string> {
+export function collectAllowedOrigins(): Set<string> {
   const allowed = new Set<string>();
   const appUrl = (process.env.APP_URL || "").trim().replace(/\/+$/, "");
   if (appUrl) allowed.add(appUrl);
@@ -35,6 +36,19 @@ function collectAllowedOrigins(): Set<string> {
     allowed.add("http://127.0.0.1:3000");
   }
   return allowed;
+}
+
+/**
+ * True when a browser Origin header is acceptable for a credentialed request.
+ * A missing Origin is allowed (non-browser clients, same-origin GETs that omit
+ * it); a present Origin must be on the allowlist. Shared with the supervisor
+ * WebSocket upgrade so cookie-authenticated sockets get the same cross-site
+ * hijacking protection assertSameOrigin gives HTTP mutations.
+ */
+export function isAllowedBrowserOrigin(origin: string | undefined | null): boolean {
+  if (!origin) return true;
+  const normalized = origin.replace(/\/+$/, "");
+  return collectAllowedOrigins().has(normalized);
 }
 
 function originFromReferer(referer: string): string | null {
@@ -70,11 +84,6 @@ function selfOrigin(req: Request): string | null {
     .split(",")[0]
     .trim();
   return `${proto}://${host}`.replace(/\/+$/, "");
-}
-
-function hasBearerAuthorization(req: Request): boolean {
-  const header = req.headers.authorization;
-  return typeof header === "string" && /^Bearer\s+\S+/i.test(header);
 }
 
 /**

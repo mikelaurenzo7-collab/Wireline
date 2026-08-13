@@ -76,10 +76,16 @@ export function jsonSafeId(id: bigint | number | string | null | undefined): str
  * parameter — a client mistake — reads as a server fault. Returning null lets
  * the caller answer 400 without wrapping every id in its own try/catch.
  */
+/** Postgres bigint ceiling: BigInt() itself is arbitrary-precision, so an
+ *  overlong id parses fine here and then raises a range error inside the
+ *  database — which surfaces as a 500 instead of the intended 400/404. */
+const MAX_POSTGRES_BIGINT = 9_223_372_036_854_775_807n;
+
 export function parseBigIntId(value: unknown): bigint | null {
   if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
   try {
-    return BigInt(value);
+    const parsed = BigInt(value);
+    return parsed > MAX_POSTGRES_BIGINT ? null : parsed;
   } catch {
     return null;
   }

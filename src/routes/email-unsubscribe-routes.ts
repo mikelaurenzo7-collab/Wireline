@@ -21,8 +21,7 @@ import {
 const router = Router();
 
 type UnsubscribeTarget =
-  | { scope: "wireline"; email: string }
-  | { scope: "tenant"; userId: string; email: string };
+  { scope: "wireline"; email: string } | { scope: "tenant"; userId: string; email: string };
 
 function targetFromToken(token: string): UnsubscribeTarget | null {
   const tenant = verifyTenantUnsubscribeToken(token);
@@ -87,12 +86,36 @@ router.post("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request,
 });
 
 router.get("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request, res: Response) => {
-  const target = targetFromToken(String(req.query.token || ""));
+  const rawToken = String(req.query.token || "");
+  const target = targetFromToken(rawToken);
   if (!target) {
     res
       .status(400)
       .type("html")
       .send(renderPage("Invalid unsubscribe link", "This unsubscribe link is invalid or expired."));
+    return;
+  }
+
+  // A bare GET must NOT mutate. Enterprise mail security (Defender Safe Links,
+  // Proofpoint URL Defense, Barracuda) pre-fetches every URL in a message
+  // body, so recording the suppression on GET opts recipients out who never
+  // clicked. Require an explicit confirm click — which link scanners do not
+  // perform — before suppressing. RFC 8058 one-click stays on the POST route.
+  if (String(req.query.confirm || "") !== "1") {
+    const confirmHref = `/api/email/unsubscribe?token=${encodeURIComponent(rawToken)}&confirm=1`;
+    const intro =
+      target.scope === "tenant"
+        ? `Confirm that <strong>${escapeHtml(target.email)}</strong> should stop receiving marketing email from this sender.`
+        : `Confirm that <strong>${escapeHtml(target.email)}</strong> should stop receiving Wireline product &amp; billing reminders. You'll still get essential account email (security and billing receipts).`;
+    res
+      .status(200)
+      .type("html")
+      .send(
+        renderPage(
+          "Confirm unsubscribe",
+          `${intro}<div style="margin-top:24px;"><a href="${confirmHref}" style="display:inline-block;background:#4F1E7B;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:600;font-size:14px;">Confirm unsubscribe</a></div>`,
+        ),
+      );
     return;
   }
 

@@ -26,8 +26,9 @@ setInterval(
 ).unref();
 
 function specRateLimiter(req: Request, res: Response, next: NextFunction) {
-  const xff = req.headers["x-forwarded-for"];
-  const key = (typeof xff === "string" ? xff.split(",")[0].trim() : null) || req.ip || "anon";
+  // trust-proxy-resolved req.ip only: raw X-Forwarded-For is client-writable,
+  // so keying on XFF[0] lets a flooder mint a fresh bucket per request.
+  const key = req.ip || "anon";
   const now = Date.now();
   const hits = (specRateLimit.get(key) || []).filter((t: number) => now - t < SPEC_RATE_WINDOW_MS);
   if (hits.length >= SPEC_RATE_MAX) {

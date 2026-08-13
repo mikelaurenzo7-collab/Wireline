@@ -3,7 +3,7 @@ import { Router, Response } from "express";
 import { createHash, randomBytes } from "node:crypto";
 import { log, drizzle, requirePermission, tenantStore } from "../lib/server-context";
 import { secureTeamMembers } from "../db/security-schema";
-import { eq, and, desc, isNull, sql } from "drizzle-orm";
+import { eq, and, desc, isNotNull, isNull, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { emailRateLimiter } from "../middleware/rate-limit-middleware";
 import { validateBody, inviteTeamMemberSchema } from "../lib/api-validation";
@@ -313,6 +313,10 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const tenantId = requireUuid(req.params.tenantId, "workspace id");
     if (tenantId !== req.user.id) {
+      // Mirror resolveTenantId's membership rule exactly (accepted AND not
+      // revoked). A pending invitee must not be able to mint a session token
+      // carrying this tenant claim — the auth middleware would ignore it today,
+      // but two copies of one membership rule must not drift apart.
       const [membership] = await tenantStore.run(req.user.id, () =>
         drizzle
           .select({ id: secureTeamMembers.id })
@@ -321,6 +325,7 @@ router.post(
             and(
               eq(secureTeamMembers.tenantId, tenantId),
               eq(secureTeamMembers.userId, req.user.id),
+              isNotNull(secureTeamMembers.acceptedAt),
               isNull(secureTeamMembers.revokedAt),
             ),
           )

@@ -20,7 +20,7 @@
  */
 
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { drizzle, log } from "./server-context";
+import { drizzle, log, IS_PROD } from "./server-context";
 import * as schema from "../db/schema";
 import { and, eq } from "drizzle-orm";
 import { readCompanyIdentityPreferences } from "./company-identity";
@@ -32,13 +32,18 @@ const TOKEN_LABEL = "email-unsubscribe-v1";
 function unsubKey(): string {
   // Derive a purpose-specific subkey (domain separation) so the unsubscribe
   // HMAC never reuses the raw data key directly. base64 of the data key keeps
-  // the HMAC key a string, matching the codebase's createHmac usage. The
-  // dev/test fallback is deterministic and never used when WIRELINE_DATA_KEY
-  // is configured (i.e. never in production).
-  const base = isVaultConfigured()
-    ? getDataKey().toString("base64")
-    : "wireline-dev-unsubscribe-secret";
-  return createHmac("sha256", base).update(TOKEN_LABEL).digest("hex");
+  // the HMAC key a string, matching the codebase's createHmac usage.
+  if (isVaultConfigured()) {
+    return createHmac("sha256", getDataKey().toString("base64")).update(TOKEN_LABEL).digest("hex");
+  }
+  // A production deploy without WIRELINE_DATA_KEY must fail closed: the
+  // literal fallback is in the public bundle, so anyone could mint suppression
+  // tokens for arbitrary recipients against the public unsubscribe endpoint.
+  // Startup only warns (the env var is optional), making this the last gate.
+  if (IS_PROD) {
+    throw new Error("UNSUBSCRIBE_KEY_NOT_CONFIGURED: set WIRELINE_DATA_KEY in production");
+  }
+  return createHmac("sha256", "wireline-dev-unsubscribe-secret").update(TOKEN_LABEL).digest("hex");
 }
 
 export function normalizeEmail(email: string): string {
@@ -108,9 +113,7 @@ export function getPostalAddress(): string | null {
 function requirePostalAddress(): string {
   const address = getPostalAddress();
   if (!address) {
-    throw new Error(
-      "WIRELINE_POSTAL_ADDRESS is required for commercial email",
-    );
+    throw new Error("WIRELINE_POSTAL_ADDRESS is required for commercial email");
   }
   return address;
 }
@@ -213,7 +216,9 @@ export function signTenantUnsubscribeToken(userId: string, email: string): strin
     JSON.stringify({ v: 1, t: userId, e: normalizeEmail(email) }),
     "utf8",
   ).toString("base64url");
-  const sig = createHmac("sha256", unsubKey()).update(`${TENANT_TOKEN_PREFIX}.${payload}`).digest("base64url");
+  const sig = createHmac("sha256", unsubKey())
+    .update(`${TENANT_TOKEN_PREFIX}.${payload}`)
+    .digest("base64url");
   return `${TENANT_TOKEN_PREFIX}.${payload}.${sig}`;
 }
 
@@ -387,4 +392,3 @@ export async function recordTenantEmailSuppression(
     return false;
   }
 }
-

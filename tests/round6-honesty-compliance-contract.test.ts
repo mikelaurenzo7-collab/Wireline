@@ -70,10 +70,21 @@ describe("email unsubscribe endpoints honor the write result", () => {
 
   it("the human GET page never renders success over a failed write", () => {
     const routes = read("src/routes/email-unsubscribe-routes.ts");
-    expect(routes).toContain(
+    expect(routes).toContain('const recorded = await recordTarget(target, "link_unsubscribe")');
+    expect(routes).toContain("We couldn't process that just now");
+  });
+
+  it("a bare GET does not suppress before an explicit confirm click (link-scanner safety)", () => {
+    const routes = read("src/routes/email-unsubscribe-routes.ts");
+    // The suppression write must sit behind the confirm gate so a mail-security
+    // link prefetch (Defender/Proofpoint) cannot opt a recipient out.
+    const gateIndex = routes.indexOf('String(req.query.confirm || "") !== "1"');
+    const recordIndex = routes.indexOf(
       'const recorded = await recordTarget(target, "link_unsubscribe")',
     );
-    expect(routes).toContain("We couldn't process that just now");
+    expect(gateIndex).toBeGreaterThan(-1);
+    expect(recordIndex).toBeGreaterThan(gateIndex);
+    expect(routes).toContain("Confirm unsubscribe");
   });
 });
 

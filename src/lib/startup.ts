@@ -99,6 +99,16 @@ export function validateStartupEnv() {
     }
   }
 
+  // The unsubscribe-token HMAC and secret vault both key off WIRELINE_DATA_KEY.
+  // Signing/verifying now fails closed in production without it, so surface the
+  // misconfiguration at boot with the same error-level signal Upstash gets.
+  if (!importSmokeWithoutDatabase && IS_PROD && !process.env.WIRELINE_DATA_KEY) {
+    log.error(
+      "WIRELINE_DATA_KEY not set in production — secret-vault encryption and " +
+        "unsubscribe-token signing/verification will fail closed until it is set in Vercel.",
+    );
+  }
+
   if (!importSmokeWithoutDatabase && IS_PROD && !isFederalDncVendorConfigured()) {
     log.warn(
       "Federal DNC vendor is not configured (missing FEDERAL_DNC_API_URL/KEY or rejected placeholder key) — marketing/campaign outbound fails closed until a real DNCScrub loginId is set.",

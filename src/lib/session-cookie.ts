@@ -55,11 +55,30 @@ export function parseCookieHeader(header: string | undefined): Record<string, st
   return out;
 }
 
+/**
+ * The one definition of "this request authenticates with a bearer token".
+ * The same-origin CSRF gate exempts bearer surfaces (native apps) from the
+ * Origin check, so it MUST agree exactly with the token reader below — a
+ * tolerant gate plus a strict reader let `Authorization: bearer x` skip the
+ * CSRF check and then silently authenticate from the victim's cookie.
+ */
+const BEARER_HEADER_RE = /^Bearer\s+(\S+)\s*$/i;
+
+export function hasBearerAuthorization(req: Request): boolean {
+  const header = req.headers.authorization;
+  return typeof header === "string" && BEARER_HEADER_RE.test(header);
+}
+
 /** Bearer header first, then httpOnly session cookie. */
 export function getSessionTokenFromRequest(req: Request): string | undefined {
   const authHeader = req.headers.authorization;
-  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : undefined;
-  if (bearer) return bearer || undefined;
+  if (typeof authHeader === "string" && authHeader.trim() !== "") {
+    // Any Authorization header claims header-based auth. Never fall through
+    // to the session cookie here: a malformed bearer must fail as a 401, not
+    // quietly ride cookie credentials past the bearer-only CSRF exemption.
+    const match = BEARER_HEADER_RE.exec(authHeader);
+    return match?.[1] || undefined;
+  }
   const cookies = parseCookieHeader(req.headers.cookie);
   const fromCookie = cookies[SESSION_COOKIE_NAME];
   return fromCookie || undefined;

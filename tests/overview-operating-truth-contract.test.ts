@@ -115,7 +115,11 @@ describe("Home operating truth", () => {
     expect(overview).toContain('authFetch("/api/calendar/accounts").catch(() => null)');
     expect(overview).toContain('authFetch("/api/emails/accounts").catch(() => null)');
     expect(overview).toContain("setRecentUnavailable(true)");
-    expect(overview).toContain("affected metrics or recent activity may not be current");
+    // Whitespace-tolerant: this asserts the degraded-state copy exists, not how
+    // JSX wraps it, so it survives formatter reflow of the notice text.
+    expect(overview.replace(/\s+/g, " ")).toContain(
+      "affected metrics or recent activity may not be current",
+    );
   });
 
   it("shadows historical pending-only nav/dashboard implementations with exact routes first", () => {
