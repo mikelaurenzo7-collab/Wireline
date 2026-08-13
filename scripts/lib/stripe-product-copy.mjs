@@ -56,26 +56,20 @@ export function stripeProductCopyFindings(products, expectedProducts) {
       );
     }
 
-    const actualDescriptor = String(product.statement_descriptor || "");
-    if (
-      expected.key !== "conversation_balance" &&
-      actualDescriptor !== EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR
-    ) {
-      findings.push(
-        finding("error", `Stripe product statement descriptor drift for ${expected.name}.`, {
-          product_id: product.id,
-          expected_statement_descriptor: EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR,
-          actual_statement_descriptor: product.statement_descriptor || null,
-        }),
-      );
-    } else if (expected.key === "conversation_balance" && actualDescriptor) {
-      findings.push(
-        finding("error", `Stripe product statement descriptor drift for ${expected.name}.`, {
-          product_id: product.id,
-          expected_statement_descriptor: null,
-          actual_statement_descriptor: product.statement_descriptor,
-        }),
-      );
+    // Stripe only applies Product.statement_descriptor to subscription payments.
+    // Runtime Balance is a one-time Checkout payment, so its Product descriptor
+    // is not a customer-facing billing invariant and should not create false drift.
+    if (expected.key !== "conversation_balance") {
+      const actualDescriptor = String(product.statement_descriptor || "");
+      if (actualDescriptor !== EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR) {
+        findings.push(
+          finding("error", `Stripe product statement descriptor drift for ${expected.name}.`, {
+            product_id: product.id,
+            expected_statement_descriptor: EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR,
+            actual_statement_descriptor: product.statement_descriptor || null,
+          }),
+        );
+      }
     }
 
     for (const [key, expectedValue] of Object.entries(expected.metadata || {})) {
