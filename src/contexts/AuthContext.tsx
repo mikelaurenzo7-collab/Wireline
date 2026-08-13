@@ -10,7 +10,7 @@ import React, {
 import { useLocation } from "react-router";
 import { AUTH_SESSION_EXPIRED_EVENT, refreshSessionIfNeeded } from "../lib/api";
 import { LEGACY_STORAGE_KEY } from "../lib/session-cookie";
-import { isSessionOptionalPublicPath } from "../lib/public-routes";
+import { isAuthPortalPath, isSessionOptionalPublicPath } from "../lib/public-routes";
 import { clearStudioLastAgentId } from "../lib/studio-agent-preference";
 
 export interface User {
@@ -111,12 +111,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let cancelled = false;
     (async () => {
       const sessionOptional = isSessionOptionalPublicPath(location.pathname);
-      if (sessionOptional || (user && session)) {
+      if (user && session) {
         if (!cancelled) setLoading(false);
         return;
       }
 
-      if (!cancelled) setLoading(true);
+      if (sessionOptional) {
+        // Public and account-entry routes must paint without waiting on the
+        // session endpoint. Account-entry routes still hydrate in the
+        // background, though: otherwise a signed-in customer who refreshed
+        // /signin or /signup was rendered as anonymous forever and could start
+        // a second account flow instead of returning to their workspace.
+        if (!cancelled) setLoading(false);
+        if (!isAuthPortalPath(location.pathname)) return;
+      }
+
+      if (!sessionOptional && !cancelled) setLoading(true);
       try {
         await migrateLegacyLocalStorage();
         const hydrated = await fetchSessionUser();
