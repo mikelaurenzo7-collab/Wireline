@@ -236,7 +236,7 @@ async function scopeClientToTenant(userId: string) {
 /* eslint-disable @typescript-eslint/no-explicit-any -- pg Pool.connect has overloaded callback/promise signatures */
 (pool as any).connect = function tenantScopedConnect(callback?: any): any {
   const userId = tenantStore.getStore();
-  let connectionScope: "root" | "tenant";
+  let connectionScope;
   try {
     connectionScope = resolveTenantDatabaseScope(userId);
   } catch (error) {
@@ -250,16 +250,16 @@ async function scopeClientToTenant(userId: string) {
     return Promise.reject(error);
   }
 
-  if (connectionScope === "root") {
+  if (connectionScope.kind === "root") {
     return callback ? _origConnect(callback) : _origConnect();
   }
   if (callback) {
-    scopeClientToTenant(userId!)
+    scopeClientToTenant(connectionScope.userId)
       .then((client) => callback(null, client, client.release))
       .catch((err: any) => callback(err));
     return;
   }
-  return scopeClientToTenant(userId!);
+  return scopeClientToTenant(connectionScope.userId);
 };
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
