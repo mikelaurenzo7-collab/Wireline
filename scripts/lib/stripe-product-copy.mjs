@@ -1,3 +1,6 @@
+const EXPECTED_PRODUCT_URL = "https://trywireline.com/pricing";
+const EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR = "TRY WIRELINE";
+
 function normalizeCopy(value) {
   return String(value || "")
     .trim()
@@ -39,6 +42,32 @@ export function stripeProductCopyFindings(products, expectedProducts) {
           product_id: product.id,
           expected_description: expectedDescription,
           actual_description: actualDescription || null,
+        }),
+      );
+    }
+
+    if (String(product.url || "") !== EXPECTED_PRODUCT_URL) {
+      findings.push(
+        finding("error", `Stripe product URL drift for ${expected.name}.`, {
+          product_id: product.id,
+          expected_url: EXPECTED_PRODUCT_URL,
+          actual_url: product.url || null,
+        }),
+      );
+    }
+
+    // Runtime Balance is a one-time top-up. Every recurring/custom Wireline
+    // product should carry a recognizable subscription statement descriptor so
+    // card statements cannot inherit stale account-level branding.
+    if (
+      expected.key !== "conversation_balance" &&
+      String(product.statement_descriptor || "") !== EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR
+    ) {
+      findings.push(
+        finding("error", `Stripe product statement descriptor drift for ${expected.name}.`, {
+          product_id: product.id,
+          expected_statement_descriptor: EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR,
+          actual_statement_descriptor: product.statement_descriptor || null,
         }),
       );
     }
