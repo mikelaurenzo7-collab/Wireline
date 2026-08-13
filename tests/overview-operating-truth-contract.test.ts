@@ -54,10 +54,27 @@ describe("Home operating truth", () => {
     expect(overview).not.toContain('authFetch("/api/nav-counts")');
   });
 
+  it("keeps connected email first-class in the Home live wiring summary", () => {
+    expect(overview).toContain('authFetch("/api/emails/accounts").catch(() => null)');
+    expect(overview).toContain("if (mailboxRes?.ok)");
+    expect(overview).toContain('coreConnections.push("Email")');
+    expect(overview).toContain(
+      "const allConnections = [...new Set([...coreConnections, ...activeProviders])]",
+    );
+
+    const phone = overview.indexOf('coreConnections.push("Phone")');
+    const email = overview.indexOf('coreConnections.push("Email")');
+    const calendar = overview.indexOf('coreConnections.push("Calendar")');
+    expect(phone).toBeGreaterThan(-1);
+    expect(email).toBeGreaterThan(phone);
+    expect(calendar).toBeGreaterThan(email);
+  });
+
   it("isolates Home data-plane failures so one integration cannot blank independent truth", () => {
     expect(overview).toContain('authFetch("/api/dashboard/stats").catch(() => null)');
     expect(overview).toContain('authFetch("/api/oauth/crm/status").catch(() => null)');
     expect(overview).toContain('authFetch("/api/calendar/accounts").catch(() => null)');
+    expect(overview).toContain('authFetch("/api/emails/accounts").catch(() => null)');
     expect(overview).toContain("affected metrics or recent activity may not be current");
   });
 

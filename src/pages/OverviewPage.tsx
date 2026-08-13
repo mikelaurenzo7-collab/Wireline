@@ -434,13 +434,14 @@ export default function OverviewPage() {
       dayBoundary.setHours(0, 0, 0, 0);
       const since = dayBoundary.toISOString();
 
-      const [statsRes, operatingRes, crmRes, calendarRes] = await Promise.all([
+      const [statsRes, operatingRes, crmRes, calendarRes, mailboxRes] = await Promise.all([
         authFetch("/api/dashboard/stats").catch(() => null),
         authFetch(`/api/overview/operating-metrics?since=${encodeURIComponent(since)}`).catch(
           () => null,
         ),
         authFetch("/api/oauth/crm/status").catch(() => null),
         authFetch("/api/calendar/accounts").catch(() => null),
+        authFetch("/api/emails/accounts").catch(() => null),
       ]);
 
       if (cancelled) return;
@@ -480,13 +481,19 @@ export default function OverviewPage() {
       }
 
       const coreConnections: string[] = [];
+      if (agents.some((agent) => agent.phone_number)) coreConnections.push("Phone");
+      if (mailboxRes?.ok) {
+        const mailboxData = await mailboxRes.json().catch(() => null);
+        if (Array.isArray(mailboxData?.accounts) && mailboxData.accounts.length > 0) {
+          coreConnections.push("Email");
+        }
+      }
       if (calendarRes?.ok) {
         const calendarData = await calendarRes.json().catch(() => null);
         if (Array.isArray(calendarData?.accounts) && calendarData.accounts.length > 0) {
           coreConnections.push("Calendar");
         }
       }
-      if (agents.some((agent) => agent.phone_number)) coreConnections.push("Phone");
 
       const allConnections = [...new Set([...coreConnections, ...activeProviders])];
       setConnectionsCount(allConnections.length);
