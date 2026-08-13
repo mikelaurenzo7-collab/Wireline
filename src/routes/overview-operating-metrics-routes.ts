@@ -145,7 +145,13 @@ router.get(
               agentName: schema.agents.name,
             })
             .from(schema.callLogs)
-            .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
+            .leftJoin(
+              schema.agents,
+              and(
+                eq(schema.callLogs.agentId, schema.agents.id),
+                eq(schema.agents.userId, userId),
+              ),
+            )
             .where(eq(schema.callLogs.userId, userId))
             .orderBy(desc(schema.callLogs.createdAt))
             .limit(RECENT_CONVERSATION_LIMIT),
@@ -160,7 +166,13 @@ router.get(
               agentName: schema.agents.name,
             })
             .from(schema.emailThreads)
-            .leftJoin(schema.agents, eq(schema.emailThreads.agentId, schema.agents.id))
+            .leftJoin(
+              schema.agents,
+              and(
+                eq(schema.emailThreads.agentId, schema.agents.id),
+                eq(schema.agents.userId, userId),
+              ),
+            )
             .where(eq(schema.emailThreads.userId, userId))
             .orderBy(
               desc(sql`coalesce(${schema.emailThreads.lastMessageAt}, ${schema.emailThreads.createdAt})`),
@@ -176,7 +188,13 @@ router.get(
               agentName: schema.agents.name,
             })
             .from(schema.smsThreads)
-            .leftJoin(schema.agents, eq(schema.smsThreads.agentId, schema.agents.id))
+            .leftJoin(
+              schema.agents,
+              and(
+                eq(schema.smsThreads.agentId, schema.agents.id),
+                eq(schema.agents.userId, userId),
+              ),
+            )
             .where(eq(schema.smsThreads.userId, userId))
             .orderBy(
               desc(sql`coalesce(${schema.smsThreads.lastMessageAt}, ${schema.smsThreads.createdAt})`),
