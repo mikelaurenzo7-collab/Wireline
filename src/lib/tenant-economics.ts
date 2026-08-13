@@ -16,8 +16,20 @@ import { getVoiceUsageSnapshot } from "./voice-usage";
 import { getBudgetSnapshot } from "./spend-guards";
 
 export const MARGIN_AT_RISK_THRESHOLD_PCT = 10;
-/** Observed blended COGS above this triggers a pricing review alert. */
-export const COGS_DRIFT_THRESHOLD_PER_MIN_USD = 0.14;
+/**
+ * Observed blended COGS above this triggers a pricing review alert.
+ *
+ * The alarm is the priced-in reserve itself: any observed blended cost above
+ * what the catalog assumed is drift worth reviewing, and it must fire before
+ * the launch-certified 30% hard contribution floor (assertPlanMarginFloors)
+ * breaks, not after. Solving the full-utilization margin for the floor across
+ * the v6 catalog puts the binding constraint at $0.12898/min (enterprise
+ * annual) — the prior $0.14 alarm only fired once four of the eight
+ * plan-interval combinations were already below the certified floor.
+ * round6-margin-capacity-contract re-derives that bound from the catalog and
+ * pins the alarm beneath it.
+ */
+export const COGS_DRIFT_THRESHOLD_PER_MIN_USD = VOICE_VARIABLE_COST_PER_MIN_USD;
 
 export type TenantEconomics = {
   user_id: string;

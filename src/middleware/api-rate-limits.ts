@@ -85,11 +85,20 @@ export async function simulationMinuteQuota(req: Request, res: Response, next: N
     }
   } catch (err) {
     // checkAndIncrement already degrades internally; an exception here means
-    // the tracker itself is down. Simulations are low-stakes relative to
-    // blocking every Studio test — log and continue.
-    log.warn("simulation quota check failed — allowing session", {
+    // the tracker itself is down. Every session mint charges a vendor-metered
+    // realtime client secret on platform keys — the same spend-sensitive class
+    // as dial/SMS/campaign buckets, which fail closed on limiter outage. With
+    // the tracker down there is no daily ceiling at all, so allowing mints
+    // here would hand out unbounded provider spend to $0 accounts exactly
+    // when accounting is blind.
+    log.error("simulation quota tracker unavailable — refusing session mint", {
       userId,
       error: getErrorMessage(err),
+    });
+    return res.status(503).json({
+      code: "SIMULATION_QUOTA_UNAVAILABLE",
+      error:
+        "Live simulation is briefly unavailable. Try again shortly — phone calls are unaffected.",
     });
   }
   next();

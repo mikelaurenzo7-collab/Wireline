@@ -45,12 +45,39 @@ describe("catalog v6 capacity stays inside the two-floor margin guardrail", () =
     }
   });
 
+  it("alarms before any plan-interval breaches the certified hard floor", () => {
+    // The drift alarm must fire while assertPlanMarginFloors still holds.
+    // Solve the full-utilization margin for the hard floor on both intervals
+    // of every paid plan; the alarm threshold may not sit above the tightest
+    // binding COGS/min, or the launch-certified 30% floor is already broken
+    // by the time operations hears about drift.
+    for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
+      for (const interval of ["month", "year"] as const) {
+        const revenue = interval === "year" ? plan.price_usd_annual / 12 : plan.price_usd_monthly;
+        const commercialFees =
+          interval === "year"
+            ? estimatedStripeCommercialFeesUsd(plan.price_usd_annual) / 12
+            : estimatedStripeCommercialFeesUsd(plan.price_usd_monthly);
+        const bindingCogsPerMin =
+          (revenue * (1 - HARD_CONTRIBUTION_MARGIN_FLOOR) -
+            plan.included_phone_numbers * 1.15 -
+            plan.runtime_allowance_usd_monthly -
+            commercialFees) /
+          plan.voice_minutes_monthly;
+        expect(
+          COGS_DRIFT_THRESHOLD_PER_MIN_USD,
+          `${plan.id} ${interval} floor binds at ${bindingCogsPerMin.toFixed(4)}/min`,
+        ).toBeLessThanOrEqual(bindingCogsPerMin);
+      }
+    }
+  });
+
   it("survives a COGS drift to the pricing-review threshold without going underwater", () => {
     // Bigger included allowances raise exposure to per-minute cost drift. At
-    // the $0.14 alarm rate every paid plan must keep expected-usage
-    // contribution at or above 40% and worst-case full-use contribution at or
-    // above 25% on the binding annual interval, or v6 was sized with no room
-    // for its cost basis to move.
+    // the alarm rate every paid plan must keep expected-usage contribution at
+    // or above 40% and worst-case full-use contribution at or above 25% on
+    // the binding annual interval, or v6 was sized with no room for its cost
+    // basis to move.
     for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
       const revenue = plan.price_usd_annual / 12;
       const commercialFees = estimatedStripeCommercialFeesUsd(plan.price_usd_annual) / 12;

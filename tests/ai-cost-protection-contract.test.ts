@@ -204,6 +204,19 @@ describe("AI cost-protection contract", () => {
     expect(quotas).toContain('"simulation_minutes_daily",');
     expect(read("src/routes/grok-voice-routes.ts")).toContain("simulationMinuteQuota");
     expect(read("src/routes/openai-realtime-routes.ts")).toContain("simulationMinuteQuota");
+
+    // Every session mint charges a vendor-metered realtime secret on platform
+    // keys, so a quota-tracker outage must refuse the mint (matching the
+    // fail-closed posture of the dial/SMS/campaign spend buckets), not hand
+    // out unmetered sessions while accounting is blind.
+    const limits = read("src/middleware/api-rate-limits.ts");
+    const quotaFn = limits.slice(
+      limits.indexOf("export async function simulationMinuteQuota"),
+      limits.indexOf("interface RateLimitMiddleware"),
+    );
+    expect(quotaFn).toContain('"SIMULATION_QUOTA_UNAVAILABLE"');
+    expect(quotaFn).toContain("res.status(503)");
+    expect(quotaFn).not.toContain("allowing session");
   });
 
   it("deep completion-grace debt routes inbound to a durable bounded take-a-message assistant", () => {
