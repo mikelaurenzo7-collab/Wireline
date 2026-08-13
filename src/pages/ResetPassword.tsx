@@ -11,8 +11,16 @@ import MarketingChrome from "../components/marketing/MarketingChrome";
 import WirelineMark from "../components/brand/WirelineMark";
 import { readStoredWorkspaceMode, resolvePostAuthDestination } from "../lib/auth-redirect";
 
+function readResetTokenFromLocation(): string {
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const query = new URLSearchParams(window.location.search);
+  // New reset emails use the fragment so the bearer credential never reaches
+  // the server. Query support keeps already-issued reset emails working.
+  return hash.get("token") || query.get("token") || "";
+}
+
 /**
- * /reset-password?token=<raw>
+ * /reset-password#token=<raw>
  *
  * Lands the user from the password-reset email. Captures the single-use token
  * synchronously, removes it from browser-visible history before paint, validates
@@ -22,7 +30,7 @@ import { readStoredWorkspaceMode, resolvePostAuthDestination } from "../lib/auth
 export default function ResetPassword() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const resetTokenRef = useRef(new URLSearchParams(window.location.search).get("token") || "");
+  const resetTokenRef = useRef(readResetTokenFromLocation());
   const [token] = useState<string | null>(() => resetTokenRef.current || null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
