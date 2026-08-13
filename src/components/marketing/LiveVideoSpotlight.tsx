@@ -16,7 +16,7 @@ const CHANNELS = [
 ] as const;
 
 const PRESENTER_SLOTS = ["01", "02", "03"] as const;
-const LIVE_VIDEO_FACTS = ["60 min / month", "5 min sessions", "$19/mo add-on"] as const;
+const LIVE_VIDEO_FACTS = ["60 min/month", "5 min/session max", "$19/mo add-on"] as const;
 
 type LiveVideoSpotlightProps = {
   bridgeLabel: string;
