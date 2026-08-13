@@ -123,6 +123,13 @@ These files stay outside `docs/` because a development tool, compatibility path,
 | [android/README.md](../android/README.md) | Android build, signing, push, Telecom, consent, and release entry point beside its source. |
 | [ios/README.md](../ios/README.md) | iOS architecture, build, widgets, intents, and release entry point beside its source. |
 | [references/design-system-navigation-plan.md](../references/design-system-navigation-plan.md) | Exact path consumed by the design-system regression contract. |
+| [.superdesign/design-system.md](../.superdesign/design-system.md) | Superdesign product, visual, interaction, content, and accessibility contract generated from the canonical Wireline system. |
+| [.superdesign/init/components.md](../.superdesign/init/components.md) | Superdesign component inventory at the exact tool-discovery path. |
+| [.superdesign/init/extractable-components.md](../.superdesign/init/extractable-components.md) | Superdesign reusable-component candidate inventory at the exact tool-discovery path. |
+| [.superdesign/init/layouts.md](../.superdesign/init/layouts.md) | Superdesign layout-source inventory at the exact tool-discovery path. |
+| [.superdesign/init/pages.md](../.superdesign/init/pages.md) | Superdesign page-source inventory at the exact tool-discovery path. |
+| [.superdesign/init/routes.md](../.superdesign/init/routes.md) | Superdesign route inventory at the exact tool-discovery path. |
+| [.superdesign/init/theme.md](../.superdesign/init/theme.md) | Superdesign theme and token inventory at the exact tool-discovery path. |
 
 ## Verification
 
