@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const catalog = readFileSync("scripts/lib/stripe-founder-catalog.mjs", "utf8");
 const audit = readFileSync("scripts/lib/stripe-product-copy.mjs", "utf8");
+const reconciler = readFileSync("scripts/setup-stripe-catalog.mjs", "utf8");
 
 const LIVE_PRODUCT_COPY = [
   "1 live voice agent, 1 production number, 60 voice minutes/month, email + SMS, and no automatic overages.",
@@ -30,5 +31,13 @@ describe("Stripe customer-facing product truth", () => {
     expect(audit).toContain("Stripe product URL drift");
     expect(audit).toContain("Stripe product statement descriptor drift");
     expect(audit).toContain('expected.key !== "conversation_balance"');
+  });
+
+  it("makes the catalog reconciler repair audited customer-facing presentation", () => {
+    expect(reconciler).toContain("EXPECTED_PRODUCT_URL");
+    expect(reconciler).toContain("EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR");
+    expect(reconciler).toContain("customerProductPresentation(spec)");
+    expect(reconciler).toContain('spec.key === "conversation_balance"');
+    expect(reconciler).toContain("...customerPresentation");
   });
 });
