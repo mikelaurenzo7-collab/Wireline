@@ -314,6 +314,24 @@ router.post("/api/vapi-webhook", async (req, res) => {
             ),
           });
         }
+        // Concurrency ceiling: the grace gate reads settled ledger state, so a
+        // burst of simultaneous inbound calls all passed it before any of them
+        // settled. Beyond the per-tenant live-call ceiling, overflow degrades
+        // to the same bounded take-a-message assistant (fail-open on error).
+        const { inboundConcurrencyExceeded } = await import("../lib/inbound-concurrency");
+        if (await inboundConcurrencyExceeded(agent.user_id)) {
+          log.warn("Inbound routed to take-a-message assistant — concurrency ceiling", {
+            agentId: webhookAgentId,
+          });
+          return res.json({
+            assistant: buildDurableTakeMessageAssistant(
+              webhookAgentId,
+              agentVoiceName,
+              agentComplianceMode,
+              userSettings?.businessName,
+            ),
+          });
+        }
         return res.json({
           assistant: await buildVapiAssistant({
             message,
