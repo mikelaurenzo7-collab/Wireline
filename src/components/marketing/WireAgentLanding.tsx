@@ -8,6 +8,7 @@ import MarketingStickyCta from "./MarketingStickyCta";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import TrustSignals from "./TrustSignals";
 import BrowserCallWidget from "./BrowserCallWidget";
+import LiveVideoSpotlight from "./LiveVideoSpotlight";
 import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
 import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
@@ -227,25 +228,7 @@ export default function WireAgentLanding() {
           }
         />
 
-        <section className="wl-public-section border-b border-border">
-          <div className="wl-public-rail">
-            <div className="mx-auto mb-8 max-w-2xl text-center">
-              <h2 className="wl-display-2">Every channel. One agent.</h2>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {["Voice", "Text messages", "Email", "One record"].map(
-                (title) => (
-                  <article
-                    key={title}
-                    className="wl-paper rounded-[16px] p-6 text-center"
-                  >
-                    <h3 className="wl-display-4">{title}</h3>
-                  </article>
-                ),
-              )}
-            </div>
-          </div>
-        </section>
+        <LiveVideoSpotlight />
 
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
@@ -362,7 +345,7 @@ export default function WireAgentLanding() {
         <section className="wl-public-section border-b border-border">
           <div className="wl-public-rail">
             <div className="mx-auto mb-8 max-w-2xl text-center">
-              <h2 className="wl-display-2">Build free. Go live from $19.</h2>
+              <h2 className="wl-display-2">Build free. Launch from $19.</h2>
             </div>
             <div className="mx-auto grid max-w-[1200px] gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {PLAN_PREVIEW.map((plan) => (
@@ -439,14 +422,14 @@ export default function WireAgentLanding() {
               />
               <div className="relative">
                 <h2 className="wl-display-2 mx-auto max-w-[18ch]">
-                  Put your first voice agent to work.
+                  Put your first agent to work.
                 </h2>
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                   <Link
                     to="/signup?plan=personal"
                     className="marketing-btn-primary min-h-12 w-full justify-center px-7 text-[15px] font-semibold sm:w-auto"
                   >
-                    Build your voice agent
+                    Build your agent
                     <ArrowRight size={16} aria-hidden="true" />
                   </Link>
                   <Link
