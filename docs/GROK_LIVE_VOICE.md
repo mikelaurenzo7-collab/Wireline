@@ -1,6 +1,6 @@
 # Grok Live Voice — retired from demo routing
 
-The xAI realtime implementation remains in the repository only as an explicit internal experiment. It is not mounted as Wireline's default structured runtime and it does not own any public, authenticated, mobile, Studio, Showcase, or ChatGPT demo path.
+The experimental xAI realtime voice service was removed from the repository on 2026-08-13 (it had no route, no client, and no runtime path). What remains of the xAI integration is opt-in structured reasoning through the provider gateway plus the retired-demo metadata in `src/lib/grok-features.ts`; xAI does not own any public, authenticated, mobile, Studio, Showcase, or ChatGPT demo path.
 
 ## Active architecture
 

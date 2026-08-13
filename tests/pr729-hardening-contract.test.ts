@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
@@ -73,10 +73,11 @@ describe("PR 729 hardening contract", () => {
     expect(noRow).not.toContain('status: "active"');
   });
 
-  it("records presenter consent at the disclosed action rather than the fetch transport", () => {
-    const preview = read("src/components/AgentPresenceLivePreview.tsx");
+  it("keeps the api facade thin (presenter consent UI retired)", () => {
+    // AgentPresenceLivePreview was removed 2026-08-13 (never mounted); the
+    // api facade discipline it shared remains pinned here.
+    expect(existsSync("src/components/AgentPresenceLivePreview.tsx")).toBe(false);
     const api = read("src/lib/api.ts");
-    expect(preview).toContain("JSON.stringify({ consentAcknowledged: true })");
     expect(api.trim()).toBe('export * from "./api-base";');
   });
 

@@ -298,7 +298,6 @@ describe("double-pass launch honesty", () => {
       ["src/routes/insights-routes.ts", 1],
       ["src/lib/vapi-assistant-factory-v2.ts", 1],
       ["src/lib/vapi-client.ts", 1],
-      ["src/lib/voice/grok-voice-service.ts", 1],
       ["src/routes/settings-routes.ts", 1],
       ["src/routes/dashboard-routes.ts", 2],
       ["src/lib/voice/openai-live-agent-service.ts", 1],

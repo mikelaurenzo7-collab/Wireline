@@ -94,7 +94,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [WIRELINE_LEVEL_UP_MASTER_PLAN.md](./WIRELINE_LEVEL_UP_MASTER_PLAN.md) | Phased product, trust, cost, and multi-surface execution plan. |
 | [AURORA_MASTERPLAN.md](./AURORA_MASTERPLAN.md) | Brand, marketing, onboarding, product, and operations plan. |
 | [RESEARCH_OPERATING_SYSTEM.md](./RESEARCH_OPERATING_SYSTEM.md) | Research lanes, prioritization, metrics, and execution horizon. |
-| [GUIDED_AGENT_SETUP_2026-07-08.md](./GUIDED_AGENT_SETUP_2026-07-08.md) | Guided call-plan setup doctrine. |
+| [GUIDED_AGENT_SETUP_2026-07-08.md](./GUIDED_AGENT_SETUP_2026-07-08.md) | Guided call-plan setup doctrine (retired 2026-08-13; historical record). |
 | [VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md](./VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md) | Provider-neutral voice moat and partner sequence. |
 | [PRESENTER_VENDOR_STRATEGY.md](./PRESENTER_VENDOR_STRATEGY.md) | Presenter vendor matrix and business-presence roadmap. |
 | [OPERATOR_SUCCESS.md](./OPERATOR_SUCCESS.md) | Operational success and support motion. |

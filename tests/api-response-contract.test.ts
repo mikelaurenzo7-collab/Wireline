@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -15,17 +15,22 @@ describe("API response contract", () => {
     expect(billingTypes).toContain("email_verified: boolean");
     expect(billingTypes).toContain("trial: BillingTrialBlock | null");
 
-    const trialBanner = read("src/components/layout/TrialBanner.tsx");
-    expect(trialBanner).toContain("BillingStatusResponse");
-    expect(trialBanner).not.toContain("eslint-disable @typescript-eslint/no-explicit-any");
+    // TrialBanner was removed 2026-08-13: unmounted since the activation
+    // model replaced trials on the shell; EmailVerifyBanner is the live
+    // consumer of the shared billing status type.
+    expect(existsSync("src/components/layout/TrialBanner.tsx")).toBe(false);
 
     const emailBanner = read("src/components/layout/EmailVerifyBanner.tsx");
     expect(emailBanner).toContain("BillingStatusResponse");
   });
 
   it("wires Grok strengths into live voice runtime paths", () => {
-    const grokVoice = read("src/lib/voice/grok-voice-service.ts");
-    expect(grokVoice).toContain("buildGrokStrengthsPromptSection");
+    // grok-voice-service was removed 2026-08-13 (dead: zero importers; the
+    // routes file never used it). The strengths section lives in the shared
+    // grok-features module the live factory actually imports.
+    expect(existsSync("src/lib/voice/grok-voice-service.ts")).toBe(false);
+    const grokFeatures = read("src/lib/grok-features.ts");
+    expect(grokFeatures).toContain("buildGrokStrengthsPromptSection");
 
     const vapiFactory = read("src/lib/vapi-assistant-factory-v2.ts");
     expect(vapiFactory).toContain("isGrokModelId");

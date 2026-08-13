@@ -89,6 +89,10 @@ ignored, and the two docs that cited it point at the command instead.
 - `src/components/recipes/**` and the unmounted components under contract test
   (`AgentActionEngine`, `PhoneAgentBlueprint`, `TrialBanner`, `PublicSiteHeader`,
   `AgentPresenceLivePreview`) — retiring a tested surface is a product decision.
+  _Follow-up 2026-08-13:_ that decision was made — the four unmounted components
+  above (plus `AgentPresencePstnBridge` and the experimental Grok voice service)
+  were retired, and their contracts now pin them deleted. `recipes/**` and
+  `AgentActionEngine` remain live.
 - `src/components/atoms/DropdownMenu.tsx` — barrel-exported canonical primitive with no
   current consumer; removing a design-system primitive is a design-system decision.
 - `public/downloads/*.zip` — generated, but load-bearing for a live download page that the

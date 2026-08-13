@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -30,9 +30,7 @@ describe("live video economics contract", () => {
     expect(usage).toContain(".onConflictDoUpdate");
     expect(routes).toContain("LIVE_VIDEO_MONTHLY_LIMIT_REACHED");
 
-    const reservation = routes.indexOf(
-      "const reservation = await reserveLiveVideoSessionMinutes",
-    );
+    const reservation = routes.indexOf("const reservation = await reserveLiveVideoSessionMinutes");
     const mint = routes.indexOf("await mintLiveAvatarLiteSessionToken", reservation);
     const release = routes.indexOf("await releaseLiveVideoSessionReservation", mint);
     expect(reservation).toBeGreaterThan(-1);
@@ -62,13 +60,11 @@ describe("live video economics contract", () => {
     expect(spotlight).toContain("LIVE_VIDEO_FACTS");
   });
 
-  it("keeps the browser audio bridge compatible with LiveAvatar LITE repeatAudio", () => {
-    const browserAudio = read("src/lib/voice/decode-browser-audio.ts");
-    const presenter = read("src/components/AgentPresenceLivePreview.tsx");
-
-    expect(browserAudio).toContain("PCM16 LE @ 24 kHz");
-    expect(browserAudio).toContain("mp3Base64ChunksToPcmBinary");
-    expect(presenter).toContain("mp3Base64ChunksToPcmBinary(payload.chunks)");
-    expect(presenter).toContain("streamSampleBinary(pcmBinary, payload.eventId)");
+  it("keeps the retired browser audio bridge deleted", () => {
+    // The unmounted preview and its decode bridge were removed 2026-08-13;
+    // LiveVideoPresenter's SDK path (video-presenter-contract) is the live
+    // browser audio surface.
+    expect(existsSync("src/lib/voice/decode-browser-audio.ts")).toBe(false);
+    expect(existsSync("src/components/AgentPresenceLivePreview.tsx")).toBe(false);
   });
 });

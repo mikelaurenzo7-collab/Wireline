@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -12,7 +12,6 @@ describe("empty-state route hygiene", () => {
     const readiness = read("src/lib/agent-readiness.ts");
     const routes = read("src/routes/AppRoutes.tsx");
     const sms = read("src/components/SmsThreads.tsx");
-    const livePreview = read("src/components/AgentPresenceLivePreview.tsx");
 
     expect(ops).not.toContain("/settings?tab=carrier");
     expect(ops).toContain('to: "/settings/phone"');
@@ -39,7 +38,8 @@ describe("empty-state route hygiene", () => {
     expect(sms).toContain('<Link to="/settings/phone">Review SMS setup</Link>');
     expect(sms).not.toContain('<a href="/settings/phone">Review SMS setup</a>');
 
-    expect(livePreview).toContain('to="/settings/billing"');
-    expect(livePreview).not.toContain('href="/settings/billing"');
+    // AgentPresenceLivePreview was removed 2026-08-13 (never mounted); its
+    // billing-link discipline died with it.
+    expect(existsSync("src/components/AgentPresenceLivePreview.tsx")).toBe(false);
   });
 });

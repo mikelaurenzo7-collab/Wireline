@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -36,7 +36,6 @@ describe("public navigation mobile regression contract", () => {
   it("keeps skip navigation visually hidden until keyboard focus", () => {
     const foundation = source("src/styles/foundation.css");
     const precisionHeader = source("src/components/marketing/PrecisionPublicHeader.tsx");
-    const publicHeader = source("src/components/marketing/PublicSiteHeader.tsx");
     const workspaceShell = source("src/components/WorkspaceShell.tsx");
     const skipLink = source("src/components/layout/SkipToContentLink.tsx");
 
@@ -54,9 +53,10 @@ describe("public navigation mobile regression contract", () => {
     expect(skipLink).toContain("onFocus");
     expect(skipLink).toContain("onBlur");
     expect(precisionHeader).toContain('<SkipToContentLink href="#main-content" />');
-    expect(publicHeader).toContain('<SkipToContentLink href="#main-content" />');
     expect(workspaceShell).toContain('<SkipToContentLink href="#workspace-main" />');
-    expect(publicHeader).not.toContain("focus:not-sr-only");
+    // The legacy PublicSiteHeader (the old Tailwind-focus-class skip link) is
+    // gone; the two shells above are the only chrome that must carry the link.
+    expect(existsSync(resolve(root, "src/components/marketing/PublicSiteHeader.tsx"))).toBe(false);
 
     // MarketingChrome pages (#security, legal, trust, status) must use a real
     // <main> landmark — not a skip-target-only div — so SR landmark nav works.

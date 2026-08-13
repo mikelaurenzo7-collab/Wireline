@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -247,15 +247,15 @@ describe("authenticated agent flow", () => {
   it("routes presenter lip-sync samples through HeyGen speech", () => {
     const routes = read("src/routes/video-presenter-routes-base.ts");
     const heygen = read("src/lib/video-presenter/heygen-voice-service.ts");
-    const preview = read("src/components/AgentPresenceLivePreview.tsx");
-    const decode = read("src/lib/voice/decode-browser-audio.ts");
 
     expect(heygen).toContain("generatePresenterSpeech");
     expect(heygen).toContain("assertTrustedHeyGenMediaUrl");
     expect(routes).toContain('format: "mp3"');
     expect(routes).toContain('voiceProvider === "presenter"');
-    expect(preview).toContain("mp3Base64ChunksToPcmBinary");
-    expect(decode).toContain("LIVEAVATAR_PCM_RATE_HZ");
+    // The unmounted web preview and its browser decode bridge were removed
+    // 2026-08-13; the server sample route above remains the live contract.
+    expect(existsSync("src/components/AgentPresenceLivePreview.tsx")).toBe(false);
+    expect(existsSync("src/lib/voice/decode-browser-audio.ts")).toBe(false);
   });
 
   it("persists the deploy modal's template identity on create", () => {
@@ -347,14 +347,12 @@ describe("authenticated agent flow", () => {
     expect(routes).toContain("phoneVoiceId");
   });
 
-  it("surfaces custom presence consent FTUX for business agents", () => {
-    const preview = read("src/components/AgentPresenceLivePreview.tsx");
-    const panel = read("src/components/video-presenter/CustomPresenceConsentPanel.tsx");
-
-    expect(preview).toContain("CustomPresenceConsentPanel");
-    expect(preview).toContain("consentStatus");
-    expect(panel).toContain("Custom likeness review is coming soon");
-    expect(panel).toContain("confirm rights");
-    expect(panel).not.toContain("Submit for review");
+  it("keeps the retired custom-presence consent FTUX deleted until a live surface exists", () => {
+    // AgentPresenceLivePreview was never mounted, so the consent panel inside
+    // it guarded copy no user could reach. Both were removed 2026-08-13; the
+    // server-side presenter consent policy remains the enforced contract, and
+    // reviving the FTUX means mounting a real surface, not resurrecting these.
+    expect(existsSync("src/components/AgentPresenceLivePreview.tsx")).toBe(false);
+    expect(existsSync("src/components/video-presenter/CustomPresenceConsentPanel.tsx")).toBe(false);
   });
 });

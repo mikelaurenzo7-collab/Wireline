@@ -200,12 +200,11 @@ describe("Wireline Letterpress polish layer", () => {
     expect(notFound).toContain("wl-code");
   });
 
-  it("wires the banner tone variants into the Trial and EmailVerify banners", () => {
-    const trial = read("src/components/layout/TrialBanner.tsx");
+  it("wires the banner tone variants into the EmailVerify banner", () => {
+    // TrialBanner was removed 2026-08-13 (unmounted); the tone scale below
+    // remains canonical for every future banner.
+    expect(existsSync("src/components/layout/TrialBanner.tsx")).toBe(false);
     const email = read("src/components/layout/EmailVerifyBanner.tsx");
-    expect(trial).toContain("wl-banner--critical");
-    expect(trial).toContain("wl-banner--warn");
-    expect(trial).toContain("wl-banner__body");
     expect(email).toContain("wl-banner--info");
     expect(email).toContain("wl-banner__icon");
     // The polish layer must define every tone these banners reference.

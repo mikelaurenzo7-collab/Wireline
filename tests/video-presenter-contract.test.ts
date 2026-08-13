@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -10,9 +10,7 @@ describe("video presenter integration", () => {
     const identity = source("src/lib/agent-identity.ts");
     expect(identity).toContain('"liveavatar"');
     expect(identity).toContain('surfaceLabel: "Live video"');
-    expect(identity).toContain(
-      'providerPreference: VideoPresenterProviderId = "synthetic"',
-    );
+    expect(identity).toContain('providerPreference: VideoPresenterProviderId = "synthetic"');
   });
 
   it("treats synthetic avatars as app identity badges, not video presenters", () => {
@@ -28,9 +26,7 @@ describe("video presenter integration", () => {
   it("keeps Fast Start free of avatar and presenter pickers", () => {
     const dialog = source("src/components/CreateAgentDialog.tsx");
     expect(dialog).toContain("Not now");
-    expect(dialog).not.toMatch(
-      /CreateAgentCatalogFacePicker|AgentPresenceAvatarPicker|avatar/i,
-    );
+    expect(dialog).not.toMatch(/CreateAgentCatalogFacePicker|AgentPresenceAvatarPicker|avatar/i);
   });
 
   it("starts bounded LiveAvatar LITE sessions on the server", () => {
@@ -50,9 +46,9 @@ describe("video presenter integration", () => {
     expect(live).toContain("repeatAudio");
     expect(live).toContain("stop: () => Promise<void>");
     expect(live).toContain("await session.stop().catch(() => undefined)");
-    const preview = source("src/components/AgentPresenceLivePreview.tsx");
-    expect(preview).toContain("End live video");
-    expect(preview).toContain("livePresenterRef.current?.stop()");
+    // The unmounted AgentPresenceLivePreview wrapper was removed;
+    // LiveVideoPresenter itself owns session teardown.
+    expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
   });
 
   it("seeds business agents with synthetic identity until live video is explicitly enabled", () => {
@@ -67,9 +63,11 @@ describe("video presenter integration", () => {
     expect(routes).toContain("/api/agents/:id/video-presenter/sample");
     expect(routes).toContain("generatePresenterSpeech");
     expect(routes).toContain("LIVE_VIDEO_NO_VOICE");
-    const preview = source("src/components/AgentPresenceLivePreview.tsx");
-    expect(preview).toContain("mp3Base64ChunksToPcmBinary");
-    expect(preview).toContain("streamSampleBinary");
+    // The browser-side mp3→PCM decode pipeline lived only in the unmounted
+    // preview wrapper; both stay deleted while the server sample route and the
+    // SDK feed below remain the live path.
+    expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
+    expect(existsSync(resolve(root, "src/lib/voice/decode-browser-audio.ts"))).toBe(false);
     const live = source("src/components/LiveVideoPresenter.tsx");
     expect(live).toContain("feedPcmDelta");
     const sandbox = source("src/components/OpenAILiveVoiceSandbox.tsx");
@@ -77,9 +75,7 @@ describe("video presenter integration", () => {
   });
 
   it("offers live video as an explicit paid opt-in add-on with an operator kill switch", () => {
-    const entitlements = source(
-      "src/lib/video-presenter/live-video-entitlements.ts",
-    );
+    const entitlements = source("src/lib/video-presenter/live-video-entitlements.ts");
     expect(entitlements).toContain("WIRELINE_LIVE_VIDEO_DISABLED");
     expect(entitlements).toContain("terminalPaidPeriodGrace");
     expect(entitlements).toContain(
@@ -95,12 +91,10 @@ describe("video presenter integration", () => {
     expect(source("src/routes/video-presenter-routes-base.ts")).toContain(
       "LIVE_VIDEO_UPGRADE_REQUIRED",
     );
-    const preview = source("src/components/AgentPresenceLivePreview.tsx");
-    expect(preview).toContain("Enable live video");
-    expect(preview).toContain("Subscribe to live video · $19/mo");
-    expect(preview).toContain("live-video-checkout");
-    expect(preview).toContain("liveVideoMeteringNote");
-    expect(preview).toContain("Choose a presenter face above before subscribing to Live Video");
+    // The unmounted preview wrapper that once rendered the enable CTA is
+    // gone; StripeBillingCard (asserted below) is the mounted checkout entry,
+    // and the server routes above stay the enforcement path.
+    expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
   });
 
   it("loads and saves public presenter catalog choices through authenticated Wireline routes", () => {
@@ -112,9 +106,7 @@ describe("video presenter integration", () => {
     expect(picker).toContain("JSON.stringify({ avatarId })");
     expect(picker).toContain("aria-pressed={selected}");
     expect(picker).not.toContain("Presence catalog paused");
-    const resolve = source(
-      "src/lib/video-presenter/resolve-agent-presenter.ts",
-    );
+    const resolve = source("src/lib/video-presenter/resolve-agent-presenter.ts");
     expect(resolve).toContain("chosenAvatarId");
   });
 
@@ -123,10 +115,10 @@ describe("video presenter integration", () => {
     expect(schema).toContain('listenUrl: text("listen_url")');
     const vapi = source("src/routes/vapi-v2.ts");
     expect(vapi).toContain("listenUrl");
-    const bridge = source("src/components/AgentPresencePstnBridge.tsx");
-    expect(bridge).toContain("feedPcmDelta");
-    expect(bridge).toContain("vapiListenPcmToLiveAvatarBase64");
-    expect(bridge).toContain("/api/supervisor/stream");
+    // The unmounted PSTN lip-sync bridge component was removed; the durable
+    // contract is the server side: listenUrl capture, the supervisor stream,
+    // and the listen gate below.
+    expect(existsSync(resolve(root, "src/components/AgentPresencePstnBridge.tsx"))).toBe(false);
     const supervisor = source("src/services/supervisor-websocket-service.ts");
     expect(supervisor).toContain("isAllowedVapiListenUrl");
     expect(supervisor).not.toContain("verifyCallOwnership");
@@ -145,9 +137,7 @@ describe("video presenter integration", () => {
     expect(manifest).toContain("STRIPE_LIVE_VIDEO_ADDON_PRICE_ID");
     expect(manifest).toContain('session_reservation_minutes: "5"');
     expect(manifest).toContain('wireline_catalog_state: "launch_active"');
-    expect(source("src/components/StripeBillingCard.tsx")).toContain(
-      "live-video-checkout",
-    );
+    expect(source("src/components/StripeBillingCard.tsx")).toContain("live-video-checkout");
   });
 
   it("streams call-floor presence via SSE with polling fallback", () => {

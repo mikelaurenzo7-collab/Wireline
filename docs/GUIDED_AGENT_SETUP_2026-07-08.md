@@ -1,8 +1,15 @@
 # Guided Agent Setup — 2026-07-08
 
-**Status:** Active product doctrine.  
-**Surface:** `src/components/PhoneAgentBlueprint.tsx`.  
-**Shared model:** `src/lib/guided-agent-learning.ts`.
+**Status:** Retired 2026-08-13 — historical decision record.  
+**Surface:** `src/components/PhoneAgentBlueprint.tsx` (deleted; it was never routed).  
+**Shared model:** `src/lib/guided-agent-learning.ts` (deleted with its only consumer).
+
+> **Retirement note (2026-08-13).** The blueprint component below was built and
+> contract-tested but never mounted on any route, so users could not reach it.
+> The dead-code sweep removed both files;
+> `tests/guided-agent-learning-contract.test.ts` now pins them deleted. The
+> activation principles in this document live on in the real surfaces:
+> `CreateAgentDialog` and the recipe forms under `src/components/recipes/`.
 
 ## Decision
 
