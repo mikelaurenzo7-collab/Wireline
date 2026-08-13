@@ -65,7 +65,7 @@ export const FOUNDER_PRODUCTS = [
     key: "enterprise",
     name: "Wireline Business",
     description:
-      "Up to 15 live voice agents, 450 pooled voice minutes/month, advanced routing, analytics, CRM, email + SMS, and no automatic overages.",
+      "Up to 15 live voice agents, 450 pooled voice minutes/month, routing, analytics, CRM, email + SMS, and no automatic overages.",
     defaultPriceKey: "enterprise_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "enterprise",
