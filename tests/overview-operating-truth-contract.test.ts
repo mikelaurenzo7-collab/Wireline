@@ -65,7 +65,7 @@ describe("Home operating truth", () => {
     expect(route).toContain("contact: schema.emailThreads.customerEmail");
     expect(route).toContain("contact: schema.smsThreads.customerNumber");
     expect(route).toContain("agentName: schema.agents.name");
-    expect(route).toContain(".leftJoin(schema.agents");
+    expect(route).toMatch(/\.leftJoin\(\s*schema\.agents,/);
     expect(route).toContain('channel: "voice" as const');
     expect(route).toContain('channel: "email" as const');
     expect(route).toContain('channel: "sms" as const');

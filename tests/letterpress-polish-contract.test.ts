@@ -324,11 +324,9 @@ describe("Wireline Letterpress polish layer", () => {
     const portal = read("src/components/AuthPortal.tsx");
     const statusNotice = read("src/components/molecules/StatusNotice.tsx");
     expect(portal).not.toMatch(/border-rose-500|bg-rose-500|text-rose-600/);
-    // Matched without the self-closing slash: the notice now carries a
-    // "Sign in instead" action for the duplicate-signup case, so it has
-    // children. What matters is that the shared primitive owns the tone and
-    // title, not whether the element happens to be self-closing.
-    expect(portal).toContain('<StatusNotice tone="destructive" title={error}');
+    expect(portal).toMatch(
+      /<StatusNotice[\s\S]{0,240}?tone="destructive"[\s\S]{0,120}?title=\{error\}[\s\S]{0,900}?Sign in instead[\s\S]{0,120}?<\/StatusNotice>/,
+    );
     expect(portal).toContain('<StatusNotice tone="success" title={message} />');
     expect(statusNotice).toContain("var(--wireline-color-feedback-error-border)");
     expect(statusNotice).toContain("var(--wireline-color-feedback-success-surface)");
