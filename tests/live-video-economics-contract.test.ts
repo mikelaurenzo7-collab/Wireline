@@ -56,8 +56,8 @@ describe("live video economics contract", () => {
     expect(spotlight).toContain('to="/signup?plan=starter"');
     expect(spotlight).not.toContain('to="/signup?plan=personal"');
     expect(spotlight).toContain("paid business agent for $19/mo");
-    expect(spotlight).toContain('"60 min / month"');
-    expect(spotlight).toContain('"5 min sessions"');
+    expect(spotlight).toContain('"60 min/month"');
+    expect(spotlight).toContain('"5 min/session max"');
     expect(spotlight).toContain('"$19/mo add-on"');
   });
 
