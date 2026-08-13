@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { createHash, randomBytes } from "node:crypto";
-import { drizzle, log, auditLogger } from "./server-context";
+import { drizzle, log, auditLogger, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
@@ -646,29 +646,26 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
     priorBaseRequiredCascade &&
     (stripeStatus === "active" || stripeStatus === "trialing") &&
     !sub.cancel_at_period_end;
-  await reconcileLiveVideoAddonWithBasePlan({
-    customerId,
-    baseCancelAtPeriodEnd: !!sub.cancel_at_period_end,
-    baseTerminal,
-    baseUnpaid,
-    restoreCascade,
-  });
 
-  await drizzle
-    .insert(schema.subscriptions)
-    .values({
-      userId,
-      stripeCustomerId: customerId,
-      stripeSubscriptionId: sub.id,
-      plan: plan?.id ?? null,
-      status: stripeStatus,
-      currentPeriodEnd: currentPeriodEndIso ? new Date(currentPeriodEndIso) : null,
-      cancelAtPeriodEnd: !!sub.cancel_at_period_end,
-      updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: [schema.subscriptions.userId],
-      set: {
+  // Identity is now fixed. Everything below mutates this tenant's rows —
+  // including the Runtime Allowance ledger grant — so it runs tenant-scoped
+  // like every sibling webhook arm: RLS WITH CHECK becomes the last line of
+  // defense against a userId-resolution bug crediting the wrong wallet. The
+  // customer lookup and metadata repair above stay at root scope on purpose;
+  // they are how identity gets established when no tenant is known yet.
+  await tenantStore.run(userId, async () => {
+    await reconcileLiveVideoAddonWithBasePlan({
+      customerId,
+      baseCancelAtPeriodEnd: !!sub.cancel_at_period_end,
+      baseTerminal,
+      baseUnpaid,
+      restoreCascade,
+    });
+
+    await drizzle
+      .insert(schema.subscriptions)
+      .values({
+        userId,
         stripeCustomerId: customerId,
         stripeSubscriptionId: sub.id,
         plan: plan?.id ?? null,
@@ -676,79 +673,92 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
         currentPeriodEnd: currentPeriodEndIso ? new Date(currentPeriodEndIso) : null,
         cancelAtPeriodEnd: !!sub.cancel_at_period_end,
         updatedAt: new Date(),
-      },
-    });
+      })
+      .onConflictDoUpdate({
+        target: [schema.subscriptions.userId],
+        set: {
+          stripeCustomerId: customerId,
+          stripeSubscriptionId: sub.id,
+          plan: plan?.id ?? null,
+          status: stripeStatus,
+          currentPeriodEnd: currentPeriodEndIso ? new Date(currentPeriodEndIso) : null,
+          cancelAtPeriodEnd: !!sub.cancel_at_period_end,
+          updatedAt: new Date(),
+        },
+      });
 
-  await drizzle
-    .insert(schema.settings)
-    .values({
-      id: userId,
-      userId,
-      subscriptionStatus: localStatus,
-      maxAgents: effectiveMaxAgents,
-      extraAgents,
-      updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: [schema.settings.userId],
-      set: {
+    await drizzle
+      .insert(schema.settings)
+      .values({
+        id: userId,
+        userId,
         subscriptionStatus: localStatus,
         maxAgents: effectiveMaxAgents,
         extraAgents,
         updatedAt: new Date(),
-      },
-    });
+      })
+      .onConflictDoUpdate({
+        target: [schema.settings.userId],
+        set: {
+          subscriptionStatus: localStatus,
+          maxAgents: effectiveMaxAgents,
+          extraAgents,
+          updatedAt: new Date(),
+        },
+      });
 
-  const { ensureDefaultAiSpendBudget } = await import("./workspace-usage-snapshot");
-  const spendBudgetPlanId =
-    stripeStatus === "active" || stripeStatus === "trialing" ? (plan?.id ?? null) : null;
-  await ensureDefaultAiSpendBudget(userId, spendBudgetPlanId);
+    const { ensureDefaultAiSpendBudget } = await import("./workspace-usage-snapshot");
+    const spendBudgetPlanId =
+      stripeStatus === "active" || stripeStatus === "trialing" ? (plan?.id ?? null) : null;
+    await ensureDefaultAiSpendBudget(userId, spendBudgetPlanId);
 
-  invalidateDashboard(userId);
+    invalidateDashboard(userId);
 
-  dispatchWebhook(userId, "subscription.changed", {
-    plan: plan?.id ?? null,
-    voice_number_slots_cap: effectiveMaxAgents,
-    included_extra_agents: extraAgents,
-    status: stripeStatus,
-    legacy_status: localStatus,
-    cancel_at_period_end: !!sub.cancel_at_period_end,
-    current_period_end: currentPeriodEndIso,
-    at: new Date().toISOString(),
-  }).catch((error: unknown) =>
-    log.warn("subscription.changed webhook dispatch failed", {
-      userId,
-      error: getErrorMessage(error),
-    }),
-  );
+    dispatchWebhook(userId, "subscription.changed", {
+      plan: plan?.id ?? null,
+      voice_number_slots_cap: effectiveMaxAgents,
+      included_extra_agents: extraAgents,
+      status: stripeStatus,
+      legacy_status: localStatus,
+      cancel_at_period_end: !!sub.cancel_at_period_end,
+      current_period_end: currentPeriodEndIso,
+      at: new Date().toISOString(),
+    }).catch((error: unknown) =>
+      log.warn("subscription.changed webhook dispatch failed", {
+        userId,
+        error: getErrorMessage(error),
+      }),
+    );
 
-  const billingAction: "subscription_created" | "subscription_updated" | "subscription_cancelled" =
-    stripeStatus === "canceled" || stripeStatus === "incomplete_expired"
-      ? "subscription_cancelled"
-      : (incomingSub as Stripe.Subscription & { _auditCreate?: boolean })._auditCreate
-        ? "subscription_created"
-        : "subscription_updated";
+    const billingAction:
+      "subscription_created" | "subscription_updated" | "subscription_cancelled" =
+      stripeStatus === "canceled" || stripeStatus === "incomplete_expired"
+        ? "subscription_cancelled"
+        : (incomingSub as Stripe.Subscription & { _auditCreate?: boolean })._auditCreate
+          ? "subscription_created"
+          : "subscription_updated";
 
-  if ((stripeStatus === "active" || stripeStatus === "trialing") && plan?.id) {
-    const interval = subscriptionBillingInterval(sub);
-    const periodReference = subscriptionPeriodReference(sub);
-    // Must succeed — swallowing here marks the webhook processed with no
-    // included Runtime Allowance, and Stripe will not retry.
-    await grantSubscriptionRuntimeAllowance(userId, periodReference, plan.id, interval);
-  }
+    if ((stripeStatus === "active" || stripeStatus === "trialing") && plan?.id) {
+      const interval = subscriptionBillingInterval(sub);
+      const periodReference = subscriptionPeriodReference(sub);
+      // Must succeed — swallowing here marks the webhook processed with no
+      // included Runtime Allowance, and Stripe will not retry.
+      await grantSubscriptionRuntimeAllowance(userId, periodReference, plan.id, interval);
+    }
 
-  void auditLogger
-    .logBilling(billingAction, {
-      userId,
-      subscriptionId: sub.id,
-      customerId,
-      plan: plan?.id || undefined,
-      metadata: {
-        stripe_status: stripeStatus,
-        legacy_status: localStatus,
-        cancel_at_period_end: !!sub.cancel_at_period_end,
-        extra_agents: extraAgents,
-      },
-    })
-    .catch(() => {});
+    void auditLogger
+      .logBilling(billingAction, {
+        userId,
+        subscriptionId: sub.id,
+        customerId,
+        plan: plan?.id || undefined,
+        metadata: {
+          stripe_status: stripeStatus,
+          legacy_status: localStatus,
+          cancel_at_period_end: !!sub.cancel_at_period_end,
+          extra_agents: extraAgents,
+        },
+      })
+      .catch(() => {});
+  });
 }

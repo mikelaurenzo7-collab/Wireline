@@ -82,11 +82,15 @@ export async function fulfillStripeCheckoutSession(
         throw new Error(`Settled live-video Checkout ${session.id} has no subscription.`);
       }
 
-      const updated = await drizzle
-        .update(schema.settings)
-        .set({ liveVideoAddonEnabled: true, updatedAt: new Date() })
-        .where(eq(schema.settings.userId, userId))
-        .returning({ userId: schema.settings.userId });
+      // Tenant-scoped like the credit-topup arm below: the entitlement write
+      // must carry RLS WITH CHECK insurance against a metadata-identity bug.
+      const updated = await tenantStore.run(userId, () =>
+        drizzle
+          .update(schema.settings)
+          .set({ liveVideoAddonEnabled: true, updatedAt: new Date() })
+          .where(eq(schema.settings.userId, userId))
+          .returning({ userId: schema.settings.userId }),
+      );
       if (!updated[0]) {
         // A paid add-on without a durable workspace projection must stay
         // retryable; acknowledging it here would strand the entitlement.
@@ -102,8 +106,11 @@ export async function fulfillStripeCheckoutSession(
     }
 
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    // syncSubscriptionFromStripe scopes its own mutation phase to the identity
+    // it resolves; the operation-completion write is scoped to the checkout's
+    // stamped owner, who created the operation row.
     await syncSubscriptionFromStripe(subscription);
-    await markCheckoutOperationCompleted(session);
+    await tenantStore.run(userId, () => markCheckoutOperationCompleted(session));
     result.subscriptionSynced = true;
     return result;
   }
