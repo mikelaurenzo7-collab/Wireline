@@ -11,7 +11,7 @@ export const FOUNDER_PRODUCTS = [
     key: "starter",
     name: "Wireline Starter",
     description:
-      "Founder plan for one live communications agent: 1 on-demand production number, 60 pooled voice minutes monthly, Lead Hunt access, connected email workflows, and prepaid Runtime Balance for additional usage.",
+      "1 live voice agent, 1 production number, 60 voice minutes/month, email + SMS, and no automatic overages.",
     defaultPriceKey: "starter_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "starter",
@@ -29,7 +29,7 @@ export const FOUNDER_PRODUCTS = [
     key: "team",
     name: "Wireline Starter Plus",
     description:
-      "Founder hybrid plan: personal Concierge + business voice agent (2 live agents), 2 on-demand production numbers, 120 pooled voice minutes monthly, full Lead Hunt workflows, shared conversation inbox, connected email and SMS automation, and prepaid Runtime Balance for additional usage.",
+      "2 live agents, 2 production numbers, 120 pooled voice minutes/month, Lead Hunt, email + SMS, and no automatic overages.",
     defaultPriceKey: "team_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "team",
@@ -47,7 +47,7 @@ export const FOUNDER_PRODUCTS = [
     key: "business",
     name: "Wireline Pro",
     description:
-      "Multi-agent operating plan for growing businesses: up to 5 live communications agents and on-demand numbers, 245 pooled voice minutes monthly, Lead Hunt workflows, shared inbox, routing, approvals, connected email and SMS automation, and prepaid overflow.",
+      "Up to 5 live voice agents, 245 pooled voice minutes/month, routing, approvals, CRM, email + SMS, and no automatic overages.",
     defaultPriceKey: "business_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "business",
@@ -65,7 +65,7 @@ export const FOUNDER_PRODUCTS = [
     key: "enterprise",
     name: "Wireline Business",
     description:
-      "High-capacity operating plan: up to 15 live communications agents and on-demand numbers, 450 pooled voice minutes monthly, Lead Hunt and enrichment workflows, analytics, CRM controls, approvals, connected email and SMS automation, and prepaid overflow.",
+      "Up to 15 live voice agents, 450 pooled voice minutes/month, advanced routing, analytics, CRM, email + SMS, and no automatic overages.",
     defaultPriceKey: "enterprise_monthly_founder_2026_07_v6",
     metadata: {
       wireline_plan_id: "enterprise",
@@ -83,7 +83,7 @@ export const FOUNDER_PRODUCTS = [
     key: "scale",
     name: "Wireline Scale & Enterprise",
     description:
-      "Custom committed-usage plan for 25 or more communications agents, advanced governance, SSO, custom telephony and integrations, retention controls, security review, implementation support, and negotiated channel economics.",
+      "Custom plan for 25+ agents with advanced governance, SSO, integrations, retention controls, security review, and implementation support.",
     defaultPriceKey: null,
     metadata: {
       wireline_offer: "enterprise_contact",
@@ -94,7 +94,7 @@ export const FOUNDER_PRODUCTS = [
     key: "extra_agent",
     name: "Wireline Extra Agent + 50 Minutes",
     description:
-      "Adds one live Wireline agent, one production-number slot, and 50 additional guaranteed voice minutes each month.",
+      "+1 live voice agent, +1 production-number slot, and +50 guaranteed voice minutes/month.",
     defaultPriceKey: "extra_agent_monthly_founder_2026_07_v3",
     metadata: {
       wireline_addon_id: "extra_agent",
@@ -107,7 +107,7 @@ export const FOUNDER_PRODUCTS = [
     key: "live_video",
     name: "Wireline Live Video",
     description:
-      "Photoreal presenter streaming add-on for business agents: 60 reserved Live Video minutes monthly, reserved in up-to-5-minute sessions, with no automatic overage.",
+      "Live Video for a paid business agent: 60 reserved minutes/month in up-to-5-minute sessions, with no automatic overage.",
     defaultPriceKey: "live_video_monthly",
     metadata: {
       wireline_product: "live_video_addon",
@@ -122,7 +122,7 @@ export const FOUNDER_PRODUCTS = [
     key: "conversation_balance",
     name: "Runtime Balance",
     description:
-      "One-time prepaid Runtime Balance for live calls, texts, follow-up, and provider-backed work.",
+      "Prepaid Runtime Balance for usage beyond included capacity. No automatic overages.",
     defaultPriceKey: "balance_25",
     metadata: {
       wireline_offer: "conversation_balance",
