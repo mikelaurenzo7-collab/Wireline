@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   HARD_CONTRIBUTION_MARGIN_FLOOR,
   LAUNCH_CONTRIBUTION_MARGIN_FLOOR,
+  PHONE_NUMBER_COST_MONTHLY_USD,
   STRIPE_PLANS,
   estimatedContributionMarginAtExpectedUsage,
   estimatedContributionMarginAtFullIncludedUsage,
@@ -60,7 +61,7 @@ describe("catalog v6 capacity stays inside the two-floor margin guardrail", () =
             : estimatedStripeCommercialFeesUsd(plan.price_usd_monthly);
         const bindingCogsPerMin =
           (revenue * (1 - HARD_CONTRIBUTION_MARGIN_FLOOR) -
-            plan.included_phone_numbers * 1.15 -
+            plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD -
             plan.runtime_allowance_usd_monthly -
             commercialFees) /
           plan.voice_minutes_monthly;
@@ -72,23 +73,27 @@ describe("catalog v6 capacity stays inside the two-floor margin guardrail", () =
     }
   });
 
-  it("survives a COGS drift to the pricing-review threshold without going underwater", () => {
-    // Bigger included allowances raise exposure to per-minute cost drift. At
-    // the alarm rate every paid plan must keep expected-usage contribution at
-    // or above 40% and worst-case full-use contribution at or above 25% on
-    // the binding annual interval, or v6 was sized with no room for its cost
-    // basis to move.
+  it("survives a real COGS drift without going underwater", () => {
+    // Drift resilience is deliberately parameterized independently of the
+    // pricing-review reference (which now equals the modeled reserve, so
+    // testing "drift to the reference" would just repeat the baseline floor
+    // check above). v6 must absorb roughly a 9% cost-basis move — the old
+    // $0.14 stress rate — keeping expected-usage contribution at or above 40%
+    // and worst-case full-use contribution at or above 25% on the binding
+    // annual interval.
+    const DRIFT_STRESS_RATE_PER_MIN_USD = 0.14;
+    expect(DRIFT_STRESS_RATE_PER_MIN_USD).toBeGreaterThan(COGS_DRIFT_THRESHOLD_PER_MIN_USD);
     for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
       const revenue = plan.price_usd_annual / 12;
       const commercialFees = estimatedStripeCommercialFeesUsd(plan.price_usd_annual) / 12;
       const fullCost =
-        plan.voice_minutes_monthly * COGS_DRIFT_THRESHOLD_PER_MIN_USD +
-        plan.included_phone_numbers * 1.15 +
+        plan.voice_minutes_monthly * DRIFT_STRESS_RATE_PER_MIN_USD +
+        plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD +
         plan.runtime_allowance_usd_monthly +
         commercialFees;
       const expectedCost =
-        plan.voice_minutes_monthly * 0.7 * COGS_DRIFT_THRESHOLD_PER_MIN_USD +
-        plan.included_phone_numbers * 1.15 +
+        plan.voice_minutes_monthly * 0.7 * DRIFT_STRESS_RATE_PER_MIN_USD +
+        plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD +
         plan.runtime_allowance_usd_monthly * 0.7 +
         commercialFees;
       expect(

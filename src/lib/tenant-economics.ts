@@ -17,17 +17,22 @@ import { getBudgetSnapshot } from "./spend-guards";
 
 export const MARGIN_AT_RISK_THRESHOLD_PCT = 10;
 /**
- * Observed blended COGS above this triggers a pricing review alert.
+ * Catalog-level pricing-review reference: fleet blended COGS above this means
+ * the priced-in reserve no longer covers reality and pricing needs review.
  *
- * The alarm is the priced-in reserve itself: any observed blended cost above
- * what the catalog assumed is drift worth reviewing, and it must fire before
+ * The reference is the reserve itself, and it must sit below the point where
  * the launch-certified 30% hard contribution floor (assertPlanMarginFloors)
- * breaks, not after. Solving the full-utilization margin for the floor across
- * the v6 catalog puts the binding constraint at $0.12898/min (enterprise
- * annual) — the prior $0.14 alarm only fired once four of the eight
+ * breaks — solving the full-utilization margin for the floor across the v6
+ * catalog puts the binding constraint at $0.12898/min (enterprise annual).
+ * The prior $0.14 value only flagged drift once four of the eight
  * plan-interval combinations were already below the certified floor.
  * round6-margin-capacity-contract re-derives that bound from the catalog and
- * pins the alarm beneath it.
+ * pins this beneath it; `npm run economics:report` prints both.
+ *
+ * This is a FLEET pricing bound, not a per-tenant health check: an individual
+ * tenant's observed rate naturally varies above the modeled average, so
+ * tenant-facing health (voice-reliability summary and its Insights tile)
+ * compares against reserve × TENANT_OBSERVED_COGS_HEADROOM_RATIO instead.
  */
 export const COGS_DRIFT_THRESHOLD_PER_MIN_USD = VOICE_VARIABLE_COST_PER_MIN_USD;
 

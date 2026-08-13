@@ -5,6 +5,16 @@
  * Includes carrier, voice runtime, model, and operational variance.
  */
 export const VOICE_VARIABLE_COST_PER_MIN_USD = 0.128;
+/**
+ * Per-tenant observed-COGS health headroom. A single tenant's blended rate
+ * naturally sits above the modeled fleet average (short calls carry per-call
+ * overhead, premium voices) without implying fleet-margin drift, so tenant
+ * health checks compare observed cost against reserve × this ratio. Shared by
+ * the voice-reliability health summary and its Insights tile so the banner
+ * and the tile can never disagree. Catalog-level pricing review uses
+ * COGS_DRIFT_THRESHOLD_PER_MIN_USD in tenant-economics instead.
+ */
+export const TENANT_OBSERVED_COGS_HEADROOM_RATIO = 1.15;
 export const PHONE_NUMBER_COST_MONTHLY_USD = 1.15;
 export const PAYMENT_PROCESSING_RATE = 0.029;
 export const PAYMENT_PROCESSING_FIXED_USD = 0.3;

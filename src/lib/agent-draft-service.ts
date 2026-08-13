@@ -18,7 +18,7 @@ import { emitServerProductEventOnce } from "./product-event-server";
 
 const ROLE_ARCHETYPES: Record<AgentCustomizationProfile["identity"]["role"], string> = {
   receptionist: "Receptionist",
-  scheduler: "Personal Assistant",
+  scheduler: "Scheduling Agent",
   sales: "Sales Representative",
   customer_service: "Customer Support",
 };

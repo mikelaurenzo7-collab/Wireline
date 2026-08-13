@@ -27,7 +27,7 @@ Wireline uses one headless modal foundation for any mobile surface that blocks i
 ## Completed in this foundation
 
 1. Public header recovery uses the `navigation` presentation.
-2. ClientToolbar and AppPageIntro use the `drawer` presentation.
+2. ClientToolbar uses the `drawer` presentation (AppPageIntro was retired 2026-08-13; WorkspacePageIntro owns page intros).
 3. WorkspaceShell uses one shared navigation-content composition for the desktop rail and mobile `sidebar` presentation.
 4. The design-system contract and dedicated mobile-overlay test prevent the active surfaces from reverting to manual overlays.
 

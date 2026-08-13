@@ -18,7 +18,10 @@ import {
   YAxis,
 } from "recharts";
 import { cn } from "../../lib/utils";
-import { VOICE_VARIABLE_COST_PER_MIN_USD } from "../../lib/plan-catalog";
+import {
+  TENANT_OBSERVED_COGS_HEADROOM_RATIO,
+  VOICE_VARIABLE_COST_PER_MIN_USD,
+} from "../../lib/plan-catalog";
 import type { VoiceLatencyRecentCallRow, VoiceReliabilityResponse } from "../../types/api";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 
@@ -122,9 +125,12 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
       label: "COGS / min",
       value: formatUsd(summary.economics.cogsPerMinUsd),
       sub: `est. $${VOICE_VARIABLE_COST_PER_MIN_USD}/min · margin ${formatPct(summary.economics.grossMarginPct)}`,
+      // Same bound the server-side reliability summary applies, via the shared
+      // ratio — the banner and this tile must agree about health.
       healthy:
         summary.economics.cogsPerMinUsd == null ||
-        summary.economics.cogsPerMinUsd <= VOICE_VARIABLE_COST_PER_MIN_USD * 1.15,
+        summary.economics.cogsPerMinUsd <=
+          VOICE_VARIABLE_COST_PER_MIN_USD * TENANT_OBSERVED_COGS_HEADROOM_RATIO,
     },
   ];
 

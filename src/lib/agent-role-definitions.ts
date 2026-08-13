@@ -83,8 +83,11 @@ const ROLE_META: Record<AgentRoleId, Omit<AgentRoleDefinition, "id">> = {
     description: "Routes calls and creates first impressions",
   },
   personal_assistant: {
-    label: "Personal Assistant",
-    archetype: "Personal Assistant",
+    // Stored role value is a stable technical contract; label/archetype are
+    // customer-visible through the web, API, and mobile role listings and
+    // follow the product-language rule: "personal agent", never "assistant".
+    label: "Personal Agent",
+    archetype: "Personal Agent",
     description: "Protects principal time and handles personal logistics",
   },
   marketing: {

@@ -8,7 +8,6 @@ import { eq, and, sql, desc, lt, gte, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { dashboardRateLimit } from "../middleware/api-rate-limits";
 import { computeDashboardStats } from "../lib/dashboard-stats";
-import { computeDashboardBenchmarks } from "../lib/dashboard-benchmarks";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import {
   getCachedDashboard,
@@ -159,9 +158,7 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
     // happened to match by coincidence (id, summary, transcript, direction).
     const safeCalls = (calls || []).map((call) => ({
       ...call,
-      recordingUrl: call.recordingUrl
-        ? `/api/calls/${String(call.id)}/recording`
-        : null,
+      recordingUrl: call.recordingUrl ? `/api/calls/${String(call.id)}/recording` : null,
     }));
 
     res.json({
@@ -344,66 +341,10 @@ router.get(
   },
 );
 
-// Performance benchmarks — compare user's stats against industry averages
-router.get(
-  "/api/dashboard/benchmarks",
-  authenticateUser,
-  dashboardRateLimit,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const userId = req.user.id;
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-      // One pooled client for the whole fan-out. Every root Drizzle query
-      // checks out its own tenant-scoped client and the serverless pool is
-      // capped at five, so a bare Promise.all here would put two concurrent
-      // dashboard mounts over the cap and fail on the 5s checkout timeout.
-      const [calls, leads, agents] = await drizzle.transaction((tx) =>
-        serialQueryBatch([
-          tx
-            .select({
-              duration_seconds: schema.callLogs.durationSeconds,
-              lead_score: schema.callLogs.leadScore,
-              intent_label: schema.callLogs.intentLabel,
-              cost: schema.callLogs.cost,
-              qa_score: schema.callLogs.qaScore,
-            })
-            .from(schema.callLogs)
-            .where(
-              and(
-                eq(schema.callLogs.userId, userId),
-                gte(schema.callLogs.createdAt, thirtyDaysAgo),
-              ),
-            ),
-          tx
-            .select({ status: schema.outboundLeads.status })
-            .from(schema.outboundLeads)
-            .where(
-              and(
-                eq(schema.outboundLeads.userId, userId),
-                gte(schema.outboundLeads.createdAt, thirtyDaysAgo),
-              ),
-            ),
-          tx
-            .select({ id: schema.agents.id })
-            .from(schema.agents)
-            .where(eq(schema.agents.userId, userId)),
-        ]),
-      );
-
-      const result = computeDashboardBenchmarks({
-        calls: calls as any,
-        leads: leads as any,
-        agentCount: agents.length || 0,
-      });
-      res.json({ ...result, period: "30d" });
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      log.error("Benchmarks endpoint failed", { error });
-      throw AppError.fromHttpStatus(500, "Failed to fetch benchmarks");
-    }
-  },
-);
+// The industry-benchmarks endpoint was removed 2026-08-13 together with its
+// only consumer (PerformanceBenchmarks.tsx, unmounted) and its compute module:
+// an authenticated route with zero product callers is attack surface plus
+// authz-matrix noise for nothing.
 
 // ==========================================
 // 1.6 APPOINTMENTS RETRIEVAL ENDPOINT

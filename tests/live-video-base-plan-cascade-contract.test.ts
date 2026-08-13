@@ -23,9 +23,7 @@ describe("Live Video dependent billing lifecycle", () => {
     expect(helpers).toContain("restoreCascade");
     expect(helpers).toContain("priorBaseRequiredCascade");
     expect(helpers).toContain('existing.status === "unpaid"');
-    expect(helpers).toContain(
-      'addon.metadata?.wireline_base_plan_cascade === "true"',
-    );
+    expect(helpers).toContain('addon.metadata?.wireline_base_plan_cascade === "true"');
     expect(helpers).toContain("cancel_at_period_end: false");
     expect(helpers).toContain('metadata: { wireline_base_plan_cascade: "" }');
   });
@@ -50,8 +48,10 @@ describe("Live Video dependent billing lifecycle", () => {
   });
 
   it("runs Stripe reconciliation before persisting the new local base-plan mirror", () => {
+    // Whitespace-tolerant: the mutation phase moved inside tenantStore.run,
+    // which re-indented the upsert without changing the ordering invariant.
     const call = helpers.indexOf("await reconcileLiveVideoAddonWithBasePlan({");
-    const persistence = helpers.indexOf("await drizzle\n    .insert(schema.subscriptions)", call);
+    const persistence = helpers.indexOf(".insert(schema.subscriptions)", call);
     expect(call).toBeGreaterThan(-1);
     expect(persistence).toBeGreaterThan(call);
   });

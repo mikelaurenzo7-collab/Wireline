@@ -238,9 +238,11 @@ export default function StudioWorkspaceV2() {
     const currentIndex = SECTIONS.findIndex((item) => item.id === section);
     const lastIndex = SECTIONS.length - 1;
     let nextIndex = currentIndex;
-    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+    // Horizontal tablist: Left/Right/Home/End only. Capturing Up/Down here
+    // would hijack page scroll while a tab is focused.
+    if (event.key === "ArrowRight") {
       nextIndex = currentIndex === lastIndex ? 0 : currentIndex + 1;
-    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+    } else if (event.key === "ArrowLeft") {
       nextIndex = currentIndex === 0 ? lastIndex : currentIndex - 1;
     } else if (event.key === "Home") {
       nextIndex = 0;

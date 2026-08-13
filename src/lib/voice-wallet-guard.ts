@@ -39,7 +39,8 @@ export async function getVoiceWalletSnapshot(userId: string): Promise<VoiceWalle
   // fails open on error. A Promise.all here checked out one pooled client per
   // query — two simultaneous inbound calls could exhaust the max-5 pool,
   // time out, and hand an insolvent tenant the full assistant. serialQueryBatch
-  // resolves the lazy builders one at a time on a single checkout.
+  // resolves the lazy builders strictly one at a time, so this request never
+  // holds more than one checkout concurrently.
   const [[sub], [usage], [settingsRow]] = await serialQueryBatch([
     drizzle
       .select({ plan: schema.subscriptions.plan, status: schema.subscriptions.status })

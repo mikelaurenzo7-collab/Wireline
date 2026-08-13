@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 383
-**Protected:** 314
+**Routes scanned:** 382
+**Protected:** 313
 **Public (allowlisted):** 69
 **Violations:** 0
 
@@ -215,7 +215,6 @@
 | dashboard-routes.ts | PATCH | `/api/appointments/:id` | inline | — | — | Protected |
 | dashboard-routes.ts | DELETE | `/api/appointments/:id` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/calls` | inline | — | — | Protected |
-| dashboard-routes.ts | GET | `/api/dashboard/benchmarks` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/dashboard/dossiers` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/dashboard/stats` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/export/:type.csv` | inline | — | — | Protected |

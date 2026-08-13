@@ -4,8 +4,11 @@
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { and, eq, gte } from "drizzle-orm";
-import { VOICE_VARIABLE_COST_PER_MIN_USD, planById } from "./plan-catalog";
-import { COGS_DRIFT_THRESHOLD_PER_MIN_USD } from "./tenant-economics";
+import {
+  TENANT_OBSERVED_COGS_HEADROOM_RATIO,
+  VOICE_VARIABLE_COST_PER_MIN_USD,
+  planById,
+} from "./plan-catalog";
 import { isAbnormalHangup } from "./call-reliability-capture";
 
 export { isAbnormalHangup } from "./call-reliability-capture";
@@ -233,7 +236,12 @@ export async function getVoiceReliabilitySummary(opts: {
       toolHealthy &&
       escalationHealthy &&
       webhookHealthy &&
-      (cogsPerMin == null || cogsPerMin <= COGS_DRIFT_THRESHOLD_PER_MIN_USD),
+      // Per-tenant observed rate vs the reserve with variance headroom —
+      // the same bound the Insights COGS tile shows, so the summary banner
+      // and the tile can never disagree. Catalog-level drift review is
+      // tenant-economics' COGS_DRIFT_THRESHOLD_PER_MIN_USD, not this check.
+      (cogsPerMin == null ||
+        cogsPerMin <= VOICE_VARIABLE_COST_PER_MIN_USD * TENANT_OBSERVED_COGS_HEADROOM_RATIO),
   };
 }
 
