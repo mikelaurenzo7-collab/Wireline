@@ -89,7 +89,7 @@ describe("Stripe product copy parity", () => {
     ]);
   });
 
-  it("requires Runtime Balance to stay descriptor-free", () => {
+  it("does not police subscription-only descriptor state on one-time Runtime Balance", () => {
     const runtimeBalance = [
       {
         key: "conversation_balance",
@@ -104,22 +104,11 @@ describe("Stripe product copy parity", () => {
       name: "Runtime Balance",
       description: "Prepaid runtime balance.",
       url: EXPECTED_PRODUCT_URL,
-      statement_descriptor: null,
+      statement_descriptor: "IGNORED FOR ONE-TIME PAYMENTS",
       metadata: { wireline_offer: "conversation_balance" },
     };
 
     expect(stripeProductCopyFindings([product], runtimeBalance)).toEqual([]);
-    expect(
-      stripeProductCopyFindings(
-        [{ ...product, statement_descriptor: EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR }],
-        runtimeBalance,
-      ),
-    ).toEqual([
-      expect.objectContaining({
-        level: "error",
-        message: expect.stringMatching(/statement descriptor drift/i),
-      }),
-    ]);
   });
 
   it("detects managed metadata drift without policing unrelated metadata", () => {
