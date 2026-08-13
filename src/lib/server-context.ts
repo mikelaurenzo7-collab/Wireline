@@ -236,7 +236,7 @@ async function scopeClientToTenant(userId: string) {
 /* eslint-disable @typescript-eslint/no-explicit-any -- pg Pool.connect has overloaded callback/promise signatures */
 (pool as any).connect = function tenantScopedConnect(callback?: any): any {
   const userId = tenantStore.getStore();
-  let connectionScope;
+  let connectionScope: ReturnType<typeof resolveTenantDatabaseScope>;
   try {
     connectionScope = resolveTenantDatabaseScope(userId);
   } catch (error) {
