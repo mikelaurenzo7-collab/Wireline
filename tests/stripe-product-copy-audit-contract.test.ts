@@ -26,7 +26,7 @@ describe("Stripe customer-facing product truth", () => {
 
   it("fails live audits when product URLs or recurring statement identity drift", () => {
     expect(audit).toContain('EXPECTED_PRODUCT_URL = "https://trywireline.com/pricing"');
-    expect(audit).toContain('EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR = "TRY WIRELINE"');
+    expect(audit).toContain('EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR = "WIRELINE"');
     expect(audit).toContain("Stripe product URL drift");
     expect(audit).toContain("Stripe product statement descriptor drift");
     expect(audit).toContain('expected.key !== "conversation_balance"');
