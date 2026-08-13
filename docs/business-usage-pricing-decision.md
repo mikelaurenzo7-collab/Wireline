@@ -17,7 +17,7 @@ Wireline sells operating capacity, not template access.
 
 - All templates are unlocked; Personal ("Free Builder") creates, trains, and privately simulates one draft agent at $0.
 - Every paid tier (Starter, Starter Plus, Pro, Business) guarantees live voice capacity and an on-demand number slot — see `voice_minutes_monthly` per plan in `plan-catalog.ts`.
-- Optional SMS, platform AI/research, enrichment, and business-artifact generation draw from a smaller flexible monthly Runtime Allowance included in the same subscription (`runtime_allowance_usd_monthly`), funded every billing period rather than as a one-time welcome credit.
+- Optional SMS and business-artifact generation draw from a smaller flexible monthly Runtime Allowance included in the same subscription (`runtime_allowance_usd_monthly`), funded every billing period rather than as a one-time welcome credit. Platform AI, live research, and enrichment are funded by the plan's included AI-spend envelope (`defaultAiSpendBudgetUsdForTier`), where every platform-funded provider call — model turns, Perplexity research, platform-key Apollo enrichment — is metered per account. `npm run economics:report` prints both budgets against the certified margins.
 - Live work should always reconcile through a durable ledger instead of vague "unlimited" promises.
 
 ## Current commercial structure (Founder Early Access, live in Stripe as of 2026-07-10)

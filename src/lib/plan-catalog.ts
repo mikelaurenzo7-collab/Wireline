@@ -127,8 +127,12 @@ const EXTRA_AGENT_FEATURE =
  * - Every paid tier guarantees live voice capacity and an on-demand number slot.
  * - Paid extra-agent add-ons increase both agent count and included voice capacity.
  * - Voice is the primary pricing driver because it is the only mandatory, high-variable-cost channel.
- * - Optional SMS, platform AI/research, enrichment, and business-artifact generation use a
- *   smaller flexible monthly Runtime Allowance included in the same subscription.
+ * - Optional SMS and business-artifact generation use a smaller flexible monthly
+ *   Runtime Allowance included in the same subscription. Platform AI, live
+ *   research, and enrichment are funded by the plan's included AI-spend
+ *   envelope (plan-entitlements), metered per account — every platform-funded
+ *   provider call is recorded there, so the two budgets describe the complete
+ *   variable-cost surface between them.
  * - Connected customer email, calendar, CRM, commerce, and data providers retain their own limits.
  * - Runtime Balance funds only usage beyond included capacity; there is no automatic postpaid meter.
  * - Active calls finish normally; depleted coverage blocks only the next paid action.

@@ -1,6 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Perplexity API envelopes can vary by product surface. */
-import { fetchWithTimeout, log } from "./server-context";
+import { fetchWithTimeout, log, tenantStore } from "./server-context";
 import { getErrorMessage } from "./server-utils";
+import { persistPlatformCostRecord, platformCostReserveUsd } from "../middleware/audit-middleware";
+
+/**
+ * Meter successful Perplexity requests against the calling tenant's AI-spend
+ * envelope. The tenant comes from ambient context (these helpers run inside
+ * tenantStore.run on every tenant-serving path — Vapi tool dispatch and
+ * authenticated routes). Platform-level calls with no tenant (e.g. showcase
+ * demo enrichment) are platform marketing COGS, not tenant spend, and are
+ * deliberately not charged to anyone. Fire-and-forget: metering must never
+ * fail the research result it accounts for.
+ */
+function meterPerplexityRequests(purpose: string, requests: number): void {
+  const userId = tenantStore.getStore();
+  if (!userId || !(requests > 0)) return;
+  void persistPlatformCostRecord({
+    userId,
+    action: `platform.research.${purpose}`,
+    provider: "perplexity",
+    model: "sonar",
+    costUsd: platformCostReserveUsd("perplexity_request") * requests,
+    requestMeta: { requests },
+  }).catch((error: unknown) =>
+    log.warn("Perplexity cost metering failed", { purpose, error: getErrorMessage(error) }),
+  );
+}
 
 export type PerplexityResearchDepth = "fast" | "deep";
 
@@ -25,7 +50,10 @@ export interface PerplexityResearchOptions {
   timeoutMs?: number;
 }
 
-const API_ROOT = (process.env.PERPLEXITY_API_BASE_URL || "https://api.perplexity.ai").replace(/\/$/, "");
+const API_ROOT = (process.env.PERPLEXITY_API_BASE_URL || "https://api.perplexity.ai").replace(
+  /\/$/,
+  "",
+);
 const CHAT_URL = process.env.PERPLEXITY_CHAT_API_URL || `${API_ROOT}/chat/completions`;
 const SEARCH_URL = process.env.PERPLEXITY_SEARCH_API_URL || `${API_ROOT}/search`;
 const CHAT_MODEL = process.env.PERPLEXITY_MODEL || "sonar";
@@ -89,9 +117,12 @@ function dedupeSources(sources: PerplexitySource[]): PerplexitySource[] {
 }
 
 function parseSearchSources(payload: any): PerplexitySource[] {
-  const candidates = [payload?.results, payload?.data, payload?.search_results, payload?.organic].find(
-    Array.isArray,
-  );
+  const candidates = [
+    payload?.results,
+    payload?.data,
+    payload?.search_results,
+    payload?.organic,
+  ].find(Array.isArray);
   if (!Array.isArray(candidates)) return [];
   return dedupeSources(
     candidates.map((item: any) => ({
@@ -162,6 +193,7 @@ export async function searchPerplexityWeb(
       },
       timeoutMs,
     );
+    meterPerplexityRequests("search", 1);
     const sources = parseSearchSources(payload);
     if (sources.length === 0) return null;
 
@@ -205,6 +237,7 @@ async function runSonarResearch(
       },
       timeoutMs,
     );
+    meterPerplexityRequests("sonar", 1);
     const answer = payload?.choices?.[0]?.message?.content?.trim();
     if (!answer) return null;
     return { answer: cleanAnswer(answer), sources: parseChatSources(payload) };
@@ -233,6 +266,7 @@ async function runAgentResearch(
       },
       timeoutMs,
     );
+    meterPerplexityRequests("agent", 1);
     const answer =
       (typeof payload?.output_text === "string" && payload.output_text) ||
       (typeof payload?.answer === "string" && payload.answer) ||
@@ -268,6 +302,7 @@ async function requestEmbeddings(inputs: string[], timeoutMs: number): Promise<n
       },
       timeoutMs,
     );
+    meterPerplexityRequests("embeddings", 1);
     const rows = Array.isArray(payload?.data) ? payload.data : [];
     const embeddings = rows
       .map((row: any) => row?.embedding)

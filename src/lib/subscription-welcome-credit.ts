@@ -1,17 +1,17 @@
 /**
  * Subscription-funded Wireline Runtime Allowance.
  *
- * Voice minutes remain separately guaranteed by the plan. This grant funds optional
- * SMS, platform AI/research, enrichment, and generated business artifacts without
- * allowing those workloads to consume the customer's guaranteed phone capacity.
+ * Voice minutes remain separately guaranteed by the plan. This grant funds
+ * optional SMS and generated business artifacts without allowing those
+ * workloads to consume the customer's guaranteed phone capacity. Platform AI,
+ * live research, and enrichment are funded by the plan's included AI-spend
+ * envelope instead (plan-entitlements), where every platform provider call is
+ * metered.
  */
 import { addCredit } from "./credit-wallet";
 import { planById } from "./plan-catalog";
 import { log } from "./server-context";
-import {
-  clampUnitInterval,
-  runtimeAllowanceMovementUsd,
-} from "./stripe-dispute-accounting";
+import { clampUnitInterval, runtimeAllowanceMovementUsd } from "./stripe-dispute-accounting";
 
 export type SubscriptionBillingInterval = "month" | "year";
 
@@ -34,25 +34,20 @@ export async function grantSubscriptionRuntimeAllowance(
   const amountUsd = runtimeAllowanceUsdForPlan(planId, interval);
   if (!(amountUsd > 0)) return;
 
-  const { applied } = await addCredit(
-    userId,
-    amountUsd,
-    "subscription_runtime_allowance",
-    {
-      type: "subscription_runtime_allowance",
-      id: billingPeriodReference,
-      entryKind: "grant",
-      source: "stripe",
-      provider: "stripe",
-      customerReason: "Included Wireline Runtime Allowance",
-      metadata: {
-        plan_id: planId,
-        billing_interval: interval,
-        runtime_allowance_usd: amountUsd,
-        voice_capacity_separate: true,
-      },
+  const { applied } = await addCredit(userId, amountUsd, "subscription_runtime_allowance", {
+    type: "subscription_runtime_allowance",
+    id: billingPeriodReference,
+    entryKind: "grant",
+    source: "stripe",
+    provider: "stripe",
+    customerReason: "Included Wireline Runtime Allowance",
+    metadata: {
+      plan_id: planId,
+      billing_interval: interval,
+      runtime_allowance_usd: amountUsd,
+      voice_capacity_separate: true,
     },
-  );
+  });
 
   if (applied > 0) {
     log.info("subscription runtime allowance granted", {
@@ -151,10 +146,5 @@ export async function grantWelcomeSubscriptionCredit(
   subscriptionId: string,
   planId: string | null | undefined,
 ): Promise<void> {
-  return grantSubscriptionRuntimeAllowance(
-    userId,
-    subscriptionId,
-    planId,
-    "month",
-  );
+  return grantSubscriptionRuntimeAllowance(userId, subscriptionId, planId, "month");
 }
