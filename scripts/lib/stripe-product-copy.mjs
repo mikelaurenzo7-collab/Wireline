@@ -12,9 +12,9 @@ function finding(level, message, metadata = {}) {
 }
 
 /**
- * Compare active Stripe product copy and managed metadata against the canonical
- * repository manifest. The catalog audit owns price topology; this policy owns
- * customer-visible product truth and the metadata fields used by Wireline.
+ * Compare active Stripe product copy, billing presentation, and managed
+ * metadata against Wireline's canonical repository truth. The catalog audit
+ * owns price topology; this policy owns customer-visible product identity.
  */
 export function stripeProductCopyFindings(products, expectedProducts) {
   const findings = [];
