@@ -246,7 +246,7 @@ export function renderDailyBriefEmail(
     li.warn { border-left-color:#fbbf24; }
     li.action { border-left-color:#38bdf8; }
     .footer { text-align:center; color:#71717a; font-size:12px; padding:32px 0; line-height: 1.6; }
-    .btn { display:inline-block; padding:12px 24px; border-radius:99px; background:${BRAND.colors.primary}; color:#ffffff !important; text-decoration:none; font-weight:600; font-size:13px; letter-spacing:0.1em; text-transform: uppercase; border: 1px solid ${BRAND.colors.primaryVariant}; }
+    .btn { display:inline-block; padding:12px 24px; border-radius:99px; background:${BRAND.colors.primary}; color:${BRAND.colors.onPrimary} !important; text-decoration:none; font-weight:600; font-size:13px; letter-spacing:0.1em; text-transform: uppercase; border: 1px solid ${BRAND.colors.primaryVariant}; }
   `;
 
   const stat = (label: string, value: string, delta?: number | null) => `

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   ArrowUpRight,
   MessageSquareText,
@@ -82,7 +83,24 @@ export default function ClientAppsPage() {
   // Mounted at both /apps (standalone) and /settings/apps. Inside Settings the
   // page must carry the settings tab strip and let the selected tab name it
   // (sr-only h1) like every sibling settings page; standalone keeps its own h1.
-  const inSettings = useLocation().pathname.startsWith("/settings");
+  const location = useLocation();
+  const inSettings = location.pathname.startsWith("/settings");
+
+  // The workspace scrolls inside .wl-workspace-content, not the window, and
+  // RouteChangeA11y deliberately leaves hash navigation alone — so the
+  // "MCP setup" card's /settings/apps#chatgpt-mcp link needs the same explicit
+  // scroll PhoneSetupPanel uses for #company-identity.
+  useEffect(() => {
+    if (location.hash !== "#chatgpt-mcp") return;
+    const id = window.setTimeout(() => {
+      document.getElementById("chatgpt-mcp")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [location.hash, location.pathname]);
+
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame mode="standard">

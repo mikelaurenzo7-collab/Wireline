@@ -112,7 +112,7 @@ export default function AcceptInvite() {
                 <TriangleAlert className="size-5" />
               </span>
             ) : status === "success" ? (
-              <span className="grid size-11 place-items-center rounded-full bg-emerald-500/10 text-emerald-600">
+              <span className="wl-status-success wl-text-success grid size-11 place-items-center rounded-full">
                 <CheckCircle2 className="size-5" />
               </span>
             ) : (
