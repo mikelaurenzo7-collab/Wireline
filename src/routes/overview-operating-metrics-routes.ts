@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { and, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 
 import { AppError } from "../lib/api-error";
 import { ACTIVE_OPERATOR_TASK_STATUSES } from "../lib/operator-work-status";
@@ -14,6 +14,7 @@ const router = Router();
 const MAX_DAY_BOUNDARY_AGE_MS = 48 * 60 * 60 * 1000;
 const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
 const HIGH_INTENT_SCORE = 75;
+const RECENT_CONVERSATION_LIMIT = 4;
 
 /**
  * Exact, lightweight Home KPIs.
@@ -112,6 +113,119 @@ router.get(
         error: getErrorMessage(error),
       });
       throw AppError.fromHttpStatus(503, "Home metrics are temporarily unavailable");
+    }
+  },
+);
+
+/**
+ * Lightweight omnichannel recents for Home.
+ *
+ * The legacy dashboard aggregate reads hundreds of call/analytics rows. Home
+ * only needs a four-row operating glance, so read the newest four candidates
+ * per customer channel, merge them in memory, and return bounded metadata only.
+ * Message bodies, transcripts, recordings, and provider payloads stay out of
+ * this response.
+ */
+router.get(
+  "/api/overview/recent-conversations",
+  authenticateUser,
+  dashboardRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user.id;
+      const [calls, emails, smsThreads] = await drizzle.transaction((tx) =>
+        serialQueryBatch([
+          tx
+            .select({
+              id: schema.callLogs.id,
+              contact: schema.callLogs.customerNumber,
+              summary: schema.callLogs.summary,
+              occurredAt: schema.callLogs.createdAt,
+              durationSeconds: schema.callLogs.durationSeconds,
+              agentName: schema.agents.name,
+            })
+            .from(schema.callLogs)
+            .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
+            .where(eq(schema.callLogs.userId, userId))
+            .orderBy(desc(schema.callLogs.createdAt))
+            .limit(RECENT_CONVERSATION_LIMIT),
+          tx
+            .select({
+              id: schema.emailThreads.id,
+              contact: schema.emailThreads.customerEmail,
+              headline: schema.emailThreads.subject,
+              summary: schema.emailThreads.summary,
+              occurredAt: schema.emailThreads.lastMessageAt,
+              createdAt: schema.emailThreads.createdAt,
+              agentName: schema.agents.name,
+            })
+            .from(schema.emailThreads)
+            .leftJoin(schema.agents, eq(schema.emailThreads.agentId, schema.agents.id))
+            .where(eq(schema.emailThreads.userId, userId))
+            .orderBy(desc(schema.emailThreads.lastMessageAt))
+            .limit(RECENT_CONVERSATION_LIMIT),
+          tx
+            .select({
+              id: schema.smsThreads.id,
+              contact: schema.smsThreads.customerNumber,
+              summary: schema.smsThreads.summary,
+              occurredAt: schema.smsThreads.lastMessageAt,
+              createdAt: schema.smsThreads.createdAt,
+              agentName: schema.agents.name,
+            })
+            .from(schema.smsThreads)
+            .leftJoin(schema.agents, eq(schema.smsThreads.agentId, schema.agents.id))
+            .where(eq(schema.smsThreads.userId, userId))
+            .orderBy(desc(schema.smsThreads.lastMessageAt))
+            .limit(RECENT_CONVERSATION_LIMIT),
+        ]),
+      );
+
+      const recent = [
+        ...calls.map((row) => ({
+          id: String(row.id),
+          channel: "voice" as const,
+          contact: row.contact || "Unknown caller",
+          headline: null,
+          summary: row.summary || null,
+          occurred_at: row.occurredAt?.toISOString() || null,
+          duration_seconds: row.durationSeconds ?? null,
+          agent_name: row.agentName || null,
+        })),
+        ...emails.map((row) => ({
+          id: String(row.id),
+          channel: "email" as const,
+          contact: row.contact || "Unknown sender",
+          headline: row.headline || null,
+          summary: row.summary || null,
+          occurred_at: (row.occurredAt || row.createdAt)?.toISOString() || null,
+          duration_seconds: null,
+          agent_name: row.agentName || null,
+        })),
+        ...smsThreads.map((row) => ({
+          id: String(row.id),
+          channel: "sms" as const,
+          contact: row.contact || "Unknown number",
+          headline: null,
+          summary: row.summary || null,
+          occurred_at: (row.occurredAt || row.createdAt)?.toISOString() || null,
+          duration_seconds: null,
+          agent_name: row.agentName || null,
+        })),
+      ]
+        .filter((row): row is typeof row & { occurred_at: string } => Boolean(row.occurred_at))
+        .sort((a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at))
+        .slice(0, RECENT_CONVERSATION_LIMIT);
+
+      res.setHeader("Cache-Control", "private, no-store, max-age=0");
+      res.json({ conversations: recent });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      log.error("Overview recent conversations failed", {
+        userId: req.user?.id,
+        error: getErrorMessage(error),
+      });
+      throw AppError.fromHttpStatus(503, "Recent conversations are temporarily unavailable");
     }
   },
 );
