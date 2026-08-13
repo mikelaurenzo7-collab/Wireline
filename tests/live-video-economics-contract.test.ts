@@ -59,4 +59,14 @@ describe("live video economics contract", () => {
     expect(presenter).toContain("mp3Base64ChunksToPcmBinary(payload.chunks)");
     expect(presenter).toContain("streamSampleBinary(pcmBinary, payload.eventId)");
   });
+
+  it("keeps homepage Live Video conversion on a truthful paid business path", () => {
+    const spotlight = read("src/components/marketing/LiveVideoSpotlight.tsx");
+
+    expect(spotlight).toContain('to="/signup?plan=starter"');
+    expect(spotlight).not.toContain('to="/signup?plan=personal"');
+    expect(spotlight).toContain("Start with Starter");
+    expect(spotlight).toContain("Paid business plan + $");
+    expect(spotlight).toContain("LIVE_VIDEO_ADDON_PRICE_USD");
+  });
 });
