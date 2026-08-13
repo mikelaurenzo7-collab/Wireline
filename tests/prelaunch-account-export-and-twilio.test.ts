@@ -91,13 +91,14 @@ describe("strict prelaunch account export and Twilio contracts", () => {
     const escalation = read("src/routes/escalation-routes.ts");
     expect(source).toContain('env("TWILIO_API_KEY")');
     expect(source).toContain('env("TWILIO_API_SECRET")');
-    expect(source).toContain('twilio(apiKey, apiSecret, { accountSid })');
+    expect(source).toContain("twilio(apiKey, apiSecret, { accountSid })");
     expect(source).toContain('env("TWILIO_AUTH_TOKEN")');
     expect(source).toContain('TwilioRestAuthMode = "api_key" | "auth_token" | "unconfigured"');
     expect(escalation).toContain(
-      'import { getTwilioClient } from "../lib/twilio-service-base"',
+      'import { sendPlatformOperationalAlert } from "../lib/twilio-service-base"',
     );
-    expect(escalation).toContain("const client = getTwilioClient()");
+    expect(escalation).not.toContain("client.messages.create");
+    expect(source).toContain("const client = getTwilioClient()");
     expect(escalation).not.toContain("twilio(sid, token)");
   });
 

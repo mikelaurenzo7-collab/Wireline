@@ -32,7 +32,7 @@ import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { vapiWebhookSecretOk } from "../lib/vapi-webhook-auth";
 import { postMessage as slackPostMessage, getDefaultChannel } from "../lib/slack-service";
-import { getTwilioClient } from "../lib/twilio-service-base";
+import { sendPlatformOperationalAlert } from "../lib/twilio-service-base";
 
 // Targeted, tight rate limit on the public escalation webhook.
 // Real Vapi incidents during a busy period might legitimately produce a handful of escalations.
@@ -58,25 +58,6 @@ interface EscalationBody {
   /** Wireline tenant user_id — typically the platform-owner UUID for
    * customer-service escalations on the platform's own demo lines. */
   tenant_user_id?: string;
-}
-
-async function dispatchOwnerSms(
-  to: string,
-  body: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const from = process.env.PLATFORM_SMS_FROM;
-  const client = getTwilioClient();
-  if (!client || !from) {
-    return { ok: false, error: "Twilio platform sender not configured" };
-  }
-  try {
-    const msg = await client.messages.create({ to, from, body });
-    log.info("Escalation SMS sent", { sid: msg.sid, to: to.slice(0, 8) });
-    return { ok: true };
-  } catch (e: any) {
-    log.warn("Escalation SMS failed", { error: e?.message });
-    return { ok: false, error: e?.message };
-  }
 }
 
 router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Response) => {
@@ -197,7 +178,11 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
       .filter(Boolean)
       .join("\n");
 
-    const result = await dispatchOwnerSms(process.env.OWNER_PHONE, smsBody);
+    const result = await sendPlatformOperationalAlert(
+      tenantUserId,
+      process.env.OWNER_PHONE,
+      smsBody,
+    );
     smsDispatched = result.ok;
   }
 
@@ -212,8 +197,9 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
     tracked: taskPersisted,
     sla: "4 business hours",
   });
-  // Note: owner SMS + response use the platform OWNER_PHONE (a fixed env),
-  // never a tenant-derived number, so they stay outside tenantStore.
+  // Note: the destination remains the fixed platform OWNER_PHONE, never a
+  // tenant-derived number. When a tenant resolved, only a null-thread delivery
+  // correlation row is written under that tenant for carrier-failure telemetry.
 });
 
 export default router;

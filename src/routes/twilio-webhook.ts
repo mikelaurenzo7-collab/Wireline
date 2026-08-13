@@ -284,6 +284,10 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
   const status = String(req.body?.MessageStatus || req.body?.SmsStatus || "unknown").toLowerCase();
   const errorCode = String(req.body?.ErrorCode || "").trim() || null;
   if (!messageSid) return res.status(204).end();
+  const deliveryFailed = status === "failed" || status === "undelivered";
+  // Scope is part of Twilio's signed callback URL, so a caller cannot promote
+  // an arbitrary failed customer message into a platform operational alert.
+  const operationalCallback = req.query.scope === "operational";
 
   try {
     const [message] = await drizzle
@@ -297,10 +301,11 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
       .limit(1);
 
     if (message?.userId) {
+      const operationalAlert = operationalCallback || !message.threadId;
       await tenantStore.run(message.userId, async () => {
         await drizzle.insert(schema.webhookHealth).values({
           userId: message.userId,
-          provider: "twilio_messaging",
+          provider: operationalAlert ? "twilio_operational" : "twilio_messaging",
           eventType: status,
           outcome: errorCode ? `error_${errorCode}` : status,
         });
@@ -380,6 +385,42 @@ router.post("/api/twilio-webhook/message-status", async (req: Request, res: Resp
               );
           }
         }
+      });
+
+      if (operationalAlert && deliveryFailed) {
+        const context = {
+          status,
+          errorCode,
+          messageSid: opaqueIdSuffixForLog(messageSid),
+          tenant: opaqueIdSuffixForLog(message.userId),
+        };
+        log.error("Twilio operational SMS delivery failed after provider acceptance", context);
+        reportError(new Error("Twilio operational SMS delivery failed"), {
+          route: "/api/twilio-webhook/message-status",
+          provider: "twilio_operational",
+          ...context,
+        });
+      }
+    } else if (operationalCallback && deliveryFailed) {
+      // Platform-owner alerts can be sent even when the source number could not
+      // resolve to a tenant. Preserve and alert on the carrier failure instead
+      // of silently dropping the only post-acceptance signal.
+      await drizzle.insert(schema.webhookHealth).values({
+        userId: null,
+        provider: "twilio_operational",
+        eventType: status,
+        outcome: errorCode ? `error_${errorCode}` : status,
+      });
+      const context = {
+        status,
+        errorCode,
+        messageSid: opaqueIdSuffixForLog(messageSid),
+      };
+      log.error("Unattributed Twilio operational SMS delivery failed", context);
+      reportError(new Error("Unattributed Twilio operational SMS delivery failed"), {
+        route: "/api/twilio-webhook/message-status",
+        provider: "twilio_operational",
+        ...context,
       });
     }
   } catch (error) {
