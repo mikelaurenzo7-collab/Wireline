@@ -1,5 +1,4 @@
 import express, { type Response } from "express";
-import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -33,10 +32,6 @@ import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { buildAgentIdentityPreview } from "../lib/agent-identity";
-import {
-  generatePresenterSpeech,
-  presenterVoicesConfigured,
-} from "../lib/video-presenter/heygen-voice-service";
 import { isOwnerEmail } from "../lib/auth-service";
 
 const router = express.Router();
@@ -88,7 +83,6 @@ async function ownedAgent(agentId: string, userId: string) {
       videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
       videoPresenterConsentStatus: schema.agents.videoPresenterConsentStatus,
       voiceId: schema.agents.voiceId,
-      voiceProvider: schema.agents.voiceProvider,
     })
     .from(schema.agents)
     .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
@@ -315,10 +309,7 @@ router.post(
       });
     } catch (error) {
       try {
-        await releaseLiveVideoSessionReservation(
-          req.user.id,
-          reservation.usage.periodKey,
-        );
+        await releaseLiveVideoSessionReservation(req.user.id, reservation.usage.periodKey);
       } catch (releaseError) {
         log.error("Live Video reservation release failed after provider mint error", {
           periodKey: reservation.usage.periodKey,
@@ -377,84 +368,22 @@ router.post(
   },
 );
 
-/** PCM lip-sync sample — agent voice rendered for LiveAvatar LITE preview. */
+/**
+ * Retired compatibility endpoint.
+ *
+ * The old implementation synthesized MP3 bytes and labeled the result as a
+ * lip-sync sample even though LiveAvatar LITE's audio control accepts raw 24 kHz
+ * PCM. The mounted Studio now pipes the real Wireline Realtime PCM stream into
+ * LiveAvatar instead, preserving the agent's actual Training, tools, and voice.
+ */
 router.post(
   "/api/agents/:id/video-presenter/sample",
   authenticateUser,
   sessionLimiter,
-  async (req: AuthenticatedRequest, res: Response) => {
-    const agent = await ownedAgent(req.params.id, req.user.id);
-    if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
-    if (!agent.isBusinessAgent) {
-      throw AppError.fromHttpStatus(400, "Live video is available for business agents only.");
-    }
-    const sampleEntitlement = await resolveLiveVideoEntitlement(req.user.id, {
-      isOwner: isOwnerEmail(req.user.email),
-    });
-    if (!sampleEntitlement.billingEntitled) {
-      throwLiveVideoBillingError(sampleEntitlement);
-    }
-    if (!agentLiveVideoOptedIn(agent)) {
-      throw new AppError(
-        400,
-        "LIVE_VIDEO_NOT_ENABLED",
-        "Enable the live video add-on before voice preview.",
-      );
-    }
-
-    const presenter = resolveAgentVideoPresenter(agent);
-    if (!presenter.avatarId) {
-      throw new AppError(
-        400,
-        "LIVE_VIDEO_AVATAR_REQUIRED",
-        "Pick a catalog presenter face before voice preview.",
-      );
-    }
-    if (presenter.status !== "ready") {
-      throw new AppError(
-        400,
-        "LIVE_VIDEO_NOT_READY",
-        "Live presenter must be ready before voice preview.",
-      );
-    }
-
-    const sampleText = `Hi, I'm ${agent.name}. Thanks for calling — how can I help you today?`;
-
-    if (!presenterVoicesConfigured()) {
-      throw AppError.fromHttpStatus(503, "Presenter voice preview is not configured.");
-    }
-
-    // The lip-sync preview always renders through the presenter (HeyGen) voice
-    // layer. A presenter-voice agent uses its own voice; any other agent falls
-    // back to the avatar's matched presenter voice.
-    const voiceProvider = (agent.voiceProvider || "vapi").trim().toLowerCase();
-    let presenterVoiceId = voiceProvider === "presenter" ? agent.voiceId?.trim() || null : null;
-    if (!presenterVoiceId) {
-      const resolved = await resolveAvatarDefaultVoice(presenter.avatarId);
-      presenterVoiceId = resolved?.voiceId ?? null;
-    }
-    if (!presenterVoiceId) {
-      throw new AppError(
-        400,
-        "LIVE_VIDEO_NO_VOICE",
-        "Pick a presenter voice for this agent before previewing.",
-      );
-    }
-
-    const mp3 = await generatePresenterSpeech({ voiceId: presenterVoiceId, text: sampleText });
-    const chunkSize = 48_000;
-    const view = new Uint8Array(mp3);
-    const chunks: string[] = [];
-    for (let offset = 0; offset < view.byteLength; offset += chunkSize) {
-      const slice = view.subarray(offset, Math.min(offset + chunkSize, view.byteLength));
-      chunks.push(Buffer.from(slice).toString("base64"));
-    }
-
-    res.json({
-      eventId: randomUUID(),
-      format: "mp3",
-      chunks,
-      sampleText,
+  async (_req: AuthenticatedRequest, res: Response) => {
+    res.status(410).json({
+      code: "LIVE_VIDEO_SAMPLE_RETIRED",
+      error: "Presenter samples now use the agent's live Wireline voice in Studio.",
     });
   },
 );

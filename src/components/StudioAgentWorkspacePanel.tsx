@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, Loader2, PlugZap, Save } from "lucide-react";
+import { CheckCircle2, Loader2, PlugZap, Save, Video } from "lucide-react";
 import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
@@ -51,9 +51,6 @@ export default function StudioAgentWorkspacePanel({
   );
   const [setupPersonality, setSetupPersonality] = useState("Clear");
   const [loadedPersonality, setLoadedPersonality] = useState<string | null>(null);
-  // Empty until the saved greeting loads. A generated sentence sitting in the
-  // box reads as something the customer already wrote and saved, when nothing
-  // has been saved at all; it belongs in the placeholder instead.
   const [setupGreeting, setSetupGreeting] = useState("");
   const [setupKnowledge, setSetupKnowledge] = useState("");
   const [loadingSetup, setLoadingSetup] = useState(true);
@@ -156,9 +153,6 @@ export default function StudioAgentWorkspacePanel({
       }
 
       if (isCurrentAgent()) {
-        // The notice renders under a "Changes saved" title, so saying it again
-        // here read as "Changes saved / Changes saved. Run a customer test…".
-        // The body carries the next step only.
         setSetupNotice(
           isBusinessAgent
             ? "Run a customer test before connecting live traffic."
@@ -317,10 +311,19 @@ export default function StudioAgentWorkspacePanel({
           className="rounded-2xl border border-border bg-card p-5 sm:p-6"
           aria-labelledby="voice-heading"
         >
-          <div className="mb-3">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <h3 id="voice-heading" className="text-lg font-semibold tracking-tight text-foreground">
               Phone voice
             </h3>
+            {isBusinessAgent ? (
+              <Link
+                to={`/studio/live-video?agent=${encodeURIComponent(agentId)}`}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+              >
+                <Video className="size-3.5" aria-hidden="true" />
+                Live video
+              </Link>
+            ) : null}
           </div>
           <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
         </section>

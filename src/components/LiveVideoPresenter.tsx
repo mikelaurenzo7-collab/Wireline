@@ -41,6 +41,7 @@ const LiveVideoPresenter = forwardRef<
     agentName: string;
     speaking?: boolean;
     className?: string;
+    layout?: "portrait" | "stage";
     onSpeakingChange?: (speaking: boolean) => void;
     onRetry?: () => void;
     onStreamReady?: () => void;
@@ -52,6 +53,7 @@ const LiveVideoPresenter = forwardRef<
     agentName,
     speaking = false,
     className = "",
+    layout = "portrait",
     onSpeakingChange,
     onRetry,
     onStreamReady: onStreamReadyChange,
@@ -61,14 +63,29 @@ const LiveVideoPresenter = forwardRef<
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<LiveAvatarSession | null>(null);
   const pcmAccumRef = useRef("");
+  const onSpeakingChangeRef = useRef(onSpeakingChange);
+  const onStreamReadyRef = useRef(onStreamReadyChange);
   const [streamReady, setStreamReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [lipSyncActive, setLipSyncActive] = useState(false);
+  const layoutClass = layout === "stage" ? "wl-presence-live--stage" : "";
+  const sessionToken = credentials.sessionToken;
+
+  // Parent pages intentionally pass small UI callbacks. Those callbacks can be
+  // recreated during ordinary renders; a paid provider session must not be.
+  // Keep the current callbacks in refs so session lifetime is keyed only to the
+  // minted session token.
+  onSpeakingChangeRef.current = onSpeakingChange;
+  onStreamReadyRef.current = onStreamReadyChange;
 
   const flushAccumulatedPcm = (force = false) => {
     const session = sessionRef.current;
     if (!session || session.state !== SessionState.CONNECTED) return;
-    const minBytes = 4_800;
+    // LiveAvatar's own LITE-mode chunker uses a 400 ms first PCM frame at
+    // 24 kHz, signed 16-bit mono: 24_000 * 0.4 * 2 = 19_200 bytes. Matching
+    // that boundary avoids turning every ~100 ms browser audio callback into a
+    // separate speak/speak_end command while keeping lip-sync latency bounded.
+    const minBytes = 19_200;
     if (!force && pcmAccumRef.current.length < minBytes) return;
     if (!pcmAccumRef.current) return;
     session.repeatAudio(pcmAccumRef.current);
@@ -81,12 +98,12 @@ const LiveVideoPresenter = forwardRef<
     setLipSyncActive(false);
     pcmAccumRef.current = "";
 
-    if (!credentials.sessionToken?.trim()) {
+    if (!sessionToken?.trim()) {
       setFailed(true);
       return;
     }
 
-    const session = new LiveAvatarSession(credentials.sessionToken, {
+    const session = new LiveAvatarSession(sessionToken, {
       voiceChat: false,
     });
     sessionRef.current = session;
@@ -95,19 +112,19 @@ const LiveVideoPresenter = forwardRef<
     const handleStreamReady = () => {
       if (cancelled || !videoRef.current) return;
       setStreamReady(true);
-      onStreamReadyChange?.();
+      onStreamReadyRef.current?.();
       session.attach(videoRef.current);
       videoRef.current.muted = true;
     };
 
     const onSpeakStarted = () => {
       setLipSyncActive(true);
-      onSpeakingChange?.(true);
+      onSpeakingChangeRef.current?.(true);
     };
 
     const onSpeakEnded = () => {
       setLipSyncActive(false);
-      onSpeakingChange?.(false);
+      onSpeakingChangeRef.current?.(false);
     };
 
     session.on(SessionEvent.SESSION_STREAM_READY, handleStreamReady);
@@ -117,9 +134,18 @@ const LiveVideoPresenter = forwardRef<
       if (!cancelled) setFailed(true);
     });
 
-    void session.start().catch(() => {
-      if (!cancelled) setFailed(true);
-    });
+    void (async () => {
+      try {
+        await session.start();
+        // LiveAvatarSession.stop() intentionally no-ops while CONNECTING. If
+        // this component unmounted during start(), cleanup's early stop could
+        // therefore miss the provider session. Close it again after connect so
+        // an abandoned UI can never leave a metered session running.
+        if (cancelled) await session.stop().catch(() => undefined);
+      } catch {
+        if (!cancelled) setFailed(true);
+      }
+    })();
 
     return () => {
       cancelled = true;
@@ -127,9 +153,9 @@ const LiveVideoPresenter = forwardRef<
       session.off(AgentEventsEnum.AVATAR_SPEAK_STARTED, onSpeakStarted);
       session.off(AgentEventsEnum.AVATAR_SPEAK_ENDED, onSpeakEnded);
       void session.stop().catch(() => undefined);
-      sessionRef.current = null;
+      if (sessionRef.current === session) sessionRef.current = null;
     };
-  }, [credentials.sessionToken, onSpeakingChange, onStreamReadyChange]);
+  }, [sessionToken]);
 
   useImperativeHandle(ref, () => ({
     async streamSample(chunks: string[], _eventId: string) {
@@ -172,7 +198,7 @@ const LiveVideoPresenter = forwardRef<
       sessionRef.current = null;
       setStreamReady(false);
       setLipSyncActive(false);
-      onSpeakingChange?.(false);
+      onSpeakingChangeRef.current?.(false);
       await session.stop().catch(() => undefined);
     },
     isControlConnected: () => sessionRef.current?.state === SessionState.CONNECTED,
@@ -180,25 +206,30 @@ const LiveVideoPresenter = forwardRef<
   }));
 
   const showSpeaking = speaking || lipSyncActive;
+  const frameClass = `wl-presence__frame wl-presence__frame--ink wl-presence-live ${layoutClass} ${className}`.trim();
 
   if (failed) {
     return (
-      <div className={`wl-presence__frame wl-presence__frame--ink ${className}`.trim()}>
+      <div className={frameClass}>
         <div className="wl-presence__face">
           <AgentFace
             seed={fallbackSeed}
-            size={120}
+            size={layout === "stage" ? 168 : 120}
             speaking={showSpeaking}
             title={`${agentName} face`}
           />
+        </div>
+        <div className="wl-presence__live">
+          <span className="wl-presence__live-dot" aria-hidden="true" />
+          Fallback
         </div>
         {onRetry ? (
           <button
             type="button"
             onClick={onRetry}
-            className="absolute bottom-3 left-1/2 z-[2] -translate-x-1/2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 py-1.5 text-[11px] font-semibold text-foreground hover:border-[var(--wireline-color-action-primary-default)]"
+            className="absolute bottom-3 left-1/2 z-[2] min-h-11 -translate-x-1/2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-4 py-2 text-xs font-semibold text-foreground shadow-sm hover:border-[var(--wireline-color-action-primary-default)]"
           >
-            Retry live presenter
+            Retry presenter
           </button>
         ) : null}
       </div>
@@ -206,9 +237,7 @@ const LiveVideoPresenter = forwardRef<
   }
 
   return (
-    <div
-      className={`wl-presence__frame wl-presence__frame--ink wl-presence-live ${className}`.trim()}
-    >
+    <div className={frameClass}>
       <video
         ref={videoRef}
         autoPlay
@@ -217,11 +246,19 @@ const LiveVideoPresenter = forwardRef<
         className="wl-presence-live__video"
         aria-label={`${agentName} live video presenter`}
       />
-      {!streamReady ? (
-        <div className="wl-presence-live__loading" aria-busy="true">
-          Connecting live presenter…
+      {streamReady ? (
+        <div className="wl-presence__live">
+          <span className="wl-presence__live-dot" aria-hidden="true" />
+          Live
         </div>
-      ) : null}
+      ) : (
+        <div className="wl-presence-live__loading" aria-busy="true">
+          <div className="space-y-2 text-center">
+            <span className="mx-auto block size-5 animate-pulse rounded-full border border-primary/40 bg-primary/15" />
+            <span className="block">Connecting live presenter…</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
