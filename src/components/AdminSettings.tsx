@@ -186,6 +186,14 @@ export default function AdminSettings() {
     try {
       const r = await authFetch("/api/team");
       if (!r.ok) {
+        // Shared workspaces are gated behind tenant data-plane certification —
+        // that deliberate 503 is not a failure, so the roster renders its
+        // empty state instead of an alarmed toast (same truth as TeamSettings).
+        const payload = await r.json().catch(() => null);
+        if (r.status === 503 && payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED") {
+          setTeamMembers([]);
+          return;
+        }
         toastError("Team unavailable", "Could not load team members. Please refresh.");
         return;
       }
