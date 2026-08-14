@@ -39,23 +39,43 @@ describe("video presenter integration", () => {
     expect(routes).toContain("maxSessionDurationSeconds: LIVE_VIDEO_MAX_SESSION_SECONDS");
   });
 
-  it("uses the official LiveAvatar Web SDK in the browser", () => {
+  it("uses the official LiveAvatar Web SDK in a stable widescreen stage", () => {
     const live = source("src/components/LiveVideoPresenter.tsx");
+    const presenceCss = source("src/styles/agent-presence.css");
     expect(live).toContain("@heygen/liveavatar-web-sdk");
     expect(live).toContain("LiveAvatarSession");
     expect(live).toContain("repeatAudio");
+    expect(live).toContain('layout?: "portrait" | "stage"');
+    expect(live).toContain('"wl-presence-live--stage"');
+    expect(live).toContain("onSpeakingChangeRef.current = onSpeakingChange");
+    expect(live).toContain("onStreamReadyRef.current = onStreamReadyChange");
+    expect(live).toContain("}, [sessionToken]);");
     expect(live).toContain("stop: () => Promise<void>");
     expect(live).toContain("await session.stop().catch(() => undefined)");
+    expect(presenceCss).toContain(".wl-presence-live--stage");
+    expect(presenceCss).toContain("aspect-ratio: 16 / 9");
+    expect(presenceCss).toContain("max-width: none");
     expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
   });
 
-  it("mounts a reachable consumption surface for the paid add-on", () => {
+  it("mounts a reachable, interactive consumption surface for the paid add-on", () => {
     const page = source("src/pages/LiveVideoStudioPage.tsx");
     expect(page).toContain('from "../components/AgentPresenceAvatarPicker"');
     expect(page).toContain('from "../components/LiveVideoPresenter"');
+    expect(page).toContain('from "../components/OpenAILiveVoiceSandbox"');
     expect(page).toContain("/video-presenter/enable");
     expect(page).toContain("/video-presenter/session");
     expect(page).toContain("consentAcknowledged: true");
+    expect(page).toContain('layout="stage"');
+    expect(page).toContain("onStreamReady={() => setPresenterReady(true)}");
+    expect(page).toContain("onAgentAudioDelta={(base64Pcm)");
+    expect(page).toContain("presenterRef.current?.feedPcmDelta(base64Pcm)");
+    expect(page).toContain("onAgentAudioEnd={() => presenterRef.current?.flushPcm()}");
+
+    const sandbox = source("src/components/OpenAILiveVoiceSandbox.tsx");
+    expect(sandbox).toContain("const RATE = 24_000");
+    expect(sandbox).toContain("floatToBase64Pcm");
+    expect(sandbox).toContain("onAgentAudioDelta(floatToBase64Pcm(samples))");
 
     const routes = source("src/routes/AppRoutes.tsx");
     const liveVideoMount = routes.indexOf('path="/studio/live-video"');
@@ -66,6 +86,8 @@ describe("video presenter integration", () => {
 
     const billingCard = source("src/components/StripeBillingCard.tsx");
     expect(billingCard).toContain('to="/studio/live-video"');
+    const studioSetup = source("src/components/StudioAgentWorkspacePanel.tsx");
+    expect(studioSetup).toContain("/studio/live-video?agent=");
   });
 
   it("uses authoritative paid entitlement instead of the webhook cache across product surfaces", () => {
@@ -116,7 +138,7 @@ describe("video presenter integration", () => {
     expect(defaults).toContain('videoPresenterProvider: "synthetic"');
   });
 
-  it("keeps the legacy presenter speech sample separate from the mounted Live Video session path", () => {
+  it("keeps the legacy presenter speech sample off the mounted Live Video path", () => {
     const routes = source("src/routes/video-presenter-routes-base.ts");
     expect(routes).toContain("/api/agents/:id/video-presenter/sample");
     expect(routes).toContain("generatePresenterSpeech");
@@ -125,10 +147,10 @@ describe("video presenter integration", () => {
     expect(existsSync(resolve(root, "src/lib/voice/decode-browser-audio.ts"))).toBe(false);
     const page = source("src/pages/LiveVideoStudioPage.tsx");
     expect(page).not.toContain("/video-presenter/sample");
+    expect(page).toContain("OpenAILiveVoiceSandbox");
     const live = source("src/components/LiveVideoPresenter.tsx");
     expect(live).toContain("feedPcmDelta");
-    const sandbox = source("src/components/OpenAILiveVoiceSandbox.tsx");
-    expect(sandbox).toContain("onAgentAudioDelta");
+    expect(live).toContain("flushPcm");
   });
 
   it("offers live video as an explicit paid opt-in add-on with an operator kill switch", () => {
@@ -151,7 +173,7 @@ describe("video presenter integration", () => {
     expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
   });
 
-  it("loads and saves public presenter catalog choices through authenticated Wireline routes", () => {
+  it("loads and saves a portrait-first public presenter catalog through authenticated routes", () => {
     const routes = source("src/routes/video-presenter-routes-base.ts");
     expect(routes).toContain("listPublicAvatars");
     expect(routes).toContain('"/api/video-presenter/avatars"');
@@ -159,6 +181,9 @@ describe("video presenter integration", () => {
     expect(picker).toContain('authFetch("/api/video-presenter/avatars")');
     expect(picker).toContain("JSON.stringify({ avatarId })");
     expect(picker).toContain("aria-pressed={selected}");
+    expect(picker).toContain("aspect-[4/5]");
+    expect(picker).toContain("catalogRequestSerial");
+    expect(picker).toContain("onSelectedAvatarChange");
     expect(picker).not.toContain("Presence catalog paused");
     const resolve = source("src/lib/video-presenter/resolve-agent-presenter.ts");
     expect(resolve).toContain("chosenAvatarId");
