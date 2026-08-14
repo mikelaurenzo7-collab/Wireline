@@ -1,20 +1,23 @@
 /**
  * Live Video studio — the consumption surface for the paid Live Video add-on.
  *
- * The page deliberately uses `billingEntitled` as the authority for paid
- * access. `liveVideoAddonEnabled` is only a webhook-maintained cache and can be
- * temporarily stale while a plan is canceled, unpaid, or provider access is
- * disabled. The server enforces the same entitlement boundary on every paid
- * session mint.
+ * `billingEntitled` is the authority for paid access. The page keeps Wireline's
+ * own OpenAI Realtime agent as the conversation runtime and feeds its 24 kHz PCM
+ * output into LiveAvatar LITE for lip sync, so video never becomes a second,
+ * provider-owned agent brain.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { Loader2, Play, Square, Video } from "lucide-react";
+import { Loader2, Mic2, Play, Square, Video } from "lucide-react";
 
-import AgentPresenceAvatarPicker from "../components/AgentPresenceAvatarPicker";
+import AgentFace from "../components/AgentFace";
+import AgentPresenceAvatarPicker, {
+  type PresenterCatalogSelection,
+} from "../components/AgentPresenceAvatarPicker";
 import LiveVideoPresenter, {
   type LiveVideoPresenterHandle,
 } from "../components/LiveVideoPresenter";
+import OpenAILiveVoiceSandbox from "../components/OpenAILiveVoiceSandbox";
 import WorkspaceShell from "../components/WorkspaceShell";
 import WorkspaceRecovery from "../components/WorkspaceRecovery";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
@@ -77,6 +80,8 @@ export default function LiveVideoStudioPage() {
   const [disabling, setDisabling] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [sessionBusy, setSessionBusy] = useState(false);
+  const [presenterReady, setPresenterReady] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState<PresenterCatalogSelection | null>(null);
   const [session, setSession] = useState<{
     live: LiveAvatarSessionCredentials;
     fallbackSeed: string;
@@ -118,6 +123,8 @@ export default function LiveVideoStudioPage() {
 
   useEffect(() => {
     setSession(null);
+    setPresenterReady(false);
+    setSelectedAvatar(null);
     setUsage(null);
     setNotice(null);
     setConsentAcknowledged(false);
@@ -175,6 +182,16 @@ export default function LiveVideoStudioPage() {
     }
   }
 
+  async function endPreview() {
+    try {
+      await presenterRef.current?.stop();
+    } catch {
+      // Session teardown is best-effort; the bounded provider cap ends it regardless.
+    }
+    setPresenterReady(false);
+    setSession(null);
+  }
+
   async function disableLiveVideo() {
     if (!activeAgentId || disabling) return;
     setDisabling(true);
@@ -208,7 +225,9 @@ export default function LiveVideoStudioPage() {
     setSessionBusy(true);
     setError(null);
     setNotice(null);
+    setPresenterReady(false);
     try {
+      if (session) await endPreview();
       const response = await authFetch(
         `/api/agents/${encodeURIComponent(activeAgentId)}/video-presenter/session`,
         { method: "POST" },
@@ -221,29 +240,18 @@ export default function LiveVideoStudioPage() {
         error?: string;
       } | null;
       if (!response.ok || !body?.live) {
-        if (body?.error) setError(body.error);
-        else setError("Live preview could not start. Try again shortly.");
+        setError(body?.error || "Live session could not start. Try again shortly.");
         return;
       }
       setUsage(body.usage ?? null);
       setSession({ live: body.live, fallbackSeed: body.fallbackSeed || activeAgentId });
     } catch {
-      setError("Live preview could not start. Try again shortly.");
+      setError("Live session could not start. Try again shortly.");
     } finally {
       setSessionBusy(false);
     }
   }
 
-  async function endPreview() {
-    try {
-      await presenterRef.current?.stop();
-    } catch {
-      // Session teardown is best-effort; the bounded server cap ends it regardless.
-    }
-    setSession(null);
-  }
-
-  // No page-level unmount teardown needed: LiveVideoPresenter owns session cleanup.
   const presenter = state?.presenter ?? null;
   const addon = state?.addon ?? null;
   const entitled = addon?.billingEntitled === true;
@@ -257,13 +265,14 @@ export default function LiveVideoStudioPage() {
   const remainingMinutes =
     usage?.remainingMinutes ?? Math.max(0, includedMinutes - usedMinutes);
   const exhausted = usage?.exhausted === true || remainingMinutes < sessionMinutes;
+  const activeAgentName = activeAgent?.name || "Your agent";
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame mode="standard">
         <WorkspacePageIntro
           title="Live video"
-          description="Put a selected business agent on screen with a catalog presenter."
+          description="Put a business agent on screen, then test a real conversation through the same Wireline brain."
         />
 
         {agentsLoading ? (
@@ -276,7 +285,7 @@ export default function LiveVideoStudioPage() {
             <WorkspaceRecovery onRetry={refresh} />
           </div>
         ) : businessAgents.length === 0 ? (
-          <div className="mt-8 rounded-xl border border-dashed border-border px-5 py-6 text-sm leading-6 text-muted-foreground">
+          <div className="mt-8 rounded-2xl border border-dashed border-border bg-card px-5 py-7 text-sm leading-6 text-muted-foreground">
             Create a business agent first, then add its live presenter here.
             <div className="mt-4">
               <Button asChild size="sm" variant="secondary">
@@ -286,7 +295,7 @@ export default function LiveVideoStudioPage() {
           </div>
         ) : (
           <div className="mt-8 grid gap-6">
-            <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-end sm:justify-between">
+            <section className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between">
               <label className="grid w-full max-w-sm gap-2 text-sm font-semibold text-foreground">
                 Business agent
                 <Select
@@ -312,35 +321,35 @@ export default function LiveVideoStudioPage() {
 
               {state?.addon?.addonOffered ? (
                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  <span className="rounded-full border border-border px-3 py-1.5">
+                  <span className="rounded-full border border-border bg-secondary/50 px-3 py-1.5 tabular-nums">
                     {remainingMinutes} / {includedMinutes} min left
                   </span>
-                  <span className="rounded-full border border-border px-3 py-1.5">
-                    {sessionMinutes} min reserved / session
+                  <span className="rounded-full border border-border bg-secondary/50 px-3 py-1.5">
+                    {sessionMinutes} min / session
                   </span>
                   <span
-                    className={`rounded-full border px-3 py-1.5 ${
+                    className={`rounded-full border px-3 py-1.5 font-medium ${
                       entitled
-                        ? "border-[var(--wireline-color-feedback-success-border)] text-[var(--wireline-color-status-success)]"
-                        : "border-border"
+                        ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]"
+                        : "border-border bg-secondary/50"
                     }`}
                   >
-                    {entitled ? "Active" : "Add-on"}
+                    {entitled ? "Workspace active" : "Add-on"}
                   </span>
                 </div>
               ) : null}
-            </div>
+            </section>
 
             {error ? <StatusNotice tone="destructive" title={error} /> : null}
             {notice ? <StatusNotice tone="success" title={notice} /> : null}
 
             {loading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex min-h-32 items-center justify-center gap-2 rounded-2xl border border-border bg-card text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 Checking live video status…
               </div>
             ) : !state ? null : !addon?.addonOffered ? (
-              <div className="rounded-xl border border-border bg-card px-5 py-5">
+              <div className="rounded-2xl border border-border bg-card px-5 py-6 shadow-sm">
                 <p className="text-sm font-semibold text-foreground">Live video unavailable</p>
                 <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
                   {addon?.reason || "Live video is not available on this workspace right now."}
@@ -354,11 +363,12 @@ export default function LiveVideoStudioPage() {
                 ) : null}
               </div>
             ) : !entitled ? (
-              <div className="rounded-xl border border-primary/25 bg-[var(--wireline-color-action-primary-container)] px-5 py-5">
-                <p className="text-sm font-semibold text-foreground">
-                  {checkoutAvailable ? "Add live video" : "Live video access needs attention"}
-                </p>
-                <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
+              <div className="rounded-2xl border border-primary/25 bg-[var(--wireline-color-action-primary-container)] px-5 py-6 shadow-sm">
+                <p className="wl-stitch-label">Live Video</p>
+                <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
+                  {checkoutAvailable ? "Add an on-screen presence" : "Live video access needs attention"}
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                   {checkoutAvailable
                     ? `${liveVideoAddonPitch()} ${liveVideoMeteringNote()}`
                     : addon.reason || "Restore an active paid plan before using live video."}
@@ -390,126 +400,212 @@ export default function LiveVideoStudioPage() {
                   </Button>
                 </div>
               </div>
+            ) : !liveVideoOn ? (
+              <section className="rounded-2xl border border-border bg-card px-5 py-6 shadow-sm">
+                <p className="wl-stitch-label">Agent presence</p>
+                <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
+                  Turn on live video for <span className="wl-preserve-case">{activeAgentName}</span>
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                  Calls, texts, and email stay unchanged. Live video appears only in sessions you
+                  start here, with the Wireline identity as fallback.
+                </p>
+                <label className="mt-5 flex max-w-2xl items-start gap-2.5 rounded-xl border border-border bg-secondary/40 p-4 text-sm leading-6 text-muted-foreground">
+                  <Checkbox
+                    checked={consentAcknowledged}
+                    onChange={(event) => setConsentAcknowledged(event.target.checked)}
+                    className="mt-1"
+                  />
+                  <span>
+                    I understand this agent will use a catalog presenter and each live session
+                    reserves {sessionMinutes} minutes from the monthly allowance.
+                  </span>
+                </label>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="mt-4"
+                  disabled={!consentAcknowledged || enabling}
+                  onClick={() => void enableLiveVideo()}
+                >
+                  {enabling ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Video className="size-4" aria-hidden="true" />
+                  )}
+                  Turn on live video
+                </Button>
+              </section>
             ) : (
               <>
-                {!liveVideoOn ? (
-                  <div className="rounded-xl border border-border bg-card px-5 py-5">
-                    <p className="text-sm font-semibold text-foreground">
-                      Turn on live video for {activeAgent?.name}
-                    </p>
-                    <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
-                      Calls, texts, and email stay unchanged. Live video appears only in sessions you
-                      start here, with the Wireline identity as fallback.
-                    </p>
-                    <label className="mt-4 flex items-start gap-2.5 text-sm leading-6 text-muted-foreground">
-                      <Checkbox
-                        checked={consentAcknowledged}
-                        onChange={(event) => setConsentAcknowledged(event.target.checked)}
-                        className="mt-1"
-                      />
-                      I understand this agent will use a catalog presenter and each preview reserves
-                      {` ${sessionMinutes} `}minutes from the monthly live-video allowance.
-                    </label>
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="mt-4"
-                      disabled={!consentAcknowledged || enabling}
-                      onClick={() => void enableLiveVideo()}
-                    >
-                      {enabling ? (
-                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                      ) : null}
-                      Turn on live video
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <AgentPresenceAvatarPicker
-                      agentId={activeAgentId!}
-                      presenter={presenter!}
-                      platformConfigured={Boolean(state.platform.configured)}
-                      workspaceDefaultAvatarId={state.platform.defaultAvatarId ?? null}
-                      onUpdated={(next) =>
-                        setState((current) => (current ? { ...current, presenter: next } : current))
-                      }
-                    />
+                <AgentPresenceAvatarPicker
+                  agentId={activeAgentId!}
+                  presenter={presenter!}
+                  platformConfigured={Boolean(state.platform.configured)}
+                  workspaceDefaultAvatarId={state.platform.defaultAvatarId ?? null}
+                  onSelectedAvatarChange={setSelectedAvatar}
+                  onUpdated={(next) =>
+                    setState((current) => (current ? { ...current, presenter: next } : current))
+                  }
+                />
 
-                    <div className="rounded-xl border border-border bg-card p-5">
-                      <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">Live preview</p>
-                          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-                            {exhausted
-                              ? "This month's reserved Live Video allowance is used."
-                              : hasFacePick
-                                ? `Start a live ${sessionMinutes}-minute session to check framing, motion, and presence.`
-                                : "Choose a presenter above, then start a live preview."}
-                          </p>
-                          <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                            {remainingMinutes} of {includedMinutes} reserved minutes remaining
-                          </p>
-                        </div>
-                        {session ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => void endPreview()}
-                          >
-                            <Square size={14} aria-hidden="true" />
-                            End preview
-                          </Button>
-                        ) : (
-                          <Button
-                            type="button"
-                            size="sm"
-                            disabled={!hasFacePick || sessionBusy || exhausted}
-                            onClick={() => void startPreview()}
-                          >
-                            {sessionBusy ? (
-                              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                            ) : (
-                              <Play size={14} aria-hidden="true" />
-                            )}
-                            Start live preview
-                          </Button>
-                        )}
-                      </div>
-
-                      {session ? (
-                        <div className="mt-4 max-w-2xl">
-                          <LiveVideoPresenter
-                            ref={presenterRef}
-                            credentials={session.live}
-                            fallbackSeed={session.fallbackSeed}
-                            agentName={activeAgent?.name || "Your agent"}
-                            className="aspect-video w-full"
-                            onRetry={() => void startPreview()}
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-5 py-4">
-                      <p className="text-sm text-muted-foreground">
-                        Presenter choice stays saved if you turn video off for this agent.
+                <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
+                    <div>
+                      <p className="wl-stitch-label">Live stage</p>
+                      <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
+                        <span className="wl-preserve-case">{activeAgentName}</span> on camera
+                      </h2>
+                      <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+                        {exhausted
+                          ? "This month's reserved Live Video allowance is used."
+                          : hasFacePick
+                            ? `Open a ${sessionMinutes}-minute stage, then talk to the real Wireline agent while the presenter lip-syncs its live voice.`
+                            : "Choose a presenter above before opening the live stage."}
                       </p>
+                    </div>
+                    {session ? (
                       <Button
                         type="button"
                         size="sm"
                         variant="secondary"
-                        disabled={disabling}
-                        onClick={() => void disableLiveVideo()}
+                        onClick={() => void endPreview()}
                       >
-                        {disabling ? (
-                          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                        ) : null}
-                        Turn off for this agent
+                        <Square size={14} aria-hidden="true" />
+                        End session
                       </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={!hasFacePick || sessionBusy || exhausted}
+                        onClick={() => void startPreview()}
+                      >
+                        {sessionBusy ? (
+                          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <Play size={14} aria-hidden="true" />
+                        )}
+                        Open live stage
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="bg-secondary/30 p-3 sm:p-5">
+                    {session ? (
+                      <LiveVideoPresenter
+                        ref={presenterRef}
+                        credentials={session.live}
+                        fallbackSeed={session.fallbackSeed}
+                        agentName={activeAgentName}
+                        layout="stage"
+                        className="w-full"
+                        onStreamReady={() => setPresenterReady(true)}
+                        onRetry={() => void startPreview()}
+                      />
+                    ) : (
+                      <div className="relative grid aspect-video min-h-[240px] place-items-center overflow-hidden rounded-2xl border border-border bg-background shadow-sm sm:min-h-[300px]">
+                        {selectedAvatar?.previewImageUrl ? (
+                          <>
+                            <img
+                              src={selectedAvatar.previewImageUrl}
+                              alt=""
+                              aria-hidden="true"
+                              className="absolute inset-0 h-full w-full scale-110 object-cover opacity-20 blur-2xl"
+                            />
+                            <div className="absolute inset-0 bg-background/55" />
+                            <img
+                              src={selectedAvatar.previewImageUrl}
+                              alt={`${selectedAvatar.name} presenter preview`}
+                              className="relative z-[1] h-[86%] max-h-[430px] w-auto max-w-[72%] rounded-2xl border border-border object-cover object-top shadow-lg"
+                            />
+                          </>
+                        ) : (
+                          <div className="relative z-[1] grid place-items-center">
+                            <AgentFace
+                              seed={state.fallbackSeed || activeAgentName}
+                              size={168}
+                              title={`${activeAgentName} identity fallback`}
+                            />
+                          </div>
+                        )}
+
+                        <div className="absolute left-3 top-3 z-[2] inline-flex items-center gap-2 rounded-full border border-border bg-background/85 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground backdrop-blur-sm">
+                          <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />
+                          Ready
+                        </div>
+                        <div className="absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-background via-background/80 to-transparent px-5 pb-4 pt-12">
+                          <p className="text-sm font-semibold text-foreground">
+                            <span className="wl-preserve-case">{activeAgentName}</span>
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {selectedAvatar?.name || "Wireline identity fallback"}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t border-border px-5 py-4 sm:px-6">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        <span className="rounded-full border border-border bg-secondary/50 px-3 py-1.5 tabular-nums">
+                          {remainingMinutes} of {includedMinutes} min remaining
+                        </span>
+                        <span className="rounded-full border border-border bg-secondary/50 px-3 py-1.5">
+                          {presenterReady ? "Camera connected" : session ? "Camera connecting" : "Stage closed"}
+                        </span>
+                      </div>
+                      {session && presenterReady ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+                          <Mic2 className="size-3.5" aria-hidden="true" />
+                          Live conversation ready
+                        </span>
+                      ) : null}
                     </div>
-                  </>
+                  </div>
+                </section>
+
+                {session ? (
+                  presenterReady ? (
+                    <OpenAILiveVoiceSandbox
+                      agentId={activeAgentId!}
+                      agentName={activeAgentName}
+                      onAgentAudioDelta={(base64Pcm) =>
+                        presenterRef.current?.feedPcmDelta(base64Pcm)
+                      }
+                      onAgentAudioEnd={() => presenterRef.current?.flushPcm()}
+                    />
+                  ) : (
+                    <div className="rounded-2xl border border-border bg-card px-5 py-5 text-sm text-muted-foreground shadow-sm">
+                      The presenter is connecting. Live conversation unlocks as soon as the camera
+                      stream is ready.
+                    </div>
+                  )
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-border bg-card px-5 py-5 text-sm leading-6 text-muted-foreground">
+                    Open the live stage first. Once the presenter is connected, you can speak with
+                    this agent using its current Training, rules, tools, and voice profile.
+                  </div>
                 )}
+
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
+                  <p className="text-sm text-muted-foreground">
+                    Presenter choice stays saved if you turn video off for this agent.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={disabling}
+                    onClick={() => void disableLiveVideo()}
+                  >
+                    {disabling ? (
+                      <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                    ) : null}
+                    Turn off for this agent
+                  </Button>
+                </div>
               </>
             )}
           </div>
