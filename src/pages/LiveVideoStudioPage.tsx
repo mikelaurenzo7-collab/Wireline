@@ -1,13 +1,11 @@
 /**
  * Live Video studio — the consumption surface for the paid Live Video add-on.
  *
- * The add-on was sellable (billing card + landing economics) while nothing a
- * customer could reach let them pick a presenter, enable it, or see a live
- * session — the entitlement gated APIs with no mounted caller. This page is
- * that missing surface, deliberately scoped to the CATALOG presenter flow the
- * server fully supports today: entitle → enable with disclosure → pick a face
- * → run a bounded live preview. Custom-likeness consent and PSTN lip-sync
- * bridging remain retired (see #1083) and are not resold here.
+ * The page deliberately uses `billingEntitled` as the authority for paid
+ * access. `liveVideoAddonEnabled` is only a webhook-maintained cache and can be
+ * temporarily stale while a plan is canceled, unpaid, or provider access is
+ * disabled. The server enforces the same entitlement boundary on every paid
+ * session mint.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
@@ -111,6 +109,7 @@ export default function LiveVideoStudioPage() {
 
   useEffect(() => {
     setSession(null);
+    setUsage(null);
     setNotice(null);
     setConsentAcknowledged(false);
     void loadPresenter();
@@ -159,7 +158,7 @@ export default function LiveVideoStudioPage() {
         return;
       }
       setState((current) => (current ? { ...current, presenter: body.presenter! } : current));
-      setNotice("Live video is on for this agent. Pick a presenter face below.");
+      setNotice("Live video is on for this agent. Choose its presenter below.");
     } catch {
       setError("Live video could not be enabled. Try again shortly.");
     } finally {
@@ -206,21 +205,24 @@ export default function LiveVideoStudioPage() {
     setSession(null);
   }
 
-  // No page-level unmount teardown needed: LiveVideoPresenter's own effect
-  // cleanup stops its LiveAvatar session when the component unmounts.
-
+  // No page-level unmount teardown needed: LiveVideoPresenter owns session cleanup.
   const presenter = state?.presenter ?? null;
   const addon = state?.addon ?? null;
-  const entitled = Boolean(addon?.billingEntitled || addon?.liveVideoAddonEnabled);
+  const entitled = addon?.billingEntitled === true;
+  const checkoutAvailable = addon?.liveVideoCheckoutAvailable === true;
   const liveVideoOn = presenter?.provider === "liveavatar";
   const hasFacePick = Boolean(presenter?.avatarId);
+  const includedMinutes = addon?.liveVideoMinutesIncluded ?? 60;
+  const sessionMinutes = addon?.liveVideoSessionMinutes ?? 5;
+  const usedMinutes = Math.max(0, usage?.usedMinutes ?? 0);
+  const remainingMinutes = Math.max(0, (usage?.includedMinutes ?? includedMinutes) - usedMinutes);
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame mode="standard">
         <WorkspacePageIntro
           title="Live video"
-          description="An optional on-screen presenter for business agents: pick a catalog face, preview it live, and keep the Wireline identity as the always-on fallback."
+          description="Put a selected business agent on screen with a catalog presenter."
         />
 
         {agentsLoading ? (
@@ -229,45 +231,64 @@ export default function LiveVideoStudioPage() {
             Loading your agents…
           </div>
         ) : degraded ? (
-          // An unreachable roster is not an empty one — offering "create an
-          // agent" here would duplicate agents that already exist.
           <div className="mt-8">
             <WorkspaceRecovery onRetry={refresh} />
           </div>
         ) : businessAgents.length === 0 ? (
           <div className="mt-8 rounded-xl border border-dashed border-border px-5 py-6 text-sm leading-6 text-muted-foreground">
-            Live video is available for business agents. Create a business voice agent first, then
-            return here to add its presenter.
+            Create a business agent first, then add its live presenter here.
             <div className="mt-4">
               <Button asChild size="sm" variant="secondary">
-                <Link to="/studio?create=1&posture=business">Create a business agent</Link>
+                <Link to="/studio?create=1&posture=business">Create business agent</Link>
               </Button>
             </div>
           </div>
         ) : (
           <div className="mt-8 grid gap-6">
-            <label className="grid max-w-sm gap-2 text-sm font-semibold text-foreground">
-              Business agent
-              <Select
-                value={activeAgentId ?? ""}
-                onValueChange={(value) => {
-                  const next = new URLSearchParams(params);
-                  next.set("agent", value);
-                  setParams(next, { replace: true });
-                }}
-              >
-                <SelectTrigger className="h-auto w-full rounded-md border border-input bg-card py-2 pl-3 text-sm text-foreground">
-                  <SelectValue placeholder="Choose an agent" />
-                </SelectTrigger>
-                <SelectContent>
-                  {businessAgents.map((agent) => (
-                    <SelectItem key={agent.id} value={agent.id}>
-                      {agent.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
+            <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-end sm:justify-between">
+              <label className="grid w-full max-w-sm gap-2 text-sm font-semibold text-foreground">
+                Business agent
+                <Select
+                  value={activeAgentId ?? ""}
+                  onValueChange={(value) => {
+                    const next = new URLSearchParams(params);
+                    next.set("agent", value);
+                    setParams(next, { replace: true });
+                  }}
+                >
+                  <SelectTrigger className="h-auto w-full rounded-md border border-input bg-card py-2 pl-3 text-sm text-foreground">
+                    <SelectValue placeholder="Choose an agent" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {businessAgents.map((agent) => (
+                      <SelectItem key={agent.id} value={agent.id}>
+                        {agent.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+
+              {state?.addon?.addonOffered ? (
+                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  <span className="rounded-full border border-border px-3 py-1.5">
+                    {includedMinutes} min / month
+                  </span>
+                  <span className="rounded-full border border-border px-3 py-1.5">
+                    Up to {sessionMinutes} min / session
+                  </span>
+                  <span
+                    className={`rounded-full border px-3 py-1.5 ${
+                      entitled
+                        ? "border-[var(--wireline-color-feedback-success-border)] text-[var(--wireline-color-status-success)]"
+                        : "border-border"
+                    }`}
+                  >
+                    {entitled ? "Active" : "Add-on"}
+                  </span>
+                </div>
+              ) : null}
+            </div>
 
             {error ? <StatusNotice tone="destructive" title={error} /> : null}
             {notice ? <StatusNotice tone="success" title={notice} /> : null}
@@ -278,29 +299,48 @@ export default function LiveVideoStudioPage() {
                 Checking live video status…
               </div>
             ) : !state ? null : !addon?.addonOffered ? (
-              <div className="rounded-xl border border-border bg-card px-5 py-5 text-sm leading-6 text-muted-foreground">
-                Live video is not available on this workspace yet. Contact Wireline to enable it.
+              <div className="rounded-xl border border-border bg-card px-5 py-5">
+                <p className="text-sm font-semibold text-foreground">Live video unavailable</p>
+                <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
+                  {addon?.reason || "Live video is not available on this workspace right now."}
+                </p>
               </div>
             ) : !entitled ? (
               <div className="rounded-xl border border-primary/25 bg-[var(--wireline-color-action-primary-container)] px-5 py-5">
-                <p className="text-sm font-semibold text-foreground">Live video presence</p>
-                <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  {liveVideoAddonPitch()} {liveVideoMeteringNote()}
+                <p className="text-sm font-semibold text-foreground">
+                  {checkoutAvailable ? "Add live video" : "Live video access needs attention"}
                 </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="mt-4"
-                  disabled={checkoutBusy}
-                  onClick={() => void startCheckout()}
-                >
-                  {checkoutBusy ? (
-                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
+                  {checkoutAvailable
+                    ? `${liveVideoAddonPitch()} ${liveVideoMeteringNote()}`
+                    : addon.reason || "Restore an active paid plan before using live video."}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {checkoutAvailable ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={checkoutBusy}
+                      onClick={() => void startCheckout()}
+                    >
+                      {checkoutBusy ? (
+                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Video size={14} aria-hidden="true" />
+                      )}
+                      Subscribe · $19/mo
+                    </Button>
                   ) : (
-                    <Video size={14} aria-hidden="true" />
+                    <Button asChild type="button" size="sm">
+                      <Link to="/settings/billing">
+                        {addon.upgradeRequired ? "Choose a live plan" : "Manage billing"}
+                      </Link>
+                    </Button>
                   )}
-                  Subscribe · $19/mo
-                </Button>
+                  <Button asChild type="button" size="sm" variant="secondary">
+                    <Link to="/studio">Back to Studio</Link>
+                  </Button>
+                </div>
               </div>
             ) : (
               <>
@@ -310,9 +350,8 @@ export default function LiveVideoStudioPage() {
                       Turn on live video for {activeAgent?.name}
                     </p>
                     <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
-                      The presenter appears only in live video sessions you start. Calls, texts, and
-                      email keep working exactly as before, and the Wireline identity remains the
-                      fallback whenever video is unavailable.
+                      Calls, texts, and email stay unchanged. Live video appears only in sessions you
+                      start here, with the Wireline identity as fallback.
                     </p>
                     <label className="mt-4 flex items-start gap-2.5 text-sm leading-6 text-muted-foreground">
                       <Checkbox
@@ -320,8 +359,8 @@ export default function LiveVideoStudioPage() {
                         onChange={(event) => setConsentAcknowledged(event.target.checked)}
                         className="mt-1"
                       />
-                      I understand this agent will present with a catalog video face in live video
-                      sessions, and that session minutes draw from the add-on's monthly reserve.
+                      I understand this agent will use a catalog presenter and each preview reserves
+                      {` ${sessionMinutes} `}minutes from the monthly live-video allowance.
                     </label>
                     <Button
                       type="button"
@@ -349,13 +388,18 @@ export default function LiveVideoStudioPage() {
                     />
 
                     <div className="rounded-xl border border-border bg-card p-5">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
                           <p className="text-sm font-semibold text-foreground">Live preview</p>
-                          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
                             {hasFacePick
-                              ? "Start a bounded live session to see this presenter on stream."
-                              : "Pick a presenter face above, then preview it live."}
+                              ? `Start a live ${sessionMinutes}-minute session to check framing, motion, and presence.`
+                              : "Choose a presenter above, then start a live preview."}
+                          </p>
+                          <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                            {usage
+                              ? `${remainingMinutes} of ${usage.includedMinutes ?? includedMinutes} reserved minutes remaining`
+                              : `${includedMinutes} reserved minutes each month · ${sessionMinutes} reserved per session`}
                           </p>
                         </div>
                         {session ? (
@@ -386,7 +430,7 @@ export default function LiveVideoStudioPage() {
                       </div>
 
                       {session ? (
-                        <div className="mt-4 max-w-xl">
+                        <div className="mt-4 max-w-2xl">
                           <LiveVideoPresenter
                             ref={presenterRef}
                             credentials={session.live}
@@ -395,12 +439,6 @@ export default function LiveVideoStudioPage() {
                             className="aspect-video w-full"
                             onRetry={() => void startPreview()}
                           />
-                          {typeof usage?.includedMinutes === "number" ? (
-                            <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                              {Math.max(0, usage.usedMinutes ?? 0)} of {usage.includedMinutes}{" "}
-                              reserved minutes used this month
-                            </p>
-                          ) : null}
                         </div>
                       ) : null}
                     </div>
