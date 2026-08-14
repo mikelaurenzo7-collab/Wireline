@@ -42,7 +42,7 @@ export default function LandingPage() {
   return (
     <>
       <PageMeta
-        title="Wireline | Voice agents that get work done"
+        title="Wireline | Voice agents that get the work done"
         description={PUBLIC_DESCRIPTION}
         path="/"
       />
