@@ -3,7 +3,8 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 // @ts-expect-error -- plain .mjs build script, imported for its canonical copy.
-import { CAMPAIGN_VO, speakable } from "../scripts/generate-campaign-vo.mjs";
+import { CAMPAIGN_VO, DEFAULT_VOICE_ID, speakable } from "../scripts/generate-campaign-vo.mjs";
+import { ELEVENLABS_CURATED_VOICES } from "../src/lib/voice-catalog";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -24,11 +25,17 @@ describe("launch campaign voiceover", () => {
     text: string;
   }>;
 
-  it("renders exactly the three audio deliverables the media kit lists", () => {
+  it("renders exactly the audio deliverables the media kit lists", () => {
     for (const track of tracks) {
       expect(mediaKit, `${track.file} is not listed in the media kit`).toContain(track.file);
     }
-    expect(tracks).toHaveLength(3);
+    expect(tracks).toHaveLength(4);
+  });
+
+  it("covers every launch cut that needs narration", () => {
+    // The media kit's cut table drives the audio set. A cut listed there with
+    // no track is how the Live Video reel ended up needing hand-scored VO.
+    expect(tracks.map((track) => track.id)).toContain("live-video-25s");
   });
 
   it("keeps every voiceover verbatim from the campaign document", () => {
@@ -61,6 +68,15 @@ describe("launch campaign voiceover", () => {
         `${track.id} cannot fit ${words} words into ${track.targetSeconds}s`,
       ).toBeLessThanOrEqual(track.targetSeconds);
     }
+  });
+
+  it("narrates with a real runtime Studio voice, not a marketing-only voice", () => {
+    // The launch reels claim voice quality. That claim is honest because the
+    // narration voice is one of the curated ElevenLabs Studio voices customers
+    // actually put on their phone line — the same catalog the call runtime
+    // routes through Vapi. If the default drifts off-catalog, the reels start
+    // selling a voice the product does not ship.
+    expect(ELEVENLABS_CURATED_VOICES.map((voice) => voice.id)).toContain(DEFAULT_VOICE_ID);
   });
 
   it("keeps campaign audio out of the production call path", () => {

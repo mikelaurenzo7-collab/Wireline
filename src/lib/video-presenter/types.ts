@@ -2,6 +2,7 @@
  * Video presenter types — provider-agnostic contract for on-screen agents.
  */
 import type { VideoPresenterProviderId } from "../agent-identity";
+import type { LiveVideoMode, LiveVideoVoiceEngine } from "./live-video-session-policy";
 
 export type VideoPresenterConsentStatus = "not_started" | "pending" | "approved" | "rejected";
 
@@ -36,7 +37,33 @@ export type LiveAvatarSessionCredentials = {
   sandbox: boolean;
   /** Hard provider/product ceiling; Studio may end the session sooner. */
   maxSessionSeconds?: number;
+  /**
+   * Resolved session mode. The client must only stream its own audio when the
+   * session is LITE on the Wireline voice; in every other mode the provider
+   * produces the speech and a second stream would talk over it.
+   */
+  mode?: LiveVideoMode;
+  voiceEngine?: LiveVideoVoiceEngine;
+  creditsPerMinute?: number;
+  /**
+   * Present when the requested engine could not be honored. The configuration
+   * hint behind the degrade is server-logged, never sent to tenants.
+   */
+  degradedFrom?: LiveVideoVoiceEngine;
 };
+
+/**
+ * Whether this session expects Wireline to push PCM into the lip-sync control.
+ *
+ * Treating an absent mode as "Wireline drives" keeps older clients and any
+ * response that predates mode reporting on the path they already worked on.
+ */
+export function sessionExpectsWirelineAudio(
+  credentials: Pick<LiveAvatarSessionCredentials, "mode" | "voiceEngine">,
+): boolean {
+  if (credentials.mode === "full") return false;
+  return !credentials.voiceEngine || credentials.voiceEngine === "wireline_realtime";
+}
 
 export type LiveVideoAddonState = {
   platformConfigured: boolean;

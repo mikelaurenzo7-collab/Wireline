@@ -51,8 +51,11 @@ Legacy filenames containing older provider or positioning language may remain fo
 | `wireline-missed-call-15s.mp3` | 15-second missed-call narration from the campaign pack |
 | `wireline-ai-voice-agent-30s.mp3` | **Second Ring** late-entry narration; not a generic walkthrough VO |
 | `wireline-founder-60s.mp3` | Founder/product-proof narration |
+| `wireline-live-video-25s.mp3` | **Live Video Proof** narration for the paid business add-on cut |
 
 Generate with `npm run campaign:vo`. Campaign audio is marketing/reference material only and never the production phone-call speech path.
+
+The default narration voice is deliberately a **curated runtime Studio voice** (Jessica) — the same catalog customers put on a live phone line — so the voice quality the reels sell is the voice quality the product ships. A contract pins the generator's default to the runtime catalog; do not point it at a marketing-only voice.
 
 ## Required Launch Cuts
 
@@ -91,6 +94,27 @@ A publishable Live Video cut requires exact-production authenticated capture tha
 - no provider mark, vendor console, secret, token, or unsupported availability claim appears.
 
 Static avatar badges are allowed as product identity UI. They are **not** Live Video proof frames unless the surrounding copy clearly labels them as fallback or setup state.
+
+### Live Video Proof — 25s cut brief
+
+Narration: `wireline-live-video-25s.mp3` (16.9s rendered). Copy lives in the campaign document.
+
+The cut has one job the voice reels cannot do: prove the presenter is a **session**, not a picture. Every beat below exists to make that undeniable, and the eight seconds of narration silence are where the proof actually happens.
+
+| Time | Shot | Overlay | Sound |
+| --- | --- | --- | --- |
+| 0.0–3.0 | A call already in progress on the phone surface — the product the viewer knows | — | Room tone. Real captured agent audio, low. |
+| 3.0–5.5 | Operator turns Live Video on for that same business agent. Allowance state visible and truthful. | Some conversations deserve a face. | UI tick |
+| 5.5–9.0 | Session mints. Presenter connects and **answers** — mouth in sync with the words being spoken. | — | **Presenter at full level. No VO. No music.** |
+| 9.0–15.0 | Caller interrupts mid-sentence; the presenter stops and responds. | — | **Still full level.** VO enters only at 15.0. |
+| 15.0–22.0 | Studio: transcript and logged outcome for the session just watched. | Same agent. Same rules. Same record. | VO — first and only entry |
+| 22.0–25.0 | Explicit stop. Allowance decrements truthfully. End card. | Build your Voice Agent / trywireline.com | Music resolves |
+
+**The interruption at 0:09 is the whole cut.** A rendered talking head can lip-sync a script; it cannot be cut off. Showing the presenter stop mid-word is the single frame that separates a real session from a generated concept video, and it is the reason this brief refuses a pre-rendered stand-in no matter how good the render looks.
+
+**Do not claim voice identity — unless the picture proves it.** In the default session the presenter speaks through Wireline's own realtime voice, not the phone voice. The overlay therefore claims *rules and record*, which is true, and never *same voice* — with one now-real exception: Studio exposes a **Presenter voice engine** choice, and on the Studio-voice engine an agent whose phone voice is a PSTN-approved ElevenLabs voice speaks with **that same voice** on screen. A cut may claim *same voice* only when the captured session visibly runs that engine for that agent, and the claim must not generalize to the default engine.
+
+**Sound-off variant:** extend the Studio transcript beat so the muted viewer reads the presenter's words being written live. Do not add a caption bar over the presenter.
 
 ## Publish Gate
 

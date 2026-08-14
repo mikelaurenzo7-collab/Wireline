@@ -41,14 +41,10 @@ const isStripe = (value: string) => /^sk_(test|live)_/.test(value);
 const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 const isE164 = (value: string) => /^\+[1-9]\d{6,14}$/.test(value);
 const isTwilioAccountSid = (value: string) => /^AC[a-fA-F0-9]{32}$/.test(value);
-const isPositiveNumber = (value: string) =>
-  Number.isFinite(Number(value)) && Number(value) > 0;
+const isPositiveNumber = (value: string) => Number.isFinite(Number(value)) && Number(value) > 0;
 
 const isCommaSeparatedEmails = (value: string) =>
-  !value ||
-  value
-    .split(",")
-    .every((entry) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(entry.trim()));
+  !value || value.split(",").every((entry) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(entry.trim()));
 
 export const ENV_REGISTRY: EnvVarConfig[] = [
   {
@@ -63,8 +59,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "DATABASE_POOL_URL",
     group: "core",
     required: false,
-    description:
-      "PostgreSQL pooler/proxy URL (Supabase Transaction mode pooler on :6543)",
+    description: "PostgreSQL pooler/proxy URL (Supabase Transaction mode pooler on :6543)",
     validate: (value) => !value || isPostgresConnectionString(value),
     formatHint: "postgresql://user:pass@host:6543/db",
   },
@@ -80,8 +75,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "AI_GATEWAY_API_KEY",
     group: "ai",
     required: false,
-    description:
-      "Vercel AI Gateway key for governed fallback outside Vercel OIDC",
+    description: "Vercel AI Gateway key for governed fallback outside Vercel OIDC",
     validate: nonEmpty,
   },
   {
@@ -97,8 +91,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "OPENAI_API_KEY_CHATKIT",
     group: "ai",
     required: false,
-    description:
-      "Scoped OpenAI credential for ChatGPT app realtime voice spend isolation",
+    description: "Scoped OpenAI credential for ChatGPT app realtime voice spend isolation",
     validate: (value) => value.startsWith("sk-"),
     formatHint: "sk-...",
   },
@@ -114,7 +107,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "ai",
     required: false,
     description:
-      "Optional xAI experiment credential; not part of the launch default",
+      "xAI credential. Activates the Grok structured continuity lane and Wireline Preview voice rendering; OpenAI stays the managed default",
     validate: nonEmpty,
   },
   {
@@ -128,16 +121,34 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK",
     group: "ai",
     required: false,
-    description: "Explicit opt-in for direct xAI structured fallback",
-    validate: (value) => value === "true" || value === "false",
-    formatHint: "true or false",
+    description:
+      "Operator opt-out for the xAI structured lane. Unset means the lane is active whenever XAI_API_KEY is configured; set false to disable it",
+    // Accept exactly the forms the runtime interprets (see
+    // isXAIStructuredLaneEnabled): the disable spellings plus the historical
+    // explicit opt-in. Anything else behaves as "enabled", so flag it here
+    // rather than letting a typo like "flase" silently fail open.
+    validate: (value) => ["true", "false", "0", "off"].includes(value.trim().toLowerCase()),
+    formatHint: "true or false (also accepts 0/off to disable)",
+  },
+  {
+    name: "WIRELINE_STRUCTURED_PRIMARY_PROVIDER",
+    group: "ai",
+    required: false,
+    description:
+      "Operator override for the first structured reasoning lane. Unset keeps the managed OpenAI default; the remaining lanes stay as continuity",
+    // Same acceptance as normalizeReasoningProvider, including the vendor
+    // aliases operators actually type — a working config must not be flagged.
+    validate: (value) =>
+      ["openai", "gemini", "gateway", "xai", "grok", "google", "ai-gateway", "vercel"].includes(
+        value.trim().toLowerCase(),
+      ),
+    formatHint: "openai, gemini, gateway, or xai (aliases: grok, google, ai-gateway, vercel)",
   },
   {
     name: "PERPLEXITY_API_KEY",
     group: "ai",
     required: false,
-    description:
-      "Perplexity-first live public research for Wireline CEO agents",
+    description: "Perplexity-first live public research for Wireline CEO agents",
     validate: nonEmpty,
   },
   {
@@ -192,8 +203,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "voice",
     required: false,
     requiredInProd: true,
-    description:
-      "Server-only managed studio speech and authorized private voice cloning",
+    description: "Server-only managed studio speech and authorized private voice cloning",
     validate: nonEmpty,
   },
   {
@@ -226,8 +236,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "TWILIO_API_SECRET",
     group: "voice",
     required: false,
-    description:
-      "Secret paired with TWILIO_API_KEY for scoped Twilio REST authentication",
+    description: "Secret paired with TWILIO_API_KEY for scoped Twilio REST authentication",
     validate: nonEmpty,
   },
   {
@@ -241,8 +250,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "HEYGEN_API_KEY",
     group: "voice",
     required: false,
-    description:
-      "HeyGen Studio API credential for optional presenter voice previews",
+    description: "HeyGen Studio API credential for optional presenter voice previews",
     validate: nonEmpty,
   },
   {
@@ -304,8 +312,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "STRIPE_AUTOMATIC_TAX_ENABLED",
     group: "billing",
     required: false,
-    description:
-      "Explicit opt-in for Stripe Automatic Tax after active registrations are verified",
+    description: "Explicit opt-in for Stripe Automatic Tax after active registrations are verified",
     validate: (value) => !value || value === "true" || value === "false",
     formatHint: "true or false; keep false until Stripe has an active tax registration",
   },
@@ -319,8 +326,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID",
     group: "billing",
     required: false,
-    description:
-      "SKU-shaped alias for STRIPE_LIVE_VIDEO_ADDON_PRICE_ID; either is honored",
+    description: "SKU-shaped alias for STRIPE_LIVE_VIDEO_ADDON_PRICE_ID; either is honored",
   },
   {
     name: "UPSTASH_REDIS_REST_URL",
@@ -342,8 +348,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "infrastructure",
     required: false,
     requiredInProd: true,
-    description:
-      "Transactional email for verification, billing, support, and lifecycle delivery",
+    description: "Transactional email for verification, billing, support, and lifecycle delivery",
     validate: nonEmpty,
   },
   {
@@ -388,8 +393,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "WIRELINE_LAUNCH_DEMO_MODE",
     group: "operational",
     required: false,
-    description:
-      "Marks internal launch accounts and product telemetry as demo-only",
+    description: "Marks internal launch accounts and product telemetry as demo-only",
     validate: (value) => value === "true" || value === "false",
     formatHint: "true or false",
   },
@@ -421,8 +425,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "FEDERAL_DNC_PROVIDER",
     group: "operational",
     required: false,
-    description:
-      "Federal DNC vendor id (e.g. dncscrub for Contact Center Compliance)",
+    description: "Federal DNC vendor id (e.g. dncscrub for Contact Center Compliance)",
   },
   {
     name: "FEDERAL_DNC_API_KEY",
@@ -511,8 +514,7 @@ export function validateEnv(): EnvValidationResult {
   }
 
   const gateway =
-    process.env.AI_GATEWAY_API_KEY?.trim() ||
-    (isProd && process.env.VERCEL_OIDC_TOKEN?.trim());
+    process.env.AI_GATEWAY_API_KEY?.trim() || (isProd && process.env.VERCEL_OIDC_TOKEN?.trim());
   const managedRuntime = process.env.OPENAI_API_KEY?.trim() || gateway;
   if (!managedRuntime) {
     result.valid = false;
@@ -532,8 +534,7 @@ export const getEnvByGroup = (group: EnvGroup) =>
 
 export function logEnvValidation(verbose = false) {
   const result = validateEnv();
-  if (result.valid)
-    log.info("Environment validation passed", { groups: result.byGroup });
+  if (result.valid) log.info("Environment validation passed", { groups: result.byGroup });
   else
     log.warn("Environment validation has missing or invalid settings", {
       errors: result.errors.map((error) => error.var),

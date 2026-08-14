@@ -10,7 +10,7 @@ import { drizzle, log } from "../lib/server-context";
 import {
   getLiveAvatarStatus,
   listPublicAvatars,
-  mintLiveAvatarLiteSessionToken,
+  mintLiveAvatarSessionToken,
 } from "../lib/video-presenter/liveavatar-service";
 import {
   resolveAvatarDefaultVoice,
@@ -21,6 +21,10 @@ import {
   isLiveVideoPlatformAvailable,
   isLiveVideoProvider,
 } from "../lib/video-presenter/live-video-addon";
+import {
+  readLiveVideoPlatformConfig,
+  resolveLiveVideoEngine,
+} from "../lib/video-presenter/live-video-session-policy";
 import { resolveLiveVideoEntitlement } from "../lib/video-presenter/live-video-entitlements";
 import { LIVE_VIDEO_MAX_SESSION_SECONDS } from "../lib/video-presenter/live-video-policy";
 import {
@@ -33,6 +37,7 @@ import { createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { buildAgentIdentityPreview } from "../lib/agent-identity";
 import { isOwnerEmail } from "../lib/auth-service";
+import { isCuratedElevenLabsVoiceId } from "../lib/managed-voice-runtime";
 
 const router = express.Router();
 
@@ -83,11 +88,42 @@ async function ownedAgent(agentId: string, userId: string) {
       videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
       videoPresenterConsentStatus: schema.agents.videoPresenterConsentStatus,
       voiceId: schema.agents.voiceId,
+      voiceProvider: schema.agents.voiceProvider,
     })
     .from(schema.agents)
     .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
     .limit(1);
   return agent ?? null;
+}
+
+/**
+ * The agent's PSTN-approved ElevenLabs voice, or null.
+ *
+ * Mirrors the live-call rule exactly: the provider must be ElevenLabs and the
+ * voice must be curated or a database-approved clone owned by this tenant.
+ * On the Studio-voice Live Video engine this is what lets the presenter speak
+ * the same voice the agent uses on real phone calls — and an unapproved or
+ * foreign voice id never leaves this function.
+ */
+async function approvedAgentElevenLabsVoice(
+  agent: { voiceId: string | null; voiceProvider: string | null },
+  userId: string,
+): Promise<string | null> {
+  const voiceId = agent.voiceId?.trim();
+  if (!voiceId || agent.voiceProvider !== "11labs") return null;
+  if (isCuratedElevenLabsVoiceId(voiceId)) return voiceId;
+  const [clone] = await drizzle
+    .select({ voiceId: schema.clonedVoices.voiceId })
+    .from(schema.clonedVoices)
+    .where(
+      and(
+        eq(schema.clonedVoices.voiceId, voiceId),
+        eq(schema.clonedVoices.userId, userId),
+        eq(schema.clonedVoices.status, "approved"),
+      ),
+    )
+    .limit(1);
+  return clone ? voiceId : null;
 }
 
 router.get(
@@ -291,7 +327,20 @@ router.post(
       return;
     }
 
-    const reservation = await reserveLiveVideoSessionMinutes(req.user.id);
+    // Resolve the engine before reserving: FULL-mode engines burn provider
+    // credits at 2× LITE for the same wall-clock session, so the allowance
+    // must draw down at the resolved engine's rate. Resolution is a pure
+    // function of the request and env config, so the mint below resolves to
+    // the same engine.
+    const requestedEngine = (req.body as { voiceEngine?: unknown } | undefined)?.voiceEngine;
+    const engineResolution = resolveLiveVideoEngine({
+      requested: requestedEngine,
+      config: readLiveVideoPlatformConfig(),
+    });
+
+    const reservation = await reserveLiveVideoSessionMinutes(req.user.id, {
+      creditsPerMinute: engineResolution.creditsPerMinute,
+    });
     if (!reservation.reserved) {
       throw new AppError(
         429,
@@ -301,15 +350,26 @@ router.post(
       );
     }
 
-    let liveSession: Awaited<ReturnType<typeof mintLiveAvatarLiteSessionToken>>;
+    let liveSession: Awaited<ReturnType<typeof mintLiveAvatarSessionToken>>;
     try {
-      liveSession = await mintLiveAvatarLiteSessionToken({
+      liveSession = await mintLiveAvatarSessionToken({
         avatarId: presenter.avatarId,
         maxSessionDurationSeconds: LIVE_VIDEO_MAX_SESSION_SECONDS,
+        // Server-owned resolution: an unavailable or unknown engine degrades to
+        // the managed Wireline voice rather than failing the session.
+        requestedEngine,
+        // Same voice on the phone and on screen: when the agent's phone voice
+        // is a PSTN-approved ElevenLabs voice, the Studio-voice presenter
+        // speaks with it instead of the workspace default.
+        agentElevenLabsVoiceId: await approvedAgentElevenLabsVoice(agent, req.user.id),
       });
     } catch (error) {
       try {
-        await releaseLiveVideoSessionReservation(req.user.id, reservation.usage.periodKey);
+        await releaseLiveVideoSessionReservation(
+          req.user.id,
+          reservation.usage.periodKey,
+          reservation.reservedMinutes,
+        );
       } catch (releaseError) {
         log.error("Live Video reservation release failed after provider mint error", {
           periodKey: reservation.usage.periodKey,
@@ -329,6 +389,15 @@ router.post(
         sessionToken: liveSession.sessionToken,
         sandbox: liveSession.sandbox,
         maxSessionSeconds: LIVE_VIDEO_MAX_SESSION_SECONDS,
+        // The client needs the resolved mode to know whether it must stream
+        // PCM itself (LITE + Wireline voice) or only render the provider's
+        // track (FULL, or a provider-side LITE connector).
+        mode: liveSession.mode,
+        voiceEngine: liveSession.engine,
+        creditsPerMinute: liveSession.creditsPerMinute,
+        // The configuration hint behind a degrade names workspace env vars;
+        // it is logged server-side at mint time. Tenants get the fact.
+        ...(liveSession.degradedFrom ? { degradedFrom: liveSession.degradedFrom } : {}),
       },
     });
   },

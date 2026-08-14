@@ -4,8 +4,6 @@ import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../src/lib/product-co
 
 test.setTimeout(150_000);
 
-const HERO_CHANNEL_PROOF = MARKETING_VOICE.channelProof.slice(0, 3);
-
 async function gotoHomepageWithMain(page: Page) {
   let lastError: unknown;
 
@@ -35,35 +33,22 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
   // The hero heading carries the accessible name; the subline is no longer
   // rendered as a hero subhead (the pitch lives in the title, chips, and demo).
 
-  // Source the accessible name from MARKETING_VOICE (same as the hero markup)
-  // so a brand-spine copy change can never silently desync this E2E assertion.
-  const brandSpine = page.getByLabel(MARKETING_VOICE.spine.join(", "));
-  await expect(brandSpine).toBeVisible();
-  const brandWords = brandSpine.locator("span");
-  await expect(brandWords).toHaveCount(MARKETING_VOICE.spine.length);
-  const brandWordBoxes = await brandWords.evaluateAll((elements) =>
-    elements.map((element) => {
-      const rect = element.getBoundingClientRect();
-      return { left: rect.left, right: rect.right, top: rect.top };
-    }),
-  );
-  expect(
-    Math.max(...brandWordBoxes.map(({ top }) => top)) -
-      Math.min(...brandWordBoxes.map(({ top }) => top)),
-  ).toBeLessThan(1);
-  expect(brandWordBoxes[0].left).toBeLessThan(brandWordBoxes[1].left);
-  expect(brandWordBoxes[1].right).toBeLessThan(brandWordBoxes[2].right);
+  // The hero's separate brand-spine word-mark was deliberately removed in the
+  // minimal-copy pass (#1042); the operating loop now appears once, as the
+  // loop section's heading. Assert that canonical statement instead of the
+  // retired word-mark.
+  await expect(
+    page.getByRole("heading", { name: "Build. Train. Launch. Improve.", exact: true }),
+  ).toBeVisible();
 
-  const proofList = page.getByRole("list", { name: "Wireline capabilities" });
-  // Keep labels sourced from MARKETING_VOICE so copy renames don't desync E2E.
-  for (const label of HERO_CHANNEL_PROOF) {
-    await expect(proofList.getByRole("listitem").filter({ hasText: label })).toBeVisible();
+  // Channel proof lives in the Live Video spotlight's "Agent channels" list
+  // since the hero minimal-copy pass; the old "Wireline capabilities" hero
+  // list no longer exists.
+  const channelList = page.getByRole("list", { name: "Agent channels" });
+  await expect(channelList).toBeVisible();
+  for (const label of ["Voice", "Text", "Email", "Live Video"]) {
+    await expect(channelList.getByRole("listitem").filter({ hasText: label })).toBeVisible();
   }
-  await expect(proofList.getByRole("listitem")).toHaveCount(HERO_CHANNEL_PROOF.length);
-  const proofRows = await proofList
-    .getByRole("listitem")
-    .evaluateAll((items) => items.map((item) => Math.round(item.getBoundingClientRect().top)));
-  expect(new Set(proofRows).size).toBe(2);
 
   const tablist = page.getByRole("tablist", { name: "Agent work lane" });
   await expect(tablist).toBeVisible();

@@ -26,8 +26,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
 const OUTPUT_DIR = resolve(REPO_ROOT, "official-assets/audio");
 
-/** Warm, direct, unhurried — the doc's "founder explaining to a friend". */
-const DEFAULT_VOICE_ID = "cgSgspJ2msm6clMCkdW9";
+/**
+ * Warm, direct, unhurried — the doc's "founder explaining to a friend".
+ * Deliberately a curated runtime Studio voice (Jessica), so the narration in
+ * every reel is a voice customers can actually put on their phone line.
+ * Pinned by tests/launch-campaign-vo-contract.test.ts.
+ */
+export const DEFAULT_VOICE_ID = "cgSgspJ2msm6clMCkdW9";
 const MODEL_ID = "eleven_multilingual_v2";
 
 /**
@@ -73,6 +78,18 @@ export const CAMPAIGN_VO = [
     targetSeconds: 60,
     speed: 0.8,
     text: "I built Wireline because the phone call is still where real business happens, and it is still the easiest thing to miss. Every missed call is a customer deciding to try the next name on the list. So we made it simple to build a voice agent of your own. Train it on your facts and rules in plain language. Let it practice in private simulation. Only then does it touch a real number. From that moment it answers your calls, sends the follow-up text or email, and logs every outcome so you can check its work. Personal line or front desk. One agent, or a team when volume proves the need. Build free. Go live from nineteen dollars a month, with a Wireline number included on every paid plan.",
+  },
+  {
+    id: "live-video-25s",
+    file: "wireline-live-video-25s.mp3",
+    targetSeconds: 25,
+    // 49 words into a 25s slot is ~2.0 wps at speed 1.0, under the guide's
+    // 2.3-2.5 band. That is the intent: the em-dash clause and the two short
+    // sentences before the price need air to land, and the cut hands several
+    // seconds to the session picture itself. Do not speed this up to "fill"
+    // the slot — the silence is where the presenter is on screen.
+    speed: 1.0,
+    text: "Some conversations deserve a face. Turn on Live Video and your business agent joins on screen — same training, same rules, same logged outcome as the call it would have taken. One agent, one place to review the work. Add it to a live plan for nineteen dollars a month.",
   },
 ];
 

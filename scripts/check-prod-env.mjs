@@ -122,7 +122,10 @@ const recommended = [
   ["OPENAI_API_KEY_CHATKIT", "Scoped ChatGPT app realtime voice key for spend isolation"],
   ["GEMINI_API_KEY", "Gemini continuity fallback when direct OpenAI is unavailable"],
   ["AI_GATEWAY_API_KEY", "Vercel AI Gateway governed final fallback and centralized budgets"],
-  ["XAI_API_KEY", "Optional xAI experiments (structured fallback requires explicit opt-in)"],
+  [
+    "XAI_API_KEY",
+    "Optional xAI credential — activates the Grok structured continuity lane and Wireline Preview voice rendering; OpenAI stays primary",
+  ],
   ["VITE_VAPI_PUBLIC_KEY", "Vapi browser-side test calls"],
   ["TWILIO_API_KEY", "Scoped Twilio REST API key SID; preferred over the Account Auth Token"],
   ["TWILIO_API_SECRET", "Secret paired with TWILIO_API_KEY for production REST calls"],
@@ -163,7 +166,7 @@ const optional = [
   ["XAI_API_KEY_CHATKIT", "Optional isolated xAI experiment key"],
   [
     "WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK",
-    "Optional xAI experiments — set true to append direct xAI after the AI Gateway",
+    "Operator opt-out for the xAI structured lane — unset means active with a key; set false to disable",
   ],
   [
     "WIRELINE_LAUNCH_DEMO_MODE",

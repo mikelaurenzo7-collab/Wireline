@@ -4,14 +4,7 @@ import { resendWebhookSecretConfigured } from "./resend-webhook-signature";
 
 export type IntegrationStatus = "configured" | "missing" | "fallback";
 export type IntegrationGroup =
-  | "core"
-  | "ai"
-  | "voice"
-  | "oauth"
-  | "billing"
-  | "actions"
-  | "infra"
-  | "security";
+  "core" | "ai" | "voice" | "oauth" | "billing" | "actions" | "infra" | "security";
 export type IntegrationDescriptor = {
   id: string;
   label: string;
@@ -49,14 +42,10 @@ const item = (
   oneOfEnvVars,
 });
 export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
-  item(
-    "drizzle",
-    "Supabase Postgres",
-    "Tenant data plane and persistence.",
-    "core",
-    true,
-    ["POSTGRES_URL", "INTERNAL_JWT_SECRET"],
-  ),
+  item("drizzle", "Supabase Postgres", "Tenant data plane and persistence.", "core", true, [
+    "POSTGRES_URL",
+    "INTERNAL_JWT_SECRET",
+  ]),
   item(
     "openai",
     "OpenAI",
@@ -103,20 +92,16 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "xai",
     "xAI Grok",
-    "Optional Grok experiments; excluded from the launch default chain and customer demos.",
+    "Grok structured continuity lane and Wireline Preview voice rendering.",
     "ai",
     false,
     ["XAI_API_KEY"],
-    "Structured fallback requires WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=true.",
+    "Active whenever XAI_API_KEY is configured; OpenAI stays the managed primary. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false to disable.",
   ),
-  item(
-    "vapi",
-    "Vapi",
-    "Managed PSTN inbound and outbound call orchestration.",
-    "voice",
-    true,
-    ["VAPI_PRIVATE_KEY", "VAPI_WEBHOOK_SECRET"],
-  ),
+  item("vapi", "Vapi", "Managed PSTN inbound and outbound call orchestration.", "voice", true, [
+    "VAPI_PRIVATE_KEY",
+    "VAPI_WEBHOOK_SECRET",
+  ]),
   item(
     "elevenlabs",
     "ElevenLabs",
@@ -188,14 +173,10 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "YAHOO_CLIENT_ID",
     "YAHOO_CLIENT_SECRET",
   ]),
-  item(
-    "icloud",
-    "iCloud Mail",
-    "Personal iCloud mailbox connection.",
-    "oauth",
-    false,
-    ["ICLOUD_APPLE_ID", "ICLOUD_APP_PASSWORD"],
-  ),
+  item("icloud", "iCloud Mail", "Personal iCloud mailbox connection.", "oauth", false, [
+    "ICLOUD_APPLE_ID",
+    "ICLOUD_APP_PASSWORD",
+  ]),
   item(
     "stripe",
     "Stripe",
@@ -225,14 +206,10 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     ),
     validate: resendWebhookSecretConfigured,
   },
-  item(
-    "hubspot",
-    "HubSpot",
-    "CRM contacts, deals, and activity.",
-    "actions",
-    false,
-    ["HUBSPOT_CLIENT_ID", "HUBSPOT_CLIENT_SECRET"],
-  ),
+  item("hubspot", "HubSpot", "CRM contacts, deals, and activity.", "actions", false, [
+    "HUBSPOT_CLIENT_ID",
+    "HUBSPOT_CLIENT_SECRET",
+  ]),
   item(
     "salesforce",
     "Salesforce",
@@ -259,14 +236,9 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "DOCUSIGN_JWT_TOKEN can replace DOCUSIGN_ACCESS_TOKEN.",
     [["DOCUSIGN_ACCESS_TOKEN", "DOCUSIGN_JWT_TOKEN"]],
   ),
-  item(
-    "apollo",
-    "Apollo",
-    "Lead enrichment and prospect intelligence.",
-    "actions",
-    false,
-    ["APOLLO_API_KEY"],
-  ),
+  item("apollo", "Apollo", "Lead enrichment and prospect intelligence.", "actions", false, [
+    "APOLLO_API_KEY",
+  ]),
   item("meta", "Meta", "Lead follow-up and attribution.", "actions", false, [
     "META_APP_ID",
     "META_APP_SECRET",
@@ -279,14 +251,10 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "SQUARE_APPLICATION_ID",
     "SQUARE_APPLICATION_SECRET",
   ]),
-  item(
-    "x",
-    "X",
-    "Approved social engagement and reporting.",
-    "actions",
-    false,
-    ["X_CLIENT_ID", "X_CLIENT_SECRET"],
-  ),
+  item("x", "X", "Approved social engagement and reporting.", "actions", false, [
+    "X_CLIENT_ID",
+    "X_CLIENT_SECRET",
+  ]),
   item(
     "x-ads",
     "X Ads API",
@@ -301,14 +269,10 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
       "X_ADS_ACCOUNT_ID",
     ],
   ),
-  item(
-    "upstash",
-    "Upstash Redis",
-    "Distributed rate limits and spend controls.",
-    "infra",
-    true,
-    ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"],
-  ),
+  item("upstash", "Upstash Redis", "Distributed rate limits and spend controls.", "infra", true, [
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN",
+  ]),
   item(
     "chatgpt-mcp",
     "ChatGPT MCP",
@@ -335,14 +299,9 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     ["FCM_PROJECT_ID", "FCM_CLIENT_EMAIL", "FCM_PRIVATE_KEY"],
     "Missing push configuration degrades safely; web and API behavior is unaffected.",
   ),
-  item(
-    "secret-vault",
-    "Secret Vault",
-    "Encrypted integration secrets.",
-    "security",
-    false,
-    ["WIRELINE_DATA_KEY"],
-  ),
+  item("secret-vault", "Secret Vault", "Encrypted integration secrets.", "security", false, [
+    "WIRELINE_DATA_KEY",
+  ]),
   {
     ...item(
       "federal-dnc",
@@ -393,9 +352,6 @@ export function getRuntimeIntegrationStatus() {
 }
 export function getRuntimeCapabilities() {
   return Object.fromEntries(
-    RUNTIME_INTEGRATIONS.map((entry) => [
-      entry.id.replace(/-/g, "_"),
-      configured(entry),
-    ]),
+    RUNTIME_INTEGRATIONS.map((entry) => [entry.id.replace(/-/g, "_"), configured(entry)]),
   );
 }

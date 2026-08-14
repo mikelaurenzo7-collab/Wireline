@@ -34,11 +34,25 @@ import {
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
 import { liveVideoAddonPitch, liveVideoMeteringNote } from "../lib/video-presenter/copy";
+import { sessionExpectsWirelineAudio } from "../lib/video-presenter/types";
 import type {
   AgentVideoPresenterConfig,
   LiveAvatarSessionCredentials,
   LiveVideoAddonState,
 } from "../lib/video-presenter/types";
+import type {
+  LiveVideoMode,
+  LiveVideoVoiceEngine,
+} from "../lib/video-presenter/live-video-session-policy";
+
+type PlatformEngineOption = {
+  id: LiveVideoVoiceEngine;
+  mode: LiveVideoMode;
+  label: string;
+  description: string;
+  creditsPerMinute: number;
+  available: boolean;
+};
 
 type PresenterPayload = {
   presenter: AgentVideoPresenterConfig;
@@ -47,10 +61,14 @@ type PresenterPayload = {
     configured: boolean;
     sandbox: boolean;
     defaultAvatarId?: string | null;
+    allowedMode?: LiveVideoMode;
+    engines?: PlatformEngineOption[];
   };
   addon: LiveVideoAddonState;
   hasVoice: boolean;
 };
+
+const DEFAULT_ENGINE: LiveVideoVoiceEngine = "wireline_realtime";
 
 type SessionUsage = {
   includedMinutes?: number;
@@ -82,6 +100,7 @@ export default function LiveVideoStudioPage() {
   const [sessionBusy, setSessionBusy] = useState(false);
   const [presenterReady, setPresenterReady] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<PresenterCatalogSelection | null>(null);
+  const [voiceEngine, setVoiceEngine] = useState<LiveVideoVoiceEngine>(DEFAULT_ENGINE);
   const [session, setSession] = useState<{
     live: LiveAvatarSessionCredentials;
     fallbackSeed: string;
@@ -128,6 +147,7 @@ export default function LiveVideoStudioPage() {
     setUsage(null);
     setNotice(null);
     setConsentAcknowledged(false);
+    setVoiceEngine(DEFAULT_ENGINE);
     void loadPresenter();
   }, [loadPresenter]);
 
@@ -228,9 +248,29 @@ export default function LiveVideoStudioPage() {
     setPresenterReady(false);
     try {
       if (session) await endPreview();
+      // Provider-driven engines converse through the stage itself, so the
+      // microphone must be grantable before any allowance is reserved — a
+      // denied mic would otherwise burn reserved minutes on a deaf session.
+      if (voiceEngine !== DEFAULT_ENGINE) {
+        try {
+          const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mic.getTracks().forEach((track) => track.stop());
+        } catch {
+          setError(
+            "This presenter voice engine needs microphone access. Allow the microphone and try again, or switch to the Wireline voice.",
+          );
+          return;
+        }
+      }
       const response = await authFetch(
         `/api/agents/${encodeURIComponent(activeAgentId)}/video-presenter/session`,
-        { method: "POST" },
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          // Server-owned resolution: an unavailable engine degrades to the
+          // Wireline voice and reports degradedFrom instead of failing.
+          body: JSON.stringify({ voiceEngine }),
+        },
       );
       const body = (await response.json().catch(() => null)) as {
         configured?: boolean;
@@ -259,13 +299,31 @@ export default function LiveVideoStudioPage() {
   const liveVideoOn = presenter?.provider === "liveavatar";
   const hasFacePick = Boolean(presenter?.avatarId);
   const includedMinutes = usage?.includedMinutes ?? addon?.liveVideoMinutesIncluded ?? 60;
-  const sessionMinutes =
-    usage?.sessionReservationMinutes ?? addon?.liveVideoSessionMinutes ?? 5;
+  const sessionMinutes = usage?.sessionReservationMinutes ?? addon?.liveVideoSessionMinutes ?? 5;
   const usedMinutes = Math.max(0, usage?.usedMinutes ?? 0);
-  const remainingMinutes =
-    usage?.remainingMinutes ?? Math.max(0, includedMinutes - usedMinutes);
-  const exhausted = usage?.exhausted === true || remainingMinutes < sessionMinutes;
+  const remainingMinutes = usage?.remainingMinutes ?? Math.max(0, includedMinutes - usedMinutes);
   const activeAgentName = activeAgent?.name || "Your agent";
+  // Only a LITE session on the Wireline voice expects this client to push its
+  // own PCM. Every other mode is provider-driven, and a second stream would
+  // make the presenter talk over itself.
+  const wirelineDrivesAudio = session ? sessionExpectsWirelineAudio(session.live) : true;
+  // Engine choice: offered only when the workspace actually has more than one
+  // engine configured. Reasons on unavailable engines are operator hints and
+  // are deliberately not rendered here.
+  const availableEngines = useMemo(
+    () => (state?.platform.engines ?? []).filter((engine) => engine.available),
+    [state?.platform.engines],
+  );
+  const engineChoiceOffered = availableEngines.length > 1;
+  const selectedEngine =
+    availableEngines.find((engine) => engine.id === voiceEngine) ??
+    availableEngines.find((engine) => engine.id === DEFAULT_ENGINE) ??
+    null;
+  const sessionDegraded = Boolean(session?.live.degradedFrom);
+  // A managed (FULL) engine burns provider credits at 2× LITE for the same
+  // wall-clock session, so it reserves proportionally more of the allowance.
+  const reserveMinutes = sessionMinutes * (selectedEngine?.creditsPerMinute ?? 1);
+  const exhausted = usage?.exhausted === true || remainingMinutes < reserveMinutes;
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-8">
@@ -366,7 +424,9 @@ export default function LiveVideoStudioPage() {
               <div className="rounded-2xl border border-primary/25 bg-[var(--wireline-color-action-primary-container)] px-5 py-6 shadow-sm">
                 <p className="wl-stitch-label">Live Video</p>
                 <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
-                  {checkoutAvailable ? "Add an on-screen presence" : "Live video access needs attention"}
+                  {checkoutAvailable
+                    ? "Add an on-screen presence"
+                    : "Live video access needs attention"}
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                   {checkoutAvailable
@@ -449,6 +509,13 @@ export default function LiveVideoStudioPage() {
                   }
                 />
 
+                {sessionDegraded ? (
+                  <StatusNotice tone="info" title="This stage opened with the Wireline voice.">
+                    The engine you picked is not available on this workspace yet, so the session
+                    fell back to the managed default. Your conversation still works normally.
+                  </StatusNotice>
+                ) : null}
+
                 <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
                     <div>
@@ -459,10 +526,48 @@ export default function LiveVideoStudioPage() {
                       <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
                         {exhausted
                           ? "This month's reserved Live Video allowance is used."
-                          : hasFacePick
-                            ? `Open a ${sessionMinutes}-minute stage, then talk to the real Wireline agent while the presenter lip-syncs its live voice.`
-                            : "Choose a presenter above before opening the live stage."}
+                          : !hasFacePick
+                            ? "Choose a presenter above before opening the live stage."
+                            : !selectedEngine || selectedEngine.id === DEFAULT_ENGINE
+                              ? `Open a ${sessionMinutes}-minute stage, then talk to the real Wireline agent while the presenter lip-syncs its live voice.`
+                              : `Open a ${sessionMinutes}-minute stage and speak with the presenter directly on stage.`}
                       </p>
+                      {engineChoiceOffered && !session ? (
+                        <div className="mt-4 grid max-w-sm gap-2">
+                          <label
+                            className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+                            htmlFor="live-video-voice-engine"
+                          >
+                            Presenter voice engine
+                          </label>
+                          <Select
+                            value={selectedEngine?.id ?? DEFAULT_ENGINE}
+                            onValueChange={(value) => setVoiceEngine(value as LiveVideoVoiceEngine)}
+                          >
+                            <SelectTrigger
+                              id="live-video-voice-engine"
+                              className="h-auto w-full rounded-md border border-input bg-card py-2 pl-3 text-sm text-foreground"
+                            >
+                              <SelectValue placeholder="Wireline voice" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableEngines.map((engine) => (
+                                <SelectItem key={engine.id} value={engine.id}>
+                                  {engine.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {selectedEngine ? (
+                            <p className="text-xs leading-5 text-muted-foreground">
+                              {selectedEngine.description}
+                              {reserveMinutes > sessionMinutes
+                                ? ` Reserves ${reserveMinutes} minutes of your monthly allowance per session.`
+                                : ""}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                     {session ? (
                       <Button
@@ -553,7 +658,11 @@ export default function LiveVideoStudioPage() {
                           {remainingMinutes} of {includedMinutes} min remaining
                         </span>
                         <span className="rounded-full border border-border bg-secondary/50 px-3 py-1.5">
-                          {presenterReady ? "Camera connected" : session ? "Camera connecting" : "Stage closed"}
+                          {presenterReady
+                            ? "Camera connected"
+                            : session
+                              ? "Camera connecting"
+                              : "Stage closed"}
                         </span>
                       </div>
                       {session && presenterReady ? (
@@ -568,14 +677,23 @@ export default function LiveVideoStudioPage() {
 
                 {session ? (
                   presenterReady ? (
-                    <OpenAILiveVoiceSandbox
-                      agentId={activeAgentId!}
-                      agentName={activeAgentName}
-                      onAgentAudioDelta={(base64Pcm) =>
-                        presenterRef.current?.feedPcmDelta(base64Pcm)
-                      }
-                      onAgentAudioEnd={() => presenterRef.current?.flushPcm()}
-                    />
+                    wirelineDrivesAudio ? (
+                      <OpenAILiveVoiceSandbox
+                        agentId={activeAgentId!}
+                        agentName={activeAgentName}
+                        onAgentAudioDelta={(base64Pcm) =>
+                          presenterRef.current?.feedPcmDelta(base64Pcm)
+                        }
+                        onAgentAudioEnd={() => presenterRef.current?.flushPcm()}
+                      />
+                    ) : (
+                      // The provider produces speech in this mode. Opening a
+                      // second Wireline audio stream would talk over it.
+                      <div className="rounded-2xl border border-border bg-card px-5 py-5 text-sm leading-6 text-muted-foreground shadow-sm">
+                        This presenter answers on the stage itself — speak into your microphone and
+                        it will reply. Wireline is not adding a second audio stream.
+                      </div>
+                    )
                   ) : (
                     <div className="rounded-2xl border border-border bg-card px-5 py-5 text-sm text-muted-foreground shadow-sm">
                       The presenter is connecting. Live conversation unlocks as soon as the camera

@@ -22,10 +22,14 @@ describe("voice catalog", () => {
     expect(picker).toContain('authFetch("/api/voices")');
     expect(picker).toContain("voice.provider");
     expect(picker).not.toContain("api.elevenlabs.io");
-    expect(read("src/lib/voice/voice-preview-service.ts")).toContain(
+    // The preview route renders the exact selected voice through the shared
+    // xAI engine; it must never substitute one provider's voice for another.
+    expect(read("src/lib/voice/xai-tts-service.ts")).toContain(
       'const XAI_TTS_URL = "https://api.x.ai/v1/tts"',
     );
+    expect(read("src/lib/voice/voice-preview-service.ts")).toContain("synthesizeXaiSpeech");
     expect(read("src/lib/voice/voice-preview-service.ts")).not.toContain("XAI_TO_ELEVENLABS");
+    expect(read("src/lib/voice/voice-preview-service.ts")).not.toContain("api.elevenlabs.io");
     expect(read("src/lib/voice-catalog.ts")).not.toMatch(/id: "(Kylie|Lily|Hana|Neha|Cole)"/);
     expect(read("src/lib/voice/pcm-resample.ts")).toContain("VAPI_LISTEN_PCM_RATE_HZ");
     expect(read("src/pages/AgentStudioHome.tsx")).toContain("consumeCreateWarning");

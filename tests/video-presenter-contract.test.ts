@@ -51,13 +51,97 @@ describe("video presenter integration", () => {
     expect(live).toContain('"wl-presence-live--stage"');
     expect(live).toContain("onSpeakingChangeRef.current = onSpeakingChange");
     expect(live).toContain("onStreamReadyRef.current = onStreamReadyChange");
-    expect(live).toContain("}, [sessionToken]);");
+    // Session lifetime keys only to the minted token plus the audio-direction
+    // flag derived from the same server response — never to parent callbacks,
+    // which are kept in refs above so re-renders cannot restart a paid session.
+    expect(live).toContain("}, [sessionToken, wirelineDrivesAudio]);");
     expect(live).toContain("stop: () => Promise<void>");
     expect(live).toContain("await session.stop().catch(() => undefined)");
     expect(presenceCss).toContain(".wl-presence-live--stage");
     expect(presenceCss).toContain("aspect-ratio: 16 / 9");
     expect(presenceCss).toContain("max-width: none");
     expect(existsSync(resolve(root, "src/components/AgentPresenceLivePreview.tsx"))).toBe(false);
+  });
+
+  it("routes microphone and speaker by session mode so provider-driven presenters work", () => {
+    const live = source("src/components/LiveVideoPresenter.tsx");
+    // Wireline-driven LITE keeps the SDK off the microphone (the Wireline
+    // voice surface owns capture) and keeps the provider track muted (agent
+    // audio already plays through that surface). Provider-driven modes invert
+    // both: the provider needs the mic and its track is the only speech.
+    expect(live).toContain("sessionExpectsWirelineAudio(credentials)");
+    expect(live).toContain("voiceChat: !wirelineDrivesAudio");
+    expect(live).toContain("element.muted = wirelineDrivesAudio");
+    expect(live).toContain("muted={wirelineDrivesAudio}");
+    // Blocked unmuted autoplay surfaces a control instead of a silent presenter.
+    expect(live).toContain("Tap to hear the presenter");
+  });
+
+  it("gives the Studio-voice presenter the agent's phone voice only when PSTN-approved", () => {
+    const routes = source("src/routes/video-presenter-routes-base.ts");
+    // Exactly the live-call rule: ElevenLabs provider plus curated-or-approved
+    // clone, checked against this tenant's own rows. Nothing else passes.
+    expect(routes).toContain("approvedAgentElevenLabsVoice");
+    expect(routes).toContain('agent.voiceProvider !== "11labs"');
+    expect(routes).toContain("isCuratedElevenLabsVoiceId(voiceId)");
+    expect(routes).toContain('eq(schema.clonedVoices.status, "approved")');
+    expect(routes).toContain("eq(schema.clonedVoices.userId, userId)");
+    expect(routes).toContain(
+      "agentElevenLabsVoiceId: await approvedAgentElevenLabsVoice(agent, req.user.id)",
+    );
+  });
+
+  it("offers the voice-engine choice in Studio and reports a degraded mint truthfully", () => {
+    const studio = source("src/pages/LiveVideoStudioPage.tsx");
+    // The server owns resolution; the client only expresses a preference.
+    expect(studio).toContain("JSON.stringify({ voiceEngine })");
+    // The picker appears only when the workspace really has a choice.
+    expect(studio).toContain("engineChoiceOffered = availableEngines.length > 1");
+    expect(studio).toContain("Presenter voice engine");
+    // A degraded session says so in the UI instead of silently switching voices.
+    expect(studio).toContain("sessionDegraded");
+    expect(studio).toContain("This stage opened with the Wireline voice.");
+  });
+
+  it("meters FULL-mode sessions at their provider credit rate", () => {
+    // A FULL session burns 2 provider credits per wall-clock minute against
+    // LITE's 1. If the reservation stays flat, the modeled margin and the
+    // pause-at-limit promise silently halve the moment an operator enables
+    // FULL mode — so the allowance must draw down at the resolved rate.
+    const policy = source("src/lib/video-presenter/live-video-policy.ts");
+    expect(policy).toContain("export function liveVideoSessionReservationMinutes");
+    const usage = source("src/lib/video-presenter/live-video-usage.ts");
+    expect(usage).toContain("liveVideoSessionReservationMinutes(options.creditsPerMinute)");
+    expect(usage).toContain("current.remainingMinutes < reservedMinutes");
+    const routes = source("src/routes/video-presenter-routes-base.ts");
+    // The engine resolves before the reservation so the draw-down rate is the
+    // resolved engine's, and a failed mint releases exactly what was reserved.
+    expect(routes.indexOf("const engineResolution = resolveLiveVideoEngine")).toBeLessThan(
+      routes.indexOf("await reserveLiveVideoSessionMinutes(req.user.id"),
+    );
+    expect(routes).toContain("creditsPerMinute: engineResolution.creditsPerMinute");
+    expect(routes).toContain("reservation.reservedMinutes");
+    // The Studio surface tells the truth about the higher draw before minting.
+    const studio = source("src/pages/LiveVideoStudioPage.tsx");
+    expect(studio).toContain(
+      "const reserveMinutes = sessionMinutes * (selectedEngine?.creditsPerMinute ?? 1)",
+    );
+    expect(studio).toContain("remainingMinutes < reserveMinutes");
+  });
+
+  it("keeps operator configuration hints off every tenant-facing payload", () => {
+    // The per-engine reasons and degrade reasons name workspace env vars.
+    // Tenants get availability and the degrade fact; the hints are served only
+    // on the platform-admin health surface and in server logs.
+    const service = source("src/lib/video-presenter/liveavatar-service.ts");
+    expect(service).toContain("map(({ reason: _reason, ...engine }) => engine)");
+    const routes = source("src/routes/video-presenter-routes-base.ts");
+    expect(routes).not.toContain("degradeReason: liveSession.degradeReason");
+    expect(routes).toContain("{ degradedFrom: liveSession.degradedFrom }");
+    const health = source("src/routes/health-routes.ts");
+    expect(health).toContain(
+      "live_video_engines: describeLiveVideoEngines(readLiveVideoPlatformConfig())",
+    );
   });
 
   it("mounts a reachable, interactive consumption surface for the paid add-on", () => {
@@ -122,7 +206,9 @@ describe("video presenter integration", () => {
     expect(routes).toContain('"/api/agents/:id/video-presenter/disable"');
     expect(routes).toContain('videoPresenterProvider: "synthetic"');
     expect(routes).toContain('videoPresenterConsentStatus: "not_started"');
-    expect(routes).not.toMatch(/videoPresenterProvider: "synthetic"[\s\S]{0,180}videoPresenterAvatarId/);
+    expect(routes).not.toMatch(
+      /videoPresenterProvider: "synthetic"[\s\S]{0,180}videoPresenterAvatarId/,
+    );
 
     const page = source("src/pages/LiveVideoStudioPage.tsx");
     expect(page).toContain('authFetch("/api/video-presenter/usage")');

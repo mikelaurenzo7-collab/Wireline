@@ -1,7 +1,8 @@
 /* Provider-neutral structured runtime adapter. Direct OpenAI is the managed
- * primary, Gemini provides the first continuity fallback, and the Vercel AI
- * Gateway is the governed multi-model route. Direct xAI is available only when
- * explicitly enabled as an experimental final fallback. */
+ * primary, Gemini provides the first continuity fallback, the Vercel AI Gateway
+ * is the governed multi-model route, and direct xAI closes the chain whenever
+ * XAI_API_KEY is configured. Eligibility and ordering are owned by
+ * `reasoning-provider-policy.ts`; this module owns transport only. */
 import { log } from "./server-logger";
 import {
   GEMINI_STRUCTURED_FALLBACK_MODEL,
@@ -9,6 +10,12 @@ import {
   STRUCTURED_PRIMARY_MODEL,
   XAI_STRUCTURED_PRIMARY_MODEL,
 } from "./ai-models";
+import {
+  isXAIStructuredLaneEnabled,
+  orderReasoningProviders,
+  resolveReasoningPreference,
+  type ReasoningProviderId,
+} from "./reasoning-provider-policy";
 import {
   AI_GATEWAY_BASE_URL,
   gatewayHeaders,
@@ -332,8 +339,10 @@ async function callXAI(
   const apiKey = process.env.XAI_API_KEY;
   if (!apiKey) throw new Error("XAI_API_KEY not configured");
   const requested = String(body.model || "").trim();
-  // Only forward xAI-native model ids directly. This path is opt-in and never
-  // receives OpenAI or Gemini ids from the managed launch default.
+  // Only forward xAI-native model ids directly. As a continuity lane this path
+  // routinely receives requests that named an OpenAI or Gemini model; those
+  // map onto the configured Grok structured model rather than being sent to a
+  // vendor that cannot serve them.
   const model = /grok/i.test(requested) ? requested : XAI_STRUCTURED_PRIMARY_MODEL;
   return callResponsesEndpoint({
     endpoint: XAI_RESPONSES_URL,
@@ -520,21 +529,44 @@ const gatewayCircuitBreaker = new RuntimeCircuitBreaker("AI Gateway");
 const openAICircuitBreaker = new RuntimeCircuitBreaker("OpenAI");
 const geminiCircuitBreaker = new RuntimeCircuitBreaker("Gemini");
 
-function xaiStructuredFallbackEnabled(): boolean {
-  return process.env.WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK?.trim().toLowerCase() === "true";
+function xaiStructuredLaneAvailable(): boolean {
+  return isXAIStructuredLaneEnabled() && Boolean(process.env.XAI_API_KEY);
 }
 
+/**
+ * Transport registry keyed by policy id. The policy module decides which of
+ * these are eligible and in what order; this table only says how to reach each
+ * one, so a routing change never has to touch fetch code.
+ */
+const RUNTIME_PROVIDER_REGISTRY: Record<
+  ReasoningProviderId,
+  { provider: RuntimeProvider; available: () => boolean }
+> = {
+  openai: {
+    provider: { name: "OpenAI", call: callOpenAI, breaker: openAICircuitBreaker },
+    available: () => Boolean(process.env.OPENAI_API_KEY),
+  },
+  gemini: {
+    provider: { name: "Gemini", call: callGemini, breaker: geminiCircuitBreaker },
+    available: () => Boolean(process.env.GEMINI_API_KEY),
+  },
+  gateway: {
+    provider: { name: "AI Gateway", call: callGateway, breaker: gatewayCircuitBreaker },
+    available: () => isAIGatewayConfigured(),
+  },
+  xai: {
+    provider: { name: "xAI", call: callXAI, breaker: xaiCircuitBreaker },
+    available: xaiStructuredLaneAvailable,
+  },
+};
+
 function configuredProviders(): RuntimeProvider[] {
-  const providers: RuntimeProvider[] = [];
-  if (process.env.OPENAI_API_KEY)
-    providers.push({ name: "OpenAI", call: callOpenAI, breaker: openAICircuitBreaker });
-  if (process.env.GEMINI_API_KEY)
-    providers.push({ name: "Gemini", call: callGemini, breaker: geminiCircuitBreaker });
-  if (isAIGatewayConfigured())
-    providers.push({ name: "AI Gateway", call: callGateway, breaker: gatewayCircuitBreaker });
-  if (xaiStructuredFallbackEnabled() && process.env.XAI_API_KEY)
-    providers.push({ name: "xAI", call: callXAI, breaker: xaiCircuitBreaker });
-  return providers;
+  const available = (Object.keys(RUNTIME_PROVIDER_REGISTRY) as ReasoningProviderId[]).filter((id) =>
+    RUNTIME_PROVIDER_REGISTRY[id].available(),
+  );
+  return orderReasoningProviders(available, resolveReasoningPreference()).map(
+    (id) => RUNTIME_PROVIDER_REGISTRY[id].provider,
+  );
 }
 
 function nextAvailableProvider(
@@ -549,14 +581,14 @@ function fallbackMessage(from: RuntimeProviderName, to: RuntimeProviderName): st
   if (from === "Gemini" && to === "AI Gateway")
     return "Gemini request failed; trying AI Gateway fallback";
   if (from === "AI Gateway" && to === "xAI")
-    return "AI Gateway request failed; trying explicitly enabled xAI fallback";
+    return "AI Gateway request failed; trying configured xAI fallback";
   return `${from} request failed; trying ${to} fallback`;
 }
 
 export class RuntimeUnavailableError extends Error {
   status = 503;
   constructor() {
-    super("AI runtime is unavailable. Configure OpenAI, Gemini, or the AI Gateway.");
+    super("AI runtime is unavailable. Configure OpenAI, Gemini, xAI, or the AI Gateway.");
     this.name = "RuntimeUnavailableError";
   }
 }
@@ -634,10 +666,11 @@ export function getRuntimeClient(): RuntimeClient {
   return client;
 }
 
-export const isRuntimeAvailable = () =>
-  Boolean(
-    process.env.OPENAI_API_KEY ||
-    process.env.GEMINI_API_KEY ||
-    isAIGatewayConfigured() ||
-    (xaiStructuredFallbackEnabled() && process.env.XAI_API_KEY),
-  );
+export const isRuntimeAvailable = () => configuredProviders().length > 0;
+
+/**
+ * Operator-facing view of the resolved chain. Names only — never credentials,
+ * endpoints, or model ids — so this is safe to surface on a status route.
+ */
+export const describeRuntimeChain = (): RuntimeProviderName[] =>
+  configuredProviders().map((provider) => provider.name);
