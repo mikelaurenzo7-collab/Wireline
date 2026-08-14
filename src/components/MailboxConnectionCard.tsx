@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Mail, Trash2 } from "lucide-react";
+import { Loader2, Mail, RefreshCw, Trash2 } from "lucide-react";
 
 import { authFetch, safeJson } from "../lib/api";
 import { Badge, Button, Skeleton } from "./atoms";
@@ -40,6 +40,7 @@ const PROVIDERS: Array<{
 export default function MailboxConnectionCard() {
   const [accounts, setAccounts] = useState<MailboxAccount[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusUnavailable, setStatusUnavailable] = useState(false);
   const [busy, setBusy] = useState<MailboxProvider | string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showIcloudForm, setShowIcloudForm] = useState(false);
@@ -47,6 +48,7 @@ export default function MailboxConnectionCard() {
   const [icloudPassword, setIcloudPassword] = useState("");
 
   const loadAccounts = useCallback(async () => {
+    setLoading(true);
     try {
       const response = await authFetch("/api/emails/accounts");
       const body = (await safeJson(response)) as {
@@ -55,8 +57,13 @@ export default function MailboxConnectionCard() {
       } | null;
       if (!response.ok) throw new Error(body?.error || "Could not load inbox connections.");
       setAccounts(Array.isArray(body?.accounts) ? body.accounts : []);
+      setStatusUnavailable(false);
       setError(null);
     } catch (reason) {
+      // A status outage is not proof that every mailbox disconnected. Fail
+      // closed instead of rendering a fresh set of Connect buttons that can
+      // push an already-connected customer into duplicate OAuth setup.
+      setStatusUnavailable(true);
       setError(reason instanceof Error ? reason.message : "Could not load inbox connections.");
     } finally {
       setLoading(false);
@@ -86,9 +93,6 @@ export default function MailboxConnectionCard() {
       if (event.data?.type !== "OAUTH_AUTH_SUCCESS" && event.data?.type !== "EMAIL_OAUTH_SUCCESS") {
         return;
       }
-      // Consent already succeeded, so the close poll has nothing left to detect —
-      // without this it survives until the user closes the popup and then
-      // reloads accounts a second time.
       stopPopupPoll();
       setBusy(null);
       void loadAccounts().then(() => {
@@ -121,8 +125,6 @@ export default function MailboxConnectionCard() {
         "width=600,height=720,popup=yes",
       );
       if (!popup) throw new Error("Allow popups, then try connecting again.");
-      // Retrying, or switching providers, would otherwise stack a second poll
-      // that only the first popup's close can clear.
       stopPopupPoll();
       popupPollRef.current = window.setInterval(() => {
         if (!popup.closed) return;
@@ -191,12 +193,6 @@ export default function MailboxConnectionCard() {
         <Mail className="size-5 text-primary" aria-hidden="true" />
       </div>
 
-      {error ? (
-        <StatusNotice tone="destructive" title="Inbox connection unavailable" className="mt-4">
-          {error}
-        </StatusNotice>
-      ) : null}
-
       {loading ? (
         <div
           className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4"
@@ -207,117 +203,137 @@ export default function MailboxConnectionCard() {
             <Skeleton key={provider.id} shape="surface" className="h-[140px] w-full" />
           ))}
         </div>
-      ) : (
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {PROVIDERS.map((provider) => {
-            const providerAccounts = accounts.filter((item) => item.provider === provider.id);
-            const isBusy = busy === provider.id;
-            return (
-              <article
-                key={provider.id}
-                className="rounded-xl border border-border bg-card px-4 py-4"
-              >
-                <div className="flex items-start gap-3">
-                  <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-background p-1.5">
-                    {getIntegrationLogo(provider.logo)}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-foreground">
-                        {provider.label}
-                      </span>
-                      {providerAccounts.length ? <Badge variant="outline">Connected</Badge> : null}
-                    </span>
-                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                      {provider.detail}
-                    </span>
-                  </span>
-                </div>
-                {providerAccounts.length ? (
-                  <ul className="mt-4 grid gap-2">
-                    {providerAccounts.map((account) => (
-                      <li
-                        key={account.id}
-                        className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-2"
-                      >
-                        <span className="min-w-0 flex-1 truncate text-xs text-foreground">
-                          {account.emailAddress}
-                        </span>
-                        <button
-                          type="button"
-                          className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
-                          aria-label={`Disconnect ${account.emailAddress}`}
-                          disabled={busy === account.id}
-                          onClick={() => void disconnect(account)}
-                        >
-                          {busy === account.id ? (
-                            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                          ) : (
-                            <Trash2 className="size-4" aria-hidden="true" />
-                          )}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                {provider.id === "icloud" && showIcloudForm ? (
-                  <form className="mt-4 grid gap-2" onSubmit={(event) => void connectIcloud(event)}>
-                    <input
-                      type="email"
-                      required
-                      autoComplete="email"
-                      value={icloudEmail}
-                      onChange={(event) => setIcloudEmail(event.target.value)}
-                      placeholder="name@icloud.com"
-                      aria-label="iCloud email address"
-                      className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
-                    />
-                    <input
-                      type="password"
-                      required
-                      autoComplete="off"
-                      value={icloudPassword}
-                      onChange={(event) => setIcloudPassword(event.target.value)}
-                      placeholder="App-specific password"
-                      aria-label="Apple app-specific password"
-                      className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
-                    />
-                    <p className="text-[11px] leading-relaxed text-muted-foreground">
-                      Generate one in Apple ID under Sign-In and Security → App-Specific Passwords.
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button type="submit" size="sm" disabled={isBusy}>
-                        {isBusy ? (
-                          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                        ) : null}
-                        Connect
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => setShowIcloudForm(false)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </form>
-                ) : (
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="mt-4 w-full"
-                    disabled={isBusy}
-                    onClick={() => void connect(provider.id)}
-                  >
-                    {isBusy ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
-                    {providerAccounts.length ? "Connect another" : `Connect ${provider.label}`}
-                  </Button>
-                )}
-              </article>
-            );
-          })}
+      ) : statusUnavailable ? (
+        <div className="mt-5">
+          <StatusNotice
+            tone="destructive"
+            title="Inbox connection status unavailable"
+            action={
+              <Button type="button" size="sm" variant="secondary" onClick={() => void loadAccounts()}>
+                <RefreshCw className="size-3.5" aria-hidden="true" />
+                Retry
+              </Button>
+            }
+          >
+            {error || "Wireline couldn't verify your connected mailboxes. No connection state was changed."}
+          </StatusNotice>
         </div>
+      ) : (
+        <>
+          {error ? (
+            <StatusNotice tone="destructive" title="Inbox action unavailable" className="mt-4">
+              {error}
+            </StatusNotice>
+          ) : null}
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {PROVIDERS.map((provider) => {
+              const providerAccounts = accounts.filter((item) => item.provider === provider.id);
+              const isBusy = busy === provider.id;
+              return (
+                <article
+                  key={provider.id}
+                  className="rounded-xl border border-border bg-card px-4 py-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-background p-1.5">
+                      {getIntegrationLogo(provider.logo)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold text-foreground">{provider.label}</span>
+                        {providerAccounts.length ? <Badge variant="outline">Connected</Badge> : null}
+                      </span>
+                      <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                        {provider.detail}
+                      </span>
+                    </span>
+                  </div>
+                  {providerAccounts.length ? (
+                    <ul className="mt-4 grid gap-2">
+                      {providerAccounts.map((account) => (
+                        <li
+                          key={account.id}
+                          className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-2"
+                        >
+                          <span className="min-w-0 flex-1 truncate text-xs text-foreground">
+                            {account.emailAddress}
+                          </span>
+                          <button
+                            type="button"
+                            className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                            aria-label={`Disconnect ${account.emailAddress}`}
+                            disabled={busy === account.id}
+                            onClick={() => void disconnect(account)}
+                          >
+                            {busy === account.id ? (
+                              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                            ) : (
+                              <Trash2 className="size-4" aria-hidden="true" />
+                            )}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {provider.id === "icloud" && showIcloudForm ? (
+                    <form className="mt-4 grid gap-2" onSubmit={(event) => void connectIcloud(event)}>
+                      <input
+                        type="email"
+                        required
+                        autoComplete="email"
+                        value={icloudEmail}
+                        onChange={(event) => setIcloudEmail(event.target.value)}
+                        placeholder="name@icloud.com"
+                        aria-label="iCloud email address"
+                        className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                      />
+                      <input
+                        type="password"
+                        required
+                        autoComplete="off"
+                        value={icloudPassword}
+                        onChange={(event) => setIcloudPassword(event.target.value)}
+                        placeholder="App-specific password"
+                        aria-label="Apple app-specific password"
+                        className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                      />
+                      <p className="text-[11px] leading-relaxed text-muted-foreground">
+                        Generate one in Apple ID under Sign-In and Security → App-Specific Passwords.
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button type="submit" size="sm" disabled={isBusy}>
+                          {isBusy ? (
+                            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                          ) : null}
+                          Connect
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setShowIcloudForm(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="mt-4 w-full"
+                      disabled={isBusy}
+                      onClick={() => void connect(provider.id)}
+                    >
+                      {isBusy ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+                      {providerAccounts.length ? "Connect another" : `Connect ${provider.label}`}
+                    </Button>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        </>
       )}
     </section>
   );
