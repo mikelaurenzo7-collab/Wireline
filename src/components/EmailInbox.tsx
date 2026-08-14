@@ -148,6 +148,9 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
         current && nextThreads.some((thread) => thread.id === current) ? current : null,
       );
     } catch (cause) {
+      // A failed list read says nothing about whether a mailbox is connected.
+      // Keep the state explicitly unavailable so the product never converts a
+      // transient API failure into a misleading setup CTA.
       setError(cause instanceof Error ? cause.message : "Could not load email conversations.");
     } finally {
       setLoading(false);
@@ -300,6 +303,32 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
     : "min-h-screen bg-background px-5 py-8 sm:px-6";
   if (loading) return <InboxLoadingState frameClass={frameClass} />;
 
+  if (threads.length === 0 && error) {
+    return (
+      <section className={`${frameClass} flex flex-1 flex-col px-5 text-center`}>
+        <EmptyState
+          fill
+          framed
+          density="compact"
+          titleTone="ui"
+          withHalo={false}
+          icon={<Mail className="size-5" />}
+          title="Inbox unavailable"
+          description="Wireline couldn't verify your email conversations. Your mailbox connection was not changed."
+          action={
+            <Button type="button" onClick={() => void loadThreads()}>
+              <RefreshCw aria-hidden="true" className="size-4" />
+              Try again
+            </Button>
+          }
+        />
+        <StatusNotice tone="destructive" className="mx-auto mt-3 max-w-lg text-left">
+          {error}
+        </StatusNotice>
+      </section>
+    );
+  }
+
   if (threads.length === 0) {
     return (
       <section className={`${frameClass} flex flex-1 flex-col px-5 text-center`}>
@@ -310,36 +339,24 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
           titleTone="ui"
           withHalo={false}
           icon={<Mail className="size-5" />}
-          title="Connect your inbox"
-          description="Connect Gmail or Outlook to sync customer threads."
+          title="No email conversations yet"
+          description="Refresh for new mail, or open Connections if you still need to add a mailbox."
           action={
             <div className="flex flex-wrap justify-center gap-2">
-              <Button asChild>
-                <Link to="/connections">Open Connections</Link>
+              <Button type="button" disabled={syncing} onClick={() => void syncInbox()}>
+                {syncing ? (
+                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+                ) : (
+                  <RefreshCw aria-hidden="true" className="size-4" />
+                )}
+                {syncing ? "Refreshing" : "Refresh inbox"}
               </Button>
-              {error ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={syncing}
-                  onClick={() => void syncInbox()}
-                >
-                  {syncing ? (
-                    <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                  ) : (
-                    <RefreshCw aria-hidden="true" className="size-4" />
-                  )}
-                  {syncing ? "Refreshing" : "Try again"}
-                </Button>
-              ) : null}
+              <Button asChild variant="secondary">
+                <Link to="/connections">Connections</Link>
+              </Button>
             </div>
           }
         />
-        {error ? (
-          <StatusNotice tone="destructive" className="mx-auto mt-3 max-w-lg text-left">
-            {error}
-          </StatusNotice>
-        ) : null}
       </section>
     );
   }
