@@ -97,9 +97,17 @@ export default function StripeBillingCard() {
       setStripeConfigured(!!statusRes.stripe_configured && !!plansRes.stripe_configured);
       setSub(statusRes.subscription || null);
       setAgentCount(statusRes.agent_count ?? 0);
+      // An explicit ?plan= in the URL is a direct ask (the wizard's activation
+      // CTA, auth-redirect's returning-paid-intent path) and outranks derived
+      // signup intent — without this, the activation moment's preselection
+      // never reached the plan grid. Only known paid plan ids qualify.
+      const urlPlan = new URLSearchParams(window.location.search).get("plan");
+      const explicitPaidPlan =
+        urlPlan && ["starter", "team", "business", "enterprise"].includes(urlPlan) ? urlPlan : null;
       const storedIntent = getStoredSignupIntent();
       setSignupPlanInterest(
-        statusRes.signup_intent?.plan_id ||
+        explicitPaidPlan ||
+          statusRes.signup_intent?.plan_id ||
           (storedIntent ? recommendedPlanFromIntent(storedIntent) : null),
       );
       setPlans(plansRes.plans || []);

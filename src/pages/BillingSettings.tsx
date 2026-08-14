@@ -158,9 +158,14 @@ export default function BillingSettings() {
           setLoadError("Subscription status is temporarily unavailable.");
         }
 
-        if (balanceRes.ok) {
-          const data = (await balanceRes.json()) as ConversationBalanceResponse;
-          setBalanceUsd(Number(data.balance_usd ?? 0));
+        // Parse defensively: a malformed balance body must degrade only the
+        // balance line, never bubble to the outer catch and flip the whole
+        // page (including a successfully loaded subscription) to unavailable.
+        const balanceData = balanceRes.ok
+          ? ((await balanceRes.json().catch(() => null)) as ConversationBalanceResponse | null)
+          : null;
+        if (balanceData) {
+          setBalanceUsd(Number(balanceData.balance_usd ?? 0));
         } else if (statusRes.ok) {
           setLoadError(`${CONVERSATION_BALANCE_COPY.title} is temporarily unavailable.`);
         }

@@ -423,10 +423,25 @@ export default function OverviewPage() {
   // time even when nothing changed. Keying this effect on that identity (and
   // re-arming the skeletons every run) made Home visibly tear down — four
   // metric tiles and the activity list flashing grey — on every alt-tab back.
-  // Depend on the one derived fact the dashboard actually uses, and show
-  // skeletons only before the first load.
+  // Depend on the one derived fact the dashboard actually reads, plus an
+  // explicit debounced focus tick so metrics still refresh when the user
+  // returns — silently, because skeletons only show before the first load.
   const hasPhoneLine = agents.some((agent) => agent.phone_number);
   const dashboardLoadedOnceRef = useRef(false);
+  const [dashboardRefreshTick, setDashboardRefreshTick] = useState(0);
+
+  useEffect(() => {
+    let timer: number | null = null;
+    const onFocus = () => {
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => setDashboardRefreshTick((tick) => tick + 1), 1_500);
+    };
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      if (timer) window.clearTimeout(timer);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -516,7 +531,7 @@ export default function OverviewPage() {
     return () => {
       cancelled = true;
     };
-  }, [hasPhoneLine]);
+  }, [hasPhoneLine, dashboardRefreshTick]);
 
   const personalAgents = agents.filter((agent) => !agent.is_business_agent);
   const businessAgents = agents.filter((agent) => agent.is_business_agent);

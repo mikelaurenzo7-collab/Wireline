@@ -563,6 +563,25 @@ router.post("/mcp", async (req, res) => {
         throw AppError.tooManyRequests(
           "The private voice simulation limit has been reached. Continue testing from Wireline.",
         );
+      // Web mints run enforceSpendCap BEFORE the quota debit; this JSON-RPC
+      // path must match on both counts — the quota increment below is durable,
+      // so a capped tenant's rejected attempts must not eat the daily
+      // allowance they would need after raising the cap.
+      const capExceeded = await isHardSpendCapExceeded(authed.userId).catch((err: unknown) => {
+        log.error("chatgpt simulation spend-guard unavailable — refusing mint", {
+          userId: authed.userId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        throw AppError.fromHttpStatus(
+          503,
+          "Live simulation is briefly unavailable. Try again shortly.",
+        );
+      });
+      if (capExceeded)
+        throw AppError.fromHttpStatus(
+          402,
+          "The plan-funded simulation allowance is used for this period. Continue from Wireline billing.",
+        );
       // Every mint charges a vendor-metered realtime secret on the platform
       // key, so this tool must draw from the same daily simulation-minute
       // quota the web sandbox charges — the hourly limiter alone allowed 8
@@ -600,23 +619,6 @@ router.post("/mcp", async (req, res) => {
           "Live simulation is briefly unavailable. Try again shortly.",
         );
       }
-      // Web mints run enforceSpendCap; this JSON-RPC path must apply the same
-      // hard cap or a capped tenant simply switches surfaces to keep minting.
-      const capExceeded = await isHardSpendCapExceeded(authed.userId).catch((err: unknown) => {
-        log.error("chatgpt simulation spend-guard unavailable — refusing mint", {
-          userId: authed.userId,
-          error: err instanceof Error ? err.message : String(err),
-        });
-        throw AppError.fromHttpStatus(
-          503,
-          "Live simulation is briefly unavailable. Try again shortly.",
-        );
-      });
-      if (capExceeded)
-        throw AppError.fromHttpStatus(
-          402,
-          "The plan-funded simulation allowance is used for this period. Continue from Wireline billing.",
-        );
       const session = await createOpenAIRealtimeClientSecret({
         userId: authed.userId,
         agentName: draft.view.name,

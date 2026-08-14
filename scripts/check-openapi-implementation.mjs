@@ -42,9 +42,18 @@ function walk(dir) {
   return files;
 }
 
+// Strip comments so a commented-out registration ("// router.get(...)") never
+// satisfies parity while the operation actually 404s. Block comments go
+// entirely; line comments are stripped only when the line STARTS with `//`,
+// which covers disabled registrations without corrupting string literals that
+// contain `//` (URLs) mid-line.
+function stripComments(source) {
+  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+}
+
 const routeText = walk(path.join(root, "src/routes"))
   .concat([path.join(root, "server.ts"), path.join(root, "src/server/register-api-routes.ts")])
-  .map((file) => readFileSync(file, "utf8"))
+  .map((file) => stripComments(readFileSync(file, "utf8")))
   .join("\n");
 
 const mountedPrefixes = ["/api/health", "/api/intake", "/api/webhooks", "/api/quotas", "/api", ""];

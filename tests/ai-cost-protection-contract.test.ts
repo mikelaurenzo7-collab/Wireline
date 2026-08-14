@@ -246,8 +246,20 @@ describe("AI cost-protection contract", () => {
       expect(route, path).toContain("enforceSpendCap");
       expect(route, path).toContain('platformCostReserveUsd("openai_realtime_session")');
       expect(route, path).toContain('action: "voice.realtime.session"');
+      // Cap BEFORE quota: simulationMinuteQuota durably debits five minutes,
+      // so a capped tenant's rejected attempts must not consume the daily
+      // allowance they would still need after raising the cap.
+      expect(route.indexOf("enforceSpendCap,"), path).toBeGreaterThan(-1);
+      expect(route.indexOf("enforceSpendCap,"), path).toBeLessThan(
+        route.indexOf("simulationMinuteQuota,"),
+      );
     }
     expect(mcpSimulation).toContain("isHardSpendCapExceeded(authed.userId)");
+    // Same ordering rule for the JSON-RPC path: cap check ahead of the
+    // durable quota increment.
+    expect(mcpSimulation.indexOf("isHardSpendCapExceeded")).toBeLessThan(
+      mcpSimulation.indexOf("checkAndIncrement"),
+    );
     expect(mcpSimulation).toContain('platformCostReserveUsd("openai_realtime_session")');
     const middleware = read("src/middleware/audit-middleware.ts");
     expect(middleware).toContain("openai_realtime_session");

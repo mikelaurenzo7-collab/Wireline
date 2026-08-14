@@ -15,8 +15,12 @@ describe("Home operating truth", () => {
     expect(statuses).toContain(
       'ACTIVE_OPERATOR_TASK_STATUSES = ["pending", "open", "in_progress"] as const',
     );
-    expect(route).toContain("inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES])");
-    expect(navRoute).toContain("inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES])");
+    expect(route).toContain(
+      "inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES])",
+    );
+    expect(navRoute).toContain(
+      "inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES])",
+    );
     expect(callOpsRoute).toContain(
       "inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES])",
     );
@@ -33,7 +37,9 @@ describe("Home operating truth", () => {
     expect(metricsRoute).toContain("gte(schema.smsThreads.lastMessageAt, since)");
     expect(metricsRoute).toContain("HIGH_INTENT_SCORE = 75");
     expect(metricsRoute).toContain("eq(schema.appointments.userId, userId)");
-    expect(metricsRoute).toContain('res.setHeader("Cache-Control", "private, no-store, max-age=0")');
+    expect(metricsRoute).toContain(
+      'res.setHeader("Cache-Control", "private, no-store, max-age=0")',
+    );
     expect(metricsRoute).not.toContain("customerNumber:");
     expect(metricsRoute).not.toContain("transcript:");
     expect(metricsRoute).not.toContain("summary:");
@@ -48,9 +54,7 @@ describe("Home operating truth", () => {
     expect(overview).toContain("setConversationsToday(Number(data?.conversationsToday ?? 0))");
     expect(overview).toContain("setHighIntentToday(Number(data?.highIntentToday ?? 0))");
     expect(overview).toContain("setActiveWork(Number(data?.activeWork ?? 0))");
-    expect(overview).toContain(
-      "recentConversations.length > 0 || conversationsToday > 0",
-    );
+    expect(overview).toContain("recentConversations.length > 0 || conversationsToday > 0");
     expect(overview).not.toContain("setHotLeadsCount");
     expect(overview).not.toContain("setPendingFollowUps");
     expect(overview).not.toContain("isoToLocalDateKey");
@@ -102,21 +106,26 @@ describe("Home operating truth", () => {
   });
 
   it("isolates Home data-plane failures so one integration cannot blank independent truth", () => {
-    expect(overview).toContain(
-      'authFetch("/api/overview/recent-conversations").catch(() => null)',
-    );
+    expect(overview).toContain('authFetch("/api/overview/recent-conversations").catch(() => null)');
     expect(overview).toContain('authFetch("/api/oauth/crm/status").catch(() => null)');
     expect(overview).toContain('authFetch("/api/calendar/accounts").catch(() => null)');
     expect(overview).toContain('authFetch("/api/emails/accounts").catch(() => null)');
     expect(overview).toContain("setRecentUnavailable(true)");
-    expect(overview).toContain("affected metrics or recent activity may not be current");
+    // Whitespace-collapsed so formatter reflow of the JSX text node cannot
+    // read as a copy violation — the invariant is the copy, not its wrapping
+    // (same treatment as the managed-runtime prose gate).
+    expect(overview.replace(/\s+/g, " ")).toContain(
+      "affected metrics or recent activity may not be current",
+    );
   });
 
   it("shadows historical pending-only nav/dashboard implementations with exact routes first", () => {
     expect(registry).toContain(
       'import overviewOperatingMetricsRouter from "../routes/overview-operating-metrics-routes";',
     );
-    expect(registry).toContain('import navCountsTruthRouter from "../routes/nav-counts-truth-routes";');
+    expect(registry).toContain(
+      'import navCountsTruthRouter from "../routes/nav-counts-truth-routes";',
+    );
     const overviewMount = registry.indexOf("app.use(overviewOperatingMetricsRouter);");
     const navMount = registry.indexOf("app.use(navCountsTruthRouter);");
     const dashboardMount = registry.indexOf("app.use(dashboardRouter);");

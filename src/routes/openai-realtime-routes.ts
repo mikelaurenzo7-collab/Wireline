@@ -39,13 +39,16 @@ router.post(
   "/api/voice/openai/session",
   authenticateUser,
   openaiRealtimeLimiter,
-  simulationMinuteQuota,
   // The minted secret spends vendor-metered realtime audio on the platform
   // key, and browser-to-vendor WebRTC audio never reaches the token audit
   // path — so the mint itself must respect the tenant's AI-spend hard cap and
   // land a reserve in the envelope. Without both, a tenant already 402'd on
   // text AI could still mint voice sessions all day as invisible COGS.
+  // Cap BEFORE quota: the quota middleware durably debits five minutes, so a
+  // capped tenant's rejected attempts must not eat the daily allowance they
+  // would need after raising the cap.
   enforceSpendCap,
+  simulationMinuteQuota,
   validateBody(openaiRealtimeSessionSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     const session = await createOpenAIRealtimeClientSecret({

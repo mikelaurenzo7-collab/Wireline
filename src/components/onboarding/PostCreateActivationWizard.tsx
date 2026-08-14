@@ -229,10 +229,14 @@ export default function PostCreateActivationWizard({
 
   const hasLine = Boolean(phoneNumber);
   const starterPriceUsd = planById("starter")?.price_usd_monthly ?? 19;
-  // Preselect the plan the customer told us about at signup; Starter otherwise.
+  // Preselect the PAID plan the customer told us about at signup. A Free
+  // Builder signup's stored intent (and the no-intent default) is "personal",
+  // which cannot activate a number — the CTA promising "$19/mo" must land on
+  // Starter, never on the free tier.
   const activationPlanPath = useMemo(() => {
     const recommended = recommendedPlanFromIntent(getStoredSignupIntent());
-    return `/settings/billing?plan=${encodeURIComponent(recommended)}&interval=month`;
+    const paidPlan = recommended === "personal" ? "starter" : recommended;
+    return `/settings/billing?plan=${encodeURIComponent(paidPlan)}&interval=month`;
   }, []);
 
   const markWireFunnelEvents = useCallback(() => {

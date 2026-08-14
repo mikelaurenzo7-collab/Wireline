@@ -83,11 +83,13 @@ router.post(
   "/api/voice/live/session",
   authenticateUser,
   sessionLimiter,
-  simulationMinuteQuota,
   // Same posture as /api/voice/openai/session: the mint spends vendor-metered
   // realtime audio on platform keys outside the token audit path, so it must
   // respect the tenant's AI-spend hard cap and land a reserve in the envelope.
+  // Cap BEFORE quota so a capped tenant's rejections don't consume the
+  // durable daily minute debit.
   enforceSpendCap,
+  simulationMinuteQuota,
   validateBody(sessionSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     const session = await createOpenAILiveVoiceCall({

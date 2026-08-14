@@ -22,9 +22,12 @@ type SimulationAllowanceStatus = {
  * Renders nothing for paid tenants (their guard scope is not the simulation
  * allowance) and nothing while unknown, so it can never block testing.
  */
-function SimulationAllowanceMeter() {
+function SimulationAllowanceMeter({ refreshTick }: { refreshTick: number }) {
   const [status, setStatus] = useState<SimulationAllowanceStatus | null>(null);
 
+  // refreshTick bumps when a simulation session starts or ends: each session
+  // lands a new reserve record, so a mount-only fetch would keep showing the
+  // stale amount while the user runs through the warning threshold.
   useEffect(() => {
     let cancelled = false;
     void authFetch("/api/spend/status")
@@ -36,7 +39,7 @@ function SimulationAllowanceMeter() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshTick]);
 
   if (!status || !(status.monthly_limit_usd > 0)) return null;
 
@@ -106,16 +109,23 @@ export default function RoleplaySandbox({
   onTestStarted?: () => void;
   onTestCompleted?: () => void;
 }) {
+  const [allowanceRefreshTick, setAllowanceRefreshTick] = useState(0);
   return (
     <div className="space-y-4">
       <WirelineLiveVoiceProfile agentId={agentId} />
       <LiveVoiceSandbox
         agentId={agentId}
         agentName={agentName}
-        onTestStarted={onTestStarted}
-        onTestCompleted={onTestCompleted}
+        onTestStarted={() => {
+          setAllowanceRefreshTick((tick) => tick + 1);
+          onTestStarted?.();
+        }}
+        onTestCompleted={() => {
+          setAllowanceRefreshTick((tick) => tick + 1);
+          onTestCompleted?.();
+        }}
       />
-      <SimulationAllowanceMeter />
+      <SimulationAllowanceMeter refreshTick={allowanceRefreshTick} />
       <div className="grid gap-3 rounded-xl border border-border bg-secondary p-4 sm:grid-cols-2">
         <div className="flex gap-3">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-card text-primary">
